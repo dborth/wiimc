@@ -653,13 +653,18 @@ SRCS_MPLAYER-$(XVR100)        += libvo/vo_xvr100.c
 SRCS_MPLAYER-$(YUV4MPEG)      += libvo/vo_yuv4mpeg.c
 SRCS_MPLAYER-$(ZR)            += libvo/jpeg_enc.c libvo/vo_zr.c libvo/vo_zr2.c
 
-SRCS_MPLAYER-$(GEKKO) += osdep/log_console.c \
-							 osdep/gx_supp.c \
-							 osdep/glob_gekko.c \
-							 osdep/plat_gekko.c \
-							 osdep/mem2_manager.c \
-							 libao2/ao_gekko.c \
-							 libvo/vo_gekko.c
+SRCS_MPLAYER-$(GEKKO) += 	../utils/di2.c \
+							../utils/usb2storage.c \
+							../utils/ftp_devoptab.c \
+							../utils/libdvdiso.c \
+							../utils/mload.c \
+							osdep/log_console.c \
+							osdep/gx_supp.c \
+							osdep/glob_gekko.c \
+							osdep/plat_gekko.c \
+							osdep/mem2_manager.c \
+							libao2/ao_gekko.c \
+							libvo/vo_gekko.c \
 
 SRCS_MPLAYER = command.c \
                m_property.c \

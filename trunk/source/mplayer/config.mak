@@ -53,7 +53,7 @@ CFLAGS_TREMOR_LOW =
 YASMFLAGS =
 
 #EXTRALIBS = -L$(DEVKITPRO)/libogc/lib/wii -L$(DEVKITPRO)/3rd/wii/lib
-EXTRALIBS = -L$(DEVKITPRO)/libogc/lib/wii
+EXTRALIBS = -L$(DEVKITPRO)/libogc/lib/wii -L$(DEVKITPRO)/portlibs/ppc/lib
 #EXTRA_LIB = -static $(COMMONFLAGS) -ldvdread -ldvdnav -lwiiuse -lbte -lfat -ldi -ltinysmb -logc -ldb -lm
 #EXTRA_LIB = -static $(COMMONFLAGS) -liconv -lfreetype -ljpeg -lz -ldb -ldi -ltinysmb -lwiiuse -lbte -lfat -logc -lm
 EXTRA_LIB = -static $(COMMONFLAGS) -lfreetype -liconv -lfribidi -lz -ljpeg -ldi -ltinysmb -lwiiuse -lbte -lfat -lntfs -logc -lm

@@ -295,7 +295,7 @@ static s64 ntfs_device_gekko_io_readbytes(struct ntfs_device *dev, s64 offset, s
     
     // Determine the range of sectors required for this read
     if (offset > 0) {
-        sec_start += floor(offset / (float)fd->sectorSize);
+        sec_start += floor(offset / fd->sectorSize);
         buffer_offset = offset % fd->sectorSize;
     }
     if (count > fd->sectorSize) {
@@ -378,7 +378,7 @@ static s64 ntfs_device_gekko_io_writebytes(struct ntfs_device *dev, s64 offset, 
     
     // Determine the range of sectors required for this write
     if (offset > 0) {
-        sec_start += floor(offset / (float)fd->sectorSize);
+        sec_start += floor(offset / fd->sectorSize);
         buffer_offset = offset % fd->sectorSize;
     }
     if (count > fd->sectorSize) {
@@ -644,3 +644,4 @@ struct ntfs_device_operations ntfs_device_gekko_io_ops = {
     .stat       = ntfs_device_gekko_io_stat,
     .ioctl      = ntfs_device_gekko_io_ioctl,
 };
+

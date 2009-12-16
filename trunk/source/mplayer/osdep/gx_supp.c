@@ -145,12 +145,9 @@ void ChangeVideoMode(int mode)
 		default:
 			vmode = VIDEO_GetPreferredMode(NULL);
 	}
-	
-	vmode->viWidth = 678;
-	vmode->viXOrigin = ((VI_MAX_WIDTH_PAL - vmode->viWidth) / 2);
 
-	//if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
-	//	vmode->viWidth = VI_MAX_WIDTH_NTSC;
+	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
+		vmode->viWidth = VI_MAX_WIDTH_NTSC;
 
 	VIDEO_Configure(vmode);
 	VIDEO_Flush();
@@ -521,10 +518,8 @@ void DrawMPlayer()
 		Mtx44 p;
 		draw_initYUV();
 		draw_scaling();
-		guPerspective(p, 60, 1.33f, 10.0f, 1000.0f);
-		GX_LoadProjectionMtx(p, GX_PERSPECTIVE);
-		//guOrtho(p, 480/2, -(480/2), -(640/2), 640/2, 10, 1000);
-		//GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
+		guOrtho(p, 528/2, -(528/2), -(640/2), 640/2, 10, 1000); // why do we need 528?
+		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
 	}
 	#endif
@@ -643,10 +638,8 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_SetCullMode(GX_CULL_NONE);
 	GX_CopyDisp(xfb[whichfb ^ 1], GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
-	guPerspective(p, 60, 1.33f, 10.0f, 1000.0f);
-	GX_LoadProjectionMtx(p, GX_PERSPECTIVE);
-	//guOrtho(p, 480/2, -(480/2), -(640/2), 640/2, 10, 1000);
-	//GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
+	guOrtho(p, 528/2, -(528/2), -(640/2), 640/2, 10, 1000); // why do we need 528?
+	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 	GX_Flush();
 	GX_UpdateSquare();
 }

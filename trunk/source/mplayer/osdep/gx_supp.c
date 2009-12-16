@@ -29,7 +29,6 @@
 #include <string.h>
 #include <malloc.h>
 #include <unistd.h>
-#include <math.h>
 #include <ogc/mutex.h>
 #include <ogc/lwp.h>
 #include "gx_supp.h"
@@ -68,12 +67,10 @@ extern u32 *xfb[2];
 extern int screenwidth;
 extern int screenheight;
 #else
-static u32 whichfb;
-static u32 *xfb[2];
+static u32 whichfb = 0;
+static u32 *xfb[2] = { NULL, NULL };
 GXRModeObj *vmode = NULL;
 
-int screenwidth = 640;
-int screenheight = 480;
 #endif
 static u32 whichtex=0;
 
@@ -105,10 +102,10 @@ typedef struct tagcamera {
 } camera;
 
 static s16 square[] ATTRIBUTE_ALIGN(32) = {
-	-HASPECT, VASPECT, 0,
-	HASPECT, VASPECT, 0,
-	HASPECT, -VASPECT, 0,
-	-HASPECT, -VASPECT, 0,
+	-HASPECT,  VASPECT, 0,
+	 HASPECT,  VASPECT, 0,
+	 HASPECT, -VASPECT, 0,
+	-HASPECT, -VASPECT, 0
 };
 
 static GXColor colors[] ATTRIBUTE_ALIGN(32) = {
@@ -119,7 +116,7 @@ static u8 texcoords[] ATTRIBUTE_ALIGN(32) = {
 	0x00, 0x00,
 	0x01, 0x00,
 	0x01, 0x01,
-	0x00, 0x01,
+	0x00, 0x01
 };
 
 static camera cam = {
@@ -128,10 +125,10 @@ static camera cam = {
 	{ 0.0f, 0.0f, -0.5f }
 };
 #ifndef WIILIB
-int video_mode=0;
-void ChangeVideoMode(int video_mode)
+
+void ChangeVideoMode(int mode)
 {
-	switch(video_mode)
+	switch(mode)
 	{
 		case 1: // NTSC (480i)
 			vmode = &TVNtsc480IntDf;
@@ -146,36 +143,20 @@ void ChangeVideoMode(int video_mode)
 			vmode = &TVEurgb60Hz480IntDf;
 				break;
 		default:
-			return;
+			vmode = VIDEO_GetPreferredMode(NULL);
 	}
 	
-	vmode->viHeight *= 0.95; vmode->viHeight += fmod(vmode->viHeight, 2);
-	screenheight = vmode->efbHeight;
-	
-	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
-	{
-        vmode->viWidth = VI_MAX_WIDTH_NTSC * 0.95;
-		screenwidth = (int)(((float)screenheight / 9) * 16);
-	}
-	else
-	{
-        vmode->viWidth = VI_MAX_WIDTH_NTSC * 0.93;
-		screenwidth = (int)(((float)screenheight / 3) * 4);
-	}
-	
-	screenwidth -= fmod(screenwidth, 4);
-	
-	vmode->xfbHeight *= 0.95; vmode->xfbHeight += fmod(vmode->xfbHeight, 2);
-	vmode->efbHeight *= 0.95; vmode->efbHeight += fmod(vmode->efbHeight, 2);
-	
-	vmode->viXOrigin = (VI_MAX_WIDTH_NTSC - vmode->viWidth) / 2;
-	vmode->viYOrigin = (screenheight - vmode->viHeight) / 2;
+	vmode->viWidth = 678;
+	vmode->viXOrigin = ((VI_MAX_WIDTH_PAL - vmode->viWidth) / 2);
+
+	//if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
+	//	vmode->viWidth = VI_MAX_WIDTH_NTSC;
 
 	VIDEO_Configure(vmode);
 	VIDEO_Flush();
 
-	free(MEM_K1_TO_K0(xfb[0]));
-	free(MEM_K1_TO_K0(xfb[1]));
+	if(xfb[0]) free(MEM_K1_TO_K0(xfb[0]));
+	if(xfb[1]) free(MEM_K1_TO_K0(xfb[1]));
 
 	xfb[0] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer(vmode));
 	xfb[1] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer(vmode));
@@ -191,57 +172,33 @@ void ChangeVideoMode(int video_mode)
 	if (vmode->viTVMode & VI_NON_INTERLACE)
 		VIDEO_WaitVSync();
 	else
-	    while (VIDEO_GetNextField())
-	    	VIDEO_WaitVSync();
-
-
+		while (VIDEO_GetNextField())
+			VIDEO_WaitVSync();
 }
+
 void GX_InitVideo()
 {
-	vmode = VIDEO_GetPreferredMode(NULL);
-	
-	vmode->viHeight *= 0.95; vmode->viHeight += fmod(vmode->viHeight, 2);
-	screenheight = vmode->efbHeight;
-	
-	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
-	{
-        vmode->viWidth = VI_MAX_WIDTH_NTSC * 0.95;
-		screenwidth = (int)(((float)screenheight / 9) * 16);
-	}
-	else
-	{
-        vmode->viWidth = VI_MAX_WIDTH_NTSC * 0.93;
-		screenwidth = (int)(((float)screenheight / 3) * 4);
-	}
-	
-	screenwidth -= fmod(screenwidth, 4);
-	
-	vmode->xfbHeight *= 0.95; vmode->xfbHeight += fmod(vmode->xfbHeight, 2);
-	vmode->efbHeight *= 0.95; vmode->efbHeight += fmod(vmode->efbHeight, 2);
-	
-	vmode->viXOrigin = (VI_MAX_WIDTH_NTSC - vmode->viWidth) / 2;
-	vmode->viYOrigin = (screenheight - vmode->viHeight) / 2;
+	VIDEO_Init();
+	ChangeVideoMode(0);
 
-	VIDEO_Configure(vmode);
+	GXColor gxbackground = { 0, 0, 0, 0xff };
 
-	xfb[0] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer(vmode));
-	xfb[1] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer(vmode));
+	/*** Clear out FIFO area ***/
 	gp_fifo = (u8 *) memalign(32, DEFAULT_FIFO_SIZE);
+	memset(gp_fifo, 0, DEFAULT_FIFO_SIZE);
 
-	VIDEO_ClearFrameBuffer(vmode, xfb[0], COLOR_BLACK);
-	VIDEO_ClearFrameBuffer(vmode, xfb[1], COLOR_BLACK);
-
-	whichfb = 0;
-	VIDEO_SetNextFramebuffer(xfb[whichfb]);
-	VIDEO_SetBlack(FALSE);
-	VIDEO_Flush();
-	VIDEO_WaitVSync();
-
-	if (vmode->viTVMode & VI_NON_INTERLACE)
-		VIDEO_WaitVSync();
-	else
-	    while (VIDEO_GetNextField())
-	    	VIDEO_WaitVSync();
+	/*** Initialise GX ***/
+	GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
+	GX_SetCopyClear(gxbackground, 0x00ffffff);
+	GX_SetViewport(0, 0, vmode->fbWidth, vmode->efbHeight, 0, 1);
+	GX_SetDispCopyYScale((f32) vmode->xfbHeight / (f32) vmode->efbHeight);
+	GX_SetScissor(0, 0, vmode->fbWidth, vmode->efbHeight);
+	GX_SetDispCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
+	GX_SetDispCopyDst(vmode->fbWidth, vmode->xfbHeight);
+	GX_SetCopyFilter(vmode->aa, vmode->sample_pattern, GX_TRUE, vmode->vfilter);
+	GX_SetFieldMode(vmode->field_rendering, ((vmode->viHeight == 2 * vmode->xfbHeight) ? GX_ENABLE : GX_DISABLE));
+	GX_CopyDisp (xfb[whichfb], GX_TRUE); // reset xfb
+	GX_Flush();
 
 	//make texture memory fixed (max texture 900*700, gx can't manage more) and in mem1 (is faster)
 	if (!Ytexture[0])
@@ -564,8 +521,10 @@ void DrawMPlayer()
 		Mtx44 p;
 		draw_initYUV();
 		draw_scaling();
-		guOrtho(p, screenheight / 2, -(screenheight / 2), -(screenwidth / 2), screenwidth / 2, 10, 1000);
-		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
+		guPerspective(p, 60, 1.33f, 10.0f, 1000.0f);
+		GX_LoadProjectionMtx(p, GX_PERSPECTIVE);
+		//guOrtho(p, 480/2, -(480/2), -(640/2), 640/2, 10, 1000);
+		//GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
 	}
 	#endif
@@ -645,6 +604,8 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	square[3] -= stretch/2;
   	square[6] -= stretch/2;
 
+  	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
+
 	Ytexsize = (w*h);
 	UVtexsize = (w*h)/4;
 
@@ -678,37 +639,14 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	/*** Setup for first call to scaler ***/
 	oldvwidth = oldvheight = oldpitch = -1;
 
-#ifndef WIILIB
-	static bool inited = false;
-	GXColor gxbackground = { 0, 0, 0, 0xff };
-
-	if (inited)
-		return;
-
-	inited = true;
-
-	/*** Clear out FIFO area ***/
-	memset(gp_fifo, 0, DEFAULT_FIFO_SIZE);
-
-	/*** Initialise GX ***/
-	GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
-	GX_SetCopyClear(gxbackground, 0x00ffffff);
-	GX_SetViewport(0, 0, vmode->fbWidth, vmode->efbHeight, 0, 1);
-	GX_SetDispCopyYScale((f32) vmode->xfbHeight / (f32) vmode->efbHeight);
-	GX_SetScissor(0, 0, vmode->fbWidth, vmode->efbHeight);
-	GX_SetDispCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
-	GX_SetDispCopyDst(vmode->fbWidth, vmode->xfbHeight);
-	GX_SetCopyFilter(vmode->aa, vmode->sample_pattern, GX_TRUE, vmode->vfilter);
-	GX_SetFieldMode(vmode->field_rendering, ((vmode->viHeight == 2 * vmode->xfbHeight) ? GX_ENABLE : GX_DISABLE));
-#endif
-
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	GX_SetCullMode(GX_CULL_NONE);
 	GX_CopyDisp(xfb[whichfb ^ 1], GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
-	guOrtho(p, screenheight / 2, -(screenheight / 2), -(screenwidth / 2), screenwidth / 2, 10, 1000);
-	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
-
+	guPerspective(p, 60, 1.33f, 10.0f, 1000.0f);
+	GX_LoadProjectionMtx(p, GX_PERSPECTIVE);
+	//guOrtho(p, 480/2, -(480/2), -(640/2), 640/2, 10, 1000);
+	//GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 	GX_Flush();
 	GX_UpdateSquare();
 }

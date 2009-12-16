@@ -58,10 +58,6 @@ static u32 image_width = 0, image_height = 0;
 
 static u32 gx_width, gx_height;
 
-extern int screenwidth;
-extern int screenheight;
-
-
 void vo_draw_alpha_gekko(int w, int h, unsigned char* src, unsigned char *srca,
 		int srcstride, unsigned char* dstbase, int dststride, int x0)
 {
@@ -250,7 +246,7 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
           uint32_t d_height, uint32_t flags, char *title,
           uint32_t format)
 {
-	float sar, iar;
+	float sar, par, iar;
 
 	image_width = width;
 	image_height = ((int) ((height / 8.0))) * 8;
@@ -258,19 +254,26 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	pitch[0] = 0;
 	pitch[1] = 0;
 	pitch[2] = 0;
-	
-	sar = (float)screenwidth / (float)screenheight;
-	iar = (float)d_width / (float)d_height;
+
+	if (CONF_GetAspectRatio())
+		sar = 16.0f / 9.0f;
+	else
+		sar = 4.0f / 3.0f;
+
+	iar = (float) d_width / (float) d_height;
+	par = (float) d_width / (float) d_height;
+	par *= (float) vmode->fbWidth / (float) vmode->xfbHeight;
+	par /= sar;
 
 	if (iar > sar)
 	{
-		width = screenwidth;
-		height = d_height * ((float)screenwidth / (float)d_width);
+		width = vmode->viWidth;
+		height = (float) width / par;
 	}
 	else
 	{
-		width = d_width * ((float)screenheight / (float)d_height);
-		height = screenheight;
+		height = vmode->viHeight;
+		width = (float) height * par + vmode->viWidth - vmode->fbWidth;
 	}
 
 	gx_width = width;

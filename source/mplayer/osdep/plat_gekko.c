@@ -857,10 +857,10 @@ static int LoadParams()
 	{
 	    //{   "component_fix", &component_fix, CONF_TYPE_FLAG, 0, 0, 1, NULL},  //deprecated
 	    {   "debug_network", &dbg_network, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-	    //{   "gxzoom", &gxzoom, CONF_TYPE_FLOAT, CONF_RANGE, 200, 500, NULL},
-	    //{   "hor_pos", &hor_pos, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},	  
-	    //{   "vert_pos", &vert_pos, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},	  
-	    //{   "horizontal_stretch", &stretch, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},
+	    {   "gxzoom", &gxzoom, CONF_TYPE_FLOAT, CONF_RANGE, 200, 500, NULL},
+	    {   "hor_pos", &hor_pos, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},	  
+	    {   "vert_pos", &vert_pos, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},	  
+	    {   "horizontal_stretch", &stretch, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},
 		{	"cache", &stream_cache_size, CONF_TYPE_INT, CONF_RANGE, 32, 1048576, NULL},	 
 	    {   "restore_points", &enable_restore_points, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	    {   "watchdog", &enable_watchdog, CONF_TYPE_FLAG, 0, 0, 1, NULL},
@@ -954,10 +954,8 @@ void plat_init (int *argc, char **argv[]) {
 	int mload=-1;
 	char cad[10]={127,130,158,147,171,151,164,117,119,0};
 	
-	VIDEO_Init();
 	GX_InitVideo();
 	log_console_init(vmode, 0);
-
 
 	printf("Loading ");
   
@@ -1136,18 +1134,5 @@ void plat_deinit (int rc)
 	//printf("exiting mplayerce\n");sleep(3);
 	//log_console_deinit();
 }
-
-#if 0 // change 0 by 1 if you are using devkitppc r17
-int _gettimeofday_r(struct _reent *ptr,	struct timeval *ptimeval ,	void *ptimezone)
-{
-	u64 t;
-	t=gettime();
-	if(ptimeval!=NULL)
-	{
-		ptimeval->tv_sec = ticks_to_secs(t);
-		ptimeval->tv_usec = ticks_to_microsecs(t);
-	}
-} 
-#endif
 
 #endif

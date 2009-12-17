@@ -102,7 +102,7 @@ fsysloc_table_t	*fsysloc_table_init( const char* confpath)
 
 			r = getword( code, sizeof(code)-1, word, "=");
 			if ( !strcmp( code, "names")) {
-				getword( names_buf, sizeof(locale)-1, r, NULL);
+				getword( names_buf, sizeof(names_buf)-1, r, NULL);
 				s = names_buf;
 				names[0] = s;
 				names_count = 1;
@@ -120,9 +120,9 @@ fsysloc_table_t	*fsysloc_table_init( const char* confpath)
 			} else if ( !strcmp( code, "locale")) {
 				getword( locale, sizeof(locale)-1, r, NULL);
 			} else if ( !strcmp( code, "cpfsys")) {
-				getword( cpfsys, sizeof(locale)-1, r, NULL);
+				getword( cpfsys, sizeof(cpfsys)-1, r, NULL);
 			} else if ( !strcmp( code, "cpplayer")) {
-				getword( cpplayer, sizeof(locale)-1, r, NULL);
+				getword( cpplayer, sizeof(cpplayer)-1, r, NULL);
 			} 
 			p = skipspace( p);
 		}

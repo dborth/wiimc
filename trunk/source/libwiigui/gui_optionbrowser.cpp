@@ -89,12 +89,12 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
 		optionBg[i] = new GuiImage(bgOptionsEntry);
 		optionIcon[i] = NULL;
 
-		optionBtn[i] = new GuiButton(420,30);
+		optionBtn[i] = new GuiButton(420,26);
 		optionBtn[i]->SetParent(this);
 		optionBtn[i]->SetLabel(optionTxt[i], 0);
 		optionBtn[i]->SetLabel(optionVal[i], 1);
 		optionBtn[i]->SetImageOver(optionBg[i]);
-		optionBtn[i]->SetPosition(0,30*i+3);
+		optionBtn[i]->SetPosition(0,26*i+3);
 		optionBtn[i]->SetTrigger(trigA);
 		//optionBtn[i]->SetSoundClick(btnSoundClick);
 	}

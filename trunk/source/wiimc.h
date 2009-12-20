@@ -15,7 +15,7 @@
 
 #define APPNAME			"WiiMC"
 #define APPVERSION		"1.0.0"
-#define APPFOLDER		"apps/mplayer_ce"
+#define APPFOLDER		"apps/wiimc"
 
 enum {
 	DEVICE_SD,
@@ -31,7 +31,7 @@ enum {
 void ExitApp();
 void LoadMPlayer();
 void ShutdownMPlayer();
-void FindNextFile();
+void FindNextAudioFile();
 extern int ScreenshotRequested;
 extern int ConfigRequested;
 extern int ShutdownRequested;

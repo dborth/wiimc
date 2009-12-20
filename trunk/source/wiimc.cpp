@@ -55,7 +55,7 @@ void ExitApp()
 	if(ShutdownRequested == 1)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0); // Shutdown Wii
 
-	if(CESettings.exitAction == EXIT_AUTO)
+	if(WiiSettings.exitAction == EXIT_AUTO)
 	{
 		char * sig = (char *)0x80001804;
 		if(
@@ -71,7 +71,7 @@ void ExitApp()
 		else
 			SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0); // HBC not found
 	}
-	else if(CESettings.exitAction == EXIT_WIIMENU)
+	else if(WiiSettings.exitAction == EXIT_WIIMENU)
 	{
 		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
 	}
@@ -150,30 +150,27 @@ void USBGeckoOutput()
  * MPlayer interface
  ***************************************************************************/
 
-void FindNextFile()
+void FindNextAudioFile()
 {
-	if(CESettings.playOrder == PLAY_CONTINUOUS)
+	if(playlistSize <= 1)
 	{
-		browser.selIndex++;
+		playingAudio = false;
+		return;
 	}
-	else if(CESettings.playOrder == PLAY_SHUFFLE)
-	{
-		int n = rand() % browser.numEntries;
-		browser.selIndex = n;
-	}
-	
-	if(browser.selIndex >= browser.numEntries || browser.selIndex == 0)
-		browser.selIndex = 1;
 
-	sprintf(loadedFile, "%s%s", browser.dir, browserList[browser.selIndex].filename);
-
-	if(browser.selIndex < browser.pageIndex || browser.selIndex >= browser.pageIndex + FILE_PAGESIZE)
+	if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 	{
-		browser.pageIndex = (ceil(browser.selIndex/FILE_PAGESIZE*1.0)) * FILE_PAGESIZE;
-		if(browser.pageIndex + FILE_PAGESIZE > browser.numEntries)
-			browser.pageIndex = browser.numEntries - FILE_PAGESIZE;
+		playlistIndex++;
+
+		if(playlistIndex >= playlistSize)
+			playlistIndex = 0;
 	}
-	selectLoadedFile = 2;
+	else if(WiiSettings.playOrder == PLAY_SHUFFLE)
+	{
+		int n = rand() % playlistSize;
+		playlistIndex = n;
+	}
+	sprintf(loadedFile, "%s", playlist[playlistIndex].filepath);
 }
 
 static void *
@@ -181,7 +178,7 @@ mplayerthread (void *arg)
 {
 	while(1)
 	{
-		if(controlledbygui == 2 || CESettings.playOrder == 0 || !playingAudio)
+		if(controlledbygui == 2 || WiiSettings.playOrder == 0 || !playingAudio)
 			LWP_SuspendThread(mthread);
 
 		printf("load file: %s\n",loadedFile);
@@ -191,8 +188,8 @@ mplayerthread (void *arg)
 			mplayer_loadfile(loadedFile);
 		}
 
-		if(controlledbygui != 2 && CESettings.playOrder > 0 && playingAudio) // load next file
-			FindNextFile();
+		if(controlledbygui != 2 && WiiSettings.playOrder > 0 && playingAudio) // load next file
+			FindNextAudioFile();
 	}
 	return NULL;
 }

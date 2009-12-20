@@ -240,8 +240,8 @@ ConnectShare (int num, bool silent)
 	char mountpoint[6];
 	sprintf(mountpoint, "smb%d", num);
 	int retry = 1;
-	int chkS = (strlen(CESettings.smbConf[num-1].share) > 0) ? 0:1;
-	int chkI = (strlen(CESettings.smbConf[num-1].ip) > 0) ? 0:1;
+	int chkS = (strlen(WiiSettings.smbConf[num-1].share) > 0) ? 0:1;
+	int chkI = (strlen(WiiSettings.smbConf[num-1].ip) > 0) ? 0:1;
 
 	if(networkShareInit[num-1])
 		return true;
@@ -277,8 +277,8 @@ ConnectShare (int num, bool silent)
 		if(!silent)
 			ShowAction ("Connecting to network share...");
 		
-		if(smbInitDevice(mountpoint, CESettings.smbConf[num-1].user, CESettings.smbConf[num-1].pwd,
-					CESettings.smbConf[num-1].share, CESettings.smbConf[num-1].ip))
+		if(smbInitDevice(mountpoint, WiiSettings.smbConf[num-1].user, WiiSettings.smbConf[num-1].pwd,
+					WiiSettings.smbConf[num-1].share, WiiSettings.smbConf[num-1].ip))
 			networkShareInit[num-1] = true;
 
 		if(networkShareInit[num-1] || silent)
@@ -313,9 +313,9 @@ ConnectFTP (int num, bool silent)
 	char mountpoint[6];
 	sprintf(mountpoint, "ftp%d", num);
 
-	int chkI = (strlen(CESettings.ftpConf[num-1].ip) > 0) ? 0:1;
-	int chkU = (strlen(CESettings.ftpConf[num-1].user) > 0) ? 0:1;
-	int chkP = (strlen(CESettings.ftpConf[num-1].pwd) > 0) ? 0:1;
+	int chkI = (strlen(WiiSettings.ftpConf[num-1].ip) > 0) ? 0:1;
+	int chkU = (strlen(WiiSettings.ftpConf[num-1].user) > 0) ? 0:1;
+	int chkP = (strlen(WiiSettings.ftpConf[num-1].pwd) > 0) ? 0:1;
 
 	// check that all parameters have been set
 	if(chkI + chkU + chkP > 0)
@@ -349,9 +349,9 @@ ConnectFTP (int num, bool silent)
 			if(!silent)
 				ShowAction ("Connecting to FTP site...");
 
-			if(ftpInitDevice(mountpoint, CESettings.ftpConf[num-1].user, 
-				CESettings.ftpConf[num-1].pwd, CESettings.ftpConf[num-1].folder, 
-				CESettings.ftpConf[num-1].ip, CESettings.ftpConf[num-1].passive))
+			if(ftpInitDevice(mountpoint, WiiSettings.ftpConf[num-1].user, 
+				WiiSettings.ftpConf[num-1].pwd, WiiSettings.ftpConf[num-1].folder, 
+				WiiSettings.ftpConf[num-1].ip, WiiSettings.ftpConf[num-1].passive))
 			{
 				ftpInit[num-1] = true;
 			}

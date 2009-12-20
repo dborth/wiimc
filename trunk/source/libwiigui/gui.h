@@ -44,6 +44,7 @@
 #include "../video.h"
 #include "../filelist.h"
 #include "../input.h"
+#include "../menu.h"
 
 extern FreeTypeGX *fontSystem[];
 
@@ -708,7 +709,7 @@ class GuiButton : public GuiElement
 		//!Constructor
 		//!\param w Width
 		//!\param h Height
-		GuiButton(int w, int h);
+		GuiButton(int w = 0, int h = 0);
 		//!Destructor
 		~GuiButton();
 		//!Sets the button's image
@@ -947,6 +948,7 @@ class GuiFileBrowser : public GuiElement
 		void TriggerUpdate();
 		void Update(GuiTrigger * t);
 		GuiButton * fileList[FILE_PAGESIZE];
+		GuiButton * playlistAddBtn[FILE_PAGESIZE];
 	protected:
 		int selectedItem;
 		int numEntries;
@@ -955,6 +957,8 @@ class GuiFileBrowser : public GuiElement
 		GuiText * fileListText[FILE_PAGESIZE];
 		GuiImage * fileListBg[FILE_PAGESIZE];
 		GuiImage * fileListIcon[FILE_PAGESIZE];
+
+		GuiImage * playlistAddImg[FILE_PAGESIZE];
 
 		GuiButton * arrowUpBtn;
 		GuiButton * arrowDownBtn;
@@ -976,6 +980,7 @@ class GuiFileBrowser : public GuiElement
 		GuiImageData * iconDVD;
 		GuiImageData * iconSMB;
 		GuiImageData * iconFTP;
+		GuiImageData * playlistAdd;
 		GuiImageData * scrollbar;
 		GuiImageData * arrowDown;
 		GuiImageData * arrowDownOver;

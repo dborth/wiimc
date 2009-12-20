@@ -77,7 +77,7 @@ void ShutoffRumble()
 
 void DoRumble(int i)
 {
-	if(!CESettings.rumble) return;
+	if(!WiiSettings.rumble) return;
 
 	if(rumbleRequest[i] && rumbleCount[i] < 3)
 	{

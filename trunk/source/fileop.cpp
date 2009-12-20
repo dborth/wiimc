@@ -881,7 +881,7 @@ static bool ParseDirEntries()
 		}
 
 		// check that this file's extension is on the list of visible file types
-		if(CESettings.filterFiles && (filestat.st_mode & _IFDIR) == 0 && !isPlaylist)
+		if(WiiSettings.filterFiles && (filestat.st_mode & _IFDIR) == 0 && !isPlaylist)
 		{
 			if(ext == NULL)
 				continue; // file does not have an extension - skip it
@@ -945,11 +945,11 @@ static bool ParseDirEntries()
 				browserList[browser.numEntries+i].icon = ICON_NONE;
 
 				// hide the file's extension
-				if(CESettings.hideExtensions)
+				if(WiiSettings.hideExtensions)
 					StripExt(browserList[browser.numEntries+i].displayname);
 
 				// strip unwanted stuff from the filename
-				if(CESettings.cleanFilenames)
+				if(WiiSettings.cleanFilenames)
 					CleanFilename(browserList[browser.numEntries+i].displayname);
 			}
 			i++;
@@ -1017,6 +1017,8 @@ static bool ParseDirEntries()
 }
 
 /***************************************************************************
+ * ParseDirectory
+ * 
  * Browse subdirectories
  **************************************************************************/
 int
@@ -1099,41 +1101,20 @@ ParseDirectory(bool waitParse)
 	return browser.numEntries;
 }
 
-int LoadPlaylist()
+/****************************************************************************
+ * ParsePlaylistFile
+ * 
+ * Loads a playlist selected from the filebrowser into the filebrowser
+ ***************************************************************************/
+int ParsePlaylistFile()
 {
 	char * playlistEntry;
 	
-	play_tree_t * list = parse_playlist_file(currentPlaylist);
+	play_tree_t * list = parse_playlist_file(browserPlaylist);
 	
 	if(!list)
 		return 0;
-	
-	if(playlist)
-	{
-		free(playlist);
-		playlist = NULL;
-	}
 
-	playlistSize = 0;
-	
-	play_tree_iter_t *pt_iter = NULL;
-
-	if((pt_iter = pt_iter_create(&list, NULL)))
-	{
-		while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
-		{
-			playlist = (MEDIAENTRY *)realloc(playlist, (playlistSize + 1) * sizeof(MEDIAENTRY));
-			memset(&(playlist[playlistSize]), 0, sizeof(MEDIAENTRY)); // clear the new entry
-			strncpy(playlist[playlistSize].address, playlistEntry, MAXPATHLEN);
-			playlistSize++;
-		}
-		pt_iter_destroy(&pt_iter);
-	}
-	return playlistSize;
-}
-
-int ParsePlaylist()
-{
 	AddBrowserEntry();
 	sprintf(browserList[0].filename, "..");
 	sprintf(browserList[0].displayname, "Up One Level");
@@ -1143,35 +1124,47 @@ int ParsePlaylist()
 	browserList[0].icon = ICON_FOLDER;
 	browser.numEntries++;
 	
-	int i;
-	char * start;
-	
-	for(i=0; i < playlistSize; i++)
+	play_tree_iter_t *pt_iter = NULL;
+	char *start;
+
+	if((pt_iter = pt_iter_create(&list, NULL)))
 	{
-		AddBrowserEntry();
-		sprintf(browserList[i+1].filename, playlist[i].address);
-		start = strrchr(playlist[i].address,'/');
-		if(start != NULL) // start up starting part of path
+		while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
 		{
-			start++;
-			sprintf(browserList[i+1].displayname, start);
+			if(!AddBrowserEntry()) // add failed
+				break;
+
+			strncpy(browserList[browser.numEntries].filename, playlistEntry, MAXPATHLEN);
+			browserList[browser.numEntries].filename[MAXPATHLEN] = 0;
+
+			start = strrchr(playlistEntry,'/');
+			if(start != NULL) // start up starting part of path
+			{
+				start++;
+				sprintf(browserList[browser.numEntries].displayname, start);
+			}
+			else
+			{
+				strncpy(browserList[browser.numEntries].displayname, playlistEntry, MAXJOLIET);
+				browserList[browser.numEntries].displayname[MAXJOLIET] = 0;
+			}
+			browser.numEntries++;
 		}
-		else
-		{
-			sprintf(browserList[i+1].displayname, playlist[i].address);
-		}
-		browserList[i+1].length = 0;
-		browserList[i+1].mtime = 0;
-		browserList[i+1].isdir = 0;
-		browserList[i+1].isplaylist = 0;
-		browserList[i+1].icon = ICON_NONE;
+		pt_iter_destroy(&pt_iter);
 	}
-	browser.numEntries += i;
 	return browser.numEntries;
 }
 
+/****************************************************************************
+ * ParseOnlineMedia
+ * 
+ * Loads the current online media list into the filebrowser
+ ***************************************************************************/
 int ParseOnlineMedia()
 {
+	if(onlinemediaSize == 0)
+		return 0;
+
 	if(browser.dir[0] != 0)
 	{
 		AddBrowserEntry();
@@ -1228,6 +1221,8 @@ int ParseOnlineMedia()
 				AddBrowserEntry();
 				strncpy(browserList[browser.numEntries].filename, folder, MAXPATHLEN);
 				strncpy(browserList[browser.numEntries].displayname, folder, MAXJOLIET);
+				browserList[browser.numEntries].filename[MAXPATHLEN] = 0;
+				browserList[browser.numEntries].displayname[MAXJOLIET] = 0;
 				browserList[browser.numEntries].length = 0;
 				browserList[browser.numEntries].mtime = 0;
 				browserList[browser.numEntries].isdir = 1;
@@ -1243,7 +1238,182 @@ int ParseOnlineMedia()
 }
 
 /****************************************************************************
+ * ResetsPlaylist
+ * 
+ * Resets the current playlist
+ ***************************************************************************/
+void ResetPlaylist()
+{
+	if(playlist)
+	{
+		free(playlist);
+		playlist = NULL;
+	}
+	playlistSize = 0;
+}
+
+/****************************************************************************
+ * ParsePlaylist
+ * 
+ * Loads the files inside the current playlist into the filebrowser
+ ***************************************************************************/
+int ParsePlaylist()
+{
+	if(playlistSize == 0)
+	{
+		InfoPrompt("There are no files currently in the playlist.");
+		return 0;
+	}
+
+	ResetBrowser();
+	
+	AddBrowserEntry();
+	sprintf(browserList[0].filename, "..");
+	sprintf(browserList[0].displayname, "Exit Playlist");
+	browserList[0].length = 0;
+	browserList[0].mtime = 0;
+	browserList[0].isdir = 1;
+	browserList[0].icon = ICON_FOLDER;
+	browser.numEntries++;
+	
+	int i;
+
+	for(i=0; i < playlistSize; i++)
+	{
+		if(!AddBrowserEntry())
+			break;
+
+		sprintf(browserList[i+1].filename, playlist[i].filepath);
+		sprintf(browserList[i+1].displayname, playlist[i].displayname);
+		browserList[i+1].length = 0;
+		browserList[i+1].mtime = 0;
+		browserList[i+1].isdir = 0;
+		browserList[i+1].isplaylist = 0;
+		browserList[i+1].icon = ICON_NONE;
+	}
+	browser.numEntries += i;
+	return browser.numEntries;
+}
+
+/****************************************************************************
+ * EnqueueFile
+ * 
+ * Adds the specified file (with full path) to the playlist.
+ * If a playlist is found, it is parse and the music files inside are added.
+ ***************************************************************************/
+bool EnqueueFile(char * path, char * name)
+{
+	if(path == NULL || name == NULL || strcmp(name,".") == 0)
+		return false;
+
+	char *ext = strrchr(path,'.');
+
+	if(ext == NULL)
+		return false; // file does not have an extension - skip it
+
+	ext++;
+
+	// check if this is a playlist
+	int i=0;
+	char *start;
+	do
+	{
+		if (strcasecmp(ext, validPlaylistExtensions[i++]) == 0)
+		{
+			// this is a playlist - parse it and add the files inside
+			char * playlistEntry;
+			char display[MAXJOLIET+1];
+			play_tree_t * list = parse_playlist_file(browserPlaylist);
+			
+			if(!list)
+				return false;
+
+			play_tree_iter_t *pt_iter = NULL;
+
+			if((pt_iter = pt_iter_create(&list, NULL)))
+			{
+				while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
+				{
+					start = strrchr(playlistEntry,'/');
+					if(start != NULL) // start up starting part of path
+					{
+						start++;
+						sprintf(display, start);
+					}
+					else
+					{
+						strncpy(display, playlistEntry, MAXJOLIET);
+						display[MAXJOLIET] = 0;
+					}
+					EnqueueFile(playlistEntry, display);
+				}
+				pt_iter_destroy(&pt_iter);
+			}
+			return true;
+		}
+	} while (validPlaylistExtensions[i][0] != 0);
+
+	// check if this is a valid audio file
+	i=0;
+	do
+	{
+		if (strcasecmp(ext, validAudioExtensions[i]) == 0)
+			break;
+	} while (validAudioExtensions[++i][0] != 0);
+	if (validAudioExtensions[i][0] == 0) // extension not found
+		return false;
+
+	if(!AddPlaylistEntry()) // add failed
+		return false;
+
+	strncpy(playlist[playlistSize-1].filepath, path, MAXPATHLEN);
+	strncpy(playlist[playlistSize-1].displayname, name, MAXJOLIET);
+	playlist[playlistSize-1].filepath[MAXPATHLEN] = 0;
+	playlist[playlistSize-1].displayname[MAXJOLIET] = 0;
+
+	// hide the file's extension
+	if(WiiSettings.hideExtensions)
+		StripExt(playlist[playlistSize-1].displayname);
+
+	// strip unwanted stuff from the filename
+	if(WiiSettings.cleanFilenames)
+		CleanFilename(playlist[playlistSize-1].displayname);
+
+	return true;
+}
+
+/****************************************************************************
+ * EnqueueFolder
+ * 
+ * Adds all music files in the currently selected folder to the playlist
+ ***************************************************************************/
+bool EnqueueFolder(char * path)
+{
+	char filename[MAXJOLIET+1];
+	char filepath[MAXPATHLEN];
+	struct stat filestat;
+	DIR_ITER *dir = diropen(path);
+
+	if(dir == NULL)
+	{
+		char msg[1024];
+		sprintf(msg, "Error opening %s", path);
+		ErrorPrompt(msg);
+		return false;
+	}
+
+	while(dirnext(dir,filename,&filestat) == 0)
+	{
+		sprintf(filepath, "%s/%s", path, filename);
+		EnqueueFile(filepath, filename);
+	}
+	return true;
+}
+
+/****************************************************************************
  * LoadFile
+ * 
+ * Loads the file specified into the provided buffer
  ***************************************************************************/
 size_t LoadFile (char * buffer, char *filepath, bool silent)
 {
@@ -1302,7 +1472,8 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 
 /****************************************************************************
  * SaveFile
- * Write buffer to file
+ * 
+ * Writes the provided buffer to the specified filepath
  ***************************************************************************/
 size_t SaveFile (char * buffer, char *filepath, size_t datasize, bool silent)
 {

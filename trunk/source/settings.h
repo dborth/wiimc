@@ -54,7 +54,7 @@ enum {
 	FONTCOLOR_GRAY
 };
 
-struct SCESettings {
+struct SWiiSettings {
 	// Menu
 	int 	autoResume;
 	int 	playOrder; // PLAY_SINGLE, PLAY_CONTINUOUS, PLAY_SHUFFLE, PLAY_LOOP
@@ -101,7 +101,7 @@ void DefaultSettings ();
 bool SaveSettings (bool silent);
 bool LoadSettings ();
 
-extern struct SCESettings CESettings;
+extern struct SWiiSettings WiiSettings;
 
 const char validVideoExtensions[][7] =
 {

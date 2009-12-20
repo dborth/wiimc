@@ -38,6 +38,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 	iconDVD = new GuiImageData(icon_dvd_png);
 	iconSMB = new GuiImageData(icon_smb_png);
 	iconFTP = new GuiImageData(icon_ftp_png);
+	playlistAdd = new GuiImageData(playlist_add_png);
 
 	scrollbar = new GuiImageData(scrollbar_png);
 	scrollbarImg = new GuiImage(scrollbar);
@@ -84,7 +85,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 	scrollbarBoxBtn->SetImageOver(scrollbarBoxOverImg);
 	scrollbarBoxBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	scrollbarBoxBtn->SetMinY(0);
-	scrollbarBoxBtn->SetMaxY(190);
+	scrollbarBoxBtn->SetMaxY(130);
 	scrollbarBoxBtn->SetSelectable(false);
 	scrollbarBoxBtn->SetClickable(false);
 	scrollbarBoxBtn->SetHoldable(true);
@@ -95,17 +96,28 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 		fileListText[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
 		fileListText[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 		fileListText[i]->SetPosition(30,0);
-		fileListText[i]->SetMaxWidth(410);
+		fileListText[i]->SetMaxWidth(455);
 
 		fileListBg[i] = new GuiImage(bgBrowseEntryOver);
 		fileListIcon[i] = NULL;
 
-		fileList[i] = new GuiButton(440, 30);
+		fileList[i] = new GuiButton(460, 26);
 		fileList[i]->SetParent(this);
 		fileList[i]->SetLabel(fileListText[i]);
 		fileList[i]->SetImageOver(fileListBg[i]);
-		fileList[i]->SetPosition(0,30*i+3);
+		fileList[i]->SetPosition(0,26*i+3);
 		fileList[i]->SetTrigger(trigA);
+		
+		playlistAddImg[i] = new GuiImage(playlistAdd);
+		playlistAddBtn[i] = new GuiButton(playlistAdd->GetWidth(), playlistAdd->GetHeight());
+		playlistAddBtn[i]->SetParent(this);
+		playlistAddBtn[i]->SetImage(playlistAddImg[i]);
+		playlistAddBtn[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+		playlistAddBtn[i]->SetPosition(-40, 2 + i*26);
+		playlistAddBtn[i]->SetTrigger(trigA);
+		playlistAddBtn[i]->SetEffectGrow();
+		playlistAddBtn[i]->SetVisible(false);
+		playlistAddBtn[i]->SetState(STATE_DISABLED);
 	}
 }
 
@@ -134,6 +146,7 @@ GuiFileBrowser::~GuiFileBrowser()
 	delete iconDVD;
 	delete iconSMB;
 	delete iconFTP;
+	delete playlistAdd;
 	delete scrollbar;
 	delete arrowDown;
 	delete arrowDownOver;
@@ -153,6 +166,9 @@ GuiFileBrowser::~GuiFileBrowser()
 
 		if(fileListIcon[i])
 			delete fileListIcon[i];
+		
+		delete playlistAddImg[i];
+		delete playlistAddBtn[i];
 	}
 }
 
@@ -176,6 +192,7 @@ void GuiFileBrowser::ResetState()
 	for(int i=0; i<FILE_PAGESIZE; i++)
 	{
 		fileList[i]->ResetState();
+		playlistAddBtn[i]->ResetState();
 	}
 }
 
@@ -196,13 +213,13 @@ void GuiFileBrowser::Draw()
 	for(int i=0; i<FILE_PAGESIZE; i++)
 	{
 		fileList[i]->Draw();
+		playlistAddBtn[i]->Draw();
 	}
 
 	scrollbarImg->Draw();
 	arrowUpBtn->Draw();
 	arrowDownBtn->Draw();
 	scrollbarBoxBtn->Draw();
-
 	this->UpdateEffects();
 }
 
@@ -362,11 +379,32 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 						break;
 				}
 				fileList[i]->SetIcon(fileListIcon[i]);
+				
+				if(currentMenu == MENU_BROWSE_MUSIC && i > 0)
+				{
+					if(browser.dir[0] == 0 || inPlaylist) // at root or in playlist
+					{
+						playlistAddBtn[i]->SetVisible(false);
+						playlistAddBtn[i]->SetState(STATE_DISABLED);
+					}
+					else
+					{
+						playlistAddBtn[i]->SetVisible(true);
+						if(playlistAddBtn[i]->GetState() == STATE_DISABLED)
+							playlistAddBtn[i]->SetState(STATE_DEFAULT);
+					}
+				}
 			}
 			else
 			{
 				fileList[i]->SetVisible(false);
 				fileList[i]->SetState(STATE_DISABLED);
+				
+				if(currentMenu == MENU_BROWSE_MUSIC && i > 0)
+				{
+					playlistAddBtn[i]->SetVisible(false);
+					playlistAddBtn[i]->SetState(STATE_DISABLED);
+				}
 			}
 		}
 
@@ -393,6 +431,8 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 			fileListText[i]->SetScroll(SCROLL_HORIZONTAL);
 		else
 			fileListText[i]->SetScroll(SCROLL_NONE);
+		
+		playlistAddBtn[i]->Update(t);
 	}
 
 	// update the location of the scroll box based on the position in the file list
@@ -404,12 +444,12 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		}
 		else
 		{
-			position = 190*(browser.pageIndex + FILE_PAGESIZE/2.0) / (browser.numEntries*1.0);
+			position = 130*(browser.pageIndex + FILE_PAGESIZE/2.0) / (browser.numEntries*1.0);
 	
 			if(browser.pageIndex/(FILE_PAGESIZE/2.0) < 1)
 				position = 0;
 			else if((browser.pageIndex+FILE_PAGESIZE)/(FILE_PAGESIZE*1.0) >= (browser.numEntries)/(FILE_PAGESIZE*1.0))
-				position = 190;
+				position = 130;
 		}
 		scrollbarBoxBtn->SetPosition(0,position+36);
 	}

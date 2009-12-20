@@ -98,7 +98,7 @@ void GuiTooltip::DrawTooltip()
 		if(time1 != 0)
 			time(&time1);
 
-		if(time1 == 0 || difftime(time1, time2) >= 1.5)
+		if(time1 == 0 || difftime(time1, time2) >= 1.0)
 		{
 			if(time1 != 0)
 				SetEffect(EFFECT_FADE, 20);

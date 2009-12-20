@@ -23,7 +23,7 @@
 
 #define SAVEBUFFERSIZE (64*1024)
 
-struct SCESettings CESettings;
+struct SWiiSettings WiiSettings;
 static char * savebuffer = NULL;
 
 /****************************************************************************
@@ -79,11 +79,11 @@ static void createXMLSMBShare(int i)
 	mxmlElementSetAttr(item, "name", toStr(i));
 
 	// create variables
-	createXMLVariable("ip", "SMB Share IP", CESettings.smbConf[i].ip);
-	createXMLVariable("share", "SMB Share Name", CESettings.smbConf[i].share);
-	createXMLVariable("user", "SMB Share Username", CESettings.smbConf[i].user);
-	createXMLVariable("pwd", "SMB Share Password", CESettings.smbConf[i].pwd);
-	createXMLVariable("displayname", "SMB Display Name", CESettings.smbConf[i].displayname);
+	createXMLVariable("ip", "SMB Share IP", WiiSettings.smbConf[i].ip);
+	createXMLVariable("share", "SMB Share Name", WiiSettings.smbConf[i].share);
+	createXMLVariable("user", "SMB Share Username", WiiSettings.smbConf[i].user);
+	createXMLVariable("pwd", "SMB Share Password", WiiSettings.smbConf[i].pwd);
+	createXMLVariable("displayname", "SMB Display Name", WiiSettings.smbConf[i].displayname);
 }
 
 static void createXMLFTPSite(int i)
@@ -92,12 +92,12 @@ static void createXMLFTPSite(int i)
 	mxmlElementSetAttr(item, "name", toStr(i));
 
 	// create variables
-	createXMLVariable("ip", "FTP IP", CESettings.ftpConf[i].ip);
-	createXMLVariable("folder", "FTP Name", CESettings.ftpConf[i].folder);
-	createXMLVariable("user", "FTP Username", CESettings.ftpConf[i].user);
-	createXMLVariable("pwd", "FTP Password", CESettings.ftpConf[i].pwd);
-	createXMLVariable("passive", "FTP Passive Mode", toStr(CESettings.ftpConf[i].passive));
-	createXMLVariable("displayname", "FTP Display Name", CESettings.ftpConf[i].displayname);
+	createXMLVariable("ip", "FTP IP", WiiSettings.ftpConf[i].ip);
+	createXMLVariable("folder", "FTP Name", WiiSettings.ftpConf[i].folder);
+	createXMLVariable("user", "FTP Username", WiiSettings.ftpConf[i].user);
+	createXMLVariable("pwd", "FTP Password", WiiSettings.ftpConf[i].pwd);
+	createXMLVariable("passive", "FTP Passive Mode", toStr(WiiSettings.ftpConf[i].passive));
+	createXMLVariable("displayname", "FTP Display Name", WiiSettings.ftpConf[i].displayname);
 }
 
 static const char * XMLSaveCallback(mxml_node_t *node, int where)
@@ -140,24 +140,24 @@ prepareSettingsData ()
 
 	// General
 	createXMLSection("General", "General Settings");
-	createXMLSetting("autoResume", "Auto-resume", toStr(CESettings.autoResume));
-	createXMLSetting("playOrder", "Play order", toStr(CESettings.playOrder));
-	createXMLSetting("cleanFilenames", "Clean filenames", toStr(CESettings.cleanFilenames));
-	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(CESettings.hideExtensions));
-	createXMLSetting("filterFiles", "Hide invalid file types", toStr(CESettings.filterFiles));
-	createXMLSetting("language", "Language", toStr(CESettings.language));
-	createXMLSetting("videoFolder", "Video files folder", CESettings.videoFolder);
-	createXMLSetting("musicFolder", "Music files folder", CESettings.musicFolder);
-	createXMLSetting("pictureFolder", "Picture files folder", CESettings.pictureFolder);
-	createXMLSetting("onlinemediaFolder", "Online media files folder", CESettings.onlinemediaFolder);
-	createXMLSetting("exitAction", "Exit action", toStr(CESettings.exitAction));
-	createXMLSetting("rumble", "Wiimote rumble", toStr(CESettings.rumble));
+	createXMLSetting("autoResume", "Auto-resume", toStr(WiiSettings.autoResume));
+	createXMLSetting("playOrder", "Play order", toStr(WiiSettings.playOrder));
+	createXMLSetting("cleanFilenames", "Clean filenames", toStr(WiiSettings.cleanFilenames));
+	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
+	createXMLSetting("filterFiles", "Hide invalid file types", toStr(WiiSettings.filterFiles));
+	createXMLSetting("language", "Language", toStr(WiiSettings.language));
+	createXMLSetting("videoFolder", "Video files folder", WiiSettings.videoFolder);
+	createXMLSetting("musicFolder", "Music files folder", WiiSettings.musicFolder);
+	createXMLSetting("pictureFolder", "Picture files folder", WiiSettings.pictureFolder);
+	createXMLSetting("onlinemediaFolder", "Online media files folder", WiiSettings.onlinemediaFolder);
+	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
+	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
 
 	// Cache
 	createXMLSection("Cache", "Cache Settings");
-	createXMLSetting("cacheSize", "Cache size", toStr(CESettings.cacheSize));
-	createXMLSetting("cacheFillStart", "Cache prefill %", toStr(CESettings.cacheFillStart));
-	createXMLSetting("cacheFillRestart", "Cache refill %", toStr(CESettings.cacheFillRestart));
+	createXMLSetting("cacheSize", "Cache size", toStr(WiiSettings.cacheSize));
+	createXMLSetting("cacheFillStart", "Cache prefill %", toStr(WiiSettings.cacheFillStart));
+	createXMLSetting("cacheFillRestart", "Cache refill %", toStr(WiiSettings.cacheFillRestart));
 
 	// Network
 	createXMLSection("Network", "Network Settings");
@@ -168,24 +168,24 @@ prepareSettingsData ()
 
 	// Video
 	createXMLSection("Video", "Video Settings");
-	createXMLSetting("frameDropping", "Frame dropping compensation", toStr(CESettings.frameDropping));
-	createXMLSetting("aspectRatio", "Aspect ratio", toStr(CESettings.aspectRatio));
-	createXMLSetting("videoZoom", "Video zoom", FtoStr(CESettings.videoZoom));
-	createXMLSetting("videoXshift", "Video X offset", toStr(CESettings.videoXshift));
-	createXMLSetting("videoYshift", "Video Y offset", toStr(CESettings.videoYshift));
+	createXMLSetting("frameDropping", "Frame dropping compensation", toStr(WiiSettings.frameDropping));
+	createXMLSetting("aspectRatio", "Aspect ratio", toStr(WiiSettings.aspectRatio));
+	createXMLSetting("videoZoom", "Video zoom", FtoStr(WiiSettings.videoZoom));
+	createXMLSetting("videoXshift", "Video X offset", toStr(WiiSettings.videoXshift));
+	createXMLSetting("videoYshift", "Video Y offset", toStr(WiiSettings.videoYshift));
 
 	// Audio
 	createXMLSection("Audio", "Audio Settings");
-	createXMLSetting("volume", "Volume", toStr(CESettings.volume));
-	createXMLSetting("audioDelay", "Audio delay (ms)", toStr(CESettings.audioDelay));
+	createXMLSetting("volume", "Volume", toStr(WiiSettings.volume));
+	createXMLSetting("audioDelay", "Audio delay (ms)", toStr(WiiSettings.audioDelay));
 
 	// Subtitles
 	createXMLSection("Subtitle", "Subtitle Settings");
-	createXMLSetting("subtitleDelay", "Subtitle delay", toStr(CESettings.subtitleDelay));
-	createXMLSetting("subtitlePostion", "Subtitle position", toStr(CESettings.subtitlePosition));
-	createXMLSetting("subtitleSize", "Subtitle size", toStr(CESettings.subtitleSize));
-	createXMLSetting("subtitleAlpha", "Subtitle transparency", toStr(CESettings.subtitleAlpha));
-	createXMLSetting("subtitleColor", "Subtitle color", toStr(CESettings.subtitleColor));
+	createXMLSetting("subtitleDelay", "Subtitle delay", toStr(WiiSettings.subtitleDelay));
+	createXMLSetting("subtitlePostion", "Subtitle position", toStr(WiiSettings.subtitlePosition));
+	createXMLSetting("subtitleSize", "Subtitle size", toStr(WiiSettings.subtitleSize));
+	createXMLSetting("subtitleAlpha", "Subtitle transparency", toStr(WiiSettings.subtitleAlpha));
+	createXMLSetting("subtitleColor", "Subtitle color", toStr(WiiSettings.subtitleColor));
 
 	int datasize = mxmlSaveString(xml, (char *)savebuffer, SAVEBUFFERSIZE, XMLSaveCallback);
 
@@ -258,11 +258,11 @@ static void loadXMLSMBShare(int i)
 	if(item)
 	{
 		// find variables
-		loadXMLVariable(CESettings.smbConf[i].ip, "ip", sizeof(CESettings.smbConf[i].ip));
-		loadXMLVariable(CESettings.smbConf[i].share, "share", sizeof(CESettings.smbConf[i].share));
-		loadXMLVariable(CESettings.smbConf[i].user, "user", sizeof(CESettings.smbConf[i].user));
-		loadXMLVariable(CESettings.smbConf[i].pwd, "pwd", sizeof(CESettings.smbConf[i].pwd));
-		loadXMLVariable(CESettings.smbConf[i].displayname, "displayname", sizeof(CESettings.smbConf[i].displayname));
+		loadXMLVariable(WiiSettings.smbConf[i].ip, "ip", sizeof(WiiSettings.smbConf[i].ip));
+		loadXMLVariable(WiiSettings.smbConf[i].share, "share", sizeof(WiiSettings.smbConf[i].share));
+		loadXMLVariable(WiiSettings.smbConf[i].user, "user", sizeof(WiiSettings.smbConf[i].user));
+		loadXMLVariable(WiiSettings.smbConf[i].pwd, "pwd", sizeof(WiiSettings.smbConf[i].pwd));
+		loadXMLVariable(WiiSettings.smbConf[i].displayname, "displayname", sizeof(WiiSettings.smbConf[i].displayname));
 	}
 }
 
@@ -273,12 +273,12 @@ static void loadXMLFTPSite(int i)
 	if(item)
 	{
 		// find variables
-		loadXMLVariable(CESettings.ftpConf[i].ip, "ip", sizeof(CESettings.ftpConf[i].ip));
-		loadXMLVariable(CESettings.ftpConf[i].folder, "folder", sizeof(CESettings.ftpConf[i].folder));
-		loadXMLVariable(CESettings.ftpConf[i].user, "user", sizeof(CESettings.ftpConf[i].user));
-		loadXMLVariable(CESettings.ftpConf[i].pwd, "pwd", sizeof(CESettings.ftpConf[i].pwd));
-		loadXMLVariable(&CESettings.ftpConf[i].passive, "passive");
-		loadXMLVariable(CESettings.ftpConf[i].displayname, "displayname", sizeof(CESettings.ftpConf[i].displayname));
+		loadXMLVariable(WiiSettings.ftpConf[i].ip, "ip", sizeof(WiiSettings.ftpConf[i].ip));
+		loadXMLVariable(WiiSettings.ftpConf[i].folder, "folder", sizeof(WiiSettings.ftpConf[i].folder));
+		loadXMLVariable(WiiSettings.ftpConf[i].user, "user", sizeof(WiiSettings.ftpConf[i].user));
+		loadXMLVariable(WiiSettings.ftpConf[i].pwd, "pwd", sizeof(WiiSettings.ftpConf[i].pwd));
+		loadXMLVariable(&WiiSettings.ftpConf[i].passive, "passive");
+		loadXMLVariable(WiiSettings.ftpConf[i].displayname, "displayname", sizeof(WiiSettings.ftpConf[i].displayname));
 	}
 }
 
@@ -295,12 +295,15 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 		
 		if(name && addr) // this is a link
 		{
-			onlinemediaList = (MEDIAENTRY *)realloc(onlinemediaList, (onlinemediaSize + 1) * sizeof(MEDIAENTRY));
-			memset(&(onlinemediaList[onlinemediaSize]), 0, sizeof(MEDIAENTRY)); // clear the new entry
-			strncpy(onlinemediaList[onlinemediaSize].filepath, path, MAXPATHLEN);
-			strncpy(onlinemediaList[onlinemediaSize].address, addr, MAXPATHLEN);
-			strncpy(onlinemediaList[onlinemediaSize].displayname, name, MAXJOLIET);
-			onlinemediaSize++;
+			if(!AddMediaEntry())
+				break;
+
+			strncpy(onlinemediaList[onlinemediaSize-1].filepath, path, MAXPATHLEN);
+			strncpy(onlinemediaList[onlinemediaSize-1].address, addr, MAXPATHLEN);
+			strncpy(onlinemediaList[onlinemediaSize-1].displayname, name, MAXJOLIET);
+			onlinemediaList[onlinemediaSize-1].filepath[MAXPATHLEN] = 0;
+			onlinemediaList[onlinemediaSize-1].address[MAXPATHLEN] = 0;
+			onlinemediaList[onlinemediaSize-1].displayname[MAXJOLIET] = 0;
 		}
 		next = mxmlFindElement(next, top, "link", NULL, NULL, MXML_NO_DESCEND);
 	}
@@ -353,46 +356,46 @@ static void LoadOnlineMediaFile(char * filepath)
  ***************************************************************************/
 void DefaultSettings ()
 {
-	memset(&CESettings, 0, sizeof(SCESettings));
+	memset(&WiiSettings, 0, sizeof(SWiiSettings));
 
 	// General
-	CESettings.autoResume = 1;
-	CESettings.playOrder = PLAY_SINGLE;
-	CESettings.cleanFilenames = 1;
-	CESettings.hideExtensions = 1;
-	CESettings.filterFiles = 1;
-	CESettings.language = CONF_GetLanguage();
-	CESettings.videoFolder[0] = 0;
-	CESettings.musicFolder[0] = 0;
-	CESettings.pictureFolder[0] = 0;
-	CESettings.onlinemediaFolder[0] = 0;
-	CESettings.exitAction = EXIT_AUTO;
-	CESettings.rumble = 1;
+	WiiSettings.autoResume = 1;
+	WiiSettings.playOrder = PLAY_SINGLE;
+	WiiSettings.cleanFilenames = 1;
+	WiiSettings.hideExtensions = 1;
+	WiiSettings.filterFiles = 1;
+	WiiSettings.language = CONF_GetLanguage();
+	WiiSettings.videoFolder[0] = 0;
+	WiiSettings.musicFolder[0] = 0;
+	WiiSettings.pictureFolder[0] = 0;
+	WiiSettings.onlinemediaFolder[0] = 0;
+	WiiSettings.exitAction = EXIT_AUTO;
+	WiiSettings.rumble = 1;
 
 	// Cache
-	CESettings.cacheSize = 8192;
-	CESettings.cacheFillStart = 30;
-	CESettings.cacheFillRestart = 50;
+	WiiSettings.cacheSize = 8192;
+	WiiSettings.cacheFillStart = 30;
+	WiiSettings.cacheFillRestart = 50;
 
 	// Network
 
 	// Video
-	CESettings.frameDropping = FRAMEDROPPING_AUTO;
-	CESettings.aspectRatio = ASPECT_AUTO;
-	CESettings.videoZoom = 1;
-	CESettings.videoXshift = 0;
-	CESettings.videoYshift = 0;
+	WiiSettings.frameDropping = FRAMEDROPPING_AUTO;
+	WiiSettings.aspectRatio = ASPECT_AUTO;
+	WiiSettings.videoZoom = 1;
+	WiiSettings.videoXshift = 0;
+	WiiSettings.videoYshift = 0;
 
 	// Audio
-	CESettings.volume = 100;
-	CESettings.audioDelay = 0;
+	WiiSettings.volume = 100;
+	WiiSettings.audioDelay = 0;
 
 	// Subtitles
-	CESettings.subtitleDelay = 0;
-	CESettings.subtitlePosition = 75; // 0-100
-	CESettings.subtitleSize = 16;
-	CESettings.subtitleAlpha = 0; // 0-255
-	CESettings.subtitleColor = COLOR_WHITE;
+	WiiSettings.subtitleDelay = 0;
+	WiiSettings.subtitlePosition = 75; // 0-100
+	WiiSettings.subtitleSize = 16;
+	WiiSettings.subtitleAlpha = 0; // 0-255
+	WiiSettings.subtitleColor = COLOR_WHITE;
 }
 
 /****************************************************************************
@@ -403,62 +406,62 @@ void DefaultSettings ()
 static void FixInvalidSettings()
 {
 	// General
-	if(CESettings.autoResume != 1 && CESettings.autoResume != 0)
-		CESettings.autoResume = 1;
-	if(CESettings.playOrder < 0 || CESettings.playOrder > PLAY_LOOP)
-		CESettings.playOrder = PLAY_SINGLE;
-	if(CESettings.cleanFilenames != 1 && CESettings.cleanFilenames != 0)
-		CESettings.cleanFilenames = 1;
-	if(CESettings.hideExtensions != 1 && CESettings.hideExtensions != 0)
-		CESettings.hideExtensions = 1;
-	if(CESettings.filterFiles != 1 && CESettings.filterFiles != 0)
-		CESettings.filterFiles = 1;
-	if(CESettings.language < 0 || CESettings.language > LANG_KOREAN)
-		CESettings.language = LANG_ENGLISH;
-	if(CESettings.exitAction < 0 || CESettings.exitAction > EXIT_LOADER)
-		CESettings.exitAction = EXIT_AUTO;
-	if(CESettings.rumble != 1 && CESettings.rumble != 0)
-		CESettings.rumble = 1;
+	if(WiiSettings.autoResume != 1 && WiiSettings.autoResume != 0)
+		WiiSettings.autoResume = 1;
+	if(WiiSettings.playOrder < 0 || WiiSettings.playOrder > PLAY_LOOP)
+		WiiSettings.playOrder = PLAY_SINGLE;
+	if(WiiSettings.cleanFilenames != 1 && WiiSettings.cleanFilenames != 0)
+		WiiSettings.cleanFilenames = 1;
+	if(WiiSettings.hideExtensions != 1 && WiiSettings.hideExtensions != 0)
+		WiiSettings.hideExtensions = 1;
+	if(WiiSettings.filterFiles != 1 && WiiSettings.filterFiles != 0)
+		WiiSettings.filterFiles = 1;
+	if(WiiSettings.language < 0 || WiiSettings.language > LANG_KOREAN)
+		WiiSettings.language = LANG_ENGLISH;
+	if(WiiSettings.exitAction < 0 || WiiSettings.exitAction > EXIT_LOADER)
+		WiiSettings.exitAction = EXIT_AUTO;
+	if(WiiSettings.rumble != 1 && WiiSettings.rumble != 0)
+		WiiSettings.rumble = 1;
 
 	// Cache
-	if(CESettings.cacheSize < 0 || CESettings.cacheSize > 16384)
-		CESettings.cacheSize = 8192;
-	if(CESettings.cacheFillStart < 0 || CESettings.cacheFillStart > 100)
-		CESettings.cacheFillStart = 30;
-	if(CESettings.cacheFillRestart < 0 || CESettings.cacheFillRestart > 100)
-		CESettings.cacheFillRestart = 50;
+	if(WiiSettings.cacheSize < 0 || WiiSettings.cacheSize > 16384)
+		WiiSettings.cacheSize = 8192;
+	if(WiiSettings.cacheFillStart < 0 || WiiSettings.cacheFillStart > 100)
+		WiiSettings.cacheFillStart = 30;
+	if(WiiSettings.cacheFillRestart < 0 || WiiSettings.cacheFillRestart > 100)
+		WiiSettings.cacheFillRestart = 50;
 
 	// Network
 
 	// Video
-	if(CESettings.frameDropping < 0 || CESettings.frameDropping > FRAMEDROPPING_ALWAYS)
-		CESettings.frameDropping = FRAMEDROPPING_AUTO;
-	if(CESettings.aspectRatio < 0 || CESettings.aspectRatio > ASPECT_235_1)
-		CESettings.aspectRatio = ASPECT_AUTO;
-	if(CESettings.videoZoom < 0.5 || CESettings.videoZoom > 1.5)
-		CESettings.videoZoom = 1;
-	if(CESettings.videoXshift < -50 || CESettings.videoXshift > 50)
-		CESettings.videoXshift = 0;
-	if(CESettings.videoYshift < -50 || CESettings.videoYshift > 50)
-		CESettings.videoYshift = 0;
+	if(WiiSettings.frameDropping < 0 || WiiSettings.frameDropping > FRAMEDROPPING_ALWAYS)
+		WiiSettings.frameDropping = FRAMEDROPPING_AUTO;
+	if(WiiSettings.aspectRatio < 0 || WiiSettings.aspectRatio > ASPECT_235_1)
+		WiiSettings.aspectRatio = ASPECT_AUTO;
+	if(WiiSettings.videoZoom < 0.5 || WiiSettings.videoZoom > 1.5)
+		WiiSettings.videoZoom = 1;
+	if(WiiSettings.videoXshift < -50 || WiiSettings.videoXshift > 50)
+		WiiSettings.videoXshift = 0;
+	if(WiiSettings.videoYshift < -50 || WiiSettings.videoYshift > 50)
+		WiiSettings.videoYshift = 0;
 
 	// Audio
-	if(CESettings.volume < 0 || CESettings.volume > 100)
-		CESettings.volume = 100;
-	if(CESettings.audioDelay < 0 || CESettings.audioDelay > 1000)
-		CESettings.audioDelay = 0;
+	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
+		WiiSettings.volume = 100;
+	if(WiiSettings.audioDelay < 0 || WiiSettings.audioDelay > 1000)
+		WiiSettings.audioDelay = 0;
 
 	// Subtitles
-	if(CESettings.subtitleDelay < 0 || CESettings.subtitleDelay > 1000)
-		CESettings.subtitleDelay = 0;
-	if(CESettings.subtitlePosition < 0 || CESettings.subtitlePosition > 100)
-		CESettings.subtitlePosition = 75; // 0-100
-	if(CESettings.subtitleSize < 10 || CESettings.subtitleSize > 80)
-		CESettings.subtitleSize = 16;
-	if(CESettings.subtitleAlpha < 0 || CESettings.subtitleAlpha > 255)
-		CESettings.subtitleAlpha = 0; // 0-255
-	if(CESettings.subtitleColor < 0 || CESettings.subtitleColor > FONTCOLOR_GRAY)
-		CESettings.subtitleColor = FONTCOLOR_WHITE;
+	if(WiiSettings.subtitleDelay < 0 || WiiSettings.subtitleDelay > 1000)
+		WiiSettings.subtitleDelay = 0;
+	if(WiiSettings.subtitlePosition < 0 || WiiSettings.subtitlePosition > 100)
+		WiiSettings.subtitlePosition = 75; // 0-100
+	if(WiiSettings.subtitleSize < 10 || WiiSettings.subtitleSize > 80)
+		WiiSettings.subtitleSize = 16;
+	if(WiiSettings.subtitleAlpha < 0 || WiiSettings.subtitleAlpha > 255)
+		WiiSettings.subtitleAlpha = 0; // 0-255
+	if(WiiSettings.subtitleColor < 0 || WiiSettings.subtitleColor > FONTCOLOR_GRAY)
+		WiiSettings.subtitleColor = FONTCOLOR_WHITE;
 }
 
 /****************************************************************************
@@ -564,23 +567,23 @@ static bool LoadSettingsFile(char * filepath)
 			if(result)
 			{
 				// General
-				loadXMLSetting(&CESettings.autoResume, "autoResume");
-				loadXMLSetting(&CESettings.playOrder, "playOrder");
-				loadXMLSetting(&CESettings.cleanFilenames, "cleanFilenames");
-				loadXMLSetting(&CESettings.hideExtensions, "hideExtensions");
-				loadXMLSetting(&CESettings.filterFiles, "filterFiles");
-				loadXMLSetting(&CESettings.language, "language");
-				loadXMLSetting(CESettings.videoFolder, "videoFolder", sizeof(CESettings.videoFolder));
-				loadXMLSetting(CESettings.musicFolder, "musicFolder", sizeof(CESettings.musicFolder));
-				loadXMLSetting(CESettings.pictureFolder, "pictureFolder", sizeof(CESettings.pictureFolder));
-				loadXMLSetting(CESettings.onlinemediaFolder, "onlinemediaFolder", sizeof(CESettings.onlinemediaFolder));
-				loadXMLSetting(&CESettings.exitAction, "exitAction");
-				loadXMLSetting(&CESettings.rumble, "rumble");
+				loadXMLSetting(&WiiSettings.autoResume, "autoResume");
+				loadXMLSetting(&WiiSettings.playOrder, "playOrder");
+				loadXMLSetting(&WiiSettings.cleanFilenames, "cleanFilenames");
+				loadXMLSetting(&WiiSettings.hideExtensions, "hideExtensions");
+				loadXMLSetting(&WiiSettings.filterFiles, "filterFiles");
+				loadXMLSetting(&WiiSettings.language, "language");
+				loadXMLSetting(WiiSettings.videoFolder, "videoFolder", sizeof(WiiSettings.videoFolder));
+				loadXMLSetting(WiiSettings.musicFolder, "musicFolder", sizeof(WiiSettings.musicFolder));
+				loadXMLSetting(WiiSettings.pictureFolder, "pictureFolder", sizeof(WiiSettings.pictureFolder));
+				loadXMLSetting(WiiSettings.onlinemediaFolder, "onlinemediaFolder", sizeof(WiiSettings.onlinemediaFolder));
+				loadXMLSetting(&WiiSettings.exitAction, "exitAction");
+				loadXMLSetting(&WiiSettings.rumble, "rumble");
 
 				// Cache
-				loadXMLSetting(&CESettings.cacheSize, "cacheSize");
-				loadXMLSetting(&CESettings.cacheFillStart, "cacheFillStart");
-				loadXMLSetting(&CESettings.cacheFillRestart, "cacheFillRestart");
+				loadXMLSetting(&WiiSettings.cacheSize, "cacheSize");
+				loadXMLSetting(&WiiSettings.cacheFillStart, "cacheFillStart");
+				loadXMLSetting(&WiiSettings.cacheFillRestart, "cacheFillRestart");
 
 				// Network
 				for(int i=0; i<5; i++)
@@ -590,22 +593,22 @@ static bool LoadSettingsFile(char * filepath)
 				}
 
 				// Video
-				loadXMLSetting(&CESettings.frameDropping, "frameDropping");
-				loadXMLSetting(&CESettings.aspectRatio, "aspectRatio");
-				loadXMLSetting(&CESettings.videoZoom, "videoZoom");
-				loadXMLSetting(&CESettings.videoXshift, "videoXshift");
-				loadXMLSetting(&CESettings.videoYshift, "videoYshift");
+				loadXMLSetting(&WiiSettings.frameDropping, "frameDropping");
+				loadXMLSetting(&WiiSettings.aspectRatio, "aspectRatio");
+				loadXMLSetting(&WiiSettings.videoZoom, "videoZoom");
+				loadXMLSetting(&WiiSettings.videoXshift, "videoXshift");
+				loadXMLSetting(&WiiSettings.videoYshift, "videoYshift");
 
 				// Audio
-				loadXMLSetting(&CESettings.volume, "volume");
-				loadXMLSetting(&CESettings.audioDelay, "audioDelay");
+				loadXMLSetting(&WiiSettings.volume, "volume");
+				loadXMLSetting(&WiiSettings.audioDelay, "audioDelay");
 
 				// Subtitles
-				loadXMLSetting(&CESettings.subtitleDelay, "subtitleDelay");
-				loadXMLSetting(&CESettings.subtitlePosition, "subtitlePosition");
-				loadXMLSetting(&CESettings.subtitleSize, "subtitleSize");
-				loadXMLSetting(&CESettings.subtitleAlpha, "subtitleAlpha");
-				loadXMLSetting(&CESettings.subtitleColor, "subtitleColor");
+				loadXMLSetting(&WiiSettings.subtitleDelay, "subtitleDelay");
+				loadXMLSetting(&WiiSettings.subtitlePosition, "subtitlePosition");
+				loadXMLSetting(&WiiSettings.subtitleSize, "subtitleSize");
+				loadXMLSetting(&WiiSettings.subtitleAlpha, "subtitleAlpha");
+				loadXMLSetting(&WiiSettings.subtitleColor, "subtitleColor");
 			}
 			mxmlDelete(xml);
 		}

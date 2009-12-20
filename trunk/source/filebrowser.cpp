@@ -24,14 +24,15 @@
 
 BROWSERINFO browser;
 BROWSERENTRY * browserList = NULL; // list of files/folders in browser
+char browserPlaylist[MAXPATHLEN] = "\0"; // playlist URL, loaded from the file browser
 
 MEDIAENTRY * onlinemediaList = NULL; // list of online media files
 int onlinemediaSize = 0; // number of online media files
-bool inOnlineMedia = false;
 
+// audio playlist
 MEDIAENTRY * playlist = NULL; // list of files in the current playlist
 int playlistSize = 0; // number of playlist files
-char currentPlaylist[MAXPATHLEN] = "\0"; // playlist URL
+int playlistIndex = 0; // index of file currently playing in the playlist
 
 /****************************************************************************
  * ResetBrowser()
@@ -61,7 +62,6 @@ bool AddBrowserEntry()
 
 	if(!newBrowserList) // failed to allocate required memory
 	{
-		ResetBrowser();
 		ErrorPrompt("Out of memory: too many files!");
 		return false;
 	}
@@ -71,6 +71,42 @@ bool AddBrowserEntry()
 	}
 	memset(&(browserList[browser.size]), 0, sizeof(BROWSERENTRY)); // clear the new entry
 	browser.size++;
+	return true;
+}
+
+bool AddPlaylistEntry()
+{
+	MEDIAENTRY * newList = (MEDIAENTRY *)realloc(playlist, (playlistSize+1) * sizeof(MEDIAENTRY));
+
+	if(!newList) // failed to allocate required memory
+	{
+		ErrorPrompt("Out of memory: too many files!");
+		return false;
+	}
+	else
+	{
+		playlist = newList;
+	}
+	memset(&(playlist[playlistSize]), 0, sizeof(MEDIAENTRY)); // clear the new entry
+	playlistSize++;
+	return true;
+}
+
+bool AddMediaEntry()
+{
+	MEDIAENTRY * newList = (MEDIAENTRY *)realloc(onlinemediaList, (onlinemediaSize+1) * sizeof(MEDIAENTRY));
+
+	if(!newList) // failed to allocate required memory
+	{
+		ErrorPrompt("Out of memory: too many files!");
+		return false;
+	}
+	else
+	{
+		onlinemediaList = newList;
+	}
+	memset(&(onlinemediaList[onlinemediaSize]), 0, sizeof(MEDIAENTRY)); // clear the new entry
+	onlinemediaSize++;
 	return true;
 }
 
@@ -142,9 +178,9 @@ static int UpdateDirName()
 		}
 		else
 		{
-			if(currentPlaylist[0] != 0) // inside a playlist
+			if(browserPlaylist[0] != 0) // inside a playlist
 			{
-				currentPlaylist[0] = 0; // leave playlist
+				browserPlaylist[0] = 0; // leave playlist
 			}
 			else
 			{
@@ -165,7 +201,7 @@ static int UpdateDirName()
 		return 1;
 	}
 
-	if(!inOnlineMedia && browser.dir[0] == 0)
+	if(currentMenu != MENU_BROWSE_ONLINEMEDIA && browser.dir[0] == 0)
 	{
 		// try to switch to device
 		if(!ChangeInterface(browserList[browser.selIndex].filename, NOTSILENT))
@@ -232,11 +268,11 @@ int BrowserChangeFolder(bool updateDir)
 	HaltParseThread(); // halt parsing
 	ResetBrowser(); // reset browser
 
-	if(currentPlaylist[0] != 0)
+	if(browserPlaylist[0] != 0)
 	{
-		ParsePlaylist();
+		ParsePlaylistFile();
 	}
-	else if(inOnlineMedia)
+	else if(currentMenu == MENU_BROWSE_ONLINEMEDIA)
 	{
 		ParseOnlineMedia();
 	}
@@ -310,17 +346,17 @@ int BrowserChangeFolder(bool updateDir)
 
 			for(i=0; i < 5; i++)
 			{
-				if(CESettings.smbConf[i].share[0] != 0)
+				if(WiiSettings.smbConf[i].share[0] != 0)
 				{
 					if(!AddBrowserEntry())
 						break;
 	
 					sprintf(browserList[browser.numEntries].filename, "smb%d:/", i+1);
 					
-					if(CESettings.smbConf[i].displayname[0] != 0)
-						sprintf(browserList[browser.numEntries].displayname, "%s", CESettings.smbConf[i].displayname);
+					if(WiiSettings.smbConf[i].displayname[0] != 0)
+						sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.smbConf[i].displayname);
 					else
-						sprintf(browserList[browser.numEntries].displayname, "%s", CESettings.smbConf[i].share);
+						sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.smbConf[i].share);
 					browserList[browser.numEntries].length = 0;
 					browserList[browser.numEntries].mtime = 0;
 					browserList[browser.numEntries].isdir = 1; // flag this as a dir
@@ -331,16 +367,16 @@ int BrowserChangeFolder(bool updateDir)
 
 			for(i=0; i < 5; i++)
 			{
-				if(CESettings.ftpConf[i].ip[0] != 0)
+				if(WiiSettings.ftpConf[i].ip[0] != 0)
 				{
 					if(!AddBrowserEntry())
 						break;
 	
 					sprintf(browserList[browser.numEntries].filename, "ftp%d:/", i+1);
-					if(CESettings.ftpConf[i].displayname[0] != 0)
-						sprintf(browserList[browser.numEntries].displayname, "%s", CESettings.ftpConf[i].displayname);
+					if(WiiSettings.ftpConf[i].displayname[0] != 0)
+						sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.ftpConf[i].displayname);
 					else
-						sprintf(browserList[browser.numEntries].displayname, "%s@%s/%s", CESettings.ftpConf[i].user, CESettings.ftpConf[i].ip, CESettings.ftpConf[i].folder);
+						sprintf(browserList[browser.numEntries].displayname, "%s@%s/%s", WiiSettings.ftpConf[i].user, WiiSettings.ftpConf[i].ip, WiiSettings.ftpConf[i].folder);
 					browserList[browser.numEntries].length = 0;
 					browserList[browser.numEntries].mtime = 0;
 					browserList[browser.numEntries].isdir = 1; // flag this as a dir

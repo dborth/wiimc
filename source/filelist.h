@@ -130,6 +130,29 @@ extern const u32	bg_browse_entry_png_size;
 extern const u8		bg_browse_entry_over_png[];
 extern const u32	bg_browse_entry_over_png_size;
 
+extern const u8		bg_rounded_png[];
+extern const u32	bg_rounded_png_size;
+
+extern const u8		nav_videos_png[];
+extern const u32	nav_videos_png_size;
+extern const u8		nav_music_png[];
+extern const u32	nav_music_png_size;
+extern const u8		nav_pictures_png[];
+extern const u32	nav_pictures_size;
+extern const u8		nav_dvd_png[];
+extern const u32	nav_dvd_size;
+extern const u8		nav_onlinemedia_png[];
+extern const u32	nav_onlinemedia_size;
+extern const u8		nav_settings_png[];
+extern const u32	nav_settings_size;
+extern const u8		nav_exit_png[];
+extern const u32	nav_exit_size;
+extern const u8		nav_playlist_png[];
+extern const u32	nav_playlist_size;
+
+extern const u8		playlist_add_png[];
+extern const u32	playlist_add_size;
+
 extern const u8		browse_small_png[];
 extern const u32	browse_small_png_size;
 extern const u8		dvd_small_png[];

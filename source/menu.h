@@ -28,6 +28,7 @@ bool StatusSet();
 }
 
 extern int currentMenu;
+extern bool inPlaylist;
 extern int doMPlayerGuiDraw;
 
 enum
@@ -35,8 +36,8 @@ enum
 	MENU_BROWSE_VIDEOS,
 	MENU_BROWSE_MUSIC,
 	MENU_BROWSE_PICTURES,
-	MENU_BROWSE_ONLINEMEDIA,
 	MENU_DVD,
+	MENU_BROWSE_ONLINEMEDIA,
 	MENU_SETTINGS,
 	MENU_SETTINGS_GENERAL,
 	MENU_SETTINGS_CACHE,

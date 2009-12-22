@@ -95,6 +95,8 @@ static GuiButton * videobarPauseBtn = NULL;
 static GuiButton * videobarFastForwardBtn = NULL;
 static GuiButton * videobarSkipForwardBtn = NULL;
 
+static GuiText * videobarTime = NULL;
+
 static GuiImage * audiobarProgressImg = NULL;
 static GuiImage * audiobarProgressLeftImg = NULL;
 static GuiImage * audiobarProgressMidImg = NULL;
@@ -1098,11 +1100,15 @@ static void MenuBrowse(int menu)
 	GuiTooltip playlistBtnTip("Playlist");
 	GuiImageData playlistImg(nav_playlist_png);
 	GuiImage playlistBtnImg(&playlistImg);
+	GuiText playlistBtnTxt(NULL, 18, (GXColor){0, 0, 0, 255});
+	playlistBtnTxt.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+	playlistBtnTxt.SetPosition(-20, 0);
 	GuiButton playlistBtn(playlistBtnImg.GetWidth(), playlistBtnImg.GetHeight());
 	playlistBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	playlistBtn.SetPosition(48, -30);
 	playlistBtn.SetTooltip(&playlistBtnTip);
 	playlistBtn.SetImage(&playlistBtnImg);
+	playlistBtn.SetLabel(&playlistBtnTxt);
 	playlistBtn.SetTrigger(&trigA);
 	playlistBtn.SetEffectGrow();
 	playlistBtn.SetAlpha(128);
@@ -1111,7 +1117,13 @@ static void MenuBrowse(int menu)
 	mainWindow->Append(&fileBrowser);
 
 	if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
+	{
+		char txt[10];
+		sprintf(txt, "%d", playlistSize);
+		playlistBtnTxt.SetText(txt);
+
 		mainWindow->Append(&playlistBtn);
+	}
 
 	ResumeGui();
 
@@ -1286,6 +1298,10 @@ static void MenuBrowse(int menu)
 					EnqueueFolder(fullpath);
 				else
 					EnqueueFile(fullpath, browserList[addIndex].filename);
+
+				char txt[10];
+				sprintf(txt, "%d", playlistSize);
+				playlistBtnTxt.SetText(txt);
 			}
 		}
 		
@@ -2780,9 +2796,9 @@ static void VideoProgressCallback(void * ptr)
 {
 	GuiButton * b = (GuiButton *)ptr;
 
-	double total = wiiGetTimeLength();
+	float total = wiiGetTimeLength();
 	int done = wiiGetTimePos();
-	double percent = 0;
+	float percent = 0;
 	
 	if(total > 0)
 		percent = done/total;
@@ -2813,6 +2829,9 @@ static void VideoProgressCallback(void * ptr)
 		videobarProgressMidImg->SetTile((int)(84*percent));
 		videobarProgressRightImg->SetVisible(false);
 	}
+	char time[50];
+	wiiGetTimeDisplay(time);
+	videobarTime->SetText(time);
 }
 
 static void VideoSkipBackwardCallback(void * ptr)
@@ -3183,6 +3202,10 @@ static void SetupPlaybar()
 	videobarSkipForwardBtn->SetUpdateCallback(VideoSkipForwardCallback);
 	videobarSkipForwardBtn->SetEffectGrow();
 	
+	videobarTime = new GuiText(NULL, 16, (GXColor){0, 0, 0, 255});
+	videobarTime->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	videobarTime->SetPosition(0, -13);
+
 	videobar = new GuiWindow(360, 80);
 
 	videobar->Append(videobarProgressBtn);
@@ -3194,6 +3217,7 @@ static void SetupPlaybar()
 	videobar->Append(videobarPauseBtn);
 	videobar->Append(videobarFastForwardBtn);
 	videobar->Append(videobarSkipForwardBtn);
+	videobar->Append(videobarTime);
 	
 	videobar->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
 	videobar->SetPosition(0, -40);

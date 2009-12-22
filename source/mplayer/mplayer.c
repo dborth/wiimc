@@ -5173,9 +5173,9 @@ double wiiGetTimeLength()
 	return demuxer_get_time_length(mpctx->demuxer);
 }
 
-int wiiGetTimePos()
+double wiiGetTimePos()
 {
-	int pos = 0;
+	double pos = 0;
 
 	if (mpctx && mpctx->sh_video)
 		pos = mpctx->sh_video->pts;
@@ -5183,6 +5183,19 @@ int wiiGetTimePos()
 		pos = playing_audio_pts(mpctx->sh_audio, mpctx->d_audio, mpctx->audio_out);
 	
 	return pos;
+}
+
+void wiiGetTimeDisplay(char * buf)
+{
+	if(!mpctx || !mpctx->demuxer)
+		return;
+
+	int len = demuxer_get_time_length(mpctx->demuxer);
+	int pts = demuxer_get_current_time(mpctx->demuxer);
+
+	sprintf(buf, "%02d:%02d:%02d / %02d:%02d:%02d",
+		pts/3600,(pts/60)%60,pts%60,
+		len/3600,(len/60)%60,len%60);
 }
 
 void wiiSetOSDLevel(int l)

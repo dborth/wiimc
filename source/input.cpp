@@ -114,10 +114,10 @@ void MPlayerInput()
 
 		if(userInput[i].wpad->btns_d & WPAD_BUTTON_1)
 		{
-			if(level == 3)
+			if(level == 2)
 				wiiSetOSDLevel(0);
 			else
-				wiiSetOSDLevel(level+1);
+				wiiSetOSDLevel(2);
 		}
 		
 		if(ConfigRequested || userInput[i].wpad->btns_d & WPAD_BUTTON_HOME)
@@ -131,17 +131,17 @@ void MPlayerInput()
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
 				wiiPause();
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
-				wiiFastForward();
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
-				wiiRewind();
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
 				wiiSkipForward();
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
 				wiiSkipBackward();
+			if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
+				wiiFastForward();
+			if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
+				wiiRewind();
 		}
 	}
 
-	if(ir || StatusSet() || wiiGetOSDLevel() >= 2)
+	if(ir || StatusSet() || wiiGetOSDLevel() == 2)
 	{
 		drawGui = true;
 	}

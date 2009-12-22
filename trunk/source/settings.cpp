@@ -9,6 +9,7 @@
 #include <gccore.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/dir.h>
 #include <ogcsys.h>
 #include <mxml.h>
 #include <ogc/conf.h>
@@ -470,12 +471,44 @@ static void FixInvalidSettings()
 bool
 SaveSettings (bool silent)
 {
-	char filepath[1024];
+	char filepath[1024] = { 0 };
 	int datasize;
 	int offset = 0;
 
 	// We'll save using the first available method (probably SD) since this
 	// is the method settings will be loaded from by default
+
+	if(strlen(appPath) > 0)
+	{
+		sprintf(filepath, "%s/settings.xml", appPath);
+	}
+	else
+	{
+		if(ChangeInterface(DEVICE_SD, 1, SILENT))
+			sprintf(filepath, "sd1:");
+		else if(ChangeInterface(DEVICE_USB, 1, SILENT))
+			sprintf(filepath, "usb1:");
+		else if(ChangeInterface(DEVICE_USB, 2, SILENT))
+			sprintf(filepath, "usb2:");
+		else if(ChangeInterface(DEVICE_USB, 3, SILENT))
+			sprintf(filepath, "usb3:");
+		
+		// could not mount any devices
+		if(strlen(filepath) == 0)
+			return false;
+		
+		// ensure the necessary folders exists for saving
+		strcat(filepath, "/apps");
+		if (!diropen(filepath))
+			mkdir(filepath, 0777);
+		
+		strcat(filepath, "/");
+		strcat(filepath, APPFOLDER);
+		if (!diropen(filepath))
+			mkdir(filepath, 0777);
+		
+		strcat(filepath, "/settings.xml");
+	}
 
 	if (!silent)
 		ShowAction ("Saving settings...");
@@ -484,17 +517,6 @@ SaveSettings (bool silent)
 	savebuffer = (char *)malloc(SAVEBUFFERSIZE);
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
 	datasize = prepareSettingsData ();
-
-	if(strlen(appPath) > 0)
-		sprintf(filepath, "%s/settings.xml", appPath);
-	else if(ChangeInterface(DEVICE_SD, 1, SILENT))
-		sprintf(filepath, "sd1:/%s/settings.xml", APPFOLDER);
-	else if(ChangeInterface(DEVICE_USB, 1, SILENT))
-		sprintf(filepath, "usb1:/%s/settings.xml", APPFOLDER);
-	else if(ChangeInterface(DEVICE_USB, 2, SILENT))
-		sprintf(filepath, "usb2:/%s/settings.xml", APPFOLDER);
-	else if(ChangeInterface(DEVICE_USB, 3, SILENT))
-		sprintf(filepath, "usb3:/%s/settings.xml", APPFOLDER);
 
 	offset = SaveFile(savebuffer, filepath, datasize, silent);
 
@@ -634,10 +656,10 @@ bool LoadSettings()
 	char filepath[MAXPATHLEN];
 
 	sprintf(path[0], "%s", appPath);
-	sprintf(path[1], "sd1:/%s", APPFOLDER);
-	sprintf(path[2], "usb1:/%s", APPFOLDER);
-	sprintf(path[3], "usb2:/%s", APPFOLDER);
-	sprintf(path[4], "usb3:/%s", APPFOLDER);
+	sprintf(path[1], "sd1:/apps/%s", APPFOLDER);
+	sprintf(path[2], "usb1:/apps/%s", APPFOLDER);
+	sprintf(path[3], "usb2:/apps/%s", APPFOLDER);
+	sprintf(path[4], "usb3:/apps/%s", APPFOLDER);
 
 	for(int i=0; i<5; i++)
 	{

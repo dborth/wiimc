@@ -39,15 +39,15 @@ bool updateFound = false; // true if an app update was found
 
 void UpdateCheck()
 {
-	// we can only check for the update if we have internet + SD
-	if(!updateChecked && networkInit && isInserted[DEVICE_SD])
+	// we can only check for the update if we have internet + SD or USB
+	if(!updateChecked && networkInit && (isInserted[DEVICE_SD] || isInserted[DEVICE_USB]))
 	{
 		static char url[128];
 		int retval;
 
 		updateChecked = true;
 
-		snprintf(url, 128, "http://mplayer-ce.googlecode.com/svn/trunk/update.xml");
+		snprintf(url, 128, "http://wiimc.googlecode.com/svn/trunk/update.xml");
 
 		u8 * tmpbuffer = (u8 *)memalign(32,32768);
 		memset(tmpbuffer, 0, 32768);
@@ -128,43 +128,52 @@ static bool unzipArchive(char * zipfilepath, char * unzipfolderpath)
 bool DownloadUpdate()
 {
 	bool result = false;
-	if(strlen(updateURL) > 0)
+
+	if(strlen(updateURL) == 0 || strlen(appPath) == 0)
+		goto done;
+
+	if(!ChangeInterface(appPath, NOTSILENT))
+		goto done;
+
+	// stop checking if devices were removed/inserted
+	// since we're saving a file
+	HaltDeviceThread();
+
+	// find devoptab name
+	char dev[10];
+	int i;
+	for(i=0; i < 8; i++)
 	{
-		// stop checking if devices were removed/inserted
-		// since we're saving a file
-		HaltDeviceThread();
-
-		FILE * hfile;
-		char updateFile[50];
-		sprintf(updateFile, "sd:/%s Update.zip", APPNAME);
-		hfile = fopen (updateFile, "wb");
-
-		if (hfile > 0)
-		{
-			int retval;
-			retval = http_request(updateURL, hfile, NULL, (1024*1024*5));
-			fclose (hfile);
-		}
-
-		bool unzipResult = unzipArchive(updateFile, (char *)"sd:/");
-		remove(updateFile); // delete update file
-
-		if(unzipResult)
-		{
-			result = true;
-			InfoPrompt("Update successful!");
-		}
-		else
-		{
-			result = false;
-			ErrorPrompt("Update failed!");
-		}
-
-		updateFound = false; // updating is finished (successful or not!)
-
-		// go back to checking if devices were inserted/removed
-		ResumeDeviceThread();
+		dev[i] = appPath[i];
+		if(appPath[i] == '/') break;
 	}
+	dev[i+1] = 0;
+
+	FILE * hfile;
+	char updateFile[50];
+	sprintf(updateFile, "%s%s Update.zip", dev, APPNAME);
+	hfile = fopen (updateFile, "wb");
+
+	if (hfile > 0)
+	{
+		int retval;
+		retval = http_request(updateURL, hfile, NULL, (1024*1024*5));
+		fclose (hfile);
+	}
+
+	result = unzipArchive(updateFile, dev);
+	remove(updateFile); // delete update file
+
+	// go back to checking if devices were inserted/removed
+	ResumeDeviceThread();
+	
+done:	
+	if(result)
+		InfoPrompt("Update successful!");
+	else
+		ErrorPrompt("Update failed!");
+
+	updateFound = false; // updating is finished (successful or not!)
 	return result;
 }
 

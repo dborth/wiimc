@@ -15,7 +15,7 @@
 
 #define APPNAME			"WiiMC"
 #define APPVERSION		"1.0.0"
-#define APPFOLDER		"apps/wiimc"
+#define APPFOLDER		"wiimc"
 
 enum {
 	DEVICE_SD,

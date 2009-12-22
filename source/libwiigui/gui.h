@@ -945,6 +945,7 @@ class GuiFileBrowser : public GuiElement
 		void ResetState();
 		void SetFocus(int f);
 		void Draw();
+		void DrawTooltip();
 		void TriggerUpdate();
 		void Update(GuiTrigger * t);
 		GuiButton * fileList[FILE_PAGESIZE];
@@ -959,6 +960,7 @@ class GuiFileBrowser : public GuiElement
 		GuiImage * fileListIcon[FILE_PAGESIZE];
 
 		GuiImage * playlistAddImg[FILE_PAGESIZE];
+		GuiTooltip * playlistAddTip[FILE_PAGESIZE];
 
 		GuiButton * arrowUpBtn;
 		GuiButton * arrowDownBtn;

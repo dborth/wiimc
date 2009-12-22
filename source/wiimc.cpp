@@ -188,6 +188,8 @@ mplayerthread (void *arg)
 			mplayer_loadfile(loadedFile);
 		}
 
+		HideNowPlaying();
+
 		if(controlledbygui != 2 && WiiSettings.playOrder > 0 && playingAudio) // load next file
 			FindNextAudioFile();
 	}

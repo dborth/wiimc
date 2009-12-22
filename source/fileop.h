@@ -34,6 +34,7 @@ void MountAllDevices();
 bool ChangeInterface(int device, int devnum, bool silent);
 bool ChangeInterface(char * filepath, bool silent);
 void CreateAppPath(char * origpath);
+void StripExt(char* string);
 int ParseDirectory(bool waitParse = false);
 int ParsePlaylistFile();
 int ParseOnlineMedia();

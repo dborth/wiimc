@@ -109,9 +109,11 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 		fileList[i]->SetTrigger(trigA);
 		
 		playlistAddImg[i] = new GuiImage(playlistAdd);
+		playlistAddTip[i] = new GuiTooltip("Add to Playlist");
 		playlistAddBtn[i] = new GuiButton(playlistAdd->GetWidth(), playlistAdd->GetHeight());
 		playlistAddBtn[i]->SetParent(this);
 		playlistAddBtn[i]->SetImage(playlistAddImg[i]);
+		playlistAddBtn[i]->SetTooltip(playlistAddTip[i]);
 		playlistAddBtn[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 		playlistAddBtn[i]->SetPosition(-40, 2 + i*26);
 		playlistAddBtn[i]->SetTrigger(trigA);
@@ -168,6 +170,7 @@ GuiFileBrowser::~GuiFileBrowser()
 			delete fileListIcon[i];
 		
 		delete playlistAddImg[i];
+		delete playlistAddTip[i];
 		delete playlistAddBtn[i];
 	}
 }
@@ -221,6 +224,15 @@ void GuiFileBrowser::Draw()
 	arrowDownBtn->Draw();
 	scrollbarBoxBtn->Draw();
 	this->UpdateEffects();
+}
+
+void GuiFileBrowser::DrawTooltip()
+{
+	for(int i=0; i<FILE_PAGESIZE; i++)
+	{
+		if(playlistAddTip[i])
+			playlistAddTip[i]->DrawTooltip();
+	}
 }
 
 void GuiFileBrowser::Update(GuiTrigger * t)

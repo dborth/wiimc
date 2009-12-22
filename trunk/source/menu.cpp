@@ -115,6 +115,9 @@ static GuiButton * audiobarSkipBackwardBtn = NULL;
 static GuiButton * audiobarPauseBtn = NULL;
 static GuiButton * audiobarSkipForwardBtn = NULL;
 
+static GuiText * audiobarNowPlaying[4] = { NULL, NULL };
+static bool nowPlayingSet = false;
+
 static GuiImage * picturebarPreviousImg = NULL;
 static GuiImage * picturebarPreviousOverImg = NULL;
 static GuiImage * picturebarPreviousIcon = NULL;
@@ -1263,6 +1266,7 @@ static void MenuBrowse(int menu)
 						
 						// add the audio bar
 						mainWindow->Append(audiobar);
+						nowPlayingSet = false;
 					}
 				}
 			}
@@ -2868,10 +2872,86 @@ static void AudioProgressCallback(void * ptr)
 	double total = wiiGetTimeLength();
 	int done = wiiGetTimePos();
 	double percent = 0;
-	
+
 	if(total > 0)
 		percent = done/total;
 	
+	if(!nowPlayingSet && total > 0)
+	{
+		nowPlayingSet = true;
+		char *title = NULL;
+		char *artist = NULL;
+		char *album = NULL;
+		char *year = NULL;
+		int i;
+		audiobarNowPlaying[0]->SetVisible(true);
+
+		if(wiiGetMetaTitle() != NULL)
+		{
+			title = strdup(wiiGetMetaTitle());
+			for(i=strlen(title)-1; i >= 0; i--)	if(title[i] == ' ') title[i] = '\0'; else break;
+			
+			if(strlen(title) > 0)
+				audiobarNowPlaying[1]->SetText(title);
+		}
+		else
+		{
+			char tmp[MAXJOLIET+1];
+			char *start = strrchr(loadedFile,'/');
+			if(start != NULL) // start up starting part of path
+				strcpy(tmp, &start[1]);
+			else
+				strcpy(tmp, loadedFile);
+			StripExt(tmp);
+			audiobarNowPlaying[1]->SetText(tmp);
+		}
+
+		if(wiiGetMetaArtist() != NULL)
+		{
+			artist = strdup(wiiGetMetaArtist());
+			for(i=strlen(artist)-1; i >= 0; i--) if(artist[i] == ' ') artist[i] = '\0'; else break;
+			
+			if(strlen(artist) > 0)
+				audiobarNowPlaying[2]->SetText(artist);
+		}
+
+		if(wiiGetMetaAlbum() != NULL)
+		{
+			album = strdup(wiiGetMetaAlbum());
+			for(i=strlen(album)-1; i >= 0; i--) if(album[i] == ' ') album[i] = '\0'; else break;
+		}
+
+		if(wiiGetMetaYear() != NULL)
+		{
+			year = strdup(wiiGetMetaYear());
+			for(i=strlen(year)-1; i >= 0; i--) if(year[i] == ' ') year[i] = '\0'; else break;
+		}
+
+		char txt[1024];
+
+		if(album && strlen(album) > 0 && year && strlen(year) > 0)
+		{
+			sprintf(txt, "%s (%s)", album, year);
+			audiobarNowPlaying[3]->SetText(txt);
+		}
+		else if(album && strlen(album) > 0)
+		{
+			audiobarNowPlaying[3]->SetText(album);
+		}
+		else if(year && strlen(year) > 0)
+		{
+			audiobarNowPlaying[3]->SetText(year);
+		}
+
+		if(title) free(title);
+		if(artist) free(artist);
+		if(album) free(album);
+		if(year) free(year);
+		
+		for(i=1; i < 4; i++)
+			audiobarNowPlaying[i]->SetVisible(true);
+	}
+
 	if(b->GetState() == STATE_CLICKED)
 	{
 		percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/360.0;
@@ -2879,7 +2959,7 @@ static void AudioProgressCallback(void * ptr)
 		b->ResetState();
 		wiiSeekPos(done);
 	}
-	
+
 	if(percent <= 0.01)
 	{
 		audiobarProgressLeftImg->SetVisible(false);
@@ -3188,7 +3268,19 @@ static void SetupPlaybar()
 	audiobarSkipForwardBtn->SetUpdateCallback(AudioSkipForwardCallback);
 	audiobarSkipForwardBtn->SetEffectGrow();
 	
-	audiobar = new GuiWindow(360, 80);
+	audiobarNowPlaying[0] = new GuiText("Now Playing:", 16, (GXColor){0, 0, 0, 255});
+	audiobarNowPlaying[0]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	audiobarNowPlaying[0]->SetPosition(0, 0);
+	
+	for(int i=1; i < 4; i++)
+	{
+		audiobarNowPlaying[i] = new GuiText(NULL, 16, (GXColor){0, 0, 0, 255});
+		audiobarNowPlaying[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+		audiobarNowPlaying[i]->SetPosition(0, 20*i);
+		audiobarNowPlaying[i]->SetMaxWidth(250);
+	}
+
+	audiobar = new GuiWindow(500, 80);
 
 	audiobar->Append(audiobarProgressBtn);
 	audiobar->Append(audiobarProgressLeftImg);
@@ -3198,6 +3290,9 @@ static void SetupPlaybar()
 	audiobar->Append(audiobarPauseBtn);
 	audiobar->Append(audiobarSkipForwardBtn);
 	
+	for(int i=0; i < 4; i++)
+		audiobar->Append(audiobarNowPlaying[i]);
+
 	audiobar->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	audiobar->SetPosition(100, -30);
 	
@@ -3279,6 +3374,15 @@ static void SetupPlaybar()
 	picturebar->Append(picturebarCloseBtn);
 	
 	playbarSetup = 1;
+}
+
+void HideNowPlaying()
+{
+	for(int i=0; i < 4; i++)
+	{
+		audiobarNowPlaying[i]->SetVisible(false);
+		if(i > 0) audiobarNowPlaying[i]->SetText(NULL);
+	}
 }
 
 /****************************************************************************

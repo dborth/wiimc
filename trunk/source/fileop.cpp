@@ -1404,8 +1404,15 @@ bool EnqueueFolder(char * path)
 
 	while(dirnext(dir,filename,&filestat) == 0)
 	{
+		if(filename[0] == '.')
+			continue;
+
 		sprintf(filepath, "%s/%s", path, filename);
-		EnqueueFile(filepath, filename);
+
+		if(filestat.st_mode & _IFDIR)
+			EnqueueFolder(filepath); // directory recursion doesn't work properly on SMB
+		else
+			EnqueueFile(filepath, filename);
 	}
 	return true;
 }

@@ -202,7 +202,9 @@ static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x,
 
 static void draw_osd(void)
 {
+#ifndef WIILIB
 	vo_draw_text(image_width, image_height, draw_alpha);
+#endif
 }
 
 //void wii_draw_osd()

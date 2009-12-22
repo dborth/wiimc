@@ -884,16 +884,20 @@ libmenu/fsysloc-wiilib.o: libmenu/fsysloc.c
 osdep/getch2-gekko-wiilib.o: osdep/getch2-gekko.c
 	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
 
+libvo/vo_gekko-wiilib.o: libvo/vo_gekko.c
+	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
+
 A1 =	$(subst gx_supp.o,gx_supp-wiilib.o,$(OBJS_MPLAYER))
 A2 =	$(subst mplayer.o,mplayer-wiilib.o,$(A1))
 A3 =	$(subst plat_gekko.o,plat_gekko-wiilib.o,$(A2))
 A4 =	$(subst command.o,command-wiilib.o,$(A3))
 A5 =	$(subst menu_filesel.o,menu_filesel-wiilib.o,$(A4))
 A6 =	$(subst fsysloc.o,fsysloc-wiilib.o,$(A5))
-A7 =	$(subst getch2-gekko.o,getch2-gekko-wiilib.o,$(OBJS_COMMON))
+A7 =	$(subst vo_gekko.o,vo_gekko-wiilib.o,$(A6))
+A8 =	$(subst getch2-gekko.o,getch2-gekko-wiilib.o,$(OBJS_COMMON))
 
-MPLAYERWIILIB = $(A6) 
-MPLAYERWIILIB += $(A7) 
+MPLAYERWIILIB = $(A7) 
+MPLAYERWIILIB += $(A8)
 
 libmplayerwii.a: $(MPLAYERWIILIB) $(COMMON_LIBS)
 	rm -f $@

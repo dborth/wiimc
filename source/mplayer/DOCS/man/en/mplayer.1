@@ -1,4 +1,4 @@
-.\" $Revision: 29905 $
+.\" $Revision: 30075 $
 .\" MPlayer (C) 2000-2009 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -3138,11 +3138,11 @@ y coordinates are relative to the top-left corner of the window rather
 than the screen.
 The coordinates are relative to the screen given with \-xineramascreen for
 the video output drivers that fully support \-xineramascreen (direct3d, gl, gl2,
-vdpau, x11, xv, xvmc).
+vdpau, x11, xv, xvmc, corevideo).
 .br
 .I NOTE:
 This option is only supported by the x11, xmga, xv, xvmc, xvidix,
-gl, gl2, directx, fbdev and tdfxfb video output drivers.
+gl, gl2, directx, fbdev, tdfxfb and corevideo video output drivers.
 .sp 1
 .I EXAMPLE:
 .PD 0
@@ -3330,7 +3330,8 @@ This option is not suitable to only set the startup screen (because
 it will always display on the given screen in fullscreen mode),
 \-geometry is the best that is available for that purpose
 currently.
-Supported by at least the direct3d, gl, gl2, x11 and xv video output drivers.
+Supported by at least the direct3d, gl, gl2, x11, xv and corevideo video output
+drivers.
 .
 .TP
 .B \-zrbw (\-vo zr only)
@@ -3838,6 +3839,9 @@ Values below 0 will leave it at the system default.
 This limits the framerate to (horizontal refresh rate / n).
 Requires GLX_SGI_swap_control support to work.
 With some (most/all?) implementations this only works in fullscreen mode.
+.IPs ycbcr
+Use the GL_MESA_ycbcr_texture extension to convert YUV to RGB.
+In most cases this is probably slower than doing software conversion to RGB.
 .IPs yuv=<n>
 Select the type of YUV to RGB conversion.
 .RSss
@@ -3881,9 +3885,6 @@ Provides brightness, contrast, saturation, hue and gamma control.
 Gamma can also be set independently for red, green and blue.
 Speed depends more on GPU memory bandwidth than other methods.
 .RE
-.IPs ycbcr
-Use the GL_MESA_ycbcr_texture extension to convert YUV to RGB.
-In most cases this is probably slower than doing software conversion to RGB.
 .IPs lscale=<n>
 Select the scaling function to use for luminance scaling.
 Only valid for yuv modes 2, 3, 4 and 6.
@@ -3920,6 +3921,13 @@ If enabled (default) use GL_LINEAR interpolation, otherwise use GL_NEAREST
 for customtex texture.
 .IPs (no)customtrect
 If enabled, use texture_rectangle for customtex texture.
+Default is disabled.
+.IPs (no)mipmapgen
+If enabled, mipmaps for the video are automatically generated.
+This should be useful together with the customprog and the TXB
+instruction to implement blur filters with a large radius.
+For most OpenGL implementations this is very slow for any non-RGB
+formats.
 Default is disabled.
 .RE
 .sp 1

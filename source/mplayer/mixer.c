@@ -18,10 +18,23 @@ char * mixer_channel=NULL;
 #ifdef GEKKO
 int soft_vol = 1;
 float soft_vol_max = 300.0;
+extern float mplayer_volume;
 #else
 int soft_vol = 0;
 float soft_vol_max = 110.0;
 #endif
+
+void auto_adjust_soft_vol_max(mixer_t *mixer)
+{
+	float vol;
+	if(mplayer_volume!=-1) return;
+	soft_vol_max=110.0;
+	mixer_getvolume(mixer,&vol,&vol);
+	soft_vol_max=vol*1.1;
+	//printf("vol: %f\nmax: %f\n",vol,soft_vol_max);
+	mixer_getvolume(mixer,&vol,&vol);
+	mixer_setvolume(mixer, vol*0.7, vol*0.7);
+}
 
 void mixer_getvolume(mixer_t *mixer, float *l, float *r)
 {
@@ -45,14 +58,16 @@ void mixer_getvolume(mixer_t *mixer, float *l, float *r)
     }
     *r=vol.right;
     *l=vol.left;
+    mplayer_volume=vol.right;
   }
-  printf("get vol: %f\n",vol.right);
+  //printf("get vol: %f, %f\n",vol.right,mplayer_volume);
 }
 
 void mixer_setvolume(mixer_t *mixer, float l, float r)
 {
   ao_control_vol_t vol;
   vol.right=r; vol.left=l;
+  //printf("set vol: %f\n",vol.right);
   if(mixer->audio_out){
     if(soft_vol ||
         CONTROL_OK != mixer->audio_out->control(AOCONTROL_SET_VOLUME,&vol)) {

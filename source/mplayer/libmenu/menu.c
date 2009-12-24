@@ -547,7 +547,6 @@ void menu_draw_text_full(mp_image_t* mpi,char* txt,
 
   // How many space do we need to draw this ?
   menu_text_size(txt,w,vspace,warp,&need_w,&need_h);
-
   // Find the first line
   if(align & MENU_TEXT_VCENTER)
     sy = ymin + ((h - need_h)/2);
@@ -595,6 +594,20 @@ void menu_draw_text_full(mp_image_t* mpi,char* txt,
       continue;
     }
 
+
+    // Get the length and end of this line
+    char* txt1=txt;
+    char* last;
+    for(n = 0, ll = 0 ;   ; n++) {
+      int c=utf8_get_char((const char**)&txt1);
+      if(c == '\0' || c == '\n') break;
+      last=txt1;
+      if(warp && ll + vo_font->width[c]  > w)  break;
+      ll += vo_font->width[c]+vo_font->charspace;
+    }
+    line_end = last;
+
+/*
     // Get the length and end of this line
     for(n = 0, ll = 0 ; txt[n] != '\0' && txt[n] != '\n'  ; n++) {
       unsigned char c = txt[n];
@@ -602,6 +615,7 @@ void menu_draw_text_full(mp_image_t* mpi,char* txt,
       ll += vo_font->width[c]+vo_font->charspace;
     }
     line_end = &txt[n];
+*/
     ll -= vo_font->charspace;
 
 

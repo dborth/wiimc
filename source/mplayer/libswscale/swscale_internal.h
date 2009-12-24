@@ -80,7 +80,6 @@ typedef struct SwsContext {
     int lumXInc, chrXInc;
     int lumYInc, chrYInc;
     enum PixelFormat dstFormat, srcFormat;  ///< format 4:2:0 type is always YV12
-    int origDstFormat, origSrcFormat;       ///< format
     int chrSrcHSubSample, chrSrcVSubSample;
     int chrDstHSubSample, chrDstVSubSample;
     int vChrDrop;
@@ -190,14 +189,14 @@ typedef struct SwsContext {
     int32_t  alpMmxFilter[4*MAX_FILTER_SIZE];
 
 #if HAVE_ALTIVEC
-  vector signed short   CY;
-  vector signed short   CRV;
-  vector signed short   CBU;
-  vector signed short   CGU;
-  vector signed short   CGV;
-  vector signed short   OY;
-  vector unsigned short CSHIFT;
-  vector signed short   *vYCoeffsBank, *vCCoeffsBank;
+    vector signed short   CY;
+    vector signed short   CRV;
+    vector signed short   CBU;
+    vector signed short   CGU;
+    vector signed short   CGV;
+    vector signed short   OY;
+    vector unsigned short CSHIFT;
+    vector signed short   *vYCoeffsBank, *vCCoeffsBank;
 #endif
 
 #if ARCH_BFIN
@@ -254,24 +253,33 @@ typedef struct SwsContext {
                         const int16_t **alpSrc, uint8_t *dest,
                         long dstW, long dstY);
 
-    void (*hyscale_internal)(uint8_t *dst, const uint8_t *src,
-                             long width, uint32_t *pal);
-    void (*hascale_internal)(uint8_t *dst, const uint8_t *src,
-                             long width, uint32_t *pal);
-    void (*hcscale_internal)(uint8_t *dstU, uint8_t *dstV,
-                             const uint8_t *src1, const uint8_t *src2,
-                             long width, uint32_t *pal);
+    void (*lumToYV12)(uint8_t *dst, const uint8_t *src,
+                      long width, uint32_t *pal); ///< Unscaled conversion of luma plane to YV12 for horizontal scaler.
+    void (*alpToYV12)(uint8_t *dst, const uint8_t *src,
+                      long width, uint32_t *pal); ///< Unscaled conversion of alpha plane to YV12 for horizontal scaler.
+    void (*chrToYV12)(uint8_t *dstU, uint8_t *dstV,
+                      const uint8_t *src1, const uint8_t *src2,
+                      long width, uint32_t *pal); ///< Unscaled conversion of chroma planes to YV12 for horizontal scaler.
     void (*hyscale_fast)(struct SwsContext *c,
-                         int16_t *dst, int dstWidth,
+                         int16_t *dst, long dstWidth,
                          const uint8_t *src, int srcW, int xInc);
     void (*hcscale_fast)(struct SwsContext *c,
-                         int16_t *dst, int dstWidth,
+                         int16_t *dst, long dstWidth,
                          const uint8_t *src1, const uint8_t *src2,
                          int srcW, int xInc);
 
     void (*hScale)(int16_t *dst, int dstW, const uint8_t *src, int srcW,
                    int xInc, const int16_t *filter, const int16_t *filterPos,
                    long filterSize);
+
+    void (*lumConvertRange)(uint16_t *dst, int width); ///< Color range conversion function for luma plane if needed.
+    void (*chrConvertRange)(uint16_t *dst, int width); ///< Color range conversion function for chroma planes if needed.
+
+    int lumSrcOffset; ///< Offset given to luma src pointers passed to horizontal input functions.
+    int chrSrcOffset; ///< Offset given to chroma src pointers passed to horizontal input functions.
+    int alpSrcOffset; ///< Offset given to alpha src pointers passed to horizontal input functions.
+
+    int needs_hcscale; ///< Set if there are chroma planes to be converted.
 
 } SwsContext;
 //FIXME check init (where 0)

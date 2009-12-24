@@ -71,6 +71,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (BMP, bmp);
     REGISTER_DECODER (C93, c93);
     REGISTER_DECODER (CAVS, cavs);
+    REGISTER_DECODER (CDGRAPHICS, cdgraphics);
     REGISTER_DECODER (CINEPAK, cinepak);
     REGISTER_DECODER (CLJR, cljr);
     REGISTER_DECODER (CSCD, cscd);
@@ -145,6 +146,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (QDRAW, qdraw);
     REGISTER_DECODER (QPEG, qpeg);
     REGISTER_ENCDEC  (QTRLE, qtrle);
+    REGISTER_DECODER (R210,  r210);
     REGISTER_ENCDEC  (RAWVIDEO, rawvideo);
     REGISTER_DECODER (RL2, rl2);
     REGISTER_ENCDEC  (ROQ, roq);

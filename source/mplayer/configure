@@ -280,7 +280,8 @@ Optional features:
   --disable-vstream      disable TiVo vstream client support [autodetect]
   --disable-pthreads     disable Posix threads support [autodetect]
   --disable-w32threads   disable Win32 threads support [autodetect]
-  --disable-ass          disable internal SSA/ASS subtitle support [autodetect]
+--disable-ass-internal disable internal SSA/ASS subtitle support [autodetect]
+  --disable-ass          disable SSA/ASS subtitle support [autodetect]
   --enable-rpath         enable runtime linker path for extra libs [disabled]
 
 Codecs:
@@ -741,6 +742,7 @@ _vstream=auto
 _pthreads=auto
 _w32threads=auto
 _ass=auto
+ass_internal=yes
 _rpath=no
 _asmalign_pot=auto
 _stream_cache=yes
@@ -1248,6 +1250,8 @@ for ac_option do
   --disable-w32threads) _w32threads=no  ;;
   --enable-ass)         _ass=yes        ;;
   --disable-ass)        _ass=no         ;;
+  --enable-ass-internal)  ass_internal=yes ;;
+  --disable-ass-internal) ass_internal=no  ;;
   --enable-rpath)       _rpath=yes      ;;
   --disable-rpath)      _rpath=no       ;;
 
@@ -1430,7 +1434,7 @@ else # if test -z "$_target"
     qnx) system_name=QNX ;;
     morphos) system_name=MorphOS ;;
     amigaos) system_name=AmigaOS ;;
-    mingw32msvc) system_name=MINGW32 ;;
+    mingw32) system_name=MINGW32 ;;
   esac
   # We need to convert underscores so that values like k6-2 and pentium-mmx can be passed
   host_arch=$(echo $_target | cut -d '-' -f 1)
@@ -3050,7 +3054,8 @@ _socklib=no
 for _ld_tmp in "" "-lsocket -lbind" "-lsocket -ldnet" "-lsocket -lnsl" "-lnsl" "-lsocket" ; do
   cc_check $_ld_tmp && _ld_sock="$_ld_tmp" && _socklib=yes && break
 done
-if test $_winsock2_h = auto && ! cygwin ; then
+test $_socklib = yes && test $_winsock2_h = auto && _winsock2_h=no
+if test $_winsock2_h = auto ; then
   _winsock2_h=no
   cat > $TMPC << EOF
 #include <winsock2.h>
@@ -4921,11 +4926,14 @@ EOF
   _gl=no
   if cc_check -lGL $_ld_lm ; then
     _gl=yes
+    _gl_x11=yes
     libs_mplayer="$libs_mplayer -lGL $_ld_dl"
   elif cc_check -lGL $_ld_lm $_ld_pthread ; then
     _gl=yes
+    _gl_x11=yes
     libs_mplayer="$libs_mplayer -lGL $_ld_pthread $_ld_dl"
-  elif cc_check -DGL_WIN32 -lopengl32 ; then
+  fi
+  if cc_check -DGL_WIN32 -lopengl32 ; then
     _gl=yes
     _gl_win32=yes
     libs_mplayer="$libs_mplayer -lopengl32 -lgdi32"
@@ -4935,14 +4943,20 @@ else
 fi
 if test "$_gl" = yes ; then
   def_gl='#define CONFIG_GL 1'
+  _res_comment="backends:"
   if test "$_gl_win32" = yes ; then
-    def_gl_win32='#define GL_WIN32 1'
-    _res_comment="win32 version"
+    def_gl_win32='#define CONFIG_GL_WIN32 1'
+    _res_comment="$_res_comment win32"
+  fi
+  if test "$_gl_x11" = yes ; then
+    def_gl_x11='#define CONFIG_GL_X11 1'
+    _res_comment="$_res_comment x11"
   fi
   _vomodules="opengl $_vomodules"
 else
   def_gl='#undef CONFIG_GL'
-  def_gl_win32='#undef GL_WIN32'
+  def_gl_win32='#undef CONFIG_GL_WIN32'
+  def_gl_x11='#undef CONFIG_GL_X11'
   _novomodules="opengl $_novomodules"
 fi
 echores "$_gl"
@@ -6156,12 +6170,20 @@ EOF
     cc_check $($_freetypeconfig --cflags) $($_freetypeconfig --libs) && _ass=yes
     if test "$_ass" = no ; then
         _res_comment="FreeType >= 2.1.8 needed"
+    elif test "$ass_internal" = no ; then
+        _res_comment="external"
+        extra_ldflags="$extra_ldflags -lass"
     fi
 fi
 if test "$_ass" = yes ; then
     def_ass='#define CONFIG_ASS 1'
 else
     def_ass='#undef CONFIG_ASS'
+fi
+if test "$ass_internal" = yes ; then
+    def_ass_internal='#define CONFIG_ASS_INTERNAL 1'
+else
+    def_ass_internal='#undef CONFIG_ASS_INTERNAL'
 fi
 echores "$_ass"
 
@@ -8279,6 +8301,7 @@ GIF = $_gif
 GGI = $_ggi
 GL = $_gl
 GL_WIN32 = $_gl_win32
+GL_X11 = $_gl_x11
 GUI = $_gui
 GUI_GTK = $_gui_gtk
 GUI_WIN32 = $_gui_win32
@@ -8293,6 +8316,7 @@ LADSPA = $_ladspa
 LIBA52 = $_liba52
 LIBA52_INTERNAL = $_liba52_internal
 LIBASS = $_ass
+LIBASS_INTERNAL = $ass_internal
 LIBBS2B = $_libbs2b
 LIBDCA = $_libdca
 LIBDV = $_libdv
@@ -8753,6 +8777,7 @@ $def_tv_v4l2
 
 /* font stuff */
 $def_ass
+$def_ass_internal
 $def_bitmap_font
 $def_enca
 $def_fontconfig
@@ -8801,6 +8826,7 @@ $def_gif_4
 $def_gif_tvt_hack
 $def_gl
 $def_gl_win32
+$def_gl_x11
 $def_ivtv
 $def_jpeg
 $def_kva

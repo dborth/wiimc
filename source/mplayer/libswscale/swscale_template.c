@@ -2219,6 +2219,37 @@ static inline void RENAME(hScale)(int16_t *dst, int dstW, const uint8_t *src, in
 #endif /* COMPILE_MMX */
 }
 
+//FIXME all pal and rgb srcFormats could do this convertion as well
+//FIXME all scalers more complex than bilinear could do half of this transform
+static void RENAME(chrRangeToJpeg)(uint16_t *dst, int width)
+{
+    int i;
+    for (i = 0; i < width; i++) {
+        dst[i     ] = (FFMIN(dst[i     ],30775)*4663 - 9289992)>>12; //-264
+        dst[i+VOFW] = (FFMIN(dst[i+VOFW],30775)*4663 - 9289992)>>12; //-264
+    }
+}
+static void RENAME(chrRangeFromJpeg)(uint16_t *dst, int width)
+{
+    int i;
+    for (i = 0; i < width; i++) {
+        dst[i     ] = (dst[i     ]*1799 + 4081085)>>11; //1469
+        dst[i+VOFW] = (dst[i+VOFW]*1799 + 4081085)>>11; //1469
+    }
+}
+static void RENAME(lumRangeToJpeg)(uint16_t *dst, int width)
+{
+    int i;
+    for (i = 0; i < width; i++)
+        dst[i] = (FFMIN(dst[i],30189)*19077 - 39057361)>>14;
+}
+static void RENAME(lumRangeFromJpeg)(uint16_t *dst, int width)
+{
+    int i;
+    for (i = 0; i < width; i++)
+        dst[i] = (dst[i]*14071 + 33561947)>>14;
+}
+
 #define FAST_BILINEAR_X86 \
     "subl    %%edi, %%esi    \n\t" /*  src[xx+1] - src[xx] */                   \
     "imull   %%ecx, %%esi    \n\t" /* (src[xx+1] - src[xx])*xalpha */           \
@@ -2228,9 +2259,116 @@ static inline void RENAME(hScale)(int16_t *dst, int dstW, const uint8_t *src, in
     "shrl       $9, %%esi    \n\t"                                              \
 
 static inline void RENAME(hyscale_fast)(SwsContext *c, int16_t *dst,
-                                        int dstWidth, const uint8_t *src, int srcW,
+                                        long dstWidth, const uint8_t *src, int srcW,
                                         int xInc)
 {
+#if ARCH_X86 && CONFIG_GPL
+#if COMPILE_TEMPLATE_MMX2
+    int32_t *mmx2FilterPos = c->lumMmx2FilterPos;
+    int16_t *mmx2Filter    = c->lumMmx2Filter;
+    int     canMMX2BeUsed  = c->canMMX2BeUsed;
+    void    *mmx2FilterCode= c->lumMmx2FilterCode;
+    int i;
+#if defined(PIC)
+    DECLARE_ALIGNED(8, uint64_t, ebxsave);
+#endif
+    if (canMMX2BeUsed) {
+        __asm__ volatile(
+#if defined(PIC)
+            "mov               %%"REG_b", %5        \n\t"
+#endif
+            "pxor                  %%mm7, %%mm7     \n\t"
+            "mov                      %0, %%"REG_c" \n\t"
+            "mov                      %1, %%"REG_D" \n\t"
+            "mov                      %2, %%"REG_d" \n\t"
+            "mov                      %3, %%"REG_b" \n\t"
+            "xor               %%"REG_a", %%"REG_a" \n\t" // i
+            PREFETCH"        (%%"REG_c")            \n\t"
+            PREFETCH"      32(%%"REG_c")            \n\t"
+            PREFETCH"      64(%%"REG_c")            \n\t"
+
+#if ARCH_X86_64
+
+#define CALL_MMX2_FILTER_CODE \
+            "movl            (%%"REG_b"), %%esi     \n\t"\
+            "call                    *%4            \n\t"\
+            "movl (%%"REG_b", %%"REG_a"), %%esi     \n\t"\
+            "add               %%"REG_S", %%"REG_c" \n\t"\
+            "add               %%"REG_a", %%"REG_D" \n\t"\
+            "xor               %%"REG_a", %%"REG_a" \n\t"\
+
+#else
+
+#define CALL_MMX2_FILTER_CODE \
+            "movl (%%"REG_b"), %%esi        \n\t"\
+            "call         *%4                       \n\t"\
+            "addl (%%"REG_b", %%"REG_a"), %%"REG_c" \n\t"\
+            "add               %%"REG_a", %%"REG_D" \n\t"\
+            "xor               %%"REG_a", %%"REG_a" \n\t"\
+
+#endif /* ARCH_X86_64 */
+
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+
+#if defined(PIC)
+            "mov                      %5, %%"REG_b" \n\t"
+#endif
+            :: "m" (src), "m" (dst), "m" (mmx2Filter), "m" (mmx2FilterPos),
+            "m" (mmx2FilterCode)
+#if defined(PIC)
+            ,"m" (ebxsave)
+#endif
+            : "%"REG_a, "%"REG_c, "%"REG_d, "%"REG_S, "%"REG_D
+#if !defined(PIC)
+            ,"%"REG_b
+#endif
+        );
+        for (i=dstWidth-1; (i*xInc)>>16 >=srcW-1; i--) dst[i] = src[srcW-1]*128;
+    } else {
+#endif /* COMPILE_TEMPLATE_MMX2 */
+    x86_reg xInc_shr16 = xInc >> 16;
+    uint16_t xInc_mask = xInc & 0xffff;
+    //NO MMX just normal asm ...
+    __asm__ volatile(
+        "xor %%"REG_a", %%"REG_a"            \n\t" // i
+        "xor %%"REG_d", %%"REG_d"            \n\t" // xx
+        "xorl    %%ecx, %%ecx                \n\t" // xalpha
+        ASMALIGN(4)
+        "1:                                  \n\t"
+        "movzbl    (%0, %%"REG_d"), %%edi    \n\t" //src[xx]
+        "movzbl   1(%0, %%"REG_d"), %%esi    \n\t" //src[xx+1]
+        FAST_BILINEAR_X86
+        "movw     %%si, (%%"REG_D", %%"REG_a", 2)   \n\t"
+        "addw       %4, %%cx                 \n\t" //xalpha += xInc&0xFFFF
+        "adc        %3, %%"REG_d"            \n\t" //xx+= xInc>>16 + carry
+
+        "movzbl    (%0, %%"REG_d"), %%edi    \n\t" //src[xx]
+        "movzbl   1(%0, %%"REG_d"), %%esi    \n\t" //src[xx+1]
+        FAST_BILINEAR_X86
+        "movw     %%si, 2(%%"REG_D", %%"REG_a", 2)  \n\t"
+        "addw       %4, %%cx                 \n\t" //xalpha += xInc&0xFFFF
+        "adc        %3, %%"REG_d"            \n\t" //xx+= xInc>>16 + carry
+
+
+        "add        $2, %%"REG_a"            \n\t"
+        "cmp        %2, %%"REG_a"            \n\t"
+        " jb        1b                       \n\t"
+
+
+        :: "r" (src), "m" (dst), "m" (dstWidth), "m" (xInc_shr16), "m" (xInc_mask)
+        : "%"REG_a, "%"REG_d, "%ecx", "%"REG_D, "%esi"
+    );
+#if COMPILE_TEMPLATE_MMX2
+    } //if MMX2 can't be used
+#endif
+#else
     int i;
     unsigned int xpos=0;
     for (i=0;i<dstWidth;i++) {
@@ -2239,171 +2377,142 @@ static inline void RENAME(hyscale_fast)(SwsContext *c, int16_t *dst,
         dst[i]= (src[xx]<<7) + (src[xx+1] - src[xx])*xalpha;
         xpos+=xInc;
     }
+#endif /* ARCH_X86 */
 }
 
       // *** horizontal scale Y line to temp buffer
 static inline void RENAME(hyscale)(SwsContext *c, uint16_t *dst, long dstWidth, const uint8_t *src, int srcW, int xInc,
-                                   int flags, const int16_t *hLumFilter,
+                                   const int16_t *hLumFilter,
                                    const int16_t *hLumFilterPos, int hLumFilterSize,
-                                   enum PixelFormat srcFormat, uint8_t *formatConvBuffer,
+                                   uint8_t *formatConvBuffer,
                                    uint32_t *pal, int isAlpha)
 {
-    int32_t av_unused *mmx2FilterPos = c->lumMmx2FilterPos;
-    int16_t av_unused *mmx2Filter    = c->lumMmx2Filter;
-    int     av_unused canMMX2BeUsed  = c->canMMX2BeUsed;
-    void    av_unused *mmx2FilterCode= c->lumMmx2FilterCode;
-    void (*internal_func)(uint8_t *, const uint8_t *, long, uint32_t *) = isAlpha ? c->hascale_internal : c->hyscale_internal;
+    void (*toYV12)(uint8_t *, const uint8_t *, long, uint32_t *) = isAlpha ? c->alpToYV12 : c->lumToYV12;
+    void (*convertRange)(uint16_t *, int) = isAlpha ? NULL : c->lumConvertRange;
 
-    if (isAlpha) {
-        if (srcFormat == PIX_FMT_RGB32   || srcFormat == PIX_FMT_BGR32  )
-            src += 3;
-    } else {
-        if (srcFormat == PIX_FMT_RGB32_1 || srcFormat == PIX_FMT_BGR32_1)
-            src += ALT32_CORR;
-    }
+    src += isAlpha ? c->alpSrcOffset : c->lumSrcOffset;
 
-    if (srcFormat == PIX_FMT_RGB48LE)
-        src++;
-
-    if (internal_func) {
-        internal_func(formatConvBuffer, src, srcW, pal);
+    if (toYV12) {
+        toYV12(formatConvBuffer, src, srcW, pal);
         src= formatConvBuffer;
     }
 
-#if COMPILE_TEMPLATE_MMX
-    // Use the new MMX scaler if the MMX2 one can't be used (it is faster than the x86 ASM one).
-    if (!(flags&SWS_FAST_BILINEAR) || (!canMMX2BeUsed))
-#else
-    if (!(flags&SWS_FAST_BILINEAR))
-#endif
+    if (!c->hyscale_fast)
     {
         c->hScale(dst, dstWidth, src, srcW, xInc, hLumFilter, hLumFilterPos, hLumFilterSize);
     } else { // fast bilinear upscale / crap downscale
-#if ARCH_X86 && CONFIG_GPL
-#if COMPILE_TEMPLATE_MMX2
-        int i;
-#if defined(PIC)
-        DECLARE_ALIGNED(8, uint64_t, ebxsave);
-#endif
-        if (canMMX2BeUsed) {
-            __asm__ volatile(
-#if defined(PIC)
-                "mov               %%"REG_b", %5        \n\t"
-#endif
-                "pxor                  %%mm7, %%mm7     \n\t"
-                "mov                      %0, %%"REG_c" \n\t"
-                "mov                      %1, %%"REG_D" \n\t"
-                "mov                      %2, %%"REG_d" \n\t"
-                "mov                      %3, %%"REG_b" \n\t"
-                "xor               %%"REG_a", %%"REG_a" \n\t" // i
-                PREFETCH"        (%%"REG_c")            \n\t"
-                PREFETCH"      32(%%"REG_c")            \n\t"
-                PREFETCH"      64(%%"REG_c")            \n\t"
-
-#if ARCH_X86_64
-
-#define CALL_MMX2_FILTER_CODE \
-                "movl            (%%"REG_b"), %%esi     \n\t"\
-                "call                    *%4            \n\t"\
-                "movl (%%"REG_b", %%"REG_a"), %%esi     \n\t"\
-                "add               %%"REG_S", %%"REG_c" \n\t"\
-                "add               %%"REG_a", %%"REG_D" \n\t"\
-                "xor               %%"REG_a", %%"REG_a" \n\t"\
-
-#else
-
-#define CALL_MMX2_FILTER_CODE \
-                "movl (%%"REG_b"), %%esi        \n\t"\
-                "call         *%4                       \n\t"\
-                "addl (%%"REG_b", %%"REG_a"), %%"REG_c" \n\t"\
-                "add               %%"REG_a", %%"REG_D" \n\t"\
-                "xor               %%"REG_a", %%"REG_a" \n\t"\
-
-#endif /* ARCH_X86_64 */
-
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-
-#if defined(PIC)
-                "mov                      %5, %%"REG_b" \n\t"
-#endif
-                :: "m" (src), "m" (dst), "m" (mmx2Filter), "m" (mmx2FilterPos),
-                "m" (mmx2FilterCode)
-#if defined(PIC)
-                ,"m" (ebxsave)
-#endif
-                : "%"REG_a, "%"REG_c, "%"REG_d, "%"REG_S, "%"REG_D
-#if !defined(PIC)
-                ,"%"REG_b
-#endif
-            );
-            for (i=dstWidth-1; (i*xInc)>>16 >=srcW-1; i--) dst[i] = src[srcW-1]*128;
-        } else {
-#endif /* COMPILE_TEMPLATE_MMX2 */
-        x86_reg xInc_shr16 = xInc >> 16;
-        uint16_t xInc_mask = xInc & 0xffff;
-        //NO MMX just normal asm ...
-        __asm__ volatile(
-            "xor %%"REG_a", %%"REG_a"            \n\t" // i
-            "xor %%"REG_d", %%"REG_d"            \n\t" // xx
-            "xorl    %%ecx, %%ecx                \n\t" // xalpha
-            ASMALIGN(4)
-            "1:                                  \n\t"
-            "movzbl    (%0, %%"REG_d"), %%edi    \n\t" //src[xx]
-            "movzbl   1(%0, %%"REG_d"), %%esi    \n\t" //src[xx+1]
-            FAST_BILINEAR_X86
-            "movw     %%si, (%%"REG_D", %%"REG_a", 2)   \n\t"
-            "addw       %4, %%cx                 \n\t" //xalpha += xInc&0xFFFF
-            "adc        %3, %%"REG_d"            \n\t" //xx+= xInc>>16 + carry
-
-            "movzbl    (%0, %%"REG_d"), %%edi    \n\t" //src[xx]
-            "movzbl   1(%0, %%"REG_d"), %%esi    \n\t" //src[xx+1]
-            FAST_BILINEAR_X86
-            "movw     %%si, 2(%%"REG_D", %%"REG_a", 2)  \n\t"
-            "addw       %4, %%cx                 \n\t" //xalpha += xInc&0xFFFF
-            "adc        %3, %%"REG_d"            \n\t" //xx+= xInc>>16 + carry
-
-
-            "add        $2, %%"REG_a"            \n\t"
-            "cmp        %2, %%"REG_a"            \n\t"
-            " jb        1b                       \n\t"
-
-
-            :: "r" (src), "m" (dst), "m" (dstWidth), "m" (xInc_shr16), "m" (xInc_mask)
-            : "%"REG_a, "%"REG_d, "%ecx", "%"REG_D, "%esi"
-        );
-#if COMPILE_TEMPLATE_MMX2
-        } //if MMX2 can't be used
-#endif
-#else
         c->hyscale_fast(c, dst, dstWidth, src, srcW, xInc);
-#endif /* ARCH_X86 */
     }
 
-    if(!isAlpha && c->srcRange != c->dstRange && !(isRGB(c->dstFormat) || isBGR(c->dstFormat))) {
-        int i;
-        //FIXME all pal and rgb srcFormats could do this convertion as well
-        //FIXME all scalers more complex than bilinear could do half of this transform
-        if(c->srcRange) {
-            for (i=0; i<dstWidth; i++)
-                dst[i]= (dst[i]*14071 + 33561947)>>14;
-        } else {
-            for (i=0; i<dstWidth; i++)
-                dst[i]= (FFMIN(dst[i],30189)*19077 - 39057361)>>14;
-        }
-    }
+    if (convertRange)
+        convertRange(dst, dstWidth);
 }
 
 static inline void RENAME(hcscale_fast)(SwsContext *c, int16_t *dst,
-                                        int dstWidth, const uint8_t *src1,
+                                        long dstWidth, const uint8_t *src1,
                                         const uint8_t *src2, int srcW, int xInc)
 {
+#if ARCH_X86 && CONFIG_GPL
+#if COMPILE_TEMPLATE_MMX2
+    int32_t *mmx2FilterPos = c->chrMmx2FilterPos;
+    int16_t *mmx2Filter    = c->chrMmx2Filter;
+    int     canMMX2BeUsed  = c->canMMX2BeUsed;
+    void    *mmx2FilterCode= c->chrMmx2FilterCode;
+    int i;
+#if defined(PIC)
+    DECLARE_ALIGNED(8, uint64_t, ebxsave);
+#endif
+    if (canMMX2BeUsed) {
+        __asm__ volatile(
+#if defined(PIC)
+            "mov          %%"REG_b", %6         \n\t"
+#endif
+            "pxor             %%mm7, %%mm7      \n\t"
+            "mov                 %0, %%"REG_c"  \n\t"
+            "mov                 %1, %%"REG_D"  \n\t"
+            "mov                 %2, %%"REG_d"  \n\t"
+            "mov                 %3, %%"REG_b"  \n\t"
+            "xor          %%"REG_a", %%"REG_a"  \n\t" // i
+            PREFETCH"   (%%"REG_c")             \n\t"
+            PREFETCH" 32(%%"REG_c")             \n\t"
+            PREFETCH" 64(%%"REG_c")             \n\t"
+
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            "xor          %%"REG_a", %%"REG_a"  \n\t" // i
+            "mov                 %5, %%"REG_c"  \n\t" // src
+            "mov                 %1, %%"REG_D"  \n\t" // buf1
+            "add              $"AV_STRINGIFY(VOF)", %%"REG_D"  \n\t"
+            PREFETCH"   (%%"REG_c")             \n\t"
+            PREFETCH" 32(%%"REG_c")             \n\t"
+            PREFETCH" 64(%%"REG_c")             \n\t"
+
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+            CALL_MMX2_FILTER_CODE
+
+#if defined(PIC)
+            "mov %6, %%"REG_b"    \n\t"
+#endif
+            :: "m" (src1), "m" (dst), "m" (mmx2Filter), "m" (mmx2FilterPos),
+            "m" (mmx2FilterCode), "m" (src2)
+#if defined(PIC)
+            ,"m" (ebxsave)
+#endif
+            : "%"REG_a, "%"REG_c, "%"REG_d, "%"REG_S, "%"REG_D
+#if !defined(PIC)
+            ,"%"REG_b
+#endif
+        );
+        for (i=dstWidth-1; (i*xInc)>>16 >=srcW-1; i--) {
+            //printf("%d %d %d\n", dstWidth, i, srcW);
+            dst[i] = src1[srcW-1]*128;
+            dst[i+VOFW] = src2[srcW-1]*128;
+        }
+    } else {
+#endif /* COMPILE_TEMPLATE_MMX2 */
+        x86_reg xInc_shr16 = (x86_reg) (xInc >> 16);
+        uint16_t xInc_mask = xInc & 0xffff;
+        __asm__ volatile(
+            "xor %%"REG_a", %%"REG_a"               \n\t" // i
+            "xor %%"REG_d", %%"REG_d"               \n\t" // xx
+            "xorl    %%ecx, %%ecx                   \n\t" // xalpha
+            ASMALIGN(4)
+            "1:                                     \n\t"
+            "mov        %0, %%"REG_S"               \n\t"
+            "movzbl  (%%"REG_S", %%"REG_d"), %%edi  \n\t" //src[xx]
+            "movzbl 1(%%"REG_S", %%"REG_d"), %%esi  \n\t" //src[xx+1]
+            FAST_BILINEAR_X86
+            "movw     %%si, (%%"REG_D", %%"REG_a", 2)   \n\t"
+
+            "movzbl    (%5, %%"REG_d"), %%edi       \n\t" //src[xx]
+            "movzbl   1(%5, %%"REG_d"), %%esi       \n\t" //src[xx+1]
+            FAST_BILINEAR_X86
+            "movw     %%si, "AV_STRINGIFY(VOF)"(%%"REG_D", %%"REG_a", 2)   \n\t"
+
+            "addw       %4, %%cx                    \n\t" //xalpha += xInc&0xFFFF
+            "adc        %3, %%"REG_d"               \n\t" //xx+= xInc>>16 + carry
+            "add        $1, %%"REG_a"               \n\t"
+            "cmp        %2, %%"REG_a"               \n\t"
+            " jb        1b                          \n\t"
+
+/* GCC 3.3 makes MPlayer crash on IA-32 machines when using "g" operand here,
+which is needed to support GCC 4.0. */
+#if ARCH_X86_64 && AV_GCC_VERSION_AT_LEAST(3,4)
+            :: "m" (src1), "m" (dst), "g" (dstWidth), "m" (xInc_shr16), "m" (xInc_mask),
+#else
+            :: "m" (src1), "m" (dst), "m" (dstWidth), "m" (xInc_shr16), "m" (xInc_mask),
+#endif
+            "r" (src2)
+            : "%"REG_a, "%"REG_d, "%ecx", "%"REG_D, "%esi"
+        );
+#if COMPILE_TEMPLATE_MMX2
+    } //if MMX2 can't be used
+#endif
+#else
     int i;
     unsigned int xpos=0;
     for (i=0;i<dstWidth;i++) {
@@ -2417,164 +2526,35 @@ static inline void RENAME(hcscale_fast)(SwsContext *c, int16_t *dst,
         */
         xpos+=xInc;
     }
+#endif /* ARCH_X86 */
 }
 
 inline static void RENAME(hcscale)(SwsContext *c, uint16_t *dst, long dstWidth, const uint8_t *src1, const uint8_t *src2,
-                                   int srcW, int xInc, int flags, const int16_t *hChrFilter,
+                                   int srcW, int xInc, const int16_t *hChrFilter,
                                    const int16_t *hChrFilterPos, int hChrFilterSize,
-                                   enum PixelFormat srcFormat, uint8_t *formatConvBuffer,
+                                   uint8_t *formatConvBuffer,
                                    uint32_t *pal)
 {
-    int32_t av_unused *mmx2FilterPos = c->chrMmx2FilterPos;
-    int16_t av_unused *mmx2Filter    = c->chrMmx2Filter;
-    int     av_unused canMMX2BeUsed  = c->canMMX2BeUsed;
-    void    av_unused *mmx2FilterCode= c->chrMmx2FilterCode;
 
-    if (isGray(srcFormat) || srcFormat==PIX_FMT_MONOBLACK || srcFormat==PIX_FMT_MONOWHITE)
-        return;
+    src1 += c->chrSrcOffset;
+    src2 += c->chrSrcOffset;
 
-    if (srcFormat==PIX_FMT_RGB32_1 || srcFormat==PIX_FMT_BGR32_1) {
-        src1 += ALT32_CORR;
-        src2 += ALT32_CORR;
-    }
-
-    if (srcFormat==PIX_FMT_RGB48LE) {
-        src1++;
-        src2++;
-    }
-
-    if (c->hcscale_internal) {
-        c->hcscale_internal(formatConvBuffer, formatConvBuffer+VOFW, src1, src2, srcW, pal);
+    if (c->chrToYV12) {
+        c->chrToYV12(formatConvBuffer, formatConvBuffer+VOFW, src1, src2, srcW, pal);
         src1= formatConvBuffer;
         src2= formatConvBuffer+VOFW;
     }
 
-#if COMPILE_TEMPLATE_MMX
-    // Use the new MMX scaler if the MMX2 one can't be used (it is faster than the x86 ASM one).
-    if (!(flags&SWS_FAST_BILINEAR) || (!canMMX2BeUsed))
-#else
-    if (!(flags&SWS_FAST_BILINEAR))
-#endif
+    if (!c->hcscale_fast)
     {
         c->hScale(dst     , dstWidth, src1, srcW, xInc, hChrFilter, hChrFilterPos, hChrFilterSize);
         c->hScale(dst+VOFW, dstWidth, src2, srcW, xInc, hChrFilter, hChrFilterPos, hChrFilterSize);
     } else { // fast bilinear upscale / crap downscale
-#if ARCH_X86 && CONFIG_GPL
-#if COMPILE_TEMPLATE_MMX2
-        int i;
-#if defined(PIC)
-        DECLARE_ALIGNED(8, uint64_t, ebxsave);
-#endif
-        if (canMMX2BeUsed) {
-            __asm__ volatile(
-#if defined(PIC)
-                "mov          %%"REG_b", %6         \n\t"
-#endif
-                "pxor             %%mm7, %%mm7      \n\t"
-                "mov                 %0, %%"REG_c"  \n\t"
-                "mov                 %1, %%"REG_D"  \n\t"
-                "mov                 %2, %%"REG_d"  \n\t"
-                "mov                 %3, %%"REG_b"  \n\t"
-                "xor          %%"REG_a", %%"REG_a"  \n\t" // i
-                PREFETCH"   (%%"REG_c")             \n\t"
-                PREFETCH" 32(%%"REG_c")             \n\t"
-                PREFETCH" 64(%%"REG_c")             \n\t"
-
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                "xor          %%"REG_a", %%"REG_a"  \n\t" // i
-                "mov                 %5, %%"REG_c"  \n\t" // src
-                "mov                 %1, %%"REG_D"  \n\t" // buf1
-                "add              $"AV_STRINGIFY(VOF)", %%"REG_D"  \n\t"
-                PREFETCH"   (%%"REG_c")             \n\t"
-                PREFETCH" 32(%%"REG_c")             \n\t"
-                PREFETCH" 64(%%"REG_c")             \n\t"
-
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-                CALL_MMX2_FILTER_CODE
-
-#if defined(PIC)
-                "mov %6, %%"REG_b"    \n\t"
-#endif
-                :: "m" (src1), "m" (dst), "m" (mmx2Filter), "m" (mmx2FilterPos),
-                "m" (mmx2FilterCode), "m" (src2)
-#if defined(PIC)
-                ,"m" (ebxsave)
-#endif
-                : "%"REG_a, "%"REG_c, "%"REG_d, "%"REG_S, "%"REG_D
-#if !defined(PIC)
-                ,"%"REG_b
-#endif
-            );
-            for (i=dstWidth-1; (i*xInc)>>16 >=srcW-1; i--) {
-                //printf("%d %d %d\n", dstWidth, i, srcW);
-                dst[i] = src1[srcW-1]*128;
-                dst[i+VOFW] = src2[srcW-1]*128;
-            }
-        } else {
-#endif /* COMPILE_TEMPLATE_MMX2 */
-            x86_reg xInc_shr16 = (x86_reg) (xInc >> 16);
-            uint16_t xInc_mask = xInc & 0xffff;
-            __asm__ volatile(
-                "xor %%"REG_a", %%"REG_a"               \n\t" // i
-                "xor %%"REG_d", %%"REG_d"               \n\t" // xx
-                "xorl    %%ecx, %%ecx                   \n\t" // xalpha
-                ASMALIGN(4)
-                "1:                                     \n\t"
-                "mov        %0, %%"REG_S"               \n\t"
-                "movzbl  (%%"REG_S", %%"REG_d"), %%edi  \n\t" //src[xx]
-                "movzbl 1(%%"REG_S", %%"REG_d"), %%esi  \n\t" //src[xx+1]
-                FAST_BILINEAR_X86
-                "movw     %%si, (%%"REG_D", %%"REG_a", 2)   \n\t"
-
-                "movzbl    (%5, %%"REG_d"), %%edi       \n\t" //src[xx]
-                "movzbl   1(%5, %%"REG_d"), %%esi       \n\t" //src[xx+1]
-                FAST_BILINEAR_X86
-                "movw     %%si, "AV_STRINGIFY(VOF)"(%%"REG_D", %%"REG_a", 2)   \n\t"
-
-                "addw       %4, %%cx                    \n\t" //xalpha += xInc&0xFFFF
-                "adc        %3, %%"REG_d"               \n\t" //xx+= xInc>>16 + carry
-                "add        $1, %%"REG_a"               \n\t"
-                "cmp        %2, %%"REG_a"               \n\t"
-                " jb        1b                          \n\t"
-
-/* GCC 3.3 makes MPlayer crash on IA-32 machines when using "g" operand here,
-   which is needed to support GCC 4.0. */
-#if ARCH_X86_64 && AV_GCC_VERSION_AT_LEAST(3,4)
-                :: "m" (src1), "m" (dst), "g" (dstWidth), "m" (xInc_shr16), "m" (xInc_mask),
-#else
-                :: "m" (src1), "m" (dst), "m" (dstWidth), "m" (xInc_shr16), "m" (xInc_mask),
-#endif
-                "r" (src2)
-                : "%"REG_a, "%"REG_d, "%ecx", "%"REG_D, "%esi"
-            );
-#if COMPILE_TEMPLATE_MMX2
-        } //if MMX2 can't be used
-#endif
-#else
         c->hcscale_fast(c, dst, dstWidth, src1, src2, srcW, xInc);
-#endif /* ARCH_X86 */
     }
-    if(c->srcRange != c->dstRange && !(isRGB(c->dstFormat) || isBGR(c->dstFormat))) {
-        int i;
-        //FIXME all pal and rgb srcFormats could do this convertion as well
-        //FIXME all scalers more complex than bilinear could do half of this transform
-        if(c->srcRange) {
-            for (i=0; i<dstWidth; i++) {
-                dst[i     ]= (dst[i     ]*1799 + 4081085)>>11; //1469
-                dst[i+VOFW]= (dst[i+VOFW]*1799 + 4081085)>>11; //1469
-            }
-        } else {
-            for (i=0; i<dstWidth; i++) {
-                dst[i     ]= (FFMIN(dst[i     ],30775)*4663 - 9289992)>>12; //-264
-                dst[i+VOFW]= (FFMIN(dst[i+VOFW],30775)*4663 - 9289992)>>12; //-264
-            }
-        }
-    }
+
+    if (c->chrConvertRange)
+        c->chrConvertRange(dst, dstWidth);
 }
 
 #define DEBUG_SWSCALE_BUFFERS 0
@@ -2713,13 +2693,13 @@ static int RENAME(swScale)(SwsContext *c, uint8_t* src[], int srcStride[], int s
             assert(lastInLumBuf + 1 - srcSliceY < srcSliceH);
             assert(lastInLumBuf + 1 - srcSliceY >= 0);
             RENAME(hyscale)(c, lumPixBuf[ lumBufIndex ], dstW, src1, srcW, lumXInc,
-                            flags, hLumFilter, hLumFilterPos, hLumFilterSize,
-                            c->srcFormat, formatConvBuffer,
+                            hLumFilter, hLumFilterPos, hLumFilterSize,
+                            formatConvBuffer,
                             pal, 0);
             if (CONFIG_SWSCALE_ALPHA && alpPixBuf)
                 RENAME(hyscale)(c, alpPixBuf[ lumBufIndex ], dstW, src2, srcW, lumXInc,
-                                flags, hLumFilter, hLumFilterPos, hLumFilterSize,
-                                c->srcFormat, formatConvBuffer,
+                                hLumFilter, hLumFilterPos, hLumFilterSize,
+                                formatConvBuffer,
                                 pal, 1);
             lastInLumBuf++;
         }
@@ -2734,10 +2714,10 @@ static int RENAME(swScale)(SwsContext *c, uint8_t* src[], int srcStride[], int s
             assert(lastInChrBuf + 1 - chrSrcSliceY >= 0);
             //FIXME replace parameters through context struct (some at least)
 
-            if (!(isGray(srcFormat) || isGray(dstFormat)))
+            if (c->needs_hcscale)
                 RENAME(hcscale)(c, chrPixBuf[ chrBufIndex ], chrDstW, src1, src2, chrSrcW, chrXInc,
-                                flags, hChrFilter, hChrFilterPos, hChrFilterSize,
-                                c->srcFormat, formatConvBuffer,
+                                hChrFilter, hChrFilterPos, hChrFilterSize,
+                                formatConvBuffer,
                                 pal);
             lastInChrBuf++;
         }
@@ -2955,98 +2935,137 @@ static void RENAME(sws_init_swScale)(SwsContext *c)
 
     c->hScale       = RENAME(hScale      );
 
-    c->hyscale_fast = RENAME(hyscale_fast);
-    c->hcscale_fast = RENAME(hcscale_fast);
+#if COMPILE_TEMPLATE_MMX
+    // Use the new MMX scaler if the MMX2 one can't be used (it is faster than the x86 ASM one).
+    if (c->flags & SWS_FAST_BILINEAR && c->canMMX2BeUsed)
+#else
+    if (c->flags & SWS_FAST_BILINEAR)
+#endif
+    {
+        c->hyscale_fast = RENAME(hyscale_fast);
+        c->hcscale_fast = RENAME(hcscale_fast);
+    }
 
-    c->hcscale_internal = NULL;
+    c->chrToYV12 = NULL;
     switch(srcFormat) {
-        case PIX_FMT_YUYV422  : c->hcscale_internal = RENAME(yuy2ToUV); break;
-        case PIX_FMT_UYVY422  : c->hcscale_internal = RENAME(uyvyToUV); break;
-        case PIX_FMT_NV12     : c->hcscale_internal = RENAME(nv12ToUV); break;
-        case PIX_FMT_NV21     : c->hcscale_internal = RENAME(nv21ToUV); break;
+        case PIX_FMT_YUYV422  : c->chrToYV12 = RENAME(yuy2ToUV); break;
+        case PIX_FMT_UYVY422  : c->chrToYV12 = RENAME(uyvyToUV); break;
+        case PIX_FMT_NV12     : c->chrToYV12 = RENAME(nv12ToUV); break;
+        case PIX_FMT_NV21     : c->chrToYV12 = RENAME(nv21ToUV); break;
         case PIX_FMT_RGB8     :
         case PIX_FMT_BGR8     :
         case PIX_FMT_PAL8     :
         case PIX_FMT_BGR4_BYTE:
-        case PIX_FMT_RGB4_BYTE: c->hcscale_internal = palToUV; break;
+        case PIX_FMT_RGB4_BYTE: c->chrToYV12 = palToUV; break;
         case PIX_FMT_YUV420P16BE:
         case PIX_FMT_YUV422P16BE:
-        case PIX_FMT_YUV444P16BE: c->hcscale_internal = RENAME(BEToUV); break;
+        case PIX_FMT_YUV444P16BE: c->chrToYV12 = RENAME(BEToUV); break;
         case PIX_FMT_YUV420P16LE:
         case PIX_FMT_YUV422P16LE:
-        case PIX_FMT_YUV444P16LE: c->hcscale_internal = RENAME(LEToUV); break;
+        case PIX_FMT_YUV444P16LE: c->chrToYV12 = RENAME(LEToUV); break;
     }
     if (c->chrSrcHSubSample) {
         switch(srcFormat) {
         case PIX_FMT_RGB48BE:
-        case PIX_FMT_RGB48LE: c->hcscale_internal = rgb48ToUV_half; break;
+        case PIX_FMT_RGB48LE: c->chrToYV12 = rgb48ToUV_half; break;
         case PIX_FMT_RGB32  :
-        case PIX_FMT_RGB32_1: c->hcscale_internal = bgr32ToUV_half; break;
-        case PIX_FMT_BGR24  : c->hcscale_internal = RENAME(bgr24ToUV_half); break;
-        case PIX_FMT_BGR565 : c->hcscale_internal = bgr16ToUV_half; break;
-        case PIX_FMT_BGR555 : c->hcscale_internal = bgr15ToUV_half; break;
+        case PIX_FMT_RGB32_1: c->chrToYV12 = bgr32ToUV_half; break;
+        case PIX_FMT_BGR24  : c->chrToYV12 = RENAME(bgr24ToUV_half); break;
+        case PIX_FMT_BGR565 : c->chrToYV12 = bgr16ToUV_half; break;
+        case PIX_FMT_BGR555 : c->chrToYV12 = bgr15ToUV_half; break;
         case PIX_FMT_BGR32  :
-        case PIX_FMT_BGR32_1: c->hcscale_internal = rgb32ToUV_half; break;
-        case PIX_FMT_RGB24  : c->hcscale_internal = RENAME(rgb24ToUV_half); break;
-        case PIX_FMT_RGB565 : c->hcscale_internal = rgb16ToUV_half; break;
-        case PIX_FMT_RGB555 : c->hcscale_internal = rgb15ToUV_half; break;
+        case PIX_FMT_BGR32_1: c->chrToYV12 = rgb32ToUV_half; break;
+        case PIX_FMT_RGB24  : c->chrToYV12 = RENAME(rgb24ToUV_half); break;
+        case PIX_FMT_RGB565 : c->chrToYV12 = rgb16ToUV_half; break;
+        case PIX_FMT_RGB555 : c->chrToYV12 = rgb15ToUV_half; break;
         }
     } else {
         switch(srcFormat) {
         case PIX_FMT_RGB48BE:
-        case PIX_FMT_RGB48LE: c->hcscale_internal = rgb48ToUV; break;
+        case PIX_FMT_RGB48LE: c->chrToYV12 = rgb48ToUV; break;
         case PIX_FMT_RGB32  :
-        case PIX_FMT_RGB32_1: c->hcscale_internal = bgr32ToUV; break;
-        case PIX_FMT_BGR24  : c->hcscale_internal = RENAME(bgr24ToUV); break;
-        case PIX_FMT_BGR565 : c->hcscale_internal = bgr16ToUV; break;
-        case PIX_FMT_BGR555 : c->hcscale_internal = bgr15ToUV; break;
+        case PIX_FMT_RGB32_1: c->chrToYV12 = bgr32ToUV; break;
+        case PIX_FMT_BGR24  : c->chrToYV12 = RENAME(bgr24ToUV); break;
+        case PIX_FMT_BGR565 : c->chrToYV12 = bgr16ToUV; break;
+        case PIX_FMT_BGR555 : c->chrToYV12 = bgr15ToUV; break;
         case PIX_FMT_BGR32  :
-        case PIX_FMT_BGR32_1: c->hcscale_internal = rgb32ToUV; break;
-        case PIX_FMT_RGB24  : c->hcscale_internal = RENAME(rgb24ToUV); break;
-        case PIX_FMT_RGB565 : c->hcscale_internal = rgb16ToUV; break;
-        case PIX_FMT_RGB555 : c->hcscale_internal = rgb15ToUV; break;
+        case PIX_FMT_BGR32_1: c->chrToYV12 = rgb32ToUV; break;
+        case PIX_FMT_RGB24  : c->chrToYV12 = RENAME(rgb24ToUV); break;
+        case PIX_FMT_RGB565 : c->chrToYV12 = rgb16ToUV; break;
+        case PIX_FMT_RGB555 : c->chrToYV12 = rgb15ToUV; break;
         }
     }
 
-    c->hyscale_internal = NULL;
-    c->hascale_internal = NULL;
+    c->lumToYV12 = NULL;
+    c->alpToYV12 = NULL;
     switch (srcFormat) {
     case PIX_FMT_YUYV422  :
     case PIX_FMT_YUV420P16BE:
     case PIX_FMT_YUV422P16BE:
     case PIX_FMT_YUV444P16BE:
-    case PIX_FMT_GRAY16BE : c->hyscale_internal = RENAME(yuy2ToY); break;
+    case PIX_FMT_GRAY16BE : c->lumToYV12 = RENAME(yuy2ToY); break;
     case PIX_FMT_UYVY422  :
     case PIX_FMT_YUV420P16LE:
     case PIX_FMT_YUV422P16LE:
     case PIX_FMT_YUV444P16LE:
-    case PIX_FMT_GRAY16LE : c->hyscale_internal = RENAME(uyvyToY); break;
-    case PIX_FMT_BGR24    : c->hyscale_internal = RENAME(bgr24ToY); break;
-    case PIX_FMT_BGR565   : c->hyscale_internal = bgr16ToY; break;
-    case PIX_FMT_BGR555   : c->hyscale_internal = bgr15ToY; break;
-    case PIX_FMT_RGB24    : c->hyscale_internal = RENAME(rgb24ToY); break;
-    case PIX_FMT_RGB565   : c->hyscale_internal = rgb16ToY; break;
-    case PIX_FMT_RGB555   : c->hyscale_internal = rgb15ToY; break;
+    case PIX_FMT_GRAY16LE : c->lumToYV12 = RENAME(uyvyToY); break;
+    case PIX_FMT_BGR24    : c->lumToYV12 = RENAME(bgr24ToY); break;
+    case PIX_FMT_BGR565   : c->lumToYV12 = bgr16ToY; break;
+    case PIX_FMT_BGR555   : c->lumToYV12 = bgr15ToY; break;
+    case PIX_FMT_RGB24    : c->lumToYV12 = RENAME(rgb24ToY); break;
+    case PIX_FMT_RGB565   : c->lumToYV12 = rgb16ToY; break;
+    case PIX_FMT_RGB555   : c->lumToYV12 = rgb15ToY; break;
     case PIX_FMT_RGB8     :
     case PIX_FMT_BGR8     :
     case PIX_FMT_PAL8     :
     case PIX_FMT_BGR4_BYTE:
-    case PIX_FMT_RGB4_BYTE: c->hyscale_internal = palToY; break;
-    case PIX_FMT_MONOBLACK: c->hyscale_internal = monoblack2Y; break;
-    case PIX_FMT_MONOWHITE: c->hyscale_internal = monowhite2Y; break;
+    case PIX_FMT_RGB4_BYTE: c->lumToYV12 = palToY; break;
+    case PIX_FMT_MONOBLACK: c->lumToYV12 = monoblack2Y; break;
+    case PIX_FMT_MONOWHITE: c->lumToYV12 = monowhite2Y; break;
     case PIX_FMT_RGB32  :
-    case PIX_FMT_RGB32_1: c->hyscale_internal = bgr32ToY; break;
+    case PIX_FMT_RGB32_1: c->lumToYV12 = bgr32ToY; break;
     case PIX_FMT_BGR32  :
-    case PIX_FMT_BGR32_1: c->hyscale_internal = rgb32ToY; break;
+    case PIX_FMT_BGR32_1: c->lumToYV12 = rgb32ToY; break;
     case PIX_FMT_RGB48BE:
-    case PIX_FMT_RGB48LE: c->hyscale_internal = rgb48ToY; break;
+    case PIX_FMT_RGB48LE: c->lumToYV12 = rgb48ToY; break;
     }
     if (c->alpPixBuf) {
         switch (srcFormat) {
         case PIX_FMT_RGB32  :
         case PIX_FMT_RGB32_1:
         case PIX_FMT_BGR32  :
-        case PIX_FMT_BGR32_1: c->hascale_internal = abgrToA; break;
+        case PIX_FMT_BGR32_1: c->alpToYV12 = abgrToA; break;
         }
     }
+
+    switch (srcFormat) {
+    case PIX_FMT_RGB32  :
+    case PIX_FMT_BGR32  :
+        c->alpSrcOffset = 3;
+        break;
+    case PIX_FMT_RGB32_1:
+    case PIX_FMT_BGR32_1:
+        c->lumSrcOffset = ALT32_CORR;
+        c->chrSrcOffset = ALT32_CORR;
+        break;
+    case PIX_FMT_RGB48LE:
+        c->lumSrcOffset = 1;
+        c->chrSrcOffset = 1;
+        c->alpSrcOffset = 1;
+        break;
+    }
+
+    if (c->srcRange != c->dstRange && !(isRGB(c->dstFormat) || isBGR(c->dstFormat))) {
+        if (c->srcRange) {
+            c->lumConvertRange = RENAME(lumRangeFromJpeg);
+            c->chrConvertRange = RENAME(chrRangeFromJpeg);
+        } else {
+            c->lumConvertRange = RENAME(lumRangeToJpeg);
+            c->chrConvertRange = RENAME(chrRangeToJpeg);
+        }
+    }
+
+    if (!(isGray(srcFormat) || isGray(c->dstFormat) ||
+          srcFormat == PIX_FMT_MONOBLACK || srcFormat == PIX_FMT_MONOWHITE))
+        c->needs_hcscale = 1;
 }

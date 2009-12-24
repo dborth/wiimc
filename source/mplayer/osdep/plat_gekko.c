@@ -1,5 +1,5 @@
 /*
-   MPlayer Wii port
+MPlayer Wii port
 
    Copyright (C) 2008 dhewg
 
@@ -64,10 +64,10 @@
 #undef abort
 
 
-#define MPCE_VERSION "0.761 b1 10/12"
+#define MPCE_VERSION "0.761 b1 21/12"
 
 //#define DEBUG_INIT
-#define USE_NET_THREADS
+//#define USE_NET_THREADS
 
 #ifdef DEBUG_INIT
 #define printf_debug(fmt, args...) \
@@ -85,6 +85,7 @@ static float gxzoom=348;
 static float hor_pos=3;
 static float vert_pos=0;
 static float stretch=0;
+extern float amplify_volume;
 
 static off_t get_filesize(char *FileName)
 {
@@ -297,7 +298,7 @@ int network_initied = 0;
 int mounting_usb=0;
 static bool dvd_mounted = false;
 static bool dvd_mounting = false;
-static bool dbg_network = false;
+static int dbg_network = false;
 //static int component_fix = false;  //deprecated
 
 static bool usb_init=false;
@@ -336,7 +337,7 @@ bool mount_sd_ntfs()
 	boot=partitions[0];
 	free(partitions);
 	
-	return ntfsMount("ntfs_sd", sd, boot, 256, 4, NTFS_DEFAULT | NTFS_RECOVER ) ;
+	return ntfsMount("ntfs_sd", sd, boot, 256, 4, NTFS_DEFAULT | NTFS_RECOVER | NTFS_READ_ONLY ) ;
 }
 
 bool mount_usb_ntfs()
@@ -347,10 +348,14 @@ bool mount_usb_ntfs()
 	sec_t boot;
 	
 	partition_count = ntfsFindPartitions (usb, &partitions);
-	if(partition_count<1) return 0;
+	if(partition_count<1) 
+	{
+		printf_debug("no ntfs partitions found\n");
+		return 0;
+	}
 	boot=partitions[0];
 	free(partitions);
-	return ntfsMount("ntfs_usb", usb, boot, 256, 4, NTFS_DEFAULT | NTFS_RECOVER ) ;
+	return ntfsMount("ntfs_usb", usb, boot, 256, 4, NTFS_DEFAULT | NTFS_RECOVER | NTFS_READ_ONLY ) ;
 }
 
 
@@ -358,7 +363,7 @@ static void * mountthreadfunc (void *arg)
 {
 	int dp, dvd_inserted=0,usb_inserted=0;
 //todo: add sd automount
-	usleep(200000);
+	usleep(400000);
 	//sleep(1);
 	mount_sd_ntfs(); //only once now
 		
@@ -378,7 +383,7 @@ static void * mountthreadfunc (void *arg)
 			{
 //				printf("usb isInserted: %d\n",dp);
 
-				usleep(500); // needed, I don't know why, but sometimes hang if it's deleted
+				usleep(1000); // needed, I don't know why, but sometimes hang if it's deleted
 				usb_inserted=dp;
 				if(!dp)
 				{
@@ -389,9 +394,10 @@ static void * mountthreadfunc (void *arg)
 				{
 					//printf("mount usb\n");
 					fatMount("usb",usb,0,3,256);
-					mount_usb_ntfs();
+					if(mount_usb_ntfs())printf_debug("ntfs partition mounted\n");
+					else printf_debug("error mounting ntfs partition\n");
 				}
-				usleep(200);
+				usleep(800);
 			}
 
 			mounting_usb=0;
@@ -408,13 +414,7 @@ static void * mountthreadfunc (void *arg)
 			}
 		}
 		if(exit_automount_thread) break;
-		usleep(200000);	
-		if(exit_automount_thread) break;	
-		usleep(200000);		
-		if(exit_automount_thread) break;	
-		usleep(200000);		
-		//usleep(300000);		
-		//sleep(1);
+		usleep(600000);
 	}
 	return NULL;
 }
@@ -428,6 +428,7 @@ static char *default_args[] = {
 	"-really-quiet",
 #endif	
 	"-vo","gekko","-ao","gekko",
+//	"ntfs_usb:/test.avi"
 	"-menu","-menu-startup"
 }; 
 
@@ -540,7 +541,7 @@ static bool mount_smb(int number)
 	if(smb_conf[number].ip==NULL || smb_conf[number].share==NULL)
 	{
 		if(dbg_network) printf("SMB %s not filled\n",device);
-		sleep(1); // sync problem on libogc threads
+		usleep(2000); // sync problem on libogc threads
 		return false;
 	}
 
@@ -580,7 +581,7 @@ bool mount_ftp(int number)
 	if(ftp_conf[number].ip==NULL || ftp_conf[number].share==NULL)
 	{
 		if(dbg_network) printf("FTP %s not filled\n",device);
-		usleep(20000);  // sync problem on libogc threads
+		usleep(2000);  // sync problem on libogc threads
 		return false;
 	}
 
@@ -622,7 +623,6 @@ static void tryftp()
 	for(i=0;i<5;i++) mount_ftp(i);
 }
 
-#ifdef USE_NET_THREADS
 
 void read_net_config()
 {
@@ -705,6 +705,8 @@ void read_net_config()
 
 }
 
+#ifdef USE_NET_THREADS
+
 static void * smbthread (void *arg)
 {
 	int i;
@@ -727,11 +729,10 @@ static void * ftpthread (void *arg)
 static void * networkthreadfunc (void *arg)
 {
 	if(wait_for_network_initialisation()==0) return NULL;
-	read_net_config();
 #ifndef USE_NET_THREADS
-	trysmb();
-	tryftp();
 	network_initied = 1;
+	trysmb();
+	tryftp();	
 #else
 	int i,x1[5],x2[5];
 	lwp_t smb_th[5],ftp_th[5];
@@ -852,19 +853,21 @@ bool DeviceMounted(const char *device)
 static int LoadParams()
 {
 	char cad[100];
+	int ret;
 	m_config_t *comp_conf;
 	m_option_t comp_opts[] =
 	{
 	    //{   "component_fix", &component_fix, CONF_TYPE_FLAG, 0, 0, 1, NULL},  //deprecated
-	    {   "debug_network", &dbg_network, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	    {   "gxzoom", &gxzoom, CONF_TYPE_FLOAT, CONF_RANGE, 200, 500, NULL},
-	    {   "hor_pos", &hor_pos, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},	  
-	    {   "vert_pos", &vert_pos, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},	  
+	    {   "hor_pos", &hor_pos, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},
+	    {   "vert_pos", &vert_pos, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},
 	    {   "horizontal_stretch", &stretch, CONF_TYPE_FLOAT, CONF_RANGE, -400, 400, NULL},
 		{	"cache", &stream_cache_size, CONF_TYPE_INT, CONF_RANGE, 32, 1048576, NULL},	 
 	    {   "restore_points", &enable_restore_points, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	    {   "watchdog", &enable_watchdog, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	    {   "debug_network", &dbg_network, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 		{	"video_mode", &video_mode, CONF_TYPE_INT, CONF_RANGE, 0, 4, NULL},
+		{	"amplify_volume", &amplify_volume, CONF_TYPE_FLOAT, CONF_RANGE, 0, 100, NULL},
 	    {   NULL, NULL, 0, 0, 0, 0, NULL }
 	};		
 	
@@ -873,7 +876,9 @@ static int LoadParams()
 	m_config_register_options(comp_conf, comp_opts);
 	
 	sprintf(cad,"%s/mplayer.conf",MPLAYER_DATADIR);
-	return m_config_parse_config_file(comp_conf, cad); 
+	ret = m_config_parse_config_file(comp_conf, cad); 
+	m_config_free(comp_conf);
+	return ret;
 }
 
 static bool CheckPath(char *path)
@@ -950,12 +955,35 @@ printf("m1(%.2f) m2(%.2f)\n",
 
 }
 
+#include "../input/input.h"
+static void * exithreadfunc (void *arg)
+{
+	sleep(8);
+
+	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
+	cmd->id=MP_CMD_SEEK;
+	cmd->name=strdup("seek");
+	cmd->nargs = 2;
+	cmd->args[0].v.f = 30; // # seconds
+	cmd->args[1].v.i = 2;
+	printf("seek\n");
+	mp_input_queue_cmd(cmd);
+
+	sleep(15);
+	cmd = calloc( 1,sizeof( *cmd ) );
+	cmd->id=MP_CMD_QUIT;
+	cmd->name=strdup("quit");
+	mp_input_queue_cmd(cmd);
+	while(1){sleep(1);}
+}
+
 void plat_init (int *argc, char **argv[]) {	
 	int mload=-1;
 	char cad[10]={127,130,158,147,171,151,164,117,119,0};
-	
+	__exception_setreload(1);
 	GX_InitVideo();
 	log_console_init(vmode, 0);
+
 
 	printf("Loading ");
   
@@ -1023,19 +1051,20 @@ void plat_init (int *argc, char **argv[]) {
 
 	stream_cache_size=8*1024; //default cache size (8MB)
 	printf_debug("Loading params\n");
+	
 	LoadParams();
+	read_net_config();
 	//GX_SetComponentFix(component_fix); //deprecated
 	//GX_SetCamPosZ(gxzoom);
 	//GX_SetScreenPos((int)hor_pos,(int)vert_pos,(int)stretch);
 
-	if(video_mode>0)
+	if(video_mode > 0)
 	{
 		printf_debug("Changing video mode\n");
 		ChangeVideoMode(video_mode);
 		CON_InitEx(vmode, 20, 30, vmode->fbWidth - 40, vmode->xfbHeight - 60);
 	}
-
-
+	
 	if(dbg_network)
 	{
 		printf("\nDebugging Network\n");
@@ -1044,6 +1073,7 @@ void plat_init (int *argc, char **argv[]) {
 			trysmb();
 			tryftp();
 		}
+		network_initied=1;
 		printf("Pause for reading (10 seconds)...");
 		VIDEO_WaitVSync();
 		sleep(10);
@@ -1094,7 +1124,17 @@ else
 		mount_usb_ntfs();
 	}
 }
-
+/*
+	*argv = default_args;
+	*argc = sizeof(default_args) / sizeof(char *);
+if(usb->isInserted())
+{
+	usb_init=true;
+	fatMount("usb",usb,0,3,256);
+	mount_usb_ntfs();
+	LWP_CreateThread(&mountthread, exithreadfunc, NULL, NULL, 0, 64);
+}
+*/
 
 	if(enable_watchdog)
 	{
@@ -1114,7 +1154,7 @@ else
 	//if (!*((u32*)0x80001800)) sp();
 	//log_console_enable_video(false);
 	printf_debug("Launching mplayer\n");
-
+	usleep(200);
 
 }
 

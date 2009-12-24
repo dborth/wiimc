@@ -385,7 +385,7 @@ strcpy(menu_dir,mpriv->dir);
   	{
   		while(mounting_usb)usleep(50);
   		mounting_usb=1;
-  		usleep(500);
+  		//usleep(500);
   		//printf("checking DeviceMounted\n");VIDEO_WaitVSync();
   		if(!DeviceMounted("usb")) 
 		{
@@ -396,7 +396,7 @@ strcpy(menu_dir,mpriv->dir);
   			mounting_usb=0;
 			goto error_exit;
 		}
-  		mounting_usb=0;
+  		//mounting_usb=0;
 	}
   } 
   else if(!strcmp(mpriv->dir,"ntfs_usb:/"))
@@ -404,9 +404,9 @@ strcpy(menu_dir,mpriv->dir);
 	//printf("playing_usb: %i\n",playing_usb);VIDEO_WaitVSync();
   	//if(!playing_usb)
   	{
-  		while(mounting_usb)usleep(50);
-  		mounting_usb=1;
-  		usleep(500);
+  		while(mounting_usb)usleep(5000);
+  		//mounting_usb=1;
+  		//usleep(500);
   		//printf("checking DeviceMounted\n");VIDEO_WaitVSync();
   		if(!DeviceMounted("ntfs_usb")) 
 		{
@@ -417,7 +417,7 @@ strcpy(menu_dir,mpriv->dir);
   			mounting_usb=0;
 			goto error_exit;
 		}
-  		mounting_usb=0;
+  		//mounting_usb=0;
 	}
   } 
   else if(!strcmp(mpriv->dir,"dvd:/"))
@@ -598,7 +598,8 @@ bailout:
     free(namelist[n]);
   }
   free(namelist);
-fast_continue();
+  if(!strcmp(mpriv->dir,"usb:/"))mounting_usb=0;
+  fast_continue();
   return 1;
   
 error_exit:
@@ -607,7 +608,9 @@ error_exit:
     }
     fsysloc_restorelocale( fsysloc, locale_changed);
 
-fast_continue();
+    if(!strcmp(mpriv->dir,"usb:/"))mounting_usb=0;
+    fast_continue();
+
 return 0;  
 }
 

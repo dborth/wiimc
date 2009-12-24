@@ -48,15 +48,7 @@ static const vo_info_t info =
 
 const LIBVO_EXTERN(gl)
 
-#ifdef GL_WIN32
-static int gl_vinfo = 0;
-static HGLRC gl_context = 0;
-#define update_xinerama_info w32_update_xinerama_info
-#define vo_init vo_w32_init
-#define vo_window vo_w32_window
-#else
-static XVisualInfo *gl_vinfo = NULL;
-static GLXContext gl_context = 0;
+#ifdef CONFIG_GL_X11
 static int                  wsGLXAttrib[] = { GLX_RGBA,
                                        GLX_RED_SIZE,1,
                                        GLX_GREEN_SIZE,1,
@@ -64,6 +56,7 @@ static int                  wsGLXAttrib[] = { GLX_RGBA,
                                        GLX_DOUBLEBUFFER,
                                        None };
 #endif
+static MPGLContext glctx;
 
 static int use_osd;
 static int scaled_osd;
@@ -97,6 +90,9 @@ static int osd_color;
 
 static int use_aspect;
 static int use_ycbcr;
+#define MASK_ALL_YUV (~(1 << YUV_CONVERSION_NONE))
+#define MASK_NOT_COMBINERS (~((1 << YUV_CONVERSION_NONE) | (1 << YUV_CONVERSION_COMBINERS) | (1 << YUV_CONVERSION_COMBINERS_ATI)))
+#define MASK_GAMMA_SUPPORT (MASK_NOT_COMBINERS & ~(1 << YUV_CONVERSION_FRAGMENT))
 static int use_yuv;
 static int lscale;
 static int cscale;
@@ -131,6 +127,7 @@ static char *custom_prog;
 static char *custom_tex;
 static int custom_tlin;
 static int custom_trect;
+static int mipmap_gen;
 
 static int int_pause;
 static int eq_bri = 0;
@@ -156,12 +153,12 @@ static void resize(int x,int y){
   if (WinID >= 0) {
     int top = 0, left = 0, w = x, h = y;
     geometry(&top, &left, &w, &h, vo_screenwidth, vo_screenheight);
-    glViewport(top, left, w, h);
+    Viewport(top, left, w, h);
   } else
-  glViewport( 0, 0, x, y );
+  Viewport( 0, 0, x, y );
 
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
+  MatrixMode(GL_PROJECTION);
+  LoadIdentity();
   ass_border_x = ass_border_y = 0;
   if (aspect_scaling() && use_aspect) {
     int new_w, new_h;
@@ -172,14 +169,14 @@ static void resize(int x,int y){
     new_h += vo_panscan_y;
     scale_x = (GLdouble)new_w / (GLdouble)x;
     scale_y = (GLdouble)new_h / (GLdouble)y;
-    glScaled(scale_x, scale_y, 1);
+    Scaled(scale_x, scale_y, 1);
     ass_border_x = (vo_dwidth - new_w) / 2;
     ass_border_y = (vo_dheight - new_h) / 2;
   }
-  glOrtho(0, image_width, image_height, 0, -1,1);
+  Ortho(0, image_width, image_height, 0, -1,1);
 
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
+  MatrixMode(GL_MODELVIEW);
+  LoadIdentity();
 
   if (!scaled_osd) {
 #ifdef CONFIG_FREETYPE
@@ -188,7 +185,7 @@ static void resize(int x,int y){
 #endif
   vo_osd_changed(OSDTYPE_OSD);
   }
-  glClear(GL_COLOR_BUFFER_BIT);
+  Clear(GL_COLOR_BUFFER_BIT);
   redraw();
 }
 
@@ -266,14 +263,14 @@ static void clearOSD(void) {
   int i;
   if (!osdtexCnt)
     return;
-  glDeleteTextures(osdtexCnt, osdtex);
+  DeleteTextures(osdtexCnt, osdtex);
 #ifndef FAST_OSD
-  glDeleteTextures(osdtexCnt, osdatex);
+  DeleteTextures(osdtexCnt, osdatex);
   for (i = 0; i < osdtexCnt; i++)
-    glDeleteLists(osdaDispList[i], 1);
+    DeleteLists(osdaDispList[i], 1);
 #endif
   for (i = 0; i < osdtexCnt; i++)
-    glDeleteLists(osdDispList[i], 1);
+    DeleteLists(osdDispList[i], 1);
   osdtexCnt = 0;
 }
 
@@ -282,10 +279,10 @@ static void clearOSD(void) {
  */
 static void clearEOSD(void) {
   if (eosdDispList)
-    glDeleteLists(eosdDispList, 1);
+    DeleteLists(eosdDispList, 1);
   eosdDispList = 0;
   if (eosdtexCnt)
-    glDeleteTextures(eosdtexCnt, eosdtex);
+    DeleteTextures(eosdtexCnt, eosdtex);
   eosdtexCnt = 0;
   free(eosdtex);
   eosdtex = NULL;
@@ -380,15 +377,15 @@ static void genEOSD(mp_eosd_images_t *imgs) {
     glUploadTex(gl_target, GL_ALPHA, GL_UNSIGNED_BYTE, i->bitmap, i->stride,
                 x, y, i->w, i->h, 0);
   }
-  eosdDispList = glGenLists(1);
+  eosdDispList = GenLists(1);
 skip_upload:
-  glNewList(eosdDispList, GL_COMPILE);
+  NewList(eosdDispList, GL_COMPILE);
   tinytexcur = smalltexcur = 0;
   for (i = img, curtex = eosdtex; i; i = i->next) {
     int x = 0, y = 0;
     if (i->w <= 0 || i->h <= 0 || i->stride < i->w)
       continue;
-    glColor4ub(i->color >> 24, (i->color >> 16) & 0xff, (i->color >> 8) & 0xff, 255 - (i->color & 0xff));
+    Color4ub(i->color >> 24, (i->color >> 16) & 0xff, (i->color >> 8) & 0xff, 255 - (i->color & 0xff));
     if (is_tinytex(i, tinytexcur)) {
       tinytex_pos(tinytexcur, &x, &y);
       sx = sy = LARGE_EOSD_TEX_SIZE;
@@ -405,7 +402,7 @@ skip_upload:
     }
     glDrawTex(i->dst_x, i->dst_y, i->w, i->h, x, y, i->w, i->h, sx, sy, use_rectangle == 1, 0, 0);
   }
-  glEndList();
+  EndList();
   BindTexture(gl_target, 0);
 }
 
@@ -420,12 +417,12 @@ static void uninitGl(void) {
   while (default_texs[i] != 0)
     i++;
   if (i)
-    glDeleteTextures(i, default_texs);
+    DeleteTextures(i, default_texs);
   default_texs[0] = 0;
   clearOSD();
   clearEOSD();
   if (largeeosdtex[0])
-    glDeleteTextures(2, largeeosdtex);
+    DeleteTextures(2, largeeosdtex);
   largeeosdtex[0] = 0;
   if (DeleteBuffers && gl_buffer)
     DeleteBuffers(1, &gl_buffer);
@@ -435,7 +432,7 @@ static void uninitGl(void) {
     DeleteBuffers(2, gl_buffer_uv);
   gl_buffer_uv[0] = gl_buffer_uv[1] = 0; gl_buffersize_uv = 0;
   gl_bufferptr_uv[0] = gl_bufferptr_uv[1] = 0;
-#ifdef CONFIG_X11
+#ifdef CONFIG_GL_X11
   if (mesa_bufferptr)
     FreeMemoryMESA(mDisplay, mScreen, mesa_bufferptr);
 #endif
@@ -444,9 +441,9 @@ static void uninitGl(void) {
 }
 
 static void autodetectGlExtensions(void) {
-  const char *extensions = glGetString(GL_EXTENSIONS);
-  const char *vendor     = glGetString(GL_VENDOR);
-  const char *version    = glGetString(GL_VERSION);
+  const char *extensions = GetString(GL_EXTENSIONS);
+  const char *vendor     = GetString(GL_VENDOR);
+  const char *version    = GetString(GL_VERSION);
   int is_ati = strstr(vendor, "ATI") != NULL;
   int ati_broken_pbo = 0;
   if (is_ati && strncmp(version, "2.1.", 4) == 0) {
@@ -469,23 +466,24 @@ static void autodetectGlExtensions(void) {
  * set global gl-related variables to their default values
  */
 static int initGl(uint32_t d_width, uint32_t d_height) {
+  int scale_type = mipmap_gen ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR;
   autodetectGlExtensions();
   texSize(image_width, image_height, &texture_width, &texture_height);
 
-  glDisable(GL_BLEND);
-  glDisable(GL_DEPTH_TEST);
-  glDepthMask(GL_FALSE);
-  glDisable(GL_CULL_FACE);
-  glEnable(gl_target);
-  glDrawBuffer(vo_doublebuffering?GL_BACK:GL_FRONT);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  Disable(GL_BLEND);
+  Disable(GL_DEPTH_TEST);
+  DepthMask(GL_FALSE);
+  Disable(GL_CULL_FACE);
+  Enable(gl_target);
+  DrawBuffer(vo_doublebuffering?GL_BACK:GL_FRONT);
+  TexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
   mp_msg(MSGT_VO, MSGL_V, "[gl] Creating %dx%d texture...\n",
           texture_width, texture_height);
 
   if (image_format == IMGFMT_YV12) {
     int i;
-    glGenTextures(21, default_texs);
+    GenTextures(21, default_texs);
     default_texs[21] = 0;
     for (i = 0; i < 7; i++) {
       ActiveTexture(GL_TEXTURE1 + i);
@@ -494,34 +492,39 @@ static int initGl(uint32_t d_width, uint32_t d_height) {
       BindTexture(GL_TEXTURE_3D, default_texs[i + 14]);
     }
     ActiveTexture(GL_TEXTURE1);
-    glCreateClearTex(gl_target, gl_texfmt, gl_format, gl_type, GL_LINEAR,
+    glCreateClearTex(gl_target, gl_texfmt, gl_format, gl_type, scale_type,
                      texture_width / 2, texture_height / 2, 128);
+    if (mipmap_gen)
+      TexParameteri(gl_target, GL_GENERATE_MIPMAP, GL_TRUE);
     ActiveTexture(GL_TEXTURE2);
-    glCreateClearTex(gl_target, gl_texfmt, gl_format, gl_type, GL_LINEAR,
+    glCreateClearTex(gl_target, gl_texfmt, gl_format, gl_type, scale_type,
                      texture_width / 2, texture_height / 2, 128);
-    switch (use_yuv) {
-      case YUV_CONVERSION_FRAGMENT_LOOKUP:
-      case YUV_CONVERSION_FRAGMENT_POW:
-      case YUV_CONVERSION_FRAGMENT:
-        if (!GenPrograms || !BindProgram) {
-          mp_msg(MSGT_VO, MSGL_ERR, "[gl] fragment program functions missing!\n");
-          break;
-        }
-        GenPrograms(1, &fragprog);
-        BindProgram(GL_FRAGMENT_PROGRAM, fragprog);
-        break;
-    }
+    if (mipmap_gen)
+      TexParameteri(gl_target, GL_GENERATE_MIPMAP, GL_TRUE);
     ActiveTexture(GL_TEXTURE0);
     BindTexture(gl_target, 0);
+  }
+  if (image_format == IMGFMT_YV12 || custom_prog)
+  {
+    if ((MASK_NOT_COMBINERS & (1 << use_yuv)) || custom_prog) {
+      if (!GenPrograms || !BindProgram) {
+        mp_msg(MSGT_VO, MSGL_ERR, "[gl] fragment program functions missing!\n");
+      } else {
+        GenPrograms(1, &fragprog);
+        BindProgram(GL_FRAGMENT_PROGRAM, fragprog);
+      }
+    }
     update_yuvconv();
   }
-  glCreateClearTex(gl_target, gl_texfmt, gl_format, gl_type, GL_LINEAR,
+  glCreateClearTex(gl_target, gl_texfmt, gl_format, gl_type, scale_type,
                    texture_width, texture_height, 0);
+  if (mipmap_gen)
+    TexParameteri(gl_target, GL_GENERATE_MIPMAP, GL_TRUE);
 
   resize(d_width, d_height);
 
-  glClearColor( 0.0f,0.0f,0.0f,0.0f );
-  glClear( GL_COLOR_BUFFER_BIT );
+  ClearColor( 0.0f,0.0f,0.0f,0.0f );
+  Clear( GL_COLOR_BUFFER_BIT );
   if (SwapInterval && swap_interval >= 0)
     SwapInterval(swap_interval);
   return 1;
@@ -548,11 +551,12 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
     goto glconfig;
   }
 #endif
-#ifdef GL_WIN32
-  if (!vo_w32_config(d_width, d_height, flags))
+#ifdef CONFIG_GL_WIN32
+  if (glctx.type == GLTYPE_W32 && !vo_w32_config(d_width, d_height, flags))
     return -1;
-#else
-  {
+#endif
+#ifdef CONFIG_GL_X11
+  if (glctx.type == GLTYPE_X11) {
     XVisualInfo *vinfo=glXChooseVisual( mDisplay,mScreen,wsGLXAttrib );
     if (vinfo == NULL)
     {
@@ -570,7 +574,7 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 glconfig:
   if (vo_config_count)
     uninitGl();
-  if (setGlWindow(&gl_vinfo, &gl_context, vo_window) == SET_WINDOW_FAILED)
+  if (glctx.setGlWindow(&glctx) == SET_WINDOW_FAILED)
     return -1;
   if (mesa_buffer && !AllocateMemoryMESA) {
     mp_msg(MSGT_VO, MSGL_ERR, "Can not enable mesa-buffer because AllocateMemoryMESA was not found\n");
@@ -583,7 +587,7 @@ glconfig:
 
 static void check_events(void)
 {
-    int e=vo_check_events();
+    int e=glctx.check_events();
     if(e&VO_EVENT_RESIZE) resize(vo_dwidth,vo_dheight);
     if(e&VO_EVENT_EXPOSE && int_pause) redraw();
 }
@@ -613,14 +617,14 @@ static void create_osd_texture(int x0, int y0, int w, int h,
   }
 
   // create Textures for OSD part
-  glGenTextures(1, &osdtex[osdtexCnt]);
+  GenTextures(1, &osdtex[osdtexCnt]);
   BindTexture(gl_target, osdtex[osdtexCnt]);
   glCreateClearTex(gl_target, GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_BYTE, scale_type, sx, sy, 0);
   glUploadTex(gl_target, GL_LUMINANCE, GL_UNSIGNED_BYTE, src, stride,
               0, 0, w, h, 0);
 
 #ifndef FAST_OSD
-  glGenTextures(1, &osdatex[osdtexCnt]);
+  GenTextures(1, &osdatex[osdtexCnt]);
   BindTexture(gl_target, osdatex[osdtexCnt]);
   glCreateClearTex(gl_target, GL_ALPHA, GL_ALPHA, GL_UNSIGNED_BYTE, scale_type, sx, sy, 0);
   {
@@ -640,19 +644,19 @@ static void create_osd_texture(int x0, int y0, int w, int h,
 
   // Create a list for rendering this OSD part
 #ifndef FAST_OSD
-  osdaDispList[osdtexCnt] = glGenLists(1);
-  glNewList(osdaDispList[osdtexCnt], GL_COMPILE);
+  osdaDispList[osdtexCnt] = GenLists(1);
+  NewList(osdaDispList[osdtexCnt], GL_COMPILE);
   // render alpha
   BindTexture(gl_target, osdatex[osdtexCnt]);
   glDrawTex(x0, y0, w, h, 0, 0, w, h, sx, sy, use_rectangle == 1, 0, 0);
-  glEndList();
+  EndList();
 #endif
-  osdDispList[osdtexCnt] = glGenLists(1);
-  glNewList(osdDispList[osdtexCnt], GL_COMPILE);
+  osdDispList[osdtexCnt] = GenLists(1);
+  NewList(osdDispList[osdtexCnt], GL_COMPILE);
   // render OSD
   BindTexture(gl_target, osdtex[osdtexCnt]);
   glDrawTex(x0, y0, w, h, 0, 0, w, h, sx, sy, use_rectangle == 1, 0, 0);
-  glEndList();
+  EndList();
 
   osdtexCnt++;
 }
@@ -672,18 +676,18 @@ static void draw_osd(void)
 }
 
 static void do_render(void) {
-//  glEnable(GL_TEXTURE_2D);
-//  glBindTexture(GL_TEXTURE_2D, texture_id);
+//  Enable(GL_TEXTURE_2D);
+//  BindTexture(GL_TEXTURE_2D, texture_id);
 
-  glColor3f(1,1,1);
-  if (image_format == IMGFMT_YV12)
+  Color3f(1,1,1);
+  if (image_format == IMGFMT_YV12 || custom_prog)
     glEnableYUVConversion(gl_target, yuvconvtype);
   glDrawTex(0, 0, image_width, image_height,
             0, 0, image_width, image_height,
             texture_width, texture_height,
             use_rectangle == 1, image_format == IMGFMT_YV12,
             mpi_flipped ^ vo_flipped);
-  if (image_format == IMGFMT_YV12)
+  if (image_format == IMGFMT_YV12 || custom_prog)
     glDisableYUVConversion(gl_target, yuvconvtype);
 }
 
@@ -694,45 +698,45 @@ static void do_render_osd(int type) {
   if (((type & 1) && osdtexCnt > 0) || ((type & 2) && eosdDispList)) {
     // set special rendering parameters
     if (!scaled_osd) {
-      glMatrixMode(GL_PROJECTION);
-      glPushMatrix();
-      glLoadIdentity();
-      glOrtho(0, vo_dwidth, vo_dheight, 0, -1, 1);
+      MatrixMode(GL_PROJECTION);
+      PushMatrix();
+      LoadIdentity();
+      Ortho(0, vo_dwidth, vo_dheight, 0, -1, 1);
     }
-    glEnable(GL_BLEND);
+    Enable(GL_BLEND);
     if ((type & 2) && eosdDispList) {
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      glCallList(eosdDispList);
+      BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      CallList(eosdDispList);
     }
     if ((type & 1) && osdtexCnt > 0) {
-      glColor4ub((osd_color >> 16) & 0xff, (osd_color >> 8) & 0xff, osd_color & 0xff, 0xff - (osd_color >> 24));
+      Color4ub((osd_color >> 16) & 0xff, (osd_color >> 8) & 0xff, osd_color & 0xff, 0xff - (osd_color >> 24));
       // draw OSD
 #ifndef FAST_OSD
-      glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA);
-      glCallLists(osdtexCnt, GL_UNSIGNED_INT, osdaDispList);
+      BlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA);
+      CallLists(osdtexCnt, GL_UNSIGNED_INT, osdaDispList);
 #endif
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-      glCallLists(osdtexCnt, GL_UNSIGNED_INT, osdDispList);
+      BlendFunc(GL_SRC_ALPHA, GL_ONE);
+      CallLists(osdtexCnt, GL_UNSIGNED_INT, osdDispList);
     }
     // set rendering parameters back to defaults
-    glDisable(GL_BLEND);
+    Disable(GL_BLEND);
     if (!scaled_osd)
-      glPopMatrix();
+      PopMatrix();
     BindTexture(gl_target, 0);
   }
 }
 
 static void flip_page(void) {
   if (vo_doublebuffering) {
-    if (use_glFinish) glFinish();
-    swapGlBuffers();
+    if (use_glFinish) Finish();
+    glctx.swapGlBuffers(&glctx);
     if (aspect_scaling() && use_aspect)
-      glClear(GL_COLOR_BUFFER_BIT);
+      Clear(GL_COLOR_BUFFER_BIT);
   } else {
     do_render();
     do_render_osd(3);
-    if (use_glFinish) glFinish();
-    else glFlush();
+    if (use_glFinish) Finish();
+    else Flush();
   }
 }
 
@@ -780,7 +784,7 @@ static uint32_t get_image(mp_image_t *mpi) {
   mpi->stride[0] = mpi->width * mpi->bpp / 8;
   needed_size = mpi->stride[0] * mpi->height;
   if (mesa_buffer) {
-#ifdef CONFIG_X11
+#ifdef CONFIG_GL_X11
     if (mesa_bufferptr && needed_size > mesa_buffersize) {
       FreeMemoryMESA(mDisplay, mScreen, mesa_bufferptr);
       mesa_bufferptr = NULL;
@@ -888,7 +892,7 @@ static uint32_t draw_image(mp_image_t *mpi) {
   mpi_flipped = stride[0] < 0;
   if (mpi->flags & MP_IMGFLAG_DIRECT) {
     if (mesa_buffer) {
-      glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, 1);
+      PixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, 1);
       w = texture_width;
     } else {
       intptr_t base = (intptr_t)planes[0];
@@ -928,7 +932,7 @@ static uint32_t draw_image(mp_image_t *mpi) {
     ActiveTexture(GL_TEXTURE0);
   }
   if (mpi->flags & MP_IMGFLAG_DIRECT) {
-    if (mesa_buffer) glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, 0);
+    if (mesa_buffer) PixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, 0);
     else BindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
   }
 skip_upload:
@@ -972,12 +976,11 @@ uninit(void)
 {
   if (!vo_config_count) return;
   uninitGl();
-  releaseGlContext(&gl_vinfo, &gl_context);
   if (custom_prog) free(custom_prog);
   custom_prog = NULL;
   if (custom_tex) free(custom_tex);
   custom_tex = NULL;
-  vo_uninit();
+  uninit_mpglcontext(&glctx);
 }
 
 static const opt_t subopts[] = {
@@ -1001,13 +1004,18 @@ static const opt_t subopts[] = {
   {"customtex",    OPT_ARG_MSTRZ,&custom_tex,   NULL},
   {"customtlin",   OPT_ARG_BOOL, &custom_tlin,  NULL},
   {"customtrect",  OPT_ARG_BOOL, &custom_trect, NULL},
+  {"mipmapgen",    OPT_ARG_BOOL, &mipmap_gen,   NULL},
   {"osdcolor",     OPT_ARG_INT,  &osd_color,    NULL},
   {NULL}
 };
 
 static int preinit(const char *arg)
 {
+    enum MPGLType gltype = GLTYPE_X11;
     // set defaults
+#ifdef CONFIG_GL_WIN32
+    gltype = GLTYPE_W32;
+#endif
     many_fmts = 1;
     use_osd = 1;
     scaled_osd = 0;
@@ -1028,6 +1036,7 @@ static int preinit(const char *arg)
     custom_tex = NULL;
     custom_tlin = 1;
     custom_trect = 0;
+    mipmap_gen = 0;
     osd_color = 0xffffff;
     if (subopt_parse(arg, subopts) != 0) {
       mp_msg(MSGT_VO, MSGL_FATAL,
@@ -1058,6 +1067,8 @@ static int preinit(const char *arg)
               "    Interval in displayed frames between to buffer swaps.\n"
               "    1 is equivalent to enable VSYNC, 0 to disable VSYNC.\n"
               "    Requires GLX_SGI_swap_control support to work.\n"
+              "  ycbcr\n"
+              "    also try to use the GL_MESA_ycbcr_texture extension\n"
               "  yuv=<n>\n"
               "    0: use software YUV to RGB conversion.\n"
               "    1: use register combiners (nVidia only, for older cards).\n"
@@ -1085,10 +1096,10 @@ static int preinit(const char *arg)
               "    use GL_NEAREST scaling for customtex texture\n"
               "  customtrect\n"
               "    use texture_rectangle for customtex texture\n"
+              "  mipmapgen\n"
+              "    generate mipmaps for the video image (use with TXB in customprog)\n"
               "  osdcolor=<0xAARRGGBB>\n"
               "    use the given color for the OSD\n"
-              "  ycbcr\n"
-              "    also try to use the GL_MESA_ycbcr_texture extension\n"
               "\n" );
       return -1;
     }
@@ -1102,14 +1113,10 @@ static int preinit(const char *arg)
                "Use -vo gl:nomanyfmts if playback fails.\n");
     mp_msg(MSGT_VO, MSGL_V, "[gl] Using %d as slice height "
              "(0 means image height).\n", slice_height);
-    if (!vo_init()) return -1; // Can't open X11
+    if (!init_mpglcontext(&glctx, gltype)) return -1;
 
     return 0;
 }
-
-#define MASK_ALL_YUV (~(1 << YUV_CONVERSION_NONE))
-#define MASK_NOT_COMBINERS (~((1 << YUV_CONVERSION_NONE) | (1 << YUV_CONVERSION_COMBINERS) | (1 << YUV_CONVERSION_COMBINERS_ATI)))
-#define MASK_GAMMA_SUPPORT (MASK_NOT_COMBINERS & ~(1 << YUV_CONVERSION_FRAGMENT))
 
 static const struct {
   const char *name;
@@ -1161,14 +1168,14 @@ static int control(uint32_t request, void *data, ...)
   case VOCTRL_GUISUPPORT:
     return VO_TRUE;
   case VOCTRL_ONTOP:
-    vo_ontop();
+    glctx.ontop();
     return VO_TRUE;
   case VOCTRL_FULLSCREEN:
-    vo_fullscreen();
+    glctx.fullscreen();
     resize(vo_dwidth, vo_dheight);
     return VO_TRUE;
   case VOCTRL_BORDER:
-    vo_border();
+    glctx.border();
     resize(vo_dwidth, vo_dheight);
     return VO_TRUE;
   case VOCTRL_GET_PANSCAN:
@@ -1212,7 +1219,7 @@ static int control(uint32_t request, void *data, ...)
     }
     break;
   case VOCTRL_UPDATE_SCREENINFO:
-    update_xinerama_info();
+    glctx.update_xinerama_info();
     return VO_TRUE;
   }
   return VO_NOTIMPL;

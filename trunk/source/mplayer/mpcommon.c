@@ -19,7 +19,6 @@
 double sub_last_pts = -303;
 
 #ifdef CONFIG_ASS
-#include "libass/ass.h"
 #include "libass/ass_mp.h"
 ass_track_t* ass_track = 0; // current track to render
 #endif
@@ -190,12 +189,13 @@ void update_subtitles(sh_video_t *sh_video, double refpts, demux_stream_t *d_dvd
                                       (long long)((endpts-subpts)*1000 + 0.5));
                 } else { // plaintext subs with libass
                     if (subpts != MP_NOPTS_VALUE) {
+                        subtitle tmp_subs = {0};
                         if (endpts == MP_NOPTS_VALUE) endpts = subpts + 3;
-                        sub_clear_text(&subs, MP_NOPTS_VALUE);
-                        sub_add_text(&subs, packet, len, endpts);
-                        subs.start = subpts * 100;
-                        subs.end = endpts * 100;
-                        ass_process_subtitle(ass_track, &subs);
+                        sub_add_text(&tmp_subs, packet, len, endpts);
+                        tmp_subs.start = subpts * 100;
+                        tmp_subs.end = endpts * 100;
+                        ass_process_subtitle(ass_track, &tmp_subs);
+                        sub_clear_text(&tmp_subs, MP_NOPTS_VALUE);
                     }
                 }
                 continue;

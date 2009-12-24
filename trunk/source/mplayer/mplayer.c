@@ -83,6 +83,8 @@ int player_idle_mode=0;
 int quiet=0;
 int enable_mouse_movements=0;
 float start_volume = -1;
+float mplayer_volume = -1;
+float amplify_volume = 0.0;
 
 #include "osdep/priority.h"
 
@@ -3602,7 +3604,11 @@ setwatchdogcounter(-1);
 //m_config_set_option(mconfig,"framedrop",NULL);
 m_config_set_option(mconfig,"sws","4");
 m_config_set_option(mconfig,"lavdopts","lowres=1,900");
-m_config_set_option(mconfig,"af","volume=7:0");
+if(amplify_volume!=0.0){
+char cad[25];
+sprintf(cad,"volume=%f:0",amplify_volume);
+m_config_set_option(mconfig,"af",cad);
+}
 
 if (filename) {
     load_per_protocol_config (mconfig, filename);
@@ -4415,8 +4421,14 @@ if(mpctx->sh_video){
     audio_delay += mpctx->sh_video->stream_delay;
 }
 if(mpctx->sh_audio){
+  if (mplayer_volume >= 0)
+    mixer_setvolume(&mpctx->mixer, mplayer_volume, mplayer_volume);
+  else
+	auto_adjust_soft_vol_max(&mpctx->mixer);
+
   if (start_volume >= 0)
     mixer_setvolume(&mpctx->mixer, start_volume, start_volume);
+
   if (! ignore_start)
     audio_delay -= mpctx->sh_audio->stream_delay;
   mpctx->delay=-audio_delay;

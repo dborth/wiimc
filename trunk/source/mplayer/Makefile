@@ -116,16 +116,17 @@ SRCS_COMMON-$(LIBA52_INTERNAL)       += liba52/crc.c \
                                         liba52/imdct.c \
                                         liba52/parse.c \
 
-SRCS_COMMON-$(LIBASS)                += libass/ass.c \
+SRCS_COMMON-$(LIBASS)                += libmpcodecs/vf_ass.c \
+                                        libass/ass_mp.c \
+
+SRCS_COMMON-$(LIBASS_INTERNAL)       += libass/ass.c \
                                         libass/ass_bitmap.c \
                                         libass/ass_cache.c \
                                         libass/ass_font.c \
                                         libass/ass_fontconfig.c \
                                         libass/ass_library.c \
-                                        libass/ass_mp.c \
                                         libass/ass_render.c \
                                         libass/ass_utils.c \
-                                        libmpcodecs/vf_ass.c \
 
 SRCS_COMMON-$(LIBAVCODEC)            += av_opts.c \
                                         libaf/af_lavcresample.c \
@@ -273,7 +274,10 @@ SRCS_COMMON-$(TREMOR_INTERNAL)       += tremor/bitwise.c \
 SRCS_COMMON-$(TV)                    += stream/stream_tv.c stream/tv.c \
                                         stream/frequencies.c stream/tvi_dummy.c
 SRCS_COMMON-$(TV_BSDBT848)           += stream/tvi_bsdbt848.c
-SRCS_COMMON-$(TV_DSHOW)              += stream/tvi_dshow.c
+SRCS_COMMON-$(TV_DSHOW)              += stream/tvi_dshow.c \
+                                        loader/dshow/guids.c \
+                                        loader/dshow/mediatype.c \
+
 SRCS_COMMON-$(TV_V4L1)               += stream/tvi_v4l.c  stream/audio_in.c
 SRCS_COMMON-$(TV_V4L2)               += stream/tvi_v4l2.c stream/audio_in.c
 SRCS_COMMON-$(UNRAR_EXEC)            += unrar_exec.c
@@ -541,6 +545,7 @@ SRCS_MPLAYER-$(GGI)          += libvo/vo_ggi.c
 SRCS_MPLAYER-$(GIF)          += libvo/vo_gif89a.c
 SRCS_MPLAYER-$(GL)           += libvo/gl_common.c libvo/vo_gl.c libvo/vo_gl2.c
 SRCS_MPLAYER-$(GL_WIN32)     += libvo/w32_common.c
+SRCS_MPLAYER-$(GL_X11)       += libvo/x11_common.c
 SRCS_MPLAYER-$(GUI)          += gui/bitmap.c
 SRCS_MPLAYER-$(GUI_GTK)      += gui/app.c \
                                 gui/cfg.c \
@@ -960,11 +965,11 @@ tremor/%: CFLAGS += $(CFLAGS_TREMOR_LOW)
 
 vidix/%: CFLAGS += $(CFLAGS_DHAHELPER) $(CFLAGS_SVGALIB_HELPER)
 
-VIDIX_PCI_FILES = vidix/pci_dev_ids.c vidix/pci_ids.h vidix/pci_names.c \
-                  vidix/pci_names.h vidix/pci_vendors.h
+VIDIX_PCI_FILES = vidix/pci_dev_ids.c vidix/pci_ids.h vidix/pci_vendor_ids.h \
+                  vidix/pci_vendors.h
 
 $(VIDIX_PCI_FILES): vidix/pci_db2c.awk vidix/pci.db
-	awk -f $^ $(VIDIX_PCIDB)
+	$^ $(VIDIX_PCIDB)
 
 VIDIX_DEPS = $(filter vidix/%,$(SRCS_MPLAYER:.c=.d))
 VIDIX_OBJS = $(filter vidix/%,$(SRCS_MPLAYER:.c=.o))

@@ -598,7 +598,9 @@ bailout:
     free(namelist[n]);
   }
   free(namelist);
+#ifndef WIILIB
   if(!strcmp(mpriv->dir,"usb:/"))mounting_usb=0;
+#endif
   fast_continue();
   return 1;
   
@@ -607,8 +609,9 @@ error_exit:
         free( d_name_iconv);
     }
     fsysloc_restorelocale( fsysloc, locale_changed);
-
+#ifndef WIILIB
     if(!strcmp(mpriv->dir,"usb:/"))mounting_usb=0;
+#endif
     fast_continue();
 
 return 0;  

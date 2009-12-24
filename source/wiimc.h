@@ -78,6 +78,8 @@ char * wiiGetMetaTitle();
 char * wiiGetMetaArtist();
 char * wiiGetMetaAlbum();
 char * wiiGetMetaYear();
+void wiiDVDNav(int cmd, int x, int y);
+bool wiiInDVDMenu();
 
 #ifdef __cplusplus
 }

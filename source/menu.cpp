@@ -165,7 +165,7 @@ static void ChangeMenu(int menu)
 {
 	if(menu == currentMenu)
 		return;
-	
+
 	lastMenu = currentMenu;
 	currentMenu = menu;
 }
@@ -254,25 +254,28 @@ UpdateGui (void *arg)
 		for(i=3; i >= 0; i--)
 		{
 			mainWindow->Update(&userInput[i]);
-			
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_PLUS)
-			{
-				int newMenu = currentMenu + 1;
-				if(newMenu > MENU_SETTINGS)
-					newMenu = MENU_BROWSE_VIDEOS;
-				ChangeMenu(newMenu);
-			}
-			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_MINUS)
-			{
-				int newMenu = currentMenu - 1;
-				if(newMenu < MENU_BROWSE_VIDEOS)
-					newMenu = MENU_SETTINGS;
-				ChangeMenu(newMenu);
-			}
 		}
 
 		if(menuMode == 0) // normal GUI
 		{
+			for(i=3; i >= 0; i--)
+			{
+				if(userInput[i].wpad->btns_d & WPAD_BUTTON_PLUS)
+				{
+					int newMenu = currentMenu + 1;
+					if(newMenu > MENU_SETTINGS)
+						newMenu = MENU_BROWSE_VIDEOS;
+					ChangeMenu(newMenu);
+				}
+				else if(userInput[i].wpad->btns_d & WPAD_BUTTON_MINUS)
+				{
+					int newMenu = currentMenu - 1;
+					if(newMenu < MENU_BROWSE_VIDEOS)
+						newMenu = MENU_SETTINGS;
+					ChangeMenu(newMenu);
+				}
+			}
+
 			Menu_Render();
 
 			if(updateFound)
@@ -1332,76 +1335,30 @@ done:
 
 static void MenuDVD()
 {
-	int ret;
-	int i = 0;
-	int selected = -1;
-
-	MenuItemList items;
-	sprintf(items.name[i], "Play Title #1");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Play Title #2");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Play Title #3");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Play Title #4");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Play Title #5");
-	items.img[i] = NULL; i++;
-	items.length = i;
-
-	GuiText titleTxt("DVD", 26, (GXColor){255, 255, 255, 255});
-	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(70, 90);
-
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-
-	GuiMenuBrowser itemBrowser(300, 400, &items);
-	itemBrowser.SetPosition(70, 120);
-	itemBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-
-	HaltGui();
-	mainWindow->Append(&itemBrowser);
-	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
 	if(!ChangeInterface(DEVICE_DVD, -1, NOTSILENT))
-		ChangeMenu(lastMenu); // go back to last menu
-
-	while(currentMenu == MENU_DVD && !guiShutdown)
 	{
-		usleep(THREAD_SLEEP);
-
-		if(selected != itemBrowser.GetSelectedItem())
-		{
-			selected = itemBrowser.GetSelectedItem();
-		}
-
-		ret = itemBrowser.GetClickedItem();
-
-		if(ret >= 0)
-		{
-			sprintf(loadedFile, "dvd://%d", ret+1);
-
-			ShutdownMPlayer();
-
-			ShowAction("Loading...");
-
-			// signal MPlayer to load
-			LoadMPlayer();
-
-			// wait until MPlayer is ready to take control
-			while(!guiShutdown)
-				usleep(THREAD_SLEEP);
-
-			CancelAction();
-			guiShutdown = true;
-		}
+		ChangeMenu(lastMenu); // go back to last menu
+		return;
 	}
 
+	sprintf(loadedFile, "dvdnav://");
+	ShutdownMPlayer();
+	ShowAction("Loading...");
+	LoadMPlayer(); // signal MPlayer to load
+
+	// wait until MPlayer is ready to take or return control
+	while(!guiShutdown && controlledbygui != 1)
+		usleep(THREAD_SLEEP);
+
+	CancelAction();
+	ChangeMenu(lastMenu); // go back to last menu
+	
+	if(!guiShutdown) // load failed
+		ErrorPrompt("Invalid DVD!");
+
 	HaltGui();
-	mainWindow->Remove(&itemBrowser);
-	mainWindow->Remove(&titleTxt);
 }
 
 static void MenuSettingsGeneral()
@@ -3703,6 +3660,17 @@ void MPlayerMenu()
 	while(!controlledbygui)
 	{
 		usleep(THREAD_SLEEP);
+
+		if(mainWindow->IsVisible() && wiiInDVDMenu())
+		{
+			mainWindow->SetVisible(false);
+			mainWindow->SetState(STATE_DISABLED);
+		}
+		else if(!mainWindow->IsVisible() && !wiiInDVDMenu())
+		{
+			mainWindow->SetVisible(true);
+			mainWindow->SetState(STATE_DEFAULT);
+		}
 	}
 
 	ShutoffRumble();

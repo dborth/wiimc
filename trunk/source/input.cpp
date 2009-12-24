@@ -21,6 +21,7 @@
 #include "input.h"
 #include "settings.h"
 #include "libwiigui/gui.h"
+#include "mplayer/input/input.h"
 
 int rumbleRequest[4] = {0,0,0,0};
 GuiTrigger userInput[4];
@@ -106,6 +107,7 @@ void MPlayerInput()
 	int i;
 	bool ir = false;
 	int level = wiiGetOSDLevel();
+	bool inDVDMenu = wiiInDVDMenu();
 
 	for(i=0; i<4; i++)
 	{
@@ -119,14 +121,32 @@ void MPlayerInput()
 			else
 				wiiSetOSDLevel(2);
 		}
-		
+
 		if(ConfigRequested || userInput[i].wpad->btns_d & WPAD_BUTTON_HOME)
 		{
 			ConfigRequested = 0;
 			wiiGotoGui();
 		}
 
-		if(!drawGui)
+		if(inDVDMenu)
+		{
+			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
+			{
+				if(userInput[i].wpad->ir.valid)
+					wiiDVDNav(MP_CMD_DVDNAV_MOUSECLICK, userInput[i].wpad->ir.x, userInput[i].wpad->ir.y);
+				else
+					wiiDVDNav(MP_CMD_DVDNAV_SELECT, 0, 0);
+			}
+			if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
+				wiiDVDNav(MP_CMD_DVDNAV_UP, 0, 0);
+			if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
+				wiiDVDNav(MP_CMD_DVDNAV_DOWN, 0, 0);
+			if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
+				wiiDVDNav(MP_CMD_DVDNAV_RIGHT, 0, 0);
+			if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
+				wiiDVDNav(MP_CMD_DVDNAV_LEFT, 0, 0);
+		}
+		else if(!drawGui)
 		{			
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
 				wiiPause();

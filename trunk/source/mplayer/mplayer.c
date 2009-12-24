@@ -122,6 +122,7 @@ char *heartbeat_cmd;
 #include <ogc/system.h>
 void wiiPause();
 void SetStatus(const char * txt);
+int controlledbygui=0;
 #endif
 
 //**************************************************************************//
@@ -980,7 +981,9 @@ void exit_player_with_rc(exit_reason_t how, int rc){
   }
   mp_msg(MSGT_CPLAYER,MSGL_DBG2,"max framesize was %d bytes\n",max_framesize);
 
-#ifndef WIILIB
+#ifdef WIILIB
+  controlledbygui = 1;
+#else
 #ifdef GEKKO
   //if(mpctx->sh_video)
   	save_restore_points_file();
@@ -2760,7 +2763,6 @@ static double update_video(int *blit_frame)
 }
 
 #ifdef WIILIB
-int controlledbygui=0;
 int pause_gui=0;
 void PauseAndGotoGUI()
 {
@@ -5240,4 +5242,54 @@ char * wiiGetMetaYear()
 	return get_metadata(META_INFO_YEAR);
 }
 
+void wiiDVDNav(int cmd, int x, int y)
+{
+	int button = -1;
+
+	if (mpctx->stream->type != STREAMTYPE_DVDNAV)
+		return;
+
+	mp_command_type command = cmd;
+
+	/*MP_CMD_DVDNAV_UP
+	MP_CMD_DVDNAV_DOWN
+	MP_CMD_DVDNAV_LEFT
+	MP_CMD_DVDNAV_RIGHT
+	MP_CMD_DVDNAV_MENU
+	MP_CMD_DVDNAV_SELECT
+	MP_CMD_DVDNAV_PREVMENU*/
+
+	mp_dvdnav_update_mouse_pos(mpctx->stream, x, y, &button);
+	mp_dvdnav_handle_input(mpctx->stream,command,&button);
+	printf("Selected button number %d", button);
+}
+
+#include "libdvdnav/dvdnav/dvdnav.h"
+
+typedef struct {
+  dvdnav_t *       dvdnav;              /* handle to libdvdnav stuff */
+  char *           filename;            /* path */
+  unsigned int     duration;            /* in milliseconds */
+  int              mousex, mousey;
+  int              title;
+  unsigned int     spu_clut[16];
+  dvdnav_highlight_event_t hlev;
+  int              still_length;        /* still frame duration */
+  unsigned int     state;
+} dvdnav_priv_t;
+
+bool wiiInDVDMenu()
+{
+	if(!mpctx || !mpctx->stream || !mpctx->stream->priv)
+		return false;
+
+	if (mpctx->stream->type != STREAMTYPE_DVDNAV)
+		return false;
+
+	dvdnav_priv_t* priv = mpctx->stream->priv;
+	if(dvdnav_is_domain_vts(priv->dvdnav)) // playing video
+		return false;
+
+	return true;
+}
 #endif

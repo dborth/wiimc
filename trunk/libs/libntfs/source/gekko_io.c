@@ -644,4 +644,3 @@ struct ntfs_device_operations ntfs_device_gekko_io_ops = {
     .stat       = ntfs_device_gekko_io_stat,
     .ioctl      = ntfs_device_gekko_io_ioctl,
 };
-

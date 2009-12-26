@@ -480,10 +480,15 @@ bool ntfsMount (const char *name, const DISC_INTERFACE *interface, sec_t startSe
     }
     
     // Build the mount flags
-    if (!(interface->features & FEATURE_MEDIUM_CANWRITE))
-        vd->flags |= MS_RDONLY;
-    if ((interface->features & FEATURE_MEDIUM_CANREAD) && (interface->features & FEATURE_MEDIUM_CANWRITE))
-        vd->flags |= MS_EXCLUSIVE;
+    if (flags & NTFS_READ_ONLY)
+    	vd->flags |= MS_RDONLY;
+    else
+    {
+	    if (!(interface->features & FEATURE_MEDIUM_CANWRITE))
+	        vd->flags |= MS_RDONLY;
+	    if ((interface->features & FEATURE_MEDIUM_CANREAD) && (interface->features & FEATURE_MEDIUM_CANWRITE))
+	        vd->flags |= MS_EXCLUSIVE;
+    }
     if (flags & NTFS_RECOVER)
         vd->flags |= MS_RECOVER;
     if (flags & NTFS_IGNORE_HIBERFILE)

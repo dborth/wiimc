@@ -838,6 +838,7 @@ SettingWindow(const char * title, GuiWindow * w)
 }
 
 // Picture Viewer
+#define MAX_PICTURE_SIZE (1024*1024*10) // 10 MB
 static int changePicture = 0; // load a new picture
 static int closePictureViewer = 0; // is picture viewer open
 static int slideshow = 0; // slideshow mode
@@ -845,12 +846,23 @@ static u64 slideprev, slidenow; // slideshow timer
 
 static void ChangePicture(int dir)
 {
-	browser.selIndex += dir;
+	int oldIndex = browser.selIndex;
 
-	if(browser.selIndex >= browser.numEntries)
-		browser.selIndex = 0;
-	else if(browser.selIndex < 0)
-		browser.selIndex = browser.numEntries-1;
+	while(1)
+	{
+		browser.selIndex += dir;
+
+		if(browser.selIndex >= browser.numEntries)
+			browser.selIndex = 1;
+		else if(browser.selIndex < 1)
+			browser.selIndex = browser.numEntries-1;
+
+		if(browser.selIndex == oldIndex)
+			return; // we have wrapped around to the same image - do nothing
+		
+		if(browserList[browser.selIndex].length <= MAX_PICTURE_SIZE)
+			break; // found a picture we can display
+	}
 
 	sprintf(loadedFile, "%s%s", browser.dir, browserList[browser.selIndex].filename);
 	printf("now loading: %s\n", loadedFile);
@@ -1247,7 +1259,10 @@ static void MenuBrowse(int menu)
 					if(currentMenu == MENU_BROWSE_PICTURES)
 					{
 						// load picture viewer
-						PictureViewer();
+						if(browserList[browser.selIndex].length > MAX_PICTURE_SIZE)
+							ErrorPrompt("Picture size is too large!");
+						else
+							PictureViewer();
 						continue;
 					}
 

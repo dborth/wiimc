@@ -31,6 +31,27 @@ typedef unsigned char ebmpBYTE;
 typedef unsigned short ebmpWORD;
 typedef unsigned int ebmpDWORD;
 
+// it's easier to use a struct than a class
+// because we can read/write all four of the bytes 
+// at once (as we can count on them being continuous 
+// in memory
+
+typedef struct RGBApixel
+{
+	ebmpBYTE Blue;
+	ebmpBYTE Green;
+	ebmpBYTE Red;
+	ebmpBYTE Alpha;
+} RGBApixel;
+
+typedef struct BMPFile
+{
+	const unsigned char *imgData;
+	int imgSize;
+	int currentPosition;
+	FILE *fp;
+} BMPFile;
+
 static inline double Square(double number)
 {
 	return number * number;
@@ -73,18 +94,39 @@ static int IntPow(int base, int exponent)
 	return output;
 }
 
-// it's easier to use a struct than a class
-// because we can read/write all four of the bytes 
-// at once (as we can count on them being continuous 
-// in memory
-
-typedef struct RGBApixel
+static bool SafeFread(char* buffer, int size, int number, struct BMPFile *bmpFile)
 {
-	ebmpBYTE Blue;
-	ebmpBYTE Green;
-	ebmpBYTE Red;
-	ebmpBYTE Alpha;
-} RGBApixel;
+	if (bmpFile->fp)
+	{
+		int ItemsRead;
+		if (feof(bmpFile->fp))
+		{
+			return false;
+		}
+		ItemsRead = (int) fread(buffer, size, number, bmpFile->fp);
+		if (ItemsRead < number)
+		{
+			return false;
+		}
+		return true;
+	}
+	else
+	{
+		int amount = number * size;
+
+		bool retval = true;
+		if (amount + bmpFile->currentPosition > bmpFile->imgSize)
+		{
+			retval = false;
+			amount = bmpFile->imgSize - bmpFile->currentPosition;
+		}
+
+		void *start = (void *) (bmpFile->imgData + bmpFile->currentPosition);
+		memcpy(buffer, start, amount);
+		bmpFile->currentPosition += amount;
+		return retval;
+	}
+}
 
 class BMFH
 {
@@ -119,14 +161,6 @@ class BMIH
 		void display(void);
 		void SwitchEndianess(void);
 };
-
-typedef struct BMPFile
-{
-	const unsigned char *imgData;
-	int imgSize;
-	int currentPosition;
-	FILE *fp;
-} BMPFile;
 
 BMFH::BMFH()
 {
@@ -170,9 +204,6 @@ void BMIH::SwitchEndianess(void)
 	biClrImportant = FlipDWORD(biClrImportant);
 	return;
 }
-
-bool SafeFread(char* buffer, int size, int number, struct BMPFile *bmpFile);
-bool EasyBMPcheckDataSize(void);
 
 class BMP
 {
@@ -227,72 +258,6 @@ class BMP
 		bool Read(struct BMPFile *bmpFile);
 		u8 * DecodeTo4x4RGB8();
 };
-
-/* These functions are defined in EasyBMP_BMP.h */
-
-RGBApixel BMP::GetPixel(int i, int j) const
-{
-	if (i >= Width)
-	{
-		i = Width - 1;
-	}
-	if (i < 0)
-	{
-		i = 0;
-	}
-	if (j >= Height)
-	{
-		j = Height - 1;
-	}
-	if (j < 0)
-	{
-		j = 0;
-	}
-	return Pixels[i][j];
-}
-
-bool BMP::SetColor(int ColorNumber, RGBApixel NewColor)
-{
-	if (BitDepth != 1 && BitDepth != 4 && BitDepth != 8)
-	{
-		return false;
-	}
-	if (!Colors)
-	{
-		return false;
-	}
-	if (ColorNumber >= TellNumberOfColors())
-	{
-		return false;
-	}
-	Colors[ColorNumber] = NewColor;
-	return true;
-}
-
-// RGBApixel BMP::GetColor( int ColorNumber ) const
-RGBApixel BMP::GetColor(int ColorNumber)
-{
-	RGBApixel Output;
-	Output.Red = 255;
-	Output.Green = 255;
-	Output.Blue = 255;
-	Output.Alpha = 0;
-
-	if (BitDepth != 1 && BitDepth != 4 && BitDepth != 8)
-	{
-		return Output;
-	}
-	if (!Colors)
-	{
-		return Output;
-	}
-	if (ColorNumber >= TellNumberOfColors())
-	{
-		return Output;
-	}
-	Output = Colors[ColorNumber];
-	return Output;
-}
 
 BMP::BMP()
 {
@@ -496,6 +461,72 @@ bool BMP::SetSize(int NewWidth, int NewHeight)
 	}
 
 	return true;
+}
+
+/* These functions are defined in EasyBMP_BMP.h */
+
+RGBApixel BMP::GetPixel(int i, int j) const
+{
+	if (i >= Width)
+	{
+		i = Width - 1;
+	}
+	if (i < 0)
+	{
+		i = 0;
+	}
+	if (j >= Height)
+	{
+		j = Height - 1;
+	}
+	if (j < 0)
+	{
+		j = 0;
+	}
+	return Pixels[i][j];
+}
+
+bool BMP::SetColor(int ColorNumber, RGBApixel NewColor)
+{
+	if (BitDepth != 1 && BitDepth != 4 && BitDepth != 8)
+	{
+		return false;
+	}
+	if (!Colors)
+	{
+		return false;
+	}
+	if (ColorNumber >= TellNumberOfColors())
+	{
+		return false;
+	}
+	Colors[ColorNumber] = NewColor;
+	return true;
+}
+
+// RGBApixel BMP::GetColor( int ColorNumber ) const
+RGBApixel BMP::GetColor(int ColorNumber)
+{
+	RGBApixel Output;
+	Output.Red = 255;
+	Output.Green = 255;
+	Output.Blue = 255;
+	Output.Alpha = 0;
+
+	if (BitDepth != 1 && BitDepth != 4 && BitDepth != 8)
+	{
+		return Output;
+	}
+	if (!Colors)
+	{
+		return Output;
+	}
+	if (ColorNumber >= TellNumberOfColors())
+	{
+		return Output;
+	}
+	Output = Colors[ColorNumber];
+	return Output;
 }
 
 bool BMP::Read(struct BMPFile *bmpFile)
@@ -1043,40 +1074,6 @@ bool BMP::CreateStandardColorTable(void)
 	return true;
 }
 
-bool SafeFread(char* buffer, int size, int number, struct BMPFile *bmpFile)
-{
-	if (bmpFile->fp)
-	{
-		int ItemsRead;
-		if (feof(bmpFile->fp))
-		{
-			return false;
-		}
-		ItemsRead = (int) fread(buffer, size, number, bmpFile->fp);
-		if (ItemsRead < number)
-		{
-			return false;
-		}
-		return true;
-	}
-	else
-	{
-		int amount = number * size;
-
-		bool retval = true;
-		if (amount + bmpFile->currentPosition > bmpFile->imgSize)
-		{
-			retval = false;
-			amount = bmpFile->imgSize - bmpFile->currentPosition;
-		}
-
-		void *start = (void *) (bmpFile->imgData + bmpFile->currentPosition);
-		memcpy(buffer, start, amount);
-		bmpFile->currentPosition += amount;
-		return retval;
-	}
-}
-
 void BMP::SetDPI(int HorizontalDPI, int VerticalDPI)
 {
 	XPelsPerMeter = (int) (HorizontalDPI * 39.37007874015748);
@@ -1254,6 +1251,134 @@ u8 * BMP::DecodeTo4x4RGB8()
 	return dst;
 }
 
+static bool Rescale(BMP& InputImage, char mode, int NewDimension)
+{
+	using namespace std;
+	int CapMode = mode;
+
+	BMP OldImage(InputImage);
+
+	if (CapMode != 'P' && CapMode != 'W' && CapMode != 'H' && CapMode != 'F')
+	{
+		printf("EasyBMP Error: Unknown rescale mode %c requested\n", mode);
+		return false;
+	}
+
+	int NewWidth = 0;
+	int NewHeight = 0;
+
+	int OldWidth = OldImage.TellWidth();
+	int OldHeight = OldImage.TellHeight();
+
+	if (CapMode == 'P')
+	{
+		NewWidth = (int) floor(OldWidth * NewDimension / 100.0);
+		NewHeight = (int) floor(OldHeight * NewDimension / 100.0);
+	}
+	if (CapMode == 'F')
+	{
+		if (OldWidth > OldHeight)
+		{
+			CapMode = 'W';
+		}
+		else
+		{
+			CapMode = 'H';
+		}
+	}
+
+	if (CapMode == 'W')
+	{
+		double percent = (double) NewDimension / (double) OldWidth;
+		NewWidth = NewDimension;
+		NewHeight = (int) floor(OldHeight * percent);
+	}
+	if (CapMode == 'H')
+	{
+		double percent = (double) NewDimension / (double) OldHeight;
+		NewHeight = NewDimension;
+		NewWidth = (int) floor(OldWidth * percent);
+	}
+
+	if (NewWidth < 1)
+	{
+		NewWidth = 1;
+	}
+	if (NewHeight < 1)
+	{
+		NewHeight = 1;
+	}
+
+	InputImage.SetSize(NewWidth, NewHeight);
+	InputImage.SetBitDepth(24);
+
+	int I, J;
+	double ThetaI, ThetaJ;
+
+	for (int j = 0; j < NewHeight - 1; j++)
+	{
+		ThetaJ = (double) (j * (OldHeight - 1.0)) / (double) (NewHeight - 1.0);
+		J = (int) floor(ThetaJ);
+		ThetaJ -= J;
+
+		for (int i = 0; i < NewWidth - 1; i++)
+		{
+			ThetaI = (double) (i * (OldWidth - 1.0))
+					/ (double) (NewWidth - 1.0);
+			I = (int) floor(ThetaI);
+			ThetaI -= I;
+
+			InputImage(i, j)->Red = (ebmpBYTE) ((1.0 - ThetaI - ThetaJ + ThetaI
+					* ThetaJ) * (OldImage(I, J)->Red) + (ThetaI - ThetaI
+					* ThetaJ) * (OldImage(I + 1, J)->Red) + (ThetaJ - ThetaI
+					* ThetaJ) * (OldImage(I, J + 1)->Red) + (ThetaI * ThetaJ)
+					* (OldImage(I + 1, J + 1)->Red));
+			InputImage(i, j)->Green = (ebmpBYTE) ((1.0 - ThetaI - ThetaJ
+					+ ThetaI * ThetaJ) * OldImage(I, J)->Green + (ThetaI
+					- ThetaI * ThetaJ) * OldImage(I + 1, J)->Green + (ThetaJ
+					- ThetaI * ThetaJ) * OldImage(I, J + 1)->Green + (ThetaI
+					* ThetaJ) * OldImage(I + 1, J + 1)->Green);
+			InputImage(i, j)->Blue = (ebmpBYTE) ((1.0 - ThetaI - ThetaJ
+					+ ThetaI * ThetaJ) * OldImage(I, J)->Blue + (ThetaI
+					- ThetaI * ThetaJ) * OldImage(I + 1, J)->Blue + (ThetaJ
+					- ThetaI * ThetaJ) * OldImage(I, J + 1)->Blue + (ThetaI
+					* ThetaJ) * OldImage(I + 1, J + 1)->Blue);
+		}
+		InputImage(NewWidth - 1, j)->Red = (ebmpBYTE) ((1.0 - ThetaJ)
+				* (OldImage(OldWidth - 1, J)->Red) + ThetaJ * (OldImage(
+				OldWidth - 1, J + 1)->Red));
+		InputImage(NewWidth - 1, j)->Green = (ebmpBYTE) ((1.0 - ThetaJ)
+				* (OldImage(OldWidth - 1, J)->Green) + ThetaJ * (OldImage(
+				OldWidth - 1, J + 1)->Green));
+		InputImage(NewWidth - 1, j)->Blue = (ebmpBYTE) ((1.0 - ThetaJ)
+				* (OldImage(OldWidth - 1, J)->Blue) + ThetaJ * (OldImage(
+				OldWidth - 1, J + 1)->Blue));
+	}
+
+	for (int i = 0; i < NewWidth - 1; i++)
+	{
+		ThetaI = (double) (i * (OldWidth - 1.0)) / (double) (NewWidth - 1.0);
+		I = (int) floor(ThetaI);
+		ThetaI -= I;
+		InputImage(i, NewHeight - 1)->Red = (ebmpBYTE) ((1.0 - ThetaI)
+				* (OldImage(I, OldHeight - 1)->Red) + ThetaI * (OldImage(I,
+				OldHeight - 1)->Red));
+		InputImage(i, NewHeight - 1)->Green = (ebmpBYTE) ((1.0 - ThetaI)
+				* (OldImage(I, OldHeight - 1)->Green) + ThetaI * (OldImage(I,
+				OldHeight - 1)->Green));
+		InputImage(i, NewHeight - 1)->Blue = (ebmpBYTE) ((1.0 - ThetaI)
+				* (OldImage(I, OldHeight - 1)->Blue) + ThetaI * (OldImage(I,
+				OldHeight - 1)->Blue));
+	}
+
+	*InputImage(NewWidth - 1, NewHeight - 1) = *OldImage(OldWidth - 1,
+			OldHeight - 1);
+	return true;
+}
+
+#define MAX_WIDTH	640
+#define MAX_HEIGHT	480
+
 u8 * DecodeBMP(const u8 * src, u32 srclen, int * width, int * height)
 {
 	BMP bmp;
@@ -1264,6 +1389,13 @@ u8 * DecodeBMP(const u8 * src, u32 srclen, int * width, int * height)
 	if (!bmp.Read(&bmpFile))
 		return NULL;
 
+	if(bmp.TellWidth() > MAX_WIDTH || bmp.TellHeight() > MAX_HEIGHT)
+	{
+		if((float)bmp.TellHeight()/(float)bmp.TellWidth() > MAX_HEIGHT/MAX_WIDTH)
+			Rescale(bmp, 'H', MAX_HEIGHT);
+		else
+			Rescale(bmp, 'W', MAX_WIDTH);
+	}
 	*width = bmp.TellWidth();
 	*height = bmp.TellHeight();
 	return bmp.DecodeTo4x4RGB8();

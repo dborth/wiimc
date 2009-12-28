@@ -202,17 +202,8 @@ static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x,
 
 static void draw_osd(void)
 {
-#ifndef WIILIB
 	vo_draw_text(image_width, image_height, draw_alpha);
-#endif
 }
-
-//void wii_draw_osd()
-//{
-	// this is not the best test - 'OSD: Disabled' message will not show up!
-//	if(osd_level >= 1)
-//		vo_draw_text(image_width, image_height, draw_alpha);
-//}
 
 static void flip_page(void)
 {
@@ -280,10 +271,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 
 	gx_width = width;
 	gx_height = height;
-
-	/*moved to mplayer.c after cache end (reinit_video) */
-	//  GX_StartYUV(image_width, image_height, width / 2, height / 2 ); 
-	//  GX_ConfigTextureYUV(image_width, image_height, pitch);	
 
 	//  image_height = orig_height;
 	reinit_video();

@@ -3178,7 +3178,9 @@ int argc;
 char *argv[] = {
 	"",
 	//"-nocache",
-	"-vo","gekko","-ao","gekko",
+	"-vo","gekko",
+	"-ao","gekko",
+	"-osdlevel","0",
 	_file
 }; 
 argc=argc = sizeof(argv) / sizeof(char *);
@@ -5210,16 +5212,6 @@ void wiiGetTimeDisplay(char * buf)
 	sprintf(buf, "%02d:%02d:%02d / %02d:%02d:%02d",
 		pts/3600,(pts/60)%60,pts%60,
 		len/3600,(len/60)%60,len%60);
-}
-
-void wiiSetOSDLevel(int l)
-{
-	osd_level = l;
-}
-
-int wiiGetOSDLevel()
-{
-	return osd_level;
 }
 
 char * wiiGetMetaTitle()

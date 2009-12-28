@@ -26,6 +26,7 @@
 int rumbleRequest[4] = {0,0,0,0};
 GuiTrigger userInput[4];
 static int rumbleCount[4] = {0,0,0,0};
+static int osdLevel = 0;
 
 /****************************************************************************
  * UpdatePads
@@ -106,7 +107,6 @@ void MPlayerInput()
 {
 	int i;
 	bool ir = false;
-	int level = wiiGetOSDLevel();
 	bool inDVDMenu = wiiInDVDMenu();
 
 	for(i=0; i<4; i++)
@@ -116,10 +116,7 @@ void MPlayerInput()
 
 		if(userInput[i].wpad->btns_d & WPAD_BUTTON_1)
 		{
-			if(level == 2)
-				wiiSetOSDLevel(0);
-			else
-				wiiSetOSDLevel(2);
+			osdLevel ^= 1;
 		}
 
 		if(ConfigRequested || userInput[i].wpad->btns_d & WPAD_BUTTON_HOME)
@@ -161,7 +158,7 @@ void MPlayerInput()
 		}
 	}
 
-	if(ir || StatusSet() || wiiGetOSDLevel() == 2)
+	if(ir || StatusSet() || osdLevel)
 	{
 		drawGui = true;
 	}

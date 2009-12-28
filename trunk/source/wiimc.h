@@ -72,8 +72,6 @@ void wiiSkipBackward();
 double wiiGetTimeLength();
 double wiiGetTimePos();
 void wiiGetTimeDisplay(char * buf);
-void wiiSetOSDLevel(int l);
-int wiiGetOSDLevel();
 char * wiiGetMetaTitle();
 char * wiiGetMetaArtist();
 char * wiiGetMetaAlbum();

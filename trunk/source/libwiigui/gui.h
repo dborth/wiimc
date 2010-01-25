@@ -192,11 +192,11 @@ class GuiTrigger
 		//!\param wiibtns Wii controller trigger button(s) - classic controller buttons are considered separately
 		//!\param gcbtns GameCube controller trigger button(s)
 		void SetButtonOnlyInFocusTrigger(s32 ch, u32 wiibtns, u16 gcbtns);
-		//!Get X/Y value from Wii Joystick (classic, nunchuk) input
-		//!\param right Controller stick (left = 0, right = 1)
+		//!Get X or Y value from Wii Joystick (classic, nunchuk) input
+		//!\param stick Controller stick (left = 0, right = 1)
 		//!\param axis Controller stick axis (x-axis = 0, y-axis = 1)
 		//!\return Stick value
-		s8 WPAD_Stick(u8 right, int axis);
+		s8 WPAD_Stick(u8 stick, int axis);
 		//!Get X value from Wii Joystick (classic, nunchuk) input
 		//!\param stick Controller stick (left = 0, right = 1)
 		//!\return Stick value
@@ -218,11 +218,11 @@ class GuiTrigger
 		//!\return true if selection should be moved down, false otherwise
 		bool Down();
 
-		u8 type; //!< trigger type (TRIGGER_SIMPLE,	TRIGGER_HELD, TRIGGER_BUTTON_ONLY, TRIGGER_BUTTON_ONLY_IN_FOCUS)
-		s32 chan; //!< Trigger controller channel (0-3, -1 for all)
-		WPADData * wpad; //!< Wii controller trigger
 		WPADData wpaddata; //!< Wii controller trigger data
 		PADData pad; //!< GameCube controller trigger data
+		WPADData * wpad; //!< Wii controller trigger
+		s32 chan; //!< Trigger controller channel (0-3, -1 for all)
+		u8 type; //!< trigger type (TRIGGER_SIMPLE,	TRIGGER_HELD, TRIGGER_BUTTON_ONLY, TRIGGER_BUTTON_ONLY_IN_FOCUS)
 };
 
 extern GuiTrigger userInput[4];
@@ -398,7 +398,9 @@ class GuiElement
 		//!Called constantly to redraw the element's tooltip
 		virtual void DrawTooltip();
 	protected:
-		bool visible; //!< Visibility of the element. If false, Draw() is skipped
+		GuiTrigger * trigger[2]; //!< GuiTriggers (input actions) that this element responds to
+		UpdateCallback updateCB; //!< Callback function to call when this element is updated
+		GuiElement * parentElement; //!< Parent element
 		int focus; //!< Element focus (-1 = focus disabled, 0 = not focused, 1 = focused)
 		int width; //!< Element width
 		int height; //!< Element height
@@ -411,10 +413,9 @@ class GuiElement
 		int xoffsetDyn; //!< Element X offset, dynamic (added to xoffset value for animation effects)
 		int yoffsetDyn; //!< Element Y offset, dynamic (added to yoffset value for animation effects)
 		int alpha; //!< Element alpha value (0-255)
-		f32 scale; //!< Element scale (1 = 100%)
 		int alphaDyn; //!< Element alpha, dynamic (multiplied by alpha value for blending/fading effects)
+		f32 scale; //!< Element scale (1 = 100%)
 		f32 scaleDyn; //!< Element scale, dynamic (multiplied by alpha value for blending/fading effects)
-		bool rumble; //!< Wiimote rumble (on/off) - set to on when this element requests a rumble event
 		int effects; //!< Currently enabled effect(s). 0 when no effects are enabled
 		int effectAmount; //!< Effect amount. Used by different effects for different purposes
 		int effectTarget; //!< Effect target amount. Used by different effects for different purposes
@@ -428,9 +429,8 @@ class GuiElement
 		bool selectable; //!< Whether or not this element selectable (can change to SELECTED state)
 		bool clickable; //!< Whether or not this element is clickable (can change to CLICKED state)
 		bool holdable; //!< Whether or not this element is holdable (can change to HELD state)
-		GuiTrigger * trigger[2]; //!< GuiTriggers (input actions) that this element responds to
-		GuiElement * parentElement; //!< Parent element
-		UpdateCallback updateCB; //!< Callback function to call when this element is updated
+		bool visible; //!< Visibility of the element. If false, Draw() is skipped
+		bool rumble; //!< Wiimote rumble (on/off) - set to on when this element requests a rumble event
 };
 
 //!Allows GuiElements to be grouped together into a "window"
@@ -662,18 +662,18 @@ class GuiText : public GuiElement
 		//!Constantly called to draw the text
 		void Draw();
 	protected:
-		char * origText; //!< Original text data
+		GXColor color; //!< Font color
 		wchar_t* text; //!< Unicode text value
+		wchar_t* textDyn; //!< Wrapped text value
+		char * origText; //!< Original text data
 		int size; //!< Font size
 		int maxWidth; //!< Maximum width of the generated text object (for text wrapping)
-		bool wrap; //!< Wrapping toggle
-		wchar_t* textDyn; //!< Wrapped text value
 		int textScroll; //!< Scrolling toggle
 		int textScrollPos; //!< Current starting index of text string for scrolling
 		int textScrollInitialDelay; //!< Delay to wait before starting to scroll
 		int textScrollDelay; //!< Scrolling speed
 		u16 style; //!< FreeTypeGX style attributes
-		GXColor color; //!< Font color
+		bool wrap; //!< Wrapping toggle
 };
 
 //!Display, manage, and manipulate tooltips in the GUI
@@ -806,7 +806,6 @@ class GuiKeyboard : public GuiWindow
 		char kbtextstr[256];
 	protected:
 		u32 kbtextmaxlen;
-		Key keys[4][11];
 		int shift;
 		int caps;
 		GuiText * kbText;
@@ -840,6 +839,7 @@ class GuiKeyboard : public GuiWindow
 		GuiSound * keySoundOver;
 		GuiSound * keySoundClick;
 		GuiTrigger * trigA;
+		Key keys[4][11]; // two chars = less space than one pointer
 };
 
 typedef struct _menuitemlist {
@@ -877,9 +877,9 @@ class GuiMenuBrowser : public GuiElement
 
 typedef struct _optionlist {
 	int length;
+	int icon[MAX_OPTIONS]; // icon to display
 	char name[MAX_OPTIONS][50];
 	char value[MAX_OPTIONS][50];
-	int icon[MAX_OPTIONS]; // icon to display
 } OptionList;
 
 //!Display a list of menu options
@@ -900,16 +900,15 @@ class GuiOptionBrowser : public GuiElement
 		void Update(GuiTrigger * t);
 		GuiText * optionVal[PAGESIZE];
 	protected:
-		int selectedItem;
-		int listOffset;
-		bool listChanged;
-
-		OptionList * options;
 		int optionIndex[PAGESIZE];
 		GuiButton * optionBtn[PAGESIZE];
 		GuiText * optionTxt[PAGESIZE];
 		GuiImage * optionBg[PAGESIZE];
 		GuiImage * optionIcon[PAGESIZE];
+
+		int selectedItem;
+		int listOffset;
+		OptionList * options;
 
 		GuiButton * arrowUpBtn;
 		GuiButton * arrowDownBtn;
@@ -934,6 +933,8 @@ class GuiOptionBrowser : public GuiElement
 		GuiSound * btnSoundOver;
 		GuiSound * btnSoundClick;
 		GuiTrigger * trigA;
+
+		bool listChanged;
 };
 
 //!Display a list of files
@@ -951,10 +952,6 @@ class GuiFileBrowser : public GuiElement
 		GuiButton * fileList[FILE_PAGESIZE];
 		GuiButton * playlistAddBtn[FILE_PAGESIZE];
 	protected:
-		int selectedItem;
-		int numEntries;
-		bool listChanged;
-
 		GuiText * fileListText[FILE_PAGESIZE];
 		GuiImage * fileListBg[FILE_PAGESIZE];
 		GuiImage * fileListIcon[FILE_PAGESIZE];
@@ -995,6 +992,10 @@ class GuiFileBrowser : public GuiElement
 		GuiSound * btnSoundClick;
 		GuiTrigger * trigA;
 		GuiTrigger * trigHeldA;
+
+		int selectedItem;
+		int numEntries;
+		bool listChanged;
 };
 
 #endif

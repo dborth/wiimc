@@ -241,20 +241,22 @@ UpdateGui (void *arg)
 			if (mainWindow->GetState() != STATE_DISABLED)
 				mainWindow->DrawTooltip();
 
-			for(i=3; i >= 0; i--) // so that player 1's cursor appears on top!
+			i = 3;
+			do
 			{
 				if(userInput[i].wpad->ir.valid)
 					Menu_DrawImg(userInput[i].wpad->ir.x-48, userInput[i].wpad->ir.y-48,
 						96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255);
 				DoRumble(i);
-			}
+				--i;
+			} while(i>=0);
 			doMPlayerGuiDraw = 0;
 		}
 
-		for(i=3; i >= 0; i--)
-		{
-			mainWindow->Update(&userInput[i]);
-		}
+		mainWindow->Update(&userInput[3]);
+		mainWindow->Update(&userInput[2]);
+		mainWindow->Update(&userInput[1]);
+		mainWindow->Update(&userInput[0]);
 
 		if(menuMode == 0) // normal GUI
 		{
@@ -563,12 +565,12 @@ ProgressWindow(char *title, char *msg)
 		{
 			if(count % 5 == 0)
 			{
-				angle+=45;
-				if(angle >= 360)
+				angle+=45.0f;
+				if(angle >= 360.0f)
 					angle = 0;
 				throbberImg.SetAngle(angle);
 			}
-			count++;
+			++count;
 		}
 	}
 
@@ -625,10 +627,8 @@ ShowProgress (const char *msg, int done, int total)
 
 	if(total < (256*1024))
 		return;
-	else if(done > total) // this shouldn't happen
-		done = total;
-
-	if(done/total > 0.99)
+	
+	if(done > total) // this shouldn't happen
 		done = total;
 
 	if(showProgress != 1)

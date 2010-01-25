@@ -213,7 +213,7 @@ void GuiFileBrowser::Draw()
 	if(!this->IsVisible())
 		return;
 
-	for(int i=0; i<FILE_PAGESIZE; i++)
+	for(u32 i=0; i<FILE_PAGESIZE; ++i)
 	{
 		fileList[i]->Draw();
 		playlistAddBtn[i]->Draw();
@@ -262,7 +262,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		else if(positionWiimote > scrollbarBoxBtn->GetMaxY())
 			positionWiimote = scrollbarBoxBtn->GetMaxY();
 
-		browser.pageIndex = (positionWiimote * browser.numEntries)/190.0 - selectedItem;
+		browser.pageIndex = (positionWiimote * browser.numEntries)/190.0f - selectedItem;
 
 		if(browser.pageIndex <= 0)
 		{
@@ -323,7 +323,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 			if(selectedItem == FILE_PAGESIZE-1)
 			{
 				// move list down by 1
-				browser.pageIndex++;
+				++browser.pageIndex;
 				listChanged = true;
 			}
 			else if(fileList[selectedItem+1]->IsVisible())
@@ -338,7 +338,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		if(selectedItem == 0 &&	browser.pageIndex + selectedItem > 0)
 		{
 			// move list up by 1
-			browser.pageIndex--;
+			--browser.pageIndex;
 			listChanged = true;
 		}
 		else if(selectedItem > 0)
@@ -350,7 +350,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 
 	endNavigation:
 
-	for(int i=0; i<FILE_PAGESIZE; i++)
+	for(int i=0; i<FILE_PAGESIZE; ++i)
 	{
 		if(listChanged || numEntries != browser.numEntries)
 		{
@@ -365,7 +365,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 
 				if(fileListIcon[i])
 				{
-					delete(fileListIcon[i]);
+					delete fileListIcon[i];
 					fileListIcon[i] = NULL;
 				}
 
@@ -448,20 +448,24 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	}
 
 	// update the location of the scroll box based on the position in the file list
-	if(positionWiimote > 0 || listChanged || numEntries != browser.numEntries)
+	if(positionWiimote > 0)
 	{
-		if(positionWiimote > 0)
+		position = positionWiimote; // follow wiimote cursor
+		scrollbarBoxBtn->SetPosition(0,position+36);
+	}
+	else if(listChanged || numEntries != browser.numEntries)
+	{
+		if(float((browser.pageIndex<<1))/(float(FILE_PAGESIZE)) < 1.0)
 		{
-			position = positionWiimote; // follow wiimote cursor
+			position = 0;
+		}
+		else if(browser.pageIndex+FILE_PAGESIZE >= browser.numEntries)
+		{
+			position = 130;
 		}
 		else
 		{
-			position = 130*(browser.pageIndex + FILE_PAGESIZE/2.0) / (browser.numEntries*1.0);
-	
-			if(browser.pageIndex/(FILE_PAGESIZE/2.0) < 1)
-				position = 0;
-			else if((browser.pageIndex+FILE_PAGESIZE)/(FILE_PAGESIZE*1.0) >= (browser.numEntries)/(FILE_PAGESIZE*1.0))
-				position = 130;
+			position = 130* (int((float(browser.pageIndex) + float(FILE_PAGESIZE)*0.5f) / (float(browser.numEntries))));
 		}
 		scrollbarBoxBtn->SetPosition(0,position+36);
 	}

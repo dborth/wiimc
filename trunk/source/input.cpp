@@ -81,20 +81,23 @@ void DoRumble(int i)
 {
 	if(!WiiSettings.rumble) return;
 
-	if(rumbleRequest[i] && rumbleCount[i] < 3)
+	if(rumbleRequest[i])
 	{
-		WPAD_Rumble(i, 1); // rumble on
-		rumbleCount[i]++;
-	}
-	else if(rumbleRequest[i])
-	{
-		rumbleCount[i] = 12;
-		rumbleRequest[i] = 0;
+		if(rumbleCount[i] < 3)
+		{
+			WPAD_Rumble(i, 1); // rumble on
+			++rumbleCount[i];
+		}
+		else
+		{
+			rumbleCount[i] = 12;
+			rumbleRequest[i] = 0;
+		}
 	}
 	else
 	{
 		if(rumbleCount[i])
-			rumbleCount[i]--;
+			--rumbleCount[i];
 		WPAD_Rumble(i, 0); // rumble off
 	}
 }

@@ -118,7 +118,7 @@ char *heartbeat_cmd;
 #ifdef GEKKO
 #include "osdep/plat_gekko.h"
 #include "osdep/gx_supp.h"
-#include "osdep/di2.h"
+#include "../utils/di2.h"
 #include <ogc/system.h>
 void wiiPause();
 void SetStatus(const char * txt);
@@ -315,12 +315,6 @@ int enable_restore_points=1;
 
 #define MAX_RESTORE_POINTS 10
 
-bool IsLoopAvi(char *_file)
-{
-	return false;
-}
-
-
 typedef struct st_restore_points restore_points_t;
 struct st_restore_points{
     char filename[MAXPATHLEN];
@@ -416,7 +410,7 @@ void save_restore_point(char *_filename,int position)
 {
 	int i,j;
 	if(!enable_restore_points)return;
-	if(_filename==NULL || IsLoopAvi(_filename))return;
+	if(_filename==NULL)return;
 	
 	if(!strncmp(_filename,"dvd://",6) || !strncmp(_filename,"dvdnav",6 )
 		|| !strncmp(_filename,"http:/",6))return;
@@ -3652,7 +3646,7 @@ if (edl_output_filename) {
 int vob_sub_auto = 1; //scip
 
     current_module="vobsub";
-    if(!IsLoopAvi(NULL) && !InternetStream())
+    if(!InternetStream())
     {
 		set_osd_msg(OSD_MSG_TEXT, 1, 80000, "Loading vobsub subtitles...");
 		force_osd();
@@ -3706,10 +3700,7 @@ int vob_sub_auto = 1; //scip
       mpctx->global_sub_indices[SUB_SOURCE_VOBSUB] = mpctx->global_sub_size; // the global # of the first vobsub.
       mpctx->global_sub_size += vobsub_get_indexes_count(vo_vobsub);
     }else{
-    	if(!IsLoopAvi(NULL))
-    	{
-    		rm_osd_msg(OSD_MSG_TEXT);force_osd();
-		}
+    	rm_osd_msg(OSD_MSG_TEXT);force_osd();
 	}
 
 
@@ -3855,14 +3846,11 @@ stream_cache_min_percent=1.0;
   if(res == 0)
     if((mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY))) goto goto_next_file;
 }
-	if(!IsLoopAvi(NULL))
-    {
     //printf("Analysing Stream...");
     	clear_osd_msgs();
 		update_osd_msg();
 		set_osd_msg(OSD_MSG_TEXT, 1, 0, "Analysing Stream...");
 		force_osd();
-	}
   if(mpctx->demuxer)
   {
   	free_demuxer(mpctx->demuxer);
@@ -4353,14 +4341,6 @@ if(restore_seek<0)restore_seek=0;
 
 if(!mpctx->sh_video || !strncmp(filename,"dvd",3))first_frame=true;
 
-//else if (/*restore_seek>0 && */mpctx->sh_audio && !mpctx->mixer.muted) mixer_mute(&mpctx->mixer);
-/*
-	if(!IsLoopAvi(NULL))
-    {
-	set_osd_msg(OSD_MSG_TEXT, 1, 1000, "Playing Stream...");
-	force_osd();
-	}
-*/
 seek_to_sec=restore_seek;
 {
  if(seek_to_sec && strncmp(fileplaying,"dvd://",6) && strncmp(fileplaying,"dvdnav",6 ) /*&& hasvideo*/)
@@ -4396,11 +4376,9 @@ if(mpctx->sh_video)
 	  if (!vo_font || prev_dxs!=w || prev_dys!=h) {
 	    force_load_font = 0;
 
-		if(!IsLoopAvi(NULL))
-		{
 		set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Loading Fonts...");
 		force_osd();
-		}
+
 	    ReInitTTFLib();
 	    //printf("force_ refill: load_font_ft(%s) w: %i  h: %i  sc: %f\n",font_name,w, h,osd_font_scale_factor);
 	    load_font_ft(w,h,&vo_font,font_name,osd_font_scale_factor);
@@ -4609,7 +4587,7 @@ if(auto_quality>0){
   current_module="pause";
 
     //low cache
-	if (stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0 && !IsLoopAvi(NULL)) {
+	if (stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0) {
    		if(mpctx->osd_function == OSD_PAUSE)
    		{
 		   mpctx->was_paused = 1;

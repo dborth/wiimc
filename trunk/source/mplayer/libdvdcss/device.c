@@ -58,7 +58,7 @@
 #endif
 
 #ifdef GEKKO
-#    include "../osdep/di2.h"
+#    include "../../utils/di2.h"
 #    include <malloc.h>
 #endif
 

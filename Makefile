@@ -33,8 +33,9 @@ LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-MPLIBS	:=	-lmplayerwii -lavcodec -lavformat -lavutil -lpostproc -lswscale
-LIBS 	:= 	$(MPLIBS) -lfribidi -ljpeg -ldi -liconv -lpng -lz -lntfs -lfat \
+MPLIBS	:=	-lmplayerwii -lavformat -lavcodec -lavutil -lpostproc -lswscale 
+LIBS 	:= 	$(MPLIBS) -lopencore-amrnb -lopencore-amrwb -lopenjpeg \
+			-lfribidi -ljpeg -ldi -liconv -lpng -lz -lntfs -lfat \
 			-lwiiuse -lbte -logc -lfreetype -ljpeg -lmxml -ltinysmb
 
 

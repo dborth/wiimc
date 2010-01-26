@@ -35,7 +35,7 @@ extern GXRModeObj *vmode;
 
 void GX_InitVideo();
 void GX_SetCamPosZ(float f);
-void GX_SetComponentFix(bool f);
+void GX_SetOverscan(bool f);
 void StopDrawThread();
 void GX_SetScreenPos(int _hor_pos,int _vert_pos, int _stretch);
 
@@ -46,7 +46,6 @@ void GX_ResetTextureYUVPointers();
 void GX_FillTextureYUV(u16 height,u8 *buffer[3]);
 void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch);
 void getStrideInfo(int *_w1,int *_df1,int *_Yrowpitch);
-void GX_UpdateSquare();
 u8* GetYtexture();
 
 #ifdef __cplusplus

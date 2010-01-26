@@ -19,7 +19,7 @@
 #include "m_option.h"
 #include "stream.h"
 #include "libmpdemux/demuxer.h"
-#include "libmenu/fsysloc.h"
+#include "../../utils/fsysloc.h"
 
 
 
@@ -53,16 +53,6 @@ if(!filename) {
 //============ Open STDIN or plain FILE ============
 
 
-  fsysloc = fsysloc_table_locate( fsysloc_table, filename);
-  locale_changed = fsysloc_setlocale( fsysloc);
-  filename_iconv = fsysloc_iconv_to_fsys( fsysloc, filename);
-
-  ret = open_stream_full(filename_iconv,STREAM_READ,options,file_format);
-
-  fsysloc_restorelocale( fsysloc, locale_changed);
-  if ( filename_iconv != filename ){
-     free( filename_iconv);
-  }
-  return ret;
+  return open_stream_full(filename,STREAM_READ,options,file_format);
 }
 

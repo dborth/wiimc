@@ -425,7 +425,16 @@ static int mpegts_write_header(AVFormatContext *s)
         if (st->codec->codec_type == CODEC_TYPE_VIDEO &&
             service->pcr_pid == 0x1fff)
             service->pcr_pid = ts_st->pid;
-        total_bit_rate += st->codec->bit_rate;
+        if (st->codec->rc_max_rate)
+            total_bit_rate += st->codec->rc_max_rate;
+        else {
+            if (!st->codec->bit_rate) {
+                av_log(s, AV_LOG_WARNING,
+                       "stream %d, bit rate is not set, this will cause problems\n",
+                       st->index);
+            }
+            total_bit_rate += st->codec->bit_rate;
+        }
         /* PES header size */
         if (st->codec->codec_type == CODEC_TYPE_VIDEO ||
             st->codec->codec_type == CODEC_TYPE_SUBTITLE) {
@@ -448,15 +457,6 @@ static int mpegts_write_header(AVFormatContext *s)
         service->pcr_pid = ts_st->pid;
     }
 
-    if (total_bit_rate <= 8 * 1024)
-        total_bit_rate = 8 * 1024;
-    service->pcr_packet_period = (total_bit_rate * PCR_RETRANS_TIME) /
-        (TS_PACKET_SIZE * 8 * 1000);
-    ts->sdt_packet_period = (total_bit_rate * SDT_RETRANS_TIME) /
-        (TS_PACKET_SIZE * 8 * 1000);
-    ts->pat_packet_period = (total_bit_rate * PAT_RETRANS_TIME) /
-        (TS_PACKET_SIZE * 8 * 1000);
-
     ts->mux_rate = 1; // avoid div by 0
 
     /* write info at the start of the file, so that it will be fast to
@@ -471,19 +471,35 @@ static int mpegts_write_header(AVFormatContext *s)
     }
     pat_pmt_size = url_ftell(s->pb) - pos;
 
-    total_bit_rate +=
-        total_bit_rate *  4 / TS_PACKET_SIZE           + /* TS  header size */
-        SDT_RETRANS_TIME * 8 * sdt_size     / 1000     + /* SDT size */
-        PAT_RETRANS_TIME * 8 * pat_pmt_size / 1000     + /* PAT+PMT size */
-        PCR_RETRANS_TIME * 8 * 8            / 1000;      /* PCR size */
+    if (total_bit_rate <= 8 * 1024)
+        total_bit_rate = 8 * 1024;
 
-    av_log(s, AV_LOG_DEBUG, "muxrate %d freq sdt %d pat %d\n",
-           total_bit_rate, ts->sdt_packet_period, ts->pat_packet_period);
+    total_bit_rate +=
+        total_bit_rate * 4 / (TS_PACKET_SIZE-4)        + /* TS header size */
+        1000 * 8 * sdt_size     / PAT_RETRANS_TIME     + /* SDT size */
+        1000 * 8 * pat_pmt_size / SDT_RETRANS_TIME     + /* PAT+PMT size */
+        1000 * 8 * 8            / PCR_RETRANS_TIME;      /* PCR size */
 
     if (s->mux_rate)
         ts->mux_rate = s->mux_rate;
     else
         ts->mux_rate = total_bit_rate;
+
+    service->pcr_packet_period = (ts->mux_rate * PCR_RETRANS_TIME) /
+        (TS_PACKET_SIZE * 8 * 1000);
+    ts->sdt_packet_period      = (ts->mux_rate * SDT_RETRANS_TIME) /
+        (TS_PACKET_SIZE * 8 * 1000);
+    ts->pat_packet_period      = (ts->mux_rate * PAT_RETRANS_TIME) /
+        (TS_PACKET_SIZE * 8 * 1000);
+
+    // output a PCR as soon as possible
+    service->pcr_packet_count = service->pcr_packet_period;
+
+    av_log(s, AV_LOG_DEBUG,
+           "calculated bitrate %d bps, muxrate %d bps, "
+           "sdt every %d, pat/pmt every %d pkts\n",
+           total_bit_rate, ts->mux_rate, ts->sdt_packet_period,
+           ts->pat_packet_period);
 
     // adjust pcr
     ts->cur_pcr /= ts->mux_rate;
@@ -519,6 +535,55 @@ static void retransmit_si_info(AVFormatContext *s)
     }
 }
 
+/* Write a single null transport stream packet */
+static void mpegts_insert_null_packet(AVFormatContext *s)
+{
+    MpegTSWrite *ts = s->priv_data;
+    uint8_t *q;
+    uint8_t buf[TS_PACKET_SIZE];
+
+    q = buf;
+    *q++ = 0x47;
+    *q++ = 0x00 | 0x1f;
+    *q++ = 0xff;
+    *q++ = 0x10;
+    memset(q, 0x0FF, TS_PACKET_SIZE - (q - buf));
+    put_buffer(s->pb, buf, TS_PACKET_SIZE);
+    ts->cur_pcr += TS_PACKET_SIZE*8*90000LL/ts->mux_rate;
+}
+
+/* Write a single transport stream packet with a PCR and no payload */
+static void mpegts_insert_pcr_only(AVFormatContext *s, AVStream *st)
+{
+    MpegTSWrite *ts = s->priv_data;
+    MpegTSWriteStream *ts_st = st->priv_data;
+    uint8_t *q;
+    uint64_t pcr = ts->cur_pcr;
+    uint8_t buf[TS_PACKET_SIZE];
+
+    q = buf;
+    *q++ = 0x47;
+    *q++ = ts_st->pid >> 8;
+    *q++ = ts_st->pid;
+    *q++ = 0x20 | ts_st->cc;   /* Adaptation only */
+    /* Continuity Count field does not increment (see 13818-1 section 2.4.3.3) */
+    *q++ = TS_PACKET_SIZE - 5; /* Adaptation Field Length */
+    *q++ = 0x10;               /* Adaptation flags: PCR present */
+
+    /* PCR coded into 6 bytes */
+    *q++ = pcr >> 25;
+    *q++ = pcr >> 17;
+    *q++ = pcr >> 9;
+    *q++ = pcr >> 1;
+    *q++ = (pcr & 1) << 7;
+    *q++ = 0;
+
+    /* stuffing bytes */
+    memset(q, 0xFF, TS_PACKET_SIZE - (q - buf));
+    put_buffer(s->pb, buf, TS_PACKET_SIZE);
+    ts->cur_pcr += TS_PACKET_SIZE*8*90000LL/ts->mux_rate;
+}
+
 static void write_pts(uint8_t *q, int fourbits, int64_t pts)
 {
     int val;
@@ -533,7 +598,11 @@ static void write_pts(uint8_t *q, int fourbits, int64_t pts)
     *q++ = val;
 }
 
-/* NOTE: pes_data contains all the PES packet */
+/* Add a pes header to the front of payload, and segment into an integer number of
+ * ts packets. The final ts packet is padded using an over-sized adaptation header
+ * to exactly fill the last ts packet.
+ * NOTE: 'payload' contains a complete PES payload.
+ */
 static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
                              const uint8_t *payload, int payload_size,
                              int64_t pts, int64_t dts)
@@ -545,6 +614,7 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
     int val, is_start, len, header_len, write_pcr, private_code, flags;
     int afc_len, stuffing_len;
     int64_t pcr = -1; /* avoid warning */
+    int64_t delay = av_rescale(s->max_delay, 90000, AV_TIME_BASE);
 
     is_start = 1;
     while (payload_size > 0) {
@@ -558,6 +628,15 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
                 ts_st->service->pcr_packet_count = 0;
                 write_pcr = 1;
             }
+        }
+
+        if (dts != AV_NOPTS_VALUE && (dts - (int64_t)ts->cur_pcr) > delay) {
+            /* pcr insert gets priority over null packet insert */
+            if (write_pcr)
+                mpegts_insert_pcr_only(s, st);
+            else
+                mpegts_insert_null_packet(s);
+            continue; /* recalculate write_pcr and possibly retransmit si_info */
         }
 
         /* prepare packet header */
@@ -705,7 +784,7 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
 static int mpegts_write_packet(AVFormatContext *s, AVPacket *pkt)
 {
     AVStream *st = s->streams[pkt->stream_index];
-    int len, size = pkt->size;
+    int size = pkt->size;
     uint8_t *buf= pkt->data;
     uint8_t *data= NULL;
     MpegTSWriteStream *ts_st = st->priv_data;
@@ -748,28 +827,19 @@ static int mpegts_write_packet(AVFormatContext *s, AVPacket *pkt)
         return 0;
     }
 
-    if (ts_st->payload_pts == AV_NOPTS_VALUE) {
-        ts_st->payload_dts = dts;
-        ts_st->payload_pts = pts;
+    if (ts_st->payload_index + size > DEFAULT_PES_PAYLOAD_SIZE) {
+        mpegts_write_pes(s, st, ts_st->payload, ts_st->payload_index,
+                         ts_st->payload_pts, ts_st->payload_dts);
+        ts_st->payload_index = 0;
     }
 
-    // audio
-    while (size > 0) {
-        len = DEFAULT_PES_PAYLOAD_SIZE - ts_st->payload_index;
-        if (len > size)
-            len = size;
-        memcpy(ts_st->payload + ts_st->payload_index, buf, len);
-        buf += len;
-        size -= len;
-        ts_st->payload_index += len;
-        if (ts_st->payload_index >= DEFAULT_PES_PAYLOAD_SIZE) {
-            mpegts_write_pes(s, st, ts_st->payload, ts_st->payload_index,
-                             ts_st->payload_pts, ts_st->payload_dts);
-            ts_st->payload_pts = AV_NOPTS_VALUE;
-            ts_st->payload_dts = AV_NOPTS_VALUE;
-            ts_st->payload_index = 0;
-        }
+    if (!ts_st->payload_index) {
+        ts_st->payload_pts = pts;
+        ts_st->payload_dts = dts;
     }
+
+    memcpy(ts_st->payload + ts_st->payload_index, buf, size);
+    ts_st->payload_index += size;
 
     return 0;
 }

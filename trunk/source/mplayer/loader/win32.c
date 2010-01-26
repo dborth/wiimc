@@ -208,8 +208,8 @@ static inline void dbgprintf(char* fmt, ...)
 	vprintf(fmt, va);
 //	mp_dbg(MSGT_WIN32, MSGL_DBG3, fmt, va);
 	va_end(va);
+	fflush(stdout);
     }
-  fflush(stdout);
 }
 
 
@@ -3839,7 +3839,7 @@ HRESULT WINAPI CoInitialize(LPVOID lpReserved)
 }
 void WINAPI CoUninitialize(void)
 {
-    return expCoUninitialize();
+    expCoUninitialize();
 }
 
 static DWORD WINAPI expSetThreadAffinityMask
@@ -5326,9 +5326,11 @@ struct libs libraries[]={
 
 static WIN_BOOL WINAPI ext_stubs(void)
 {
-    volatile int idx = 0xdeadabcd;
+    // NOTE! these magic values will be replaced at runtime, make sure
+    // add_stub can still find them if you change them.
+    volatile int idx = 0x0deadabc;
     // make sure gcc does not do eip-relative call or something like that
-    volatile void (*my_printf)(char *, char *) = (void *)0xdeadfbcd;
+    void (* volatile my_printf)(char *, char *) = (void *)0xdeadfbcd;
     my_printf("Called unk_%s\n", export_names[idx]);
     return 0;
 }
@@ -5355,7 +5357,7 @@ static void* add_stub(void)
     memcpy(answ, ext_stubs, MAX_STUB_SIZE);
     for (i = 0; i < MAX_STUB_SIZE - 3; i++) {
       int *magic = (int *)(answ + i);
-      if (*magic == 0xdeadabcd) {
+      if (*magic == 0x0deadabc) {
         *magic = pos;
         found |= 1;
       }

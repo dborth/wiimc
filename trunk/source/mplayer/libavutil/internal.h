@@ -120,44 +120,6 @@
 
 /* math */
 
-extern const uint32_t ff_inverse[257];
-
-#if ARCH_X86
-#    define FASTDIV(a,b) \
-    ({\
-        int ret, dmy;\
-        __asm__ volatile(\
-            "mull %3"\
-            :"=d"(ret), "=a"(dmy)\
-            :"1"(a), "g"(ff_inverse[b])\
-            );\
-        ret;\
-    })
-#elif HAVE_ARMV6 && HAVE_INLINE_ASM
-static inline av_const int FASTDIV(int a, int b)
-{
-    int r, t;
-    __asm__ volatile("cmp     %3, #2               \n\t"
-                     "ldr     %1, [%4, %3, lsl #2] \n\t"
-                     "lsrle   %0, %2, #1           \n\t"
-                     "smmulgt %0, %1, %2           \n\t"
-                     : "=&r"(r), "=&r"(t) : "r"(a), "r"(b), "r"(ff_inverse));
-    return r;
-}
-#elif ARCH_ARM && HAVE_INLINE_ASM
-static inline av_const int FASTDIV(int a, int b)
-{
-    int r, t;
-    __asm__ volatile("umull %1, %0, %2, %3"
-                     : "=&r"(r), "=&r"(t) : "r"(a), "r"(ff_inverse[b]));
-    return r;
-}
-#elif CONFIG_FASTDIV
-#    define FASTDIV(a,b)   ((uint32_t)((((uint64_t)a) * ff_inverse[b]) >> 32))
-#else
-#    define FASTDIV(a,b)   ((a) / (b))
-#endif
-
 extern const uint8_t ff_sqrt_tab[256];
 
 static inline av_const unsigned int ff_sqrt(unsigned int a)
@@ -192,25 +154,6 @@ static inline av_const unsigned int ff_sqrt(unsigned int a)
 #define MASK_ABS(mask, level)\
             mask  = level >> 31;\
             level = (level ^ mask) - mask;
-#endif
-
-#if HAVE_CMOV
-#define COPY3_IF_LT(x, y, a, b, c, d)\
-__asm__ volatile(\
-    "cmpl  %0, %3       \n\t"\
-    "cmovl %3, %0       \n\t"\
-    "cmovl %4, %1       \n\t"\
-    "cmovl %5, %2       \n\t"\
-    : "+&r" (x), "+&r" (a), "+r" (c)\
-    : "r" (y), "r" (b), "r" (d)\
-);
-#else
-#define COPY3_IF_LT(x, y, a, b, c, d)\
-if ((y) < (x)) {\
-    (x) = (y);\
-    (a) = (b);\
-    (c) = (d);\
-}
 #endif
 
 /* avoid usage of dangerous/inappropriate system functions */
@@ -263,6 +206,16 @@ if ((y) < (x)) {\
     }\
 }
 
+#if !HAVE_EXP2
+#undef exp2
+#define exp2(x) exp((x) * 0.693147180559945)
+#endif /* HAVE_EXP2 */
+
+#if !HAVE_EXP2F
+#undef exp2f
+#define exp2f(x) exp2(x)
+#endif /* HAVE_EXP2F */
+
 #if !HAVE_LLRINT
 #ifndef GEKKO
 static av_always_inline av_const long long llrint(double x)
@@ -276,11 +229,14 @@ static av_always_inline av_const long long llrint(double x)
 #endif /* HAVE_LLRINT */
 
 #if !HAVE_LOG2
-static av_always_inline av_const double log2(double x)
-{
-    return (log(x)) * 1.44269504088896340736;
-}
+#undef log2
+#define log2(x) (log(x) * 1.44269504088896340736)
 #endif /* HAVE_LOG2 */
+
+#if !HAVE_LOG2F
+#undef log2f
+#define log2f(x) log2(x)
+#endif /* HAVE_LOG2F */
 
 #if !HAVE_LRINT
 static av_always_inline av_const long int lrint(double x)

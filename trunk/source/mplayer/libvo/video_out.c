@@ -96,6 +96,7 @@ extern vo_functions_t video_out_vdpau;
 extern vo_functions_t video_out_xv;
 extern vo_functions_t video_out_gl;
 extern vo_functions_t video_out_gl2;
+extern vo_functions_t video_out_matrixview;
 extern vo_functions_t video_out_dga;
 extern vo_functions_t video_out_sdl;
 extern vo_functions_t video_out_3dfx;
@@ -194,6 +195,9 @@ const vo_functions_t* const video_out_drivers[] =
         &video_out_gl,
         &video_out_gl2,
 #endif
+#ifdef CONFIG_MATRIXVIEW
+        &video_out_matrixview,
+#endif
 #ifdef CONFIG_DGA
         &video_out_dga,
 #endif
@@ -265,7 +269,7 @@ const vo_functions_t* const video_out_drivers[] =
 #ifdef CONFIG_YUV4MPEG
         &video_out_yuv4mpeg,
 #endif
-#ifdef CONFIG_PNG
+#ifdef CONFIG_LIBAVCODEC
         &video_out_png,
 #endif
 #ifdef CONFIG_JPEG

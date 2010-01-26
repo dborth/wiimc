@@ -322,8 +322,8 @@ mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype,
     // keep buffer allocation status & color flags only:
 //    mpi->flags&=~(MP_IMGFLAG_PRESERVE|MP_IMGFLAG_READABLE|MP_IMGFLAG_DIRECT);
     mpi->flags&=MP_IMGFLAG_ALLOCATED|MP_IMGFLAG_TYPE_DISPLAYED|MP_IMGFLAGMASK_COLORS;
-    // accept restrictions & draw_slice flags only:
-    mpi->flags|=mp_imgflag&(MP_IMGFLAGMASK_RESTRICTIONS|MP_IMGFLAG_DRAW_CALLBACK);
+    // accept restrictions, draw_slice and palette flags only:
+    mpi->flags|=mp_imgflag&(MP_IMGFLAGMASK_RESTRICTIONS|MP_IMGFLAG_DRAW_CALLBACK|MP_IMGFLAG_RGB_PALETTE);
     if(!vf->draw_slice) mpi->flags&=~MP_IMGFLAG_DRAW_CALLBACK;
     if(mpi->width!=w2 || mpi->height!=h){
 //	printf("vf.c: MPI parameters changed!  %dx%d -> %dx%d   \n", mpi->width,mpi->height,w2,h);
@@ -372,44 +372,9 @@ mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype,
 	      }
 	  }
 
-	  // IF09 - allocate space for 4. plane delta info - unused
-	  if (mpi->imgfmt == IMGFMT_IF09)
-	  {
-	     mpi->planes[0]=memalign(64, mpi->bpp*mpi->width*(mpi->height+2)/8+
-	    				mpi->chroma_width*mpi->chroma_height);
-	     /* export delta table */
-	     mpi->planes[3]=mpi->planes[0]+(mpi->width*mpi->height)+2*(mpi->chroma_width*mpi->chroma_height);
-	  }
-	  else
-	     mpi->planes[0]=memalign(64, mpi->bpp*mpi->width*(mpi->height+2)/8);
-	  if(mpi->flags&MP_IMGFLAG_PLANAR){
-	      // YV12/I420/YVU9/IF09. feel free to add other planar formats here...
-	      //if(!mpi->stride[0])
-	      mpi->stride[0]=mpi->width;
-	      //if(!mpi->stride[1])
-	      if(mpi->num_planes > 2){
-	      mpi->stride[1]=mpi->stride[2]=mpi->chroma_width;
-	      if(mpi->flags&MP_IMGFLAG_SWAPPED){
-	          // I420/IYUV  (Y,U,V)
-	          mpi->planes[1]=mpi->planes[0]+mpi->width*mpi->height;
-	          mpi->planes[2]=mpi->planes[1]+mpi->chroma_width*mpi->chroma_height;
-	      } else {
-	          // YV12,YVU9,IF09  (Y,V,U)
-	          mpi->planes[2]=mpi->planes[0]+mpi->width*mpi->height;
-	          mpi->planes[1]=mpi->planes[2]+mpi->chroma_width*mpi->chroma_height;
-	      }
-	      } else {
-	          // NV12/NV21
-	          mpi->stride[1]=mpi->chroma_width;
-	          mpi->planes[1]=mpi->planes[0]+mpi->width*mpi->height;
-	      }
-	  } else {
-	      //if(!mpi->stride[0])
-	      mpi->stride[0]=mpi->width*mpi->bpp/8;
-	  }
+	  mp_image_alloc_planes(mpi);
 //	  printf("clearing img!\n");
 	  vf_mpi_clear(mpi,0,0,mpi->width,mpi->height);
-	  mpi->flags|=MP_IMGFLAG_ALLOCATED;
         }
     }
     if(mpi->flags&MP_IMGFLAG_DRAW_CALLBACK)

@@ -35,12 +35,28 @@
 #define IMGFMT_ARGB IMGFMT_BGR32
 #define IMGFMT_RGBA (IMGFMT_BGR32|64)
 #define IMGFMT_RGB48NE IMGFMT_RGB48BE
+#define IMGFMT_RGB15BE IMGFMT_RGB15
+#define IMGFMT_RGB15LE (IMGFMT_RGB15|64)
+#define IMGFMT_RGB16BE IMGFMT_RGB16
+#define IMGFMT_RGB16LE (IMGFMT_RGB16|64)
+#define IMGFMT_BGR15BE IMGFMT_BGR15
+#define IMGFMT_BGR15LE (IMGFMT_BGR15|64)
+#define IMGFMT_BGR16BE IMGFMT_BGR16
+#define IMGFMT_BGR16LE (IMGFMT_BGR16|64)
 #else
 #define IMGFMT_ABGR (IMGFMT_BGR32|64)
 #define IMGFMT_BGRA IMGFMT_BGR32
 #define IMGFMT_ARGB (IMGFMT_RGB32|64)
 #define IMGFMT_RGBA IMGFMT_RGB32
 #define IMGFMT_RGB48NE IMGFMT_RGB48LE
+#define IMGFMT_RGB15BE (IMGFMT_RGB15|64)
+#define IMGFMT_RGB15LE IMGFMT_RGB15
+#define IMGFMT_RGB16BE (IMGFMT_RGB16|64)
+#define IMGFMT_RGB16LE IMGFMT_RGB16
+#define IMGFMT_BGR15BE (IMGFMT_BGR15|64)
+#define IMGFMT_BGR15LE IMGFMT_BGR15
+#define IMGFMT_BGR16BE (IMGFMT_BGR16|64)
+#define IMGFMT_BGR16LE IMGFMT_BGR16
 #endif
 
 /* old names for compatibility */
@@ -71,7 +87,32 @@
 #define IMGFMT_444P 0x50343434
 #define IMGFMT_422P 0x50323234
 #define IMGFMT_411P 0x50313134
+#define IMGFMT_440P 0x50303434
 #define IMGFMT_HM12 0x32314D48
+
+// 4:2:0 planar with alpha
+#define IMGFMT_420A 0x41303234
+
+#define IMGFMT_444P16_LE 0x51343434
+#define IMGFMT_444P16_BE 0x34343451
+#define IMGFMT_422P16_LE 0x51323234
+#define IMGFMT_422P16_BE 0x34323251
+#define IMGFMT_420P16_LE 0x51303234
+#define IMGFMT_420P16_BE 0x34323051
+#if HAVE_BIGENDIAN
+#define IMGFMT_444P16 IMGFMT_444P16_BE
+#define IMGFMT_422P16 IMGFMT_422P16_BE
+#define IMGFMT_420P16 IMGFMT_420P16_BE
+#else
+#define IMGFMT_444P16 IMGFMT_444P16_LE
+#define IMGFMT_422P16 IMGFMT_422P16_LE
+#define IMGFMT_420P16 IMGFMT_420P16_LE
+#endif
+
+#define IMGFMT_IS_YUVP16_LE(fmt) (((fmt  ^ IMGFMT_420P16_LE) & 0xff0000ff) == 0)
+#define IMGFMT_IS_YUVP16_BE(fmt) (((fmt  ^ IMGFMT_420P16_BE) & 0xff0000ff) == 0)
+#define IMGFMT_IS_YUVP16_NE(fmt) (((fmt  ^ IMGFMT_420P16   ) & 0xff0000ff) == 0)
+#define IMGFMT_IS_YUVP16(fmt)    (IMGFMT_IS_YUVP16_LE(fmt) || IMGFMT_IS_YUVP16_BE(fmt))
 
 /* Packed YUV Formats */
 
@@ -132,5 +173,12 @@ typedef struct {
 } vo_mpegpes_t;
 
 const char *vo_format_name(int format);
+
+/**
+ * Calculates the scale shifts for the chroma planes for planar YUV
+ *
+ * \return bits-per-pixel for format if successful (i.e. format is 3 or 4-planes planar YUV), 0 otherwise
+ */
+int mp_get_chroma_shift(int format, int *x_shift, int *y_shift);
 
 #endif /* MPLAYER_IMG_FORMAT_H */

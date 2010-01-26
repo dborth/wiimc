@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: layer2.c 29305 2009-05-13 02:58:57Z diego $
+ * $Id: layer2.c 30209 2010-01-04 19:36:18Z diego $
  */
 
 /*
@@ -11,7 +11,7 @@
  *
  */
 
-//#include "mpg123.h"
+#include "mpg123.h"
 #include "l2tables.h"
 
 static int grp_3tab[32 * 3] = { 0, };   /* used: 27 */

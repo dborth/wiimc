@@ -16,7 +16,7 @@
  *
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: dct36_3dnow.c 28152 2008-12-15 16:13:41Z reimar $
+ * $Id: dct36_3dnow.c 30209 2010-01-04 19:36:18Z diego $
  *
  * Original disclaimer:
  *  The author of this program disclaim whole expressed or implied
@@ -27,10 +27,9 @@
  * 2003/06/21: Moved to GCC inline assembly - Alex Beregszaszi
  */
 
-#define real float /* ugly - but only way */
-
 #include "config.h"
 #include "mangle.h"
+#include "mpg123.h"
 
 #ifdef DCT36_OPTIMIZE_FOR_K7
 void dct36_3dnowex(real *inbuf, real *o1,

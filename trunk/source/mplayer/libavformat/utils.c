@@ -43,12 +43,12 @@ unsigned avformat_version(void)
     return LIBAVFORMAT_VERSION_INT;
 }
 
-const char * avformat_configuration(void)
+const char *avformat_configuration(void)
 {
     return FFMPEG_CONFIGURATION;
 }
 
-const char * avformat_license(void)
+const char *avformat_license(void)
 {
 #define LICENSE_PREFIX "libavformat license: "
     return LICENSE_PREFIX FFMPEG_LICENSE + sizeof(LICENSE_PREFIX) - 1;
@@ -139,7 +139,14 @@ void av_register_output_format(AVOutputFormat *format)
     format->next = NULL;
 }
 
+#if LIBAVFORMAT_VERSION_MAJOR < 53
 int match_ext(const char *filename, const char *extensions)
+{
+    return av_match_ext(filename, extensions);
+}
+#endif
+
+int av_match_ext(const char *filename, const char *extensions)
 {
     const char *ext, *p;
     char ext1[32], *q;
@@ -184,8 +191,16 @@ static int match_format(const char *name, const char *names)
     return !strcasecmp(name, names);
 }
 
+#if LIBAVFORMAT_VERSION_MAJOR < 53
 AVOutputFormat *guess_format(const char *short_name, const char *filename,
                              const char *mime_type)
+{
+    return av_guess_format(short_name, filename, mime_type);
+}
+#endif
+
+AVOutputFormat *av_guess_format(const char *short_name, const char *filename,
+                                const char *mime_type)
 {
     AVOutputFormat *fmt, *fmt_found;
     int score_max, score;
@@ -195,7 +210,7 @@ AVOutputFormat *guess_format(const char *short_name, const char *filename,
     if (!short_name && filename &&
         av_filename_number_test(filename) &&
         av_guess_image2_codec(filename) != CODEC_ID_NONE) {
-        return guess_format("image2", NULL, NULL);
+        return av_guess_format("image2", NULL, NULL);
     }
 #endif
     /* Find the proper file type. */
@@ -209,7 +224,7 @@ AVOutputFormat *guess_format(const char *short_name, const char *filename,
         if (fmt->mime_type && mime_type && !strcmp(fmt->mime_type, mime_type))
             score += 10;
         if (filename && fmt->extensions &&
-            match_ext(filename, fmt->extensions)) {
+            av_match_ext(filename, fmt->extensions)) {
             score += 5;
         }
         if (score > score_max) {
@@ -221,17 +236,18 @@ AVOutputFormat *guess_format(const char *short_name, const char *filename,
     return fmt_found;
 }
 
+#if LIBAVFORMAT_VERSION_MAJOR < 53
 AVOutputFormat *guess_stream_format(const char *short_name, const char *filename,
                              const char *mime_type)
 {
-    AVOutputFormat *fmt = guess_format(short_name, filename, mime_type);
+    AVOutputFormat *fmt = av_guess_format(short_name, filename, mime_type);
 
     if (fmt) {
         AVOutputFormat *stream_fmt;
         char stream_format_name[64];
 
         snprintf(stream_format_name, sizeof(stream_format_name), "%s_stream", fmt->name);
-        stream_fmt = guess_format(stream_format_name, NULL, NULL);
+        stream_fmt = av_guess_format(stream_format_name, NULL, NULL);
 
         if (stream_fmt)
             fmt = stream_fmt;
@@ -239,6 +255,7 @@ AVOutputFormat *guess_stream_format(const char *short_name, const char *filename
 
     return fmt;
 }
+#endif
 
 enum CodecID av_guess_codec(AVOutputFormat *fmt, const char *short_name,
                             const char *filename, const char *mime_type, enum CodecType type){
@@ -310,7 +327,7 @@ static AVInputFormat *av_probe_input_format2(AVProbeData *pd, int is_opened, int
         if (fmt1->read_probe) {
             score = fmt1->read_probe(pd);
         } else if (fmt1->extensions) {
-            if (match_ext(pd->filename, fmt1->extensions)) {
+            if (av_match_ext(pd->filename, fmt1->extensions)) {
                 score = 50;
             }
         }
@@ -2203,7 +2220,7 @@ int av_find_stream_info(AVFormatContext *ic)
     }
     for(i=0;i<ic->nb_streams;i++) {
         st = ic->streams[i];
-        if(codec_info_nb_frames[i]>2)
+        if(codec_info_nb_frames[i]>2 && !st->avg_frame_rate.num)
             av_reduce(&st->avg_frame_rate.num, &st->avg_frame_rate.den,
                      (codec_info_nb_frames[i]-2)*(int64_t)st->time_base.den,
                       codec_info_duration[i]    *(int64_t)st->time_base.num, 60000);
@@ -2486,6 +2503,11 @@ int av_write_header(AVFormatContext *s)
     AVStream *st;
 
     // some sanity checks
+    if (s->nb_streams == 0) {
+        av_log(s, AV_LOG_ERROR, "no streams\n");
+        return -1;
+    }
+
     for(i=0;i<s->nb_streams;i++) {
         st = s->streams[i];
 

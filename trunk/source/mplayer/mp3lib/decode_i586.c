@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: decode_i586.c 27791 2008-10-16 20:17:56Z diego $
+ * $Id: decode_i586.c 30209 2010-01-04 19:36:18Z diego $
  */
 
 /*
@@ -27,11 +27,11 @@
 *
 * Stefan Bieschewski <stb@acm.org>
 *
-* $Id: decode_i586.c 27791 2008-10-16 20:17:56Z diego $
+* $Id: decode_i586.c 30209 2010-01-04 19:36:18Z diego $
 */
 #include "config.h"
 #include "mangle.h"
-#define real float /* ugly - but only way */
+#include "mpg123.h"
 
 static int attribute_used buffs[1088]={0};
 static int attribute_used bo=1;

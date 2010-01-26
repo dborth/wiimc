@@ -211,7 +211,7 @@ typedef struct CONTEXT86
 #define CONTEXT86_FULL (CONTEXT86_CONTROL | CONTEXT86_INTEGER | CONTEXT86_SEGMENTS)
 
 /* i386 context definitions */
-#ifdef __i386__
+#if ARCH_X86_32
 
 #define CONTEXT_CONTROL         CONTEXT86_CONTROL
 #define CONTEXT_INTEGER         CONTEXT86_INTEGER
@@ -222,7 +222,7 @@ typedef struct CONTEXT86
 
 typedef CONTEXT86 CONTEXT;
 
-#endif  /* __i386__ */
+#endif  /* ARCH_X86_32 */
 
 /* Alpha context definitions */
 #if defined(_ALPHA_) || defined(__alpha__)
@@ -620,7 +620,8 @@ typedef struct CONTEXT
 #endif  /* __sparc__ */
 
 #if !defined(CONTEXT_FULL) && !defined(RC_INVOKED)
-#error You need to define a CONTEXT for your CPU
+#warning You need to define a CONTEXT for your CPU
+typedef void CONTEXT;
 #endif
 
 typedef CONTEXT *PCONTEXT;
@@ -675,7 +676,7 @@ typedef HANDLE *PHANDLE;
 
 /* Macros to retrieve the current context */
 
-#ifdef __i386__
+#if ARCH_X86_32
 
 #ifdef NEED_UNDERSCORE_PREFIX
 # define ASM_NAME(name) "_" name
@@ -717,7 +718,7 @@ typedef HANDLE *PHANDLE;
 #define DEFINE_REGS_ENTRYPOINT_4( name, fn, t1, t2, t3, t4 ) \
   DEFINE_REGS_ENTRYPOINT( name, fn, 16 )
 
-#endif  /* __i386__ */
+#endif  /* ARCH_X86_32 */
 
 #ifdef __sparc__
 /* FIXME: use getcontext() to retrieve full context */
@@ -747,10 +748,10 @@ typedef HANDLE *PHANDLE;
 #endif /* __sparc__ */
 
 #ifndef DEFINE_REGS_ENTRYPOINT_0
-#error You need to define DEFINE_REGS_ENTRYPOINT macros for your CPU
+#warning You need to define DEFINE_REGS_ENTRYPOINT macros for your CPU
 #endif
 
-#ifdef __i386__
+#if ARCH_X86_32
 # define GET_IP(context) ((LPVOID)(context)->Eip)
 #endif
 #ifdef __sparc__
@@ -758,7 +759,7 @@ typedef HANDLE *PHANDLE;
 #endif
 
 #if !defined(GET_IP) && !defined(RC_INVOKED)
-# error You must define GET_IP for this CPU
+#warning You must define GET_IP for this CPU
 #endif
 
 /*
@@ -1070,7 +1071,7 @@ typedef struct NT_TIB
 
 struct TEB;
 /*
-#if defined(__i386__) && defined(__GNUC__)
+#if ARCH_X86_32 && defined(__GNUC__)
 inline struct TEB * WINAPI NtCurrentTeb(void);
 inline struct TEB * WINAPI NtCurrentTeb(void)
 {

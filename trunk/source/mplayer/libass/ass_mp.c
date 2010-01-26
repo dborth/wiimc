@@ -27,10 +27,7 @@
 #include "mp_msg.h"
 #include "get_path.h"
 
-#include "ass.h"
-#include "ass_utils.h"
 #include "ass_mp.h"
-#include "ass_library.h"
 
 #ifdef CONFIG_FONTCONFIG
 #include <fontconfig/fontconfig.h>
@@ -70,8 +67,6 @@ extern char* sub_cp;
 #else
 static char* sub_cp = 0;
 #endif
-
-void process_force_style(ass_track_t* track);
 
 ass_track_t* ass_default_track(ass_library_t* library) {
 	ass_track_t* track = ass_new_track(library);
@@ -245,10 +240,14 @@ void ass_configure_fonts(ass_renderer_t* priv) {
 	else if (font_fontconfig >= 0 && font_name) family = strdup(font_name);
 	else family = 0;
 
+#if defined(LIBASS_VERSION) && LIBASS_VERSION >= 0x00907010
+        ass_set_fonts(priv, path, family, font_fontconfig, NULL, 1);
+#else
 	if (font_fontconfig >= 0)
 		ass_set_fonts(priv, path, family);
 	else
 		ass_set_fonts_nofc(priv, path, family);
+#endif
 
 	free(dir);
 	free(path);

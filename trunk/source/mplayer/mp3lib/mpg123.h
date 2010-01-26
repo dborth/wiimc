@@ -1,13 +1,16 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: mpg123.h 28085 2008-12-03 23:01:03Z diego $
+ * $Id: mpg123.h 30209 2010-01-04 19:36:18Z diego $
  */
 
 /*
  * mpg123 defines
  * used source: musicout.h from mpegaudio package
  */
+
+#ifndef MPLAYER_MP3LIB_MPG123_H
+#define MPLAYER_MP3LIB_MPG123_H
 
 #include "config.h"
 
@@ -21,6 +24,8 @@
 #define NEW_DCT9
 
 #undef MPG123_REMOTE           /* Get rid of this stuff for Win32 */
+
+typedef float real;
 
 /*
 #  define real float
@@ -126,3 +131,5 @@ void dct36_sse(real *, real *, real *, real *, real *);
 
 typedef int (*synth_func_t)( real *,int,short * );
 typedef void (*dct36_func_t)(real *,real *,real *,real *,real *);
+
+#endif /* MPLAYER_MP3LIB_MPG123_H */

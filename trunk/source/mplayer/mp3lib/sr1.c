@@ -13,9 +13,6 @@
 #include        <string.h>
 #include        <math.h>
 
-#define real float
-// #define int long
-
 #include "mpg123.h"
 #include "huffman.h"
 #include "mp3.h"
@@ -73,7 +70,7 @@ int mp3_read(char *buf,int size);
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: sr1.c 29761 2009-10-08 11:32:17Z diego $
+ * $Id: sr1.c 30209 2010-01-04 19:36:18Z diego $
  */
 
 

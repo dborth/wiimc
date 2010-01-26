@@ -38,7 +38,7 @@
 #define MP_IMGFLAG_YUV 0x200
 // set if it's swapped (BGR or YVU) plane/byteorder
 #define MP_IMGFLAG_SWAPPED 0x400
-// using palette for RGB data
+// set if you want memory for palette allocated and managed by vf_get_image etc.
 #define MP_IMGFLAG_RGB_PALETTE 0x800
 
 #define MP_IMGFLAGMASK_COLORS 0xF00
@@ -133,51 +133,32 @@ static inline void mp_image_setfmt(mp_image_t* mpi,unsigned int out_fmt){
     }
     mpi->flags|=MP_IMGFLAG_YUV;
     mpi->num_planes=3;
+    if (mp_get_chroma_shift(out_fmt, NULL, NULL)) {
+        mpi->flags|=MP_IMGFLAG_PLANAR;
+        mpi->bpp = mp_get_chroma_shift(out_fmt, &mpi->chroma_x_shift, &mpi->chroma_y_shift);
+        mpi->chroma_width  = mpi->width  >> mpi->chroma_x_shift;
+        mpi->chroma_height = mpi->height >> mpi->chroma_y_shift;
+    }
     switch(out_fmt){
     case IMGFMT_I420:
     case IMGFMT_IYUV:
 	mpi->flags|=MP_IMGFLAG_SWAPPED;
     case IMGFMT_YV12:
-	mpi->flags|=MP_IMGFLAG_PLANAR;
-	mpi->bpp=12;
-	mpi->chroma_width=(mpi->width>>1);
-	mpi->chroma_height=(mpi->height>>1);
-	mpi->chroma_x_shift=1;
-	mpi->chroma_y_shift=1;
 	return;
+    case IMGFMT_420A:
     case IMGFMT_IF09:
 	mpi->num_planes=4;
     case IMGFMT_YVU9:
-	mpi->flags|=MP_IMGFLAG_PLANAR;
-	mpi->bpp=9;
-	mpi->chroma_width=(mpi->width>>2);
-	mpi->chroma_height=(mpi->height>>2);
-	mpi->chroma_x_shift=2;
-	mpi->chroma_y_shift=2;
-	return;
     case IMGFMT_444P:
-	mpi->flags|=MP_IMGFLAG_PLANAR;
-	mpi->bpp=24;
-	mpi->chroma_width=(mpi->width);
-	mpi->chroma_height=(mpi->height);
-	mpi->chroma_x_shift=0;
-	mpi->chroma_y_shift=0;
-	return;
     case IMGFMT_422P:
-	mpi->flags|=MP_IMGFLAG_PLANAR;
-	mpi->bpp=16;
-	mpi->chroma_width=(mpi->width>>1);
-	mpi->chroma_height=(mpi->height);
-	mpi->chroma_x_shift=1;
-	mpi->chroma_y_shift=0;
-	return;
     case IMGFMT_411P:
-	mpi->flags|=MP_IMGFLAG_PLANAR;
-	mpi->bpp=12;
-	mpi->chroma_width=(mpi->width>>2);
-	mpi->chroma_height=(mpi->height);
-	mpi->chroma_x_shift=2;
-	mpi->chroma_y_shift=0;
+    case IMGFMT_440P:
+    case IMGFMT_444P16_LE:
+    case IMGFMT_444P16_BE:
+    case IMGFMT_422P16_LE:
+    case IMGFMT_422P16_BE:
+    case IMGFMT_420P16_LE:
+    case IMGFMT_420P16_BE:
 	return;
     case IMGFMT_Y800:
     case IMGFMT_Y8:
@@ -223,11 +204,14 @@ static inline void free_mp_image(mp_image_t* mpi){
     if(mpi->flags&MP_IMGFLAG_ALLOCATED){
 	/* becouse we allocate the whole image in once */
 	if(mpi->planes[0]) free(mpi->planes[0]);
+	if (mpi->flags & MP_IMGFLAG_RGB_PALETTE)
+	    free(mpi->planes[1]);
     }
     free(mpi);
 }
 
 mp_image_t* alloc_mpi(int w, int h, unsigned long int fmt);
+void mp_image_alloc_planes(mp_image_t *mpi);
 void copy_mpi(mp_image_t *dmpi, mp_image_t *mpi);
 
 #endif /* MPLAYER_MP_IMAGE_H */

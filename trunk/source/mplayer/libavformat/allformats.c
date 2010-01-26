@@ -53,6 +53,7 @@ void av_register_all(void)
     REGISTER_DEMUXER  (AEA, aea);
     REGISTER_MUXDEMUX (AIFF, aiff);
     REGISTER_MUXDEMUX (AMR, amr);
+    REGISTER_DEMUXER  (ANM, anm);
     REGISTER_DEMUXER  (APC, apc);
     REGISTER_DEMUXER  (APE, ape);
     REGISTER_MUXDEMUX (ASF, asf);
@@ -81,6 +82,7 @@ void av_register_all(void)
     REGISTER_DEMUXER  (EA_CDATA, ea_cdata);
     REGISTER_MUXDEMUX (EAC3, eac3);
     REGISTER_MUXDEMUX (FFM, ffm);
+    REGISTER_MUXDEMUX (FILMSTRIP, filmstrip);
     REGISTER_MUXDEMUX (FLAC, flac);
     REGISTER_DEMUXER  (FLIC, flic);
     REGISTER_MUXDEMUX (FLV, flv);

@@ -1,8 +1,10 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: tabinit.c 23452 2007-06-02 16:25:18Z zuxy $
+ * $Id: tabinit.c 30209 2010-01-04 19:36:18Z diego $
  */
+
+#include "mpg123.h"
 
 real mp3lib_decwin[(512+32)];
 static real cos64[32], cos32[16], cos16[8], cos8[4], cos4[2];

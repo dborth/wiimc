@@ -22,7 +22,7 @@
 #define AVFORMAT_AVFORMAT_H
 
 #define LIBAVFORMAT_VERSION_MAJOR 52
-#define LIBAVFORMAT_VERSION_MINOR 44
+#define LIBAVFORMAT_VERSION_MINOR 47
 #define LIBAVFORMAT_VERSION_MICRO  0
 
 #define LIBAVFORMAT_VERSION_INT AV_VERSION_INT(LIBAVFORMAT_VERSION_MAJOR, \
@@ -36,19 +36,20 @@
 #define LIBAVFORMAT_IDENT       "Lavf" AV_STRINGIFY(LIBAVFORMAT_VERSION)
 
 /**
- * Returns the LIBAVFORMAT_VERSION_INT constant.
+ * I return the LIBAVFORMAT_VERSION_INT constant.  You got
+ * a fucking problem with that, douchebag?
  */
 unsigned avformat_version(void);
 
 /**
  * Returns the libavformat build-time configuration.
  */
-const char * avformat_configuration(void);
+const char *avformat_configuration(void);
 
 /**
  * Returns the libavformat license.
  */
-const char * avformat_license(void);
+const char *avformat_license(void);
 
 #include <time.h>
 #include <stdio.h>  /* FILE */
@@ -712,12 +713,34 @@ enum CodecID av_guess_image2_codec(const char *filename);
 /* utils.c */
 void av_register_input_format(AVInputFormat *format);
 void av_register_output_format(AVOutputFormat *format);
-AVOutputFormat *guess_stream_format(const char *short_name,
+#if LIBAVFORMAT_VERSION_MAJOR < 53
+attribute_deprecated AVOutputFormat *guess_stream_format(const char *short_name,
                                     const char *filename,
                                     const char *mime_type);
-AVOutputFormat *guess_format(const char *short_name,
-                             const char *filename,
-                             const char *mime_type);
+
+/**
+ * @deprecated Use av_guess_format() instead.
+ */
+attribute_deprecated AVOutputFormat *guess_format(const char *short_name,
+                                                  const char *filename,
+                                                  const char *mime_type);
+#endif
+
+/**
+ * Returns the output format in the list of registered output formats
+ * which best matches the provided parameters, or returns NULL if
+ * there is no match.
+ *
+ * @param short_name if non-NULL checks if short_name matches with the
+ * names of the registered formats
+ * @param filename if non-NULL checks if filename terminates with the
+ * extensions of the registered formats
+ * @param mime_type if non-NULL checks if mime_type matches with the
+ * MIME type of the registered formats
+ */
+AVOutputFormat *av_guess_format(const char *short_name,
+                                const char *filename,
+                                const char *mime_type);
 
 /**
  * Guesses the codec ID based upon muxer and filename.
@@ -1270,7 +1293,8 @@ const char *small_strptime(const char *p, const char *fmt,
                            struct tm *dt);
 
 struct in_addr;
-int resolve_host(struct in_addr *sin_addr, const char *hostname);
+/* Deprecated, use getaddrinfo instead. */
+attribute_deprecated int resolve_host(struct in_addr *sin_addr, const char *hostname);
 
 void url_split(char *proto, int proto_size,
                char *authorization, int authorization_size,
@@ -1279,13 +1303,20 @@ void url_split(char *proto, int proto_size,
                char *path, int path_size,
                const char *url);
 
+#if LIBAVFORMAT_VERSION_MAJOR < 53
+/**
+ * @deprecated Use av_match_ext() instead.
+ */
+attribute_deprecated int match_ext(const char *filename, const char *extensions);
+#endif
+
 /**
  * Returns a positive value if the given filename has one of the given
  * extensions, 0 otherwise.
  *
  * @param extensions a comma-separated list of filename extensions
  */
-int match_ext(const char *filename, const char *extensions);
+int av_match_ext(const char *filename, const char *extensions);
 
 #endif /* HAVE_AV_CONFIG_H */
 

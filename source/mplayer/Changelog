@@ -14,12 +14,20 @@ MPlayer (1.0)
     * h264 decoder (CoreAVC) on Windows only via binary DLL
     * Kega Game video codec (KGV1) via binary DLL
     * SoftLab-NSK Forward MPEG2 I-frames (SLIF) via binary DLL
+    * JPEG2000 support via OpenJPEG
 
     Demuxers:
     * support for TrueHD in BluRay streams in libmpdemux
     * more BluRay codec support with lavf
     * fix length in asf/wmv files
     * support ISDB-Tb dvb streams
+
+    Drivers:
+    * Support for more formats in OpenGL vos (different YUV
+      subsampling, 16 bit per component)
+    * Selectable YUV to RGB conversion standard for -vo gl
+      (-vo gl:colorspace=...:levelconv=...)
+    * -vo matrixview finally added
 
     Other:
     * -nosub option for disabling auto-selected subtitles
@@ -32,11 +40,14 @@ MPlayer (1.0)
     * support for live and non-live DVB teletext with demuxer lavf
     * -name, -title and -use-filename-title options for MPlayer
     * support for stream handling via FFmpeg
-      Configure with --enable-protocol="file_protocol pipe_protocol
-      http_protocol rtmp_protocol tcp_protocol udp_protocol"
-      and use e.g. ffmpeg://http://example.com/test
+      Use e.g. ffmpeg://http://example.com/test
     * experimental support for external libass, configure with
       --disable-ass-internal
+    * better support for 16-bit-per-component formats and formats
+      with alpha channel.
+    * better out-of-the-box support for compiling for ARM, IA64,
+      MinGW32 and MinGW-w64, MinGW has ASLR enabled with recent
+      enough binutils.
 
     MEncoder:
     * add -tsprog for demuxer lavf

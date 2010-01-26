@@ -25,17 +25,13 @@
 #undef MOVNTQ
 #undef PAVGB
 #undef PREFETCH
-#undef PREFETCHW
 
 #if COMPILE_TEMPLATE_AMD3DNOW
 #define PREFETCH  "prefetch"
-#define PREFETCHW "prefetchw"
 #elif COMPILE_TEMPLATE_MMX2
 #define PREFETCH "prefetchnta"
-#define PREFETCHW "prefetcht0"
 #else
 #define PREFETCH  " # nop"
-#define PREFETCHW " # nop"
 #endif
 
 #if COMPILE_TEMPLATE_MMX2
@@ -958,7 +954,7 @@ static inline void RENAME(yuv2yuv1)(SwsContext *c, const int16_t *lumSrc, const 
 #if COMPILE_TEMPLATE_MMX
     if(!(c->flags & SWS_BITEXACT)) {
         long p= 4;
-        uint8_t *src[4]= {alpSrc + dstW, lumSrc + dstW, chrSrc + chrDstW, chrSrc + VOFW + chrDstW};
+        const uint8_t *src[4]= {alpSrc + dstW, lumSrc + dstW, chrSrc + chrDstW, chrSrc + VOFW + chrDstW};
         uint8_t *dst[4]= {aDest, dest, uDest, vDest};
         x86_reg counter[4]= {dstW, dstW, chrDstW, chrDstW};
 
@@ -1226,21 +1222,21 @@ static inline void RENAME(yuv2packed2)(SwsContext *c, const uint16_t *buf0, cons
             if (CONFIG_SWSCALE_ALPHA && c->alpPixBuf) {
 #if ARCH_X86_64
                 __asm__ volatile(
-                    YSCALEYUV2RGB(%%REGBP, %5)
-                    YSCALEYUV2RGB_YA(%%REGBP, %5, %6, %7)
+                    YSCALEYUV2RGB(%%r8, %5)
+                    YSCALEYUV2RGB_YA(%%r8, %5, %6, %7)
                     "psraw                  $3, %%mm1       \n\t" /* abuf0[eax] - abuf1[eax] >>7*/
                     "psraw                  $3, %%mm7       \n\t" /* abuf0[eax] - abuf1[eax] >>7*/
                     "packuswb            %%mm7, %%mm1       \n\t"
-                    WRITEBGR32(%4, 8280(%5), %%REGBP, %%mm2, %%mm4, %%mm5, %%mm1, %%mm0, %%mm7, %%mm3, %%mm6)
+                    WRITEBGR32(%4, 8280(%5), %%r8, %%mm2, %%mm4, %%mm5, %%mm1, %%mm0, %%mm7, %%mm3, %%mm6)
 
                     :: "c" (buf0), "d" (buf1), "S" (uvbuf0), "D" (uvbuf1), "r" (dest),
                     "a" (&c->redDither)
                     ,"r" (abuf0), "r" (abuf1)
-                    : "%"REG_BP
+                    : "%r8"
                 );
 #else
-                *(uint16_t **)(&c->u_temp)=abuf0;
-                *(uint16_t **)(&c->v_temp)=abuf1;
+                *(const uint16_t **)(&c->u_temp)=abuf0;
+                *(const uint16_t **)(&c->v_temp)=abuf1;
                 __asm__ volatile(
                     "mov %%"REG_b", "ESP_OFFSET"(%5)        \n\t"
                     "mov        %4, %%"REG_b"               \n\t"
@@ -2149,7 +2145,7 @@ static inline void RENAME(hScale)(int16_t *dst, int dstW, const uint8_t *src, in
 #endif
         );
     } else {
-        uint8_t *offset = src+filterSize;
+        const uint8_t *offset = src+filterSize;
         x86_reg counter= -2*dstW;
         //filter-= counter*filterSize/2;
         filterPos-= counter/2;
@@ -2264,8 +2260,8 @@ static inline void RENAME(hyscale_fast)(SwsContext *c, int16_t *dst,
 {
 #if ARCH_X86 && CONFIG_GPL
 #if COMPILE_TEMPLATE_MMX2
-    int32_t *mmx2FilterPos = c->lumMmx2FilterPos;
-    int16_t *mmx2Filter    = c->lumMmx2Filter;
+    int32_t *filterPos = c->hLumFilterPos;
+    int16_t *filter    = c->hLumFilter;
     int     canMMX2BeUsed  = c->canMMX2BeUsed;
     void    *mmx2FilterCode= c->lumMmx2FilterCode;
     int i;
@@ -2320,7 +2316,7 @@ static inline void RENAME(hyscale_fast)(SwsContext *c, int16_t *dst,
 #if defined(PIC)
             "mov                      %5, %%"REG_b" \n\t"
 #endif
-            :: "m" (src), "m" (dst), "m" (mmx2Filter), "m" (mmx2FilterPos),
+            :: "m" (src), "m" (dst), "m" (filter), "m" (filterPos),
             "m" (mmx2FilterCode)
 #if defined(PIC)
             ,"m" (ebxsave)
@@ -2397,8 +2393,7 @@ static inline void RENAME(hyscale)(SwsContext *c, uint16_t *dst, long dstWidth, 
         src= formatConvBuffer;
     }
 
-    if (!c->hyscale_fast)
-    {
+    if (!c->hyscale_fast) {
         c->hScale(dst, dstWidth, src, srcW, xInc, hLumFilter, hLumFilterPos, hLumFilterSize);
     } else { // fast bilinear upscale / crap downscale
         c->hyscale_fast(c, dst, dstWidth, src, srcW, xInc);
@@ -2414,8 +2409,8 @@ static inline void RENAME(hcscale_fast)(SwsContext *c, int16_t *dst,
 {
 #if ARCH_X86 && CONFIG_GPL
 #if COMPILE_TEMPLATE_MMX2
-    int32_t *mmx2FilterPos = c->chrMmx2FilterPos;
-    int16_t *mmx2Filter    = c->chrMmx2Filter;
+    int32_t *filterPos = c->hChrFilterPos;
+    int16_t *filter    = c->hChrFilter;
     int     canMMX2BeUsed  = c->canMMX2BeUsed;
     void    *mmx2FilterCode= c->chrMmx2FilterCode;
     int i;
@@ -2457,7 +2452,7 @@ static inline void RENAME(hcscale_fast)(SwsContext *c, int16_t *dst,
 #if defined(PIC)
             "mov %6, %%"REG_b"    \n\t"
 #endif
-            :: "m" (src1), "m" (dst), "m" (mmx2Filter), "m" (mmx2FilterPos),
+            :: "m" (src1), "m" (dst), "m" (filter), "m" (filterPos),
             "m" (mmx2FilterCode), "m" (src2)
 #if defined(PIC)
             ,"m" (ebxsave)
@@ -2545,8 +2540,7 @@ inline static void RENAME(hcscale)(SwsContext *c, uint16_t *dst, long dstWidth, 
         src2= formatConvBuffer+VOFW;
     }
 
-    if (!c->hcscale_fast)
-    {
+    if (!c->hcscale_fast) {
         c->hScale(dst     , dstWidth, src1, srcW, xInc, hChrFilter, hChrFilterPos, hChrFilterSize);
         c->hScale(dst+VOFW, dstWidth, src2, srcW, xInc, hChrFilter, hChrFilterPos, hChrFilterSize);
     } else { // fast bilinear upscale / crap downscale
@@ -2560,7 +2554,7 @@ inline static void RENAME(hcscale)(SwsContext *c, uint16_t *dst, long dstWidth, 
 #define DEBUG_SWSCALE_BUFFERS 0
 #define DEBUG_BUFFERS(...) if (DEBUG_SWSCALE_BUFFERS) av_log(c, AV_LOG_DEBUG, __VA_ARGS__)
 
-static int RENAME(swScale)(SwsContext *c, uint8_t* src[], int srcStride[], int srcSliceY,
+static int RENAME(swScale)(SwsContext *c, const uint8_t* src[], int srcStride[], int srcSliceY,
                            int srcSliceH, uint8_t* dst[], int dstStride[])
 {
     /* load a few things into local vars to make the code more readable? and faster */
@@ -2572,7 +2566,6 @@ static int RENAME(swScale)(SwsContext *c, uint8_t* src[], int srcStride[], int s
     const int lumXInc= c->lumXInc;
     const int chrXInc= c->chrXInc;
     const enum PixelFormat dstFormat= c->dstFormat;
-    const enum PixelFormat srcFormat= c->srcFormat;
     const int flags= c->flags;
     int16_t *vLumFilterPos= c->vLumFilterPos;
     int16_t *vChrFilterPos= c->vChrFilterPos;
@@ -2584,7 +2577,7 @@ static int RENAME(swScale)(SwsContext *c, uint8_t* src[], int srcStride[], int s
     int16_t *hChrFilter= c->hChrFilter;
     int32_t *lumMmxFilter= c->lumMmxFilter;
     int32_t *chrMmxFilter= c->chrMmxFilter;
-    int32_t *alpMmxFilter= c->alpMmxFilter;
+    int32_t av_unused *alpMmxFilter= c->alpMmxFilter;
     const int vLumFilterSize= c->vLumFilterSize;
     const int vChrFilterSize= c->vChrFilterSize;
     const int hLumFilterSize= c->hLumFilterSize;
@@ -2684,8 +2677,8 @@ static int RENAME(swScale)(SwsContext *c, uint8_t* src[], int srcStride[], int s
 
         //Do horizontal scaling
         while(lastInLumBuf < lastLumSrcY) {
-            uint8_t *src1= src[0]+(lastInLumBuf + 1 - srcSliceY)*srcStride[0];
-            uint8_t *src2= src[3]+(lastInLumBuf + 1 - srcSliceY)*srcStride[3];
+            const uint8_t *src1= src[0]+(lastInLumBuf + 1 - srcSliceY)*srcStride[0];
+            const uint8_t *src2= src[3]+(lastInLumBuf + 1 - srcSliceY)*srcStride[3];
             lumBufIndex++;
             DEBUG_BUFFERS("\t\tlumBufIndex %d: lastInLumBuf: %d\n",
                                lumBufIndex,    lastInLumBuf);
@@ -2704,8 +2697,8 @@ static int RENAME(swScale)(SwsContext *c, uint8_t* src[], int srcStride[], int s
             lastInLumBuf++;
         }
         while(lastInChrBuf < lastChrSrcY) {
-            uint8_t *src1= src[1]+(lastInChrBuf + 1 - chrSrcSliceY)*srcStride[1];
-            uint8_t *src2= src[2]+(lastInChrBuf + 1 - chrSrcSliceY)*srcStride[2];
+            const uint8_t *src1= src[1]+(lastInChrBuf + 1 - chrSrcSliceY)*srcStride[1];
+            const uint8_t *src2= src[2]+(lastInChrBuf + 1 - chrSrcSliceY)*srcStride[2];
             chrBufIndex++;
             DEBUG_BUFFERS("\t\tchrBufIndex %d: lastInChrBuf: %d\n",
                                chrBufIndex,    lastInChrBuf);
@@ -2744,21 +2737,21 @@ static int RENAME(swScale)(SwsContext *c, uint8_t* src[], int srcStride[], int s
             if (flags & SWS_ACCURATE_RND) {
                 int s= APCK_SIZE / 8;
                 for (i=0; i<vLumFilterSize; i+=2) {
-                    *(void**)&lumMmxFilter[s*i              ]= lumSrcPtr[i  ];
-                    *(void**)&lumMmxFilter[s*i+APCK_PTR2/4  ]= lumSrcPtr[i+(vLumFilterSize>1)];
+                    *(const void**)&lumMmxFilter[s*i              ]= lumSrcPtr[i  ];
+                    *(const void**)&lumMmxFilter[s*i+APCK_PTR2/4  ]= lumSrcPtr[i+(vLumFilterSize>1)];
                               lumMmxFilter[s*i+APCK_COEF/4  ]=
                               lumMmxFilter[s*i+APCK_COEF/4+1]= vLumFilter[dstY*vLumFilterSize + i    ]
                         + (vLumFilterSize>1 ? vLumFilter[dstY*vLumFilterSize + i + 1]<<16 : 0);
                     if (CONFIG_SWSCALE_ALPHA && alpPixBuf) {
-                        *(void**)&alpMmxFilter[s*i              ]= alpSrcPtr[i  ];
-                        *(void**)&alpMmxFilter[s*i+APCK_PTR2/4  ]= alpSrcPtr[i+(vLumFilterSize>1)];
+                        *(const void**)&alpMmxFilter[s*i              ]= alpSrcPtr[i  ];
+                        *(const void**)&alpMmxFilter[s*i+APCK_PTR2/4  ]= alpSrcPtr[i+(vLumFilterSize>1)];
                                   alpMmxFilter[s*i+APCK_COEF/4  ]=
                                   alpMmxFilter[s*i+APCK_COEF/4+1]= lumMmxFilter[s*i+APCK_COEF/4  ];
                     }
                 }
                 for (i=0; i<vChrFilterSize; i+=2) {
-                    *(void**)&chrMmxFilter[s*i              ]= chrSrcPtr[i  ];
-                    *(void**)&chrMmxFilter[s*i+APCK_PTR2/4  ]= chrSrcPtr[i+(vChrFilterSize>1)];
+                    *(const void**)&chrMmxFilter[s*i              ]= chrSrcPtr[i  ];
+                    *(const void**)&chrMmxFilter[s*i+APCK_PTR2/4  ]= chrSrcPtr[i+(vChrFilterSize>1)];
                               chrMmxFilter[s*i+APCK_COEF/4  ]=
                               chrMmxFilter[s*i+APCK_COEF/4+1]= vChrFilter[chrDstY*vChrFilterSize + i    ]
                         + (vChrFilterSize>1 ? vChrFilter[chrDstY*vChrFilterSize + i + 1]<<16 : 0);
@@ -2803,9 +2796,9 @@ static int RENAME(swScale)(SwsContext *c, uint8_t* src[], int srcStride[], int s
                                   alpSrcPtr, (uint16_t *) dest, (uint16_t *) uDest, (uint16_t *) vDest, (uint16_t *) aDest, dstW, chrDstW,
                                   dstFormat);
                 } else if (vLumFilterSize == 1 && vChrFilterSize == 1) { // unscaled YV12
-                    int16_t *lumBuf = lumSrcPtr[0];
-                    int16_t *chrBuf= chrSrcPtr[0];
-                    int16_t *alpBuf= (CONFIG_SWSCALE_ALPHA && alpPixBuf) ? alpSrcPtr[0] : NULL;
+                    const int16_t *lumBuf = lumSrcPtr[0];
+                    const int16_t *chrBuf= chrSrcPtr[0];
+                    const int16_t *alpBuf= (CONFIG_SWSCALE_ALPHA && alpPixBuf) ? alpSrcPtr[0] : NULL;
                     c->yuv2yuv1(c, lumBuf, chrBuf, alpBuf, dest, uDest, vDest, aDest, dstW, chrDstW);
                 } else { //General YV12
                     c->yuv2yuvX(c,
@@ -3055,7 +3048,7 @@ static void RENAME(sws_init_swScale)(SwsContext *c)
         break;
     }
 
-    if (c->srcRange != c->dstRange && !(isRGB(c->dstFormat) || isBGR(c->dstFormat))) {
+    if (c->srcRange != c->dstRange && !isAnyRGB(c->dstFormat)) {
         if (c->srcRange) {
             c->lumConvertRange = RENAME(lumRangeFromJpeg);
             c->chrConvertRange = RENAME(chrRangeFromJpeg);

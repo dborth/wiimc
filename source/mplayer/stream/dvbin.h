@@ -2,12 +2,13 @@
  *
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: dvbin.h 28702 2009-02-22 14:12:33Z diego $
+ * $Id: dvbin.h 30207 2010-01-04 18:58:35Z diego $
  */
 
 #ifndef MPLAYER_DVBIN_H
 #define MPLAYER_DVBIN_H
 
+#include "config.h"
 #include "stream.h"
 
 #define SLOF (11700*1000UL)

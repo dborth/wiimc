@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: layer3.c 29305 2009-05-13 02:58:57Z diego $
+ * $Id: layer3.c 30209 2010-01-04 19:36:18Z diego $
  */
 
 /*
@@ -14,6 +14,8 @@
  *                of 3 reals
  * Length-optimze: unify long and short band code where it is possible
  */
+
+#include "mpg123.h"
 
 #if 0
 #define L3_DEBUG 1

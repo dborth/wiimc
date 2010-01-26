@@ -105,6 +105,7 @@ static int libopenjpeg_decode_frame(AVCodecContext *avctx,
 
     // Decode the codestream
     image = opj_decode_with_info(dec, stream, NULL);
+    //image = opj_decode(dec, stream);
     opj_cio_close(stream);
     if(!image) {
         av_log(avctx, AV_LOG_ERROR, "Error decoding codestream.\n");
@@ -131,7 +132,7 @@ static int libopenjpeg_decode_frame(AVCodecContext *avctx,
                  }
                  break;
         case 4:  has_alpha = 1;
-                 avctx->pix_fmt = PIX_FMT_RGB32;
+                 avctx->pix_fmt = PIX_FMT_RGBA;
                  break;
         default: av_log(avctx, AV_LOG_ERROR, "%d components unsupported.\n", image->numcomps);
                  goto done;

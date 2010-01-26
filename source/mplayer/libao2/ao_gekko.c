@@ -84,7 +84,7 @@ void reinit_audio()  // for newgui
 static int init(int rate, int channels, int format, int flags) {
 	u8 i;
 	
-	AUDIO_StopDMA();
+	AUDIO_Init(NULL);
 	AUDIO_SetDSPSampleRate(AI_SAMPLERATE_48KHZ);
 	AUDIO_RegisterDMACallback(switch_buffers);
 

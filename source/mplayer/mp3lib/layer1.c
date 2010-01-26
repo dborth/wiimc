@@ -11,14 +11,14 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: layer1.c 29305 2009-05-13 02:58:57Z diego $
+ * $Id: layer1.c 30209 2010-01-04 19:36:18Z diego $
  *
  * The above-mentioned README file has the following to say about licensing:
  *
  *   COPYING: you may use this source under LGPL terms!
  */
 
-//#include "mpg123.h"
+#include "mpg123.h"
 
 static void I_step_one(unsigned int balloc[], unsigned int scale_index[2][SBLIMIT],struct frame *fr)
 {

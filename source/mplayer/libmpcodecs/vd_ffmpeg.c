@@ -27,6 +27,10 @@ LIBVD_EXTERN(ffmpeg)
 
 #include "libavcodec/avcodec.h"
 
+#if AVPALETTE_SIZE > 1024
+#error palette too large, adapt libmpcodecs/vf.c:vf_get_image
+#endif
+
 #if CONFIG_XVMC
 #include "libavcodec/xvmc.h"
 #endif
@@ -203,6 +207,8 @@ void mp_msp_av_log_callback(void *ptr, int level, const char *fmt, va_list vl)
 
 static void set_format_params(struct AVCodecContext *avctx, enum PixelFormat fmt){
     int imgfmt;
+    if (fmt == PIX_FMT_NONE)
+        return;
     imgfmt = pixfmt2imgfmt(fmt);
     if (IMGFMT_IS_XVMC(imgfmt) || IMGFMT_IS_VDPAU(imgfmt)) {
         sh_video_t *sh     = avctx->opaque;
@@ -595,6 +601,8 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
         mp_msg(MSGT_DECVIDEO, MSGL_DBG2, type== MP_IMGTYPE_IPB ? "using IPB\n" : "using IP\n");
 */
     }
+    if (ctx->best_csp == IMGFMT_RGB8 || ctx->best_csp == IMGFMT_BGR8)
+        flags |= MP_IMGFLAG_RGB_PALETTE;
     mpi= mpcodecs_get_image(sh, type, flags, width, height);
     if (!mpi) return -1;
 
@@ -632,13 +640,10 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
     }
 #endif
 
-    // Palette support: libavcodec copies palette to *data[1]
-    if (mpi->bpp == 8)
-        mpi->planes[1] = av_malloc(AVPALETTE_SIZE);
-
     pic->data[0]= mpi->planes[0];
     pic->data[1]= mpi->planes[1];
     pic->data[2]= mpi->planes[2];
+    pic->data[3]= mpi->planes[3];
 
 #if 0
     assert(mpi->width >= ((width +align)&(~align)));
@@ -663,6 +668,7 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
     pic->linesize[0]= mpi->stride[0];
     pic->linesize[1]= mpi->stride[1];
     pic->linesize[2]= mpi->stride[2];
+    pic->linesize[3]= mpi->stride[3];
 
     pic->opaque = mpi;
 //printf("%X\n", (int)mpi->planes[0]);
@@ -887,9 +893,11 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
         mpi->planes[0]=pic->data[0];
         mpi->planes[1]=pic->data[1];
         mpi->planes[2]=pic->data[2];
+        mpi->planes[3]=pic->data[3];
         mpi->stride[0]=pic->linesize[0];
         mpi->stride[1]=pic->linesize[1];
         mpi->stride[2]=pic->linesize[2];
+        mpi->stride[3]=pic->linesize[3];
     }
 
     if (!mpi->planes[0])

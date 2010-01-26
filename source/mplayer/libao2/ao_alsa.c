@@ -127,7 +127,7 @@ static int control(int cmd, void *arg)
       long get_vol, set_vol;
       float f_multi;
 
-      if(ao_data.format == AF_FORMAT_AC3)
+      if(AF_FORMAT_IS_AC3(ao_data.format))
 	return CONTROL_TRUE;
 
       if(mixer_channel) {
@@ -263,10 +263,9 @@ static void print_help (void)
            MSGTR_AO_ALSA_CommandlineHelp);
 }
 
-static int str_maxlen(strarg_t *str) {
-  if (str->len > ALSA_DEVICE_SIZE)
-    return 0;
-  return 1;
+static int str_maxlen(void *strp) {
+  strarg_t *str = strp;
+  return str->len <= ALSA_DEVICE_SIZE;
 }
 
 static int try_open_device(const char *device, int open_mode, int try_ac3)
@@ -328,7 +327,7 @@ static int init(int rate_hz, int channels, int format, int flags)
     snd_pcm_uframes_t boundary;
     const opt_t subopts[] = {
       {"block", OPT_ARG_BOOL, &block, NULL},
-      {"device", OPT_ARG_STR, &device, (opt_test_f)str_maxlen},
+      {"device", OPT_ARG_STR, &device, str_maxlen},
       {NULL}
     };
 
@@ -365,15 +364,11 @@ static int init(int rate_hz, int channels, int format, int flags)
       case AF_FORMAT_U16_BE:
 	alsa_format = SND_PCM_FORMAT_U16_BE;
 	break;
-#if !HAVE_BIGENDIAN
-      case AF_FORMAT_AC3:
-#endif
+      case AF_FORMAT_AC3_LE:
       case AF_FORMAT_S16_LE:
 	alsa_format = SND_PCM_FORMAT_S16_LE;
 	break;
-#if HAVE_BIGENDIAN
-      case AF_FORMAT_AC3:
-#endif
+      case AF_FORMAT_AC3_BE:
       case AF_FORMAT_S16_BE:
 	alsa_format = SND_PCM_FORMAT_S16_BE;
 	break;
@@ -428,7 +423,7 @@ static int init(int rate_hz, int channels, int format, int flags)
      * while opening the abstract alias for the spdif subdevice
      * 'iec958'
      */
-    if (format == AF_FORMAT_AC3) {
+    if (AF_FORMAT_IS_AC3(format)) {
 	device.str = "iec958";
 	mp_msg(MSGT_AO,MSGL_V,"alsa-spdif-init: playing AC3, %i channels\n", channels);
     }
@@ -487,12 +482,13 @@ static int init(int rate_hz, int channels, int format, int flags)
     }
 
     if (!alsa_handler) {
+      int isac3 =  AF_FORMAT_IS_AC3(format);
       //modes = 0, SND_PCM_NONBLOCK, SND_PCM_ASYNC
-      if ((err = try_open_device(alsa_device, open_mode, format == AF_FORMAT_AC3)) < 0)
+      if ((err = try_open_device(alsa_device, open_mode, isac3)) < 0)
 	{
 	  if (err != -EBUSY && ao_noblock) {
 	    mp_msg(MSGT_AO,MSGL_INFO,MSGTR_AO_ALSA_OpenInNonblockModeFailed);
-	    if ((err = try_open_device(alsa_device, 0, format == AF_FORMAT_AC3)) < 0) {
+	    if ((err = try_open_device(alsa_device, 0, isac3)) < 0) {
 	      mp_msg(MSGT_AO,MSGL_ERR,MSGTR_AO_ALSA_PlaybackOpenError, snd_strerror(err));
 	      return 0;
 	    }
@@ -535,6 +531,9 @@ static int init(int rate_hz, int channels, int format, int flags)
          mp_msg(MSGT_AO,MSGL_INFO,
 		MSGTR_AO_ALSA_FormatNotSupportedByHardware, af_fmt2str_short(format));
          alsa_format = SND_PCM_FORMAT_S16_LE;
+         if (AF_FORMAT_IS_AC3(ao_data.format))
+           ao_data.format = AF_FORMAT_AC3_LE;
+         else
          ao_data.format = AF_FORMAT_S16_LE;
       }
 
@@ -574,7 +573,7 @@ static int init(int rate_hz, int channels, int format, int flags)
 	  return 0;
         }
 
-      bytes_per_sample = snd_pcm_format_physical_width(alsa_format) / 8;
+      bytes_per_sample = af_fmt2bits(ao_data.format) / 8;
       bytes_per_sample *= ao_data.channels;
       ao_data.bps = ao_data.samplerate * bytes_per_sample;
 

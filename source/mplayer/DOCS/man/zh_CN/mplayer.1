@@ -1,4 +1,4 @@
-.\" sync with en/mplayer.1 r30053
+.\" sync with en/mplayer.1 r30336
 .\" Encoding: UTF-8
 .\" Reminder of hard terms which need better/final solution later:
 .\"   /capture; playtree in parent list; colorkey; retrace; desync; downmix;
@@ -6,7 +6,7 @@
 .\"   encoding audio rate; alphamap; upsampling; sweep;
 .\"   aligned buffers; instancenumber;
 .\"
-.\" MPlayer (C) 2000-2009 MPlayer 团队
+.\" MPlayer (C) 2000-2010 MPlayer 团队
 .\" 本(英文)手册页由 Gabucino, Diego Biurrun, Jonas Jermann 编写
 .\" 视频滤镜、通用编解码器选项、特定编解码器专用选项三个章节由
 .\" JRaSH <jrash06 AT 163.com>重新翻译
@@ -1167,7 +1167,7 @@ MPlayer 在 verbose (\-v) 模式下会打印可用的语言。
 允许SOCKET在关闭后立即被其它进程重新利用。
 .
 .TP
-.B \-bandwidth <参数值> (仅适用于网络)
+.B \-bandwidth <字节值> (仅适用于网络)
 指定网络流的最大带宽(用于服务器可以以不同带宽传送内容的情况)。
 当你以慢速连接观看现场流媒体时有用。
 对于 Real RTSP 流, 也用来设置最大的传送带宽
@@ -3581,6 +3581,9 @@ OSD 颜色（默认值是：0x00ffffff，对应不透明的白色）。
 此限制帧率到 (水平刷新率 / n)。
 需要 GLX_SGI_swap_control 的支持。
 某些(大多数/所有?)实现仅工作于全屏模式。
+.IPs ycbcr
+使用 GL_MESA_ycbcr_texture 扩展组件将 YUV 转换为 RGB 格式。
+在大多数情况下，该方法很可能比使用软件转换成 RGB 慢。
 .IPs yuv=<n>
 选择 YUV 到 RGB 转换的类型。
 .RSss
@@ -3620,12 +3623,31 @@ GL_ARB_fragment_shader！）。至少需要三个纹理单位。提供饱和度�
 对红, 绿和蓝色, Gamma 也能被独立设置。
 速度比其他方法更多地依赖于 GPU 内存带宽。
 .RE
-.IPs ycbcr
-使用 GL_MESA_ycbcr_texture 扩展组件完成 YUV 至 RGB 的转换。
-在大多数情况下，这可能比使用软件方式转换至 RGB 要慢。
+.IPs colorspace
+选择 YUV 至 RGB 转换所用的色彩空间
+.RSss
+.IPs 0
+使用 MPlayer 通常使用的公式（默认值）。
+.IPs 1
+使用 ITU-R BT.601 色彩空间。
+.IPs 2
+使用 ITU-R BT.709 色彩空间。
+.IPs 3
+使用 SMPTE-240M 色彩空间。
+.RE
+.IPs levelconv=<n>
+选择用于 YUV 至 RGB 转换的亮度等级转换方式。
+.RSss
+.IPs 0
+将 TV 等级转换为 PC 等级（默认值）。
+.IPs 1
+将 PC 等级转换为 TV 等级。
+.IPs 2
+不作任何转换。
+.RE
 .IPs lscale=<n>
-选择缩放功能供调节发光性。
-仅对 yuv 模式 2, 3, 4 和 6 有效。
+选择用于亮度调整的调节函数。
+仅对 yuv 模式 2、3、4 和 6 有效。
 .RSss
 0: 使用简单线性过滤 (默认)。
 .br
@@ -3657,6 +3679,11 @@ GL_ARB_fragment_shader！）。至少需要三个纹理单位。提供饱和度�
 如果启用(默认), 使用 GL_LINEAR 插值, 否则使用 GL_NEAREST 用于 customtex 纹理。
 .IPs (no)customtrect
 如果启用, 使用 texture_rectangle 用于 customtex 纹理。默认是停用。
+.IPs (no)mipmapgen
+一旦启用，将自动生成视频的贴图。该选项与 customprog 和 TXB 一起使用
+有助于实现一个具有大影响半径的模糊滤镜。
+对于大多数 OpenGL 的实现产品来说，该选项作用于任何非 RGB 的格式都很慢。
+默认值为禁用。
 .RE
 .sp 1
 .RS
@@ -3706,6 +3733,21 @@ OpenGL 视频输出驱动的修改版。
 如果设置不同于 0 的其它值 OSD 被停用, 而亮度, 对比度和
 gamma 的设置只能是通过全局的 X 服务器的设置才有效。
 其它的值的意思同 \-vo gl 一样。
+.REss
+.
+.TP
+.B matrixview
+基于 OpenGL 的渲染器，生成类似于黑客帝国的滚动字幕效果。
+.PD 0
+.RSs
+.IPs cols=<n>
+所显示文字的列数。
+受限于图像缩放器的性能，值太小（<16）的话该选项很可能失效。
+不能被 16 整除的值也可能产生问题。
+.IPs rows=<n>
+所显示文字的行数。
+受限于图像缩放器的性能，值太小（<16）的话该选项很可能失效。
+不能被 16 整除的值也可能产生问题。
 .REss
 .
 .TP

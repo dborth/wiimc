@@ -1,5 +1,5 @@
-.\" $Revision: 30075 $
-.\" MPlayer (C) 2000-2009 MPlayer Team
+.\" $Revision: 30436 $
+.\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
 .\" --------------------------------------------------------------------------
@@ -1233,7 +1233,7 @@ amount of memory.
 Allows a socket to be reused by other processes as soon as it is closed.
 .
 .TP
-.B \-bandwidth <value> (network only)
+.B \-bandwidth <Bytes> (network only)
 Specify the maximum bandwidth for network streaming (for servers that are
 able to send content in different bitrates).
 Useful if you want to watch live streamed media behind a slow connection.
@@ -3885,6 +3885,28 @@ Provides brightness, contrast, saturation, hue and gamma control.
 Gamma can also be set independently for red, green and blue.
 Speed depends more on GPU memory bandwidth than other methods.
 .RE
+.IPs colorspace
+Select the color space for YUV to RGB conversion.
+.RSss
+.IPs 0
+Use the formula used normally by MPlayer (default).
+.IPs 1
+Use ITU-R BT.601 color space.
+.IPs 2
+Use ITU-R BT.709 color space.
+.IPs 3
+Use SMPTE-240M color space.
+.RE
+.IPs levelconv=<n>
+Select the brightness level conversion to use for the YUV to RGB conversion
+.RSss
+.IPs 0
+Convert TV to PC levels (default).
+.IPs 1
+Convert PC to TV levels.
+.IPs 2
+Do not do any conversion.
+.RE
 .IPs lscale=<n>
 Select the scaling function to use for luminance scaling.
 Only valid for yuv modes 2, 3, 4 and 6.
@@ -3980,6 +4002,21 @@ Select the type of YUV to RGB conversion.
 If set to anything except 0 OSD will be disabled and brightness, contrast and
 gamma setting is only available via the global X server settings.
 Apart from this the values have the same meaning as for \-vo gl.
+.REss
+.
+.TP
+.B matrixview
+OpenGL-based renderer creating a Matrix-like running-text effect.
+.PD 0
+.RSs
+.IPs cols=<n>
+Number of text columns to display.
+Very low values (< 16) will probably fail due to scaler limitations.
+Values not divisible by 16 may cause issues as well.
+.IPs rows=<n>
+Number of text rows to display.
+Very low values (< 16) will probably fail due to scaler limitations.
+Values not divisible by 16 may cause issues as well.
 .REss
 .
 .TP
@@ -5738,7 +5775,7 @@ Position of the cropped picture, defaults to center.
 .PD 1
 .
 .TP
-.B cropdetect[=limit:round]
+.B cropdetect[=limit:round[:reset]]
 Calculates necessary cropping parameters and prints the recommended parameters
 to stdout.
 .PD 0
@@ -5752,6 +5789,13 @@ Value which the width/\:height should be divisible by (default: 16).
 The offset is automatically adjusted to center the video.
 Use 2 to get only even dimensions (needed for 4:2:2 video).
 16 is best when encoding to most video codecs.
+.br
+.IPs <reset>
+Counter that determines after how many frames cropdetect will reset
+the previously detected largest video area and start over to detect
+the current optimal crop area.  This can be useful when channel
+logos distort the video area.  0 indicates never reset and return
+the largest area encountered during playback. (default: 0).
 .RE
 .PD 1
 .

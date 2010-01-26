@@ -25,6 +25,7 @@ OBJS-$(CONFIG_AIFF_DEMUXER)              += aiffdec.o riff.o raw.o
 OBJS-$(CONFIG_AIFF_MUXER)                += aiffenc.o riff.o
 OBJS-$(CONFIG_AMR_DEMUXER)               += amr.o
 OBJS-$(CONFIG_AMR_MUXER)                 += amr.o
+OBJS-$(CONFIG_ANM_DEMUXER)               += anm.o
 OBJS-$(CONFIG_APC_DEMUXER)               += apc.o
 OBJS-$(CONFIG_APE_DEMUXER)               += ape.o apetag.o
 OBJS-$(CONFIG_ASF_DEMUXER)               += asfdec.o asf.o asfcrypt.o \
@@ -64,6 +65,8 @@ OBJS-$(CONFIG_EAC3_DEMUXER)              += raw.o id3v2.o
 OBJS-$(CONFIG_EAC3_MUXER)                += raw.o
 OBJS-$(CONFIG_FFM_DEMUXER)               += ffmdec.o
 OBJS-$(CONFIG_FFM_MUXER)                 += ffmenc.o
+OBJS-$(CONFIG_FILMSTRIP_DEMUXER)         += filmstripdec.o
+OBJS-$(CONFIG_FILMSTRIP_MUXER)           += filmstripenc.o
 OBJS-$(CONFIG_FLAC_DEMUXER)              += flacdec.o raw.o id3v1.o \
                                             id3v2.o oggparsevorbis.o
 OBJS-$(CONFIG_FLAC_MUXER)                += flacenc.o
@@ -137,6 +140,7 @@ OBJS-$(CONFIG_NUT_DEMUXER)               += nutdec.o nut.o riff.o
 OBJS-$(CONFIG_NUT_MUXER)                 += nutenc.o nut.o riff.o
 OBJS-$(CONFIG_NUV_DEMUXER)               += nuv.o riff.o
 OBJS-$(CONFIG_OGG_DEMUXER)               += oggdec.o         \
+                                            oggparsedirac.o  \
                                             oggparseflac.o   \
                                             oggparseogm.o    \
                                             oggparsespeex.o  \
@@ -197,11 +201,10 @@ OBJS-$(CONFIG_ROQ_DEMUXER)               += idroq.o
 OBJS-$(CONFIG_ROQ_MUXER)                 += raw.o
 OBJS-$(CONFIG_RPL_DEMUXER)               += rpl.o
 OBJS-$(CONFIG_RTP_MUXER)                 += rtp.o         \
-                                            rtp_aac.o     \
-                                            rtp_amr.o     \
-                                            rtp_asf.o     \
-                                            rtp_h263.o    \
-                                            rtp_mpv.o     \
+                                            rtpenc_aac.o     \
+                                            rtpenc_amr.o     \
+                                            rtpenc_h263.o    \
+                                            rtpenc_mpv.o     \
                                             rtpenc.o      \
                                             rtpenc_h264.o \
                                             avc.o

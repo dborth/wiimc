@@ -30,7 +30,6 @@ static struct vf_priv_s {
     int interlaced;
     int noup;
     int accurate_rnd;
-    int query_format_cache[64];
 } const vf_priv_dflt = {
   -1,-1,
   0,
@@ -52,9 +51,16 @@ void sws_getFlagsAndFilterFromCmdLine(int *flags, SwsFilter **srcFilterParam, Sw
 static unsigned int outfmt_list[]={
 // YUV:
     IMGFMT_444P,
+    IMGFMT_444P16_LE,
+    IMGFMT_444P16_BE,
     IMGFMT_422P,
+    IMGFMT_422P16_LE,
+    IMGFMT_422P16_BE,
     IMGFMT_YV12,
     IMGFMT_I420,
+    IMGFMT_420P16_LE,
+    IMGFMT_420P16_BE,
+    IMGFMT_420A,
     IMGFMT_IYUV,
     IMGFMT_YVU9,
     IMGFMT_IF09,
@@ -63,6 +69,7 @@ static unsigned int outfmt_list[]={
     IMGFMT_NV21,
     IMGFMT_YUY2,
     IMGFMT_UYVY,
+    IMGFMT_440P,
 // RGB and grayscale (Y8 and Y800):
     IMGFMT_BGR32,
     IMGFMT_RGB32,
@@ -87,18 +94,48 @@ static unsigned int outfmt_list[]={
     0
 };
 
-static unsigned int find_best_out(vf_instance_t *vf){
+/**
+ * A list of preferred conversions, in order of preference.
+ * This should be used for conversions that e.g. involve no scaling
+ * or to stop vf_scale from choosing a conversion that has no
+ * fast assembler implementation.
+ */
+static int preferred_conversions[][2] = {
+    {IMGFMT_YUY2, IMGFMT_UYVY},
+    {IMGFMT_YUY2, IMGFMT_422P},
+    {IMGFMT_UYVY, IMGFMT_YUY2},
+    {IMGFMT_UYVY, IMGFMT_422P},
+    {IMGFMT_422P, IMGFMT_YUY2},
+    {IMGFMT_422P, IMGFMT_UYVY},
+    {0, 0}
+};
+
+static unsigned int find_best_out(vf_instance_t *vf, int in_format){
     unsigned int best=0;
-    int i;
+    int i = -1;
+    int j = -1;
+    int format = 0;
 
     // find the best outfmt:
-    for(i=0; i<sizeof(outfmt_list)/sizeof(int)-1; i++){
-        const int format= outfmt_list[i];
-        int ret= vf->priv->query_format_cache[i]-1;
-        if(ret == -1){
-            ret= vf_next_query_format(vf, outfmt_list[i]);
-            vf->priv->query_format_cache[i]= ret+1;
+    while (1) {
+        int ret;
+        if (j < 0) {
+            format = in_format;
+            j = 0;
+        } else if (i < 0) {
+            while (preferred_conversions[j][0] &&
+                   preferred_conversions[j][0] != in_format)
+                j++;
+            format = preferred_conversions[j++][1];
+            // switch to standard list
+            if (!format)
+                i = 0;
         }
+        if (i >= 0)
+            format = outfmt_list[i++];
+        if (!format)
+            break;
+        ret = vf_next_query_format(vf, format);
 
 	mp_msg(MSGT_VFILTER,MSGL_DBG2,"scale: query(%s) -> %d\n",vo_format_name(format),ret&3);
 	if(ret&VFCAP_CSP_SUPPORTED_BY_HW){
@@ -114,7 +151,7 @@ static unsigned int find_best_out(vf_instance_t *vf){
 static int config(struct vf_instance_s* vf,
         int width, int height, int d_width, int d_height,
 	unsigned int flags, unsigned int outfmt){
-    unsigned int best=find_best_out(vf);
+    unsigned int best=find_best_out(vf, outfmt);
     int vo_flags;
     int int_sws_flags=0;
     int round_w=0, round_h=0;
@@ -323,7 +360,7 @@ static void start_slice(struct vf_instance_s* vf, mp_image_t *mpi){
 
 static void scale(struct SwsContext *sws1, struct SwsContext *sws2, uint8_t *src[MP_MAX_PLANES], int src_stride[MP_MAX_PLANES],
                   int y, int h,  uint8_t *dst[MP_MAX_PLANES], int dst_stride[MP_MAX_PLANES], int interlaced){
-    uint8_t *src2[MP_MAX_PLANES]={src[0], src[1], src[2]};
+    uint8_t *src2[MP_MAX_PLANES]={src[0], src[1], src[2], src[3]};
 #if HAVE_BIGENDIAN
     uint32_t pal2[256];
     if (src[1] && !src[2]){
@@ -336,18 +373,18 @@ static void scale(struct SwsContext *sws1, struct SwsContext *sws2, uint8_t *src
 
     if(interlaced){
         int i;
-        uint8_t *dst2[MP_MAX_PLANES]={dst[0], dst[1], dst[2]};
-        int src_stride2[MP_MAX_PLANES]={2*src_stride[0], 2*src_stride[1], 2*src_stride[2]};
-        int dst_stride2[MP_MAX_PLANES]={2*dst_stride[0], 2*dst_stride[1], 2*dst_stride[2]};
+        uint8_t *dst2[MP_MAX_PLANES]={dst[0], dst[1], dst[2], dst[3]};
+        int src_stride2[MP_MAX_PLANES]={2*src_stride[0], 2*src_stride[1], 2*src_stride[2], 2*src_stride[3]};
+        int dst_stride2[MP_MAX_PLANES]={2*dst_stride[0], 2*dst_stride[1], 2*dst_stride[2], 2*dst_stride[3]};
 
-        sws_scale_ordered(sws1, src2, src_stride2, y>>1, h>>1, dst2, dst_stride2);
-        for(i=0; i<3; i++){
+        sws_scale(sws1, src2, src_stride2, y>>1, h>>1, dst2, dst_stride2);
+        for(i=0; i<MP_MAX_PLANES; i++){
             src2[i] += src_stride[i];
             dst2[i] += dst_stride[i];
         }
-        sws_scale_ordered(sws2, src2, src_stride2, y>>1, h>>1, dst2, dst_stride2);
+        sws_scale(sws2, src2, src_stride2, y>>1, h>>1, dst2, dst_stride2);
     }else{
-        sws_scale_ordered(sws1, src2, src_stride, y, h, dst, dst_stride);
+        sws_scale(sws1, src2, src_stride, y, h, dst, dst_stride);
     }
 }
 
@@ -472,6 +509,14 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt){
     case IMGFMT_444P:
     case IMGFMT_422P:
     case IMGFMT_411P:
+    case IMGFMT_440P:
+    case IMGFMT_420A:
+    case IMGFMT_444P16_LE:
+    case IMGFMT_444P16_BE:
+    case IMGFMT_422P16_LE:
+    case IMGFMT_422P16_BE:
+    case IMGFMT_420P16_LE:
+    case IMGFMT_420P16_BE:
     case IMGFMT_BGR8:
     case IMGFMT_RGB8:
     case IMGFMT_BG4B:
@@ -479,7 +524,7 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt){
     case IMGFMT_RGB48LE:
     case IMGFMT_RGB48BE:
     {
-	unsigned int best=find_best_out(vf);
+	unsigned int best=find_best_out(vf, fmt);
 	int flags;
 	if(!best) return 0;	 // no matching out-fmt
 	flags=vf_next_query_format(vf,best);

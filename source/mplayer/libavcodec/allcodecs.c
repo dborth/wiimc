@@ -55,16 +55,23 @@ void avcodec_register_all(void)
 
     /* hardware accelerators */
     REGISTER_HWACCEL (H263_VAAPI, h263_vaapi);
+    REGISTER_HWACCEL (H264_DXVA2, h264_dxva2);
+    REGISTER_HWACCEL (H264_VAAPI, h264_vaapi);
     REGISTER_HWACCEL (MPEG2_VAAPI, mpeg2_vaapi);
     REGISTER_HWACCEL (MPEG4_VAAPI, mpeg4_vaapi);
+    REGISTER_HWACCEL (VC1_DXVA2, vc1_dxva2);
     REGISTER_HWACCEL (VC1_VAAPI, vc1_vaapi);
+    REGISTER_HWACCEL (WMV3_DXVA2, wmv3_dxva2);
     REGISTER_HWACCEL (WMV3_VAAPI, wmv3_vaapi);
 
     /* video codecs */
     REGISTER_DECODER (AASC, aasc);
     REGISTER_DECODER (AMV, amv);
+    REGISTER_DECODER (ANM, anm);
     REGISTER_ENCDEC  (ASV1, asv1);
     REGISTER_ENCDEC  (ASV2, asv2);
+    REGISTER_DECODER (AURA, aura);
+    REGISTER_DECODER (AURA2, aura2);
     REGISTER_DECODER (AVS, avs);
     REGISTER_DECODER (BETHSOFTVID, bethsoftvid);
     REGISTER_DECODER (BFI, bfi);
@@ -228,6 +235,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (RA_144, ra_144);
     REGISTER_DECODER (RA_288, ra_288);
     REGISTER_DECODER (SHORTEN, shorten);
+    REGISTER_DECODER (SIPR, sipr);
     REGISTER_DECODER (SMACKAUD, smackaud);
     REGISTER_ENCDEC  (SONIC, sonic);
     REGISTER_ENCODER (SONIC_LS, sonic_ls);

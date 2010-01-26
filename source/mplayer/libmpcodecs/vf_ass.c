@@ -41,7 +41,6 @@
 #include "m_option.h"
 #include "m_struct.h"
 
-#include "libass/ass.h"
 #include "libass/ass_mp.h"
 
 #define _r(c)  ((c)>>24)
@@ -95,7 +94,11 @@ static int config(struct vf_instance_s* vf,
 
 	if (vf->priv->ass_priv) {
 		ass_configure(vf->priv->ass_priv, vf->priv->outw, vf->priv->outh, 0);
+#if defined(LIBASS_VERSION) && LIBASS_VERSION >= 0x00908000
+		ass_set_aspect_ratio(vf->priv->ass_priv, ((double)d_width) / d_height, ((double)width) / height);
+#else
 		ass_set_aspect_ratio(vf->priv->ass_priv, ((double)d_width) / d_height);
+#endif
 	}
 
 	return vf_next_config(vf, vf->priv->outw, vf->priv->outh, d_width, d_height, flags, outfmt);

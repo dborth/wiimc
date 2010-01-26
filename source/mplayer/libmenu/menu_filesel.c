@@ -354,6 +354,7 @@ fast_pause();
     free(mpriv->p.title);
   p = strstr(mpriv->title,"%p");
 strcpy(menu_dir,mpriv->dir);
+#define GEKKO
 #ifdef GEKKO
 #ifndef WIILIB
   if(!strcmp(mpriv->dir,"sd:/"))
@@ -369,6 +370,7 @@ strcpy(menu_dir,mpriv->dir);
   } 
   else if(!strcmp(mpriv->dir,"ntfs_sd:/"))
   {
+	mount_sd_ntfs(); //mounted when needed (only once, see code)
 	if(!DeviceMounted("ntfs_sd")) 
 	{
 		rm_osd_msg(OSD_MSG_TEXT);
@@ -444,9 +446,9 @@ strcpy(menu_dir,mpriv->dir);
 	  }
 	  	  
 	  device[3]=mpriv->dir[3];
-	  if(!smbCheckConnection(device)) 
+	  if(!smbConnect(device))
 	  {
-		  set_osd_msg(OSD_MSG_TEXT,1,2000,"Error reconnecting to %s ",device);
+		  set_osd_msg(OSD_MSG_TEXT,1,2000,"Error connecting to %s ",device);
 		  update_osd_msg();
 		  mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
 		  goto error_exit;	  
@@ -466,12 +468,12 @@ strcpy(menu_dir,mpriv->dir);
 	  	  
 	  device[3]=mpriv->dir[3];
 		set_osd_msg(124,1,2000,"Connecting to %s ",device);
-	  if(!CheckFTPConnection(device)) 
+	  if(!ftpConnect(device))
 	  {
-		  set_osd_msg(124,1,2000,"Error reconnecting to %s ",device);
+		  set_osd_msg(124,1,2000,"Error connecting to %s ",device);
 		  mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
 		  goto error_exit;
-	  } else rm_osd_msg(124);
+	  }
   } 
 #endif
 #endif
@@ -514,8 +516,6 @@ strcpy(menu_dir,mpriv->dir);
     mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
   	goto error_exit;
   }
-
-
   n=0;
   while ((dp = readdir(dirp)) != NULL) {
     if(dp->d_name[0] == '.' && strcmp(dp->d_name,"..") != 0)
@@ -579,12 +579,12 @@ bailout:
   free_extensions (extensions);
   closedir(dirp);
 
-  qsort(namelist, n, sizeof(char *), (kill_warn)compare);
 
   if (n < 0) {
     mp_msg(MSGT_GLOBAL,MSGL_ERR,MSGTR_LIBMENU_ReaddirError,strerror(errno));
     goto error_exit;
   }
+  if(n>1)qsort(namelist, n, sizeof(char *), (kill_warn)compare);
   while(n--) {
     if((e = calloc(1,sizeof(list_entry_t))) != NULL){
     e->p.next = NULL;
@@ -598,9 +598,7 @@ bailout:
     free(namelist[n]);
   }
   free(namelist);
-#ifndef WIILIB
   if(!strcmp(mpriv->dir,"usb:/"))mounting_usb=0;
-#endif
   fast_continue();
   return 1;
   
@@ -609,9 +607,8 @@ error_exit:
         free( d_name_iconv);
     }
     fsysloc_restorelocale( fsysloc, locale_changed);
-#ifndef WIILIB
+
     if(!strcmp(mpriv->dir,"usb:/"))mounting_usb=0;
-#endif
     fast_continue();
 
 return 0;  
@@ -804,23 +801,16 @@ static int open_fs(menu_t* menu, char* args) {
 
 bool check_play_next_file(char *fileplaying,char *next_filename)
 {
-	//printf("dir_play: %i\n",dir_play);
 	if(next_file==NULL || dir_play==false) return false;
 	
 	if(menu_dir[0]=='\0') return false;
 	if(strcmp(file_dir,menu_dir)!=0) return false;
 	
 	sprintf(next_filename,"%s%s",file_dir,next_file);
-//	int dist=levenshtein_distance(fileplaying,next_filename);
-//	if(directory_mode<0 || (dist>0 && dist<directory_mode))
-//	{
-		actual_list=actual_list->p.next;
-		if(!actual_list) next_file=NULL;
-		else next_file=actual_list->p.txt;
-		//printf("next file: %s",	next_filename);	
-		return true;
-//	}
-//	return false;
+	actual_list=actual_list->p.next;
+	if(!actual_list) next_file=NULL;
+	else next_file=actual_list->p.txt;
+	return true;
 }
 
 const menu_info_t menu_info_filesel = {

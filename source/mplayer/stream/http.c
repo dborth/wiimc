@@ -743,6 +743,7 @@ static int http_streaming_start(stream_t *stream, int* file_format) {
 	int auth_retry=0;
 	int seekable=0;
 	char *content_type;
+	const char *content_length;
 	char *next_url;
 	URL_t *url = stream->streaming_ctrl->url;
 
@@ -767,9 +768,12 @@ static int http_streaming_start(stream_t *stream, int* file_format) {
 
 		// Check if we can make partial content requests and thus seek in http-streams
 		if( http_hdr!=NULL && http_hdr->status_code==200 ) {
-		    char *accept_ranges;
-		    if( (accept_ranges = http_get_field(http_hdr,"Accept-Ranges")) != NULL )
+		    const char *accept_ranges = http_get_field(http_hdr,"Accept-Ranges");
+		    const char *server = http_get_field(http_hdr, "Server");
+		    if (accept_ranges)
 			seekable = strncmp(accept_ranges,"bytes",5)==0;
+		    else if (server && strcmp(server, "gvs 1.0") == 0)
+			seekable = 1; // HACK for youtube incorrectly claiming not to support seeking
 		}
 
 		print_icy_metadata(http_hdr);
@@ -813,15 +817,15 @@ static int http_streaming_start(stream_t *stream, int* file_format) {
 		// Assume standard http if not ICY
 		switch( http_hdr->status_code ) {
 			case 200: // OK
+				content_length = http_get_field(http_hdr, "Content-Length");
+				if (content_length) {
+					mp_msg(MSGT_NETWORK,MSGL_V,"Content-Length: [%s]\n", content_length);
+					stream->end_pos = atoll(content_length);
+				}
 				// Look if we can use the Content-Type
 				content_type = http_get_field( http_hdr, "Content-Type" );
 				if( content_type!=NULL ) {
-					char *content_length = NULL;
 					mp_msg(MSGT_NETWORK,MSGL_V,"Content-Type: [%s]\n", content_type );
-					if( (content_length = http_get_field(http_hdr, "Content-Length")) != NULL) {
-						mp_msg(MSGT_NETWORK,MSGL_V,"Content-Length: [%s]\n", http_get_field(http_hdr, "Content-Length"));
-						stream->end_pos = atoi(content_length);
-					}
 					// Check in the mime type table for a demuxer type
 					i = 0;
 					while(mime_type_table[i].mime_type != NULL) {

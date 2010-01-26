@@ -106,8 +106,7 @@ SRCS_COMMON-$(HAVE_POSIX_SELECT)     += libmpcodecs/vf_bmovl.c
 SRCS_COMMON-$(HAVE_SYS_MMAN_H)       += libaf/af_export.c osdep/mmap_anon.c
 SRCS_COMMON-$(JPEG)                  += libmpcodecs/vd_ijpg.c
 SRCS_COMMON-$(LADSPA)                += libaf/af_ladspa.c
-SRCS_COMMON-$(LIBA52)                += libmpcodecs/ad_hwac3.c \
-                                        libmpcodecs/ad_liba52.c
+SRCS_COMMON-$(LIBA52)                += libmpcodecs/ad_liba52.c
 SRCS_COMMON-$(LIBA52_INTERNAL)       += liba52/crc.c \
                                         liba52/resample.c \
                                         liba52/bit_allocate.c \
@@ -122,10 +121,13 @@ SRCS_COMMON-$(LIBASS)                += libmpcodecs/vf_ass.c \
 SRCS_COMMON-$(LIBASS_INTERNAL)       += libass/ass.c \
                                         libass/ass_bitmap.c \
                                         libass/ass_cache.c \
+                                        libass/ass_drawing.c \
                                         libass/ass_font.c \
                                         libass/ass_fontconfig.c \
                                         libass/ass_library.c \
+                                        libass/ass_parse.c \
                                         libass/ass_render.c \
+                                        libass/ass_strtod.c \
                                         libass/ass_utils.c \
 
 SRCS_COMMON-$(LIBAVCODEC)            += av_opts.c \
@@ -377,6 +379,7 @@ SRCS_COMMON = asxparser.c \
               libmpcodecs/ad_alaw.c \
               libmpcodecs/ad_dk3adpcm.c \
               libmpcodecs/ad_dvdpcm.c \
+              libmpcodecs/ad_hwac3.c \
               libmpcodecs/ad_hwmpa.c \
               libmpcodecs/ad_imaadpcm.c \
               libmpcodecs/ad_msadpcm.c \
@@ -543,9 +546,10 @@ SRCS_MPLAYER-$(ESD)          += libao2/ao_esd.c
 SRCS_MPLAYER-$(FBDEV)        += libvo/vo_fbdev.c libvo/vo_fbdev2.c
 SRCS_MPLAYER-$(GGI)          += libvo/vo_ggi.c
 SRCS_MPLAYER-$(GIF)          += libvo/vo_gif89a.c
-SRCS_MPLAYER-$(GL)           += libvo/gl_common.c libvo/vo_gl.c libvo/vo_gl2.c
+SRCS_MPLAYER-$(GL)           += libvo/gl_common.c libvo/vo_gl.c libvo/vo_gl2.c libvo/csputils.c
 SRCS_MPLAYER-$(GL_WIN32)     += libvo/w32_common.c
 SRCS_MPLAYER-$(GL_X11)       += libvo/x11_common.c
+SRCS_MPLAYER-$(MATRIXVIEW)   += libvo/vo_matrixview.c libvo/matrixview.c
 SRCS_MPLAYER-$(GUI)          += gui/bitmap.c
 SRCS_MPLAYER-$(GUI_GTK)      += gui/app.c \
                                 gui/cfg.c \
@@ -587,6 +591,7 @@ SRCS_MPLAYER-$(JACK)         += libao2/ao_jack.c
 SRCS_MPLAYER-$(JOYSTICK)     += input/joystick.c
 SRCS_MPLAYER-$(JPEG)         += libvo/vo_jpeg.c
 SRCS_MPLAYER-$(KVA)          += libvo/vo_kva.c
+SRCS_MPLAYER-$(LIBAVCODEC)   += libvo/vo_png.c
 SRCS_MPLAYER-$(LIBMENU)      += libmenu/menu.c \
                                 libmenu/menu_chapsel.c \
                                 libmenu/menu_cmdlist.c  \
@@ -606,7 +611,6 @@ SRCS_MPLAYER-$(MGA)           += libvo/vo_mga.c
 SRCS_MPLAYER-$(NAS)           += libao2/ao_nas.c
 SRCS_MPLAYER-$(OPENAL)        += libao2/ao_openal.c
 SRCS_MPLAYER-$(OSS)           += libao2/ao_oss.c
-SRCS_MPLAYER-$(PNG)           += libvo/vo_png.c
 SRCS_MPLAYER-$(PNM)           += libvo/vo_pnm.c
 SRCS_MPLAYER-$(PULSE)         += libao2/ao_pulse.c
 SRCS_MPLAYER-$(QUARTZ)        += libvo/vo_quartz.c libvo/osx_common.c
@@ -663,6 +667,7 @@ SRCS_MPLAYER-$(GEKKO) += 	../utils/di2.c \
 							../utils/ftp_devoptab.c \
 							../utils/libdvdiso.c \
 							../utils/mload.c \
+							../utils/fsysloc.c \
 							osdep/log_console.c \
 							osdep/gx_supp.c \
 							osdep/glob_gekko.c \
@@ -795,6 +800,7 @@ DIRS =  . \
         loader \
         loader/dshow \
         loader/dmo \
+        loader/wine \
         mp3lib \
         osdep \
         stream \
@@ -868,41 +874,9 @@ mencoder$(EXESUF) mplayer$(EXESUF):
 #                   MPLAYER WII LIB                         #
 #############################################################
 
-mplayer-wiilib.o: mplayer.c
-	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
 
-command-wiilib.o: command.c
-	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
-
-osdep/gx_supp-wiilib.o: osdep/gx_supp.c
-	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
-
-osdep/plat_gekko-wiilib.o: osdep/plat_gekko.c
-	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
-	
-libmenu/menu_filesel-wiilib.o: libmenu/menu_filesel.c
-	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
-
-libmenu/fsysloc-wiilib.o: libmenu/fsysloc.c
-	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
-
-osdep/getch2-gekko-wiilib.o: osdep/getch2-gekko.c
-	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
-
-libvo/vo_gekko-wiilib.o: libvo/vo_gekko.c
-	$(CC) $(CFLAGS) -DWIILIB -c -o $@ $<
-
-A1 =	$(subst gx_supp.o,gx_supp-wiilib.o,$(OBJS_MPLAYER))
-A2 =	$(subst mplayer.o,mplayer-wiilib.o,$(A1))
-A3 =	$(subst plat_gekko.o,plat_gekko-wiilib.o,$(A2))
-A4 =	$(subst command.o,command-wiilib.o,$(A3))
-A5 =	$(subst menu_filesel.o,menu_filesel-wiilib.o,$(A4))
-A6 =	$(subst fsysloc.o,fsysloc-wiilib.o,$(A5))
-A7 =	$(subst vo_gekko.o,vo_gekko-wiilib.o,$(A6))
-A8 =	$(subst getch2-gekko.o,getch2-gekko-wiilib.o,$(OBJS_COMMON))
-
-MPLAYERWIILIB = $(A7) 
-MPLAYERWIILIB += $(A8)
+MPLAYERWIILIB = $(OBJS_MPLAYER) 
+MPLAYERWIILIB += $(OBJS_COMMON) 
 
 libmplayerwii.a: $(MPLAYERWIILIB) $(COMMON_LIBS)
 	rm -f $@
@@ -953,7 +927,7 @@ libdvdnav/%:   CFLAGS := -Ilibdvdnav -D__USE_UNIX98 -D_GNU_SOURCE -DHAVE_CONFIG_
 libdvdread4/%: CFLAGS := -Ilibdvdread4 -D__USE_UNIX98 -D_GNU_SOURCE $(CFLAGS_LIBDVDCSS_DVDREAD) $(CFLAGS)
 libfaad2/%:    CFLAGS := -Ilibfaad2 -D_GNU_SOURCE -DHAVE_CONFIG_H $(CFLAGS_FAAD_FIXED) $(CFLAGS)
 
-loader/%: CFLAGS += -Iloader -fno-omit-frame-pointer $(CFLAGS_NO_OMIT_LEAF_FRAME_POINTER)
+loader/%: CFLAGS += -fno-omit-frame-pointer $(CFLAGS_NO_OMIT_LEAF_FRAME_POINTER)
 #loader/%: CFLAGS += -Ddbg_printf=__vprintf -DTRACE=__vprintf -DDETAILED_OUT
 loader/win32%: CFLAGS += $(CFLAGS_STACKREALIGN)
 
@@ -965,11 +939,11 @@ tremor/%: CFLAGS += $(CFLAGS_TREMOR_LOW)
 
 vidix/%: CFLAGS += $(CFLAGS_DHAHELPER) $(CFLAGS_SVGALIB_HELPER)
 
-VIDIX_PCI_FILES = vidix/pci_dev_ids.c vidix/pci_ids.h vidix/pci_vendor_ids.h \
+VIDIX_PCI_FILES = vidix/pci_dev_ids.c vidix/pci_ids.h vidix/pci_names.c \
                   vidix/pci_vendors.h
 
 $(VIDIX_PCI_FILES): vidix/pci_db2c.awk vidix/pci.db
-	$^ $(VIDIX_PCIDB)
+	awk -f $^ $(VIDIX_PCIDB)
 
 VIDIX_DEPS = $(filter vidix/%,$(SRCS_MPLAYER:.c=.d))
 VIDIX_OBJS = $(filter vidix/%,$(SRCS_MPLAYER:.c=.o))
@@ -1038,7 +1012,7 @@ uninstall:
 	rm -f $(foreach lang,$(MAN_LANGS),$(foreach man,mplayer.1 mencoder.1,$(MANDIR)/$(lang)/man1/$(man)))
 
 clean:
-	-rm -f $(call ADD_ALL_DIRS,/*.o /*.d /*.a /*.ho /*~)
+	-rm -f $(call ADD_ALL_DIRS,/*.o /*.a /*.ho /*~)
 	-rm -f $(call ADD_ALL_EXESUFS,mplayer mencoder)
 
 distclean: clean testsclean toolsclean driversclean dhahelperclean dhahelperwinclean

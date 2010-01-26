@@ -43,6 +43,16 @@ struct m_config;
 #define PLAY_TREE_ITER_RND 1
 ///@}
 
+/// start denper's changes
+/// \defgroup PlaytreeParams Playtree prams
+/// \ingroup PlaytreeParams 
+///@{
+#define PLAY_TREE_PARAM_PRETTYFORMAT_TITLE "pt_prettyformat_title"
+///@}
+/// end denper's changes
+
+
+
 /// \defgroup Playtree
 ///@{
 

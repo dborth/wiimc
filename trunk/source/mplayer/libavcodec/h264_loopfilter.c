@@ -615,7 +615,7 @@ void ff_h264_filter_mb( H264Context *h, int mb_x, int mb_y, uint8_t *img_y, uint
     if (FRAME_MBAFF
             // and current and left pair do not have the same interlaced type
             && IS_INTERLACED(mb_type^h->left_type[0])
-            // and left mb is in the same slice if deblocking_filter == 2
+            // and left mb is in available to us
             && h->left_type[0]) {
         /* First vertical edge is different in MBAFF frames
          * There are 8 different bS to compute and 2 different Qp
@@ -632,6 +632,16 @@ void ff_h264_filter_mb( H264Context *h, int mb_x, int mb_y, uint8_t *img_y, uint
             *(uint64_t*)&bS[0]=
             *(uint64_t*)&bS[4]= 0x0004000400040004ULL;
         else {
+            static const uint8_t offset[2][2][8]={
+                {
+                    {7+8*0, 7+8*0, 7+8*0, 7+8*0, 7+8*1, 7+8*1, 7+8*1, 7+8*1},
+                    {7+8*2, 7+8*2, 7+8*2, 7+8*2, 7+8*3, 7+8*3, 7+8*3, 7+8*3},
+                },{
+                    {7+8*0, 7+8*1, 7+8*2, 7+8*3, 7+8*0, 7+8*1, 7+8*2, 7+8*3},
+                    {7+8*0, 7+8*1, 7+8*2, 7+8*3, 7+8*0, 7+8*1, 7+8*2, 7+8*3},
+                }
+            };
+            const uint8_t *off= offset[MB_FIELD][mb_y&1];
             for( i = 0; i < 8; i++ ) {
                 int j= MB_FIELD ? i>>2 : i&1;
                 int mbn_xy = h->left_mb_xy[j];
@@ -644,7 +654,7 @@ void ff_h264_filter_mb( H264Context *h, int mb_x, int mb_y, uint8_t *img_y, uint
                          ((!h->pps.cabac && IS_8x8DCT(mbn_type)) ?
                             (h->cbp_table[mbn_xy] & ((MB_FIELD ? (i&2) : (mb_y&1)) ? 8 : 2))
                                                                        :
-                            h->non_zero_count[mbn_xy][7+(MB_FIELD ? (i&3) : (i>>2)+(mb_y&1)*2)*8]));
+                            h->non_zero_count[mbn_xy][ off[i] ]));
                 }
             }
         }

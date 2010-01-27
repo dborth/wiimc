@@ -27,17 +27,6 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
-#include <locale.h>
-
-#ifdef GEKKO
-#include <sdcard/wiisd_io.h>
-#include <sdcard/gcsd.h>
-#include <ogc/usbstorage.h>
-#include "mp_osd.h"
-const static DISC_INTERFACE* sd = &__io_wiisd;
-const static DISC_INTERFACE* usb = &__io_usbstorage;
-extern bool playing_usb;
-#endif
 
 
 #include "config.h"
@@ -55,19 +44,11 @@ extern bool playing_usb;
 #include "input/input.h"
 #include "osdep/keycodes.h"
 
-
-#include "fsysloc.h"
-
-#define MENU_KEEP_PATH "mp_current_path"
-
-fsysloc_table_t *fsysloc_table = NULL;
-static int fsysloc_table_init_flag = 0;
+#define MENU_KEEP_PATH "/tmp/mp_current_path"
 
 int menu_keepdir = 0;
 char *menu_chroot = NULL;
 extern char *filename;
-
-
 
 struct list_entry_s {
   struct list_entry p;
@@ -113,74 +94,6 @@ static m_option_t cfg_fields[] = {
 
 #define mpriv (menu->priv)
 
-
-static list_entry_t* actual_list;
-static char *next_file=NULL;
-static char file_dir[1024];
-static char menu_dir[1024];
-
-
-
-/*****************************************************/
-/*Function prototypes and libraries needed to compile*/
-/*****************************************************/
-int dir_play=1;
-//int levenshtein_distance(char *s,char*t);
-int minimum(int a,int b,int c);
-
-/****************************************/
-/*Implementation of Levenshtein distance*/
-/****************************************/
-
-int levenshtein_distance(char *s,char*t)
-/*Compute levenshtein distance between s and t*/
-{
-  //Step 1
-  int k,i,j,n,m,cost,*d,distance;
-  n=strlen(s); 
-  m=strlen(t);
-  if(n!=0&&m!=0)
-  {
-    d=malloc((sizeof(int))*(m+1)*(n+1));
-    m++;
-    n++;
-    //Step 2	
-    for(k=0;k<n;k++)
-	d[k]=k;
-    for(k=0;k<m;k++)
-      d[k*n]=k;
-    //Step 3 and 4	
-    for(i=1;i<n;i++)
-      for(j=1;j<m;j++)
-	{
-        //Step 5
-        if(s[i-1]==t[j-1])
-          cost=0;
-        else
-          cost=1;
-        //Step 6			 
-        d[j*n+i]=minimum(d[(j-1)*n+i]+1,d[j*n+i-1]+1,d[(j-1)*n+i-1]+cost);
-      }
-    distance=d[n*m-1];
-    free(d);
-    return distance;
-  }
-  else 
-    return -1; //a negative return value means that one or both strings are empty.
-}
-
-int minimum(int a,int b,int c)
-/*Gets the minimum of three values*/
-{
-  int min=a;
-  if(b<min)
-    min=b;
-  if(c<min)
-    min=c;
-  return min;
-}
-
-
 static void free_entry(list_entry_t* entry) {
   free(entry->p.txt);
   free(entry);
@@ -199,8 +112,8 @@ static char* replace_path(char* title , char* dir , int escape) {
     do {
       if (*d == '\\')
         l++;
-      else if (*d == '\'') /* ' -> \' */
-        l+=2;
+      else if (*d == '\'') /* ' -> \'\\\'\' */
+        l+=7;
     } while (*d++);
     }
     r = malloc(l + 1);
@@ -210,8 +123,11 @@ static char* replace_path(char* title , char* dir , int escape) {
       if (escape) {
       if (*dir == '\\')
         *n++ = '\\';
-      else if (*dir == '\'') { /* ' -> \' */
-        *n++ = '\\'; 
+      else if (*dir == '\'') { /* ' -> \'\\\'\' */
+        *n++ = '\\'; *n++ = '\'';
+        *n++ = '\\'; *n++ = '\\';
+        *n++ = '\\'; *n++ = '\'';
+        *n++ = '\\';
       }
       }
     } while ((*n++ = *dir++));
@@ -224,21 +140,7 @@ static char* replace_path(char* title , char* dir , int escape) {
 
 typedef int (*kill_warn)(const void*, const void*);
 
-static int mystat( const fsysloc_t *fsysloc, const char *dir, struct stat *st)
-{
-    char *iconv_buf;
-    int ret;
-
-    iconv_buf = fsysloc_iconv_to_fsys( fsysloc, dir);
-
-    ret = stat( iconv_buf, st);
-
-    if ( iconv_buf != dir) {
-        free(iconv_buf);
-    }
-    return ret;
-}
-static int mylstat(const fsysloc_t *fsysloc, char *dir, char *file,struct stat* st) {
+static int mylstat(char *dir, char *file,struct stat* st) {
   int l = strlen(dir) + strlen(file);
   char s[l+2];
   if (!strcmp("..", file)) {
@@ -257,12 +159,12 @@ static int mylstat(const fsysloc_t *fsysloc, char *dir, char *file,struct stat* 
       slash = strrchr(s,'\\');
 #endif
     if (!slash)
-      return mystat( fsysloc,dir,st);
+      return stat(dir,st);
     slash[1] = '\0';
-    return mystat( fsysloc,s,st);
+    return stat(s,st);
   }
   sprintf(s,"%s/%s",dir,file);
-  return mystat(fsysloc,s,st);
+  return stat(s,st);
 }
 
 static int compare(char **a, char **b){
@@ -288,7 +190,6 @@ static char **get_extensions(menu_t *menu){
     return NULL;
 
   fp = fopen(mpriv->filter, "r");
-  
   if(!fp)
     return NULL;
 
@@ -324,10 +225,7 @@ static void free_extensions(char **extensions){
     free (extensions);
   }
 }
-#ifdef GEKKO
-extern int network_initied;
-extern int mounting_usb;
-#endif
+
 static int open_dir(menu_t* menu,char* args) {
   char **namelist, **tp;
   struct dirent *dp;
@@ -339,11 +237,6 @@ static int open_dir(menu_t* menu,char* args) {
   DIR* dirp;
   extern int file_filter;
   char **extensions, **elem, *ext;
-  fsysloc_t *fsysloc = NULL;
-  char *locale_changed = NULL;
-  char *d_name_save = NULL;
-  char *d_name_iconv = NULL;
-fast_pause();	  	  
 
   menu_list_init(menu);
 
@@ -353,155 +246,16 @@ fast_pause();
   if(mpriv->p.title && mpriv->p.title != mpriv->title && mpriv->p.title != cfg_dflt.p.title)
     free(mpriv->p.title);
   p = strstr(mpriv->title,"%p");
-strcpy(menu_dir,mpriv->dir);
-#define GEKKO
-#ifdef GEKKO
-#ifndef WIILIB
-  if(!strcmp(mpriv->dir,"sd:/"))
-  {
-	if(!DeviceMounted("sd")) 
-	{
-		rm_osd_msg(OSD_MSG_TEXT);
-	  	set_osd_msg(OSD_MSG_TEXT, 1, 2000, "FAT SD device not mounted");
-	  	update_osd_msg();
-		mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-		goto error_exit;
-	}
-  } 
-  else if(!strcmp(mpriv->dir,"ntfs_sd:/"))
-  {
-	mount_sd_ntfs(); //mounted when needed (only once, see code)
-	if(!DeviceMounted("ntfs_sd")) 
-	{
-		rm_osd_msg(OSD_MSG_TEXT);
-	  	set_osd_msg(OSD_MSG_TEXT, 1, 2000, "NTFS SD device not mounted");
-	  	update_osd_msg();
-		mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-		goto error_exit;
-	}
-  } 
-  else if(!strcmp(mpriv->dir,"usb:/"))
-  {
-	//printf("playing_usb: %i\n",playing_usb);VIDEO_WaitVSync();
-  	//if(!playing_usb)
-  	{
-  		while(mounting_usb)usleep(50);
-  		mounting_usb=1;
-  		//usleep(500);
-  		//printf("checking DeviceMounted\n");VIDEO_WaitVSync();
-  		if(!DeviceMounted("usb")) 
-		{
-			rm_osd_msg(OSD_MSG_TEXT);
-		  	set_osd_msg(OSD_MSG_TEXT, 1, 2000, "FAT USB device not mounted");
-		  	update_osd_msg();
-  			mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-  			mounting_usb=0;
-			goto error_exit;
-		}
-  		//mounting_usb=0;
-	}
-  } 
-  else if(!strcmp(mpriv->dir,"ntfs_usb:/"))
-  {
-	//printf("playing_usb: %i\n",playing_usb);VIDEO_WaitVSync();
-  	//if(!playing_usb)
-  	{
-  		while(mounting_usb)usleep(5000);
-  		//mounting_usb=1;
-  		//usleep(500);
-  		//printf("checking DeviceMounted\n");VIDEO_WaitVSync();
-  		if(!DeviceMounted("ntfs_usb")) 
-		{
-			rm_osd_msg(OSD_MSG_TEXT);
-		  	set_osd_msg(OSD_MSG_TEXT, 1, 2000, "NTFS USB device not mounted");
-		  	update_osd_msg();
-  			mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-  			mounting_usb=0;
-			goto error_exit;
-		}
-  		//mounting_usb=0;
-	}
-  } 
-  else if(!strcmp(mpriv->dir,"dvd:/"))
-  {  
-	  if(!DVDGekkoMount()) 
-	  {
-	    rm_osd_msg(OSD_MSG_TEXT);
-  		set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Error mounting DVD");
-  		update_osd_msg();
-  		mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-		  goto error_exit;
-	  }
-  }
-  else if(mpriv->dir[0]=='s' && mpriv->dir[1]=='m' && mpriv->dir[2]=='b' && mpriv->dir[4]==':')
-  { // reconnect samba if needed
-	  char device[5]="smbx";
-	  
-	  if(network_initied==0)
-	  {
-  		  set_osd_msg(OSD_MSG_TEXT,1,2000,"Network not yet initialized, Please Wait");
-  		  update_osd_msg();
-  		  mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-		  goto error_exit;
-	  }
-	  	  
-	  device[3]=mpriv->dir[3];
-	  if(!smbConnect(device))
-	  {
-		  set_osd_msg(OSD_MSG_TEXT,1,2000,"Error connecting to %s ",device);
-		  update_osd_msg();
-		  mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-		  goto error_exit;	  
-	  }	  
-	  
-  }
-  else if(mpriv->dir[0]=='f' && mpriv->dir[1]=='t' && mpriv->dir[2]=='p' && mpriv->dir[4]==':')
-  { // reconnect ftp if needed
-	  char device[5]="ftpx";
-	  
-	  if(network_initied==0)
-	  {
-  		  set_osd_msg(124,1,2000,"Network not yet initialized, Please Wait");
-  		  mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-		  goto error_exit;
-	  }
-	  	  
-	  device[3]=mpriv->dir[3];
-		set_osd_msg(124,1,2000,"Connecting to %s ",device);
-	  if(!ftpConnect(device))
-	  {
-		  set_osd_msg(124,1,2000,"Error connecting to %s ",device);
-		  mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-		  goto error_exit;
-	  }
-  } 
-#endif
-#endif
-
-
-  if ( !fsysloc_table_init_flag) {
-     char cad[100];
-     sprintf( cad, "%s%s", MPLAYER_CONFDIR, "/fsysloc.conf");
-     fsysloc_table = fsysloc_table_init( cad);
-     fsysloc_table_init_flag = 1;
-  }
-  fsysloc = fsysloc_table_locate( fsysloc_table, mpriv->dir);
-  locale_changed = fsysloc_setlocale( fsysloc);
-
-  d_name_save = mpriv->dir;
-  d_name_iconv = fsysloc_iconv_to_fsys( fsysloc, d_name_save);
 
   mpriv->p.title = replace_path(mpriv->title,mpriv->dir,0);
-  if ((dirp = opendir (d_name_iconv)) == NULL){
+
+  if ((dirp = opendir (mpriv->dir)) == NULL){
     mp_msg(MSGT_GLOBAL,MSGL_ERR,MSGTR_LIBMENU_OpendirError, strerror(errno));
-    goto error_exit;
+    return 0;
   }
 
   if (menu_keepdir) {
-  	char file[100];
-	sprintf(file,"%s/%s",MPLAYER_DATADIR,MENU_KEEP_PATH);	
-
-    path_fp = open (file, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+    path_fp = open (MENU_KEEP_PATH, O_CREAT | O_WRONLY | O_TRUNC, 0666);
     if (path_fp >= 0) {
       write (path_fp, mpriv->dir, strlen (mpriv->dir));
       close (path_fp);
@@ -510,12 +264,7 @@ strcpy(menu_dir,mpriv->dir);
 
   namelist = (char **) malloc(sizeof(char *));
   extensions = get_extensions(menu);
-  if(extensions != NULL && *extensions == NULL)
-  {
-    set_osd_msg(124,1,4000,"Your 'file_ext' file is empty, check it");  
-    mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-  	goto error_exit;
-  }
+
   n=0;
   while ((dp = readdir(dirp)) != NULL) {
     if(dp->d_name[0] == '.' && strcmp(dp->d_name,"..") != 0)
@@ -526,17 +275,10 @@ strcpy(menu_dir,mpriv->dir);
           && !strncmp (mpriv->dir, menu_chroot, len))
         continue;
     }
-    if ( d_name_iconv!=NULL && d_name_iconv!=d_name_save) {
-        free( d_name_iconv);
-    }
-    d_name_save = dp->d_name;
-    d_name_iconv = fsysloc_iconv_from_fsys( fsysloc, d_name_save);
-
-    if (mylstat(fsysloc, args, d_name_iconv,&st))
+    if (mylstat(args,dp->d_name,&st))
       continue;
-      
     if (file_filter && extensions && !S_ISDIR(st.st_mode)) {
-      if((ext = strrchr(d_name_iconv,'.')) == NULL)
+      if((ext = strrchr(dp->d_name,'.')) == NULL)
         continue;
       ext++;
       elem = extensions;
@@ -557,34 +299,29 @@ strcpy(menu_dir,mpriv->dir);
       namelist=tp;
     }
 
-    namelist[n] = (char *) malloc(strlen(d_name_iconv) + 2);
+    namelist[n] = (char *) malloc(strlen(dp->d_name) + 2);
     if(namelist[n] == NULL){
       mp_msg(MSGT_GLOBAL,MSGL_ERR,MSGTR_LIBMENU_MallocError, strerror(errno));
       n--;
       goto bailout;
     }
 
-    strcpy(namelist[n], d_name_iconv);
+    strcpy(namelist[n], dp->d_name);
     if(S_ISDIR(st.st_mode))
       strcat(namelist[n], "/");
     n++;
   }
-bailout:
-    if ( d_name_iconv!=NULL && d_name_iconv!=d_name_save) {
-        free( d_name_iconv);
-    }
-    d_name_iconv = d_name_save = NULL;
 
-    fsysloc_restorelocale( fsysloc, locale_changed);
+bailout:
   free_extensions (extensions);
   closedir(dirp);
 
+  qsort(namelist, n, sizeof(char *), (kill_warn)compare);
 
   if (n < 0) {
     mp_msg(MSGT_GLOBAL,MSGL_ERR,MSGTR_LIBMENU_ReaddirError,strerror(errno));
-    goto error_exit;
+    return 0;
   }
-  if(n>1)qsort(namelist, n, sizeof(char *), (kill_warn)compare);
   while(n--) {
     if((e = calloc(1,sizeof(list_entry_t))) != NULL){
     e->p.next = NULL;
@@ -598,28 +335,16 @@ bailout:
     free(namelist[n]);
   }
   free(namelist);
-  if(!strcmp(mpriv->dir,"usb:/"))mounting_usb=0;
-  fast_continue();
+
   return 1;
-  
-error_exit:
-    if ( d_name_iconv!=NULL && d_name_iconv!=d_name_save) {
-        free( d_name_iconv);
-    }
-    fsysloc_restorelocale( fsysloc, locale_changed);
-
-    if(!strcmp(mpriv->dir,"usb:/"))mounting_usb=0;
-    fast_continue();
-
-return 0;  
 }
 
 static char *action;
 
 static void read_cmd(menu_t* menu,int cmd) {
   switch(cmd) {
-  //case MENU_CMD_LEFT: //scip
-    //mpriv->p.current = mpriv->p.menu; // Hack : we consider that the first entry is ../
+  case MENU_CMD_LEFT:
+    mpriv->p.current = mpriv->p.menu; // Hack : we consider that the first entry is ../
   case MENU_CMD_RIGHT:
   case MENU_CMD_OK: {
     // Directory
@@ -654,23 +379,8 @@ static void read_cmd(menu_t* menu,int cmd) {
       char *str;
       char *action = mpriv->p.current->d ? mpriv->dir_action:mpriv->file_action;
       sprintf(filename,"%s%s",mpriv->dir,mpriv->p.current->p.txt);
-      str = replace_path(action, filename,1);      
+      str = replace_path(action, filename,1);
       mp_input_parse_and_queue_cmds(str);
-      //rodries
-      if(strstr(action,"loadfile")!=NULL)
-	  {	  	
-	  	strcpy(file_dir,mpriv->dir);
-	  	if(mpriv->p.current->p.next!=NULL)
-	  	{
-		  	actual_list=mpriv->p.current->p.next;
-		  	next_file=actual_list->p.txt;
-		}
-		else
-		{
-			next_file=NULL;
-			actual_list=NULL;
-		}
-	  }
       if (str != action)
 	free(str);
     }
@@ -688,7 +398,6 @@ static void read_cmd(menu_t* menu,int cmd) {
   default:
     menu_list_read_cmd(menu,cmd);
   }
-  strcpy(menu_dir,mpriv->dir);
 }
 
 static int read_key(menu_t* menu,int c){
@@ -707,8 +416,6 @@ static int read_key(menu_t* menu,int c){
 static void clos(menu_t* menu) {
   menu_list_uninit(menu,free_entry);
   free(mpriv->dir);
-  mpriv->dir=NULL;
-  menu_dir[0]='\0';
 }
 
 static int open_fs(menu_t* menu, char* args) {
@@ -726,10 +433,8 @@ static int open_fs(menu_t* menu, char* args) {
     if (!path || path[0] == '\0') {
       struct stat st;
       int path_fp;
-  	  char file[100];
-	  sprintf(file,"%s/%s",MPLAYER_DATADIR,MENU_KEEP_PATH);	
 
-      path_fp = open (file, O_RDONLY);
+      path_fp = open (MENU_KEEP_PATH, O_RDONLY);
       if (path_fp >= 0) {
         if (!fstat (path_fp, &st) && (st.st_size > 0)) {
           path = malloc(st.st_size+1);
@@ -763,7 +468,6 @@ static int open_fs(menu_t* menu, char* args) {
 #endif
       path = wd;
   }
-#ifndef GEKKO  
   if (path[0] != '/') {
     if(path[strlen(path)-1] != '/')
       snprintf(b,sizeof(b),"%s/%s/",wd,path);
@@ -787,30 +491,9 @@ static int open_fs(menu_t* menu, char* args) {
       }
     }
   }
-#else
-  if (path[strlen(path)-1]!='/') {
-    sprintf(b,"%s/",path);
-    path = b;
-  }
-#endif  
   r = open_dir(menu,path);
 
   return r;
-}
-
-
-bool check_play_next_file(char *fileplaying,char *next_filename)
-{
-	if(next_file==NULL || dir_play==false) return false;
-	
-	if(menu_dir[0]=='\0') return false;
-	if(strcmp(file_dir,menu_dir)!=0) return false;
-	
-	sprintf(next_filename,"%s%s",file_dir,next_file);
-	actual_list=actual_list->p.next;
-	if(!actual_list) next_file=NULL;
-	else next_file=actual_list->p.txt;
-	return true;
 }
 
 const menu_info_t menu_info_filesel = {

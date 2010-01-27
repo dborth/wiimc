@@ -1,1 +1,0 @@
-wiiload mplayer.dol 

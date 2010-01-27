@@ -19,9 +19,6 @@
 #include "m_option.h"
 #include "stream.h"
 #include "libmpdemux/demuxer.h"
-#include "../../utils/fsysloc.h"
-
-
 
 /// We keep these 2 for the gui atm, but they will be removed.
 int vcd_track=0;
@@ -34,12 +31,6 @@ int dvd_title=0;
 // Open a new stream  (stdin/file/vcd/url)
 
 stream_t* open_stream(char* filename,char** options, int* file_format){
-   stream_t* ret;
-   extern fsysloc_table_t *fsysloc_table;
-   char *locale_changed = NULL ;
-   const fsysloc_t *fsysloc = NULL;
-   char* filename_iconv = NULL;
-
   // Check if playlist or unknown
   if (*file_format != DEMUXER_TYPE_PLAYLIST){
     *file_format=DEMUXER_TYPE_UNKNOWN;
@@ -51,7 +42,6 @@ if(!filename) {
 }
 
 //============ Open STDIN or plain FILE ============
-
 
   return open_stream_full(filename,STREAM_READ,options,file_format);
 }

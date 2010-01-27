@@ -1,1 +1,0 @@
-C:\devkitPro\devkitPPC\bin\powerpc-eabi-addr2line -e mplayer.elf %1

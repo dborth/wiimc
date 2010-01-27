@@ -58,8 +58,8 @@ struct menu_priv_s {
   int last_line;
   int num_lines;
   int add_line;
-  u64 hide_ts;
-  u64 show_ts;
+  unsigned int hide_ts;
+  unsigned int show_ts;
   pid_t child; // Child process if we are running a shell cmd
   int child_fd[3]; // The 3 default fd
   char* prompt;
@@ -75,8 +75,8 @@ struct menu_priv_s {
   int minb;
   int vspace;
   int bg,bg_alpha;
-  u64 hide_time;
-  u64 show_time;
+  unsigned int hide_time;
+  unsigned int show_time;
   int history_max;
   int raw_child;
 };
@@ -190,7 +190,7 @@ static void draw(menu_t* menu, mp_image_t* mpi) {
   ll = mpriv->last_line - 1;
 
   if(mpriv->hide_ts) {
-    u64 t = GetTimerMS() - mpriv->hide_ts;
+    unsigned int t = GetTimerMS() - mpriv->hide_ts;
     if(t >= mpriv->hide_time) {
       mpriv->hide_ts = 0;
       menu->show = 0;
@@ -239,7 +239,7 @@ static void draw(menu_t* menu, mp_image_t* mpi) {
 }
 
 static void check_child(menu_t* menu) {
-#if !defined (__MINGW32__) && !defined (GEKKO)
+#ifndef __MINGW32__
   fd_set rfd;
   struct timeval tv;
   int max_fd = mpriv->child_fd[2] > mpriv->child_fd[1] ? mpriv->child_fd[2] :
@@ -293,7 +293,7 @@ static void check_child(menu_t* menu) {
 #define close_pipe(pipe) close(pipe[0]); close(pipe[1])
 
 static int run_shell_cmd(menu_t* menu, char* cmd) {
-#if !defined (__MINGW32__) && !defined (GEKKO)
+#ifndef __MINGW32__
   int in[2],out[2],err[2];
 
   mp_msg(MSGT_GLOBAL,MSGL_INFO,MSGTR_LIBMENU_ConsoleRun,cmd);

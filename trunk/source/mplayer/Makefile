@@ -602,7 +602,6 @@ SRCS_MPLAYER-$(LIBMENU)      += libmenu/menu.c \
                                 libmenu/menu_pt.c \
                                 libmenu/menu_txt.c \
                                 libmenu/vf_menu.c \
-                                libmenu/fsysloc.c \
 
 SRCS_MPLAYER-$(LIBMENU_DVBIN) += libmenu/menu_dvbin.c
 SRCS_MPLAYER-$(LIRC)          += input/lirc.c
@@ -662,13 +661,7 @@ SRCS_MPLAYER-$(XVR100)        += libvo/vo_xvr100.c
 SRCS_MPLAYER-$(YUV4MPEG)      += libvo/vo_yuv4mpeg.c
 SRCS_MPLAYER-$(ZR)            += libvo/jpeg_enc.c libvo/vo_zr.c libvo/vo_zr2.c
 
-SRCS_MPLAYER-$(GEKKO) += 	../utils/di2.c \
-							../utils/usb2storage.c \
-							../utils/ftp_devoptab.c \
-							../utils/libdvdiso.c \
-							../utils/mload.c \
-							../utils/fsysloc.c \
-							osdep/log_console.c \
+SRCS_MPLAYER-$(GEKKO) += 	osdep/log_console.c \
 							osdep/gx_supp.c \
 							osdep/glob_gekko.c \
 							osdep/plat_gekko.c \
@@ -830,10 +823,13 @@ FFMPEGFILES = $(foreach part, $(FFMPEGPARTS), $(wildcard $(part)/*.[chS] $(part)
 
 ###### generic rules #######
 
-all: $(ALL_PRG-yes)
+MPLAYERWIILIB = $(OBJS_MPLAYER) 
+MPLAYERWIILIB += $(OBJS_COMMON) 
 
-mplayer.dol: mplayer$(EXESUF)
-	$(OBJCOPY) -O binary mplayer$(EXESUF) mplayer.dol
+all: $(MPLAYERWIILIB) $(COMMON_LIBS)
+	rm -f $@
+	$(AR) rc libmplayerwii.a $(MPLAYERWIILIB)
+	$(RANLIB) libmplayerwii.a
 
 %.d: %.c
 	$(MPDEPEND_CMD) > $@
@@ -869,21 +865,6 @@ mplayer$(EXESUF): $(MPLAYER_DEPS)
 mplayer$(EXESUF): EXTRALIBS += $(EXTRALIBS_MPLAYER)
 mencoder$(EXESUF) mplayer$(EXESUF):
 	$(CC) -o $@ $^ $(EXTRALIBS)
-
-#############################################################
-#                   MPLAYER WII LIB                         #
-#############################################################
-
-
-MPLAYERWIILIB = $(OBJS_MPLAYER) 
-MPLAYERWIILIB += $(OBJS_COMMON) 
-
-libmplayerwii.a: $(MPLAYERWIILIB) $(COMMON_LIBS)
-	rm -f $@
-	$(AR) rc $@ $(MPLAYERWIILIB)
-	 
-	$(RANLIB) $@
-#############################################################
 
 #TOOLS/netstream$(EXESUF) TOOLS/vivodump$(EXESUF): $(subst mplayer.o,mplayer-nomain.o,$(OBJS_MPLAYER)) $(filter-out %mencoder.o,$(OBJS_MENCODER)) $(OBJS_COMMON) $(COMMON_LIBS)
 #	$(CC) $(CFLAGS) -o $@ $^ $(EXTRALIBS_MPLAYER) $(EXTRALIBS_MENCODER) $(COMMON_LDFLAGS)

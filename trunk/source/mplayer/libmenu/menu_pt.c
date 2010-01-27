@@ -155,25 +155,10 @@ static int op(menu_t* menu, char* args) {
     /* NOP */;
   for( ; i != NULL ; i = i->next ) {
     e = calloc(1,sizeof(list_entry_t));
-    if(i->files) {
+    if(i->files)
       e->p.txt = mp_basename(i->files[0]);
-	  
-	  /// start denper's changes
-	  // If parameter mp_file_title exists, replaces the list_entry text with its value
-	  if(i->params) {
-		  for ( int n = 0; i->params[n].name != NULL ; n++ ) {
-			if(strcasecmp(i->params[n].name,PLAY_TREE_PARAM_PRETTYFORMAT_TITLE) == 0) {
-				if(i->params[n].value != NULL) {
-					e->p.txt = i->params[n].value;
-					break;
-				}
-			}
-		  }
-	  }
-	  /// end denper's changes
-    } else {
+    else
       e->p.txt = "Group ...";
-	}
     e->pt = i;
     menu_list_add_entry(menu,e);
   }

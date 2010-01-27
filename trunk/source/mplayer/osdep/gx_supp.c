@@ -92,10 +92,10 @@ typedef struct tagcamera {
 } camera;
 
 static s16 square[] ATTRIBUTE_ALIGN(32) = {
-	-HASPECT, VASPECT, 0,
-	HASPECT, VASPECT, 0,
-	HASPECT, -VASPECT, 0,
-	-HASPECT, -VASPECT, 0,
+	-HASPECT,  VASPECT,  0,
+	 HASPECT,  VASPECT,  0,
+	 HASPECT, -VASPECT,  0,
+	-HASPECT, -VASPECT,  0
 };
 
 static GXColor colors[] ATTRIBUTE_ALIGN(32) = {
@@ -106,7 +106,7 @@ static u8 texcoords[] ATTRIBUTE_ALIGN(32) = {
 	0x00, 0x00,
 	0x01, 0x00,
 	0x01, 0x01,
-	0x00, 0x01,
+	0x00, 0x01
 };
 
 static camera cam = {
@@ -297,6 +297,25 @@ static void draw_scaling()
 	GX_SetViewport(0, 0, vmode->fbWidth, vmode->efbHeight, 0, 1);
 }
 
+//nunchuk control
+static s16 mysquare[12] ATTRIBUTE_ALIGN(32);
+void GX_UpdateSquare()
+{
+	memcpy(mysquare, square, sizeof(square));
+	
+	mysquare[0] -= m_screenleft_shift*100;
+	mysquare[9] -= m_screenleft_shift*100;
+	mysquare[3] -= m_screenright_shift*100;
+	mysquare[6] -= m_screenright_shift*100;
+	mysquare[1] -= m_screentop_shift*100;
+	mysquare[4] -= m_screentop_shift*100;
+	mysquare[7] -= m_screenbottom_shift*100;
+	mysquare[10] -= m_screenbottom_shift*100;
+	
+	GX_SetArray(GX_VA_POS, mysquare, 3 * sizeof(s16));
+//	set_osd_msg(124,1,5000,"fH:%u vH:%i sob:%i st:%i sb:%i",vmode->efbHeight,vmode->viHeight,square[7],mysquare[1],mysquare[7]);
+}
+
 void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 {
 	int wp,ww;
@@ -423,27 +442,6 @@ void DrawMPlayer()
 		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
 	}
-}
-
-//nunchuk control
-extern float m_screenleft_shift, m_screenright_shift;
-extern float m_screentop_shift, m_screenbottom_shift;
-static s16 mysquare[12] ATTRIBUTE_ALIGN(32);
-void GX_UpdateSquare()
-{
-	memcpy(mysquare, square, sizeof(square));
-	
-	mysquare[0] -= m_screenleft_shift*100;
-	mysquare[9] -= m_screenleft_shift*100;
-	mysquare[3] -= m_screenright_shift*100;
-	mysquare[6] -= m_screenright_shift*100;
-	mysquare[1] -= m_screentop_shift*100;
-	mysquare[4] -= m_screentop_shift*100;
-	mysquare[7] -= m_screenbottom_shift*100;
-	mysquare[10] -= m_screenbottom_shift*100;
-	
-	GX_SetArray(GX_VA_POS, mysquare, 3 * sizeof(s16));
-//	set_osd_msg(124,1,5000,"fH:%u vH:%i sob:%i st:%i sb:%i",vmode->efbHeight,vmode->viHeight,square[7],mysquare[1],mysquare[7]);
 }
 
 /****************************************************************************

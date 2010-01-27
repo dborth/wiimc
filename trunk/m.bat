@@ -2,7 +2,7 @@
 del wiimc.dol
 del wiimc.elf
 cd source\mplayer
-make libmplayerwii.a
+make
 if not %errorlevel% == 0 goto error
 
 cd ..\..

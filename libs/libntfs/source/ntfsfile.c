@@ -52,10 +52,11 @@ void ntfsCloseFile (ntfs_file_state *file)
 
     // Special case fix ups for compressed and/or encrypted files
     if (file->compressed)
-        ntfs_attr_pclose(file->data_na);        
+        ntfs_attr_pclose(file->data_na);   
+#ifdef HAVE_SETXATTR		     
     if (file->encrypted)
         ntfs_efs_fixup_attribute(NULL, file->data_na);
-        
+#endif        
     // Close the file data attribute (if open)
     if (file->data_na)
         ntfs_attr_close(file->data_na);

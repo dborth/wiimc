@@ -1,6 +1,6 @@
-prefix=${DEVKITPRO}/libogc
+prefix=${DEVKITPRO}/portlibs/ppc
 exec_prefix=${prefix}
-libdir=${DEVKITPRO}/libogc/lib/wii
+libdir=${DEVKITPRO}/portlibs/ppc/lib
 includedir=${prefix}/include/opencore-amrnb
 
 Name: OpenCORE AMR-NB

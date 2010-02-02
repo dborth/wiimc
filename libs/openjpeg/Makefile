@@ -11,8 +11,8 @@ INCLUDE = -Ilibopenjpeg
 CC = ${DEVKITPPC}/bin/powerpc-eabi-gcc
 AR = ${DEVKITPPC}/bin/powerpc-eabi-ar
 
-INSTALL_LIBDIR = $(DEVKITPRO)/libogc/lib/wii
-INSTALL_INCLUDE = $(DEVKITPRO)/libogc/include
+INSTALL_LIBDIR = $(DEVKITPRO)/portlibs/ppc/lib
+INSTALL_INCLUDE = $(DEVKITPRO)/portlibs/ppc/include
 
 # Converts cr/lf to just lf
 DOS2UNIX = dos2unix

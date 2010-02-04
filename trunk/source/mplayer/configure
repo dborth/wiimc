@@ -424,6 +424,7 @@ Audio output:
   --disable-nas          disable NAS audio output [autodetect]
   --disable-sgiaudio     disable SGI audio output [autodetect]
   --disable-sunaudio     disable Sun audio output [autodetect]
+  --disable-kai          disable KAI audio output [autodetect]
   --disable-dart         disable DART audio output [autodetect]
   --disable-win32waveout disable Windows waveout audio output [autodetect]
   --disable-coreaudio    disable CoreAudio audio output [autodetect]
@@ -617,6 +618,7 @@ _arts=auto
 _esd=auto
 _pulse=auto
 _jack=auto
+_kai=auto
 _dart=auto
 _openal=auto
 _libcdio=auto
@@ -1010,6 +1012,8 @@ for ac_option do
   --disable-jack)       _jack=no        ;;
   --enable-openal)      _openal=yes     ;;
   --disable-openal)     _openal=no      ;;
+  --enable-kai)         _kai=yes        ;;
+  --disable-kai)        _kai=no         ;;
   --enable-dart)        _dart=yes       ;;
   --disable-dart)       _dart=no        ;;
   --enable-mad)         _mad=yes        ;;
@@ -3148,12 +3152,13 @@ if test "$_struct_addrinfo" = auto; then
   cat > $TMPC << EOF
 #if HAVE_WINSOCK2_H
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #endif
-int main(void) { struct addrinfo *ai; return 0; }
+int main(void) { struct addrinfo ai; return 0; }
 EOF
   cc_check $cc_check_winsock2_h && _struct_addrinfo=yes
 fi
@@ -3210,6 +3215,51 @@ if test "$_struct_sockaddr_storage" = yes; then
 else
   def_sockaddr_storage="#define HAVE_STRUCT_SOCKADDR_STORAGE 0"
 fi
+
+
+echocheck "struct ipv6_mreq"
+_struct_ipv6_mreq=no
+def_struct_ipv6_mreq="#define HAVE_STRUCT_IPV6_MREQ 0"
+for header in "netinet/in.h" "ws2tcpip.h" ; do
+  cat > $TMPC << EOF
+#include <$header>
+int main(void) { struct ipv6_mreq mreq6; return 0; }
+EOF
+  cc_check && _struct_ipv6_mreq=yes && \
+    def_struct_ipv6_mreq="#define HAVE_STRUCT_IPV6_MREQ 1" && break
+done
+echores "$_struct_ipv6_mreq"
+
+
+echocheck "struct sockaddr_in6"
+_struct_sockaddr_in6=no
+def_struct_sockaddr_in6="#define HAVE_STRUCT_SOCKADDR_IN6 0"
+for header in "netinet/in.h" "ws2tcpip.h" ; do
+  cat > $TMPC << EOF
+#include <$header>
+int main(void) { struct sockaddr_in6 addr; return 0; }
+EOF
+  cc_check && _struct_sockaddr_in6=yes && \
+    def_struct_sockaddr_in6="#define HAVE_STRUCT_SOCKADDR_IN6 1" && break
+done
+echores "$_struct_sockaddr_in6"
+
+
+echocheck "struct sockaddr sa_len"
+_struct_sockaddr_sa_len=no
+def_struct_sockaddr_sa_len="#define HAVE_STRUCT_SOCKADDR_SA_LEN 0"
+cat > $TMPC << EOF
+#if HAVE_WINSOCK2_H
+#include <winsock2.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#endif
+int main(void) { const void *p = &((struct sockaddr *)0)->sa_len; return 0; }
+EOF
+cc_check $cc_check_winsock2_h && _struct_sockaddr_sa_len=yes && \
+  def_struct_sockaddr_sa_len="#define HAVE_STRUCT_SOCKADDR_SA_LEN 1"
+echores "$_struct_sockaddr_sa_len"
 
 
 echocheck "arpa/inet.h"
@@ -3304,6 +3354,7 @@ else
   _noinputmodules="network $_noinputmodules"
   def_network='#undef CONFIG_NETWORK'
   _ftp=no
+  _libavprotocols=$(echo $_libavprotocols | sed -e s/GOPHER_PROTOCOL// -e s/HTTP_PROTOCOL// -e s/RTMP_PROTOCOL// -e s/RTP_PROTOCOL// -e s/TCP_PROTOCOL// -e s/UDP_PROTOCOL//)
 fi
 echores "$_network"
 
@@ -6020,6 +6071,26 @@ fi #if irix
 
 
 if os2 ; then
+echocheck "KAI (UNIAUD/DART)"
+if test "$_kai" = auto; then
+  cat > $TMPC << EOF
+#include <os2.h>
+#include <kai.h>
+int main(void) { return 0; }
+EOF
+  _kai=no;
+  cc_check -lkai && _kai=yes
+fi
+if test "$_kai" = yes ; then
+  def_kai='#define CONFIG_KAI 1'
+  libs_mplayer="$libs_mplayer -lkai"
+  _aomodules="kai $_aomodules"
+else
+  def_kai='#undef CONFIG_KAI'
+  _noaomodules="kai $_noaomodules"
+fi
+echores "$_kai"
+
 echocheck "DART"
 if test "$_dart" = auto; then
   cat > $TMPC << EOF
@@ -8532,6 +8603,7 @@ IVTV = $_ivtv
 JACK = $_jack
 JOYSTICK = $_joystick
 JPEG = $_jpeg
+KAI = $_kai
 KVA = $_kva
 LADSPA = $_ladspa
 LIBA52 = $_liba52
@@ -8671,6 +8743,7 @@ FULLNAME=\$(NAME)\$(BUILDSUF)
 
 # Some FFmpeg codecs depend on these. Enable them unconditionally for now.
 CONFIG_AANDCT=yes
+CONFIG_DCT=yes
 CONFIG_FFT=yes
 CONFIG_FFT_MMX=$fft_mmx
 CONFIG_GOLOMB=yes
@@ -8970,6 +9043,7 @@ $def_dart
 $def_esd
 $def_esd_latency
 $def_jack
+$def_kai
 $def_nas
 $def_openal
 $def_openal_h
@@ -9028,6 +9102,9 @@ $def_nemesi
 $def_network
 $def_smb
 $def_socklen_t
+$def_struct_ipv6_mreq
+$def_struct_sockaddr_in6
+$def_struct_sockaddr_sa_len
 $def_vstream
 $def_addrinfo
 $def_getaddrinfo
@@ -9169,6 +9246,7 @@ $def_yasm
 #define CONFIG_IPV6 0
 #endif
 
+#define HAVE_ATTRIBUTE_MAY_ALIAS 1
 #define HAVE_ATTRIBUTE_PACKED 1
 #define HAVE_GETHRTIME 0
 #define HAVE_INLINE_ASM 1

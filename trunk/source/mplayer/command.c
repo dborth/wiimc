@@ -2001,7 +2001,7 @@ static const m_option_t mp_properties[] = {
 
     // Audio
     { "volume", mp_property_volume, CONF_TYPE_FLOAT,
-     M_OPT_RANGE, 0, 100, NULL },
+     M_OPT_RANGE, 0, 200, NULL },
     { "mute", mp_property_mute, CONF_TYPE_FLAG,
      M_OPT_RANGE, 0, 1, NULL },
     { "audio_delay", mp_property_audio_delay, CONF_TYPE_FLOAT,

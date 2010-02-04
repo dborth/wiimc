@@ -335,7 +335,7 @@ static char *bsd_block2char( const char *path )
 dvd_reader_t *DVDOpen( const char *ppath )
 {
   struct stat fileinfo;
-  int ret, have_css, retval, cdir = 0;
+  int ret, have_css, retval, cdir = -1;
   dvd_reader_t *ret_val = NULL;
   char *dev_name = NULL;
   char *path = NULL, *new_path = NULL, *path_copy = NULL;

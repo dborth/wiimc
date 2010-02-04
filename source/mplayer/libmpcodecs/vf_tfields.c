@@ -1,3 +1,21 @@
+/*
+ * This file is part of MPlayer.
+ *
+ * MPlayer is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * MPlayer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with MPlayer; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,13 +43,16 @@ static void deint(unsigned char *dest, int ds, unsigned char *src, int ss, int w
 	int x, y;
 	src += ss;
 	dest += ds;
+	h--;
 	if (field) {
+		fast_memcpy(dest - ds, src - ss, w);
 		src += ss;
 		dest += ds;
-		h -= 2;
+		h--;
 	}
-	for (y=h/2; y; y--) {
-		for (x=0; x<w; x++) {
+	for (y=h/2; y > 0; y--) {
+		dest[0] = src[0];
+		for (x=1; x<w-1; x++) {
 			if (((src[x-ss] < src[x]) && (src[x+ss] < src[x])) ||
 				((src[x-ss] > src[x]) && (src[x+ss] > src[x]))) {
 				//dest[x] = (src[x+ss] + src[x-ss])>>1;
@@ -41,9 +62,12 @@ static void deint(unsigned char *dest, int ds, unsigned char *src, int ss, int w
 			}
 			else dest[x] = src[x];
 		}
+		dest[w-1] = src[w-1];
 		dest += ds<<1;
 		src += ss<<1;
 	}
+	if (h & 1)
+		fast_memcpy(dest, src, w);
 }
 
 #if HAVE_AMD3DNOW
@@ -312,6 +336,12 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
 	return continue_buffered_image(vf);
 }
 
+static double calc_pts(double base_pts, int field)
+{
+    // FIXME this assumes 25 fps / 50 fields per second
+    return base_pts + 0.02 * field;
+}
+
 static int continue_buffered_image(struct vf_instance_s *vf)
 {
 	int i=vf->priv->buffered_i;
@@ -325,7 +355,6 @@ static int continue_buffered_image(struct vf_instance_s *vf)
 
 	if (i == 0)
 		vf_queue_frame(vf, continue_buffered_image);
-	pts += i * .02;  // XXX not right
 
 	if (!(mpi->flags & MP_IMGFLAG_PLANAR)) bpp = mpi->bpp/8;
 	if (vf->priv->parity < 0) {
@@ -363,7 +392,7 @@ static int continue_buffered_image(struct vf_instance_s *vf)
 				dmpi->stride[1] = 2*mpi->stride[1];
 				dmpi->stride[2] = 2*mpi->stride[2];
 			}
-			ret |= vf_next_put_image(vf, dmpi, pts);
+			ret |= vf_next_put_image(vf, dmpi, calc_pts(pts, i));
 			if (correct_pts)
 				break;
 			else
@@ -393,7 +422,7 @@ static int continue_buffered_image(struct vf_instance_s *vf)
 				deint(dmpi->planes[2], dmpi->stride[2], mpi->planes[2], mpi->stride[2],
 					mpi->chroma_width, mpi->chroma_height, (i^!tff));
 			}
-			ret |= vf_next_put_image(vf, dmpi, pts);
+			ret |= vf_next_put_image(vf, dmpi, calc_pts(pts, i));
 			if (correct_pts)
 				break;
 			else
@@ -419,7 +448,7 @@ static int continue_buffered_image(struct vf_instance_s *vf)
 					mpi->chroma_width, mpi->chroma_height/2,
 					dmpi->stride[2], mpi->stride[2]*2, (i^!tff));
 			}
-			ret |= vf_next_put_image(vf, dmpi, pts);
+			ret |= vf_next_put_image(vf, dmpi, calc_pts(pts, i));
 			if (correct_pts)
 				break;
 			else
@@ -431,11 +460,13 @@ static int continue_buffered_image(struct vf_instance_s *vf)
 	return ret;
 }
 
-#if 0
 static int query_format(struct vf_instance_s* vf, unsigned int fmt)
 {
-	/* FIXME - figure out which other formats work */
+	/* FIXME - figure out which formats exactly work */
 	switch (fmt) {
+	default:
+		if (vf->priv->mode == 1)
+			return 0;
 	case IMGFMT_YV12:
 	case IMGFMT_IYUV:
 	case IMGFMT_I420:
@@ -443,7 +474,6 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt)
 	}
 	return 0;
 }
-#endif
 
 static int config(struct vf_instance_s* vf,
         int width, int height, int d_width, int d_height,
@@ -471,7 +501,7 @@ static int open(vf_instance_t *vf, char* args)
 	struct vf_priv_s *p;
 	vf->config = config;
 	vf->put_image = put_image;
-	//vf->query_format = query_format;
+	vf->query_format = query_format;
 	vf->uninit = uninit;
 	vf->default_reqs = VFCAP_ACCEPT_STRIDE;
 	vf->priv = p = calloc(1, sizeof(struct vf_priv_s));

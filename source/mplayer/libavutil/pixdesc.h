@@ -95,8 +95,8 @@ typedef struct AVPixFmtDescriptor{
 extern const AVPixFmtDescriptor av_pix_fmt_descriptors[];
 
 /**
- * Reads a line from an image, and writes to dst the values of the
- * pixel format component c.
+ * Reads a line from an image, and writes the values of the
+ * pixel format component c to dst.
  *
  * @param data the array containing the pointers to the planes of the image
  * @param linesizes the array containing the linesizes of the image
@@ -106,8 +106,8 @@ extern const AVPixFmtDescriptor av_pix_fmt_descriptors[];
  * @param w the width of the line to read, that is the number of
  * values to write to dst
  * @param read_pal_component if not zero and the format is a paletted
- * format writes to dst the values corresponding to the palette
- * component c in data[1], rather than the palette indexes in
+ * format writes the values corresponding to the palette
+ * component c in data[1] to dst, rather than the palette indexes in
  * data[0]. The behavior is undefined if the format is not paletted.
  */
 static inline void read_line(uint16_t *dst, const uint8_t *data[4], const int linesize[4],
@@ -201,6 +201,19 @@ static inline void write_line(const uint16_t *src, uint8_t *data[4], const int l
         }
     }
 }
+
+/**
+ * Returns the pixel format corresponding to name.
+ *
+ * If there is no pixel format with name name, then looks for a
+ * pixel format with the name corresponding to the native endian
+ * format of name.
+ * For example in a little-endian system, first looks for "gray16",
+ * then for "gray16le".
+ *
+ * Finally if no pixel format has been found, returns PIX_FMT_NONE.
+ */
+enum PixelFormat av_get_pix_fmt(const char *name);
 
 /**
  * Returns the number of bits per pixel used by the pixel format

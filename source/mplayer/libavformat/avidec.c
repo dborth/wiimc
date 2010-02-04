@@ -251,7 +251,7 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
     ByteIOContext *pb = s->pb;
     unsigned int tag, tag1, handler;
     int codec_type, stream_index, frame_period, bit_rate;
-    unsigned int size, nb_frames;
+    unsigned int size;
     int i;
     AVStream *st;
     AVIStream *ast = NULL;
@@ -412,10 +412,9 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
             av_set_pts_info(st, 64, ast->scale, ast->rate);
 
             ast->cum_len=get_le32(pb); /* start */
-            nb_frames = get_le32(pb);
+            st->nb_frames = get_le32(pb);
 
             st->start_time = 0;
-            st->duration = nb_frames;
             get_le32(pb); /* buffer size */
             get_le32(pb); /* quality */
             ast->sample_size = get_le32(pb); /* sample ssize */
@@ -442,6 +441,8 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 av_log(s, AV_LOG_ERROR, "unknown stream type %X\n", tag1);
                 goto fail;
             }
+            if(ast->sample_size == 0)
+                st->duration = st->nb_frames;
             ast->frame_offset= ast->cum_len;
             url_fskip(pb, size - 12 * 4);
             break;
@@ -476,7 +477,7 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
                     get_le32(pb); /* ClrUsed */
                     get_le32(pb); /* ClrImportant */
 
-                    if (tag1 == MKTAG('D', 'X', 'S', 'B')) {
+                    if (tag1 == MKTAG('D', 'X', 'S', 'B') || tag1 == MKTAG('D','X','S','A')) {
                         st->codec->codec_type = CODEC_TYPE_SUBTITLE;
                         st->codec->codec_tag = tag1;
                         st->codec->codec_id = CODEC_ID_XSUB;

@@ -164,6 +164,7 @@ void ff_decode_10_pulses_35bits(const int16_t *fixed_index,
     int i;
     int mask = (1 << bits) - 1;
 
+    fixed_sparse->no_repeat_mask = 0;
     fixed_sparse->n = 2 * half_pulse_count;
     for (i = 0; i < half_pulse_count; i++) {
         const int pos1   = gray_decode[fixed_index[2*i+1] & mask] + i;
@@ -243,16 +244,14 @@ void ff_set_fixed_vector(float *out, const AMRFixed *in, float scale, int size)
     int i;
 
     for (i=0; i < in->n; i++) {
-        int x   = in->x[i];
+        int x   = in->x[i], repeats = !((in->no_repeat_mask >> i) & 1);
         float y = in->y[i] * scale;
-        out[x] += y;
 
-        x += in->pitch_lag;
-        while (x < size) {
-            y *= in->pitch_fac;
+        do {
             out[x] += y;
+            y *= in->pitch_fac;
             x += in->pitch_lag;
-        }
+        } while (x < size && repeats);
     }
 }
 
@@ -261,13 +260,11 @@ void ff_clear_fixed_vector(float *out, const AMRFixed *in, int size)
     int i;
 
     for (i=0; i < in->n; i++) {
-        int x  = in->x[i];
-        out[x] = 0.0;
+        int x  = in->x[i], repeats = !((in->no_repeat_mask >> i) & 1);
 
-        x += in->pitch_lag;
-        while (x < size) {
+        do {
             out[x] = 0.0;
             x += in->pitch_lag;
-        }
+        } while (x < size && repeats);
     }
 }

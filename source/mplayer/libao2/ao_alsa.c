@@ -72,15 +72,9 @@ static snd_pcm_format_t alsa_format;
 static snd_pcm_hw_params_t *alsa_hwparams;
 static snd_pcm_sw_params_t *alsa_swparams;
 
-static unsigned int alsa_buffer_time = 500000; /* 0.5 s */
-static unsigned int alsa_fragcount = 16;
-
 static size_t bytes_per_sample;
 
-static int ao_noblock = 0;
-
-static int open_mode;
-static int alsa_can_pause = 0;
+static int alsa_can_pause;
 
 #define ALSA_DEVICE_SIZE 256
 
@@ -119,9 +113,9 @@ static int control(int cmd, void *arg)
       snd_mixer_elem_t *elem;
       snd_mixer_selem_id_t *sid;
 
-      static char *mix_name = "PCM";
-      static char *card = "default";
-      static int mix_index = 0;
+      char *mix_name = "PCM";
+      char *card = "default";
+      int mix_index = 0;
 
       long pmin, pmax;
       long get_vol, set_vol;
@@ -319,6 +313,8 @@ static int try_open_device(const char *device, int open_mode, int try_ac3)
 */
 static int init(int rate_hz, int channels, int format, int flags)
 {
+    unsigned int alsa_buffer_time = 500000; /* 0.5 s */
+    unsigned int alsa_fragcount = 16;
     int err;
     int block;
     strarg_t device;
@@ -468,25 +464,17 @@ static int init(int rate_hz, int channels, int format, int flags)
         print_help();
         return 0;
     }
-    ao_noblock = !block;
     parse_device(alsa_device, device.str, device.len);
 
     mp_msg(MSGT_AO,MSGL_V,"alsa-init: using device %s\n", alsa_device);
 
-    //setting modes for block or nonblock-mode
-    if (ao_noblock) {
-      open_mode = SND_PCM_NONBLOCK;
-    }
-    else {
-      open_mode = 0;
-    }
-
     if (!alsa_handler) {
+      int open_mode = block ? 0 : SND_PCM_NONBLOCK;
       int isac3 =  AF_FORMAT_IS_AC3(format);
       //modes = 0, SND_PCM_NONBLOCK, SND_PCM_ASYNC
       if ((err = try_open_device(alsa_device, open_mode, isac3)) < 0)
 	{
-	  if (err != -EBUSY && ao_noblock) {
+	  if (err != -EBUSY && !block) {
 	    mp_msg(MSGT_AO,MSGL_INFO,MSGTR_AO_ALSA_OpenInNonblockModeFailed);
 	    if ((err = try_open_device(alsa_device, 0, isac3)) < 0) {
 	      mp_msg(MSGT_AO,MSGL_ERR,MSGTR_AO_ALSA_PlaybackOpenError, snd_strerror(err));
@@ -554,7 +542,8 @@ static int init(int rate_hz, int channels, int format, int flags)
 	}
 
       /* workaround for buggy rate plugin (should be fixed in ALSA 1.0.11)
-         prefer our own resampler */
+         prefer our own resampler, since that allows users to choose the resampler,
+         even per file if desired */
 #if SND_LIB_VERSION >= 0x010009
       if ((err = snd_pcm_hw_params_set_rate_resample(alsa_handler, alsa_hwparams,
 						     0)) < 0)

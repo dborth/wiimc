@@ -46,8 +46,8 @@ extern "C" {
 #endif
 
 extern int controlledbygui;
-extern u64 frameCounter;
 
+void plat_init (int size);
 int mplayer_loadfile(const char* _file);
 void DrawMPlayer();
 bool DVDGekkoMount();

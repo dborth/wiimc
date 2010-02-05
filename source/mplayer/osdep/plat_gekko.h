@@ -27,7 +27,7 @@ bool DVDGekkoMount();
 
 #define abort(x) gekko_abort(x)
 
-void plat_init (int *argc, char **argv[]);
+void plat_init (int size);
 void plat_deinit (int rc);
 
 #define WATCH_TIMEOUT 5

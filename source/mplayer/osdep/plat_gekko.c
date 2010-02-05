@@ -258,8 +258,8 @@ static void * watchdogthreadfunc (void *arg)
 		}
 	}
 }
-
-void plat_init (int *argc, char **argv[])
+extern int cache_size;
+void plat_init (int size)
 {
 	sprintf(MPLAYER_DATADIR,"%s",appPath);
 	sprintf(MPLAYER_CONFDIR,"%s",appPath);
@@ -273,11 +273,10 @@ void plat_init (int *argc, char **argv[])
 	setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
 
 	//LWP_MutexInit(watchdogmutex, false);
-
-	stream_cache_size=8*1024; //default cache size (8MB)
+	cache_size=size;
 
 	// only used for cache_mem
-	InitMem2Manager((stream_cache_size*1024)+(8*1024));
+	InitMem2Manager((cache_size*1024)+(8*1024));
 }
 void plat_deinit (int rc)
 {

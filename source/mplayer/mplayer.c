@@ -301,6 +301,7 @@ float stream_cache_seek_min_percent=50.0;
 #define cache_fill_status 0
 #endif
 #ifdef GEKKO
+int cache_size=0; //get the cache size from settings.xml
 
 static bool InternetStream()
 {
@@ -1835,6 +1836,8 @@ extern int prev_dxs , prev_dys;
 
 void force_osd()
 {
+	return;
+/*
 	update_osd_msg();
 	if (mpctx && mpctx->sh_video && mpctx->video_out && vo_config_count)
     	mpctx->video_out->check_events();
@@ -1844,6 +1847,7 @@ void force_osd()
     	vf_menu_pause_update(vf_menu);
    }
 #endif   
+*/
 }
 
 ///@}
@@ -2047,11 +2051,11 @@ static int generate_video_frame(sh_video_t *sh_video, demux_stream_t *d_video)
     int rtc_fd = -1;
 #endif
 
-static double timing_sleep(double time_frame)
+static double timing_sleep_old(double time_frame)
 {
     //int x=0,y=0;
     //double t=time_frame;
-    s32 frame=time_frame*1000000; //in us
+    u32 frame=time_frame*1000000; //in us
 
 #ifdef HAVE_RTC
     if (rtc_fd >= 0){
@@ -2069,7 +2073,7 @@ static double timing_sleep(double time_frame)
 	// assume kernel HZ=100 for softsleep, works with larger HZ but with
 	// unnecessarily high CPU usage
     //double margin = softsleep ? 0.0011 : 0.0;
-    s32 margin = softsleep ? 500 : 0;  //in us
+    u32 margin = softsleep ? 500 : 0;  //in us
 
     current_module = "sleep_timer";
 	//printf("timing_sleep run: %li\n",frame);
@@ -2109,6 +2113,27 @@ static double timing_sleep(double time_frame)
 
     }
 */
+    return time_frame;
+}
+
+#define RENDER_TEXTURE_TIME 1000 //Ihave to check it
+static double timing_sleep(double time_frame)
+{
+    u32 frame=time_frame*1000000; //in us
+
+    current_module = "sleep_timer";
+	while (frame > 5)
+	{
+		if(frame>RENDER_TEXTURE_TIME)
+		{
+			DrawMPlayer();
+			VIDEO_WaitVSync();
+		}
+		else usec_sleep(frame-5);
+	    frame -= GetRelativeTime();
+	    break;
+	}
+	time_frame=frame * 0.000001F;
     return time_frame;
 }
 
@@ -2472,6 +2497,7 @@ static int sleep_until_update(double *time_frame, double *aq_sleep_time)
     if (*time_frame > 0.001 && !(vo_flags&256))
     	*time_frame = timing_sleep(*time_frame);
     //else printf("no timing_sleep: %f, %i\n",*time_frame,frame_time_remaining);
+    //printf("time_frame: %f\n",*time_frame);
     return frame_time_remaining;
 }
 
@@ -2697,7 +2723,6 @@ printf("PauseAndGotoGUI\n");
 #endif
 
 printf("send control to gui	\n");
-StopDrawThread();
 if(controlledbygui == 0)
 	controlledbygui=1; //send control to gui
   while (controlledbygui==1 && ((cmd = mp_input_get_cmd(20, 1, 1)) == NULL || cmd->pausing == 4)) {
@@ -3094,7 +3119,7 @@ int gui_no_filename=0;
 
 #ifdef GEKKO
   __exception_setreload(8);
-  plat_init (&argc, &argv);
+  //plat_init (&argc, &argv);
   fileplaying=(char*)malloc(sizeof(char)*MAXPATHLEN);
   load_restore_points();
 #endif
@@ -3716,6 +3741,7 @@ int vob_sub_auto = 1; //scip
   static float orig_stream_cache_min_percent=-1;
   static float orig_stream_cache_seek_min_percent=-1;
   static int orig_stream_cache_size=-1;
+  stream_cache_size=cache_size;
   if(orig_stream_cache_min_percent==-1 && orig_stream_cache_seek_min_percent==-1)
   {
     orig_stream_cache_min_percent=stream_cache_min_percent;
@@ -3834,12 +3860,12 @@ if(mpctx->stream->type==STREAMTYPE_DVDNAV){
 #endif
 
 // CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
+printf("stream_cache_size: %i\n",stream_cache_size);
 goto_enable_cache:
-
 if(stream_cache_size>0){
   int res;
   current_module="enable_cache";
-stream_cache_min_percent=1.0;  
+stream_cache_min_percent=1.0;
   res = stream_enable_cache(mpctx->stream,stream_cache_size*1024,
                           stream_cache_size*1024*(stream_cache_min_percent / 100.0),
                           stream_cache_size*1024*(stream_cache_seek_min_percent / 100.0));
@@ -3848,9 +3874,11 @@ stream_cache_min_percent=1.0;
 }
     //printf("Analysing Stream...");
     	clear_osd_msgs();
+    	/*
 		update_osd_msg();
 		set_osd_msg(OSD_MSG_TEXT, 1, 0, "Analysing Stream...");
 		force_osd();
+		*/
   if(mpctx->demuxer)
   {
   	free_demuxer(mpctx->demuxer);
@@ -4357,6 +4385,7 @@ seek_to_sec=restore_seek;
 int aux=mpctx->set_of_sub_size;
 mpctx->set_of_sub_size=0; // to not load subfonts
 mpctx->osd_function=OSD_PAUSE;
+printf("ssss\n");
 if(stream_cache_size>0 && hasvideo) // no refill cache on only audio streams  
 	refillcache(mpctx->stream,stream_cache_min_percent);
 mpctx->osd_function=OSD_PLAY;
@@ -4463,6 +4492,7 @@ if(!mpctx->sh_video) {
 
   if (!mpctx->num_buffered_frames) {
 	  double frame_time = update_video(&blit_frame);
+	  /*
 	  if (!(mpctx->bg_demuxer && mpctx->bg_demuxer->video && mpctx->bg_demuxer->video->sh && mpctx->sh_video == mpctx->bg_demuxer->video->sh)) {
       while (!blit_frame && mpctx->startup_decode_retry > 0) {
           double delay = mpctx->delay;
@@ -4473,7 +4503,7 @@ if(!mpctx->sh_video) {
           mpctx->startup_decode_retry--;
       }
       mpctx->startup_decode_retry = 0;
-	  }  
+	  }  */
       mp_dbg(MSGT_AVSYNC,MSGL_DBG2,"*** ftime=%5.3f ***\n",frame_time);
       if (mpctx->sh_video->vf_initialized < 0) {
 	  mp_msg(MSGT_CPLAYER,MSGL_FATAL, MSGTR_NotInitializeVOPorVO);
@@ -4727,13 +4757,6 @@ if(rel_seek_secs || abs_seek_pos){
 
 } // while(!mpctx->eof)
 setwatchdogcounter(-1);
-printf("mplayer: end film. UNINIT\n");
-StopDrawThread();
-uninit_player(INITIALIZED_ALL);
-if(controlledbygui == 0)
-	controlledbygui = 1;
-printf("mplayer: exit\n");
-return 1;
 
 }
 goto_next_file:  // don't jump here after ao/vo/getch initialization!
@@ -4765,8 +4788,11 @@ if(benchmark){
 }
 
 // time to uninit all, except global stuff:
-//rodries: INITIALIZED_DEMUXER+INITIALIZED_VCODEC  review (added for testing)
-uninit_player(INITIALIZED_ALL-(INITIALIZED_DEMUXER+INITIALIZED_INPUT+INITIALIZED_VCODEC+INITIALIZED_GUI+(fixed_vo?INITIALIZED_VO:0)));
+printf("mplayer: end film. UNINIT\n");
+
+uninit_player(INITIALIZED_ALL);
+
+//clear subs
 if(mpctx->set_of_sub_size > 0) {
     current_module="sub_free";
     for(i = 0; i < mpctx->set_of_sub_size; ++i) {
@@ -4789,13 +4815,17 @@ if(ass_library)
 #ifdef GEKKO
 if (mpctx->sh_audio) mpctx->audio_out->reset();
 
-if(mpctx->eof == PT_NEXT_SRC || mpctx->eof == PT_STOP /*|| mpctx->eof == PT_NEXT_ENTRY*/ || error_playing)
+if(mpctx->eof == PT_NEXT_SRC || mpctx->eof == PT_STOP || error_playing)
 {
 	save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
 }else delete_restore_point(fileplaying);
 
 
 #endif
+printf("mplayer: exit\n");
+if(controlledbygui == 0)
+	controlledbygui = 1;
+return 1;
 load_next_file:
 
 if(mpctx->eof == PT_NEXT_ENTRY || mpctx->eof == PT_PREV_ENTRY) {

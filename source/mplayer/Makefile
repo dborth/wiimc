@@ -828,9 +828,9 @@ MPLAYERWIILIB = $(OBJS_MPLAYER)
 MPLAYERWIILIB += $(OBJS_COMMON) 
 
 all: $(MPLAYERWIILIB) $(COMMON_LIBS)
-#	rm -f $@
+	rm -f libmplayerwii.a
 	$(AR) rc libmplayerwii.a $(MPLAYERWIILIB)
-#	$(RANLIB) libmplayerwii.a
+	$(RANLIB) libmplayerwii.a
 
 %.d: %.c
 	$(MPDEPEND_CMD) > $@

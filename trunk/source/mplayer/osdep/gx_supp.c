@@ -452,11 +452,9 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	int w,h;
 	Mtx44 p;
 	int diffx,diffy;
-	
+
 	// tell GUI to shut down, MPlayer is ready to take over
 	ShutdownGui();
-
-	StartDrawThread();
 
 	/*** Set new aspect ***/
 	square[0] = square[9] = -haspect;
@@ -607,6 +605,7 @@ void GX_RenderTexture()
 {
 	whichtex ^= 1;
 	frameCounter++;
+	DrawMPlayer();
 }
 
 void GX_ResetTextureYUVPointers()

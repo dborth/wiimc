@@ -23,9 +23,6 @@
 extern "C" {
 #endif
 
-static lwp_t drawthread = LWP_THREAD_NULL;
-static bool stopdrawthread = true;
-
 #define DEFAULT_FIFO_SIZE 256 * 1024
 static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32);
 static Mtx GXmodelView2D;
@@ -216,42 +213,6 @@ void Menu_DrawRectangle(f32 x, f32 y, f32 width, f32 height, GXColor color, u8 f
 	GX_End();
 }
 
-static void * MPlayerDrawThread (void *arg)
-{
-	while (1)
-	{
-		if(stopdrawthread)
-		{
-			LWP_SuspendThread(drawthread);
-
-			while(frameCounter == 0)
-				usleep(100);
-		}
-
-		DrawMPlayer();
-		VIDEO_WaitVSync();
-	}
-	return NULL;
-}
-
-void StartDrawThread()
-{
-	frameCounter = 0;
-	stopdrawthread = false;
-	LWP_ResumeThread(drawthread);
-}
-
-void StopDrawThread()
-{
-	if(drawthread != LWP_THREAD_NULL)
-	{
-		stopdrawthread = true;
-		
-		// wait for thread to finish
-		while(!LWP_ThreadIsSuspended(drawthread))
-			usleep(100);
-	}
-}
 
 int DrawMPlayerGui()
 {
@@ -331,7 +292,6 @@ InitVideo ()
 	GX_SetCopyFilter(vmode->aa,vmode->sample_pattern,GX_TRUE,vmode->vfilter);
 	GX_SetFieldMode(vmode->field_rendering,((vmode->viHeight==2*vmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
 
-	LWP_CreateThread (&drawthread, MPlayerDrawThread, NULL, NULL, 0, 67);
 }
 
 #ifdef __cplusplus

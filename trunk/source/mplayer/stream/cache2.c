@@ -387,7 +387,6 @@ static cache_vars_t* cache_init(int size,int sector){
   s->buffer=shmem_alloc(s->buffer_size);
 #else
   if(global_buffer==NULL) global_buffer=mem2_malloc(size);
-  //if(global_buffer==NULL) global_buffer=malloc(size);
   s->buffer=global_buffer;
 #endif
 
@@ -399,7 +398,6 @@ static cache_vars_t* cache_init(int size,int sector){
 #endif
     return NULL;
   }
-
   s->fill_limit=8*sector;
 #if defined(GEKKO)
   s->back_size=s->buffer_size/4; // 1/4 back  3/4 forward

@@ -681,5 +681,6 @@ bool LoadSettings()
 		FixInvalidSettings();
 
 	ResetText();
+	plat_init (WiiSettings.cacheSize);
 	return settingsFound;
 }

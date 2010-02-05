@@ -2116,7 +2116,8 @@ static double timing_sleep_old(double time_frame)
     return time_frame;
 }
 
-#define RENDER_TEXTURE_TIME 1000 //Ihave to check it
+//#define RENDER_TEXTURE_TIME 4600 //Ihave to check it
+int render_texture_time=0;
 static double timing_sleep(double time_frame)
 {
     u32 frame=time_frame*1000000; //in us
@@ -2124,7 +2125,7 @@ static double timing_sleep(double time_frame)
     current_module = "sleep_timer";
 	while (frame > 5)
 	{
-		if(frame>RENDER_TEXTURE_TIME)
+		if(frame>render_texture_time)
 		{
 			DrawMPlayer();
 			VIDEO_WaitVSync();

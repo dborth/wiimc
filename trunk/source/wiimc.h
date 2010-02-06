@@ -63,6 +63,7 @@ void USB2Enable(bool e); // in osdep/usb2storage.c
 
 void wiiGotoGui();
 void wiiPause();
+bool wiiIsPaused();
 void wiiMute();
 void wiiSeekPos(int sec);
 void wiiFastForward();

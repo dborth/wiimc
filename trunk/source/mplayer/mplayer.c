@@ -2716,8 +2716,6 @@ void PauseAndGotoGUI()
     if (mpctx->video_out && mpctx->sh_video && vo_config_count)
 	mpctx->video_out->control(VOCTRL_PAUSE, NULL);
 printf("PauseAndGotoGUI\n");
-//printf("wiimote controlled by gui\n");
-//getch2_disable(); //wiimote controlled by gui
 #ifdef CONFIG_MENU
 	if (vf_menu)
 	    vf_menu_pause_update(vf_menu);
@@ -2834,7 +2832,10 @@ static void low_cache_loop(void)
 	if (vf_menu)
 	    vf_menu_pause_update(vf_menu);
 #endif
-		usec_sleep(50000);		
+		//usec_sleep(50000);
+
+		DrawMPlayer();
+	    VIDEO_WaitVSync();
     }
 	rm_osd_msg(OSD_MSG_PAUSE);
 
@@ -2930,10 +2931,10 @@ static void pause_loop(void)
         if (vf_menu)
             vf_menu_pause_update(vf_menu);
 #endif
-	usec_sleep(20000);		
+	//usec_sleep(20000);
 
-	if(controlledbygui==2)
-		wiiPause(); // unpause
+    DrawMPlayer();
+    VIDEO_WaitVSync();
     }
 
     if (cmd && cmd->id == MP_CMD_PAUSE) {
@@ -4280,7 +4281,6 @@ if(!mpctx->sh_video){
 	printf("No video - returning control to GUI\n");
 	if(controlledbygui == 0)
 		controlledbygui=1; // send control to gui
-	//getch2_disable(); // wiimote controlled by gui
    mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_Video_NoVideo);
    mp_msg(MSGT_CPLAYER,MSGL_V,"Freeing %d unused video chunks.\n",mpctx->d_video->packs);
    ds_free_packs(mpctx->d_video);
@@ -4896,12 +4896,20 @@ void wiiGotoGui()
 	mp_input_queue_cmd(cmd);
 }
 
+static int isPaused = 0;
+
 void wiiPause()
 {
+	isPaused ^= 1;
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
 	cmd->id=MP_CMD_PAUSE;
 	cmd->name=strdup("pause");
 	mp_input_queue_cmd(cmd);
+}
+
+bool wiiIsPaused()
+{
+	return isPaused;
 }
 
 void wiiMute()

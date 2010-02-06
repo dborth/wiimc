@@ -159,6 +159,13 @@ void MPlayerInput()
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
 				wiiRewind();
 		}
+		else
+		{
+			// Quick hack to allow people to unpause while the OSD GUI is visible by pointing above the 
+			// button bar and pressing A. We should look at this behavior. 
+			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A && userInput[i].wpad->ir.y < 340)
+				wiiPause();
+		}
 	}
 
 	if(ir || StatusSet() || osdLevel)

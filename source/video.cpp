@@ -216,6 +216,13 @@ void Menu_DrawRectangle(f32 x, f32 y, f32 width, f32 height, GXColor color, u8 f
 
 int DrawMPlayerGui()
 {
+	if(!drawGui && wiiIsPaused())
+	{
+		UpdatePads();
+		MPlayerInput();
+		return 1;
+	}
+
 	if(!drawGui)
 		return 0;
 

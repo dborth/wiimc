@@ -62,9 +62,9 @@ struct SWiiSettings {
 	int 	hideExtensions;
 	int 	filterFiles;
 	int 	language;
-	char 	videoFolder[MAXPATHLEN];
+	char 	videosFolder[MAXPATHLEN];
 	char	musicFolder[MAXPATHLEN];
-	char	pictureFolder[MAXPATHLEN];
+	char	picturesFolder[MAXPATHLEN];
 	char	onlinemediaFolder[MAXPATHLEN];
 	int		exitAction;
 	int		rumble;

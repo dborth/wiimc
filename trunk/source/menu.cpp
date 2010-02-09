@@ -3639,11 +3639,17 @@ void WiiMenu()
 
 bool StatusSet()
 {
+	if(!statusText)
+		return false;
+
 	return statusText->IsVisible();
 }
 
 void SetStatus(const char * txt)
 {
+	if(!statusText)
+		return;
+
 	if(txt)
 		statusText->SetVisible(true);
 	else

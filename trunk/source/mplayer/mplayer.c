@@ -2934,10 +2934,16 @@ static void pause_loop(void)
         if (vf_menu)
             vf_menu_pause_update(vf_menu);
 #endif
-	//usec_sleep(20000);
 
-    DrawMPlayer();
-    VIDEO_WaitVSync();
+    if(!mpctx->sh_video || !mpctx->video_out)
+    {
+    	usec_sleep(20000);
+    }
+    else
+    {
+    	DrawMPlayer();
+    	VIDEO_WaitVSync();
+    }
     }
 
     if (cmd && cmd->id == MP_CMD_PAUSE) {

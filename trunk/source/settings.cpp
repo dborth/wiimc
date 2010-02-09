@@ -147,10 +147,10 @@ prepareSettingsData ()
 	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
 	createXMLSetting("filterFiles", "Hide invalid file types", toStr(WiiSettings.filterFiles));
 	createXMLSetting("language", "Language", toStr(WiiSettings.language));
-	createXMLSetting("videoFolder", "Video files folder", WiiSettings.videoFolder);
-	createXMLSetting("musicFolder", "Music files folder", WiiSettings.musicFolder);
-	createXMLSetting("pictureFolder", "Picture files folder", WiiSettings.pictureFolder);
-	createXMLSetting("onlinemediaFolder", "Online media files folder", WiiSettings.onlinemediaFolder);
+	createXMLSetting("videosFolder", "Videos folder", WiiSettings.videosFolder);
+	createXMLSetting("musicFolder", "Music folder", WiiSettings.musicFolder);
+	createXMLSetting("picturesFolder", "Pictures folder", WiiSettings.picturesFolder);
+	createXMLSetting("onlinemediaFolder", "Online media folder", WiiSettings.onlinemediaFolder);
 	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
 
@@ -366,9 +366,9 @@ void DefaultSettings ()
 	WiiSettings.hideExtensions = 1;
 	WiiSettings.filterFiles = 1;
 	WiiSettings.language = CONF_GetLanguage();
-	WiiSettings.videoFolder[0] = 0;
+	WiiSettings.videosFolder[0] = 0;
 	WiiSettings.musicFolder[0] = 0;
-	WiiSettings.pictureFolder[0] = 0;
+	WiiSettings.picturesFolder[0] = 0;
 	WiiSettings.onlinemediaFolder[0] = 0;
 	WiiSettings.exitAction = EXIT_AUTO;
 	WiiSettings.rumble = 1;
@@ -595,9 +595,9 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.hideExtensions, "hideExtensions");
 				loadXMLSetting(&WiiSettings.filterFiles, "filterFiles");
 				loadXMLSetting(&WiiSettings.language, "language");
-				loadXMLSetting(WiiSettings.videoFolder, "videoFolder", sizeof(WiiSettings.videoFolder));
+				loadXMLSetting(WiiSettings.videosFolder, "videosFolder", sizeof(WiiSettings.videosFolder));
 				loadXMLSetting(WiiSettings.musicFolder, "musicFolder", sizeof(WiiSettings.musicFolder));
-				loadXMLSetting(WiiSettings.pictureFolder, "pictureFolder", sizeof(WiiSettings.pictureFolder));
+				loadXMLSetting(WiiSettings.picturesFolder, "picturesFolder", sizeof(WiiSettings.picturesFolder));
 				loadXMLSetting(WiiSettings.onlinemediaFolder, "onlinemediaFolder", sizeof(WiiSettings.onlinemediaFolder));
 				loadXMLSetting(&WiiSettings.exitAction, "exitAction");
 				loadXMLSetting(&WiiSettings.rumble, "rumble");

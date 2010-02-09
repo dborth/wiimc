@@ -2708,74 +2708,77 @@ int controlledbygui=0;
 int pause_gui=0;
 void PauseAndGotoGUI()
 {
-	mp_cmd_t* cmd=NULL;
+	mp_cmd_t* cmd = NULL;
 	setwatchdogcounter(-1);
-    if (mpctx->audio_out && mpctx->sh_audio)
-	mpctx->audio_out->pause();	// pause audio, keep data if possible
+	if (mpctx->audio_out && mpctx->sh_audio)
+		mpctx->audio_out->pause(); // pause audio, keep data if possible
 
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-	mpctx->video_out->control(VOCTRL_PAUSE, NULL);
-printf("PauseAndGotoGUI\n");
+	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
+
+	printf("PauseAndGotoGUI\n");
 #ifdef CONFIG_MENU
 	if (vf_menu)
-	    vf_menu_pause_update(vf_menu);
+	vf_menu_pause_update(vf_menu);
 #endif
 
-printf("send control to gui	\n");
-if(controlledbygui == 0)
-	controlledbygui=1; //send control to gui
-  while (controlledbygui==1 && ((cmd = mp_input_get_cmd(20, 1, 1)) == NULL || cmd->pausing == 4)) {
-	if (cmd) {
-	  cmd = mp_input_get_cmd(0,1,0);	  
-	  run_command(mpctx, cmd);
-	  mp_cmd_free(cmd);
-	  continue;
+	printf("sent control to gui\n");
+	if (controlledbygui == 0)
+		controlledbygui = 1; // send control to gui
+	while (controlledbygui == 1 && ((cmd = mp_input_get_cmd(20, 1, 1)) == NULL || cmd->pausing == 4))
+	{
+		if (cmd)
+		{
+			cmd = mp_input_get_cmd(0, 1, 0);
+			run_command(mpctx, cmd);
+			mp_cmd_free(cmd);
+			continue;
+		}
+		if (mpctx->sh_video && mpctx->video_out && vo_config_count)
+			mpctx->video_out->check_events();
+
+		usec_sleep(20000);
 	}
-	if (mpctx->sh_video && mpctx->video_out && vo_config_count)
-	    mpctx->video_out->check_events();
-	
-	usec_sleep(20000);
-  }	
 
-printf("control return to mplayer\n");
-if(controlledbygui!=2)
-{
-	printf("reinit mplayer video/audio\n");
-	reinit_audio();
-	reinit_video();
-	printf("mplayer video reinit ok\n");
-	//getch2_enable();
-}
+	printf("control returned to mplayer\n");
+	if (controlledbygui != 2)
+	{
+		printf("reinit mplayer video/audio\n");
+		reinit_audio();
+		reinit_video();
+		printf("mplayer video reinit ok\n");
+	}
 
-    if (cmd && cmd->id == MP_CMD_QUIT) {
-	cmd = mp_input_get_cmd(0,1,0);
-	mp_cmd_free(cmd);
-    }
-    
-    mpctx->osd_function=OSD_PLAY;
-	
-    if(controlledbygui!=2)
-	{	    
-		if((!strncmp(filename,"dvd:",4)) ||  (!strncmp(filename,"dvdnav:",7)))
+	if (cmd && cmd->id == MP_CMD_QUIT)
+	{
+		cmd = mp_input_get_cmd(0, 1, 0);
+		mp_cmd_free(cmd);
+	}
+
+	mpctx->osd_function = OSD_PLAY;
+
+	if (controlledbygui != 2)
+	{
+		if ((!strncmp(filename, "dvd:", 4))	|| (!strncmp(filename, "dvdnav:", 7)))
 		{
 			//DI2_StartMotor();
 			//printf("start motor\n");
-			void *ptr=memalign(32, 0x800*2);
+			void *ptr = memalign(32, 0x800 * 2);
 			//printf("read sector 1\n");
 			DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
 			//printf("read sector 5000\n");
 			DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
 			free(ptr);
 		}
-	
-	    if (mpctx->audio_out && mpctx->sh_audio)
-		    mpctx->audio_out->resume();	// resume audio
-    }
-    
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-        mpctx->video_out->control(VOCTRL_RESUME, NULL);	// resume video
-    (void)GetRelativeTime();	// ignore time that passed during pause
-    setwatchdogcounter(WATCH_TIMEOUT);
+
+		if (mpctx->audio_out && mpctx->sh_audio)
+			mpctx->audio_out->resume(); // resume audio
+	}
+
+	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+		mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
+	(void) GetRelativeTime(); // ignore time that passed during pause
+	setwatchdogcounter(WATCH_TIMEOUT);
 }
 
 static void low_cache_loop(void)

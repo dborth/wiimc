@@ -1094,11 +1094,11 @@ static void MenuBrowse(int menu)
 	switch(menu)
 	{
 		case MENU_BROWSE_VIDEOS:
-			browser.dir = &WiiSettings.videoFolder[0]; break;
+			browser.dir = &WiiSettings.videosFolder[0]; break;
 		case MENU_BROWSE_MUSIC:
 			browser.dir = &WiiSettings.musicFolder[0]; break;
 		case MENU_BROWSE_PICTURES:
-			browser.dir = &WiiSettings.pictureFolder[0]; break;
+			browser.dir = &WiiSettings.picturesFolder[0]; break;
 		case MENU_BROWSE_ONLINEMEDIA:
 			browser.dir = &WiiSettings.onlinemediaFolder[0]; break;
 		default:
@@ -1389,8 +1389,9 @@ static void MenuSettingsGeneral()
 	sprintf(options.name[i++], "File Extensions");
 	sprintf(options.name[i++], "Unsupported Files");
 	sprintf(options.name[i++], "Language");
-	sprintf(options.name[i++], "Video Files Folder");
+	sprintf(options.name[i++], "Videos Files Folder");
 	sprintf(options.name[i++], "Music Files Folder");
+	sprintf(options.name[i++], "Pictures Files Folder");
 	sprintf(options.name[i++], "Exit Action");
 	sprintf(options.name[i++], "Wiimote Rumble");
 
@@ -1468,17 +1469,20 @@ static void MenuSettingsGeneral()
 					WiiSettings.language = 0;
 				break;
 			case 6:
-				OnScreenKeyboard(WiiSettings.videoFolder, MAXPATHLEN);
+				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);
 				break;
 			case 7:
 				OnScreenKeyboard(WiiSettings.musicFolder, MAXPATHLEN);
 				break;
 			case 8:
+				OnScreenKeyboard(WiiSettings.picturesFolder, MAXPATHLEN);
+				break;
+			case 9:
 				WiiSettings.exitAction++;
 				if(WiiSettings.exitAction > EXIT_LOADER)
 					WiiSettings.exitAction = 0;
 				break;
-			case 9:
+			case 10:
 				WiiSettings.rumble ^= 1;
 				break;
 		}
@@ -1515,18 +1519,19 @@ static void MenuSettingsGeneral()
 				case LANG_KOREAN:		sprintf(options.value[5], "Korean"); break;
 			}
 
-			snprintf(options.value[6], 20, "%s", WiiSettings.videoFolder);
+			snprintf(options.value[6], 20, "%s", WiiSettings.videosFolder);
 			snprintf(options.value[7], 20, "%s", WiiSettings.musicFolder);
+			snprintf(options.value[8], 20, "%s", WiiSettings.picturesFolder);
 
 			switch(WiiSettings.exitAction)
 			{
-				case EXIT_AUTO:		sprintf(options.value[8], "Auto"); break;
-				case EXIT_WIIMENU:	sprintf(options.value[8], "Return to Wii Menu"); break;
-				case EXIT_POWEROFF:	sprintf(options.value[8], "Power Off Wii"); break;
-				case EXIT_LOADER:	sprintf(options.value[8], "Return to Loader"); break;
+				case EXIT_AUTO:		sprintf(options.value[9], "Auto"); break;
+				case EXIT_WIIMENU:	sprintf(options.value[9], "Return to Wii Menu"); break;
+				case EXIT_POWEROFF:	sprintf(options.value[9], "Power Off Wii"); break;
+				case EXIT_LOADER:	sprintf(options.value[9], "Return to Loader"); break;
 			}
 
-			sprintf(options.value[9], "%s", WiiSettings.rumble ? "On" : "Off");
+			sprintf(options.value[10], "%s", WiiSettings.rumble ? "On" : "Off");
 
 			optionBrowser.TriggerUpdate();
 		}

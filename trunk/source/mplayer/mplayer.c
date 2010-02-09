@@ -2944,6 +2944,9 @@ static void pause_loop(void)
     	DrawMPlayer();
     	VIDEO_WaitVSync();
     }
+
+    if(controlledbygui == 2) // mplayer shutdown requested!
+    	break;
     }
 
     if (cmd && cmd->id == MP_CMD_PAUSE) {

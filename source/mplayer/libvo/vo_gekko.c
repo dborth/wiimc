@@ -43,7 +43,8 @@
 
 #include <gccore.h>
 
-extern int osd_level;
+extern int screenwidth;
+extern int screenheight;
 
 static const vo_info_t info = {
 	"gekko video output",
@@ -293,6 +294,10 @@ static int preinit(const char *arg)
 {
 	log_console_enable_video(false);
 	//reset_nunchuk_positions();
+
+	vo_screenheight = screenheight;
+	vo_screenwidth = screenwidth;
+	vo_fs=1;
 
 	return 0;
 }

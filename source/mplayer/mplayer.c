@@ -3110,8 +3110,9 @@ int mplayer_loadfile(const char* _file){
 int argc;
 char *argv[] = {
 	"",
-	//"-nocache",
-	"-vo","gekko","-ao","gekko",
+	"-vo","gekko",
+	"-ao","gekko",
+	"-osdlevel","0",
 	_file
 }; 
 argc=argc = sizeof(argv) / sizeof(char *);
@@ -5021,26 +5022,47 @@ char * wiiGetMetaYear()
 	return get_metadata(META_INFO_YEAR);
 }
 
-void wiiDVDNav(int cmd, int x, int y)
+void wiiUpdatePointer(int x, int y)
 {
-	int button = -1;
+	mp_cmd_t *cmd = calloc( 1,sizeof( *cmd ) );
+	cmd->id=MP_CMD_SET_MOUSE_POS;
+	cmd->name=strdup("set_mouse_pos");
+	cmd->nargs = 2;
+	cmd->args[0].v.i = x;
+	cmd->args[1].v.i = y;
+	mp_input_queue_cmd(cmd);
+}
 
+void wiiDVDNav(int command)
+{
 	if (mpctx->stream->type != STREAMTYPE_DVDNAV)
 		return;
 
-	mp_command_type command = cmd;
+	mp_cmd_t *cmd = calloc( 1,sizeof( *cmd ) );
+	cmd->id=MP_CMD_DVDNAV;
+	cmd->name=strdup("dvdnav");
+	cmd->nargs = 1;
 
-	/*MP_CMD_DVDNAV_UP
-	MP_CMD_DVDNAV_DOWN
-	MP_CMD_DVDNAV_LEFT
-	MP_CMD_DVDNAV_RIGHT
-	MP_CMD_DVDNAV_MENU
-	MP_CMD_DVDNAV_SELECT
-	MP_CMD_DVDNAV_PREVMENU*/
-
-	mp_dvdnav_update_mouse_pos(mpctx->stream, x, y, &button);
-	mp_dvdnav_handle_input(mpctx->stream,command,&button);
-	printf("Selected button number %d", button);
+	switch(command)
+	{
+		case MP_CMD_DVDNAV_UP:
+			cmd->args[0].v.s = strdup("up"); break;
+		case MP_CMD_DVDNAV_DOWN:
+			cmd->args[0].v.s = strdup("down"); break;
+		case MP_CMD_DVDNAV_LEFT:
+			cmd->args[0].v.s = strdup("left"); break;
+		case MP_CMD_DVDNAV_RIGHT:
+			cmd->args[0].v.s = strdup("right"); break;
+		case MP_CMD_DVDNAV_MENU:
+			cmd->args[0].v.s = strdup("menu"); break;
+		case MP_CMD_DVDNAV_SELECT:
+			cmd->args[0].v.s = strdup("select"); break;
+		case MP_CMD_DVDNAV_PREVMENU:
+			cmd->args[0].v.s = strdup("prev"); break;
+		case MP_CMD_DVDNAV_MOUSECLICK:
+			cmd->args[0].v.s = strdup("mouse"); break;
+	}
+	mp_input_queue_cmd(cmd);
 }
 
 #include "libdvdnav/dvdnav/dvdnav.h"

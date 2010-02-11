@@ -55,7 +55,7 @@ All buffers in this document need to be 32-byte aligned!
 FUNCTION PROTOTYPES GO HERE!
 */
 
-int DI2_Init();
+int DI2_Init(bool dvdx);
 void DI2_Mount();
 void DI2_Close();
 int DI2_GetStatus();

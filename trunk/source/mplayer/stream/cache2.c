@@ -414,8 +414,7 @@ void cache_uninit(stream_t *s) {
   if(!s->cache_pid) return; 
   cache_do_control(s, -2, NULL);
   c->thread_active = 0;
-  while(!c->exited) usleep(1000);
-  LWP_JoinThread(s->cache_pid, NULL);  
+  LWP_JoinThread(s->cache_pid, NULL);
   s->cache_pid = 0;
 #else  
   if(s->cache_pid) {

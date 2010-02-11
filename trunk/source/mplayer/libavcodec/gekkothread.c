@@ -20,10 +20,12 @@ typedef struct ThreadContext{
 }ThreadContext;
 
 
-static void * thread_func(void *v){
+static void * thread_func(void *v)
+{
     ThreadContext *c= v;
 
-    while(1){
+    while(1)
+    {
         //mp_msg(MSGT_VO, MSGL_ERR,"thread_func Lock work_sem %i\n",c->work_sem);
         LWP_SemWait(c->work_sem);
         //mp_msg(MSGT_VO, MSGL_ERR,"thread_func pass Lock work_sem %i, exec\n",c->work_sem);
@@ -43,19 +45,19 @@ static void * thread_func(void *v){
  * Free what has been allocated by avcodec_thread_init().
  * Must be called after decoding has finished, especially do not call while avcodec_thread_execute() is running.
  */
-void avcodec_thread_free(AVCodecContext *s){
+void avcodec_thread_free(AVCodecContext *s)
+{
     ThreadContext *c= s->thread_opaque;
     int i;
-    //usleep(10000);
-    for(i=0; i<s->thread_count; i++){
 
+    for(i=0; i<s->thread_count; i++)
+	{
         c[i].func= NULL;
         LWP_SemPost(c[i].work_sem);
-        //usleep(10000);
+        LWP_JoinThread(c[i].thread, NULL);
         LWP_SemDestroy(c[i].work_sem);
         LWP_SemDestroy(c[i].done_sem);
     }
-    //usleep(10000);
     av_freep(&s->thread_opaque);  
 }
 

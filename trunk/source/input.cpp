@@ -129,24 +129,9 @@ void MPlayerInput()
 		}
 
 		if(inDVDMenu)
-		{
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
-			{
-				if(userInput[i].wpad->ir.valid)
-					wiiDVDNav(MP_CMD_DVDNAV_MOUSECLICK, userInput[i].wpad->ir.x, userInput[i].wpad->ir.y);
-				else
-					wiiDVDNav(MP_CMD_DVDNAV_SELECT, 0, 0);
-			}
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
-				wiiDVDNav(MP_CMD_DVDNAV_UP, 0, 0);
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
-				wiiDVDNav(MP_CMD_DVDNAV_DOWN, 0, 0);
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
-				wiiDVDNav(MP_CMD_DVDNAV_RIGHT, 0, 0);
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
-				wiiDVDNav(MP_CMD_DVDNAV_LEFT, 0, 0);
-		}
-		else if(!drawGui)
+			continue;
+
+		if(!drawGui)
 		{			
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
 				wiiPause();
@@ -166,6 +151,33 @@ void MPlayerInput()
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A && userInput[i].wpad->ir.y < 340)
 				wiiPause();
 		}
+	}
+
+	if(inDVDMenu)
+	{
+		if(userInput[0].wpad->ir.valid)
+			wiiUpdatePointer((int)userInput[0].wpad->ir.x, (int)userInput[0].wpad->ir.y);
+
+		if(userInput[0].wpad->btns_d & WPAD_BUTTON_A)
+		{
+			if(userInput[0].wpad->ir.valid)
+				wiiDVDNav(MP_CMD_DVDNAV_MOUSECLICK);
+			else
+				wiiDVDNav(MP_CMD_DVDNAV_SELECT);
+		}
+
+		if(userInput[0].wpad->btns_d & WPAD_BUTTON_UP)
+			wiiDVDNav(MP_CMD_DVDNAV_UP);
+		if(userInput[0].wpad->btns_d & WPAD_BUTTON_DOWN)
+			wiiDVDNav(MP_CMD_DVDNAV_DOWN);
+		if(userInput[0].wpad->btns_d & WPAD_BUTTON_RIGHT)
+			wiiDVDNav(MP_CMD_DVDNAV_RIGHT);
+		if(userInput[0].wpad->btns_d & WPAD_BUTTON_LEFT)
+			wiiDVDNav(MP_CMD_DVDNAV_LEFT);
+	}
+	else if(userInput[0].wpad->btns_d & WPAD_BUTTON_2)
+	{
+		wiiDVDNav(MP_CMD_DVDNAV_MENU);
 	}
 
 	if(ir || StatusSet() || osdLevel)

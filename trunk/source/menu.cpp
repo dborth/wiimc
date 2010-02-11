@@ -359,6 +359,9 @@ HaltGui()
 
 void ShutdownGui()
 {
+	if(menuMode == 1) // prevent MPlayer from shutting down OSD
+		return;
+
 	CancelAction();
 	HaltGui();
 	guiShutdown = true;
@@ -3696,6 +3699,7 @@ void MPlayerMenu()
 		{
 			mainWindow->SetVisible(true);
 			mainWindow->SetState(STATE_DEFAULT);
+			statusText->SetVisible(false);
 		}
 	}
 

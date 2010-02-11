@@ -31,9 +31,10 @@
 #include <unistd.h>
 #include <ogc/mutex.h>
 #include <ogc/lwp.h>
-#include "gx_supp.h"
-
 #include <wiiuse/wpad.h>
+
+#include "../libvo/video_out.h"
+#include "gx_supp.h"
 
 #define DEFAULT_FIFO_SIZE (256 * 1024)
 
@@ -317,7 +318,7 @@ void GX_UpdateSquare()
 void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 {
 	int wp,ww;
-	
+
 	GX_ResetTextureYUVPointers();
 
 	wp=pitch[0];
@@ -351,6 +352,8 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 	oldvheight = vheight;
 	draw_initYUV();
 	draw_scaling();
+	vo_dwidth = vwidth;
+	vo_dheight = vheight;
 
 	p01= pitch[0];
     p02= pitch[0] * 2;

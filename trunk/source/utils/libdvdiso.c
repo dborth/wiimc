@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <malloc.h>
+#include <unistd.h>
 #ifndef DEBUG
 #include <sys/iosupport.h>
 #include <ogc/ipc.h>
@@ -128,8 +129,7 @@ int WIIDVD_Init(bool dvdx)
 	totalentries=0;
 	
 #ifndef DEBUG
-	if(dvdx)retval=DI2_Init();
-	else retval=DI2_InitNoDVDx();
+	retval=DI2_Init(dvdx);
 	if(retval>=0) dvd_initied=true;
 	else dvd_initied=false;
 #else

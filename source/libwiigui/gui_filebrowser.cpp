@@ -392,7 +392,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 				}
 				fileList[i]->SetIcon(fileListIcon[i]);
 				
-				if(currentMenu == MENU_BROWSE_MUSIC && i > 0)
+				if(menuCurrent == MENU_BROWSE_MUSIC && i > 0)
 				{
 					if(browser.dir[0] == 0 || inPlaylist) // at root or in playlist
 					{
@@ -412,7 +412,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 				fileList[i]->SetVisible(false);
 				fileList[i]->SetState(STATE_DISABLED);
 				
-				if(currentMenu == MENU_BROWSE_MUSIC && i > 0)
+				if(menuCurrent == MENU_BROWSE_MUSIC && i > 0)
 				{
 					playlistAddBtn[i]->SetVisible(false);
 					playlistAddBtn[i]->SetState(STATE_DISABLED);

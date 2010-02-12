@@ -138,9 +138,10 @@ static GuiButton * picturebarNextBtn = NULL;
 static GuiButton * picturebarSlideshowBtn = NULL;
 static GuiButton * picturebarCloseBtn = NULL;
 
-int currentMenu = MENU_BROWSE_VIDEOS;
+int menuCurrent = MENU_BROWSE_VIDEOS;
+static int menuPrevious = MENU_BROWSE_VIDEOS;
+static int menuUndo = MENU_BROWSE_VIDEOS;
 bool inPlaylist = false;
-static int lastMenu = MENU_BROWSE_VIDEOS;
 static int netEditIndex = 0; // current index of FTP/SMB share being edited
 
 static lwp_t guithread = LWP_THREAD_NULL;
@@ -163,12 +164,19 @@ static bool menuMode = 0; // 0 - normal GUI, 1 - GUI for MPlayer
 
 static void ChangeMenu(int menu)
 {
-	if(menu == currentMenu)
+	if(menu == menuCurrent)
 		return;
 
-	lastMenu = currentMenu;
-	currentMenu = menu;
+	menuUndo = menuPrevious;
+	menuPrevious = menuCurrent;
+	menuCurrent = menu;
 }
+static void UndoChangeMenu()
+{
+	menuCurrent = menuPrevious;
+	menuPrevious = menuUndo;
+}
+
 static void ChangeMenu(void * ptr, int menu)
 {
 	GuiButton * b = (GuiButton *)ptr;
@@ -264,14 +272,14 @@ UpdateGui (void *arg)
 			{
 				if(userInput[i].wpad->btns_d & WPAD_BUTTON_PLUS)
 				{
-					int newMenu = currentMenu + 1;
+					int newMenu = menuCurrent + 1;
 					if(newMenu > MENU_SETTINGS)
 						newMenu = MENU_BROWSE_VIDEOS;
 					ChangeMenu(newMenu);
 				}
 				else if(userInput[i].wpad->btns_d & WPAD_BUTTON_MINUS)
 				{
-					int newMenu = currentMenu - 1;
+					int newMenu = menuCurrent - 1;
 					if(newMenu < MENU_BROWSE_VIDEOS)
 						newMenu = MENU_SETTINGS;
 					ChangeMenu(newMenu);
@@ -1145,6 +1153,13 @@ static void MenuBrowse(int menu)
 
 	ResumeGui();
 
+	if(menu == MENU_BROWSE_ONLINEMEDIA && onlinemediaSize == 0)
+	{
+		ErrorPrompt("Online media file not found.");
+		UndoChangeMenu();
+		goto done;
+	}
+
 	// populate initial directory listing
 	while(BrowserChangeFolder(false) <= 0)
 	{
@@ -1152,16 +1167,16 @@ static void MenuBrowse(int menu)
 		"Error",
 		"Unable to display files on selected load device.",
 		"Retry",
-		"Check Settings");
+		"Cancel");
 
 		if(choice == 0)
 		{
-			ChangeMenu(MENU_SETTINGS);
+			UndoChangeMenu();
 			goto done;
 		}
 	}
 
-	while(currentMenu == menu && !guiShutdown)
+	while(menuCurrent == menu && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 		
@@ -1223,7 +1238,7 @@ static void MenuBrowse(int menu)
 					if(browserList[browser.selIndex].isplaylist)
 					{
 						// parse list
-						if(currentMenu == MENU_BROWSE_ONLINEMEDIA)
+						if(menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 							sprintf(browserPlaylist, "%s", browserList[browser.selIndex].filename);
 						else
 							sprintf(browserPlaylist, "%s%s", browser.dir, browserList[browser.selIndex].filename);
@@ -1253,13 +1268,13 @@ static void MenuBrowse(int menu)
 					}
 					else
 					{
-						if(inPlaylist || browserPlaylist[0] != 0 || currentMenu == MENU_BROWSE_ONLINEMEDIA)
+						if(inPlaylist || browserPlaylist[0] != 0 || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 							sprintf(loadedFile, "%s", browserList[browser.selIndex].filename);
 						else
 							sprintf(loadedFile, "%s%s", browser.dir, browserList[browser.selIndex].filename);
 					}
 
-					if(currentMenu == MENU_BROWSE_PICTURES)
+					if(menuCurrent == MENU_BROWSE_PICTURES)
 					{
 						// load picture viewer
 						if(browserList[browser.selIndex].length > MAX_PICTURE_SIZE)
@@ -1305,7 +1320,7 @@ static void MenuBrowse(int menu)
 			}
 			
 			// music playlist add buttons - skip first entry (..)
-			if(currentMenu != MENU_BROWSE_MUSIC || i == 0)
+			if(menuCurrent != MENU_BROWSE_MUSIC || i == 0)
 				continue;
 
 			if(fileBrowser.playlistAddBtn[i]->GetState() == STATE_CLICKED)
@@ -1357,7 +1372,7 @@ static void MenuDVD()
 
 	if(!ChangeInterface(DEVICE_DVD, -1, NOTSILENT))
 	{
-		ChangeMenu(lastMenu); // go back to last menu
+		UndoChangeMenu(); // go back to last menu
 		return;
 	}
 
@@ -1371,7 +1386,7 @@ static void MenuDVD()
 		usleep(THREAD_SLEEP);
 
 	CancelAction();
-	ChangeMenu(lastMenu); // go back to last menu
+	UndoChangeMenu(); // go back to last menu
 	
 	if(!guiShutdown) // load failed
 		ErrorPrompt("Invalid DVD!");
@@ -1441,7 +1456,7 @@ static void MenuSettingsGeneral()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(currentMenu == MENU_SETTINGS_GENERAL && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_GENERAL && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -1541,7 +1556,7 @@ static void MenuSettingsGeneral()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			currentMenu = MENU_SETTINGS;
+			menuCurrent = MENU_SETTINGS;
 		}
 	}
 	HaltGui();
@@ -1605,7 +1620,7 @@ static void MenuSettingsCache()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(currentMenu == MENU_SETTINGS_CACHE && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_CACHE && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -1644,7 +1659,7 @@ static void MenuSettingsCache()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			currentMenu = MENU_SETTINGS;
+			menuCurrent = MENU_SETTINGS;
 		}
 	}
 	HaltGui();
@@ -1757,7 +1772,7 @@ static void MenuSettingsNetwork()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(currentMenu == MENU_SETTINGS_NETWORK && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_NETWORK && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -1766,17 +1781,17 @@ static void MenuSettingsNetwork()
 		if((ret >= 0 && ret < 5) || addsmbBtn.GetState() == STATE_CLICKED)
 		{
 			netEditIndex = ret;
-			currentMenu = MENU_SETTINGS_NETWORK_SMB;
+			menuCurrent = MENU_SETTINGS_NETWORK_SMB;
 		}
 		else if(ret >= 5 || addftpBtn.GetState() == STATE_CLICKED)
 		{
 			netEditIndex = ret-5;
-			currentMenu = MENU_SETTINGS_NETWORK_FTP;
+			menuCurrent = MENU_SETTINGS_NETWORK_FTP;
 		}
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			currentMenu = MENU_SETTINGS;
+			menuCurrent = MENU_SETTINGS;
 		}
 	}
 	HaltGui();
@@ -1882,7 +1897,7 @@ static void MenuSettingsNetworkSMB()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(currentMenu == MENU_SETTINGS_NETWORK_SMB && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_NETWORK_SMB && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -1924,7 +1939,7 @@ static void MenuSettingsNetworkSMB()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			currentMenu = MENU_SETTINGS_NETWORK;
+			menuCurrent = MENU_SETTINGS_NETWORK;
 		}
 		if(deleteBtn.GetState() == STATE_CLICKED)
 		{
@@ -1936,7 +1951,7 @@ static void MenuSettingsNetworkSMB()
 				WiiSettings.smbConf[netEditIndex].share[0] = 0;
 				WiiSettings.smbConf[netEditIndex].user[0] = 0;
 				WiiSettings.smbConf[netEditIndex].pwd[0] = 0;
-				currentMenu = MENU_SETTINGS_NETWORK;
+				menuCurrent = MENU_SETTINGS_NETWORK;
 			}
 		}
 	}
@@ -2046,7 +2061,7 @@ static void MenuSettingsNetworkFTP()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(currentMenu == MENU_SETTINGS_NETWORK_FTP && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_NETWORK_FTP && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -2093,7 +2108,7 @@ static void MenuSettingsNetworkFTP()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			currentMenu = MENU_SETTINGS_NETWORK;
+			menuCurrent = MENU_SETTINGS_NETWORK;
 		}
 		if(deleteBtn.GetState() == STATE_CLICKED)
 		{
@@ -2106,7 +2121,7 @@ static void MenuSettingsNetworkFTP()
 				WiiSettings.ftpConf[netEditIndex].user[0] = 0;
 				WiiSettings.ftpConf[netEditIndex].pwd[0] = 0;
 				WiiSettings.ftpConf[netEditIndex].passive = 0;
-				currentMenu = MENU_SETTINGS_NETWORK;
+				menuCurrent = MENU_SETTINGS_NETWORK;
 			}
 		}
 	}
@@ -2368,7 +2383,7 @@ static void MenuSettingsVideo()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(currentMenu == MENU_SETTINGS_VIDEO && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_VIDEO && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -2430,7 +2445,7 @@ static void MenuSettingsVideo()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			currentMenu = MENU_SETTINGS;
+			menuCurrent = MENU_SETTINGS;
 		}
 	}
 	HaltGui();
@@ -2492,7 +2507,7 @@ static void MenuSettingsAudio()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(currentMenu == MENU_SETTINGS_AUDIO && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_AUDIO && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -2524,7 +2539,7 @@ static void MenuSettingsAudio()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			currentMenu = MENU_SETTINGS;
+			menuCurrent = MENU_SETTINGS;
 		}
 	}
 	HaltGui();
@@ -2589,7 +2604,7 @@ static void MenuSettingsSubtitles()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(currentMenu == MENU_SETTINGS_SUBTITLES && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_SUBTITLES && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -2651,7 +2666,7 @@ static void MenuSettingsSubtitles()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			currentMenu = MENU_SETTINGS;
+			menuCurrent = MENU_SETTINGS;
 		}
 	}
 	HaltGui();
@@ -2715,7 +2730,7 @@ static void MenuSettings()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(currentMenu == MENU_SETTINGS && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -2729,32 +2744,32 @@ static void MenuSettings()
 		switch (ret)
 		{
 			case 0:
-				currentMenu = MENU_SETTINGS_GENERAL;
+				menuCurrent = MENU_SETTINGS_GENERAL;
 				break;
 
 			case 1:
-				currentMenu = MENU_SETTINGS_CACHE;
+				menuCurrent = MENU_SETTINGS_CACHE;
 				break;
 
 			case 2:
-				currentMenu = MENU_SETTINGS_NETWORK;
+				menuCurrent = MENU_SETTINGS_NETWORK;
 				break;
 
 			case 3:
-				currentMenu = MENU_SETTINGS_VIDEO;
+				menuCurrent = MENU_SETTINGS_VIDEO;
 				break;
 
 			case 4:
-				currentMenu = MENU_SETTINGS_AUDIO;
+				menuCurrent = MENU_SETTINGS_AUDIO;
 				break;
 
 			case 5:
-				currentMenu = MENU_SETTINGS_SUBTITLES;
+				menuCurrent = MENU_SETTINGS_SUBTITLES;
 				break;
 		}
 
 		if(backBtn.GetState() == STATE_CLICKED)
-			ChangeMenu(lastMenu);
+			ChangeMenu(menuPrevious);
 	}
 
 	HaltGui();
@@ -3555,13 +3570,13 @@ void WiiMenu()
 
 	while(!guiShutdown)
 	{
-		switch (currentMenu)
+		switch (menuCurrent)
 		{
 			case MENU_BROWSE_VIDEOS:
 			case MENU_BROWSE_MUSIC:
 			case MENU_BROWSE_PICTURES:
 			case MENU_BROWSE_ONLINEMEDIA:
-				MenuBrowse(currentMenu);
+				MenuBrowse(menuCurrent);
 				break;
 			case MENU_DVD:
 				MenuDVD();

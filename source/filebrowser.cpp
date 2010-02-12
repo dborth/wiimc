@@ -201,7 +201,7 @@ static int UpdateDirName()
 		return 1;
 	}
 
-	if(currentMenu != MENU_BROWSE_ONLINEMEDIA && browser.dir[0] == 0)
+	if(menuCurrent != MENU_BROWSE_ONLINEMEDIA && browser.dir[0] == 0)
 	{
 		// try to switch to device
 		if(!ChangeInterface(browserList[browser.selIndex].filename, NOTSILENT))
@@ -272,7 +272,7 @@ int BrowserChangeFolder(bool updateDir)
 	{
 		ParsePlaylistFile();
 	}
-	else if(currentMenu == MENU_BROWSE_ONLINEMEDIA)
+	else if(menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 	{
 		ParseOnlineMedia();
 	}

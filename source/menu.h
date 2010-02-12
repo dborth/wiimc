@@ -28,7 +28,7 @@ void SetStatus(const char * txt);
 bool StatusSet();
 }
 
-extern int currentMenu;
+extern int menuCurrent;
 extern bool inPlaylist;
 extern int doMPlayerGuiDraw;
 

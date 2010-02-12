@@ -888,7 +888,7 @@ static bool ParseDirEntries()
 
 			j=0;
 			
-			if(currentMenu == MENU_BROWSE_VIDEOS)
+			if(menuCurrent == MENU_BROWSE_VIDEOS)
 			{
 				do
 				{
@@ -898,7 +898,7 @@ static bool ParseDirEntries()
 				if (validVideoExtensions[j][0] == 0) // extension not found
 					continue;
 			}
-			else if(currentMenu == MENU_BROWSE_MUSIC)
+			else if(menuCurrent == MENU_BROWSE_MUSIC)
 			{
 				do
 				{
@@ -908,7 +908,7 @@ static bool ParseDirEntries()
 				if (validAudioExtensions[j][0] == 0) // extension not found
 					continue;
 			}
-			else if(currentMenu == MENU_BROWSE_PICTURES)
+			else if(menuCurrent == MENU_BROWSE_PICTURES)
 			{
 				do
 				{

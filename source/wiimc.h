@@ -29,6 +29,7 @@ enum {
 #define SILENT 1
 
 void ExitApp();
+void InitMPlayer();
 void LoadMPlayer();
 void ShutdownMPlayer();
 void FindNextAudioFile();
@@ -46,21 +47,8 @@ extern "C" {
 #endif
 
 extern int controlledbygui;
-
-void plat_init (int size);
-int mplayer_loadfile(const char* _file);
-void DrawMPlayer();
-bool DVDGekkoMount();
-void log_console_init(GXRModeObj *vmode, u16 logsize);
-//void log_console_deinit(void);
-//void log_console_enable_log(bool enable);
-void log_console_enable_video(bool enable);
-
-bool FindIOS(u32 ios);   //in osdep/plat_gekko.c
-bool load_ehci_module();  //in osdep/plat_gekko.c
-void __exception_setreload(int t); //in osdep/plat_gekko.c
-void USB2Enable(bool e); // in usb2storage.c
-void GX_SetScreenPos(int xshift, int yshift, float xzoom, float yzoom);
+int mplayer_loadfile(const char* _file); // in mplayer.c
+void DrawMPlayer(); // in gx_supp.c
 
 void wiiGotoGui();
 void wiiPause();
@@ -81,6 +69,7 @@ char * wiiGetMetaYear();
 void wiiDVDNav(int cmd);
 void wiiUpdatePointer(int x, int y);
 bool wiiInDVDMenu();
+void wiiSetCache(int size, int prefill);
 void wiiSetProperty(int cmd, float val);
 
 #ifdef __cplusplus

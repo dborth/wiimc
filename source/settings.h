@@ -64,8 +64,7 @@ struct SWiiSettings {
 
 	// Cache
 	int 	cacheSize;
-	int 	cacheFillStart;
-	int 	cacheFillRestart;
+	int 	cachePrefill;
 
 	// Network
 	SMBSettings smbConf[5];

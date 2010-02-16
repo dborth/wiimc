@@ -45,10 +45,6 @@ int use_gui;
 
 #include "mp_msg.h"
 
-#ifdef GEKKO
-#include "osdep/log_console.h"
-#endif
-
 /* maximum message length of mp_msg */
 #define MSGSIZE_MAX 3072
 
@@ -247,16 +243,6 @@ void mp_msg(int mod, int lev, const char *format, ... ){
         print_msg_module(stream, mod);
     set_msg_color(stream, lev);
     header = tmp[strlen(tmp)-1] == '\n' || tmp[strlen(tmp)-1] == '\r';
-#ifdef GEKKO
-	if (mod == MSGT_STATUSLINE)
-		log_console_enable_log(false);
-#endif
     fprintf(stream, "%s", tmp);
     fflush(stream);
-    
-#ifdef GEKKO
-	if (mod == MSGT_STATUSLINE)
-		log_console_enable_log(true);
-#endif
-    
 }

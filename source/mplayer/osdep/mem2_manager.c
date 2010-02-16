@@ -9,8 +9,9 @@ static bool mem2_initied=false;
 static u32 mem2_size=0;
 //u32 MALLOC_MEM2=1;  // to disable/enable sbrk.c mem2 management
 
-u32 InitMem2Manager (u32 size) 
+u32 InitMem2Manager () 
 {
+	int size = (16384*1024)+(8*1024);
 	u32 level;
 	unsigned char *mem2_heap_ptr;
 	if(mem2_initied) return mem2_size;

@@ -35,8 +35,7 @@ extern GXRModeObj *vmode;
 
 void GX_InitVideo();
 void GX_SetCamPosZ(float f);
-void GX_SetOverscan(bool f);
-void StopDrawThread();
+void GX_SetScreenPos(int xshift, int yshift, float xzoom, float yzoom);
 
 void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect);
 void GX_RenderTexture();

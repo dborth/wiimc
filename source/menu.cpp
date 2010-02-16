@@ -1570,7 +1570,6 @@ static void MenuSettingsCache()
 
 	sprintf(options.name[i++], "Size");
 	sprintf(options.name[i++], "Prefill");
-	sprintf(options.name[i++], "Refill");
 
 	options.length = i;
 
@@ -1630,15 +1629,9 @@ static void MenuSettingsCache()
 				break;
 
 			case 1:
-				WiiSettings.cacheFillStart += 10;
-				if (WiiSettings.cacheFillStart > 100)
-					WiiSettings.cacheFillStart = 0;
-				break;
-
-			case 2:
-				WiiSettings.cacheFillRestart += 10;
-				if (WiiSettings.cacheFillRestart > 100)
-					WiiSettings.cacheFillRestart = 0;
+				WiiSettings.cachePrefill += 10;
+				if (WiiSettings.cachePrefill > 100)
+					WiiSettings.cachePrefill = 0;
 				break;
 		}
 
@@ -1646,8 +1639,7 @@ static void MenuSettingsCache()
 		{
 			firstRun = false;
 			sprintf (options.value[0], "%d", WiiSettings.cacheSize);
-			sprintf (options.value[1], "%d%%", WiiSettings.cacheFillStart);
-			sprintf (options.value[2], "%d%%", WiiSettings.cacheFillRestart);
+			sprintf (options.value[1], "%d%%", WiiSettings.cachePrefill);
 
 			optionBrowser.TriggerUpdate();
 		}

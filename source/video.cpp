@@ -19,9 +19,7 @@
 #include "menu.h"
 #include "wiimc.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define DEFAULT_FIFO_SIZE 256 * 1024
 static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32);
@@ -301,6 +299,4 @@ InitVideo ()
 
 }
 
-#ifdef __cplusplus
 }
-#endif

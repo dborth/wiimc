@@ -5093,3 +5093,25 @@ bool wiiInDVDMenu()
 
 	return true;
 }
+
+void wiiSetProperty(int command, float value)
+{
+	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
+	
+	cmd->id=command;
+	cmd->name=strdup("wiicommand");
+	cmd->nargs = 1;
+	
+	switch(command)
+	{
+		case MP_CMD_FRAMEDROPPING:
+		case MP_CMD_SUB_VISIBILITY:
+		case MP_CMD_SUB_ALIGNMENT:
+			cmd->args[0].v.i = (int)value;
+			break;
+		default:
+			cmd->args[0].v.f = value;
+			break;
+	}
+	mp_input_queue_cmd(cmd);
+}

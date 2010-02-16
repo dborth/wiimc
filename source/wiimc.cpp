@@ -25,6 +25,8 @@
 #include "wiimc.h"
 #include "settings.h"
 
+#include "mplayer/input/input.h"
+
 int ScreenshotRequested = 0;
 int ConfigRequested = 0;
 int ShutdownRequested = 0;
@@ -203,6 +205,23 @@ void LoadMPlayer()
 	printf("return control to mplayer\n");
 	if(LWP_ThreadIsSuspended(mthread))
 		LWP_ResumeThread(mthread);
+}
+
+extern "C" {
+void SetupSettings()
+{
+	GX_SetScreenPos(WiiSettings.videoXshift, WiiSettings.videoYshift, 
+					WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
+	wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
+	// Switch ratio doesn't work - disable for now. Could also be done with GX. Which is better?
+	//wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
+	wiiSetProperty(MP_CMD_VOLUME, WiiSettings.volume);
+	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);
+	wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
+	wiiSetProperty(MP_CMD_SUB_ALIGNMENT, WiiSettings.subtitlePosition);
+	wiiSetProperty(MP_CMD_SUB_SCALE, WiiSettings.subtitleScale);
+	wiiSetProperty(MP_CMD_SUB_DELAY, WiiSettings.subtitleDelay);
+}
 }
 
 void ShutdownMPlayer()

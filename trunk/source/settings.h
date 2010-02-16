@@ -42,16 +42,9 @@ enum {
 };
 
 enum {
-	ASPECT_AUTO,
-	ASPECT_16_9,
-	ASPECT_4_3,
-	ASPECT_235_1
-};
-
-enum {
-	FONTCOLOR_WHITE,
-	FONTCOLOR_BLACK,
-	FONTCOLOR_GRAY
+	SUBTITLE_ALIGN_TOP,
+	SUBTITLE_ALIGN_CENTER,
+	SUBTITLE_ALIGN_BOTTOM
 };
 
 struct SWiiSettings {
@@ -80,8 +73,9 @@ struct SWiiSettings {
 
 	// Video
 	int 	frameDropping; // FRAMEDROPPING_DISABLED, FRAMEDROPPING_AUTO, FRAMEDROPPING_ALWAYS
-	int 	aspectRatio; // ASPECT_ORIGINAL, ASPECT_16_9, ASPECT_4_3, ASPECT_235_1
-	float 	videoZoom;
+	float 	aspectRatio;
+	float	videoZoomHor; // horizontal zoom amount
+	float	videoZoomVert; // vertical zoom amount
 	int 	videoXshift;
 	int 	videoYshift;
 
@@ -90,11 +84,10 @@ struct SWiiSettings {
 	int 	audioDelay; // in ms
 
 	// Subtitles
-	int 	subtitleDelay;
-	int 	subtitlePosition;
-	int 	subtitleSize;
-	int 	subtitleAlpha;
-	int 	subtitleColor;
+	int		subtitleVisibility; // 0 - off, 1 - on
+	int 	subtitlePosition; // SUBTITLE_ALIGN_TOP, SUBTITLE_ALIGN_CENTER, SUBTITLE_ALIGN_BOTTOM
+	float 	subtitleScale;
+	int 	subtitleDelay; // in secs
 };
 
 void DefaultSettings ();

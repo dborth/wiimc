@@ -59,7 +59,8 @@ void log_console_enable_video(bool enable);
 bool FindIOS(u32 ios);   //in osdep/plat_gekko.c
 bool load_ehci_module();  //in osdep/plat_gekko.c
 void __exception_setreload(int t); //in osdep/plat_gekko.c
-void USB2Enable(bool e); // in osdep/usb2storage.c
+void USB2Enable(bool e); // in usb2storage.c
+void GX_SetScreenPos(int xshift, int yshift, float xzoom, float yzoom);
 
 void wiiGotoGui();
 void wiiPause();
@@ -80,6 +81,7 @@ char * wiiGetMetaYear();
 void wiiDVDNav(int cmd);
 void wiiUpdatePointer(int x, int y);
 bool wiiInDVDMenu();
+void wiiSetProperty(int cmd, float val);
 
 #ifdef __cplusplus
 }

@@ -45,13 +45,10 @@ static u16 currentWidth = 0;
 static u16 * currentPitch = NULL;
 static int drawMode = 0;
 
-static float m_screenleft_shift=0, m_screenright_shift=0;
-static float m_screentop_shift=0, m_screenbottom_shift=0;
-
-
 void StartDrawThread();
 void PauseAndGotoGUI();
 void ShutdownGui();
+void SetupSettings();
 void TakeScreenshot();
 int DrawMPlayerGui();
 int copyScreen = 0;
@@ -66,8 +63,9 @@ extern int screenheight;
 
 static u32 whichtex=0;
 
-//static bool component_fix=false;
-static int hor_pos=0, vert_pos=0, stretch=0;
+static int hor_pos=0, vert_pos=0;
+static float hor_zoom = 1.0f, vert_zoom = 1.0f;
+
 
 /*** 3D GX ***/
 
@@ -114,11 +112,12 @@ static camera cam = {
 	{ 0.0f, 0.0f, -0.5f }
 };
 
-void GX_SetScreenPos(int _hor_pos,int _vert_pos, int _stretch)
+void GX_SetScreenPos(int _hor_pos, int _vert_pos, float _hor_zoom, float _vert_zoom)
 {
 	hor_pos = _hor_pos;
 	vert_pos = _vert_pos;
-	stretch = _stretch;
+	hor_zoom = _hor_zoom;
+	vert_zoom = _vert_zoom;
 }
 
 void GX_SetCamPosZ(float f)
@@ -296,25 +295,6 @@ static void draw_scaling()
 	GX_SetViewport(0, 0, vmode->fbWidth, vmode->efbHeight, 0, 1);
 }
 
-//nunchuk control
-static s16 mysquare[12] ATTRIBUTE_ALIGN(32);
-void GX_UpdateSquare()
-{
-	memcpy(mysquare, square, sizeof(square));
-	
-	mysquare[0] -= m_screenleft_shift*100;
-	mysquare[9] -= m_screenleft_shift*100;
-	mysquare[3] -= m_screenright_shift*100;
-	mysquare[6] -= m_screenright_shift*100;
-	mysquare[1] -= m_screentop_shift*100;
-	mysquare[4] -= m_screentop_shift*100;
-	mysquare[7] -= m_screenbottom_shift*100;
-	mysquare[10] -= m_screenbottom_shift*100;
-	
-	GX_SetArray(GX_VA_POS, mysquare, 3 * sizeof(s16));
-//	set_osd_msg(124,1,5000,"fH:%u vH:%i sob:%i st:%i sb:%i",vmode->efbHeight,vmode->viHeight,square[7],mysquare[1],mysquare[7]);
-}
-
 void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 {
 	int wp,ww;
@@ -328,17 +308,17 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 	if(ww % 2) ww++;
 	ww=ww*16;
 
-	if(wp>ww)wp=ww;
-    w1 = wp >> 3 ;
-    w2 = wp >> 4 ;
+	if(wp>ww) wp=ww;
+	w1 = wp >> 3;
+	w2 = wp >> 4;
 
-    df1 = ((ww >> 3) - w1)*4;
-    df2 = ((ww >> 4) - w2)*4;
+	df1 = ((ww >> 3) - w1)*4;
+	df2 = ((ww >> 4) - w2)*4;
 
-    UVrowpitch = pitch[1]/2-w2;
-    Yrowpitch = pitch[0]/2-w1;
+	UVrowpitch = pitch[1]/2-w2;
+	Yrowpitch = pitch[0]/2-w1;
 
-  	vwidth = width;
+	vwidth = width;
 
 	Ywidth = ww;
 	UVwidth = ww>>1;
@@ -356,13 +336,11 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 	vo_dheight = vheight;
 
 	p01= pitch[0];
-    p02= pitch[0] * 2;
-    p03= pitch[0] * 3;
-    p11= pitch[1];
-    p12= pitch[1] * 2;
-    p13= pitch[1] * 3;
-    
-    GX_UpdateSquare();
+	p02= pitch[0] * 2;
+	p03= pitch[0] * 3;
+	p11= pitch[1];
+	p12= pitch[1] * 2;
+	p13= pitch[1] * 3;
 }
 
 void GX_UpdatePitch(int width,u16 *pitch)
@@ -385,7 +363,6 @@ void DrawMPlayer()
 {
 	// render textures
 	static u32 last_frame=-1;
-	static int cnt=0;
 	u32 frame=whichtex^1;
 	u64 t1;
 	if(!render_texture_time)t1=GetTimer();
@@ -458,47 +435,32 @@ void DrawMPlayer()
  ****************************************************************************/
 void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 {
-	int w,h;
+	int w,h,xscale,yscale,diffx,diffy;
 	Mtx44 p;
-	int diffx,diffy;
 
-	// tell GUI to shut down, MPlayer is ready to take over
-	ShutdownGui();
+	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
+	SetupSettings(); // pass settings from WiiMC into MPlayer
 
-	/*** Set new aspect ***/
-	square[0] = square[9] = -haspect;
-	square[3] = square[6] = haspect;
-	square[1] = square[4] = vaspect;
-	square[7] = square[10] = -vaspect;
+	// Set new aspect
+	xscale = haspect * hor_zoom;
+	yscale = vaspect * vert_zoom;
 
-	/*** Allocate 32byte aligned texture memory ***/
-
+	// Allocate 32byte aligned texture memory
 	w = (width / 16);
 	if(w % 2) w++;
 	w=w*16;
 	h = ((int)((height/8.0)))*8;
 
-	//center, to correct difference between pitch and real width
-	diffx=width-w;
-	diffx+=hor_pos;
+	// center, to correct difference between pitch and real width
+	diffx = width - w + hor_pos;
+	diffy = height - h + vert_pos;
 
-	diffy=height-h;
+	square[0] = square[9] = -xscale + diffx;
+	square[3] = square[6] = xscale + diffx;
+	square[1] = square[4] = yscale - diffy;
+	square[7] = square[10] = -yscale - diffy;
 
-	square[3] -= diffx;
-  	square[6] -= diffx;
-
-	square[7] += diffy;
-	square[10] += diffy;
-
-	square[1] -= vert_pos;
-	square[4] -= vert_pos;
-	square[7] -= vert_pos;
-	square[10] -= vert_pos;
-
-	square[0] += stretch/2;
-  	square[9] += stretch/2;
-	square[3] -= stretch/2;
-  	square[6] -= stretch/2;
+  	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
 
 	Ytexsize = (w*h);
 	UVtexsize = (w*h)/4;
@@ -529,7 +491,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	/*** Setup for first call to scaler ***/
 	oldvwidth = oldvheight = oldpitch = -1;
 
-
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	GX_SetCullMode(GX_CULL_NONE);
 	GX_CopyDisp(xfb[whichfb ^ 1], GX_TRUE);
@@ -538,7 +499,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 
 	GX_Flush();
-	GX_UpdateSquare();
 	render_texture_time=0;
 }
 

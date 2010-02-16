@@ -48,7 +48,7 @@ static int drawMode = 0;
 void StartDrawThread();
 void PauseAndGotoGUI();
 void ShutdownGui();
-void SetupSettings();
+void SetMPlayerSettings();
 void TakeScreenshot();
 int DrawMPlayerGui();
 int copyScreen = 0;
@@ -364,7 +364,7 @@ void DrawMPlayer()
 	// render textures
 	static u32 last_frame=-1;
 	u32 frame=whichtex^1;
-	u64 t1;
+	u64 t1 = 0;
 	if(!render_texture_time)t1=GetTimer();
 
 	GX_InvVtxCache();
@@ -439,7 +439,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	Mtx44 p;
 
 	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
-	SetupSettings(); // pass settings from WiiMC into MPlayer
+	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
 
 	// Set new aspect
 	xscale = haspect * hor_zoom;

@@ -15,6 +15,8 @@
 #include <sys/iosupport.h>
 
 #include "utils/FreeTypeGX.h"
+#include "utils/ehcmodule_elf.h"
+#include "utils/mload.h"
 #include "video.h"
 #include "menu.h"
 #include "libwiigui/gui.h"
@@ -25,7 +27,15 @@
 #include "wiimc.h"
 #include "settings.h"
 
+#include "mplayer/config.h"
 #include "mplayer/input/input.h"
+#include "mplayer/osdep/mem2_manager.h"
+#include "mplayer/osdep/gx_supp.h"
+
+extern "C" {
+extern void __exception_setreload(int t);
+extern void USB2Enable(bool e); // in usb2storage.c
+}
 
 int ScreenshotRequested = 0;
 int ConfigRequested = 0;
@@ -138,7 +148,7 @@ const devoptab_t gecko_out = {
 	NULL		// device statvfs_r
 };
 
-void USBGeckoOutput()
+static void USBGeckoOutput()
 {
 	gecko = usb_isgeckoalive(1);
 	if(!gecko) return;
@@ -146,6 +156,76 @@ void USBGeckoOutput()
 	
 	devoptab_list[STD_OUT] = &gecko_out;
 	devoptab_list[STD_ERR] = &gecko_out;
+}
+
+/****************************************************************************
+ * IOS 202
+ ***************************************************************************/
+
+static bool load_ehci_module()
+{
+	data_elf my_data_elf;
+	mload_elf((void *) ehcmodule_elf, &my_data_elf);
+
+	if(mload_run_thread(my_data_elf.start, my_data_elf.stack, my_data_elf.size_stack, my_data_elf.prio)<0)
+	{
+		usleep(1000);
+		if(mload_run_thread(my_data_elf.start, my_data_elf.stack, my_data_elf.size_stack, 0x47)<0)
+		{
+			printf("ehcmodule not loaded\n");
+			return false;
+		}else printf("ehcmodule loaded with priority: %i\n",0x47);
+	}else printf("ehcmodule loaded with priority: %i\n",my_data_elf.prio);
+
+	return true;
+}
+
+static bool FindIOS(u32 ios)
+{
+	s32 ret;
+	u32 n;
+
+	u64 *titles = NULL;
+	u32 num_titles=0;
+
+	ret = ES_GetNumTitles(&num_titles);
+	if (ret < 0)
+	{
+		printf("error ES_GetNumTitles\n");
+		return false;
+	}
+
+	if(num_titles<1) 
+	{
+		printf("error num_titles<1\n");
+		return false;
+	}
+
+	titles = (u64 *)memalign(32, num_titles * sizeof(u64) + 32);
+	if (!titles)
+	{
+		printf("error memalign\n");
+		return false;
+	}
+
+	ret = ES_GetTitles(titles, num_titles);
+	if (ret < 0)
+	{
+		free(titles);
+		printf("error ES_GetTitles\n");
+		return false;	
+	}
+		
+	for(n=0; n<num_titles; n++) {
+		if((titles[n] &  0xFFFFFFFF)==ios) 
+		{
+			free(titles); 
+			return true;
+		}
+	}
+	
+    free(titles); 
+	return false;
 }
 
 /****************************************************************************
@@ -187,6 +267,7 @@ mplayerthread (void *arg)
 		if(loadedFile[0] != 0)
 		{
 			controlledbygui = 0;
+			wiiSetCache(WiiSettings.cacheSize, WiiSettings.cachePrefill);
 			mplayer_loadfile(loadedFile);
 		}
 
@@ -198,6 +279,23 @@ mplayerthread (void *arg)
 	return NULL;
 }
 
+void InitMPlayer()
+{
+	sprintf(MPLAYER_DATADIR,"%s",appPath);
+	sprintf(MPLAYER_CONFDIR,"%s",appPath);
+	sprintf(MPLAYER_LIBDIR,"%s",appPath);
+	chdir(appPath);
+
+	setenv("HOME", MPLAYER_DATADIR, 1);
+	setenv("DVDCSS_CACHE", "off", 1);
+	setenv("DVDCSS_VERBOSE", "0", 1);
+	setenv("DVDREAD_VERBOSE", "0", 1);
+	setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
+
+	// only used for cache_mem
+	InitMem2Manager();
+}
+
 void LoadMPlayer()
 {
 	controlledbygui = 0;
@@ -207,8 +305,16 @@ void LoadMPlayer()
 		LWP_ResumeThread(mthread);
 }
 
+void ShutdownMPlayer()
+{
+	printf("shutting down mplayer\n");
+	controlledbygui=2;
+	while(!LWP_ThreadIsSuspended(mthread))
+		usleep(500);
+}
+
 extern "C" {
-void SetupSettings()
+void SetMPlayerSettings()
 {
 	GX_SetScreenPos(WiiSettings.videoXshift, WiiSettings.videoYshift, 
 					WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
@@ -224,14 +330,6 @@ void SetupSettings()
 }
 }
 
-void ShutdownMPlayer()
-{
-	printf("shutting down mplayer\n");
-	controlledbygui=2;
-	while(!LWP_ThreadIsSuspended(mthread))
-		usleep(500);
-}
-
 /****************************************************************************
  * Main
  ***************************************************************************/
@@ -242,7 +340,7 @@ main(int argc, char *argv[])
 	USBGeckoOutput(); // uncomment to enable USB gecko output
 	__exception_setreload(8);
 
-	//try to load ios202
+	// try to load ios202
 	if(IOS_GetVersion()!=202)
 	{
 		if(FindIOS(202))

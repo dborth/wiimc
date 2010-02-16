@@ -48,10 +48,6 @@
 #include "mp_fifo.h"
 #include "libavutil/avstring.h"
 
-#ifdef GEKKO
-#include "osdep/plat_gekko.h"
-#endif
-
 #define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
 
 extern int use_menu;
@@ -2709,7 +2705,7 @@ int run_command(MPContext * mpctx, mp_cmd_t * cmd)
 	    break;
 
 	case MP_CMD_LOADLIST:{
-		setwatchdogcounter(-1);
+		//setwatchdogcounter(-1);
 		play_tree_t *e = parse_playlist_file(cmd->args[0].v.s);
 		if (!e)
 		    mp_msg(MSGT_CPLAYER, MSGL_ERR,
@@ -2729,7 +2725,7 @@ int run_command(MPContext * mpctx, mp_cmd_t * cmd)
 			mpctx->eof = PT_NEXT_SRC;
 		    }
 		}
-		setwatchdogcounter(WATCH_TIMEOUT);
+		//setwatchdogcounter(WATCH_TIMEOUT);
 		brk_cmd = 1;
 	    }
 	    break;

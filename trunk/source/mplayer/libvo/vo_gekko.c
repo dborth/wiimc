@@ -37,7 +37,6 @@
 #include "osd.h"
 #include "sub.h"
 #include "osdep/keycodes.h"
-#include "osdep/log_console.h"
 #include "osdep/gx_supp.h"
 #include "fastmemcpy.h"
 
@@ -283,7 +282,6 @@ static void uninit(void)
 {
 	image_width = 0;
 	image_height = 0;
-	//reset_nunchuk_positions();
 }
 
 static void check_events(void)
@@ -292,9 +290,6 @@ static void check_events(void)
 
 static int preinit(const char *arg)
 {
-	log_console_enable_video(false);
-	//reset_nunchuk_positions();
-
 	vo_screenheight = screenheight;
 	vo_screenwidth = screenwidth;
 	vo_fs=1;

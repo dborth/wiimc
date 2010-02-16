@@ -116,7 +116,6 @@ char *heartbeat_cmd;
 #include "stream/cache2.h"
 
 #ifdef GEKKO
-#include "osdep/plat_gekko.h"
 #include "osdep/gx_supp.h"
 #include "../utils/di2.h"
 #include <ogc/system.h>
@@ -2709,7 +2708,7 @@ int pause_gui=0;
 void PauseAndGotoGUI()
 {
 	mp_cmd_t* cmd = NULL;
-	setwatchdogcounter(-1);
+	//setwatchdogcounter(-1);
 	if (mpctx->audio_out && mpctx->sh_audio)
 		mpctx->audio_out->pause(); // pause audio, keep data if possible
 
@@ -2778,7 +2777,7 @@ void PauseAndGotoGUI()
 	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
 		mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
 	(void) GetRelativeTime(); // ignore time that passed during pause
-	setwatchdogcounter(WATCH_TIMEOUT);
+	//setwatchdogcounter(WATCH_TIMEOUT);
 }
 
 static void low_cache_loop(void)
@@ -2787,7 +2786,7 @@ static void low_cache_loop(void)
 	int brk_cmd ;
     mp_cmd_t* cmd;
         
-    setwatchdogcounter(-1);
+    //setwatchdogcounter(-1);
     //this values can be improved
 	if(!strncmp(fileplaying,"usb:",4) || !strncmp(fileplaying,"ntfs_usb:",9) ||
 	   !strncmp(fileplaying,"ntfs_sd:",8) || !strncmp(fileplaying,"sd:",3)) percent=stream_cache_min_percent/6;
@@ -2867,7 +2866,7 @@ static void low_cache_loop(void)
     if (mpctx->video_out && mpctx->sh_video && vo_config_count)
         mpctx->video_out->control(VOCTRL_RESUME, NULL);	// resume video
     (void)GetRelativeTime();	// ignore time that passed during pause
-    setwatchdogcounter(WATCH_TIMEOUT);
+    //setwatchdogcounter(WATCH_TIMEOUT);
 #ifdef CONFIG_GUI
     if (use_gui)
         guiGetEvent(guiCEvent, (char *)guiSetPause);
@@ -2877,7 +2876,7 @@ static void low_cache_loop(void)
 void fast_pause()
 {
 	if(mpctx->osd_function==OSD_PAUSE) return;
-	setwatchdogcounter(-1);
+	//setwatchdogcounter(-1);
     if (mpctx->audio_out && mpctx->sh_audio)
 	mpctx->audio_out->pause();	// pause audio, keep data if possible
 
@@ -2894,14 +2893,14 @@ void fast_continue()
     if (mpctx->video_out && mpctx->sh_video && vo_config_count)
         mpctx->video_out->control(VOCTRL_RESUME, NULL);	// resume video
     (void)GetRelativeTime();	// ignore time that passed during pause
-    setwatchdogcounter(WATCH_TIMEOUT);
+    //setwatchdogcounter(WATCH_TIMEOUT);
 		
 }
 
 static void pause_loop(void)
 {
     mp_cmd_t* cmd=NULL;
-	setwatchdogcounter(-1);
+	//setwatchdogcounter(-1);
 
 #ifdef CONFIG_GUI
     if (use_gui)
@@ -2985,7 +2984,7 @@ static void pause_loop(void)
     if (mpctx->video_out && mpctx->sh_video && vo_config_count)
         mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
     (void)GetRelativeTime(); // ignore time that passed during pause
-    setwatchdogcounter(WATCH_TIMEOUT);
+    //setwatchdogcounter(WATCH_TIMEOUT);
 #ifdef CONFIG_GUI
     if (use_gui) {
         if (guiIntfStruct.Playing == guiSetStop)
@@ -3057,7 +3056,7 @@ static void edl_update(MPContext *mpctx)
 // return -1 if seek failed (non-seekable stream?), 0 otherwise
 static int seek(MPContext *mpctx, double amount, int style)
 {
-	setwatchdogcounter(-1);
+	//setwatchdogcounter(-1);
     current_module = "seek";
     if (demux_seek(mpctx->demuxer, amount, audio_delay, style) == 0)
 	return -1;
@@ -3098,7 +3097,7 @@ static int seek(MPContext *mpctx, double amount, int style)
     drop_frame_cnt = 0;
 
     current_module = NULL;
-    setwatchdogcounter(WATCH_TIMEOUT);
+    //setwatchdogcounter(WATCH_TIMEOUT);
     return 0;
 }
 static int error_playing;
@@ -3115,7 +3114,7 @@ char *argv[] = {
 	"-osdlevel","0",
 	_file
 }; 
-argc=argc = sizeof(argv) / sizeof(char *);
+argc = sizeof(argv) / sizeof(char *);
 char * mem_ptr;
 
 // movie info:
@@ -3133,8 +3132,6 @@ int gui_no_filename=0;
   InitTimer();
 
 #ifdef GEKKO
-  __exception_setreload(8);
-  //plat_init (&argc, &argv);
   fileplaying=(char*)malloc(sizeof(char)*MAXPATHLEN);
   load_restore_points();
 #endif
@@ -3529,7 +3526,7 @@ current_module = NULL;
 
 // ******************* Now, let's see the per-file stuff ********************
 play_next_file:
-setwatchdogcounter(-1);
+//setwatchdogcounter(-1);
   // init global sub numbers
   mpctx->global_sub_size = 0;
   { int i; for (i = 0; i < SUB_SOURCES; i++) mpctx->global_sub_indices[i] = -1; }
@@ -3780,7 +3777,7 @@ int vob_sub_auto = 1; //scip
 	   stream_cache_seek_min_percent=5;
     }
 
-  setwatchdogcounter(-1);
+  //setwatchdogcounter(-1);
   //end rodries
   #endif
   mpctx->stream=open_stream(filename,0,&mpctx->file_format);
@@ -4458,7 +4455,7 @@ mpctx->eof=0;
 while(!mpctx->eof){
     double aq_sleep_time=0;
 //init_while:
-setwatchdogcounter(WATCH_TIMEOUT);
+//setwatchdogcounter(WATCH_TIMEOUT);
 
 if(dvd_last_chapter>0) {
   int cur_chapter = demuxer_get_current_chapter(mpctx->demuxer);
@@ -4770,7 +4767,7 @@ if(rel_seek_secs || abs_seek_pos){
 #endif /* CONFIG_GUI */
 
 } // while(!mpctx->eof)
-setwatchdogcounter(-1);
+//setwatchdogcounter(-1);
 
 }
 goto_next_file:  // don't jump here after ao/vo/getch initialization!
@@ -5092,6 +5089,12 @@ bool wiiInDVDMenu()
 		return false;
 
 	return true;
+}
+
+void wiiSetCache(int size, int prefill)
+{
+	cache_size = size;
+	stream_cache_min_percent = prefill;
 }
 
 void wiiSetProperty(int command, float value)

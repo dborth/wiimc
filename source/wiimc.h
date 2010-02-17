@@ -50,6 +50,8 @@ extern int controlledbygui;
 int mplayer_loadfile(const char* _file); // in mplayer.c
 void DrawMPlayer(); // in gx_supp.c
 
+void wiiLoadRestorePoints(char * path);
+char * wiiSaveRestorePoints(char * path);
 void wiiGotoGui();
 void wiiPause();
 bool wiiIsPaused();
@@ -70,6 +72,7 @@ void wiiDVDNav(int cmd);
 void wiiUpdatePointer(int x, int y);
 bool wiiInDVDMenu();
 void wiiSetCache(int size, int prefill);
+void wiiSetAutoResume(int enable);
 void wiiSetProperty(int cmd, float val);
 
 #ifdef __cplusplus

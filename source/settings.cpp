@@ -525,6 +525,12 @@ SaveSettings (bool silent)
 		char * end = strrchr(appPath, '/');
 		end[0] = 0; // strip filename
 
+		// save restore points
+		sprintf(filepath,"%s/%s",appPath,"restore_points");
+		char * buff = wiiSaveRestorePoints(filepath);
+		SaveFile(buff, filepath, strlen(buff), SILENT);
+		free(buff);
+
 		if (!silent)
 			InfoPrompt("Settings saved");
 		return true;
@@ -669,7 +675,7 @@ bool LoadSettings()
 			break;
 		}
 	}
-
+	wiiLoadRestorePoints(appPath);
 	settingsLoaded = true; // attempted to load settings
 
 	if(settingsFound)

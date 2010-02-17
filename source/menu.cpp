@@ -172,6 +172,7 @@ static void ChangeMenu(int menu)
 	menuPrevious = menuCurrent;
 	menuCurrent = menu;
 }
+
 static void UndoChangeMenu()
 {
 	menuCurrent = menuPrevious;
@@ -187,6 +188,7 @@ static void ChangeMenu(void * ptr, int menu)
 		b->ResetState();
 	}
 }
+
 static void ChangeMenuVideos(void * ptr) { ChangeMenu(ptr, MENU_BROWSE_VIDEOS); }
 static void ChangeMenuMusic(void * ptr) { ChangeMenu(ptr, MENU_BROWSE_MUSIC); }
 static void ChangeMenuPictures(void * ptr) { ChangeMenu(ptr, MENU_BROWSE_PICTURES); }
@@ -852,10 +854,14 @@ static u64 slideprev, slidenow; // slideshow timer
 
 static void ChangePicture(int dir)
 {
+	if(changePicture == 1)
+		return; // cannot change picture until previous change has completed
+
 	int oldIndex = browser.selIndex;
 
 	while(1)
 	{
+		usleep(10);
 		browser.selIndex += dir;
 
 		if(browser.selIndex >= browser.numEntries)
@@ -871,7 +877,6 @@ static void ChangePicture(int dir)
 	}
 
 	sprintf(loadedFile, "%s%s", browser.dir, browserList[browser.selIndex].filename);
-	printf("now loading: %s\n", loadedFile);
 	changePicture = 1;
 }
 
@@ -885,58 +890,44 @@ static void ToggleSlideshow()
 
 static void PictureViewer()
 {
+	u8 * picBuffer = (u8 *)malloc(1024*1024*10);
+
+	if(!picBuffer)
+		return;
+
 	closePictureViewer = 0;
 	changePicture = 1;
 	slideshow = 0;
-	u8 * picBuffer = NULL;
 	GuiWindow * oldWindow = mainWindow;
 	GuiImageData * picture = NULL;
-	GuiImage pictureImg;
-	pictureImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	GuiImage * pictureImg = new GuiImage;
+	pictureImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 
 	HaltGui();
-	GuiWindow w(screenwidth, screenheight);
-	w.Append(&pictureImg);
-	w.Append(picturebar);
-	mainWindow = &w;
+	GuiWindow * w = new GuiWindow(screenwidth, screenheight);
+	w->Append(pictureImg);
+	w->Append(picturebar);
+	mainWindow = w;
 	ResumeGui();
 
 	while(closePictureViewer == 0)
 	{
 		if(changePicture)
 		{
-			printf("changing picture!\n");
-			printf("selected index: %d, length: %d\n", browser.selIndex, (int)browserList[browser.selIndex].length);
-			printf("mem1: %d, mem2: %d\n", SYS_GetArena1Size(), SYS_GetArena2Size());
-			picBuffer = (u8 *)malloc(browserList[browser.selIndex].length);
-			printf("done allocating!\n");
-			if(!picBuffer)
-			{
-				printf("could not allocate picture buffer!\n");
-				break;
-			}
-
-			printf("loading file: %s\n", loadedFile);
-			int size = LoadFile((char *)picBuffer, loadedFile, NOTSILENT);
+			int size = LoadFile((char *)picBuffer, loadedFile, slideshow);
 
 			if(!size)
-			{
-				printf("could not load file!\n");
 				break;
-			}
-			printf("done loading file\n");
+
 			HaltGui();
+
 			if(picture)	delete picture;
 			picture = new GuiImageData(picBuffer, size);
-			free(picBuffer);
 
-			if(picture->GetImage() == NULL)
-			{
-				printf("image data empty - could not create image!\n");
+			if(picture->GetImage() == NULL) // could not create image!
 				break;
-			}
 
-			pictureImg.SetImage(picture);
+			pictureImg->SetImage(picture);
 			ResumeGui();
 			changePicture = 0;
 		}
@@ -952,14 +943,15 @@ static void PictureViewer()
 		}
 		usleep(THREAD_SLEEP);
 	}
-	printf("done!\n");
+
 	HaltGui();
 	mainWindow = oldWindow;
 	ResumeGui();
-	if(picBuffer) free(picBuffer);
+	delete w;
+	delete pictureImg;
 	if(picture)	delete picture;
+	free(picBuffer);
 }
-
 
 /****************************************************************************
  * WindowCredits

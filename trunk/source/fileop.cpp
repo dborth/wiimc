@@ -1458,7 +1458,8 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 
 		while(!feof(file))
 		{
-			ShowProgress ("Loading...", offset, size);
+			if(!silent)
+				ShowProgress ("Loading...", offset, size);
 			readsize = fread (buffer + offset, 1, 4096, file); // read in next chunk
 
 			if(readsize <= 0)
@@ -1468,12 +1469,14 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 		}
 		fclose (file);
 		size = offset;
-		CancelAction();
+		if(!silent)
+			CancelAction();
 	}
 
 	// go back to checking if devices were inserted/removed
 	ResumeDeviceThread();
-	CancelAction();
+	if(!silent)
+		CancelAction();
 	return size;
 }
 

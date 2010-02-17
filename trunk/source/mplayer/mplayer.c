@@ -116,11 +116,14 @@ char *heartbeat_cmd;
 #include "stream/cache2.h"
 
 #ifdef GEKKO
+#include <stdlib.h>
+#include <ogc/system.h>
 #include "osdep/gx_supp.h"
 #include "../utils/di2.h"
-#include <ogc/system.h>
 void wiiPause();
 void SetStatus(const char * txt);
+void reinit_video();
+void reinit_audio();
 #endif
 
 //**************************************************************************//
@@ -299,106 +302,39 @@ float stream_cache_seek_min_percent=50.0;
 #else
 #define cache_fill_status 0
 #endif
+
 #ifdef GEKKO
-int cache_size=0; //get the cache size from settings.xml
-
-static bool InternetStream()
-{
-	if(!strncmp(filename,"http:",5)) return true;
-	return false;
-}
-
 static bool low_cache=false;
-static char* fileplaying=NULL;
-static bool restore_points_changed=false;
-int enable_restore_points=1;
+static char fileplaying[MAXPATHLEN];
+static int enable_restore_points=1;
 
 #define MAX_RESTORE_POINTS 10
 
 typedef struct st_restore_points restore_points_t;
-struct st_restore_points{
+struct st_restore_points {
     char filename[MAXPATHLEN];
     int position;
 };
 
 restore_points_t restore_points[MAX_RESTORE_POINTS];
 
-void load_restore_points()
+static void delete_restore_point(char *_filename)
 {
 	int i;
-	FILE *f;
-	char aux[120];
-	for(i=0;i<MAX_RESTORE_POINTS;i++)
-	{
-		restore_points[i].filename[0]='\0';
-		restore_points[i].position=0;
-	}
-	if(!enable_restore_points)return;
-	sprintf(aux,"%s/%s",MPLAYER_DATADIR,"restore_points");
-	f=fopen(aux,"r");
-	if(f==NULL) return;
-	setvbuf(f,NULL,_IONBF,0);
-	//printf("loading rp: %s------------------\n",aux);
-	for(i=0;i<MAX_RESTORE_POINTS && !feof(f) ;i++)
-	{
-		fscanf(f,"%[^\t]%i\n",restore_points[i].filename,&(restore_points[i].position));
-		//printf("%s - %i\n",restore_points[i].filename,restore_points[i].position);
-	}
-	fclose(f);
-}
-
-void save_restore_points_file()
-{ //save file
-	FILE *f;
-	int i;
-	char aux[1024];
-	static char *buff=NULL;
-	if(!enable_restore_points)return;
-	if(!restore_points_changed) return;
-	
-	if(buff==NULL)buff=malloc(sizeof(char)*MAX_RESTORE_POINTS*1024); //created only once
-	buff[0]='\0';
-	sprintf(aux,"%s/%s",MPLAYER_DATADIR,"restore_points");
-	//printf("saving rp: %s\n------------------\n",aux);
-	f=fopen(aux,"wb+");
-	if(f==NULL)
-	{
-		//printf("error save rp: %s\n",aux);
+	if(!enable_restore_points)
 		return;
-	}
-	//setvbuf(f,NULL,_IONBF,0);
-	//printf("saving rp: %s\n------------------\n",aux);
-	for(i=0;i<MAX_RESTORE_POINTS && restore_points[i].filename[0]!='\0';i++)
-	{
-		//fprintf(f,"%s\t%i\n",restore_points[i].filename,restore_points[i].position);
-		sprintf(aux,"%s\t%i\n",restore_points[i].filename,restore_points[i].position);
-		strcat(buff,aux);
-		//printf("%s\t%i\n",restore_points[i].filename,restore_points[i].position);		
-	}
-	//printf("writing\n");
-	
-	i=fwrite( buff, sizeof(char), strlen(buff), f );
-//printf("writing ok (%i) (%i)\n",i,strlen(buff));
-	//printf("---------------------\n");
-	fclose(f);
-//printf("close ok\n");
-}
 
-
-void delete_restore_point(char *_filename)
-{
-	int i;
-	if(!enable_restore_points)return;
 	for(i=0;i<MAX_RESTORE_POINTS;i++)
 	{
+		if(restore_points[i].filename[0] == '\0')
+			break;
+
 		if(!strcmp(_filename,restore_points[i].filename))
 		{
-			restore_points_changed=true;
 			for(;i<MAX_RESTORE_POINTS-1 && restore_points[i].filename[0]!='\0';i++)
 			{
 				strcpy(restore_points[i].filename,restore_points[i+1].filename);
 				restore_points[i].position=restore_points[i+1].position;
-
 			}
 			restore_points[MAX_RESTORE_POINTS-1].filename[0]='\0';
 			restore_points[MAX_RESTORE_POINTS-1].position=0;
@@ -406,24 +342,26 @@ void delete_restore_point(char *_filename)
 	}
 }
 
-void save_restore_point(char *_filename,int position)
+static void save_restore_point(char *_filename, int position)
 {
 	int i,j;
-	if(!enable_restore_points)return;
-	if(_filename==NULL)return;
-	
+
+	if(!enable_restore_points || strlen(_filename) == 0)
+		return;
+
 	if(!strncmp(_filename,"dvd://",6) || !strncmp(_filename,"dvdnav",6 )
-		|| !strncmp(_filename,"http:/",6))return;
-		
-	if(position <= 8 || !( mpctx->demuxer->seekable)) 
+		|| !strncmp(_filename,"http:/",6))
+		return;
+
+	if(position <= 8 || !( mpctx->demuxer->seekable))
 	{
 		delete_restore_point(_filename);
 		return;
 	}
-	//printf("save_restore_point: %s - %d\n",_filename,position);
-	for(j=0;j<MAX_RESTORE_POINTS ;j++)
+
+	for(j=0;j<MAX_RESTORE_POINTS;j++)
 	{
-		if(restore_points[j].filename[0]=='\0' || !strcmp(_filename,restore_points[j].filename))
+		if(restore_points[j].filename[0] == '\0' || !strcmp(_filename,restore_points[j].filename))
 		{
 			// check if position is similar (+- 5 secs)
 			if(restore_points[j].position>=position-5 && restore_points[j].position<=position+5) return;
@@ -432,36 +370,33 @@ void save_restore_point(char *_filename,int position)
 		}
 	}
 	if(j>1)
+	{
 		for(i=j-1;i>0;i--)
 		{
 			strcpy(restore_points[i].filename,restore_points[i-1].filename);
 			restore_points[i].position=restore_points[i-1].position;
 		}
+	}
 	restore_points[0].position=position;
 	strcpy(restore_points[0].filename,_filename);
-	restore_points_changed=true;
-	//save_restore_points_file();
-	//printf("end save_restore_point\n");
 }
 
-int get_restore_point(char *_filename)
+static int load_restore_point(char *_filename)
 {
 	int j;
-	if(!enable_restore_points)return 0;
-	//printf("search rp: %s - ",_filename);
+	if(!enable_restore_points)
+		return 0;
+
 	for(j=0;j<MAX_RESTORE_POINTS;j++)
 	{
+		if(restore_points[j].filename[0] == '\0')
+			break;
+		
 		if(!strcmp(_filename,restore_points[j].filename))
-		{
-			//printf("forund : %i\n",restore_points[j].position);
 			return restore_points[j].position;
-		}
 	}
-	//printf("not found\n");
 	return 0;
 }
-
-static char next_filename[1024];
 
 #endif
 
@@ -872,7 +807,8 @@ void uninit_player(unsigned int mask){
 
 void exit_player_with_rc(exit_reason_t how, int rc){
 #ifdef GEKKO
-  if(mpctx->sh_video && how==EXIT_QUIT) save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
+  if(mpctx->sh_video && how==EXIT_QUIT)
+	  save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
 #endif
 
   if (mpctx->user_muted && !mpctx->edl_muted) mixer_mute(&mpctx->mixer);
@@ -936,8 +872,6 @@ void exit_player_with_rc(exit_reason_t how, int rc){
     mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_EXIT=NONE\n");
   }
   mp_msg(MSGT_CPLAYER,MSGL_DBG2,"max framesize was %d bytes\n",max_framesize);
-
-//  	save_restore_points_file(); //todo ?
 }
 
 void exit_player(exit_reason_t how){
@@ -2716,10 +2650,9 @@ void PauseAndGotoGUI()
 		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
 
 	printf("PauseAndGotoGUI\n");
-#ifdef CONFIG_MENU
-	if (vf_menu)
-	vf_menu_pause_update(vf_menu);
-#endif
+
+	if(mpctx->sh_video)
+		save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
 
 	printf("sent control to gui\n");
 	if (controlledbygui == 0)
@@ -2788,9 +2721,8 @@ static void low_cache_loop(void)
         
     //setwatchdogcounter(-1);
     //this values can be improved
-	if(!strncmp(fileplaying,"usb:",4) || !strncmp(fileplaying,"ntfs_usb:",9) ||
-	   !strncmp(fileplaying,"ntfs_sd:",8) || !strncmp(fileplaying,"sd:",3)) percent=stream_cache_min_percent/6;
-	else if(!strncmp(fileplaying,"smb:",4)) percent=stream_cache_min_percent/2;
+	if(!strncmp(fileplaying,"usb",3) || !strncmp(fileplaying,"sd",2)) percent=stream_cache_min_percent/6;
+	else if(!strncmp(fileplaying,"smb",3)) percent=stream_cache_min_percent/2;
 	else percent=stream_cache_min_percent;
 		
    	//set_osd_msg(OSD_MSG_PAUSE, 1, 1000, "Buffering (%02d%%) cfs:%2.2f  p:%2.2f",(int)(cache_fill_status*100.0/percent),cache_fill_status,percent);
@@ -3130,13 +3062,6 @@ int gui_no_filename=0;
 
   srand(GetTimerMS());
   InitTimer();
-
-#ifdef GEKKO
-  fileplaying=(char*)malloc(sizeof(char)*MAXPATHLEN);
-  load_restore_points();
-#endif
-
-
   mp_msg_init();
 
   // Create the config context and register the options
@@ -3683,11 +3608,7 @@ if (edl_output_filename) {
 int vob_sub_auto = 1; //scip
 
     current_module="vobsub";
-    if(!InternetStream())
-    {
-		set_osd_msg(OSD_MSG_TEXT, 1, 80000, "Loading vobsub subtitles...");
-		force_osd();
-	}
+
     if (vobsub_name){
       vo_vobsub=vobsub_open(vobsub_name,spudec_ifo,1,&vo_spudec);
       if(vo_vobsub==NULL)
@@ -3753,7 +3674,7 @@ int vob_sub_auto = 1; //scip
   static float orig_stream_cache_min_percent=-1;
   static float orig_stream_cache_seek_min_percent=-1;
   static int orig_stream_cache_size=-1;
-  stream_cache_size=cache_size;
+
   if(orig_stream_cache_min_percent==-1 && orig_stream_cache_seek_min_percent==-1)
   {
     orig_stream_cache_min_percent=stream_cache_min_percent;
@@ -4375,7 +4296,7 @@ int hasvideo=true;
 	  }
   }
 //if (mpctx->sh_audio) mpctx->audio_out->reset();
-restore_seek=get_restore_point(fileplaying)-8;
+restore_seek=load_restore_point(fileplaying)-8;
 if(restore_seek<0)restore_seek=0;
 
 if(!mpctx->sh_video || !strncmp(filename,"dvd",3))first_frame=true;
@@ -4396,7 +4317,6 @@ seek_to_sec=restore_seek;
 int aux=mpctx->set_of_sub_size;
 mpctx->set_of_sub_size=0; // to not load subfonts
 mpctx->osd_function=OSD_PAUSE;
-printf("ssss\n");
 if(stream_cache_size>0 && hasvideo) // no refill cache on only audio streams  
 	refillcache(mpctx->stream,stream_cache_min_percent);
 mpctx->osd_function=OSD_PLAY;
@@ -4827,10 +4747,9 @@ if(ass_library)
 if (mpctx->sh_audio) mpctx->audio_out->reset();
 
 if(mpctx->eof == PT_NEXT_SRC || mpctx->eof == PT_STOP || error_playing)
-{
 	save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
-}else delete_restore_point(fileplaying);
-
+else
+	delete_restore_point(fileplaying);
 
 #endif
 printf("mplayer: exit\n");
@@ -4897,6 +4816,50 @@ return 1;
 }
 #endif /* DISABLE_MAIN */
 
+/****************************************************************************
+ * Wii hooks
+ ***************************************************************************/
+
+void wiiLoadRestorePoints(char * path)
+{
+	int i;
+	FILE *f;
+	char filepath[MAXPATHLEN];
+
+	for(i=0; i<MAX_RESTORE_POINTS; i++)
+	{
+		restore_points[i].filename[0]='\0';
+		restore_points[i].position=0;
+	}
+
+	sprintf(filepath,"%s/%s",path,"restore_points");
+	f=fopen(filepath,"r");
+
+	if(f==NULL)
+		return;
+
+	for(i=0; i<MAX_RESTORE_POINTS && !feof(f); i++)
+		fscanf(f,"%[^\t]%i\n",restore_points[i].filename,&(restore_points[i].position));
+	fclose(f);
+}
+
+char * wiiSaveRestorePoints(char * path)
+{
+	int i;
+	char tmppath[MAXPATHLEN];
+	char *buff = malloc(MAX_RESTORE_POINTS*1024 + 1024);
+	buff[0] = 0;
+
+	for(i=0; i<MAX_RESTORE_POINTS; i++)
+	{
+		if(restore_points[i].filename[0]=='\0')
+			break;
+
+		sprintf(tmppath,"%s\t%i\n",restore_points[i].filename,restore_points[i].position);
+		strcat(buff,tmppath);
+	}
+	return buff;
+}
 
 void wiiGotoGui()
 {
@@ -4910,11 +4873,11 @@ static int isPaused = 0;
 
 void wiiPause()
 {
-	isPaused ^= 1;
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
 	cmd->id=MP_CMD_PAUSE;
 	cmd->name=strdup("pause");
 	mp_input_queue_cmd(cmd);
+	isPaused ^= 1;
 }
 
 bool wiiIsPaused()
@@ -5093,8 +5056,13 @@ bool wiiInDVDMenu()
 
 void wiiSetCache(int size, int prefill)
 {
-	cache_size = size;
+	stream_cache_size = size;
 	stream_cache_min_percent = prefill;
+}
+
+void wiiSetAutoResume(int enable)
+{
+	enable_restore_points = enable;
 }
 
 void wiiSetProperty(int command, float value)

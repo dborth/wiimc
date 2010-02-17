@@ -318,6 +318,7 @@ void SetMPlayerSettings()
 {
 	GX_SetScreenPos(WiiSettings.videoXshift, WiiSettings.videoYshift, 
 					WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
+	wiiSetAutoResume(WiiSettings.autoResume);
 	wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
 	// Switch ratio doesn't work - disable for now. Could also be done with GX. Which is better?
 	//wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);

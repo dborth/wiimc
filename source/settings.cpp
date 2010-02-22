@@ -488,11 +488,19 @@ SaveSettings (bool silent)
 			sprintf(filepath, "usb2:");
 		else if(ChangeInterface(DEVICE_USB, 3, SILENT))
 			sprintf(filepath, "usb3:");
-		
+
 		// could not mount any devices
 		if(strlen(filepath) == 0)
+		{
+			if(!silent)
+			{
+				ErrorPrompt("Could not find a valid SD or USB device - one is required for normal operation.");
+				if(!InitMPlayer())
+					ExitRequested = 1;
+			}
 			return false;
-		
+		}
+
 		// ensure the necessary folders exists for saving
 		strcat(filepath, "/apps");
 		if (!diropen(filepath))
@@ -534,6 +542,15 @@ SaveSettings (bool silent)
 		if (!silent)
 			InfoPrompt("Settings saved");
 		return true;
+	}
+	else if(!silent)
+	{
+		char msg[512];
+		sprintf(msg, "Could not save settings to %s", filepath);
+		ErrorPrompt(msg);
+
+		if(!InitMPlayer())
+			ExitRequested = 1;
 	}
 	return false;
 }
@@ -675,13 +692,18 @@ bool LoadSettings()
 			break;
 		}
 	}
-	wiiLoadRestorePoints(appPath);
+
 	settingsLoaded = true; // attempted to load settings
 
 	if(settingsFound)
 		FixInvalidSettings();
 
 	ResetText();
-	InitMPlayer();
+
+	if(settingsFound)
+	{
+		wiiLoadRestorePoints(appPath);
+		InitMPlayer();
+	}
 	return settingsFound;
 }

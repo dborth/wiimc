@@ -279,8 +279,12 @@ mplayerthread (void *arg)
 	return NULL;
 }
 
-void InitMPlayer()
+bool InitMPlayer()
 {
+	static bool init = false;
+	if(init) return true;
+	if(appPath[0] == 0) return false;
+
 	sprintf(MPLAYER_DATADIR,"%s",appPath);
 	sprintf(MPLAYER_CONFDIR,"%s",appPath);
 	sprintf(MPLAYER_LIBDIR,"%s",appPath);
@@ -292,8 +296,8 @@ void InitMPlayer()
 	setenv("DVDREAD_VERBOSE", "0", 1);
 	setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
 
-	// only used for cache_mem
-	InitMem2Manager();
+	InitMem2Manager(); // only used for cache_mem
+	init = true;
 }
 
 void LoadMPlayer()

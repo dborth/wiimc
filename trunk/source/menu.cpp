@@ -3605,7 +3605,7 @@ void WiiMenu()
 
 	// Load settings
 	if(!LoadSettings())
-		SaveSettings(SILENT);
+		SaveSettings(NOTSILENT);
 
 	while(!guiShutdown)
 	{

@@ -29,7 +29,7 @@ enum {
 #define SILENT 1
 
 void ExitApp();
-void InitMPlayer();
+bool InitMPlayer();
 void LoadMPlayer();
 void ShutdownMPlayer();
 void FindNextAudioFile();

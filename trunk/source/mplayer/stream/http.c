@@ -46,6 +46,9 @@
 extern const mime_struct_t mime_type_table[];
 extern int stream_cache_size;
 extern int network_bandwidth;
+#ifdef HW_RVL
+extern int controlledbygui;
+#endif
 
 int http_seek(stream_t *stream, off_t pos);
 
@@ -76,6 +79,10 @@ static unsigned my_read(int fd, char *buffer, int len, streaming_ctrl_t *sc) {
     if (ret <= 0)
       break;
     pos += ret;
+#ifdef HW_RVL
+    if(controlledbygui == 2)
+	  break;
+#endif
   }
   return pos;
 }
@@ -146,6 +153,10 @@ static int scast_streaming_read(int fd, char *buffer, int size,
   scast_data_t *sd = (scast_data_t *)sc->data;
   unsigned block, ret;
   unsigned done = 0;
+#ifdef HW_RVL
+  if(controlledbygui == 2)
+	return 0;
+#endif
 
   // first read remaining data up to next metadata
   block = sd->metaint - sd->metapos;

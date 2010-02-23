@@ -1232,13 +1232,13 @@ static void MenuBrowse(int menu)
 						
 						int numItems = BrowserChangeFolder();
 
-						if(numItems == 0)
+						if(numItems <= 1)
 						{
 							browserPlaylist[0] = 0;
 							ErrorPrompt("Error loading playlist!");
 							continue;
 						}
-						else if(numItems == 1) // let's load this one file
+						else if(numItems == 2) // let's load this one file
 						{
 							sprintf(loadedFile, browserList[1].filename);
 							// go up one level
@@ -1300,6 +1300,24 @@ static void MenuBrowse(int menu)
 						//mainWindow->Remove(mplayerBtn);
 						
 						// add the audio bar
+						if(wiiGetTimeLength() <= 1) // this is a stream - hide some elements
+						{
+							audiobar->Remove(audiobarProgressBtn);
+							audiobar->Remove(audiobarProgressLeftImg);
+							audiobar->Remove(audiobarProgressMidImg);
+							audiobar->Remove(audiobarProgressRightImg);
+							audiobar->Remove(audiobarSkipBackwardBtn);
+							audiobar->Remove(audiobarSkipForwardBtn);
+						}
+						else
+						{
+							audiobar->Append(audiobarProgressBtn);
+							audiobar->Append(audiobarProgressLeftImg);
+							audiobar->Append(audiobarProgressMidImg);
+							audiobar->Append(audiobarProgressRightImg);
+							audiobar->Append(audiobarSkipBackwardBtn);
+							audiobar->Append(audiobarSkipForwardBtn);
+						}
 						mainWindow->Append(audiobar);
 						nowPlayingSet = false;
 					}
@@ -1630,7 +1648,7 @@ static void MenuSettingsCache()
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			sprintf (options.value[0], "%d", WiiSettings.cacheSize);
+			sprintf (options.value[0], "%d MB", WiiSettings.cacheSize/1024);
 			sprintf (options.value[1], "%d%%", WiiSettings.cachePrefill);
 
 			optionBrowser.TriggerUpdate();
@@ -3502,6 +3520,7 @@ void WiiMenu()
 	logoBtn->SetPosition(70, 30);
 	logoBtn->SetImage(&logoBtnImg);
 	logoBtn->SetTrigger(&trigA);
+	logoBtn->SetSelectable(false);
 	logoBtn->SetUpdateCallback(DisplayCredits);
 	mainWindow->Append(logoBtn);
 
@@ -3521,6 +3540,7 @@ void WiiMenu()
 	videosBtn->SetTooltip(&videosBtnTip);
 	videosBtn->SetImage(&videosBtnImg);
 	videosBtn->SetTrigger(&trigA);
+	videosBtn->SetSelectable(false);
 	videosBtn->SetEffectGrow();
 	videosBtn->SetUpdateCallback(ChangeMenuVideos);
 
@@ -3532,6 +3552,7 @@ void WiiMenu()
 	musicBtn->SetTooltip(&musicBtnTip);
 	musicBtn->SetImage(&musicBtnImg);
 	musicBtn->SetTrigger(&trigA);
+	musicBtn->SetSelectable(false);
 	musicBtn->SetEffectGrow();
 	musicBtn->SetUpdateCallback(ChangeMenuMusic);
 
@@ -3543,6 +3564,7 @@ void WiiMenu()
 	picturesBtn->SetTooltip(&picturesBtnTip);
 	picturesBtn->SetImage(&picturesBtnImg);
 	picturesBtn->SetTrigger(&trigA);
+	picturesBtn->SetSelectable(false);
 	picturesBtn->SetEffectGrow();
 	picturesBtn->SetUpdateCallback(ChangeMenuPictures);
 
@@ -3554,6 +3576,7 @@ void WiiMenu()
 	dvdBtn->SetTooltip(&dvdBtnTip);
 	dvdBtn->SetImage(&dvdBtnImg);
 	dvdBtn->SetTrigger(&trigA);
+	dvdBtn->SetSelectable(false);
 	dvdBtn->SetEffectGrow();
 	dvdBtn->SetUpdateCallback(ChangeMenuDVD);
 
@@ -3565,6 +3588,7 @@ void WiiMenu()
 	onlineBtn->SetTooltip(&onlineBtnTip);
 	onlineBtn->SetImage(&onlineBtnImg);
 	onlineBtn->SetTrigger(&trigA);
+	onlineBtn->SetSelectable(false);
 	onlineBtn->SetEffectGrow();
 	onlineBtn->SetUpdateCallback(ChangeMenuOnline);
 
@@ -3576,6 +3600,7 @@ void WiiMenu()
 	settingsBtn->SetImage(&settingsBtnImg);
 	settingsBtn->SetTooltip(&settingsBtnTip);
 	settingsBtn->SetTrigger(&trigA);
+	settingsBtn->SetSelectable(false);
 	settingsBtn->SetEffectGrow();
 	settingsBtn->SetUpdateCallback(ChangeMenuSettings);
 	
@@ -3587,6 +3612,7 @@ void WiiMenu()
 	exitBtn->SetImage(&exitBtnImg);
 	exitBtn->SetTooltip(&exitBtnTip);
 	exitBtn->SetTrigger(&trigA);
+	exitBtn->SetSelectable(false);
 	exitBtn->SetEffectGrow();
 	exitBtn->SetUpdateCallback(ExitButtonCallback);
 

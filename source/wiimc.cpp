@@ -60,6 +60,7 @@ void ExitApp()
 	SaveSettings(SILENT);
 
 	// shut down some threads
+	ShutdownMPlayer();
 	HaltDeviceThread();
 	CancelAction();
 	StopGX();
@@ -298,6 +299,7 @@ bool InitMPlayer()
 
 	InitMem2Manager(); // only used for cache_mem
 	init = true;
+	return true;
 }
 
 void LoadMPlayer()

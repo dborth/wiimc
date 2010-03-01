@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009
+ * Tantric 2009-2010
  *
  * fileop.cpp
  * File operations
@@ -139,6 +139,8 @@ static void *
 parsecallback (void *arg)
 {
 	while(ParseDirEntries()) usleep(THREAD_SLEEP);
+	// wait until we're ready to catch with LWP_JoinThread
+	while(!parseHalt) usleep(THREAD_SLEEP);
 	return NULL;
 }
 
@@ -861,13 +863,13 @@ static bool ParseDirEntries()
 
 		if(strcmp(filename,".") == 0)
 			continue;
-		
+
 		ext = strrchr(filename,'.');
-		
+
 		if(ext != NULL)
-		{		
+		{
 			ext++;
-			
+
 			// check if this is a playlist
 			j=0;
 			do
@@ -887,7 +889,7 @@ static bool ParseDirEntries()
 				continue; // file does not have an extension - skip it
 
 			j=0;
-			
+
 			if(menuCurrent == MENU_BROWSE_VIDEOS)
 			{
 				do
@@ -956,15 +958,14 @@ static bool ParseDirEntries()
 		}
 		else
 		{
-			parseHalt = true;
+			res = -1;
+			break;
 		}
 	}
 
 	// Sort the file list
 	if(i > 0)
-	{
 		qsort(browserList, browser.numEntries+i, sizeof(BROWSERENTRY), FileSortCallback);
-	}
 
 	// try to find and select the last loaded file
 	if(selectLoadedFile == 1 && res != 0 && loadedFile[0] != 0 && browser.dir[0] != 0)
@@ -1081,6 +1082,7 @@ ParseDirectory(bool waitParse)
 		browserList[0].icon = ICON_FOLDER;
 	}
 
+	HaltParseThread();
 	parseHalt = false;
 	ParseDirEntries(); // index first 20 entries
 	ResumeParseThread(); // index remaining entries
@@ -1088,13 +1090,13 @@ ParseDirectory(bool waitParse)
 	if(waitParse) // wait for complete parsing
 	{
 		ShowAction("Loading...");
-
+		while(dirIter != NULL) usleep(THREAD_SLEEP);
+		parseHalt = true;
 		if(parsethread != LWP_THREAD_NULL)
 		{
 			LWP_JoinThread(parsethread, NULL);
 			parsethread = LWP_THREAD_NULL;
 		}
-
 		CancelAction();
 	}
 
@@ -1417,6 +1419,13 @@ bool EnqueueFolder(char * path)
 	return true;
 }
 
+static bool cancelFileLoad = false;
+
+void CancelFileOp()
+{
+	cancelFileLoad = true;
+}
+
 /****************************************************************************
  * LoadFile
  * 
@@ -1466,6 +1475,14 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 				break; // reading finished (or failed)
 
 			offset += readsize;
+
+			if(cancelFileLoad)
+			{
+				cancelFileLoad = false;
+				retry = 0;
+				offset = 0;
+				break;
+			}
 		}
 		fclose (file);
 		size = offset;

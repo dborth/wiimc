@@ -40,6 +40,8 @@
 #include <wchar.h>
 #include <math.h>
 #include <wiiuse/wpad.h>
+#include <ogc/lwp_watchdog.h>
+
 #include "../utils/FreeTypeGX.h"
 #include "../video.h"
 #include "../filelist.h"
@@ -126,6 +128,7 @@ typedef struct _paddata {
 #define EFFECT_FADE					64
 #define EFFECT_SCALE				128
 #define EFFECT_COLOR_TRANSITION		256
+#define EFFECT_ROTATE				512
 
 //!Sound conversion and playback. A wrapper for other sound libraries - ASND, libmad, ltremor, etc
 class GuiSound
@@ -320,6 +323,10 @@ class GuiElement
 		//!Sets the element's scale
 		//!\param s scale (1 is 100%)
 		void SetScale(float s);
+		//!Sets the element's scale, using the provided max width/height
+		//!\param w Maximum width
+		//!\param h Maximum height
+		void SetScale(int w, int h);
 		//!Gets the element's current scale
 		//!Considers scale, scaleDyn, and the parent element's GetScale() value
 		float GetScale();

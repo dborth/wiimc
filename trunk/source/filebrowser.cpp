@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009
+ * Tantric 2009-2010
  *
  * filebrowser.cpp
  *
@@ -259,7 +259,7 @@ int FileSortCallback(const void *f1, const void *f2)
  *
  * Update current directory and set new entry list if directory has changed
  ***************************************************************************/
-int BrowserChangeFolder(bool updateDir)
+int BrowserChangeFolder(bool updateDir, bool waitParse)
 {
 	if(updateDir && !UpdateDirName())
 		return -1;
@@ -279,7 +279,7 @@ int BrowserChangeFolder(bool updateDir)
 	else
 	{
 		if(browser.dir[0] != 0)
-			ParseDirectory();
+			ParseDirectory(waitParse);
 
 		if(browser.numEntries == 0)
 		{

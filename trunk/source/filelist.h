@@ -1,6 +1,6 @@
 /****************************************************************************
  * libwiigui Template
- * Tantric 2009
+ * Tantric 2009-2010
  *
  * imagelist.h
  * Contains a list of all of the files in the images, fonts, sounds folders
@@ -152,21 +152,6 @@ extern const u32	nav_playlist_size;
 
 extern const u8		playlist_add_png[];
 extern const u32	playlist_add_size;
-
-extern const u8		browse_small_png[];
-extern const u32	browse_small_png_size;
-extern const u8		dvd_small_png[];
-extern const u32	dvd_small_png_size;
-extern const u8		radio_small_png[];
-extern const u32	radio_small_png_size;
-extern const u8		options_small_png[];
-extern const u32	options_small_png_size;
-extern const u8		sd_small_png[];
-extern const u32	sd_small_png_size;
-extern const u8		usb_small_png[];
-extern const u32	usb_small_png_size;
-extern const u8		smb_small_png[];
-extern const u32	smb_small_png_size;
 
 extern const u8		bg_options_png[];
 extern const u32	bg_options_png_size;

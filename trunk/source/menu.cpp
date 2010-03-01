@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009
+ * Tantric 2009-2010
  *
  * menu.cpp
  * Menu flow routines - handles all menu logic
@@ -29,6 +29,7 @@
 #define THREAD_SLEEP 100
 
 static GuiImageData * pointer[4] = { NULL, NULL, NULL, NULL };
+static GuiImageData throbber(throbber_png);
 static GuiImage * videoImg = NULL;
 static GuiButton * videosBtn = NULL;
 static GuiButton * musicBtn = NULL;
@@ -39,7 +40,6 @@ static GuiButton * settingsBtn = NULL;
 static GuiButton * exitBtn = NULL;
 
 static GuiButton * logoBtn = NULL;
-static GuiButton * mplayerBtn = NULL;
 static GuiWindow * mainWindow = NULL;
 static GuiText * settingText = NULL;
 static GuiText * settingText2 = NULL;
@@ -230,8 +230,7 @@ AppUpdate (void *arg)
  *
  * Primary GUI thread to allow GUI to respond to state changes, and draws GUI
  ***************************************************************************/
-static void *
-UpdateGui (void *arg)
+static void *UpdateGui (void *arg)
 {
 	int i;
 
@@ -521,7 +520,6 @@ ProgressWindow(char *title, char *msg)
 	progressbarImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	progressbarImg.SetPosition(25, 40);
 
-	GuiImageData throbber(throbber_png);
 	GuiImage throbberImg(&throbber);
 	throbberImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	throbberImg.SetPosition(0, 40);
@@ -845,114 +843,6 @@ SettingWindow(const char * title, GuiWindow * w)
 	return save;
 }
 
-// Picture Viewer
-#define MAX_PICTURE_SIZE (1024*1024*10) // 10 MB
-static int changePicture = 0; // load a new picture
-static int closePictureViewer = 0; // is picture viewer open
-static int slideshow = 0; // slideshow mode
-static u64 slideprev, slidenow; // slideshow timer
-
-static void ChangePicture(int dir)
-{
-	if(changePicture == 1)
-		return; // cannot change picture until previous change has completed
-
-	int oldIndex = browser.selIndex;
-
-	while(1)
-	{
-		usleep(10);
-		browser.selIndex += dir;
-
-		if(browser.selIndex >= browser.numEntries)
-			browser.selIndex = 1;
-		else if(browser.selIndex < 1)
-			browser.selIndex = browser.numEntries-1;
-
-		if(browser.selIndex == oldIndex)
-			return; // we have wrapped around to the same image - do nothing
-		
-		if(browserList[browser.selIndex].length <= MAX_PICTURE_SIZE)
-			break; // found a picture we can display
-	}
-
-	sprintf(loadedFile, "%s%s", browser.dir, browserList[browser.selIndex].filename);
-	changePicture = 1;
-}
-
-static void ToggleSlideshow()
-{
-	if(slideshow == 0)
-		slideprev = gettime(); // setup timer
-
-	slideshow ^= 1;
-}
-
-static void PictureViewer()
-{
-	u8 * picBuffer = (u8 *)malloc(1024*1024*10);
-
-	if(!picBuffer)
-		return;
-
-	closePictureViewer = 0;
-	changePicture = 1;
-	slideshow = 0;
-	GuiWindow * oldWindow = mainWindow;
-	GuiImageData * picture = NULL;
-	GuiImage * pictureImg = new GuiImage;
-	pictureImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-
-	HaltGui();
-	GuiWindow * w = new GuiWindow(screenwidth, screenheight);
-	w->Append(pictureImg);
-	w->Append(picturebar);
-	mainWindow = w;
-	ResumeGui();
-
-	while(closePictureViewer == 0)
-	{
-		if(changePicture)
-		{
-			int size = LoadFile((char *)picBuffer, loadedFile, slideshow);
-
-			if(!size)
-				break;
-
-			HaltGui();
-
-			if(picture)	delete picture;
-			picture = new GuiImageData(picBuffer, size);
-
-			if(picture->GetImage() == NULL) // could not create image!
-				break;
-
-			pictureImg->SetImage(picture);
-			ResumeGui();
-			changePicture = 0;
-		}
-
-		if(slideshow) // slideshow mode - change every 3 seconds
-		{
-			slidenow = gettime();
-			if(diff_usec(slideprev, slidenow) > 1000*1000*3)
-			{
-				ChangePicture(1); // change to next picture
-				slideprev = slidenow; // reset timer
-			}
-		}
-		usleep(THREAD_SLEEP);
-	}
-
-	HaltGui();
-	mainWindow = oldWindow;
-	ResumeGui();
-	delete w;
-	delete pictureImg;
-	if(picture)	delete picture;
-	free(picBuffer);
-}
-
 /****************************************************************************
  * WindowCredits
  * Display credits, legal copyright and licence
@@ -1088,15 +978,13 @@ static void MenuBrowse(int menu)
 	ShutoffRumble();
 	browserPlaylist[0] = 0;
 	inPlaylist = false;
-	
+
 	switch(menu)
 	{
 		case MENU_BROWSE_VIDEOS:
 			browser.dir = &WiiSettings.videosFolder[0]; break;
 		case MENU_BROWSE_MUSIC:
 			browser.dir = &WiiSettings.musicFolder[0]; break;
-		case MENU_BROWSE_PICTURES:
-			browser.dir = &WiiSettings.picturesFolder[0]; break;
 		case MENU_BROWSE_ONLINEMEDIA:
 			browser.dir = &WiiSettings.onlinemediaFolder[0]; break;
 		default:
@@ -1106,9 +994,9 @@ static void MenuBrowse(int menu)
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
-	GuiFileBrowser fileBrowser(530, 240);
+	GuiFileBrowser fileBrowser(552, 240);
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	fileBrowser.SetPosition(58, 100);
+	fileBrowser.SetPosition(44, 100);
 
 	GuiTooltip playlistBtnTip("Playlist");
 	GuiImageData playlistImg(nav_playlist_png);
@@ -1261,22 +1149,9 @@ static void MenuBrowse(int menu)
 							sprintf(loadedFile, "%s%s", browser.dir, browserList[browser.selIndex].filename);
 					}
 
-					if(menuCurrent == MENU_BROWSE_PICTURES)
-					{
-						// load picture viewer
-						if(browserList[browser.selIndex].length > MAX_PICTURE_SIZE)
-							ErrorPrompt("Picture size is too large!");
-						else
-							PictureViewer();
-						continue;
-					}
-
 					ShutdownMPlayer();
-
 					ShowAction("Loading...");
-
-					// signal MPlayer to load
-					LoadMPlayer();
+					LoadMPlayer(); // signal MPlayer to load
 
 					// wait until MPlayer is ready to take control (or return control)
 					while(!guiShutdown && controlledbygui != 1)
@@ -1295,10 +1170,9 @@ static void MenuBrowse(int menu)
 						ResumeDeviceThread();
 
 						// we loaded an audio file - if we already had a video
-						// loaded, we should remove the bg and MPlayer button
+						// loaded, we should remove the bg
 						mainWindow->Remove(videoImg);
-						//mainWindow->Remove(mplayerBtn);
-						
+
 						// add the audio bar
 						if(wiiGetTimeLength() <= 1) // this is a stream - hide some elements
 						{
@@ -1345,7 +1219,7 @@ static void MenuBrowse(int menu)
 				playlistBtnTxt.SetText(txt);
 			}
 		}
-		
+
 		if(playlistBtn.GetState() == STATE_CLICKED)
 		{
 			playlistBtn.ResetState();
@@ -1366,9 +1240,482 @@ done:
 	HaltParseThread(); // halt parsing
 	HaltGui();
 	mainWindow->Remove(&fileBrowser);
-	
+
 	if(menu == MENU_BROWSE_MUSIC) // remove playlist functionality
 		mainWindow->Remove(&playlistBtn);
+}
+
+// Picture Viewer
+#define MAX_PICTURE_SIZE (1024*1024*10) // 10 MB
+static int loadPictures = 0; // reload pictures
+
+static lwp_t picturethread = LWP_THREAD_NULL;
+static bool pictureThreadHalt = true;
+
+#define NUM_PICTURES 		7 // 1 image with a buffer of +/- 3 on each side
+#define PIC_WIDTH			240
+#define PIC_HEIGHT			180
+
+static GuiImage *pictureImg = NULL;
+static GuiButton *pictureBtn = NULL;
+static GuiImageData *picture[NUM_PICTURES] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+static int pictureIndex[NUM_PICTURES] = {-1, -1, -1, -1, -1, -1, -1};
+static int pictureIndexLoaded = -1;
+static int pictureIndexLoading = -1;
+static int pictureLoaded = -1;
+
+static int closePictureViewer = 0; // is picture viewer open
+static int slideshow = 0; // slideshow mode
+static u64 slideprev, slidenow; // slideshow timer
+
+static int FoundPicture(int p)
+{
+	if(p <= 0)
+		return -1;
+
+	for(int i=0; i < NUM_PICTURES; i++)
+		if(pictureIndex[i] == p)
+			return i;
+	return -1;
+}
+
+static void SetPicture(int picIndex, int browserIndex)
+{
+	if(picIndex >= 0)
+	{
+		pictureLoaded = picIndex;
+		pictureIndexLoaded = browserIndex;
+		HaltGui();
+		pictureImg->SetImage(picture[picIndex]);
+		pictureImg->SetScale(PIC_WIDTH, PIC_HEIGHT);
+		pictureImg->SetEffect(EFFECT_ROTATE, 0);
+		pictureBtn->SetState(STATE_DEFAULT);
+		ResumeGui();
+	}
+	else
+	{
+		if(browserList[browser.selIndex].isdir)
+		{
+			if(pictureImg->GetImage() != NULL)
+			{
+				HaltGui();
+				pictureImg->SetImage(NULL);
+				pictureImg->SetEffect(EFFECT_ROTATE, 0);
+				ResumeGui();
+			}
+		}
+		else if(pictureLoaded >= 0)
+		{
+			HaltGui();
+			pictureImg->SetScale(1);
+			pictureImg->SetImage(&throbber);
+			pictureImg->SetEffect(EFFECT_ROTATE, 100);
+			ResumeGui();
+		}
+		pictureBtn->SetState(STATE_DISABLED);
+		pictureLoaded = -1;
+		pictureIndexLoaded = -1;
+	}
+}
+
+static void *picturecallback (void *arg)
+{
+	int selIndex;
+	int i,next;
+	char filepath[1024];
+	u8 * picBuffer = (u8 *)memalign(32, MAX_PICTURE_SIZE);
+
+	if(!picBuffer)
+	{
+		while(!pictureThreadHalt) usleep(THREAD_SLEEP);
+		return NULL;
+	}
+
+	pictureLoaded = -1;
+	pictureIndexLoaded = -1;
+	pictureIndexLoading = -1;
+
+	while(1)
+	{
+done:
+		if(pictureThreadHalt)
+			break;
+
+		if(loadPictures)
+		{
+			loadPictures = 0;
+			selIndex = browser.selIndex;
+
+			// free any unused picture data
+			for(i=0; i < NUM_PICTURES; i++)
+			{
+				if(pictureIndex[i] == -1 || i == pictureLoaded)
+					continue;
+
+				if(pictureIndex[i] < browser.selIndex-3 || pictureIndex[i] > browser.selIndex+3)
+				{
+					if(picture[i]) delete picture[i];
+					picture[i] = NULL;
+					pictureIndex[i] = -1;
+				}
+			}
+
+			// load missing pictures - starting with selected index
+			if(selIndex > 0 
+				&& !browserList[selIndex].isdir
+				&& pictureIndexLoaded != selIndex
+				&& browserList[selIndex].length < MAX_PICTURE_SIZE)
+			{
+				int found = FoundPicture(selIndex);
+				if(found < 0)
+				{
+					sprintf(filepath, "%s%s", browser.dir, browserList[selIndex].filename);
+					pictureIndexLoading = selIndex;
+					int size = LoadFile((char *)picBuffer, filepath, SILENT);
+
+					if(size > 0)
+					{
+						// find first empty slot
+						for(i=0; i < NUM_PICTURES; i++)
+							if(pictureIndex[i] == -1)
+								break;
+						
+						picture[i] = new GuiImageData(picBuffer, size);
+						pictureIndex[i] = selIndex;
+						found = i;
+					}
+				}
+
+				pictureIndexLoading = -1;
+
+				if(found >= 0)
+				{
+					SetPicture(found, selIndex);
+				}
+				else
+				{
+					SetPicture(-1, -1);
+					goto done;
+				}
+			}
+
+			// fill up image buffer slots
+			next = selIndex-3;
+
+			if(next <= 0)
+				next = 1;
+
+			for(i=0; i < NUM_PICTURES; i++)
+			{
+				if(pictureIndex[i] > 0)
+					continue;
+
+				while(next < browser.numEntries && 
+					(browserList[next].isdir
+					|| next == selIndex 
+					|| browserList[next].length > MAX_PICTURE_SIZE
+					|| FoundPicture(next) >= 0))
+					next++;
+
+				if(next >= browser.numEntries || next > selIndex+3)
+					break;
+
+				sprintf(filepath, "%s%s", browser.dir, browserList[next].filename);
+				pictureIndexLoading = next;
+				int size = LoadFile((char *)picBuffer, filepath, SILENT);
+
+				if(size == 0)
+					goto done;
+
+				picture[i] = new GuiImageData(picBuffer, size);
+				pictureIndex[i] = next;
+				pictureIndexLoading = -1;
+				if(browser.selIndex == next)
+					SetPicture(i, next);
+				next++;
+			}
+		}
+		usleep(THREAD_SLEEP);
+	}
+
+	// reset everything
+	HaltGui();
+
+	for(i=0; i < NUM_PICTURES; i++)
+	{
+		if(picture[i]) delete picture[i];
+		picture[i] = NULL;
+		pictureIndex[i] = -1;
+	}
+	ResumeGui();
+	free(picBuffer);
+	return NULL;
+}
+
+/****************************************************************************
+ * ResumePictureThread
+ *
+ * Signals the picture thread to start, and resumes the thread.
+ ***************************************************************************/
+static void
+ResumePictureThread()
+{
+	pictureThreadHalt = false;
+	if(picturethread == LWP_THREAD_NULL)
+		LWP_CreateThread (&picturethread, picturecallback, NULL, NULL, 0, 66);
+}
+
+/****************************************************************************
+ * HaltPictureThread
+ *
+ * Signals the picture thread to stop.
+ ***************************************************************************/
+static void
+HaltPictureThread()
+{
+	pictureThreadHalt = true;
+	CancelFileOp();
+
+	if(picturethread != LWP_THREAD_NULL)
+	{
+		// wait for thread to finish
+		LWP_JoinThread(picturethread, NULL);
+		picturethread = LWP_THREAD_NULL;
+	}
+}
+
+static void ChangePicture(int dir)
+{
+	int newIndex = browser.selIndex;
+
+	while(1)
+	{
+		usleep(THREAD_SLEEP);
+		newIndex += dir;
+
+		if(newIndex >= browser.numEntries)
+			newIndex = 1;
+		else if(newIndex < 1)
+			newIndex = browser.numEntries-1;
+
+		if(browserList[newIndex].isdir)
+			continue;
+
+		if(newIndex == browser.selIndex)
+			return; // we have wrapped around to the same image - do nothing
+
+		if(browserList[newIndex].length <= MAX_PICTURE_SIZE)
+			break; // found a picture we can display
+	}
+	browser.selIndex = newIndex;
+	loadPictures = 1;
+}
+
+static void ToggleSlideshow()
+{
+	if(slideshow == 0)
+		slideprev = gettime(); // setup timer
+
+	slideshow ^= 1;
+}
+
+static void PictureViewer()
+{
+	int currentIndex = -1;
+	closePictureViewer = 0;
+	slideshow = 0;
+	GuiWindow * oldWindow = mainWindow;
+	GuiImage * pictureFullImg = new GuiImage;
+	pictureFullImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+
+	HaltGui();
+	GuiWindow * w = new GuiWindow(screenwidth, screenheight);
+	w->Append(pictureFullImg);
+	w->Append(picturebar);
+	mainWindow = w;
+	ResumeGui();
+
+	while(closePictureViewer == 0)
+	{
+		if(browser.selIndex != currentIndex)
+		{
+			currentIndex = browser.selIndex;
+			// search through already loaded pictures for this picture
+			int found = FoundPicture(browser.selIndex);
+			if(found >= 0)
+			{
+				HaltGui();
+				pictureFullImg->SetImage(picture[found]);
+				ResumeGui();
+			}
+			else if(!browserList[browser.selIndex].isdir
+				&& pictureIndexLoading != browser.selIndex)
+				CancelFileOp();
+
+			loadPictures = 1; // trigger picture thread
+
+			if(!slideshow)
+			{
+				ShowAction("Loading...");
+				while(FoundPicture(browser.selIndex) < 0) // wait for picture to load
+					usleep(THREAD_SLEEP);
+				CancelAction();
+			}
+		}
+
+		if(slideshow) // slideshow mode - change every 3 seconds
+		{
+			slidenow = gettime();
+			if(diff_usec(slideprev, slidenow) > 1000*1000*3)
+			{
+				ChangePicture(1); // change to next picture
+				slideprev = slidenow; // reset timer
+			}
+		}
+		usleep(THREAD_SLEEP);
+	}
+
+	HaltGui();
+	mainWindow = oldWindow;
+	ResumeGui();
+	delete w;
+	delete pictureFullImg;
+}
+
+static void MenuBrowsePictures()
+{
+	int currentIndex = -1;
+	ShutoffRumble();
+	browser.dir = &WiiSettings.picturesFolder[0];
+
+	GuiTrigger trigA;
+	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
+	GuiFileBrowser fileBrowser(300, 240);
+	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	fileBrowser.SetPosition(44, 100);
+
+	HaltGui();
+	mainWindow->Append(&fileBrowser);
+	ResumeGui();
+
+	// populate initial directory listing
+	while(BrowserChangeFolder(false) <= 0)
+	{
+		int choice = WindowPrompt(
+		"Error",
+		"Unable to display files on selected load device.",
+		"Retry",
+		"Cancel");
+
+		if(choice == 0)
+		{
+			UndoChangeMenu();
+			goto done;
+		}
+	}
+
+	SetPicture(-1, -1);
+	HaltGui();
+	mainWindow->Append(pictureBtn);
+	ResumeGui();
+
+	// start picture thread
+	ResumePictureThread();
+
+	while(menuCurrent == MENU_BROWSE_PICTURES && !guiShutdown)
+	{
+		usleep(THREAD_SLEEP);
+
+		// devices were inserted or removed - update the filebrowser!
+		if(devicesChanged)
+		{
+			devicesChanged = false;
+
+			if(BrowserChangeFolder(false))
+			{
+				fileBrowser.ResetState();
+				fileBrowser.fileList[0]->SetState(STATE_SELECTED);
+				fileBrowser.TriggerUpdate();
+			}
+			else
+			{
+				goto done;
+			}
+		}
+
+		// update displayed picture
+		if(browser.selIndex != currentIndex)
+		{
+			currentIndex = browser.selIndex;
+
+			if(browserList[browser.selIndex].isdir)
+			{
+				SetPicture(-1, -1); // set picture to blank
+			}
+			else
+			{
+				// search through already loaded pictures for this picture
+				int found = FoundPicture(browser.selIndex);
+				if(found >= 0)
+				{
+					SetPicture(found, browser.selIndex);
+				}
+				else
+				{
+					SetPicture(-1, -1); // set picture to blank
+					if(!browserList[browser.selIndex].isdir && 
+						pictureIndexLoading != browser.selIndex)
+					{
+						CancelFileOp();
+					}
+				}
+				loadPictures = 1; // trigger picture thread
+			}
+		}
+
+		if(pictureBtn->GetState() == STATE_CLICKED)
+		{
+			pictureBtn->ResetState();
+			PictureViewer();
+		}
+
+		// update file browser based on arrow buttons
+		for(int i=0; i<FILE_PAGESIZE; i++)
+		{
+			if(fileBrowser.fileList[i]->GetState() == STATE_CLICKED)
+			{
+				fileBrowser.fileList[i]->ResetState();
+
+				if(browserList[browser.selIndex].isdir)
+				{
+					HaltPictureThread();
+
+					if(BrowserChangeFolder())
+					{
+						fileBrowser.ResetState();
+						fileBrowser.fileList[0]->SetState(STATE_SELECTED);
+						fileBrowser.TriggerUpdate();
+						ResumePictureThread();
+					}
+					else
+					{
+						goto done;
+					}
+				}
+				else
+				{
+					PictureViewer();
+				}
+			}
+		}
+	}
+done:
+	HaltPictureThread(); // halt picture thread
+	HaltParseThread(); // halt parsing
+	HaltGui();
+	mainWindow->Remove(pictureBtn);
+	mainWindow->Remove(&fileBrowser);
 }
 
 static void MenuDVD()
@@ -1394,7 +1741,7 @@ static void MenuDVD()
 	UndoChangeMenu(); // go back to last menu
 	
 	if(!guiShutdown) // load failed
-		ErrorPrompt("Invalid DVD!");
+		ErrorPrompt("DVD not inserted or invalid DVD!");
 
 	HaltGui();
 }
@@ -2834,16 +3181,6 @@ static void MenuSettings()
 	mainWindow->Remove(&titleTxt);
 }
 
-static void BackToMplayerCallback(void * ptr)
-{
-	GuiButton * b = (GuiButton *)ptr;
-	if(b->GetState() == STATE_CLICKED)
-	{
-		b->ResetState();
-		LoadMPlayer(); // signal MPlayer to resume
-	}
-}
-
 static void VideoProgressCallback(void * ptr)
 {
 	GuiButton * b = (GuiButton *)ptr;
@@ -3492,22 +3829,12 @@ void WiiMenu()
 	GuiImage bgRoundedImg(&bgRounded);
 	bgRoundedImg.SetPosition(0, 332);
 
-	/*GuiText mplayerBtnTxt("MPlayer", 18, (GXColor){255, 255, 255, 255});
-	mplayerBtn = new GuiButton(100, 100);
-	mplayerBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	mplayerBtn->SetPosition(-30, 20);
-	mplayerBtn->SetLabel(&mplayerBtnTxt);
-	mplayerBtn->SetTrigger(&trigA);
-	mplayerBtn->SetEffectGrow();
-	mplayerBtn->SetUpdateCallback(BackToMplayerCallback);*/
-	
 	mainWindow->Append(&bg);
 
 	if(videoScreenshot)
 	{
 		videoImg = new GuiImage(videoScreenshot, screenwidth, screenheight);
 		mainWindow->Append(videoImg);
-		//mainWindow->Append(mplayerBtn);
 	}
 	
 	mainWindow->Append(&bg2);
@@ -3517,7 +3844,7 @@ void WiiMenu()
 	GuiImage logoBtnImg(&logo);
 	logoBtn = new GuiButton(logo.GetWidth(), logo.GetHeight());
 	logoBtn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	logoBtn->SetPosition(70, 30);
+	logoBtn->SetPosition(70, 40);
 	logoBtn->SetImage(&logoBtnImg);
 	logoBtn->SetTrigger(&trigA);
 	logoBtn->SetSelectable(false);
@@ -3536,7 +3863,7 @@ void WiiMenu()
 	GuiImage videosBtnImg(&videos);
 	videosBtn = new GuiButton(videosBtnImg.GetWidth(), videosBtnImg.GetHeight());
 	videosBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	videosBtn->SetPosition(58, 30);
+	videosBtn->SetPosition(44, 30);
 	videosBtn->SetTooltip(&videosBtnTip);
 	videosBtn->SetImage(&videosBtnImg);
 	videosBtn->SetTrigger(&trigA);
@@ -3548,7 +3875,7 @@ void WiiMenu()
 	GuiImage musicBtnImg(&music);
 	musicBtn = new GuiButton(musicBtnImg.GetWidth(), musicBtnImg.GetHeight());
 	musicBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	musicBtn->SetPosition(106, 30);
+	musicBtn->SetPosition(92, 30);
 	musicBtn->SetTooltip(&musicBtnTip);
 	musicBtn->SetImage(&musicBtnImg);
 	musicBtn->SetTrigger(&trigA);
@@ -3560,7 +3887,7 @@ void WiiMenu()
 	GuiImage picturesBtnImg(&pictures);
 	picturesBtn = new GuiButton(picturesBtnImg.GetWidth(), picturesBtnImg.GetHeight());
 	picturesBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	picturesBtn->SetPosition(154, 30);
+	picturesBtn->SetPosition(140, 30);
 	picturesBtn->SetTooltip(&picturesBtnTip);
 	picturesBtn->SetImage(&picturesBtnImg);
 	picturesBtn->SetTrigger(&trigA);
@@ -3572,7 +3899,7 @@ void WiiMenu()
 	GuiImage dvdBtnImg(&dvd);
 	dvdBtn = new GuiButton(dvdBtnImg.GetWidth(), dvdBtnImg.GetHeight());
 	dvdBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	dvdBtn->SetPosition(202, 30);
+	dvdBtn->SetPosition(188, 30);
 	dvdBtn->SetTooltip(&dvdBtnTip);
 	dvdBtn->SetImage(&dvdBtnImg);
 	dvdBtn->SetTrigger(&trigA);
@@ -3584,7 +3911,7 @@ void WiiMenu()
 	GuiImage onlineBtnImg(&online);
 	onlineBtn = new GuiButton(onlineBtnImg.GetWidth(), onlineBtnImg.GetHeight());
 	onlineBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	onlineBtn->SetPosition(250, 30);
+	onlineBtn->SetPosition(236, 30);
 	onlineBtn->SetTooltip(&onlineBtnTip);
 	onlineBtn->SetImage(&onlineBtnImg);
 	onlineBtn->SetTrigger(&trigA);
@@ -3596,7 +3923,7 @@ void WiiMenu()
 	GuiImage settingsBtnImg(&settings);
 	settingsBtn = new GuiButton(settingsBtnImg.GetWidth(), settingsBtnImg.GetHeight());
 	settingsBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	settingsBtn->SetPosition(-106, 30);
+	settingsBtn->SetPosition(-92, 30);
 	settingsBtn->SetImage(&settingsBtnImg);
 	settingsBtn->SetTooltip(&settingsBtnTip);
 	settingsBtn->SetTrigger(&trigA);
@@ -3608,7 +3935,7 @@ void WiiMenu()
 	GuiImage exitBtnImg(&exit);
 	exitBtn = new GuiButton(exitBtnImg.GetWidth(), exitBtnImg.GetHeight());
 	exitBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	exitBtn->SetPosition(-58, 30);
+	exitBtn->SetPosition(-44, 30);
 	exitBtn->SetImage(&exitBtnImg);
 	exitBtn->SetTooltip(&exitBtnTip);
 	exitBtn->SetTrigger(&trigA);
@@ -3627,6 +3954,15 @@ void WiiMenu()
 	// play bar
 	SetupPlaybar();
 
+	pictureImg = new GuiImage;
+	pictureImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	pictureBtn = new GuiButton(PIC_WIDTH, PIC_HEIGHT);
+	pictureBtn->SetImage(pictureImg);
+	pictureBtn->SetTrigger(&trigA);
+	pictureBtn->SetSelectable(false);
+	pictureBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	pictureBtn->SetPosition(-50, 100);
+
 	ResumeGui();
 
 	// Load settings
@@ -3639,9 +3975,11 @@ void WiiMenu()
 		{
 			case MENU_BROWSE_VIDEOS:
 			case MENU_BROWSE_MUSIC:
-			case MENU_BROWSE_PICTURES:
 			case MENU_BROWSE_ONLINEMEDIA:
 				MenuBrowse(menuCurrent);
+				break;
+			case MENU_BROWSE_PICTURES:
+				MenuBrowsePictures();
 				break;
 			case MENU_DVD:
 				MenuDVD();
@@ -3704,8 +4042,10 @@ void WiiMenu()
 	exitBtn = NULL;
 	delete logoBtn;
 	logoBtn = NULL;
-	//delete mplayerBtn;
-	//mplayerBtn = NULL;
+	delete pictureBtn;
+	pictureBtn = NULL;
+	delete pictureImg;
+	pictureImg = NULL;
 
 	if(videoImg)
 	{

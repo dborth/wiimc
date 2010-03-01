@@ -9,6 +9,10 @@
  ***************************************************************************/
 
 #include "gui.h"
+
+static u64 prev;
+static u64 now;
+
 /**
  * Constructor for the GuiImage class.
  */
@@ -228,23 +232,19 @@ void GuiImage::Draw()
 
 	float currScale = this->GetScale();
 	int currLeft = this->GetLeft();
-	int thisTop = this->GetTop();
+	int currTop = this->GetTop();
 
 	if(tile > 0)
 	{
 		int alpha = this->GetAlpha();
 		for(int i=0; i<tile; ++i)
 		{
-			Menu_DrawImg(currLeft+width*i, thisTop, width, height, image, imageangle, currScale, currScale, alpha);
+			Menu_DrawImg(currLeft+width*i, currTop, width, height, image, imageangle, currScale, currScale, alpha);
 		}
 	}
 	else
 	{
-		// temporary (maybe), used to correct offset for scaled images
-		if(scale != 1)
-			currLeft += (width*(scale - 1))/2;
-
-		Menu_DrawImg(currLeft, thisTop, width, height, image, imageangle, currScale, currScale, this->GetAlpha());
+		Menu_DrawImg(currLeft, currTop, width, height, image, imageangle, currScale, currScale, this->GetAlpha());
 	}
 
 	if(stripe > 0)
@@ -252,7 +252,28 @@ void GuiImage::Draw()
 		int thisHeight = this->GetHeight();
 		int thisWidth = this->GetWidth();
 		for(int y=0; y < thisHeight; y+=6)
-			Menu_DrawRectangle(currLeft,thisTop+y,thisWidth,3,(GXColor){0, 0, 0, stripe},1);
+			Menu_DrawRectangle(currLeft,currTop+y,thisWidth,3,(GXColor){0, 0, 0, stripe},1);
 	}
 	this->UpdateEffects();
+
+	if(effects & EFFECT_ROTATE)
+	{
+		if(effectAmount == 0)
+		{
+			effects = 0;
+			imageangle = 0;
+			return;
+		}
+
+		now = gettime();
+
+		if(diff_usec(prev, now) > (u32)(effectAmount*1000))
+		{
+			prev = now;
+
+			imageangle+=45.0f;
+			if(imageangle >= 360.0f)
+				imageangle = 0;
+		}
+	}
 }

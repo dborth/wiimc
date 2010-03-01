@@ -91,12 +91,13 @@ int GuiElement::GetLeft()
 			x = pLeft;
 			break;
 		case ALIGN_CENTRE:
-			x = pLeft + (pWidth>>1) - (width>>1);
+			x = pLeft + pWidth/2.0 - (width*scale)/2.0;
 			break;
 		case ALIGN_RIGHT:
-			x = pLeft + pWidth - width;
+			x = pLeft + pWidth - width*scale;
 			break;
 	}
+	x += (width*(scale - 1))/2.0; // correct offset for scaled images
 	return x + xoffset;
 }
 
@@ -121,12 +122,13 @@ int GuiElement::GetTop()
 			y = pTop;
 			break;
 		case ALIGN_MIDDLE:
-			y = pTop + (pHeight>>1) - (height>>1);
+			y = pTop + pHeight/2.0 - (height*scale)/2.0;
 			break;
 		case ALIGN_BOTTOM:
-			y = pTop + pHeight - height;
+			y = pTop + pHeight - height*scale;
 			break;
 	}
+	y += (height*(scale - 1))/2.0; // correct offset for scaled images
 	return y + yoffset;
 }
 
@@ -218,6 +220,18 @@ int GuiElement::GetAlpha()
 void GuiElement::SetScale(float s)
 {
 	scale = s;
+}
+
+void GuiElement::SetScale(int mw, int mh)
+{
+	scale = 1.0f;
+	if(width > mw || height > mh)
+	{
+		if(width/(height*1.0) > mw/(mh*1.0))
+			scale = mw/(width*1.0);
+		else
+			scale = mh/(height*1.0);
+	}
 }
 
 float GuiElement::GetScale()

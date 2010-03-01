@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009
+ * Tantric 2009-2010
  *
  * fileop.h
  *
@@ -30,6 +30,7 @@ typedef struct
 void ResumeDeviceThread();
 void HaltDeviceThread();
 void HaltParseThread();
+void CancelFileOp();
 void MountAllDevices();
 bool ChangeInterface(int device, int devnum, bool silent);
 bool ChangeInterface(char * filepath, bool silent);

@@ -85,7 +85,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 	scrollbarBoxBtn->SetImageOver(scrollbarBoxOverImg);
 	scrollbarBoxBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	scrollbarBoxBtn->SetMinY(0);
-	scrollbarBoxBtn->SetMaxY(130);
+	scrollbarBoxBtn->SetMaxY(h-110);
 	scrollbarBoxBtn->SetSelectable(false);
 	scrollbarBoxBtn->SetClickable(false);
 	scrollbarBoxBtn->SetHoldable(true);
@@ -96,12 +96,14 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 		fileListText[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
 		fileListText[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 		fileListText[i]->SetPosition(30,0);
-		fileListText[i]->SetMaxWidth(455);
+		fileListText[i]->SetMaxWidth(w-70);
 
 		fileListBg[i] = new GuiImage(bgBrowseEntryOver);
+		fileListBg[i]->SetTile(w/4 - 10);
+		fileListBg[i]->SetPosition(4, 0);
 		fileListIcon[i] = NULL;
 
-		fileList[i] = new GuiButton(460, 26);
+		fileList[i] = new GuiButton(w-40, 26);
 		fileList[i]->SetParent(this);
 		fileList[i]->SetLabel(fileListText[i]);
 		fileList[i]->SetImageOver(fileListBg[i]);
@@ -262,7 +264,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		else if(positionWiimote > scrollbarBoxBtn->GetMaxY())
 			positionWiimote = scrollbarBoxBtn->GetMaxY();
 
-		browser.pageIndex = (positionWiimote * browser.numEntries)/190.0f - selectedItem;
+		browser.pageIndex = (positionWiimote * browser.numEntries)/float(height-110) - selectedItem;
 
 		if(browser.pageIndex <= 0)
 		{
@@ -461,11 +463,11 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		}
 		else if(browser.pageIndex+FILE_PAGESIZE >= browser.numEntries)
 		{
-			position = 130;
+			position = height-110;
 		}
 		else
 		{
-			position = 130* (int((float(browser.pageIndex) + float(FILE_PAGESIZE)*0.5f) / (float(browser.numEntries))));
+			position = (height-110) * (int((float(browser.pageIndex) + float(FILE_PAGESIZE)*0.5f) / (float(browser.numEntries))));
 		}
 		scrollbarBoxBtn->SetPosition(0,position+36);
 	}

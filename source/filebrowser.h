@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009
+ * Tantric 2009-2010
  *
  * filebrowser.h
  *
@@ -70,7 +70,7 @@ void ResetBrowser();
 bool AddBrowserEntry();
 bool AddMediaEntry();
 bool AddPlaylistEntry();
-int BrowserChangeFolder(bool updateDir = true);
+int BrowserChangeFolder(bool updateDir = true, bool waitParse = false);
 int BrowseDevice();
 
 #endif

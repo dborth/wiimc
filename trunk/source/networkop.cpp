@@ -360,7 +360,7 @@ ConnectFTP (int num, bool silent)
 
 			if(ftpInitDevice(mountpoint, WiiSettings.ftpConf[num-1].user, 
 				WiiSettings.ftpConf[num-1].pwd, WiiSettings.ftpConf[num-1].folder, 
-				WiiSettings.ftpConf[num-1].ip, WiiSettings.ftpConf[num-1].passive))
+				WiiSettings.ftpConf[num-1].ip, 21, WiiSettings.ftpConf[num-1].passive))
 			{
 				ftpInit[num-1] = true;
 			}

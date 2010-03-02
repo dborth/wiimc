@@ -548,7 +548,6 @@ int ntfsLink (ntfs_vd *vd, const char *old_path, const char *new_path)
     }
 
     // Update entry times
-    ntfsUpdateTimes(vd, ni, NTFS_UPDATE_CTIME);
     ntfsUpdateTimes(vd, dir_ni, NTFS_UPDATE_MCTIME);
 
     // Sync the entry to disc

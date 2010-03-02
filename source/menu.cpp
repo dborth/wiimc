@@ -863,41 +863,33 @@ static void * WindowCredits(void *arg)
 	creditsBoxImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	creditsWindow.Append(&creditsBoxImg);
 
-	int numEntries = 23;
+	int numEntries = 17;
 	GuiText * txt[numEntries];
 
 	txt[i] = new GuiText("Credits", 30, (GXColor){0, 0, 0, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP); txt[i]->SetPosition(0,y); i++; y+=32;
 
-	txt[i] = new GuiText("Official Site: http://code.google.com/p/mplayer-ce/", 20, (GXColor){0, 0, 0, 255});
+	txt[i] = new GuiText("Official Site: http://www.wiimc.org/", 20, (GXColor){0, 0, 0, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP); txt[i]->SetPosition(0,y); i++; y+=40;
 
 	txt[i]->SetPresets(20, (GXColor){0, 0, 0, 255}, 0,
 			FTGX_JUSTIFY_LEFT | FTGX_ALIGN_TOP, ALIGN_LEFT, ALIGN_TOP);
 
-	txt[i] = new GuiText("rodries");
-	txt[i]->SetPosition(50,y); i++;
-	txt[i] = new GuiText("Coding");
-	txt[i]->SetPosition(320,y); i++; y+=22;
 	txt[i] = new GuiText("Tantric");
 	txt[i]->SetPosition(50,y); i++;
 	txt[i] = new GuiText("Coding & menu design");
 	txt[i]->SetPosition(320,y); i++; y+=22;
-	txt[i] = new GuiText("drmr");
+	txt[i] = new GuiText("rodries");
+	txt[i]->SetPosition(50,y); i++;
+	txt[i] = new GuiText("Coding");
+	txt[i]->SetPosition(320,y); i++; y+=22;
+	txt[i] = new GuiText("Sam Mularczyk");
 	txt[i]->SetPosition(50,y); i++;
 	txt[i] = new GuiText("Menu artwork");
 	txt[i]->SetPosition(320,y); i++; y+=22;
-	txt[i] = new GuiText("scip");
+	txt[i] = new GuiText("Psyche & drmr");
 	txt[i]->SetPosition(50,y); i++;
-	txt[i] = new GuiText("Original project author");
-	txt[i]->SetPosition(320,y); i++; y+=22;
-	txt[i] = new GuiText("AgentX");
-	txt[i]->SetPosition(50,y); i++;
-	txt[i] = new GuiText("Coding & testing");
-	txt[i]->SetPosition(320,y); i++; y+=22;
-	txt[i] = new GuiText("DJDynamite123");
-	txt[i]->SetPosition(50,y); i++;
-	txt[i] = new GuiText("Testing");
+	txt[i] = new GuiText("Logo");
 	txt[i]->SetPosition(320,y); i++; y+=44;
 
 	txt[i] = new GuiText("Thanks also to:");
@@ -910,11 +902,6 @@ static void * WindowCredits(void *arg)
 	txt[i]->SetPosition(50,y); i++;
 	txt[i] = new GuiText("shagkur & wintermute");
 	txt[i]->SetPosition(320,y); i++; y+=36;
-
-	txt[i] = new GuiText("Team Twiizers, Armin Tamzarian, Daca, dargllun,");
-	txt[i]->SetPosition(50,y); i++; y+=22;
-	txt[i] = new GuiText("Extrems, GeeXboX Authors, hax, Shareese, tipolosko");
-	txt[i]->SetPosition(50,y); i++; y+=22;
 
 	txt[i]->SetPresets(18, (GXColor){0, 0, 0, 255}, 0,
 		FTGX_JUSTIFY_CENTER | FTGX_ALIGN_TOP, ALIGN_CENTRE, ALIGN_TOP);
@@ -1746,22 +1733,18 @@ static void MenuDVD()
 	HaltGui();
 }
 
-static void MenuSettingsGeneral()
+static void MenuSettingsGlobal()
 {
 	int ret;
 	int i = 0;
 	bool firstRun = true;
 	OptionList options;
-
-	sprintf(options.name[i++], "Auto-Resume");
-	sprintf(options.name[i++], "Play Order");
+	
 	sprintf(options.name[i++], "Clean Filenames");
 	sprintf(options.name[i++], "File Extensions");
 	sprintf(options.name[i++], "Unsupported Files");
 	sprintf(options.name[i++], "Language");
-	sprintf(options.name[i++], "Videos Files Folder");
-	sprintf(options.name[i++], "Music Files Folder");
-	sprintf(options.name[i++], "Pictures Files Folder");
+	sprintf(options.name[i++], "Volume");
 	sprintf(options.name[i++], "Exit Action");
 	sprintf(options.name[i++], "Wiimote Rumble");
 
@@ -1773,7 +1756,7 @@ static void MenuSettingsGeneral()
 		options.icon[i] = 0;
 	}
 
-	GuiText titleTxt("Settings - General", 26, (GXColor){255, 255, 255, 255});
+	GuiText titleTxt("Settings - Global", 26, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(70, 90);
 
@@ -1808,7 +1791,7 @@ static void MenuSettingsGeneral()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(menuCurrent == MENU_SETTINGS_GENERAL && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_GLOBAL && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -1817,42 +1800,30 @@ static void MenuSettingsGeneral()
 		switch (ret)
 		{
 			case 0:
-				WiiSettings.autoResume ^= 1;
-				break;
-			case 1:
-				WiiSettings.playOrder++;
-				if(WiiSettings.playOrder > PLAY_LOOP)
-					WiiSettings.playOrder = 0;
-				break;
-			case 2:
 				WiiSettings.cleanFilenames ^= 1;
 				break;
-			case 3:
+			case 1:
 				WiiSettings.hideExtensions ^= 1;
 				break;
-			case 4:
+			case 2:
 				WiiSettings.filterFiles ^= 1;
 				break;
-			case 5:
+			case 3:
 				WiiSettings.language++;
 				if(WiiSettings.language > LANG_KOREAN)
 					WiiSettings.language = 0;
 				break;
-			case 6:
-				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);
+			case 4:
+				WiiSettings.volume += 10;
+				if(WiiSettings.volume > 100)
+					WiiSettings.volume = 0;
 				break;
-			case 7:
-				OnScreenKeyboard(WiiSettings.musicFolder, MAXPATHLEN);
-				break;
-			case 8:
-				OnScreenKeyboard(WiiSettings.picturesFolder, MAXPATHLEN);
-				break;
-			case 9:
+			case 5:
 				WiiSettings.exitAction++;
 				if(WiiSettings.exitAction > EXIT_LOADER)
 					WiiSettings.exitAction = 0;
 				break;
-			case 10:
+			case 6:
 				WiiSettings.rumble ^= 1;
 				break;
 		}
@@ -1861,47 +1832,35 @@ static void MenuSettingsGeneral()
 		{
 			firstRun = false;
 
-			sprintf(options.value[0], "%s", WiiSettings.autoResume ? "On" : "Off");
-
-			switch(WiiSettings.playOrder)
-			{
-				case PLAY_SINGLE:		sprintf(options.value[1], "Single"); break;
-				case PLAY_CONTINUOUS:	sprintf(options.value[1], "Continuous"); break;
-				case PLAY_SHUFFLE:		sprintf(options.value[1], "Shuffle"); break;
-				case PLAY_LOOP:			sprintf(options.value[1], "Loop"); break;
-			}
-
-			sprintf(options.value[2], "%s", WiiSettings.cleanFilenames ? "On" : "Off");
-			sprintf(options.value[3], "%s", WiiSettings.hideExtensions ? "Hide" : "Show");
-			sprintf(options.value[4], "%s", WiiSettings.filterFiles ? "Hide" : "Show");
+			sprintf(options.value[0], "%s", WiiSettings.cleanFilenames ? "On" : "Off");
+			sprintf(options.value[1], "%s", WiiSettings.hideExtensions ? "Hide" : "Show");
+			sprintf(options.value[2], "%s", WiiSettings.filterFiles ? "Hide" : "Show");
 
 			switch(WiiSettings.language)
 			{
-				case LANG_JAPANESE:		sprintf(options.value[5], "Japanese"); break;
-				case LANG_ENGLISH:		sprintf(options.value[5], "English"); break;
-				case LANG_GERMAN:		sprintf(options.value[5], "German"); break;
-				case LANG_FRENCH:		sprintf(options.value[5], "French"); break;
-				case LANG_SPANISH:		sprintf(options.value[5], "Spanish"); break;
-				case LANG_ITALIAN:		sprintf(options.value[5], "Italian"); break;
-				case LANG_DUTCH:		sprintf(options.value[5], "Dutch"); break;
-				case LANG_SIMP_CHINESE:	sprintf(options.value[5], "Chinese (Simplified)"); break;
-				case LANG_TRAD_CHINESE:	sprintf(options.value[5], "Chinese (Traditional)"); break;
-				case LANG_KOREAN:		sprintf(options.value[5], "Korean"); break;
+				case LANG_JAPANESE:		sprintf(options.value[3], "Japanese"); break;
+				case LANG_ENGLISH:		sprintf(options.value[3], "English"); break;
+				case LANG_GERMAN:		sprintf(options.value[3], "German"); break;
+				case LANG_FRENCH:		sprintf(options.value[3], "French"); break;
+				case LANG_SPANISH:		sprintf(options.value[3], "Spanish"); break;
+				case LANG_ITALIAN:		sprintf(options.value[3], "Italian"); break;
+				case LANG_DUTCH:		sprintf(options.value[3], "Dutch"); break;
+				case LANG_SIMP_CHINESE:	sprintf(options.value[3], "Chinese (Simplified)"); break;
+				case LANG_TRAD_CHINESE:	sprintf(options.value[3], "Chinese (Traditional)"); break;
+				case LANG_KOREAN:		sprintf(options.value[3], "Korean"); break;
 			}
-
-			snprintf(options.value[6], 20, "%s", WiiSettings.videosFolder);
-			snprintf(options.value[7], 20, "%s", WiiSettings.musicFolder);
-			snprintf(options.value[8], 20, "%s", WiiSettings.picturesFolder);
+			
+			sprintf (options.value[4], "%d%%", WiiSettings.volume);
 
 			switch(WiiSettings.exitAction)
 			{
-				case EXIT_AUTO:		sprintf(options.value[9], "Auto"); break;
-				case EXIT_WIIMENU:	sprintf(options.value[9], "Return to Wii Menu"); break;
-				case EXIT_POWEROFF:	sprintf(options.value[9], "Power Off Wii"); break;
-				case EXIT_LOADER:	sprintf(options.value[9], "Return to Loader"); break;
+				case EXIT_AUTO:		sprintf(options.value[5], "Auto"); break;
+				case EXIT_WIIMENU:	sprintf(options.value[5], "Return to Wii Menu"); break;
+				case EXIT_POWEROFF:	sprintf(options.value[5], "Power Off Wii"); break;
+				case EXIT_LOADER:	sprintf(options.value[5], "Return to Loader"); break;
 			}
 
-			sprintf(options.value[10], "%s", WiiSettings.rumble ? "On" : "Off");
+			sprintf(options.value[6], "%s", WiiSettings.rumble ? "On" : "Off");
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -1918,15 +1877,280 @@ static void MenuSettingsGeneral()
 	ResetText();
 }
 
-static void MenuSettingsCache()
+static void ScreenZoomWindowUpdate(void * ptr, float h, float v)
+{
+	GuiButton * b = (GuiButton *)ptr;
+	if(b->GetState() == STATE_CLICKED)
+	{
+		WiiSettings.videoZoomHor += h;
+		WiiSettings.videoZoomVert += v;
+
+		char zoom[10];
+		sprintf(zoom, "%.2f%%", WiiSettings.videoZoomHor*100);
+		settingText->SetText(zoom);
+		sprintf(zoom, "%.2f%%", WiiSettings.videoZoomVert*100);
+		settingText2->SetText(zoom);
+		b->ResetState();
+	}
+}
+
+static void ScreenZoomWindowLeftClick(void * ptr) { ScreenZoomWindowUpdate(ptr, -0.01, 0); }
+static void ScreenZoomWindowRightClick(void * ptr) { ScreenZoomWindowUpdate(ptr, +0.01, 0); }
+static void ScreenZoomWindowUpClick(void * ptr) { ScreenZoomWindowUpdate(ptr, 0, +0.01); }
+static void ScreenZoomWindowDownClick(void * ptr) { ScreenZoomWindowUpdate(ptr, 0, -0.01); }
+
+static void ScreenZoomWindow()
+{
+	GuiWindow * w = new GuiWindow(200,200);
+	w->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+
+	GuiTrigger trigA;
+	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
+	GuiTrigger trigLeft;
+	trigLeft.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_LEFT | WPAD_CLASSIC_BUTTON_LEFT, PAD_BUTTON_LEFT);
+
+	GuiTrigger trigRight;
+	trigRight.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_RIGHT | WPAD_CLASSIC_BUTTON_RIGHT, PAD_BUTTON_RIGHT);
+
+	GuiTrigger trigUp;
+	trigUp.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_UP | WPAD_CLASSIC_BUTTON_UP, PAD_BUTTON_UP);
+
+	GuiTrigger trigDown;
+	trigDown.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
+
+	GuiImageData arrowLeft(button_arrow_left_png);
+	GuiImage arrowLeftImg(&arrowLeft);
+	GuiImageData arrowLeftOver(button_arrow_left_over_png);
+	GuiImage arrowLeftOverImg(&arrowLeftOver);
+	GuiButton arrowLeftBtn(arrowLeft.GetWidth(), arrowLeft.GetHeight());
+	arrowLeftBtn.SetImage(&arrowLeftImg);
+	arrowLeftBtn.SetImageOver(&arrowLeftOverImg);
+	arrowLeftBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	arrowLeftBtn.SetPosition(50, 0);
+	arrowLeftBtn.SetTrigger(0, &trigA);
+	arrowLeftBtn.SetTrigger(1, &trigLeft);
+	arrowLeftBtn.SetSelectable(false);
+	arrowLeftBtn.SetUpdateCallback(ScreenZoomWindowLeftClick);
+
+	GuiImageData arrowRight(button_arrow_right_png);
+	GuiImage arrowRightImg(&arrowRight);
+	GuiImageData arrowRightOver(button_arrow_right_over_png);
+	GuiImage arrowRightOverImg(&arrowRightOver);
+	GuiButton arrowRightBtn(arrowRight.GetWidth(), arrowRight.GetHeight());
+	arrowRightBtn.SetImage(&arrowRightImg);
+	arrowRightBtn.SetImageOver(&arrowRightOverImg);
+	arrowRightBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	arrowRightBtn.SetPosition(164, 0);
+	arrowRightBtn.SetTrigger(0, &trigA);
+	arrowRightBtn.SetTrigger(1, &trigRight);
+	arrowRightBtn.SetSelectable(false);
+	arrowRightBtn.SetUpdateCallback(ScreenZoomWindowRightClick);
+
+	GuiImageData arrowUp(button_arrow_up_png);
+	GuiImage arrowUpImg(&arrowUp);
+	GuiImageData arrowUpOver(button_arrow_up_over_png);
+	GuiImage arrowUpOverImg(&arrowUpOver);
+	GuiButton arrowUpBtn(arrowUp.GetWidth(), arrowUp.GetHeight());
+	arrowUpBtn.SetImage(&arrowUpImg);
+	arrowUpBtn.SetImageOver(&arrowUpOverImg);
+	arrowUpBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	arrowUpBtn.SetPosition(-76, -27);
+	arrowUpBtn.SetTrigger(0, &trigA);
+	arrowUpBtn.SetTrigger(1, &trigUp);
+	arrowUpBtn.SetSelectable(false);
+	arrowUpBtn.SetUpdateCallback(ScreenZoomWindowUpClick);
+
+	GuiImageData arrowDown(button_arrow_down_png);
+	GuiImage arrowDownImg(&arrowDown);
+	GuiImageData arrowDownOver(button_arrow_down_over_png);
+	GuiImage arrowDownOverImg(&arrowDownOver);
+	GuiButton arrowDownBtn(arrowDown.GetWidth(), arrowDown.GetHeight());
+	arrowDownBtn.SetImage(&arrowDownImg);
+	arrowDownBtn.SetImageOver(&arrowDownOverImg);
+	arrowDownBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	arrowDownBtn.SetPosition(-76, 27);
+	arrowDownBtn.SetTrigger(0, &trigA);
+	arrowDownBtn.SetTrigger(1, &trigDown);
+	arrowDownBtn.SetSelectable(false);
+	arrowDownBtn.SetUpdateCallback(ScreenZoomWindowDownClick);
+
+	GuiImageData screenPosition(screen_position_png);
+	GuiImage screenPositionImg(&screenPosition);
+	screenPositionImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	screenPositionImg.SetPosition(0, 0);
+
+	settingText = new GuiText(NULL, 22, (GXColor){0, 0, 0, 255});
+	settingText2 = new GuiText(NULL, 22, (GXColor){0, 0, 0, 255});
+	char zoom[10];
+	sprintf(zoom, "%.2f%%", WiiSettings.videoZoomHor*100);
+	settingText->SetText(zoom);
+	settingText->SetPosition(108, 0);
+	sprintf(zoom, "%.2f%%", WiiSettings.videoZoomVert*100);
+	settingText2->SetText(zoom);
+	settingText2->SetPosition(-76, 0);
+
+	float currentZoomHor = WiiSettings.videoZoomHor;
+	float currentZoomVert = WiiSettings.videoZoomVert;
+
+	w->Append(&arrowLeftBtn);
+	w->Append(&arrowRightBtn);
+	w->Append(&arrowUpBtn);
+	w->Append(&arrowDownBtn);
+	w->Append(&screenPositionImg);
+	w->Append(settingText);
+	w->Append(settingText2);
+
+	if(!SettingWindow("Screen Zoom",w))
+	{
+		// undo changes
+		WiiSettings.videoZoomHor = currentZoomHor;
+		WiiSettings.videoZoomVert = currentZoomVert;
+	}
+
+	delete(w);
+	delete(settingText);
+	delete(settingText2);
+}
+
+static void ScreenPositionWindowUpdate(void * ptr, int x, int y)
+{
+	GuiButton * b = (GuiButton *)ptr;
+	if(b->GetState() == STATE_CLICKED)
+	{
+		WiiSettings.videoXshift += x;
+		WiiSettings.videoYshift += y;
+
+		char shift[10];
+		sprintf(shift, "%i, %i", WiiSettings.videoXshift, WiiSettings.videoYshift);
+		settingText->SetText(shift);
+		b->ResetState();
+	}
+}
+
+static void ScreenPositionWindowLeftClick(void * ptr) { ScreenPositionWindowUpdate(ptr, -1, 0); }
+static void ScreenPositionWindowRightClick(void * ptr) { ScreenPositionWindowUpdate(ptr, +1, 0); }
+static void ScreenPositionWindowUpClick(void * ptr) { ScreenPositionWindowUpdate(ptr, 0, -1); }
+static void ScreenPositionWindowDownClick(void * ptr) { ScreenPositionWindowUpdate(ptr, 0, +1); }
+
+static void ScreenPositionWindow()
+{
+	GuiWindow * w = new GuiWindow(150,150);
+	w->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	w->SetPosition(0, -10);
+
+	GuiTrigger trigA;
+	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
+	GuiTrigger trigLeft;
+	trigLeft.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_LEFT | WPAD_CLASSIC_BUTTON_LEFT, PAD_BUTTON_LEFT);
+
+	GuiTrigger trigRight;
+	trigRight.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_RIGHT | WPAD_CLASSIC_BUTTON_RIGHT, PAD_BUTTON_RIGHT);
+
+	GuiTrigger trigUp;
+	trigUp.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_UP | WPAD_CLASSIC_BUTTON_UP, PAD_BUTTON_UP);
+
+	GuiTrigger trigDown;
+	trigDown.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
+
+	GuiImageData arrowLeft(button_arrow_left_png);
+	GuiImage arrowLeftImg(&arrowLeft);
+	GuiImageData arrowLeftOver(button_arrow_left_over_png);
+	GuiImage arrowLeftOverImg(&arrowLeftOver);
+	GuiButton arrowLeftBtn(arrowLeft.GetWidth(), arrowLeft.GetHeight());
+	arrowLeftBtn.SetImage(&arrowLeftImg);
+	arrowLeftBtn.SetImageOver(&arrowLeftOverImg);
+	arrowLeftBtn.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+	arrowLeftBtn.SetTrigger(0, &trigA);
+	arrowLeftBtn.SetTrigger(1, &trigLeft);
+	arrowLeftBtn.SetSelectable(false);
+	arrowLeftBtn.SetUpdateCallback(ScreenPositionWindowLeftClick);
+
+	GuiImageData arrowRight(button_arrow_right_png);
+	GuiImage arrowRightImg(&arrowRight);
+	GuiImageData arrowRightOver(button_arrow_right_over_png);
+	GuiImage arrowRightOverImg(&arrowRightOver);
+	GuiButton arrowRightBtn(arrowRight.GetWidth(), arrowRight.GetHeight());
+	arrowRightBtn.SetImage(&arrowRightImg);
+	arrowRightBtn.SetImageOver(&arrowRightOverImg);
+	arrowRightBtn.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
+	arrowRightBtn.SetTrigger(0, &trigA);
+	arrowRightBtn.SetTrigger(1, &trigRight);
+	arrowRightBtn.SetSelectable(false);
+	arrowRightBtn.SetUpdateCallback(ScreenPositionWindowRightClick);
+
+	GuiImageData arrowUp(button_arrow_up_png);
+	GuiImage arrowUpImg(&arrowUp);
+	GuiImageData arrowUpOver(button_arrow_up_over_png);
+	GuiImage arrowUpOverImg(&arrowUpOver);
+	GuiButton arrowUpBtn(arrowUp.GetWidth(), arrowUp.GetHeight());
+	arrowUpBtn.SetImage(&arrowUpImg);
+	arrowUpBtn.SetImageOver(&arrowUpOverImg);
+	arrowUpBtn.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	arrowUpBtn.SetTrigger(0, &trigA);
+	arrowUpBtn.SetTrigger(1, &trigUp);
+	arrowUpBtn.SetSelectable(false);
+	arrowUpBtn.SetUpdateCallback(ScreenPositionWindowUpClick);
+
+	GuiImageData arrowDown(button_arrow_down_png);
+	GuiImage arrowDownImg(&arrowDown);
+	GuiImageData arrowDownOver(button_arrow_down_over_png);
+	GuiImage arrowDownOverImg(&arrowDownOver);
+	GuiButton arrowDownBtn(arrowDown.GetWidth(), arrowDown.GetHeight());
+	arrowDownBtn.SetImage(&arrowDownImg);
+	arrowDownBtn.SetImageOver(&arrowDownOverImg);
+	arrowDownBtn.SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
+	arrowDownBtn.SetTrigger(0, &trigA);
+	arrowDownBtn.SetTrigger(1, &trigDown);
+	arrowDownBtn.SetSelectable(false);
+	arrowDownBtn.SetUpdateCallback(ScreenPositionWindowDownClick);
+
+	GuiImageData screenPosition(screen_position_png);
+	GuiImage screenPositionImg(&screenPosition);
+	screenPositionImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+
+	settingText = new GuiText(NULL, 22, (GXColor){0, 0, 0, 255});
+	char shift[10];
+	sprintf(shift, "%i, %i", WiiSettings.videoXshift, WiiSettings.videoYshift);
+	settingText->SetText(shift);
+
+	int currentX = WiiSettings.videoXshift;
+	int currentY = WiiSettings.videoYshift;
+
+	w->Append(&arrowLeftBtn);
+	w->Append(&arrowRightBtn);
+	w->Append(&arrowUpBtn);
+	w->Append(&arrowDownBtn);
+	w->Append(&screenPositionImg);
+	w->Append(settingText);
+
+	if(!SettingWindow("Screen Position",w))
+	{
+		WiiSettings.videoXshift = currentX; // undo changes
+		WiiSettings.videoYshift = currentY;
+	}
+
+	delete(w);
+	delete(settingText);
+}
+
+static void MenuSettingsVideos()
 {
 	int ret;
 	int i = 0;
 	bool firstRun = true;
 	OptionList options;
-
-	sprintf(options.name[i++], "Size");
-	sprintf(options.name[i++], "Prefill");
+	
+	sprintf(options.name[i++], "Screen Zoom");
+	sprintf(options.name[i++], "Screen Position");
+	sprintf(options.name[i++], "Frame Dropping");
+	sprintf(options.name[i++], "Aspect Ratio");
+	sprintf(options.name[i++], "Cache Size");
+	sprintf(options.name[i++], "Cache Prefill");
+	sprintf(options.name[i++], "Audio Delay (ms)");
+	sprintf(options.name[i++], "Auto-Resume");
+	sprintf(options.name[i++], "Videos Files Folder");
 
 	options.length = i;
 
@@ -1936,7 +2160,7 @@ static void MenuSettingsCache()
 		options.icon[i] = 0;
 	}
 
-	GuiText titleTxt("Settings - Cache", 26, (GXColor){255, 255, 255, 255});
+	GuiText titleTxt("Settings - Videos", 26, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(70, 90);
 
@@ -1971,7 +2195,7 @@ static void MenuSettingsCache()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(menuCurrent == MENU_SETTINGS_CACHE && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_VIDEOS && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -1980,24 +2204,269 @@ static void MenuSettingsCache()
 		switch (ret)
 		{
 			case 0:
+				ScreenZoomWindow();
+				break;
+			case 1:
+				ScreenPositionWindow();
+				break;
+			case 2:
+				WiiSettings.frameDropping++;
+				if (WiiSettings.frameDropping > 2)
+					WiiSettings.frameDropping = 0;
+				break;
+			case 3:
+				if(WiiSettings.aspectRatio > 2.34)
+					WiiSettings.aspectRatio = -1;
+				else if(WiiSettings.aspectRatio > 1.84)
+					WiiSettings.aspectRatio = 2.35;
+				else if(WiiSettings.aspectRatio > 1.77)
+					WiiSettings.aspectRatio = 1.85;
+				else if(WiiSettings.aspectRatio > 1.32)
+					WiiSettings.aspectRatio = 1.7778;
+				else if(WiiSettings.aspectRatio > -1.01)
+					WiiSettings.aspectRatio = 1.3333;
+				else
+					WiiSettings.aspectRatio = -1;
+				break;
+			case 4:
 				WiiSettings.cacheSize += 2048;
 				if(WiiSettings.cacheSize > 16384)
 					WiiSettings.cacheSize = 0;
 				break;
-
-			case 1:
+			case 5:
 				WiiSettings.cachePrefill += 10;
 				if (WiiSettings.cachePrefill > 100)
 					WiiSettings.cachePrefill = 0;
+				break;
+			case 6:
+				WiiSettings.audioDelay += 100;
+				if (WiiSettings.audioDelay > 1000)
+					WiiSettings.audioDelay = -1000;
+				break;
+			case 7:
+				WiiSettings.autoResume ^= 1;
+				break;
+			case 8:
+				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);
 				break;
 		}
 
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			sprintf (options.value[0], "%d MB", WiiSettings.cacheSize/1024);
-			sprintf (options.value[1], "%d%%", WiiSettings.cachePrefill);
+			sprintf (options.value[0], "%.2f%%, %.2f%%", WiiSettings.videoZoomHor*100, WiiSettings.videoZoomVert*100);
+			sprintf (options.value[1], "%d, %d", WiiSettings.videoXshift, WiiSettings.videoYshift);
 
+			switch(WiiSettings.frameDropping)
+			{
+				case FRAMEDROPPING_AUTO:
+					sprintf (options.value[2], "Auto"); break;
+				case FRAMEDROPPING_ALWAYS:
+					sprintf (options.value[2], "Always"); break;
+				case FRAMEDROPPING_DISABLED:
+					sprintf (options.value[2], "Disabled"); break;
+			}
+
+			if(WiiSettings.aspectRatio > 2.34)
+				sprintf (options.value[3], "2.35:1");
+			else if(WiiSettings.aspectRatio > 1.84)
+				sprintf (options.value[3], "1.85:1");
+			else if(WiiSettings.aspectRatio > 1.77)
+				sprintf (options.value[3], "16:9");
+			else if(WiiSettings.aspectRatio > 1.32)
+				sprintf (options.value[3], "4:3");
+			else
+				sprintf (options.value[3], "Auto");
+
+			sprintf (options.value[4], "%d MB", WiiSettings.cacheSize/1024);
+			sprintf (options.value[5], "%d%%", WiiSettings.cachePrefill);
+			sprintf (options.value[6], "%d ms", WiiSettings.audioDelay);
+			sprintf (options.value[7], "%s", WiiSettings.autoResume ? "On" : "Off");
+			snprintf(options.value[8], 20, "%s", WiiSettings.videosFolder);
+
+			optionBrowser.TriggerUpdate();
+		}
+
+		if(backBtn.GetState() == STATE_CLICKED)
+		{
+			menuCurrent = MENU_SETTINGS;
+		}
+	}
+	HaltGui();
+	mainWindow->Remove(&optionBrowser);
+	mainWindow->Remove(&w);
+	mainWindow->Remove(&titleTxt);
+}
+
+static void MenuSettingsMusic()
+{
+	int ret;
+	int i = 0;
+	bool firstRun = true;
+	OptionList options;
+
+	sprintf(options.name[i++], "Play Order");
+	sprintf(options.name[i++], "Music Files Folder");
+
+	options.length = i;
+		
+	for(i=0; i < options.length; i++)
+	{
+		options.value[i][0] = 0;
+		options.icon[i] = 0;
+	}
+
+	GuiText titleTxt("Settings - Music", 26, (GXColor){255, 255, 255, 255});
+	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	titleTxt.SetPosition(70, 90);
+
+	GuiImageData btnOutline(button_png);
+	GuiImageData btnOutlineOver(button_over_png);
+
+	GuiTrigger trigA;
+	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
+	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
+	GuiImage backBtnImg(&btnOutline);
+	GuiImage backBtnImgOver(&btnOutlineOver);
+	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	backBtn.SetPosition(30, -35);
+	backBtn.SetLabel(&backBtnTxt);
+	backBtn.SetImage(&backBtnImg);
+	backBtn.SetImageOver(&backBtnImgOver);
+	backBtn.SetTrigger(&trigA);
+	backBtn.SetEffectGrow();
+
+	GuiOptionBrowser optionBrowser(460, 220, &options);
+	optionBrowser.SetPosition(70, 120);
+	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+
+	HaltGui();
+	GuiWindow w(screenwidth, screenheight);
+	w.Append(&backBtn);
+	mainWindow->Append(&optionBrowser);
+	mainWindow->Append(&w);
+	mainWindow->Append(&titleTxt);
+	ResumeGui();
+
+	while(menuCurrent == MENU_SETTINGS_MUSIC && !guiShutdown)
+	{
+		usleep(THREAD_SLEEP);
+
+		ret = optionBrowser.GetClickedOption();
+
+		switch (ret)
+		{
+			case 0:
+				WiiSettings.playOrder++;
+				if(WiiSettings.playOrder > PLAY_LOOP)
+					WiiSettings.playOrder = 0;
+				break;
+			case 1:
+				OnScreenKeyboard(WiiSettings.musicFolder, MAXPATHLEN);
+				break;
+		}
+
+		if(ret >= 0 || firstRun)
+		{
+			firstRun = false;
+			
+
+			switch(WiiSettings.playOrder)
+			{
+				case PLAY_SINGLE:		sprintf(options.value[0], "Single"); break;
+				case PLAY_CONTINUOUS:	sprintf(options.value[0], "Continuous"); break;
+				case PLAY_SHUFFLE:		sprintf(options.value[0], "Shuffle"); break;
+				case PLAY_LOOP:			sprintf(options.value[0], "Loop"); break;
+			}
+			snprintf(options.value[1], 20, "%s", WiiSettings.musicFolder);
+
+			optionBrowser.TriggerUpdate();
+		}
+
+		if(backBtn.GetState() == STATE_CLICKED)
+		{
+			menuCurrent = MENU_SETTINGS;
+		}
+	}
+	HaltGui();
+	mainWindow->Remove(&optionBrowser);
+	mainWindow->Remove(&w);
+	mainWindow->Remove(&titleTxt);
+}
+
+static void MenuSettingsPictures()
+{
+	int ret;
+	int i = 0;
+	bool firstRun = true;
+	OptionList options;
+
+	sprintf(options.name[i++], "Pictures Files Folder");
+
+	options.length = i;
+		
+	for(i=0; i < options.length; i++)
+	{
+		options.value[i][0] = 0;
+		options.icon[i] = 0;
+	}
+
+	GuiText titleTxt("Settings - Pictures", 26, (GXColor){255, 255, 255, 255});
+	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	titleTxt.SetPosition(70, 90);
+
+	GuiImageData btnOutline(button_png);
+	GuiImageData btnOutlineOver(button_over_png);
+
+	GuiTrigger trigA;
+	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
+	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
+	GuiImage backBtnImg(&btnOutline);
+	GuiImage backBtnImgOver(&btnOutlineOver);
+	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	backBtn.SetPosition(30, -35);
+	backBtn.SetLabel(&backBtnTxt);
+	backBtn.SetImage(&backBtnImg);
+	backBtn.SetImageOver(&backBtnImgOver);
+	backBtn.SetTrigger(&trigA);
+	backBtn.SetEffectGrow();
+
+	GuiOptionBrowser optionBrowser(460, 220, &options);
+	optionBrowser.SetPosition(70, 120);
+	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+
+	HaltGui();
+	GuiWindow w(screenwidth, screenheight);
+	w.Append(&backBtn);
+	mainWindow->Append(&optionBrowser);
+	mainWindow->Append(&w);
+	mainWindow->Append(&titleTxt);
+	ResumeGui();
+
+	while(menuCurrent == MENU_SETTINGS_PICTURES && !guiShutdown)
+	{
+		usleep(THREAD_SLEEP);
+
+		ret = optionBrowser.GetClickedOption();
+
+		switch (ret)
+		{
+			case 0:
+				OnScreenKeyboard(WiiSettings.picturesFolder, MAXPATHLEN);
+				break;
+		}
+
+		if(ret >= 0 || firstRun)
+		{
+			firstRun = false;
+
+			snprintf(options.value[0], 20, "%s", WiiSettings.picturesFolder);
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -2475,492 +2944,6 @@ static void MenuSettingsNetworkFTP()
 	mainWindow->Remove(&titleTxt);
 }
 
-static void ScreenZoomWindowUpdate(void * ptr, float h, float v)
-{
-	GuiButton * b = (GuiButton *)ptr;
-	if(b->GetState() == STATE_CLICKED)
-	{
-		WiiSettings.videoZoomHor += h;
-		WiiSettings.videoZoomVert += v;
-
-		char zoom[10];
-		sprintf(zoom, "%.2f%%", WiiSettings.videoZoomHor*100);
-		settingText->SetText(zoom);
-		sprintf(zoom, "%.2f%%", WiiSettings.videoZoomVert*100);
-		settingText2->SetText(zoom);
-		b->ResetState();
-	}
-}
-
-static void ScreenZoomWindowLeftClick(void * ptr) { ScreenZoomWindowUpdate(ptr, -0.01, 0); }
-static void ScreenZoomWindowRightClick(void * ptr) { ScreenZoomWindowUpdate(ptr, +0.01, 0); }
-static void ScreenZoomWindowUpClick(void * ptr) { ScreenZoomWindowUpdate(ptr, 0, +0.01); }
-static void ScreenZoomWindowDownClick(void * ptr) { ScreenZoomWindowUpdate(ptr, 0, -0.01); }
-
-static void ScreenZoomWindow()
-{
-	GuiWindow * w = new GuiWindow(200,200);
-	w->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-
-	GuiTrigger trigLeft;
-	trigLeft.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_LEFT | WPAD_CLASSIC_BUTTON_LEFT, PAD_BUTTON_LEFT);
-
-	GuiTrigger trigRight;
-	trigRight.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_RIGHT | WPAD_CLASSIC_BUTTON_RIGHT, PAD_BUTTON_RIGHT);
-
-	GuiTrigger trigUp;
-	trigUp.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_UP | WPAD_CLASSIC_BUTTON_UP, PAD_BUTTON_UP);
-
-	GuiTrigger trigDown;
-	trigDown.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
-
-	GuiImageData arrowLeft(button_arrow_left_png);
-	GuiImage arrowLeftImg(&arrowLeft);
-	GuiImageData arrowLeftOver(button_arrow_left_over_png);
-	GuiImage arrowLeftOverImg(&arrowLeftOver);
-	GuiButton arrowLeftBtn(arrowLeft.GetWidth(), arrowLeft.GetHeight());
-	arrowLeftBtn.SetImage(&arrowLeftImg);
-	arrowLeftBtn.SetImageOver(&arrowLeftOverImg);
-	arrowLeftBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	arrowLeftBtn.SetPosition(50, 0);
-	arrowLeftBtn.SetTrigger(0, &trigA);
-	arrowLeftBtn.SetTrigger(1, &trigLeft);
-	arrowLeftBtn.SetSelectable(false);
-	arrowLeftBtn.SetUpdateCallback(ScreenZoomWindowLeftClick);
-
-	GuiImageData arrowRight(button_arrow_right_png);
-	GuiImage arrowRightImg(&arrowRight);
-	GuiImageData arrowRightOver(button_arrow_right_over_png);
-	GuiImage arrowRightOverImg(&arrowRightOver);
-	GuiButton arrowRightBtn(arrowRight.GetWidth(), arrowRight.GetHeight());
-	arrowRightBtn.SetImage(&arrowRightImg);
-	arrowRightBtn.SetImageOver(&arrowRightOverImg);
-	arrowRightBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	arrowRightBtn.SetPosition(164, 0);
-	arrowRightBtn.SetTrigger(0, &trigA);
-	arrowRightBtn.SetTrigger(1, &trigRight);
-	arrowRightBtn.SetSelectable(false);
-	arrowRightBtn.SetUpdateCallback(ScreenZoomWindowRightClick);
-
-	GuiImageData arrowUp(button_arrow_up_png);
-	GuiImage arrowUpImg(&arrowUp);
-	GuiImageData arrowUpOver(button_arrow_up_over_png);
-	GuiImage arrowUpOverImg(&arrowUpOver);
-	GuiButton arrowUpBtn(arrowUp.GetWidth(), arrowUp.GetHeight());
-	arrowUpBtn.SetImage(&arrowUpImg);
-	arrowUpBtn.SetImageOver(&arrowUpOverImg);
-	arrowUpBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	arrowUpBtn.SetPosition(-76, -27);
-	arrowUpBtn.SetTrigger(0, &trigA);
-	arrowUpBtn.SetTrigger(1, &trigUp);
-	arrowUpBtn.SetSelectable(false);
-	arrowUpBtn.SetUpdateCallback(ScreenZoomWindowUpClick);
-
-	GuiImageData arrowDown(button_arrow_down_png);
-	GuiImage arrowDownImg(&arrowDown);
-	GuiImageData arrowDownOver(button_arrow_down_over_png);
-	GuiImage arrowDownOverImg(&arrowDownOver);
-	GuiButton arrowDownBtn(arrowDown.GetWidth(), arrowDown.GetHeight());
-	arrowDownBtn.SetImage(&arrowDownImg);
-	arrowDownBtn.SetImageOver(&arrowDownOverImg);
-	arrowDownBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	arrowDownBtn.SetPosition(-76, 27);
-	arrowDownBtn.SetTrigger(0, &trigA);
-	arrowDownBtn.SetTrigger(1, &trigDown);
-	arrowDownBtn.SetSelectable(false);
-	arrowDownBtn.SetUpdateCallback(ScreenZoomWindowDownClick);
-
-	GuiImageData screenPosition(screen_position_png);
-	GuiImage screenPositionImg(&screenPosition);
-	screenPositionImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	screenPositionImg.SetPosition(0, 0);
-
-	settingText = new GuiText(NULL, 22, (GXColor){0, 0, 0, 255});
-	settingText2 = new GuiText(NULL, 22, (GXColor){0, 0, 0, 255});
-	char zoom[10];
-	sprintf(zoom, "%.2f%%", WiiSettings.videoZoomHor*100);
-	settingText->SetText(zoom);
-	settingText->SetPosition(108, 0);
-	sprintf(zoom, "%.2f%%", WiiSettings.videoZoomVert*100);
-	settingText2->SetText(zoom);
-	settingText2->SetPosition(-76, 0);
-
-	float currentZoomHor = WiiSettings.videoZoomHor;
-	float currentZoomVert = WiiSettings.videoZoomVert;
-
-	w->Append(&arrowLeftBtn);
-	w->Append(&arrowRightBtn);
-	w->Append(&arrowUpBtn);
-	w->Append(&arrowDownBtn);
-	w->Append(&screenPositionImg);
-	w->Append(settingText);
-	w->Append(settingText2);
-
-	if(!SettingWindow("Screen Zoom",w))
-	{
-		// undo changes
-		WiiSettings.videoZoomHor = currentZoomHor;
-		WiiSettings.videoZoomVert = currentZoomVert;
-	}
-
-	delete(w);
-	delete(settingText);
-	delete(settingText2);
-}
-
-static void ScreenPositionWindowUpdate(void * ptr, int x, int y)
-{
-	GuiButton * b = (GuiButton *)ptr;
-	if(b->GetState() == STATE_CLICKED)
-	{
-		WiiSettings.videoXshift += x;
-		WiiSettings.videoYshift += y;
-
-		char shift[10];
-		sprintf(shift, "%i, %i", WiiSettings.videoXshift, WiiSettings.videoYshift);
-		settingText->SetText(shift);
-		b->ResetState();
-	}
-}
-
-static void ScreenPositionWindowLeftClick(void * ptr) { ScreenPositionWindowUpdate(ptr, -1, 0); }
-static void ScreenPositionWindowRightClick(void * ptr) { ScreenPositionWindowUpdate(ptr, +1, 0); }
-static void ScreenPositionWindowUpClick(void * ptr) { ScreenPositionWindowUpdate(ptr, 0, -1); }
-static void ScreenPositionWindowDownClick(void * ptr) { ScreenPositionWindowUpdate(ptr, 0, +1); }
-
-static void ScreenPositionWindow()
-{
-	GuiWindow * w = new GuiWindow(150,150);
-	w->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	w->SetPosition(0, -10);
-
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-
-	GuiTrigger trigLeft;
-	trigLeft.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_LEFT | WPAD_CLASSIC_BUTTON_LEFT, PAD_BUTTON_LEFT);
-
-	GuiTrigger trigRight;
-	trigRight.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_RIGHT | WPAD_CLASSIC_BUTTON_RIGHT, PAD_BUTTON_RIGHT);
-
-	GuiTrigger trigUp;
-	trigUp.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_UP | WPAD_CLASSIC_BUTTON_UP, PAD_BUTTON_UP);
-
-	GuiTrigger trigDown;
-	trigDown.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
-
-	GuiImageData arrowLeft(button_arrow_left_png);
-	GuiImage arrowLeftImg(&arrowLeft);
-	GuiImageData arrowLeftOver(button_arrow_left_over_png);
-	GuiImage arrowLeftOverImg(&arrowLeftOver);
-	GuiButton arrowLeftBtn(arrowLeft.GetWidth(), arrowLeft.GetHeight());
-	arrowLeftBtn.SetImage(&arrowLeftImg);
-	arrowLeftBtn.SetImageOver(&arrowLeftOverImg);
-	arrowLeftBtn.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	arrowLeftBtn.SetTrigger(0, &trigA);
-	arrowLeftBtn.SetTrigger(1, &trigLeft);
-	arrowLeftBtn.SetSelectable(false);
-	arrowLeftBtn.SetUpdateCallback(ScreenPositionWindowLeftClick);
-
-	GuiImageData arrowRight(button_arrow_right_png);
-	GuiImage arrowRightImg(&arrowRight);
-	GuiImageData arrowRightOver(button_arrow_right_over_png);
-	GuiImage arrowRightOverImg(&arrowRightOver);
-	GuiButton arrowRightBtn(arrowRight.GetWidth(), arrowRight.GetHeight());
-	arrowRightBtn.SetImage(&arrowRightImg);
-	arrowRightBtn.SetImageOver(&arrowRightOverImg);
-	arrowRightBtn.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	arrowRightBtn.SetTrigger(0, &trigA);
-	arrowRightBtn.SetTrigger(1, &trigRight);
-	arrowRightBtn.SetSelectable(false);
-	arrowRightBtn.SetUpdateCallback(ScreenPositionWindowRightClick);
-
-	GuiImageData arrowUp(button_arrow_up_png);
-	GuiImage arrowUpImg(&arrowUp);
-	GuiImageData arrowUpOver(button_arrow_up_over_png);
-	GuiImage arrowUpOverImg(&arrowUpOver);
-	GuiButton arrowUpBtn(arrowUp.GetWidth(), arrowUp.GetHeight());
-	arrowUpBtn.SetImage(&arrowUpImg);
-	arrowUpBtn.SetImageOver(&arrowUpOverImg);
-	arrowUpBtn.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	arrowUpBtn.SetTrigger(0, &trigA);
-	arrowUpBtn.SetTrigger(1, &trigUp);
-	arrowUpBtn.SetSelectable(false);
-	arrowUpBtn.SetUpdateCallback(ScreenPositionWindowUpClick);
-
-	GuiImageData arrowDown(button_arrow_down_png);
-	GuiImage arrowDownImg(&arrowDown);
-	GuiImageData arrowDownOver(button_arrow_down_over_png);
-	GuiImage arrowDownOverImg(&arrowDownOver);
-	GuiButton arrowDownBtn(arrowDown.GetWidth(), arrowDown.GetHeight());
-	arrowDownBtn.SetImage(&arrowDownImg);
-	arrowDownBtn.SetImageOver(&arrowDownOverImg);
-	arrowDownBtn.SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
-	arrowDownBtn.SetTrigger(0, &trigA);
-	arrowDownBtn.SetTrigger(1, &trigDown);
-	arrowDownBtn.SetSelectable(false);
-	arrowDownBtn.SetUpdateCallback(ScreenPositionWindowDownClick);
-
-	GuiImageData screenPosition(screen_position_png);
-	GuiImage screenPositionImg(&screenPosition);
-	screenPositionImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-
-	settingText = new GuiText(NULL, 22, (GXColor){0, 0, 0, 255});
-	char shift[10];
-	sprintf(shift, "%i, %i", WiiSettings.videoXshift, WiiSettings.videoYshift);
-	settingText->SetText(shift);
-
-	int currentX = WiiSettings.videoXshift;
-	int currentY = WiiSettings.videoYshift;
-
-	w->Append(&arrowLeftBtn);
-	w->Append(&arrowRightBtn);
-	w->Append(&arrowUpBtn);
-	w->Append(&arrowDownBtn);
-	w->Append(&screenPositionImg);
-	w->Append(settingText);
-
-	if(!SettingWindow("Screen Position",w))
-	{
-		WiiSettings.videoXshift = currentX; // undo changes
-		WiiSettings.videoYshift = currentY;
-	}
-
-	delete(w);
-	delete(settingText);
-}
-
-static void MenuSettingsVideo()
-{
-	int ret;
-	int i = 0;
-	bool firstRun = true;
-	OptionList options;
-
-	sprintf(options.name[i++], "Frame Dropping");
-	sprintf(options.name[i++], "Aspect Ratio");
-	sprintf(options.name[i++], "Zoom");
-	sprintf(options.name[i++], "Position");
-
-	options.length = i;
-		
-	for(i=0; i < options.length; i++)
-	{
-		options.value[i][0] = 0;
-		options.icon[i] = 0;
-	}
-
-	GuiText titleTxt("Settings - Video", 26, (GXColor){255, 255, 255, 255});
-	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(70, 90);
-
-	GuiImageData btnOutline(button_png);
-	GuiImageData btnOutlineOver(button_over_png);
-
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-
-	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
-	GuiImage backBtnImg(&btnOutline);
-	GuiImage backBtnImgOver(&btnOutlineOver);
-	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
-	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
-	backBtn.SetPosition(30, -35);
-	backBtn.SetLabel(&backBtnTxt);
-	backBtn.SetImage(&backBtnImg);
-	backBtn.SetImageOver(&backBtnImgOver);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetEffectGrow();
-
-	GuiOptionBrowser optionBrowser(460, 220, &options);
-	optionBrowser.SetPosition(70, 120);
-	optionBrowser.SetCol2Position(220);
-	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-
-	HaltGui();
-	GuiWindow w(screenwidth, screenheight);
-	w.Append(&backBtn);
-	mainWindow->Append(&optionBrowser);
-	mainWindow->Append(&w);
-	mainWindow->Append(&titleTxt);
-	ResumeGui();
-
-	while(menuCurrent == MENU_SETTINGS_VIDEO && !guiShutdown)
-	{
-		usleep(THREAD_SLEEP);
-
-		ret = optionBrowser.GetClickedOption();
-
-		switch (ret)
-		{
-			case 0:
-				WiiSettings.frameDropping++;
-				if (WiiSettings.frameDropping > 2)
-					WiiSettings.frameDropping = 0;
-				break;
-
-			case 1:
-				if(WiiSettings.aspectRatio > 2.34)
-					WiiSettings.aspectRatio = -1;
-				else if(WiiSettings.aspectRatio > 1.84)
-					WiiSettings.aspectRatio = 2.35;
-				else if(WiiSettings.aspectRatio > 1.77)
-					WiiSettings.aspectRatio = 1.85;
-				else if(WiiSettings.aspectRatio > 1.32)
-					WiiSettings.aspectRatio = 1.7778;
-				else if(WiiSettings.aspectRatio > -1.01)
-					WiiSettings.aspectRatio = 1.3333;
-				else
-					WiiSettings.aspectRatio = -1;
-				break;
-
-			case 2:
-				ScreenZoomWindow();
-				break;
-
-			case 3:
-				ScreenPositionWindow();
-				break;
-		}
-
-		if(ret >= 0 || firstRun)
-		{
-			firstRun = false;
-			switch(WiiSettings.frameDropping)
-			{
-				case FRAMEDROPPING_AUTO:
-					sprintf (options.value[0], "Auto"); break;
-				case FRAMEDROPPING_ALWAYS:
-					sprintf (options.value[0], "Always"); break;
-				case FRAMEDROPPING_DISABLED:
-					sprintf (options.value[0], "Disabled"); break;
-			}
-
-			if(WiiSettings.aspectRatio > 2.34)
-				sprintf (options.value[1], "2.35:1");
-			else if(WiiSettings.aspectRatio > 1.84)
-				sprintf (options.value[1], "1.85:1");
-			else if(WiiSettings.aspectRatio > 1.77)
-				sprintf (options.value[1], "16:9");
-			else if(WiiSettings.aspectRatio > 1.32)
-				sprintf (options.value[1], "4:3");
-			else
-				sprintf (options.value[1], "Auto");
-
-			sprintf (options.value[2], "%.2f%%, %.2f%%", WiiSettings.videoZoomHor*100, WiiSettings.videoZoomVert*100);
-			sprintf (options.value[3], "%d, %d", WiiSettings.videoXshift, WiiSettings.videoYshift);
-
-			optionBrowser.TriggerUpdate();
-		}
-
-		if(backBtn.GetState() == STATE_CLICKED)
-		{
-			menuCurrent = MENU_SETTINGS;
-		}
-	}
-	HaltGui();
-	mainWindow->Remove(&optionBrowser);
-	mainWindow->Remove(&w);
-	mainWindow->Remove(&titleTxt);
-}
-
-static void MenuSettingsAudio()
-{
-	int ret;
-	int i = 0;
-	bool firstRun = true;
-	OptionList options;
-
-	sprintf(options.name[i++], "Volume");
-	sprintf(options.name[i++], "Delay (ms)");
-
-	options.length = i;
-		
-	for(i=0; i < options.length; i++)
-	{
-		options.value[i][0] = 0;
-		options.icon[i] = 0;
-	}
-
-	GuiText titleTxt("Settings - Audio", 26, (GXColor){255, 255, 255, 255});
-	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(70, 90);
-
-	GuiImageData btnOutline(button_png);
-	GuiImageData btnOutlineOver(button_over_png);
-
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-
-	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
-	GuiImage backBtnImg(&btnOutline);
-	GuiImage backBtnImgOver(&btnOutlineOver);
-	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
-	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
-	backBtn.SetPosition(30, -35);
-	backBtn.SetLabel(&backBtnTxt);
-	backBtn.SetImage(&backBtnImg);
-	backBtn.SetImageOver(&backBtnImgOver);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetEffectGrow();
-
-	GuiOptionBrowser optionBrowser(460, 220, &options);
-	optionBrowser.SetPosition(70, 120);
-	optionBrowser.SetCol2Position(220);
-	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-
-	HaltGui();
-	GuiWindow w(screenwidth, screenheight);
-	w.Append(&backBtn);
-	mainWindow->Append(&optionBrowser);
-	mainWindow->Append(&w);
-	mainWindow->Append(&titleTxt);
-	ResumeGui();
-
-	while(menuCurrent == MENU_SETTINGS_AUDIO && !guiShutdown)
-	{
-		usleep(THREAD_SLEEP);
-
-		ret = optionBrowser.GetClickedOption();
-
-		switch (ret)
-		{
-			case 0:
-				WiiSettings.volume += 10;
-				if(WiiSettings.volume > 100)
-					WiiSettings.volume = 0;
-				break;
-
-			case 1:
-				WiiSettings.audioDelay += 100;
-				if (WiiSettings.audioDelay > 1000)
-					WiiSettings.audioDelay = -1000;
-				break;
-		}
-
-		if(ret >= 0 || firstRun)
-		{
-			firstRun = false;
-			sprintf (options.value[0], "%d%%", WiiSettings.volume);
-			sprintf (options.value[1], "%d ms", WiiSettings.audioDelay);
-
-			optionBrowser.TriggerUpdate();
-		}
-
-		if(backBtn.GetState() == STATE_CLICKED)
-		{
-			menuCurrent = MENU_SETTINGS;
-		}
-	}
-	HaltGui();
-	mainWindow->Remove(&optionBrowser);
-	mainWindow->Remove(&w);
-	mainWindow->Remove(&titleTxt);
-}
-
 static void MenuSettingsSubtitles()
 {
 	int ret;
@@ -3089,15 +3072,15 @@ static void MenuSettings()
 	int selected = -1;
 
 	MenuItemList items;
-	sprintf(items.name[i], "General");
+	sprintf(items.name[i], "Global");
 	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Cache");
+	sprintf(items.name[i], "Videos");
+	items.img[i] = NULL; i++;
+	sprintf(items.name[i], "Music");
+	items.img[i] = NULL; i++;
+	sprintf(items.name[i], "Pictures");
 	items.img[i] = NULL; i++;
 	sprintf(items.name[i], "Network");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Video");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Audio");
 	items.img[i] = NULL; i++;
 	sprintf(items.name[i], "Subtitles");
 	items.img[i] = NULL; i++;
@@ -3148,23 +3131,23 @@ static void MenuSettings()
 		switch (ret)
 		{
 			case 0:
-				menuCurrent = MENU_SETTINGS_GENERAL;
+				menuCurrent = MENU_SETTINGS_GLOBAL;
 				break;
 
 			case 1:
-				menuCurrent = MENU_SETTINGS_CACHE;
+				menuCurrent = MENU_SETTINGS_VIDEOS;
 				break;
 
 			case 2:
-				menuCurrent = MENU_SETTINGS_NETWORK;
+				menuCurrent = MENU_SETTINGS_MUSIC;
 				break;
 
 			case 3:
-				menuCurrent = MENU_SETTINGS_VIDEO;
+				menuCurrent = MENU_SETTINGS_PICTURES;
 				break;
 
 			case 4:
-				menuCurrent = MENU_SETTINGS_AUDIO;
+				menuCurrent = MENU_SETTINGS_NETWORK;
 				break;
 
 			case 5:
@@ -3987,11 +3970,17 @@ void WiiMenu()
 			case MENU_SETTINGS:
 				MenuSettings();
 				break;
-			case MENU_SETTINGS_GENERAL:
-				MenuSettingsGeneral();
+			case MENU_SETTINGS_GLOBAL:
+				MenuSettingsGlobal();
 				break;
-			case MENU_SETTINGS_CACHE:
-				MenuSettingsCache();
+			case MENU_SETTINGS_VIDEOS:
+				MenuSettingsVideos();
+				break;
+			case MENU_SETTINGS_MUSIC:
+				MenuSettingsMusic();
+				break;
+			case MENU_SETTINGS_PICTURES:
+				MenuSettingsPictures();
 				break;
 			case MENU_SETTINGS_NETWORK:
 				MenuSettingsNetwork();
@@ -4001,12 +3990,6 @@ void WiiMenu()
 				break;
 			case MENU_SETTINGS_NETWORK_FTP:
 				MenuSettingsNetworkFTP();
-				break;
-			case MENU_SETTINGS_VIDEO:
-				MenuSettingsVideo();
-				break;
-			case MENU_SETTINGS_AUDIO:
-				MenuSettingsAudio();
 				break;
 			case MENU_SETTINGS_SUBTITLES:
 				MenuSettingsSubtitles();

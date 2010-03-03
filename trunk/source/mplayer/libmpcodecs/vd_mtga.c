@@ -34,7 +34,7 @@
 
 #include "vd_internal.h"
 
-static vd_info_t info =
+static const vd_info_t info =
 {
     "TGA Images decoder",
     "mtga",
@@ -92,7 +92,7 @@ static int control(sh_video_t *sh, int cmd, void *arg, ...)
 /* init driver */
 static int init(sh_video_t *sh)
 {
-    sh->context = (TGAInfo *) calloc(1, sizeof(TGAInfo));
+    sh->context = calloc(1, sizeof(TGAInfo));
     last_w = -1;
 
     return 1;
@@ -249,4 +249,3 @@ static mp_image_t *decode(sh_video_t *sh, void *raw, int len, int flags)
 
     return mpi;
 }
-

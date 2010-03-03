@@ -22,9 +22,9 @@
 #include "config.h"
 #endif
 
-
-//#define LOG_DEBUG
-
+/*
+#define LOG_DEBUG
+*/
 
 #include <inttypes.h>
 #include <stdlib.h>

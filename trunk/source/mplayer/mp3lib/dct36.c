@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: dct36.c 29305 2009-05-13 02:58:57Z diego $
+ * $Id: dct36.c 30675 2010-02-20 21:02:49Z diego $
  */
 
 /*
@@ -267,4 +267,3 @@ static void dct36(real *inbuf,real *o1,real *o2,real *wintab,real *tsbuf)
 
   }
 }
-

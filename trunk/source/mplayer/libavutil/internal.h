@@ -56,7 +56,7 @@
 #endif
 
 #ifndef av_alias
-#if HAVE_ATTRIBUTE_MAY_ALIAS
+#if HAVE_ATTRIBUTE_MAY_ALIAS && (!defined(__ICC) || __ICC > 1110) && AV_GCC_VERSION_AT_LEAST(3,3)
 #   define av_alias __attribute__((may_alias))
 #else
 #   define av_alias
@@ -165,7 +165,7 @@ static inline av_const unsigned int ff_sqrt(unsigned int a)
 #endif
 
 /* avoid usage of dangerous/inappropriate system functions */
-#undef  malloc
+/*#undef  malloc
 #define malloc please_use_av_malloc
 #undef  free
 #define free please_use_av_free
@@ -195,6 +195,7 @@ static inline av_const unsigned int ff_sqrt(unsigned int a)
 #undef  perror
 #define perror please_use_av_log_instead_of_perror
 #endif
+*/
 
 #define FF_ALLOC_OR_GOTO(ctx, p, size, label)\
 {\
@@ -221,7 +222,7 @@ static inline av_const unsigned int ff_sqrt(unsigned int a)
 
 #if !HAVE_EXP2F
 #undef exp2f
-#define exp2f(x) exp2(x)
+#define exp2f(x) ((float)exp2(x))
 #endif /* HAVE_EXP2F */
 
 #if !HAVE_LLRINT
@@ -231,8 +232,7 @@ static av_always_inline av_const long long llrint(double x)
     return rint(x);
 }
 #else
-// WTFBBQ broken libc, eh?
-#define llrint(x) rint(x)
+#define llrint(x) ((long long)rint(x))
 #endif
 #endif /* HAVE_LLRINT */
 
@@ -243,7 +243,7 @@ static av_always_inline av_const long long llrint(double x)
 
 #if !HAVE_LOG2F
 #undef log2f
-#define log2f(x) log2(x)
+#define log2f(x) ((float)log2(x))
 #endif /* HAVE_LOG2F */
 
 #if !HAVE_LRINT

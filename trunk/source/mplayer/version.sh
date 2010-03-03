@@ -15,15 +15,14 @@ test $svn_revision || svn_revision=UNKNOWN
 version=$(cat VERSION 2> /dev/null)
 test $version || version=$svn_revision
 
-NEW_HEAD="#define VERSION \"${version}${extra}\"
-#define BUILD_DATE \"$(date +%d/%m/%g)\""
-OLD_HEAD=$(head -n 2 version.h 2> /dev/null)
+NEW_REVISION="#define VERSION \"${version}${extra}\""
+OLD_REVISION=$(head -n 1 version.h 2> /dev/null)
 TITLE='#define MP_TITLE "%s "VERSION" (C) 2000-2010 MPlayer Team\n"'
 
-# Update version.h only on revision or date changes to avoid spurious rebuilds
-if test "$NEW_HEAD" != "$OLD_HEAD"; then
+# Update version.h only on revision changes to avoid spurious rebuilds
+if test "$NEW_REVISION" != "$OLD_REVISION"; then
     cat <<EOF > version.h
-$NEW_HEAD
+$NEW_REVISION
 $TITLE
 EOF
 fi

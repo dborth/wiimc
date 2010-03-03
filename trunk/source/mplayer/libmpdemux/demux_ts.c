@@ -34,9 +34,9 @@
 #include "demuxer.h"
 #include "parse_es.h"
 #include "stheader.h"
-
 #include "ms_hdr.h"
 #include "mpeg_hdr.h"
+#include "demux_ts.h"
 
 #define TS_PH_PACKET_SIZE 192
 #define TS_FEC_PACKET_SIZE 204
@@ -320,7 +320,7 @@ static void ts_add_stream(demuxer_t * demuxer, ES_stream_t *es)
 
 		if(es->extradata && es->extradata_len)
 		{
-			sh->wf = (WAVEFORMATEX *) malloc(sizeof (WAVEFORMATEX) + es->extradata_len);
+			sh->wf = malloc(sizeof (WAVEFORMATEX) + es->extradata_len);
 			sh->wf->cbSize = es->extradata_len;
 			memcpy(sh->wf + 1, es->extradata, es->extradata_len);
 		}
@@ -344,7 +344,7 @@ static void ts_add_stream(demuxer_t * demuxer, ES_stream_t *es)
 			if(sh->format == VIDEO_AVC && es->extradata && es->extradata_len)
 			{
 				int w = 0, h = 0;
-				sh->bih = (BITMAPINFOHEADER *) calloc(1, sizeof(BITMAPINFOHEADER) + es->extradata_len);
+				sh->bih = calloc(1, sizeof(BITMAPINFOHEADER) + es->extradata_len);
 				sh->bih->biSize= sizeof(BITMAPINFOHEADER) + es->extradata_len;
 				sh->bih->biCompression = sh->format;
 				memcpy(sh->bih + 1, es->extradata, es->extradata_len);
@@ -680,7 +680,7 @@ static off_t ts_detect_streams(demuxer_t *demuxer, tsdemux_init_t *param)
 				pptr = &pes_priv1[es.pid];
 				if(pptr->pos < 64*1024)
 				{
-				tmpbuf = (char*) realloc(pptr->buf, pptr->pos + es.size);
+				tmpbuf = realloc(pptr->buf, pptr->pos + es.size);
 				if(tmpbuf != NULL)
 				{
 					pptr->buf = tmpbuf;
@@ -1115,7 +1115,6 @@ static void demux_close_ts(demuxer_t * demuxer)
 }
 
 
-unsigned char mp_getbits(unsigned char*, unsigned int, unsigned char);
 #define getbits mp_getbits
 
 static int mp4_parse_sl_packet(pmt_t *pmt, uint8_t *buf, uint16_t packet_len, int pid, ES_stream_t *pes_es)
@@ -1679,7 +1678,7 @@ static int collect_section(ts_section_t *section, int is_start, unsigned char *b
 	{
 		if(! section->buffer)
 		{
-			section->buffer = (uint8_t*) malloc(4096+256);
+			section->buffer = malloc(4096 + 256);
 			if(section->buffer == NULL)
 				return 0;
 		}
@@ -2698,7 +2697,7 @@ static int fill_extradata(mp4_decoder_config_t * mp4_dec, ES_stream_t *tss)
 
 	if(mp4_dec->buf_size > tss->extradata_alloc)
 	{
-		tmp = (uint8_t *) realloc(tss->extradata, mp4_dec->buf_size);
+		tmp = realloc(tss->extradata, mp4_dec->buf_size);
 		if(!tmp)
 			return 0;
 		tss->extradata = tmp;

@@ -59,7 +59,7 @@ audio_encoder_t *new_audio_encoder(muxer_stream_t *stream, audio_encoding_params
 	if(! params)
 		return NULL;
 
-	encoder = (audio_encoder_t *) calloc(1, sizeof(audio_encoder_t));
+	encoder = calloc(1, sizeof(audio_encoder_t));
 	memcpy(&encoder->params, params, sizeof(audio_encoding_params_t));
 	encoder->stream = stream;
 
@@ -114,5 +114,3 @@ audio_encoder_t *new_audio_encoder(muxer_stream_t *stream, audio_encoding_params
 	encoder->codec = stream->codec;
 	return encoder;
 }
-
-

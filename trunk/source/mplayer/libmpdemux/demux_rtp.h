@@ -21,13 +21,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
-#ifndef STREAM_H
-#include "stream/stream.h"
-#endif
-#ifndef DEMUXER_H
 #include "demuxer.h"
-#endif
 
 // Open a RTP demuxer (which was initiated either from a SDP file,
 // or from a RTSP URL):

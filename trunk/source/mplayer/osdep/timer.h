@@ -32,14 +32,10 @@ u64 GetRelativeTime(void);
 #else
 unsigned int GetTimer(void);
 unsigned int GetTimerMS(void);
-double GetRelativeTime(void);
+//int uGetTimer(void);
+float GetRelativeTime(void);
 int usec_sleep(unsigned int usec_delay);
 #endif
-//int uGetTimer(void);
-
-
-
-
 /* timer's callback handling */
 typedef void timer_callback( void );
 unsigned set_timer_callback(unsigned ms,timer_callback func);

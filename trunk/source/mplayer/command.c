@@ -1,3 +1,21 @@
+/*
+ * This file is part of MPlayer.
+ *
+ * MPlayer is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * MPlayer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with MPlayer; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
 #include <stdlib.h>
 #include <inttypes.h>
 #include <unistd.h>
@@ -51,7 +69,9 @@
 #define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
 
 extern int use_menu;
+#ifdef GEKKO
 extern int copyScreen;
+#endif
 
 static void rescale_input_coordinates(int ix, int iy, double *dx, double *dy)
 {
@@ -2564,11 +2584,16 @@ int run_command(MPContext * mpctx, mp_cmd_t * cmd)
 	    break;
 
 	case MP_CMD_QUIT:
-//like pause
+#ifdef GEKKO
+		//like pause
 	    cmd->pausing = 1;
 	    brk_cmd = 1;
 	    copyScreen = 1;
 	    break;
+#else
+	    exit_player_with_rc(EXIT_QUIT,
+				(cmd->nargs > 0) ? cmd->args[0].v.i : 0);
+#endif
 	case MP_CMD_PLAY_TREE_STEP:{
 		int n = cmd->args[0].v.i == 0 ? 1 : cmd->args[0].v.i;
 		int force = cmd->args[1].v.i;
@@ -2585,7 +2610,18 @@ int run_command(MPContext * mpctx, mp_cmd_t * cmd)
 		} else
 #endif
 		{
-		    mpctx->eof = 1;
+		    if (!force && mpctx->playtree_iter) {
+			play_tree_iter_t *i =
+			    play_tree_iter_new_copy(mpctx->playtree_iter);
+			if (play_tree_iter_step(i, n, 0) ==
+			    PLAY_TREE_ITER_ENTRY)
+			    mpctx->eof =
+				(n > 0) ? PT_NEXT_ENTRY : PT_PREV_ENTRY;
+			play_tree_iter_free(i);
+		    } else
+			mpctx->eof = (n > 0) ? PT_NEXT_ENTRY : PT_PREV_ENTRY;
+		    if (mpctx->eof)
+			mpctx->play_tree_step = n;
 		    brk_cmd = 1;
 		}
 	    }
@@ -2705,7 +2741,6 @@ int run_command(MPContext * mpctx, mp_cmd_t * cmd)
 	    break;
 
 	case MP_CMD_LOADLIST:{
-		//setwatchdogcounter(-1);
 		play_tree_t *e = parse_playlist_file(cmd->args[0].v.s);
 		if (!e)
 		    mp_msg(MSGT_CPLAYER, MSGL_ERR,
@@ -2725,7 +2760,6 @@ int run_command(MPContext * mpctx, mp_cmd_t * cmd)
 			mpctx->eof = PT_NEXT_SRC;
 		    }
 		}
-		//setwatchdogcounter(WATCH_TIMEOUT);
 		brk_cmd = 1;
 	    }
 	    break;
@@ -2964,9 +2998,8 @@ int run_command(MPContext * mpctx, mp_cmd_t * cmd)
 				extern char* dvdsub_lang;
 				int i,j;
 				
-				set_osd_msg(OSD_MSG_TEXT, 1, 30000000,	"Subtitles: loading");
-				
-				force_osd();
+				//set_osd_msg(OSD_MSG_TEXT, 1, 30000000,	"Subtitles: loading");
+				//force_osd();
 				
 				vobsub_filename=strdup(cmd->args[0].v.s);
 				j=strlen(vobsub_filename);

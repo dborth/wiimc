@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "stream/stream.h"
+#include "aviprint.h"
 #include "demuxer.h"
 #include "stheader.h"
 #include "genres.h"
@@ -61,8 +62,6 @@ typedef struct mp3_hdr {
   int cons_hdrs; // if this reaches MIN_MP3_HDRS we accept as MP3 file
   struct mp3_hdr *next;
 } mp3_hdr_t;
-
-void print_wave_header(WAVEFORMATEX *h, int verbose_level);
 
 int hr_mp3_seek = 0;
 
@@ -417,6 +416,8 @@ static int demux_audio_open(demuxer_t* demuxer) {
       }
       stream_read(s,(char*)((char*)(w)+sizeof(WAVEFORMATEX)),w->cbSize);
       l -= w->cbSize;
+      if (w->wFormatTag & 0xfffe && w->cbSize >= 22)
+          sh_audio->format = ((WAVEFORMATEXTENSIBLE *)w)->SubFormat;
     }
 
     if( mp_msg_test(MSGT_DEMUX,MSGL_V) ) print_wave_header(w, MSGL_V);

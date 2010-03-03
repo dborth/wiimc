@@ -31,6 +31,9 @@
 #include "demuxer.h"
 #include "stheader.h"
 #include "libavutil/intreadwrite.h"
+#include "aviprint.h"
+#include "demux_mov.h"
+#include "demux_ogg.h"
 
 #define FOURCC_VORBIS mmioFOURCC('v', 'r', 'b', 's')
 #define FOURCC_SPEEX  mmioFOURCC('s', 'p', 'x', ' ')
@@ -182,7 +185,8 @@ extern int dvdsub_id;
 static subtitle ogg_sub;
 //FILE* subout;
 
-void demux_ogg_add_sub (ogg_stream_t* os,ogg_packet* pack) {
+static void demux_ogg_add_sub(ogg_stream_t *os, ogg_packet *pack)
+{
   int lcv;
   char *packet = pack->packet;
 
@@ -370,7 +374,32 @@ static int demux_ogg_check_lang(const char *clang, const char *langlist)
   return 0;
 }
 
-static int demux_ogg_sub_reverse_id(demuxer_t *demuxer, int id);
+/** \brief Change the current subtitle stream and return its ID.
+
+  \param demuxer The demuxer whose subtitle stream will be changed.
+  \param new_num The number of the new subtitle track. The number must be
+  between 0 and ogg_d->n_text - 1.
+
+  \returns The Ogg stream number ( = page serial number) of the newly selected
+  track.
+*/
+static int demux_ogg_sub_id(demuxer_t *demuxer, int index)
+{
+  ogg_demuxer_t *ogg_d = demuxer->priv;
+  return (index < 0) ? index : (index >= ogg_d->n_text) ? -1 : ogg_d->text_ids[index];
+}
+
+/** \brief Translate the ogg track number into the subtitle number.
+ *  \param demuxer The demuxer about whose subtitles we are inquiring.
+ *  \param id The ogg track number of the subtitle track.
+ */
+static int demux_ogg_sub_reverse_id(demuxer_t *demuxer, int id) {
+  ogg_demuxer_t *ogg_d = demuxer->priv;
+  int i;
+  for (i = 0; i < ogg_d->n_text; i++)
+    if (ogg_d->text_ids[i] == id) return i;
+  return -1;
+}
 
 /// Try to print out comments and also check for LANGUAGE= tag
 static void demux_ogg_check_comments(demuxer_t *d, ogg_stream_t *os, int id, vorbis_comment *vc)
@@ -518,7 +547,8 @@ static int demux_ogg_add_packet(demux_stream_t* ds,ogg_stream_t* os,int id,ogg_p
 
 /// if -forceidx build a table of all syncpoints to make seeking easier
 /// otherwise try to get at least the final_granulepos
-void demux_ogg_scan_stream(demuxer_t* demuxer) {
+static void demux_ogg_scan_stream(demuxer_t *demuxer)
+{
   ogg_demuxer_t* ogg_d = demuxer->priv;
   stream_t *s = demuxer->stream;
   ogg_sync_state* sync = &ogg_d->sync;
@@ -639,40 +669,6 @@ void demux_ogg_scan_stream(demuxer_t* demuxer) {
   }
 
 }
-
-void print_wave_header(WAVEFORMATEX *h, int verbose_level);
-void print_video_header(BITMAPINFOHEADER *h, int verbose_level);
-
-/* defined in demux_mov.c */
-unsigned int store_ughvlc(unsigned char *s, unsigned int v);
-
-/** \brief Change the current subtitle stream and return its ID.
-
-  \param demuxer The demuxer whose subtitle stream will be changed.
-  \param new_num The number of the new subtitle track. The number must be
-  between 0 and ogg_d->n_text - 1.
-
-  \returns The Ogg stream number ( = page serial number) of the newly selected
-  track.
-*/
-int demux_ogg_sub_id(demuxer_t *demuxer, int index) {
-  ogg_demuxer_t *ogg_d = demuxer->priv;
-  return (index < 0) ? index : (index >= ogg_d->n_text) ? -1 : ogg_d->text_ids[index];
-}
-
-/** \brief Translate the ogg track number into the subtitle number.
- *  \param demuxer The demuxer about whose subtitles we are inquiring.
- *  \param id The ogg track number of the subtitle track.
- */
-static int demux_ogg_sub_reverse_id(demuxer_t *demuxer, int id) {
-  ogg_demuxer_t *ogg_d = demuxer->priv;
-  int i;
-  for (i = 0; i < ogg_d->n_text; i++)
-    if (ogg_d->text_ids[i] == id) return i;
-  return -1;
-}
-
-static void demux_close_ogg(demuxer_t* demuxer);
 
 static void fixup_vorbis_wf(sh_audio_t *sh, ogg_demuxer_t *od)
 {
@@ -1260,7 +1256,7 @@ demuxer_t* init_avi_with_ogg(demuxer_t* demuxer) {
   demux_packet_t *dp;
   sh_audio_t *sh_audio = demuxer->audio->sh;
   int np;
-  uint8_t *extradata = sh_audio->wf + 1;
+  uint8_t *extradata = (uint8_t *)(sh_audio->wf + 1);
   int i;
   unsigned char *p = NULL,*buf;
   int plen;

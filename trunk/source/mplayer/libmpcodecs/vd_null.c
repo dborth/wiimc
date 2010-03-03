@@ -24,7 +24,7 @@
 
 #include "vd_internal.h"
 
-static vd_info_t info =
+static const vd_info_t info =
 {
 	"Null video decoder",
 	"null",
@@ -54,4 +54,3 @@ static void uninit(sh_video_t *sh){
 static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags){
     return NULL;
 }
-

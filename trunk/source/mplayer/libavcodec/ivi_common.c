@@ -33,6 +33,12 @@
 #include "libavutil/common.h"
 #include "ivi_dsp.h"
 
+extern const IVIHuffDesc ff_ivi_mb_huff_desc[8];  ///< static macroblock huffman tables
+extern const IVIHuffDesc ff_ivi_blk_huff_desc[8]; ///< static block huffman tables
+
+VLC ff_ivi_mb_vlc_tabs [8];
+VLC ff_ivi_blk_vlc_tabs[8];
+
 /**
  *  Reverses "nbits" bits of the value "val" and returns the result
  *  in the least significant bits.
@@ -80,23 +86,70 @@ int ff_ivi_create_huff_from_desc(const IVIHuffDesc *cb, VLC *vlc, int flag)
 
     /* number of codewords = pos */
     return init_vlc(vlc, IVI_VLC_BITS, pos, bits, 1, 1, codewords, 2, 2,
-                    (flag & 1) | INIT_VLC_LE);
+                    (flag ? INIT_VLC_USE_NEW_STATIC : 0) | INIT_VLC_LE);
 }
 
-int ff_ivi_dec_huff_desc(GetBitContext *gb, IVIHuffDesc *desc)
+void ff_ivi_init_static_vlc(void)
 {
-    int tab_sel, i;
+    int i;
+    static VLC_TYPE table_data[8192 * 16][2];
+    static int initialized_vlcs = 0;
 
-    tab_sel = get_bits(gb, 3);
-    if (tab_sel == 7) {
-        /* custom huffman table (explicitly encoded) */
-        desc->num_rows = get_bits(gb, 4);
+    if (initialized_vlcs)
+        return;
+    for (i = 0; i < 8; i++) {
+        ff_ivi_mb_vlc_tabs[i].table = table_data + i * 2 * 8192;
+        ff_ivi_mb_vlc_tabs[i].table_allocated = 8192;
+        ff_ivi_create_huff_from_desc(&ff_ivi_mb_huff_desc[i],  &ff_ivi_mb_vlc_tabs[i],  1);
+        ff_ivi_blk_vlc_tabs[i].table = table_data + (i * 2 + 1) * 8192;
+        ff_ivi_blk_vlc_tabs[i].table_allocated = 8192;
+        ff_ivi_create_huff_from_desc(&ff_ivi_blk_huff_desc[i], &ff_ivi_blk_vlc_tabs[i], 1);
+    }
+    initialized_vlcs = 1;
+}
 
-        for (i = 0; i < desc->num_rows; i++)
-            desc->xbits[i] = get_bits(gb, 4);
+int ff_ivi_dec_huff_desc(GetBitContext *gb, int desc_coded, int which_tab,
+                         IVIHuffTab *huff_tab, AVCodecContext *avctx)
+{
+    int         i, result;
+    IVIHuffDesc new_huff;
+
+    if (!desc_coded) {
+        /* select default table */
+        huff_tab->tab = (which_tab) ? &ff_ivi_blk_vlc_tabs[7]
+            : &ff_ivi_mb_vlc_tabs [7];
+    } else {
+        huff_tab->tab_sel = get_bits(gb, 3);
+        if (huff_tab->tab_sel == 7) {
+            /* custom huffman table (explicitly encoded) */
+            new_huff.num_rows = get_bits(gb, 4);
+
+            for (i = 0; i < new_huff.num_rows; i++)
+                new_huff.xbits[i] = get_bits(gb, 4);
+
+            /* Have we got the same custom table? Rebuild if not. */
+            if (ff_ivi_huff_desc_cmp(&new_huff, &huff_tab->cust_desc)) {
+                ff_ivi_huff_desc_copy(&huff_tab->cust_desc, &new_huff);
+
+                if (huff_tab->cust_tab.table)
+                    free_vlc(&huff_tab->cust_tab);
+                result = ff_ivi_create_huff_from_desc(&huff_tab->cust_desc,
+                        &huff_tab->cust_tab, 0);
+                if (result) {
+                    av_log(avctx, AV_LOG_ERROR,
+                           "Error while initializing custom vlc table!\n");
+                    return -1;
+                }
+            }
+            huff_tab->tab = &huff_tab->cust_tab;
+        } else {
+            /* select one of predefined tables */
+            huff_tab->tab = (which_tab) ? &ff_ivi_blk_vlc_tabs[huff_tab->tab_sel]
+                : &ff_ivi_mb_vlc_tabs [huff_tab->tab_sel];
+        }
     }
 
-    return tab_sel;
+    return 0;
 }
 
 int ff_ivi_huff_desc_cmp(const IVIHuffDesc *desc1, const IVIHuffDesc *desc2)
@@ -166,7 +219,7 @@ int av_cold ff_ivi_init_planes(IVIPlaneDesc *planes, const IVIPicConfig *cfg)
                     return AVERROR(ENOMEM);
             }
 
-            planes[p].bands[0].huff_desc.num_rows = 0; /* reset custom vlc */
+            planes[p].bands[0].blk_vlc.cust_desc.num_rows = 0; /* reset custom vlc */
         }
     }
 
@@ -183,6 +236,8 @@ void av_cold ff_ivi_free_buffers(IVIPlaneDesc *planes)
             av_freep(&planes[p].bands[b].bufs[1]);
             av_freep(&planes[p].bands[b].bufs[2]);
 
+            if (planes[p].bands[b].blk_vlc.cust_tab.table)
+                free_vlc(&planes[p].bands[b].blk_vlc.cust_tab);
             for (t = 0; t < planes[p].bands[b].num_tiles; t++)
                 av_freep(&planes[p].bands[b].tiles[t].mbs);
             av_freep(&planes[p].bands[b].tiles);
@@ -331,14 +386,14 @@ int ff_ivi_decode_blocks(GetBitContext *gb, IVIBandDesc *band, IVITile *tile)
                 memset(col_flags, 0, sizeof(col_flags));      /* zero column flags */
 
                 while (scan_pos <= num_coeffs) {
-                    sym = get_vlc2(gb, band->blk_vlc->table, IVI_VLC_BITS, 1);
+                    sym = get_vlc2(gb, band->blk_vlc.tab->table, IVI_VLC_BITS, 1);
                     if (sym == rvmap->eob_sym)
                         break; /* End of block */
 
                     if (sym == rvmap->esc_sym) { /* Escape - run/val explicitly coded using 3 vlc codes */
-                        run = get_vlc2(gb, band->blk_vlc->table, IVI_VLC_BITS, 1) + 1;
-                        lo  = get_vlc2(gb, band->blk_vlc->table, IVI_VLC_BITS, 1);
-                        hi  = get_vlc2(gb, band->blk_vlc->table, IVI_VLC_BITS, 1);
+                        run = get_vlc2(gb, band->blk_vlc.tab->table, IVI_VLC_BITS, 1) + 1;
+                        lo  = get_vlc2(gb, band->blk_vlc.tab->table, IVI_VLC_BITS, 1);
+                        hi  = get_vlc2(gb, band->blk_vlc.tab->table, IVI_VLC_BITS, 1);
                         val = IVI_TOSIGNED((hi << 6) | lo); /* merge them and convert into signed val */
                     } else {
                         run = rvmap->runtab[sym];

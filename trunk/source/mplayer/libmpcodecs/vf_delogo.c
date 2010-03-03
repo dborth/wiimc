@@ -117,7 +117,7 @@ static void delogo(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int
     }
 }
 
-static int config(struct vf_instance_s* vf,
+static int config(struct vf_instance *vf,
 		  int width, int height, int d_width, int d_height,
 		  unsigned int flags, unsigned int outfmt){
 
@@ -125,7 +125,7 @@ static int config(struct vf_instance_s* vf,
 }
 
 
-static void get_image(struct vf_instance_s* vf, mp_image_t *mpi){
+static void get_image(struct vf_instance *vf, mp_image_t *mpi){
     if(mpi->flags&MP_IMGFLAG_PRESERVE) return; // don't change
     if(mpi->imgfmt!=vf->priv->outfmt) return; // colorspace differ
     // ok, we can do pp in-place (or pp disabled):
@@ -143,7 +143,7 @@ static void get_image(struct vf_instance_s* vf, mp_image_t *mpi){
     mpi->flags|=MP_IMGFLAG_DIRECT;
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
     mp_image_t *dmpi;
 
     if(!(mpi->flags&MP_IMGFLAG_DIRECT)){
@@ -169,7 +169,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
     return vf_next_put_image(vf,dmpi, pts);
 }
 
-static void uninit(struct vf_instance_s* vf){
+static void uninit(struct vf_instance *vf){
     if(!vf->priv) return;
 
     free(vf->priv);
@@ -178,7 +178,7 @@ static void uninit(struct vf_instance_s* vf){
 
 //===========================================================================//
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt){
+static int query_format(struct vf_instance *vf, unsigned int fmt){
     switch(fmt)
     {
     case IMGFMT_YV12:
@@ -189,14 +189,14 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt){
     return 0;
 }
 
-static unsigned int fmt_list[]={
+static const unsigned int fmt_list[]={
     IMGFMT_YV12,
     IMGFMT_I420,
     IMGFMT_IYUV,
     0
 };
 
-static int open(vf_instance_t *vf, char* args){
+static int vf_open(vf_instance_t *vf, char *args){
     vf->config=config;
     vf->put_image=put_image;
     vf->get_image=get_image;
@@ -233,7 +233,7 @@ static int open(vf_instance_t *vf, char* args){
 }
 
 #define ST_OFF(f) M_ST_OFF(struct vf_priv_s,f)
-static m_option_t vf_opts_fields[] = {
+static const m_option_t vf_opts_fields[] = {
     { "x", ST_OFF(xoff), CONF_TYPE_INT, 0, 0, 0, NULL },
     { "y", ST_OFF(yoff), CONF_TYPE_INT, 0, 0, 0, NULL },
     { "w", ST_OFF(lw), CONF_TYPE_INT, 0, 0, 0, NULL },
@@ -243,7 +243,7 @@ static m_option_t vf_opts_fields[] = {
     { NULL, NULL, 0, 0, 0, 0, NULL }
 };
 
-static m_struct_t vf_opts = {
+static const m_struct_t vf_opts = {
     "delogo",
     sizeof(struct vf_priv_s),
     &vf_priv_dflt,
@@ -255,7 +255,7 @@ const vf_info_t vf_info_delogo = {
     "delogo",
     "Jindrich Makovicka, Alex Beregszaszi",
     "",
-    open,
+    vf_open,
     &vf_opts
 };
 

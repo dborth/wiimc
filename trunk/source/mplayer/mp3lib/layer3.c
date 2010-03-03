@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: layer3.c 30209 2010-01-04 19:36:18Z diego $
+ * $Id: layer3.c 30675 2010-02-20 21:02:49Z diego $
  */
 
 /*
@@ -1347,5 +1347,3 @@ static int do_layer3(struct frame *fr,int single){
 
   return clip;
 }
-
-

@@ -34,6 +34,7 @@
 #include "unary.h"
 #include "mpeg4audio.h"
 #include "bytestream.h"
+#include "bgmc.h"
 
 #include <stdint.h>
 
@@ -120,6 +121,28 @@ static const int16_t mcc_weightings[] = {
 };
 
 
+/** Tail codes used in arithmetic coding using block Gilbert-Moore codes.
+ */
+static const uint8_t tail_code[16][6] = {
+    { 74, 44, 25, 13,  7, 3},
+    { 68, 42, 24, 13,  7, 3},
+    { 58, 39, 23, 13,  7, 3},
+    {126, 70, 37, 19, 10, 5},
+    {132, 70, 37, 20, 10, 5},
+    {124, 70, 38, 20, 10, 5},
+    {120, 69, 37, 20, 11, 5},
+    {116, 67, 37, 20, 11, 5},
+    {108, 66, 36, 20, 10, 5},
+    {102, 62, 36, 20, 10, 5},
+    { 88, 58, 34, 19, 10, 5},
+    {162, 89, 49, 25, 13, 7},
+    {156, 87, 49, 26, 14, 7},
+    {150, 86, 47, 26, 14, 7},
+    {142, 84, 47, 26, 14, 7},
+    {131, 79, 46, 26, 14, 7}
+};
+
+
 enum RA_Flag {
     RA_FLAG_NONE,
     RA_FLAG_FRAMES,
@@ -169,6 +192,9 @@ typedef struct {
     unsigned int frame_id;          ///< the frame ID / number of the current frame
     unsigned int js_switch;         ///< if true, joint-stereo decoding is enforced
     unsigned int num_blocks;        ///< number of blocks used in the current frame
+    unsigned int s_max;             ///< maximum Rice parameter allowed in entropy coding
+    uint8_t *bgmc_lut;              ///< pointer at lookup tables used for BGMC
+    unsigned int *bgmc_lut_status;  ///< pointer at lookup table status flags used for BGMC
     int ltp_lag_length;             ///< number of bits used for ltp lag value
     int *use_ltp;                   ///< contains use_ltp flags for all channels
     int *ltp_lag;                   ///< contains ltp lag values for all channels
@@ -383,7 +409,6 @@ static int check_specific_config(ALSDecContext *ctx)
     }
 
     MISSING_ERR(sconf->floating,             "Floating point decoding",     -1);
-    MISSING_ERR(sconf->bgmc,                 "BGMC entropy decoding",       -1);
     MISSING_ERR(sconf->rlslms,               "Adaptive RLS-LMS prediction", -1);
     MISSING_ERR(sconf->chan_sort,            "Channel sorting",              0);
 
@@ -554,11 +579,13 @@ static int read_var_block_data(ALSDecContext *ctx, ALSBlockData *bd)
     GetBitContext *gb        = &ctx->gb;
     unsigned int k;
     unsigned int s[8];
+    unsigned int sx[8];
     unsigned int sub_blocks, log2_sub_blocks, sb_length;
     unsigned int start      = 0;
     unsigned int opt_order;
     int          sb;
     int32_t      *quant_cof = bd->quant_cof;
+    int32_t      *current_res;
 
 
     // ensure variable block decoding by reusing this field
@@ -591,9 +618,15 @@ static int read_var_block_data(ALSDecContext *ctx, ALSBlockData *bd)
 
     sb_length = bd->block_length >> log2_sub_blocks;
 
-
     if (sconf->bgmc) {
-        // TODO: BGMC mode
+        s[0] = get_bits(gb, 8 + (sconf->resolution > 1));
+        for (k = 1; k < sub_blocks; k++)
+            s[k] = s[k - 1] + decode_rice(gb, 2);
+
+        for (k = 0; k < sub_blocks; k++) {
+            sx[k]   = s[k] & 0x0F;
+            s [k] >>= 4;
+        }
     } else {
         s[0] = get_bits(gb, 4 + (sconf->resolution > 1));
         for (k = 1; k < sub_blocks; k++)
@@ -670,10 +703,14 @@ static int read_var_block_data(ALSDecContext *ctx, ALSBlockData *bd)
         *bd->use_ltp = get_bits1(gb);
 
         if (*bd->use_ltp) {
+            int r, c;
+
             bd->ltp_gain[0]   = decode_rice(gb, 1) << 3;
             bd->ltp_gain[1]   = decode_rice(gb, 2) << 3;
 
-            bd->ltp_gain[2]   = ltp_gain_values[get_unary(gb, 0, 4)][get_bits(gb, 2)];
+            r                 = get_unary(gb, 0, 4);
+            c                 = get_bits(gb, 2);
+            bd->ltp_gain[2]   = ltp_gain_values[r][c];
 
             bd->ltp_gain[3]   = decode_rice(gb, 2) << 3;
             bd->ltp_gain[4]   = decode_rice(gb, 1) << 3;
@@ -688,18 +725,85 @@ static int read_var_block_data(ALSDecContext *ctx, ALSBlockData *bd)
         if (opt_order)
             bd->raw_samples[0] = decode_rice(gb, avctx->bits_per_raw_sample - 4);
         if (opt_order > 1)
-            bd->raw_samples[1] = decode_rice(gb, s[0] + 3);
+            bd->raw_samples[1] = decode_rice(gb, FFMIN(s[0] + 3, ctx->s_max));
         if (opt_order > 2)
-            bd->raw_samples[2] = decode_rice(gb, s[0] + 1);
+            bd->raw_samples[2] = decode_rice(gb, FFMIN(s[0] + 1, ctx->s_max));
 
         start = FFMIN(opt_order, 3);
     }
 
     // read all residuals
     if (sconf->bgmc) {
-        // TODO: BGMC mode
+        unsigned int delta[sub_blocks];
+        unsigned int k    [sub_blocks];
+        unsigned int b = av_clip((av_ceil_log2(bd->block_length) - 3) >> 1, 0, 5);
+        unsigned int i = start;
+
+        // read most significant bits
+        unsigned int high;
+        unsigned int low;
+        unsigned int value;
+
+        ff_bgmc_decode_init(gb, &high, &low, &value);
+
+        current_res = bd->raw_samples + start;
+
+        for (sb = 0; sb < sub_blocks; sb++, i = 0) {
+            k    [sb] = s[sb] > b ? s[sb] - b : 0;
+            delta[sb] = 5 - s[sb] + k[sb];
+
+            ff_bgmc_decode(gb, sb_length, current_res,
+                        delta[sb], sx[sb], &high, &low, &value, ctx->bgmc_lut, ctx->bgmc_lut_status);
+
+            current_res += sb_length;
+        }
+
+        ff_bgmc_decode_end(gb);
+
+
+        // read least significant bits and tails
+        i = start;
+        current_res = bd->raw_samples + start;
+
+        for (sb = 0; sb < sub_blocks; sb++, i = 0) {
+            unsigned int cur_tail_code = tail_code[sx[sb]][delta[sb]];
+            unsigned int cur_k         = k[sb];
+            unsigned int cur_s         = s[sb];
+
+            for (; i < sb_length; i++) {
+                int32_t res = *current_res;
+
+                if (res == cur_tail_code) {
+                    unsigned int max_msb =   (2 + (sx[sb] > 2) + (sx[sb] > 10))
+                                          << (5 - delta[sb]);
+
+                    res = decode_rice(gb, cur_s);
+
+                    if (res >= 0) {
+                        res += (max_msb    ) << cur_k;
+                    } else {
+                        res -= (max_msb - 1) << cur_k;
+                    }
+                } else {
+                    if (res > cur_tail_code)
+                        res--;
+
+                    if (res & 1)
+                        res = -res;
+
+                    res >>= 1;
+
+                    if (cur_k) {
+                        res <<= cur_k;
+                        res  |= get_bits_long(gb, cur_k);
+                    }
+                }
+
+                *current_res++ = res;
+            }
+        }
     } else {
-        int32_t *current_res = bd->raw_samples + start;
+        current_res = bd->raw_samples + start;
 
         for (sb = 0; sb < sub_blocks; sb++, start = 0)
             for (; start < sb_length; start++)
@@ -1348,6 +1452,8 @@ static av_cold int decode_end(AVCodecContext *avctx)
 
     av_freep(&ctx->sconf.chan_pos);
 
+    ff_bgmc_end(&ctx->bgmc_lut, &ctx->bgmc_lut_status);
+
     av_freep(&ctx->use_ltp);
     av_freep(&ctx->ltp_lag);
     av_freep(&ctx->ltp_gain);
@@ -1395,6 +1501,9 @@ static av_cold int decode_init(AVCodecContext *avctx)
         return -1;
     }
 
+    if (sconf->bgmc)
+        ff_bgmc_init(avctx, &ctx->bgmc_lut, &ctx->bgmc_lut_status);
+
     if (sconf->floating) {
         avctx->sample_fmt          = SAMPLE_FMT_FLT;
         avctx->bits_per_raw_sample = 32;
@@ -1403,6 +1512,11 @@ static av_cold int decode_init(AVCodecContext *avctx)
                                      ? SAMPLE_FMT_S32 : SAMPLE_FMT_S16;
         avctx->bits_per_raw_sample = (sconf->resolution + 1) * 8;
     }
+
+    // set maximum Rice parameter for progressive decoding based on resolution
+    // This is not specified in 14496-3 but actually done by the reference
+    // codec RM22 revision 2.
+    ctx->s_max = sconf->resolution > 1 ? 31 : 15;
 
     // set lag value for long-term prediction
     ctx->ltp_lag_length = 8 + (avctx->sample_rate >=  96000) +
@@ -1453,8 +1567,8 @@ static av_cold int decode_init(AVCodecContext *avctx)
     // allocate and assign channel data buffer for mcc mode
     if (sconf->mc_coding) {
         ctx->chan_data_buffer  = av_malloc(sizeof(*ctx->chan_data_buffer) *
-                                           num_buffers);
-        ctx->chan_data         = av_malloc(sizeof(ALSChannelData) *
+                                           num_buffers * num_buffers);
+        ctx->chan_data         = av_malloc(sizeof(*ctx->chan_data) *
                                            num_buffers);
         ctx->reverted_channels = av_malloc(sizeof(*ctx->reverted_channels) *
                                            num_buffers);
@@ -1466,7 +1580,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
         }
 
         for (c = 0; c < num_buffers; c++)
-            ctx->chan_data[c] = ctx->chan_data_buffer + c;
+            ctx->chan_data[c] = ctx->chan_data_buffer + c * num_buffers;
     } else {
         ctx->chan_data         = NULL;
         ctx->chan_data_buffer  = NULL;

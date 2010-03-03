@@ -33,7 +33,7 @@
 
 #include "vd_internal.h"
 
-static vd_info_t info = {
+static const vd_info_t info = {
 	"JPEG Images decoder",
 	"ijpg",
 	"Pontscho",
@@ -110,7 +110,7 @@ METHODDEF(void) skip_input_data (j_decompress_ptr cinfo, long num_bytes)
 
 METHODDEF(void) term_source (j_decompress_ptr cinfo) { }
 
-GLOBAL(void) jpeg_buf_src ( j_decompress_ptr cinfo, char * inbuf,int bufsize )
+static GLOBAL(void) jpeg_buf_src (j_decompress_ptr cinfo, char * inbuf, int bufsize)
 {
  my_src_ptr src;
  if (cinfo->src == NULL) cinfo->src=malloc( sizeof( my_source_mgr ) );

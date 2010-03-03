@@ -28,7 +28,7 @@
 #include "ad_internal.h"
 #include "libaf/reorder_ch.h"
 
-static ad_info_t info =
+static const ad_info_t info =
 {
 	"AAC (MPEG2/4 Advanced Audio Coding)",
 	"faad",
@@ -96,7 +96,6 @@ static int init(sh_audio_t *sh)
     mp_msg(MSGT_DECAUDIO,MSGL_DBG2,"FAAD: codecdata extracted from WAVEFORMATEX\n");
   }
   if(!sh->codecdata_len) {
-#if 1
     faacDecConfigurationPtr faac_conf;
     /* Set the default object type and samplerate */
     /* This is useful for RAW AAC files */
@@ -125,7 +124,6 @@ static int init(sh_audio_t *sh)
     //faac_conf->defObjectType = LTP; // => MAIN, LC, SSR, LTP available.
 
     faacDecSetConfiguration(faac_hdec, faac_conf);
-#endif
 
     sh->a_in_buffer_len = demux_read_data(sh->ds, sh->a_in_buffer, sh->a_in_buffer_size);
     pos = aac_probe(sh->a_in_buffer, sh->a_in_buffer_len);

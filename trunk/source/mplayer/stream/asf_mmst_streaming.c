@@ -43,10 +43,6 @@
 #include <winsock2.h>
 #endif
 
-#ifndef CONFIG_SETLOCALE
-#undef CONFIG_ICONV
-#endif
-
 #ifdef CONFIG_ICONV
 #include <iconv.h>
 #endif
@@ -55,7 +51,7 @@
 #include "libmpdemux/asf.h"
 
 #include "stream.h"
-
+#include "asf_mmst_streaming.h"
 #include "network.h"
 #include "tcp.h"
 

@@ -32,7 +32,7 @@
 
 //===========================================================================//
 
-static void get_image(struct vf_instance_s* vf, mp_image_t *mpi){
+static void get_image(struct vf_instance *vf, mp_image_t *mpi){
     mp_image_t *dmpi= vf_get_image(vf->next, mpi->imgfmt,
 	mpi->type, mpi->flags, mpi->w, mpi->h);
 
@@ -48,7 +48,7 @@ static void get_image(struct vf_instance_s* vf, mp_image_t *mpi){
     mpi->priv=(void*)dmpi;
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
     mp_image_t *dmpi;
 
     if(mpi->flags&MP_IMGFLAG_DIRECT){
@@ -72,7 +72,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
 
 //===========================================================================//
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt){
+static int query_format(struct vf_instance *vf, unsigned int fmt){
 	switch(fmt)
 	{
 	case IMGFMT_YV12:
@@ -87,7 +87,7 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt){
 	return 0;
 }
 
-static int open(vf_instance_t *vf, char* args){
+static int vf_open(vf_instance_t *vf, char *args){
     vf->put_image=put_image;
     vf->get_image=get_image;
     vf->query_format=query_format;
@@ -99,7 +99,7 @@ const vf_info_t vf_info_swapuv = {
     "swapuv",
     "Michael Niedermayer",
     "",
-    open,
+    vf_open,
     NULL
 };
 

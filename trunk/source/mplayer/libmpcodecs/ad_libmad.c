@@ -24,7 +24,7 @@
 
 #include "ad_internal.h"
 
-static ad_info_t info =  {
+static const ad_info_t info =  {
 	"libmad mpeg audio decoder",
 	"libmad",
 	"A'rpi",
@@ -52,7 +52,7 @@ typedef struct mad_decoder_s {
 
 static int preinit(sh_audio_t *sh){
 
-  mad_decoder_t *this = (mad_decoder_t *) malloc(sizeof(mad_decoder_t));
+  mad_decoder_t *this = malloc(sizeof(mad_decoder_t));
   memset(this,0,sizeof(mad_decoder_t));
   sh->context = this;
 

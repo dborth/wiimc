@@ -21,6 +21,7 @@
 
 #include "config.h"
 #include "mp_msg.h"
+#include "url.h"
 #include <string.h>
 #include <inttypes.h>
 #include <sys/types.h>
@@ -90,10 +91,24 @@
 #define STREAM_CTRL_GET_ANGLE 10
 #define STREAM_CTRL_SET_ANGLE 11
 
+typedef enum {
+	streaming_stopped_e,
+	streaming_playing_e
+} streaming_status;
 
-#ifdef CONFIG_NETWORK
-#include "network.h"
-#endif
+typedef struct streaming_control {
+	URL_t *url;
+	streaming_status status;
+	int buffering;	// boolean
+	unsigned int prebuffer_size;
+	char *buffer;
+	unsigned int buffer_size;
+	unsigned int buffer_pos;
+	unsigned int bandwidth;	// The downstream available
+	int (*streaming_read)( int fd, char *buffer, int buffer_size, struct streaming_control *stream_ctrl );
+	int (*streaming_seek)( int fd, off_t pos, struct streaming_control *stream_ctrl );
+	void *data;
+} streaming_ctrl_t;
 
 struct stream_st;
 typedef struct stream_info_st {
@@ -145,19 +160,23 @@ typedef struct stream_st {
   unsigned char buffer[STREAM_BUFFER_SIZE>VCD_SECTOR_SIZE?STREAM_BUFFER_SIZE:VCD_SECTOR_SIZE];
 } stream_t;
 
+#ifdef CONFIG_NETWORK
+#include "network.h"
+#endif
+
+int stream_fill_buffer(stream_t *s);
+int stream_seek_long(stream_t *s, off_t pos);
+
 #ifdef CONFIG_STREAM_CACHE
 int stream_enable_cache(stream_t *stream,int size,int min,int prefill);
 int cache_stream_fill_buffer(stream_t *s);
 int cache_stream_seek_long(stream_t *s,off_t pos);
 #else
 // no cache, define wrappers:
-int stream_fill_buffer(stream_t *s);
-int stream_seek_long(stream_t *s,off_t pos);
 #define cache_stream_fill_buffer(x) stream_fill_buffer(x)
 #define cache_stream_seek_long(x,y) stream_seek_long(x,y)
 #define stream_enable_cache(x,y,z,w) 1
 #endif
-void fixup_network_stream_cache(stream_t *stream);
 int stream_write_buffer(stream_t *s, unsigned char *buf, int len);
 
 inline static int stream_read_char(stream_t *s){
@@ -230,8 +249,9 @@ inline static unsigned int stream_read_int24(stream_t *s){
   y=(y<<8)|stream_read_char(s);
   return y;
 }
+#ifdef GEKKO
 int stream_read(stream_t *s,char* mem,int total);
-/*
+#else
 inline static int stream_read(stream_t *s,char* mem,int total){
   int len=total;
   while(len>0){
@@ -248,31 +268,8 @@ inline static int stream_read(stream_t *s,char* mem,int total){
   }
   return total;
 }
-*/
-inline static unsigned char* stream_read_line(stream_t *s,unsigned char* mem, int max) {
-  int len;
-  unsigned char* end,*ptr = mem;
-  do {
-    len = s->buf_len-s->buf_pos;
-    // try to fill the buffer
-    if(len <= 0 &&
-       (!cache_stream_fill_buffer(s) ||
-        (len = s->buf_len-s->buf_pos) <= 0)) break;
-    end = (unsigned char*) memchr((void*)(s->buffer+s->buf_pos),'\n',len);
-    if(end) len = end - (s->buffer+s->buf_pos) + 1;
-    if(len > 0 && max > 1) {
-      int l = len > max-1 ? max-1 : len;
-      memcpy(ptr,s->buffer+s->buf_pos,l);
-      max -= l;
-      ptr += l;
-    }
-    s->buf_pos += len;
-  } while(!end);
-  if(s->eof && ptr == mem) return NULL;
-  if(max > 0) ptr[0] = 0;
-  return mem;
-}
-
+#endif
+unsigned char* stream_read_line(stream_t *s,unsigned char* mem, int max, int utf16);
 
 inline static int stream_eof(stream_t *s){
   return s->eof;
@@ -286,6 +283,8 @@ inline static int stream_seek(stream_t *s,off_t pos){
 
   mp_dbg(MSGT_DEMUX, MSGL_DBG3, "seek to 0x%qX\n",(long long)pos);
 
+  if(s->eof)
+    return 0;
   if(pos<s->pos){
     off_t x=pos-(s->pos-s->buf_len);
     if(x>=0){
@@ -321,9 +320,9 @@ int stream_control(stream_t *s, int cmd, void *arg);
 stream_t* new_stream(int fd,int type);
 void free_stream(stream_t *s);
 stream_t* new_memory_stream(unsigned char* data,int len);
-stream_t* open_stream(char* filename,char** options,int* file_format);
-stream_t* open_stream_full(char* filename,int mode, char** options, int* file_format);
-stream_t* open_output_stream(char* filename,char** options);
+stream_t* open_stream(const char* filename,char** options,int* file_format);
+stream_t* open_stream_full(const char* filename,int mode, char** options, int* file_format);
+stream_t* open_output_stream(const char* filename,char** options);
 /// Set the callback to be used by libstream to check for user
 /// interruption during long blocking operations (cache filling, etc).
 void stream_set_interrupt_callback(int (*cb)(int));

@@ -426,7 +426,7 @@ static void copy_image(mp_image_t *dmpi, mp_image_t *mpi, int field)
 	}
 }
 
-static int do_put_image(struct vf_instance_s* vf, mp_image_t *dmpi)
+static int do_put_image(struct vf_instance *vf, mp_image_t *dmpi)
 {
 	struct vf_priv_s *p = vf->priv;
 	int dropflag=0;
@@ -455,7 +455,7 @@ static int do_put_image(struct vf_instance_s* vf, mp_image_t *dmpi)
 	return vf_next_put_image(vf, dmpi, MP_NOPTS_VALUE);
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 {
 	int ret=0;
 	struct vf_priv_s *p = vf->priv;
@@ -506,7 +506,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
 	return ret;
 }
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt)
+static int query_format(struct vf_instance *vf, unsigned int fmt)
 {
 	switch (fmt) {
 	case IMGFMT_YV12:
@@ -517,12 +517,12 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt)
 	return 0;
 }
 
-static void uninit(struct vf_instance_s* vf)
+static void uninit(struct vf_instance *vf)
 {
 	free(vf->priv);
 }
 
-static int open(vf_instance_t *vf, char* args)
+static int vf_open(vf_instance_t *vf, char *args)
 {
 	struct vf_priv_s *p;
 	vf->put_image = put_image;
@@ -545,8 +545,6 @@ const vf_info_t vf_info_ivtc = {
     "ivtc",
     "Rich Felker",
     "",
-    open,
+    vf_open,
     NULL
 };
-
-

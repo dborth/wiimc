@@ -75,6 +75,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (AVS, avs);
     REGISTER_DECODER (BETHSOFTVID, bethsoftvid);
     REGISTER_DECODER (BFI, bfi);
+    REGISTER_DECODER (BINK, bink);
     REGISTER_ENCDEC  (BMP, bmp);
     REGISTER_DECODER (C93, c93);
     REGISTER_DECODER (CAVS, cavs);
@@ -118,6 +119,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (IFF_ILBM, iff_ilbm);
     REGISTER_DECODER (INDEO2, indeo2);
     REGISTER_DECODER (INDEO3, indeo3);
+    REGISTER_DECODER (INDEO5, indeo5);
     REGISTER_DECODER (INTERPLAY_VIDEO, interplay_video);
     REGISTER_ENCDEC  (JPEGLS, jpegls);
     REGISTER_DECODER (KMVC, kmvc);
@@ -212,6 +214,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (AC3, ac3);
     REGISTER_ENCDEC  (ALAC, alac);
     REGISTER_DECODER (ALS, als);
+    REGISTER_DECODER (AMRNB, amrnb);
     REGISTER_DECODER (APE, ape);
     REGISTER_DECODER (ATRAC1, atrac1);
     REGISTER_DECODER (ATRAC3, atrac3);
@@ -253,6 +256,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (WMAPRO, wmapro);
     REGISTER_ENCDEC  (WMAV1, wmav1);
     REGISTER_ENCDEC  (WMAV2, wmav2);
+    REGISTER_DECODER (WMAVOICE, wmavoice);
     REGISTER_DECODER (WS_SND1, ws_snd1);
 
     /* PCM codecs */

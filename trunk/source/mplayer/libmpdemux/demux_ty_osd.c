@@ -26,6 +26,7 @@
 //#include "subreader.h"
 #include "sub_cc.h"
 #include "libvo/sub.h"
+#include "demux_ty_osd.h"
 
 //#include "dvdauth.h"
 
@@ -909,6 +910,3 @@ void ty_processuserdata( unsigned char* buf, int len )
 		}
 	}
 }
-
-
-

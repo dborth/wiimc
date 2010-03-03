@@ -44,7 +44,6 @@ enum BinkAudFlags {
 
 typedef struct {
     uint32_t file_size;
-    uint32_t total_frames;
 
     uint32_t num_audio_tracks;
     int current_track;      ///< audio track to return in next packet
@@ -75,7 +74,7 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
     uint32_t fps_num, fps_den;
     AVStream *vst, *ast;
     unsigned int i;
-    uint32_t pos, prev_pos;
+    uint32_t pos, next_pos;
     uint16_t flags;
     int keyframe;
 
@@ -86,9 +85,9 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
     vst->codec->codec_tag = get_le32(pb);
 
     bink->file_size = get_le32(pb) + 8;
-    bink->total_frames = get_le32(pb);
+    vst->duration   = get_le32(pb);
 
-    if (bink->total_frames > 1000000) {
+    if (vst->duration > 1000000) {
         av_log(s, AV_LOG_ERROR, "invalid header: more than 1000000 frames\n");
         return AVERROR(EIO);
     }
@@ -112,10 +111,12 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
     }
     av_set_pts_info(vst, 64, fps_den, fps_num);
 
-    url_fskip(pb, 4);
-
     vst->codec->codec_type = CODEC_TYPE_VIDEO;
     vst->codec->codec_id   = CODEC_ID_BINKVIDEO;
+    vst->codec->extradata  = av_mallocz(4 + FF_INPUT_BUFFER_PADDING_SIZE);
+    vst->codec->extradata_size = 4;
+    get_buffer(pb, vst->codec->extradata, 4);
+
     bink->num_audio_tracks = get_le32(pb);
 
     if (bink->num_audio_tracks > BINK_MAX_AUDIO_TRACKS) {
@@ -146,22 +147,24 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
     }
 
     /* frame index table */
-    pos = get_le32(pb) & ~1;
-    for (i = 0; i < bink->total_frames; i++) {
-        prev_pos = pos;
-        if (i == bink->total_frames - 1) {
-            pos = bink->file_size;
+    next_pos = get_le32(pb);
+    for (i = 0; i < vst->duration; i++) {
+        pos = next_pos;
+        if (i == vst->duration - 1) {
+            next_pos = bink->file_size;
             keyframe = 0;
         } else {
-            pos = get_le32(pb);
+            next_pos = get_le32(pb);
             keyframe = pos & 1;
-            pos &= ~1;
         }
-        if (pos <= prev_pos) {
+        pos &= ~1;
+        next_pos &= ~1;
+
+        if (next_pos <= pos) {
             av_log(s, AV_LOG_ERROR, "invalid frame index table\n");
             return AVERROR(EIO);
         }
-        av_add_index_entry(vst, pos, i, pos - prev_pos, 0,
+        av_add_index_entry(vst, pos, i, next_pos - pos, 0,
                            keyframe ? AVINDEX_KEYFRAME : 0);
     }
 
@@ -181,7 +184,7 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
         int index_entry;
         AVStream *st = s->streams[0]; // stream 0 is video stream with index
 
-        if (bink->video_pts >= bink->total_frames)
+        if (bink->video_pts >= st->duration)
             return AVERROR(EIO);
 
         index_entry = av_index_search_timestamp(st, bink->video_pts,
@@ -197,7 +200,7 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
         bink->current_track = 0;
     }
 
-    if (bink->current_track < bink->num_audio_tracks) {
+    while (bink->current_track < bink->num_audio_tracks) {
         uint32_t audio_size = get_le32(pb);
         if (audio_size > bink->remain_packet_size - 4) {
             av_log(s, AV_LOG_ERROR,
@@ -218,7 +221,8 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
                                            != audio_size)
                 return ret;
             pkt->stream_index = bink->current_track;
-            pkt->pts = bink->audio_pts[bink->current_track - 1] += reported_size;
+            pkt->pts = bink->audio_pts[bink->current_track - 1];
+            bink->audio_pts[bink->current_track -1] += reported_size;
             return 0;
         }
     }
@@ -237,6 +241,19 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
     return 0;
 }
 
+static int read_seek(AVFormatContext *s, int stream_index, int64_t timestamp, int flags)
+{
+    BinkDemuxContext *bink = s->priv_data;
+    AVStream *vst = s->streams[0];
+
+    /* seek to the first frame */
+    url_fseek(s->pb, vst->index_entries[0].pos, SEEK_SET);
+    bink->video_pts = 0;
+    memset(bink->audio_pts, 0, sizeof(bink->audio_pts));
+    bink->current_track = -1;
+    return 0;
+}
+
 AVInputFormat bink_demuxer = {
     "bink",
     NULL_IF_CONFIG_SMALL("Bink"),
@@ -244,4 +261,6 @@ AVInputFormat bink_demuxer = {
     probe,
     read_header,
     read_packet,
+    NULL,
+    read_seek,
 };

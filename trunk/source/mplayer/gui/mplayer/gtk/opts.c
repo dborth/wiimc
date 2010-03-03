@@ -39,6 +39,7 @@
 #include "gui/app.h"
 #include "gui/cfg.h"
 #include "gui/interface.h"
+#include "gui/mplayer/gmplayer.h"
 #include "gui/mplayer/widgets.h"
 #include "opts.h"
 #include "fs.h"
@@ -480,7 +481,7 @@ void ShowPreferences( void )
  }
 }
 
-void HidePreferences( void )
+static void HidePreferences( void )
 {
  if ( !Preferences ) return;
  gtk_widget_hide( Preferences );
@@ -528,7 +529,7 @@ static void prEntry( GtkContainer * container,gpointer user_data )
 #define bLSubtitle 4
 #define bLFont     5
 
-void prButton( GtkButton * button,gpointer user_data )
+static void prButton( GtkButton * button, gpointer user_data )
 {
  switch ( (int)user_data )
   {
@@ -1374,7 +1375,8 @@ GtkWidget * create_Preferences( void )
 }
 
 #ifdef CONFIG_OSS_AUDIO
-GList *appendOSSDevices(GList *l) {
+static GList *appendOSSDevices(GList *l)
+{
   // careful! the current implementation allows only string constants!
   l = g_list_append(l, (gpointer)"/dev/dsp");
   if (gtkAOOSSDevice && strncmp(gtkAOOSSDevice, "/dev/sound", 10) == 0) {
@@ -1398,7 +1400,8 @@ GList *appendOSSDevices(GList *l) {
   return l;
 }
 
-GList *appendOSSMixers(GList *l) {
+static GList *appendOSSMixers(GList *l)
+{
   // careful! the current implementation allows only string constants!
   l = g_list_append(l, (gpointer)"/dev/mixer");
   if (gtkAOOSSMixer && strncmp(gtkAOOSSMixer, "/dev/sound", 10) == 0) {
@@ -1415,7 +1418,8 @@ GList *appendOSSMixers(GList *l) {
   return l;
 }
 
-GList *appendOSSMixerChannels(GList *l) {
+static GList *appendOSSMixerChannels(GList *l)
+{
   l = g_list_append(l, (gpointer)"vol");
   l = g_list_append(l, (gpointer)"pcm");
   l = g_list_append(l, (gpointer)"line");
@@ -1424,7 +1428,8 @@ GList *appendOSSMixerChannels(GList *l) {
 #endif
 
 #ifdef CONFIG_ALSA
-GList *appendALSADevices(GList *l) {
+static GList *appendALSADevices(GList *l)
+{
   l = g_list_append(l, (gpointer)"default");
   l = g_list_append(l, (gpointer)"hw=0.0");
   l = g_list_append(l, (gpointer)"hw=0.1");
@@ -1436,12 +1441,14 @@ GList *appendALSADevices(GList *l) {
   return l;
 }
 
-GList *appendALSAMixers(GList *l) {
+static GList *appendALSAMixers(GList *l)
+{
   l = g_list_append(l, (gpointer)"default");
   return l;
 }
 
-GList *appendALSAMixerChannels(GList *l) {
+static GList *appendALSAMixerChannels(GList *l)
+{
   l = g_list_append(l, (gpointer)"Master");
   l = g_list_append(l, (gpointer)"Line");
   l = g_list_append(l, (gpointer)"PCM");
@@ -1451,7 +1458,8 @@ GList *appendALSAMixerChannels(GList *l) {
 #endif
 
 #ifdef CONFIG_SDL
-GList *appendSDLDevices(GList *l) {
+static GList *appendSDLDevices(GList *l)
+{
   l = g_list_append(l, (gpointer)"alsa");
   l = g_list_append(l, (gpointer)"arts");
   l = g_list_append(l, (gpointer)"esd");
@@ -1463,7 +1471,8 @@ GList *appendSDLDevices(GList *l) {
 #endif
 
 #ifdef CONFIG_ESD
-GList *appendESDDevices(GList *l) {
+static GList *appendESDDevices(GList *l)
+{
   l = g_list_append(l, (gpointer)"Enter Remote IP");
   l = g_list_append(l, (gpointer)"Use Software Mixer");
   return l;
@@ -1472,7 +1481,8 @@ GList *appendESDDevices(GList *l) {
 
 // Gets text string from a gtk entry, interpreting
 // MSGTR_PREFERENCES_DriverDefault as null string.
-const char *getGtkEntryText(GtkWidget *from) {
+static const char *getGtkEntryText(GtkWidget *from)
+{
   const char *tmp = gtk_entry_get_text(GTK_ENTRY(from));
   if (strcmp(tmp, MSGTR_PREFERENCES_DriverDefault) == 0) {
     tmp = NULL;
@@ -1482,7 +1492,8 @@ const char *getGtkEntryText(GtkWidget *from) {
 
 // Sets text string of a gtk entry, interpreting
 // null string as MSGTR_PREFERENCES_DriverDefault.
-void setGtkEntryText(GtkWidget *dest, char *to) {
+static void setGtkEntryText(GtkWidget *dest, char *to)
+{
   if (!to) {
     to = MSGTR_PREFERENCES_DriverDefault;
   }

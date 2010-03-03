@@ -29,6 +29,7 @@
 #include "av_opts.h"
 
 #include "stream/stream.h"
+#include "aviprint.h"
 #include "demuxer.h"
 #include "stheader.h"
 #include "m_option.h"
@@ -37,11 +38,13 @@
 #include "libavformat/avformat.h"
 #include "libavformat/avio.h"
 #include "libavutil/avutil.h"
+#include "libavutil/avstring.h"
 #include "libavcodec/opt.h"
 
 #include "mp_taglists.h"
 
-#define PROBE_BUF_SIZE (32*1024)
+#define INITIAL_PROBE_SIZE (32*1024)
+#define PROBE_BUF_SIZE (2*1024*1024)
 
 extern char *audio_lang;
 extern char *dvdsub_lang;
@@ -67,7 +70,7 @@ typedef struct lavf_priv_t{
     AVInputFormat *avif;
     AVFormatContext *avfc;
     ByteIOContext *pb;
-    uint8_t buffer[FFMAX(BIO_BUFFER_SIZE, PROBE_BUF_SIZE)];
+    uint8_t buffer[BIO_BUFFER_SIZE];
     int audio_streams;
     int video_streams;
     int sub_streams;
@@ -77,9 +80,6 @@ typedef struct lavf_priv_t{
     int sstreams[MAX_S_STREAMS];
     int cur_program;
 }lavf_priv_t;
-
-void print_wave_header(WAVEFORMATEX *h, int verbose_level);
-void print_video_header(BITMAPINFOHEADER *h, int verbose_level);
 
 static int mp_read(void *opaque, uint8_t *buf, int size) {
     stream_t *stream = opaque;
@@ -96,7 +96,7 @@ static int mp_read(void *opaque, uint8_t *buf, int size) {
 static int64_t mp_seek(void *opaque, int64_t pos, int whence) {
     stream_t *stream = opaque;
     int64_t current_pos;
-    mp_msg(MSGT_HEADER,MSGL_DBG2,"mp_seek(%p, %d, %d)\n", stream, (int)pos, whence);
+    mp_msg(MSGT_HEADER,MSGL_DBG2,"mp_seek(%p, %"PRId64", %d)\n", stream, pos, whence);
     if(whence == SEEK_CUR)
         pos +=stream_tell(stream);
     else if(whence == SEEK_END && stream->end_pos > 0)
@@ -132,7 +132,8 @@ static void list_formats(void) {
 static int lavf_check_file(demuxer_t *demuxer){
     AVProbeData avpd;
     lavf_priv_t *priv;
-    int probe_data_size;
+    int probe_data_size = 0;
+    int read_size = INITIAL_PROBE_SIZE;
 
     if(!demuxer->priv)
         demuxer->priv=calloc(sizeof(lavf_priv_t),1);
@@ -154,14 +155,26 @@ static int lavf_check_file(demuxer_t *demuxer){
         return DEMUXER_TYPE_LAVF;
     }
 
-    probe_data_size = stream_read(demuxer->stream, priv->buffer, PROBE_BUF_SIZE);
-    if(probe_data_size <= 0)
+    avpd.buf = av_mallocz(FFMAX(BIO_BUFFER_SIZE, PROBE_BUF_SIZE) +
+                          FF_INPUT_BUFFER_PADDING_SIZE);
+    do {
+    read_size = stream_read(demuxer->stream, avpd.buf + probe_data_size, read_size);
+    if(read_size < 0) {
+        av_free(avpd.buf);
         return 0;
+    }
+    probe_data_size += read_size;
     avpd.filename= demuxer->stream->url;
-    avpd.buf= priv->buffer;
+    if (!strncmp(avpd.filename, "ffmpeg://", 9))
+        avpd.filename += 9;
     avpd.buf_size= probe_data_size;
 
-    priv->avif= av_probe_input_format(&avpd, 1);
+    priv->avif= av_probe_input_format(&avpd, probe_data_size > 0);
+    read_size = FFMIN(2*read_size, PROBE_BUF_SIZE - probe_data_size);
+    } while (demuxer->desc->type != DEMUXER_TYPE_LAVF_PREFERRED &&
+             !priv->avif && read_size > 0 && probe_data_size < PROBE_BUF_SIZE);
+    av_free(avpd.buf);
+
     if(!priv->avif){
         mp_msg(MSGT_HEADER,MSGL_V,"LAVF_check: no clue about this gibberish!\n");
         return 0;
@@ -458,10 +471,13 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
         }
     }
 
-    if(demuxer->stream->url)
-        strncpy(mp_filename + 3, demuxer->stream->url, sizeof(mp_filename)-3);
-    else
-        strncpy(mp_filename + 3, "foobar.dummy", sizeof(mp_filename)-3);
+    if(demuxer->stream->url) {
+        if (!strncmp(demuxer->stream->url, "ffmpeg://rtsp:", 14))
+            av_strlcpy(mp_filename, demuxer->stream->url + 9, sizeof(mp_filename));
+        else
+            av_strlcat(mp_filename, demuxer->stream->url, sizeof(mp_filename));
+    } else
+        av_strlcat(mp_filename, "foobar.dummy", sizeof(mp_filename));
 
     priv->pb = av_alloc_put_byte(priv->buffer, BIO_BUFFER_SIZE, 0,
                                  demuxer->stream, mp_read, NULL, mp_seek);

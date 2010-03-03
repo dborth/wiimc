@@ -62,16 +62,17 @@
 #include "m_config.h"
 #include "parser-mecmd.h"
 #include "parser-cfg.h"
-
+#include "mp_fifo.h"
 #include "get_path.h"
 
 #include "stream/stream.h"
+#include "libmpdemux/aviprint.h"
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/stheader.h"
 #include "libmpdemux/mp3_hdr.h"
 #include "libmpdemux/muxer.h"
 
-
+#include "input/input.h"
 #include "libvo/video_out.h"
 
 #include "libaf/af_format.h"
@@ -368,8 +369,6 @@ static void exit_sighandler(int x){
 }
 
 static muxer_t* muxer=NULL;
-
-void print_wave_header(WAVEFORMATEX *h, int verbose_level);
 
 int main(int argc,char* argv[]){
 
@@ -1223,7 +1222,7 @@ if(sh_audio){
 	    }
 	}
 	if(len<=0) break; // EOF?
-	muxer_write_chunk(mux_a,len,0x10, MP_NOPTS_VALUE, MP_NOPTS_VALUE);
+	muxer_write_chunk(mux_a,len,AVIIF_KEYFRAME, MP_NOPTS_VALUE, MP_NOPTS_VALUE);
 	if(!mux_a->h.dwSampleSize && mux_a->timer>0)
 	    mux_a->wf->nAvgBytesPerSec=0.5f+(double)mux_a->size/mux_a->timer; // avg bps (VBR)
 	if(mux_a->buffer_len>=len){
@@ -1309,11 +1308,11 @@ ptimer_start = GetTimerMS();
 switch(mux_v->codec){
 case VCODEC_COPY:
     mux_v->buffer=frame_data.start;
-    if(skip_flag<=0) muxer_write_chunk(mux_v,frame_data.in_size,(sh_video->ds->flags&1)?0x10:0, MP_NOPTS_VALUE, MP_NOPTS_VALUE);
+    if(skip_flag<=0) muxer_write_chunk(mux_v,frame_data.in_size,(sh_video->ds->flags&1)?AVIIF_KEYFRAME:0, MP_NOPTS_VALUE, MP_NOPTS_VALUE);
     break;
 case VCODEC_FRAMENO:
     mux_v->buffer=(unsigned char *)&decoded_frameno; // tricky
-    if(skip_flag<=0) muxer_write_chunk(mux_v,sizeof(int),0x10, MP_NOPTS_VALUE, MP_NOPTS_VALUE);
+    if(skip_flag<=0) muxer_write_chunk(mux_v,sizeof(int),AVIIF_KEYFRAME, MP_NOPTS_VALUE, MP_NOPTS_VALUE);
     break;
 default:
     // decode_video will callback down to ve_*.c encoders, through the video filters

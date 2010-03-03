@@ -48,10 +48,10 @@ struct vf_priv_s {
 };
 #define video_out (vf->priv->vo)
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt); /* forward declaration */
-static void draw_slice(struct vf_instance_s* vf, unsigned char** src, int* stride, int w,int h, int x, int y);
+static int query_format(struct vf_instance *vf, unsigned int fmt); /* forward declaration */
+static void draw_slice(struct vf_instance *vf, unsigned char** src, int* stride, int w,int h, int x, int y);
 
-static int config(struct vf_instance_s* vf,
+static int config(struct vf_instance *vf,
         int width, int height, int d_width, int d_height,
 	unsigned int flags, unsigned int outfmt){
 
@@ -93,7 +93,7 @@ static int config(struct vf_instance_s* vf,
     return 1;
 }
 
-static int control(struct vf_instance_s* vf, int request, void* data)
+static int control(struct vf_instance *vf, int request, void* data)
 {
     switch(request){
     case VFCTRL_GET_DEINTERLACE:
@@ -148,10 +148,11 @@ static int control(struct vf_instance_s* vf, int request, void* data)
             mp_eosd_res_t res;
             memset(&res, 0, sizeof(res));
             if (video_out->control(VOCTRL_GET_EOSD_RES, &res) == VO_TRUE) {
+                double dar = (double) (res.w - res.ml - res.mr) / (res.h - res.mt - res.mb);
                 ass_set_frame_size(vf->priv->ass_priv, res.w, res.h);
                 ass_set_margins(vf->priv->ass_priv, res.mt, res.mb, res.ml, res.mr);
 #if defined(LIBASS_VERSION) && LIBASS_VERSION >= 0x00908000
-                ass_set_aspect_ratio(vf->priv->ass_priv, (double)res.w / res.h, (double)res.srcw/res.srch);
+                ass_set_aspect_ratio(vf->priv->ass_priv, dar, (double)res.srcw/res.srch);
 #else
                 ass_set_aspect_ratio(vf->priv->ass_priv, (double)res.w / res.h);
 #endif
@@ -177,7 +178,7 @@ static int control(struct vf_instance_s* vf, int request, void* data)
     return CONTROL_UNKNOWN;
 }
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt){
+static int query_format(struct vf_instance *vf, unsigned int fmt){
     int flags=video_out->control(VOCTRL_QUERY_FORMAT,&fmt);
     // draw_slice() accepts stride, draw_frame() doesn't:
     if(flags)
@@ -186,7 +187,7 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt){
     return flags;
 }
 
-static void get_image(struct vf_instance_s* vf,
+static void get_image(struct vf_instance *vf,
         mp_image_t *mpi){
     if(!vo_config_count) return;
     // GET_IMAGE is required for hardware-accelerated formats
@@ -195,7 +196,7 @@ static void get_image(struct vf_instance_s* vf,
 	video_out->control(VOCTRL_GET_IMAGE,mpi);
 }
 
-static int put_image(struct vf_instance_s* vf,
+static int put_image(struct vf_instance *vf,
         mp_image_t *mpi, double pts){
   if(!vo_config_count) return 0; // vo not configured?
   // record pts (potentially modified by filters) for main loop
@@ -214,19 +215,19 @@ static int put_image(struct vf_instance_s* vf,
   return 1;
 }
 
-static void start_slice(struct vf_instance_s* vf,
+static void start_slice(struct vf_instance *vf,
 		       mp_image_t *mpi) {
     if(!vo_config_count) return; // vo not configured?
     video_out->control(VOCTRL_START_SLICE,mpi);
 }
 
-static void draw_slice(struct vf_instance_s* vf,
+static void draw_slice(struct vf_instance *vf,
         unsigned char** src, int* stride, int w,int h, int x, int y){
     if(!vo_config_count) return; // vo not configured?
     video_out->draw_slice(src,stride,w,h,x,y);
 }
 
-static void uninit(struct vf_instance_s* vf)
+static void uninit(struct vf_instance *vf)
 {
     if (vf->priv) {
 #ifdef CONFIG_ASS
@@ -238,7 +239,7 @@ static void uninit(struct vf_instance_s* vf)
 }
 //===========================================================================//
 
-static int open(vf_instance_t *vf, char* args){
+static int vf_open(vf_instance_t *vf, char *args){
     vf->config=config;
     vf->control=control;
     vf->query_format=query_format;
@@ -250,7 +251,6 @@ static int open(vf_instance_t *vf, char* args){
     vf->priv=calloc(1, sizeof(struct vf_priv_s));
     vf->priv->vo = (const vo_functions_t *)args;
     if(!video_out) return 0; // no vo ?
-//    if(video_out->preinit(args)) return 0; // preinit failed
     return 1;
 }
 
@@ -259,7 +259,7 @@ const vf_info_t vf_info_vo = {
     "vo",
     "A'rpi",
     "for internal use",
-    open,
+    vf_open,
     NULL
 };
 

@@ -30,6 +30,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <limits.h>
+#include "asxparser.h"
 #include "m_config.h"
 #include "playtree.h"
 #include "playtreeparser.h"
@@ -38,14 +40,9 @@
 #include "mp_msg.h"
 
 
-extern play_tree_t*
-asx_parser_build_tree(char* buffer, int ref);
-
 #define BUF_STEP 1024
 
 #define WHITES " \n\r\t"
-
-#define mp_pretty_title(s) (strrchr((s),',')==NULL?(char*)(s):(strrchr((s),',')+1))
 
 static void
 strstrip(char* str) {
@@ -84,8 +81,15 @@ play_tree_parser_get_line(play_tree_parser_t* p) {
   while(1) {
 
     if(resize) {
+      char *tmp;
       r = p->iter - p->buffer;
-      p->buffer = (char*)realloc(p->buffer,p->buffer_size+BUF_STEP);
+      end = p->buffer + p->buffer_end;
+      if (p->buffer_size > INT_MAX - BUF_STEP)
+        break;
+      tmp = realloc(p->buffer, p->buffer_size + BUF_STEP);
+      if (!tmp)
+        break;
+      p->buffer = tmp;
       p->iter = p->buffer + r;
       p->buffer_size += BUF_STEP;
       resize = 0;
@@ -117,7 +121,7 @@ play_tree_parser_get_line(play_tree_parser_t* p) {
 
   line_end = (end > p->iter && *(end-1) == '\r') ? end-1 : end;
   if(line_end - p->iter >= 0)
-    p->line = (char*)realloc(p->line,line_end - p->iter+1);
+    p->line = realloc(p->line, line_end - p->iter + 1);
   else
     return NULL;
   if(line_end - p->iter > 0)
@@ -242,21 +246,28 @@ static int
 pls_read_entry(char* line,pls_entry_t** _e,int* _max_entry,char** val) {
   int num,max_entry = (*_max_entry);
   pls_entry_t* e = (*_e);
+  int limit = INT_MAX / sizeof(*e);
   char* v;
 
   v = pls_entry_get_value(line);
   if(!v) {
     mp_msg(MSGT_PLAYTREE,MSGL_ERR,"No value in entry %s\n",line);
-    return 0;
+    return -1;
   }
 
   num = atoi(line);
-  if(num < 0) {
+  if(num <= 0 || num > limit) {
+    if (max_entry >= limit) {
+        mp_msg(MSGT_PLAYTREE, MSGL_WARN, "Too many index entries\n");
+        return -1;
+    }
     num = max_entry+1;
-    mp_msg(MSGT_PLAYTREE,MSGL_WARN,"No entry index in entry %s\nAssuming %d\n",line,num);
+    mp_msg(MSGT_PLAYTREE,MSGL_WARN,"No or invalid entry index in entry %s\nAssuming %d\n",line,num);
   }
   if(num > max_entry) {
-    e = (pls_entry_t*)realloc(e,num*sizeof(pls_entry_t));
+    e = realloc(e, num * sizeof(pls_entry_t));
+    if (!e)
+      return -1;
     memset(&e[max_entry],0,(num-max_entry)*sizeof(pls_entry_t));
     max_entry = num;
   }
@@ -409,8 +420,7 @@ parse_ref_ini(play_tree_parser_t* p) {
 
 static play_tree_t*
 parse_m3u(play_tree_parser_t* p) {
-  char *line, *title = NULL;
-  
+  char* line;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying extended m3u playlist...\n");
@@ -439,33 +449,16 @@ parse_m3u(play_tree_parser_t* p) {
           strtol(line+8,&line,10), line+2);
       }
 #endif
- 	  /// start denper's changes
-	  // Get the title of .m3u entry
-	  title = realloc(title, strlen(mp_pretty_title(line))+1);
-	  strcpy(title, mp_pretty_title(line));
-	  /// end denper's changes
-	  
       continue;
     }
     entry = play_tree_new();
     play_tree_add_file(entry,line);
-	
-	/// start denper's changes
-	// Add the title parameter if it exists
-	play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
-	/// end denper's changes
-		
     if(!list)
       list = entry;
     else
       play_tree_append_entry(last_entry,entry);
     last_entry = entry;
   }
-  /// start denper's changes
-  // Free the memory of title pointer
-  free(title); 
-  title = NULL;
-  /// end denper's changes
 
   if(!list) return NULL;
   entry = play_tree_new();
@@ -476,10 +469,9 @@ parse_m3u(play_tree_parser_t* p) {
 static play_tree_t*
 parse_smil(play_tree_parser_t* p) {
   int entrymode=0;
-  char* line,source[512],title[128],*pos,*pos1,*s_start,*s_end,*src_line;
+  char* line,source[512],*pos,*s_start,*s_end,*src_line;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
   int is_rmsmil = 0;
-  int exists_title = 0;
   unsigned int npkt, ttlpkt;
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying smil playlist...\n");
@@ -574,36 +566,6 @@ parse_smil(play_tree_parser_t* p) {
      }
     }
     if (entrymode) { //Entry found but not yet filled
-    
-	  /// start denper's changes	  
-	  // Get the title of .smi entry
-	  exists_title = 0;
-	  pos1 = strstr(pos,"title=");
-	  if (pos1 != NULL) {
-		while(1) {
-			if (pos1[6] != '"' && pos1[6] != '\'') {
-			  mp_msg(MSGT_PLAYTREE,MSGL_V,"Unknown delimiter %c in source line %s\n", pos1[6], line);
-			  break;
-			}
-			s_start=pos1+7;
-			s_end=strchr(s_start,pos1[6]);
-			if (s_end == NULL) {
-			  mp_msg(MSGT_PLAYTREE,MSGL_V,"Error parsing this source line %s\n",line);
-			  break;
-			}
-			if (s_end-s_start> 127) {
-			  mp_msg(MSGT_PLAYTREE,MSGL_V,"Cannot store such a large source %s\n",line);
-			  break;
-			}
-			strncpy(title,s_start,s_end-s_start);
-			title[(s_end-s_start)]='\0'; // Null terminate
-			exists_title = 1;
-			break;
-		}
-		
-      }
-	  /// end denper's changes   
-	   
       pos = strstr(pos,"src=");   // Is source present on this line
       if (pos != NULL) {
         entrymode=0;
@@ -625,13 +587,6 @@ parse_smil(play_tree_parser_t* p) {
         source[(s_end-s_start)]='\0'; // Null terminate
         entry = play_tree_new();
         play_tree_add_file(entry,source);
-
-		/// start denper's changes
-		// Add the title parameter if it exists
-		if(exists_title)
-			play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
-		/// end denper's changes
-
         if(!list)  //Insert new entry
           list = entry;
         else
@@ -773,12 +728,12 @@ play_tree_add_basepath(play_tree_t* pt, char* bp) {
     if (pt->files[i][0] == '\\') {
       if (pt->files[i][1] == '\\')
         continue;
-      pt->files[i] = (char*)realloc(pt->files[i],2+fl+1);
+      pt->files[i] = realloc(pt->files[i], 2 + fl + 1);
       memmove(pt->files[i] + 2,pt->files[i],fl+1);
       memcpy(pt->files[i],bp,2);
       continue;
     }
-    pt->files[i] = (char*)realloc(pt->files[i],bl+fl+1);
+    pt->files[i] = realloc(pt->files[i], bl + fl + 1);
     memmove(pt->files[i] + bl,pt->files[i],fl+1);
     memcpy(pt->files[i],bp,bl);
   }

@@ -46,11 +46,10 @@
 extern const mime_struct_t mime_type_table[];
 extern int stream_cache_size;
 extern int network_bandwidth;
+
 #ifdef HW_RVL
 extern int controlledbygui;
 #endif
-
-int http_seek(stream_t *stream, off_t pos);
 
 typedef struct {
   unsigned metaint;
@@ -345,7 +344,7 @@ http_response_append( HTTP_header_t *http_hdr, char *response, int length ) {
 		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Bad size in memory (re)allocation\n");
 		return -1;
 	}
-	http_hdr->buffer = (char*)realloc( http_hdr->buffer, http_hdr->buffer_size+length+1 );
+	http_hdr->buffer = realloc( http_hdr->buffer, http_hdr->buffer_size+length+1 );
 	if( http_hdr->buffer==NULL ) {
 		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory (re)allocation failed\n");
 		return -1;
@@ -441,7 +440,7 @@ http_response_parse( HTTP_header_t *http_hdr ) {
 		while( *ptr!='\r' && *ptr!='\n' ) ptr++;
 		len = ptr-hdr_ptr;
 		if( len==0 ) break;
-		field = (char*)realloc(field, len+1);
+		field = realloc(field, len+1);
 		if( field==NULL ) {
 			mp_msg(MSGT_NETWORK,MSGL_ERR,"Memory allocation failed\n");
 			return -1;
@@ -533,7 +532,7 @@ char *
 http_get_field( HTTP_header_t *http_hdr, const char *field_name ) {
 	if( http_hdr==NULL || field_name==NULL ) return NULL;
 	http_hdr->field_search_pos = http_hdr->first_field;
-	http_hdr->field_search = (char*)realloc( http_hdr->field_search, strlen(field_name)+1 );
+	http_hdr->field_search = realloc( http_hdr->field_search, strlen(field_name)+1 );
 	if( http_hdr->field_search==NULL ) {
 		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
 		return NULL;
@@ -957,8 +956,8 @@ static int open_s1(stream_t *stream,int mode, void* opts, int* file_format) {
 	mp_msg(MSGT_OPEN, MSGL_V, "STREAM_HTTP(1), URL: %s\n", stream->url);
 	seekable = http_streaming_start(stream, file_format);
 	if((seekable < 0) || (*file_format == DEMUXER_TYPE_ASF)) {
-		if (stream->fd >= 0) 
-		    closesocket(stream->fd);
+		if (stream->fd >= 0)
+			closesocket(stream->fd);
 		stream->fd = -1;
 		if (seekable == STREAM_REDIRECTED)
 			return seekable;

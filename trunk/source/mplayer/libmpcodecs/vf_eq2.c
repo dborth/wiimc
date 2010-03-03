@@ -5,7 +5,7 @@
  * Daniel Moreno <comac@comac.darktech.org> (saturation, R/G/B gamma support)
  * Richard Felker (original MMX contrast/brightness code (vf_eq.c))
  * Michael Niedermayer <michalni@gmx.at> (LUT16)
-/*
+ *
  * This file is part of MPlayer.
  *
  * MPlayer is free software; you can redistribute it and/or modify
@@ -255,11 +255,11 @@ int put_image (vf_instance_t *vf, mp_image_t *src, double pts)
     img_n = eq2->buf_w[0]*eq2->buf_h[0];
     if(src->num_planes>1){
       img_c = eq2->buf_w[1]*eq2->buf_h[1];
-      eq2->buf[0] = (unsigned char *) realloc (eq2->buf[0], img_n + 2*img_c);
+      eq2->buf[0] = realloc (eq2->buf[0], img_n + 2*img_c);
       eq2->buf[1] = eq2->buf[0] + img_n;
       eq2->buf[2] = eq2->buf[1] + img_c;
     } else
-      eq2->buf[0] = (unsigned char *) realloc (eq2->buf[0], img_n);
+      eq2->buf[0] = realloc (eq2->buf[0], img_n);
   }
 
   dst = vf_get_image (vf->next, src->imgfmt, MP_IMGTYPE_EXPORT, 0, src->w, src->h);
@@ -446,7 +446,7 @@ void uninit (vf_instance_t *vf)
 }
 
 static
-int open (vf_instance_t *vf, char *args)
+int vf_open(vf_instance_t *vf, char *args)
 {
   unsigned i;
   vf_eq2_t *eq2;
@@ -457,7 +457,7 @@ int open (vf_instance_t *vf, char *args)
   vf->put_image = put_image;
   vf->uninit = uninit;
 
-  vf->priv = (vf_eq2_t *) malloc (sizeof (vf_eq2_t));
+  vf->priv = malloc (sizeof (vf_eq2_t));
   eq2 = vf->priv;
 
   for (i = 0; i < 3; i++) {
@@ -514,6 +514,6 @@ const vf_info_t vf_info_eq2 = {
   "eq2",
   "Hampa Hug, Daniel Moreno, Richard Felker",
   "",
-  &open,
+  &vf_open,
   NULL
 };

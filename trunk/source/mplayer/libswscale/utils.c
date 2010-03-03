@@ -787,7 +787,6 @@ SwsContext *sws_getContext(int srcW, int srcH, enum PixelFormat srcFormat,
                            int dstW, int dstH, enum PixelFormat dstFormat, int flags,
                            SwsFilter *srcFilter, SwsFilter *dstFilter, const double *param)
 {
-
     SwsContext *c;
     int i;
     int usesVFilter, usesHFilter;
@@ -865,15 +864,14 @@ SwsContext *sws_getContext(int srcW, int srcH, enum PixelFormat srcFormat,
     c->srcFormatBpp = av_get_bits_per_pixel(&av_pix_fmt_descriptors[srcFormat]);
     c->vRounder= 4* 0x0001000100010001ULL;
 
-    usesHFilter= usesVFilter= 0;
-    if (dstFilter->lumV && dstFilter->lumV->length>1) usesVFilter=1;
-    if (dstFilter->lumH && dstFilter->lumH->length>1) usesHFilter=1;
-    if (dstFilter->chrV && dstFilter->chrV->length>1) usesVFilter=1;
-    if (dstFilter->chrH && dstFilter->chrH->length>1) usesHFilter=1;
-    if (srcFilter->lumV && srcFilter->lumV->length>1) usesVFilter=1;
-    if (srcFilter->lumH && srcFilter->lumH->length>1) usesHFilter=1;
-    if (srcFilter->chrV && srcFilter->chrV->length>1) usesVFilter=1;
-    if (srcFilter->chrH && srcFilter->chrH->length>1) usesHFilter=1;
+    usesVFilter = (srcFilter->lumV && srcFilter->lumV->length>1) ||
+                  (srcFilter->chrV && srcFilter->chrV->length>1) ||
+                  (dstFilter->lumV && dstFilter->lumV->length>1) ||
+                  (dstFilter->chrV && dstFilter->chrV->length>1);
+    usesHFilter = (srcFilter->lumH && srcFilter->lumH->length>1) ||
+                  (srcFilter->chrH && srcFilter->chrH->length>1) ||
+                  (dstFilter->lumH && dstFilter->lumH->length>1) ||
+                  (dstFilter->chrH && dstFilter->chrH->length>1);
 
     getSubSampleFactors(&c->chrSrcHSubSample, &c->chrSrcVSubSample, srcFormat);
     getSubSampleFactors(&c->chrDstHSubSample, &c->chrDstVSubSample, dstFormat);
@@ -1313,7 +1311,7 @@ SwsVector *sws_getIdentityVec(void)
     return sws_getConstVec(1.0, 1);
 }
 
-double sws_dcVec(SwsVector *a)
+static double sws_dcVec(SwsVector *a)
 {
     int i;
     double sum=0;
@@ -1567,17 +1565,20 @@ struct SwsContext *sws_getCachedContext(struct SwsContext *context,
     if (!param)
         param = default_param;
 
-    if (context) {
-        if (context->srcW != srcW || context->srcH != srcH ||
-            context->srcFormat != srcFormat ||
-            context->dstW != dstW || context->dstH != dstH ||
-            context->dstFormat != dstFormat || context->flags != flags ||
-            context->param[0] != param[0] || context->param[1] != param[1])
-        {
-            sws_freeContext(context);
-            context = NULL;
-        }
+    if (context &&
+        (context->srcW      != srcW      ||
+         context->srcH      != srcH      ||
+         context->srcFormat != srcFormat ||
+         context->dstW      != dstW      ||
+         context->dstH      != dstH      ||
+         context->dstFormat != dstFormat ||
+         context->flags     != flags     ||
+         context->param[0]  != param[0]  ||
+         context->param[1]  != param[1])) {
+        sws_freeContext(context);
+        context = NULL;
     }
+
     if (!context) {
         return sws_getContext(srcW, srcH, srcFormat,
                               dstW, dstH, dstFormat, flags,

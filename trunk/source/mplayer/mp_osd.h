@@ -31,7 +31,7 @@
 #define OSD_MSG_PROPERTY                0x100
 #define OSD_MSG_SUB_BASE                0x1000
 
-#define MAX_OSD_LEVEL 4
+#define MAX_OSD_LEVEL 3
 #define MAX_TERM_OSD_LEVEL 1
 
 // These appear in options list
@@ -39,7 +39,7 @@ extern int osd_duration;
 extern int term_osd;
 
 void set_osd_bar(int type,const char* name,double min,double max,double val);
-void set_osd_msg(int id, int level, u64 time, const char* fmt, ...);
+void set_osd_msg(int id, int level, int time, const char* fmt, ...);
 void rm_osd_msg(int id);
 
 #endif /* MPLAYER_MP_OSD_H */

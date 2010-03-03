@@ -1,4 +1,4 @@
-.\" $Revision: 30490 $
+.\" $Revision: 30748 $
 .\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -1537,6 +1537,9 @@ This option is obsolete now that MPlayer has OpenDML support.
 .TP
 .B \-mc <seconds/frame>
 maximum A-V sync correction per frame (in seconds)
+.br
+\-mc 0 should always be combined with \-noskip for mencoder, otherwise
+it will almost certainly cause A-V desync.
 .
 .TP
 .B \-mf <option1:option2:...>
@@ -2863,9 +2866,9 @@ OS/2 KAI audio output driver
 .PD 0
 .RSs
 .IPs uniaud
-Force UNIAUD mode
+Force UNIAUD mode.
 .IPs dart
-Force DART mode
+Force DART mode.
 .IPs (no)share
 Open audio in shareable or exclusive mode.
 .IPs bufsize=<size>
@@ -3528,7 +3531,9 @@ Makes temporal deinterlacers operate both on luma and chroma (default).
 Use nochroma\-deint to solely use luma and speed up advanced deinterlacing.
 Useful with slow video memory.
 .IPs pullup
-Try to apply inverse telecine, needs motion adaptive temporal deinterlacing.
+Try to skip deinterlacing for progressive frames, useful for watching
+telecined content, needs fast video hardware for high resolutions.
+Only works with motion adaptive temporal deinterlacing.
 .IPs colorspace
 Select the color space for YUV to RGB conversion.
 In general BT.601 should be used for standard definition (SD) content and
@@ -5806,11 +5811,11 @@ Use 2 to get only even dimensions (needed for 4:2:2 video).
 16 is best when encoding to most video codecs.
 .br
 .IPs <reset>
-Counter that determines after how many frames cropdetect will reset
-the previously detected largest video area and start over to detect
-the current optimal crop area.  This can be useful when channel
-logos distort the video area.  0 indicates never reset and return
-the largest area encountered during playback. (default: 0).
+Counter that determines after how many frames cropdetect will reset the
+previously detected largest video area and start over to detect the current
+optimal crop area (default: 0).
+This can be useful when channel logos distort the video area.
+0 indicates never reset and return the largest area encountered during playback.
 .RE
 .PD 1
 .
@@ -10118,8 +10123,15 @@ This is not recommended and wastes bitrate as scenecuts encoded as P-frames
 are just as big as I-frames, but do not reset the "keyint counter".
 .
 .TP
+.B (no)intra_refresh
+Periodic intra block refresh instead of keyframes (default: disabled).
+This option disables IDR-frames, and, instead, uses a moving vertical bar
+of intra-coded blocks. This reduces compression efficiency but benefits
+low-latency streaming and resilience to packet loss.
+.
+.TP
 .B frameref=<1\-16>
-Number of previous frames used as predictors in B- and P-frames (default: 1).
+Number of previous frames used as predictors in B- and P-frames (default: 3).
 This is effective in anime, but in live-action material the improvements
 usually drop off very rapidly above 6 or so reference frames.
 This has no effect on decoding speed, but does increase the memory needed for
@@ -10128,7 +10140,7 @@ Some decoders can only handle a maximum of 15 reference frames.
 .
 .TP
 .B bframes=<0\-16>
-maximum number of consecutive B-frames between I- and P-frames (default: 0)
+maximum number of consecutive B-frames between I- and P-frames (default: 3)
 .
 .TP
 .B (no)b_adapt
@@ -10202,6 +10214,20 @@ maximum quantizer (default: 51)
 .B qp_step=<1\-50> (ABR or two pass)
 maximum value by which the quantizer may be incremented/decremented between
 frames (default: 4)
+.
+.TP
+.B (no)mbtree
+Enable macroblock tree ratecontrol (default: enabled).
+Use a large lookahead to track temporal propagation of data and weight quality
+accordingly.
+In multi-pass mode, this writes to a separate stats file named
+<passlogfile>.mbtree.
+.
+.TP
+.B rc_lookahead=<0\-250>
+Adjust the mbtree lookahead distance (default: 40).
+Larger values will be slower and cause x264 to consume more memory, but can
+yield higher quality.
 .
 .TP
 .B ratetol=<0.1\-100.0> (ABR or two pass)
@@ -10294,6 +10320,20 @@ Auto is slightly better, but slower.
 Auto is most effective when combined with multipass.
 direct_pred=none is both slower and lower quality.
 .RE
+.
+.TP
+.B weightp
+Weighted P-frame prediction mode (default: 2).
+.PD 0
+.RSs
+.IPs 0
+disabled (fastest)
+.IPs 1
+blind mode (slightly better quality)
+.IPs 2
+smart mode (best)
+.RE
+.PD 1
 .
 .TP
 .B (no)weight_b
@@ -10399,9 +10439,9 @@ SATD metric, rather than reusing vectors from the forward and backward
 searches.
 .IPs 6
 Enables rate-distortion optimization of macroblock types in
-I- and P-frames (default).
+I- and P-frames.
 .IPs 7
-Enables rate-distortion optimization of macroblock types in all frames.
+Enables rate-distortion optimization of macroblock types in all frames (default).
 .IPs 8
 Enables rate-distortion optimization of motion vectors and intra prediction modes in I- and P-frames.
 .IPs 9
@@ -10432,9 +10472,9 @@ rate-distortion optimal quantization
 .PD 0
 .RSs
 .IPs 0
-disabled (default)
+disabled
 .IPs 1
-enabled only for the final encode
+enabled only for the final encode (default)
 .IPs 2
 enabled during all mode decisions (slow, requires subq>=6)
 .RE
@@ -10451,6 +10491,11 @@ psy optimization strength (requires subq>=6) (default: 1.0)
 trellis (requires trellis, experimental) (default: 0.0)
 .RE
 .PD 1
+.
+.TP
+.B (no)psy
+Enable psychovisual optimizations that hurt PSNR and SSIM but ought to look
+better (default: enabled).
 .
 .TP
 .B deadzone_inter=<0\-32>
@@ -10584,10 +10629,41 @@ and you have a need to set it.
 .
 .TP
 .B threads=<0\-16>
-Spawn threads to encode in parallel on multiple CPUs (default: 1).
+Spawn threads to encode in parallel on multiple CPUs (default: 0).
 This has a slight penalty to compression quality.
 0 or 'auto' tells x264 to detect how many CPUs you have and pick an
 appropriate number of threads.
+.
+.TP
+.B (no)sliced_threads
+Use slice-based threading (default: disabled).
+Unlike normal threading, this option adds no encoding latency, but is slightly
+slower and less effective at compression.
+.
+.TP
+.B slice_max_size=<0 or positive integer>
+Maximum slice size in bytes (default:0).
+A value of zero disables the maximum.
+.
+.TP
+.B slice_max_mbs=<0 or positive integer>
+Maximum slice size in number of macroblocks (default:0).
+A value of zero disables the maximum.
+.
+.TP
+.B slices=<0 or positive integer>
+Maximum number of slices per frame (default:0).
+A value of zero disables the maximum.
+.
+.TP
+.B sync_lookahead=<0\-250>
+Adjusts the size of the threaded lookahead buffer (default: 0).
+0 or 'auto' tells x264 to automatically determine buffer size.
+.
+.TP
+.B (no)deterministic
+Use only deterministic optimizations with multithreaded encoding (default:
+enabled).
 .
 .TP
 .B (no)global_header
@@ -10599,6 +10675,16 @@ The default behavior causes SPS and PPS to repeat prior to each IDR frame.
 .TP
 .B (no)interlaced
 Treat the video content as interlaced.
+.
+.TP
+.B (no)constrained_intra
+Enable constrained intra prediction (default: disabled).
+This significantly reduces compression, but is required for the base layer of
+SVC encodes.
+.
+.TP
+.B (no)aud
+Write access unit delimeters to the stream (default: disabled).
 .
 .TP
 .B log=<\-1\-3>
@@ -10642,6 +10728,11 @@ If the x264 on your system supports it, a new window will be opened during
 the encoding process, in which x264 will attempt to present an overview of
 how each frame gets encoded.
 Each block type on the visualized movie will be colored as follows:
+.
+.TP
+.B dump_yuv=<file name>
+Dump YUV frames to the specified file.
+For debugging use.
 .PD 0
 .RSs
 .IPs red/pink

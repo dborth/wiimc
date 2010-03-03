@@ -66,7 +66,7 @@ static struct stream_priv_s {
   int title;
   char* device;
 } stream_priv_dflts = {
-  0,
+  1,
   NULL
 };
 
@@ -249,7 +249,8 @@ static int dvd_next_cell(dvd_priv_t *d) {
   return next_cell;
 }
 
-int dvd_read_sector(dvd_priv_t *d,unsigned char* data) {
+static int dvd_read_sector(dvd_priv_t *d, unsigned char *data)
+{
   int len;
 
   if(d->packs_left==0) {
@@ -369,7 +370,8 @@ read_next:
   return d->cur_pack-1;
 }
 
-void dvd_seek(dvd_priv_t *d,int pos) {
+static void dvd_seek(dvd_priv_t *d, int pos)
+{
   d->packs_left=-1;
   d->cur_pack=pos;
 
@@ -407,7 +409,8 @@ void dvd_seek(dvd_priv_t *d,int pos) {
   d->angle_seek=1;
 }
 
-void dvd_close(dvd_priv_t *d) {
+static void dvd_close(dvd_priv_t *d)
+{
   ifoClose(d->vts_file);
   ifoClose(d->vmg_file);
   DVDCloseFile(d->title);
@@ -810,36 +813,7 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
       }
       if (DVDUDFVolumeInfo(dvd, volid, sizeof(volid), NULL, 0) >= 0 || DVDISOVolumeInfo(dvd, volid, sizeof(volid), NULL, 0) >= 0)
         mp_msg(MSGT_IDENTIFY, MSGL_V, "ID_DVD_VOLUME_ID=%s\n", volid);
-    }  
-/**
- * Try to autodetect main title if title number not specified.
- */
-    if (dvd_title == 0) {
-	    int longest_len = 0;
-	    int longest_title = 0;
-
-	    int vts_no;
-	    for (vts_no = 1; vts_no <= vmg_file->vts_atrt->nr_of_vtss; vts_no++) {
-		    ifo_handle_t *temp_vts_file = ifoOpen(dvd, vts_no);
-		    // ignore failed titles
-		    if (temp_vts_file) {
-			    int title_no;
-			    for (title_no = 0; title_no < tt_srpt->nr_of_srpts; title_no++) {
-				    int len;
-				    if (tt_srpt->title[title_no].title_set_nr != vts_no)
-					    continue;
-				    len = mp_get_titleset_length(temp_vts_file, tt_srpt, title_no);
-				    if (len > longest_len) {
-					    longest_len = len;
-					    longest_title = title_no;
-				    }
-			    }
-			    ifoClose(temp_vts_file);
-		    }
-		    
-	    }
-	    dvd_title = longest_title + 1; // remap +1 for the validation
-    }      
+    }
     /**
      * Make sure our title number is valid.
      */
@@ -1049,7 +1023,6 @@ fail:
 static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_format)
 {
 #ifndef GEKKO
-    char *ext;
     char* filename;
     struct stream_priv_s *spriv;
     int len = strlen(stream->url);
@@ -1077,7 +1050,7 @@ static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_fo
     return open_s(stream, mode, spriv, file_format);
 #else
     return STREAM_UNSUPPORTED;
-#endif    
+#endif  
 }
 
 const stream_info_t stream_info_dvd = {

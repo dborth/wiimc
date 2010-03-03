@@ -1,9 +1,27 @@
+/*
+ * This file is part of MPlayer.
+ *
+ * MPlayer is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * MPlayer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with MPlayer; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
 /// \file
 /// \ingroup Properties Command2Property OSDMsgStack
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
-
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #define _UWIN 1  /*disable Non-underscored versions of non-ANSI functions as otherwise int eof would conflict with eof()*/
@@ -65,16 +83,15 @@
 #include "codec-cfg.h"
 
 #include "edl.h"
-
+#include "mplayer.h"
 #include "spudec.h"
 #include "vobsub.h"
+#include "access_mpcontext.h"
 
 #include "osdep/getch2.h"
 #include "osdep/timer.h"
 
-#ifdef CONFIG_GUI
 #include "gui/interface.h"
-#endif
 
 #include "input/input.h"
 
@@ -83,8 +100,6 @@ int player_idle_mode=0;
 int quiet=0;
 int enable_mouse_movements=0;
 float start_volume = -1;
-float mplayer_volume = -1;
-float amplify_volume = 0.0;
 
 #include "osdep/priority.h"
 
@@ -102,38 +117,18 @@ char *heartbeat_cmd;
 #endif /* __linux__ */
 #endif /* HAVE_RTC */
 
-#ifdef CONFIG_TV
 #include "stream/tv.h"
-#endif
-#ifdef CONFIG_RADIO
 #include "stream/stream_radio.h"
-#endif
-
 #ifdef CONFIG_DVBIN
 #include "stream/dvbin.h"
 #endif
-
 #include "stream/cache2.h"
-
-#ifdef GEKKO
-#include <stdlib.h>
-#include <ogc/system.h>
-#include "osdep/gx_supp.h"
-#include "../utils/di2.h"
-void wiiPause();
-void SetStatus(const char * txt);
-void reinit_video();
-void reinit_audio();
-#endif
 
 //**************************************************************************//
 //             Playtree
 //**************************************************************************//
 #include "playtree.h"
 #include "playtreeparser.h"
-
-int import_playtree_playlist_into_gui(play_tree_t* my_playtree, m_config_t* config);
-int import_initial_playtree_into_gui(play_tree_t* my_playtree, m_config_t* config, int enqueue);
 
 //**************************************************************************//
 //             Config
@@ -156,12 +151,6 @@ static int cfg_include(m_option_t *conf, char *filename){
 #include "get_path.h"
 
 //**************************************************************************//
-//             XScreensaver
-//**************************************************************************//
-
-void xscreensaver_heartbeat(void);
-
-//**************************************************************************//
 //**************************************************************************//
 //             Input media streaming & demultiplexer:
 //**************************************************************************//
@@ -175,10 +164,7 @@ static int max_framesize=0;
 #ifdef CONFIG_DVDREAD
 #include "stream/stream_dvd.h"
 #endif
-
-#ifdef CONFIG_DVDNAV
 #include "stream/stream_dvdnav.h"
-#endif
 
 #include "libmpcodecs/dec_audio.h"
 #include "libmpcodecs/dec_video.h"
@@ -189,6 +175,34 @@ static int max_framesize=0;
 #include "mixer.h"
 
 #include "mp_core.h"
+
+#ifdef GEKKO
+#include "osdep/gx_supp.h"
+#include "../utils/di2.h"
+
+extern int prev_dxs , prev_dys;
+
+void wiiPause();
+void SetStatus(const char * txt);
+void reinit_video();
+void reinit_audio();
+void PauseAndGotoGUI();
+
+static void low_cache_loop(void);
+static double timing_sleep(double time_frame);
+static void delete_restore_point(char *_filename);
+static void save_restore_point(char *_filename, int position);
+static int load_restore_point(char *_filename);
+
+int controlledbygui=0;
+int pause_gui=0;
+int render_texture_time=0;
+float mplayer_volume = -1;
+float amplify_volume = 0.0;
+static bool low_cache=false;
+static char fileplaying[MAXPATHLEN];
+static int enable_restore_points=1;
+#endif
 
 //**************************************************************************//
 //**************************************************************************//
@@ -242,7 +256,7 @@ static int list_properties = 0;
 
 int osd_level=1;
 // if nonzero, hide current OSD contents when GetTimerMS() reaches this
-u64 osd_visible;
+unsigned int osd_visible;
 int osd_duration = 1000;
 
 int term_osd = 1;
@@ -257,7 +271,7 @@ static int loop_seek=0;
 static m_time_size_t end_at = { .type = END_AT_NONE, .pos = 0 };
 
 // A/V sync:
-int autosync=0; // 30 might be a good default value.
+       int autosync=0; // 30 might be a good default value.
 
 // may be changed by GUI:  (FIXME!)
 float rel_seek_secs=0;
@@ -286,14 +300,12 @@ int vobsub_id=-1;
 char* audio_lang=NULL;
 char* dvdsub_lang=NULL;
 static char* spudec_ifo=NULL;
-char* filename=NULL;
-
-
+char* filename=NULL; //"MI2-Trailer.avi";
 int forced_subs_only=0;
 int file_filter=1;
 
 // cache2:
-int stream_cache_size=-1;
+       int stream_cache_size=-1;
 #ifdef CONFIG_STREAM_CACHE
 extern float cache_fill_status;
 
@@ -301,103 +313,6 @@ float stream_cache_min_percent=20.0;
 float stream_cache_seek_min_percent=50.0;
 #else
 #define cache_fill_status 0
-#endif
-
-#ifdef GEKKO
-static bool low_cache=false;
-static char fileplaying[MAXPATHLEN];
-static int enable_restore_points=1;
-
-#define MAX_RESTORE_POINTS 10
-
-typedef struct st_restore_points restore_points_t;
-struct st_restore_points {
-    char filename[MAXPATHLEN];
-    int position;
-};
-
-restore_points_t restore_points[MAX_RESTORE_POINTS];
-
-static void delete_restore_point(char *_filename)
-{
-	int i;
-	if(!enable_restore_points)
-		return;
-
-	for(i=0;i<MAX_RESTORE_POINTS;i++)
-	{
-		if(restore_points[i].filename[0] == '\0')
-			break;
-
-		if(!strcmp(_filename,restore_points[i].filename))
-		{
-			for(;i<MAX_RESTORE_POINTS-1 && restore_points[i].filename[0]!='\0';i++)
-			{
-				strcpy(restore_points[i].filename,restore_points[i+1].filename);
-				restore_points[i].position=restore_points[i+1].position;
-			}
-			restore_points[MAX_RESTORE_POINTS-1].filename[0]='\0';
-			restore_points[MAX_RESTORE_POINTS-1].position=0;
-		}
-	}
-}
-
-static void save_restore_point(char *_filename, int position)
-{
-	int i,j;
-
-	if(!enable_restore_points || strlen(_filename) == 0)
-		return;
-
-	if(!strncmp(_filename,"dvd://",6) || !strncmp(_filename,"dvdnav",6 )
-		|| !strncmp(_filename,"http:/",6))
-		return;
-
-	if(position <= 8 || !( mpctx->demuxer->seekable))
-	{
-		delete_restore_point(_filename);
-		return;
-	}
-
-	for(j=0;j<MAX_RESTORE_POINTS;j++)
-	{
-		if(restore_points[j].filename[0] == '\0' || !strcmp(_filename,restore_points[j].filename))
-		{
-			// check if position is similar (+- 5 secs)
-			if(restore_points[j].position>=position-5 && restore_points[j].position<=position+5) return;
-			j++;
-			break;
-		}
-	}
-	if(j>1)
-	{
-		for(i=j-1;i>0;i--)
-		{
-			strcpy(restore_points[i].filename,restore_points[i-1].filename);
-			restore_points[i].position=restore_points[i-1].position;
-		}
-	}
-	restore_points[0].position=position;
-	strcpy(restore_points[0].filename,_filename);
-}
-
-static int load_restore_point(char *_filename)
-{
-	int j;
-	if(!enable_restore_points)
-		return 0;
-
-	for(j=0;j<MAX_RESTORE_POINTS;j++)
-	{
-		if(restore_points[j].filename[0] == '\0')
-			break;
-		
-		if(!strcmp(_filename,restore_points[j].filename))
-			return restore_points[j].position;
-	}
-	return 0;
-}
-
 #endif
 
 // dump:
@@ -412,10 +327,11 @@ static float c_total=0;
 static int ignore_start=0;
 
 static int softsleep=0;
+
        double force_fps=0;
 static int force_srate=0;
 static int audio_output_format=-1; // AF_FORMAT_UNKNOWN
-       int frame_dropping=1; // option  0=no drop  1= drop vo  2= drop decode
+       int frame_dropping=0; // option  0=no drop  1= drop vo  2= drop decode
 static int play_n_frames=-1;
 static int play_n_frames_mf=-1;
 
@@ -447,7 +363,6 @@ char* current_module=NULL; // for debugging
 #ifdef CONFIG_MENU
 #include "m_struct.h"
 #include "libmenu/menu.h"
-void vf_menu_pause_update(struct vf_instance_s* vf);
 extern vf_info_t vf_info_menu;
 static vf_info_t* libmenu_vfs[] = {
   &vf_info_menu,
@@ -457,7 +372,6 @@ static vf_instance_t* vf_menu = NULL;
 int use_menu = 0;
 static char* menu_cfg = NULL;
 static char* menu_root = "main";
-
 #endif
 
 
@@ -714,11 +628,7 @@ void uninit_player(unsigned int mask){
   if(mask&INITIALIZED_VCODEC){
     initialized_flags&=~INITIALIZED_VCODEC;
     current_module="uninit_vcodec";
-    
-    if(mpctx->sh_video) 
-	{
-		uninit_video(mpctx->sh_video);
-	}
+    if(mpctx->sh_video) uninit_video(mpctx->sh_video);
     mpctx->sh_video=NULL;
 #ifdef CONFIG_MENU
     vf_menu=NULL;
@@ -805,7 +715,8 @@ void uninit_player(unsigned int mask){
   current_module=NULL;
 }
 
-void exit_player_with_rc(exit_reason_t how, int rc){
+void exit_player_with_rc(enum exit_reason how, int rc)
+{
 #ifdef GEKKO
   if(mpctx->sh_video && how==EXIT_QUIT)
 	  save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
@@ -858,7 +769,7 @@ void exit_player_with_rc(exit_reason_t how, int rc){
   switch(how) {
   case EXIT_QUIT:
     mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_ExitingHow,MSGTR_Exit_quit);
-    mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_EXIT=QUIT\n");    
+    mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_EXIT=QUIT\n");
     break;
   case EXIT_EOF:
     mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_ExitingHow,MSGTR_Exit_eof);
@@ -872,9 +783,12 @@ void exit_player_with_rc(exit_reason_t how, int rc){
     mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_EXIT=NONE\n");
   }
   mp_msg(MSGT_CPLAYER,MSGL_DBG2,"max framesize was %d bytes\n",max_framesize);
+
+  exit(rc);
 }
 
-void exit_player(exit_reason_t how){
+void exit_player(enum exit_reason how)
+{
   exit_player_with_rc(how, 1);
 }
 
@@ -961,20 +875,16 @@ static void exit_sighandler(int x){
   exit(1);
 }
 
-void mp_input_register_options(m_config_t* cfg);
-
 #include "cfg-mplayer.h"
 
 static void parse_cfgfiles( m_config_t* conf )
 {
-char *conffile;
-char cad[100];
-int conffile_fd;
-sprintf(cad,"%s%s",MPLAYER_CONFDIR,"/mplayer.conf");
-if (!disable_system_conf &&
-    m_config_parse_config_file(conf, cad) < 0)
-  exit_player(EXIT_NONE);
 #ifndef GEKKO
+char *conffile;
+int conffile_fd;
+if (!disable_system_conf &&
+    m_config_parse_config_file(conf, MPLAYER_CONFDIR "/mplayer.conf") < 0)
+  exit_player(EXIT_NONE);
 if ((conffile = get_path("")) == NULL) {
   mp_msg(MSGT_CPLAYER,MSGL_WARN,MSGTR_NoHomeDir);
 } else {
@@ -1202,9 +1112,9 @@ void add_subtitles(char *filename, float fps, int noerr)
 #ifdef CONFIG_ASS
     if (ass_enabled)
 #ifdef CONFIG_ICONV
-        asst = ass_read_file(ass_library, filename, sub_cp);
+        asst = ass_read_stream(ass_library, filename, sub_cp);
 #else
-        asst = ass_read_file(ass_library, filename, 0);
+        asst = ass_read_stream(ass_library, filename, 0);
 #endif
     if (ass_enabled && subd && !asst)
         asst = ass_read_subdata(ass_library, subd, fps);
@@ -1258,6 +1168,11 @@ void init_vo_spudec(void) {
     spudec_free(vo_spudec);
   initialized_flags &= ~INITIALIZED_SPUDEC;
   vo_spudec = NULL;
+
+  // we currently can't work without video stream
+  if (!mpctx->sh_video)
+    return;
+
   if (spudec_ifo) {
     unsigned int palette[16], width, height;
     current_module="spudec_init_vobsub";
@@ -1359,7 +1274,9 @@ static void sadd_hhmmssf(char *buf, unsigned *pos, int len, float time) {
  */
 static void print_status(float a_pos, float a_v, float corr)
 {
+#ifdef GEKKO
 return;
+#else
   sh_video_t * const sh_video = mpctx->sh_video;
   int width;
   char *line;
@@ -1403,7 +1320,6 @@ return;
       (int)sh_video->num_frames,
       (int)sh_video->num_frames_decoded);
 
-#ifndef GEKKO
   // CPU usage
   if (sh_video) {
     if (sh_video->timer > 0.5)
@@ -1420,15 +1336,15 @@ return;
     else
       saddf(line, &pos, width, "??,?%% ");
   }
-#endif
+
   // VO stats
   if (sh_video)
     saddf(line, &pos, width, "%d %d ", drop_frame_cnt, output_quality);
 
 #ifdef CONFIG_STREAM_CACHE
   // cache stats
-  //if (stream_cache_size > 0)
-  //  saddf(line, &pos, width, "%d%% ", cache_fill_status);
+  if (stream_cache_size > 0)
+    saddf(line, &pos, width, "%d%% ", cache_fill_status);
 #endif
 
   // other
@@ -1445,6 +1361,7 @@ return;
     mp_msg(MSGT_STATUSLINE, MSGL_STATUS, "%s\r", line);
   }
   free(line);
+#endif
 }
 
 /**
@@ -1498,7 +1415,7 @@ struct mp_osd_msg {
     char msg[128];
     int  id,level,started;
     /// Display duration in ms.
-    u64  time;
+    unsigned  time;
 };
 
 /// OSD message stack.
@@ -1512,7 +1429,7 @@ static mp_osd_msg_t* osd_msg_stack = NULL;
  *
  */
 
-void set_osd_msg(int id, int level, u64 time, const char* fmt, ...) {
+void set_osd_msg(int id, int level, int time, const char* fmt, ...) {
     mp_osd_msg_t *msg,*last=NULL;
     va_list va;
     int r;
@@ -1590,9 +1507,9 @@ static void clear_osd_msgs(void) {
 
 static mp_osd_msg_t* get_osd_msg(void) {
     mp_osd_msg_t *msg,*prev,*last = NULL;
-    static u64 last_update = 0;
-    u64 now = GetTimerMS();
-    u64 diff;
+    static unsigned last_update = 0;
+    unsigned now = GetTimerMS();
+    unsigned diff;
     char hidden_dec_done = 0;
 
     if (osd_visible) {
@@ -1693,7 +1610,7 @@ void set_osd_subtitle(subtitle *subs) {
  *
  */
 
-void update_osd_msg(void) {
+static void update_osd_msg(void) {
     mp_osd_msg_t *msg;
     static char osd_text[128] = "";
     static char osd_text_timer[128];
@@ -1705,11 +1622,12 @@ void update_osd_msg(void) {
     if((msg = get_osd_msg())) {
         if(strcmp(osd_text,msg->msg)) {
             strncpy((char*)osd_text, msg->msg, 127);
-            if(mpctx->sh_video)vo_osd_changed(OSDTYPE_OSD);
-            else if(term_osd) mp_msg(MSGT_CPLAYER,MSGL_STATUS,"%s%s\n",term_osd_esc,msg->msg);
+            if(mpctx->sh_video) vo_osd_changed(OSDTYPE_OSD); else
+            if(term_osd) mp_msg(MSGT_CPLAYER,MSGL_STATUS,"%s%s\n",term_osd_esc,msg->msg);
         }
         return;
     }
+
     if(mpctx->sh_video) {
         // fallback on the timer
         if(osd_level>=2) {
@@ -1726,20 +1644,12 @@ void update_osd_msg(void) {
             else
                 percentage_text[0] = 0;
 
-            if (osd_level >= 3) {
-				if (osd_level == 4)
-					snprintf(osd_text_timer, 63,
-							"%c %02d:%02d:%02d / %02d:%02d:%02d%s  cache(%02d%%) m1(%.2f) m2(%.2f)",
-							mpctx->osd_function,pts/3600,(pts/60)%60,pts%60,
-							len/3600,(len/60)%60,len%60,percentage_text, (int)cache_fill_status,
-								((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
-								((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-				else
-					snprintf(osd_text_timer, 63,
-							"%c %02d:%02d:%02d / %02d:%02d:%02d%s",
-							mpctx->osd_function,pts/3600,(pts/60)%60,pts%60,
-							len/3600,(len/60)%60,len%60,percentage_text);
-            } else
+            if (osd_level == 3)
+                snprintf(osd_text_timer, 63,
+                         "%c %02d:%02d:%02d / %02d:%02d:%02d%s",
+                         mpctx->osd_function,pts/3600,(pts/60)%60,pts%60,
+                         len/3600,(len/60)%60,len%60,percentage_text);
+            else
                 snprintf(osd_text_timer, 63, "%c %02d:%02d:%02d%s",
                          mpctx->osd_function,pts/3600,(pts/60)%60,
                          pts%60,percentage_text);
@@ -1754,7 +1664,6 @@ void update_osd_msg(void) {
             strncpy(osd_text, osd_text_timer, 63);
             vo_osd_changed(OSDTYPE_OSD);
         }
-
         return;
     }
 
@@ -1763,24 +1672,6 @@ void update_osd_msg(void) {
         osd_text[0] = 0;
         printf("%s\n",term_osd_esc);
     }
-}
-
-extern int prev_dxs , prev_dys;
-
-void force_osd()
-{
-	return;
-/*
-	update_osd_msg();
-	if (mpctx && mpctx->sh_video && mpctx->video_out && vo_config_count)
-    	mpctx->video_out->check_events();
-#ifdef CONFIG_MENU    	
-   if (vf_menu)
-   {
-    	vf_menu_pause_update(vf_menu);
-   }
-#endif   
-*/
 }
 
 ///@}
@@ -1803,7 +1694,6 @@ void reinit_audio_chain(void) {
     ao_data.samplerate=force_srate;
     ao_data.channels=0;
     ao_data.format=audio_output_format;
-#if 1
     // first init to detect best values
     if(!init_audio_filters(mpctx->sh_audio,   // preliminary init
                            // input:
@@ -1813,7 +1703,6 @@ void reinit_audio_chain(void) {
         mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_AudioFilterChainPreinitError);
         exit_player(EXIT_ERROR);
     }
-#endif
     current_module="ao2_init";
     mpctx->audio_out = init_best_audio_out(audio_driver_list,
                                            0, // plugin flag
@@ -1835,13 +1724,11 @@ void reinit_audio_chain(void) {
     if(strlen(mpctx->audio_out->info->comment) > 0)
         mp_msg(MSGT_CPLAYER,MSGL_V,"AO: Comment: %s\n", mpctx->audio_out->info->comment);
     // init audio filters:
-#if 1
     current_module="af_init";
     if(!build_afilter_chain(mpctx->sh_audio, &ao_data)) {
         mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_NoMatchingFilter);
         goto init_error;
     }
-#endif
     mpctx->mixer.audio_out = mpctx->audio_out;
     mpctx->mixer.volstep = volstep;
     return;
@@ -1912,7 +1799,6 @@ static double written_audio_pts(sh_audio_t *sh_audio, demux_stream_t *d_audio)
 double playing_audio_pts(sh_audio_t *sh_audio, demux_stream_t *d_audio,
 				const ao_functions_t *audio_out)
 {
-	if(!audio_out) return written_audio_pts(sh_audio, d_audio);
     return written_audio_pts(sh_audio, d_audio) - playback_speed *
 	audio_out->get_delay();
 }
@@ -1984,12 +1870,9 @@ static int generate_video_frame(sh_video_t *sh_video, demux_stream_t *d_video)
     int rtc_fd = -1;
 #endif
 
-static double timing_sleep_old(double time_frame)
+#ifndef GEKKO
+static float timing_sleep(float time_frame)
 {
-    //int x=0,y=0;
-    //double t=time_frame;
-    u32 frame=time_frame*1000000; //in us
-
 #ifdef HAVE_RTC
     if (rtc_fd >= 0){
 	// -------- RTC -----------
@@ -2005,71 +1888,23 @@ static double timing_sleep_old(double time_frame)
     {
 	// assume kernel HZ=100 for softsleep, works with larger HZ but with
 	// unnecessarily high CPU usage
-    //double margin = softsleep ? 0.0011 : 0.0;
-    u32 margin = softsleep ? 500 : 0;  //in us
-
-    current_module = "sleep_timer";
-	//printf("timing_sleep run: %li\n",frame);
-	while (frame > margin) {
-	    usec_sleep(frame - margin);
-	    //y++;
-	    frame -= GetRelativeTime();
-	    break;
+	float margin = softsleep ? 0.011 : 0;
+	current_module = "sleep_timer";
+	while (time_frame > margin) {
+	    usec_sleep(1000000 * (time_frame - margin));
+	    time_frame -= GetRelativeTime();
 	}
-	//printf("-end\n");
 	if (softsleep){
-		//printf("sleep_soft run: %li\n",frame);
 	    current_module = "sleep_soft";
-	    if (frame < 0)
-	    {
-		//mp_msg(MSGT_AVSYNC, MSGL_WARN, MSGTR_SoftsleepUnderflow);
-		printf("SoftsleepUnderflow: %li\n",frame);
-	    }
-	    else
-	    {
-			while (frame > 5)
-			{
-				//x++;
-				frame-=GetRelativeTime(); // burn the CPU
-				//if(x>10000) break;
-			}
-	    }
+	    if (time_frame < 0)
+		mp_msg(MSGT_AVSYNC, MSGL_WARN, MSGTR_SoftsleepUnderflow);
+	    while (time_frame > 0)
+		time_frame-=GetRelativeTime(); // burn the CPU
 	}
-	time_frame=frame * 0.000001F;
     }
-    //printf("timeframe: %f   \n",time_frame);
-
-/*
-    if(time_frame >0.000050 || time_frame<-0.00006 || x>10000 || y>1)
-    {
-    	printf("orig: %f  timeframe: %f   x: %i  y: %i  frame: %li\n",t,time_frame,x,y,frame);
-
-    }
-*/
     return time_frame;
 }
-
-//#define RENDER_TEXTURE_TIME 4600 //Ihave to check it
-int render_texture_time=0;
-static double timing_sleep(double time_frame)
-{
-    u32 frame=time_frame*1000000; //in us
-
-    current_module = "sleep_timer";
-	while (frame > 5)
-	{
-		if(frame>render_texture_time)
-		{
-			DrawMPlayer();
-			VIDEO_WaitVSync();
-		}
-		else usec_sleep(frame-5);
-	    frame -= GetRelativeTime();
-	    break;
-	}
-	time_frame=frame * 0.000001F;
-    return time_frame;
-}
+#endif
 
 static void select_subtitle(MPContext *mpctx) {
   // find the best sub to use
@@ -2288,6 +2123,7 @@ static void adjust_sync_and_print_status(int between_frames, float timing_error)
 	    if(!quiet)
 		print_status(a_pts - audio_delay, AV_delay, c_total);
 	}
+
     } else {
 	// No audio:
 
@@ -2370,7 +2206,6 @@ static int fill_audio_out_buffers(void)
 	    // Sanity check to avoid hanging in case current ao doesn't output
 	    // partial chunks and doesn't check for AOPLAY_FINAL_CHUNK
 	    mp_msg(MSGT_CPLAYER, MSGL_WARN, "Audio output truncated at end.\n");
-	    printf("Audio output truncated at end.\n");
 	    sh_audio->a_out_buffer_len = 0;
 	}
     }
@@ -2429,9 +2264,7 @@ static int sleep_until_update(double *time_frame, double *aq_sleep_time)
 
     // flag 256 means: libvo driver does its timing (dvb card)
     if (*time_frame > 0.001 && !(vo_flags&256))
-    	*time_frame = timing_sleep(*time_frame);
-    //else printf("no timing_sleep: %f, %i\n",*time_frame,frame_time_remaining);
-    //printf("time_frame: %f\n",*time_frame);
+	*time_frame = timing_sleep(*time_frame);
     return frame_time_remaining;
 }
 
@@ -2451,6 +2284,7 @@ int reinit_video_chain(void) {
     }
     initialized_flags|=INITIALIZED_VO;
   }
+
   if(stream_control(mpctx->demuxer->stream, STREAM_CTRL_GET_ASPECT_RATIO, &ar) != STREAM_UNSUPPORTED)
       mpctx->sh_video->stream_aspect = ar;
   current_module="init_video_filters";
@@ -2458,7 +2292,6 @@ int reinit_video_chain(void) {
     char* vf_arg[] = { "_oldargs_", (char*)mpctx->video_out , NULL };
     sh_video->vfilter=(void*)vf_open_filter(NULL,"vo",vf_arg);
   }
-
 #ifdef CONFIG_MENU
   if(use_menu) {
     char* vf_arg[] = { "_oldargs_", menu_root, NULL };
@@ -2547,6 +2380,7 @@ if(sh_video->disp_w>1024)
   // ========== Init display (sh_video->disp_w*sh_video->disp_h/out_fmt) ============
 
   current_module="init_vo";
+
   return 1;
 
 err_out:
@@ -2608,11 +2442,9 @@ static double update_video(int *blit_frame)
 	current_module = "filter_video";
 	*blit_frame = (decoded_frame && filter_video(sh_video, decoded_frame,
 						    sh_video->pts));
-
     }
     else {
 	int res = generate_video_frame(sh_video, mpctx->d_video);
-
 	if (!res)
 	    return -1;
 	((vf_instance_t *)sh_video->vfilter)->control(sh_video->vfilter,
@@ -2637,8 +2469,2099 @@ static double update_video(int *blit_frame)
     return frame_time;
 }
 
-int controlledbygui=0;
-int pause_gui=0;
+static void pause_loop(void)
+{
+    mp_cmd_t* cmd = NULL;
+    if (!quiet) {
+        // Small hack to display the pause message on the OSD line.
+        // The pause string is: "\n == PAUSE == \r" so we need to
+        // take the first and the last char out
+        if (term_osd && !mpctx->sh_video) {
+            char msg[128] = MSGTR_Paused;
+            int mlen = strlen(msg);
+            msg[mlen-1] = '\0';
+            set_osd_msg(OSD_MSG_PAUSE, 1, 0, "%s", msg+1);
+            update_osd_msg();
+        } else
+            mp_msg(MSGT_CPLAYER,MSGL_STATUS,MSGTR_Paused);
+        mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_PAUSED\n");
+    }
+#ifdef CONFIG_GUI
+    if (use_gui)
+        guiGetEvent(guiCEvent, (char *)guiSetPause);
+#endif
+    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+        mpctx->video_out->control(VOCTRL_PAUSE, NULL);
+
+    if (mpctx->audio_out && mpctx->sh_audio)
+        mpctx->audio_out->pause(); // pause audio, keep data if possible
+
+    while ( (cmd = mp_input_get_cmd(20, 1, 1)) == NULL || cmd->pausing == 4) {
+        if (cmd) {
+          cmd = mp_input_get_cmd(0,1,0);
+          run_command(mpctx, cmd);
+          mp_cmd_free(cmd);
+          continue;
+        }
+        if (mpctx->sh_video && mpctx->video_out && vo_config_count)
+            mpctx->video_out->check_events();
+#ifdef CONFIG_GUI
+        if (use_gui) {
+            guiEventHandling();
+            guiGetEvent(guiReDraw, NULL);
+            if (guiIntfStruct.Playing!=2 || (rel_seek_secs || abs_seek_pos))
+                break;
+        }
+#endif
+#ifdef CONFIG_MENU
+        if (vf_menu)
+            vf_menu_pause_update(vf_menu);
+#endif
+#ifdef GEKKO
+	if(!mpctx->sh_video || !mpctx->video_out)
+    {
+    	usec_sleep(20000);
+    }
+    else
+    {
+    	DrawMPlayer();
+    	VIDEO_WaitVSync();
+    }
+
+    if(controlledbygui == 2) // mplayer shutdown requested!
+    	break;
+    }
+#else
+        usec_sleep(20000);
+#endif
+    if (cmd && cmd->id == MP_CMD_PAUSE) {
+        cmd = mp_input_get_cmd(0,1,0);
+        mp_cmd_free(cmd);
+    }
+    mpctx->osd_function=OSD_PLAY;
+#ifdef GEKKO
+	cmd = mp_input_get_cmd(0, 0, 1);
+	if(cmd && cmd->id!=MP_CMD_PAUSE)
+	{
+		if (mpctx->audio_out && mpctx->sh_audio)
+        	mpctx->audio_out->reset();	// reset audio
+	}
+	else
+	{
+		if((!strncmp(filename,"dvd:",4)) ||  (!strncmp(filename,"dvdnav:",7)))
+		{
+			//DI_StartMotor();
+			//printf("start motor\n");
+			void *ptr=memalign(32, 0x800*2);
+			//printf("read sector 1\n");
+			DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
+			//printf("read sector 5000\n");
+			DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
+			free(ptr);
+		}
+	    if (mpctx->audio_out && mpctx->sh_audio)
+    	    mpctx->audio_out->resume();	// resume audio
+    }
+#else
+    if (mpctx->audio_out && mpctx->sh_audio) {
+        if (mpctx->eof) // do not play remaining audio if we e.g.  switch to the next file
+          mpctx->audio_out->reset();
+        else
+          mpctx->audio_out->resume(); // resume audio
+    }
+#endif
+    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+        mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
+    (void)GetRelativeTime(); // ignore time that passed during pause
+#ifdef CONFIG_GUI
+    if (use_gui) {
+        if (guiIntfStruct.Playing == guiSetStop)
+            mpctx->eof = 1;
+        else
+            guiGetEvent(guiCEvent, (char *)guiSetPlay);
+    }
+#endif
+}
+
+
+// Find the right mute status and record position for new file position
+static void edl_seek_reset(MPContext *mpctx)
+{
+    mpctx->edl_muted = 0;
+    next_edl_record = edl_records;
+
+    while (next_edl_record) {
+	if (next_edl_record->start_sec >= mpctx->sh_video->pts)
+	    break;
+
+	if (next_edl_record->action == EDL_MUTE)
+	    mpctx->edl_muted = !mpctx->edl_muted;
+	next_edl_record = next_edl_record->next;
+    }
+    if ((mpctx->user_muted | mpctx->edl_muted) != mpctx->mixer.muted)
+	mixer_mute(&mpctx->mixer);
+}
+
+
+// Execute EDL command for the current position if one exists
+static void edl_update(MPContext *mpctx)
+{
+    if (!next_edl_record)
+	return;
+
+    if (!mpctx->sh_video) {
+	mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_EdlNOsh_video);
+	free_edl(edl_records);
+	next_edl_record = NULL;
+	edl_records = NULL;
+	return;
+    }
+
+    if (mpctx->sh_video->pts >= next_edl_record->start_sec) {
+	if (next_edl_record->action == EDL_SKIP) {
+	    mpctx->osd_function = OSD_FFW;
+	    abs_seek_pos = 0;
+	    rel_seek_secs = next_edl_record->length_sec;
+	    mp_msg(MSGT_CPLAYER, MSGL_DBG4, "EDL_SKIP: start [%f], stop "
+		   "[%f], length [%f]\n", next_edl_record->start_sec,
+		   next_edl_record->stop_sec, next_edl_record->length_sec);
+	    edl_decision = 1;
+	}
+	else if (next_edl_record->action == EDL_MUTE) {
+	    mpctx->edl_muted = !mpctx->edl_muted;
+	    if ((mpctx->user_muted | mpctx->edl_muted) != mpctx->mixer.muted)
+		mixer_mute(&mpctx->mixer);
+	    mp_msg(MSGT_CPLAYER, MSGL_DBG4, "EDL_MUTE: [%f]\n",
+		   next_edl_record->start_sec );
+	}
+	next_edl_record = next_edl_record->next;
+    }
+}
+
+
+// style & SEEK_ABSOLUTE == 0 means seek relative to current position, == 1 means absolute
+// style & SEEK_FACTOR == 0 means amount in seconds, == 2 means fraction of file length
+// return -1 if seek failed (non-seekable stream?), 0 otherwise
+static int seek(MPContext *mpctx, double amount, int style)
+{
+    current_module = "seek";
+    if (demux_seek(mpctx->demuxer, amount, audio_delay, style) == 0)
+	return -1;
+
+    mpctx->startup_decode_retry = DEFAULT_STARTUP_DECODE_RETRY;
+    if (mpctx->sh_video) {
+	current_module = "seek_video_reset";
+	if (vo_config_count)
+	    mpctx->video_out->control(VOCTRL_RESET, NULL);
+	mpctx->num_buffered_frames = 0;
+	mpctx->delay = 0;
+	mpctx->time_frame = 0;
+	// Not all demuxers set d_video->pts during seek, so this value
+	// (which is used by at least vobsub and edl code below) may
+	// be completely wrong (probably 0).
+	mpctx->sh_video->pts = mpctx->d_video->pts;
+	update_subtitles(mpctx->sh_video, mpctx->sh_video->pts, mpctx->d_sub, 1);
+	update_teletext(mpctx->sh_video, mpctx->demuxer, 1);
+    }
+
+    if (mpctx->sh_audio) {
+	current_module = "seek_audio_reset";
+	mpctx->audio_out->reset(); // stop audio, throwing away buffered data
+	if (!mpctx->sh_video)
+	    update_subtitles(NULL, mpctx->sh_audio->pts, mpctx->d_sub, 1);
+    }
+
+    if (vo_vobsub && mpctx->sh_video) {
+	current_module = "seek_vobsub_reset";
+	vobsub_seek(vo_vobsub, mpctx->sh_video->pts);
+    }
+
+    edl_seek_reset(mpctx);
+
+    c_total = 0;
+    max_pts_correction = 0.1;
+    audio_time_usage = 0; video_time_usage = 0; vout_time_usage = 0;
+    drop_frame_cnt = 0;
+
+    current_module = NULL;
+    return 0;
+}
+
+/* This preprocessor directive is a hack to generate a mplayer-nomain.o object
+ * file for some tools to link against. */
+#ifndef DISABLE_MAIN
+#ifdef GEKKO
+int mplayer_loadfile(const char* _file){
+int argc;
+char *argv[] = {
+	"",
+	"-vo","gekko",
+	"-ao","gekko",
+	"-osdlevel","0",
+	_file
+}; 
+argc = sizeof(argv) / sizeof(char *);
+#else
+int main(int argc,char* argv[]){
+#endif
+
+char * mem_ptr;
+
+// movie info:
+
+/* Flag indicating whether MPlayer should exit without playing anything. */
+int opt_exit = 0;
+
+//float a_frame=0;    // Audio
+
+int i;
+
+int gui_no_filename=0;
+
+  InitTimer();
+  srand(GetTimerMS());
+
+  mp_msg_init();
+
+  // Create the config context and register the options
+  mconfig = m_config_new();
+  m_config_register_options(mconfig,mplayer_opts);
+  mp_input_register_options(mconfig);
+
+  // Preparse the command line
+  m_config_preparse_command_line(mconfig,argc,argv);
+
+#if (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(CONFIG_WIN32DLL)
+  set_path_env();
+#endif
+
+#ifdef CONFIG_TV
+  stream_tv_defaults.immediate = 1;
+#endif
+
+  if (argc > 1 && argv[1] &&
+      (!strcmp(argv[1], "-gui") || !strcmp(argv[1], "-nogui"))) {
+    use_gui = !strcmp(argv[1], "-gui");
+  } else
+  if ( argv[0] )
+  {
+    char *base = strrchr(argv[0], '/');
+    if (!base)
+      base = strrchr(argv[0], '\\');
+    if (!base)
+      base = argv[0];
+    if(strstr(base, "gmplayer"))
+          use_gui=1;
+  }
+
+    parse_cfgfiles(mconfig);
+
+#ifdef CONFIG_GUI
+    if ( use_gui ) cfg_read();
+#endif
+
+    mpctx->playtree = m_config_parse_mp_command_line(mconfig, argc, argv);
+    if(mpctx->playtree == NULL)
+      opt_exit = 1;
+    else {
+    mpctx->playtree = play_tree_cleanup(mpctx->playtree);
+    if(mpctx->playtree) {
+      mpctx->playtree_iter = play_tree_iter_new(mpctx->playtree,mconfig);
+      if(mpctx->playtree_iter) {
+	if(play_tree_iter_step(mpctx->playtree_iter,0,0) != PLAY_TREE_ITER_ENTRY) {
+	  play_tree_iter_free(mpctx->playtree_iter);
+	  mpctx->playtree_iter = NULL;
+	}
+	filename = play_tree_iter_get_file(mpctx->playtree_iter,1);
+      }
+    }
+    }
+
+  print_version("MPlayer");
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#ifdef CONFIG_GUI
+    void *runningmplayer = FindWindow("MPlayer GUI for Windows", "MPlayer for Windows");
+    if(runningmplayer && filename && use_gui){
+        COPYDATASTRUCT csData;
+        char file[MAX_PATH];
+        char *filepart = filename;
+        if(GetFullPathName(filename, MAX_PATH, file, &filepart)){
+            csData.dwData = 0;
+            csData.cbData = strlen(file)*2;
+            csData.lpData = file;
+            SendMessage(runningmplayer, WM_COPYDATA, (WPARAM)runningmplayer, (LPARAM)&csData);
+        }
+    }
+#endif
+
+	{
+		HMODULE kernel32 = GetModuleHandle("Kernel32.dll");
+		BOOL WINAPI (*setDEP)(DWORD) = NULL;
+		if (kernel32)
+			setDEP = GetProcAddress(kernel32, "SetProcessDEPPolicy");
+		if (setDEP) setDEP(3);
+	}
+	// stop Windows from showing all kinds of annoying error dialogs
+	SetErrorMode(0x8003);
+	// request 1ms timer resolution
+	timeBeginPeriod(1);
+#endif
+
+#ifdef CONFIG_PRIORITY
+    set_priority();
+#endif
+
+#ifndef CONFIG_GUI
+    if(use_gui){
+      mp_msg(MSGT_CPLAYER,MSGL_WARN,MSGTR_NoGui);
+      use_gui=0;
+    }
+#else
+#if !defined(__MINGW32__) && !defined(__CYGWIN__)
+    if(use_gui && !vo_init()){
+      mp_msg(MSGT_CPLAYER,MSGL_WARN,MSGTR_GuiNeedsX);
+      use_gui=0;
+    }
+#endif
+    if (use_gui && mpctx->playtree_iter){
+      char cwd[PATH_MAX+2];
+      // Free Playtree and Playtree-Iter as it's not used by the GUI.
+      play_tree_iter_free(mpctx->playtree_iter);
+      mpctx->playtree_iter=NULL;
+
+      if (getcwd(cwd, PATH_MAX) != (char *)NULL)
+      {
+	  strcat(cwd, "/");
+          // Prefix relative paths with current working directory
+          play_tree_add_bpf(mpctx->playtree, cwd);
+      }
+      // Import initital playtree into GUI.
+      import_initial_playtree_into_gui(mpctx->playtree, mconfig, enqueue);
+    }
+#endif /* CONFIG_GUI */
+
+    if(video_driver_list && strcmp(video_driver_list[0],"help")==0){
+      list_video_out();
+      opt_exit = 1;
+    }
+
+    if(audio_driver_list && strcmp(audio_driver_list[0],"help")==0){
+      list_audio_out();
+      opt_exit = 1;
+    }
+#ifdef GEKKO
+load_builtin_codecs();
+#else
+/* Check codecs.conf. */
+if(!codecs_file || !parse_codec_cfg(codecs_file)){
+  if(!parse_codec_cfg(mem_ptr=get_path("codecs.conf"))){
+    if(!parse_codec_cfg(MPLAYER_CONFDIR "/codecs.conf")){
+      if(!parse_codec_cfg(NULL)){
+        exit_player_with_rc(EXIT_NONE, 0);
+      }
+      mp_msg(MSGT_CPLAYER,MSGL_V,MSGTR_BuiltinCodecsConf);
+    }
+  }
+  free( mem_ptr ); // release the buffer created by get_path()
+}
+#endif
+#if 0
+    if(video_codec_list){
+	int i;
+	video_codec=video_codec_list[0];
+	for(i=0;video_codec_list[i];i++)
+	    mp_msg(MSGT_FIXME,MSGL_FIXME,"vc#%d: '%s'\n",i,video_codec_list[i]);
+    }
+#endif
+    if(audio_codec_list && strcmp(audio_codec_list[0],"help")==0){
+      mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_AvailableAudioCodecs);
+      mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_AUDIO_CODECS\n");
+      list_codecs(1);
+      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
+      opt_exit = 1;
+    }
+    if(video_codec_list && strcmp(video_codec_list[0],"help")==0){
+      mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_AvailableVideoCodecs);
+      mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_VIDEO_CODECS\n");
+      list_codecs(0);
+      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
+      opt_exit = 1;
+    }
+    if(video_fm_list && strcmp(video_fm_list[0],"help")==0){
+      vfm_help();
+      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
+      opt_exit = 1;
+    }
+    if(audio_fm_list && strcmp(audio_fm_list[0],"help")==0){
+      afm_help();
+      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
+      opt_exit = 1;
+    }
+    if(af_cfg.list && strcmp(af_cfg.list[0],"help")==0){
+      af_help();
+      printf("\n");
+      opt_exit = 1;
+    }
+#ifdef CONFIG_X11
+    if(vo_fstype_list && strcmp(vo_fstype_list[0],"help")==0){
+      fstype_help();
+      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
+      opt_exit = 1;
+    }
+#endif
+    if((demuxer_name && strcmp(demuxer_name,"help")==0) ||
+       (audio_demuxer_name && strcmp(audio_demuxer_name,"help")==0) ||
+       (sub_demuxer_name && strcmp(sub_demuxer_name,"help")==0)){
+      demuxer_help();
+      mp_msg(MSGT_CPLAYER, MSGL_INFO, "\n");
+      opt_exit = 1;
+    }
+    if(list_properties) {
+      property_print_help();
+      opt_exit = 1;
+    }
+
+    if(opt_exit)
+      exit_player(EXIT_NONE);
+
+    if (player_idle_mode && use_gui) {
+        mp_msg(MSGT_CPLAYER, MSGL_FATAL, MSGTR_NoIdleAndGui);
+        exit_player_with_rc(EXIT_NONE, 1);
+    }
+
+    if(!filename && !player_idle_mode){
+      if(!use_gui){
+	// no file/vcd/dvd -> show HELP:
+	mp_msg(MSGT_CPLAYER, MSGL_INFO, help_text);
+        exit_player_with_rc(EXIT_NONE, 0);
+      } else gui_no_filename=1;
+    }
+
+    /* Display what configure line was used */
+    mp_msg(MSGT_CPLAYER, MSGL_V, "Configuration: " CONFIGURATION "\n");
+
+    // Many users forget to include command line in bugreports...
+    if( mp_msg_test(MSGT_CPLAYER,MSGL_V) ){
+      mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_CommandLine);
+      for(i=1;i<argc;i++)mp_msg(MSGT_CPLAYER, MSGL_INFO," '%s'",argv[i]);
+      mp_msg(MSGT_CPLAYER, MSGL_INFO, "\n");
+    }
+
+//------ load global data first ------
+
+// check font
+#ifdef CONFIG_FREETYPE
+  init_freetype();
+#endif
+#ifdef CONFIG_FONTCONFIG
+  if(font_fontconfig <= 0)
+  {
+#endif
+#ifdef CONFIG_BITMAP_FONT
+  if(font_name){
+       vo_font=read_font_desc(font_name,font_factor,verbose>1);
+       if(!vo_font) mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_CantLoadFont,
+		filename_recode(font_name));
+  } else {
+      // try default:
+       vo_font=read_font_desc( mem_ptr=get_path("font/font.desc"),font_factor,verbose>1);
+       free(mem_ptr); // release the buffer created by get_path()
+       if(!vo_font)
+       {
+    	   char cad[200];
+           sprintf(cad,"%s%s",MPLAYER_DATADIR,"/font/font.desc");
+           //printf("read_font_desc (%s)\n",cad);
+           vo_font=read_font_desc(cad,font_factor,verbose>1);
+       }
+  }
+  if (sub_font_name)
+    sub_font = read_font_desc(sub_font_name, font_factor, verbose>1);
+  else
+    sub_font = vo_font;
+#endif
+#ifdef CONFIG_FONTCONFIG
+  }
+#endif
+
+  vo_init_osd();
+
+#ifdef CONFIG_ASS
+  ass_library = ass_init();
+#endif
+
+#ifdef HAVE_RTC
+  if(!nortc)
+  {
+    // seteuid(0); /* Can't hurt to try to get root here */
+    if ((rtc_fd = open(rtc_device ? rtc_device : "/dev/rtc", O_RDONLY)) < 0)
+	mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_RTCDeviceNotOpenable,
+	    rtc_device ? rtc_device : "/dev/rtc", strerror(errno));
+     else {
+	unsigned long irqp = 1024; /* 512 seemed OK. 128 is jerky. */
+
+	if (ioctl(rtc_fd, RTC_IRQP_SET, irqp) < 0) {
+    	    mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_LinuxRTCInitErrorIrqpSet, irqp, strerror(errno));
+    	    mp_msg(MSGT_CPLAYER, MSGL_HINT, MSGTR_IncreaseRTCMaxUserFreq, irqp);
+   	    close (rtc_fd);
+    	    rtc_fd = -1;
+	} else if (ioctl(rtc_fd, RTC_PIE_ON, 0) < 0) {
+	    /* variable only by the root */
+    	    mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_LinuxRTCInitErrorPieOn, strerror(errno));
+    	    close (rtc_fd);
+	    rtc_fd = -1;
+	} else
+	    mp_msg(MSGT_CPLAYER, MSGL_V, MSGTR_UsingRTCTiming, irqp);
+    }
+  }
+#ifdef CONFIG_GUI
+// breaks DGA and SVGAlib and VESA drivers:  --A'rpi
+// and now ? -- Pontscho
+    if(use_gui) setuid( getuid() ); // strongly test, please check this.
+#endif
+    if(rtc_fd<0)
+#endif /* HAVE_RTC */
+      mp_msg(MSGT_CPLAYER, MSGL_V, "Using %s timing\n",
+	     softsleep?"software":timer_name);
+
+#ifdef HAVE_TERMCAP
+  if ( !use_gui ) load_termcap(NULL); // load key-codes
+#endif
+
+// ========== Init keyboard FIFO (connection to libvo) ============
+
+// Init input system
+current_module = "init_input";
+mp_input_init(use_gui);
+  mp_input_add_key_fd(-1,0,mplayer_get_key,NULL);
+if(slave_mode)
+  mp_input_add_cmd_fd(0,USE_SELECT,MP_INPUT_SLAVE_CMD_FUNC,NULL);
+else if(!noconsolecontrols)
+    mp_input_add_event_fd(0, getch2);
+// Set the libstream interrupt callback
+stream_set_interrupt_callback(mp_input_check_interrupt);
+
+#ifdef CONFIG_MENU
+ if(use_menu) {
+   if(menu_cfg && menu_init(mpctx, menu_cfg))
+     mp_msg(MSGT_CPLAYER, MSGL_V, MSGTR_MenuInitialized, menu_cfg);
+   else {
+     menu_cfg = get_path("menu.conf");
+     if(menu_init(mpctx, menu_cfg))
+       mp_msg(MSGT_CPLAYER, MSGL_V, MSGTR_MenuInitialized, menu_cfg);
+     else {
+       if(menu_init(mpctx, MPLAYER_CONFDIR "/menu.conf"))
+         mp_msg(MSGT_CPLAYER, MSGL_V, MSGTR_MenuInitialized, MPLAYER_CONFDIR"/menu.conf");
+       else {
+         mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_MenuInitFailed);
+         use_menu = 0;
+       }
+     }
+   }
+ }
+#endif
+
+initialized_flags|=INITIALIZED_INPUT;
+current_module = NULL;
+
+  /// Catch signals
+#if !defined(__MINGW32__) && !defined(GEKKO)
+  signal(SIGCHLD,child_sighandler);
+#endif
+
+#ifdef CONFIG_CRASH_DEBUG
+  prog_path = argv[0];
+#endif
+  //========= Catch terminate signals: ================
+  // terminate requests:
+  signal(SIGTERM,exit_sighandler); // kill
+  signal(SIGHUP,exit_sighandler);  // kill -HUP  /  xterm closed
+
+  signal(SIGINT,exit_sighandler);  // Interrupt from keyboard
+
+  signal(SIGQUIT,exit_sighandler); // Quit from keyboard
+  signal(SIGPIPE,exit_sighandler); // Some window managers cause this
+#ifdef CONFIG_SIGHANDLER
+  // fatal errors:
+  signal(SIGBUS,exit_sighandler);  // bus error
+  signal(SIGSEGV,exit_sighandler); // segfault
+  signal(SIGILL,exit_sighandler);  // illegal instruction
+  signal(SIGFPE,exit_sighandler);  // floating point exc.
+  signal(SIGABRT,exit_sighandler); // abort()
+#ifdef CONFIG_CRASH_DEBUG
+  if (crash_debug)
+    signal(SIGTRAP,exit_sighandler);
+#endif
+#endif
+
+#ifdef CONFIG_GUI
+  if(use_gui){
+       guiInit();
+       guiGetEvent(guiSetContext, mpctx);
+       initialized_flags|=INITIALIZED_GUI;
+       guiGetEvent( guiCEvent,(char *)((gui_no_filename) ? 0 : 1) );
+  }
+#endif
+
+// ******************* Now, let's see the per-file stuff ********************
+
+play_next_file:
+
+  // init global sub numbers
+  mpctx->global_sub_size = 0;
+  { int i; for (i = 0; i < SUB_SOURCES; i++) mpctx->global_sub_indices[i] = -1; }
+#ifdef GEKKO
+m_config_set_option(mconfig,"sws","4");
+m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
+if(amplify_volume!=0.0){
+	char cad[25];
+	sprintf(cad,"volume=%f:0",amplify_volume);
+	m_config_set_option(mconfig,"af",cad);
+}
+#endif
+  if (filename) {
+    load_per_protocol_config (mconfig, filename);
+    load_per_extension_config (mconfig, filename);
+    load_per_file_config (mconfig, filename);
+  }
+
+  if (video_driver_list)
+    load_per_output_config (mconfig, PROFILE_CFG_VO, video_driver_list[0]);
+  if (audio_driver_list)
+    load_per_output_config (mconfig, PROFILE_CFG_AO, audio_driver_list[0]);
+
+// We must enable getch2 here to be able to interrupt network connection
+// or cache filling
+if(!noconsolecontrols && !slave_mode){
+  if(initialized_flags&INITIALIZED_GETCH2)
+    mp_msg(MSGT_CPLAYER,MSGL_WARN,MSGTR_Getch2InitializedTwice);
+  else
+    getch2_enable();  // prepare stdin for hotkeys...
+  initialized_flags|=INITIALIZED_GETCH2;
+  mp_msg(MSGT_CPLAYER,MSGL_DBG2,"\n[[[init getch2]]]\n");
+}
+
+// =================== GUI idle loop (STOP state) ===========================
+#ifdef CONFIG_GUI
+    if ( use_gui ) {
+      mpctx->file_format=DEMUXER_TYPE_UNKNOWN;
+      guiGetEvent( guiSetDefaults,0 );
+      while ( guiIntfStruct.Playing != 1 )
+       {
+        mp_cmd_t* cmd;
+	usec_sleep(20000);
+	guiEventHandling();
+	guiGetEvent( guiReDraw,NULL );
+	if ( (cmd = mp_input_get_cmd(0,0,0)) != NULL) {
+	  guiGetEvent(guiIEvent, (char *)cmd->id);
+	  mp_cmd_free(cmd);
+	}
+       }
+      guiGetEvent( guiSetParameters,NULL );
+      if ( guiIntfStruct.StreamType == STREAMTYPE_STREAM )
+       {
+        play_tree_t * entry = play_tree_new();
+        play_tree_add_file( entry,guiIntfStruct.Filename );
+        if ( mpctx->playtree ) play_tree_free_list( mpctx->playtree->child,1 );
+         else mpctx->playtree=play_tree_new();
+        play_tree_set_child( mpctx->playtree,entry );
+        if(mpctx->playtree)
+	 {
+	  mpctx->playtree_iter = play_tree_iter_new(mpctx->playtree,mconfig);
+	  if(mpctx->playtree_iter)
+	   {
+	    if(play_tree_iter_step(mpctx->playtree_iter,0,0) != PLAY_TREE_ITER_ENTRY)
+	     {
+	      play_tree_iter_free(mpctx->playtree_iter);
+	      mpctx->playtree_iter = NULL;
+	     }
+	    filename = play_tree_iter_get_file(mpctx->playtree_iter,1);
+	   }
+         }
+       }
+    }
+#endif /* CONFIG_GUI */
+
+while (player_idle_mode && !filename) {
+    play_tree_t * entry = NULL;
+    mp_cmd_t * cmd;
+    if (mpctx->video_out && vo_config_count)
+        mpctx->video_out->control(VOCTRL_PAUSE, NULL);
+    while (!(cmd = mp_input_get_cmd(0,1,0))) { // wait for command
+        if (mpctx->video_out && vo_config_count) mpctx->video_out->check_events();
+        usec_sleep(20000);
+    }
+    switch (cmd->id) {
+        case MP_CMD_LOADFILE:
+            // prepare a tree entry with the new filename
+            entry = play_tree_new();
+            play_tree_add_file(entry, cmd->args[0].v.s);
+            // The entry is added to the main playtree after the switch().
+            break;
+        case MP_CMD_LOADLIST:
+            entry = parse_playlist_file(cmd->args[0].v.s);
+            break;
+        case MP_CMD_QUIT:
+            exit_player_with_rc(EXIT_QUIT, (cmd->nargs > 0)? cmd->args[0].v.i : 0);
+            break;
+        case MP_CMD_GET_PROPERTY:
+        case MP_CMD_SET_PROPERTY:
+        case MP_CMD_STEP_PROPERTY:
+            run_command(mpctx, cmd);
+            break;
+    }
+
+    mp_cmd_free(cmd);
+
+    if (entry) { // user entered a command that gave a valid entry
+        if (mpctx->playtree) // the playtree is always a node with one child. let's clear it
+            play_tree_free_list(mpctx->playtree->child, 1);
+        else mpctx->playtree=play_tree_new(); // .. or make a brand new playtree
+
+        if (!mpctx->playtree) continue; // couldn't make playtree! wait for next command
+
+        play_tree_set_child(mpctx->playtree, entry);
+
+        /* Make iterator start at the top the of tree. */
+        mpctx->playtree_iter = play_tree_iter_new(mpctx->playtree, mconfig);
+        if (!mpctx->playtree_iter) continue;
+
+        // find the first real item in the tree
+        if (play_tree_iter_step(mpctx->playtree_iter,0,0) != PLAY_TREE_ITER_ENTRY) {
+            // no items!
+            play_tree_iter_free(mpctx->playtree_iter);
+            mpctx->playtree_iter = NULL;
+            continue; // wait for next command
+        }
+        filename = play_tree_iter_get_file(mpctx->playtree_iter, 1);
+    }
+}
+//---------------------------------------------------------------------------
+
+    if (mpctx->video_out && vo_config_count)
+        mpctx->video_out->control(VOCTRL_RESUME, NULL);
+
+    if(filename) {
+	mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_Playing,
+		filename_recode(filename));
+        if(use_filename_title && vo_wintitle == NULL)
+            vo_wintitle = strdup ( mp_basename2 (filename));
+    }
+
+if (edl_filename) {
+    if (edl_records) free_edl(edl_records);
+    next_edl_record = edl_records = edl_parse_file();
+}
+if (edl_output_filename) {
+    if (edl_fd) fclose(edl_fd);
+    if ((edl_fd = fopen(edl_output_filename, "w")) == NULL)
+    {
+        mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_EdlCantOpenForWrite,
+		filename_recode(edl_output_filename));
+    }
+}
+
+//==================== Open VOB-Sub ============================
+#ifdef GEKKO
+int vob_sub_auto = 1;
+#endif
+
+    current_module="vobsub";
+    if (vobsub_name){
+      vo_vobsub=vobsub_open(vobsub_name,spudec_ifo,1,&vo_spudec);
+      if(vo_vobsub==NULL)
+        mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_CantLoadSub,
+		filename_recode(vobsub_name));
+     } else
+	if (vo_vobsub==NULL && vob_sub_auto && filename){ //scip sub_auto -> vob_sub_auto
+      /* try to autodetect vobsub from movie filename ::atmos */
+      char *buf = strdup(filename), *psub;
+      char *pdot = strrchr(buf, '.');
+      char *pslash = strrchr(buf, '/');
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+      if (!pslash) pslash = strrchr(buf, '\\');
+#endif
+      if (pdot && (!pslash || pdot > pslash))
+        *pdot = '\0';
+      vo_vobsub=vobsub_open(buf,spudec_ifo,0,&vo_spudec);
+      /* try from ~/.mplayer/sub */
+      if(!vo_vobsub && (psub = get_path( "sub/" ))) {
+          char *bname;
+          int l;
+          bname = strrchr(buf,'/');
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+          if(!bname) bname = strrchr(buf,'\\');
+#endif
+          if(bname) bname++;
+          else bname = buf;
+          l = strlen(psub) + strlen(bname) + 1;
+          psub = realloc(psub,l);
+          strcat(psub,bname);
+          vo_vobsub=vobsub_open(psub,spudec_ifo,0,&vo_spudec);
+          free(psub);
+      }
+      free(buf);
+    }
+    if(vo_vobsub){
+      initialized_flags|=INITIALIZED_VOBSUB;
+      vobsub_set_from_lang(vo_vobsub, dvdsub_lang);
+      mp_property_do("sub_forced_only", M_PROPERTY_SET, &forced_subs_only, mpctx);
+
+      // setup global sub numbering
+      mpctx->global_sub_indices[SUB_SOURCE_VOBSUB] = mpctx->global_sub_size; // the global # of the first vobsub.
+      mpctx->global_sub_size += vobsub_get_indexes_count(vo_vobsub);
+    }
+
+//============ Open & Sync STREAM --- fork cache2 ====================
+
+  mpctx->stream=NULL;
+  mpctx->demuxer=NULL;
+  if (mpctx->d_audio) {
+    //free_demuxer_stream(mpctx->d_audio);
+    mpctx->d_audio=NULL;
+  }
+  if (mpctx->d_video) {
+    //free_demuxer_stream(d_video);
+    mpctx->d_video=NULL;
+  }
+  mpctx->sh_audio=NULL;
+  mpctx->sh_video=NULL;
+
+  current_module="open_stream";
+  #ifdef GEKKO
+  static float orig_stream_cache_min_percent=-1;
+  static float orig_stream_cache_seek_min_percent=-1;
+  static int orig_stream_cache_size=-1;
+
+  if(orig_stream_cache_min_percent==-1 && orig_stream_cache_seek_min_percent==-1)
+  {
+    orig_stream_cache_min_percent=stream_cache_min_percent;
+    orig_stream_cache_seek_min_percent=stream_cache_seek_min_percent;
+    orig_stream_cache_size=stream_cache_size;
+  }
+  else
+  {
+    stream_cache_min_percent=orig_stream_cache_min_percent;
+    stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
+  }
+  if(!strncmp(filename,"dvdnav://",9))
+  	stream_cache_size=-1;
+  else
+  	stream_cache_size=orig_stream_cache_size;
+
+
+    if(!strncmp(filename,"http:",5))
+    {
+	   stream_cache_min_percent=1;
+	   stream_cache_seek_min_percent=5;
+    }
+  #endif
+  mpctx->stream=open_stream(filename,0,&mpctx->file_format);
+  if(!mpctx->stream) { // error...
+    mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY);
+    goto goto_next_file;
+  }
+  initialized_flags|=INITIALIZED_STREAM;
+#ifdef GEKKO
+  strcpy(fileplaying,filename);
+#endif
+
+#ifdef CONFIG_GUI
+  if ( use_gui ) guiGetEvent( guiSetStream,(char *)mpctx->stream );
+#endif
+
+  if(mpctx->file_format == DEMUXER_TYPE_PLAYLIST) {
+    play_tree_t* entry;
+    // Handle playlist
+    current_module="handle_playlist";
+    mp_msg(MSGT_CPLAYER,MSGL_V,"Parsing playlist %s...\n",
+	    filename_recode(filename));
+    entry = parse_playtree(mpctx->stream,0);
+    mpctx->eof=playtree_add_playlist(entry);
+    goto goto_next_file;
+  }
+  mpctx->stream->start_pos+=seek_to_byte;
+
+if(stream_dump_type==5){
+  unsigned char buf[4096];
+  int len;
+  FILE *f;
+  current_module="dumpstream";
+  stream_reset(mpctx->stream);
+  stream_seek(mpctx->stream,mpctx->stream->start_pos);
+  f=fopen(stream_dump_name,"wb");
+  if(!f){
+    mp_msg(MSGT_CPLAYER,MSGL_FATAL,MSGTR_CantOpenDumpfile);
+    exit_player(EXIT_ERROR);
+  }
+  if (dvd_chapter > 1) {
+    int chapter = dvd_chapter - 1;
+    stream_control(mpctx->stream, STREAM_CTRL_SEEK_TO_CHAPTER, &chapter);
+  }
+  while(!mpctx->stream->eof && !async_quit_request){
+      len=stream_read(mpctx->stream,buf,4096);
+      if(len>0) {
+        if(fwrite(buf,len,1,f) != 1) {
+          mp_msg(MSGT_MENCODER,MSGL_FATAL,MSGTR_ErrorWritingFile,stream_dump_name);
+          exit_player(EXIT_ERROR);
+        }
+      }
+      if(dvd_last_chapter > 0) {
+        int chapter = -1;
+        if (stream_control(mpctx->stream, STREAM_CTRL_GET_CURRENT_CHAPTER,
+                           &chapter) == STREAM_OK && chapter + 1 > dvd_last_chapter)
+          break;
+      }
+  }
+  if(fclose(f)) {
+    mp_msg(MSGT_MENCODER,MSGL_FATAL,MSGTR_ErrorWritingFile,stream_dump_name);
+    exit_player(EXIT_ERROR);
+  }
+  mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_CoreDumped);
+  exit_player_with_rc(EXIT_EOF, 0);
+}
+
+#ifdef CONFIG_DVDREAD
+if(mpctx->stream->type==STREAMTYPE_DVD){
+  current_module="dvd lang->id";
+  if(audio_id==-1) audio_id=dvd_aid_from_lang(mpctx->stream,audio_lang);
+  if(dvdsub_lang && dvdsub_id==-1) dvdsub_id=dvd_sid_from_lang(mpctx->stream,dvdsub_lang);
+  // setup global sub numbering
+  mpctx->global_sub_indices[SUB_SOURCE_DEMUX] = mpctx->global_sub_size; // the global # of the first demux-specific sub.
+  mpctx->global_sub_size += dvd_number_of_subs(mpctx->stream);
+  current_module=NULL;
+}
+#endif
+
+#ifdef CONFIG_DVDNAV
+if(mpctx->stream->type==STREAMTYPE_DVDNAV){
+  current_module="dvdnav lang->id";
+  if(audio_id==-1) audio_id=mp_dvdnav_aid_from_lang(mpctx->stream,audio_lang);
+  dvdsub_lang_id = -3;
+  if(dvdsub_lang && dvdsub_id==-1)
+    dvdsub_lang_id=dvdsub_id=mp_dvdnav_sid_from_lang(mpctx->stream,dvdsub_lang);
+  // setup global sub numbering
+  mpctx->global_sub_indices[SUB_SOURCE_DEMUX] = mpctx->global_sub_size; // the global # of the first demux-specific sub.
+  mpctx->global_sub_size += mp_dvdnav_number_of_subs(mpctx->stream);
+  current_module=NULL;
+}
+#endif
+
+// CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
+goto_enable_cache:
+if(stream_cache_size>0){
+  int res;
+  current_module="enable_cache";
+#ifdef GEKKO
+stream_cache_min_percent=1.0;
+#endif
+  res = stream_enable_cache(mpctx->stream,stream_cache_size*1024,
+                          stream_cache_size*1024*(stream_cache_min_percent / 100.0),
+                          stream_cache_size*1024*(stream_cache_seek_min_percent / 100.0));
+  if(res == 0)
+    if((mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY))) goto goto_next_file;
+}
+
+//============ Open DEMUXERS --- DETECT file type =======================
+current_module="demux_open";
+
+mpctx->demuxer=demux_open(mpctx->stream,mpctx->file_format,audio_id,video_id,dvdsub_id,filename);
+
+// HACK to get MOV Reference Files working
+
+if (mpctx->demuxer && mpctx->demuxer->type==DEMUXER_TYPE_PLAYLIST)
+{
+  unsigned char* playlist_entry;
+  play_tree_t *list = NULL, *entry = NULL;
+
+  current_module="handle_demux_playlist";
+  while (ds_get_packet(mpctx->demuxer->video,&playlist_entry)>0)
+  {
+    char *temp, *bname;
+
+    mp_msg(MSGT_CPLAYER,MSGL_V,"Adding file %s to element entry.\n",
+	    filename_recode(playlist_entry));
+
+    bname=mp_basename(playlist_entry);
+    if ((strlen(bname)>10) && !strncmp(bname,"qt",2) && !strncmp(bname+3,"gateQT",6))
+        continue;
+
+    if (!strcmp(playlist_entry,filename)) // ignoring self-reference
+        continue;
+
+    entry = play_tree_new();
+
+    if (filename && !strcmp(mp_basename(playlist_entry),playlist_entry)) // add reference path of current file
+    {
+      temp=malloc((strlen(filename)-strlen(mp_basename(filename))+strlen(playlist_entry)+1));
+      if (temp)
+      {
+	strncpy(temp, filename, strlen(filename)-strlen(mp_basename(filename)));
+	temp[strlen(filename)-strlen(mp_basename(filename))]='\0';
+	strcat(temp, playlist_entry);
+	if (!strcmp(temp, filename)) {
+	  free(temp);
+	  continue;
+	}
+	play_tree_add_file(entry,temp);
+	mp_msg(MSGT_CPLAYER,MSGL_V,"Resolving reference to %s.\n",temp);
+	free(temp);
+      }
+    }
+    else
+      play_tree_add_file(entry,playlist_entry);
+
+    if(!list)
+      list = entry;
+    else
+      play_tree_append_entry(list,entry);
+  }
+  free_demuxer(mpctx->demuxer);
+  mpctx->demuxer = NULL;
+
+  if (list)
+  {
+    entry = play_tree_new();
+    play_tree_set_child(entry,list);
+    mpctx->eof=playtree_add_playlist(entry);
+    goto goto_next_file;
+  }
+}
+
+if(!mpctx->demuxer)
+  goto goto_next_file;
+if(dvd_chapter>1) {
+  float pts;
+  if (demuxer_seek_chapter(mpctx->demuxer, dvd_chapter-1, 1, &pts, NULL, NULL) >= 0 && pts > -1.0)
+    seek(mpctx, pts, SEEK_ABSOLUTE);
+}
+
+initialized_flags|=INITIALIZED_DEMUXER;
+
+if (mpctx->stream->type != STREAMTYPE_DVD && mpctx->stream->type != STREAMTYPE_DVDNAV) {
+  int i;
+  int maxid = -1;
+  // setup global sub numbering
+  mpctx->global_sub_indices[SUB_SOURCE_DEMUX] = mpctx->global_sub_size; // the global # of the first demux-specific sub.
+  for (i = 0; i < MAX_S_STREAMS; i++)
+    if (mpctx->demuxer->s_streams[i])
+      maxid = FFMAX(maxid, ((sh_sub_t *)mpctx->demuxer->s_streams[i])->sid);
+  mpctx->global_sub_size += maxid + 1;
+}
+// Make dvdsub_id always selectable if set.
+if (mpctx->global_sub_size <= mpctx->global_sub_indices[SUB_SOURCE_DEMUX] + dvdsub_id)
+  mpctx->global_sub_size = mpctx->global_sub_indices[SUB_SOURCE_DEMUX] + dvdsub_id + 1;
+
+#ifdef CONFIG_ASS
+if (ass_enabled && ass_library) {
+  for (i = 0; i < mpctx->demuxer->num_attachments; ++i) {
+    demux_attachment_t* att = mpctx->demuxer->attachments + i;
+    if (extract_embedded_fonts &&
+        att->name && att->type && att->data && att->data_size &&
+        (strcmp(att->type, "application/x-truetype-font") == 0 ||
+         strcmp(att->type, "application/x-font") == 0))
+      ass_add_font(ass_library, att->name, att->data, att->data_size);
+  }
+}
+#endif
+
+current_module="demux_open2";
+
+//file_format=demuxer->file_format;
+
+mpctx->d_audio=mpctx->demuxer->audio;
+mpctx->d_video=mpctx->demuxer->video;
+mpctx->d_sub=mpctx->demuxer->sub;
+
+if (ts_prog) {
+  int tmp = ts_prog;
+  mp_property_do("switch_program", M_PROPERTY_SET, &tmp, mpctx);
+}
+// select audio stream
+select_audio(mpctx->demuxer, audio_id, audio_lang);
+
+// DUMP STREAMS:
+if((stream_dump_type)&&(stream_dump_type<4)){
+  FILE *f;
+  demux_stream_t *ds=NULL;
+  current_module="dump";
+  // select stream to dump
+  switch(stream_dump_type){
+  case 1: ds=mpctx->d_audio;break;
+  case 2: ds=mpctx->d_video;break;
+  case 3: ds=mpctx->d_sub;break;
+  }
+  if(!ds){
+      mp_msg(MSGT_CPLAYER,MSGL_FATAL,MSGTR_DumpSelectedStreamMissing);
+      exit_player(EXIT_ERROR);
+  }
+  // disable other streams:
+  if(mpctx->d_audio && mpctx->d_audio!=ds) {ds_free_packs(mpctx->d_audio); mpctx->d_audio->id=-2; }
+  if(mpctx->d_video && mpctx->d_video!=ds) {ds_free_packs(mpctx->d_video); mpctx->d_video->id=-2; }
+  if(mpctx->d_sub && mpctx->d_sub!=ds) {ds_free_packs(mpctx->d_sub); mpctx->d_sub->id=-2; }
+  // let's dump it!
+  f=fopen(stream_dump_name,"wb");
+  if(!f){
+    mp_msg(MSGT_CPLAYER,MSGL_FATAL,MSGTR_CantOpenDumpfile);
+    exit_player(EXIT_ERROR);
+  }
+  while(!ds->eof){
+    unsigned char* start;
+    int in_size=ds_get_packet(ds,&start);
+    if( (mpctx->demuxer->file_format==DEMUXER_TYPE_AVI || mpctx->demuxer->file_format==DEMUXER_TYPE_ASF || mpctx->demuxer->file_format==DEMUXER_TYPE_MOV)
+	&& stream_dump_type==2) fwrite(&in_size,1,4,f);
+    if(in_size>0) fwrite(start,in_size,1,f);
+    if(dvd_last_chapter>0) {
+      int cur_chapter = demuxer_get_current_chapter(mpctx->demuxer);
+      if(cur_chapter!=-1 && cur_chapter+1>dvd_last_chapter)
+        break;
+    }
+  }
+  fclose(f);
+  mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_CoreDumped);
+  exit_player_with_rc(EXIT_EOF, 0);
+}
+
+mpctx->sh_audio=mpctx->d_audio->sh;
+mpctx->sh_video=mpctx->d_video->sh;
+
+if(mpctx->sh_video){
+
+  current_module="video_read_properties";
+  if(!video_read_properties(mpctx->sh_video)) {
+    mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_CannotReadVideoProperties);
+    mpctx->sh_video=mpctx->d_video->sh=NULL;
+  } else {
+    mp_msg(MSGT_CPLAYER,MSGL_V,MSGTR_FilefmtFourccSizeFpsFtime,
+	   mpctx->demuxer->file_format,mpctx->sh_video->format, mpctx->sh_video->disp_w,mpctx->sh_video->disp_h,
+	   mpctx->sh_video->fps,mpctx->sh_video->frametime
+	   );
+
+    /* need to set fps here for output encoders to pick it up in their init */
+    if(force_fps){
+      mpctx->sh_video->fps=force_fps;
+      mpctx->sh_video->frametime=1.0f/mpctx->sh_video->fps;
+    }
+    vo_fps = mpctx->sh_video->fps;
+
+    if(!mpctx->sh_video->fps && !force_fps){
+      mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_FPSnotspecified);
+      mpctx->sh_video=mpctx->d_video->sh=NULL;
+    }
+  }
+
+}
+
+if(!mpctx->sh_video && !mpctx->sh_audio){
+    mp_msg(MSGT_CPLAYER,MSGL_FATAL, MSGTR_NoStreamFound);
+#ifdef CONFIG_DVBIN
+	if(mpctx->stream->type == STREAMTYPE_DVB)
+	{
+		int dir;
+		int v = mpctx->last_dvb_step;
+		if(v > 0)
+			dir = DVB_CHANNEL_HIGHER;
+		else
+			dir = DVB_CHANNEL_LOWER;
+
+		if(dvb_step_channel(mpctx->stream, dir))
+			mpctx->eof = mpctx->dvbin_reopen = 1;
+	}
+#endif
+    goto goto_next_file; // exit_player(MSGTR_Exit_error);
+}
+
+/* display clip info */
+demux_info_print(mpctx->demuxer);
+
+//================== Read SUBTITLES (DVD & TEXT) ==========================
+if(vo_spudec==NULL && mpctx->sh_video &&
+     (mpctx->stream->type==STREAMTYPE_DVD || mpctx->stream->type == STREAMTYPE_DVDNAV)){
+  init_vo_spudec();
+}
+
+if(1 || mpctx->sh_video) {
+// after reading video params we should load subtitles because
+// we know fps so now we can adjust subtitle time to ~6 seconds AST
+// check .sub
+  double fps = mpctx->sh_video ? mpctx->sh_video->fps : 25;
+  current_module="read_subtitles_file";
+  if(sub_name){
+    for (i = 0; sub_name[i] != NULL; ++i)
+        add_subtitles (sub_name[i], fps, 0);
+  }
+  //scip:
+  sub_auto = 1;
+  if(vo_vobsub==NULL && sub_auto) { // auto load sub file ...
+    //char *psub = get_path( "sub/" );
+    //char **tmp = sub_filenames((psub ? psub : ""), filename);
+    char **tmp = sub_filenames("", filename);
+    int i = 0;
+    //free(psub); // release the buffer created by get_path() above
+    while (tmp[i]) {
+        add_subtitles (tmp[i], fps, 1);
+        free(tmp[i++]);
+    }
+    free(tmp);
+  }
+  if (mpctx->set_of_sub_size > 0)  {
+      // setup global sub numbering
+      mpctx->global_sub_indices[SUB_SOURCE_SUBS] = mpctx->global_sub_size; // the global # of the first sub.
+      mpctx->global_sub_size += mpctx->set_of_sub_size;
+  }
+}
+
+if (mpctx->global_sub_size) {
+  select_subtitle(mpctx);
+  if(subdata)
+    switch (stream_dump_type) {
+        case 3: list_sub_file(subdata); break;
+        case 4: dump_mpsub(subdata, mpctx->sh_video->fps); break;
+        case 6: dump_srt(subdata, mpctx->sh_video->fps); break;
+        case 7: dump_microdvd(subdata, mpctx->sh_video->fps); break;
+        case 8: dump_jacosub(subdata, mpctx->sh_video->fps); break;
+        case 9: dump_sami(subdata, mpctx->sh_video->fps); break;
+    }
+}
+
+  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_FILENAME=%s\n",
+	  filename_recode(filename));
+  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_DEMUXER=%s\n", mpctx->demuxer->desc->name);
+  if (mpctx->sh_video) {
+    /* Assume FOURCC if all bytes >= 0x20 (' ') */
+    if (mpctx->sh_video->format >= 0x20202020)
+	mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_FORMAT=%.4s\n", (char *)&mpctx->sh_video->format);
+    else
+	mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_FORMAT=0x%08X\n", mpctx->sh_video->format);
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_BITRATE=%d\n", mpctx->sh_video->i_bps*8);
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_WIDTH=%d\n", mpctx->sh_video->disp_w);
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_HEIGHT=%d\n", mpctx->sh_video->disp_h);
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_FPS=%5.3f\n", mpctx->sh_video->fps);
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_ASPECT=%1.4f\n", mpctx->sh_video->aspect);
+  }
+  if (mpctx->sh_audio) {
+    /* Assume FOURCC if all bytes >= 0x20 (' ') */
+    if (mpctx->sh_audio->format >= 0x20202020)
+      mp_msg(MSGT_IDENTIFY,MSGL_INFO, "ID_AUDIO_FORMAT=%.4s\n", (char *)&mpctx->sh_audio->format);
+    else
+      mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_AUDIO_FORMAT=%d\n", mpctx->sh_audio->format);
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_AUDIO_BITRATE=%d\n", mpctx->sh_audio->i_bps*8);
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_AUDIO_RATE=%d\n", mpctx->sh_audio->samplerate);
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_AUDIO_NCH=%d\n", mpctx->sh_audio->channels);
+  }
+  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_LENGTH=%.2lf\n", demuxer_get_time_length(mpctx->demuxer));
+  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_SEEKABLE=%d\n",
+         mpctx->stream->seek && (!mpctx->demuxer || mpctx->demuxer->seekable));
+  if (mpctx->demuxer) {
+      if (mpctx->demuxer->num_chapters == 0)
+          stream_control(mpctx->demuxer->stream, STREAM_CTRL_GET_NUM_CHAPTERS, &mpctx->demuxer->num_chapters);
+      mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_CHAPTERS=%d\n", mpctx->demuxer->num_chapters);
+  }
+
+if(!mpctx->sh_video) goto main; // audio-only
+
+if(!reinit_video_chain()) {
+  if(!mpctx->sh_video){
+    if(!mpctx->sh_audio) goto goto_next_file;
+    goto main; // exit_player(MSGTR_Exit_error);
+  }
+}
+
+   if(vo_flags & 0x08 && vo_spudec)
+      spudec_set_hw_spu(vo_spudec,mpctx->video_out);
+
+#ifdef CONFIG_FREETYPE
+   //force_load_font = 1;
+#endif
+
+//================== MAIN: ==========================
+main:
+current_module="main";
+
+    if(playing_msg) {
+        char* msg = property_expand_string(mpctx, playing_msg);
+        mp_msg(MSGT_CPLAYER,MSGL_INFO,"%s",msg);
+        free(msg);
+    }
+
+
+// Disable the term OSD in verbose mode
+if(verbose) term_osd = 0;
+
+{
+//int frame_corr_num=0;   //
+//float v_frame=0;    // Video
+//float num_frames=0;      // number of frames played
+
+int frame_time_remaining=0; // flag
+int blit_frame=0;
+mpctx->num_buffered_frames=0;
+
+// Make sure old OSD does not stay around,
+// e.g. with -fixed-vo and same-resolution files
+clear_osd_msgs();
+update_osd_msg();
+
+//================ SETUP AUDIO ==========================
+
+if(mpctx->sh_audio){
+  reinit_audio_chain();
+  if (mpctx->sh_audio && mpctx->sh_audio->codec)
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO, "ID_AUDIO_CODEC=%s\n", mpctx->sh_audio->codec->name);
+}
+
+current_module="av_init";
+
+if(mpctx->sh_video){
+  mpctx->sh_video->timer=0;
+  if (! ignore_start)
+    audio_delay += mpctx->sh_video->stream_delay;
+}
+if(mpctx->sh_audio){
+#ifdef GEKKO
+  if (mplayer_volume >= 0)
+    mixer_setvolume(&mpctx->mixer, mplayer_volume, mplayer_volume);
+#endif
+  if (start_volume >= 0)
+    mixer_setvolume(&mpctx->mixer, start_volume, start_volume);
+  if (! ignore_start)
+    audio_delay -= mpctx->sh_audio->stream_delay;
+  mpctx->delay=-audio_delay;
+}
+
+if(!mpctx->sh_audio){
+  mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_NoSound);
+  mp_msg(MSGT_CPLAYER,MSGL_V,"Freeing %d unused audio chunks.\n",mpctx->d_audio->packs);
+  ds_free_packs(mpctx->d_audio); // free buffered chunks
+  //mpctx->d_audio->id=-2;         // do not read audio chunks
+  //uninit_player(INITIALIZED_AO); // close device
+}
+if(!mpctx->sh_video){
+#ifdef GEKKO
+	printf("No video - returning control to GUI\n");
+	if(controlledbygui == 0)
+		controlledbygui=1; // send control to gui
+#endif
+   mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_Video_NoVideo);
+   mp_msg(MSGT_CPLAYER,MSGL_V,"Freeing %d unused video chunks.\n",mpctx->d_video->packs);
+   ds_free_packs(mpctx->d_video);
+   mpctx->d_video->id=-2;
+   //if(!fixed_vo) uninit_player(INITIALIZED_VO);
+}
+
+if (!mpctx->sh_video && !mpctx->sh_audio)
+    goto goto_next_file;
+
+//if(demuxer->file_format!=DEMUXER_TYPE_AVI) pts_from_bps=0; // it must be 0 for mpeg/asf!
+if(force_fps && mpctx->sh_video){
+  vo_fps = mpctx->sh_video->fps=force_fps;
+  mpctx->sh_video->frametime=1.0f/mpctx->sh_video->fps;
+  mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_FPSforced,mpctx->sh_video->fps,mpctx->sh_video->frametime);
+}
+
+#ifdef CONFIG_GUI
+if ( use_gui ) {
+    if ( mpctx->sh_audio ) guiIntfStruct.AudioType=mpctx->sh_audio->channels; else guiIntfStruct.AudioType=0;
+    if ( !mpctx->sh_video && mpctx->sh_audio ) guiGetEvent( guiSetAudioOnly,(char *)1 ); else guiGetEvent( guiSetAudioOnly,(char *)0 );
+    guiGetEvent( guiSetFileFormat,(char *)mpctx->demuxer->file_format );
+    if ( guiGetEvent( guiSetValues,(char *)mpctx->sh_video ) ) goto goto_next_file;
+    guiGetEvent( guiSetDemuxer,(char *)mpctx->demuxer );
+}
+#endif
+
+mp_input_set_section(NULL);
+//TODO: add desired (stream-based) sections here
+if (mpctx->stream->type==STREAMTYPE_TV) mp_input_set_section("tv");
+if (mpctx->stream->type==STREAMTYPE_DVDNAV) mp_input_set_section("dvdnav");
+
+//==================== START PLAYING =======================
+
+if(mpctx->loop_times>1) mpctx->loop_times--; else
+if(mpctx->loop_times==1) mpctx->loop_times = -1;
+
+mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_StartPlaying);
+
+total_time_usage_start=GetTimer();
+audio_time_usage=0; video_time_usage=0; vout_time_usage=0;
+total_frame_cnt=0; drop_frame_cnt=0; // fix for multifile fps benchmark
+play_n_frames=play_n_frames_mf;
+mpctx->startup_decode_retry = DEFAULT_STARTUP_DECODE_RETRY;
+
+if(play_n_frames==0){
+  mpctx->eof=PT_NEXT_ENTRY; goto goto_next_file;
+}
+
+#ifndef GEKKO
+if (seek_to_sec) {
+    seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
+    end_at.pos += seek_to_sec;
+}
+#endif
+
+if (end_at.type == END_AT_SIZE) {
+    mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_MPEndposNoSizeBased);
+    end_at.type = END_AT_NONE;
+}
+
+#ifdef CONFIG_DVDNAV
+mp_dvdnav_context_free(mpctx);
+if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
+    mp_dvdnav_read_wait(mpctx->stream, 0, 1);
+    mp_dvdnav_cell_has_changed(mpctx->stream,1);
+}
+#endif
+
+#ifdef GEKKO
+static bool first_frame;
+first_frame=false;
+int restore_seek;
+
+if (mpctx->sh_video)
+{
+	stream_cache_min_percent=orig_stream_cache_min_percent;
+	stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
+}
+
+restore_seek=load_restore_point(fileplaying)-8;
+if(restore_seek<0)restore_seek=0;
+
+if(!mpctx->sh_video || !strncmp(filename,"dvd",3))first_frame=true;
+
+seek_to_sec=restore_seek;
+
+if(seek_to_sec && strncmp(fileplaying,"dvd://",6) && strncmp(fileplaying,"dvdnav",6 ) /*&& hasvideo*/)
+{
+	seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
+	end_at.pos += seek_to_sec;
+}
+
+int aux=mpctx->set_of_sub_size;
+mpctx->set_of_sub_size=0; // to not load subfonts
+mpctx->osd_function=OSD_PAUSE;
+if(stream_cache_size>0 && mpctx->sh_video) // no refill cache on only audio streams  
+refillcache(mpctx->stream,stream_cache_min_percent);
+mpctx->osd_function=OSD_PLAY;
+mpctx->set_of_sub_size=aux;
+
+if(mpctx->sh_video)
+{
+	int w,h;
+	w=mpctx->sh_video->disp_w;
+	h=mpctx->sh_video->disp_h;
+	if(w > 1024)
+	{
+		w=w/2;
+		h=h/2;
+	}
+	if (!vo_font || prev_dxs!=w || prev_dys!=h)
+	{
+		force_load_font = 0;
+
+		//set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Loading Fonts...");
+		//force_osd();
+
+		ReInitTTFLib();
+		//printf("force_ refill: load_font_ft(%s) w: %i  h: %i  sc: %f\n",font_name,w, h,osd_font_scale_factor);
+		load_font_ft(w,h,&vo_font,font_name,osd_font_scale_factor);
+		prev_dxs = w; prev_dys=h;
+		if(osd_font_scale_factor==text_font_scale_factor && (!sub_font_name || sub_font_name==font_name))
+		sub_font=vo_font;
+
+		else
+		{
+			if(mpctx->set_of_sub_size>0)
+			{
+				if (!sub_font)
+				{
+					if (sub_font_name)
+					load_font_ft(prev_dxs, prev_dys, &sub_font, sub_font_name, text_font_scale_factor);
+					else
+					load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
+				}
+			}
+		}
+
+	}
+}
+
+vo_osd_changed(OSDTYPE_SUBTITLE);
+vo_osd_changed(OSDTYPE_PROGBAR);
+vo_osd_changed(OSDTYPE_OSD);
+
+total_time_usage_start=GetTimer();
+mpctx->eof=0;
+#endif
+
+while(!mpctx->eof){
+    float aq_sleep_time=0;
+
+if(dvd_last_chapter>0) {
+  int cur_chapter = demuxer_get_current_chapter(mpctx->demuxer);
+  if(cur_chapter!=-1 && cur_chapter+1>dvd_last_chapter)
+    goto goto_next_file;
+}
+
+if(!mpctx->sh_audio && mpctx->d_audio->sh) {
+  mpctx->sh_audio = mpctx->d_audio->sh;
+  mpctx->sh_audio->ds = mpctx->d_audio;
+  reinit_audio_chain();
+}
+
+/*========================== PLAY AUDIO ============================*/
+
+if (mpctx->sh_audio)
+    if (!fill_audio_out_buffers())
+	// at eof, all audio at least written to ao
+	if (!mpctx->sh_video)
+	    mpctx->eof = PT_NEXT_ENTRY;
+
+
+if(!mpctx->sh_video) {
+  // handle audio-only case:
+  double a_pos=0;
+  // sh_audio can be NULL due to video stream switching
+  // TODO: handle this better
+  if((!quiet || end_at.type == END_AT_TIME) && mpctx->sh_audio)
+    a_pos = playing_audio_pts(mpctx->sh_audio, mpctx->d_audio, mpctx->audio_out);
+
+  if(!quiet)
+    print_status(a_pos, 0, 0);
+
+  if(end_at.type == END_AT_TIME && end_at.pos < a_pos)
+    mpctx->eof = PT_NEXT_ENTRY;
+  update_subtitles(NULL, a_pos, mpctx->d_sub, 0);
+  update_osd_msg();
+
+} else {
+
+/*========================== PLAY VIDEO ============================*/
+
+  vo_pts=mpctx->sh_video->timer*90000.0;
+  vo_fps=mpctx->sh_video->fps;
+
+  if (!mpctx->num_buffered_frames) {
+      double frame_time = update_video(&blit_frame);
+      while (!blit_frame && mpctx->startup_decode_retry > 0) {
+          double delay = mpctx->delay;
+          // these initial decode failures are probably due to codec delay,
+          // ignore them and also their probably nonsense durations
+          update_video(&blit_frame);
+          mpctx->delay = delay;
+          mpctx->startup_decode_retry--;
+      }
+      mpctx->startup_decode_retry = 0;
+      mp_dbg(MSGT_AVSYNC,MSGL_DBG2,"*** ftime=%5.3f ***\n",frame_time);
+      if (mpctx->sh_video->vf_initialized < 0) {
+	  mp_msg(MSGT_CPLAYER,MSGL_FATAL, MSGTR_NotInitializeVOPorVO);
+	  mpctx->eof = 1; goto goto_next_file;
+      }
+      if (frame_time < 0)
+	  mpctx->eof = 1;
+      else {
+	  // might return with !eof && !blit_frame if !correct_pts
+	  mpctx->num_buffered_frames += blit_frame;
+	  mpctx->time_frame += frame_time / playback_speed;  // for nosound
+      }
+  }
+
+// ==========================================================================
+
+//    current_module="draw_osd";
+//    if(vo_config_count) mpctx->video_out->draw_osd();
+
+#ifdef CONFIG_GUI
+    if(use_gui) guiEventHandling();
+#endif
+
+    current_module="vo_check_events";
+    if (vo_config_count) mpctx->video_out->check_events();
+
+#ifdef CONFIG_X11
+    if (stop_xscreensaver) {
+	current_module = "stop_xscreensaver";
+	xscreensaver_heartbeat();
+    }
+#endif
+#ifndef GEKKO
+    if (heartbeat_cmd) {
+        static unsigned last_heartbeat;
+        unsigned now = GetTimerMS();
+        if (now - last_heartbeat > 30000) {
+            last_heartbeat = now;
+            system(heartbeat_cmd);
+        }
+    }
+#endif
+    frame_time_remaining = sleep_until_update(&mpctx->time_frame, &aq_sleep_time);
+
+//====================== FLIP PAGE (VIDEO BLT): =========================
+
+        current_module="flip_page";
+        if (!frame_time_remaining && blit_frame) {
+	   u64 t2=GetTimer();
+
+	   if(vo_config_count && first_frame) mpctx->video_out->flip_page();
+	   mpctx->num_buffered_frames--;
+
+	   vout_time_usage += (GetTimer() - t2) * 0.000001;
+        }
+//====================== A-V TIMESTAMP CORRECTION: =========================
+
+  adjust_sync_and_print_status(frame_time_remaining, mpctx->time_frame);
+
+//============================ Auto QUALITY ============================
+
+/*Output quality adjustments:*/
+if(auto_quality>0){
+  current_module="autoq";
+//  float total=0.000001f * (GetTimer()-aq_total_time);
+//  if(output_quality<auto_quality && aq_sleep_time>0.05f*total)
+  if(output_quality<auto_quality && aq_sleep_time>0)
+      ++output_quality;
+  else
+//  if(output_quality>0 && aq_sleep_time<-0.05f*total)
+  if(output_quality>1 && aq_sleep_time<0)
+      --output_quality;
+  else
+  if(output_quality>0 && aq_sleep_time<-0.050f) // 50ms
+      output_quality=0;
+//  printf("total: %8.6f  sleep: %8.6f  q: %d\n",(0.000001f*aq_total_time),aq_sleep_time,output_quality);
+  set_video_quality(mpctx->sh_video,output_quality);
+}
+
+ if (play_n_frames >= 0 && !frame_time_remaining && blit_frame) {
+     --play_n_frames;
+     if (play_n_frames <= 0) mpctx->eof = PT_NEXT_ENTRY;
+ }
+
+
+// FIXME: add size based support for -endpos
+ if (end_at.type == END_AT_TIME &&
+         !frame_time_remaining && end_at.pos <= mpctx->sh_video->pts)
+     mpctx->eof = PT_NEXT_ENTRY;
+
+} // end if(mpctx->sh_video)
+
+#ifdef CONFIG_DVDNAV
+ if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
+   nav_highlight_t hl;
+   mp_dvdnav_get_highlight (mpctx->stream, &hl);
+   osd_set_nav_box (hl.sx, hl.sy, hl.ex, hl.ey);
+   vo_osd_changed (OSDTYPE_DVDNAV);
+
+   if (mp_dvdnav_stream_has_changed(mpctx->stream)) {
+     double ar = -1.0;
+     if (stream_control (mpctx->demuxer->stream,
+                         STREAM_CTRL_GET_ASPECT_RATIO, &ar)
+         != STREAM_UNSUPPORTED)
+       mpctx->sh_video->stream_aspect = ar;
+   }
+ }
+#endif
+
+//============================ Handle PAUSE ===============================
+
+  current_module="pause";
+
+    //low cache
+	if (stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0) {
+   		if(mpctx->osd_function == OSD_PAUSE)
+   		{
+		   mpctx->was_paused = 1;
+   		   low_cache=false;
+   		   low_cache_loop();
+   		}else 
+		{
+			mpctx->osd_function = OSD_PAUSE;
+			low_cache=true;
+		}
+	}
+	else if (mpctx->osd_function == OSD_PAUSE) {
+      
+      if(low_cache) 
+	  {
+	  	low_cache=false;
+	  	mpctx->osd_function = OSD_PLAY;
+	  }	  
+      else if(pause_gui)
+	  {
+	  	pause_gui=0;
+	  	mpctx->was_paused = 1;
+	  	PauseAndGotoGUI();
+	  }
+      else 
+	  {
+	  	mpctx->was_paused = 1;
+	  	pause_loop();
+	  }
+  }
+
+// handle -sstep
+if(step_sec>0) {
+	mpctx->osd_function=OSD_FFW;
+	rel_seek_secs+=step_sec;
+}
+
+ edl_update(mpctx);
+ 
+#ifdef GEKKO
+  if(!first_frame && blit_frame && !frame_time_remaining )
+  {
+  	first_frame=true;
+	if (restore_seek)
+	{
+		//char cad[100];
+		//sprintf(cad,"seek %d 2",restore_seek);
+		//mp_input_queue_cmd(mp_input_parse_cmd(cad));
+		//set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Resume");
+		//force_osd();
+		//edl_decision=1;
+		restore_seek=0;
+	}else
+	{
+		clear_osd_msgs();
+		update_osd_msg();
+	}
+	//if (mpctx->sh_audio && mpctx->mixer.muted)mixer_mute(&mpctx->mixer);
+  }
+#endif
+
+//================= Keyboard events, SEEKing ====================
+ 
+	if(controlledbygui==2) // new film - we have to exit
+		mpctx->eof=1;
+  
+  current_module="key_events";
+
+{
+  mp_cmd_t* cmd;
+  int brk_cmd = 0;
+  while( !brk_cmd && (cmd = mp_input_get_cmd(0,0,0)) != NULL) {
+      brk_cmd = run_command(mpctx, cmd);
+      mp_cmd_free(cmd);
+      if (brk_cmd == 2)
+	  goto goto_enable_cache;
+  }
+}
+  mpctx->was_paused = 0;
+
+  /* Looping. */
+  if(mpctx->eof==1 && mpctx->loop_times>=0) {
+    mp_msg(MSGT_CPLAYER,MSGL_V,"loop_times = %d, eof = %d\n", mpctx->loop_times,mpctx->eof);
+
+    if(mpctx->loop_times>1) mpctx->loop_times--; else
+    if(mpctx->loop_times==1) mpctx->loop_times=-1;
+    play_n_frames=play_n_frames_mf;
+    mpctx->eof=0;
+    abs_seek_pos=SEEK_ABSOLUTE; rel_seek_secs=seek_to_sec;
+    loop_seek = 1;
+  }
+
+if(rel_seek_secs || abs_seek_pos){
+  if (seek(mpctx, rel_seek_secs, abs_seek_pos) >= 0) {
+        // Set OSD:
+      if(!loop_seek){
+	if( !edl_decision )
+          set_osd_bar(0,"Position",0,100,demuxer_get_percent_pos(mpctx->demuxer));
+      }
+  }
+
+  rel_seek_secs=0;
+  abs_seek_pos=0;
+  loop_seek=0;
+  edl_decision = 0;
+}
+
+#ifdef CONFIG_GUI
+      if(use_gui){
+        guiEventHandling();
+	if(mpctx->demuxer->file_format==DEMUXER_TYPE_AVI && mpctx->sh_video && mpctx->sh_video->video.dwLength>2){
+	  // get pos from frame number / total frames
+	  guiIntfStruct.Position=(float)mpctx->d_video->pack_no*100.0f/mpctx->sh_video->video.dwLength;
+	} else {
+          guiIntfStruct.Position=demuxer_get_percent_pos(mpctx->demuxer);
+	}
+	if ( mpctx->sh_video ) guiIntfStruct.TimeSec=mpctx->sh_video->pts;
+	  else if ( mpctx->sh_audio ) guiIntfStruct.TimeSec=playing_audio_pts(mpctx->sh_audio, mpctx->d_audio, mpctx->audio_out);
+	guiIntfStruct.LengthInSec=demuxer_get_time_length(mpctx->demuxer);
+	guiGetEvent( guiReDraw,NULL );
+	guiGetEvent( guiSetVolume,NULL );
+	if(guiIntfStruct.Playing==0) break; // STOP
+	if(guiIntfStruct.Playing==2) mpctx->osd_function=OSD_PAUSE;
+        if ( guiIntfStruct.DiskChanged || guiIntfStruct.NewPlay ) goto goto_next_file;
+#ifdef CONFIG_DVDREAD
+        if ( mpctx->stream->type == STREAMTYPE_DVD )
+	 {
+	  dvd_priv_t * dvdp = mpctx->stream->priv;
+	  guiIntfStruct.DVD.current_chapter=dvd_chapter_from_cell(dvdp,guiIntfStruct.DVD.current_title-1, dvdp->cur_cell)+1;
+	 }
+#endif
+      }
+#endif /* CONFIG_GUI */
+
+} // while(!mpctx->eof)
+
+mp_msg(MSGT_GLOBAL,MSGL_V,"EOF code: %d  \n",mpctx->eof);
+
+#ifdef CONFIG_DVBIN
+if(mpctx->dvbin_reopen)
+{
+  mpctx->eof = 0;
+  uninit_player(INITIALIZED_ALL-(INITIALIZED_GUI|INITIALIZED_STREAM|INITIALIZED_INPUT|INITIALIZED_GETCH2|(fixed_vo?INITIALIZED_VO:0)));
+  cache_uninit(mpctx->stream);
+  mpctx->dvbin_reopen = 0;
+  goto goto_enable_cache;
+}
+#endif
+}
+
+goto_next_file:  // don't jump here after ao/vo/getch initialization!
+
+mp_msg(MSGT_CPLAYER,MSGL_INFO,"\n");
+
+if(benchmark){
+    double tot=video_time_usage+vout_time_usage+audio_time_usage;
+    double total_time_usage;
+    total_time_usage_start=GetTimer()-total_time_usage_start;
+    total_time_usage = (float)total_time_usage_start*0.000001;
+    mp_msg(MSGT_CPLAYER,MSGL_INFO,"\nBENCHMARKs: VC:%8.3fs VO:%8.3fs A:%8.3fs Sys:%8.3fs = %8.3fs\n",
+           video_time_usage,vout_time_usage,audio_time_usage,
+           total_time_usage-tot,total_time_usage);
+    if(total_time_usage>0.0)
+        mp_msg(MSGT_CPLAYER,MSGL_INFO,"BENCHMARK%%: VC:%8.4f%% VO:%8.4f%% A:%8.4f%% Sys:%8.4f%% = %8.4f%%\n",
+               100.0*video_time_usage/total_time_usage,
+               100.0*vout_time_usage/total_time_usage,
+               100.0*audio_time_usage/total_time_usage,
+               100.0*(total_time_usage-tot)/total_time_usage,
+               100.0);
+    if(total_frame_cnt && frame_dropping)
+        mp_msg(MSGT_CPLAYER,MSGL_INFO,"BENCHMARKn: disp: %d (%3.2f fps)  drop: %d (%d%%)  total: %d (%3.2f fps)\n",
+               total_frame_cnt-drop_frame_cnt,
+               (total_time_usage>0.5)?((total_frame_cnt-drop_frame_cnt)/total_time_usage):0,
+               drop_frame_cnt,
+               100*drop_frame_cnt/total_frame_cnt,
+               total_frame_cnt,
+               (total_time_usage>0.5)?(total_frame_cnt/total_time_usage):0);
+}
+
+// time to uninit all, except global stuff:
+printf("mplayer: end film. UNINIT\n");
+
+uninit_player(INITIALIZED_ALL);
+
+//clear subs
+if(mpctx->set_of_sub_size > 0) {
+    current_module="sub_free";
+    for(i = 0; i < mpctx->set_of_sub_size; ++i) {
+        sub_free(mpctx->set_of_subtitles[i]);
+#ifdef CONFIG_ASS
+        if(mpctx->set_of_ass_tracks[i])
+            ass_free_track( mpctx->set_of_ass_tracks[i] );
+#endif
+    }
+    mpctx->set_of_sub_size = 0;
+}
+vo_sub_last = vo_sub=NULL;
+subdata=NULL;
+#ifdef CONFIG_ASS
+ass_track = NULL;
+if(ass_library)
+    ass_clear_fonts(ass_library);
+#endif
+
+#ifdef GEKKO
+if (mpctx->sh_audio) mpctx->audio_out->reset();
+
+if(mpctx->eof == PT_NEXT_SRC || mpctx->eof == PT_STOP)
+	save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
+else
+	delete_restore_point(fileplaying);
+
+#endif
+printf("mplayer: exit\n");
+if(controlledbygui == 0)
+	controlledbygui = 1;
+return 1;
+load_next_file:
+
+if(mpctx->eof == PT_NEXT_ENTRY || mpctx->eof == PT_PREV_ENTRY) {
+    mpctx->eof = mpctx->eof == PT_NEXT_ENTRY ? 1 : -1;
+    if(play_tree_iter_step(mpctx->playtree_iter,mpctx->play_tree_step,0) == PLAY_TREE_ITER_ENTRY) {
+        mpctx->eof = 1;
+    } else {
+        play_tree_iter_free(mpctx->playtree_iter);
+        mpctx->playtree_iter = NULL;
+    }
+    mpctx->play_tree_step = 1;
+} else if(mpctx->eof == PT_UP_NEXT || mpctx->eof == PT_UP_PREV) {
+    mpctx->eof = mpctx->eof == PT_UP_NEXT ? 1 : -1;
+    if(mpctx->playtree_iter) {
+        if(play_tree_iter_up_step(mpctx->playtree_iter,mpctx->eof,0) == PLAY_TREE_ITER_ENTRY) {
+            mpctx->eof = 1;
+        } else {
+            play_tree_iter_free(mpctx->playtree_iter);
+            mpctx->playtree_iter = NULL;
+        }
+    }
+} else if (mpctx->eof == PT_STOP) {
+    play_tree_iter_free(mpctx->playtree_iter);
+    mpctx->playtree_iter = NULL;
+} else { // NEXT PREV SRC
+    mpctx->eof = mpctx->eof == PT_PREV_SRC ? -1 : 1;
+}
+
+if(mpctx->eof == 0) mpctx->eof = 1;
+
+while(mpctx->playtree_iter != NULL) {
+    filename = play_tree_iter_get_file(mpctx->playtree_iter,mpctx->eof);
+    if(filename == NULL) {
+        if(play_tree_iter_step(mpctx->playtree_iter,mpctx->eof,0) != PLAY_TREE_ITER_ENTRY) {
+            play_tree_iter_free(mpctx->playtree_iter);
+            mpctx->playtree_iter = NULL;
+        };
+    } else
+        break;
+}
+
+#ifdef CONFIG_GUI
+if(use_gui && !mpctx->playtree_iter) {
+#ifdef CONFIG_DVDREAD
+    if(!guiIntfStruct.DiskChanged)
+#endif
+        mplEnd();
+}
+#endif
+
+if(use_gui || mpctx->playtree_iter != NULL || player_idle_mode){
+    if(!mpctx->playtree_iter) filename = NULL;
+    mpctx->eof = 0;
+    goto play_next_file;
+}
+
+
+exit_player_with_rc(EXIT_EOF, 0);
+
+return 1;
+}
+#endif /* DISABLE_MAIN */
+
+#ifdef GEKKO
+/****************************************************************************
+ * Wii support code
+ ***************************************************************************/
+#include <stdlib.h>
+#include <ogc/system.h>
+
+#define MAX_RESTORE_POINTS 10
+
+typedef struct st_restore_points restore_points_t;
+struct st_restore_points {
+    char filename[MAXPATHLEN];
+    int position;
+};
+
+restore_points_t restore_points[MAX_RESTORE_POINTS];
+
+static void delete_restore_point(char *_filename)
+{
+	int i;
+	if(!enable_restore_points)
+		return;
+
+	for(i=0;i<MAX_RESTORE_POINTS;i++)
+	{
+		if(restore_points[i].filename[0] == '\0')
+			break;
+
+		if(!strcmp(_filename,restore_points[i].filename))
+		{
+			for(;i<MAX_RESTORE_POINTS-1 && restore_points[i].filename[0]!='\0';i++)
+			{
+				strcpy(restore_points[i].filename,restore_points[i+1].filename);
+				restore_points[i].position=restore_points[i+1].position;
+			}
+			restore_points[MAX_RESTORE_POINTS-1].filename[0]='\0';
+			restore_points[MAX_RESTORE_POINTS-1].position=0;
+		}
+	}
+}
+
+static void save_restore_point(char *_filename, int position)
+{
+	int i,j;
+
+	if(!enable_restore_points || strlen(_filename) == 0)
+		return;
+
+	if(!strncmp(_filename,"dvd://",6) || !strncmp(_filename,"dvdnav",6 )
+		|| !strncmp(_filename,"http:/",6))
+		return;
+
+	if(position <= 8 || !( mpctx->demuxer->seekable))
+	{
+		delete_restore_point(_filename);
+		return;
+	}
+
+	for(j=0;j<MAX_RESTORE_POINTS;j++)
+	{
+		if(restore_points[j].filename[0] == '\0' || !strcmp(_filename,restore_points[j].filename))
+		{
+			// check if position is similar (+- 5 secs)
+			if(restore_points[j].position>=position-5 && restore_points[j].position<=position+5) return;
+			j++;
+			break;
+		}
+	}
+	if(j>1)
+	{
+		for(i=j-1;i>0;i--)
+		{
+			strcpy(restore_points[i].filename,restore_points[i-1].filename);
+			restore_points[i].position=restore_points[i-1].position;
+		}
+	}
+	restore_points[0].position=position;
+	strcpy(restore_points[0].filename,_filename);
+}
+
+static int load_restore_point(char *_filename)
+{
+	int j;
+	if(!enable_restore_points)
+		return 0;
+
+	for(j=0;j<MAX_RESTORE_POINTS;j++)
+	{
+		if(restore_points[j].filename[0] == '\0')
+			break;
+		
+		if(!strcmp(_filename,restore_points[j].filename))
+			return restore_points[j].position;
+	}
+	return 0;
+}
+
+static double timing_sleep(double time_frame)
+{
+    u32 frame=time_frame*1000000; //in us
+
+    current_module = "sleep_timer";
+	while (frame > 5)
+	{
+		if(frame>render_texture_time)
+		{
+			DrawMPlayer();
+			VIDEO_WaitVSync();
+		}
+		else usec_sleep(frame-5);
+	    frame -= GetRelativeTime();
+	    break;
+	}
+	time_frame=frame * 0.000001F;
+    return time_frame;
+}
+
 void PauseAndGotoGUI()
 {
 	mp_cmd_t* cmd = NULL;
@@ -2752,8 +4675,8 @@ static void low_cache_loop(void)
 		}
 		
 	   	//set_osd_msg(OSD_MSG_PAUSE, 1, 1000, "Buffering (%02d%%) cfs:%2.2f  p:%2.2f",(int)(cache_fill_status*100.0/percent),cache_fill_status,percent);
-	   	set_osd_msg(OSD_MSG_PAUSE, 1, 1000, "Buffering (%02d%%) ",(int)(cache_fill_status*100.0/percent));
-    	force_osd();
+	   	//set_osd_msg(OSD_MSG_PAUSE, 1, 1000, "Buffering (%02d%%) ",(int)(cache_fill_status*100.0/percent));
+    	//force_osd();
 		char msg[512];
 		sprintf(msg, "Buffering (%02d%%) ",(int)(cache_fill_status*100.0/percent));
 		SetStatus(msg);
@@ -2814,7 +4737,6 @@ void fast_pause()
 
     if (mpctx->video_out && mpctx->sh_video && vo_config_count)
         mpctx->video_out->control(VOCTRL_PAUSE, NULL);
-
 }
 
 void fast_continue()
@@ -2826,1995 +4748,7 @@ void fast_continue()
         mpctx->video_out->control(VOCTRL_RESUME, NULL);	// resume video
     (void)GetRelativeTime();	// ignore time that passed during pause
     //setwatchdogcounter(WATCH_TIMEOUT);
-		
 }
-
-static void pause_loop(void)
-{
-    mp_cmd_t* cmd=NULL;
-	//setwatchdogcounter(-1);
-
-#ifdef CONFIG_GUI
-    if (use_gui)
-	guiGetEvent(guiCEvent, (char *)guiSetPause);
-#endif
-    if (mpctx->audio_out && mpctx->sh_audio)
-        mpctx->audio_out->pause(); // pause audio, keep data if possible
-
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-	mpctx->video_out->control(VOCTRL_PAUSE, NULL);
-
-    while ( (cmd = mp_input_get_cmd(20, 1, 1)) == NULL || cmd->pausing == 4) {
-	if (cmd) {
-	  cmd = mp_input_get_cmd(0,1,0);	  
-	  run_command(mpctx, cmd);
-	  mp_cmd_free(cmd);
-	  continue;
-	}
-	if (mpctx->sh_video && mpctx->video_out && vo_config_count)
-	    mpctx->video_out->check_events();
-#ifdef CONFIG_GUI
-        if (use_gui) {
-            guiEventHandling();
-            guiGetEvent(guiReDraw, NULL);
-            if (guiIntfStruct.Playing!=2 || (rel_seek_secs || abs_seek_pos))
-                break;
-        }
-#endif
-#ifdef CONFIG_MENU
-        if (vf_menu)
-            vf_menu_pause_update(vf_menu);
-#endif
-
-    if(!mpctx->sh_video || !mpctx->video_out)
-    {
-    	usec_sleep(20000);
-    }
-    else
-    {
-    	DrawMPlayer();
-    	VIDEO_WaitVSync();
-    }
-
-    if(controlledbygui == 2) // mplayer shutdown requested!
-    	break;
-    }
-
-    if (cmd && cmd->id == MP_CMD_PAUSE) {
-        cmd = mp_input_get_cmd(0,1,0);
-        mp_cmd_free(cmd);
-    }
-    
-    mpctx->osd_function=OSD_PLAY;
-    
-    cmd = mp_input_get_cmd(0, 0, 1);
-	if(cmd && cmd->id!=MP_CMD_PAUSE)
-	{
-		if (mpctx->audio_out && mpctx->sh_audio)
-        	mpctx->audio_out->reset();	// reset audio
-	}
-	else
-	{    
-    	    
-		if((!strncmp(filename,"dvd:",4)) ||  (!strncmp(filename,"dvdnav:",7)))
-		{
-			//DI_StartMotor();
-			//printf("start motor\n");
-			void *ptr=memalign(32, 0x800*2);
-			//printf("read sector 1\n");
-			DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
-			//printf("read sector 5000\n");
-			DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
-			free(ptr);
-		}
-
-	    if (mpctx->audio_out && mpctx->sh_audio)
-    	    mpctx->audio_out->resume();	// resume audio
-    	    
-    }
-
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-        mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
-    (void)GetRelativeTime(); // ignore time that passed during pause
-    //setwatchdogcounter(WATCH_TIMEOUT);
-#ifdef CONFIG_GUI
-    if (use_gui) {
-        if (guiIntfStruct.Playing == guiSetStop)
-            mpctx->eof = 1;
-        else
-            guiGetEvent(guiCEvent, (char *)guiSetPlay);
-    }
-#endif
-}
-
-
-// Find the right mute status and record position for new file position
-static void edl_seek_reset(MPContext *mpctx)
-{
-    mpctx->edl_muted = 0;
-    next_edl_record = edl_records;
-
-    while (next_edl_record) {
-	if (next_edl_record->start_sec >= mpctx->sh_video->pts)
-	    break;
-
-	if (next_edl_record->action == EDL_MUTE)
-	    mpctx->edl_muted = !mpctx->edl_muted;
-	next_edl_record = next_edl_record->next;
-    }
-    if ((mpctx->user_muted | mpctx->edl_muted) != mpctx->mixer.muted)
-	mixer_mute(&mpctx->mixer);
-}
-
-
-// Execute EDL command for the current position if one exists
-static void edl_update(MPContext *mpctx)
-{
-    if (!next_edl_record)
-	return;
-
-    if (!mpctx->sh_video) {
-	mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_EdlNOsh_video);
-	free_edl(edl_records);
-	next_edl_record = NULL;
-	edl_records = NULL;
-	return;
-    }
-
-    if (mpctx->sh_video->pts >= next_edl_record->start_sec) {
-	if (next_edl_record->action == EDL_SKIP) {
-	    mpctx->osd_function = OSD_FFW;
-	    abs_seek_pos = 0;
-	    rel_seek_secs = next_edl_record->length_sec;
-	    mp_msg(MSGT_CPLAYER, MSGL_DBG4, "EDL_SKIP: start [%f], stop "
-		   "[%f], length [%f]\n", next_edl_record->start_sec,
-		   next_edl_record->stop_sec, next_edl_record->length_sec);
-	    edl_decision = 1;
-	}
-	else if (next_edl_record->action == EDL_MUTE) {
-	    mpctx->edl_muted = !mpctx->edl_muted;
-	    if ((mpctx->user_muted | mpctx->edl_muted) != mpctx->mixer.muted)
-		mixer_mute(&mpctx->mixer);
-	    mp_msg(MSGT_CPLAYER, MSGL_DBG4, "EDL_MUTE: [%f]\n",
-		   next_edl_record->start_sec );
-	}
-	next_edl_record = next_edl_record->next;
-    }
-}
-
-
-// style & SEEK_ABSOLUTE == 0 means seek relative to current position, == 1 means absolute
-// style & SEEK_FACTOR == 0 means amount in seconds, == 2 means fraction of file length
-// return -1 if seek failed (non-seekable stream?), 0 otherwise
-static int seek(MPContext *mpctx, double amount, int style)
-{
-	//setwatchdogcounter(-1);
-    current_module = "seek";
-    if (demux_seek(mpctx->demuxer, amount, audio_delay, style) == 0)
-	return -1;
-
-    mpctx->startup_decode_retry = DEFAULT_STARTUP_DECODE_RETRY;
-    if (mpctx->sh_video) {
-	current_module = "seek_video_reset";
-	if (vo_config_count)
-	    mpctx->video_out->control(VOCTRL_RESET, NULL);
-	mpctx->num_buffered_frames = 0;
-	mpctx->delay = 0;
-	mpctx->time_frame = 0;  
-	// Not all demuxers set d_video->pts during seek, so this value
-	// (which is used by at least vobsub and edl code below) may
-	// be completely wrong (probably 0).
-	mpctx->sh_video->pts = mpctx->d_video->pts;
-	update_subtitles(mpctx->sh_video, mpctx->sh_video->pts, mpctx->d_sub, 1);
-	update_teletext(mpctx->sh_video, mpctx->demuxer, 1);
-    }
-
-    if (mpctx->sh_audio) {
-	current_module = "seek_audio_reset";
-	mpctx->audio_out->reset(); // stop audio, throwing away buffered data
-	if (!mpctx->sh_video)
-	    update_subtitles(NULL, mpctx->sh_audio->pts, mpctx->d_sub, 1);
-    }
-
-    if (vo_vobsub && mpctx->sh_video) {
-	current_module = "seek_vobsub_reset";
-	vobsub_seek(vo_vobsub, mpctx->sh_video->pts);
-    }
-
-    edl_seek_reset(mpctx);
-
-    c_total = 0;
-    max_pts_correction = 0.1;
-    audio_time_usage = 0; video_time_usage = 0; vout_time_usage = 0;
-    drop_frame_cnt = 0;
-
-    current_module = NULL;
-    //setwatchdogcounter(WATCH_TIMEOUT);
-    return 0;
-}
-static int error_playing;
-
-/* This preprocessor directive is a hack to generate a mplayer-nomain.o object
- * file for some tools to link against. */
-#ifndef DISABLE_MAIN
-int mplayer_loadfile(const char* _file){
-int argc;
-char *argv[] = {
-	"",
-	"-vo","gekko",
-	"-ao","gekko",
-	"-osdlevel","0",
-	_file
-}; 
-argc = sizeof(argv) / sizeof(char *);
-char * mem_ptr;
-
-// movie info:
-
-/* Flag indicating whether MPlayer should exit without playing anything. */
-int opt_exit = 0;
-
-//float a_frame=0;    // Audio
-
-int i;
-
-int gui_no_filename=0;
-
-  srand(GetTimerMS());
-  InitTimer();
-  mp_msg_init();
-
-  // Create the config context and register the options
-  mconfig = m_config_new();
-  m_config_register_options(mconfig,mplayer_opts);
-  mp_input_register_options(mconfig);
-  
-
-  // Preparse the command line
-  m_config_preparse_command_line(mconfig,argc,argv);
-
-#if (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(CONFIG_WIN32DLL)
-  set_path_env();
-#endif
-
-#ifdef CONFIG_TV
-  stream_tv_defaults.immediate = 1;
-#endif
-
-  if (argc > 1 && argv[1] &&
-      (!strcmp(argv[1], "-gui") || !strcmp(argv[1], "-nogui"))) {
-    use_gui = !strcmp(argv[1], "-gui");
-  } else
-  if ( argv[0] )
-  {
-    char *base = strrchr(argv[0], '/');
-    if (!base)
-      base = strrchr(argv[0], '\\');
-    if (!base)
-      base = argv[0];
-    if(strstr(base, "gmplayer"))
-          use_gui=1;
-  }
-
-    parse_cfgfiles(mconfig);
-
-#ifdef CONFIG_GUI
-    if ( use_gui ) cfg_read();
-#endif
-
-    mpctx->playtree = m_config_parse_mp_command_line(mconfig, argc, argv);
-    if(mpctx->playtree == NULL)
-      opt_exit = 1;
-    else {
-    mpctx->playtree = play_tree_cleanup(mpctx->playtree);
-    if(mpctx->playtree) {
-      mpctx->playtree_iter = play_tree_iter_new(mpctx->playtree,mconfig);
-      if(mpctx->playtree_iter) {
-	if(play_tree_iter_step(mpctx->playtree_iter,0,0) != PLAY_TREE_ITER_ENTRY) {
-	  play_tree_iter_free(mpctx->playtree_iter);
-	  mpctx->playtree_iter = NULL;
-	}
-	filename = play_tree_iter_get_file(mpctx->playtree_iter,1);
-      }
-    }
-    }
-  print_version("MPlayer");
-
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-#ifdef CONFIG_GUI
-    void *runningmplayer = FindWindow("MPlayer GUI for Windows", "MPlayer for Windows");
-    if(runningmplayer && filename && use_gui){
-        COPYDATASTRUCT csData;
-        char file[MAX_PATH];
-        char *filepart = filename;
-        if(GetFullPathName(filename, MAX_PATH, file, &filepart)){
-            csData.dwData = 0;
-            csData.cbData = strlen(file)*2;
-            csData.lpData = file;
-            SendMessage(runningmplayer, WM_COPYDATA, (WPARAM)runningmplayer, (LPARAM)&csData);
-        }
-    }
-#endif
-
-	{
-		HMODULE kernel32 = GetModuleHandle("Kernel32.dll");
-		BOOL WINAPI (*setDEP)(DWORD) = NULL;
-		if (kernel32)
-			setDEP = GetProcAddress(kernel32, "SetProcessDEPPolicy");
-		if (setDEP) setDEP(3);
-	}
-	// stop Windows from showing all kinds of annoying error dialogs
-	SetErrorMode(0x8003);
-	// request 1ms timer resolution
-	timeBeginPeriod(1);
-#endif
-
-#ifdef CONFIG_PRIORITY
-    set_priority();
-#endif
-
-#ifndef CONFIG_GUI
-    if(use_gui){
-      mp_msg(MSGT_CPLAYER,MSGL_WARN,MSGTR_NoGui);
-      use_gui=0;
-    }
-#else
-#if !defined(__MINGW32__) && !defined(__CYGWIN__)
-    if(use_gui && !vo_init()){
-      mp_msg(MSGT_CPLAYER,MSGL_WARN,MSGTR_GuiNeedsX);
-      use_gui=0;
-    }
-#endif
-    if (use_gui && mpctx->playtree_iter){
-      char cwd[PATH_MAX+2];
-      // Free Playtree and Playtree-Iter as it's not used by the GUI.
-      play_tree_iter_free(mpctx->playtree_iter);
-      mpctx->playtree_iter=NULL;
-
-      if (getcwd(cwd, PATH_MAX) != (char *)NULL)
-      {
-	  strcat(cwd, "/");
-          // Prefix relative paths with current working directory
-          play_tree_add_bpf(mpctx->playtree, cwd);
-      }
-      // Import initital playtree into GUI.
-      import_initial_playtree_into_gui(mpctx->playtree, mconfig, enqueue);
-    }
-#endif /* CONFIG_GUI */
-
-    if(video_driver_list && strcmp(video_driver_list[0],"help")==0){
-      list_video_out();
-      opt_exit = 1;
-    }
-
-    if(audio_driver_list && strcmp(audio_driver_list[0],"help")==0){
-      list_audio_out();
-      opt_exit = 1;
-    }
-#ifdef GEKKO
-load_builtin_codecs();
-#else
-/* Check codecs.conf. */
-if(!codecs_file || !parse_codec_cfg(codecs_file)){
-  mem_ptr=get_path("codecs.conf");
-  if(!parse_codec_cfg(mem_ptr)){
-  	char cad[100];
-  	sprintf(cad,"%s%s",MPLAYER_CONFDIR,"/codecs.conf");
-    if(!parse_codec_cfg(cad)){
-      if(!parse_codec_cfg(NULL)){
-        exit_player_with_rc(EXIT_NONE, 0);
-      }
-      mp_msg(MSGT_CPLAYER,MSGL_V,MSGTR_BuiltinCodecsConf);
-    }
-  }
-  free( mem_ptr ); // release the buffer created by get_path()
-}
-#endif
-#if 0
-    if(video_codec_list){
-	int i;
-	video_codec=video_codec_list[0];
-	for(i=0;video_codec_list[i];i++)
-	    mp_msg(MSGT_FIXME,MSGL_FIXME,"vc#%d: '%s'\n",i,video_codec_list[i]);
-    }
-#endif
-    if(audio_codec_list && strcmp(audio_codec_list[0],"help")==0){
-      mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_AvailableAudioCodecs);
-      mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_AUDIO_CODECS\n");
-      list_codecs(1);
-      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
-      opt_exit = 1;
-    }
-    if(video_codec_list && strcmp(video_codec_list[0],"help")==0){
-      mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_AvailableVideoCodecs);
-      mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_VIDEO_CODECS\n");
-      list_codecs(0);
-      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
-      opt_exit = 1;
-    }
-    if(video_fm_list && strcmp(video_fm_list[0],"help")==0){
-      vfm_help();
-      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
-      opt_exit = 1;
-    }
-    if(audio_fm_list && strcmp(audio_fm_list[0],"help")==0){
-      afm_help();
-      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
-      opt_exit = 1;
-    }
-    if(af_cfg.list && strcmp(af_cfg.list[0],"help")==0){
-      af_help();
-      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
-      opt_exit = 1;
-    }
-#ifdef CONFIG_X11
-    if(vo_fstype_list && strcmp(vo_fstype_list[0],"help")==0){
-      fstype_help();
-      mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
-      opt_exit = 1;
-    }
-#endif
-    if((demuxer_name && strcmp(demuxer_name,"help")==0) ||
-       (audio_demuxer_name && strcmp(audio_demuxer_name,"help")==0) ||
-       (sub_demuxer_name && strcmp(sub_demuxer_name,"help")==0)){
-      demuxer_help();
-      mp_msg(MSGT_CPLAYER, MSGL_INFO, "\n");
-      opt_exit = 1;
-    }
-    if(list_properties) {
-      property_print_help();
-      opt_exit = 1;
-    }
-
-    if(opt_exit)
-      exit_player(EXIT_NONE);
-
-    if (player_idle_mode && use_gui) {
-        mp_msg(MSGT_CPLAYER, MSGL_FATAL, MSGTR_NoIdleAndGui);
-        exit_player_with_rc(EXIT_NONE, 1);
-    }
-
-    if(!filename && !player_idle_mode){
-      if(!use_gui){
-	// no file/vcd/dvd -> show HELP:
-	mp_msg(MSGT_CPLAYER, MSGL_INFO, help_text);
-        exit_player_with_rc(EXIT_NONE, 0);
-      } else gui_no_filename=1;
-    }
-
-    /* Display what configure line was used */
-    mp_msg(MSGT_CPLAYER, MSGL_V, "Configuration: " CONFIGURATION "\n");
-
-    // Many users forget to include command line in bugreports...
-    if( mp_msg_test(MSGT_CPLAYER,MSGL_V) ){
-      mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_CommandLine);
-      for(i=1;i<argc;i++)mp_msg(MSGT_CPLAYER, MSGL_INFO," '%s'",argv[i]);
-      mp_msg(MSGT_CPLAYER, MSGL_INFO, "\n");
-    }
-    
-    
-//------ load global data first ------
-// check font
-#ifdef CONFIG_FREETYPE
-  init_freetype();
-#endif
-#ifdef CONFIG_FONTCONFIG
-  if(font_fontconfig <= 0)
-  {
-#endif
-#ifdef CONFIG_BITMAP_FONT
-  if(font_name){
-       vo_font=read_font_desc(font_name,font_factor,verbose>1);
-       if(!vo_font) mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_CantLoadFont,
-		filename_recode(font_name));
-  } else {
-      // try default:
-       vo_font=read_font_desc( mem_ptr=get_path("font/font.desc"),font_factor,verbose>1);
-       free(mem_ptr); // release the buffer created by get_path()
-       if(!vo_font)
-       {
-       char cad[200];
-       sprintf(cad,"%s%s",MPLAYER_DATADIR,"/font/font.desc");
-       //printf("read_font_desc (%s)\n",cad);
-       vo_font=read_font_desc(cad,font_factor,verbose>1);
-       }
-  }
-  if (sub_font_name)
-    sub_font = read_font_desc(sub_font_name, font_factor, verbose>1);
-  else
-    sub_font = vo_font;
-#endif
-#ifdef CONFIG_FONTCONFIG
-  }
-#endif
-
-  vo_init_osd();
-
-#ifdef CONFIG_ASS
-  ass_library = ass_init();
-#endif
-
-#ifdef HAVE_RTC
-  if(!nortc)
-  {
-    // seteuid(0); /* Can't hurt to try to get root here */
-    if ((rtc_fd = open(rtc_device ? rtc_device : "/dev/rtc", O_RDONLY)) < 0)
-	mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_RTCDeviceNotOpenable,
-	    rtc_device ? rtc_device : "/dev/rtc", strerror(errno));
-     else {
-	unsigned long irqp = 1024; /* 512 seemed OK. 128 is jerky. */
-
-	if (ioctl(rtc_fd, RTC_IRQP_SET, irqp) < 0) {
-    	    mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_LinuxRTCInitErrorIrqpSet, irqp, strerror(errno));
-    	    mp_msg(MSGT_CPLAYER, MSGL_HINT, MSGTR_IncreaseRTCMaxUserFreq, irqp);
-   	    close (rtc_fd);
-    	    rtc_fd = -1;
-	} else if (ioctl(rtc_fd, RTC_PIE_ON, 0) < 0) {
-	    /* variable only by the root */
-    	    mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_LinuxRTCInitErrorPieOn, strerror(errno));
-    	    close (rtc_fd);
-	    rtc_fd = -1;
-	} else
-	    mp_msg(MSGT_CPLAYER, MSGL_V, MSGTR_UsingRTCTiming, irqp);
-    }
-  }
-#ifdef CONFIG_GUI
-// breaks DGA and SVGAlib and VESA drivers:  --A'rpi
-// and now ? -- Pontscho
-    if(use_gui) setuid( getuid() ); // strongly test, please check this.
-#endif
-    if(rtc_fd<0)
-#endif /* HAVE_RTC */
-      mp_msg(MSGT_CPLAYER, MSGL_V, "Using %s timing\n",
-	     softsleep?"software":timer_name);
-
-#ifdef HAVE_TERMCAP
-  if ( !use_gui ) load_termcap(NULL); // load key-codes
-#endif
-
-// ========== Init keyboard FIFO (connection to libvo) ============
-
-// Init input system
-current_module = "init_input";
-mp_input_init(use_gui);
-  mp_input_add_key_fd(-1,0,mplayer_get_key,NULL);
-if(slave_mode)
-  mp_input_add_cmd_fd(0,USE_SELECT,MP_INPUT_SLAVE_CMD_FUNC,NULL);
-else if(!noconsolecontrols)
-    mp_input_add_event_fd(0, getch2);
-// Set the libstream interrupt callback
-stream_set_interrupt_callback(mp_input_check_interrupt);
-
-#ifdef CONFIG_MENU
- if(use_menu) {
-   if(menu_cfg && menu_init(mpctx, menu_cfg))
-     mp_msg(MSGT_CPLAYER, MSGL_V, MSGTR_MenuInitialized, menu_cfg);
-   else {
-     menu_cfg = get_path("menu.conf");
-     if(menu_init(mpctx, menu_cfg))
-       mp_msg(MSGT_CPLAYER, MSGL_V, MSGTR_MenuInitialized, menu_cfg);
-     else {
-     	char cad[100];
-       sprintf(cad,"%s%s",MPLAYER_CONFDIR,"/menu.conf");
-       if(menu_init(mpctx, cad))
-         mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_MenuInitialized, cad);
-       else {
-         mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_MenuInitFailed);
-         use_menu = 0;
-       }
-     }
-   }
- }
-#endif
-
-initialized_flags|=INITIALIZED_INPUT;
-current_module = NULL;
-
-  /// Catch signals
-#if !defined(__MINGW32__) && !defined(GEKKO)
-  signal(SIGCHLD,child_sighandler);
-#endif
-
-#ifdef CONFIG_CRASH_DEBUG
-  prog_path = argv[0];
-#endif
-  //========= Catch terminate signals: ================
-  // terminate requests:
-  signal(SIGTERM,exit_sighandler); // kill
-  signal(SIGHUP,exit_sighandler);  // kill -HUP  /  xterm closed
-
-  signal(SIGINT,exit_sighandler);  // Interrupt from keyboard
-
-  signal(SIGQUIT,exit_sighandler); // Quit from keyboard
-  signal(SIGPIPE,exit_sighandler); // Some window managers cause this
-#ifdef CONFIG_SIGHANDLER
-  // fatal errors:
-  signal(SIGBUS,exit_sighandler);  // bus error
-  signal(SIGSEGV,exit_sighandler); // segfault
-  signal(SIGILL,exit_sighandler);  // illegal instruction
-  signal(SIGFPE,exit_sighandler);  // floating point exc.
-  signal(SIGABRT,exit_sighandler); // abort()
-#ifdef CONFIG_CRASH_DEBUG
-  if (crash_debug)
-    signal(SIGTRAP,exit_sighandler);
-#endif
-#endif
-
-#ifdef CONFIG_GUI
-  if(use_gui){
-       guiInit();
-       guiGetEvent(guiSetContext, mpctx);
-       initialized_flags|=INITIALIZED_GUI;
-       guiGetEvent( guiCEvent,(char *)((gui_no_filename) ? 0 : 1) );
-  }
-#endif
-
-// ******************* Now, let's see the per-file stuff ********************
-play_next_file:
-//setwatchdogcounter(-1);
-  // init global sub numbers
-  mpctx->global_sub_size = 0;
-  { int i; for (i = 0; i < SUB_SOURCES; i++) mpctx->global_sub_indices[i] = -1; }
-
-//m_config_set_option(mconfig,"framedrop",NULL);
-m_config_set_option(mconfig,"sws","4");
-m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
-if(amplify_volume!=0.0){
-char cad[25];
-sprintf(cad,"volume=%f:0",amplify_volume);
-m_config_set_option(mconfig,"af",cad);
-}
-
-if (filename) {
-    load_per_protocol_config (mconfig, filename);
-    load_per_extension_config (mconfig, filename);
-    load_per_file_config (mconfig, filename);
-  }
-
-  if (video_driver_list)
-    load_per_output_config (mconfig, PROFILE_CFG_VO, video_driver_list[0]);
-  if (audio_driver_list)
-    load_per_output_config (mconfig, PROFILE_CFG_AO, audio_driver_list[0]);
-
-// We must enable getch2 here to be able to interrupt network connection
-// or cache filling
-if(!noconsolecontrols && !slave_mode){
-  if(initialized_flags&INITIALIZED_GETCH2)
-    mp_msg(MSGT_CPLAYER,MSGL_WARN,MSGTR_Getch2InitializedTwice);
-  else
-    getch2_enable();  // prepare stdin for hotkeys...
-  initialized_flags|=INITIALIZED_GETCH2;
-  mp_msg(MSGT_CPLAYER,MSGL_DBG2,"\n[[[init getch2]]]\n");
-}
-
-// =================== GUI idle loop (STOP state) ===========================
-#ifdef CONFIG_GUI
-    if ( use_gui ) {
-      mpctx->file_format=DEMUXER_TYPE_UNKNOWN;
-      guiGetEvent( guiSetDefaults,0 );
-      while ( guiIntfStruct.Playing != 1 )
-       {
-        mp_cmd_t* cmd;
-	usec_sleep(20000);
-	guiEventHandling();
-	guiGetEvent( guiReDraw,NULL );
-	if ( (cmd = mp_input_get_cmd(0,0,0)) != NULL) {
-	  guiGetEvent(guiIEvent, (char *)cmd->id);
-	  mp_cmd_free(cmd);
-	}
-       }
-      guiGetEvent( guiSetParameters,NULL );
-      if ( guiIntfStruct.StreamType == STREAMTYPE_STREAM )
-       {
-        play_tree_t * entry = play_tree_new();
-        play_tree_add_file( entry,guiIntfStruct.Filename );
-        if ( mpctx->playtree ) play_tree_free_list( mpctx->playtree->child,1 );
-         else mpctx->playtree=play_tree_new();
-        play_tree_set_child( mpctx->playtree,entry );
-        if(mpctx->playtree)
-	 {
-	  mpctx->playtree_iter = play_tree_iter_new(mpctx->playtree,mconfig);
-	  if(mpctx->playtree_iter)
-	   {
-	    if(play_tree_iter_step(mpctx->playtree_iter,0,0) != PLAY_TREE_ITER_ENTRY)
-	     {
-	      play_tree_iter_free(mpctx->playtree_iter);
-	      mpctx->playtree_iter = NULL;
-	     }
-	    filename = play_tree_iter_get_file(mpctx->playtree_iter,1);
-	   }
-         }
-       }
-    }
-#endif /* CONFIG_GUI */
-
-while (player_idle_mode && !filename) {
-    play_tree_t * entry = NULL;
-    mp_cmd_t * cmd;
-    while (!(cmd = mp_input_get_cmd(0,1,0))) { // wait for command
-        if (mpctx->video_out && vo_config_count) mpctx->video_out->check_events();
-        usec_sleep(20000);
-    }
-    switch (cmd->id) {
-        case MP_CMD_LOADFILE:
-            // prepare a tree entry with the new filename
-            entry = play_tree_new();
-            play_tree_add_file(entry, cmd->args[0].v.s);
-            // The entry is added to the main playtree after the switch().
-            break;
-        case MP_CMD_LOADLIST:
-        	printf("loadlist\n");
-            entry = parse_playlist_file(cmd->args[0].v.s);
-            break;
-        case MP_CMD_QUIT:
-            exit_player_with_rc(EXIT_QUIT, (cmd->nargs > 0)? cmd->args[0].v.i : 0);
-            break;
-        case MP_CMD_GET_PROPERTY:
-        case MP_CMD_SET_PROPERTY:
-        case MP_CMD_STEP_PROPERTY:
-            run_command(mpctx, cmd);
-            break;
-    }
-
-    mp_cmd_free(cmd);
-
-    if (entry) { // user entered a command that gave a valid entry
-        if (mpctx->playtree) // the playtree is always a node with one child. let's clear it
-            play_tree_free_list(mpctx->playtree->child, 1);
-        else mpctx->playtree=play_tree_new(); // .. or make a brand new playtree
-
-        if (!mpctx->playtree) continue; // couldn't make playtree! wait for next command
-
-        play_tree_set_child(mpctx->playtree, entry);
-
-        /* Make iterator start at the top the of tree. */
-        mpctx->playtree_iter = play_tree_iter_new(mpctx->playtree, mconfig);
-        if (!mpctx->playtree_iter) continue;
-
-        // find the first real item in the tree
-        if (play_tree_iter_step(mpctx->playtree_iter,0,0) != PLAY_TREE_ITER_ENTRY) {
-            // no items!
-            play_tree_iter_free(mpctx->playtree_iter);
-            mpctx->playtree_iter = NULL;
-            continue; // wait for next command
-        }
-        filename = play_tree_iter_get_file(mpctx->playtree_iter, 1);
-    }
-    //mp_input_queue_cmd(mp_input_parse_cmd("menu show"));
-}
-//---------------------------------------------------------------------------
-
-    if(filename) {
-	mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_Playing,
-		filename_recode(filename));
-        if(use_filename_title && vo_wintitle == NULL)
-            vo_wintitle = strdup ( mp_basename2 (filename));
-    }
-
-if (edl_filename) {
-    if (edl_records) free_edl(edl_records);
-    next_edl_record = edl_records = edl_parse_file();
-}
-if (edl_output_filename) {
-    if (edl_fd) fclose(edl_fd);
-    if ((edl_fd = fopen(edl_output_filename, "w")) == NULL)
-    {
-        mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_EdlCantOpenForWrite,
-		filename_recode(edl_output_filename));
-    }
-}
-
-//==================== Open VOB-Sub ============================
-int vob_sub_auto = 1; //scip
-
-    current_module="vobsub";
-
-    if (vobsub_name){
-      vo_vobsub=vobsub_open(vobsub_name,spudec_ifo,1,&vo_spudec);
-      if(vo_vobsub==NULL)
-        mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_CantLoadSub,
-		filename_recode(vobsub_name));
-    } else
-	if (vo_vobsub==NULL && vob_sub_auto && filename){ //scip sub_auto -> vob_sub_auto
-      /* try to autodetect vobsub from movie filename ::atmos */
-      char *buf = strdup(filename), *psub;
-      char *pdot = strrchr(buf, '.');
-      char *pslash = strrchr(buf, '/');
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-      if (!pslash) pslash = strrchr(buf, '\\');
-#endif
-      if (pdot && (!pslash || pdot > pslash))
-        *pdot = '\0';
-		    
-      vo_vobsub=vobsub_open(buf,spudec_ifo,0,&vo_spudec);
-      /* try from ~/.mplayer/sub */
-      if(!vo_vobsub && (psub = get_path( "sub/" ))) {
-          char *bname;
-          int l;
-          bname = strrchr(buf,'/');
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-          if(!bname) bname = strrchr(buf,'\\');
-#endif
-          if(bname) bname++;
-          else bname = buf;
-          l = strlen(psub) + strlen(bname) + 1;
-          psub = realloc(psub,l);
-          strcat(psub,bname);
-          vo_vobsub=vobsub_open(psub,spudec_ifo,0,&vo_spudec);
-          free(psub);
-      }
-      free(buf);
-    }
-    if(vo_vobsub){
-      set_osd_msg(OSD_MSG_TEXT, 1, 1000, "Vobsub subtitles loaded");
-	  force_osd();
-
-      initialized_flags|=INITIALIZED_VOBSUB;
-      vobsub_set_from_lang(vo_vobsub, dvdsub_lang);
-      // check if vobsub requested only to display forced subtitles /** rodries review **/
-      //mp_property_do("sub_forced_only", M_PROPERTY_SET, &forced_subs_only, mpctx);
-
-      // setup global sub numbering
-      mpctx->global_sub_indices[SUB_SOURCE_VOBSUB] = mpctx->global_sub_size; // the global # of the first vobsub.
-      mpctx->global_sub_size += vobsub_get_indexes_count(vo_vobsub);
-    }else{
-    	rm_osd_msg(OSD_MSG_TEXT);force_osd();
-	}
-
-
-//============ Open & Sync STREAM --- fork cache2 ====================
-
-
-  //mpctx->stream=NULL;
-
-  current_module="open_stream";
-  #ifdef GEKKO
-
-  // rodries
-  static float orig_stream_cache_min_percent=-1;
-  static float orig_stream_cache_seek_min_percent=-1;
-  static int orig_stream_cache_size=-1;
-
-  if(orig_stream_cache_min_percent==-1 && orig_stream_cache_seek_min_percent==-1)
-  {
-    orig_stream_cache_min_percent=stream_cache_min_percent;
-    orig_stream_cache_seek_min_percent=stream_cache_seek_min_percent;
-    orig_stream_cache_size=stream_cache_size;
-  }
-  else
-  {
-    stream_cache_min_percent=orig_stream_cache_min_percent;
-    stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
-  }
-  if(!strncmp(filename,"dvdnav://",9))
-  	stream_cache_size=-1;
-  else
-  	stream_cache_size=orig_stream_cache_size;
-
-
-    if(!strncmp(filename,"http:",5))
-    {
-	   stream_cache_min_percent=1;
-	   stream_cache_seek_min_percent=5;
-    }
-
-  //setwatchdogcounter(-1);
-  //end rodries
-  #endif
-  mpctx->stream=open_stream(filename,0,&mpctx->file_format);
-  if(!mpctx->stream) { // error...
-    mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY);
-    goto goto_next_file;
-  }
-  initialized_flags|=INITIALIZED_STREAM;
-  //strcpy(fileplaying,filename_recode(filename));
-  strcpy(fileplaying,filename);
-
-#ifdef CONFIG_GUI
-  if ( use_gui ) guiGetEvent( guiSetStream,(char *)mpctx->stream );
-#endif
-
-  if(mpctx->file_format == DEMUXER_TYPE_PLAYLIST) {
-    play_tree_t* entry;
-    // Handle playlist
-    current_module="handle_playlist";
-    printf(MSGL_V,"Parsing playlist %s...\n",filename_recode(filename));
-    mp_msg(MSGT_CPLAYER,MSGL_V,"Parsing playlist %s...\n",
-	    filename_recode(filename));
-    entry = parse_playtree(mpctx->stream,0);
-    mpctx->eof=playtree_add_playlist(entry);
-    goto goto_next_file;
-  }
-  mpctx->stream->start_pos+=seek_to_byte;
-
-if(stream_dump_type==5){
-  unsigned char buf[4096];
-  int len;
-  FILE *f;
-  current_module="dumpstream";
-  stream_reset(mpctx->stream);
-  stream_seek(mpctx->stream,mpctx->stream->start_pos);
-  f=fopen(stream_dump_name,"wb");
-  if(!f){
-    mp_msg(MSGT_CPLAYER,MSGL_FATAL,MSGTR_CantOpenDumpfile);
-    exit_player(EXIT_ERROR);
-  }
-  if (dvd_chapter > 1) {
-    int chapter = dvd_chapter - 1;
-    stream_control(mpctx->stream, STREAM_CTRL_SEEK_TO_CHAPTER, &chapter);
-  }
-  while(!mpctx->stream->eof && !async_quit_request){
-      len=stream_read(mpctx->stream,buf,4096);
-      if(len>0) {
-        if(fwrite(buf,len,1,f) != 1) {
-          mp_msg(MSGT_MENCODER,MSGL_FATAL,MSGTR_ErrorWritingFile,stream_dump_name);
-          exit_player(EXIT_ERROR);
-        }
-      }
-      if(dvd_last_chapter > 0) {
-        int chapter = -1;
-        if (stream_control(mpctx->stream, STREAM_CTRL_GET_CURRENT_CHAPTER,
-                           &chapter) == STREAM_OK && chapter + 1 > dvd_last_chapter)
-          break;
-      }
-  }
-  if(fclose(f)) {
-    mp_msg(MSGT_MENCODER,MSGL_FATAL,MSGTR_ErrorWritingFile,stream_dump_name);
-    exit_player(EXIT_ERROR);
-  }
-  mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_CoreDumped);
-  exit_player_with_rc(EXIT_EOF, 0);
-}
-
-#ifdef CONFIG_DVDREAD
-if(mpctx->stream->type==STREAMTYPE_DVD){
-  current_module="dvd lang->id";
-  if(audio_id==-1) audio_id=dvd_aid_from_lang(mpctx->stream,audio_lang);
-  if(dvdsub_lang && dvdsub_id==-1) dvdsub_id=dvd_sid_from_lang(mpctx->stream,dvdsub_lang);
-  // setup global sub numbering
-  mpctx->global_sub_indices[SUB_SOURCE_DEMUX] = mpctx->global_sub_size; // the global # of the first demux-specific sub.
-  mpctx->global_sub_size += dvd_number_of_subs(mpctx->stream);
-  current_module=NULL;
-}
-#endif
-
-#ifdef CONFIG_DVDNAV
-if(mpctx->stream->type==STREAMTYPE_DVDNAV){
-  current_module="dvdnav lang->id";
-  if(audio_id==-1) audio_id=mp_dvdnav_aid_from_lang(mpctx->stream,audio_lang);
-  dvdsub_lang_id = -3;
-  if(dvdsub_lang && dvdsub_id==-1)
-    dvdsub_lang_id=dvdsub_id=mp_dvdnav_sid_from_lang(mpctx->stream,dvdsub_lang);
-  // setup global sub numbering
-  mpctx->global_sub_indices[SUB_SOURCE_DEMUX] = mpctx->global_sub_size; // the global # of the first demux-specific sub.
-  mpctx->global_sub_size += mp_dvdnav_number_of_subs(mpctx->stream);
-  current_module=NULL;
-}
-#endif
-
-// CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
-printf("stream_cache_size: %i\n",stream_cache_size);
-goto_enable_cache:
-if(stream_cache_size>0){
-  int res;
-  current_module="enable_cache";
-stream_cache_min_percent=1.0;
-  res = stream_enable_cache(mpctx->stream,stream_cache_size*1024,
-                          stream_cache_size*1024*(stream_cache_min_percent / 100.0),
-                          stream_cache_size*1024*(stream_cache_seek_min_percent / 100.0));
-  if(res == 0)
-    if((mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY))) goto goto_next_file;
-}
-    //printf("Analysing Stream...");
-    	clear_osd_msgs();
-    	/*
-		update_osd_msg();
-		set_osd_msg(OSD_MSG_TEXT, 1, 0, "Analysing Stream...");
-		force_osd();
-		*/
-  if(mpctx->demuxer)
-  {
-  	free_demuxer(mpctx->demuxer);
-  	mpctx->demuxer=NULL;
-  }
-  if (mpctx->d_audio) {
-    //free_demuxer_stream(mpctx->d_audio);
-    mpctx->d_audio=NULL;
-  }
-  if (mpctx->d_video) {
-    //free_demuxer_stream(d_video);
-    mpctx->d_video=NULL;
-  }
-  if(mpctx->sh_audio)
-  {
-  	uninit_audio(mpctx->sh_audio);
-  	mpctx->sh_audio=NULL;
-  	mpctx->mixer.afilter = NULL;
-  }
-  
-  if(mpctx->sh_video)
-  {
-  	uninit_video(mpctx->sh_video);
-    mpctx->sh_video=NULL;
-#ifdef CONFIG_MENU
-    vf_menu=NULL;
-#endif
-  }
-//============ Open DEMUXERS --- DETECT file type =======================
-current_module="demux_open";
-mpctx->demuxer=demux_open(mpctx->stream,mpctx->file_format,audio_id,video_id,dvdsub_id,filename);
-
-// HACK to get MOV Reference Files working
-if (mpctx->demuxer && mpctx->demuxer->type==DEMUXER_TYPE_PLAYLIST)
-{
-  unsigned char* playlist_entry;
-  play_tree_t *list = NULL, *entry = NULL;
-
-  current_module="handle_demux_playlist";
-  while (ds_get_packet(mpctx->demuxer->video,&playlist_entry)>0)
-  {
-    char *temp, *bname;
-
-    mp_msg(MSGT_CPLAYER,MSGL_V,"Adding file %s to element entry.\n",
-	    filename_recode(playlist_entry));
-
-    bname=mp_basename(playlist_entry);
-    if ((strlen(bname)>10) && !strncmp(bname,"qt",2) && !strncmp(bname+3,"gateQT",6))
-        continue;
-
-    if (!strcmp(playlist_entry,filename)) // ignoring self-reference
-        continue;
-
-    entry = play_tree_new();
-
-    if (filename && !strcmp(mp_basename(playlist_entry),playlist_entry)) // add reference path of current file
-    {
-      temp=malloc((strlen(filename)-strlen(mp_basename(filename))+strlen(playlist_entry)+1));
-      if (temp)
-      {
-	strncpy(temp, filename, strlen(filename)-strlen(mp_basename(filename)));
-	temp[strlen(filename)-strlen(mp_basename(filename))]='\0';
-	strcat(temp, playlist_entry);
-	if (!strcmp(temp, filename)) {
-	  free(temp);
-	  continue;
-	}
-	play_tree_add_file(entry,temp);
-	mp_msg(MSGT_CPLAYER,MSGL_V,"Resolving reference to %s.\n",temp);
-	free(temp);
-      }
-    }
-    else
-      play_tree_add_file(entry,playlist_entry);
-
-    if(!list)
-      list = entry;
-    else
-      play_tree_append_entry(list,entry);
-  }
-  free_demuxer(mpctx->demuxer);
-  mpctx->demuxer = NULL;
-
-  if (list)
-  {
-    entry = play_tree_new();
-    play_tree_set_child(entry,list);
-    mpctx->eof=playtree_add_playlist(entry);
-    goto goto_next_file;
-  }
-}
-
-if(!mpctx->demuxer)
-  goto goto_next_file;
-if(dvd_chapter>1) {
-  float pts;
-  if (demuxer_seek_chapter(mpctx->demuxer, dvd_chapter-1, 1, &pts, NULL, NULL) >= 0 && pts > -1.0)
-    seek(mpctx, pts, SEEK_ABSOLUTE);
-}
-initialized_flags|=INITIALIZED_DEMUXER;
-if (mpctx->stream->type != STREAMTYPE_DVD && mpctx->stream->type != STREAMTYPE_DVDNAV) {
-  int i;
-  int maxid = -1;
-  // setup global sub numbering
-  mpctx->global_sub_indices[SUB_SOURCE_DEMUX] = mpctx->global_sub_size; // the global # of the first demux-specific sub.
-  for (i = 0; i < MAX_S_STREAMS; i++)
-    if (mpctx->demuxer->s_streams[i])
-      maxid = FFMAX(maxid, ((sh_sub_t *)mpctx->demuxer->s_streams[i])->sid);
-  mpctx->global_sub_size += maxid + 1;
-}
-// Make dvdsub_id always selectable if set.
-if (mpctx->global_sub_size <= mpctx->global_sub_indices[SUB_SOURCE_DEMUX] + dvdsub_id)
-  mpctx->global_sub_size = mpctx->global_sub_indices[SUB_SOURCE_DEMUX] + dvdsub_id + 1;
-#ifdef CONFIG_ASS
-if (ass_enabled && ass_library) {
-  for (i = 0; i < mpctx->demuxer->num_attachments; ++i) {
-    demux_attachment_t* att = mpctx->demuxer->attachments + i;
-    if (extract_embedded_fonts &&
-        att->name && att->type && att->data && att->data_size &&
-        (strcmp(att->type, "application/x-truetype-font") == 0 ||
-         strcmp(att->type, "application/x-font") == 0))
-      ass_add_font(ass_library, att->name, att->data, att->data_size);
-  }
-}
-#endif
-current_module="demux_open2";
-
-//file_format=demuxer->file_format;
-
-mpctx->d_audio=mpctx->demuxer->audio;
-mpctx->d_video=mpctx->demuxer->video;
-mpctx->d_sub=mpctx->demuxer->sub;
-if (ts_prog) {
-  int tmp = ts_prog;
-  mp_property_do("switch_program", M_PROPERTY_SET, &tmp, mpctx);
-}
-// select audio stream
-select_audio(mpctx->demuxer, audio_id, audio_lang);
-// DUMP STREAMS:
-if((stream_dump_type)&&(stream_dump_type<4)){
-  FILE *f;
-  demux_stream_t *ds=NULL;
-  current_module="dump";
-  // select stream to dump
-  switch(stream_dump_type){
-  case 1: ds=mpctx->d_audio;break;
-  case 2: ds=mpctx->d_video;break;
-  case 3: ds=mpctx->d_sub;break;
-  }
-  if(!ds){
-      mp_msg(MSGT_CPLAYER,MSGL_FATAL,MSGTR_DumpSelectedStreamMissing);
-      exit_player(EXIT_ERROR);
-  }
-  // disable other streams:
-  if(mpctx->d_audio && mpctx->d_audio!=ds) {ds_free_packs(mpctx->d_audio); mpctx->d_audio->id=-2; }
-  if(mpctx->d_video && mpctx->d_video!=ds) {ds_free_packs(mpctx->d_video); mpctx->d_video->id=-2; }
-  if(mpctx->d_sub && mpctx->d_sub!=ds) {ds_free_packs(mpctx->d_sub); mpctx->d_sub->id=-2; }
-  // let's dump it!
-  f=fopen(stream_dump_name,"wb");
-  if(!f){
-    mp_msg(MSGT_CPLAYER,MSGL_FATAL,MSGTR_CantOpenDumpfile);
-    exit_player(EXIT_ERROR);
-  }
-  while(!ds->eof){
-    unsigned char* start;
-    int in_size=ds_get_packet(ds,&start);
-    if( (mpctx->demuxer->file_format==DEMUXER_TYPE_AVI || mpctx->demuxer->file_format==DEMUXER_TYPE_ASF || mpctx->demuxer->file_format==DEMUXER_TYPE_MOV)
-	&& stream_dump_type==2) fwrite(&in_size,1,4,f);
-    if(in_size>0) fwrite(start,in_size,1,f);
-    if(dvd_last_chapter>0) {
-      int cur_chapter = demuxer_get_current_chapter(mpctx->demuxer);
-      if(cur_chapter!=-1 && cur_chapter+1>dvd_last_chapter)
-        break;
-    }
-  }
-  fclose(f);
-  mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_CoreDumped);
-  exit_player_with_rc(EXIT_EOF, 0);
-}
-mpctx->sh_audio=mpctx->d_audio->sh;
-mpctx->sh_video=mpctx->d_video->sh;
-
-
-//
-if(mpctx->sh_video){
-
-  current_module="video_read_properties";
-  if(!video_read_properties(mpctx->sh_video)) {
-    mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_CannotReadVideoProperties);
-    mpctx->sh_video=mpctx->d_video->sh=NULL;
-  } else {
-    mp_msg(MSGT_CPLAYER,MSGL_V,MSGTR_FilefmtFourccSizeFpsFtime,
-	   mpctx->demuxer->file_format,mpctx->sh_video->format, mpctx->sh_video->disp_w,mpctx->sh_video->disp_h,
-	   mpctx->sh_video->fps,mpctx->sh_video->frametime
-	   );
-
-    /* need to set fps here for output encoders to pick it up in their init */
-    if(force_fps){
-      mpctx->sh_video->fps=force_fps;
-      mpctx->sh_video->frametime=1.0f/mpctx->sh_video->fps;
-    }
-    vo_fps = mpctx->sh_video->fps;
-
-    if(!mpctx->sh_video->fps && !force_fps){
-      mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_FPSnotspecified);
-      mpctx->sh_video=mpctx->d_video->sh=NULL;
-    }
-  }
-
-}
-if(!mpctx->sh_video && !mpctx->sh_audio){
-    mp_msg(MSGT_CPLAYER,MSGL_FATAL, MSGTR_NoStreamFound);
-#ifdef CONFIG_DVBIN
-	if(mpctx->stream->type == STREAMTYPE_DVB)
-	{
-		int dir;
-		int v = mpctx->last_dvb_step;
-		if(v > 0)
-			dir = DVB_CHANNEL_HIGHER;
-		else
-			dir = DVB_CHANNEL_LOWER;
-
-		if(dvb_step_channel(mpctx->stream, dir))
-			mpctx->eof = mpctx->dvbin_reopen = 1;
-	}
-#endif
-    goto goto_next_file; // exit_player(MSGTR_Exit_error);
-}
-/* display clip info */
-demux_info_print(mpctx->demuxer);
-//================== Read SUBTITLES (DVD & TEXT) ==========================
-if(vo_spudec==NULL && mpctx->sh_video &&
-     (mpctx->stream->type==STREAMTYPE_DVD || mpctx->stream->type == STREAMTYPE_DVDNAV)){
-  init_vo_spudec();
-}
-if(1 || mpctx->sh_video) {
-// after reading video params we should load subtitles because
-// we know fps so now we can adjust subtitle time to ~6 seconds AST
-// check .sub
-  double fps = mpctx->sh_video ? mpctx->sh_video->fps : 25;
-  current_module="read_subtitles_file";
-  if(sub_name){
-    for (i = 0; sub_name[i] != NULL; ++i)
-        add_subtitles (sub_name[i], fps, 0);
-  }
-  //scip:
-  sub_auto = 1;
-  if(vo_vobsub==NULL && sub_auto) { // auto load sub file ...
-    //char *psub = get_path( "sub/" );
-    //char **tmp = sub_filenames((psub ? psub : ""), filename);
-    char **tmp = sub_filenames("", filename);
-    int i = 0;
-    //free(psub); // release the buffer created by get_path() above
-    while (tmp[i]) {
-        add_subtitles (tmp[i], fps, 1);
-        free(tmp[i++]);
-    }
-    free(tmp);
-  }
-  if (mpctx->set_of_sub_size > 0)  {
-      // setup global sub numbering
-      mpctx->global_sub_indices[SUB_SOURCE_SUBS] = mpctx->global_sub_size; // the global # of the first sub.
-      mpctx->global_sub_size += mpctx->set_of_sub_size;
-  }
-
-}
-if (mpctx->global_sub_size) {
-  select_subtitle(mpctx);
-  if(subdata)
-    switch (stream_dump_type) {
-        case 3: list_sub_file(subdata); break;
-        case 4: dump_mpsub(subdata, mpctx->sh_video->fps); break;
-        case 6: dump_srt(subdata, mpctx->sh_video->fps); break;
-        case 7: dump_microdvd(subdata, mpctx->sh_video->fps); break;
-        case 8: dump_jacosub(subdata, mpctx->sh_video->fps); break;
-        case 9: dump_sami(subdata, mpctx->sh_video->fps); break;
-    }
-}
-  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_FILENAME=%s\n",
-	  filename_recode(filename));
-  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_DEMUXER=%s\n", mpctx->demuxer->desc->name);
-  
-  if (mpctx->sh_video) {
-    /* Assume FOURCC if all bytes >= 0x20 (' ') */
-    if (mpctx->sh_video->format >= 0x20202020)
-	mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_FORMAT=%.4s\n", (char *)&mpctx->sh_video->format);
-    else
-	mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_FORMAT=0x%08X\n", mpctx->sh_video->format);
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_BITRATE=%d\n", mpctx->sh_video->i_bps*8);
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_WIDTH=%d\n", mpctx->sh_video->disp_w);
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_HEIGHT=%d\n", mpctx->sh_video->disp_h);
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_FPS=%5.3f\n", mpctx->sh_video->fps);
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_VIDEO_ASPECT=%1.4f\n", mpctx->sh_video->aspect);
-  }
-  if (mpctx->sh_audio) {
-    /* Assume FOURCC if all bytes >= 0x20 (' ') */
-    if (mpctx->sh_audio->format >= 0x20202020)
-      mp_msg(MSGT_IDENTIFY,MSGL_INFO, "ID_AUDIO_FORMAT=%.4s\n", (char *)&mpctx->sh_audio->format);
-    else
-      mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_AUDIO_FORMAT=%d\n", mpctx->sh_audio->format);
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_AUDIO_BITRATE=%d\n", mpctx->sh_audio->i_bps*8);
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_AUDIO_RATE=%d\n", mpctx->sh_audio->samplerate);
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_AUDIO_NCH=%d\n", mpctx->sh_audio->channels);
-  }
-
-  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_LENGTH=%.2lf\n", demuxer_get_time_length(mpctx->demuxer));
-  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_SEEKABLE=%d\n",
-         mpctx->stream->seek && (!mpctx->demuxer || mpctx->demuxer->seekable));
-
-  if (mpctx->demuxer) {
-      if (mpctx->demuxer->num_chapters == 0)
-      {
-          stream_control(mpctx->demuxer->stream, STREAM_CTRL_GET_NUM_CHAPTERS, &mpctx->demuxer->num_chapters);
-    }
-      mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_CHAPTERS=%d\n", mpctx->demuxer->num_chapters);
-  }
-if(!mpctx->sh_video) goto main; // audio-only
-if(!reinit_video_chain()) {
-
-  if(!mpctx->sh_video){
-    if(!mpctx->sh_audio)
-	{
-		goto goto_next_file;
-	}
-    goto main; // exit_player(MSGTR_Exit_error);
-  }
-}
-   if(vo_flags & 0x08 && vo_spudec)
-      spudec_set_hw_spu(vo_spudec,mpctx->video_out);
-
-#ifdef CONFIG_FREETYPE
-   //force_load_font = 1;
-#endif
-
-//================== MAIN: ==========================
-main:
-current_module="main";
-
-    if(playing_msg) {
-        char* msg = property_expand_string(mpctx, playing_msg);
-        mp_msg(MSGT_CPLAYER,MSGL_INFO,"%s",msg);
-        free(msg);
-    }
-
-
-// Disable the term OSD in verbose mode
-if(verbose) term_osd = 0;
-
-{
-//int frame_corr_num=0;   //
-//float v_frame=0;    // Video
-//float num_frames=0;      // number of frames played
-
-int frame_time_remaining=0; // flag
-int blit_frame=0;
-mpctx->num_buffered_frames=0;
-
-// Make sure old OSD does not stay around,
-// e.g. with -fixed-vo and same-resolution files
-clear_osd_msgs();
-update_osd_msg();
-
-//================ SETUP AUDIO ==========================
-
-if(mpctx->sh_audio){
-  reinit_audio_chain();
-  if (mpctx->sh_audio && mpctx->sh_audio->codec)
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO, "ID_AUDIO_CODEC=%s\n", mpctx->sh_audio->codec->name);
-}
-current_module="av_init";
-
-if(mpctx->sh_video){
-  mpctx->sh_video->timer=0;
-  if (! ignore_start)
-    audio_delay += mpctx->sh_video->stream_delay;
-}
-if(mpctx->sh_audio){
-  if (mplayer_volume >= 0)
-    mixer_setvolume(&mpctx->mixer, mplayer_volume, mplayer_volume);
-
-  if (start_volume >= 0)
-    mixer_setvolume(&mpctx->mixer, start_volume, start_volume);
-
-  if (! ignore_start)
-    audio_delay -= mpctx->sh_audio->stream_delay;
-  mpctx->delay=-audio_delay;
-}
-
-if(!mpctx->sh_audio){
-  mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_NoSound);
-  mp_msg(MSGT_CPLAYER,MSGL_V,"Freeing %d unused audio chunks.\n",mpctx->d_audio->packs);
-  ds_free_packs(mpctx->d_audio); // free buffered chunks
-  //mpctx->d_audio->id=-2;         // do not read audio chunks
-  //uninit_player(INITIALIZED_AO); // close device
-}
-
-if(!mpctx->sh_video){
-	printf("No video - returning control to GUI\n");
-	if(controlledbygui == 0)
-		controlledbygui=1; // send control to gui
-   mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_Video_NoVideo);
-   mp_msg(MSGT_CPLAYER,MSGL_V,"Freeing %d unused video chunks.\n",mpctx->d_video->packs);
-   ds_free_packs(mpctx->d_video);
-   mpctx->d_video->id=-2;
-   //if(!fixed_vo) uninit_player(INITIALIZED_VO);
-}
-
-if (!mpctx->sh_video && !mpctx->sh_audio)
-    goto goto_next_file;
-
-//if(demuxer->file_format!=DEMUXER_TYPE_AVI) pts_from_bps=0; // it must be 0 for mpeg/asf!
-if(force_fps && mpctx->sh_video){
-  vo_fps = mpctx->sh_video->fps=force_fps;
-  mpctx->sh_video->frametime=1.0f/mpctx->sh_video->fps;
-  mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_FPSforced,mpctx->sh_video->fps,mpctx->sh_video->frametime);
-}
-#ifdef CONFIG_GUI
-if ( use_gui ) {
-    if ( mpctx->sh_audio ) guiIntfStruct.AudioType=mpctx->sh_audio->channels; else guiIntfStruct.AudioType=0;
-    if ( !mpctx->sh_video && mpctx->sh_audio ) guiGetEvent( guiSetAudioOnly,(char *)1 ); else guiGetEvent( guiSetAudioOnly,(char *)0 );
-    guiGetEvent( guiSetFileFormat,(char *)mpctx->demuxer->file_format );
-    if ( guiGetEvent( guiSetValues,(char *)mpctx->sh_video ) ) goto goto_next_file;
-    guiGetEvent( guiSetDemuxer,(char *)mpctx->demuxer );
-}
-#endif
-mp_input_set_section(NULL);
-//TODO: add desired (stream-based) sections here
-if (mpctx->stream->type==STREAMTYPE_TV) mp_input_set_section("tv");
-if (mpctx->stream->type==STREAMTYPE_DVDNAV) mp_input_set_section("dvdnav");
-
-//==================== START PLAYING =======================
-if(mpctx->loop_times>1) mpctx->loop_times--; else
-if(mpctx->loop_times==1) mpctx->loop_times = -1;
-mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_StartPlaying);
-
-total_time_usage_start=GetTimer();
-audio_time_usage=0; video_time_usage=0; vout_time_usage=0;
-total_frame_cnt=0; drop_frame_cnt=0; // fix for multifile fps benchmark
-play_n_frames=play_n_frames_mf;
-mpctx->startup_decode_retry = DEFAULT_STARTUP_DECODE_RETRY;
-
-if(play_n_frames==0){
-  mpctx->eof=PT_NEXT_ENTRY; goto goto_next_file;
-}
-
-#ifndef GEKKO
-if (seek_to_sec) {
-    seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
-    end_at.pos += seek_to_sec;
-}
-#endif
-
-if (end_at.type == END_AT_SIZE) {
-    mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_MPEndposNoSizeBased);
-    end_at.type = END_AT_NONE;
-}
-#ifdef CONFIG_DVDNAV
-mp_dvdnav_context_free(mpctx);
-if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
-    mp_dvdnav_read_wait(mpctx->stream, 0, 1);
-    mp_dvdnav_cell_has_changed(mpctx->stream,1);
-}
-#endif
-#ifdef GEKKO
-static bool first_frame;
-first_frame=false;
-int restore_seek;
-
-int hasvideo=true;
-  //if(!strncmp(filename,"http:",5))
-  {
-  	  if (!mpctx->sh_video || (mpctx->bg_demuxer && mpctx->bg_demuxer->video && mpctx->bg_demuxer->video->sh && mpctx->sh_video == mpctx->bg_demuxer->video->sh))
-	  {
-	  	hasvideo=false;
-		 //printf("only audio\n");
-
-	  }else 
-	  {
-		 stream_cache_min_percent=orig_stream_cache_min_percent;
-		 stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
-	  	//printf("has video\n");
-	  }
-  }
-//if (mpctx->sh_audio) mpctx->audio_out->reset();
-restore_seek=load_restore_point(fileplaying)-8;
-if(restore_seek<0)restore_seek=0;
-
-if(!mpctx->sh_video || !strncmp(filename,"dvd",3))first_frame=true;
-
-seek_to_sec=restore_seek;
-{
- if(seek_to_sec && strncmp(fileplaying,"dvd://",6) && strncmp(fileplaying,"dvdnav",6 ) /*&& hasvideo*/)
- {
- 	//printf("seek\n");
-    seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
-    end_at.pos += seek_to_sec;
- }
-}
-
-
-#endif
-{
-int aux=mpctx->set_of_sub_size;
-mpctx->set_of_sub_size=0; // to not load subfonts
-mpctx->osd_function=OSD_PAUSE;
-if(stream_cache_size>0 && hasvideo) // no refill cache on only audio streams  
-	refillcache(mpctx->stream,stream_cache_min_percent);
-mpctx->osd_function=OSD_PLAY;
-mpctx->set_of_sub_size=aux;
-}
-
-if(mpctx->sh_video)
-{
-	int w,h;
-	w=mpctx->sh_video->disp_w;
-	h=mpctx->sh_video->disp_h;
-	if(w > 1024)
-	{
-		w=w/2;
-		h=h/2;
-	}
-	  if (!vo_font || prev_dxs!=w || prev_dys!=h) {
-	    force_load_font = 0;
-
-		set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Loading Fonts...");
-		force_osd();
-
-	    ReInitTTFLib();
-	    //printf("force_ refill: load_font_ft(%s) w: %i  h: %i  sc: %f\n",font_name,w, h,osd_font_scale_factor);
-	    load_font_ft(w,h,&vo_font,font_name,osd_font_scale_factor);
-	    prev_dxs = w; prev_dys=h;
-	    if(osd_font_scale_factor==text_font_scale_factor && (!sub_font_name || sub_font_name==font_name))
-	    	sub_font=vo_font;
-	    
-    	else
-    	{
-			if(mpctx->set_of_sub_size>0)
-			{
-	       	if (!sub_font) {
-	           if (sub_font_name)
-	               load_font_ft(prev_dxs, prev_dys, &sub_font, sub_font_name, text_font_scale_factor);
-	           else
-	               load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
-	       }
-	       }
-        }
-
-	  }
-}
-
-vo_osd_changed(OSDTYPE_SUBTITLE);
-vo_osd_changed(OSDTYPE_PROGBAR);
-vo_osd_changed(OSDTYPE_OSD);
-
-
-//reinit_video(); //to help gui
-
-total_time_usage_start=GetTimer();
-//GetRelativeTime();
-mpctx->eof=0;
-while(!mpctx->eof){
-    double aq_sleep_time=0;
-//init_while:
-//setwatchdogcounter(WATCH_TIMEOUT);
-
-if(dvd_last_chapter>0) {
-  int cur_chapter = demuxer_get_current_chapter(mpctx->demuxer);
-  if(cur_chapter!=-1 && cur_chapter+1>dvd_last_chapter)
-    goto goto_next_file;
-}
-
-if(!mpctx->sh_audio && mpctx->d_audio->sh) {
-  mpctx->sh_audio = mpctx->d_audio->sh;
-  mpctx->sh_audio->ds = mpctx->d_audio;
-  reinit_audio_chain();
-}
-
-/*========================== PLAY AUDIO ============================*/
-
-if (mpctx->sh_audio)
-	    if (!fill_audio_out_buffers())
-			// at eof, all audio at least written to ao
-			if (!mpctx->sh_video)
-			    mpctx->eof = PT_NEXT_ENTRY;
-
-
-if(!mpctx->sh_video) {
-  // handle audio-only case:
-  double a_pos=0;
-  // sh_audio can be NULL due to video stream switching
-  // TODO: handle this better
-  if((!quiet || end_at.type == END_AT_TIME) && mpctx->sh_audio)
-    a_pos = playing_audio_pts(mpctx->sh_audio, mpctx->d_audio, mpctx->audio_out);
-
-  if(!quiet)
-    print_status(a_pos, 0, 0);
-
-  if(end_at.type == END_AT_TIME && end_at.pos < a_pos)
-    mpctx->eof = PT_NEXT_ENTRY;
-  update_subtitles(NULL, a_pos, mpctx->d_sub, 0);
-  update_osd_msg();
-
-} else {
-
-/*========================== PLAY VIDEO ============================*/
-
-  vo_pts=mpctx->sh_video->timer*90000.0;
-  vo_fps=mpctx->sh_video->fps;
-
-  if (!mpctx->num_buffered_frames) {
-	  double frame_time = update_video(&blit_frame);
-	  /*
-	  if (!(mpctx->bg_demuxer && mpctx->bg_demuxer->video && mpctx->bg_demuxer->video->sh && mpctx->sh_video == mpctx->bg_demuxer->video->sh)) {
-      while (!blit_frame && mpctx->startup_decode_retry > 0) {
-          double delay = mpctx->delay;
-          // these initial decode failures are probably due to codec delay,
-          // ignore them and also their probably nonsense durations
-          update_video(&blit_frame);
-          mpctx->delay = delay;
-          mpctx->startup_decode_retry--;
-      }
-      mpctx->startup_decode_retry = 0;
-	  }  */
-      mp_dbg(MSGT_AVSYNC,MSGL_DBG2,"*** ftime=%5.3f ***\n",frame_time);
-      if (mpctx->sh_video->vf_initialized < 0) {
-	  mp_msg(MSGT_CPLAYER,MSGL_FATAL, MSGTR_NotInitializeVOPorVO);
-	  mpctx->eof = 1; goto goto_next_file;
-      }
-      if (frame_time < 0)
-		  mpctx->eof = 1;
-      else {
-	  // might return with !eof && !blit_frame if !correct_pts
-	  mpctx->num_buffered_frames += blit_frame;
-	  mpctx->time_frame += frame_time / playback_speed;  // for nosound
-      }
-  }
-
-// ==========================================================================
-
-//    current_module="draw_osd";
-//    if(vo_config_count) mpctx->video_out->draw_osd();
-
-#ifdef CONFIG_GUI
-    if(use_gui) guiEventHandling();
-#endif
-
-    current_module="vo_check_events";
-    if (vo_config_count) mpctx->video_out->check_events();
-
-#ifdef CONFIG_X11
-    if (stop_xscreensaver) {
-	current_module = "stop_xscreensaver";
-	xscreensaver_heartbeat();
-    }
-#endif
-
-#ifndef GEKKO
-    if (heartbeat_cmd) {
-        static u64 last_heartbeat;
-        u64 now = GetTimerMS();
-        if (now - last_heartbeat > 30000) {
-            last_heartbeat = now;
-            system(heartbeat_cmd);
-        }
-    }
-#endif
-    frame_time_remaining = sleep_until_update(&mpctx->time_frame, &aq_sleep_time);
-
-//====================== FLIP PAGE (VIDEO BLT): =========================
-
-        current_module="flip_page";
-        if (!frame_time_remaining && blit_frame) {
-       u64 t2=GetTimer();
-
-	   if(vo_config_count && first_frame) mpctx->video_out->flip_page();
-	   mpctx->num_buffered_frames--;
-
-	   vout_time_usage += (GetTimer() - t2) * 0.000001;
-        }
-//====================== A-V TIMESTAMP CORRECTION: =========================
-
-  adjust_sync_and_print_status(frame_time_remaining, mpctx->time_frame);
-
-//============================ Auto QUALITY ============================
-
-/*Output quality adjustments:*/
-if(auto_quality>0){
-  current_module="autoq";
-//  float total=0.000001f * (GetTimer()-aq_total_time);
-//  if(output_quality<auto_quality && aq_sleep_time>0.05f*total)
-  if(output_quality<auto_quality && aq_sleep_time>0)
-      ++output_quality;
-  else
-//  if(output_quality>0 && aq_sleep_time<-0.05f*total)
-  if(output_quality>1 && aq_sleep_time<0)
-      --output_quality;
-  else
-  if(output_quality>0 && aq_sleep_time<-0.050f) // 50ms
-      output_quality=0;
-//  printf("total: %8.6f  sleep: %8.6f  q: %d\n",(0.000001f*aq_total_time),aq_sleep_time,output_quality);
-  set_video_quality(mpctx->sh_video,output_quality);
-}
-
- if (play_n_frames >= 0 && !frame_time_remaining && blit_frame) {
-     --play_n_frames;
-     if (play_n_frames <= 0) mpctx->eof = PT_NEXT_ENTRY;
- }
-// FIXME: add size based support for -endpos
- if (end_at.type == END_AT_TIME &&
-         !frame_time_remaining && end_at.pos <= mpctx->sh_video->pts)
-     mpctx->eof = PT_NEXT_ENTRY;
-
-} // end if(mpctx->sh_video)
-
-#ifdef CONFIG_DVDNAV
- if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
-   nav_highlight_t hl;
-   mp_dvdnav_get_highlight (mpctx->stream, &hl);
-   osd_set_nav_box (hl.sx, hl.sy, hl.ex, hl.ey);
-   vo_osd_changed (OSDTYPE_DVDNAV);
-
-   if (mp_dvdnav_stream_has_changed(mpctx->stream)) {
-     double ar = -1.0;
-     if (stream_control (mpctx->demuxer->stream,
-                         STREAM_CTRL_GET_ASPECT_RATIO, &ar)
-         != STREAM_UNSUPPORTED)
-       mpctx->sh_video->stream_aspect = ar;
-   }
- }
-#endif
-
-//============================ Handle PAUSE ===============================
-
-  current_module="pause";
-
-    //low cache
-	if (stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0) {
-   		if(mpctx->osd_function == OSD_PAUSE)
-   		{
-		   mpctx->was_paused = 1;
-   		   low_cache=false;
-   		   low_cache_loop();
-   		}else 
-		{
-			mpctx->osd_function = OSD_PAUSE;
-			low_cache=true;
-		}
-	}
-	else if (mpctx->osd_function == OSD_PAUSE) {
-      
-      if(low_cache) 
-	  {
-	  	low_cache=false;
-	  	mpctx->osd_function = OSD_PLAY;
-	  }	  
-      else if(pause_gui)
-	  {
-	  	pause_gui=0;
-	  	mpctx->was_paused = 1;
-	  	PauseAndGotoGUI();
-	  }
-      else 
-	  {
-	  	mpctx->was_paused = 1;
-	  	pause_loop();
-	  }
-  }
-
-
-// handle -sstep
-if(step_sec>0) {
-	mpctx->osd_function=OSD_FFW;
-	rel_seek_secs+=step_sec;
-}
-
- edl_update(mpctx);
-
-#ifdef GEKKO
-  if(!first_frame && blit_frame && !frame_time_remaining )
-  {
-  	first_frame=true;
-	if (restore_seek)
-	{
-		//char cad[100];
-		//sprintf(cad,"seek %d 2",restore_seek);
-		//mp_input_queue_cmd(mp_input_parse_cmd(cad));
-		set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Resume");
-		force_osd();
-		//edl_decision=1;
-		restore_seek=0;
-	}else
-	{
-		clear_osd_msgs();
-		update_osd_msg();
-	}
-	//if (mpctx->sh_audio && mpctx->mixer.muted)mixer_mute(&mpctx->mixer);
-  }
-#endif
-
-//================= Keyboard events, SEEKing ====================
-  
-	if(controlledbygui==2) // new film - we have to exit
-		mpctx->eof=1;
-  
-  current_module="key_events";
-
-{
-  mp_cmd_t* cmd;
-  int brk_cmd = 0;
-  while( !brk_cmd && (cmd = mp_input_get_cmd(0,0,0)) != NULL) {
-      brk_cmd = run_command(mpctx, cmd);
-      mp_cmd_free(cmd);
-      if (brk_cmd == 2)
-	  	goto goto_enable_cache;
-  }
-}
-  
-  mpctx->was_paused = 0;
-    
-   
-  /* Looping. */
-  if(mpctx->eof==1 && mpctx->loop_times>=0) {
-    mp_msg(MSGT_CPLAYER,MSGL_V,"loop_times = %d, eof = %d\n", mpctx->loop_times,mpctx->eof);
-    if(mpctx->loop_times>1) mpctx->loop_times--; else
-    if(mpctx->loop_times==1) mpctx->loop_times=-1;
-    play_n_frames=play_n_frames_mf;
-    mpctx->eof=0;
-    abs_seek_pos=SEEK_ABSOLUTE; rel_seek_secs=seek_to_sec;
-    loop_seek = 1;
-  }
-
-if(rel_seek_secs || abs_seek_pos){
-  if (seek(mpctx, rel_seek_secs, abs_seek_pos) >= 0) {
-        // Set OSD:
-      if(!loop_seek){
-	if( !edl_decision )
-          set_osd_bar(0,"Position",0,100,demuxer_get_percent_pos(mpctx->demuxer));
-      }
-  }
-
-  rel_seek_secs=0;
-  abs_seek_pos=0;
-  loop_seek=0;
-  edl_decision = 0;
-}
-
-
-#ifdef CONFIG_GUI
-      if(use_gui){
-        guiEventHandling();
-	if(mpctx->demuxer->file_format==DEMUXER_TYPE_AVI && mpctx->sh_video && mpctx->sh_video->video.dwLength>2){
-	  // get pos from frame number / total frames
-	  guiIntfStruct.Position=(float)mpctx->d_video->pack_no*100.0f/mpctx->sh_video->video.dwLength;
-	} else {
-          guiIntfStruct.Position=demuxer_get_percent_pos(mpctx->demuxer);
-	}
-	if ( mpctx->sh_video ) guiIntfStruct.TimeSec=mpctx->sh_video->pts;
-	  else if ( mpctx->sh_audio ) guiIntfStruct.TimeSec=playing_audio_pts(mpctx->sh_audio, mpctx->d_audio, mpctx->audio_out);
-	guiIntfStruct.LengthInSec=demuxer_get_time_length(mpctx->demuxer);
-	guiGetEvent( guiReDraw,NULL );
-	guiGetEvent( guiSetVolume,NULL );
-	if(guiIntfStruct.Playing==0) break; // STOP
-	if(guiIntfStruct.Playing==2) mpctx->osd_function=OSD_PAUSE;
-        if ( guiIntfStruct.DiskChanged || guiIntfStruct.NewPlay ) goto goto_next_file;
-#ifdef CONFIG_DVDREAD
-        if ( mpctx->stream->type == STREAMTYPE_DVD )
-	 {
-	  dvd_priv_t * dvdp = mpctx->stream->priv;
-	  guiIntfStruct.DVD.current_chapter=dvd_chapter_from_cell(dvdp,guiIntfStruct.DVD.current_title-1, dvdp->cur_cell)+1;
-	 }
-#endif
-      }
-#endif /* CONFIG_GUI */
-
-} // while(!mpctx->eof)
-//setwatchdogcounter(-1);
-
-}
-goto_next_file:  // don't jump here after ao/vo/getch initialization!
-mp_msg(MSGT_CPLAYER,MSGL_INFO,"\n");
-
-if(benchmark){
-    double tot=video_time_usage+vout_time_usage+audio_time_usage;
-    double total_time_usage;
-    total_time_usage_start=GetTimer()-total_time_usage_start;
-    total_time_usage = total_time_usage_start*0.000001;
-    mp_msg(MSGT_CPLAYER,MSGL_INFO,"\nBENCHMARKs: VC:%8.3fs VO:%8.3fs A:%8.3fs Sys:%8.3fs = %8.3fs\n",
-           video_time_usage,vout_time_usage,audio_time_usage,
-           total_time_usage-tot,total_time_usage);
-    if(total_time_usage>0.0)
-        mp_msg(MSGT_CPLAYER,MSGL_INFO,"BENCHMARK%%: VC:%8.4f%% VO:%8.4f%% A:%8.4f%% Sys:%8.4f%% = %8.4f%%\n",
-               100.0*video_time_usage/total_time_usage,
-               100.0*vout_time_usage/total_time_usage,
-               100.0*audio_time_usage/total_time_usage,
-               100.0*(total_time_usage-tot)/total_time_usage,
-               100.0);
-    if(total_frame_cnt && frame_dropping)
-        mp_msg(MSGT_CPLAYER,MSGL_INFO,"BENCHMARKn: disp: %d (%3.2f fps)  drop: %d (%d%%)  total: %d (%3.2f fps)\n",
-               total_frame_cnt-drop_frame_cnt,
-               (total_time_usage>0.5)?((total_frame_cnt-drop_frame_cnt)/total_time_usage):0,
-               drop_frame_cnt,
-               100*drop_frame_cnt/total_frame_cnt,
-               total_frame_cnt,
-               (total_time_usage>0.5)?(total_frame_cnt/total_time_usage):0);
-}
-
-// time to uninit all, except global stuff:
-printf("mplayer: end film. UNINIT\n");
-
-uninit_player(INITIALIZED_ALL);
-
-//clear subs
-if(mpctx->set_of_sub_size > 0) {
-    current_module="sub_free";
-    for(i = 0; i < mpctx->set_of_sub_size; ++i) {
-        sub_free(mpctx->set_of_subtitles[i]);
-#ifdef CONFIG_ASS
-        if(mpctx->set_of_ass_tracks[i])
-            ass_free_track( mpctx->set_of_ass_tracks[i] );
-#endif
-    }
-    mpctx->set_of_sub_size = 0;
-}
-vo_sub_last = vo_sub=NULL;
-subdata=NULL;
-#ifdef CONFIG_ASS
-ass_track = NULL;
-if(ass_library)
-    ass_clear_fonts(ass_library);
-#endif
-
-#ifdef GEKKO
-if (mpctx->sh_audio) mpctx->audio_out->reset();
-
-if(mpctx->eof == PT_NEXT_SRC || mpctx->eof == PT_STOP || error_playing)
-	save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
-else
-	delete_restore_point(fileplaying);
-
-#endif
-printf("mplayer: exit\n");
-if(controlledbygui == 0)
-	controlledbygui = 1;
-return 1;
-load_next_file:
-
-if(mpctx->eof == PT_NEXT_ENTRY || mpctx->eof == PT_PREV_ENTRY) {
-    mpctx->eof = mpctx->eof == PT_NEXT_ENTRY ? 1 : -1;
-    if(play_tree_iter_step(mpctx->playtree_iter,mpctx->play_tree_step,0) == PLAY_TREE_ITER_ENTRY) {
-        mpctx->eof = 1;
-    } else {
-        play_tree_iter_free(mpctx->playtree_iter);
-        mpctx->playtree_iter = NULL;
-    }
-    mpctx->play_tree_step = 1;
-} else if(mpctx->eof == PT_UP_NEXT || mpctx->eof == PT_UP_PREV) {
-    mpctx->eof = mpctx->eof == PT_UP_NEXT ? 1 : -1;
-    if(mpctx->playtree_iter) {
-        if(play_tree_iter_up_step(mpctx->playtree_iter,mpctx->eof,0) == PLAY_TREE_ITER_ENTRY) {
-            mpctx->eof = 1;
-        } else {
-            play_tree_iter_free(mpctx->playtree_iter);
-            mpctx->playtree_iter = NULL;
-        }
-    }
-} else if (mpctx->eof == PT_STOP) {
-    play_tree_iter_free(mpctx->playtree_iter);
-    mpctx->playtree_iter = NULL;
-} else { // NEXT PREV SRC
-    mpctx->eof = mpctx->eof == PT_PREV_SRC ? -1 : 1;
-}
-
-if(mpctx->eof == 0) mpctx->eof = 1;
-while(mpctx->playtree_iter != NULL) {
-    filename = play_tree_iter_get_file(mpctx->playtree_iter,mpctx->eof);
-    if(filename == NULL) {
-        if(play_tree_iter_step(mpctx->playtree_iter,mpctx->eof,0) != PLAY_TREE_ITER_ENTRY) {
-            play_tree_iter_free(mpctx->playtree_iter);
-            mpctx->playtree_iter = NULL;
-        };
-    } else
-        break;
-}
-
-#ifdef CONFIG_GUI
-if(use_gui && !mpctx->playtree_iter) {
-#ifdef CONFIG_DVDREAD
-    if(!guiIntfStruct.DiskChanged)
-#endif
-        mplEnd();
-}
-#endif
-
-if(use_gui || mpctx->playtree_iter != NULL || player_idle_mode){
-    if(!mpctx->playtree_iter) filename = NULL;
-    mpctx->eof = 0;
-    goto play_next_file;
-}
-
-exit_player_with_rc(EXIT_EOF, 0);
-return 1;
-}
-#endif /* DISABLE_MAIN */
 
 /****************************************************************************
  * Wii hooks
@@ -5086,3 +5020,4 @@ void wiiSetProperty(int command, float value)
 	}
 	mp_input_queue_cmd(cmd);
 }
+#endif

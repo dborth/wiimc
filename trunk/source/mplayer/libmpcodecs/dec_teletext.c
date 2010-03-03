@@ -94,20 +94,10 @@
 // thread as e.g. with DVB teletext
 #include <pthread.h>
 #else
-#ifdef GEKKO
-#define HAVE_PTHREADS 1
-#include <ogc/mutex.h>
-#define pthread_mutex_init(a, b) LWP_MutexInit(a,false)
-#define pthread_mutex_lock(a)    LWP_MutexLock(*a)
-#define pthread_mutex_unlock(a)  LWP_MutexUnlock(*a)
-#define pthread_mutex_destroy(a) LWP_MutexDestroy(*a)
-#define pthread_mutex_t          mutex_t
-#else
 #define pthread_mutex_init(m, p)
 #define pthread_mutex_destroy(m)
 #define pthread_mutex_lock(m)
 #define pthread_mutex_unlock(m)
-#endif
 #endif
 
 #include "dec_teletext.h"
@@ -962,7 +952,6 @@ static void render2text(tt_page* pt,FILE* f,int colored){
         color=-1;bkg=-1;
         fprintf(f,"|\n");
     }
-#if 1
     //for debug
     fprintf(f,"+====================raw=================+\n");
     for(i=0;i<VBI_ROWS;i++){
@@ -976,7 +965,6 @@ static void render2text(tt_page* pt,FILE* f,int colored){
             fprintf(f,"%02x ",dp[i*VBI_COLUMNS+j].lng);
         fprintf(f,"\n");
     }
-#endif
     fprintf(f,"+========================================+\n");
 }
 

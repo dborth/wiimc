@@ -37,6 +37,9 @@
 #include "cfg.h"
 #include "help_mp.h"
 #include "get_path.h"
+#include "mp_core.h"
+#include "mplayer.h"
+#include "libmpcodecs/vd.h"
 #include "libvo/x11_common.h"
 #include "libvo/video_out.h"
 #include "libvo/font_load.h"
@@ -72,7 +75,7 @@ int vcd_seek_to_track(void *vcd, int track);
 guiInterface_t guiIntfStruct;
 int guiWinID=-1;
 
-char * gstrcat( char ** dest,const char * src )
+static char * gstrcat( char ** dest, const char * src )
 {
  char * tmp = NULL;
 
@@ -100,7 +103,7 @@ int gstrcmp( const char * a,const char * b )
  return strcmp( a,b );
 }
 
-int gstrncmp( const char * a,const char * b,int size )
+static int gstrncmp( const char * a, const char * b, int size )
 {
  if ( !a && !b ) return 0;
  if ( !a || !b ) return -1;
@@ -125,7 +128,7 @@ void gfree( void ** p )
  free( *p ); *p=NULL;
 }
 
-void gset( char ** str, const char * what )
+static void gset( char ** str, const char * what )
 {
  if ( *str ) { if ( !strstr( *str,what ) ) { gstrcat( str,"," ); gstrcat( str,what ); }}
    else gstrcat( str,what );
@@ -153,7 +156,7 @@ void gaddlist( char *** list,const char * entry )
  * \brief this replaces a string starting with search by replace.
  * If not found, replace is appended.
  */
-void greplace(char ***list, const char *search, const char *replace)
+static void greplace(char ***list, const char *search, const char *replace)
 {
  int i = 0;
  int len = (search) ? strlen(search) : 0;
@@ -520,15 +523,15 @@ static void remove_vf( char * str )
   }
 }
 
-int guiGetEvent( int type,char * arg )
+int guiGetEvent( int type,void * arg )
 {
   const ao_functions_t *audio_out = NULL;
   const vo_functions_t *video_out = NULL;
   mixer_t *mixer = NULL;
 
- stream_t * stream = (stream_t *) arg;
+ stream_t * stream = arg;
 #ifdef CONFIG_DVDREAD
- dvd_priv_t * dvdp = (dvd_priv_t *) arg;
+ dvd_priv_t * dvdp = arg;
 #endif
 
  if (guiIntfStruct.mpcontext) {
@@ -540,8 +543,8 @@ int guiGetEvent( int type,char * arg )
  switch ( type )
   {
    case guiXEvent:
-        guiIntfStruct.event_struct=(void *)arg;
-        wsEvents( wsDisplay,(XEvent *)arg,NULL );
+        guiIntfStruct.event_struct=arg;
+        wsEvents( wsDisplay,arg,NULL );
         gtkEventHandling();
         break;
    case guiCEvent:
@@ -571,12 +574,12 @@ int guiGetEvent( int type,char * arg )
 	  else wsVisibleWindow( &appMPlayer.subWindow,wsShowWindow );
 	break;
    case guiSetContext:
-	guiIntfStruct.mpcontext=(void *)arg;
+	guiIntfStruct.mpcontext=arg;
    case guiSetDemuxer:
-	guiIntfStruct.demuxer=(void *)arg;
+	guiIntfStruct.demuxer=arg;
 	break;
    case guiSetAfilter:
-	guiIntfStruct.afilter=(void *)arg;
+	guiIntfStruct.afilter=arg;
 	break;
    case guiSetShVideo:
 	 {
@@ -672,7 +675,7 @@ int guiGetEvent( int type,char * arg )
 	guiIntfStruct.sh_video=arg;
 	if ( arg )
 	 {
-	  sh_video_t * sh = (sh_video_t *)arg;
+	  sh_video_t * sh = arg;
 	  guiIntfStruct.FPS=sh->fps;
 	 }
 
@@ -781,7 +784,7 @@ int guiGetEvent( int type,char * arg )
 	     }
 	 }
 
-	if ( !video_driver_list && !video_driver_list[0] ) { gtkMessageBox( GTK_MB_FATAL,MSGTR_IDFGCVD ); exit_player( "gui init" ); }
+	if ( !video_driver_list && !video_driver_list[0] ) { gtkMessageBox( GTK_MB_FATAL,MSGTR_IDFGCVD ); exit_player(EXIT_ERROR); }
 
 	{
 	 int i = 0;
@@ -1196,7 +1199,7 @@ void * gtkSet( int cmd,float fparam, void * vparam )
 
 //This function adds/inserts one file into the gui playlist
 
-int import_file_into_gui(char* temp, int insert)
+static int import_file_into_gui(char* temp, int insert)
 {
   char *filename, *pathname;
   plItem * item;

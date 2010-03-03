@@ -776,7 +776,6 @@ err_out_release_num:
 static void codecs_free(codecs_t* codecs,int count) {
 	int i;
 		for ( i = 0; i < count; i++)
-		{
 			if ( codecs[i].name ) {
 				if( codecs[i].name )
 					free(codecs[i].name);
@@ -789,7 +788,6 @@ static void codecs_free(codecs_t* codecs,int count) {
 				if( codecs[i].drv )
 					free(codecs[i].drv);
 			}
-		}
 		if (codecs)
 			free(codecs);
 }
@@ -797,20 +795,20 @@ static void codecs_free(codecs_t* codecs,int count) {
 void codecs_uninit_free(void) {
 	if (video_codecs)
 	codecs_free(video_codecs,nr_vcodecs);
-	nr_vcodecs=0;
 	video_codecs=NULL;
 	if (audio_codecs)
 	codecs_free(audio_codecs,nr_acodecs);
-	nr_acodecs=0;
 	audio_codecs=NULL;
 }
 
+#ifdef GEKKO
 void load_builtin_codecs() {
 	video_codecs = builtin_video_codecs;
 	audio_codecs = builtin_audio_codecs;
 	nr_vcodecs = sizeof(builtin_video_codecs)/sizeof(codecs_t);
 	nr_acodecs = sizeof(builtin_audio_codecs)/sizeof(codecs_t);
 }
+#endif
 
 codecs_t *find_audio_codec(unsigned int fourcc, unsigned int *fourccmap,
 		codecs_t *start, int force)

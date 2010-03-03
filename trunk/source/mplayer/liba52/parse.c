@@ -67,7 +67,7 @@ a52_state_t * a52_init (uint32_t mm_accel)
 #if defined(__MINGW32__) && defined(HAVE_SSE)
     state->samples = av_malloc(256 * 12 * sizeof (sample_t));
 #else
-    state->samples = memalign (16, ((256 * 12 * sizeof (sample_t))+15) &(~15));
+    state->samples = memalign (16, 256 * 12 * sizeof (sample_t));
 #endif
     if(((int)state->samples%16) && (mm_accel&MM_ACCEL_X86_SSE)){
       mm_accel &=~MM_ACCEL_X86_SSE;

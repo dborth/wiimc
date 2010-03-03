@@ -20,7 +20,7 @@ OBJS-$(CONFIG_AAC_DEMUXER)               += raw.o id3v1.o id3v2.o
 OBJS-$(CONFIG_AC3_DEMUXER)               += raw.o
 OBJS-$(CONFIG_AC3_MUXER)                 += raw.o
 OBJS-$(CONFIG_ADTS_MUXER)                += adtsenc.o
-OBJS-$(CONFIG_AEA_DEMUXER)               += aea.o
+OBJS-$(CONFIG_AEA_DEMUXER)               += aea.o raw.o
 OBJS-$(CONFIG_AIFF_DEMUXER)              += aiffdec.o riff.o raw.o
 OBJS-$(CONFIG_AIFF_MUXER)                += aiffenc.o riff.o
 OBJS-$(CONFIG_AMR_DEMUXER)               += amr.o
@@ -35,8 +35,8 @@ OBJS-$(CONFIG_ASS_DEMUXER)               += assdec.o
 OBJS-$(CONFIG_ASS_MUXER)                 += assenc.o
 OBJS-$(CONFIG_AU_DEMUXER)                += au.o raw.o
 OBJS-$(CONFIG_AU_MUXER)                  += au.o
-OBJS-$(CONFIG_AVI_DEMUXER)               += avidec.o riff.o
-OBJS-$(CONFIG_AVI_MUXER)                 += avienc.o riff.o
+OBJS-$(CONFIG_AVI_DEMUXER)               += avidec.o riff.o avi.o
+OBJS-$(CONFIG_AVI_MUXER)                 += avienc.o riff.o avi.o
 OBJS-$(CONFIG_AVISYNTH)                  += avisynth.o
 OBJS-$(CONFIG_AVM2_MUXER)                += swfenc.o
 OBJS-$(CONFIG_AVS_DEMUXER)               += avs.o vocdec.o voc.o
@@ -214,10 +214,11 @@ OBJS-$(CONFIG_SDP_DEMUXER)               += rtsp.o        \
                                             rdt.o         \
                                             rtp.o         \
                                             rtpdec.o      \
+                                            rtpdec_amr.o  \
+                                            rtpdec_asf.o  \
                                             rtpdec_h263.o \
-                                            rtp_asf.o     \
-                                            rtp_h264.o    \
-                                            rtp_vorbis.o
+                                            rtpdec_h264.o \
+                                            rtpdec_vorbis.o
 OBJS-$(CONFIG_SEGAFILM_DEMUXER)          += segafilm.o
 OBJS-$(CONFIG_SHORTEN_DEMUXER)           += raw.o id3v2.o
 OBJS-$(CONFIG_SIFF_DEMUXER)              += siff.o
@@ -249,7 +250,7 @@ OBJS-$(CONFIG_WAV_MUXER)                 += wav.o riff.o
 OBJS-$(CONFIG_WC3_DEMUXER)               += wc3movie.o
 OBJS-$(CONFIG_WSAUD_DEMUXER)             += westwood.o
 OBJS-$(CONFIG_WSVQA_DEMUXER)             += westwood.o
-OBJS-$(CONFIG_WV_DEMUXER)                += wv.o
+OBJS-$(CONFIG_WV_DEMUXER)                += wv.o apetag.o id3v1.o
 OBJS-$(CONFIG_XA_DEMUXER)                += xa.o
 OBJS-$(CONFIG_YUV4MPEGPIPE_MUXER)        += yuv4mpeg.o
 OBJS-$(CONFIG_YUV4MPEGPIPE_DEMUXER)      += yuv4mpeg.o

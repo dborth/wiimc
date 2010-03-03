@@ -121,7 +121,7 @@ static dvdnav_priv_t * new_dvdnav_stream(char * filename) {
 
   if(1)	//from vlc: if not used dvdnav from cvs will fail
   {
-    int len=2048, event=1;
+    int len, event;
     char buf[2048];
 
     dvdnav_get_next_block(priv->dvdnav,buf,&event,&len);
@@ -132,12 +132,10 @@ static dvdnav_priv_t * new_dvdnav_stream(char * filename) {
   dvdnav_set_readahead_flag(priv->dvdnav, 0);
   if(dvdnav_set_PGC_positioning_flag(priv->dvdnav, 1) != DVDNAV_STATUS_OK)
     mp_msg(MSGT_OPEN,MSGL_ERR,"stream_dvdnav, failed to set PGC positioning\n");
-#if 1
   /* report the title?! */
   if (dvdnav_get_title_string(priv->dvdnav,&title_str)==DVDNAV_STATUS_OK) {
     mp_msg(MSGT_IDENTIFY, MSGL_INFO,"Title: '%s'\n",title_str);
   }
-#endif
 
   //dvdnav_event_clear(priv);
 
@@ -590,7 +588,7 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
 
   if(p->device) filename = p->device;
   else if(dvd_device) filename= dvd_device;
-  else filename = DEFAULT_DVD_DEVICE;  
+  else filename = DEFAULT_DVD_DEVICE;
   if(!(priv=new_dvdnav_stream(filename))) {
     mp_msg(MSGT_OPEN,MSGL_ERR,MSGTR_CantOpenDVD,filename, strerror(errno));
     return STREAM_UNSUPPORTED;

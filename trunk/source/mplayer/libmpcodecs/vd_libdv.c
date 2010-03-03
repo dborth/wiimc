@@ -35,8 +35,9 @@
 #include "libmpdemux/stheader.h"
 
 #include "vd_internal.h"
+#include "vd_libdv.h"
 
-static vd_info_t info =
+static const vd_info_t info =
 {
 	"Raw DV Video Decoder",
 	"libdv",

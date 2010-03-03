@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "config.h"
 #include "mp_msg.h"
 #include "get_path.h"
 
@@ -47,8 +48,9 @@
 char *get_path(const char *filename){
 	char *homedir;
 	char *buff;
-#if defined (__MINGW32__) || defined (GEKKO)
-	//static char *config_dir = "/mplayer";
+#ifdef __MINGW32__
+	static char *config_dir = "/mplayer";
+#elif defined (GEKKO)
 	static char *config_dir = "/";
 #else
 	static char *config_dir = "/.mplayer";

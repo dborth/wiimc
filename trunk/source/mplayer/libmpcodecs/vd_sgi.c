@@ -37,7 +37,7 @@
 #define OUT_PIXEL_STRIDE 3 /* RGB */
 
 
-static vd_info_t info =
+static const vd_info_t info =
 {
   "SGI Image decoder",
   "sgi",
@@ -84,7 +84,7 @@ control(sh_video_t* sh, int cmd, void *arg, ...)
 static int
 init(sh_video_t *sh)
 {
-  sh->context = (SGIInfo *) calloc(1, sizeof(SGIInfo));
+  sh->context = calloc(1, sizeof(SGIInfo));
   last_x = -1;
 
   return 1;
@@ -341,4 +341,3 @@ mp_image_t *decode(sh_video_t *sh, void *raw, int len, int flags)
 
   return mpi;
 }
-

@@ -63,7 +63,7 @@ static sample_t a52_level = 1;
 float a52_drc_level = 1.0;
 static int a52_drc_action = DRC_NO_ACTION;
 
-static ad_info_t info =
+static const ad_info_t info =
 {
 	"AC3 decoding with liba52",
 	"liba52",
@@ -74,7 +74,8 @@ static ad_info_t info =
 
 LIBAD_EXTERN(liba52)
 
-int a52_fillbuff(sh_audio_t *sh_audio){
+static int a52_fillbuff(sh_audio_t *sh_audio)
+{
 int length=0;
 int flags=0;
 int sample_rate=0;
@@ -138,7 +139,8 @@ int channels=0;
   return (flags&A52_LFE) ? (channels+1) : channels;
 }
 
-sample_t dynrng_call (sample_t c, void *data) {
+static sample_t dynrng_call (sample_t c, void *data)
+{
 //	fprintf(stderr, "(%lf, %lf): %lf\n", (double)c, (double)a52_drc_level, (double)pow((double)c, a52_drc_level));
 	return pow((double)c, a52_drc_level);
 }

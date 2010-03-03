@@ -381,8 +381,17 @@ static inline int url_is_streamed(ByteIOContext *s)
     return s->is_streamed;
 }
 
-/** @note when opened as read/write, the buffers are only used for
-    writing */
+/**
+ * Creates and initializes a ByteIOContext for accessing the
+ * resource referenced by the URLContext h.
+ * @note When the URLContext h has been opened in read+write mode, the
+ * ByteIOContext can be used only for writing.
+ *
+ * @param s Used to return the pointer to the created ByteIOContext.
+ * In case of failure the pointed to value is set to NULL.
+ * @return 0 in case of success, a negative value corresponding to an
+ * AVERROR code in case of failure
+ */
 int url_fdopen(ByteIOContext **s, URLContext *h);
 
 /** @warning must be called before any I/O */
@@ -395,9 +404,21 @@ int url_setbufsize(ByteIOContext *s, int buf_size);
 int url_resetbuf(ByteIOContext *s, int flags);
 #endif
 
-/** @note when opened as read/write, the buffers are only used for
-    writing */
+/**
+ * Creates and initializes a ByteIOContext for accessing the
+ * resource indicated by url.
+ * @note When the resource indicated by url has been opened in
+ * read+write mode, the ByteIOContext can be used only for writing.
+ *
+ * @param s Used to return the pointer to the created ByteIOContext.
+ * In case of failure the pointed to value is set to NULL.
+ * @param flags flags which control how the resource indicated by url
+ * is to be opened
+ * @return 0 in case of success, a negative value corresponding to an
+ * AVERROR code in case of failure
+ */
 int url_fopen(ByteIOContext **s, const char *url, int flags);
+
 int url_fclose(ByteIOContext *s);
 URLContext *url_fileno(ByteIOContext *s);
 

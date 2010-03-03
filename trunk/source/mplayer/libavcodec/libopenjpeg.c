@@ -105,7 +105,6 @@ static int libopenjpeg_decode_frame(AVCodecContext *avctx,
 
     // Decode the codestream
     image = opj_decode_with_info(dec, stream, NULL);
-    //image = opj_decode(dec, stream);
     opj_cio_close(stream);
     if(!image) {
         av_log(avctx, AV_LOG_ERROR, "Error decoding codestream.\n");

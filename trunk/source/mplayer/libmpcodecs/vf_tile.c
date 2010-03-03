@@ -84,7 +84,7 @@ struct vf_priv_s {
 };
 
 
-static int config(struct vf_instance_s* vf,
+static int config(struct vf_instance *vf,
                   int width, int height, int d_width, int d_height,
 	          unsigned int flags, unsigned int outfmt){
 
@@ -107,7 +107,7 @@ static int config(struct vf_instance_s* vf,
 }
 
 /* Filter handler */
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 {
     mp_image_t        *dmpi;
     struct vf_priv_s  *priv;
@@ -192,14 +192,14 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
     }
 }
 
-static void uninit(struct vf_instance_s* vf)
+static void uninit(struct vf_instance *vf)
 {
     /* free local data */
     free(vf->priv);
 }
 
 /* rgb/bgr 15->32 supported & some Yxxx */
-static int query_format(struct vf_instance_s* vf, unsigned int fmt)
+static int query_format(struct vf_instance *vf, unsigned int fmt)
 {
 	switch (fmt) {
         /* rgb 15 -> 32 bit */
@@ -231,7 +231,7 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt)
  * If the value is less then 0 def_val is used.
  * Return 0 for ok
  *
- * Look below ( in open(...) ) for a use ...
+ * Look below ( in vf_open(...) ) for a use ...
  */
 static int parse_int(char **s, int *rt, int def_val)
 {
@@ -266,7 +266,7 @@ static int parse_int(char **s, int *rt, int def_val)
 }
 
 /* Main entry funct for the filter */
-static int open(vf_instance_t *vf, char* args)
+static int vf_open(vf_instance_t *vf, char *args)
 {
     struct vf_priv_s *p;
     int              er;
@@ -323,6 +323,6 @@ const vf_info_t vf_info_tile = {
     "tile",
     "Daniele Forghieri",
     "",
-    open,
+    vf_open,
     NULL
 };

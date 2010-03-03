@@ -30,11 +30,8 @@
 #include "stream/stream.h"
 #include "demuxer.h"
 #include "stheader.h"
-
+#include "demux_ogg.h"
 #include "aviheader.h"
-
-demuxer_t* init_avi_with_ogg(demuxer_t* demuxer);
-int demux_ogg_open(demuxer_t* demuxer);
 
 extern const demuxer_desc_t demuxer_desc_avi_ni;
 extern const demuxer_desc_t demuxer_desc_avi_nini;
@@ -43,7 +40,9 @@ extern const demuxer_desc_t demuxer_desc_avi_nini;
 int pts_from_bps=1;
 
 // Select ds from ID
-demux_stream_t* demux_avi_select_stream(demuxer_t *demux,unsigned int id){
+static demux_stream_t *demux_avi_select_stream(demuxer_t *demux,
+                                               unsigned int id)
+{
   int stream_id=avi_stream_id(id);
 
 
@@ -129,8 +128,8 @@ static int demux_avi_read_packet(demuxer_t *demux,demux_stream_t *ds,unsigned in
   int skip;
   float pts=0;
 
-  if(!ds || !demux)return 0;
   mp_dbg(MSGT_DEMUX,MSGL_DBG3,"demux_avi.read_packet: %X\n",id);
+
   if(ds==demux->audio){
       if(priv->pts_corrected==0){
           if(priv->pts_has_video){
@@ -306,7 +305,8 @@ do{
 // return value:
 //     0 = EOF or no stream found
 //     1 = successfully read a packet
-int demux_avi_fill_buffer_ni(demuxer_t *demux,demux_stream_t* ds){
+static int demux_avi_fill_buffer_ni(demuxer_t *demux, demux_stream_t *ds)
+{
 avi_priv_t *priv=demux->priv;
 unsigned int id=0;
 unsigned int len;
@@ -374,7 +374,8 @@ do{
 // return value:
 //     0 = EOF or no stream found
 //     1 = successfully read a packet
-int demux_avi_fill_buffer_nini(demuxer_t *demux,demux_stream_t* ds){
+static int demux_avi_fill_buffer_nini(demuxer_t *demux, demux_stream_t *ds)
+{
 avi_priv_t *priv=demux->priv;
 unsigned int id=0;
 unsigned int len;
@@ -429,8 +430,6 @@ do{
 int index_mode=-1;  // -1=untouched  0=don't use index  1=use (generate) index
 char *index_file_save = NULL, *index_file_load = NULL;
 int force_ni=0;     // force non-interleaved AVI parsing
-
-void read_avi_header(demuxer_t *demuxer,int index_mode);
 
 static demuxer_t* demux_open_avi(demuxer_t* demuxer){
     demux_stream_t *d_audio=demuxer->audio;
@@ -533,14 +532,15 @@ static demuxer_t* demux_open_avi(demuxer_t* demuxer){
   // calculating audio/video bitrate:
   if(priv->idx_size>0){
     // we have index, let's count 'em!
+    AVIINDEXENTRY *idx = priv->idx;
     int64_t vsize=0;
     int64_t asize=0;
     size_t vsamples=0;
     size_t asamples=0;
     int i;
     for(i=0;i<priv->idx_size;i++){
-      int id=avi_stream_id(((AVIINDEXENTRY *)priv->idx)[i].ckid);
-      int len=((AVIINDEXENTRY *)priv->idx)[i].dwChunkLength;
+      int id=avi_stream_id(idx[i].ckid);
+      unsigned len=idx[i].dwChunkLength;
       if(sh_video->ds->id == id) {
         vsize+=len;
         ++vsamples;
@@ -585,7 +585,9 @@ static demuxer_t* demux_open_avi(demuxer_t* demuxer){
 }
 
 
-void demux_seek_avi(demuxer_t *demuxer,float rel_seek_secs,float audio_delay,int flags){
+static void demux_seek_avi(demuxer_t *demuxer, float rel_seek_secs,
+                           float audio_delay, int flags)
+{
     avi_priv_t *priv=demuxer->priv;
     demux_stream_t *d_audio=demuxer->audio;
     demux_stream_t *d_video=demuxer->video;
@@ -758,18 +760,15 @@ void demux_seek_avi(demuxer_t *demuxer,float rel_seek_secs,float audio_delay,int
 }
 
 
-void demux_close_avi(demuxer_t *demuxer) {
+static void demux_close_avi(demuxer_t *demuxer)
+{
   avi_priv_t* priv=demuxer->priv;
 
   if(!priv)
-  {
     return;
-  }
 
-  if(priv->idx && priv->idx_size > 0 )
-  {
+  if(priv->idx_size > 0)
     free(priv->idx);
-  }
   free(priv);
 }
 

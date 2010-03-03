@@ -37,53 +37,6 @@ extern m_config_t* mconfig;
 ////// List utils
 
 void
-asx_list_add(void* list_ptr,void* entry){
-  void** list = *(void***)list_ptr;
-  int c = 0;
-
-  if(list != NULL)
-    for( ; list[c] != NULL; c++) ;
-
-  list = (void*)realloc(list,sizeof(void*)*(c+2));
-
-  list[c] = entry;
-  list[c+1] = NULL;
-
-  *(void***)list_ptr = list;
-}
-
-
-void
-asx_list_remove(void* list_ptr,void* entry,ASX_FreeFunc free_func) {
-  void** list = *(void***)list_ptr;
-  int c,e = -1;
-
-  if(list == NULL) return;
-
-  for(c = 0 ; list[c] != NULL; c++){
-    if(list[c] == entry) e = c;
-  }
-
-  if(e == -1) return; // Not found
-
-  if(free_func != NULL) free_func(list[e]);
-
-  if(c == 1) { // Only one entry, we drop all
-    free(list);
-    *(void**)list_ptr = NULL;
-    return;
-  }
-
-  if(c > e) // If c==e the memmove is not needed
-    memmove(list+e,list+e+1,(c-e)*sizeof(void*));
-
-  list = (void*)realloc(list,(c-1)*sizeof(void*));
-  list[c-1] = NULL;
-
-  *(void***)list_ptr = list;
-}
-
-void
 asx_list_free(void* list_ptr,ASX_FreeFunc free_func) {
   void** ptr = *(void***)list_ptr;
   if(ptr == NULL) return;
@@ -186,7 +139,7 @@ asx_parse_attribs(ASX_Parser_t* parser,char* buffer,char*** _attribs) {
     val[ptr2-ptr1] = '\0';
     n_attrib++;
 
-    attribs = (char**)realloc(attribs,(2*n_attrib+1)*sizeof(char*));
+    attribs = realloc(attribs, (2 * n_attrib + 1) * sizeof(char*));
     attribs[n_attrib*2-2] = attrib;
     attribs[n_attrib*2-1] = val;
 
@@ -241,7 +194,7 @@ asx_get_element(ASX_Parser_t* parser,char** _buffer,
 	memmove(parser->ret_stack,parser->ret_stack+i, (parser->ret_stack_size - i)*sizeof(ASX_LineSave_t));
       parser->ret_stack_size -= i;
       if(parser->ret_stack_size > 0)
-	parser->ret_stack = (ASX_LineSave_t*)realloc(parser->ret_stack,parser->ret_stack_size*sizeof(ASX_LineSave_t));
+	parser->ret_stack = realloc(parser->ret_stack,parser->ret_stack_size*sizeof(ASX_LineSave_t));
       else {
 	free(parser->ret_stack);
 	parser->ret_stack = NULL;
@@ -422,7 +375,7 @@ asx_get_element(ASX_Parser_t* parser,char** _buffer,
 
   parser->last_body = body;
   parser->ret_stack_size++;
-  parser->ret_stack = (ASX_LineSave_t*)realloc(parser->ret_stack,parser->ret_stack_size*sizeof(ASX_LineSave_t));
+  parser->ret_stack = realloc(parser->ret_stack,parser->ret_stack_size*sizeof(ASX_LineSave_t));
   if(parser->ret_stack_size > 1)
     memmove(parser->ret_stack+1,parser->ret_stack,(parser->ret_stack_size-1)*sizeof(ASX_LineSave_t));
   parser->ret_stack[0].buffer = ret;

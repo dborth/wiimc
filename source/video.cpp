@@ -29,8 +29,8 @@ unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
 int whichfb = 0; // Switch
 GXRModeObj *vmode; // Menu video mode
 u8 * videoScreenshot = NULL;
-int screenheight;
-int screenwidth;
+int screenheight = 480;
+int screenwidth = 640;
 bool widescreenMode = false;
 u32 FrameTimer = 0;
 bool drawGui = false;
@@ -249,14 +249,10 @@ InitVideo ()
 	VIDEO_Init();
 	vmode = VIDEO_GetPreferredMode(NULL); // get default video mode
 
-	screenheight = 480;
-	screenwidth = 640;
-
 	if(CONF_GetAspectRatio() == CONF_ASPECT_16_9)
 	{
-		//widescreenMode = true;
-		vmode->viWidth = VI_MAX_WIDTH_NTSC;
-		//screenwidth = 852;
+		vmode->viWidth = 678;
+		vmode->viXOrigin = (VI_MAX_WIDTH_PAL - 678) / 2;
 	}
 
 	VIDEO_Configure (vmode);
@@ -296,7 +292,6 @@ InitVideo ()
 	GX_SetDispCopyDst(vmode->fbWidth,xfbHeight);
 	GX_SetCopyFilter(vmode->aa,vmode->sample_pattern,GX_TRUE,vmode->vfilter);
 	GX_SetFieldMode(vmode->field_rendering,((vmode->viHeight==2*vmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
-
 }
 
 }

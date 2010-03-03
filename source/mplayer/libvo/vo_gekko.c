@@ -33,6 +33,7 @@
 #include "help_mp.h"
 #include "video_out.h"
 #include "video_out_internal.h"
+#include "aspect.h"
 #include "mp_fifo.h"
 #include "osd.h"
 #include "sub.h"
@@ -95,8 +96,6 @@ void vo_draw_alpha_gekko(int w, int h, unsigned char* src, unsigned char *srca,
 		tmp += dststride;
 		tmpa += dststride;
 	}
-	//w=srcstride=dststride;
-	//h=h1;
 
 	src = buf;
 	srca = bufa;
@@ -162,39 +161,31 @@ void vo_draw_alpha_gekko(int w, int h, unsigned char* src, unsigned char *srca,
 	free(bufa);
 }
 
-static void draw_alpha(int x0, int y0, int w, int h, unsigned char *src,
-		unsigned char *srca, int stride)
+static void draw_alpha(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
 {
-	int p;
-
-	//p=pitch[0];
-	p = image_width;
-	p = (p / 16);
+	int p = image_width / 16;
 	if (p % 2)
 		p++;
 	p = p * 16;
 	y0 = ((int) (y0 / 8.0)) * 8;
 	y0-=8;
 
-	vo_draw_alpha_gekko(w, h, src, srca, stride, GetYtexture() + (y0 * p),
-			pitch[0], x0);
+	vo_draw_alpha_gekko(w, h, src, srca, stride, GetYtexture() + (y0 * p), pitch[0], x0);
 }
 
-static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x,
-		int y)
+static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y)
 {
 	if (y == 0)
 	{
 		GX_ResetTextureYUVPointers();
+
 		if (stride[0] != pitch[0])
 		{
-			//printf("w: %i  h: %i  st0: %i  iw: %i ih: %i\n",w,h,stride[0],image_width , image_height);
 			pitch[0] = stride[0];
 			pitch[1] = stride[1];
 			pitch[2] = stride[2];
-			GX_UpdatePitch(image_width, pitch);
+			GX_UpdatePitch(pitch);
 		}
-
 	}
 	GX_FillTextureYUV(h, image);
 	return 0;
@@ -212,12 +203,11 @@ static void flip_page(void)
 
 static int draw_frame(uint8_t *src[])
 {
-	return 0;
+	return VO_ERROR;
 }
 
 static int inline query_format(uint32_t format)
 {
-
 	switch (format)
 	{
 		case IMGFMT_YV12:
@@ -225,7 +215,7 @@ static int inline query_format(uint32_t format)
 					| VFCAP_HWSCALE_UP | VFCAP_HWSCALE_DOWN
 					| VFCAP_ACCEPT_STRIDE;
 		default:
-			return 0;
+			return VO_FALSE;
 	}
 }
 
@@ -233,13 +223,13 @@ void reinit_video()
 {
 	GX_StartYUV(image_width, image_height, gx_width / 2, gx_height / 2 ); 
 	GX_ConfigTextureYUV(image_width, image_height, pitch);	
-} 
+}
 
 static int config(uint32_t width, uint32_t height, uint32_t d_width,
           uint32_t d_height, uint32_t flags, char *title,
           uint32_t format)
 {
-	float sar, par, iar;
+	float sar, par;
 
 	image_width = width;
 	image_height = ((int) ((height / 8.0))) * 8;
@@ -253,28 +243,19 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	else
 		sar = 4.0f / 3.0f;
 
-	iar = (float) d_width / (float) d_height;
 	par = (float) d_width / (float) d_height;
 	par *= (float) vmode->fbWidth / (float) vmode->xfbHeight;
 	par /= sar;
 
-	if (iar > sar)
-	{
-		width = vmode->viWidth;
-		height = (float) width / par;
-	}
-	else
-	{
-		height = vmode->viHeight;
-		width = (float) height * par + vmode->viWidth - vmode->fbWidth;
-	}
+	gx_width = vmode->viWidth;
+	gx_height = (float) gx_width / par;
 
-	gx_width = width;
-	gx_height = height;
-
-	//  image_height = orig_height;
+	if(gx_height > vmode->viHeight)
+	{
+		gx_height = vmode->viHeight;
+		gx_width = (float) gx_height * par + (vmode->viWidth - vmode->fbWidth)*2;
+	}
 	reinit_video();
-	//printf("mplayer video inited\n");
 	return 0;
 }
 
@@ -293,7 +274,6 @@ static int preinit(const char *arg)
 	vo_screenheight = screenheight;
 	vo_screenwidth = screenwidth;
 	vo_fs=1;
-
 	return 0;
 }
 
@@ -302,8 +282,13 @@ static int control(uint32_t request, void *data, ...)
 	switch (request)
 	{
 		case VOCTRL_QUERY_FORMAT:
-			return query_format(*((uint32_t*) data));
+			return query_format(*((uint32_t *)data));
+		case VOCTRL_UPDATE_SCREENINFO:
+			vo_screenwidth = screenwidth;
+			vo_screenheight = screenheight;
+			aspect_save_screenres(vo_screenwidth, vo_screenheight);
+			return VO_TRUE;
+		default:
+			return VO_NOTIMPL;
 	}
-
-	return VO_NOTIMPL;
 }

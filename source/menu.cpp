@@ -3531,6 +3531,7 @@ static void SetupPlaybar()
 	videobarSkipBackwardBtn->SetImageOver(videobarSkipBackwardOverImg);
 	videobarSkipBackwardBtn->SetIcon(videobarSkipBackwardIcon);
 	videobarSkipBackwardBtn->SetTrigger(playbarTrigA);
+	videobarSkipBackwardBtn->SetSelectable(false);
 	videobarSkipBackwardBtn->SetUpdateCallback(VideoSkipBackwardCallback);
 	videobarSkipBackwardBtn->SetEffectGrow();
 	
@@ -3541,6 +3542,7 @@ static void SetupPlaybar()
 	videobarRewindBtn->SetImageOver(videobarRewindOverImg);
 	videobarRewindBtn->SetIcon(videobarRewindIcon);
 	videobarRewindBtn->SetTrigger(playbarTrigA);
+	videobarRewindBtn->SetSelectable(false);
 	videobarRewindBtn->SetUpdateCallback(VideoRewindCallback);
 	videobarRewindBtn->SetEffectGrow();
 	
@@ -3551,6 +3553,7 @@ static void SetupPlaybar()
 	videobarPauseBtn->SetImageOver(videobarPauseOverImg);
 	videobarPauseBtn->SetIcon(videobarPauseIcon);
 	videobarPauseBtn->SetTrigger(playbarTrigA);
+	videobarPauseBtn->SetSelectable(false);
 	videobarPauseBtn->SetUpdateCallback(VideoPauseCallback);
 	videobarPauseBtn->SetEffectGrow();
 	
@@ -3561,6 +3564,7 @@ static void SetupPlaybar()
 	videobarFastForwardBtn->SetImageOver(videobarFastForwardOverImg);
 	videobarFastForwardBtn->SetIcon(videobarFastForwardIcon);
 	videobarFastForwardBtn->SetTrigger(playbarTrigA);
+	videobarFastForwardBtn->SetSelectable(false);
 	videobarFastForwardBtn->SetUpdateCallback(VideoFastForwardCallback);
 	videobarFastForwardBtn->SetEffectGrow();
 	
@@ -3571,6 +3575,7 @@ static void SetupPlaybar()
 	videobarSkipForwardBtn->SetImageOver(videobarSkipForwardOverImg);
 	videobarSkipForwardBtn->SetIcon(videobarSkipForwardIcon);
 	videobarSkipForwardBtn->SetTrigger(playbarTrigA);
+	videobarSkipForwardBtn->SetSelectable(false);
 	videobarSkipForwardBtn->SetUpdateCallback(VideoSkipForwardCallback);
 	videobarSkipForwardBtn->SetEffectGrow();
 	

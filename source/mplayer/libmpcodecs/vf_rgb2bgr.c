@@ -54,14 +54,14 @@ static unsigned int getfmt(unsigned int outfmt,int forced){
     return 0;
 }
 
-static int config(struct vf_instance_s* vf,
+static int config(struct vf_instance *vf,
         int width, int height, int d_width, int d_height,
 	unsigned int flags, unsigned int outfmt){
     vf->priv->fmt=getfmt(outfmt,vf->priv->forced);
     return vf_next_config(vf,width,height,d_width,d_height,flags,vf->priv->fmt);
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
     mp_image_t *dmpi;
 
     // hope we'll get DR buffer:
@@ -94,13 +94,13 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
 
 //===========================================================================//
 
-static int query_format(struct vf_instance_s* vf, unsigned int outfmt){
+static int query_format(struct vf_instance *vf, unsigned int outfmt){
     unsigned int fmt=getfmt(outfmt,vf->priv->forced);
     if(!fmt) return 0;
     return vf_next_query_format(vf,fmt) & (~VFCAP_CSP_SUPPORTED_BY_HW);
 }
 
-static int open(vf_instance_t *vf, char* args){
+static int vf_open(vf_instance_t *vf, char *args){
     vf->config=config;
     vf->put_image=put_image;
     vf->query_format=query_format;
@@ -114,7 +114,7 @@ const vf_info_t vf_info_rgb2bgr = {
     "rgb2bgr",
     "A'rpi",
     "",
-    open,
+    vf_open,
     NULL
 };
 

@@ -25,7 +25,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 #include <fcntl.h>
-#if !defined(__MINGW32__) && !defined(GEKKO)
+#ifndef __MINGW32__
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #endif

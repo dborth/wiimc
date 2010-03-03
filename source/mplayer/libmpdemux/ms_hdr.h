@@ -19,6 +19,8 @@
 #ifndef MPLAYER_MS_HDR_H
 #define MPLAYER_MS_HDR_H
 
+#include "config.h"
+
 #ifndef _WAVEFORMATEX_
 #define _WAVEFORMATEX_
 typedef struct __attribute__((__packed__)) _WAVEFORMATEX {
@@ -31,6 +33,17 @@ typedef struct __attribute__((__packed__)) _WAVEFORMATEX {
   unsigned short  cbSize;
 } WAVEFORMATEX, *PWAVEFORMATEX, *NPWAVEFORMATEX, *LPWAVEFORMATEX;
 #endif /* _WAVEFORMATEX_ */
+
+#ifndef _WAVEFORMATEXTENSIBLE_
+#define _WAVEFORMATEXTENSIBLE_
+typedef struct __attribute__((__packed__)) _WAVEFORMATEXTENSIBLE {
+    WAVEFORMATEX   wf;
+    unsigned short wValidBitsPerSample;
+    unsigned int   dwChannelMask;
+    unsigned int   SubFormat; // Only interested in first 32 bits of guid
+    unsigned int   _guid_remainder[3];
+} WAVEFORMATEXTENSIBLE;
+#endif /* _WAVEFORMATEXTENSIBLE_ */
 
 #ifndef _MPEGLAYER3WAVEFORMAT_
 #define _MPEGLAYER3WAVEFORMAT_

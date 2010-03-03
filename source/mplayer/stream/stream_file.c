@@ -85,24 +85,13 @@ static int seek_forward(stream_t *s,off_t newpos) {
   return 1;
 }
 
-off_t get_filesize(char *FileName)
-{
-    struct stat file;
-    if(!stat(FileName,&file))
-    {
-        return file.st_size;
-    }
-    return -1;
-}
-
 static int control(stream_t *s, int cmd, void *arg) {
   switch(cmd) {
     case STREAM_CTRL_GET_SIZE: {
       off_t size;
 
-      //size = lseek(s->fd, 0, SEEK_END);
-      //lseek(s->fd, s->pos, SEEK_SET);
-      size = get_filesize(s->url);
+      size = lseek(s->fd, 0, SEEK_END);
+      lseek(s->fd, s->pos, SEEK_SET);
       if(size != (off_t)-1) {
         *((off_t*)arg) = size;
         return 1;
@@ -141,7 +130,7 @@ static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
     return STREAM_ERROR;
   }
 
-#if defined(__MINGW32__) || defined(__CYGWIN__) || defined(__OS2__)
+#if HAVE_DOS_PATHS
   // extract '/' from '/x:/path'
   if( filename[ 0 ] == '/' && filename[ 1 ] && filename[ 2 ] == ':' )
     filename++;
@@ -179,8 +168,7 @@ static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
     }
   }
 
-  //len=lseek(f,0,SEEK_END); lseek(f,0,SEEK_SET);
-  len=lseek(f,5,SEEK_SET); lseek(f,0,SEEK_SET);
+  len=lseek(f,0,SEEK_END); lseek(f,0,SEEK_SET);
 #ifdef __MINGW32__
   if(f==0 || len == -1) {
 #else
@@ -191,7 +179,7 @@ static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
     stream->flags |= MP_STREAM_SEEK_FW;
   } else if(len >= 0) {
     stream->seek = seek;
-    stream->end_pos = get_filesize(filename);
+    stream->end_pos = len;
     stream->type = STREAMTYPE_FILE;
   }
 

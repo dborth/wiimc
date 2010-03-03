@@ -33,6 +33,7 @@
 #include "stheader.h"
 #include "ebml.h"
 #include "matroska.h"
+#include "demux_real.h"
 
 #include "mp_msg.h"
 #include "help_mp.h"
@@ -2393,8 +2394,6 @@ handle_subtitles(demuxer_t *demuxer, mkv_track_t *track, char *block,
   ds_add_packet(demuxer->sub, dp);
 }
 
-double real_fix_timestamp(unsigned char *buf, unsigned int timestamp, unsigned int format, int64_t *kf_base, int *kf_pts, double *pts);
-
 static void
 handle_realvideo (demuxer_t *demuxer, mkv_track_t *track, uint8_t *buffer,
                   uint32_t size, int block_bref)
@@ -2745,13 +2744,6 @@ handle_block (demuxer_t *demuxer, uint8_t *block, uint64_t length,
               if (buffer)
                 {
                   dp = new_demux_packet (size);
-                  if(dp->len!=size)
-                  {
-                  	free_demux_packet(dp);
-                  	free(lace_size);
-					printf("new_demux_packet: not enough ram\n");fflush(stdout);
-					return 0;
-				  }
                   memcpy (dp->buffer, buffer, size);
                   if (modified)
                     free (buffer);

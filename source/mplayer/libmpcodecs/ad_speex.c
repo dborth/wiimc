@@ -28,7 +28,7 @@
 #include <speex/speex_header.h>
 #include "ad_internal.h"
 
-static ad_info_t info = {
+static const ad_info_t info = {
   "Speex audio decoder",
   "speex",
   "Reimar Döffinger",
@@ -135,4 +135,3 @@ static int decode_audio(sh_audio_t *sh, unsigned char *buf,
 static int control(sh_audio_t *sh, int cmd, void *arg, ...) {
   return CONTROL_UNKNOWN;
 }
-

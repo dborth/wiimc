@@ -537,8 +537,8 @@ if(size>CACHE_LIMIT)
 	    100.0*(float)(s->max_filepos-s->read_filepos)/(float)(s->buffer_size),
 	    (int64_t)s->max_filepos-s->read_filepos );
 
-	set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Precache fill: %5.2f%%  ",(float)(100.0*(float)(s->max_filepos)/(float)(min)));
-	force_osd();
+	//set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Precache fill: %5.2f%%  ",(float)(100.0*(float)(s->max_filepos)/(float)(min)));
+	//force_osd();
 	
 	if(s->eof) break; // file is smaller than prefill size
 	if(stream_check_interrupt(PREFILL_SLEEP_TIME)) {
@@ -767,7 +767,7 @@ void refillcache(stream_t *stream,float min)
     while(cache_fill_status<min)
     {
 		set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Cache fill: %5.2f%%  ",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
-		force_osd();
+		//force_osd();
 		//printf("Cache fill: %5.2f%%  \n",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
 
 		if(s->eof) break; // file is smaller than prefill size

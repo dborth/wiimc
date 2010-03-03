@@ -58,6 +58,7 @@
 
 #include "mp_fifo.h"
 #include "keycodes.h"
+#include "getch2.h"
 
 #ifdef HAVE_TERMIOS
 static struct termios tio_orig;
@@ -303,4 +304,3 @@ char* get_term_charset(void)
     return charset;
 }
 #endif
-

@@ -20,7 +20,7 @@
 #include "cpudetect.h"
 //#include "liba52/mm_accel.h"
 #include "mp_msg.h"
-
+#include "libmpcodecs/ad_mp3lib.h"
 #include "libvo/fastmemcpy.h"
 
 #include "libavutil/common.h"
@@ -55,8 +55,6 @@ static long outscale = 32768;
 #include "tabinit.c"
 
 #if 1
-int mplayer_audio_read(char *buf,int size);
-
 LOCAL int mp3_read(char *buf,int size){
 //  int len=fread(buf,1,size,mp3_file);
   int len=mplayer_audio_read(buf,size);
@@ -70,7 +68,7 @@ int mp3_read(char *buf,int size);
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: sr1.c 30209 2010-01-04 19:36:18Z diego $
+ * $Id: sr1.c 30724 2010-02-23 22:29:57Z reimar $
  */
 
 
@@ -370,7 +368,7 @@ retry1:
 
   /* read main data into memory */
   if(!stream_read_frame_body(fr->framesize)){
-    //printf("\nBroken frame at 0x%X                                                  \n",resyncpos);
+    printf("\nBroken frame at 0x%X                                                  \n",resyncpos);
     return 0;
   }
   ++frames;
@@ -389,12 +387,6 @@ static int _has_mmx = 0;  // used by layer2.c, layer3.c to pre-scale coeffs
 /*           PUBLIC FUNCTIONS                  */
 /******************************************************************************/
 
-/* It's hidden from gcc in assembler */
-void dct64_MMX(short *, short *, real *);
-void dct64_MMX_3dnow(short *, short *, real *);
-void dct64_MMX_3dnowex(short *, short *, real *);
-void dct64_sse(short *, short *, real *);
-void dct64_altivec(real *, real *, real *);
 void (*dct64_MMX_func)(short *, short *, real *);
 
 #include "layer2.c"

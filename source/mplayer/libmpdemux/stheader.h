@@ -27,7 +27,7 @@
 
 #define SH_COMMON \
   demux_stream_t *ds; \
-  struct codecs_st *codec; \
+  struct codecs *codec; \
   unsigned int format; \
   int initialized; \
   float stream_delay; /* number of seconds stream should be delayed (according to dwStart or similar) */ \
@@ -43,11 +43,11 @@
   char* lang; /* track language */ \
   int default_track; \
 
-typedef struct {
+typedef struct sh_common {
   SH_COMMON
 } sh_common_t;
 
-typedef struct {
+typedef struct sh_audio {
   SH_COMMON
   int aid;
   // output format:
@@ -86,7 +86,7 @@ typedef struct {
   int pts_bytes; // bytes output by decoder after last known pts
 } sh_audio_t;
 
-typedef struct {
+typedef struct sh_video {
   SH_COMMON
   int vid;
   float timer;		  // absolute time in video stream, since last start/seek
@@ -108,7 +108,7 @@ typedef struct {
   int disp_w,disp_h;      // display size (filled by fileformat parser)
   // output driver/filters: (set by libmpcodecs core)
   unsigned int outfmtidx;
-  struct vf_instance_s *vfilter;          // the video filter chain, used for this video stream
+  struct vf_instance *vfilter;          // the video filter chain, used for this video stream
   int vf_initialized;
 #ifdef CONFIG_DYNAMIC_PLUGINS
   void *dec_handle;
@@ -119,7 +119,7 @@ typedef struct {
   void* ImageDesc; // for quicktime codecs
 } sh_video_t;
 
-typedef struct {
+typedef struct sh_sub {
   SH_COMMON
   int sid;
   char type;                    // t = text, v = VobSub, a = SSA/ASS

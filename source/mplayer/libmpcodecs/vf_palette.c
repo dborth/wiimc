@@ -37,14 +37,14 @@
 // routines are incorrrect.  they assume the palette to be of the same
 // depth as the output, which is incorrect. --Joey
 
-static unsigned int bgr_list[]={
+static const unsigned int bgr_list[]={
     IMGFMT_BGR32,
     IMGFMT_BGR24,
 //    IMGFMT_BGR16,
 //    IMGFMT_BGR15,
     0
 };
-static unsigned int rgb_list[]={
+static const unsigned int rgb_list[]={
     IMGFMT_RGB32,
     IMGFMT_RGB24,
 //    IMGFMT_RGB16,
@@ -54,10 +54,10 @@ static unsigned int rgb_list[]={
 
 static unsigned int gray_pal[256];
 
-static unsigned int find_best(struct vf_instance_s* vf, unsigned int fmt){
+static unsigned int find_best(struct vf_instance *vf, unsigned int fmt){
     unsigned int best=0;
     int ret;
-    unsigned int* p;
+    const unsigned int* p;
     if(fmt==IMGFMT_BGR8) p=bgr_list;
     else if(fmt==IMGFMT_RGB8) p=rgb_list;
     else return 0;
@@ -78,7 +78,7 @@ struct vf_priv_s {
     int pal_msg;
 };
 
-static int config(struct vf_instance_s* vf,
+static int config(struct vf_instance *vf,
         int width, int height, int d_width, int d_height,
 	unsigned int flags, unsigned int outfmt){
     if (!vf->priv->fmt)
@@ -92,7 +92,7 @@ static int config(struct vf_instance_s* vf,
     return vf_next_config(vf,width,height,d_width,d_height,flags,vf->priv->fmt);
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
     mp_image_t *dmpi;
     uint8_t *old_palette = mpi->planes[1];
 
@@ -178,7 +178,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
 
 //===========================================================================//
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt){
+static int query_format(struct vf_instance *vf, unsigned int fmt){
     int best=find_best(vf,fmt);
     if(!best) return 0; // no match
     return vf->next->query_format(vf->next,best);
@@ -188,7 +188,7 @@ static void uninit(vf_instance_t *vf) {
   free(vf->priv);
 }
 
-static int open(vf_instance_t *vf, char* args){
+static int vf_open(vf_instance_t *vf, char *args){
     unsigned int i;
     vf->config=config;
     vf->uninit=uninit;
@@ -220,7 +220,7 @@ const vf_info_t vf_info_palette = {
     "palette",
     "A'rpi & Alex",
     "",
-    open,
+    vf_open,
     NULL
 };
 

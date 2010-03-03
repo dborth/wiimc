@@ -78,6 +78,7 @@ int ff_getaddrinfo(const char *node, const char *service,
         return win_getaddrinfo(node, service, hints, res);
 #endif
 
+    *res = NULL;
     sin = av_mallocz(sizeof(struct sockaddr_in));
     if (!sin)
         return EAI_FAIL;
@@ -209,10 +210,20 @@ int ff_getnameinfo(const struct sockaddr *sa, int salen,
         } else
     #endif
             snprintf(serv, servlen, "%d", ntohs(sin->sin_port));
-            
     }
 
     return 0;
+}
+
+const char *ff_gai_strerror(int ecode)
+{
+    switch(ecode) {
+    case EAI_FAIL   : return "A non-recoverable error occurred";
+    case EAI_FAMILY : return "The address family was not recognized or the address length was invalid for the specified family";
+    case EAI_NONAME : return "The name does not resolve for the supplied parameters";
+    }
+
+    return "Unknown error";
 }
 #endif
 

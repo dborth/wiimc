@@ -43,7 +43,7 @@ static int PixelsPerMask = 2;
 #define makecol(r,g,b) (r+(g<<8)+(b<<16))
 #define makecol_depth(d,r,g,b) (r+(g<<8)+(b<<16))
 
-int Init_2xSaI(int d)
+static int Init_2xSaI(int d)
 {
 
 	int minr = 0, ming = 0, minb = 0;
@@ -95,9 +95,10 @@ int Init_2xSaI(int d)
 	+ ((((A & qlowpixelMask) + (B & qlowpixelMask) + (C & qlowpixelMask) + (D & qlowpixelMask)) >> 2) & qlowpixelMask)
 
 
-void Super2xSaI_ex(uint8_t *src, uint32_t src_pitch,
-		   uint8_t *dst, uint32_t dst_pitch,
-		   uint32_t width, uint32_t height, int sbpp) {
+static void Super2xSaI_ex(uint8_t *src, uint32_t src_pitch,
+                          uint8_t *dst, uint32_t dst_pitch,
+                          uint32_t width, uint32_t height, int sbpp)
+{
 
 	unsigned int x, y;
 	uint32_t color[16];
@@ -280,7 +281,7 @@ void Super2xSaI_ex(uint8_t *src, uint32_t src_pitch,
 
 //===========================================================================//
 
-static int config(struct vf_instance_s* vf,
+static int config(struct vf_instance *vf,
         int width, int height, int d_width, int d_height,
 	unsigned int flags, unsigned int outfmt){
 
@@ -289,7 +290,7 @@ static int config(struct vf_instance_s* vf,
     return vf_next_config(vf,2*width,2*height,2*d_width,2*d_height,flags,outfmt);
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
     mp_image_t *dmpi;
 
     // hope we'll get DR buffer:
@@ -306,7 +307,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
 
 //===========================================================================//
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt){
+static int query_format(struct vf_instance *vf, unsigned int fmt){
     switch(fmt){
 //    case IMGFMT_BGR15:
 //    case IMGFMT_BGR16:
@@ -316,7 +317,7 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt){
     return 0;
 }
 
-static int open(vf_instance_t *vf, char* args){
+static int vf_open(vf_instance_t *vf, char *args){
     vf->config=config;
     vf->put_image=put_image;
     vf->query_format=query_format;
@@ -328,7 +329,7 @@ const vf_info_t vf_info_2xsai = {
     "2xsai",
     "A'rpi",
     "http://elektron.its.tudelft.nl/~dalikifa/",
-    open,
+    vf_open,
     NULL
 };
 

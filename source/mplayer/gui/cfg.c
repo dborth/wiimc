@@ -28,6 +28,7 @@
 #include "m_config.h"
 #include "m_option.h"
 #include "get_path.h"
+#include "libmpcodecs/vd.h"
 #include "libvo/sub.h"
 #include "libvo/video_out.h"
 #include "stream/stream.h"
@@ -37,6 +38,7 @@
 #include "cfg.h"
 #include "app.h"
 #include "interface.h"
+#include "mplayer/gmplayer.h"
 #include "mplayer/play.h"
 
 // --- params
@@ -204,7 +206,6 @@ static const m_option_t gui_opts[] =
  { "equ_channel_5",&gtkEquChannel5,CONF_TYPE_STRING,0,0,0,NULL },
  { "equ_channel_6",&gtkEquChannel6,CONF_TYPE_STRING,0,0,0,NULL },
 
-#if 1
 #define audio_equ_row( i,j ) { "equ_band_"#i#j,&gtkEquChannels[i][j],CONF_TYPE_FLOAT,CONF_RANGE,-15.0,15.0,NULL },
    audio_equ_row( 0,0 ) audio_equ_row( 0,1 ) audio_equ_row( 0,2 ) audio_equ_row( 0,3 ) audio_equ_row( 0,4 ) audio_equ_row( 0,5 ) audio_equ_row( 0,6 ) audio_equ_row( 0,7 ) audio_equ_row( 0,8 ) audio_equ_row( 0,9 )
    audio_equ_row( 1,0 ) audio_equ_row( 1,1 ) audio_equ_row( 1,2 ) audio_equ_row( 1,3 ) audio_equ_row( 1,4 ) audio_equ_row( 1,5 ) audio_equ_row( 1,6 ) audio_equ_row( 1,7 ) audio_equ_row( 1,8 ) audio_equ_row( 1,9 )
@@ -213,12 +214,11 @@ static const m_option_t gui_opts[] =
    audio_equ_row( 4,0 ) audio_equ_row( 4,1 ) audio_equ_row( 4,2 ) audio_equ_row( 4,3 ) audio_equ_row( 4,4 ) audio_equ_row( 4,5 ) audio_equ_row( 4,6 ) audio_equ_row( 4,7 ) audio_equ_row( 4,8 ) audio_equ_row( 4,9 )
    audio_equ_row( 5,0 ) audio_equ_row( 5,1 ) audio_equ_row( 5,2 ) audio_equ_row( 5,3 ) audio_equ_row( 5,4 ) audio_equ_row( 5,5 ) audio_equ_row( 5,6 ) audio_equ_row( 5,7 ) audio_equ_row( 5,8 ) audio_equ_row( 5,9 )
 #undef audio_equ_row
-#endif
 
  { NULL, NULL, 0, 0, 0, 0, NULL }
 };
 
-char * gfgets( char * str, int size, FILE * f )
+static char * gfgets( char * str, int size, FILE * f )
 {
  char * s = fgets( str,size,f );
  char   c;
@@ -368,4 +368,3 @@ int cfg_write( void )
 
  return 0;
 }
-

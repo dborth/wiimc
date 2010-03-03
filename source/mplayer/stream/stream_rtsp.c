@@ -28,7 +28,7 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include "config.h"
-#if !HAVE_WINSOCK2_H 
+#if !HAVE_WINSOCK2_H
 #ifndef GEKKO
 #include <netinet/in.h>
 #include <sys/socket.h>

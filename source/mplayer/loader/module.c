@@ -241,7 +241,7 @@ static WIN_BOOL MODULE_DllProcessAttach( WINE_MODREF *wm, LPVOID lpReserved )
     //local_wm=wm;
     if(local_wm)
     {
-	local_wm->next = (modref_list*) malloc(sizeof(modref_list));
+        local_wm->next = malloc(sizeof(modref_list));
         local_wm->next->prev=local_wm;
         local_wm->next->next=NULL;
         local_wm->next->wm=wm;
@@ -744,6 +744,31 @@ static int dump_component(char* name, int type, void* orig, ComponentParameters 
 
 #ifdef EMU_QTX_API
 
+#ifdef __OS2__
+uint32_t _System DosQueryMem(void *, uint32_t *, uint32_t *);
+#endif
+
+static int is_invalid_ptr_handle(void *p)
+{
+#ifdef __OS2__
+    uint32_t cb = 1;
+    uint32_t fl;
+
+    if(DosQueryMem(p, &cb, &fl))
+        return 1;
+
+    // Occasionally, ptr with 'EXEC' attr is passed.
+    // On OS/2, however, malloc() never sets 'EXEC' attr.
+    // So ptr with 'EXEC' attr is invalid.
+    if(fl & 0x04)
+        return 1;
+
+    return 0;
+#else
+    return (uint32_t)p >= 0x60000000;
+#endif
+}
+
 static uint32_t ret_array[4096];
 static int ret_i=0;
 
@@ -824,13 +849,12 @@ static int report_func(void *stack_base, int stack_size, reg386_t *reg, uint32_t
 
 #endif
 
-#if 1
   // emulate some functions:
   switch(reg->eax){
   // memory management:
   case 0x150011: //NewPtrClear
   case 0x150012: //NewPtrSysClear
-      reg->eax=(uint32_t)malloc(((uint32_t *)stack_base)[1]);
+      reg->eax = malloc(((uint32_t *)stack_base)[1]);
       memset((void *)reg->eax,0,((uint32_t *)stack_base)[1]);
 #ifdef DEBUG_QTX_API
       printf("%*sLEAVE(%d): EMULATED! 0x%X\n",ret_i*2,"",ret_i, reg->eax);
@@ -838,16 +862,16 @@ static int report_func(void *stack_base, int stack_size, reg386_t *reg, uint32_t
       return 1;
   case 0x15000F: //NewPtr
   case 0x150010: //NewPtrSys
-      reg->eax=(uint32_t)malloc(((uint32_t *)stack_base)[1]);
+      reg->eax = malloc(((uint32_t *)stack_base)[1]);
 #ifdef DEBUG_QTX_API
       printf("%*sLEAVE(%d): EMULATED! 0x%X\n",ret_i*2,"",ret_i, reg->eax);
 #endif
       return 1;
   case 0x15002f: //DisposePtr
-      if(((uint32_t *)stack_base)[1]>=0x60000000)
+      if(is_invalid_ptr_handle(((void **)stack_base)[1]))
           printf("WARNING! Invalid Ptr handle!\n");
       else
-          free((void *)((uint32_t *)stack_base)[1]);
+          free(((void **)stack_base)[1]);
       reg->eax=0;
 #ifdef DEBUG_QTX_API
       printf("%*sLEAVE(%d): EMULATED! 0x%X\n",ret_i*2,"",ret_i, reg->eax);
@@ -870,7 +894,6 @@ static int report_func(void *stack_base, int stack_size, reg386_t *reg, uint32_t
 #endif
       return 1;
   }
-#endif
 
 #if 0
   switch(reg->eax){

@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: mpg123.h 30209 2010-01-04 19:36:18Z diego $
+ * $Id: mpg123.h 30724 2010-02-23 22:29:57Z reimar $
  */
 
 /*
@@ -128,6 +128,15 @@ int synth_1to1_MMX_s(real *, int, short *, short *, int *);
 void dct36_3dnow(real *, real *, real *, real *, real *);
 void dct36_3dnowex(real *, real *, real *, real *, real *);
 void dct36_sse(real *, real *, real *, real *, real *);
+
+void dct64_MMX(short *, short *, real *);
+void dct64_MMX_3dnow(short *, short *, real *);
+void dct64_MMX_3dnowex(short *, short *, real *);
+void dct64_sse(short *, short *, real *);
+void dct64_altivec(real *, real *, real *);
+extern void (*dct64_MMX_func)(short *, short *, real *);
+
+void mp3lib_dct64(real *, real *, real *);
 
 typedef int (*synth_func_t)( real *,int,short * );
 typedef void (*dct36_func_t)(real *,real *,real *,real *,real *);

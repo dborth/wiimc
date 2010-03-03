@@ -94,6 +94,7 @@ extern vo_functions_t video_out_xover;
 extern vo_functions_t video_out_xvmc;
 extern vo_functions_t video_out_vdpau;
 extern vo_functions_t video_out_xv;
+extern vo_functions_t video_out_gl_nosw;
 extern vo_functions_t video_out_gl;
 extern vo_functions_t video_out_gl2;
 extern vo_functions_t video_out_matrixview;
@@ -188,15 +189,15 @@ const vo_functions_t* const video_out_drivers[] =
         &video_out_xv,
 #endif
 #ifdef CONFIG_X11
+#ifdef CONFIG_GL
+        &video_out_gl_nosw,
+#endif
         &video_out_x11,
         &video_out_xover,
 #endif
 #ifdef CONFIG_GL
         &video_out_gl,
         &video_out_gl2,
-#endif
-#ifdef CONFIG_MATRIXVIEW
-        &video_out_matrixview,
 #endif
 #ifdef CONFIG_DGA
         &video_out_dga,
@@ -213,6 +214,9 @@ const vo_functions_t* const video_out_drivers[] =
 #endif
 #ifdef CONFIG_SVGALIB
         &video_out_svga,
+#endif
+#ifdef CONFIG_MATRIXVIEW
+        &video_out_matrixview,
 #endif
 #ifdef CONFIG_AA
         &video_out_aa,
@@ -484,7 +488,7 @@ range_t *str2range(char *s)
 	for (i = 0; *endptr; i++) {
 		if (*s == ',')
 			goto out_err;
-		if (!(r = (range_t *) realloc(r, sizeof(*r) * (i + 2)))) {
+		if (!(r = realloc(r, sizeof(*r) * (i + 2)))) {
 			mp_msg(MSGT_GLOBAL, MSGL_WARN,"can't realloc 'r'\n");
 			return NULL;
 		}
@@ -527,4 +531,3 @@ out_err:
 
 /* Borrowed from vo_fbdev.c END */
 #endif
-

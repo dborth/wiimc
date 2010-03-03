@@ -175,14 +175,9 @@ static inline int mkalpha(int i)
 {
   /* In mplayer's alpha planes, 0 is transparent, then 1 is nearly
      opaque upto 255 which is transparent */
-  switch (i) {
-  case 0xf:
-    return 1;
-  case 0:
-    return 0;
-  default:
-    return (0xf - i) << 4;
-  }
+  // extend 4 -> 8 bit
+  i |= i << 4;
+  return (uint8_t)(-i);
 }
 
 /* Cut the sub to visible part */
@@ -359,7 +354,7 @@ static void compute_palette(spudec_handle_t *this, packet_t *packet)
 
 static void spudec_process_control(spudec_handle_t *this, int pts100)
 {
-  int a,b; /* Temporary vars */
+  int a,b,c,d; /* Temporary vars */
   unsigned int date, type;
   unsigned int off;
   unsigned int start_off = 0;
@@ -422,10 +417,22 @@ static void spudec_process_control(spudec_handle_t *this, int pts100)
 	break;
       case 0x04:
 	/* Alpha */
-	this->alpha[0] = this->packet[off] >> 4;
-	this->alpha[1] = this->packet[off] & 0xf;
-	this->alpha[2] = this->packet[off + 1] >> 4;
-	this->alpha[3] = this->packet[off + 1] & 0xf;
+	a = this->packet[off] >> 4;
+	b = this->packet[off] & 0xf;
+	c = this->packet[off + 1] >> 4;
+	d = this->packet[off + 1] & 0xf;
+	// Note: some DVDs change these values to create a fade-in/fade-out effect
+	// We can not handle this, so just keep the highest value during the display time.
+	if (display) {
+		a = FFMAX(a, this->alpha[0]);
+		b = FFMAX(b, this->alpha[1]);
+		c = FFMAX(c, this->alpha[2]);
+		d = FFMAX(d, this->alpha[3]);
+	}
+	this->alpha[0] = a;
+	this->alpha[1] = b;
+	this->alpha[2] = c;
+	this->alpha[3] = d;
 	mp_msg(MSGT_SPUDEC,MSGL_DBG2,"Alpha %d, %d, %d, %d\n",
 	       this->alpha[0], this->alpha[1], this->alpha[2], this->alpha[3]);
 	off+=2;
@@ -760,8 +767,9 @@ static void scale_image(int x, int y, scale_pixel* table_x, scale_pixel* table_y
   }
 }
 
-void sws_spu_image(unsigned char *d1, unsigned char *d2, int dw, int dh, int ds,
-	unsigned char *s1, unsigned char *s2, int sw, int sh, int ss)
+static void sws_spu_image(unsigned char *d1, unsigned char *d2, int dw, int dh,
+                          int ds, unsigned char *s1, unsigned char *s2, int sw,
+                          int sh, int ss)
 {
 	struct SwsContext *ctx;
 	static SwsFilter filter;
@@ -1154,9 +1162,13 @@ static void spudec_parse_extradata(spudec_handle_t *this,
   buffer[extradata_len] = 0;
 
   do {
-    sscanf(ptr, "size: %dx%d", &this->orig_frame_width, &this->orig_frame_height);
-    if (sscanf(ptr, "palette: %x, %x, %x, %x, %x, %x, %x, %x,"
-                            " %x, %x, %x, %x, %x, %x, %x, %x",
+    if (*ptr == '#')
+        continue;
+    if (!strncmp(ptr, "size: ", 6))
+        sscanf(ptr + 6, "%dx%d", &this->orig_frame_width, &this->orig_frame_height);
+    if (!strncmp(ptr, "palette: ", 9) &&
+        sscanf(ptr + 9, "%x, %x, %x, %x, %x, %x, %x, %x, "
+                        "%x, %x, %x, %x, %x, %x, %x, %x",
                &pal[ 0], &pal[ 1], &pal[ 2], &pal[ 3],
                &pal[ 4], &pal[ 5], &pal[ 6], &pal[ 7],
                &pal[ 8], &pal[ 9], &pal[10], &pal[11],
@@ -1167,7 +1179,8 @@ static void spudec_parse_extradata(spudec_handle_t *this,
     }
     if (!strncasecmp(ptr, "forced subs: on", 15))
       this->forced_subs_only = 1;
-    if (sscanf(ptr, "custom colors: ON, tridx: %x, colors: %x, %x, %x, %x",
+    if (!strncmp(ptr, "custom colors: ON, tridx: ", 26) &&
+        sscanf(ptr + 26, "%x, colors: %x, %x, %x, %x",
                &tridx, cuspal+0, cuspal+1, cuspal+2, cuspal+3) == 5) {
       for (i=0; i<4; i++) {
         cuspal[i] = vobsub_rgb_to_yuv(cuspal[i]);

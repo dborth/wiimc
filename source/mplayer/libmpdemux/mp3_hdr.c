@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "mp_msg.h"
+#include "mp3_hdr.h"
 
 //----------------------- mp3 audio frame header parser -----------------------
 
@@ -37,18 +38,6 @@ static long freqs[9] = { 44100, 48000, 32000,	// MPEG 1.0
 			 22050, 24000, 16000,   // MPEG 2.0
 			 11025, 12000,  8000};  // MPEG 2.5
 
-int mp_mp3_get_lsf(unsigned char* hbuf){
-    unsigned long newhead =
-      hbuf[0] << 24 |
-      hbuf[1] << 16 |
-      hbuf[2] <<  8 |
-      hbuf[3];
-    if( newhead & ((long)1<<20) ) {
-      return (newhead & ((long)1<<19)) ? 0x0 : 0x1;
-    }
-    return 1;
-}
-
 /*
  * return frame size or -1 (bad frame)
  */
@@ -64,13 +53,11 @@ int mp_get_mp3_header(unsigned char* hbuf,int* chans, int* srate, int* spf, int*
 
 //    printf("head=0x%08X\n",newhead);
 
-#if 1
     // head_check:
     if( (newhead & 0xffe00000) != 0xffe00000 ){
 	mp_msg(MSGT_DEMUXER,MSGL_DBG2,"head_check failed\n");
 	return -1;
     }
-#endif
 
     layer = 4-((newhead>>17)&3);
     if(layer==4){
@@ -155,4 +142,3 @@ int mp_get_mp3_header(unsigned char* hbuf,int* chans, int* srate, int* spf, int*
 
     return framesize;
 }
-

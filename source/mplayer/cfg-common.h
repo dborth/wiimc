@@ -28,12 +28,6 @@ extern char *mp_msg_charset;
 extern int mp_msg_color;
 extern int mp_msg_module;
 
-// codec/filter opts: (defined at libmpcodecs/vd.c)
-extern float screen_size_xy;
-extern float movie_aspect;
-extern int softzoom;
-extern int flip;
-
 /* defined in codec-cfg.c */
 extern char * codecs_file;
 
@@ -370,7 +364,5 @@ extern const m_option_t noconfig_opts[];
 
 extern const m_option_t lavc_decode_opts_conf[];
 extern const m_option_t xvid_dec_opts[];
-
-int dvd_parse_chapter_range(const m_option_t*, const char*);
 
 #endif /* MPLAYER_CFG_COMMON_H */

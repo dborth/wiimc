@@ -957,6 +957,8 @@ mp_input_read_cmd(mp_input_fd_t* mp_fd, char** ret) {
     int l = 0;
     // Find the cmd end
     mp_fd->buffer[mp_fd->pos] = '\0';
+    end = strchr(mp_fd->buffer,'\r');
+    if (end) *end = '\n';
     end = strchr(mp_fd->buffer,'\n');
     // No cmd end ?
     if(!end) {
@@ -1494,7 +1496,7 @@ mp_input_get_input_from_name(char* name,int* keys) {
 #define BS_MAX 256
 #define SPACE_CHAR " \n\r\t"
 
-void
+static void
 mp_input_bind_keys(const int keys[MP_MAX_KEY_DOWN+1], char* cmd) {
   int i = 0,j;
   mp_cmd_bind_t* bind = NULL;
@@ -1538,7 +1540,7 @@ mp_input_bind_keys(const int keys[MP_MAX_KEY_DOWN+1], char* cmd) {
   memcpy(bind->input,keys,(MP_MAX_KEY_DOWN+1)*sizeof(int));
 }
 
-void
+static void
 mp_input_add_binds(const mp_cmd_bind_t* list) {
   int i;
   for(i = 0 ; list[i].cmd ; i++)
@@ -1732,8 +1734,7 @@ mp_input_get_section(void) {
 
 void
 mp_input_init(int use_gui) {
-  char *file;
-  
+  char* file;
 
 #ifdef CONFIG_GUI
   if(use_gui)
@@ -1752,9 +1753,12 @@ mp_input_init(int use_gui) {
       free(file);
     }
     // Try global conf dir
-    //file = MPLAYER_CONFDIR "/input.conf";
+#ifdef GEKKO
     file = (char*)malloc(sizeof(char)*100);
     sprintf(file,"%s%s",MPLAYER_CONFDIR,"/input.conf");
+#else
+    file = MPLAYER_CONFDIR "/input.conf";
+#endif
     if(! mp_input_parse_config(file))
       mp_msg(MSGT_INPUT,MSGL_V,"Falling back on default (hardcoded) input config\n");
   }

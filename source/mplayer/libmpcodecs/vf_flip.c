@@ -30,14 +30,14 @@
 
 //===========================================================================//
 
-static int config(struct vf_instance_s* vf,
+static int config(struct vf_instance *vf,
         int width, int height, int d_width, int d_height,
 	unsigned int flags, unsigned int outfmt){
     flags&=~VOFLAG_FLIPPING; // remove the FLIP flag
     return vf_next_config(vf,width,height,d_width,d_height,flags,outfmt);
 }
 
-static void get_image(struct vf_instance_s* vf, mp_image_t *mpi){
+static void get_image(struct vf_instance *vf, mp_image_t *mpi){
     if(mpi->flags&MP_IMGFLAG_ACCEPT_STRIDE){
 	// try full DR !
 	vf->dmpi=vf_get_image(vf->next,mpi->imgfmt,
@@ -59,7 +59,7 @@ static void get_image(struct vf_instance_s* vf, mp_image_t *mpi){
     }
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
     if(mpi->flags&MP_IMGFLAG_DIRECT){
 	// we've used DR, so we're ready...
 	if(!(mpi->flags&MP_IMGFLAG_PLANAR))
@@ -90,7 +90,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
 
 //===========================================================================//
 
-static int open(vf_instance_t *vf, char* args){
+static int vf_open(vf_instance_t *vf, char *args){
     vf->config=config;
     vf->get_image=get_image;
     vf->put_image=put_image;
@@ -103,7 +103,7 @@ const vf_info_t vf_info_flip = {
     "flip",
     "A'rpi",
     "",
-    open,
+    vf_open,
     NULL
 };
 

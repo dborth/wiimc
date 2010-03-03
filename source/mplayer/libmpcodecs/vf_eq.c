@@ -132,7 +132,7 @@ static void (*process)(unsigned char *dest, int dstride, unsigned char *src, int
 
 /* FIXME: add packed yuv version of process */
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 {
 	mp_image_t *dmpi;
 
@@ -161,7 +161,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
 	return vf_next_put_image(vf,dmpi, pts);
 }
 
-static int control(struct vf_instance_s* vf, int request, void* data)
+static int control(struct vf_instance *vf, int request, void* data)
 {
 	vf_equalizer_t *eq;
 
@@ -192,7 +192,7 @@ static int control(struct vf_instance_s* vf, int request, void* data)
 	return vf_next_control(vf, request, data);
 }
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt)
+static int query_format(struct vf_instance *vf, unsigned int fmt)
 {
 	switch (fmt) {
 	case IMGFMT_YVU9:
@@ -213,13 +213,13 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt)
 	return 0;
 }
 
-static void uninit(struct vf_instance_s* vf)
+static void uninit(struct vf_instance *vf)
 {
 	if (vf->priv->buf) free(vf->priv->buf);
 	free(vf->priv);
 }
 
-static int open(vf_instance_t *vf, char* args)
+static int vf_open(vf_instance_t *vf, char *args)
 {
 	vf->control=control;
 	vf->query_format=query_format;
@@ -235,13 +235,13 @@ static int open(vf_instance_t *vf, char* args)
 }
 
 #define ST_OFF(f) M_ST_OFF(struct vf_priv_s,f)
-static m_option_t vf_opts_fields[] = {
+static const m_option_t vf_opts_fields[] = {
   {"brightness", ST_OFF(brightness), CONF_TYPE_INT, M_OPT_RANGE,-100 ,100, NULL},
   {"contrast", ST_OFF(contrast), CONF_TYPE_INT, M_OPT_RANGE,-100 ,100, NULL},
   { NULL, NULL, 0, 0, 0, 0,  NULL }
 };
 
-static m_struct_t vf_opts = {
+static const m_struct_t vf_opts = {
   "eq",
   sizeof(struct vf_priv_s),
   &vf_priv_dflt,
@@ -253,7 +253,6 @@ const vf_info_t vf_info_eq = {
 	"eq",
 	"Richard Felker",
 	"",
-	open,
+	vf_open,
 	&vf_opts
 };
-

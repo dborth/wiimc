@@ -120,7 +120,8 @@ static int control(int cmd,void *arg){
 }
 
 // SDL Callback function
-void outputaudio(void *unused, Uint8 *stream, int len) {
+static void outputaudio(void *unused, Uint8 *stream, int len)
+{
 	//SDL_MixAudio(stream, read_buffer(buffers, len), len, SDL_MIX_MAXVOLUME);
 	//if(!full_buffers) printf("SDL: Buffer underrun!\n");
 
@@ -315,9 +316,3 @@ static float get_delay(void){
     int buffered = av_fifo_size(buffer); // could be less
     return (float)(buffered + ao_data.buffersize)/(float)ao_data.bps;
 }
-
-
-
-
-
-

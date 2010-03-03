@@ -34,7 +34,7 @@
 #include "loader/wine/windef.h"
 #endif
 
-static vd_info_t info = {
+static const vd_info_t info = {
 	"Quicktime Video decoder",
 	"qtvideo",
 	"A'rpi",
@@ -315,6 +315,10 @@ static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags){
     mpi=mpcodecs_get_image(sh, MP_IMGTYPE_STATIC, MP_IMGFLAG_PRESERVE,
 	sh->disp_w, sh->disp_h);
     if(!mpi) return NULL;
+
+#ifdef WIN32_LOADER
+    Setup_FS_Segment();
+#endif
 
     decpar.data = (char*)data;
     decpar.bufferSize = len;

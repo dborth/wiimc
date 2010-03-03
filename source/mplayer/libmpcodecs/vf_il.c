@@ -73,7 +73,7 @@ static void interleave(uint8_t *dst, uint8_t *src, int w, int h, int dstStride, 
 	}
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
 	int w;
 	FilterParam *luma  = &vf->priv->lumaParam;
 	FilterParam *chroma= &vf->priv->chromaParam;
@@ -119,7 +119,7 @@ static void parse(FilterParam *fp, char* args){
 	if(pos && pos<max) fp->interleave=-1;
 }
 
-static int open(vf_instance_t *vf, char* args){
+static int vf_open(vf_instance_t *vf, char *args){
 
 	vf->put_image=put_image;
 //	vf->get_image=get_image;
@@ -141,7 +141,7 @@ const vf_info_t vf_info_il = {
     "il",
     "Michael Niedermayer",
     "",
-    open,
+    vf_open,
     NULL
 };
 

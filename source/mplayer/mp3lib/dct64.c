@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: dct64.c 18786 2006-06-22 13:34:00Z diego $
+ * $Id: dct64.c 30675 2010-02-20 21:02:49Z diego $
  */
 
 /*
@@ -321,4 +321,3 @@ void mp3lib_dct64(real *a,real *b,real *c)
   real bufs[0x40];
   dct64_1(a,b,bufs,bufs+0x20,c);
 }
-

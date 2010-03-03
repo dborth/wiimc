@@ -50,7 +50,6 @@
 #define HAVE_AV_CONFIG_H
 #include "libavcodec/avcodec.h"
 #include "libavcodec/mjpegenc.h"
-//#include "jpeg_enc.h" /* this file is not present yet */
 
 #undef malloc
 #undef free
@@ -668,7 +667,7 @@ struct vf_priv_s {
  * arrange to dispatch to the config() entry pointer for the one
  * selected.
  */
-static int config(struct vf_instance_s* vf, int width, int height, int d_width,
+static int config(struct vf_instance *vf, int width, int height, int d_width,
 		int d_height, unsigned int flags, unsigned int outfmt){
 	struct vf_priv_s *priv = vf->priv;
 	float aspect_decision;
@@ -828,7 +827,7 @@ static int config(struct vf_instance_s* vf, int width, int height, int d_width,
  * \param mpi pointer to mp_image_t structure
  * \param pts
  */
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
 	struct vf_priv_s *priv = vf->priv;
 	int size = 0;
 	int i;
@@ -857,7 +856,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
  * Given the image format specified by \a fmt, this routine is called
  * to ask if the format is supported or not.
  */
-static int query_format(struct vf_instance_s* vf, unsigned int fmt){
+static int query_format(struct vf_instance *vf, unsigned int fmt){
 	VERBOSE("query_format() called\n");
 
 	switch (fmt) {
@@ -894,9 +893,9 @@ static void uninit(vf_instance_t *vf) {
  * This routine will do some basic initialization of local structures etc.,
  * and then parse the command line arguments specific for the ZRMJPEG filter.
  */
-static int open(vf_instance_t *vf, char* args){
+static int vf_open(vf_instance_t *vf, char *args){
 	struct vf_priv_s *priv;
-	VERBOSE("open() called: args=\"%s\"\n", args);
+	VERBOSE("vf_open() called: args=\"%s\"\n", args);
 
 	vf->config = config;
 	vf->put_image = put_image;
@@ -1063,7 +1062,6 @@ const vf_info_t vf_info_zrmjpeg = {
     "zrmjpeg",
     "Rik Snel",
     "",
-    open,
+    vf_open,
     NULL
 };
-

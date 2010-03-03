@@ -67,6 +67,7 @@
 
 #include "libvo/sub.h"
 
+#include "demux_mov.h"
 #include "qtpalette.h"
 #include "parse_mp4.h" // .MP4 specific stuff
 
@@ -165,7 +166,7 @@ typedef struct {
     void* desc; // image/sound/etc description (pointer to ImageDescription etc)
 } mov_track_t;
 
-void mov_build_index(mov_track_t* trak,int timescale){
+static void mov_build_index(mov_track_t* trak,int timescale){
     int i,j,s;
     int last=trak->chunks_size;
     unsigned int pts=0;

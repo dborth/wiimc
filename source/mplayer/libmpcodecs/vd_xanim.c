@@ -34,7 +34,7 @@
 
 #include "vd_internal.h"
 
-static vd_info_t info = {
+static const vd_info_t info = {
 	"XAnim codecs",
 	"xanim",
 	"A'rpi & Alex",
@@ -335,6 +335,22 @@ static int xacodec_query(sh_video_t *sh, XA_CODEC_HDR *codec_hdr)
     }
 }
 
+/* These functions are required for loading XAnim binary libs.
+ * Add forward declarations to avoid warnings with -Wmissing-prototypes. */
+void XA_Print(char *fmt, ...);
+void TheEnd1(char *err_mess);
+void XA_Add_Func_To_Free_Chain(XA_ANIM_HDR *anim_hdr, void (*function)());
+unsigned long XA_Time_Read(void);
+void XA_Gen_YUV_Tabs(XA_ANIM_HDR *anim_hdr);
+void JPG_Setup_Samp_Limit_Table(XA_ANIM_HDR *anim_hdr);
+void JPG_Alloc_MCU_Bufs(XA_ANIM_HDR *anim_hdr, unsigned int width,
+                        unsigned int height, unsigned int full_flag);
+void *YUV2x2_Blk_Func(unsigned int image_type, int blks,
+                      unsigned int dith_flag);
+void *YUV2x2_Map_Func(unsigned int image_type, unsigned int dith_type);
+void *XA_YUV1611_Func(unsigned int image_type);
+void *XA_YUV221111_Func(unsigned int image_type);
+
 void XA_Print(char *fmt, ...)
 {
     va_list vallist;
@@ -370,13 +386,12 @@ void XA_Add_Func_To_Free_Chain(XA_ANIM_HDR *anim_hdr, void (*function)())
     return;
 }
 
-
 unsigned long XA_Time_Read(void)
 {
     return GetTimer(); //(GetRelativeTime());
 }
 
-void XA_dummy(void)
+static void XA_dummy(void)
 {
     XA_Print("dummy() called");
 }
@@ -394,7 +409,7 @@ void JPG_Setup_Samp_Limit_Table(XA_ANIM_HDR *anim_hdr)
 }
 
 void JPG_Alloc_MCU_Bufs(XA_ANIM_HDR *anim_hdr, unsigned int width,
-	unsigned int height, unsigned int full_flag)
+                        unsigned int height, unsigned int full_flag)
 {
     XA_Print("JPG_Alloc_MCU_Bufs('anim_hdr: %08x', 'width: %d', 'height: %d', 'full_flag: %d')",
 	    anim_hdr, width, height, full_flag);
@@ -423,7 +438,7 @@ typedef struct
     image->planes[1][((x)>>1)+((y)>>1)*image->stride[1]]=cmap2x2->clr1_0;\
     image->planes[2][((x)>>1)+((y)>>1)*image->stride[2]]=cmap2x2->clr1_1;
 
-void XA_2x2_OUT_1BLK_Convert(unsigned char *image_p, unsigned int x, unsigned int y,
+static void XA_2x2_OUT_1BLK_Convert(unsigned char *image_p, unsigned int x, unsigned int y,
     unsigned int imagex, XA_2x2_Color *cmap2x2)
 {
     mp_image_t *mpi = (mp_image_t *)image_p;
@@ -440,7 +455,7 @@ void XA_2x2_OUT_1BLK_Convert(unsigned char *image_p, unsigned int x, unsigned in
     return;
 }
 
-void XA_2x2_OUT_4BLKS_Convert(unsigned char *image_p, unsigned int x, unsigned int y,
+static void XA_2x2_OUT_4BLKS_Convert(unsigned char *image_p, unsigned int x, unsigned int y,
     unsigned int imagex, XA_2x2_Color *cm0, XA_2x2_Color *cm1, XA_2x2_Color *cm2,
     XA_2x2_Color *cm3)
 {
@@ -470,7 +485,7 @@ void *YUV2x2_Blk_Func(unsigned int image_type, int blks, unsigned int dith_flag)
 
 //  Take Four Y's and UV and put them into a 2x2 Color structure.
 
-void XA_YUV_2x2_clr(XA_2x2_Color *cmap2x2, unsigned int Y0, unsigned int Y1,
+static void XA_YUV_2x2_clr(XA_2x2_Color *cmap2x2, unsigned int Y0, unsigned int Y1,
     unsigned int Y2, unsigned int Y3, unsigned int U, unsigned int V,
     unsigned int map_flag, unsigned int *map, XA_CHDR *chdr)
 {
@@ -522,7 +537,7 @@ YUVTabs def_yuv_tabs;
 
 /* -------------- YUV 4x4 1x1 1x1  (4:1:0 aka YVU9) [Indeo 3,4,5] ------------------ */
 
-void XA_YUV1611_Convert(unsigned char *image_p, unsigned int imagex, unsigned int imagey,
+static void XA_YUV1611_Convert(unsigned char *image_p, unsigned int imagex, unsigned int imagey,
     unsigned int i_x, unsigned int i_y, YUVBufs *yuv, YUVTabs *yuv_tabs,
     unsigned int map_flag, unsigned int *map, XA_CHDR *chdr)
 {
@@ -602,7 +617,7 @@ void *XA_YUV1611_Func(unsigned int image_type)
 
 /* --------------- YUV 2x2 1x1 1x1 (4:2:0 aka YV12) [3ivX,H263] ------------ */
 
-void XA_YUV221111_Convert(unsigned char *image_p, unsigned int imagex, unsigned int imagey,
+static void XA_YUV221111_Convert(unsigned char *image_p, unsigned int imagex, unsigned int imagey,
     unsigned int i_x, unsigned int i_y, YUVBufs *yuv, YUVTabs *yuv_tabs, unsigned int map_flag,
     unsigned int *map, XA_CHDR *chdr)
 {

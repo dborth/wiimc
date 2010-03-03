@@ -33,6 +33,7 @@
 
 #include "stream/stream.h"
 #include "demuxer.h"
+#include "demux_ty_osd.h"
 #include "stheader.h"
 #include "parse_es.h"
 #include "mpeg_hdr.h"
@@ -317,7 +318,7 @@ mpeg_header_parser:
 
    // display info:
    sh_video->format=picture.mpeg1?0x10000001:0x10000002; // mpeg video
-   sh_video->fps=picture.fps;
+   sh_video->fps=picture.fps * picture.frame_rate_extension_n / picture.frame_rate_extension_d;
    if(!sh_video->fps){
      sh_video->frametime=0;
    } else {
@@ -381,7 +382,7 @@ mpeg_header_parser:
    }
 
    if(mp_vc1_decode_sequence_header(&picture, &videobuffer[4], videobuf_len-4)) {
-     sh_video->bih = (BITMAPINFOHEADER *) calloc(1, sizeof(BITMAPINFOHEADER) + videobuf_len);
+     sh_video->bih = calloc(1, sizeof(BITMAPINFOHEADER) + videobuf_len);
      if(sh_video->bih == NULL) {
        mp_msg(MSGT_DECVIDEO,MSGL_ERR,"Couldn't alloc %d bytes for VC-1 extradata!\n", sizeof(BITMAPINFOHEADER) + videobuf_len);
        return 0;
@@ -404,8 +405,6 @@ mpeg_header_parser:
 
 return 1;
 }
-
-void ty_processuserdata( unsigned char* buf, int len );
 
 static void process_userdata(unsigned char* buf,int len){
     int i;
@@ -434,6 +433,7 @@ int video_read_frame(sh_video_t* sh_video,float* frame_time_ptr,unsigned char** 
     float frame_time=1;
     float pts1=d_video->pts;
     float pts=0;
+    float fps;
     int picture_coding_type=0;
     int in_size=0;
     video_codec_t video_codec = find_video_codec(sh_video);
@@ -470,14 +470,15 @@ int video_read_frame(sh_video_t* sh_video,float* frame_time_ptr,unsigned char** 
             case 0x100: picture_coding_type=(videobuffer[start+1] >> 3) & 7;break;
           }
         }
+        fps = picture.fps * picture.frame_rate_extension_n / picture.frame_rate_extension_d;
 
         *start=videobuffer; in_size=videobuf_len;
 
     // get mpeg fps:
-    if(sh_video->fps!=picture.fps) if(!force_fps && !telecine){
-            mp_msg(MSGT_CPLAYER,MSGL_WARN,"Warning! FPS changed %5.3f -> %5.3f  (%f) [%d]  \n",sh_video->fps,picture.fps,sh_video->fps-picture.fps,picture.frame_rate_code);
-            sh_video->fps=picture.fps;
-            sh_video->frametime=1.0/picture.fps;
+    if(sh_video->fps!=fps) if(!force_fps && !telecine){
+            mp_msg(MSGT_CPLAYER,MSGL_WARN,"Warning! FPS changed %5.3f -> %5.3f  (%f) [%d]  \n",sh_video->fps,fps,sh_video->fps-fps,picture.frame_rate_code);
+            sh_video->fps=fps;
+            sh_video->frametime=1.0/fps;
     }
 
     // fix mpeg2 frametime:
@@ -646,4 +647,3 @@ int video_read_frame(sh_video_t* sh_video,float* frame_time_ptr,unsigned char** 
     if(frame_time_ptr) *frame_time_ptr=frame_time;
     return in_size;
 }
-

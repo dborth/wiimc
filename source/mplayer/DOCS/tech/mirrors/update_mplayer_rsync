@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # MPlayer mirroring script
-# $Id: update_mplayer_rsync 18810 2006-06-24 21:51:51Z attila $
+# $Id: update_mplayer_rsync 30675 2010-02-20 21:02:49Z diego $
 
 PATH=<set_path_if_necessary>
 LOCK=<path_to_lockfile>
@@ -36,4 +36,3 @@ then
   mailx -s "MPlayer mirror" $MAILADR < $TMPFILE
 fi
 rm -f $TMPFILE
-

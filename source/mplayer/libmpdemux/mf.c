@@ -47,7 +47,7 @@ double mf_fps = 25.0;
 char * mf_type = NULL; //"jpg";
 
 mf_t* open_mf(char * filename){
-#if defined(HAVE_GLOB) || defined(__MINGW32__) || defined(GEKKO)
+#if defined(HAVE_GLOB) || defined(__MINGW32__)
  glob_t        gg;
  struct stat   fs;
  int           i;
@@ -168,4 +168,3 @@ exit_mf:
  return 0;
 #endif
 }
-

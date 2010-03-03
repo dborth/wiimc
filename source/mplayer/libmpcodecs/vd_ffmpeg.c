@@ -33,7 +33,7 @@
 
 #include "vd_internal.h"
 
-static vd_info_t info = {
+static const vd_info_t info = {
     "FFmpeg's libavcodec codec family",
     "ffmpeg",
     "A'rpi",
@@ -172,7 +172,8 @@ static int control(sh_video_t *sh, int cmd, void *arg, ...){
     return CONTROL_UNKNOWN;
 }
 
-void mp_msp_av_log_callback(void *ptr, int level, const char *fmt, va_list vl)
+static void mp_msp_av_log_callback(void *ptr, int level, const char *fmt,
+                                   va_list vl)
 {
     static int print_prefix=1;
     AVClass *avc= ptr ? *(AVClass **)ptr : NULL;
@@ -479,6 +480,7 @@ static void draw_slice(struct AVCodecContext *s,
                         int y, int type, int height){
     sh_video_t *sh = s->opaque;
     uint8_t *source[MP_MAX_PLANES]= {src->data[0] + offset[0], src->data[1] + offset[1], src->data[2] + offset[2]};
+    int strides[MP_MAX_PLANES] = {src->linesize[0], src->linesize[1], src->linesize[2]};
 #if 0
     int start=0, i;
     int width= s->width;
@@ -501,8 +503,19 @@ static void draw_slice(struct AVCodecContext *s,
         }
     }else
 #endif
+    if (height < 0)
+    {
+        int i;
+        height = -height;
+        y -= height;
+        for (i = 0; i < MP_MAX_PLANES; i++)
+        {
+            strides[i] = -strides[i];
+            source[i] -= strides[i];
+        }
+    }
     if (y < sh->disp_h) {
-        mpcodecs_draw_slice (sh, source, src->linesize, sh->disp_w, (y+height)<=sh->disp_h?height:sh->disp_h-y, 0, y);
+        mpcodecs_draw_slice (sh, source, strides, sh->disp_w, (y+height)<=sh->disp_h?height:sh->disp_h-y, 0, y);
     }
 }
 
@@ -599,9 +612,8 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
 
     if (IMGFMT_IS_XVMC(ctx->best_csp) || IMGFMT_IS_VDPAU(ctx->best_csp)) {
         type =  MP_IMGTYPE_NUMBERED | (0xffff << 16);
-    }
-    else if (!pic->buffer_hints) {
-/*
+    } else
+    if (!pic->buffer_hints) {
         if(ctx->b_count>1 || ctx->ip_count>2){
             mp_msg(MSGT_DECVIDEO, MSGL_WARN, MSGTR_MPCODECS_DRIFailure);
 
@@ -609,16 +621,15 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
             avctx->get_buffer= avcodec_default_get_buffer;
             return avctx->get_buffer(avctx, pic);
         }
-*/
-/*
+
         if(avctx->has_b_frames){
             type= MP_IMGTYPE_IPB;
         }else{
             type= MP_IMGTYPE_IP;
         }
         mp_msg(MSGT_DECVIDEO, MSGL_DBG2, type== MP_IMGTYPE_IPB ? "using IPB\n" : "using IP\n");
-*/
     }
+
     if (ctx->best_csp == IMGFMT_RGB8 || ctx->best_csp == IMGFMT_BGR8)
         flags |= MP_IMGFLAG_RGB_PALETTE;
     mpi= mpcodecs_get_image(sh, type, flags, width, height);
@@ -768,7 +779,8 @@ typedef struct dp_hdr_s {
     uint32_t chunktab;        // offset to chunk offset array
 } dp_hdr_t;
 
-void swap_palette(void *pal) {
+static void swap_palette(void *pal)
+{
     int i;
     uint32_t *p = pal;
     for (i = 0; i < AVPALETTE_COUNT; i++)
@@ -789,7 +801,6 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
     if(len<=0) return NULL; // skipped frame
 
 //ffmpeg interlace (mpeg2) bug have been fixed. no need of -noslices
-
     if (!dr1)
     avctx->draw_horiz_band=NULL;
     if(ctx->vo_initialized && !(flags&3) && !dr1){
@@ -902,12 +913,10 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
         avctx->width, avctx->height);
     if(!mpi){        // temporary!
         mp_msg(MSGT_DECVIDEO, MSGL_WARN, MSGTR_MPCODECS_CouldntAllocateImageForCodec);
-        printf(MSGT_DECVIDEO, MSGL_WARN, MSGTR_MPCODECS_CouldntAllocateImageForCodec);
         return NULL;
     }
 
-    if(!dr1)
-	{
+    if(!dr1){
         mpi->planes[0]=pic->data[0];
         mpi->planes[1]=pic->data[1];
         mpi->planes[2]=pic->data[2];

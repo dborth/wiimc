@@ -2,7 +2,7 @@
  *
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: dvbin.h 30207 2010-01-04 18:58:35Z diego $
+ * $Id: dvbin.h 30818 2010-03-02 19:57:17Z diego $
  */
 
 #ifndef MPLAYER_DVBIN_H
@@ -15,27 +15,9 @@
 #define LOF1 (9750*1000UL)
 #define LOF2 (10600*1000UL)
 
-#ifdef CONFIG_DVB_HEAD
-	#include <linux/dvb/dmx.h>
-	#include <linux/dvb/frontend.h>
-	#include <linux/dvb/version.h>
-#else
-	#include <ost/dmx.h>
-	#include <ost/sec.h>
-	#include <ost/frontend.h>
-	#define fe_status_t FrontendStatus
-	#define fe_spectral_inversion_t SpectralInversion
-	#define fe_modulation_t Modulation
-	#define fe_code_rate_t CodeRate
-	#define fe_transmit_mode_t TransmitMode
-	#define fe_guard_interval_t GuardInterval
-	#define fe_bandwidth_t BandWidth
-	#define fe_hierarchy_t Hierarchy
-	#define fe_sec_voltage_t SecVoltage
-	#define dmx_pes_filter_params dmxPesFilterParams
-	#define dmx_sct_filter_params dmxSctFilterParams
-	#define dmx_pes_type_t dmxPesType_t
-#endif
+#include <linux/dvb/dmx.h>
+#include <linux/dvb/frontend.h>
+#include <linux/dvb/version.h>
 
 #undef DVB_ATSC
 #if defined(DVB_API_VERSION_MINOR)

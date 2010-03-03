@@ -36,12 +36,13 @@ MPlayer (1.0)
     * support for displaying subs in the terminal (FIXME)
     * support for subtitles with audio-only files
     * support for right-to-left languages with embedded subtitles
+    * support for UTF-16 encoded external subtitles
     * support for 8 channel audio
     * sync dvd:// and dvdnav:// features
     * support for MPEG-4 ASP in VDPAU video output (non B-frame only)
     * support for live and non-live DVB teletext with demuxer lavf
     * -name, -title and -use-filename-title options for MPlayer
-    * support for stream handling via FFmpeg
+    * support for stream handling via FFmpeg, in particular rtmp and rtsp
       (use e.g. ffmpeg://http://example.com/test)
     * experimental support for external libass, configure with
       --disable-ass-internal

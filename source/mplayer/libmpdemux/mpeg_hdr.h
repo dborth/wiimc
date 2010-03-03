@@ -27,6 +27,8 @@ typedef struct {
     int aspect_ratio_information;
     int frame_rate_code;
     float fps;
+    int frame_rate_extension_n;
+    int frame_rate_extension_d;
     int bitrate; // 0x3FFFF==VBR
     // timing:
     int picture_structure;
@@ -47,5 +49,7 @@ int mp4_header_process_vol(mp_mpeg_header_t * picture, unsigned char * buffer);
 void mp4_header_process_vop(mp_mpeg_header_t * picture, unsigned char * buffer);
 int h264_parse_sps(mp_mpeg_header_t * picture, unsigned char * buf, int len);
 int mp_vc1_decode_sequence_header(mp_mpeg_header_t * picture, unsigned char * buf, int len);
+
+unsigned char mp_getbits(unsigned char *buffer, unsigned int from, unsigned char len);
 
 #endif /* MPLAYER_MPEG_HDR_H */

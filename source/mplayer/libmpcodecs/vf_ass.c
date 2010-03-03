@@ -34,6 +34,7 @@
 
 #include "img_format.h"
 #include "mp_image.h"
+#include "vd.h"
 #include "vf.h"
 
 #include "libvo/fastmemcpy.h"
@@ -67,14 +68,11 @@ static const struct vf_priv_s {
 	unsigned char* dirty_rows;
 } vf_priv_dflt;
 
-extern int opt_screen_size_x;
-extern int opt_screen_size_y;
-
 extern ass_track_t* ass_track;
 extern float sub_delay;
 extern int sub_visibility;
 
-static int config(struct vf_instance_s* vf,
+static int config(struct vf_instance *vf,
 	int width, int height, int d_width, int d_height,
 	unsigned int flags, unsigned int outfmt)
 {
@@ -95,16 +93,16 @@ static int config(struct vf_instance_s* vf,
 	if (vf->priv->ass_priv) {
 		ass_configure(vf->priv->ass_priv, vf->priv->outw, vf->priv->outh, 0);
 #if defined(LIBASS_VERSION) && LIBASS_VERSION >= 0x00908000
-		ass_set_aspect_ratio(vf->priv->ass_priv, ((double)d_width) / d_height, ((double)width) / height);
+		ass_set_aspect_ratio(vf->priv->ass_priv, 1, 1);
 #else
-		ass_set_aspect_ratio(vf->priv->ass_priv, ((double)d_width) / d_height);
+		ass_set_aspect_ratio(vf->priv->ass_priv, 1);
 #endif
 	}
 
 	return vf_next_config(vf, vf->priv->outw, vf->priv->outh, d_width, d_height, flags, outfmt);
 }
 
-static void get_image(struct vf_instance_s* vf, mp_image_t *mpi)
+static void get_image(struct vf_instance *vf, mp_image_t *mpi)
 {
 	if(mpi->type == MP_IMGTYPE_IPB) return;
 	if(mpi->flags & MP_IMGFLAG_PRESERVE) return;
@@ -163,7 +161,7 @@ static void blank(mp_image_t *mpi, int y1, int y2)
 	}
 }
 
-static int prepare_image(struct vf_instance_s* vf, mp_image_t *mpi)
+static int prepare_image(struct vf_instance *vf, mp_image_t *mpi)
 {
 	if(mpi->flags&MP_IMGFLAG_DIRECT || mpi->flags&MP_IMGFLAG_DRAW_CALLBACK){
 		vf->dmpi = mpi->priv;
@@ -211,7 +209,7 @@ static int prepare_image(struct vf_instance_s* vf, mp_image_t *mpi)
 /**
  * \brief Copy specified rows from render_context.dmpi to render_context.planes, upsampling to 4:4:4
  */
-static void copy_from_image(struct vf_instance_s* vf, int first_row, int last_row)
+static void copy_from_image(struct vf_instance *vf, int first_row, int last_row)
 {
 	int pl;
 	int i, j, k;
@@ -257,7 +255,7 @@ static void copy_from_image(struct vf_instance_s* vf, int first_row, int last_ro
 /**
  * \brief Copy all previously copied rows back to render_context.dmpi
  */
-static void copy_to_image(struct vf_instance_s* vf)
+static void copy_to_image(struct vf_instance *vf)
 {
 	int pl;
 	int i, j, k;
@@ -288,7 +286,7 @@ static void copy_to_image(struct vf_instance_s* vf)
 	}
 }
 
-static void my_draw_bitmap(struct vf_instance_s* vf, unsigned char* bitmap, int bitmap_w, int bitmap_h, int stride, int dst_x, int dst_y, unsigned color)
+static void my_draw_bitmap(struct vf_instance *vf, unsigned char* bitmap, int bitmap_w, int bitmap_h, int stride, int dst_x, int dst_y, unsigned color)
 {
 	unsigned char y = rgba2y(color);
 	unsigned char u = rgba2u(color);
@@ -316,7 +314,7 @@ static void my_draw_bitmap(struct vf_instance_s* vf, unsigned char* bitmap, int 
 	}
 }
 
-static int render_frame(struct vf_instance_s* vf, mp_image_t *mpi, const ass_image_t* img)
+static int render_frame(struct vf_instance *vf, mp_image_t *mpi, const ass_image_t* img)
 {
 	if (img) {
 		memset(vf->priv->dirty_rows, 0, vf->priv->outh); // reset dirty rows
@@ -331,7 +329,7 @@ static int render_frame(struct vf_instance_s* vf, mp_image_t *mpi, const ass_ima
 	return 0;
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 {
 	ass_image_t* images = 0;
 	if (sub_visibility && vf->priv->ass_priv && ass_track && (pts != MP_NOPTS_VALUE))
@@ -343,7 +341,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
 	return vf_next_put_image(vf, vf->dmpi, pts);
 }
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt)
+static int query_format(struct vf_instance *vf, unsigned int fmt)
 {
 	switch(fmt){
 	case IMGFMT_YV12:
@@ -369,7 +367,7 @@ static int control(vf_instance_t *vf, int request, void *data)
 	return vf_next_control(vf, request, data);
 }
 
-static void uninit(struct vf_instance_s* vf)
+static void uninit(struct vf_instance *vf)
 {
 	if (vf->priv->ass_priv)
 		ass_renderer_done(vf->priv->ass_priv);
@@ -388,7 +386,7 @@ static const unsigned int fmt_list[]={
 	0
 };
 
-static int open(vf_instance_t *vf, char* args)
+static int vf_open(vf_instance_t *vf, char *args)
 {
 	int flags;
 	vf->priv->outfmt = vf_match_csp(&vf->next,fmt_list,IMGFMT_YV12);
@@ -431,7 +429,6 @@ const vf_info_t vf_info_ass = {
 	"ass",
 	"Evgeniy Stepanov",
 	"",
-	open,
+	vf_open,
 	&vf_opts
 };
-

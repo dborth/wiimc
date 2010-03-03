@@ -24,6 +24,8 @@
  */
 
 #include "cfg-common.h"
+#include "libmpcodecs/vd.h"
+#include "libvo/vo_zr.h"
 
 extern int key_fifo_size;
 extern unsigned doubleclick_time;
@@ -37,11 +39,6 @@ extern char *lirc_configfile;
 extern float vo_panscanrange;
 /* only used at startup (setting these values from configfile) */
 extern char *vo_geometry;
-
-extern int opt_screen_size_x;
-extern int opt_screen_size_y;
-extern int fullscreen;
-extern int vidmode;
 
 extern char *ao_outputfilename;
 extern int ao_pcm_waveheader;
@@ -58,9 +55,6 @@ extern int menu_fribidi_flip_commas;
 
 extern char *unrar_executable;
 
-int vo_zr_parseoption(const m_option_t* conf, char *opt, char * param);
-void vo_zr_revertoption(const m_option_t* opt,char* pram);
-
 extern m_option_t dxr2_opts[];
 
 extern char * skinName;
@@ -72,8 +66,6 @@ extern float force_monitor_aspect;
 extern float monitor_pixel_aspect;
 
 extern int sws_flags;
-int readPPOpt(void *conf, char *arg);
-void revertPPOpt(void *conf, char* opt);
 extern char* pp_help;
 
 const m_option_t vd_conf[]={
@@ -188,6 +180,9 @@ const m_option_t mplayer_opts[]={
 	{"screenh", &vo_screenheight, CONF_TYPE_INT, CONF_RANGE|CONF_OLD, 0, 4096, NULL},
 	// Geometry string
 	{"geometry", &vo_geometry, CONF_TYPE_STRING, 0, 0, 0, NULL},
+	// vo name (X classname) and window title strings
+	{"name", &vo_winname, CONF_TYPE_STRING, 0, 0, 0, NULL},
+	{"title", &vo_wintitle, CONF_TYPE_STRING, 0, 0, 0, NULL},
 	// set aspect ratio of monitor - useful for 16:9 TV-out
 	{"monitoraspect", &force_monitor_aspect, CONF_TYPE_FLOAT, CONF_RANGE, 0.0, 9.0, NULL},
 	{"monitorpixelaspect", &monitor_pixel_aspect, CONF_TYPE_FLOAT, CONF_RANGE, 0.2, 9.0, NULL},
@@ -264,11 +259,13 @@ const m_option_t mplayer_opts[]={
 
 	{"use-filedir-conf", &use_filedir_conf, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
 	{"nouse-filedir-conf", &use_filedir_conf, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
+	{"use-filename-title", &use_filename_title, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
+	{"nouse-filename-title", &use_filename_title, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
 #ifdef CONFIG_CRASH_DEBUG
 	{"crash-debug", &crash_debug, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
 	{"nocrash-debug", &crash_debug, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
 #endif
-	{"osdlevel", &osd_level, CONF_TYPE_INT, CONF_RANGE, 0, 4, NULL},
+	{"osdlevel", &osd_level, CONF_TYPE_INT, CONF_RANGE, 0, 3, NULL},
 	{"osd-duration", &osd_duration, CONF_TYPE_INT, CONF_MIN, 0, 0, NULL},
 #ifdef CONFIG_MENU
 	{"menu", &use_menu, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
@@ -332,9 +329,7 @@ const m_option_t mplayer_opts[]={
 	{"noenqueue", &enqueue, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 	{"guiwid", &guiWinID, CONF_TYPE_INT, 0, 0, 0, NULL},
 #endif
-	
-  //
-  
+
 	{"noloop", &mpctx_s.loop_times, CONF_TYPE_FLAG, 0, 0, -1, NULL},
 	{"loop", &mpctx_s.loop_times, CONF_TYPE_INT, CONF_RANGE, -1, 10000, NULL},
 	{"playlist", NULL, CONF_TYPE_STRING, 0, 0, 0, NULL},
@@ -388,4 +383,3 @@ const m_option_t mplayer_opts[]={
 };
 
 #endif /* MPLAYER_CFG_MPLAYER_H */
-

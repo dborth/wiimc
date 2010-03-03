@@ -93,20 +93,3 @@ void copy_mpi(mp_image_t *dmpi, mp_image_t *mpi) {
 	       dmpi->stride[0],mpi->stride[0]);
   }
 }
-
-void clear_mpi(mp_image_t *mpi) {
-int s;
-  if (mpi->imgfmt == IMGFMT_IF09)
-  	s=mpi->bpp*mpi->width*(mpi->height+2)/8+mpi->chroma_width*mpi->chroma_height;
-  else
-  	s=mpi->bpp*mpi->width*(mpi->height+2)/8;
-  
-  memset(mpi->planes[0],0,s);
-
-  if(mpi->flags&MP_IMGFLAG_PLANAR){
-   if(mpi->flags&MP_IMGFLAG_SWAPPED)
-     memset(mpi->planes[1],128,s-(mpi->planes[1]-mpi->planes[0]));
-   else
-     memset(mpi->planes[2],128,s-(mpi->planes[2]-mpi->planes[0]));
-  }    
-}

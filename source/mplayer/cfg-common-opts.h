@@ -20,7 +20,7 @@
 #define MPLAYER_CFG_COMMON_OPTS_H
 
 #include "config.h"
-
+#include "libmpcodecs/vd.h"
 #include "osdep/priority.h"
 
 // ------------------------- common options --------------------
@@ -82,7 +82,7 @@
 	{"nocookies", &network_cookies_enabled, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 #ifndef GEKKO	
 	{"cookies-file", &cookies_file, CONF_TYPE_STRING, 0, 0, 0, NULL},
-#endif	
+#endif
 	{"prefer-ipv4", &network_prefer_ipv4, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"ipv4-only-proxy", &network_ipv4_only_proxy, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"reuse-socket", &reuse_socket, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
@@ -118,7 +118,7 @@
 #ifndef GEKKO
         {"rtsp-port", &rtsp_port, CONF_TYPE_INT, CONF_RANGE, -1, 65535, NULL},
         {"rtsp-destination", &rtsp_destination, CONF_TYPE_STRING, CONF_MIN, 0, 0, NULL},
-#endif      
+#endif
 #else
         {"rtsp-port", "MPlayer was compiled without network support.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
         {"rtsp-destination", "MPlayer was compiled without network support.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
@@ -310,15 +310,15 @@
 	{"noflip-hebrew-commas", "MPlayer was compiled without FriBiDi support.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
 #endif /* CONFIG_FRIBIDI */
 #ifdef CONFIG_ICONV
-	{"subcp", &sub_cp, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
+	{"subcp", &sub_cp, CONF_TYPE_STRING, 0, 0, 0, NULL},
 #endif
 	{"subdelay", &sub_delay, CONF_TYPE_FLOAT, 0, 0.0, 10.0, NULL},
 	{"subfps", &sub_fps, CONF_TYPE_FLOAT, 0, 0.0, 10.0, NULL},
 	{"autosub", &sub_auto, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-    {"noautosub", &sub_auto, CONF_TYPE_FLAG, 0, 1, 0, NULL},
+        {"noautosub", &sub_auto, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 	{"unicode", &sub_unicode, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"nounicode", &sub_unicode, CONF_TYPE_FLAG, 0, 1, 0, NULL},
-	{"utf8", &sub_utf8, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
+	{"utf8", &sub_utf8, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"noutf8", &sub_utf8, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 	{"forcedsubsonly", &forced_subs_only, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	// specify IFO file for VOBSUB subtitle

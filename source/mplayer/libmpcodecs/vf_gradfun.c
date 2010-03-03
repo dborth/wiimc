@@ -273,7 +273,7 @@ static void filter(struct vf_priv_s *ctx, uint8_t *dst, uint8_t *src,
     }
 }
 
-static void get_image(struct vf_instance_s* vf, mp_image_t *mpi)
+static void get_image(struct vf_instance *vf, mp_image_t *mpi)
 {
     if (mpi->flags&MP_IMGFLAG_PRESERVE) return; // don't change
     // ok, we can do pp in-place:
@@ -291,7 +291,7 @@ static void get_image(struct vf_instance_s* vf, mp_image_t *mpi)
     mpi->flags |= MP_IMGFLAG_DIRECT;
 }
 
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 {
     mp_image_t *dmpi = vf->dmpi;
     int p;
@@ -325,7 +325,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
     return vf_next_put_image(vf, dmpi, pts);
 }
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt)
+static int query_format(struct vf_instance *vf, unsigned int fmt)
 {
     switch (fmt){
     case IMGFMT_YVU9:
@@ -347,7 +347,7 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt)
     return 0;
 }
 
-static int config(struct vf_instance_s* vf,
+static int config(struct vf_instance *vf,
                   int width, int height, int d_width, int d_height,
                   unsigned int flags, unsigned int outfmt)
 {
@@ -356,7 +356,7 @@ static int config(struct vf_instance_s* vf,
     return vf_next_config(vf,width,height,d_width,d_height,flags,outfmt);
 }
 
-static void uninit(struct vf_instance_s* vf)
+static void uninit(struct vf_instance *vf)
 {
     if (!vf->priv) return;
     av_free(vf->priv->buf);
@@ -364,7 +364,7 @@ static void uninit(struct vf_instance_s* vf)
     vf->priv = NULL;
 }
 
-static int open(vf_instance_t *vf, char* args)
+static int vf_open(vf_instance_t *vf, char *args)
 {
     float thresh = 1.2;
     int radius = 16;
@@ -402,6 +402,6 @@ const vf_info_t vf_info_gradfun = {
     "gradfun",
     "Loren Merritt",
     "",
-    open,
+    vf_open,
     NULL
 };

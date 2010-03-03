@@ -89,7 +89,7 @@ struct vf_priv_s {
 };
 
 /* Filter handler */
-static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
+static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 {
     mp_image_t        *dmpi;
     struct vf_priv_s  *priv;
@@ -146,14 +146,14 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
     return 0;
 }
 
-static void uninit(struct vf_instance_s* vf)
+static void uninit(struct vf_instance *vf)
 {
     /* Free private data */
     free(vf->priv);
 }
 
 /* Main entry funct for the filter */
-static int open(vf_instance_t *vf, char* args)
+static int vf_open(vf_instance_t *vf, char *args)
 {
 	struct vf_priv_s *p;
 
@@ -200,8 +200,6 @@ const vf_info_t vf_info_framestep = {
     "framestep",
     "Daniele Forghieri",
     "",
-    open,
+    vf_open,
     NULL
 };
-
-

@@ -30,12 +30,15 @@ static const AVCodecTag mp_wav_tags[] = {
     { CODEC_ID_ADPCM_THP,         MKTAG('T', 'H', 'P', 'A')},
     { CODEC_ID_ADPCM_XA,          MKTAG('P', 'S', 'X', 'A')},
     { CODEC_ID_AMR_NB,            MKTAG('n', 'b',   0,   0)},
+    { CODEC_ID_BINKAUDIO_DCT,     MKTAG('B', 'A', 'U', '1')},
+    { CODEC_ID_BINKAUDIO_RDFT,    MKTAG('B', 'A', 'U', '2')},
     { CODEC_ID_COOK,              MKTAG('c', 'o', 'o', 'k')},
     { CODEC_ID_DSICINAUDIO,       MKTAG('D', 'C', 'I', 'A')},
     { CODEC_ID_EAC3,              MKTAG('E', 'A', 'C', '3')},
     { CODEC_ID_INTERPLAY_DPCM,    MKTAG('I', 'N', 'P', 'A')},
     { CODEC_ID_MLP,               MKTAG('M', 'L', 'P', ' ')},
     { CODEC_ID_MP1,               0x50},
+    { CODEC_ID_MP4ALS,            MKTAG('A', 'L', 'S', ' ')},
     { CODEC_ID_MUSEPACK7,         MKTAG('M', 'P', 'C', ' ')},
     { CODEC_ID_MUSEPACK8,         MKTAG('M', 'P', 'C', '8')},
     { CODEC_ID_NELLYMOSER,        MKTAG('N', 'E', 'L', 'L')},
@@ -115,4 +118,3 @@ static const AVCodecTag mp_bmp_tags[] = {
 };
 
 const struct AVCodecTag * const mp_bmp_taglists[] = {ff_codec_bmp_tags, mp_bmp_tags, 0};
-

@@ -34,12 +34,11 @@ extern "C" {
 extern GXRModeObj *vmode;
 
 void GX_InitVideo();
-void GX_SetCamPosZ(float f);
 void GX_SetScreenPos(int xshift, int yshift, float xzoom, float yzoom);
 
 void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect);
 void GX_RenderTexture();
-void GX_UpdatePitch(int width,u16 *pitch);
+void GX_UpdatePitch(u16 *pitch);
 void GX_ResetTextureYUVPointers();
 void GX_FillTextureYUV(u16 height,u8 *buffer[3]);
 void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch);

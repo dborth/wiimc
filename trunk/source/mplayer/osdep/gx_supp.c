@@ -41,8 +41,6 @@
 #define HASPECT 320
 #define VASPECT 240
 
-static u16 currentWidth = 0;
-static u16 * currentPitch = NULL;
 static int drawMode = 0;
 
 void StartDrawThread();
@@ -77,16 +75,21 @@ static u8 *Vtexture[2] = {NULL,NULL};
 static u32 Ytexsize,UVtexsize;
 
 static GXTexObj YtexObj[2],UtexObj[2],VtexObj[2];
-static Mtx view;
-static u16 vwidth, vheight, oldvwidth, oldvheight, oldpitch;
 static u16 Ywidth, Yheight, UVwidth, UVheight;
 
-/* New texture based scaler */
+static Mtx view;
+
 typedef struct tagcamera {
 	guVector pos;
 	guVector up;
 	guVector view;
 } camera;
+
+static camera cam = {
+	{ 0.0f, 0.0f, 352.0f },
+	{ 0.0f, 0.5f, 0.0f },
+	{ 0.0f, 0.0f, -0.5f }
+};
 
 static s16 square[] ATTRIBUTE_ALIGN(32) = {
 	-HASPECT,  VASPECT,  0,
@@ -106,23 +109,12 @@ static u8 texcoords[] ATTRIBUTE_ALIGN(32) = {
 	0x00, 0x01
 };
 
-static camera cam = {
-	{ 0.0f, 0.0f, 352.0f },
-	{ 0.0f, 0.5f, 0.0f },
-	{ 0.0f, 0.0f, -0.5f }
-};
-
 void GX_SetScreenPos(int _hor_pos, int _vert_pos, float _hor_zoom, float _vert_zoom)
 {
 	hor_pos = _hor_pos;
 	vert_pos = _vert_pos;
 	hor_zoom = _hor_zoom;
 	vert_zoom = _vert_zoom;
-}
-
-void GX_SetCamPosZ(float f)
-{
-	cam.pos.z = f;
 }
 
 /****************************************************************************
@@ -285,7 +277,6 @@ void getStrideInfo(int *_w1,int *_df1,int *_Yrowpitch)  // for subtitle info
 static void draw_scaling()
 {
 	Mtx m, mv;
-	
 	memset(&view, 0, sizeof(Mtx));
 	guLookAt(view, &cam.pos, &cam.up, &cam.view);
 	guMtxIdentity(m);
@@ -318,22 +309,15 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 	UVrowpitch = pitch[1]/2-w2;
 	Yrowpitch = pitch[0]/2-w1;
 
-	vwidth = width;
-
 	Ywidth = ww;
 	UVwidth = ww>>1;
 
-	vheight = height;
-	Yheight = vheight;
-	UVheight = vheight>>1;
+	Yheight = height;
+	UVheight = height>>1;
 
-	/** Update scaling **/
-	oldvwidth = vwidth;
-	oldvheight = vheight;
+	// Update scaling
 	draw_initYUV();
 	draw_scaling();
-	vo_dwidth = vwidth;
-	vo_dheight = vheight;
 
 	p01= pitch[0];
 	p02= pitch[0] * 2;
@@ -341,9 +325,12 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 	p11= pitch[1];
 	p12= pitch[1] * 2;
 	p13= pitch[1] * 3;
+
+	vo_dwidth = width;
+	vo_dheight = height;
 }
 
-void GX_UpdatePitch(int width,u16 *pitch)
+void GX_UpdatePitch(u16 *pitch)
 {
 	//black
     memset(Ytexture[0], 0, Ytexsize);
@@ -352,10 +339,7 @@ void GX_UpdatePitch(int width,u16 *pitch)
     memset(Ytexture[1], 0, Ytexsize);
 	memset(Utexture[1], 0x80, UVtexsize);
 	memset(Vtexture[1], 0x80, UVtexsize);
-
-	currentWidth = width;
-	currentPitch = pitch;
-	GX_ConfigTextureYUV(width, vheight, pitch);
+	GX_ConfigTextureYUV(vo_dwidth, vo_dheight, pitch);
 }
 #include "timer.h"
 extern int render_texture_time;
@@ -487,9 +471,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	memset(Vtexture[1], 0x80, UVtexsize);
 
 	whichtex = 0;
-
-	/*** Setup for first call to scaler ***/
-	oldvwidth = oldvheight = oldpitch = -1;
 
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	GX_SetCullMode(GX_CULL_NONE);

@@ -219,7 +219,7 @@ void GuiButton::Update(GuiTrigger * t)
 				this->SetState(STATE_SELECTED, t->chan);
 
 				if(this->Rumble())
-					rumbleRequest[t->chan] = 1;
+					RequestRumble(t->chan);
 
 				//if(soundOver)
 				//	soundOver->Play();

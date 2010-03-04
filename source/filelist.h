@@ -150,9 +150,6 @@ extern const u32	nav_exit_size;
 extern const u8		nav_playlist_png[];
 extern const u32	nav_playlist_size;
 
-extern const u8		playlist_add_png[];
-extern const u32	playlist_add_size;
-
 extern const u8		bg_options_png[];
 extern const u32	bg_options_png_size;
 
@@ -218,6 +215,15 @@ extern const u32	throbber_png_size;
 
 extern const u8		icon_folder_png[];
 extern const u32	icon_folder_png_size;
+
+extern const u8		icon_folder_checked_png[];
+extern const u32	icon_folder_checked_png_size;
+
+extern const u8		icon_file_png[];
+extern const u32	icon_file_png_size;
+
+extern const u8		icon_file_checked_png[];
+extern const u32	icon_file_checked_png_size;
 
 extern const u8		icon_sd_png[];
 extern const u32	icon_sd_png_size;

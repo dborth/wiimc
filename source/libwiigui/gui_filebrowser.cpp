@@ -11,9 +11,6 @@
 #include "gui.h"
 #include "filebrowser.h"
 
-/**
- * Constructor for the GuiFileBrowser class.
- */
 GuiFileBrowser::GuiFileBrowser(int w, int h)
 {
 	width = w;
@@ -33,12 +30,14 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 	bgBrowseEntry = new GuiImageData(bg_browse_entry_png);
 	bgBrowseEntryOver = new GuiImageData(bg_browse_entry_over_png);
 	iconFolder = new GuiImageData(icon_folder_png);
+	iconFolderChecked = new GuiImageData(icon_folder_checked_png);
+	iconFile = new GuiImageData(icon_file_png);
+	iconFileChecked = new GuiImageData(icon_file_checked_png);
 	iconSD = new GuiImageData(icon_sd_png);
 	iconUSB = new GuiImageData(icon_usb_png);
 	iconDVD = new GuiImageData(icon_dvd_png);
 	iconSMB = new GuiImageData(icon_smb_png);
 	iconFTP = new GuiImageData(icon_ftp_png);
-	playlistAdd = new GuiImageData(playlist_add_png);
 
 	scrollbar = new GuiImageData(scrollbar_png);
 	scrollbarImg = new GuiImage(scrollbar);
@@ -109,25 +108,9 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 		fileList[i]->SetImageOver(fileListBg[i]);
 		fileList[i]->SetPosition(0,26*i+3);
 		fileList[i]->SetTrigger(trigA);
-		
-		playlistAddImg[i] = new GuiImage(playlistAdd);
-		playlistAddTip[i] = new GuiTooltip("Add to Playlist");
-		playlistAddBtn[i] = new GuiButton(playlistAdd->GetWidth(), playlistAdd->GetHeight());
-		playlistAddBtn[i]->SetParent(this);
-		playlistAddBtn[i]->SetImage(playlistAddImg[i]);
-		playlistAddBtn[i]->SetTooltip(playlistAddTip[i]);
-		playlistAddBtn[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-		playlistAddBtn[i]->SetPosition(-40, 2 + i*26);
-		playlistAddBtn[i]->SetTrigger(trigA);
-		playlistAddBtn[i]->SetEffectGrow();
-		playlistAddBtn[i]->SetVisible(false);
-		playlistAddBtn[i]->SetState(STATE_DISABLED);
 	}
 }
 
-/**
- * Destructor for the GuiFileBrowser class.
- */
 GuiFileBrowser::~GuiFileBrowser()
 {
 	delete arrowUpBtn;
@@ -145,12 +128,14 @@ GuiFileBrowser::~GuiFileBrowser()
 	delete bgBrowseEntry;
 	delete bgBrowseEntryOver;
 	delete iconFolder;
+	delete iconFolderChecked;
+	delete iconFile;
+	delete iconFileChecked;
 	delete iconSD;
 	delete iconUSB;
 	delete iconDVD;
 	delete iconSMB;
 	delete iconFTP;
-	delete playlistAdd;
 	delete scrollbar;
 	delete arrowDown;
 	delete arrowDownOver;
@@ -170,10 +155,6 @@ GuiFileBrowser::~GuiFileBrowser()
 
 		if(fileListIcon[i])
 			delete fileListIcon[i];
-		
-		delete playlistAddImg[i];
-		delete playlistAddTip[i];
-		delete playlistAddBtn[i];
 	}
 }
 
@@ -195,10 +176,7 @@ void GuiFileBrowser::ResetState()
 	selectedItem = 0;
 
 	for(int i=0; i<FILE_PAGESIZE; i++)
-	{
 		fileList[i]->ResetState();
-		playlistAddBtn[i]->ResetState();
-	}
 }
 
 void GuiFileBrowser::TriggerUpdate()
@@ -207,34 +185,19 @@ void GuiFileBrowser::TriggerUpdate()
 	listChanged = true;
 }
 
-/**
- * Draw the button on screen
- */
 void GuiFileBrowser::Draw()
 {
 	if(!this->IsVisible())
 		return;
 
 	for(u32 i=0; i<FILE_PAGESIZE; ++i)
-	{
 		fileList[i]->Draw();
-		playlistAddBtn[i]->Draw();
-	}
 
 	scrollbarImg->Draw();
 	arrowUpBtn->Draw();
 	arrowDownBtn->Draw();
 	scrollbarBoxBtn->Draw();
 	this->UpdateEffects();
-}
-
-void GuiFileBrowser::DrawTooltip()
-{
-	for(int i=0; i<FILE_PAGESIZE; i++)
-	{
-		if(playlistAddTip[i])
-			playlistAddTip[i]->DrawTooltip();
-	}
 }
 
 void GuiFileBrowser::Update(GuiTrigger * t)
@@ -376,6 +339,15 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 					case ICON_FOLDER:
 						fileListIcon[i] = new GuiImage(iconFolder);
 						break;
+					case ICON_FOLDER_CHECKED:
+						fileListIcon[i] = new GuiImage(iconFolderChecked);
+						break;
+					case ICON_FILE:
+						fileListIcon[i] = new GuiImage(iconFile);
+						break;
+					case ICON_FILE_CHECKED:
+						fileListIcon[i] = new GuiImage(iconFileChecked);
+						break;
 					case ICON_SD:
 						fileListIcon[i] = new GuiImage(iconSD);
 						break;
@@ -393,32 +365,11 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 						break;
 				}
 				fileList[i]->SetIcon(fileListIcon[i]);
-				
-				if(menuCurrent == MENU_BROWSE_MUSIC && i > 0)
-				{
-					if(browser.dir[0] == 0 || inPlaylist) // at root or in playlist
-					{
-						playlistAddBtn[i]->SetVisible(false);
-						playlistAddBtn[i]->SetState(STATE_DISABLED);
-					}
-					else
-					{
-						playlistAddBtn[i]->SetVisible(true);
-						if(playlistAddBtn[i]->GetState() == STATE_DISABLED)
-							playlistAddBtn[i]->SetState(STATE_DEFAULT);
-					}
-				}
 			}
 			else
 			{
 				fileList[i]->SetVisible(false);
 				fileList[i]->SetState(STATE_DISABLED);
-				
-				if(menuCurrent == MENU_BROWSE_MUSIC && i > 0)
-				{
-					playlistAddBtn[i]->SetVisible(false);
-					playlistAddBtn[i]->SetState(STATE_DISABLED);
-				}
 			}
 		}
 
@@ -445,8 +396,6 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 			fileListText[i]->SetScroll(SCROLL_HORIZONTAL);
 		else
 			fileListText[i]->SetScroll(SCROLL_NONE);
-		
-		playlistAddBtn[i]->Update(t);
 	}
 
 	// update the location of the scroll box based on the position in the file list

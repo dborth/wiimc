@@ -264,6 +264,8 @@ mplayerthread (void *arg)
 		if(controlledbygui == 2 || WiiSettings.playOrder == 0 || !playingAudio)
 			LWP_SuspendThread(mthread);
 
+		nowPlayingSet = false;
+
 		printf("load file: %s\n",loadedFile);
 		if(loadedFile[0] != 0)
 		{
@@ -305,6 +307,7 @@ bool InitMPlayer()
 void LoadMPlayer()
 {
 	controlledbygui = 0;
+	wiiResetPause();
 	HaltDeviceThread();
 	printf("return control to mplayer\n");
 	if(LWP_ThreadIsSuspended(mthread))

@@ -36,13 +36,10 @@ bool ChangeInterface(int device, int devnum, bool silent);
 bool ChangeInterface(char * filepath, bool silent);
 void CreateAppPath(char * origpath);
 void StripExt(char* string);
+void CleanFilename(char* string);
 int ParseDirectory(bool waitParse = false);
 int ParsePlaylistFile();
 int ParseOnlineMedia();
-void ResetPlaylist();
-int ParsePlaylist();
-bool EnqueueFile(char * path, char * name);
-bool EnqueueFolder(char * path);
 size_t LoadFile (char * buffer, char *filepath, bool silent);
 size_t SaveFile (char * buffer, char *filepath, size_t datasize, bool silent);
 

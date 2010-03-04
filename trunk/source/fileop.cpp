@@ -31,6 +31,7 @@ extern "C" {
 #include "menu.h"
 #include "filebrowser.h"
 #include "settings.h"
+#include "musicplaylist.h"
 #include "libwiigui/gui.h"
 
 #define THREAD_SLEEP 100
@@ -929,22 +930,32 @@ static bool ParseDirEntries()
 			browserList[browser.numEntries+i].length = filestat.st_size;
 			browserList[browser.numEntries+i].mtime = filestat.st_mtime;
 			browserList[browser.numEntries+i].isdir = (filestat.st_mode & _IFDIR) == 0 ? 0 : 1; // flag this as a dir
-			
+
 			if(browserList[browser.numEntries+i].isdir)
 			{
 				if(strcmp(filename, "..") == 0)
 					sprintf(browserList[browser.numEntries+i].displayname, "Up One Level");
 				else
 					strncpy(browserList[browser.numEntries+i].displayname, browserList[browser.numEntries+i].filename, MAXJOLIET);
+
 				browserList[browser.numEntries+i].icon = ICON_FOLDER;
 			}
 			else
 			{
 				if(isPlaylist)
 					browserList[browser.numEntries+i].isplaylist = 1;
-				
+
 				strncpy(browserList[browser.numEntries+i].displayname, browserList[browser.numEntries+i].filename, MAXJOLIET);
 				browserList[browser.numEntries+i].icon = ICON_NONE;
+
+				if(menuCurrent == MENU_BROWSE_MUSIC)
+				{
+					// check if this file is in the playlist
+					if(MusicPlaylistFind(browser.numEntries+i))
+						browserList[browser.numEntries+i].icon = ICON_FILE_CHECKED;
+					else
+						browserList[browser.numEntries+i].icon = ICON_FILE;
+				}
 
 				// hide the file's extension
 				if(WiiSettings.hideExtensions)
@@ -1237,186 +1248,6 @@ int ParseOnlineMedia()
 	// Sort the file list
 	qsort(browserList, browser.numEntries, sizeof(BROWSERENTRY), FileSortCallback);
 	return browser.numEntries;
-}
-
-/****************************************************************************
- * ResetsPlaylist
- * 
- * Resets the current playlist
- ***************************************************************************/
-void ResetPlaylist()
-{
-	if(playlist)
-	{
-		free(playlist);
-		playlist = NULL;
-	}
-	playlistSize = 0;
-}
-
-/****************************************************************************
- * ParsePlaylist
- * 
- * Loads the files inside the current playlist into the filebrowser
- ***************************************************************************/
-int ParsePlaylist()
-{
-	if(playlistSize == 0)
-	{
-		InfoPrompt("There are no files currently in the playlist.");
-		return 0;
-	}
-
-	ResetBrowser();
-	
-	AddBrowserEntry();
-	sprintf(browserList[0].filename, "..");
-	sprintf(browserList[0].displayname, "Exit Playlist");
-	browserList[0].length = 0;
-	browserList[0].mtime = 0;
-	browserList[0].isdir = 1;
-	browserList[0].icon = ICON_FOLDER;
-	browser.numEntries++;
-	
-	int i;
-
-	for(i=0; i < playlistSize; i++)
-	{
-		if(!AddBrowserEntry())
-			break;
-
-		sprintf(browserList[i+1].filename, playlist[i].filepath);
-		sprintf(browserList[i+1].displayname, playlist[i].displayname);
-		browserList[i+1].length = 0;
-		browserList[i+1].mtime = 0;
-		browserList[i+1].isdir = 0;
-		browserList[i+1].isplaylist = 0;
-		browserList[i+1].icon = ICON_NONE;
-	}
-	browser.numEntries += i;
-	return browser.numEntries;
-}
-
-/****************************************************************************
- * EnqueueFile
- * 
- * Adds the specified file (with full path) to the playlist.
- * If a playlist is found, it is parse and the music files inside are added.
- ***************************************************************************/
-bool EnqueueFile(char * path, char * name)
-{
-	if(path == NULL || name == NULL || strcmp(name,".") == 0)
-		return false;
-
-	char *ext = strrchr(path,'.');
-
-	if(ext == NULL)
-		return false; // file does not have an extension - skip it
-
-	ext++;
-
-	// check if this is a playlist
-	int i=0;
-	char *start;
-	do
-	{
-		if (strcasecmp(ext, validPlaylistExtensions[i++]) == 0)
-		{
-			// this is a playlist - parse it and add the files inside
-			char * playlistEntry;
-			char display[MAXJOLIET+1];
-			play_tree_t * list = parse_playlist_file(browserPlaylist);
-			
-			if(!list)
-				return false;
-
-			play_tree_iter_t *pt_iter = NULL;
-
-			if((pt_iter = pt_iter_create(&list, NULL)))
-			{
-				while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
-				{
-					start = strrchr(playlistEntry,'/');
-					if(start != NULL) // start up starting part of path
-					{
-						start++;
-						sprintf(display, start);
-					}
-					else
-					{
-						strncpy(display, playlistEntry, MAXJOLIET);
-						display[MAXJOLIET] = 0;
-					}
-					EnqueueFile(playlistEntry, display);
-				}
-				pt_iter_destroy(&pt_iter);
-			}
-			return true;
-		}
-	} while (validPlaylistExtensions[i][0] != 0);
-
-	// check if this is a valid audio file
-	i=0;
-	do
-	{
-		if (strcasecmp(ext, validAudioExtensions[i]) == 0)
-			break;
-	} while (validAudioExtensions[++i][0] != 0);
-	if (validAudioExtensions[i][0] == 0) // extension not found
-		return false;
-
-	if(!AddPlaylistEntry()) // add failed
-		return false;
-
-	strncpy(playlist[playlistSize-1].filepath, path, MAXPATHLEN);
-	strncpy(playlist[playlistSize-1].displayname, name, MAXJOLIET);
-	playlist[playlistSize-1].filepath[MAXPATHLEN] = 0;
-	playlist[playlistSize-1].displayname[MAXJOLIET] = 0;
-
-	// hide the file's extension
-	if(WiiSettings.hideExtensions)
-		StripExt(playlist[playlistSize-1].displayname);
-
-	// strip unwanted stuff from the filename
-	if(WiiSettings.cleanFilenames)
-		CleanFilename(playlist[playlistSize-1].displayname);
-
-	return true;
-}
-
-/****************************************************************************
- * EnqueueFolder
- * 
- * Adds all music files in the currently selected folder to the playlist
- ***************************************************************************/
-bool EnqueueFolder(char * path)
-{
-	char filename[MAXJOLIET+1];
-	char filepath[MAXPATHLEN];
-	struct stat filestat;
-	DIR_ITER *dir = diropen(path);
-
-	if(dir == NULL)
-	{
-		char msg[1024];
-		sprintf(msg, "Error opening %s", path);
-		ErrorPrompt(msg);
-		return false;
-	}
-
-	while(dirnext(dir,filename,&filestat) == 0)
-	{
-		if(filename[0] == '.')
-			continue;
-
-		sprintf(filepath, "%s/%s", path, filename);
-
-		if(filestat.st_mode & _IFDIR)
-			EnqueueFolder(filepath); // directory recursion doesn't work properly on SMB
-		else
-			EnqueueFile(filepath, filename);
-	}
-	return true;
 }
 
 static bool cancelFileLoad = false;

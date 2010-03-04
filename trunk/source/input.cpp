@@ -132,24 +132,42 @@ void MPlayerInput()
 			continue;
 
 		if(!drawGui)
-		{			
+		{
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
+			{
 				wiiPause();
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
+				UpdateVideoPauseIcon();
+			}
+			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
+			{
 				wiiSkipForward();
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
+				UpdateVideoPauseIcon();
+			}
+			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
+			{
 				wiiSkipBackward();
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
+				UpdateVideoPauseIcon();
+			}
+			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
+			{
 				wiiFastForward();
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
+				UpdateVideoPauseIcon();
+			}
+			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
+			{
 				wiiRewind();
+				UpdateVideoPauseIcon();
+			}
 		}
 		else
 		{
 			// Quick hack to allow people to unpause while the OSD GUI is visible by pointing above the 
 			// button bar and pressing A. We should look at this behavior. 
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A && userInput[i].wpad->ir.y < 340)
+			{
 				wiiPause();
+				UpdateVideoPauseIcon();
+			}
 		}
 	}
 

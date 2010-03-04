@@ -22,6 +22,7 @@
 #include "fileop.h"
 #include "input.h"
 #include "networkop.h"
+#include "musicplaylist.h"
 #include "filebrowser.h"
 #include "utils/gettext.h"
 #include "filelist.h"
@@ -118,8 +119,8 @@ static GuiButton * audiobarSkipBackwardBtn = NULL;
 static GuiButton * audiobarPauseBtn = NULL;
 static GuiButton * audiobarSkipForwardBtn = NULL;
 
-static GuiText * audiobarNowPlaying[4] = { NULL, NULL };
-static bool nowPlayingSet = false;
+static GuiText * audiobarNowPlaying[4] = { NULL, NULL, NULL, NULL };
+bool nowPlayingSet = false;
 
 static GuiImage * picturebarPreviousImg = NULL;
 static GuiImage * picturebarPreviousOverImg = NULL;
@@ -272,14 +273,14 @@ static void *UpdateGui (void *arg)
 		{
 			for(i=3; i >= 0; i--)
 			{
-				if(userInput[i].wpad->btns_d & WPAD_BUTTON_PLUS)
+				if(userInput[i].wpad->btns_d & WPAD_BUTTON_1)
 				{
 					int newMenu = menuCurrent + 1;
 					if(newMenu > MENU_SETTINGS)
 						newMenu = MENU_BROWSE_VIDEOS;
 					ChangeMenu(newMenu);
 				}
-				else if(userInput[i].wpad->btns_d & WPAD_BUTTON_MINUS)
+				else if(userInput[i].wpad->btns_d & WPAD_BUTTON_2)
 				{
 					int newMenu = menuCurrent - 1;
 					if(newMenu < MENU_BROWSE_VIDEOS)
@@ -295,7 +296,7 @@ static void *UpdateGui (void *arg)
 				updateFound = false;
 				LWP_CreateThread (&updatethread, AppUpdate, NULL, NULL, 0, 60);
 			}
-			
+
 			if(!creditsOpen && creditsthread != LWP_THREAD_NULL)
 			{
 				LWP_JoinThread(creditsthread, NULL);
@@ -980,6 +981,8 @@ static void MenuBrowse(int menu)
 
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	GuiTrigger trigPlus;
+	trigPlus.SetButtonOnlyTrigger(-1, WPAD_BUTTON_PLUS | WPAD_CLASSIC_BUTTON_PLUS, PAD_BUTTON_X);
 
 	GuiFileBrowser fileBrowser(552, 240);
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -989,8 +992,7 @@ static void MenuBrowse(int menu)
 	GuiImageData playlistImg(nav_playlist_png);
 	GuiImage playlistBtnImg(&playlistImg);
 	GuiText playlistBtnTxt(NULL, 18, (GXColor){0, 0, 0, 255});
-	playlistBtnTxt.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	playlistBtnTxt.SetPosition(-20, 0);
+	playlistBtnTxt.SetPosition(0, 9);
 	GuiButton playlistBtn(playlistBtnImg.GetWidth(), playlistBtnImg.GetHeight());
 	playlistBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	playlistBtn.SetPosition(48, -30);
@@ -998,8 +1000,13 @@ static void MenuBrowse(int menu)
 	playlistBtn.SetImage(&playlistBtnImg);
 	playlistBtn.SetLabel(&playlistBtnTxt);
 	playlistBtn.SetTrigger(&trigA);
+	playlistBtn.SetSelectable(false);
 	playlistBtn.SetEffectGrow();
 	playlistBtn.SetAlpha(128);
+
+	GuiButton playlistAddBtn(0, 0);
+	playlistAddBtn.SetTrigger(&trigPlus);
+	playlistAddBtn.SetSelectable(false);
 
 	HaltGui();
 	mainWindow->Append(&fileBrowser);
@@ -1010,6 +1017,7 @@ static void MenuBrowse(int menu)
 		sprintf(txt, "%d", playlistSize);
 		playlistBtnTxt.SetText(txt);
 
+		mainWindow->Append(&playlistAddBtn);
 		mainWindow->Append(&playlistBtn);
 	}
 
@@ -1065,7 +1073,7 @@ static void MenuBrowse(int menu)
 				goto done;
 			}
 		}
-		
+
 		if(inPlaylist && fileBrowser.fileList[0]->GetState() == STATE_CLICKED)
 		{
 			fileBrowser.fileList[0]->ResetState();
@@ -1180,39 +1188,35 @@ static void MenuBrowse(int menu)
 							audiobar->Append(audiobarSkipForwardBtn);
 						}
 						mainWindow->Append(audiobar);
-						nowPlayingSet = false;
 					}
 				}
 			}
-			
-			// music playlist add buttons - skip first entry (..)
-			if(menuCurrent != MENU_BROWSE_MUSIC || i == 0)
-				continue;
+		}
 
-			if(fileBrowser.playlistAddBtn[i]->GetState() == STATE_CLICKED)
+		if(playlistAddBtn.GetState() == STATE_CLICKED)
+		{
+			playlistAddBtn.ResetState();
+			int addIndex = browser.selIndex;
+
+			if(fileBrowser.IsFocused() && addIndex > 0)
 			{
-				fileBrowser.playlistAddBtn[i]->ResetState();
-				char fullpath[MAXPATHLEN+1];
-				int addIndex = browser.pageIndex + i;
-				sprintf(fullpath, "%s%s", browser.dir, browserList[addIndex].filename);
-
-				if(browserList[addIndex].isdir)
-					EnqueueFolder(fullpath);
+				if(browserList[addIndex].icon == ICON_FILE_CHECKED || 
+					browserList[addIndex].icon == ICON_FOLDER_CHECKED)
+					MusicPlaylistDequeue(addIndex);
 				else
-					EnqueueFile(fullpath, browserList[addIndex].filename);
-
+					MusicPlaylistEnqueue(addIndex);
+	
 				char txt[10];
 				sprintf(txt, "%d", playlistSize);
 				playlistBtnTxt.SetText(txt);
+				fileBrowser.TriggerUpdate();
 			}
 		}
-
 		if(playlistBtn.GetState() == STATE_CLICKED)
 		{
 			playlistBtn.ResetState();
-			inPlaylist = ParsePlaylist(); // load the current playlist into the filebrowser
+			inPlaylist = MusicPlaylistLoad();
 		}
-		
 		if(playlist && playlistBtn.GetAlpha() == 128)
 		{
 			playlistBtn.SetAlpha(255);
@@ -1229,7 +1233,10 @@ done:
 	mainWindow->Remove(&fileBrowser);
 
 	if(menu == MENU_BROWSE_MUSIC) // remove playlist functionality
+	{
+		mainWindow->Remove(&playlistAddBtn);
 		mainWindow->Remove(&playlistBtn);
+	}
 }
 
 // Picture Viewer
@@ -1574,9 +1581,6 @@ static void MenuBrowsePictures()
 	int currentIndex = -1;
 	ShutoffRumble();
 	browser.dir = &WiiSettings.picturesFolder[0];
-
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
 	GuiFileBrowser fileBrowser(300, 240);
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3181,6 +3185,7 @@ static void VideoProgressCallback(void * ptr)
 		done = total*percent;
 		b->ResetState();
 		wiiSeekPos(done);
+		videobarPauseBtn->SetIcon(videobarPauseIcon);
 	}
 	
 	if(percent <= 0.01)
@@ -3213,6 +3218,7 @@ static void VideoSkipBackwardCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiSkipBackward();
+		videobarPauseBtn->SetIcon(videobarPauseIcon);
 	}
 }
 
@@ -3223,7 +3229,16 @@ static void VideoRewindCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiRewind();
+		videobarPauseBtn->SetIcon(videobarPauseIcon);
 	}
+}
+
+void UpdateVideoPauseIcon()
+{
+	if(wiiIsPaused())
+		videobarPauseBtn->SetIcon(videobarPlayIcon);
+	else
+		videobarPauseBtn->SetIcon(videobarPauseIcon);
 }
 
 static void VideoPauseCallback(void * ptr)
@@ -3233,6 +3248,7 @@ static void VideoPauseCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiPause();
+		UpdateVideoPauseIcon();
 	}
 }
 
@@ -3243,6 +3259,7 @@ static void VideoFastForwardCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiFastForward();
+		videobarPauseBtn->SetIcon(videobarPauseIcon);
 	}
 }
 
@@ -3253,6 +3270,7 @@ static void VideoSkipForwardCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiSkipForward();
+		videobarPauseBtn->SetIcon(videobarPauseIcon);
 	}
 }
 
@@ -3349,6 +3367,7 @@ static void AudioProgressCallback(void * ptr)
 		done = total*percent;
 		b->ResetState();
 		wiiSeekPos(done);
+		audiobarPauseBtn->SetIcon(audiobarPauseIcon);
 	}
 
 	if(percent <= 0.01)
@@ -3377,7 +3396,8 @@ static void AudioSkipBackwardCallback(void * ptr)
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
-		// do something
+		wiiSeekPos(0);
+		audiobarPauseBtn->SetIcon(audiobarPauseIcon);
 	}
 }
 
@@ -3388,6 +3408,11 @@ static void AudioPauseCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiPause();
+
+		if(wiiIsPaused())
+			audiobarPauseBtn->SetIcon(audiobarPlayIcon);
+		else
+			audiobarPauseBtn->SetIcon(audiobarPauseIcon);
 	}
 }
 
@@ -3402,6 +3427,7 @@ static void AudioSkipForwardCallback(void * ptr)
 		ShutdownMPlayer();
 		FindNextAudioFile();
 		LoadMPlayer();
+		audiobarPauseBtn->SetIcon(audiobarPauseIcon);
 	}
 }
 

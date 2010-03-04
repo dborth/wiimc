@@ -22,6 +22,7 @@ void ShowProgress (const char *msg, int done, int total);
 int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
 void ResetText();
 void HideNowPlaying();
+void UpdateVideoPauseIcon();
 
 extern "C" {
 void SetStatus(const char * txt);
@@ -31,6 +32,7 @@ bool StatusSet();
 extern int menuCurrent;
 extern bool inPlaylist;
 extern int doMPlayerGuiDraw;
+extern bool nowPlayingSet;
 
 enum
 {

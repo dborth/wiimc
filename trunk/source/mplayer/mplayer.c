@@ -4819,6 +4819,11 @@ bool wiiIsPaused()
 	return isPaused;
 }
 
+void wiiResetPause()
+{
+	isPaused = 0;
+}
+
 void wiiMute()
 {
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
@@ -4836,6 +4841,7 @@ static void wiiSeek(int sec, int mode)
 	cmd->args[0].v.f = sec; // # seconds
 	cmd->args[1].v.i = mode;
 	mp_input_queue_cmd(cmd);
+	isPaused = 0;
 }
 
 void wiiSeekPos(int sec)

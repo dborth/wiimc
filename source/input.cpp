@@ -14,6 +14,7 @@
 #include <ogcsys.h>
 #include <unistd.h>
 #include <wiiuse/wpad.h>
+#include <ogc/lwp_watchdog.h>
 
 #include "wiimc.h"
 #include "menu.h"
@@ -23,10 +24,15 @@
 #include "libwiigui/gui.h"
 #include "mplayer/input/input.h"
 
-int rumbleRequest[4] = {0,0,0,0};
-GuiTrigger userInput[4];
-static int rumbleCount[4] = {0,0,0,0};
+#define RUMBLE_MAX 		60000
+#define RUMBLE_COOLOFF 	10000000
+
+static int rumbleOn[4] = {0,0,0,0};
+static u64 prev[4];
+static u64 now[4];
 static int osdLevel = 0;
+
+GuiTrigger userInput[4];
 
 /****************************************************************************
  * UpdatePads
@@ -68,8 +74,22 @@ void ShutoffRumble()
 	for(int i=0;i<4;i++)
 	{
 		WPAD_Rumble(i, 0);
-		rumbleCount[i] = 0;
-		rumbleRequest[i] = 0;
+		rumbleOn[i] = 0;
+	}
+}
+
+void RequestRumble(int i)
+{
+	now[i] = gettime();
+
+	if(prev[i] > now[i])
+		return;
+
+	if(diff_usec(prev[i], now[i]) > RUMBLE_MAX)
+	{
+		rumbleOn[i] = 1;
+		WPAD_Rumble(i, 1); // rumble on
+		prev[i] = now[i];
 	}
 }
 
@@ -81,24 +101,16 @@ void DoRumble(int i)
 {
 	if(!WiiSettings.rumble) return;
 
-	if(rumbleRequest[i])
+	if(rumbleOn[i])
 	{
-		if(rumbleCount[i] < 3)
+		now[i] = gettime();
+
+		if(diff_usec(prev[i], now[i]) > RUMBLE_MAX)
 		{
-			WPAD_Rumble(i, 1); // rumble on
-			++rumbleCount[i];
+			prev[i] = now[i] + RUMBLE_COOLOFF;
+			WPAD_Rumble(i, 0); // rumble off
+			rumbleOn[i] = 0;
 		}
-		else
-		{
-			rumbleCount[i] = 12;
-			rumbleRequest[i] = 0;
-		}
-	}
-	else
-	{
-		if(rumbleCount[i])
-			--rumbleCount[i];
-		WPAD_Rumble(i, 0); // rumble off
 	}
 }
 

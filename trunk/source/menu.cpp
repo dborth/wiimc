@@ -1298,7 +1298,7 @@ static void SetPicture(int picIndex, int browserIndex)
 				ResumeGui();
 			}
 		}
-		else if(pictureLoaded >= 0)
+		else
 		{
 			HaltGui();
 			pictureImg->SetScale(1);
@@ -1591,7 +1591,7 @@ static void MenuBrowsePictures()
 	ResumeGui();
 
 	// populate initial directory listing
-	while(BrowserChangeFolder(false) <= 0)
+	while(BrowserChangeFolder(false, true) <= 0)
 	{
 		int choice = WindowPrompt(
 		"Error",
@@ -1612,6 +1612,7 @@ static void MenuBrowsePictures()
 	ResumeGui();
 
 	// start picture thread
+	loadPictures = 1; // trigger picture thread
 	ResumePictureThread();
 
 	while(menuCurrent == MENU_BROWSE_PICTURES && !guiShutdown)
@@ -1623,7 +1624,7 @@ static void MenuBrowsePictures()
 		{
 			devicesChanged = false;
 
-			if(BrowserChangeFolder(false))
+			if(BrowserChangeFolder(true, true))
 			{
 				fileBrowser.ResetState();
 				fileBrowser.fileList[0]->SetState(STATE_SELECTED);
@@ -1687,6 +1688,7 @@ static void MenuBrowsePictures()
 						fileBrowser.ResetState();
 						fileBrowser.fileList[0]->SetState(STATE_SELECTED);
 						fileBrowser.TriggerUpdate();
+						loadPictures = 1; // trigger picture thread
 						ResumePictureThread();
 					}
 					else

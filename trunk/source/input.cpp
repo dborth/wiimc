@@ -27,6 +27,7 @@
 #define RUMBLE_MAX 		60000
 #define RUMBLE_COOLOFF 	10000000
 
+static bool rumbleDisabled = false;
 static int rumbleOn[4] = {0,0,0,0};
 static u64 prev[4];
 static u64 now[4];
@@ -69,17 +70,34 @@ void SetupPads()
  * ShutoffRumble
  ***************************************************************************/
 
+static void ShutoffRumble(int i)
+{
+	prev[i] = now[i] + RUMBLE_COOLOFF;
+	WPAD_Rumble(i, 0); // rumble off
+	rumbleOn[i] = 0;
+}
+
 void ShutoffRumble()
 {
 	for(int i=0;i<4;i++)
-	{
-		WPAD_Rumble(i, 0);
-		rumbleOn[i] = 0;
-	}
+		ShutoffRumble(i);
+}
+
+void DisableRumble()
+{
+	rumbleDisabled = true;
+	ShutoffRumble();
+}
+
+void EnableRumble()
+{
+	rumbleDisabled = false;
 }
 
 void RequestRumble(int i)
 {
+	if(!WiiSettings.rumble || rumbleDisabled) return;
+	
 	now[i] = gettime();
 
 	if(prev[i] > now[i])
@@ -99,18 +117,12 @@ void RequestRumble(int i)
 
 void DoRumble(int i)
 {
-	if(!WiiSettings.rumble) return;
-
 	if(rumbleOn[i])
 	{
 		now[i] = gettime();
 
 		if(diff_usec(prev[i], now[i]) > RUMBLE_MAX)
-		{
-			prev[i] = now[i] + RUMBLE_COOLOFF;
-			WPAD_Rumble(i, 0); // rumble off
-			rumbleOn[i] = 0;
-		}
+			ShutoffRumble(i);
 	}
 }
 

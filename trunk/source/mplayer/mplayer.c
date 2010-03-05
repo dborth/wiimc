@@ -4454,6 +4454,8 @@ return 1;
 
 #define MAX_RESTORE_POINTS 10
 
+static int isPaused = 0;
+
 typedef struct st_restore_points restore_points_t;
 struct st_restore_points {
     char filename[MAXPATHLEN];
@@ -4493,8 +4495,7 @@ static void save_restore_point(char *_filename, int position)
 	if(!enable_restore_points || strlen(_filename) == 0)
 		return;
 
-	if(!strncmp(_filename,"dvd://",6) || !strncmp(_filename,"dvdnav",6 )
-		|| !strncmp(_filename,"http:/",6))
+	if(!strncmp(_filename,"dvd://",6) || !strncmp(_filename,"dvdnav",6 ) || !strncmp(_filename,"http:/",6))
 		return;
 
 	if(position <= 8 || !( mpctx->demuxer->seekable))
@@ -4535,7 +4536,7 @@ static int load_restore_point(char *_filename)
 	{
 		if(restore_points[j].filename[0] == '\0')
 			break;
-		
+
 		if(!strcmp(_filename,restore_points[j].filename))
 			return restore_points[j].position;
 	}
@@ -4544,9 +4545,9 @@ static int load_restore_point(char *_filename)
 
 static double timing_sleep(double time_frame)
 {
-    u32 frame=time_frame*1000000; //in us
+	u32 frame=time_frame*1000000; //in us
 
-    current_module = "sleep_timer";
+	current_module = "sleep_timer";
 	while (frame > 5)
 	{
 		if(frame>render_texture_time)
@@ -4554,18 +4555,20 @@ static double timing_sleep(double time_frame)
 			DrawMPlayer();
 			VIDEO_WaitVSync();
 		}
-		else usec_sleep(frame-5);
-	    frame -= GetRelativeTime();
-	    break;
+		else
+		{
+			usec_sleep(frame-5);
+		}
+		frame -= GetRelativeTime();
+		break;
 	}
 	time_frame=frame * 0.000001F;
-    return time_frame;
+	return time_frame;
 }
 
 void PauseAndGotoGUI()
 {
 	mp_cmd_t* cmd = NULL;
-	//setwatchdogcounter(-1);
 	if (mpctx->audio_out && mpctx->sh_audio)
 		mpctx->audio_out->pause(); // pause audio, keep data if possible
 
@@ -4609,19 +4612,15 @@ void PauseAndGotoGUI()
 		cmd = mp_input_get_cmd(0, 1, 0);
 		mp_cmd_free(cmd);
 	}
-
+	
 	mpctx->osd_function = OSD_PLAY;
 
 	if (controlledbygui != 2)
 	{
-		if ((!strncmp(filename, "dvd:", 4))	|| (!strncmp(filename, "dvdnav:", 7)))
+		if ((!strncmp(filename, "dvd:", 4)) || (!strncmp(filename, "dvdnav:", 7)))
 		{
-			//DI2_StartMotor();
-			//printf("start motor\n");
-			void *ptr = memalign(32, 0x800 * 2);
-			//printf("read sector 1\n");
+			void *ptr = (void *)memalign(32, 0x800 * 2);
 			DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
-			//printf("read sector 5000\n");
 			DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
 			free(ptr);
 		}
@@ -4632,122 +4631,110 @@ void PauseAndGotoGUI()
 
 	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
 		mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
-	(void) GetRelativeTime(); // ignore time that passed during pause
-	//setwatchdogcounter(WATCH_TIMEOUT);
+
+	GetRelativeTime(); // ignore time that passed during pause
 }
 
 static void low_cache_loop(void)
 {
-    float percent;
-	int brk_cmd ;
-    mp_cmd_t* cmd;
-        
-    //setwatchdogcounter(-1);
-    //this values can be improved
-	if(!strncmp(fileplaying,"usb",3) || !strncmp(fileplaying,"sd",2)) percent=stream_cache_min_percent/6;
-	else if(!strncmp(fileplaying,"smb",3)) percent=stream_cache_min_percent/2;
-	else percent=stream_cache_min_percent;
-		
-   	//set_osd_msg(OSD_MSG_PAUSE, 1, 1000, "Buffering (%02d%%) cfs:%2.2f  p:%2.2f",(int)(cache_fill_status*100.0/percent),cache_fill_status,percent);
-   	//set_osd_msg(OSD_MSG_PAUSE, 1, 1000, "Buffering (%02d%%) ",(int)(cache_fill_status*100.0/percent));
-    //force_osd();
+	char msg[512];
+	float percent;
+	int progress;
+	int brk_cmd;
+	mp_cmd_t* cmd;
 
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-	mpctx->video_out->control(VOCTRL_PAUSE, NULL);
+	if(stream_cache_min_percent < 10 || stream_cache_min_percent > 100)
+		stream_cache_min_percent = 50; // reset to a sane number
 
-    if (mpctx->audio_out && mpctx->sh_audio)
-	mpctx->audio_out->pause();	// pause audio, keep data if possible
+	if(!strncmp(fileplaying,"usb",3) || !strncmp(fileplaying,"sd",2))
+		percent=stream_cache_min_percent/6;
+	else if(!strncmp(fileplaying,"smb",3))
+		percent=stream_cache_min_percent/2;
+	else
+		percent=stream_cache_min_percent;
 
-    while ( cache_fill_status < percent  && cache_fill_status>=0) {
-    
+	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
+
+	if (mpctx->audio_out && mpctx->sh_audio)
+		mpctx->audio_out->pause(); // pause audio, keep data if possible
+
+	while (cache_fill_status < percent && cache_fill_status>=0 && percent < 100)
+	{
 		cmd = mp_input_get_cmd(20, 1, 1);
-		if (cmd) {
-	  		cmd = mp_input_get_cmd(0,1,0);
-	  		brk_cmd = run_command(mpctx, cmd);
-	  		if(cmd->pausing != 4)brk_cmd=1;
-	    	if (cmd->id == MP_CMD_PAUSE) {
-	    		mp_cmd_free(cmd);
-				cmd = mp_input_get_cmd(0,1,0);				
-	  		}
-	  		mp_cmd_free(cmd);
-	  		if(brk_cmd > 0) break;
-	  		//continue;
+		if (cmd)
+		{
+			cmd = mp_input_get_cmd(0,1,0);
+			brk_cmd = run_command(mpctx, cmd);
+			if(cmd->pausing != 4)
+				brk_cmd=1;
+			if (cmd->id == MP_CMD_PAUSE)
+			{
+				mp_cmd_free(cmd);
+				cmd = mp_input_get_cmd(0,1,0);
+				isPaused ^= 1;
+			}
+			mp_cmd_free(cmd);
+			if(brk_cmd > 0) break;
 		}
-		
-	   	//set_osd_msg(OSD_MSG_PAUSE, 1, 1000, "Buffering (%02d%%) cfs:%2.2f  p:%2.2f",(int)(cache_fill_status*100.0/percent),cache_fill_status,percent);
-	   	//set_osd_msg(OSD_MSG_PAUSE, 1, 1000, "Buffering (%02d%%) ",(int)(cache_fill_status*100.0/percent));
-    	//force_osd();
-		char msg[512];
-		sprintf(msg, "Buffering (%02d%%) ",(int)(cache_fill_status*100.0/percent));
+
+		progress = (int)(cache_fill_status*100.0/percent);
+		if(progress > 100)
+			progress = 100;
+		sprintf(msg, "Buffering (%02d%%)", progress);
 		SetStatus(msg);
-    	//percent=0.0;
 
-	if (mpctx->sh_video && mpctx->video_out && vo_config_count)
-	    mpctx->video_out->check_events();
-
-#ifdef CONFIG_MENU
-	if (vf_menu)
-	    vf_menu_pause_update(vf_menu);
-#endif
-		//usec_sleep(50000);
+		if (mpctx->sh_video && mpctx->video_out && vo_config_count)
+			mpctx->video_out->check_events();
 
 		DrawMPlayer();
-	    VIDEO_WaitVSync();
-    }
+		VIDEO_WaitVSync();
+	}
 	rm_osd_msg(OSD_MSG_PAUSE);
-
 	SetStatus(NULL);
 
-	if((!strncmp(filename,"dvd:",4)) ||  (!strncmp(filename,"dvdnav:",7)))
+	if((!strncmp(filename,"dvd:",4)) || (!strncmp(filename,"dvdnav:",7)))
 	{
-		//DI2_StartMotor();
-		//printf("start motor\n");
-		void *ptr=memalign(32, 0x800*2);
-		//printf("read sector 1\n");
+		void *ptr=(void *)memalign(32, 0x800*2);
 		DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
-		//printf("read sector 5000\n");
 		DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
 		free(ptr);
 	}
-	/*
-    if (cmd && cmd->id == MP_CMD_PAUSE) {
-	cmd = mp_input_get_cmd(0,1,0);
-	mp_cmd_free(cmd);
-    }
-    */
-    mpctx->osd_function=OSD_PLAY;
-    if (mpctx->audio_out && mpctx->sh_audio)
-        mpctx->audio_out->resume();	// resume audio
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-        mpctx->video_out->control(VOCTRL_RESUME, NULL);	// resume video
-    (void)GetRelativeTime();	// ignore time that passed during pause
-    //setwatchdogcounter(WATCH_TIMEOUT);
-#ifdef CONFIG_GUI
-    if (use_gui)
-        guiGetEvent(guiCEvent, (char *)guiSetPause);
-#endif
+	mpctx->osd_function=OSD_PLAY;
+
+	if (mpctx->audio_out && mpctx->sh_audio)
+		mpctx->audio_out->resume(); // resume audio
+
+	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+		mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
+
+	GetRelativeTime(); // ignore time that passed during pause
 }
 
 void fast_pause()
 {
-	if(mpctx->osd_function==OSD_PAUSE) return;
-	//setwatchdogcounter(-1);
-    if (mpctx->audio_out && mpctx->sh_audio)
-	mpctx->audio_out->pause();	// pause audio, keep data if possible
+	if(mpctx->osd_function==OSD_PAUSE)
+		return;
 
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-        mpctx->video_out->control(VOCTRL_PAUSE, NULL);
+	if (mpctx->audio_out && mpctx->sh_audio)
+		mpctx->audio_out->pause(); // pause audio, keep data if possible
+
+	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
 }
 
 void fast_continue()
 {
-	if(mpctx->osd_function==OSD_PAUSE) return;
+	if(mpctx->osd_function==OSD_PAUSE)
+		return;
+
 	if (mpctx->audio_out && mpctx->sh_audio)
-		mpctx->audio_out->resume();	// resume audio
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-        mpctx->video_out->control(VOCTRL_RESUME, NULL);	// resume video
-    (void)GetRelativeTime();	// ignore time that passed during pause
-    //setwatchdogcounter(WATCH_TIMEOUT);
+		mpctx->audio_out->resume(); // resume audio
+
+	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+		mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
+
+	GetRelativeTime(); // ignore time that passed during pause
 }
 
 /****************************************************************************
@@ -4802,8 +4789,6 @@ void wiiGotoGui()
 	cmd->name=strdup("quit");
 	mp_input_queue_cmd(cmd);
 }
-
-static int isPaused = 0;
 
 void wiiPause()
 {

@@ -56,7 +56,7 @@ static u8 mstack[TSTACK] ATTRIBUTE_ALIGN (32);
 
 void ExitApp()
 {
-	ShutoffRumble();
+	DisableRumble();
 	SaveSettings(SILENT);
 
 	// shut down some threads

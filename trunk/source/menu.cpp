@@ -2384,12 +2384,12 @@ static void MenuSettingsVideos()
 			case 4:
 				WiiSettings.cacheSize += 2048;
 				if(WiiSettings.cacheSize > 16384)
-					WiiSettings.cacheSize = 0;
+					WiiSettings.cacheSize = 2048;
 				break;
 			case 5:
 				WiiSettings.cachePrefill += 10;
 				if (WiiSettings.cachePrefill > 100)
-					WiiSettings.cachePrefill = 0;
+					WiiSettings.cachePrefill = 10;
 				break;
 			case 6:
 				WiiSettings.audioDelay += 100;
@@ -3328,8 +3328,9 @@ static void VideoProgressCallback(void * ptr)
 		percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/360.0;
 		done = total*percent;
 		b->ResetState();
+		DisableRumble();
+		UpdateVideobarPauseBtn(true);
 		wiiSeekPos(done);
-		UpdateVideobarPauseBtn(false);
 	}
 	
 	if(percent <= 0.01)
@@ -3361,8 +3362,9 @@ static void VideoSkipBackwardCallback(void * ptr)
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
+		DisableRumble();
+		UpdateVideobarPauseBtn(true);
 		wiiSkipBackward();
-		UpdateVideobarPauseBtn(false);
 	}
 }
 
@@ -3372,8 +3374,9 @@ static void VideoRewindCallback(void * ptr)
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
+		DisableRumble();
+		UpdateVideobarPauseBtn(true);
 		wiiRewind();
-		UpdateVideobarPauseBtn(false);
 	}
 }
 
@@ -3394,8 +3397,9 @@ static void VideoFastForwardCallback(void * ptr)
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
+		DisableRumble();
+		UpdateVideobarPauseBtn(true);
 		wiiFastForward();
-		UpdateVideobarPauseBtn(false);
 	}
 }
 
@@ -3405,8 +3409,9 @@ static void VideoSkipForwardCallback(void * ptr)
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
+		DisableRumble();
+		UpdateVideobarPauseBtn(true);
 		wiiSkipForward();
-		UpdateVideobarPauseBtn(false);
 	}
 }
 
@@ -3782,7 +3787,7 @@ static void SetupPlaybar()
 	
 	videobarTime = new GuiText(NULL, 16, (GXColor){0, 0, 0, 255});
 	videobarTime->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	videobarTime->SetPosition(0, -13);
+	videobarTime->SetPosition(0, -18);
 
 	videobar = new GuiWindow(360, 80);
 
@@ -4282,10 +4287,15 @@ void SetStatus(const char * txt)
 		return;
 
 	if(txt)
+	{
 		statusText->SetVisible(true);
+	}
 	else
+	{
 		statusText->SetVisible(false);
-
+		EnableRumble();
+		UpdateVideobarPauseBtn(wiiIsPaused());
+	}
 	statusText->SetText(txt);
 }
 
@@ -4301,7 +4311,7 @@ void MPlayerMenu()
 
 	mainWindow = new GuiWindow(screenwidth, screenheight);
 
-	GuiImage bgBottom(screenwidth, 140, (GXColor){155, 155, 155, 155});
+	GuiImage bgBottom(screenwidth, 152, (GXColor){155, 155, 155, 155});
 	bgBottom.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	
 	// status text

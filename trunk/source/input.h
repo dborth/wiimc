@@ -17,6 +17,8 @@
 
 void SetupPads();
 void UpdatePads();
+void DisableRumble();
+void EnableRumble();
 void ShutoffRumble();
 void RequestRumble(int i);
 void DoRumble(int i);

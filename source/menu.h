@@ -21,8 +21,7 @@ void CancelAction();
 void ShowProgress (const char *msg, int done, int total);
 int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
 void ResetText();
-void HideNowPlaying();
-void UpdateVideoPauseIcon();
+void UpdateVideobarPauseBtn(bool paused);
 
 extern "C" {
 void SetStatus(const char * txt);

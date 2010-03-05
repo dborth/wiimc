@@ -45,29 +45,33 @@ static GuiWindow * mainWindow = NULL;
 static GuiText * settingText = NULL;
 static GuiText * settingText2 = NULL;
 
-// playbar
+// actionbar
 
 static GuiText * statusText = NULL;
 
 static GuiWindow * videobar = NULL;
 static GuiWindow * audiobar = NULL;
 static GuiWindow * picturebar = NULL;
-static GuiTrigger * playbarTrigA = NULL;
+static GuiTrigger * actionbarTrigA = NULL;
 
-static GuiImageData * playbarProgress = NULL;
-static GuiImageData * playbarProgressLeft = NULL;
-static GuiImageData * playbarProgressMid = NULL;
-static GuiImageData * playbarProgressRight = NULL;
-static GuiImageData * playbarCircle = NULL;
-static GuiImageData * playbarCircleOver = NULL;
-static GuiImageData * playbarSkipBackward = NULL;
-static GuiImageData * playbarRewind = NULL;
-static GuiImageData * playbarPause = NULL;
-static GuiImageData * playbarPlay = NULL;
-static GuiImageData * playbarFastForward = NULL;
-static GuiImageData * playbarSkipForward = NULL;
-static GuiImageData * playbarSlideshow = NULL;
-static GuiImageData * playbarClose = NULL;
+static GuiImageData * actionbarProgress = NULL;
+static GuiImageData * actionbarProgressLeft = NULL;
+static GuiImageData * actionbarProgressMid = NULL;
+static GuiImageData * actionbarProgressRight = NULL;
+static GuiImageData * actionbarCircle = NULL;
+static GuiImageData * actionbarCircleOver = NULL;
+static GuiImageData * actionbarSkipBackward = NULL;
+static GuiImageData * actionbarRewind = NULL;
+static GuiImageData * actionbarPause = NULL;
+static GuiImageData * actionbarPlay = NULL;
+static GuiImageData * actionbarFastForward = NULL;
+static GuiImageData * actionbarSkipForward = NULL;
+static GuiImageData * actionbarSingle = NULL;
+static GuiImageData * actionbarContinuous = NULL;
+static GuiImageData * actionbarShuffle = NULL;
+static GuiImageData * actionbarLoop = NULL;
+static GuiImageData * actionbarSlideshow = NULL;
+static GuiImageData * actionbarClose = NULL;
 
 static GuiImage * videobarProgressImg = NULL;
 static GuiImage * videobarProgressLeftImg = NULL;
@@ -82,13 +86,18 @@ static GuiImage * videobarRewindIcon = NULL;
 static GuiImage * videobarPauseImg = NULL;
 static GuiImage * videobarPauseOverImg = NULL;
 static GuiImage * videobarPauseIcon = NULL;
-static GuiImage * videobarPlayIcon = NULL;
 static GuiImage * videobarFastForwardImg = NULL;
 static GuiImage * videobarFastForwardOverImg = NULL;
 static GuiImage * videobarFastForwardIcon = NULL;
 static GuiImage * videobarSkipForwardImg = NULL;
 static GuiImage * videobarSkipForwardOverImg = NULL;
 static GuiImage * videobarSkipForwardIcon = NULL;
+
+static GuiTooltip * videobarSkipBackwardTip = NULL;
+static GuiTooltip * videobarRewindTip = NULL;
+static GuiTooltip * videobarPauseTip = NULL;
+static GuiTooltip * videobarFastForwardTip = NULL;
+static GuiTooltip * videobarSkipForwardTip = NULL;
 
 static GuiButton * videobarProgressBtn = NULL;
 static GuiButton * videobarSkipBackwardBtn = NULL;
@@ -109,15 +118,23 @@ static GuiImage * audiobarSkipBackwardIcon = NULL;
 static GuiImage * audiobarPauseImg = NULL;
 static GuiImage * audiobarPauseOverImg = NULL;
 static GuiImage * audiobarPauseIcon = NULL;
-static GuiImage * audiobarPlayIcon = NULL;
 static GuiImage * audiobarSkipForwardImg = NULL;
 static GuiImage * audiobarSkipForwardOverImg = NULL;
 static GuiImage * audiobarSkipForwardIcon = NULL;
+static GuiImage * audiobarModeImg = NULL;
+static GuiImage * audiobarModeOverImg = NULL;
+static GuiImage * audiobarModeIcon = NULL;
+
+static GuiTooltip * audiobarSkipBackwardTip = NULL;
+static GuiTooltip * audiobarPauseTip = NULL;
+static GuiTooltip * audiobarSkipForwardTip = NULL;
+static GuiTooltip * audiobarModeTip = NULL;
 
 static GuiButton * audiobarProgressBtn = NULL;
 static GuiButton * audiobarSkipBackwardBtn = NULL;
 static GuiButton * audiobarPauseBtn = NULL;
 static GuiButton * audiobarSkipForwardBtn = NULL;
+static GuiButton * audiobarModeBtn = NULL;
 
 static GuiText * audiobarNowPlaying[4] = { NULL, NULL, NULL, NULL };
 bool nowPlayingSet = false;
@@ -957,6 +974,58 @@ static void DisplayCredits(void * ptr)
 		LWP_CreateThread (&creditsthread, WindowCredits, NULL, NULL, 0, 60);
 }
 
+
+void UpdateVideobarPauseBtn(bool paused)
+{
+	if(paused)
+	{
+		videobarPauseIcon->SetImage(actionbarPlay);
+		videobarPauseTip->SetText("Play");
+	}
+	else
+	{
+		videobarPauseIcon->SetImage(actionbarPause);
+		videobarPauseTip->SetText("Pause");
+	}
+}
+
+static void UpdateAudiobarPauseBtn(bool paused)
+{
+	if(paused)
+	{
+		audiobarPauseIcon->SetImage(actionbarPlay);
+		audiobarPauseTip->SetText("Play");
+	}
+	else
+	{
+		audiobarPauseIcon->SetImage(actionbarPause);
+		audiobarPauseTip->SetText("Pause");
+	}
+}
+
+static void UpdateAudiobarModeBtn()
+{
+	switch(WiiSettings.playOrder)
+	{
+		case PLAY_SINGLE:
+			audiobarModeIcon->SetImage(actionbarSingle);
+			audiobarModeTip->SetText("Single Play");
+			break;
+		case PLAY_CONTINUOUS:
+			audiobarModeIcon->SetImage(actionbarContinuous);
+			audiobarModeTip->SetText("Continuous Play");
+			break;
+		case PLAY_SHUFFLE:
+			audiobarModeIcon->SetImage(actionbarShuffle);
+			audiobarModeTip->SetText("Shuffle");
+			break;
+		case PLAY_LOOP:
+			audiobarModeIcon->SetImage(actionbarLoop);
+			audiobarModeTip->SetText("Loop");
+			break;
+	}
+}
+
 /****************************************************************************
  * MenuBrowse
  ***************************************************************************/
@@ -1008,27 +1077,14 @@ static void MenuBrowse(int menu)
 	playlistAddBtn.SetTrigger(&trigPlus);
 	playlistAddBtn.SetSelectable(false);
 
-	HaltGui();
-	mainWindow->Append(&fileBrowser);
-
-	if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
-	{
-		char txt[10];
-		sprintf(txt, "%d", playlistSize);
-		playlistBtnTxt.SetText(txt);
-
-		mainWindow->Append(&playlistAddBtn);
-		mainWindow->Append(&playlistBtn);
-	}
-
-	ResumeGui();
-
 	if(menu == MENU_BROWSE_ONLINEMEDIA && onlinemediaSize == 0)
 	{
 		ErrorPrompt("Online media file not found.");
 		UndoChangeMenu();
 		goto done;
 	}
+
+	ResumeGui();
 
 	// populate initial directory listing
 	while(BrowserChangeFolder(false) <= 0)
@@ -1045,6 +1101,24 @@ static void MenuBrowse(int menu)
 			goto done;
 		}
 	}
+
+	HaltGui();
+	mainWindow->Append(&fileBrowser);
+	
+	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
+		mainWindow->Append(audiobar);
+
+	if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
+	{
+		char txt[10];
+		sprintf(txt, "%d", playlistSize);
+		playlistBtnTxt.SetText(txt);
+
+		mainWindow->Append(&playlistAddBtn);
+		mainWindow->Append(&playlistBtn);
+		UpdateAudiobarModeBtn();
+	}
+	ResumeGui();
 
 	while(menuCurrent == menu && !guiShutdown)
 	{
@@ -1162,13 +1236,14 @@ static void MenuBrowse(int menu)
 					else
 					{
 						playingAudio = true;
+						UpdateAudiobarPauseBtn(false);
 						ResumeDeviceThread();
 
 						// we loaded an audio file - if we already had a video
 						// loaded, we should remove the bg
 						mainWindow->Remove(videoImg);
 
-						// add the audio bar
+						// update the audio bar
 						if(wiiGetTimeLength() <= 1) // this is a stream - hide some elements
 						{
 							audiobar->Remove(audiobarProgressBtn);
@@ -1177,6 +1252,7 @@ static void MenuBrowse(int menu)
 							audiobar->Remove(audiobarProgressRightImg);
 							audiobar->Remove(audiobarSkipBackwardBtn);
 							audiobar->Remove(audiobarSkipForwardBtn);
+							audiobar->Remove(audiobarModeBtn);
 						}
 						else
 						{
@@ -1186,12 +1262,16 @@ static void MenuBrowse(int menu)
 							audiobar->Append(audiobarProgressRightImg);
 							audiobar->Append(audiobarSkipBackwardBtn);
 							audiobar->Append(audiobarSkipForwardBtn);
+							audiobar->Append(audiobarModeBtn);
 						}
-						mainWindow->Append(audiobar);
 					}
 				}
 			}
 		}
+
+		// updating audio bar elements is not required for Videos area
+		if(menu == MENU_BROWSE_VIDEOS)
+			continue;
 
 		if(playlistAddBtn.GetState() == STATE_CLICKED)
 		{
@@ -1217,20 +1297,87 @@ static void MenuBrowse(int menu)
 			playlistBtn.ResetState();
 			inPlaylist = MusicPlaylistLoad();
 		}
-		if(playlist && playlistBtn.GetAlpha() == 128)
+
+		if(playlistSize > 0)
 		{
-			playlistBtn.SetAlpha(255);
-			playlistBtn.ResetState();
+			if(playlistBtn.GetAlpha() == 128)
+				playlistBtn.SetAlpha(255);
+			if(playlistSize == 1)
+			{
+				if(audiobarSkipForwardBtn->GetState() != STATE_DISABLED)
+				{
+					audiobarSkipForwardBtn->SetState(STATE_DISABLED);
+					audiobarSkipForwardBtn->SetAlpha(128);
+				}
+			}
+			else if(audiobarSkipForwardBtn->GetState() == STATE_DISABLED && playingAudio)
+			{
+				audiobarSkipForwardBtn->SetState(STATE_DEFAULT);
+				audiobarSkipForwardBtn->SetAlpha(255);
+			}
+			if(audiobarPauseBtn->GetState() == STATE_DISABLED)
+			{
+				audiobarPauseBtn->SetState(STATE_DEFAULT);
+				audiobarPauseBtn->SetAlpha(255);
+			}
 		}
-		else if(!playlist && playlistBtn.GetAlpha() == 255)
+		else if(playlistSize == 0)
 		{
-			playlistBtn.SetAlpha(128);
+			if(playlistBtn.GetAlpha() == 255)
+				playlistBtn.SetAlpha(128);
+			if(audiobarSkipForwardBtn->GetState() != STATE_DISABLED)
+			{
+				audiobarSkipForwardBtn->SetState(STATE_DISABLED);
+				audiobarSkipForwardBtn->SetAlpha(128);
+			}
+			if(audiobarPauseBtn->GetState() != STATE_DISABLED && !playingAudio)
+			{
+				audiobarPauseBtn->SetState(STATE_DISABLED);
+				audiobarPauseBtn->SetAlpha(128);
+			}
+		}
+
+		if(playingAudio)
+		{
+			if(audiobarProgressBtn->GetState() == STATE_DISABLED && wiiGetTimeLength() > 0)
+			{
+				audiobarProgressBtn->SetState(STATE_DEFAULT);
+				audiobarProgressBtn->SetAlpha(255);
+				audiobarSkipBackwardBtn->SetState(STATE_DEFAULT);
+				audiobarSkipBackwardBtn->SetAlpha(255);
+
+				for(int i=0; i < 4; i++)
+					audiobarNowPlaying[i]->SetVisible(true);
+			}
+			if(audiobarPauseBtn->GetState() == STATE_DISABLED)
+			{
+				audiobarPauseBtn->SetState(STATE_DEFAULT);
+				audiobarPauseBtn->SetAlpha(255);
+			}
+		}
+		else
+		{
+			if(audiobarProgressBtn->GetState() != STATE_DISABLED)
+			{
+				audiobarProgressBtn->SetState(STATE_DISABLED);
+				audiobarProgressBtn->SetAlpha(128);
+				audiobarSkipBackwardBtn->SetState(STATE_DISABLED);
+				audiobarSkipBackwardBtn->SetAlpha(128);
+				for(int i=0; i < 4; i++)
+				{
+					audiobarNowPlaying[i]->SetVisible(false);
+					if(i > 0) audiobarNowPlaying[i]->SetText(NULL);
+				}
+			}
 		}
 	}
 done:
 	HaltParseThread(); // halt parsing
 	HaltGui();
 	mainWindow->Remove(&fileBrowser);
+
+	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
+		mainWindow->Remove(audiobar);
 
 	if(menu == MENU_BROWSE_MUSIC) // remove playlist functionality
 	{
@@ -3075,7 +3222,6 @@ static void MenuSettings()
 {
 	int ret;
 	int i = 0;
-	int selected = -1;
 
 	MenuItemList items;
 	sprintf(items.name[i], "Global");
@@ -3127,11 +3273,6 @@ static void MenuSettings()
 	{
 		usleep(THREAD_SLEEP);
 
-		if(selected != itemBrowser.GetSelectedItem())
-		{
-			selected = itemBrowser.GetSelectedItem();
-		}
-
 		ret = itemBrowser.GetClickedItem();
 
 		switch (ret)
@@ -3167,6 +3308,7 @@ static void MenuSettings()
 
 	HaltGui();
 	mainWindow->Remove(&itemBrowser);
+	mainWindow->Remove(&backBtn);
 	mainWindow->Remove(&titleTxt);
 }
 
@@ -3187,7 +3329,7 @@ static void VideoProgressCallback(void * ptr)
 		done = total*percent;
 		b->ResetState();
 		wiiSeekPos(done);
-		videobarPauseBtn->SetIcon(videobarPauseIcon);
+		UpdateVideobarPauseBtn(false);
 	}
 	
 	if(percent <= 0.01)
@@ -3220,7 +3362,7 @@ static void VideoSkipBackwardCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiSkipBackward();
-		videobarPauseBtn->SetIcon(videobarPauseIcon);
+		UpdateVideobarPauseBtn(false);
 	}
 }
 
@@ -3231,16 +3373,8 @@ static void VideoRewindCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiRewind();
-		videobarPauseBtn->SetIcon(videobarPauseIcon);
+		UpdateVideobarPauseBtn(false);
 	}
-}
-
-void UpdateVideoPauseIcon()
-{
-	if(wiiIsPaused())
-		videobarPauseBtn->SetIcon(videobarPlayIcon);
-	else
-		videobarPauseBtn->SetIcon(videobarPauseIcon);
 }
 
 static void VideoPauseCallback(void * ptr)
@@ -3250,7 +3384,7 @@ static void VideoPauseCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiPause();
-		UpdateVideoPauseIcon();
+		UpdateVideobarPauseBtn(wiiIsPaused());
 	}
 }
 
@@ -3261,7 +3395,7 @@ static void VideoFastForwardCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiFastForward();
-		videobarPauseBtn->SetIcon(videobarPauseIcon);
+		UpdateVideobarPauseBtn(false);
 	}
 }
 
@@ -3272,7 +3406,7 @@ static void VideoSkipForwardCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiSkipForward();
-		videobarPauseBtn->SetIcon(videobarPauseIcon);
+		UpdateVideobarPauseBtn(false);
 	}
 }
 
@@ -3283,6 +3417,9 @@ static void AudioProgressCallback(void * ptr)
 	double total = wiiGetTimeLength();
 	int done = wiiGetTimePos();
 	double percent = 0;
+
+	if(!playingAudio)
+		total = 0; // values are from a loaded video - do not show!
 
 	if(total > 0)
 		percent = done/total;
@@ -3295,7 +3432,6 @@ static void AudioProgressCallback(void * ptr)
 		char *album = NULL;
 		char *year = NULL;
 		int i;
-		audiobarNowPlaying[0]->SetVisible(true);
 
 		if(wiiGetMetaTitle() != NULL)
 		{
@@ -3358,9 +3494,6 @@ static void AudioProgressCallback(void * ptr)
 		if(artist) free(artist);
 		if(album) free(album);
 		if(year) free(year);
-		
-		for(i=1; i < 4; i++)
-			audiobarNowPlaying[i]->SetVisible(true);
 	}
 
 	if(b->GetState() == STATE_CLICKED)
@@ -3369,7 +3502,7 @@ static void AudioProgressCallback(void * ptr)
 		done = total*percent;
 		b->ResetState();
 		wiiSeekPos(done);
-		audiobarPauseBtn->SetIcon(audiobarPauseIcon);
+		UpdateAudiobarPauseBtn(false);
 	}
 
 	if(percent <= 0.01)
@@ -3399,7 +3532,7 @@ static void AudioSkipBackwardCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiSeekPos(0);
-		audiobarPauseBtn->SetIcon(audiobarPauseIcon);
+		UpdateAudiobarPauseBtn(false);
 	}
 }
 
@@ -3409,12 +3542,22 @@ static void AudioPauseCallback(void * ptr)
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
-		wiiPause();
-
-		if(wiiIsPaused())
-			audiobarPauseBtn->SetIcon(audiobarPlayIcon);
-		else
-			audiobarPauseBtn->SetIcon(audiobarPauseIcon);
+		
+		if(playingAudio)
+		{
+			wiiPause();
+			UpdateAudiobarPauseBtn(wiiIsPaused());
+		}
+		else if(playlistSize > 0)
+		{
+			// skip to next song
+			playingAudio = true;
+			ShutdownMPlayer();
+			mainWindow->Remove(videoImg);
+			FindNextAudioFile();
+			LoadMPlayer();
+			UpdateAudiobarPauseBtn(false);
+		}
 	}
 }
 
@@ -3425,11 +3568,28 @@ static void AudioSkipForwardCallback(void * ptr)
 	{
 		b->ResetState();
 
-		// skip to next song
-		ShutdownMPlayer();
-		FindNextAudioFile();
-		LoadMPlayer();
-		audiobarPauseBtn->SetIcon(audiobarPauseIcon);
+		if(playlistSize > 0)
+		{
+			// skip to next song
+			ShutdownMPlayer();
+			FindNextAudioFile();
+			LoadMPlayer();
+			UpdateAudiobarPauseBtn(false);
+		}
+	}
+}
+
+static void AudioModeCallback(void * ptr)
+{
+	GuiButton * b = (GuiButton *)ptr;
+	if(b->GetState() == STATE_CLICKED)
+	{
+		b->ResetState();
+		WiiSettings.playOrder++;
+		if(WiiSettings.playOrder > PLAY_LOOP)
+			WiiSettings.playOrder = 0;
+
+		UpdateAudiobarModeBtn();
 	}
 }
 
@@ -3475,80 +3635,88 @@ static void PictureCloseCallback(void * ptr)
 
 static void SetupPlaybar()
 {	
-	static int playbarSetup = 0;
+	static int actionbarSetup = 0;
 	
-	if(playbarSetup)
+	if(actionbarSetup)
 		return;
 
-	playbarTrigA = new GuiTrigger();
-	playbarTrigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	actionbarTrigA = new GuiTrigger();
+	actionbarTrigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 	
 	// images
 	
-	playbarProgress = new GuiImageData(playbar_progress_bg_png);
-	playbarProgressLeft = new GuiImageData(playbar_progress_left_png);
-	playbarProgressMid = new GuiImageData(playbar_progress_mid_png);
-	playbarProgressRight = new GuiImageData(playbar_progress_right_png);
-	playbarCircle = new GuiImageData(playbar_circle_png);
-	playbarCircleOver = new GuiImageData(playbar_circle_over_png);
-	playbarSkipBackward = new GuiImageData(playbar_skipbackward_png);
-	playbarRewind = new GuiImageData(playbar_rewind_png);
-	playbarPause = new GuiImageData(playbar_pause_png);
-	playbarPlay = new GuiImageData(playbar_play_png);
-	playbarFastForward = new GuiImageData(playbar_fastforward_png);
-	playbarSkipForward = new GuiImageData(playbar_skipforward_png);
-	playbarClose = new GuiImageData(playbar_close_png);
-	playbarSlideshow = new GuiImageData(playbar_slideshow_png);
+	actionbarProgress = new GuiImageData(actionbar_progress_bg_png);
+	actionbarProgressLeft = new GuiImageData(actionbar_progress_left_png);
+	actionbarProgressMid = new GuiImageData(actionbar_progress_mid_png);
+	actionbarProgressRight = new GuiImageData(actionbar_progress_right_png);
+	actionbarCircle = new GuiImageData(actionbar_circle_png);
+	actionbarCircleOver = new GuiImageData(actionbar_circle_over_png);
+	actionbarSkipBackward = new GuiImageData(actionbar_skipbackward_png);
+	actionbarRewind = new GuiImageData(actionbar_rewind_png);
+	actionbarPause = new GuiImageData(actionbar_pause_png);
+	actionbarPlay = new GuiImageData(actionbar_play_png);
+	actionbarFastForward = new GuiImageData(actionbar_fastforward_png);
+	actionbarSkipForward = new GuiImageData(actionbar_skipforward_png);
+	actionbarSingle = new GuiImageData(actionbar_single_png);
+	actionbarContinuous = new GuiImageData(actionbar_continuous_png);
+	actionbarShuffle = new GuiImageData(actionbar_shuffle_png);
+	actionbarLoop = new GuiImageData(actionbar_loop_png);	
+	actionbarClose = new GuiImageData(actionbar_close_png);
+	actionbarSlideshow = new GuiImageData(actionbar_slideshow_png);
 	
 	// video bar
 
-	videobarProgressImg = new GuiImage(playbarProgress);
-	videobarProgressLeftImg = new GuiImage(playbarProgressLeft);
+	videobarProgressImg = new GuiImage(actionbarProgress);
+	videobarProgressLeftImg = new GuiImage(actionbarProgressLeft);
 	videobarProgressLeftImg->SetPosition(3, 0);
 	videobarProgressLeftImg->SetVisible(false);
-	videobarProgressMidImg = new GuiImage(playbarProgressMid);
+	videobarProgressMidImg = new GuiImage(actionbarProgressMid);
 	videobarProgressMidImg->SetPosition(15, 0);
 	videobarProgressMidImg->SetTile(0);
-	videobarProgressRightImg = new GuiImage(playbarProgressRight);
+	videobarProgressRightImg = new GuiImage(actionbarProgressRight);
 	videobarProgressRightImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	videobarProgressRightImg->SetVisible(false);
-	videobarSkipBackwardImg = new GuiImage(playbarCircle);
+	videobarSkipBackwardImg = new GuiImage(actionbarCircle);
 	videobarSkipBackwardImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarSkipBackwardOverImg = new GuiImage(playbarCircleOver);
+	videobarSkipBackwardOverImg = new GuiImage(actionbarCircleOver);
 	videobarSkipBackwardOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarSkipBackwardIcon = new GuiImage(playbarSkipBackward);
+	videobarSkipBackwardIcon = new GuiImage(actionbarSkipBackward);
 	videobarSkipBackwardIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarRewindImg = new GuiImage(playbarCircle);
+	videobarRewindImg = new GuiImage(actionbarCircle);
 	videobarRewindImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarRewindOverImg = new GuiImage(playbarCircleOver);
+	videobarRewindOverImg = new GuiImage(actionbarCircleOver);
 	videobarRewindOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarRewindIcon = new GuiImage(playbarRewind);
+	videobarRewindIcon = new GuiImage(actionbarRewind);
 	videobarRewindIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarPauseImg = new GuiImage(playbarCircle);
+	videobarPauseImg = new GuiImage(actionbarCircle);
 	videobarPauseImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarPauseOverImg = new GuiImage(playbarCircleOver);
+	videobarPauseOverImg = new GuiImage(actionbarCircleOver);
 	videobarPauseOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarPauseIcon = new GuiImage(playbarPause);
+	videobarPauseIcon = new GuiImage(actionbarPause);
 	videobarPauseIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarPlayIcon = new GuiImage(playbarPlay);
-	videobarPlayIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarFastForwardImg = new GuiImage(playbarCircle);
+	videobarFastForwardImg = new GuiImage(actionbarCircle);
 	videobarFastForwardImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarFastForwardOverImg = new GuiImage(playbarCircleOver);
+	videobarFastForwardOverImg = new GuiImage(actionbarCircleOver);
 	videobarFastForwardOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarFastForwardIcon = new GuiImage(playbarFastForward);
+	videobarFastForwardIcon = new GuiImage(actionbarFastForward);
 	videobarFastForwardIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarSkipForwardImg = new GuiImage(playbarCircle);
+	videobarSkipForwardImg = new GuiImage(actionbarCircle);
 	videobarSkipForwardImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarSkipForwardOverImg = new GuiImage(playbarCircleOver);
+	videobarSkipForwardOverImg = new GuiImage(actionbarCircleOver);
 	videobarSkipForwardOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	videobarSkipForwardIcon = new GuiImage(playbarSkipForward);
+	videobarSkipForwardIcon = new GuiImage(actionbarSkipForward);
 	videobarSkipForwardIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	
+	videobarSkipBackwardTip = new GuiTooltip("Skip Backward");
+	videobarRewindTip = new GuiTooltip("Rewind");
+	videobarPauseTip = new GuiTooltip("Pause");
+	videobarFastForwardTip = new GuiTooltip("Fast Forward");
+	videobarSkipForwardTip = new GuiTooltip("Skip Forward");
 	
 	videobarProgressBtn = new GuiButton(videobarProgressImg->GetWidth(), videobarProgressImg->GetHeight());
 	videobarProgressBtn->SetImage(videobarProgressImg);
 	videobarProgressBtn->SetPosition(3, 0);
-	videobarProgressBtn->SetTrigger(playbarTrigA);
+	videobarProgressBtn->SetTrigger(actionbarTrigA);
 	videobarProgressBtn->SetSelectable(false);
 	videobarProgressBtn->SetUpdateCallback(VideoProgressCallback);
 
@@ -3558,7 +3726,8 @@ static void SetupPlaybar()
 	videobarSkipBackwardBtn->SetImage(videobarSkipBackwardImg);
 	videobarSkipBackwardBtn->SetImageOver(videobarSkipBackwardOverImg);
 	videobarSkipBackwardBtn->SetIcon(videobarSkipBackwardIcon);
-	videobarSkipBackwardBtn->SetTrigger(playbarTrigA);
+	videobarSkipBackwardBtn->SetTooltip(videobarSkipBackwardTip);
+	videobarSkipBackwardBtn->SetTrigger(actionbarTrigA);
 	videobarSkipBackwardBtn->SetSelectable(false);
 	videobarSkipBackwardBtn->SetUpdateCallback(VideoSkipBackwardCallback);
 	videobarSkipBackwardBtn->SetEffectGrow();
@@ -3569,7 +3738,8 @@ static void SetupPlaybar()
 	videobarRewindBtn->SetImage(videobarRewindImg);
 	videobarRewindBtn->SetImageOver(videobarRewindOverImg);
 	videobarRewindBtn->SetIcon(videobarRewindIcon);
-	videobarRewindBtn->SetTrigger(playbarTrigA);
+	videobarRewindBtn->SetTooltip(videobarRewindTip);
+	videobarRewindBtn->SetTrigger(actionbarTrigA);
 	videobarRewindBtn->SetSelectable(false);
 	videobarRewindBtn->SetUpdateCallback(VideoRewindCallback);
 	videobarRewindBtn->SetEffectGrow();
@@ -3580,7 +3750,8 @@ static void SetupPlaybar()
 	videobarPauseBtn->SetImage(videobarPauseImg);
 	videobarPauseBtn->SetImageOver(videobarPauseOverImg);
 	videobarPauseBtn->SetIcon(videobarPauseIcon);
-	videobarPauseBtn->SetTrigger(playbarTrigA);
+	videobarPauseBtn->SetTooltip(videobarPauseTip);
+	videobarPauseBtn->SetTrigger(actionbarTrigA);
 	videobarPauseBtn->SetSelectable(false);
 	videobarPauseBtn->SetUpdateCallback(VideoPauseCallback);
 	videobarPauseBtn->SetEffectGrow();
@@ -3591,7 +3762,8 @@ static void SetupPlaybar()
 	videobarFastForwardBtn->SetImage(videobarFastForwardImg);
 	videobarFastForwardBtn->SetImageOver(videobarFastForwardOverImg);
 	videobarFastForwardBtn->SetIcon(videobarFastForwardIcon);
-	videobarFastForwardBtn->SetTrigger(playbarTrigA);
+	videobarFastForwardBtn->SetTooltip(videobarFastForwardTip);
+	videobarFastForwardBtn->SetTrigger(actionbarTrigA);
 	videobarFastForwardBtn->SetSelectable(false);
 	videobarFastForwardBtn->SetUpdateCallback(VideoFastForwardCallback);
 	videobarFastForwardBtn->SetEffectGrow();
@@ -3602,7 +3774,8 @@ static void SetupPlaybar()
 	videobarSkipForwardBtn->SetImage(videobarSkipForwardImg);
 	videobarSkipForwardBtn->SetImageOver(videobarSkipForwardOverImg);
 	videobarSkipForwardBtn->SetIcon(videobarSkipForwardIcon);
-	videobarSkipForwardBtn->SetTrigger(playbarTrigA);
+	videobarSkipForwardBtn->SetTooltip(videobarSkipForwardTip);
+	videobarSkipForwardBtn->SetTrigger(actionbarTrigA);
 	videobarSkipForwardBtn->SetSelectable(false);
 	videobarSkipForwardBtn->SetUpdateCallback(VideoSkipForwardCallback);
 	videobarSkipForwardBtn->SetEffectGrow();
@@ -3629,41 +3802,52 @@ static void SetupPlaybar()
 	
 	// audio bar
 	
-	audiobarProgressImg = new GuiImage(playbarProgress);
-	audiobarProgressLeftImg = new GuiImage(playbarProgressLeft);
+	audiobarProgressImg = new GuiImage(actionbarProgress);
+	audiobarProgressLeftImg = new GuiImage(actionbarProgressLeft);
 	audiobarProgressLeftImg->SetPosition(3, 0);
 	audiobarProgressLeftImg->SetVisible(false);
-	audiobarProgressMidImg = new GuiImage(playbarProgressMid);
+	audiobarProgressMidImg = new GuiImage(actionbarProgressMid);
 	audiobarProgressMidImg->SetPosition(15, 0);
 	audiobarProgressMidImg->SetTile(0);
-	audiobarProgressRightImg = new GuiImage(playbarProgressRight);
+	audiobarProgressRightImg = new GuiImage(actionbarProgressRight);
 	audiobarProgressRightImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	audiobarProgressRightImg->SetVisible(false);
-	audiobarSkipBackwardImg = new GuiImage(playbarCircle);
+	audiobarSkipBackwardImg = new GuiImage(actionbarCircle);
 	audiobarSkipBackwardImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarSkipBackwardOverImg = new GuiImage(playbarCircleOver);
+	audiobarSkipBackwardOverImg = new GuiImage(actionbarCircleOver);
 	audiobarSkipBackwardOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarSkipBackwardIcon = new GuiImage(playbarSkipBackward);
+	audiobarSkipBackwardIcon = new GuiImage(actionbarSkipBackward);
 	audiobarSkipBackwardIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarPauseImg = new GuiImage(playbarCircle);
+	audiobarPauseImg = new GuiImage(actionbarCircle);
 	audiobarPauseImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarPauseOverImg = new GuiImage(playbarCircleOver);
+	audiobarPauseOverImg = new GuiImage(actionbarCircleOver);
 	audiobarPauseOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarPauseIcon = new GuiImage(playbarPause);
+	audiobarPauseIcon = new GuiImage(actionbarPlay);
 	audiobarPauseIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarPlayIcon = new GuiImage(playbarPlay);
-	audiobarPlayIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarSkipForwardImg = new GuiImage(playbarCircle);
+	audiobarSkipForwardImg = new GuiImage(actionbarCircle);
 	audiobarSkipForwardImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarSkipForwardOverImg = new GuiImage(playbarCircleOver);
+	audiobarSkipForwardOverImg = new GuiImage(actionbarCircleOver);
 	audiobarSkipForwardOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarSkipForwardIcon = new GuiImage(playbarSkipForward);
+	audiobarSkipForwardIcon = new GuiImage(actionbarSkipForward);
 	audiobarSkipForwardIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	
+	audiobarModeImg = new GuiImage(actionbarCircle);
+	audiobarModeImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	audiobarModeOverImg = new GuiImage(actionbarCircleOver);
+	audiobarModeOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	audiobarModeIcon = new GuiImage;
+	audiobarModeIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+
+	audiobarSkipBackwardTip = new GuiTooltip("Restart Song");
+	audiobarPauseTip = new GuiTooltip("Play");
+	audiobarSkipForwardTip = new GuiTooltip("Next Song");
+	audiobarModeTip = new GuiTooltip("Single Play");
+
+	UpdateAudiobarModeBtn();
+
 	audiobarProgressBtn = new GuiButton(audiobarProgressImg->GetWidth(), audiobarProgressImg->GetHeight());
 	audiobarProgressBtn->SetImage(audiobarProgressImg);
 	audiobarProgressBtn->SetPosition(3, 0);
-	audiobarProgressBtn->SetTrigger(playbarTrigA);
+	audiobarProgressBtn->SetTrigger(actionbarTrigA);
 	audiobarProgressBtn->SetSelectable(false);
 	audiobarProgressBtn->SetUpdateCallback(AudioProgressCallback);
 
@@ -3673,7 +3857,8 @@ static void SetupPlaybar()
 	audiobarSkipBackwardBtn->SetImage(audiobarSkipBackwardImg);
 	audiobarSkipBackwardBtn->SetImageOver(audiobarSkipBackwardOverImg);
 	audiobarSkipBackwardBtn->SetIcon(audiobarSkipBackwardIcon);
-	audiobarSkipBackwardBtn->SetTrigger(playbarTrigA);
+	audiobarSkipBackwardBtn->SetTooltip(audiobarSkipBackwardTip);
+	audiobarSkipBackwardBtn->SetTrigger(actionbarTrigA);
 	audiobarSkipBackwardBtn->SetUpdateCallback(AudioSkipBackwardCallback);
 	audiobarSkipBackwardBtn->SetEffectGrow();
 	
@@ -3683,7 +3868,8 @@ static void SetupPlaybar()
 	audiobarPauseBtn->SetImage(audiobarPauseImg);
 	audiobarPauseBtn->SetImageOver(audiobarPauseOverImg);
 	audiobarPauseBtn->SetIcon(audiobarPauseIcon);
-	audiobarPauseBtn->SetTrigger(playbarTrigA);
+	audiobarPauseBtn->SetTooltip(audiobarPauseTip);
+	audiobarPauseBtn->SetTrigger(actionbarTrigA);
 	audiobarPauseBtn->SetUpdateCallback(AudioPauseCallback);
 	audiobarPauseBtn->SetEffectGrow();
 	
@@ -3693,13 +3879,26 @@ static void SetupPlaybar()
 	audiobarSkipForwardBtn->SetImage(audiobarSkipForwardImg);
 	audiobarSkipForwardBtn->SetImageOver(audiobarSkipForwardOverImg);
 	audiobarSkipForwardBtn->SetIcon(audiobarSkipForwardIcon);
-	audiobarSkipForwardBtn->SetTrigger(playbarTrigA);
+	audiobarSkipForwardBtn->SetTooltip(audiobarSkipForwardTip);
+	audiobarSkipForwardBtn->SetTrigger(actionbarTrigA);
 	audiobarSkipForwardBtn->SetUpdateCallback(AudioSkipForwardCallback);
 	audiobarSkipForwardBtn->SetEffectGrow();
+	
+	audiobarModeBtn = new GuiButton(50, 50);
+	audiobarModeBtn->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	audiobarModeBtn->SetPosition(240, 0);
+	audiobarModeBtn->SetImage(audiobarModeImg);
+	audiobarModeBtn->SetImageOver(audiobarModeOverImg);
+	audiobarModeBtn->SetIcon(audiobarModeIcon);
+	audiobarModeBtn->SetTooltip(audiobarModeTip);
+	audiobarModeBtn->SetTrigger(actionbarTrigA);
+	audiobarModeBtn->SetUpdateCallback(AudioModeCallback);
+	audiobarModeBtn->SetEffectGrow();
 	
 	audiobarNowPlaying[0] = new GuiText("Now Playing:", 16, (GXColor){0, 0, 0, 255});
 	audiobarNowPlaying[0]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	audiobarNowPlaying[0]->SetPosition(0, 0);
+	audiobarNowPlaying[0]->SetVisible(false);
 	
 	for(int i=1; i < 4; i++)
 	{
@@ -3707,6 +3906,7 @@ static void SetupPlaybar()
 		audiobarNowPlaying[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 		audiobarNowPlaying[i]->SetPosition(0, 20*i);
 		audiobarNowPlaying[i]->SetMaxWidth(250);
+		audiobarNowPlaying[i]->SetVisible(false);
 	}
 
 	audiobar = new GuiWindow(500, 80);
@@ -3718,6 +3918,7 @@ static void SetupPlaybar()
 	audiobar->Append(audiobarSkipBackwardBtn);
 	audiobar->Append(audiobarPauseBtn);
 	audiobar->Append(audiobarSkipForwardBtn);
+	audiobar->Append(audiobarModeBtn);
 	
 	for(int i=0; i < 4; i++)
 		audiobar->Append(audiobarNowPlaying[i]);
@@ -3727,32 +3928,32 @@ static void SetupPlaybar()
 	
 	// setup picture bar
 
-	picturebarPreviousImg = new GuiImage(playbarCircle);
+	picturebarPreviousImg = new GuiImage(actionbarCircle);
 	picturebarPreviousImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	picturebarPreviousOverImg = new GuiImage(playbarCircleOver);
+	picturebarPreviousOverImg = new GuiImage(actionbarCircleOver);
 	picturebarPreviousOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	picturebarPreviousIcon = new GuiImage(playbarRewind);
+	picturebarPreviousIcon = new GuiImage(actionbarRewind);
 	picturebarPreviousIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	
-	picturebarNextImg = new GuiImage(playbarCircle);
+	picturebarNextImg = new GuiImage(actionbarCircle);
 	picturebarNextImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	picturebarNextOverImg = new GuiImage(playbarCircleOver);
+	picturebarNextOverImg = new GuiImage(actionbarCircleOver);
 	picturebarNextOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	picturebarNextIcon = new GuiImage(playbarFastForward);
+	picturebarNextIcon = new GuiImage(actionbarFastForward);
 	picturebarNextIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	
-	picturebarSlideshowImg = new GuiImage(playbarCircle);
+	picturebarSlideshowImg = new GuiImage(actionbarCircle);
 	picturebarSlideshowImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	picturebarSlideshowOverImg = new GuiImage(playbarCircleOver);
+	picturebarSlideshowOverImg = new GuiImage(actionbarCircleOver);
 	picturebarSlideshowOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	picturebarSlideshowIcon = new GuiImage(playbarSlideshow);
+	picturebarSlideshowIcon = new GuiImage(actionbarSlideshow);
 	picturebarSlideshowIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 
-	picturebarCloseImg = new GuiImage(playbarCircle);
+	picturebarCloseImg = new GuiImage(actionbarCircle);
 	picturebarCloseImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	picturebarCloseOverImg = new GuiImage(playbarCircleOver);
+	picturebarCloseOverImg = new GuiImage(actionbarCircleOver);
 	picturebarCloseOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	picturebarCloseIcon = new GuiImage(playbarClose);
+	picturebarCloseIcon = new GuiImage(actionbarClose);
 	picturebarCloseIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 
 	picturebarPreviousBtn = new GuiButton(50, 50);
@@ -3761,7 +3962,7 @@ static void SetupPlaybar()
 	picturebarPreviousBtn->SetImage(picturebarPreviousImg);
 	picturebarPreviousBtn->SetImageOver(picturebarPreviousOverImg);
 	picturebarPreviousBtn->SetIcon(picturebarPreviousIcon);
-	picturebarPreviousBtn->SetTrigger(playbarTrigA);
+	picturebarPreviousBtn->SetTrigger(actionbarTrigA);
 	picturebarPreviousBtn->SetUpdateCallback(PicturePreviousCallback);
 	picturebarPreviousBtn->SetEffectGrow();
 	
@@ -3771,7 +3972,7 @@ static void SetupPlaybar()
 	picturebarNextBtn->SetImage(picturebarNextImg);
 	picturebarNextBtn->SetImageOver(picturebarNextOverImg);
 	picturebarNextBtn->SetIcon(picturebarNextIcon);
-	picturebarNextBtn->SetTrigger(playbarTrigA);
+	picturebarNextBtn->SetTrigger(actionbarTrigA);
 	picturebarNextBtn->SetUpdateCallback(PictureNextCallback);
 	picturebarNextBtn->SetEffectGrow();
 	
@@ -3781,7 +3982,7 @@ static void SetupPlaybar()
 	picturebarSlideshowBtn->SetImage(picturebarSlideshowImg);
 	picturebarSlideshowBtn->SetImageOver(picturebarSlideshowOverImg);
 	picturebarSlideshowBtn->SetIcon(picturebarSlideshowIcon);
-	picturebarSlideshowBtn->SetTrigger(playbarTrigA);
+	picturebarSlideshowBtn->SetTrigger(actionbarTrigA);
 	picturebarSlideshowBtn->SetUpdateCallback(PictureSlideshowCallback);
 	picturebarSlideshowBtn->SetEffectGrow();
 	
@@ -3791,7 +3992,7 @@ static void SetupPlaybar()
 	picturebarCloseBtn->SetImage(picturebarCloseImg);
 	picturebarCloseBtn->SetImageOver(picturebarCloseOverImg);
 	picturebarCloseBtn->SetIcon(picturebarCloseIcon);
-	picturebarCloseBtn->SetTrigger(playbarTrigA);
+	picturebarCloseBtn->SetTrigger(actionbarTrigA);
 	picturebarCloseBtn->SetUpdateCallback(PictureCloseCallback);
 	picturebarCloseBtn->SetEffectGrow();
 	
@@ -3802,16 +4003,7 @@ static void SetupPlaybar()
 	picturebar->Append(picturebarSlideshowBtn);
 	picturebar->Append(picturebarCloseBtn);
 	
-	playbarSetup = 1;
-}
-
-void HideNowPlaying()
-{
-	for(int i=0; i < 4; i++)
-	{
-		audiobarNowPlaying[i]->SetVisible(false);
-		if(i > 0) audiobarNowPlaying[i]->SetText(NULL);
-	}
+	actionbarSetup = 1;
 }
 
 /****************************************************************************

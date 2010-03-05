@@ -79,20 +79,24 @@ int MusicPlaylistLoad()
 	return browser.numEntries;
 }
 
-bool MusicPlaylistFind(int index)
+static bool MusicPlaylistFind(char * fullpath)
 {
-	if(index <= 0 || index >= browser.size)
-		return false;
-	
-	char fullpath[MAXPATHLEN];
-	sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
-	
 	for(int i=0; i < playlistSize; i++)
 	{
 		if(strcmp(fullpath, playlist[i].filepath) == 0)
 			return true;
 	}
 	return false;
+}
+
+bool MusicPlaylistFind(int index)
+{
+	if(index <= 0 || index >= browser.size)
+		return false;
+
+	char fullpath[MAXPATHLEN];
+	sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
+	return MusicPlaylistFind(fullpath);
 }
 
 /****************************************************************************
@@ -103,7 +107,7 @@ bool MusicPlaylistFind(int index)
  ***************************************************************************/
 static bool EnqueueFile(char * path, char * name)
 {
-	if(path == NULL || name == NULL || strcmp(name,".") == 0)
+	if(path == NULL || name == NULL || strcmp(name,".") == 0 || MusicPlaylistFind(path))
 		return false;
 
 	char *ext = strrchr(path,'.');

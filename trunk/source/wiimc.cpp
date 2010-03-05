@@ -217,7 +217,8 @@ static bool FindIOS(u32 ios)
 		return false;	
 	}
 		
-	for(n=0; n<num_titles; n++) {
+	for(n=0; n<num_titles; n++)
+	{
 		if((titles[n] &  0xFFFFFFFF)==ios) 
 		{
 			free(titles); 
@@ -235,11 +236,8 @@ static bool FindIOS(u32 ios)
 
 void FindNextAudioFile()
 {
-	if(playlistSize <= 1)
-	{
-		playingAudio = false;
+	if(playlistSize == 0)
 		return;
-	}
 
 	if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 	{
@@ -270,11 +268,10 @@ mplayerthread (void *arg)
 		if(loadedFile[0] != 0)
 		{
 			controlledbygui = 0;
+			wiiResetPause();
 			wiiSetCache(WiiSettings.cacheSize, WiiSettings.cachePrefill);
 			mplayer_loadfile(loadedFile);
 		}
-
-		HideNowPlaying();
 
 		if(controlledbygui != 2 && WiiSettings.playOrder > 0 && playingAudio) // load next file
 			FindNextAudioFile();
@@ -307,7 +304,6 @@ bool InitMPlayer()
 void LoadMPlayer()
 {
 	controlledbygui = 0;
-	wiiResetPause();
 	HaltDeviceThread();
 	printf("return control to mplayer\n");
 	if(LWP_ThreadIsSuspended(mthread))

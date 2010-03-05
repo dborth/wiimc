@@ -374,7 +374,7 @@ void DefaultSettings ()
 
 	// Cache
 	WiiSettings.cacheSize = 8192;
-	WiiSettings.cachePrefill = 20;
+	WiiSettings.cachePrefill = 50;
 
 	// Network
 
@@ -423,10 +423,10 @@ static void FixInvalidSettings()
 		WiiSettings.rumble = 1;
 
 	// Cache
-	if(WiiSettings.cacheSize < 0 || WiiSettings.cacheSize > 16384)
+	if(WiiSettings.cacheSize < 2048 || WiiSettings.cacheSize > 16384)
 		WiiSettings.cacheSize = 8192;
-	if(WiiSettings.cachePrefill < 0 || WiiSettings.cachePrefill > 100)
-		WiiSettings.cachePrefill = 20;
+	if(WiiSettings.cachePrefill < 10 || WiiSettings.cachePrefill > 100)
+		WiiSettings.cachePrefill = 50;
 
 	// Network
 

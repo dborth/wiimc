@@ -152,6 +152,11 @@ static GuiImage * picturebarCloseImg = NULL;
 static GuiImage * picturebarCloseOverImg = NULL;
 static GuiImage * picturebarCloseIcon = NULL;
 
+static GuiTooltip * picturebarPreviousTip = NULL;
+static GuiTooltip * picturebarNextTip = NULL;
+static GuiTooltip * picturebarSlideshowTip = NULL;
+static GuiTooltip * picturebarCloseTip = NULL;
+
 static GuiButton * picturebarPreviousBtn = NULL;
 static GuiButton * picturebarNextBtn = NULL;
 static GuiButton * picturebarSlideshowBtn = NULL;
@@ -989,8 +994,11 @@ void UpdateVideobarPauseBtn(bool paused)
 	}
 }
 
-static void UpdateAudiobarPauseBtn(bool paused)
+void UpdateAudiobarPauseBtn(bool paused)
 {
+	if(!audiobarPauseIcon || !audiobarPauseTip)
+		return;
+
 	if(paused)
 	{
 		audiobarPauseIcon->SetImage(actionbarPlay);
@@ -1077,6 +1085,18 @@ static void MenuBrowse(int menu)
 	playlistAddBtn.SetTrigger(&trigPlus);
 	playlistAddBtn.SetSelectable(false);
 
+	char txt[10];
+	sprintf(txt, "%d", playlistSize);
+	playlistBtnTxt.SetText(txt);
+
+	GuiImageData plus(icon_plus_png);
+	GuiImage plusImg(&plus);
+	GuiText plusTxt("Add to Playlist", 18, (GXColor){0, 0, 0, 255});
+	plusImg.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	plusImg.SetPosition(49, -110);
+	plusTxt.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	plusTxt.SetPosition(71, -110);
+
 	if(menu == MENU_BROWSE_ONLINEMEDIA && onlinemediaSize == 0)
 	{
 		ErrorPrompt("Online media file not found.");
@@ -1110,10 +1130,8 @@ static void MenuBrowse(int menu)
 
 	if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
 	{
-		char txt[10];
-		sprintf(txt, "%d", playlistSize);
-		playlistBtnTxt.SetText(txt);
-
+		mainWindow->Append(&plusImg);
+		mainWindow->Append(&plusTxt);
 		mainWindow->Append(&playlistAddBtn);
 		mainWindow->Append(&playlistBtn);
 		UpdateAudiobarModeBtn();
@@ -1381,6 +1399,8 @@ done:
 
 	if(menu == MENU_BROWSE_MUSIC) // remove playlist functionality
 	{
+		mainWindow->Remove(&plusImg);
+		mainWindow->Remove(&plusTxt);
 		mainWindow->Remove(&playlistAddBtn);
 		mainWindow->Remove(&playlistBtn);
 	}
@@ -3960,6 +3980,11 @@ static void SetupPlaybar()
 	picturebarCloseOverImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	picturebarCloseIcon = new GuiImage(actionbarClose);
 	picturebarCloseIcon->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	
+	picturebarPreviousTip = new GuiTooltip("Previous");
+	picturebarNextTip = new GuiTooltip("Next");
+	picturebarSlideshowTip = new GuiTooltip("Slideshow");
+	picturebarCloseTip = new GuiTooltip("Close");
 
 	picturebarPreviousBtn = new GuiButton(50, 50);
 	picturebarPreviousBtn->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
@@ -3967,6 +3992,7 @@ static void SetupPlaybar()
 	picturebarPreviousBtn->SetImage(picturebarPreviousImg);
 	picturebarPreviousBtn->SetImageOver(picturebarPreviousOverImg);
 	picturebarPreviousBtn->SetIcon(picturebarPreviousIcon);
+	picturebarPreviousBtn->SetTooltip(picturebarPreviousTip);
 	picturebarPreviousBtn->SetTrigger(actionbarTrigA);
 	picturebarPreviousBtn->SetUpdateCallback(PicturePreviousCallback);
 	picturebarPreviousBtn->SetEffectGrow();
@@ -3977,6 +4003,7 @@ static void SetupPlaybar()
 	picturebarNextBtn->SetImage(picturebarNextImg);
 	picturebarNextBtn->SetImageOver(picturebarNextOverImg);
 	picturebarNextBtn->SetIcon(picturebarNextIcon);
+	picturebarNextBtn->SetTooltip(picturebarNextTip);
 	picturebarNextBtn->SetTrigger(actionbarTrigA);
 	picturebarNextBtn->SetUpdateCallback(PictureNextCallback);
 	picturebarNextBtn->SetEffectGrow();
@@ -3987,6 +4014,7 @@ static void SetupPlaybar()
 	picturebarSlideshowBtn->SetImage(picturebarSlideshowImg);
 	picturebarSlideshowBtn->SetImageOver(picturebarSlideshowOverImg);
 	picturebarSlideshowBtn->SetIcon(picturebarSlideshowIcon);
+	picturebarSlideshowBtn->SetTooltip(picturebarSlideshowTip);
 	picturebarSlideshowBtn->SetTrigger(actionbarTrigA);
 	picturebarSlideshowBtn->SetUpdateCallback(PictureSlideshowCallback);
 	picturebarSlideshowBtn->SetEffectGrow();
@@ -3997,11 +4025,14 @@ static void SetupPlaybar()
 	picturebarCloseBtn->SetImage(picturebarCloseImg);
 	picturebarCloseBtn->SetImageOver(picturebarCloseOverImg);
 	picturebarCloseBtn->SetIcon(picturebarCloseIcon);
+	picturebarCloseBtn->SetTooltip(picturebarCloseTip);
 	picturebarCloseBtn->SetTrigger(actionbarTrigA);
 	picturebarCloseBtn->SetUpdateCallback(PictureCloseCallback);
 	picturebarCloseBtn->SetEffectGrow();
 	
-	picturebar = new GuiWindow(360, 80);
+	picturebar = new GuiWindow(320, 80);
+	picturebar->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
+	picturebar->SetPosition(0, -40);
 
 	picturebar->Append(picturebarPreviousBtn);
 	picturebar->Append(picturebarNextBtn);

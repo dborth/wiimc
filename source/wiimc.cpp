@@ -260,7 +260,10 @@ mplayerthread (void *arg)
 	while(1)
 	{
 		if(controlledbygui == 2 || WiiSettings.playOrder == 0 || !playingAudio)
+		{
+			UpdateAudiobarPauseBtn(true);
 			LWP_SuspendThread(mthread);
+		}
 
 		nowPlayingSet = false;
 

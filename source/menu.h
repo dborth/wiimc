@@ -22,6 +22,7 @@ void ShowProgress (const char *msg, int done, int total);
 int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
 void ResetText();
 void UpdateVideobarPauseBtn(bool paused);
+void UpdateAudiobarPauseBtn(bool paused);
 
 extern "C" {
 void SetStatus(const char * txt);

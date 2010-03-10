@@ -1463,7 +1463,8 @@ static int pictureIndexLoaded = -1;
 static int pictureIndexLoading = -1;
 static int pictureLoaded = -1;
 
-static int closePictureViewer = 0; // is picture viewer open
+static int closePictureViewer = 1; // 0 = picture viewer is open
+static bool setPicture = false;
 static int slideshow = 0; // slideshow mode
 static u64 slideprev, slidenow; // slideshow timer
 
@@ -1588,16 +1589,10 @@ restart:
 				}
 
 				pictureIndexLoading = -1;
+				setPicture = true; // trigger picture to be reloaded
 
-				if(found >= 0)
-				{
-					SetPicture(found, selIndex);
-				}
-				else
-				{
-					SetPicture(-1, -1);
+				if(found < 0)
 					goto restart;
-				}
 			}
 
 			// fill up image buffer slots
@@ -1632,7 +1627,7 @@ restart:
 				pictureIndex[i] = next;
 				pictureIndexLoading = -1;
 				if(browser.selIndex == next)
-					SetPicture(i, next);
+					setPicture = true; // trigger picture to be reloaded
 				next++;
 			}
 		}
@@ -1728,11 +1723,12 @@ static void PictureViewer()
 	GuiWindow * oldWindow = mainWindow;
 	GuiImage * pictureFullImg = new GuiImage;
 	pictureFullImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-
-	SuspendGui();
+	
 	GuiWindow * w = new GuiWindow(screenwidth, screenheight);
 	w->Append(pictureFullImg);
 	w->Append(picturebar);
+
+	SuspendGui();
 	mainWindow = w;
 	ResumeGui();
 
@@ -1741,26 +1737,36 @@ static void PictureViewer()
 		if(browser.selIndex != currentIndex)
 		{
 			currentIndex = browser.selIndex;
+			loadPictures = 1; // trigger picture thread
+
 			// search through already loaded pictures for this picture
+			int found = FoundPicture(browser.selIndex);
+			if(found >= 0)
+				setPicture = true;
+			else if(!browserList[browser.selIndex].isdir
+				&& pictureIndexLoading != browser.selIndex)
+				CancelFileOp();
+
+			if(!slideshow && !setPicture)
+			{
+				ShowAction("Loading...");
+				while(!setPicture) // wait for picture to load
+					usleep(THREAD_SLEEP);
+
+				CancelAction();
+			}
+		}
+
+		if(setPicture)
+		{
+			setPicture = false;
+
 			int found = FoundPicture(browser.selIndex);
 			if(found >= 0)
 			{
 				SuspendGui();
 				pictureFullImg->SetImage(picture[found]);
 				ResumeGui();
-			}
-			else if(!browserList[browser.selIndex].isdir
-				&& pictureIndexLoading != browser.selIndex)
-				CancelFileOp();
-
-			loadPictures = 1; // trigger picture thread
-
-			if(!slideshow)
-			{
-				ShowAction("Loading...");
-				while(FoundPicture(browser.selIndex) < 0) // wait for picture to load
-					usleep(THREAD_SLEEP);
-				CancelAction();
 			}
 		}
 
@@ -1844,9 +1850,10 @@ static void MenuBrowsePictures()
 		}
 
 		// update displayed picture
-		if(browser.selIndex != currentIndex)
+		if(browser.selIndex != currentIndex || setPicture)
 		{
 			currentIndex = browser.selIndex;
+			setPicture = false;
 
 			if(browserList[browser.selIndex].isdir)
 			{

@@ -22,7 +22,7 @@
 #include "utils/unzip/unzip.h"
 #include "utils/unzip/miniunz.h"
 
-static bool inNetworkInit = false;
+bool inNetworkInit = false;
 static bool networkInit = false;
 static bool autoNetworkInit = true;
 static bool networkShareInit[5] = { false, false, false, false, false };
@@ -137,7 +137,7 @@ bool DownloadUpdate()
 
 	// stop checking if devices were removed/inserted
 	// since we're saving a file
-	HaltDeviceThread();
+	SuspendDeviceThread();
 
 	// find devoptab name
 	char dev[10];

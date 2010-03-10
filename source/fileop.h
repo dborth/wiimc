@@ -28,8 +28,11 @@ typedef struct
 } DEVICE_STRUCT;
 
 void ResumeDeviceThread();
-void HaltDeviceThread();
-void HaltParseThread();
+void SuspendDeviceThread();
+void StopDeviceThread();
+void ResumeParseThread();
+void SuspendParseThread();
+void StopParseThread();
 void CancelFileOp();
 void MountAllDevices();
 bool ChangeInterface(int device, int devnum, bool silent);
@@ -47,7 +50,6 @@ extern DEVICE_STRUCT part[2][MAX_DEVICES];
 
 extern bool devicesChanged;
 extern bool isInserted[];
-extern lwp_t devicethread;
 extern int currentDevice;
 extern int currentDeviceNum;
 extern int selectLoadedFile;

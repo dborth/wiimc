@@ -194,7 +194,7 @@ static void delete_restore_point(char *_filename);
 static void save_restore_point(char *_filename, int position);
 static int load_restore_point(char *_filename);
 
-int controlledbygui=0;
+int controlledbygui=1;
 int pause_gui=0;
 int render_texture_time=0;
 float mplayer_volume = -1;

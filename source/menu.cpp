@@ -168,11 +168,19 @@ static int menuUndo = MENU_BROWSE_VIDEOS;
 bool inPlaylist = false;
 static int netEditIndex = 0; // current index of FTP/SMB share being edited
 
+// threads
 static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t progressthread = LWP_THREAD_NULL;
 static lwp_t creditsthread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
-static bool guiHalt = true;
+static lwp_t picturethread = LWP_THREAD_NULL;
+
+static int progressThreadHalt = 0;
+static int creditsThreadHalt = 0;
+static int updateThreadHalt = 0;
+static int pictureThreadHalt = 0;
+
+static int guiHalt = 0;
 static bool guiShutdown = true;
 static int showProgress = 0;
 
@@ -180,8 +188,6 @@ static char progressTitle[100];
 static char progressMsg[200];
 static int progressDone = 0;
 static int progressTotal = 0;
-
-static bool creditsOpen = false;
 
 int doMPlayerGuiDraw = 0; // draw MPlayer menu
 static bool menuMode = 0; // 0 - normal GUI, 1 - GUI for MPlayer
@@ -230,37 +236,53 @@ static void ExitButtonCallback(void * ptr)
 }
 
 /****************************************************************************
- * AppUpdate
+ * UpdateThread
  *
  * Prompts for confirmation, and downloads/installs updates
  ***************************************************************************/
-static void *
-AppUpdate (void *arg)
+static void * UpdateThread (void *arg)
 {
-	bool installUpdate = WindowPrompt(
-		"Update Available",
-		"An update is available!",
-		"Update now",
-		"Update later");
-	if(installUpdate)
-		if(DownloadUpdate())
-			ExitRequested = 1;
+	while(1)
+	{
+		LWP_SuspendThread(updatethread);
+
+		if(updateThreadHalt == 2)
+			return NULL;
+
+		bool installUpdate = WindowPrompt(
+			"Update Available",
+			"An update is available!",
+			"Update now",
+			"Update later");
+		if(installUpdate)
+			if(DownloadUpdate())
+				ExitRequested = 1;
+	}
 	return NULL;
 }
 
+static void ResumeUpdateThread()
+{
+	if(updatethread == LWP_THREAD_NULL || guiShutdown)
+		return;
+
+	updateThreadHalt = 0;
+	LWP_ResumeThread(updatethread);
+}
+
 /****************************************************************************
- * UpdateGui
+ * GuiThread
  *
  * Primary GUI thread to allow GUI to respond to state changes, and draws GUI
  ***************************************************************************/
-static void *UpdateGui (void *arg)
+static void *GuiThread (void *arg)
 {
 	int i;
 
 	while(1)
 	{
-		if(guiHalt)
-			break;
+		if(guiHalt == 1)
+			LWP_SuspendThread(guithread);
 
 		UpdatePads();
 
@@ -316,13 +338,7 @@ static void *UpdateGui (void *arg)
 			if(updateFound)
 			{
 				updateFound = false;
-				LWP_CreateThread (&updatethread, AppUpdate, NULL, NULL, 0, 60);
-			}
-
-			if(!creditsOpen && creditsthread != LWP_THREAD_NULL)
-			{
-				LWP_JoinThread(creditsthread, NULL);
-				creditsthread = LWP_THREAD_NULL;
+				ResumeUpdateThread();
 			}
 
 			if(userInput[0].wpad->btns_d & WPAD_BUTTON_HOME)
@@ -356,45 +372,44 @@ static void *UpdateGui (void *arg)
  * after finishing the removal/insertion of new elements, and after initial
  * GUI setup.
  ***************************************************************************/
-static void
-ResumeGui()
+static void ResumeGui()
 {
-	guiHalt = false;
+	if(guithread == LWP_THREAD_NULL || guiShutdown)
+		return;
 
-	if(guithread == LWP_THREAD_NULL)
-		LWP_CreateThread (&guithread, UpdateGui, NULL, NULL, 0, 66);
+	guiHalt = 0;
+	LWP_ResumeThread (guithread);
 }
 
 /****************************************************************************
- * HaltGui
+ * SuspendGui
  *
  * Signals the GUI thread to stop, and waits for GUI thread to stop
  * This is necessary whenever removing/inserting new elements into the GUI.
  * This eliminates the possibility that the GUI is in the middle of accessing
  * an element that is being changed.
  ***************************************************************************/
-extern "C" {
-static void
-HaltGui()
+static void SuspendGui()
 {
-	guiHalt = true;
-
 	if(guithread == LWP_THREAD_NULL)
 		return;
 
+	guiHalt = 1;
+
 	// wait for thread to finish
-	LWP_JoinThread(guithread, NULL);
-	guithread = LWP_THREAD_NULL;
+	while(!LWP_ThreadIsSuspended(guithread))
+		usleep(THREAD_SLEEP);
 }
 
+extern "C" {
 void ShutdownGui()
 {
 	if(menuMode == 1) // prevent MPlayer from shutting down OSD
 		return;
 
-	CancelAction();
-	HaltGui();
 	guiShutdown = true;
+	CancelAction();
+	SuspendGui();
 }
 }
 
@@ -481,7 +496,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 
 	promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
 	CancelAction();
-	HaltGui();
+	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
 	mainWindow->Append(&promptWindow);
 	mainWindow->ChangeFocus(&promptWindow);
@@ -499,7 +514,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 
 	promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
 	while(promptWindow.GetEffect() > 0) usleep(THREAD_SLEEP);
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&promptWindow);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
@@ -570,10 +585,10 @@ ProgressWindow(char *title, char *msg)
 	}
 
 	usleep(400000); // wait to see if progress flag changes soon
-	if(!showProgress)
+	if(!showProgress || progressThreadHalt > 0)
 		return;
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
 	mainWindow->Append(&promptWindow);
 	mainWindow->ChangeFocus(&promptWindow);
@@ -582,7 +597,7 @@ ProgressWindow(char *title, char *msg)
 	float angle = 0;
 	u32 count = 0;
 
-	while(showProgress)
+	while(showProgress && progressThreadHalt == 0)
 	{
 		usleep(20000);
 
@@ -603,7 +618,7 @@ ProgressWindow(char *title, char *msg)
 		}
 	}
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&promptWindow);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
@@ -613,8 +628,10 @@ static void * ProgressThread (void *arg)
 {
 	while(1)
 	{
-		if(!showProgress)
-			break;
+		if(progressThreadHalt == 1)
+			LWP_SuspendThread (progressthread);
+		if(progressThreadHalt == 2)
+			return NULL;
 
 		ProgressWindow(progressTitle, progressMsg);
 		usleep(THREAD_SLEEP);
@@ -632,14 +649,15 @@ static void * ProgressThread (void *arg)
 void
 CancelAction()
 {
+	progressThreadHalt = 1;
 	showProgress = 0;
 
 	if(progressthread == LWP_THREAD_NULL)
 		return;
 
 	// wait for thread to finish
-	LWP_JoinThread(progressthread, NULL);
-	progressthread = LWP_THREAD_NULL;
+	while(!LWP_ThreadIsSuspended(progressthread))
+		usleep(THREAD_SLEEP);
 }
 
 /****************************************************************************
@@ -651,6 +669,9 @@ CancelAction()
 void
 ShowProgress (const char *msg, int done, int total)
 {
+	if(progressthread == LWP_THREAD_NULL || guiShutdown)
+		return;
+
 	if(!mainWindow || ExitRequested || ShutdownRequested)
 		return;
 
@@ -665,12 +686,12 @@ ShowProgress (const char *msg, int done, int total)
 
 	strncpy(progressMsg, msg, 200);
 	sprintf(progressTitle, "Please Wait");
+	progressThreadHalt = 0;
 	showProgress = 1;
 	progressTotal = total;
 	progressDone = done;
 
-	if(progressthread == LWP_THREAD_NULL)
-		LWP_CreateThread (&progressthread, ProgressThread, NULL, NULL, 0, 60);
+	LWP_ResumeThread (progressthread);
 }
 
 /****************************************************************************
@@ -685,17 +706,20 @@ ShowAction (const char *msg)
 	if(!mainWindow || ExitRequested || ShutdownRequested)
 		return;
 
+	if(progressthread == LWP_THREAD_NULL || guiShutdown)
+		return;
+
 	if(showProgress != 2)
 		CancelAction(); // wait for previous progress window to finish
 
 	strncpy(progressMsg, msg, 200);
 	sprintf(progressTitle, "Please Wait");
+	progressThreadHalt = 0;
 	showProgress = 2;
 	progressDone = 0;
 	progressTotal = 0;
 
-	if(progressthread == LWP_THREAD_NULL)
-		LWP_CreateThread (&progressthread, ProgressThread, NULL, NULL, 0, 60);
+	LWP_ResumeThread (progressthread);
 }
 
 void ErrorPrompt(const char *msg)
@@ -759,7 +783,7 @@ static void OnScreenKeyboard(char * var, u16 maxlen)
 	keyboard.Append(&okBtn);
 	keyboard.Append(&cancelBtn);
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
 	mainWindow->Append(&keyboard);
 	mainWindow->ChangeFocus(&keyboard);
@@ -780,7 +804,7 @@ static void OnScreenKeyboard(char * var, u16 maxlen)
 		snprintf(var, maxlen, "%s", keyboard.kbtextstr);
 	}
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&keyboard);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
@@ -842,7 +866,7 @@ SettingWindow(const char * title, GuiWindow * w)
 	promptWindow.Append(&okBtn);
 	promptWindow.Append(&cancelBtn);
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
 	mainWindow->Append(&promptWindow);
 	mainWindow->Append(w);
@@ -858,7 +882,7 @@ SettingWindow(const char * title, GuiWindow * w)
 		else if(cancelBtn.GetState() == STATE_CLICKED)
 			save = 0;
 	}
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&promptWindow);
 	mainWindow->Remove(w);
 	mainWindow->SetState(STATE_DEFAULT);
@@ -867,12 +891,13 @@ SettingWindow(const char * title, GuiWindow * w)
 }
 
 /****************************************************************************
- * WindowCredits
+ * CreditsWindow
  * Display credits, legal copyright and licence
  *
  * THIS MUST NOT BE REMOVED OR DISABLED IN ANY DERIVATIVE WORK
  ***************************************************************************/
-static void * WindowCredits(void *arg)
+
+static void CreditsWindow()
 {
 	bool exit = false;
 	int i = 0;
@@ -939,13 +964,13 @@ static void * WindowCredits(void *arg)
 	for(i=0; i < numEntries; i++)
 		creditsWindow.Append(txt[i]);
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
 	mainWindow->Append(&creditsWindow);
 	mainWindow->ChangeFocus(&creditsWindow);
 	ResumeGui();
 	
-	while(!exit)
+	while(!exit && creditsThreadHalt == 0)
 	{
 		for(i=0; i < 4; i++)
 		{
@@ -955,15 +980,37 @@ static void * WindowCredits(void *arg)
 		usleep(THREAD_SLEEP);
 	}
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&creditsWindow);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 	
 	for(i=0; i < numEntries; i++)
 		delete txt[i];
-	creditsOpen = false;
+}
+
+static void *CreditsThread(void *arg)
+{
+	while(1)
+	{
+		LWP_SuspendThread (creditsthread);
+
+		if(creditsThreadHalt == 2)
+			break;
+
+		CreditsWindow();
+		usleep(THREAD_SLEEP);
+	}
 	return NULL;
+}
+
+static void ResumeCreditsThread()
+{
+	if(creditsthread == LWP_THREAD_NULL || guiShutdown)
+		return;
+
+	creditsThreadHalt = 0;
+	LWP_ResumeThread(creditsthread);
 }
 
 static void DisplayCredits(void * ptr)
@@ -972,13 +1019,8 @@ static void DisplayCredits(void * ptr)
 		return;
 
 	logoBtn->ResetState();
-	
-	// spawn a new thread to handle the Credits
-	creditsOpen = true;
-	if(creditsthread == LWP_THREAD_NULL)
-		LWP_CreateThread (&creditsthread, WindowCredits, NULL, NULL, 0, 60);
+	ResumeCreditsThread();
 }
-
 
 void UpdateVideobarPauseBtn(bool paused)
 {
@@ -1122,7 +1164,7 @@ static void MenuBrowse(int menu)
 		}
 	}
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->Append(&fileBrowser);
 	
 	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
@@ -1255,7 +1297,6 @@ static void MenuBrowse(int menu)
 					{
 						playingAudio = true;
 						UpdateAudiobarPauseBtn(false);
-						ResumeDeviceThread();
 
 						// we loaded an audio file - if we already had a video
 						// loaded, we should remove the bg
@@ -1390,8 +1431,8 @@ static void MenuBrowse(int menu)
 		}
 	}
 done:
-	HaltParseThread(); // halt parsing
-	HaltGui();
+	SuspendParseThread(); // halt parsing
+	SuspendGui();
 	mainWindow->Remove(&fileBrowser);
 
 	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
@@ -1409,9 +1450,6 @@ done:
 // Picture Viewer
 #define MAX_PICTURE_SIZE (1024*1024*10) // 10 MB
 static int loadPictures = 0; // reload pictures
-
-static lwp_t picturethread = LWP_THREAD_NULL;
-static bool pictureThreadHalt = true;
 
 #define NUM_PICTURES 		7 // 1 image with a buffer of +/- 3 on each side
 #define PIC_WIDTH			240
@@ -1446,7 +1484,7 @@ static void SetPicture(int picIndex, int browserIndex)
 	{
 		pictureLoaded = picIndex;
 		pictureIndexLoaded = browserIndex;
-		HaltGui();
+		SuspendGui();
 		pictureImg->SetImage(picture[picIndex]);
 		pictureImg->SetScale(PIC_WIDTH, PIC_HEIGHT);
 		pictureImg->SetEffect(EFFECT_ROTATE, 0);
@@ -1459,7 +1497,7 @@ static void SetPicture(int picIndex, int browserIndex)
 		{
 			if(pictureImg->GetImage() != NULL)
 			{
-				HaltGui();
+				SuspendGui();
 				pictureImg->SetImage(NULL);
 				pictureImg->SetEffect(EFFECT_ROTATE, 0);
 				ResumeGui();
@@ -1467,7 +1505,7 @@ static void SetPicture(int picIndex, int browserIndex)
 		}
 		else
 		{
-			HaltGui();
+			SuspendGui();
 			pictureImg->SetScale(1);
 			pictureImg->SetImage(&throbber);
 			pictureImg->SetEffect(EFFECT_ROTATE, 100);
@@ -1479,7 +1517,7 @@ static void SetPicture(int picIndex, int browserIndex)
 	}
 }
 
-static void *picturecallback (void *arg)
+static void *PictureThread (void *arg)
 {
 	int selIndex;
 	int i,next;
@@ -1488,7 +1526,7 @@ static void *picturecallback (void *arg)
 
 	if(!picBuffer)
 	{
-		while(!pictureThreadHalt) usleep(THREAD_SLEEP);
+		while(pictureThreadHalt == 0) usleep(THREAD_SLEEP);
 		return NULL;
 	}
 
@@ -1498,8 +1536,10 @@ static void *picturecallback (void *arg)
 
 	while(1)
 	{
-done:
-		if(pictureThreadHalt)
+restart:
+		if(pictureThreadHalt == 1)
+			LWP_SuspendThread(picturethread);
+		if(pictureThreadHalt == 2)
 			break;
 
 		if(loadPictures)
@@ -1534,17 +1574,17 @@ done:
 					pictureIndexLoading = selIndex;
 					int size = LoadFile((char *)picBuffer, filepath, SILENT);
 
-					if(size > 0)
-					{
-						// find first empty slot
-						for(i=0; i < NUM_PICTURES; i++)
-							if(pictureIndex[i] == -1)
-								break;
-						
-						picture[i] = new GuiImageData(picBuffer, size);
-						pictureIndex[i] = selIndex;
-						found = i;
-					}
+					if(size == 0)
+						goto restart;
+
+					// find first empty slot
+					for(i=0; i < NUM_PICTURES; i++)
+						if(pictureIndex[i] == -1)
+							break;
+					
+					picture[i] = new GuiImageData(picBuffer, size);
+					pictureIndex[i] = selIndex;
+					found = i;
 				}
 
 				pictureIndexLoading = -1;
@@ -1556,7 +1596,7 @@ done:
 				else
 				{
 					SetPicture(-1, -1);
-					goto done;
+					goto restart;
 				}
 			}
 
@@ -1586,7 +1626,7 @@ done:
 				int size = LoadFile((char *)picBuffer, filepath, SILENT);
 
 				if(size == 0)
-					goto done;
+					goto restart;
 
 				picture[i] = new GuiImageData(picBuffer, size);
 				pictureIndex[i] = next;
@@ -1600,7 +1640,7 @@ done:
 	}
 
 	// reset everything
-	HaltGui();
+	SuspendGui();
 
 	for(i=0; i < NUM_PICTURES; i++)
 	{
@@ -1618,31 +1658,31 @@ done:
  *
  * Signals the picture thread to start, and resumes the thread.
  ***************************************************************************/
-static void
-ResumePictureThread()
+static void ResumePictureThread()
 {
-	pictureThreadHalt = false;
-	if(picturethread == LWP_THREAD_NULL)
-		LWP_CreateThread (&picturethread, picturecallback, NULL, NULL, 0, 66);
+	if(picturethread == LWP_THREAD_NULL || guiShutdown)
+		return;
+
+	pictureThreadHalt = 0;
+	LWP_ResumeThread(picturethread);
 }
 
 /****************************************************************************
- * HaltPictureThread
+ * SuspendPictureThread
  *
  * Signals the picture thread to stop.
  ***************************************************************************/
-static void
-HaltPictureThread()
+void SuspendPictureThread()
 {
-	pictureThreadHalt = true;
+	if(picturethread == LWP_THREAD_NULL)
+		return;
+
+	pictureThreadHalt = 1;
 	CancelFileOp();
 
-	if(picturethread != LWP_THREAD_NULL)
-	{
-		// wait for thread to finish
-		LWP_JoinThread(picturethread, NULL);
-		picturethread = LWP_THREAD_NULL;
-	}
+	// wait for thread to finish
+	while(!LWP_ThreadIsSuspended(picturethread))
+		usleep(THREAD_SLEEP);
 }
 
 static void ChangePicture(int dir)
@@ -1689,14 +1729,14 @@ static void PictureViewer()
 	GuiImage * pictureFullImg = new GuiImage;
 	pictureFullImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 
-	HaltGui();
+	SuspendGui();
 	GuiWindow * w = new GuiWindow(screenwidth, screenheight);
 	w->Append(pictureFullImg);
 	w->Append(picturebar);
 	mainWindow = w;
 	ResumeGui();
 
-	while(closePictureViewer == 0)
+	while(closePictureViewer == 0 && !guiShutdown)
 	{
 		if(browser.selIndex != currentIndex)
 		{
@@ -1705,7 +1745,7 @@ static void PictureViewer()
 			int found = FoundPicture(browser.selIndex);
 			if(found >= 0)
 			{
-				HaltGui();
+				SuspendGui();
 				pictureFullImg->SetImage(picture[found]);
 				ResumeGui();
 			}
@@ -1736,7 +1776,7 @@ static void PictureViewer()
 		usleep(THREAD_SLEEP);
 	}
 
-	HaltGui();
+	SuspendGui();
 	mainWindow = oldWindow;
 	ResumeGui();
 	delete w;
@@ -1753,7 +1793,7 @@ static void MenuBrowsePictures()
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	fileBrowser.SetPosition(44, 100);
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->Append(&fileBrowser);
 	ResumeGui();
 
@@ -1774,7 +1814,7 @@ static void MenuBrowsePictures()
 	}
 
 	SetPicture(-1, -1);
-	HaltGui();
+	SuspendGui();
 	mainWindow->Append(pictureBtn);
 	ResumeGui();
 
@@ -1833,12 +1873,6 @@ static void MenuBrowsePictures()
 			}
 		}
 
-		if(pictureBtn->GetState() == STATE_CLICKED)
-		{
-			pictureBtn->ResetState();
-			PictureViewer();
-		}
-
 		// update file browser based on arrow buttons
 		for(int i=0; i<FILE_PAGESIZE; i++)
 		{
@@ -1848,7 +1882,7 @@ static void MenuBrowsePictures()
 
 				if(browserList[browser.selIndex].isdir)
 				{
-					HaltPictureThread();
+					SuspendPictureThread();
 
 					if(BrowserChangeFolder())
 					{
@@ -1869,11 +1903,16 @@ static void MenuBrowsePictures()
 				}
 			}
 		}
+		if(pictureBtn->GetState() == STATE_CLICKED)
+		{
+			pictureBtn->ResetState();
+			PictureViewer();
+		}
 	}
 done:
-	HaltPictureThread(); // halt picture thread
-	HaltParseThread(); // halt parsing
-	HaltGui();
+	SuspendPictureThread(); // halt picture thread
+	SuspendParseThread(); // halt parsing
+	SuspendGui();
 	mainWindow->Remove(pictureBtn);
 	mainWindow->Remove(&fileBrowser);
 }
@@ -1903,7 +1942,7 @@ static void MenuDVD()
 	if(!guiShutdown) // load failed
 		ErrorPrompt("DVD not inserted or invalid DVD!");
 
-	HaltGui();
+	SuspendGui();
 }
 
 static void MenuSettingsGlobal()
@@ -1956,7 +1995,7 @@ static void MenuSettingsGlobal()
 	optionBrowser.SetCol2Position(200);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	HaltGui();
+	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
 	mainWindow->Append(&optionBrowser);
@@ -2043,7 +2082,7 @@ static void MenuSettingsGlobal()
 			menuCurrent = MENU_SETTINGS;
 		}
 	}
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
@@ -2360,7 +2399,7 @@ static void MenuSettingsVideos()
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	HaltGui();
+	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
 	mainWindow->Append(&optionBrowser);
@@ -2465,7 +2504,7 @@ static void MenuSettingsVideos()
 			menuCurrent = MENU_SETTINGS;
 		}
 	}
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
@@ -2516,7 +2555,7 @@ static void MenuSettingsMusic()
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	HaltGui();
+	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
 	mainWindow->Append(&optionBrowser);
@@ -2564,7 +2603,7 @@ static void MenuSettingsMusic()
 			menuCurrent = MENU_SETTINGS;
 		}
 	}
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
@@ -2614,7 +2653,7 @@ static void MenuSettingsPictures()
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	HaltGui();
+	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
 	mainWindow->Append(&optionBrowser);
@@ -2648,7 +2687,7 @@ static void MenuSettingsPictures()
 			menuCurrent = MENU_SETTINGS;
 		}
 	}
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
@@ -2748,7 +2787,7 @@ static void MenuSettingsNetwork()
 	optionBrowser.SetCol1Position(30);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	HaltGui();
+	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
 	w.Append(&addsmbBtn);
@@ -2780,7 +2819,7 @@ static void MenuSettingsNetwork()
 			menuCurrent = MENU_SETTINGS;
 		}
 	}
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
@@ -2857,7 +2896,7 @@ static void MenuSettingsNetworkSMB()
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	HaltGui();
+	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
 	
@@ -2941,7 +2980,7 @@ static void MenuSettingsNetworkSMB()
 			}
 		}
 	}
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
@@ -3022,7 +3061,7 @@ static void MenuSettingsNetworkFTP()
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	HaltGui();
+	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
 	
@@ -3111,7 +3150,7 @@ static void MenuSettingsNetworkFTP()
 			}
 		}
 	}
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
@@ -3164,7 +3203,7 @@ static void MenuSettingsSubtitles()
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	HaltGui();
+	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
 	mainWindow->Append(&optionBrowser);
@@ -3229,7 +3268,7 @@ static void MenuSettingsSubtitles()
 			menuCurrent = MENU_SETTINGS;
 		}
 	}
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
@@ -3283,7 +3322,7 @@ static void MenuSettings()
 	itemBrowser.SetPosition(70, 120);
 	itemBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->Append(&itemBrowser);
 	mainWindow->Append(&backBtn);
 	mainWindow->Append(&titleTxt);
@@ -3326,7 +3365,7 @@ static void MenuSettings()
 			ChangeMenu(menuPrevious);
 	}
 
-	HaltGui();
+	SuspendGui();
 	mainWindow->Remove(&itemBrowser);
 	mainWindow->Remove(&backBtn);
 	mainWindow->Remove(&titleTxt);
@@ -4007,7 +4046,7 @@ static void SetupPlaybar()
 	picturebarNextBtn->SetTrigger(actionbarTrigA);
 	picturebarNextBtn->SetUpdateCallback(PictureNextCallback);
 	picturebarNextBtn->SetEffectGrow();
-	
+
 	picturebarSlideshowBtn = new GuiButton(50, 50);
 	picturebarSlideshowBtn->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	picturebarSlideshowBtn->SetPosition(160, 0);
@@ -4040,6 +4079,78 @@ static void SetupPlaybar()
 	picturebar->Append(picturebarCloseBtn);
 	
 	actionbarSetup = 1;
+}
+
+void GuiInit()
+{
+	guiHalt = 1;
+	LWP_CreateThread (&guithread, GuiThread, NULL, NULL, 0, 66);
+}
+
+static void StartGuiThreads()
+{
+	showProgress = 0;
+	progressThreadHalt = 1;
+	pictureThreadHalt = 1;
+	creditsThreadHalt = 1;
+	updateThreadHalt = 1;
+	
+	LWP_CreateThread (&progressthread, ProgressThread, NULL, NULL, 0, 60);
+	LWP_CreateThread (&picturethread, PictureThread, NULL, NULL, 0, 60);
+	LWP_CreateThread (&creditsthread, CreditsThread, NULL, NULL, 0, 60);
+	LWP_CreateThread (&updatethread, UpdateThread, NULL, NULL, 0, 60);
+}
+
+static void StopGuiThreads()
+{
+	showProgress = 0;
+	progressThreadHalt = 2;
+
+	if(progressthread != LWP_THREAD_NULL)
+	{
+		if(LWP_ThreadIsSuspended(progressthread))
+			LWP_ResumeThread (progressthread);
+		
+		// wait for thread to finish
+		LWP_JoinThread(progressthread, NULL);
+		progressthread = LWP_THREAD_NULL;
+	}
+
+	pictureThreadHalt = 2;
+
+	if(picturethread != LWP_THREAD_NULL)
+	{
+		if(LWP_ThreadIsSuspended(picturethread))
+			LWP_ResumeThread (picturethread);
+		
+		// wait for thread to finish
+		LWP_JoinThread(picturethread, NULL);
+		picturethread = LWP_THREAD_NULL;
+	}
+
+	creditsThreadHalt = 2;
+
+	if(creditsthread != LWP_THREAD_NULL)
+	{
+		if(LWP_ThreadIsSuspended(creditsthread))
+			LWP_ResumeThread (creditsthread);
+		
+		// wait for thread to finish
+		LWP_JoinThread(creditsthread, NULL);
+		creditsthread = LWP_THREAD_NULL;
+	}
+
+	updateThreadHalt = 2;
+
+	if(updatethread != LWP_THREAD_NULL)
+	{
+		if(LWP_ThreadIsSuspended(updatethread))
+			LWP_ResumeThread (updatethread);
+		
+		// wait for thread to finish
+		LWP_JoinThread(updatethread, NULL);
+		updatethread = LWP_THREAD_NULL;
+	}
 }
 
 /****************************************************************************
@@ -4207,6 +4318,7 @@ void WiiMenu()
 	pictureBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	pictureBtn->SetPosition(-50, 100);
 
+	StartGuiThreads();
 	ResumeGui();
 
 	// Load settings
@@ -4265,7 +4377,8 @@ void WiiMenu()
 
 	ShutoffRumble();
 	CancelAction();
-	HaltGui();
+	StopGuiThreads();
+	SuspendGui();
 
 	delete mainWindow;
 	mainWindow = NULL;
@@ -4336,12 +4449,12 @@ void SetStatus(const char * txt)
 void MPlayerMenu()
 {
 	menuMode = 1; // switch to MPlayer GUI mode
-	
+	guiShutdown = false;
+
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
 	mainWindow = new GuiWindow(screenwidth, screenheight);
-
 	GuiImage bgBottom(screenwidth, 152, (GXColor){155, 155, 155, 155});
 	bgBottom.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	
@@ -4355,7 +4468,7 @@ void MPlayerMenu()
 
 	ResumeGui();
 
-	while(!controlledbygui)
+	while(controlledbygui == 0)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -4374,7 +4487,7 @@ void MPlayerMenu()
 
 	ShutoffRumble();
 	CancelAction();
-	HaltGui();
+	SuspendGui();
 
 	delete statusText;
 	delete mainWindow;

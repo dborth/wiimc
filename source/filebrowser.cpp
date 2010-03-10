@@ -265,7 +265,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		return -1;
 
 	CleanupPath(browser.dir);
-	HaltParseThread(); // halt parsing
+	SuspendParseThread(); // halt parsing
 	ResetBrowser(); // reset browser
 
 	if(browserPlaylist[0] != 0)

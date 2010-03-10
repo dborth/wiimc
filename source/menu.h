@@ -11,6 +11,7 @@
 
 #include <ogcsys.h>
 
+void GuiInit();
 void WiiMenu();
 void MPlayerMenu();
 void ErrorPrompt(const char * msg);
@@ -20,6 +21,7 @@ void ShowAction (const char *msg);
 void CancelAction();
 void ShowProgress (const char *msg, int done, int total);
 int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
+void SuspendPictureThread();
 void ResetText();
 void UpdateVideobarPauseBtn(bool paused);
 void UpdateAudiobarPauseBtn(bool paused);

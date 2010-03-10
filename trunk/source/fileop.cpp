@@ -1147,6 +1147,7 @@ ParseDirectory(bool waitParse)
 	}
 
 	SuspendParseThread();
+	parseHalt = 0;
 	ParseDirEntries(); // index first 20 entries
 	ResumeParseThread(); // index remaining entries
 

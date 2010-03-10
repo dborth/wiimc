@@ -35,4 +35,5 @@ bool ConnectFTP(int num, bool silent);
 void CloseFTP(int num);
 
 extern bool updateFound;
+extern bool inNetworkInit;
 #endif

@@ -48,14 +48,14 @@ static const DISC_INTERFACE* usb = &__io_usbstorage;
 
 // folder parsing thread
 static lwp_t parsethread = LWP_THREAD_NULL;
+static int parseHalt = 0;
 static DIR_ITER * dirIter = NULL;
-static bool parseHalt = true;
 static bool ParseDirEntries();
 int selectLoadedFile = 0;
 
 // device thread
-lwp_t devicethread = LWP_THREAD_NULL;
-static bool deviceHalt = true;
+static lwp_t devicethread = LWP_THREAD_NULL;
+static int deviceHalt = 0;
 
 /****************************************************************************
  * devicecallback
@@ -67,12 +67,13 @@ static int devsleep = 1*1000*1000;
 static bool MountPartitions(int device, int silent);
 static void UnmountPartitions(int device);
 
-static void *
-devicecallback (void *arg)
+static void * devicecallback (void *arg)
 {
 	while(devsleep > 0)
 	{
-		if(deviceHalt)
+		if(deviceHalt == 1)
+			LWP_SuspendThread(devicethread);
+		if(deviceHalt == 2)
 			return NULL;
 		usleep(THREAD_SLEEP);
 		devsleep -= THREAD_SLEEP;
@@ -127,7 +128,9 @@ devicecallback (void *arg)
 
 		while(devsleep > 0)
 		{
-			if(deviceHalt)
+			if(deviceHalt == 1)
+				LWP_SuspendThread(devicethread);
+			if(deviceHalt == 2)
 				return NULL;
 			usleep(THREAD_SLEEP);
 			devsleep -= THREAD_SLEEP;
@@ -136,75 +139,125 @@ devicecallback (void *arg)
 	return NULL;
 }
 
-static void *
-parsecallback (void *arg)
+static void * parsecallback (void *arg)
 {
-	while(ParseDirEntries()) usleep(THREAD_SLEEP);
-	// wait until we're ready to catch with LWP_JoinThread
-	while(!parseHalt) usleep(THREAD_SLEEP);
+	while (1)
+	{
+		LWP_SuspendThread(parsethread);
+
+		if(parseHalt == 2)
+			break;
+
+		while(ParseDirEntries())
+			usleep(THREAD_SLEEP);
+	}
 	return NULL;
 }
 
 /****************************************************************************
  * ResumeDeviceThread
  *
- * Signals the device thread to start, and resumes the thread.
+ * Signals the device thread to start, and resumes the thread
  ***************************************************************************/
-void
-ResumeDeviceThread()
+void ResumeDeviceThread()
 {
-	deviceHalt = false;
+	deviceHalt = 0;
+
 	if(devicethread == LWP_THREAD_NULL)
 		LWP_CreateThread (&devicethread, devicecallback, NULL, NULL, 0, 40);
+	else
+		LWP_ResumeThread(devicethread);
 }
 
 /****************************************************************************
- * HaltGui
+ * SuspendDeviceThread
  *
- * Signals the device thread to stop.
+ * Signals the device thread to stop
  ***************************************************************************/
-void
-HaltDeviceThread()
+void SuspendDeviceThread()
 {
-	deviceHalt = true;
+	deviceHalt = 1;
 
-	if(devicethread != LWP_THREAD_NULL)
-	{
-		// wait for thread to finish
-		LWP_JoinThread(devicethread, NULL);
-		devicethread = LWP_THREAD_NULL;
-	}
+	if(inNetworkInit) // don't wait for network to initialize
+		return;
+
+	if(devicethread == LWP_THREAD_NULL)
+		return;
+
+	// wait for thread to finish
+	while(!LWP_ThreadIsSuspended(devicethread))
+		usleep(THREAD_SLEEP);
+}
+
+/****************************************************************************
+ * StopDeviceThread
+ *
+ * Signals the device thread to stop
+ ***************************************************************************/
+void StopDeviceThread()
+{
+	deviceHalt = 2;
+
+	if(devicethread == LWP_THREAD_NULL)
+		return;
+
+	if(LWP_ThreadIsSuspended(devicethread))
+		LWP_ResumeThread(devicethread);
+
+	// wait for thread to finish
+	LWP_JoinThread(devicethread, NULL);
+	devicethread = LWP_THREAD_NULL;
 }
 
 /****************************************************************************
  * ResumeParseThread
  *
- * Signals the parse thread to start, and resumes the thread.
+ * Signals the parse thread to start
  ***************************************************************************/
-void
-ResumeParseThread()
+void ResumeParseThread()
 {
-	parseHalt = false;
+	parseHalt = 0;
+
 	if(parsethread == LWP_THREAD_NULL)
 		LWP_CreateThread (&parsethread, parsecallback, NULL, NULL, 0, 40);
+	else
+		LWP_ResumeThread(parsethread);
 }
 
 /****************************************************************************
- * HaltParseThread
+ * SuspendParseThread
  *
- * Signals the parse thread to stop.
+ * Signals the parse thread to stop
  ***************************************************************************/
-void
-HaltParseThread()
+void SuspendParseThread()
 {
-	parseHalt = true;
+	parseHalt = 1;
 
-	if(parsethread != LWP_THREAD_NULL)
-	{
-		// wait for thread to finish
-		LWP_JoinThread(parsethread, NULL);
-		parsethread = LWP_THREAD_NULL;
-	}
+	if(parsethread == LWP_THREAD_NULL)
+		return;
+
+	while(!LWP_ThreadIsSuspended(parsethread))
+		usleep(THREAD_SLEEP);
+}
+
+/****************************************************************************
+ * StopParseThread
+ *
+ * Signals the parse thread to stop
+ ***************************************************************************/
+void StopParseThread()
+{
+	parseHalt = 2;
+
+	if(parsethread == LWP_THREAD_NULL)
+		return;
+
+	if(LWP_ThreadIsSuspended(parsethread))
+		LWP_ResumeThread(parsethread);
+
+	// wait for thread to finish
+	LWP_JoinThread(parsethread, NULL);
+	parsethread = LWP_THREAD_NULL;
 }
 
 /****************************************************************************
@@ -1093,8 +1146,7 @@ ParseDirectory(bool waitParse)
 		browserList[0].icon = ICON_FOLDER;
 	}
 
-	HaltParseThread();
-	parseHalt = false;
+	SuspendParseThread();
 	ParseDirEntries(); // index first 20 entries
 	ResumeParseThread(); // index remaining entries
 
@@ -1102,12 +1154,6 @@ ParseDirectory(bool waitParse)
 	{
 		ShowAction("Loading...");
 		while(dirIter != NULL) usleep(THREAD_SLEEP);
-		parseHalt = true;
-		if(parsethread != LWP_THREAD_NULL)
-		{
-			LWP_JoinThread(parsethread, NULL);
-			parsethread = LWP_THREAD_NULL;
-		}
 		CancelAction();
 	}
 
@@ -1270,10 +1316,10 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 
 	// stop checking if devices were removed/inserted
 	// since we're loading a file
-	HaltDeviceThread();
+	SuspendDeviceThread();
 
 	// halt parsing
-	HaltParseThread();
+	SuspendParseThread();
 
 	// open the file
 	while(!size && retry)
@@ -1347,10 +1393,10 @@ size_t SaveFile (char * buffer, char *filepath, size_t datasize, bool silent)
 
 	// stop checking if devices were removed/inserted
 	// since we're saving a file
-	HaltDeviceThread();
+	SuspendDeviceThread();
 
 	// halt parsing
-	HaltParseThread();
+	SuspendParseThread();
 
 	while(!written && retry)
 	{

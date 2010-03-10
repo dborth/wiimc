@@ -61,7 +61,7 @@ void ExitApp()
 
 	// shut down some threads
 	ShutdownMPlayer();
-	HaltDeviceThread();
+	SuspendDeviceThread();
 	CancelAction();
 	StopGX();
 
@@ -306,8 +306,11 @@ bool InitMPlayer()
 
 void LoadMPlayer()
 {
+	SuspendDeviceThread();
+	SuspendPictureThread();
+	SuspendParseThread();
 	controlledbygui = 0;
-	HaltDeviceThread();
+
 	printf("return control to mplayer\n");
 	if(LWP_ThreadIsSuspended(mthread))
 		LWP_ResumeThread(mthread);
@@ -394,13 +397,19 @@ main(int argc, char *argv[])
 	// create mplayer thread
 	LWP_CreateThread (&mthread, mplayerthread, NULL, mstack, TSTACK, 68);
 
+	// create GUI thread
+	GuiInit();
+
 	while(1)
 	{
 		AUDIO_RegisterDMACallback(NULL);
 		AUDIO_StopDMA();
 		ResetVideo_Menu();
 		ResumeDeviceThread();
+		ResumeParseThread();
 		WiiMenu();
+		StopDeviceThread();
+		StopParseThread();
 		MPlayerMenu();
 	}
 }

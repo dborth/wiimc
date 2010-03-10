@@ -41,6 +41,7 @@ void MusicPlaylistClear()
  * 
  * Loads the files inside the current playlist into the filebrowser
  ***************************************************************************/
+
 int MusicPlaylistLoad()
 {
 	if(playlistSize == 0)
@@ -73,7 +74,7 @@ int MusicPlaylistLoad()
 		browserList[i+1].mtime = 0;
 		browserList[i+1].isdir = 0;
 		browserList[i+1].isplaylist = 0;
-		browserList[i+1].icon = ICON_NONE;
+		browserList[i+1].icon = ICON_FILE_CHECKED;
 	}
 	browser.numEntries += i;
 	return browser.numEntries;
@@ -95,7 +96,12 @@ bool MusicPlaylistFind(int index)
 		return false;
 
 	char fullpath[MAXPATHLEN];
-	sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
+
+	if(inPlaylist)
+		sprintf(fullpath, "%s", browserList[index].filename);
+	else
+		sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
+
 	return MusicPlaylistFind(fullpath);
 }
 
@@ -224,7 +230,11 @@ static bool EnqueueFolder(char * path)
 bool MusicPlaylistEnqueue(int index)
 {
 	char fullpath[MAXPATHLEN+1];
-	sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
+
+	if(inPlaylist)
+		sprintf(fullpath, "%s", browserList[index].filename);
+	else
+		sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
 	
 	if(browserList[index].isdir)
 		browserList[index].icon = ICON_FOLDER_CHECKED;
@@ -249,7 +259,12 @@ void MusicPlaylistDequeue(int index)
 {
 	bool matchFound = false;
 	char fullpath[MAXPATHLEN];
-	sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
+
+	if(inPlaylist)
+		sprintf(fullpath, "%s", browserList[index].filename);
+	else
+		sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
+
 	int len = strlen(fullpath);
 	
 	if(browserList[index].isdir)

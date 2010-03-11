@@ -58,6 +58,7 @@ void ExitApp()
 {
 	DisableRumble();
 	SaveSettings(SILENT);
+	DI_Close();
 
 	// shut down some threads
 	ShutdownMPlayer();

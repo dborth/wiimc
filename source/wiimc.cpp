@@ -1,8 +1,8 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009
+ * Tantric 2009-2010
  *
- * mplayer.cpp
+ * wiimc.cpp
  ***************************************************************************/
 
 #include <gccore.h>
@@ -15,8 +15,8 @@
 #include <sys/iosupport.h>
 
 #include "utils/FreeTypeGX.h"
-#include "utils/ehcmodule_elf.h"
 #include "utils/mload.h"
+#include "utils/di2.h"
 #include "video.h"
 #include "menu.h"
 #include "libwiigui/gui.h"
@@ -45,6 +45,7 @@ int ExitRequested = 0;
 char appPath[1024] = { 0 };
 char loadedFile[1024];
 bool playingAudio = false;
+static bool settingsSet = false;
 
 #define TSTACK (512*1024)
 static lwp_t mthread = LWP_THREAD_NULL;
@@ -58,7 +59,7 @@ void ExitApp()
 {
 	DisableRumble();
 	SaveSettings(SILENT);
-	DI_Close();
+	DI2_Close();
 
 	// shut down some threads
 	ShutdownMPlayer();
@@ -164,24 +165,6 @@ static void USBGeckoOutput()
  * IOS 202
  ***************************************************************************/
 
-static bool load_ehci_module()
-{
-	data_elf my_data_elf;
-	mload_elf((void *) ehcmodule_elf, &my_data_elf);
-
-	if(mload_run_thread(my_data_elf.start, my_data_elf.stack, my_data_elf.size_stack, my_data_elf.prio)<0)
-	{
-		usleep(1000);
-		if(mload_run_thread(my_data_elf.start, my_data_elf.stack, my_data_elf.size_stack, 0x47)<0)
-		{
-			printf("ehcmodule not loaded\n");
-			return false;
-		}else printf("ehcmodule loaded with priority: %i\n",0x47);
-	}else printf("ehcmodule loaded with priority: %i\n",my_data_elf.prio);
-
-	return true;
-}
-
 static bool FindIOS(u32 ios)
 {
 	s32 ret;
@@ -192,41 +175,30 @@ static bool FindIOS(u32 ios)
 
 	ret = ES_GetNumTitles(&num_titles);
 	if (ret < 0)
-	{
-		printf("error ES_GetNumTitles\n");
 		return false;
-	}
 
-	if(num_titles<1) 
-	{
-		printf("error num_titles<1\n");
+	if(num_titles < 1) 
 		return false;
-	}
 
 	titles = (u64 *)memalign(32, num_titles * sizeof(u64) + 32);
 	if (!titles)
-	{
-		printf("error memalign\n");
 		return false;
-	}
 
 	ret = ES_GetTitles(titles, num_titles);
 	if (ret < 0)
 	{
 		free(titles);
-		printf("error ES_GetTitles\n");
-		return false;	
+		return false;
 	}
 		
-	for(n=0; n<num_titles; n++)
+	for(n=0; n < num_titles; n++)
 	{
-		if((titles[n] &  0xFFFFFFFF)==ios) 
+		if((titles[n] & 0xFFFFFFFF)==ios) 
 		{
 			free(titles); 
 			return true;
 		}
 	}
-	
     free(titles); 
 	return false;
 }
@@ -268,7 +240,6 @@ mplayerthread (void *arg)
 
 		nowPlayingSet = false;
 
-		printf("load file: %s\n",loadedFile);
 		if(loadedFile[0] != 0)
 		{
 			controlledbygui = 0;
@@ -310,16 +281,15 @@ void LoadMPlayer()
 	SuspendDeviceThread();
 	SuspendPictureThread();
 	SuspendParseThread();
+	settingsSet = false;
 	controlledbygui = 0;
 
-	printf("return control to mplayer\n");
 	if(LWP_ThreadIsSuspended(mthread))
 		LWP_ResumeThread(mthread);
 }
 
 void ShutdownMPlayer()
 {
-	printf("shutting down mplayer\n");
 	controlledbygui=2;
 	while(!LWP_ThreadIsSuspended(mthread))
 		usleep(500);
@@ -328,12 +298,16 @@ void ShutdownMPlayer()
 extern "C" {
 void SetMPlayerSettings()
 {
+	if(settingsSet)
+		return;
+
+	settingsSet = true;
+
 	GX_SetScreenPos(WiiSettings.videoXshift, WiiSettings.videoYshift, 
 					WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
 	wiiSetAutoResume(WiiSettings.autoResume);
 	wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
-	// Switch ratio doesn't work - disable for now. Could also be done with GX. Which is better?
-	//wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
+	wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
 	wiiSetProperty(MP_CMD_VOLUME, WiiSettings.volume);
 	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);
 	wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
@@ -353,22 +327,18 @@ main(int argc, char *argv[])
 	USBGeckoOutput(); // uncomment to enable USB gecko output
 	__exception_setreload(8);
 
-	// try to load ios202
-	if(IOS_GetVersion()!=202)
-	{
-		if(FindIOS(202))
-		{
-			IOS_ReloadIOS(202);
-			WIIDVD_Init(false);  //dvdx not needed
-		}
-		else WIIDVD_Init(true);
-	}
-	else WIIDVD_Init(false);
+	// try to load IOS 202
+	if(IOS_GetVersion() != 202 && FindIOS(202))
+		IOS_ReloadIOS(202);
 
-	//load usb2 driver
-	if(mload_init() >= 0)
-		if(load_ehci_module())
+	if(IOS_GetVersion() == 202)
+	{
+		WIIDVD_Init(false);
+
+		// load usb2 driver
+		if(mload_init() >= 0 && load_ehci_module())
 			USB2Enable(true);
+	}
 
 	VIDEO_Init();
 	InitVideo(); // Initialise video

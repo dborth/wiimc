@@ -1146,6 +1146,7 @@ static void MenuBrowse(int menu)
 		goto done;
 	}
 
+	mainWindow->Append(&fileBrowser);
 	ResumeGui();
 
 	// populate initial directory listing
@@ -1165,8 +1166,7 @@ static void MenuBrowse(int menu)
 	}
 
 	SuspendGui();
-	mainWindow->Append(&fileBrowser);
-	
+
 	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
 		mainWindow->Append(audiobar);
 
@@ -1253,6 +1253,8 @@ static void MenuBrowse(int menu)
 						{
 							browserPlaylist[0] = 0;
 							ErrorPrompt("Error loading playlist!");
+							inPlaylist = false;
+							BrowserChangeFolder(false);
 							continue;
 						}
 						else if(numItems == 2) // let's load this one file

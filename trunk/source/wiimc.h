@@ -1,12 +1,12 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009
+ * Tantric 2009-2010
  *
- * mplayer.h
+ * wiimc.h
  ***************************************************************************/
 
-#ifndef _MPLAYERGUI_H_
-#define _MPLAYERGUI_H_
+#ifndef _WIIMC_H_
+#define _WIIMC_H_
 
 #include "utils/FreeTypeGX.h"
 #include "network.h"

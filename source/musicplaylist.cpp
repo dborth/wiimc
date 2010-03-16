@@ -185,10 +185,6 @@ static bool EnqueueFile(char * path, char * name)
 	if(WiiSettings.hideExtensions)
 		StripExt(playlist[playlistSize-1].displayname);
 
-	// strip unwanted stuff from the filename
-	if(WiiSettings.cleanFilenames)
-		CleanFilename(playlist[playlistSize-1].displayname);
-
 	return true;
 }
 

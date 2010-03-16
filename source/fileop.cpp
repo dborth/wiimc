@@ -889,17 +889,6 @@ void StripExt(char* string)
 		*loc_dot = 0; // strip file extension
 }
 
-/****************************************************************************
- * CleanFilename
- *
- * Strips out all of the useless nonsense from a filename
- ***************************************************************************/
-void CleanFilename(char* string)
-{
-	if(string == NULL || strlen(string) < 4)
-		return;
-}
-
 static bool ParseDirEntries()
 {
 	if(!dirIter)
@@ -943,7 +932,7 @@ static bool ParseDirEntries()
 		}
 
 		// check that this file's extension is on the list of visible file types
-		if(WiiSettings.filterFiles && (filestat.st_mode & _IFDIR) == 0 && !isPlaylist)
+		if((filestat.st_mode & _IFDIR) == 0 && !isPlaylist)
 		{
 			if(ext == NULL)
 				continue; // file does not have an extension - skip it
@@ -1019,10 +1008,6 @@ static bool ParseDirEntries()
 				// hide the file's extension
 				if(WiiSettings.hideExtensions)
 					StripExt(browserList[browser.numEntries+i].displayname);
-
-				// strip unwanted stuff from the filename
-				if(WiiSettings.cleanFilenames)
-					CleanFilename(browserList[browser.numEntries+i].displayname);
 			}
 			i++;
 		}

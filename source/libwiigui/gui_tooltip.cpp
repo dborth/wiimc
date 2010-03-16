@@ -80,6 +80,12 @@ void GuiTooltip::SetText(const char * t)
 	width = leftImage.GetWidth() + tile * tileImage.GetWidth() + rightImage.GetWidth();
 }
 
+void GuiTooltip::ResetText()
+{
+	if(text)
+		text->ResetText();
+}
+
 /*
  * Draws the tooltip
  */

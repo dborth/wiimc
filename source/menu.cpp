@@ -2359,7 +2359,7 @@ static void MenuSettingsVideos()
 	sprintf(options.name[i++], "Aspect Ratio");
 	sprintf(options.name[i++], "Cache Size");
 	sprintf(options.name[i++], "Cache Prefill");
-	sprintf(options.name[i++], "Audio Delay (ms)");
+	sprintf(options.name[i++], "Audio Delay");
 	sprintf(options.name[i++], "Auto-Resume");
 	sprintf(options.name[i++], "Videos Files Folder");
 
@@ -2450,9 +2450,9 @@ static void MenuSettingsVideos()
 					WiiSettings.cachePrefill = 10;
 				break;
 			case 6:
-				WiiSettings.audioDelay += 100;
-				if (WiiSettings.audioDelay > 1000)
-					WiiSettings.audioDelay = -1000;
+				WiiSettings.audioDelay += 0.1;
+				if (WiiSettings.audioDelay > 2)
+					WiiSettings.audioDelay = 0;
 				break;
 			case 7:
 				WiiSettings.autoResume ^= 1;
@@ -2491,7 +2491,7 @@ static void MenuSettingsVideos()
 
 			sprintf (options.value[4], "%d MB", WiiSettings.cacheSize/1024);
 			sprintf (options.value[5], "%d%%", WiiSettings.cachePrefill);
-			sprintf (options.value[6], "%d ms", WiiSettings.audioDelay);
+			sprintf (options.value[6], "%.1f sec", WiiSettings.audioDelay);
 			sprintf (options.value[7], "%s", WiiSettings.autoResume ? "On" : "Off");
 			snprintf(options.value[8], 20, "%s", WiiSettings.videosFolder);
 
@@ -3237,9 +3237,9 @@ static void MenuSettingsSubtitles()
 				break;
 
 			case 3:
-				WiiSettings.subtitleDelay += 100;
-				if (WiiSettings.subtitleDelay > 1000)
-					WiiSettings.subtitleDelay = 0;
+				WiiSettings.subtitleDelay += 0.1;
+				if (WiiSettings.subtitleDelay > 2)
+					WiiSettings.subtitleDelay = -2;
 				break;
 		}
 
@@ -3259,7 +3259,7 @@ static void MenuSettingsSubtitles()
 			}
 
 			sprintf(options.value[2], "%.2f%%", WiiSettings.subtitleScale*100);
-			sprintf(options.value[3], "%d second(s)", WiiSettings.subtitleDelay);
+			sprintf(options.value[3], "%.1f sec", WiiSettings.subtitleDelay);
 
 			optionBrowser.TriggerUpdate();
 		}

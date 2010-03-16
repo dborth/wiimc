@@ -176,14 +176,14 @@ prepareSettingsData ()
 	// Audio
 	createXMLSection("Audio", "Audio Settings");
 	createXMLSetting("volume", "Volume", toStr(WiiSettings.volume));
-	createXMLSetting("audioDelay", "Audio delay (ms)", toStr(WiiSettings.audioDelay));
+	createXMLSetting("audioDelay", "Audio delay", FtoStr(WiiSettings.audioDelay));
 
 	// Subtitles
 	createXMLSection("Subtitle", "Subtitle Settings");
 	createXMLSetting("subtitleVisibility", "Subtitle visibility", toStr(WiiSettings.subtitleVisibility));
 	createXMLSetting("subtitlePosition", "Subtitle position", toStr(WiiSettings.subtitlePosition));
 	createXMLSetting("subtitleScale", "Subtitle size", toStr(WiiSettings.subtitleScale));
-	createXMLSetting("subtitleDelay", "Subtitle delay", toStr(WiiSettings.subtitleDelay));
+	createXMLSetting("subtitleDelay", "Subtitle delay", FtoStr(WiiSettings.subtitleDelay));
 
 	int datasize = mxmlSaveString(xml, (char *)savebuffer, SAVEBUFFERSIZE, XMLSaveCallback);
 
@@ -439,7 +439,7 @@ static void FixInvalidSettings()
 	// Audio
 	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
 		WiiSettings.volume = 100;
-	if(WiiSettings.audioDelay < 0 || WiiSettings.audioDelay > 1000)
+	if(WiiSettings.audioDelay < 0 || WiiSettings.audioDelay > 2)
 		WiiSettings.audioDelay = 0;
 
 	// Subtitles
@@ -449,7 +449,7 @@ static void FixInvalidSettings()
 		WiiSettings.subtitlePosition = 0;
 	if(WiiSettings.subtitleScale < 0.5 || WiiSettings.subtitleScale > 1.5)
 		WiiSettings.subtitleScale = 1;
-	if(WiiSettings.subtitleDelay < -1000 || WiiSettings.subtitleDelay > 1000)
+	if(WiiSettings.subtitleDelay < -2 || WiiSettings.subtitleDelay > 2)
 		WiiSettings.subtitleDelay = 0;
 }
 

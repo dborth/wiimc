@@ -78,13 +78,13 @@ struct SWiiSettings {
 
 	// Audio
 	int		volume;
-	int 	audioDelay; // in ms
+	float 	audioDelay; // in secs
 
 	// Subtitles
 	int		subtitleVisibility; // 0 - off, 1 - on
 	int 	subtitlePosition; // SUBTITLE_ALIGN_TOP, SUBTITLE_ALIGN_CENTER, SUBTITLE_ALIGN_BOTTOM
 	float 	subtitleScale;
-	int 	subtitleDelay; // in secs
+	float 	subtitleDelay; // in secs
 };
 
 void DefaultSettings ();

@@ -699,7 +699,8 @@ class GuiTooltip : public GuiElement
 		void SetText(const char * t);
 		//!Constantly called to draw the GuiTooltip
 		void DrawTooltip();
-	
+		//!Resets the text for all contained elements
+		void ResetText();
 		time_t time1, time2; //!< Tooltip times
 
 	protected:

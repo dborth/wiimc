@@ -1949,7 +1949,7 @@ static void MenuDVD()
 	UndoChangeMenu(); // go back to last menu
 	
 	if(!guiShutdown) // load failed
-		ErrorPrompt("DVD not inserted or invalid DVD!");
+		ErrorPrompt("Unrecognized DVD format!");
 
 	SuspendGui();
 }
@@ -1961,9 +1961,7 @@ static void MenuSettingsGlobal()
 	bool firstRun = true;
 	OptionList options;
 	
-	sprintf(options.name[i++], "Clean Filenames");
 	sprintf(options.name[i++], "File Extensions");
-	sprintf(options.name[i++], "Unsupported Files");
 	sprintf(options.name[i++], "Language");
 	sprintf(options.name[i++], "Volume");
 	sprintf(options.name[i++], "Exit Action");
@@ -2021,30 +2019,24 @@ static void MenuSettingsGlobal()
 		switch (ret)
 		{
 			case 0:
-				WiiSettings.cleanFilenames ^= 1;
-				break;
-			case 1:
 				WiiSettings.hideExtensions ^= 1;
 				break;
+			case 1:
+				//WiiSettings.language++;
+				//if(WiiSettings.language > LANG_KOREAN)
+				//	WiiSettings.language = 0;
+				break;
 			case 2:
-				WiiSettings.filterFiles ^= 1;
-				break;
-			case 3:
-				WiiSettings.language++;
-				if(WiiSettings.language > LANG_KOREAN)
-					WiiSettings.language = 0;
-				break;
-			case 4:
 				WiiSettings.volume += 10;
 				if(WiiSettings.volume > 100)
 					WiiSettings.volume = 0;
 				break;
-			case 5:
+			case 3:
 				WiiSettings.exitAction++;
 				if(WiiSettings.exitAction > EXIT_LOADER)
 					WiiSettings.exitAction = 0;
 				break;
-			case 6:
+			case 4:
 				WiiSettings.rumble ^= 1;
 				break;
 		}
@@ -2053,35 +2045,33 @@ static void MenuSettingsGlobal()
 		{
 			firstRun = false;
 
-			sprintf(options.value[0], "%s", WiiSettings.cleanFilenames ? "On" : "Off");
-			sprintf(options.value[1], "%s", WiiSettings.hideExtensions ? "Hide" : "Show");
-			sprintf(options.value[2], "%s", WiiSettings.filterFiles ? "Hide" : "Show");
+			sprintf(options.value[0], "%s", WiiSettings.hideExtensions ? "Hide" : "Show");
 
 			switch(WiiSettings.language)
 			{
-				case LANG_JAPANESE:		sprintf(options.value[3], "Japanese"); break;
-				case LANG_ENGLISH:		sprintf(options.value[3], "English"); break;
-				case LANG_GERMAN:		sprintf(options.value[3], "German"); break;
-				case LANG_FRENCH:		sprintf(options.value[3], "French"); break;
-				case LANG_SPANISH:		sprintf(options.value[3], "Spanish"); break;
-				case LANG_ITALIAN:		sprintf(options.value[3], "Italian"); break;
-				case LANG_DUTCH:		sprintf(options.value[3], "Dutch"); break;
-				case LANG_SIMP_CHINESE:	sprintf(options.value[3], "Chinese (Simplified)"); break;
-				case LANG_TRAD_CHINESE:	sprintf(options.value[3], "Chinese (Traditional)"); break;
-				case LANG_KOREAN:		sprintf(options.value[3], "Korean"); break;
+				case LANG_JAPANESE:		sprintf(options.value[1], "Japanese"); break;
+				case LANG_ENGLISH:		sprintf(options.value[1], "English"); break;
+				case LANG_GERMAN:		sprintf(options.value[1], "German"); break;
+				case LANG_FRENCH:		sprintf(options.value[1], "French"); break;
+				case LANG_SPANISH:		sprintf(options.value[1], "Spanish"); break;
+				case LANG_ITALIAN:		sprintf(options.value[1], "Italian"); break;
+				case LANG_DUTCH:		sprintf(options.value[1], "Dutch"); break;
+				case LANG_SIMP_CHINESE:	sprintf(options.value[1], "Chinese (Simplified)"); break;
+				case LANG_TRAD_CHINESE:	sprintf(options.value[1], "Chinese (Traditional)"); break;
+				case LANG_KOREAN:		sprintf(options.value[1], "Korean"); break;
 			}
 			
-			sprintf (options.value[4], "%d%%", WiiSettings.volume);
+			sprintf (options.value[2], "%d%%", WiiSettings.volume);
 
 			switch(WiiSettings.exitAction)
 			{
-				case EXIT_AUTO:		sprintf(options.value[5], "Auto"); break;
-				case EXIT_WIIMENU:	sprintf(options.value[5], "Return to Wii Menu"); break;
-				case EXIT_POWEROFF:	sprintf(options.value[5], "Power Off Wii"); break;
-				case EXIT_LOADER:	sprintf(options.value[5], "Return to Loader"); break;
+				case EXIT_AUTO:		sprintf(options.value[3], "Auto"); break;
+				case EXIT_WIIMENU:	sprintf(options.value[3], "Return to Wii Menu"); break;
+				case EXIT_POWEROFF:	sprintf(options.value[3], "Power Off Wii"); break;
+				case EXIT_LOADER:	sprintf(options.value[3], "Return to Loader"); break;
 			}
 
-			sprintf(options.value[6], "%s", WiiSettings.rumble ? "On" : "Off");
+			sprintf(options.value[4], "%s", WiiSettings.rumble ? "On" : "Off");
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -2993,6 +2983,7 @@ static void MenuSettingsNetworkSMB()
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
+	CloseShare(netEditIndex);
 }
 
 static void MenuSettingsNetworkFTP()
@@ -3163,6 +3154,7 @@ static void MenuSettingsNetworkFTP()
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
+	CloseFTP(netEditIndex);
 }
 
 static void MenuSettingsSubtitles()

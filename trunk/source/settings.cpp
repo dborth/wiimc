@@ -143,9 +143,7 @@ prepareSettingsData ()
 	createXMLSection("General", "General Settings");
 	createXMLSetting("autoResume", "Auto-resume", toStr(WiiSettings.autoResume));
 	createXMLSetting("playOrder", "Play order", toStr(WiiSettings.playOrder));
-	createXMLSetting("cleanFilenames", "Clean filenames", toStr(WiiSettings.cleanFilenames));
 	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
-	createXMLSetting("filterFiles", "Hide invalid file types", toStr(WiiSettings.filterFiles));
 	createXMLSetting("language", "Language", toStr(WiiSettings.language));
 	createXMLSetting("videosFolder", "Videos folder", WiiSettings.videosFolder);
 	createXMLSetting("musicFolder", "Music folder", WiiSettings.musicFolder);
@@ -361,10 +359,8 @@ void DefaultSettings ()
 	// General
 	WiiSettings.autoResume = 1;
 	WiiSettings.playOrder = PLAY_SINGLE;
-	WiiSettings.cleanFilenames = 1;
 	WiiSettings.hideExtensions = 1;
-	WiiSettings.filterFiles = 1;
-	WiiSettings.language = CONF_GetLanguage();
+	WiiSettings.language = LANG_ENGLISH; //CONF_GetLanguage();
 	WiiSettings.videosFolder[0] = 0;
 	WiiSettings.musicFolder[0] = 0;
 	WiiSettings.picturesFolder[0] = 0;
@@ -409,12 +405,8 @@ static void FixInvalidSettings()
 		WiiSettings.autoResume = 1;
 	if(WiiSettings.playOrder < 0 || WiiSettings.playOrder > PLAY_LOOP)
 		WiiSettings.playOrder = PLAY_SINGLE;
-	if(WiiSettings.cleanFilenames != 1 && WiiSettings.cleanFilenames != 0)
-		WiiSettings.cleanFilenames = 1;
 	if(WiiSettings.hideExtensions != 1 && WiiSettings.hideExtensions != 0)
 		WiiSettings.hideExtensions = 1;
-	if(WiiSettings.filterFiles != 1 && WiiSettings.filterFiles != 0)
-		WiiSettings.filterFiles = 1;
 	if(WiiSettings.language < 0 || WiiSettings.language > LANG_KOREAN)
 		WiiSettings.language = LANG_ENGLISH;
 	if(WiiSettings.exitAction < 0 || WiiSettings.exitAction > EXIT_LOADER)
@@ -610,9 +602,7 @@ static bool LoadSettingsFile(char * filepath)
 				// General
 				loadXMLSetting(&WiiSettings.autoResume, "autoResume");
 				loadXMLSetting(&WiiSettings.playOrder, "playOrder");
-				loadXMLSetting(&WiiSettings.cleanFilenames, "cleanFilenames");
 				loadXMLSetting(&WiiSettings.hideExtensions, "hideExtensions");
-				loadXMLSetting(&WiiSettings.filterFiles, "filterFiles");
 				loadXMLSetting(&WiiSettings.language, "language");
 				loadXMLSetting(WiiSettings.videosFolder, "videosFolder", sizeof(WiiSettings.videosFolder));
 				loadXMLSetting(WiiSettings.musicFolder, "musicFolder", sizeof(WiiSettings.musicFolder));

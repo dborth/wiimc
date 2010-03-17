@@ -1520,6 +1520,23 @@ static void SetPicture(int picIndex, int browserIndex)
 	}
 }
 
+static void CleanupPictures(int selIndex)
+{
+	// free any unused picture data
+	for(int i=0; i < NUM_PICTURES; i++)
+	{
+		if(pictureIndex[i] == -1 || i == pictureLoaded)
+			continue;
+
+		if(selIndex == -1 || pictureIndex[i] < selIndex-3 || pictureIndex[i] > selIndex+3)
+		{
+			if(picture[i]) delete picture[i];
+			picture[i] = NULL;
+			pictureIndex[i] = -1;
+		}
+	}
+}
+
 static void *PictureThread (void *arg)
 {
 	int selIndex;
@@ -1541,7 +1558,12 @@ static void *PictureThread (void *arg)
 	{
 restart:
 		if(pictureThreadHalt == 1)
+		{
+			pictureLoaded = -1;
+			pictureIndexLoaded = -1;
+			pictureIndexLoading = -1;
 			LWP_SuspendThread(picturethread);
+		}
 		if(pictureThreadHalt == 2)
 			break;
 
@@ -1549,20 +1571,7 @@ restart:
 		{
 			loadPictures = 0;
 			selIndex = browser.selIndex;
-
-			// free any unused picture data
-			for(i=0; i < NUM_PICTURES; i++)
-			{
-				if(pictureIndex[i] == -1 || i == pictureLoaded)
-					continue;
-
-				if(pictureIndex[i] < browser.selIndex-3 || pictureIndex[i] > browser.selIndex+3)
-				{
-					if(picture[i]) delete picture[i];
-					picture[i] = NULL;
-					pictureIndex[i] = -1;
-				}
-			}
+			CleanupPictures(selIndex);
 
 			// load missing pictures - starting with selected index
 			if(selIndex > 0 
@@ -1892,6 +1901,8 @@ static void MenuBrowsePictures()
 				if(browserList[browser.selIndex].isdir)
 				{
 					SuspendPictureThread();
+					SetPicture(-1, -1); // set picture to blank
+					CleanupPictures(-1);
 
 					if(BrowserChangeFolder())
 					{

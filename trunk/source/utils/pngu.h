@@ -1,14 +1,12 @@
 /********************************************************************************************
-
-PNGU Version : 0.2a
-
-Coder : frontier
-
-More info : http://frontier-dev.net
-
-Modified by Tantric, 2009
-
+*
+* PNGU
+* 
+* Original author: frontier (http://frontier-dev.net)
+* Modified by Tantric, 2009-2010
+*
 ********************************************************************************************/
+
 #ifndef __PNGU__
 #define __PNGU__
 
@@ -67,7 +65,7 @@ struct _IMGCTX;
 typedef struct _IMGCTX *IMGCTX; 
 
 /****************************************************************************
-*							 Image context handling							*
+* Image context handling							                        *
 ****************************************************************************/
 
 // Selects a PNG file, previosly loaded into a buffer, and creates an image context for subsequent procesing.
@@ -79,22 +77,18 @@ IMGCTX PNGU_SelectImageFromDevice (const char *filename);
 // Frees resources associated with an image context. Always call this function when you no longer need the IMGCTX.
 void PNGU_ReleaseImageContext (IMGCTX ctx);
 
-
 /****************************************************************************
-*							 Miscelaneous									*
+* Miscellaneous								                             	*
 ****************************************************************************/
 
 // Retrieves info from selected PNG file, including image dimensions, color format, background and transparency colors.
 int PNGU_GetImageProperties (IMGCTX ctx, PNGUPROP *fileproperties);
 
 /****************************************************************************
-*							 Image conversion								*
+* Image conversion								                            *
 ****************************************************************************/
 
-// Expands selected image into a 4x4 tiled RGBA8 buffer. You need to specify context, image dimensions,
-// destination address and default alpha value, which is used if the source image doesn't have an alpha channel.
-int PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffer, PNGU_u8 default_alpha);
-
+PNGU_u8 * DecodePNG(const PNGU_u8 *src, int *width, int *height);
 int PNGU_EncodeFromRGB (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffer, PNGU_u32 stride);
 int PNGU_EncodeFromGXTexture (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffer, PNGU_u32 stride);
 
@@ -103,4 +97,3 @@ int PNGU_EncodeFromGXTexture (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void 
 #endif
 
 #endif
-

@@ -1201,50 +1201,44 @@ bool BMP::Read1bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
 	return true;
 }
 
+static inline u32 coordsRGBA8(u32 x, u32 y, u32 w)
+{
+	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
+}
+
 u8 * BMP::DecodeTo4x4RGB8()
 {
-	int vert, hor, col, row;
-	int len = ((Width + 3) >> 2) * ((Height + 3) >> 2) * 32 * 2;
+	int newWidth = Width;
+	if(newWidth%4) newWidth += (4-newWidth%4);
+	int newHeight = Height;
+	if(newHeight%4) newHeight += (4-newHeight%4);
+
+	int len = (newWidth * newHeight) << 2;
+	if(len%32) len += (32-len%32);
+
 	u8 * dst = (u8 *) memalign(32, len);
-	u8 *p = dst;
+	int x, y, offset;
 
-	// Write to 4x4 blocks, so read from 4 lines at once
-	// Read 4 pixels from each line, which is 16 pixels in a block
-	// Every block contains 4 bytes for each colors, which is 64 bytes
-	// The first 32 bytes will be alpha and red, the next 32 pixels will be green and blue
-
-	// If the image width is not 4 by 4 exactly, 
-	// add the amount of extra cells in transparent color
-	for (vert = 0; vert < Height + (Height & 3); vert += 4) // height & 3 == height % 4, but a lot faster!
+	for (y = 0; y < newHeight; y++)
 	{
-		for (hor = 0; hor < Width + (Width & 3); hor += 4)
+		for (x = 0; x < newWidth; x++)
 		{
-			for (row = 0; row < 4; row++)
+			offset = coordsRGBA8(x, y, newWidth);
+
+			if(x >= Width || y >= Height)
 			{
-				u8 *gb = (u8 *) (p + 32);
-				for (col = 0; col < 4; col++)
-				{
-					if (vert + row >= Height || // Transparent cell
-							hor + col >= Width)
-					{
-						*p++ = 0;
-						*p++ = 255;
-						*gb++ = 255;
-						*gb++ = 255;
-					}
-					else
-					{
-						// Get the color of this pixel, which is at 
-						// Line = vert + row, Col = hor + col
-						RGBApixel pixel = Pixels[hor + col][vert + row];
-						*p++ = 255; //pixel.Alpha;
-						*p++ = pixel.Red;
-						*gb++ = pixel.Green;
-						*gb++ = pixel.Blue;
-					}
-				}
+				dst[offset] = 0;
+				dst[offset+1] = 255;
+				dst[offset+32] = 255;
+				dst[offset+33] = 255;
 			}
-			p += 32;
+			else
+			{
+				dst[offset] = 255;
+				dst[offset+1] = Pixels[x][y].Red;
+				dst[offset+32] = Pixels[x][y].Green;
+				dst[offset+33] = Pixels[x][y].Blue;
+			}
 		}
 	}
 	DCFlushRange(dst, len);

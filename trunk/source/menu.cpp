@@ -4173,6 +4173,7 @@ void WiiMenu()
 	menuMode = 0; // switch to normal GUI mode
 	guiShutdown = false;
 	selectLoadedFile = 1;
+	EnableRumble();
 
 	if(pointer[0] == NULL)
 	{

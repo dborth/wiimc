@@ -221,6 +221,9 @@ void MPlayerInput()
 	{
 		if(userInput[0].wpad->btns_d & WPAD_BUTTON_2)
 			wiiDVDNav(MP_CMD_DVDNAV_MENU);
+
+		if(userInput[0].wpad->btns_d & WPAD_BUTTON_B)
+			wiiSetProperty(MP_CMD_SUB_SELECT, -1);
 	}
 
 	if(ir || StatusSet() || osdLevel)

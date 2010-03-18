@@ -181,6 +181,7 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height)
 {
 	u32 block, i, c, ar, gb;
 	u32 len = ((width+3)>>2)*((height+3)>>2)*32*2;
+	if(len%32) len += (32-len%32);
 	u8 * dst = (u8 *) memalign(32, len);
 	u8 * p = dst;
 

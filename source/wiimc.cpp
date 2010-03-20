@@ -271,7 +271,6 @@ bool InitMPlayer()
 	setenv("DVDREAD_VERBOSE", "0", 1);
 	setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
 
-	InitMem2Manager(); // only used for cache_mem
 	init = true;
 	return true;
 }
@@ -350,6 +349,9 @@ main(int argc, char *argv[])
 	SYS_SetPowerCallback(ShutdownCB);
 	SYS_SetResetCallback(ResetCB);
 
+	InitMem2Manager(); // only used for cache_mem
+	picBuffer = (u8 *)memalign(32, 1024*1024*10); // memory for picture viewer
+
 	MountAllDevices(); // Initialize SD and USB devices
 
 	// store path app was loaded from
@@ -367,7 +369,7 @@ main(int argc, char *argv[])
 
 	// create mplayer thread
 	LWP_CreateThread (&mthread, mplayerthread, NULL, mstack, TSTACK, 68);
-
+	
 	// create GUI thread
 	GuiInit();
 

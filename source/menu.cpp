@@ -28,6 +28,8 @@
 #include "filelist.h"
 
 #define THREAD_SLEEP 100
+#define GSTACK (256*1024)
+static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
 
 static GuiImageData * pointer[4] = { NULL, NULL, NULL, NULL };
 static GuiImageData throbber(throbber_png);
@@ -1450,6 +1452,7 @@ done:
 }
 
 // Picture Viewer
+u8* picBuffer;
 #define MAX_PICTURE_SIZE (1024*1024*10) // 10 MB
 static int loadPictures = 0; // reload pictures
 
@@ -1525,12 +1528,12 @@ static void CleanupPictures(int selIndex)
 	// free any unused picture data
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		if(pictureIndex[i] == -1 || i == pictureLoaded)
+		if(picture[i] == NULL || i == pictureLoaded)
 			continue;
 
 		if(selIndex == -1 || pictureIndex[i] < selIndex-3 || pictureIndex[i] > selIndex+3)
 		{
-			if(picture[i]) delete picture[i];
+			delete picture[i];
 			picture[i] = NULL;
 			pictureIndex[i] = -1;
 		}
@@ -1542,13 +1545,6 @@ static void *PictureThread (void *arg)
 	int selIndex;
 	int i,next;
 	char filepath[1024];
-	u8 * picBuffer = (u8 *)memalign(32, MAX_PICTURE_SIZE);
-
-	if(!picBuffer)
-	{
-		while(pictureThreadHalt == 0) usleep(THREAD_SLEEP);
-		return NULL;
-	}
 
 	pictureLoaded = -1;
 	pictureIndexLoaded = -1;
@@ -1645,17 +1641,8 @@ restart:
 		usleep(THREAD_SLEEP);
 	}
 
-	// reset everything
-	SuspendGui();
-
-	for(i=0; i < NUM_PICTURES; i++)
-	{
-		if(picture[i]) delete picture[i];
-		picture[i] = NULL;
-		pictureIndex[i] = -1;
-	}
-	ResumeGui();
-	free(picBuffer);
+	pictureLoaded = -1;
+	CleanupPictures(-1);
 	return NULL;
 }
 
@@ -4096,7 +4083,7 @@ static void SetupPlaybar()
 void GuiInit()
 {
 	guiHalt = 1;
-	LWP_CreateThread (&guithread, GuiThread, NULL, NULL, 0, 66);
+	LWP_CreateThread (&guithread, GuiThread, NULL, guistack, GSTACK, 66);
 }
 
 static void StartGuiThreads()
@@ -4173,7 +4160,6 @@ void WiiMenu()
 	menuMode = 0; // switch to normal GUI mode
 	guiShutdown = false;
 	selectLoadedFile = 1;
-	EnableRumble();
 
 	if(pointer[0] == NULL)
 	{
@@ -4333,6 +4319,7 @@ void WiiMenu()
 
 	StartGuiThreads();
 	ResumeGui();
+	EnableRumble();
 
 	// Load settings
 	if(!LoadSettings())
@@ -4388,10 +4375,9 @@ void WiiMenu()
 		usleep(THREAD_SLEEP);
 	}
 
-	ShutoffRumble();
-	CancelAction();
 	StopGuiThreads();
 	SuspendGui();
+	DisableRumble();
 
 	delete mainWindow;
 	mainWindow = NULL;
@@ -4480,6 +4466,7 @@ void MPlayerMenu()
 	mainWindow->Append(statusText);
 
 	ResumeGui();
+	EnableRumble();
 
 	while(controlledbygui == 0)
 	{
@@ -4498,9 +4485,9 @@ void MPlayerMenu()
 		}
 	}
 
-	ShutoffRumble();
 	CancelAction();
 	SuspendGui();
+	DisableRumble();
 
 	delete statusText;
 	delete mainWindow;

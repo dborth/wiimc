@@ -11,11 +11,31 @@
 #include <malloc.h>
 #include <gccore.h>
 #include "pngu.h"
-#include "png.h"
+#include <png.h>
 
 // Constants
-#define PNGU_SOURCE_BUFFER			1
-#define PNGU_SOURCE_DEVICE			2
+#define PNGU_SOURCE_BUFFER				1
+#define PNGU_SOURCE_DEVICE				2
+
+// Return codes
+#define PNGU_OK							0
+#define PNGU_ODD_WIDTH					1
+#define PNGU_ODD_STRIDE					2
+#define PNGU_INVALID_WIDTH_OR_HEIGHT	3
+#define PNGU_FILE_IS_NOT_PNG			4
+#define PNGU_UNSUPPORTED_COLOR_TYPE		5
+#define PNGU_NO_FILE_SELECTED			6
+#define PNGU_CANT_OPEN_FILE				7
+#define PNGU_CANT_READ_FILE				8
+#define PNGU_LIB_ERROR					9
+
+// Color types
+#define PNGU_COLOR_TYPE_GRAY			1
+#define PNGU_COLOR_TYPE_GRAY_ALPHA		2
+#define PNGU_COLOR_TYPE_PALETTE			3
+#define PNGU_COLOR_TYPE_RGB				4
+#define PNGU_COLOR_TYPE_RGB_ALPHA		5
+#define PNGU_COLOR_TYPE_UNKNOWN 		6
 
 // PNGU Image context struct
 struct _IMGCTX

@@ -2,8 +2,9 @@
 *	gx_supp.c - Generic GX Support for Emulators
 *	softdev 2007
 *	dhewg 2008
-*	sepp256 2008 - Coded YUV->RGB conversion in TEV.
-*	Tantric 2009 - rewritten using threads, with GUI overlaid
+*	sepp256 2008 - Coded YUV->RGB conversion in TEV
+*	Contains some improvements by Extrems
+*	Tantric / rodries 2009-2010 - rewritten using threads, with GUI overlaid
 *
 *	This program is free software; you can redistribute it and/or modify
 *	it under the terms of the GNU General Public License as published by

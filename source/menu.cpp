@@ -2755,6 +2755,7 @@ static void MenuSettingsNetwork()
 	backBtn.SetTrigger(&trigA);
 	backBtn.SetEffectGrow();
 	
+	GuiTooltip addsmbBtnTip("Add SMB Share");
 	GuiText addsmbBtnTxt("Add", 24, (GXColor){255, 255, 255, 255});
 	GuiImage addsmbBtnImg(&iconSMB);
 	addsmbBtnImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
@@ -2764,9 +2765,11 @@ static void MenuSettingsNetwork()
 	addsmbBtn.SetPosition(250, -35);
 	addsmbBtn.SetLabel(&addsmbBtnTxt);
 	addsmbBtn.SetImage(&addsmbBtnImg);
+	addsmbBtn.SetTooltip(&addsmbBtnTip);
 	addsmbBtn.SetTrigger(&trigA);
 	addsmbBtn.SetEffectGrow();
 	
+	GuiTooltip addftpBtnTip("Add FTP Site");
 	GuiText addftpBtnTxt("Add", 24, (GXColor){255, 255, 255, 255});
 	GuiImage addftpBtnImg(&iconFTP);
 	addftpBtnImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
@@ -2776,6 +2779,7 @@ static void MenuSettingsNetwork()
 	addftpBtn.SetPosition(335, -35);
 	addftpBtn.SetLabel(&addftpBtnTxt);
 	addftpBtn.SetImage(&addftpBtnImg);
+	addftpBtn.SetTooltip(&addftpBtnTip);
 	addftpBtn.SetTrigger(&trigA);
 	addftpBtn.SetEffectGrow();
 

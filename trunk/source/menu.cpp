@@ -668,6 +668,7 @@ CancelAction()
  * Updates the variables used by the progress window for drawing a progress
  * bar. Also resumes the progress window thread if it is suspended.
  ***************************************************************************/
+extern "C" {
 void
 ShowProgress (const char *msg, int done, int total)
 {
@@ -695,7 +696,7 @@ ShowProgress (const char *msg, int done, int total)
 
 	LWP_ResumeThread (progressthread);
 }
-
+}
 /****************************************************************************
  * ShowAction
  *

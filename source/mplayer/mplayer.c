@@ -717,11 +717,6 @@ void uninit_player(unsigned int mask){
 
 void exit_player_with_rc(enum exit_reason how, int rc)
 {
-#ifdef GEKKO
-  if(mpctx->sh_video && how==EXIT_QUIT)
-	  save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
-#endif
-
   if (mpctx->user_muted && !mpctx->edl_muted) mixer_mute(&mpctx->mixer);
   uninit_player(INITIALIZED_ALL);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -3912,42 +3907,31 @@ if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
 #endif
 
 #ifdef GEKKO
-static bool first_frame;
-first_frame=false;
-int restore_seek;
 
 if (mpctx->sh_video)
 {
 	stream_cache_min_percent=orig_stream_cache_min_percent;
 	stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
-}
 
-restore_seek=load_restore_point(fileplaying)-8;
-if(restore_seek<0)restore_seek=0;
+	seek_to_sec=load_restore_point(fileplaying)-8;
+	if(seek_to_sec < 0) seek_to_sec = 0;
 
-if(!mpctx->sh_video || !strncmp(filename,"dvd",3))first_frame=true;
+	if(seek_to_sec && strncmp(fileplaying,"dvd://",6) && strncmp(fileplaying,"dvdnav",6 ))
+	{
+		seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
+		end_at.pos += seek_to_sec;
+	}
 
-seek_to_sec=restore_seek;
+	int aux=mpctx->set_of_sub_size;
+	mpctx->set_of_sub_size=0; // to not load subfonts
+	mpctx->osd_function=OSD_PAUSE;
+	if(stream_cache_size>0)
+		refillcache(mpctx->stream,stream_cache_min_percent);
+	mpctx->osd_function=OSD_PLAY;
+	mpctx->set_of_sub_size=aux;
 
-if(seek_to_sec && strncmp(fileplaying,"dvd://",6) && strncmp(fileplaying,"dvdnav",6 ) /*&& hasvideo*/)
-{
-	seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
-	end_at.pos += seek_to_sec;
-}
-
-int aux=mpctx->set_of_sub_size;
-mpctx->set_of_sub_size=0; // to not load subfonts
-mpctx->osd_function=OSD_PAUSE;
-if(stream_cache_size>0 && mpctx->sh_video) // no refill cache on only audio streams  
-refillcache(mpctx->stream,stream_cache_min_percent);
-mpctx->osd_function=OSD_PLAY;
-mpctx->set_of_sub_size=aux;
-
-if(mpctx->sh_video)
-{
-	int w,h;
-	w=mpctx->sh_video->disp_w;
-	h=mpctx->sh_video->disp_h;
+	int w=mpctx->sh_video->disp_w;
+	int h=mpctx->sh_video->disp_h;
 	if(w > 1024)
 	{
 		w=w/2;
@@ -3957,11 +3941,8 @@ if(mpctx->sh_video)
 	{
 		force_load_font = 0;
 
-		//set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Loading Fonts...");
-		//force_osd();
-
 		ReInitTTFLib();
-		//printf("force_ refill: load_font_ft(%s) w: %i  h: %i  sc: %f\n",font_name,w, h,osd_font_scale_factor);
+
 		load_font_ft(w,h,&vo_font,font_name,osd_font_scale_factor);
 		prev_dxs = w; prev_dys=h;
 		if(osd_font_scale_factor==text_font_scale_factor && (!sub_font_name || sub_font_name==font_name))
@@ -3982,11 +3963,15 @@ if(mpctx->sh_video)
 		}
 
 	}
-}
 
-vo_osd_changed(OSDTYPE_SUBTITLE);
-vo_osd_changed(OSDTYPE_PROGBAR);
-vo_osd_changed(OSDTYPE_OSD);
+	vo_osd_changed(OSDTYPE_SUBTITLE);
+	vo_osd_changed(OSDTYPE_PROGBAR);
+	vo_osd_changed(OSDTYPE_OSD);
+}
+else
+{
+	seek_to_sec = 0;
+}
 
 total_time_usage_start=GetTimer();
 mpctx->eof=0;
@@ -4096,20 +4081,21 @@ if(!mpctx->sh_video) {
 
 //====================== FLIP PAGE (VIDEO BLT): =========================
 
-        current_module="flip_page";
-        if (!frame_time_remaining && blit_frame) {
+		current_module="flip_page";
+		if (!frame_time_remaining && blit_frame) {
 	   u64 t2=GetTimer();
 
-	   if(vo_config_count && first_frame) mpctx->video_out->flip_page();
+	   if(vo_config_count) mpctx->video_out->flip_page();
 	   mpctx->num_buffered_frames--;
 
 	   vout_time_usage += (GetTimer() - t2) * 0.000001;
-        }
+		}
 //====================== A-V TIMESTAMP CORRECTION: =========================
 
   adjust_sync_and_print_status(frame_time_remaining, mpctx->time_frame);
 
 //============================ Auto QUALITY ============================
+
 
 /*Output quality adjustments:*/
 if(auto_quality>0){
@@ -4203,34 +4189,12 @@ if(step_sec>0) {
 }
 
  edl_update(mpctx);
- 
-#ifdef GEKKO
-  if(!first_frame && blit_frame && !frame_time_remaining )
-  {
-  	first_frame=true;
-	if (restore_seek)
-	{
-		//char cad[100];
-		//sprintf(cad,"seek %d 2",restore_seek);
-		//mp_input_queue_cmd(mp_input_parse_cmd(cad));
-		//set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Resume");
-		//force_osd();
-		//edl_decision=1;
-		restore_seek=0;
-	}else
-	{
-		clear_osd_msgs();
-		update_osd_msg();
-	}
-	//if (mpctx->sh_audio && mpctx->mixer.muted)mixer_mute(&mpctx->mixer);
-  }
-#endif
 
 //================= Keyboard events, SEEKing ====================
- 
+
 	if(controlledbygui==2) // new film - we have to exit
 		mpctx->eof=1;
-  
+
   current_module="key_events";
 
 {
@@ -4346,10 +4310,8 @@ if(benchmark){
 
 // time to uninit all, except global stuff:
 printf("mplayer: end film. UNINIT\n");
-
 uninit_player(INITIALIZED_ALL);
 
-//clear subs
 if(mpctx->set_of_sub_size > 0) {
     current_module="sub_free";
     for(i = 0; i < mpctx->set_of_sub_size; ++i) {
@@ -4372,16 +4334,15 @@ if(ass_library)
 #ifdef GEKKO
 if (mpctx->sh_audio) mpctx->audio_out->reset();
 
-if(mpctx->eof == PT_NEXT_SRC || mpctx->eof == PT_STOP)
-	save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
-else
-	delete_restore_point(fileplaying);
-
-#endif
 printf("mplayer: exit\n");
-if(controlledbygui == 0)
+if(controlledbygui == 0) // not a forced exit, video ended naturally
+{
+	delete_restore_point(fileplaying);
 	controlledbygui = 1;
+}
+#endif
 return 1;
+
 load_next_file:
 
 if(mpctx->eof == PT_NEXT_ENTRY || mpctx->eof == PT_PREV_ENTRY) {
@@ -4452,9 +4413,7 @@ return 1;
 #include <stdlib.h>
 #include <ogc/system.h>
 
-#define MAX_RESTORE_POINTS 10
-
-static int isPaused = 0;
+#define MAX_RESTORE_POINTS 20
 
 typedef struct st_restore_points restore_points_t;
 struct st_restore_points {
@@ -4473,24 +4432,19 @@ static void delete_restore_point(char *_filename)
 	for(i=0;i<MAX_RESTORE_POINTS;i++)
 	{
 		if(restore_points[i].filename[0] == '\0')
-			break;
+			continue;
 
-		if(!strcmp(_filename,restore_points[i].filename))
+		if(strcmp(_filename,restore_points[i].filename) == 0)
 		{
-			for(;i<MAX_RESTORE_POINTS-1 && restore_points[i].filename[0]!='\0';i++)
-			{
-				strcpy(restore_points[i].filename,restore_points[i+1].filename);
-				restore_points[i].position=restore_points[i+1].position;
-			}
-			restore_points[MAX_RESTORE_POINTS-1].filename[0]='\0';
-			restore_points[MAX_RESTORE_POINTS-1].position=0;
+			restore_points[i].position=0;
+			restore_points[i].filename[0]='\0';
 		}
 	}
 }
 
 static void save_restore_point(char *_filename, int position)
 {
-	int i,j;
+	int i;
 
 	if(!enable_restore_points || strlen(_filename) == 0)
 		return;
@@ -4504,41 +4458,39 @@ static void save_restore_point(char *_filename, int position)
 		return;
 	}
 
-	for(j=0;j<MAX_RESTORE_POINTS;j++)
+	for(i=0;i<MAX_RESTORE_POINTS;i++)
 	{
-		if(restore_points[j].filename[0] == '\0' || !strcmp(_filename,restore_points[j].filename))
+		if(restore_points[i].filename[0] == '\0' || strcmp(_filename,restore_points[i].filename) == 0)
 		{
-			// check if position is similar (+- 5 secs)
-			if(restore_points[j].position>=position-5 && restore_points[j].position<=position+5) return;
-			j++;
-			break;
+			restore_points[i].position=position;
+			strcpy(restore_points[i].filename,_filename);
+			return;
 		}
 	}
-	if(j>1)
+
+	// no space found - make room by deleting oldest
+	for(i=0; i<MAX_RESTORE_POINTS-1; i++)
 	{
-		for(i=j-1;i>0;i--)
-		{
-			strcpy(restore_points[i].filename,restore_points[i-1].filename);
-			restore_points[i].position=restore_points[i-1].position;
-		}
+		strcpy(restore_points[i].filename,restore_points[i+1].filename);
+		restore_points[i].position=restore_points[i+1].position;
 	}
-	restore_points[0].position=position;
-	strcpy(restore_points[0].filename,_filename);
+	restore_points[MAX_RESTORE_POINTS-1].position=position;
+	strcpy(restore_points[MAX_RESTORE_POINTS-1].filename,_filename);
 }
 
 static int load_restore_point(char *_filename)
 {
-	int j;
+	int i;
 	if(!enable_restore_points)
 		return 0;
 
-	for(j=0;j<MAX_RESTORE_POINTS;j++)
+	for(i=0; i<MAX_RESTORE_POINTS; i++)
 	{
-		if(restore_points[j].filename[0] == '\0')
-			break;
+		if(restore_points[i].filename[0] == '\0')
+			continue;
 
-		if(!strcmp(_filename,restore_points[j].filename))
-			return restore_points[j].position;
+		if(strcmp(_filename,restore_points[i].filename) == 0)
+			return restore_points[i].position;
 	}
 	return 0;
 }
@@ -4672,7 +4624,6 @@ static void low_cache_loop(void)
 			{
 				mp_cmd_free(cmd);
 				cmd = mp_input_get_cmd(0,1,0);
-				isPaused ^= 1;
 			}
 			mp_cmd_free(cmd);
 			if(brk_cmd > 0) break;
@@ -4774,7 +4725,7 @@ char * wiiSaveRestorePoints(char * path)
 	for(i=0; i<MAX_RESTORE_POINTS; i++)
 	{
 		if(restore_points[i].filename[0]=='\0')
-			break;
+			continue;
 
 		sprintf(tmppath,"%s\t%i\n",restore_points[i].filename,restore_points[i].position);
 		strcat(buff,tmppath);
@@ -4796,17 +4747,13 @@ void wiiPause()
 	cmd->id=MP_CMD_PAUSE;
 	cmd->name=strdup("pause");
 	mp_input_queue_cmd(cmd);
-	isPaused ^= 1;
 }
 
 bool wiiIsPaused()
 {
-	return isPaused;
-}
-
-void wiiResetPause()
-{
-	isPaused = 0;
+	if(mpctx->was_paused == 1)
+		return true;
+	return false;
 }
 
 void wiiMute()
@@ -4826,7 +4773,6 @@ static void wiiSeek(int sec, int mode)
 	cmd->args[0].v.f = sec; // # seconds
 	cmd->args[1].v.i = mode;
 	mp_input_queue_cmd(cmd);
-	isPaused = 0;
 }
 
 void wiiSeekPos(int sec)

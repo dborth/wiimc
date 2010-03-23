@@ -96,12 +96,12 @@ void ExitApp()
 	}
 }
 
-void ShutdownCB()
+static void ShutdownCB()
 {
 	ConfigRequested = 1;
 	ShutdownRequested = 1;
 }
-void ResetCB()
+static void ResetCB()
 {
 	ResetRequested = 1;
 }
@@ -243,7 +243,6 @@ mplayerthread (void *arg)
 		if(loadedFile[0] != 0)
 		{
 			controlledbygui = 0;
-			wiiResetPause();
 			wiiSetCache(WiiSettings.cacheSize, WiiSettings.cachePrefill);
 			mplayer_loadfile(loadedFile);
 		}

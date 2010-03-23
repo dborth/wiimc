@@ -55,7 +55,6 @@ char * wiiSaveRestorePoints(char * path);
 void wiiGotoGui();
 void wiiPause();
 bool wiiIsPaused();
-void wiiResetPause();
 void wiiMute();
 void wiiSeekPos(int sec);
 void wiiFastForward();

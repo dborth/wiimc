@@ -160,27 +160,22 @@ void MPlayerInput()
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
 			{
 				wiiPause();
-				UpdateVideobarPauseBtn(wiiIsPaused());
 			}
 			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
 			{
 				wiiSkipForward();
-				UpdateVideobarPauseBtn(false);
 			}
 			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
 			{
 				wiiSkipBackward();
-				UpdateVideobarPauseBtn(false);
 			}
 			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
 			{
 				wiiFastForward();
-				UpdateVideobarPauseBtn(false);
 			}
 			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
 			{
 				wiiRewind();
-				UpdateVideobarPauseBtn(false);
 			}
 		}
 		else
@@ -190,7 +185,6 @@ void MPlayerInput()
 			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A && userInput[i].wpad->ir.y < 340)
 			{
 				wiiPause();
-				UpdateVideobarPauseBtn(wiiIsPaused());
 			}
 		}
 	}

@@ -1024,20 +1024,6 @@ static void DisplayCredits(void * ptr)
 	ResumeCreditsThread();
 }
 
-void UpdateVideobarPauseBtn(bool paused)
-{
-	if(paused)
-	{
-		videobarPauseIcon->SetImage(actionbarPlay);
-		videobarPauseTip->SetText("Play");
-	}
-	else
-	{
-		videobarPauseIcon->SetImage(actionbarPause);
-		videobarPauseTip->SetText("Pause");
-	}
-}
-
 void UpdateAudiobarPauseBtn(bool paused)
 {
 	if(!audiobarPauseIcon || !audiobarPauseTip)
@@ -1299,6 +1285,8 @@ static void MenuBrowse(int menu)
 					}
 					else
 					{
+						ResumeDeviceThread();
+
 						playingAudio = true;
 						UpdateAudiobarPauseBtn(false);
 
@@ -3391,7 +3379,6 @@ static void VideoProgressCallback(void * ptr)
 		done = total*percent;
 		b->ResetState();
 		DisableRumble();
-		UpdateVideobarPauseBtn(true);
 		wiiSeekPos(done);
 	}
 	
@@ -3425,7 +3412,6 @@ static void VideoSkipBackwardCallback(void * ptr)
 	{
 		b->ResetState();
 		DisableRumble();
-		UpdateVideobarPauseBtn(true);
 		wiiSkipBackward();
 	}
 }
@@ -3437,7 +3423,6 @@ static void VideoRewindCallback(void * ptr)
 	{
 		b->ResetState();
 		DisableRumble();
-		UpdateVideobarPauseBtn(true);
 		wiiRewind();
 	}
 }
@@ -3449,7 +3434,6 @@ static void VideoPauseCallback(void * ptr)
 	{
 		b->ResetState();
 		wiiPause();
-		UpdateVideobarPauseBtn(wiiIsPaused());
 	}
 }
 
@@ -3460,7 +3444,6 @@ static void VideoFastForwardCallback(void * ptr)
 	{
 		b->ResetState();
 		DisableRumble();
-		UpdateVideobarPauseBtn(true);
 		wiiFastForward();
 	}
 }
@@ -3472,7 +3455,6 @@ static void VideoSkipForwardCallback(void * ptr)
 	{
 		b->ResetState();
 		DisableRumble();
-		UpdateVideobarPauseBtn(true);
 		wiiSkipForward();
 	}
 }
@@ -4441,7 +4423,6 @@ void SetStatus(const char * txt)
 	{
 		statusText->SetVisible(false);
 		EnableRumble();
-		UpdateVideobarPauseBtn(wiiIsPaused());
 	}
 	statusText->SetText(txt);
 }
@@ -4472,6 +4453,8 @@ void MPlayerMenu()
 	ResumeGui();
 	EnableRumble();
 
+	bool paused = !wiiIsPaused();
+
 	while(controlledbygui == 0)
 	{
 		usleep(THREAD_SLEEP);
@@ -4486,6 +4469,21 @@ void MPlayerMenu()
 			mainWindow->SetVisible(true);
 			mainWindow->SetState(STATE_DEFAULT);
 			statusText->SetVisible(false);
+		}
+
+		if(paused != wiiIsPaused())
+		{
+			paused = !paused;
+			if(paused)
+			{
+				videobarPauseIcon->SetImage(actionbarPlay);
+				videobarPauseTip->SetText("Play");
+			}
+			else
+			{
+				videobarPauseIcon->SetImage(actionbarPause);
+				videobarPauseTip->SetText("Pause");
+			}
 		}
 	}
 

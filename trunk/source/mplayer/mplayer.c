@@ -2524,7 +2524,7 @@ static void pause_loop(void)
     }
 
     if(controlledbygui == 2) // mplayer shutdown requested!
-    	break;
+    	return;
     }
 #else
         usec_sleep(20000);
@@ -4520,14 +4520,11 @@ static double timing_sleep(double time_frame)
 
 void PauseAndGotoGUI()
 {
-	mp_cmd_t* cmd = NULL;
 	if (mpctx->audio_out && mpctx->sh_audio)
 		mpctx->audio_out->pause(); // pause audio, keep data if possible
 
 	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
 		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
-
-	printf("PauseAndGotoGUI\n");
 
 	if(mpctx->sh_video)
 		save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
@@ -4535,51 +4532,30 @@ void PauseAndGotoGUI()
 	printf("sent control to gui\n");
 	if (controlledbygui == 0)
 		controlledbygui = 1; // send control to gui
-	while (controlledbygui == 1 && ((cmd = mp_input_get_cmd(20, 1, 1)) == NULL || cmd->pausing == 4))
-	{
-		if (cmd)
-		{
-			cmd = mp_input_get_cmd(0, 1, 0);
-			run_command(mpctx, cmd);
-			mp_cmd_free(cmd);
-			continue;
-		}
-		if (mpctx->sh_video && mpctx->video_out && vo_config_count)
-			mpctx->video_out->check_events();
 
+	while (controlledbygui == 1)
 		usec_sleep(20000);
-	}
 
-	printf("control returned to mplayer\n");
-	if (controlledbygui != 2)
-	{
-		printf("reinit mplayer video/audio\n");
-		reinit_audio();
-		reinit_video();
-		printf("mplayer video reinit ok\n");
-	}
+	if (controlledbygui == 2)
+		return;
 
-	if (cmd && cmd->id == MP_CMD_QUIT)
-	{
-		cmd = mp_input_get_cmd(0, 1, 0);
-		mp_cmd_free(cmd);
-	}
-	
+	printf("reinit mplayer video/audio\n");
+	reinit_audio();
+	reinit_video();
+	printf("mplayer video/audio reinit ok\n");
+
 	mpctx->osd_function = OSD_PLAY;
 
-	if (controlledbygui != 2)
+	if ((!strncmp(filename, "dvd:", 4)) || (!strncmp(filename, "dvdnav:", 7)))
 	{
-		if ((!strncmp(filename, "dvd:", 4)) || (!strncmp(filename, "dvdnav:", 7)))
-		{
-			void *ptr = (void *)memalign(32, 0x800 * 2);
-			DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
-			DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
-			free(ptr);
-		}
-
-		if (mpctx->audio_out && mpctx->sh_audio)
-			mpctx->audio_out->resume(); // resume audio
+		void *ptr = (void *)memalign(32, 0x800 * 2);
+		DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
+		DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
+		free(ptr);
 	}
+
+	if (mpctx->audio_out && mpctx->sh_audio)
+		mpctx->audio_out->resume(); // resume audio
 
 	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
 		mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video

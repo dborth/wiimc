@@ -4606,8 +4606,10 @@ static void low_cache_loop(void)
 		}
 
 		progress = (int)(cache_fill_status*100.0/percent);
-		if(progress > 100)
-			progress = 100;
+
+		if(progress >= 100 || progress < 0)
+			break; // let's get out of here!
+
 		sprintf(msg, "Buffering (%02d%%)", progress);
 		SetStatus(msg);
 

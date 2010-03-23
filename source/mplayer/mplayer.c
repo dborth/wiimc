@@ -2543,7 +2543,7 @@ static void pause_loop(void)
 	}
 	else
 	{
-		if((!strncmp(filename,"dvd:",4)) ||  (!strncmp(filename,"dvdnav:",7)))
+		if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
 		{
 			//DI_StartMotor();
 			//printf("start motor\n");
@@ -3339,13 +3339,13 @@ int vob_sub_auto = 1;
     stream_cache_min_percent=orig_stream_cache_min_percent;
     stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
   }
-  if(!strncmp(filename,"dvdnav://",9))
+  if(strncmp(filename,"dvdnav:",7) == 0)
   	stream_cache_size=-1;
   else
   	stream_cache_size=orig_stream_cache_size;
 
 
-    if(!strncmp(filename,"http:",5))
+    if(strncmp(filename,"http:",5) == 0)
     {
 	   stream_cache_min_percent=1;
 	   stream_cache_seek_min_percent=5;
@@ -3916,7 +3916,7 @@ if (mpctx->sh_video)
 	seek_to_sec=load_restore_point(fileplaying)-8;
 	if(seek_to_sec < 0) seek_to_sec = 0;
 
-	if(seek_to_sec && strncmp(fileplaying,"dvd://",6) && strncmp(fileplaying,"dvdnav",6 ))
+	if(seek_to_sec && strncmp(fileplaying,"dvd:",4) != 0 && strncmp(fileplaying,"dvdnav:",7) != 0)
 	{
 		seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
 		end_at.pos += seek_to_sec;
@@ -4449,7 +4449,9 @@ static void save_restore_point(char *_filename, int position)
 	if(!enable_restore_points || strlen(_filename) == 0)
 		return;
 
-	if(!strncmp(_filename,"dvd://",6) || !strncmp(_filename,"dvdnav",6 ) || !strncmp(_filename,"http:/",6))
+	if(	strncmp(_filename,"dvd:",4) == 0 || 
+		strncmp(_filename,"dvdnav:",7) == 0 || 
+		strncmp(_filename,"http:",5) == 0)
 		return;
 
 	if(position <= 8 || !( mpctx->demuxer->seekable))
@@ -4546,7 +4548,7 @@ void PauseAndGotoGUI()
 
 	mpctx->osd_function = OSD_PLAY;
 
-	if ((!strncmp(filename, "dvd:", 4)) || (!strncmp(filename, "dvdnav:", 7)))
+	if (strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0)
 	{
 		void *ptr = (void *)memalign(32, 0x800 * 2);
 		DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
@@ -4622,7 +4624,7 @@ static void low_cache_loop(void)
 	rm_osd_msg(OSD_MSG_PAUSE);
 	SetStatus(NULL);
 
-	if((!strncmp(filename,"dvd:",4)) || (!strncmp(filename,"dvdnav:",7)))
+	if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
 	{
 		void *ptr=(void *)memalign(32, 0x800*2);
 		DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning

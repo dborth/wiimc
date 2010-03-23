@@ -764,12 +764,13 @@ void refillcache(stream_t *stream,float min)
 	u64 t1;
 	float old=0;
 	t1 = GetTimerMS();
+
     while(cache_fill_status<min)
     {
-		set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Cache fill: %5.2f%%  ",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
+		//set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Cache fill: %5.2f%%  ",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
 		//force_osd();
 		//printf("Cache fill: %5.2f%%  \n",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
-
+    	ShowProgress("Buffering...", (int)cache_fill_status*10000, (int)min*10000);
 		if(s->eof) break; // file is smaller than prefill size
 			
 		if(out==0)out=stream_check_interrupt(PREFILL_SLEEP_TIME);

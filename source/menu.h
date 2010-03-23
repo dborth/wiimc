@@ -19,13 +19,13 @@ int ErrorPromptRetry(const char * msg);
 void InfoPrompt(const char * msg);
 void ShowAction (const char *msg);
 void CancelAction();
-void ShowProgress (const char *msg, int done, int total);
 int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
 void SuspendPictureThread();
 void ResetText();
 void UpdateAudiobarPauseBtn(bool paused);
 
 extern "C" {
+void ShowProgress (const char *msg, int done, int total);
 void SetStatus(const char * txt);
 bool StatusSet();
 }

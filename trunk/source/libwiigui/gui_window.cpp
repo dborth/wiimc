@@ -179,7 +179,6 @@ void GuiWindow::ToggleFocus(GuiTrigger * t)
 		return; // this is only intended for the main window
 
 	int found = -1;
-	int newfocus = -1;
 	int i;
 
 	int elemSize = _elements.size();
@@ -212,42 +211,6 @@ void GuiWindow::ToggleFocus(GuiTrigger * t)
 				}
 			}
 			catch (const std::exception& e) { }
-		}
-	}
-	// change focus
-	else if(t->wpad->btns_d & (WPAD_BUTTON_1 | WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B)
-		|| t->pad.btns_d & PAD_BUTTON_B)
-	{
-		for (i = found; i < elemSize; ++i)
-		{
-			try
-			{
-				if(_elements.at(i)->IsFocused() == 0 && _elements.at(i)->GetState() != STATE_DISABLED) // focus is possible (but not set)
-				{
-					newfocus = i;
-					_elements.at(i)->SetFocus(1); // give this element focus
-					_elements.at(found)->SetFocus(0); // disable focus on other element
-					break;
-				}
-			}
-			catch (const std::exception& e) { }
-		}
-
-		if(newfocus == -1)
-		{
-			for (i = 0; i < found; ++i)
-			{
-				try
-				{
-					if(_elements.at(i)->IsFocused() == 0 && _elements.at(i)->GetState() != STATE_DISABLED) // focus is possible (but not set)
-					{
-						_elements.at(i)->SetFocus(1); // give this element focus
-						_elements.at(found)->SetFocus(0); // disable focus on other element
-						break;
-					}
-				}
-				catch (const std::exception& e) { }
-			}
 		}
 	}
 }

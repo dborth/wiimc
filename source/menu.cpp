@@ -1091,6 +1091,12 @@ static void MenuBrowse(int menu)
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 	GuiTrigger trigPlus;
 	trigPlus.SetButtonOnlyTrigger(-1, WPAD_BUTTON_PLUS | WPAD_CLASSIC_BUTTON_PLUS, PAD_BUTTON_X);
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
+
+	GuiButton upOneLevelBtn(0,0);
+	upOneLevelBtn.SetTrigger(&trigB);
+	upOneLevelBtn.SetSelectable(false);
 
 	GuiFileBrowser fileBrowser(552, 240);
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -1136,6 +1142,7 @@ static void MenuBrowse(int menu)
 	}
 
 	mainWindow->Append(&fileBrowser);
+	mainWindow->Append(&upOneLevelBtn);
 	ResumeGui();
 
 	// populate initial directory listing
@@ -1195,6 +1202,20 @@ static void MenuBrowse(int menu)
 			{
 				goto done;
 			}
+		}
+		
+		// up one level
+		if(upOneLevelBtn.GetState() == STATE_CLICKED)
+		{
+			upOneLevelBtn.ResetState();
+			browser.selIndex = 0;
+
+			if(!BrowserChangeFolder())
+				goto done;
+
+			fileBrowser.ResetState();
+			fileBrowser.fileList[0]->SetState(STATE_SELECTED);
+			fileBrowser.TriggerUpdate();
 		}
 
 		if(inPlaylist && fileBrowser.fileList[0]->GetState() == STATE_CLICKED)
@@ -1427,6 +1448,7 @@ done:
 	SuspendParseThread(); // halt parsing
 	SuspendGui();
 	mainWindow->Remove(&fileBrowser);
+	mainWindow->Remove(&upOneLevelBtn);
 
 	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
 		mainWindow->Remove(audiobar);
@@ -1785,9 +1807,17 @@ static void MenuBrowsePictures()
 	GuiFileBrowser fileBrowser(300, 240);
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	fileBrowser.SetPosition(44, 100);
+	
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
+
+	GuiButton upOneLevelBtn(0,0);
+	upOneLevelBtn.SetTrigger(&trigB);
+	upOneLevelBtn.SetSelectable(false);
 
 	SuspendGui();
 	mainWindow->Append(&fileBrowser);
+	mainWindow->Append(&upOneLevelBtn);
 	ResumeGui();
 
 	// populate initial directory listing
@@ -1834,6 +1864,20 @@ static void MenuBrowsePictures()
 			{
 				goto done;
 			}
+		}
+
+		// up one level
+		if(upOneLevelBtn.GetState() == STATE_CLICKED)
+		{
+			upOneLevelBtn.ResetState();
+			browser.selIndex = 0;
+
+			if(!BrowserChangeFolder())
+				goto done;
+
+			fileBrowser.ResetState();
+			fileBrowser.fileList[0]->SetState(STATE_SELECTED);
+			fileBrowser.TriggerUpdate();
 		}
 
 		// update displayed picture
@@ -1911,6 +1955,7 @@ done:
 	SuspendGui();
 	mainWindow->Remove(pictureBtn);
 	mainWindow->Remove(&fileBrowser);
+	mainWindow->Remove(&upOneLevelBtn);
 }
 
 static void MenuDVD()
@@ -1972,6 +2017,9 @@ static void MenuSettingsGlobal()
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
+
 	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
 	GuiImage backBtnImg(&btnOutline);
 	GuiImage backBtnImgOver(&btnOutlineOver);
@@ -1982,6 +2030,7 @@ static void MenuSettingsGlobal()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(&trigB);
 	backBtn.SetEffectGrow();
 
 	GuiOptionBrowser optionBrowser(460, 220, &options);
@@ -2367,6 +2416,9 @@ static void MenuSettingsVideos()
 
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 
 	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
 	GuiImage backBtnImg(&btnOutline);
@@ -2378,6 +2430,7 @@ static void MenuSettingsVideos()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(&trigB);
 	backBtn.SetEffectGrow();
 
 	GuiOptionBrowser optionBrowser(460, 220, &options);
@@ -2523,6 +2576,9 @@ static void MenuSettingsMusic()
 
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 
 	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
 	GuiImage backBtnImg(&btnOutline);
@@ -2534,6 +2590,7 @@ static void MenuSettingsMusic()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(&trigB);
 	backBtn.SetEffectGrow();
 
 	GuiOptionBrowser optionBrowser(460, 220, &options);
@@ -2621,6 +2678,9 @@ static void MenuSettingsPictures()
 
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 
 	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
 	GuiImage backBtnImg(&btnOutline);
@@ -2632,6 +2692,7 @@ static void MenuSettingsPictures()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(&trigB);
 	backBtn.SetEffectGrow();
 
 	GuiOptionBrowser optionBrowser(460, 220, &options);
@@ -2731,6 +2792,9 @@ static void MenuSettingsNetwork()
 
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 
 	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
 	GuiImage backBtnImg(&btnOutline);
@@ -2742,6 +2806,7 @@ static void MenuSettingsNetwork()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(&trigB);
 	backBtn.SetEffectGrow();
 	
 	GuiTooltip addsmbBtnTip("Add SMB Share");
@@ -2856,6 +2921,9 @@ static void MenuSettingsNetworkSMB()
 
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 
 	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
 	GuiImage backBtnImg(&btnOutline);
@@ -2867,6 +2935,7 @@ static void MenuSettingsNetworkSMB()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(&trigB);
 	backBtn.SetEffectGrow();
 	
 	GuiText deleteBtnTxt("Delete", 24, (GXColor){255, 255, 255, 255});
@@ -3022,6 +3091,9 @@ static void MenuSettingsNetworkFTP()
 
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 
 	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
 	GuiImage backBtnImg(&btnOutline);
@@ -3033,6 +3105,7 @@ static void MenuSettingsNetworkFTP()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(&trigB);
 	backBtn.SetEffectGrow();
 	
 	GuiText deleteBtnTxt("Delete", 24, (GXColor){255, 255, 255, 255});
@@ -3177,6 +3250,9 @@ static void MenuSettingsSubtitles()
 
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 
 	GuiText backBtnTxt("Go Back", 24, (GXColor){255, 255, 255, 255});
 	GuiImage backBtnImg(&btnOutline);
@@ -3188,6 +3264,7 @@ static void MenuSettingsSubtitles()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(&trigB);
 	backBtn.SetEffectGrow();
 
 	GuiOptionBrowser optionBrowser(460, 220, &options);
@@ -3295,6 +3372,9 @@ static void MenuSettings()
 
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	
+	GuiTrigger trigB;
+	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
@@ -3308,6 +3388,7 @@ static void MenuSettings()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(&trigB);
 	backBtn.SetEffectGrow();
 
 	GuiMenuBrowser itemBrowser(300, 400, &items);

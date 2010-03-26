@@ -14,6 +14,9 @@
 #include <wiiuse/wpad.h>
 #include <sys/dir.h>
 #include <malloc.h>
+#include <string>
+#include <vector>
+using namespace std;
 
 #include "filebrowser.h"
 #include "wiimc.h"
@@ -24,7 +27,8 @@
 
 BROWSERINFO browser;
 BROWSERENTRY * browserList = NULL; // list of files/folders in browser
-char browserPlaylist[MAXPATHLEN] = "\0"; // playlist URL, loaded from the file browser
+
+static std::vector<std::string> browserHistory; // browser.dir history - for nested playlists
 
 MEDIAENTRY * onlinemediaList = NULL; // list of online media files
 int onlinemediaSize = 0; // number of online media files
@@ -72,6 +76,28 @@ bool AddBrowserEntry()
 	memset(&(browserList[browser.size]), 0, sizeof(BROWSERENTRY)); // clear the new entry
 	browser.size++;
 	return true;
+}
+
+void BrowserHistoryStore(char *path)
+{
+	string newStr(path);
+	browserHistory.push_back(newStr);
+}
+
+const char * BrowserHistoryRetrieve()
+{
+	if(browserHistory.empty())
+		return "";
+
+	return browserHistory.back().c_str();
+}
+
+void BrowserHistoryDiscard()
+{
+	if(browserHistory.empty())
+		return;
+
+	browserHistory.pop_back();
 }
 
 bool AddPlaylistEntry()
@@ -132,24 +158,6 @@ static void CleanupPath(char * path)
 	path[j] = 0;
 }
 
-bool IsDeviceRoot(char * path)
-{
-	if(path == NULL || path[0] == 0)
-		return false;
-
-	int pathlen = strlen(path);
-
-	if((strncmp(path, "sd", 2) == 0 && pathlen == 5) ||
-		(strncmp(path, "usb", 3) == 0 && pathlen == 6) ||
-		strcmp(path, "dvd:/") == 0 ||
-		(strncmp(path, "smb", 3) == 0 && pathlen == 6) ||
-		(strncmp(path, "ftp", 3) == 0 && pathlen == 6))
-	{
-		return true;
-	}
-	return false;
-}
-
 /****************************************************************************
  * UpdateDirName()
  * Update curent directory name for file browser
@@ -158,10 +166,30 @@ static int UpdateDirName()
 {
 	int size=0;
 	char * test;
-	char temp[1024];
+	char temp[MAXPATHLEN];
 
 	if(browser.numEntries == 0)
 		return 1;
+
+	// we started in a playlist, and have nowhere to go back to but the device listing
+	if(browser.selIndex == 0 && strlen(browserList[0].filename) == 0)
+		browser.dir[0] = 0;
+
+	// entering a playlist - this is handled when the playlist is parsed
+	if(browser.selIndex > 0 && browserList[browser.selIndex].isplaylist)
+	{
+		BrowserHistoryStore(browser.dir);
+		GetFullPath(browser.selIndex, browser.dir);
+		return 1;
+	}
+
+	// exiting a playlist - return to specified location
+	if(browser.selIndex == 0 && browserList[0].filename[0] != '.' && browser.dir[0] != 0)
+	{
+		strcpy(browser.dir, browserList[0].filename);
+		BrowserHistoryDiscard();
+		return 1;
+	}
 
 	/* current directory doesn't change */
 	if (strcmp(browserList[browser.selIndex].filename,".") == 0)
@@ -178,25 +206,18 @@ static int UpdateDirName()
 		}
 		else
 		{
-			if(browserPlaylist[0] != 0) // inside a playlist
+			/* determine last subdirectory namelength */
+			sprintf(temp,"%s",browser.dir);
+			test = strtok(temp,"/");
+			while (test != NULL)
 			{
-				browserPlaylist[0] = 0; // leave playlist
+				size = strlen(test);
+				test = strtok(NULL,"/");
 			}
-			else
-			{
-				/* determine last subdirectory namelength */
-				sprintf(temp,"%s",browser.dir);
-				test = strtok(temp,"/");
-				while (test != NULL)
-				{
-					size = strlen(test);
-					test = strtok(NULL,"/");
-				}
-	
-				/* remove last subdirectory name */
-				size = strlen(browser.dir) - size - 1;
-				browser.dir[size] = 0;
-			}
+
+			/* remove last subdirectory name */
+			size = strlen(browser.dir) - size - 1;
+			browser.dir[size] = 0;
 		}
 		return 1;
 	}
@@ -264,125 +285,149 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	if(updateDir && !UpdateDirName())
 		return -1;
 
-	CleanupPath(browser.dir);
 	SuspendParseThread(); // halt parsing
-	ResetBrowser(); // reset browser
 
-	if(browserPlaylist[0] != 0)
+	bool isPlaylist = false;
+
+	if(browser.dir[0] != 0)
 	{
-		ParsePlaylistFile();
+		bool mounted = ChangeInterface(browser.dir, NOTSILENT);
+		if(mounted)
+		{		
+			char *ext = strrchr(browser.dir,'.');
+			if(ext != NULL) ext++;
+			isPlaylist = IsPlaylistExt(ext);
+		}
+		else if(menuCurrent != MENU_BROWSE_ONLINEMEDIA)
+		{
+			browser.dir[0] = 0;
+		}
+	}
+
+	if(!isPlaylist)
+		CleanupPath(browser.dir);
+
+	ResetBrowser();
+
+	if(isPlaylist || (browser.numEntries > 0 && browserList[browser.selIndex].isplaylist))
+	{
+		if(!ParsePlaylistFile())
+		{
+			strcpy(browser.dir, BrowserHistoryRetrieve());
+			return BrowserChangeFolder(false, waitParse);
+		}
 	}
 	else if(menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 	{
 		ParseOnlineMedia();
 	}
-	else
+	else 
 	{
 		if(browser.dir[0] != 0)
 			ParseDirectory(waitParse);
+	}
 
-		if(browser.numEntries == 0)
+	if(browser.numEntries == 0)
+	{
+		browser.dir[0] = 0;
+		
+		int i;
+
+		for(i=0; i < MAX_DEVICES; i++)
 		{
-			browser.dir[0] = 0;
-			
-			int i;
-
-			for(i=0; i < MAX_DEVICES; i++)
+			if(part[DEVICE_SD][i].type > 0)
 			{
-				if(part[DEVICE_SD][i].type > 0)
-				{
-					if(!AddBrowserEntry())
-						break;
+				if(!AddBrowserEntry())
+					break;
 
-					sprintf(browserList[browser.numEntries].filename, "%s:/", part[DEVICE_SD][i].mount);
+				sprintf(browserList[browser.numEntries].filename, "%s:/", part[DEVICE_SD][i].mount);
 
-					if(strlen(part[DEVICE_SD][i].name) > 0)
-						sprintf(browserList[browser.numEntries].displayname, "SD - %s", part[DEVICE_SD][i].name);
-					else if(i == 0 && part[DEVICE_SD][1].type == 0) // only one SD partition
-						sprintf(browserList[browser.numEntries].displayname, "SD Card");
-					else
-						sprintf(browserList[browser.numEntries].displayname, "SD Card (%d)", i);
+				if(strlen(part[DEVICE_SD][i].name) > 0)
+					sprintf(browserList[browser.numEntries].displayname, "SD - %s", part[DEVICE_SD][i].name);
+				else if(i == 0 && part[DEVICE_SD][1].type == 0) // only one SD partition
+					sprintf(browserList[browser.numEntries].displayname, "SD Card");
+				else
+					sprintf(browserList[browser.numEntries].displayname, "SD Card (%d)", i);
 
-					browserList[browser.numEntries].length = 0;
-					browserList[browser.numEntries].mtime = 0;
-					browserList[browser.numEntries].isdir = 1; // flag this as a dir
-					browserList[browser.numEntries].icon = ICON_SD;
-					browser.numEntries++;
-				}
+				browserList[browser.numEntries].length = 0;
+				browserList[browser.numEntries].mtime = 0;
+				browserList[browser.numEntries].isdir = 1; // flag this as a dir
+				browserList[browser.numEntries].icon = ICON_SD;
+				browser.numEntries++;
 			}
+		}
 
-			for(i=0; i < MAX_DEVICES; i++)
+		for(i=0; i < MAX_DEVICES; i++)
+		{
+			if(part[DEVICE_USB][i].type > 0)
 			{
-				if(part[DEVICE_USB][i].type > 0)
-				{
-					if(!AddBrowserEntry())
-						break;
+				if(!AddBrowserEntry())
+					break;
 
-					sprintf(browserList[browser.numEntries].filename, "%s:/", part[DEVICE_USB][i].mount);
+				sprintf(browserList[browser.numEntries].filename, "%s:/", part[DEVICE_USB][i].mount);
 
-					if(strlen(part[DEVICE_USB][i].name) > 0)
-						sprintf(browserList[browser.numEntries].displayname, "USB - %s", part[DEVICE_USB][i].name);
-					else if(i == 0 && part[DEVICE_USB][1].type == 0) // only one USB partition
-						sprintf(browserList[browser.numEntries].displayname, "USB Mass Storage");
-					else
-						sprintf(browserList[browser.numEntries].displayname, "USB Mass Storage (%d)", i);
+				if(strlen(part[DEVICE_USB][i].name) > 0)
+					sprintf(browserList[browser.numEntries].displayname, "USB - %s", part[DEVICE_USB][i].name);
+				else if(i == 0 && part[DEVICE_USB][1].type == 0) // only one USB partition
+					sprintf(browserList[browser.numEntries].displayname, "USB Mass Storage");
+				else
+					sprintf(browserList[browser.numEntries].displayname, "USB Mass Storage (%d)", i);
 
-					browserList[browser.numEntries].length = 0;
-					browserList[browser.numEntries].mtime = 0;
-					browserList[browser.numEntries].isdir = 1; // flag this as a dir
-					browserList[browser.numEntries].icon = ICON_USB;
-					browser.numEntries++;
-				}
+				browserList[browser.numEntries].length = 0;
+				browserList[browser.numEntries].mtime = 0;
+				browserList[browser.numEntries].isdir = 1; // flag this as a dir
+				browserList[browser.numEntries].icon = ICON_USB;
+				browser.numEntries++;
 			}
+		}
 
-			AddBrowserEntry();
-			sprintf(browserList[browser.numEntries].filename, "dvd:/");
-			sprintf(browserList[browser.numEntries].displayname, "Data DVD");
-			browserList[browser.numEntries].length = 0;
-			browserList[browser.numEntries].mtime = 0;
-			browserList[browser.numEntries].isdir = 1;
-			browserList[browser.numEntries].icon = ICON_DVD;
-			browser.numEntries++;
+		AddBrowserEntry();
+		sprintf(browserList[browser.numEntries].filename, "dvd:/");
+		sprintf(browserList[browser.numEntries].displayname, "Data DVD");
+		browserList[browser.numEntries].length = 0;
+		browserList[browser.numEntries].mtime = 0;
+		browserList[browser.numEntries].isdir = 1;
+		browserList[browser.numEntries].icon = ICON_DVD;
+		browser.numEntries++;
 
-			for(i=0; i < 5; i++)
+		for(i=0; i < 5; i++)
+		{
+			if(WiiSettings.smbConf[i].share[0] != 0)
 			{
-				if(WiiSettings.smbConf[i].share[0] != 0)
-				{
-					if(!AddBrowserEntry())
-						break;
-	
-					sprintf(browserList[browser.numEntries].filename, "smb%d:/", i+1);
-					
-					if(WiiSettings.smbConf[i].displayname[0] != 0)
-						sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.smbConf[i].displayname);
-					else
-						sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.smbConf[i].share);
-					browserList[browser.numEntries].length = 0;
-					browserList[browser.numEntries].mtime = 0;
-					browserList[browser.numEntries].isdir = 1; // flag this as a dir
-					browserList[browser.numEntries].icon = ICON_SMB;
-					browser.numEntries++;
-				}
+				if(!AddBrowserEntry())
+					break;
+
+				sprintf(browserList[browser.numEntries].filename, "smb%d:/", i+1);
+				
+				if(WiiSettings.smbConf[i].displayname[0] != 0)
+					sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.smbConf[i].displayname);
+				else
+					sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.smbConf[i].share);
+				browserList[browser.numEntries].length = 0;
+				browserList[browser.numEntries].mtime = 0;
+				browserList[browser.numEntries].isdir = 1; // flag this as a dir
+				browserList[browser.numEntries].icon = ICON_SMB;
+				browser.numEntries++;
 			}
+		}
 
-			for(i=0; i < 5; i++)
+		for(i=0; i < 5; i++)
+		{
+			if(WiiSettings.ftpConf[i].ip[0] != 0)
 			{
-				if(WiiSettings.ftpConf[i].ip[0] != 0)
-				{
-					if(!AddBrowserEntry())
-						break;
-	
-					sprintf(browserList[browser.numEntries].filename, "ftp%d:/", i+1);
-					if(WiiSettings.ftpConf[i].displayname[0] != 0)
-						sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.ftpConf[i].displayname);
-					else
-						sprintf(browserList[browser.numEntries].displayname, "%s@%s/%s", WiiSettings.ftpConf[i].user, WiiSettings.ftpConf[i].ip, WiiSettings.ftpConf[i].folder);
-					browserList[browser.numEntries].length = 0;
-					browserList[browser.numEntries].mtime = 0;
-					browserList[browser.numEntries].isdir = 1; // flag this as a dir
-					browserList[browser.numEntries].icon = ICON_FTP;
-					browser.numEntries++;
-				}
+				if(!AddBrowserEntry())
+					break;
+
+				sprintf(browserList[browser.numEntries].filename, "ftp%d:/", i+1);
+				if(WiiSettings.ftpConf[i].displayname[0] != 0)
+					sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.ftpConf[i].displayname);
+				else
+					sprintf(browserList[browser.numEntries].displayname, "%s@%s/%s", WiiSettings.ftpConf[i].user, WiiSettings.ftpConf[i].ip, WiiSettings.ftpConf[i].folder);
+				browserList[browser.numEntries].length = 0;
+				browserList[browser.numEntries].mtime = 0;
+				browserList[browser.numEntries].isdir = 1; // flag this as a dir
+				browserList[browser.numEntries].icon = ICON_FTP;
+				browser.numEntries++;
 			}
 		}
 	}

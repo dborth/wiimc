@@ -283,7 +283,7 @@ static void loadXMLFTPSite(int i)
 static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 {
 	mxml_node_t * next;
-	
+
 	next = mxmlFindElement(top, top, "link", NULL, NULL, MXML_DESCEND_FIRST);
 
 	while(next != NULL)

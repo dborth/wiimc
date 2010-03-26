@@ -167,7 +167,6 @@ static GuiButton * picturebarCloseBtn = NULL;
 int menuCurrent = MENU_BROWSE_VIDEOS;
 static int menuPrevious = MENU_BROWSE_VIDEOS;
 static int menuUndo = MENU_BROWSE_VIDEOS;
-bool inPlaylist = false;
 static int netEditIndex = 0; // current index of FTP/SMB share being edited
 
 // threads
@@ -1072,8 +1071,6 @@ static void UpdateAudiobarModeBtn()
 static void MenuBrowse(int menu)
 {
 	ShutoffRumble();
-	browserPlaylist[0] = 0;
-	inPlaylist = false;
 
 	switch(menu)
 	{
@@ -1218,13 +1215,6 @@ static void MenuBrowse(int menu)
 			fileBrowser.TriggerUpdate();
 		}
 
-		if(inPlaylist && fileBrowser.fileList[0]->GetState() == STATE_CLICKED)
-		{
-			fileBrowser.fileList[0]->ResetState();
-			inPlaylist = false;
-			BrowserChangeFolder(false);
-		}
-
 		// update file browser based on arrow buttons
 		// request guiShutdown if A button pressed on a file
 		for(int i=0; i<FILE_PAGESIZE; i++)
@@ -1252,19 +1242,10 @@ static void MenuBrowse(int menu)
 					if(browserList[browser.selIndex].isplaylist)
 					{
 						// parse list
-						if(menuCurrent == MENU_BROWSE_ONLINEMEDIA)
-							sprintf(browserPlaylist, "%s", browserList[browser.selIndex].filename);
-						else
-							sprintf(browserPlaylist, "%s%s", browser.dir, browserList[browser.selIndex].filename);
-						
 						int numItems = BrowserChangeFolder();
 
 						if(numItems <= 1)
 						{
-							browserPlaylist[0] = 0;
-							ErrorPrompt("Error loading playlist!");
-							inPlaylist = false;
-							BrowserChangeFolder(false);
 							continue;
 						}
 						else if(numItems == 2) // let's load this one file
@@ -1284,10 +1265,7 @@ static void MenuBrowse(int menu)
 					}
 					else
 					{
-						if(inPlaylist || browserPlaylist[0] != 0 || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
-							sprintf(loadedFile, "%s", browserList[browser.selIndex].filename);
-						else
-							sprintf(loadedFile, "%s%s", browser.dir, browserList[browser.selIndex].filename);
+						GetFullPath(browser.selIndex, loadedFile);
 					}
 
 					ShutdownMPlayer();
@@ -1368,7 +1346,7 @@ static void MenuBrowse(int menu)
 		if(playlistBtn.GetState() == STATE_CLICKED)
 		{
 			playlistBtn.ResetState();
-			inPlaylist = MusicPlaylistLoad();
+			MusicPlaylistLoad();
 		}
 
 		if(playlistSize > 0)

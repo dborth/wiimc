@@ -51,7 +51,7 @@ void UpdateCheck()
 
 		u8 * tmpbuffer = (u8 *)memalign(32,32768);
 		memset(tmpbuffer, 0, 32768);
-		retval = http_request(url, NULL, tmpbuffer, 32768);
+		retval = http_request(url, NULL, tmpbuffer, SILENT);
 		memset(url, 0, 128);
 
 		if (retval)
@@ -157,7 +157,7 @@ bool DownloadUpdate()
 	if (hfile > 0)
 	{
 		int retval;
-		retval = http_request(updateURL, hfile, NULL, (1024*1024*5));
+		retval = http_request(updateURL, hfile, NULL, NOTSILENT);
 		fclose (hfile);
 	}
 
@@ -182,12 +182,15 @@ done:
  * Initializes the Wii/GameCube network interface
  ***************************************************************************/
 
-void InitializeNetwork(bool silent)
+bool InitializeNetwork(bool silent)
 {
 	// stop if we're already initialized, or if auto-init has failed before
 	// in which case, manual initialization is required
-	if(networkInit || (silent && !autoNetworkInit))
-		return;
+	if(networkInit)
+		return true;
+
+	if(silent && !autoNetworkInit)
+		return false;
 
 	int retry = 1;
 	char ip[16];
@@ -227,6 +230,8 @@ void InitializeNetwork(bool silent)
 	}
 	if(!silent)
 		CancelAction();
+	
+	return networkInit;
 }
 
 void CloseShare(int num)
@@ -275,10 +280,7 @@ ConnectShare (int num, bool silent)
 		return false;
 	}
 
-	if(!networkInit)
-		InitializeNetwork(silent);
-
-	if(!networkInit)
+	if(!InitializeNetwork(silent))
 		return false;
 
 	while(retry)
@@ -348,29 +350,26 @@ ConnectFTP (int num, bool silent)
 		return false;
 	}
 
-	if(!networkInit)
-		InitializeNetwork(silent);
+	if(!InitializeNetwork(silent))
+		return false;
 
-	if(networkInit)
+	if(!ftpInit[num-1])
 	{
-		if(!ftpInit[num-1])
+		if(!silent)
+			ShowAction ("Connecting to FTP site...");
+
+		if(ftpInitDevice(mountpoint, WiiSettings.ftpConf[num-1].user, 
+			WiiSettings.ftpConf[num-1].pwd, WiiSettings.ftpConf[num-1].folder, 
+			WiiSettings.ftpConf[num-1].ip, 21, WiiSettings.ftpConf[num-1].passive))
 		{
-			if(!silent)
-				ShowAction ("Connecting to FTP site...");
-
-			if(ftpInitDevice(mountpoint, WiiSettings.ftpConf[num-1].user, 
-				WiiSettings.ftpConf[num-1].pwd, WiiSettings.ftpConf[num-1].folder, 
-				WiiSettings.ftpConf[num-1].ip, 21, WiiSettings.ftpConf[num-1].passive))
-			{
-				ftpInit[num-1] = true;
-			}
-			if(!silent)
-				CancelAction();
+			ftpInit[num-1] = true;
 		}
-
-		if(!ftpInit[num-1] && !silent)
-			ErrorPrompt("Failed to connect to FTP site.");
+		if(!silent)
+			CancelAction();
 	}
+
+	if(!ftpInit[num-1] && !silent)
+		ErrorPrompt("Failed to connect to FTP site.");
 
 	return ftpInit[num-1];
 }

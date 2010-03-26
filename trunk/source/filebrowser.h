@@ -58,7 +58,6 @@ enum
 
 extern BROWSERINFO browser;
 extern BROWSERENTRY * browserList;
-extern char browserPlaylist[];
 
 extern MEDIAENTRY * onlinemediaList;
 extern int onlinemediaSize;
@@ -67,9 +66,11 @@ extern MEDIAENTRY * playlist;
 extern int playlistSize;
 extern int playlistIndex;
 
-bool IsDeviceRoot(char * path);
 int FileSortCallback(const void *f1, const void *f2);
 void ResetBrowser();
+void BrowserHistoryStore(char *path);
+const char * BrowserHistoryRetrieve();
+void BrowserHistoryDiscard();
 bool AddBrowserEntry();
 bool AddMediaEntry();
 bool AddPlaylistEntry();

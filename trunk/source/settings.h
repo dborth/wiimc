@@ -113,5 +113,5 @@ const char validImageExtensions[][5] =
 
 const char validPlaylistExtensions[][5] =
 {
-	"asx", "m3u", "pls", "ram", "smil", ""
+	"asx", "m3u", "pls", "plx", "ram", "smil", ""
 };

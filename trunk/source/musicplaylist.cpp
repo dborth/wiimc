@@ -53,12 +53,20 @@ int MusicPlaylistLoad()
 	ResetBrowser();
 
 	AddBrowserEntry();
-	sprintf(browserList[0].filename, "..");
+	strcpy(browserList[0].filename, browser.dir);
 	sprintf(browserList[0].displayname, "Exit Playlist");
 	browserList[0].length = 0;
 	browserList[0].mtime = 0;
-	browserList[0].isdir = 1;
 	browserList[0].icon = ICON_FOLDER;
+
+	char *ext = strrchr(browser.dir,'.');
+	if(ext != NULL) ext++;
+
+	if(IsPlaylistExt(ext))
+		browserList[0].isplaylist = 1;
+	else
+		browserList[0].isdir = 1;
+
 	browser.numEntries++;
 
 	int i;
@@ -96,11 +104,7 @@ bool MusicPlaylistFind(int index)
 		return false;
 
 	char fullpath[MAXPATHLEN];
-
-	if(inPlaylist)
-		sprintf(fullpath, "%s", browserList[index].filename);
-	else
-		sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
+	GetFullPath(index, fullpath);
 
 	return MusicPlaylistFind(fullpath);
 }
@@ -123,48 +127,46 @@ static bool EnqueueFile(char * path, char * name)
 
 	ext++;
 
-	// check if this is a playlist
-	int i=0;
-	char *start;
-	do
+	// check if this is a playlist	
+	if(IsPlaylistExt(ext))
 	{
-		if (strcasecmp(ext, validPlaylistExtensions[i++]) == 0)
+		// this is a playlist - parse it and add the files inside
+		char fullpath[MAXPATHLEN];
+		GetFullPath(browser.selIndex, fullpath);
+		play_tree_t * list = parse_playlist_file(fullpath);
+
+		if(!list)
+			return false;
+
+		char * playlistEntry;
+		char display[MAXJOLIET+1];
+		char *start;
+		play_tree_iter_t *pt_iter = NULL;
+
+		if((pt_iter = pt_iter_create(&list, NULL)))
 		{
-			// this is a playlist - parse it and add the files inside
-			char * playlistEntry;
-			char display[MAXJOLIET+1];
-			play_tree_t * list = parse_playlist_file(browserPlaylist);
-			
-			if(!list)
-				return false;
-
-			play_tree_iter_t *pt_iter = NULL;
-
-			if((pt_iter = pt_iter_create(&list, NULL)))
+			while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
 			{
-				while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
+				start = strrchr(playlistEntry,'/');
+				if(start != NULL) // start up starting part of path
 				{
-					start = strrchr(playlistEntry,'/');
-					if(start != NULL) // start up starting part of path
-					{
-						start++;
-						sprintf(display, start);
-					}
-					else
-					{
-						strncpy(display, playlistEntry, MAXJOLIET);
-						display[MAXJOLIET] = 0;
-					}
-					EnqueueFile(playlistEntry, display);
+					start++;
+					sprintf(display, start);
 				}
-				pt_iter_destroy(&pt_iter);
+				else
+				{
+					strncpy(display, playlistEntry, MAXJOLIET);
+					display[MAXJOLIET] = 0;
+				}
+				EnqueueFile(playlistEntry, display);
 			}
-			return true;
+			pt_iter_destroy(&pt_iter);
 		}
-	} while (validPlaylistExtensions[i][0] != 0);
+		return true;
+	}
 
 	// check if this is a valid audio file
-	i=0;
+	int i=0;
 	do
 	{
 		if (strcasecmp(ext, validAudioExtensions[i]) == 0)
@@ -226,11 +228,7 @@ static bool EnqueueFolder(char * path)
 bool MusicPlaylistEnqueue(int index)
 {
 	char fullpath[MAXPATHLEN+1];
-
-	if(inPlaylist)
-		sprintf(fullpath, "%s", browserList[index].filename);
-	else
-		sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
+	GetFullPath(index, fullpath);
 	
 	if(browserList[index].isdir)
 		browserList[index].icon = ICON_FOLDER_CHECKED;
@@ -255,14 +253,10 @@ void MusicPlaylistDequeue(int index)
 {
 	bool matchFound = false;
 	char fullpath[MAXPATHLEN];
-
-	if(inPlaylist)
-		sprintf(fullpath, "%s", browserList[index].filename);
-	else
-		sprintf(fullpath, "%s%s", browser.dir, browserList[index].filename);
+	GetFullPath(index, fullpath);
 
 	int len = strlen(fullpath);
-	
+
 	if(browserList[index].isdir)
 		browserList[index].icon = ICON_FOLDER;
 	else

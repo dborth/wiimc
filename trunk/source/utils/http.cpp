@@ -199,7 +199,6 @@ static int tcp_read(const s32 s, u8 **buffer, const u32 length)
 		if ((res == 0) || (res == -EAGAIN))
 		{
 			usleep(20 * 1000);
-
 			continue;
 		}
 
@@ -218,8 +217,7 @@ static int tcp_read(const s32 s, u8 **buffer, const u32 length)
 			step++;
 		}
 	}
-
-	return left == 0;
+	return received;
 }
 
 static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
@@ -295,12 +293,13 @@ static bool http_split_url(char **host, char **path, const char *url)
 	return true;
 }
 
+#define MAX_SIZE (1024*1024*15)
+
 /****************************************************************************
  * http_request
  * Retrieves the specified URL, and stores it in the specified file or buffer
  ***************************************************************************/
-bool http_request(const char *url, FILE * hfile, u8 * buffer,
-		const u32 max_size)
+int http_request(const char *url, FILE * hfile, u8 * buffer, bool silent)
 {
 	int res = 0;
 	char *http_host;
@@ -309,14 +308,15 @@ bool http_request(const char *url, FILE * hfile, u8 * buffer,
 
 	http_res result;
 	u32 http_status;
-	u32 content_length = 0;
+	u32 sizeread = 0, content_length = 0;
 
 	int linecount;
+	
+	if (url == NULL || (hfile == NULL && buffer == NULL))
+		return 0;
+	
 	if (!http_split_url(&http_host, &http_path, url))
-		return false;
-
-	if (hfile == NULL && buffer == NULL)
-		return false;
+		return 0;
 
 	http_port = 80;
 	http_status = 404;
@@ -326,7 +326,7 @@ bool http_request(const char *url, FILE * hfile, u8 * buffer,
 	if (s < 0)
 	{
 		result = HTTPR_ERR_CONNECT;
-		return false;
+		return 0;
 	}
 
 	char *request = (char *) malloc(1024);
@@ -364,25 +364,33 @@ bool http_request(const char *url, FILE * hfile, u8 * buffer,
 		line = NULL;
 
 	}
+	
+	// length unknown - just read as much as we can
+	if(content_length == 0)
+		content_length = MAX_SIZE;
 
-	if (linecount == 32 || !content_length)
-		http_status = 404;
 	if (http_status != 200)
 	{
 		result = HTTPR_ERR_STATUS;
 		net_close(s);
-		return false;
+		return 0;
 	}
-	if (content_length > max_size)
+	if (content_length > MAX_SIZE)
 	{
 		result = HTTPR_ERR_TOOBIG;
 		net_close(s);
-		return false;
+		return 0;
 	}
 
 	if (buffer != NULL)
 	{
-		res = tcp_read(s, &buffer, content_length);
+		if(!silent)
+			ShowAction("Downloading...");
+
+		sizeread = tcp_read(s, &buffer, content_length);
+
+		if(!silent)
+			CancelAction();
 	}
 	else
 	{
@@ -391,7 +399,8 @@ bool http_request(const char *url, FILE * hfile, u8 * buffer,
 		u32 bytesLeft = content_length;
 		u32 readSize;
 
-		ShowProgress("Downloading...", 0, content_length);
+		if(!silent)
+			ShowProgress("Downloading...", 0, content_length);
 		u8 * fbuffer = (u8 *) malloc(bufSize);
 		if(fbuffer)
 		{
@@ -405,27 +414,32 @@ bool http_request(const char *url, FILE * hfile, u8 * buffer,
 				res = tcp_read(s, &fbuffer, readSize);
 				if (!res)
 					break;
-				res = fwrite(fbuffer, 1, readSize, hfile);
+
+				sizeread += res;
+				bytesLeft -= res;
+
+				res = fwrite(fbuffer, 1, res, hfile);
 				if (!res)
 					break;
 
-				bytesLeft -= readSize;
-				ShowProgress("Downloading...", (content_length - bytesLeft),
+				if(!silent)
+					ShowProgress("Downloading...", (content_length - bytesLeft),
 						content_length);
 			}
 			free(fbuffer);
 		}
-		CancelAction();
+		if(!silent)
+			CancelAction();
 	}
 
 	net_close(s);
 
-	if (!res)
+	if (content_length < MAX_SIZE && sizeread != content_length)
 	{
 		result = HTTPR_ERR_RECEIVE;
-		return false;
+		return 0;
 	}
 
 	result = HTTPR_OK;
-	return true;
+	return sizeread;
 }

@@ -28,7 +28,7 @@ struct FTPSettings {
 
 void UpdateCheck();
 bool DownloadUpdate();
-void InitializeNetwork(bool silent);
+bool InitializeNetwork(bool silent);
 bool ConnectShare (int num, bool silent);
 void CloseShare(int num);
 bool ConnectFTP(int num, bool silent);

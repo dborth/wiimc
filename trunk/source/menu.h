@@ -31,7 +31,6 @@ bool StatusSet();
 }
 
 extern int menuCurrent;
-extern bool inPlaylist;
 extern int doMPlayerGuiDraw;
 extern bool nowPlayingSet;
 extern u8 *picBuffer;

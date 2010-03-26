@@ -215,8 +215,8 @@ OBJS-$(CONFIG_RTP_MUXER)                 += rtp.o         \
                                             rtpenc.o      \
                                             rtpenc_h264.o \
                                             avc.o
-OBJS-$(CONFIG_RTSP_DEMUXER)              += rtsp.o
-OBJS-$(CONFIG_RTSP_MUXER)                += rtsp.o rtspenc.o
+OBJS-$(CONFIG_RTSP_DEMUXER)              += rtsp.o httpauth.o
+OBJS-$(CONFIG_RTSP_MUXER)                += rtsp.o rtspenc.o httpauth.o
 OBJS-$(CONFIG_SDP_DEMUXER)               += rtsp.o        \
                                             rdt.o         \
                                             rtp.o         \
@@ -272,7 +272,7 @@ OBJS+= avio.o aviobuf.o
 
 OBJS-$(CONFIG_FILE_PROTOCOL)             += file.o
 OBJS-$(CONFIG_GOPHER_PROTOCOL)           += gopher.o
-OBJS-$(CONFIG_HTTP_PROTOCOL)             += http.o
+OBJS-$(CONFIG_HTTP_PROTOCOL)             += http.o httpauth.o
 OBJS-$(CONFIG_PIPE_PROTOCOL)             += file.o
 OBJS-$(CONFIG_RTMP_PROTOCOL)             += rtmpproto.o rtmppkt.o
 OBJS-$(CONFIG_RTP_PROTOCOL)              += rtpproto.o

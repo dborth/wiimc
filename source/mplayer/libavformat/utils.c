@@ -480,7 +480,8 @@ int ff_probe_input_buffer(ByteIOContext **pb, AVInputFormat **fmt,
         return AVERROR(EINVAL);
     }
 
-    for(probe_size= PROBE_BUF_MIN; probe_size<=max_probe_size && !*fmt && ret >= 0; probe_size<<=1){
+    for(probe_size= PROBE_BUF_MIN; probe_size<=max_probe_size && !*fmt && ret >= 0;
+        probe_size = FFMIN(probe_size<<1, FFMAX(max_probe_size, probe_size+1))) {
         int ret, score = probe_size < max_probe_size ? AVPROBE_SCORE_MAX/4 : 0;
         int buf_offset = (probe_size == PROBE_BUF_MIN) ? 0 : probe_size>>1;
 
@@ -515,6 +516,11 @@ int ff_probe_input_buffer(ByteIOContext **pb, AVInputFormat **fmt,
     }
 
     av_free(buf);
+
+    if (!*fmt) {
+        return AVERROR_INVALIDDATA;
+    }
+
     if (url_fseek(*pb, 0, SEEK_SET) < 0) {
         url_fclose(*pb);
         if (url_fopen(pb, filename, URL_RDONLY) < 0)
@@ -3474,13 +3480,18 @@ void ff_url_split(char *proto, int proto_size,
     }
 }
 
-char *ff_data_to_hex(char *buff, const uint8_t *src, int s)
+char *ff_data_to_hex(char *buff, const uint8_t *src, int s, int lowercase)
 {
     int i;
-    static const char hex_table[16] = { '0', '1', '2', '3',
-                                        '4', '5', '6', '7',
-                                        '8', '9', 'A', 'B',
-                                        'C', 'D', 'E', 'F' };
+    static const char hex_table_uc[16] = { '0', '1', '2', '3',
+                                           '4', '5', '6', '7',
+                                           '8', '9', 'A', 'B',
+                                           'C', 'D', 'E', 'F' };
+    static const char hex_table_lc[16] = { '0', '1', '2', '3',
+                                           '4', '5', '6', '7',
+                                           '8', '9', 'a', 'b',
+                                           'c', 'd', 'e', 'f' };
+    const char *hex_table = lowercase ? hex_table_lc : hex_table_uc;
 
     for(i = 0; i < s; i++) {
         buff[i * 2]     = hex_table[src[i] >> 4];

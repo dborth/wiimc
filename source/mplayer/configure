@@ -8446,15 +8446,12 @@ AS = $_cc
 CC = $_cc
 CXX = $_cc
 HOST_CC = $_host_cc
-YASM = $_yasm
 INSTALL = $_install
 INSTALLSTRIP = $_install_strip
-RANLIB = $_ranlib
 WINDRES = $_windres
 
 CFLAGS = $CFLAGS $extra_cflags
 ASFLAGS = $CFLAGS $extra_cflags
-OPTFLAGS = $CFLAGS $extra_cflags
 CXXFLAGS = $CXXFLAGS $extra_cflags $extra_cxxflags
 CFLAGS_DHAHELPER = $cflags_dhahelper
 CFLAGS_FAAD_FIXED = $cflags_faad_fixed
@@ -8465,7 +8462,6 @@ CFLAGS_NO_OMIT_LEAF_FRAME_POINTER = $cflags_no_omit_leaf_frame_pointer
 CFLAGS_STACKREALIGN = $cflags_stackrealign
 CFLAGS_SVGALIB_HELPER = $cflags_svgalib_helper
 CFLAGS_TREMOR_LOW = $cflags_tremor_low
-YASMFLAGS = $YASMFLAGS
 
 EXTRALIBS = $extra_ldflags $_ld_static $_ld_lm $extra_libs
 EXTRALIBS_MPLAYER = $libs_mplayer
@@ -8535,8 +8531,6 @@ FAAC=$_faac
 FAAD = $_faad
 FAAD_INTERNAL = $_faad_internal
 FASTMEMCPY = $_fastmemcpy
-$mak_hardcoded_tables
-$mak_libavcodec_mpegaudio_hp
 FBDEV = $_fbdev
 FREETYPE = $_freetype
 FTP = $_ftp
@@ -8577,7 +8571,6 @@ LIBSMBCLIENT = $_smb
 LIBTHEORA = $_theora
 LIRC = $_lirc
 LIVE555 = $_live
-MACOSX_BUNDLE = $_macosx_bundle
 MACOSX_FINDER = $_macosx_finder
 MD5SUM = $_md5sum
 MGA = $_mga
@@ -8685,6 +8678,10 @@ HOSTCFLAGS=-D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 -O3
 HOSTLIBS=-lm
 CC_O=-o \$@
 LD=gcc
+RANLIB = $_ranlib
+YASM = $_yasm
+YASMFLAGS = $YASMFLAGS
+
 CONFIG_STATIC=yes
 SRC_PATH=..
 BUILD_ROOT=..
@@ -8704,6 +8701,9 @@ CONFIG_LPC=yes
 CONFIG_LSP=yes
 CONFIG_MDCT=yes
 CONFIG_RDFT=yes
+
+$mak_hardcoded_tables
+$mak_libavcodec_mpegaudio_hp
 
 CONFIG_BZLIB=$bzlib
 CONFIG_ENCODERS=yes

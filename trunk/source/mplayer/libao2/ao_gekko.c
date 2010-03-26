@@ -34,7 +34,6 @@
 #include "help_mp.h"
 
 #include <ogcsys.h>
-#include "osdep/plat_gekko.h"
 #include "osdep/ave-rvl.h"
 
 

@@ -52,7 +52,7 @@ char MPLAYER_LIBDIR[100];
 #define HAVE_MEMCPY 1
 /* libfaad2 */
 #define HAVE_STRING_H 1
-#undef HAVE_STRINGS_H
+#define HAVE_STRINGS_H 0
 #define HAVE_SYS_STAT_H 1
 #define HAVE_SYS_TYPES_H 1
 /* libdvdnav */
@@ -67,13 +67,13 @@ char MPLAYER_LIBDIR[100];
 #define HAVE_ALTIVEC_H 0
 #define HAVE_MALLOC_H 1
 #undef HAVE_SYS_MMAN_H
-
+#define MAP_FAILED ((void *) -1)
 #undef HAVE_SOUNDCARD_H
 #undef HAVE_SYS_ASOUNDLIB_H
-#define HAVE_SYS_SOUNDCARD_H 1
+#undef HAVE_SYS_SOUNDCARD_H
 #undef HAVE_SYS_SYSINFO_H
 #undef HAVE_TERMIOS_H
-#define HAVE_SYS_TERMIOS_H 1
+#undef HAVE_SYS_TERMIOS_H
 #define HAVE_WINSOCK2_H 0
 
 

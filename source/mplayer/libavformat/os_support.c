@@ -22,6 +22,7 @@
 
 /* needed by inet_aton() */
 #define _SVID_SOURCE
+#define _DARWIN_C_SOURCE
 
 #include "config.h"
 #include "avformat.h"
@@ -45,7 +46,7 @@
 #include <stdlib.h>
 #include <strings.h>
 
-int inet_aton (const char * str, struct in_addr * add)
+int ff_inet_aton (const char * str, struct in_addr * add)
 {
     unsigned int add1 = 0, add2 = 0, add3 = 0, add4 = 0;
 
@@ -57,6 +58,11 @@ int inet_aton (const char * str, struct in_addr * add)
     add->s_addr = htonl((add1 << 24) + (add2 << 16) + (add3 << 8) + add4);
 
     return 1;
+}
+#else
+int ff_inet_aton (const char * str, struct in_addr * add)
+{
+    return inet_aton(str, add);
 }
 #endif /* !HAVE_INET_ATON */
 
@@ -85,7 +91,7 @@ int ff_getaddrinfo(const char *node, const char *service,
     sin->sin_family = AF_INET;
 
     if (node) {
-        if (!inet_aton(node, &sin->sin_addr)) {
+        if (!ff_inet_aton(node, &sin->sin_addr)) {
             if (hints && (hints->ai_flags & AI_NUMERICHOST)) {
                 av_free(sin);
                 return EAI_FAIL;
@@ -210,6 +216,7 @@ int ff_getnameinfo(const struct sockaddr *sa, int salen,
         } else
     #endif
             snprintf(serv, servlen, "%d", ntohs(sin->sin_port));
+            
     }
 
     return 0;
@@ -226,41 +233,6 @@ const char *ff_gai_strerror(int ecode)
     return "Unknown error";
 }
 #endif
-
-/* resolve host with also IP address parsing */
-int resolve_host(struct in_addr *sin_addr, const char *hostname)
-{
-
-    if (!inet_aton(hostname, sin_addr)) {
-#if HAVE_GETADDRINFO
-        struct addrinfo *ai, *cur;
-        struct addrinfo hints;
-        memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_INET;
-        if (getaddrinfo(hostname, NULL, &hints, &ai))
-            return -1;
-        /* getaddrinfo returns a linked list of addrinfo structs.
-         * Even if we set ai_family = AF_INET above, make sure
-         * that the returned one actually is of the correct type. */
-        for (cur = ai; cur; cur = cur->ai_next) {
-            if (cur->ai_family == AF_INET) {
-                *sin_addr = ((struct sockaddr_in *)cur->ai_addr)->sin_addr;
-                freeaddrinfo(ai);
-                return 0;
-            }
-        }
-        freeaddrinfo(ai);
-        return -1;
-#else
-        struct hostent *hp;
-        hp = gethostbyname(hostname);
-        if (!hp)
-            return -1;
-        memcpy(sin_addr, hp->h_addr_list[0], sizeof(struct in_addr));
-#endif
-    }
-    return 0;
-}
 
 int ff_socket_nonblock(int socket, int enable)
 {

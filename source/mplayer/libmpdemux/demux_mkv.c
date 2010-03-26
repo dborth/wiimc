@@ -2744,6 +2744,13 @@ handle_block (demuxer_t *demuxer, uint8_t *block, uint64_t length,
               if (buffer)
                 {
                   dp = new_demux_packet (size);
+                  if(dp->len!=size)
+                  {
+                  	free_demux_packet(dp);
+                  	free(lace_size);
+					printf("new_demux_packet: not enough ram\n");fflush(stdout);
+					return 0;
+				  }
                   memcpy (dp->buffer, buffer, size);
                   if (modified)
                     free (buffer);

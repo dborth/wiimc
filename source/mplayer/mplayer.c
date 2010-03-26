@@ -148,7 +148,7 @@ static int cfg_include(m_option_t *conf, char *filename){
 	return m_config_parse_config_file(mconfig, filename);
 }
 
-#include "get_path.h"
+#include "path.h"
 
 //**************************************************************************//
 //**************************************************************************//
@@ -1424,7 +1424,7 @@ static mp_osd_msg_t* osd_msg_stack = NULL;
  *
  */
 
-void set_osd_msg(int id, int level, int time, const char* fmt, ...) {
+void set_osd_msg(int id, int level, unsigned int time, const char* fmt, ...) {
     mp_osd_msg_t *msg,*last=NULL;
     va_list va;
     int r;
@@ -2806,6 +2806,9 @@ int gui_no_filename=0;
 #ifdef CONFIG_PRIORITY
     set_priority();
 #endif
+
+  if (codec_path)
+    set_codec_path(codec_path);
 
 #ifndef CONFIG_GUI
     if(use_gui){

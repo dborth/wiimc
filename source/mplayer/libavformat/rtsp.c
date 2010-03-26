@@ -19,9 +19,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/* needed by inet_aton() */
-#define _SVID_SOURCE
-
 #include "libavutil/base64.h"
 #include "libavutil/avstring.h"
 #include "libavutil/intreadwrite.h"
@@ -32,7 +29,9 @@
 #include <sys/select.h>
 #endif
 #include <strings.h>
+#include "internal.h"
 #include "network.h"
+#include "os_support.h"
 #include "rtsp.h"
 
 #include "rtpdec.h"
@@ -359,7 +358,7 @@ static void sdp_parse_line(AVFormatContext *s, SDPParseState *s1,
         if (strcmp(buf1, "IP4") != 0)
             return;
         get_word_sep(buf1, sizeof(buf1), "/", &p);
-        if (inet_aton(buf1, &sdp_ip) == 0)
+        if (ff_inet_aton(buf1, &sdp_ip) == 0)
             return;
         ttl = 16;
         if (*p == '/') {
@@ -449,8 +448,8 @@ static void sdp_parse_line(AVFormatContext *s, SDPParseState *s1,
             rtsp_st = st->priv_data;
 
             /* XXX: may need to add full url resolution */
-            url_split(proto, sizeof(proto), NULL, 0, NULL, 0,
-                      NULL, NULL, 0, p);
+            ff_url_split(proto, sizeof(proto), NULL, 0, NULL, 0,
+                         NULL, NULL, 0, p);
             if (proto[0] == '\0') {
                 /* relative control URL */
                 if (rtsp_st->control_url[strlen(rtsp_st->control_url)-1]!='/')
@@ -585,7 +584,13 @@ void ff_rtsp_close_streams(AVFormatContext *s)
                 if (s->oformat) {
                     AVFormatContext *rtpctx = rtsp_st->transport_priv;
                     av_write_trailer(rtpctx);
-                    url_fclose(rtpctx->pb);
+                    if (rt->lower_transport == RTSP_LOWER_TRANSPORT_TCP) {
+                        uint8_t *ptr;
+                        url_close_dyn_buf(rtpctx->pb, &ptr);
+                        av_free(ptr);
+                    } else {
+                        url_fclose(rtpctx->pb);
+                    }
                     av_metadata_free(&rtpctx->streams[0]->metadata);
                     av_metadata_free(&rtpctx->metadata);
                     av_free(rtpctx->streams[0]);
@@ -610,7 +615,10 @@ void ff_rtsp_close_streams(AVFormatContext *s)
     av_freep(&rt->auth_b64);
 }
 
-static void *rtsp_rtp_mux_open(AVFormatContext *s, AVStream *st, URLContext *handle) {
+static void *rtsp_rtp_mux_open(AVFormatContext *s, AVStream *st,
+                               URLContext *handle)
+{
+    RTSPState *rt = s->priv_data;
     AVFormatContext *rtpctx;
     int ret;
     AVOutputFormat *rtp_format = av_guess_format("rtp", NULL, NULL);
@@ -633,17 +641,29 @@ static void *rtsp_rtp_mux_open(AVFormatContext *s, AVStream *st, URLContext *han
     /* Copy other stream parameters. */
     rtpctx->streams[0]->sample_aspect_ratio = st->sample_aspect_ratio;
 
+    /* Set the synchronized start time. */
+    rtpctx->start_time_realtime = rt->start_time;
+
     /* Remove the local codec, link to the original codec
      * context instead, to give the rtp muxer access to
      * codec parameters. */
     av_free(rtpctx->streams[0]->codec);
     rtpctx->streams[0]->codec = st->codec;
 
-    url_fdopen(&rtpctx->pb, handle);
+    if (handle) {
+        url_fdopen(&rtpctx->pb, handle);
+    } else
+        url_open_dyn_packet_buf(&rtpctx->pb, RTSP_TCP_MAX_PACKET_SIZE);
     ret = av_write_header(rtpctx);
 
     if (ret) {
-        url_fclose(rtpctx->pb);
+        if (handle) {
+            url_fclose(rtpctx->pb);
+        } else {
+            uint8_t *ptr;
+            url_close_dyn_buf(rtpctx->pb, &ptr);
+            av_free(ptr);
+        }
         av_free(rtpctx->streams[0]);
         av_free(rtpctx);
         return NULL;
@@ -803,7 +823,7 @@ static void rtsp_parse_transport(RTSPMessageHeader *reply, const char *p)
                 if (*p == '=') {
                     p++;
                     get_word_sep(buf, sizeof(buf), ";,", &p);
-                    if (inet_aton(buf, &ipaddr))
+                    if (ff_inet_aton(buf, &ipaddr))
                         th->destination = ntohl(ipaddr.s_addr);
                 }
             }
@@ -856,7 +876,7 @@ void ff_rtsp_parse_line(RTSPMessageHeader *reply, const char *buf)
 }
 
 /* skip a RTP/TCP interleaved packet */
-static void rtsp_skip_packet(AVFormatContext *s)
+void ff_rtsp_skip_packet(AVFormatContext *s)
 {
     RTSPState *rt = s->priv_data;
     int ret, len, len1;
@@ -912,7 +932,7 @@ int ff_rtsp_read_reply(AVFormatContext *s, RTSPMessageHeader *reply,
                 if (return_on_interleaved_data) {
                     return 1;
                 } else
-                rtsp_skip_packet(s);
+                    ff_rtsp_skip_packet(s);
             } else if (ch != '\r') {
                 if ((q - buf) < sizeof(buf) - 1)
                     *q++ = ch;
@@ -1090,8 +1110,8 @@ static int make_setup_request(AVFormatContext *s, const char *host, int port,
             /* first try in specified port range */
             if (RTSP_RTP_PORT_MIN != 0) {
                 while (j <= RTSP_RTP_PORT_MAX) {
-                    snprintf(buf, sizeof(buf), "rtp://%s?localport=%d",
-                             host, j);
+                    ff_url_join(buf, sizeof(buf), "rtp", NULL, host, -1,
+                                "?localport=%d", j);
                     /* we will use two ports per rtp stream (rtp and rtcp) */
                     j += 2;
                     if (url_open(&rtsp_st->rtp_handle, buf, URL_RDWR) == 0)
@@ -1201,8 +1221,8 @@ static int make_setup_request(AVFormatContext *s, const char *host, int port,
             char url[1024];
 
             /* XXX: also use address if specified */
-            snprintf(url, sizeof(url), "rtp://%s:%d",
-                     host, reply->transports[0].server_port_min);
+            ff_url_join(url, sizeof(url), "rtp", NULL, host,
+                        reply->transports[0].server_port_min, NULL);
             if (!(rt->server_type == RTSP_SERVER_WMS && i > 1) &&
                 rtp_set_remote_url(rtsp_st->rtp_handle, url) < 0) {
                 err = AVERROR_INVALIDDATA;
@@ -1230,8 +1250,8 @@ static int make_setup_request(AVFormatContext *s, const char *host, int port,
                 port      = rtsp_st->sdp_port;
                 ttl       = rtsp_st->sdp_ttl;
             }
-            snprintf(url, sizeof(url), "rtp://%s:%d?ttl=%d",
-                     inet_ntoa(in), port, ttl);
+            ff_url_join(url, sizeof(url), "rtp", NULL, inet_ntoa(in),
+                        port, "?ttl=%d", ttl);
             if (url_open(&rtsp_st->rtp_handle, url, URL_RDWR) < 0) {
                 err = AVERROR_INVALIDDATA;
                 goto fail;
@@ -1291,10 +1311,9 @@ static int rtsp_read_play(AVFormatContext *s)
     return 0;
 }
 
-static int rtsp_setup_input_streams(AVFormatContext *s)
+static int rtsp_setup_input_streams(AVFormatContext *s, RTSPMessageHeader *reply)
 {
     RTSPState *rt = s->priv_data;
-    RTSPMessageHeader reply1, *reply = &reply1;
     char cmd[1024];
     unsigned char *content = NULL;
     int ret;
@@ -1303,7 +1322,7 @@ static int rtsp_setup_input_streams(AVFormatContext *s)
     snprintf(cmd, sizeof(cmd),
              "DESCRIBE %s RTSP/1.0\r\n"
              "Accept: application/sdp\r\n",
-             s->filename);
+             rt->control_uri);
     if (rt->server_type == RTSP_SERVER_REAL) {
         /**
          * The Require: attribute is needed for proper streaming from
@@ -1330,23 +1349,42 @@ static int rtsp_setup_input_streams(AVFormatContext *s)
     return 0;
 }
 
-static int rtsp_setup_output_streams(AVFormatContext *s)
+static int rtsp_setup_output_streams(AVFormatContext *s, const char *addr)
 {
     RTSPState *rt = s->priv_data;
     RTSPMessageHeader reply1, *reply = &reply1;
     char cmd[1024];
     int i;
     char *sdp;
+    AVFormatContext sdp_ctx, *ctx_array[1];
+
+    rt->start_time = av_gettime();
 
     /* Announce the stream */
     snprintf(cmd, sizeof(cmd),
              "ANNOUNCE %s RTSP/1.0\r\n"
              "Content-Type: application/sdp\r\n",
-             s->filename);
+             rt->control_uri);
     sdp = av_mallocz(8192);
     if (sdp == NULL)
         return AVERROR(ENOMEM);
-    if (avf_sdp_create(&s, 1, sdp, 8192)) {
+    /* We create the SDP based on the RTSP AVFormatContext where we
+     * aren't allowed to change the filename field. (We create the SDP
+     * based on the RTSP context since the contexts for the RTP streams
+     * don't exist yet.) In order to specify a custom URL with the actual
+     * peer IP instead of the originally specified hostname, we create
+     * a temporary copy of the AVFormatContext, where the custom URL is set.
+     *
+     * FIXME: Create the SDP without copying the AVFormatContext.
+     * This either requires setting up the RTP stream AVFormatContexts
+     * already here (complicating things immensely) or getting a more
+     * flexible SDP creation interface.
+     */
+    sdp_ctx = *s;
+    ff_url_join(sdp_ctx.filename, sizeof(sdp_ctx.filename),
+                "rtsp", NULL, addr, -1, NULL);
+    ctx_array[0] = &sdp_ctx;
+    if (avf_sdp_create(ctx_array, 1, sdp, 8192)) {
         av_free(sdp);
         return AVERROR_INVALIDDATA;
     }
@@ -1369,7 +1407,7 @@ static int rtsp_setup_output_streams(AVFormatContext *s)
         st->priv_data = rtsp_st;
         rtsp_st->stream_index = i;
 
-        av_strlcpy(rtsp_st->control_url, s->filename, sizeof(rtsp_st->control_url));
+        av_strlcpy(rtsp_st->control_url, rt->control_uri, sizeof(rtsp_st->control_url));
         /* Note, this must match the relative uri set in the sdp content */
         av_strlcatf(rtsp_st->control_url, sizeof(rtsp_st->control_url),
                     "/streamid=%d", i);
@@ -1384,14 +1422,19 @@ int ff_rtsp_connect(AVFormatContext *s)
     char host[1024], path[1024], tcpname[1024], cmd[2048], auth[128];
     char *option_list, *option, *filename;
     URLContext *rtsp_hd;
-    int port, err;
+    int port, err, tcp_fd;
     RTSPMessageHeader reply1, *reply = &reply1;
     int lower_transport_mask = 0;
     char real_challenge[64];
+    struct sockaddr_storage peer;
+    socklen_t peer_len = sizeof(peer);
+
+    if (!ff_network_init())
+        return AVERROR(EIO);
 redirect:
     /* extract hostname and port */
-    url_split(NULL, 0, auth, sizeof(auth),
-              host, sizeof(host), &port, path, sizeof(path), s->filename);
+    ff_url_split(NULL, 0, auth, sizeof(auth),
+                 host, sizeof(host), &port, path, sizeof(path), s->filename);
     if (*auth) {
         int auth_len = strlen(auth), b64_len = ((auth_len + 2) / 3) * 4 + 1;
 
@@ -1406,9 +1449,11 @@ redirect:
         port = RTSP_DEFAULT_PORT;
 
     /* search for options */
-    option_list = strchr(path, '?');
+    option_list = strrchr(path, '?');
     if (option_list) {
-        filename = strchr(s->filename, '?');
+        /* Strip out the RTSP specific options, write out the rest of
+         * the options back into the same string. */
+        filename = option_list;
         while (option_list) {
             /* move the option pointer */
             option = ++option_list;
@@ -1418,14 +1463,17 @@ redirect:
 
             /* handle the options */
             if (!strcmp(option, "udp")) {
-                lower_transport_mask = (1<< RTSP_LOWER_TRANSPORT_UDP);
+                lower_transport_mask |= (1<< RTSP_LOWER_TRANSPORT_UDP);
             } else if (!strcmp(option, "multicast")) {
-                lower_transport_mask = (1<< RTSP_LOWER_TRANSPORT_UDP_MULTICAST);
+                lower_transport_mask |= (1<< RTSP_LOWER_TRANSPORT_UDP_MULTICAST);
             } else if (!strcmp(option, "tcp")) {
-                lower_transport_mask = (1<< RTSP_LOWER_TRANSPORT_TCP);
+                lower_transport_mask |= (1<< RTSP_LOWER_TRANSPORT_TCP);
             } else {
-                strcpy(++filename, option);
-                filename += strlen(option);
+                /* Write options back into the buffer, using memmove instead
+                 * of strcpy since the strings may overlap. */
+                int len = strlen(option);
+                memmove(++filename, option, len);
+                filename += len;
                 if (option_list) *filename = '&';
             }
         }
@@ -1436,18 +1484,19 @@ redirect:
         lower_transport_mask = (1 << RTSP_LOWER_TRANSPORT_NB) - 1;
 
     if (s->oformat) {
-        /* Only UDP output is supported at the moment. */
-        lower_transport_mask &= 1 << RTSP_LOWER_TRANSPORT_UDP;
+        /* Only UDP or TCP - UDP multicast isn't supported. */
+        lower_transport_mask &= (1 << RTSP_LOWER_TRANSPORT_UDP) |
+                                (1 << RTSP_LOWER_TRANSPORT_TCP);
         if (!lower_transport_mask) {
             av_log(s, AV_LOG_ERROR, "Unsupported lower transport method, "
-                                    "only UDP is supported for output.\n");
+                                    "only UDP and TCP are supported for output.\n");
             err = AVERROR(EINVAL);
             goto fail;
         }
     }
 
     /* open the tcp connexion */
-    snprintf(tcpname, sizeof(tcpname), "tcp://%s:%d", host, port);
+    ff_url_join(tcpname, sizeof(tcpname), "tcp", NULL, host, port, NULL);
     if (url_open(&rtsp_hd, tcpname, URL_RDWR) < 0) {
         err = AVERROR(EIO);
         goto fail;
@@ -1455,13 +1504,22 @@ redirect:
     rt->rtsp_hd = rtsp_hd;
     rt->seq = 0;
 
+    tcp_fd = url_get_file_handle(rtsp_hd);
+    if (!getpeername(tcp_fd, (struct sockaddr*) &peer, &peer_len)) {
+        getnameinfo((struct sockaddr*) &peer, peer_len, host, sizeof(host),
+                    NULL, 0, NI_NUMERICHOST);
+    }
+
+    /* Construct the URI used in request; this is similar to s->filename,
+     * but with authentication credentials removed and RTSP specific options
+     * stripped out. */
+    ff_url_join(rt->control_uri, sizeof(rt->control_uri), "rtsp", NULL,
+                host, port, "%s", path);
     /* request options supported by the server; this also detects server
      * type */
-    av_strlcpy(rt->control_uri, s->filename,
-               sizeof(rt->control_uri));
     for (rt->server_type = RTSP_SERVER_RTP;;) {
         snprintf(cmd, sizeof(cmd),
-                 "OPTIONS %s RTSP/1.0\r\n", s->filename);
+                 "OPTIONS %s RTSP/1.0\r\n", rt->control_uri);
         if (rt->server_type == RTSP_SERVER_REAL)
             av_strlcat(cmd,
                        /**
@@ -1496,9 +1554,9 @@ redirect:
     }
 
     if (s->iformat)
-        err = rtsp_setup_input_streams(s);
+        err = rtsp_setup_input_streams(s, reply);
     else
-        err = rtsp_setup_output_streams(s);
+        err = rtsp_setup_output_streams(s, host);
     if (err)
         goto fail;
 
@@ -1531,6 +1589,7 @@ redirect:
                s->filename);
         goto redirect;
     }
+    ff_network_close();
     return err;
 }
 #endif
@@ -1611,7 +1670,9 @@ static int udp_read_packet(AVFormatContext *s, RTSPStream **prtsp_st,
             if (tcp_fd != -1 && FD_ISSET(tcp_fd, &rfds)) {
                 RTSPMessageHeader reply;
 
-                ff_rtsp_read_reply(s, &reply, NULL, 0);
+                ret = ff_rtsp_read_reply(s, &reply, NULL, 0);
+                if (ret < 0)
+                    return ret;
                 /* XXX: parse message */
                 if (rt->state != RTSP_STATE_STREAMING)
                     return 0;
@@ -1881,11 +1942,12 @@ static int rtsp_read_close(AVFormatContext *s)
 #endif
     snprintf(cmd, sizeof(cmd),
              "TEARDOWN %s RTSP/1.0\r\n",
-             s->filename);
+             rt->control_uri);
     ff_rtsp_send_cmd_async(s, cmd);
 
     ff_rtsp_close_streams(s);
     url_close(rt->rtsp_hd);
+    ff_network_close();
     return 0;
 }
 
@@ -1933,6 +1995,9 @@ static int sdp_read_header(AVFormatContext *s, AVFormatParameters *ap)
     char *content;
     char url[1024];
 
+    if (!ff_network_init())
+        return AVERROR(EIO);
+
     /* read the whole sdp file */
     /* XXX: better loading */
     content = av_malloc(SDP_MAX_SIZE);
@@ -1950,11 +2015,10 @@ static int sdp_read_header(AVFormatContext *s, AVFormatParameters *ap)
     for (i = 0; i < rt->nb_rtsp_streams; i++) {
         rtsp_st = rt->rtsp_streams[i];
 
-        snprintf(url, sizeof(url), "rtp://%s:%d?localport=%d&ttl=%d",
-                 inet_ntoa(rtsp_st->sdp_ip),
-                 rtsp_st->sdp_port,
-                 rtsp_st->sdp_port,
-                 rtsp_st->sdp_ttl);
+        ff_url_join(url, sizeof(url), "rtp", NULL,
+                    inet_ntoa(rtsp_st->sdp_ip), rtsp_st->sdp_port,
+                    "?localport=%d&ttl=%d", rtsp_st->sdp_port,
+                    rtsp_st->sdp_ttl);
         if (url_open(&rtsp_st->rtp_handle, url, URL_RDWR) < 0) {
             err = AVERROR_INVALIDDATA;
             goto fail;
@@ -1965,12 +2029,14 @@ static int sdp_read_header(AVFormatContext *s, AVFormatParameters *ap)
     return 0;
 fail:
     ff_rtsp_close_streams(s);
+    ff_network_close();
     return err;
 }
 
 static int sdp_read_close(AVFormatContext *s)
 {
     ff_rtsp_close_streams(s);
+    ff_network_close();
     return 0;
 }
 

@@ -44,6 +44,8 @@
 
 #define WHITES " \n\r\t"
 
+#define mp_pretty_title(s) (strrchr((s),',')==NULL?(char*)(s):(strrchr((s),',')+1))
+
 static void
 strstrip(char* str) {
   char* i;
@@ -420,7 +422,8 @@ parse_ref_ini(play_tree_parser_t* p) {
 
 static play_tree_t*
 parse_m3u(play_tree_parser_t* p) {
-  char* line;
+  char *line, *title = NULL;
+  
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying extended m3u playlist...\n");
@@ -449,16 +452,33 @@ parse_m3u(play_tree_parser_t* p) {
           strtol(line+8,&line,10), line+2);
       }
 #endif
+ 	  /// start denper's changes
+	  // Get the title of .m3u entry
+	  title = realloc(title, strlen(mp_pretty_title(line))+1);
+	  strcpy(title, mp_pretty_title(line));
+	  /// end denper's changes
+	  
       continue;
     }
     entry = play_tree_new();
     play_tree_add_file(entry,line);
+	
+	/// start denper's changes
+	// Add the title parameter if it exists
+	play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
+	/// end denper's changes
+		
     if(!list)
       list = entry;
     else
       play_tree_append_entry(last_entry,entry);
     last_entry = entry;
   }
+  /// start denper's changes
+  // Free the memory of title pointer
+  free(title); 
+  title = NULL;
+  /// end denper's changes
 
   if(!list) return NULL;
   entry = play_tree_new();
@@ -469,9 +489,10 @@ parse_m3u(play_tree_parser_t* p) {
 static play_tree_t*
 parse_smil(play_tree_parser_t* p) {
   int entrymode=0;
-  char* line,source[512],*pos,*s_start,*s_end,*src_line;
+  char* line,source[512],title[128],*pos,*pos1,*s_start,*s_end,*src_line;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
   int is_rmsmil = 0;
+  int exists_title = 0;
   unsigned int npkt, ttlpkt;
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying smil playlist...\n");
@@ -566,6 +587,36 @@ parse_smil(play_tree_parser_t* p) {
      }
     }
     if (entrymode) { //Entry found but not yet filled
+    
+	  /// start denper's changes	  
+	  // Get the title of .smi entry
+	  exists_title = 0;
+	  pos1 = strstr(pos,"title=");
+	  if (pos1 != NULL) {
+		while(1) {
+			if (pos1[6] != '"' && pos1[6] != '\'') {
+			  mp_msg(MSGT_PLAYTREE,MSGL_V,"Unknown delimiter %c in source line %s\n", pos1[6], line);
+			  break;
+			}
+			s_start=pos1+7;
+			s_end=strchr(s_start,pos1[6]);
+			if (s_end == NULL) {
+			  mp_msg(MSGT_PLAYTREE,MSGL_V,"Error parsing this source line %s\n",line);
+			  break;
+			}
+			if (s_end-s_start> 127) {
+			  mp_msg(MSGT_PLAYTREE,MSGL_V,"Cannot store such a large source %s\n",line);
+			  break;
+			}
+			strncpy(title,s_start,s_end-s_start);
+			title[(s_end-s_start)]='\0'; // Null terminate
+			exists_title = 1;
+			break;
+		}
+		
+      }
+	  /// end denper's changes   
+	   
       pos = strstr(pos,"src=");   // Is source present on this line
       if (pos != NULL) {
         entrymode=0;
@@ -587,6 +638,13 @@ parse_smil(play_tree_parser_t* p) {
         source[(s_end-s_start)]='\0'; // Null terminate
         entry = play_tree_new();
         play_tree_add_file(entry,source);
+
+		/// start denper's changes
+		// Add the title parameter if it exists
+		if(exists_title)
+			play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
+		/// end denper's changes
+
         if(!list)  //Insert new entry
           list = entry;
         else

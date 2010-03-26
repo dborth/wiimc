@@ -106,9 +106,10 @@ theora_header (AVFormatContext * s, int idx)
 
         st->codec->codec_type = CODEC_TYPE_VIDEO;
         st->codec->codec_id = CODEC_ID_THEORA;
+        st->need_parsing = AVSTREAM_PARSE_HEADERS;
 
     } else if (os->buf[os->pstart] == 0x83) {
-        vorbis_comment (s, os->buf + os->pstart + 7, os->psize - 8);
+        ff_vorbis_comment (s, &st->metadata, os->buf + os->pstart + 7, os->psize - 8);
     }
 
     st->codec->extradata = av_realloc (st->codec->extradata,

@@ -22,10 +22,10 @@
 
 #include "seek.h"
 #include "libavutil/mem.h"
+#include "internal.h"
 
 // NOTE: implementation should be moved here in another patch, to keep patches
 // separated.
-extern void av_read_frame_flush(AVFormatContext *s);
 
 /**
  * helper structure describing keyframe search state of one stream
@@ -237,7 +237,7 @@ static void search_hi_lo_keyframes(AVFormatContext *s,
     }
 
     // Clean up the parser.
-    av_read_frame_flush(s);
+    ff_read_frame_flush(s);
 }
 
 int64_t ff_gen_syncpoint_search(AVFormatContext *s,
@@ -451,7 +451,7 @@ void ff_restore_parser_state(AVFormatContext *s, AVParserState *state)
     int i;
     AVStream *st;
     AVParserStreamState *ss;
-    av_read_frame_flush(s);
+    ff_read_frame_flush(s);
 
     if (!state)
         return;

@@ -443,6 +443,10 @@ static int UDFFileEntry( uint8_t *data, uint8_t *FileType,
 
   L_EA = GETN4( 168 );
   L_AD = GETN4( 172 );
+
+  if (176 + L_EA + L_AD > DVD_VIDEO_LB_LEN)
+    return 0;
+
   p = 176 + L_EA;
   while( p < 176 + L_EA + L_AD ) {
     switch( flags & 0x0007 ) {

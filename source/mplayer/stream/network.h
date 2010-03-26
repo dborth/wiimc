@@ -62,7 +62,8 @@
 typedef int socklen_t;
 #endif
 
-#define BUFFER_SIZE		2048
+//#define BUFFER_SIZE		2048
+#define BUFFER_SIZE		4096
 
 typedef struct {
 	const char *mime_type;

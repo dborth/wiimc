@@ -269,7 +269,7 @@ SRCS_COMMON-$(TREMOR_INTERNAL)       += tremor/bitwise.c \
                                         tremor/floor1.c \
                                         tremor/framing.c \
                                         tremor/info.c \
-                                        tremor/mapping0.c \
+										tremor/mapping0.c \
                                         tremor/mdct.c \
                                         tremor/registry.c \
                                         tremor/res012.c \
@@ -322,6 +322,7 @@ SRCS_COMMON-$(WIN32DLL)              += libmpcodecs/ad_acm.c \
                                         loader/dshow/DS_VideoDecoder.c \
                                         loader/dshow/allocator.c \
                                         loader/dshow/cmediasample.c \
+                                        loader/dshow/graph.c \
                                         loader/dshow/guids.c \
                                         loader/dshow/inputpin.c \
                                         loader/dshow/mediatype.c \
@@ -343,12 +344,12 @@ SRCS_COMMON = asxparser.c \
               edl.c \
               find_sub.c \
               fmt-conversion.c \
-              get_path.c \
               m_config.c \
               m_option.c \
               m_struct.c \
               mpcommon.c \
               parser-cfg.c \
+              path.c \
               playtree.c \
               playtreeparser.c \
               spudec.c \
@@ -430,6 +431,7 @@ SRCS_COMMON = asxparser.c \
               libmpcodecs/vf_field.c \
               libmpcodecs/vf_fil.c \
               libmpcodecs/vf_filmdint.c \
+              libmpcodecs/vf_fixpts.c \
               libmpcodecs/vf_flip.c \
               libmpcodecs/vf_format.c \
               libmpcodecs/vf_framestep.c \
@@ -598,7 +600,6 @@ SRCS_MPLAYER-$(IVTV)         += libao2/ao_ivtv.c libvo/vo_ivtv.c
 SRCS_MPLAYER-$(JACK)         += libao2/ao_jack.c
 SRCS_MPLAYER-$(JOYSTICK)     += input/joystick.c
 SRCS_MPLAYER-$(JPEG)         += libvo/vo_jpeg.c
-SRCS_MPLAYER-$(KAI)          += libao2/ao_kai.c
 SRCS_MPLAYER-$(KVA)          += libvo/vo_kva.c
 SRCS_MPLAYER-$(LIBAVCODEC)   += libvo/vo_png.c
 SRCS_MPLAYER-$(LIBMENU)      += libmenu/menu.c \
@@ -725,7 +726,6 @@ SRCS_MENCODER = mencoder.c \
                 libmpdemux/muxer_rawaudio.c \
                 libmpdemux/muxer_rawvideo.c \
                 $(SRCS_MENCODER-yes)
-
 
 COMMON_LIBS-$(LIBAVFORMAT_A)      += libavformat/libavformat.a
 COMMON_LIBS-$(LIBAVCODEC_A)       += libavcodec/libavcodec.a
@@ -877,10 +877,15 @@ $(FFMPEGLIBS): $(FFMPEGFILES) config.h
 
 mencoder$(EXESUF): $(MENCODER_DEPS)
 mencoder$(EXESUF): EXTRALIBS += $(EXTRALIBS_MENCODER)
-mplayer$(EXESUF): $(MPLAYER_DEPS)
+
+mplayer$(EXESUF): $(MPLAYER_DEPS) 
 mplayer$(EXESUF): EXTRALIBS += $(EXTRALIBS_MPLAYER)
 mencoder$(EXESUF) mplayer$(EXESUF):
 	$(CC) -o $@ $^ $(EXTRALIBS)
+
+#TOOLS/netstream$(EXESUF) TOOLS/vivodump$(EXESUF): $(subst mplayer.o,mplayer-nomain.o,$(OBJS_MPLAYER)) $(filter-out %mencoder.o,$(OBJS_MENCODER)) $(OBJS_COMMON) $(COMMON_LIBS)
+#	$(CC) $(CFLAGS) -o $@ $^ $(EXTRALIBS_MPLAYER) $(EXTRALIBS_MENCODER) $(COMMON_LDFLAGS)
+
 
 #codec-cfg$(EXESUF): codec-cfg.c help_mp.h
 #	$(HOST_CC) -O -DCODECS2HTML -I. -o $@ $<
@@ -913,7 +918,7 @@ version.h: version.sh
 # Make sure all generated header files are created.
 codec-cfg.d codec-cfg.o: codecs.conf.h
 $(DEPS) $(MENCODER_DEPS) $(MPLAYER_DEPS): help_mp.h
-$(call ADDSUFFIXES,.d .o,mpcommon vobsub stream/stream_cddb stream/network libmpdemux/muxer_avi gui/win32/gui): version.h
+$(call ADDSUFFIXES,.d .o,mpcommon vobsub stream/stream_cddb stream/network libmpdemux/muxer_avi gui/win32/gui osdep/mplayer.rc): version.h
 
 libdvdcss/%:   CFLAGS := -Ilibdvdcss -D__USE_UNIX98 -D_GNU_SOURCE -DVERSION=\"1.2.10\" $(CFLAGS_LIBDVDCSS) $(CFLAGS)
 libdvdnav/%:   CFLAGS := -Ilibdvdnav -D__USE_UNIX98 -D_GNU_SOURCE -DHAVE_CONFIG_H -DVERSION=\"MPlayer-custom\" $(CFLAGS)

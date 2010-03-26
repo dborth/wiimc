@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "common.h"
+#include <string.h>
 #include "avutil.h"
 #include "bswap.h"
 #include "sha.h"

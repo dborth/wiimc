@@ -240,6 +240,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_AURA,         MKTAG('A', 'U', 'R', 'A') },
     { CODEC_ID_AURA2,        MKTAG('A', 'U', 'R', '2') },
     { CODEC_ID_DPX,          MKTAG('d', 'p', 'x', ' ') },
+    { CODEC_ID_KGV1,         MKTAG('K', 'G', 'V', '1') },
     { CODEC_ID_NONE,         0 }
 };
 
@@ -442,7 +443,7 @@ void ff_put_bmp_header(ByteIOContext *pb, AVCodecContext *enc, const AVCodecTag 
 
     put_buffer(pb, enc->extradata, enc->extradata_size);
 
-    if (enc->extradata_size & 1)
+    if (!for_asf && enc->extradata_size & 1)
         put_byte(pb, 0);
 }
 #endif //CONFIG_MUXERS

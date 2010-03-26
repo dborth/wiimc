@@ -72,7 +72,7 @@ void* tmp;
 
     tmp=a52_resample_C(flags,chans);
     if(tmp){
-	if(a52_resample==NULL) fprintf(stderr, "No accelerated resampler found\n");
+	if(a52_resample==NULL) fprintf(stderr, "No accelerated resampler found, flags: 0x%X chans: %i\n",flags,chans);
 	a52_resample=tmp;
 	return tmp;
     }

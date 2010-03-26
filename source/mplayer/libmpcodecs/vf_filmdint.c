@@ -98,7 +98,7 @@ struct vf_priv_s {
     u64 diff_time, merge_time, decode_time, vo_time, filter_time;
 #else
     double diff_time, merge_time, decode_time, vo_time, filter_time;
-#endif   
+#endif    
 };
 
 #define PPZ { 2000, 2000, 0, 2000 }
@@ -933,7 +933,6 @@ static void init(struct vf_priv_s *p, mp_image_t *mpi)
     p->num_fields = 3;
 }
 
-
 #ifdef GEKKO
 #include <ogc/lwp_watchdog.h>
 static inline u64 get_time(void)
@@ -1169,7 +1168,7 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
     u64 start_time, diff_time;
 #else
     double start_time, diff_time;
-#endif   
+#endif    
     char prev_chflag = p->chflag;
     int keep_rate;
 
@@ -1419,7 +1418,7 @@ static void uninit(struct vf_instance *vf)
 {
     struct vf_priv_s *p = vf->priv;
     mp_msg(MSGT_VFILTER, MSGL_INFO, "diff_time: %.3f, merge_time: %.3f, "
-	   "export: %lu, merge: %lu, copy: %lu\n", p->diff_time, p->merge_time,
+	   "export: %lu, merge: %lu, copy: %lu\n", (double)p->diff_time, (double)p->merge_time,
 	   p->export_count, p->merge_count, p->num_copies);
     free(p->memory_allocated);
     free(p);

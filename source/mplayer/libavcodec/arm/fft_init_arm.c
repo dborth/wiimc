@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavcodec/dsputil.h"
+#include "libavcodec/fft.h"
 
 void ff_fft_permute_neon(FFTContext *s, FFTComplex *z);
 void ff_fft_calc_neon(FFTContext *s, FFTComplex *z);
@@ -26,6 +26,8 @@ void ff_fft_calc_neon(FFTContext *s, FFTComplex *z);
 void ff_imdct_calc_neon(FFTContext *s, FFTSample *output, const FFTSample *input);
 void ff_imdct_half_neon(FFTContext *s, FFTSample *output, const FFTSample *input);
 void ff_mdct_calc_neon(FFTContext *s, FFTSample *output, const FFTSample *input);
+
+void ff_rdft_calc_neon(struct RDFTContext *s, FFTSample *z);
 
 av_cold void ff_fft_init_arm(FFTContext *s)
 {
@@ -38,3 +40,11 @@ av_cold void ff_fft_init_arm(FFTContext *s)
         s->permutation  = FF_MDCT_PERM_INTERLEAVE;
     }
 }
+
+#if CONFIG_RDFT
+av_cold void ff_rdft_init_arm(RDFTContext *s)
+{
+    if (HAVE_NEON)
+        s->rdft_calc    = ff_rdft_calc_neon;
+}
+#endif

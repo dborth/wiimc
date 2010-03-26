@@ -49,6 +49,7 @@ for DLL to know too much about its environment.
 #include "loader.h"
 #include "com.h"
 #include "ext.h"
+#include "path.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -76,8 +77,6 @@ for DLL to know too much about its environment.
 #endif
 #include "osdep/mmap_anon.h"
 #include "libavutil/avstring.h"
-
-char* def_path = WIN32_PATH;
 
 static void do_cpuid(unsigned int ax, unsigned int *regs)
 {
@@ -146,7 +145,7 @@ static void longcount_stub(long long*);
 static unsigned int (*localcount)()=localcount_stub;
 static void (*longcount)(long long*)=longcount_stub;
 
-static pthread_mutex_t memmut;
+static pthread_mutex_t memmut = PTHREAD_MUTEX_INITIALIZER;
 
 static unsigned int localcount_stub(void)
 {
@@ -240,6 +239,7 @@ typedef struct th_list_t{
 //static int heap_counter=0;
 static tls_t* g_tls=NULL;
 static th_list* list=NULL;
+static pthread_mutex_t list_lock = PTHREAD_MUTEX_INITIALIZER;
 
 #if 0
 static void test_heap(void)
@@ -350,7 +350,8 @@ struct CRITSECT
 {
     pthread_t id;
     pthread_mutex_t mutex;
-    int locked;
+    pthread_cond_t unlocked;
+    int lock_count;
     long deadbeef;
 };
 
@@ -364,14 +365,9 @@ void* mreq_private(int size, int to_zero, int type)
     if (to_zero)
 	memset(header, 0, nsize);
 #ifdef GARBAGE
-    if (!last_alloc)
+    pthread_mutex_lock(&memmut);
+    if (last_alloc)
     {
-	pthread_mutex_init(&memmut, NULL);
-	pthread_mutex_lock(&memmut);
-    }
-    else
-    {
-	pthread_mutex_lock(&memmut);
 	last_alloc->next = header;  /* set next */
     }
 
@@ -568,16 +564,30 @@ static HMODULE WINAPI expGetDriverModuleHandle(DRVR* pdrv)
 #define	MODULE_HANDLE_winmm	((HMODULE)0x128)
 #define	MODULE_HANDLE_psapi	((HMODULE)0x129)
 
+// Fake PE header, since some software (and the Microsoft CRT v8 and newer)
+// assume GetModuleHandle(NULL) returns a pointer to a PE header.
+// We simulate a very simple header with only one section.
+//
+// NOTE: If you have a section called .mixcrt, the Microsoft CRT will assume
+// it's running in a POSIX binary, and stop using EncodePointer/DecodePointer.
+static const struct {
+    IMAGE_DOS_HEADER doshdr;
+    IMAGE_NT_HEADERS nthdr;
+    IMAGE_SECTION_HEADER opthdr;
+} __attribute__((__packed__)) mp_exe = {
+    .doshdr.e_lfanew = sizeof(IMAGE_DOS_HEADER),
+    .nthdr.FileHeader.NumberOfSections = 1,
+    .nthdr.FileHeader.SizeOfOptionalHeader =
+        sizeof(IMAGE_NT_HEADERS) - FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader), /* 0xe0 */
+    .opthdr.Name = ".text"
+};
+
 static HMODULE WINAPI expGetModuleHandleA(const char* name)
 {
     WINE_MODREF* wm;
     HMODULE result;
     if(!name)
-#ifdef CONFIG_QTX_CODECS
-	result=1;
-#else
-	result=0;
-#endif
+	result=(HMODULE)&mp_exe.doshdr;
     else
     {
 	wm=MODULE_FindModule(name);
@@ -623,6 +633,7 @@ static void* WINAPI expCreateThread(void* pSecAttr, long dwStackSize,
 	printf( "WARNING: CreateThread flags not supported\n");
     if(dwThreadId)
 	*dwThreadId=(long)pth;
+    pthread_mutex_lock(&list_lock);
     if(list==NULL)
     {
 	list=my_mreq(sizeof(th_list), 1);
@@ -636,9 +647,17 @@ static void* WINAPI expCreateThread(void* pSecAttr, long dwStackSize,
 	list=list->next;
     }
     list->thread=pth;
+    pthread_mutex_unlock(&list_lock);
     dbgprintf("CreateThread(0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x) => 0x%x\n",
 	      pSecAttr, dwStackSize, lpStartAddress, lpParameter, dwFlags, dwThreadId, pth);
     return pth;
+}
+
+static DWORD WINAPI expResumeThread(HANDLE hThread)
+{
+    int ret = 1;
+    dbgprintf("ResumeThread(0x%x) => 0x%x\n", hThread, ret);
+    return ret;
 }
 
 struct mutex_list_t;
@@ -652,14 +671,18 @@ struct mutex_list_t
     char reset;
     char name[128];
     int  semaphore;
+    int  lock_count;
+    pthread_t owner;
     struct mutex_list_t* next;
     struct mutex_list_t* prev;
 };
 typedef struct mutex_list_t mutex_list;
 static mutex_list* mlist=NULL;
+static pthread_mutex_t mlist_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void destroy_event(void* event)
 {
+    pthread_mutex_lock(&mlist_lock);
     mutex_list* pp=mlist;
     //    printf("garbage collector: destroy_event(%x)\n", event);
     while(pp)
@@ -681,10 +704,12 @@ void destroy_event(void* event)
 	     }
 	     printf("0\n");
 	     */
+	    pthread_mutex_unlock(&mlist_lock);
 	    return;
 	}
 	pp=pp->prev;
     }
+    pthread_mutex_unlock(&mlist_lock);
 }
 
 static void* WINAPI expCreateEventA(void* pSecAttr, char bManualReset,
@@ -692,6 +717,7 @@ static void* WINAPI expCreateEventA(void* pSecAttr, char bManualReset,
 {
     pthread_mutex_t *pm;
     pthread_cond_t  *pc;
+    void *ret;
     /*
      mutex_list* pp;
      pp=mlist;
@@ -702,6 +728,7 @@ static void* WINAPI expCreateEventA(void* pSecAttr, char bManualReset,
      }
      printf("0\n");
      */
+    pthread_mutex_lock(&mlist_lock);
     if(mlist!=NULL)
     {
 	mutex_list* pp=mlist;
@@ -712,6 +739,7 @@ static void* WINAPI expCreateEventA(void* pSecAttr, char bManualReset,
 	    {
 		dbgprintf("CreateEventA(0x%x, 0x%x, 0x%x, 0x%x='%s') => 0x%x\n",
 			  pSecAttr, bManualReset, bInitialState, name, name, pp->pm);
+		pthread_mutex_unlock(&mlist_lock);
 		return pp->pm;
 	    }
 	}while((pp=pp->prev) != NULL);
@@ -736,7 +764,7 @@ static void* WINAPI expCreateEventA(void* pSecAttr, char bManualReset,
     mlist->pm=pm;
     mlist->pc=pc;
     mlist->state=bInitialState;
-    mlist->reset=bManualReset;
+    mlist->reset=!bManualReset;
     if(name)
 	strncpy(mlist->name, name, 127);
     else
@@ -753,7 +781,21 @@ static void* WINAPI expCreateEventA(void* pSecAttr, char bManualReset,
     else
 	dbgprintf("CreateEventA(0x%x, 0x%x, 0x%x, NULL) => 0x%x\n",
 		  pSecAttr, bManualReset, bInitialState, mlist);
-    return mlist;
+    ret = mlist;
+    pthread_mutex_unlock(&mlist_lock);
+    return ret;
+}
+
+static void* WINAPI expCreateEventW(void* pSecAttr, char bManualReset,
+                                    char bInitialState, const WCHAR* name)
+{
+    char ascii_name[256];
+    char *aname = NULL;
+    if (name) {
+        WideCharToMultiByte(65001, 0x0, name, -1, ascii_name, 256, NULL, NULL);
+        aname = ascii_name;
+    }
+    return expCreateEventA(pSecAttr, bManualReset, bInitialState, aname);
 }
 
 static void* WINAPI expSetEvent(void* event)
@@ -785,7 +827,8 @@ static void* WINAPI expWaitForSingleObject(void* object, int duration)
     mutex_list *ml = (mutex_list *)object;
     // FIXME FIXME FIXME - this value is sometime unititialize !!!
     int ret = WAIT_FAILED;
-    mutex_list* pp=mlist;
+    mutex_list* pp;
+    th_list* tp;
     if(object == (void*)0xcfcf9898)
     {
 	/**
@@ -801,12 +844,29 @@ static void* WINAPI expWaitForSingleObject(void* object, int duration)
     }
     dbgprintf("WaitForSingleObject(0x%x, duration %d) =>\n",object, duration);
 
+    // See if this is a thread.
+    pthread_mutex_lock(&list_lock);
+    tp=list;
+    while (tp && (tp->thread != object))
+        tp = tp->prev;
+    pthread_mutex_unlock(&list_lock);
+    if (tp) {
+        if (pthread_join(*(pthread_t*)object, NULL) == 0) {
+            return (void*)WAIT_OBJECT_0;
+        } else {
+            return (void*)WAIT_FAILED;
+        }
+    }
+
     // loop below was slightly fixed - its used just for checking if
     // this object really exists in our list
     if (!ml)
 	return (void*) ret;
+    pthread_mutex_lock(&mlist_lock);
+    pp=mlist;
     while (pp && (pp->pm != ml->pm))
 	pp = pp->prev;
+    pthread_mutex_unlock(&mlist_lock);
     if (!pp) {
 	dbgprintf("WaitForSingleObject: NotFound\n");
 	return (void*)ret;
@@ -817,8 +877,8 @@ static void* WINAPI expWaitForSingleObject(void* object, int duration)
     switch(ml->type) {
     case 0: /* Event */
 	if (duration == 0) { /* Check Only */
-	    if (ml->state == 1) ret = WAIT_FAILED;
-	    else                   ret = WAIT_OBJECT_0;
+	    if (ml->state == 1) ret = WAIT_OBJECT_0;
+	    else                   ret = WAIT_FAILED;
 	}
 	if (duration == -1) { /* INFINITE */
 	    if (ml->state == 0)
@@ -845,7 +905,7 @@ static void* WINAPI expWaitForSingleObject(void* object, int duration)
 	if (duration == 0) {
 	    if(ml->semaphore==0) ret = WAIT_FAILED;
 	    else {
-		ml->semaphore++;
+		ml->semaphore--;
 		ret = WAIT_OBJECT_0;
 	    }
 	}
@@ -853,6 +913,25 @@ static void* WINAPI expWaitForSingleObject(void* object, int duration)
 	    if (ml->semaphore==0)
 		pthread_cond_wait(ml->pc,ml->pm);
 	    ml->semaphore--;
+	    ret = WAIT_OBJECT_0;
+	}
+	break;
+    case 2:  /* Mutex */
+	if (duration == 0) {
+	   if(ml->lock_count > 0 && ml->owner != pthread_self()) ret = WAIT_FAILED;
+	   else {
+		ml->lock_count++;
+		ml->owner = pthread_self();
+		ret = WAIT_OBJECT_0;
+	   }
+	}
+	if (duration == -1) {
+	    if (ml->lock_count > 0 && ml->owner != pthread_self()) {
+		pthread_cond_wait(ml->pc,ml->pm);
+	    }
+	    ml->lock_count++;
+	    ml->owner = pthread_self();
+	    ret = WAIT_OBJECT_0;
 	}
 	break;
     }
@@ -889,31 +968,6 @@ static void WINAPI expExitThread(int retcode)
 {
     dbgprintf("ExitThread(%d)\n", retcode);
     pthread_exit(&retcode);
-}
-
-static HANDLE WINAPI expCreateMutexA(void *pSecAttr,
-		    char bInitialOwner, const char *name)
-{
-    HANDLE mlist = (HANDLE)expCreateEventA(pSecAttr, 0, 0, name);
-
-    if (name)
-	dbgprintf("CreateMutexA(0x%x, %d, '%s') => 0x%x\n",
-	    pSecAttr, bInitialOwner, name, mlist);
-    else
-	dbgprintf("CreateMutexA(0x%x, %d, NULL) => 0x%x\n",
-	    pSecAttr, bInitialOwner, mlist);
-#ifndef CONFIG_QTX_CODECS
-    /* 10l to QTX, if CreateMutex returns a real mutex, WaitForSingleObject
-       waits for ever, else it works ;) */
-    return mlist;
-#endif
-}
-
-static int WINAPI expReleaseMutex(HANDLE hMutex)
-{
-    dbgprintf("ReleaseMutex(%x) => 1\n", hMutex);
-    /* FIXME:XXX !! not yet implemented */
-    return 1;
 }
 #endif
 
@@ -1122,13 +1176,6 @@ static void WINAPI expGetSystemInfo(SYSTEM_INFO* si)
 	    }
 	}
 	fclose (f);
-	/*
-	 *	ad hoc fix for smp machines.
-	 *	some problems on WaitForSingleObject,CreateEvent,SetEvent
-	 *			CreateThread ...etc..
-	 *
-	 */
-	cachedsi.dwNumberOfProcessors=1;
     }
 #endif /* __linux__ */
     cache = 1;
@@ -1331,7 +1378,8 @@ static void WINAPI expInitializeCriticalSection(CRITICAL_SECTION* c)
 	    return;
 	}
 	pthread_mutex_init(&cs->mutex, NULL);
-	cs->locked = 0;
+	pthread_cond_init(&cs->unlocked, NULL);
+	cs->lock_count = 0;
 	critsecs_list[i].cs_win = c;
 	critsecs_list[i].cs_unix = cs;
 	dbgprintf("InitializeCriticalSection -> itemno=%d, cs_win=%p, cs_unix=%p\n",
@@ -1342,7 +1390,8 @@ static void WINAPI expInitializeCriticalSection(CRITICAL_SECTION* c)
 	struct CRITSECT* cs = mreq_private(sizeof(struct CRITSECT) + sizeof(CRITICAL_SECTION),
 					   0, AREATYPE_CRITSECT);
 	pthread_mutex_init(&cs->mutex, NULL);
-	cs->locked=0;
+	pthread_cond_init(&cs->unlocked, NULL);
+	cs->lock_count = 0;
         cs->deadbeef = 0xdeadbeef;
 	*(void**)c = cs;
     }
@@ -1350,9 +1399,10 @@ static void WINAPI expInitializeCriticalSection(CRITICAL_SECTION* c)
     return;
 }
 
-static void WINAPI expInitializeCriticalSectionAndSpinCount(CRITICAL_SECTION* c, DWORD spin)
+static WIN_BOOL WINAPI expInitializeCriticalSectionAndSpinCount(CRITICAL_SECTION* c, DWORD spin)
 {
     expInitializeCriticalSection(c);
+    return 1;
 }
 
 static void WINAPI expEnterCriticalSection(CRITICAL_SECTION* c)
@@ -1374,12 +1424,17 @@ static void WINAPI expEnterCriticalSection(CRITICAL_SECTION* c)
 #endif
 	dbgprintf("Win32 Warning: Accessed uninitialized Critical Section (%p)!\n", c);
     }
-    if(cs->locked)
-	if(cs->id==pthread_self())
-	    return;
     pthread_mutex_lock(&(cs->mutex));
-    cs->locked=1;
-    cs->id=pthread_self();
+    if (cs->lock_count > 0 && cs->id == pthread_self()) {
+        cs->lock_count++;
+    } else {
+        while (cs->lock_count != 0) {
+            pthread_cond_wait(&(cs->unlocked), &(cs->mutex));
+        }
+        cs->lock_count = 1;
+        cs->id = pthread_self();
+    }
+    pthread_mutex_unlock(&(cs->mutex));
     return;
 }
 static void WINAPI expLeaveCriticalSection(CRITICAL_SECTION* c)
@@ -1396,13 +1451,16 @@ static void WINAPI expLeaveCriticalSection(CRITICAL_SECTION* c)
 	dbgprintf("Win32 Warning: Leaving uninitialized Critical Section %p!!\n", c);
 	return;
     }
-    if (cs->locked)
-    {
-	cs->locked=0;
-	pthread_mutex_unlock(&(cs->mutex));
+    pthread_mutex_lock(&(cs->mutex));
+    if (cs->lock_count == 0) {
+        dbgprintf("Win32 Warning: Unlocking unlocked Critical Section %p!!\n", c);
+    } else {
+        cs->lock_count--;
     }
-    else
-	dbgprintf("Win32 Warning: Unlocking unlocked Critical Section %p!!\n", c);
+    if (cs->lock_count == 0) {
+        pthread_cond_signal(&(cs->unlocked));
+    }
+    pthread_mutex_unlock(&(cs->mutex));
     return;
 }
 
@@ -1424,14 +1482,16 @@ static void WINAPI expDeleteCriticalSection(CRITICAL_SECTION *c)
 	return;
     }
 
-    if (cs->locked)
+    pthread_mutex_lock(&(cs->mutex));
+    if (cs->lock_count > 0)
     {
-	dbgprintf("Win32 Warning: Deleting unlocked Critical Section %p!!\n", c);
-	pthread_mutex_unlock(&(cs->mutex));
+       dbgprintf("Win32 Warning: Deleting locked Critical Section %p!!\n", c);
     }
+    pthread_mutex_unlock(&(cs->mutex));
 
 #ifndef GARBAGE
     pthread_mutex_destroy(&(cs->mutex));
+    pthread_cond_destroy(&(cs->unlocked));
     // released by GarbageCollector in my_relase otherwise
 #endif
     my_release(cs);
@@ -1738,30 +1798,43 @@ static long WINAPI expWideCharToMultiByte(long v1, long v2, short* s1, long siz1
     if(s2)dbgprintf("  dest: %s\n", s2);
     return result;
 }
+
 static long WINAPI expGetVersionExA(OSVERSIONINFOA* c)
 {
-    dbgprintf("GetVersionExA(0x%x) => 1\n");
+    dbgprintf("GetVersionExA(0x%x) => 1\n", c);
     c->dwOSVersionInfoSize=sizeof(*c);
-    c->dwMajorVersion=4;
-    c->dwMinorVersion=0;
-    c->dwBuildNumber=0x4000457;
-#if 1
-    // leave it here for testing win9x-only codecs
-    c->dwPlatformId=VER_PLATFORM_WIN32_WINDOWS;
-    strcpy(c->szCSDVersion, " B");
-#else
-    c->dwPlatformId=VER_PLATFORM_WIN32_NT; // let's not make DLL assume that it can read CR* registers
-    strcpy(c->szCSDVersion, "Service Pack 3");
-#endif
-    dbgprintf("  Major version: 4\n  Minor version: 0\n  Build number: 0x4000457\n"
-	      "  Platform Id: VER_PLATFORM_WIN32_NT\n Version string: 'Service Pack 3'\n");
+    c->dwMajorVersion=5;
+    c->dwMinorVersion=1;
+    c->dwBuildNumber=0x5010a28;
+    c->dwPlatformId=VER_PLATFORM_WIN32_NT;
+    strcpy(c->szCSDVersion, "Service Pack 2");
+    dbgprintf("  Major version: 5\n  Minor version: 1\n  Build number: 0x5010a28\n"
+	      "  Platform Id: VER_PLATFORM_WIN32_NT\n Version string: 'Service Pack 2'\n");
     return 1;
 }
+
+static long WINAPI expGetVersionExW(OSVERSIONINFOW* c)
+{
+    char CSDVersion[128];
+    dbgprintf("GetVersionExW(0x%x) => 1\n", c);
+    c->dwOSVersionInfoSize=sizeof(*c);
+    c->dwMajorVersion=5;
+    c->dwMinorVersion=1;
+    c->dwBuildNumber=0x5010a28;
+    c->dwPlatformId=VER_PLATFORM_WIN32_NT;
+    strcpy(CSDVersion, "Service Pack 2");
+    MultiByteToWideChar(65001, 0x0, CSDVersion, -1, c->szCSDVersion, 128);
+    dbgprintf("  Major version: 5\n  Minor version: 1\n  Build number: 0x5010a28\n"
+	      "  Platform Id: VER_PLATFORM_WIN32_NT\n Version string: 'Service Pack 2'\n");
+    return 1;
+}
+
 static HANDLE WINAPI expCreateSemaphoreA(char* v1, long init_count,
 					 long max_count, char* name)
 {
     pthread_mutex_t *pm;
     pthread_cond_t  *pc;
+    HANDLE ret;
     /*
     mutex_list* pp;
      printf("CreateSemaphoreA(%p = %s)\n", name, (name ? name : "<null>"));
@@ -1773,6 +1846,7 @@ static HANDLE WINAPI expCreateSemaphoreA(char* v1, long init_count,
      }
      printf("0\n");
      */
+    pthread_mutex_lock(&mlist_lock);
     if(mlist!=NULL)
     {
 	mutex_list* pp=mlist;
@@ -1783,7 +1857,9 @@ static HANDLE WINAPI expCreateSemaphoreA(char* v1, long init_count,
 	    {
 		dbgprintf("CreateSemaphoreA(0x%x, init_count %d, max_count %d, name 0x%x='%s') => 0x%x\n",
 			  v1, init_count, max_count, name, name, mlist);
-		return (HANDLE)mlist;
+		ret = (HANDLE)mlist;
+		pthread_mutex_unlock(&mlist_lock);
+		return ret;
 	    }
 	}while((pp=pp->prev) != NULL);
     }
@@ -1822,7 +1898,21 @@ static HANDLE WINAPI expCreateSemaphoreA(char* v1, long init_count,
     else
 	dbgprintf("CreateSemaphoreA(0x%x, init_count %d, max_count %d, name 0) => 0x%x\n",
 		  v1, init_count, max_count, mlist);
-    return (HANDLE)mlist;
+    ret = (HANDLE)mlist;
+    pthread_mutex_unlock(&mlist_lock);
+    return ret;
+}
+
+static HANDLE WINAPI expCreateSemaphoreW(char* v1, long init_count,
+                                         long max_count, const WCHAR* name)
+{
+    char ascii_name[256];
+    char *aname = NULL;
+    if (name) {
+        WideCharToMultiByte(65001, 0x0, name, -1, ascii_name, 256, NULL, NULL);
+        aname = ascii_name;
+    }
+    return expCreateSemaphoreA(v1, init_count, max_count, aname);
 }
 
 static long WINAPI expReleaseSemaphore(long hsem, long increment, long* prev_count)
@@ -1843,6 +1933,116 @@ static long WINAPI expReleaseSemaphore(long hsem, long increment, long* prev_cou
     return 1;
 }
 
+static HANDLE WINAPI expCreateMutexA(void *pSecAttr,
+                   char bInitialOwner, const char *name)
+{
+    pthread_mutex_t *pm;
+    pthread_cond_t  *pc;
+    HANDLE ret;
+    pthread_mutex_lock(&mlist_lock);
+    if(mlist!=NULL)
+    {
+       mutex_list* pp=mlist;
+       if(name!=NULL)
+           do
+       {
+           if((strcmp(pp->name, name)==0) && (pp->type==2))
+           {
+               dbgprintf("CreateMutexA(0x%x, %d, '%s') => 0x%x\n", pSecAttr, bInitialOwner, name, mlist);
+               ret = (HANDLE)mlist;
+               pthread_mutex_unlock(&mlist_lock);
+               return ret;
+           }
+       }while((pp=pp->prev) != NULL);
+    }
+    pm=mreq_private(sizeof(pthread_mutex_t), 0, AREATYPE_MUTEX);
+    pthread_mutex_init(pm, NULL);
+    pc=mreq_private(sizeof(pthread_cond_t), 0, AREATYPE_COND);
+    pthread_cond_init(pc, NULL);
+    if(mlist==NULL)
+    {
+       mlist=mreq_private(sizeof(mutex_list), 00, AREATYPE_EVENT);
+       mlist->next=mlist->prev=NULL;
+    }
+    else
+    {
+       mlist->next=mreq_private(sizeof(mutex_list), 00, AREATYPE_EVENT);
+       mlist->next->prev=mlist;
+       mlist->next->next=NULL;
+       mlist=mlist->next;
+    }
+    mlist->type=2; /* Type Mutex */
+    mlist->pm=pm;
+    mlist->pc=pc;
+    mlist->state=0;
+    mlist->reset=0;
+    mlist->semaphore=0;
+    if (bInitialOwner) {
+      mlist->owner = pthread_self();
+      mlist->lock_count = 1;
+    } else {
+      mlist->owner = (pthread_t)0;
+      mlist->lock_count = 0;
+    }
+    if(name!=NULL)
+       strncpy(mlist->name, name, 64);
+    else
+       mlist->name[0]=0;
+    if(pm==NULL)
+       dbgprintf("ERROR::: CreateMutexA failure\n");
+    if(name)
+       dbgprintf("CreateMutexA(0x%x, %d, '%s') => 0x%x\n",
+           pSecAttr, bInitialOwner, name, mlist);
+    else
+       dbgprintf("CreateMutexA(0x%x, %d, NULL) => 0x%x\n",
+           pSecAttr, bInitialOwner, mlist);
+    ret = (HANDLE)mlist;
+    pthread_mutex_unlock(&mlist_lock);
+    return ret;
+}
+
+static HANDLE WINAPI expCreateMutexW(void *pSecAttr, char bInitialOwner, const WCHAR *name)
+{
+    char ascii_name[256];
+    char *aname = NULL;
+    if (name) {
+        WideCharToMultiByte(65001, 0x0, name, -1, ascii_name, 256, NULL, NULL);
+        aname = ascii_name;
+    }
+    return expCreateMutexA(pSecAttr, bInitialOwner, aname);
+}
+
+static int WINAPI expReleaseMutex(HANDLE hMutex)
+{
+    mutex_list *ml = (mutex_list *)hMutex;
+
+    pthread_mutex_lock(ml->pm);
+    if (--ml->lock_count == 0) pthread_cond_signal(ml->pc);
+    pthread_mutex_unlock(ml->pm);
+    return 1;
+}
+
+static DWORD WINAPI expSignalObjectAndWait(HANDLE hObjectToSignal,
+                                           HANDLE hObjectToWaitOn,
+                                           DWORD dwMilliseconds,
+                                           WIN_BOOL bAlertable) {
+    mutex_list* mlist = (mutex_list*)hObjectToSignal;
+
+    switch (mlist->type) {
+    case 0:  // Event
+        expSetEvent(mlist);
+        break;
+    case 1:  // Semaphore
+        expReleaseSemaphore(mlist, 1, NULL);
+        break;
+    case 2:  // Mutex
+        expReleaseMutex(mlist);
+        break;
+    default:
+        dbgprintf("Signalling unknown object type %d!\n", hObjectToSignal);
+    }
+    return expWaitForSingleObject(hObjectToWaitOn, dwMilliseconds);
+}
 
 static long WINAPI expRegOpenKeyExA(long key, const char* subkey, long reserved, long access, int* newkey)
 {
@@ -2375,7 +2575,8 @@ static int WINAPI expLoadLibraryA(char* name)
 	return MODULE_HANDLE_psapi;
 
     result=LoadLibraryA(name);
-    dbgprintf("Returned LoadLibraryA(0x%x='%s'), def_path=%s => 0x%x\n", name, name, def_path, result);
+    dbgprintf("Returned LoadLibraryA(0x%x='%s'), codec_path=%s => 0x%x\n",
+              name, name, codec_path, result);
 
     return result;
 }
@@ -3389,13 +3590,15 @@ static HANDLE WINAPI expFindFirstFileA(LPCSTR s, LPWIN32_FIND_DATAA lpfd)
 #ifdef CONFIG_QTX_CODECS
     if(strstr(s, "quicktime\\*.QTX")){
 	dbgprintf("FindFirstFileA(0x%x='%s', 0x%x) => QTX\n", s, s, lpfd);
-	dbgprintf("\n### Searching for QuickTime plugins (*.qtx) at %s...\n",def_path);
-	qtx_dir=opendir(def_path);
+	dbgprintf("\n### Searching for QuickTime plugins (*.qtx) at %s...\n",
+	          codec_path);
+	qtx_dir = opendir(codec_path);
 	if(!qtx_dir) return (HANDLE)-1;
 	memset(lpfd,0,sizeof(*lpfd));
 	if(expFindNextFileA(FILE_HANDLE_quicktimeqtx,lpfd))
 	    return FILE_HANDLE_quicktimeqtx;
-	printf("loader: Couldn't find the QuickTime plugins (.qtx files) at %s\n",def_path);
+	printf("loader: Couldn't find the QuickTime plugins (.qtx files) at %s\n",
+	       codec_path);
 	return (HANDLE)-1;
     }
 #if 0
@@ -3532,8 +3735,8 @@ static HANDLE WINAPI expCreateFileA(LPCSTR cs1,DWORD i1,DWORD i2,
     if(strstr(cs1, "QuickTime.qts"))
     {
 	int result;
-	char* tmp=malloc(strlen(def_path)+50);
-	strcpy(tmp, def_path);
+	char* tmp = malloc(strlen(codec_path) + 50);
+	strcpy(tmp, codec_path);
 	strcat(tmp, "/");
 	strcat(tmp, "QuickTime.qts");
 	result=open(tmp, O_RDONLY);
@@ -3543,9 +3746,9 @@ static HANDLE WINAPI expCreateFileA(LPCSTR cs1,DWORD i1,DWORD i2,
     if(strstr(cs1, ".qtx"))
     {
 	int result;
-	char* tmp=malloc(strlen(def_path)+250);
+	char* tmp = malloc(strlen(codec_path) + 250);
 	char* x=strrchr(cs1,'\\');
-	sprintf(tmp,"%s/%s",def_path,x?(x+1):cs1);
+	sprintf(tmp, "%s/%s", codec_path, x ? (x + 1) : cs1);
 //	printf("### Open: %s -> %s\n",cs1,tmp);
 	result=open(tmp, O_RDONLY);
 	free(tmp);
@@ -3556,8 +3759,8 @@ static HANDLE WINAPI expCreateFileA(LPCSTR cs1,DWORD i1,DWORD i2,
     if(strncmp(cs1, "AP", 2) == 0)
     {
 	int result;
-	char* tmp=malloc(strlen(def_path)+50);
-	strcpy(tmp, def_path);
+	char* tmp = malloc(strlen(codec_path) + 50);
+	strcpy(tmp, codec_path);
 	strcat(tmp, "/");
 	strcat(tmp, "APmpg4v1.apl");
 	result=open(tmp, O_RDONLY);
@@ -4701,10 +4904,9 @@ typedef struct tagPALETTEENTRY {
     BYTE peFlags;
 } PALETTEENTRY;
 
-/* reversed the first 2 entries */
 typedef struct tagLOGPALETTE {
-    WORD         palNumEntries;
     WORD         palVersion;
+    WORD         palNumEntries;
     PALETTEENTRY palPalEntry[1];
 } LOGPALETTE;
 
@@ -4964,15 +5166,15 @@ struct exports exp_kernel32[]=
     FF(IsBadStringPtrA, -1)
     FF(DisableThreadLibraryCalls, -1)
     FF(CreateThread, -1)
+    FF(ResumeThread, -1)
     FF(CreateEventA, -1)
+    FF(CreateEventW, -1)
     FF(SetEvent, -1)
     FF(ResetEvent, -1)
     FF(WaitForSingleObject, -1)
 #ifdef CONFIG_QTX_CODECS
     FF(WaitForMultipleObjects, -1)
     FF(ExitThread, -1)
-    FF(CreateMutexA,-1)
-    FF(ReleaseMutex,-1)
 #endif
     FF(GetSystemInfo, -1)
     FF(GetVersion, 332)
@@ -5006,7 +5208,9 @@ struct exports exp_kernel32[]=
     FF(MultiByteToWideChar, 427)
     FF(WideCharToMultiByte, -1)
     FF(GetVersionExA, -1)
+    FF(GetVersionExW, -1)
     FF(CreateSemaphoreA, -1)
+    FF(CreateSemaphoreW, -1)
     FF(QueryPerformanceCounter, -1)
     FF(QueryPerformanceFrequency, -1)
     FF(LocalHandle, -1)
@@ -5017,6 +5221,10 @@ struct exports exp_kernel32[]=
     FF(GlobalFree, -1)
     FF(LoadResource, -1)
     FF(ReleaseSemaphore, -1)
+    FF(CreateMutexA, -1)
+    FF(CreateMutexW, -1)
+    FF(ReleaseMutex, -1)
+    FF(SignalObjectAndWait, -1)
     FF(FindResourceA, -1)
     FF(LockResource, -1)
     FF(FreeResource, -1)
@@ -5624,5 +5832,7 @@ void my_garbagecollection(void)
     dbgprintf("Total Unfree %d bytes cnt %d [%p,%d]\n",unfree, unfreecnt, last_alloc, alccnt);
 #endif
     g_tls = NULL;
+    pthread_mutex_lock(&list_lock);
     list = NULL;
+    pthread_mutex_unlock(&list_lock);
 }

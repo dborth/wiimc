@@ -110,7 +110,7 @@ static void scroll_buffer(subtitle* buf)
 void subcc_init(void)
 {
 	int i;
-	//printf("subcc_init(): initing...\n");
+	printf("subcc_init(): initing...\n");
 	build_char_table();
 	for(i=0;i<SUB_MAX_TEXT;i++) {buf1.text[i]=buf2.text[i]=NULL;}
 	buf1.lines=buf2.lines=0;
@@ -122,6 +122,7 @@ void subcc_init(void)
 
 static void append_char(char c)
 {
+	printf("append_char\n");
 	if(!bb->lines) {bb->lines++; cursor_pos=0;}
 	if(bb->text[bb->lines - 1]==NULL)
 	{
@@ -145,7 +146,7 @@ static void append_char(char c)
 	{
 		if(cursor_pos==CC_MAX_LINE_LENGTH-1)
 		{
-			fprintf(stderr,"CC: append_char() reached CC_MAX_LINE_LENGTH!\n");
+			//fprintf(stderr,"CC: append_char() reached CC_MAX_LINE_LENGTH!\n");
 			return;
 		}
 		bb->text[bb->lines - 1][cursor_pos++]=c;
@@ -287,7 +288,7 @@ static void subcc_decode(unsigned char *inputbuffer, unsigned int inputlength)
 
     if (inputlength - curbytes < 2) {
 #ifdef LOG_DEBUG
-      fprintf(stderr, "Not enough data for 2-byte CC encoding\n");
+      //fprintf(stderr, "Not enough data for 2-byte CC encoding\n");
 #endif
       break;
     }
@@ -327,7 +328,7 @@ static void subcc_decode(unsigned char *inputbuffer, unsigned int inputlength)
 
     default:
 //#ifdef LOG_DEBUG
-      fprintf(stderr, "Unknown CC encoding: %x\n", cc_code);
+      //fprintf(stderr, "Unknown CC encoding: %x\n", cc_code);
 //#endif
       skip = 2;
       break;

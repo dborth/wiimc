@@ -27,7 +27,7 @@
   {BGR,RGB}{1,4,8,15,16} support dithering
 
   unscaled special converters (YV12=I420=IYUV, Y800=Y8)
-  YV12 -> {BGR,RGB}{1,4,8,15,16,24,32}
+  YV12 -> {BGR,RGB}{1,4,8,12,15,16,24,32}
   x -> x
   YUV9 -> YV12
   YUV9/YV12 -> Y800
@@ -39,7 +39,7 @@
 
 /*
 tested special converters (most are tested actually, but I did not write it down ...)
- YV12 -> BGR16
+ YV12 -> BGR12/BGR16
  YV12 -> YV12
  BGR15 -> BGR16
  BGR16 -> BGR16
@@ -92,7 +92,6 @@ untested special converters
         || (x)==PIX_FMT_UYVY422     \
         || isAnyRGB(x)              \
     )
-#define usePal(x) (av_pix_fmt_descriptors[x].flags & PIX_FMT_PAL)
 
 #define RGB2YUV_SHIFT 15
 #define BY ( (int)(0.114*219/255*(1<<RGB2YUV_SHIFT)+0.5))
@@ -196,6 +195,13 @@ DECLARE_ALIGNED(8, static const uint8_t, dither_2x2_4)[2][8]={
 DECLARE_ALIGNED(8, static const uint8_t, dither_2x2_8)[2][8]={
 {  6,   2,   6,   2,   6,   2,   6,   2, },
 {  0,   4,   0,   4,   0,   4,   0,   4, },
+};
+
+DECLARE_ALIGNED(8, const uint8_t, dither_4x4_16)[4][8]={
+{  8,   4,  11,   7,   8,   4,  11,   7, },
+{  2,  14,   1,  13,   2,  14,   1,  13, },
+{ 10,   6,   9,   5,  10,   6,   9,   5, },
+{  0,  12,   3,  15,   0,  12,   3,  15, },
 };
 
 DECLARE_ALIGNED(8, const uint8_t, dither_8x8_32)[8][8]={
@@ -765,8 +771,10 @@ static inline void yuv2nv12XinC(const int16_t *lumFilter, const int16_t **lumSrc
             dest+=6;\
         }\
         break;\
-    case PIX_FMT_RGB565:\
-    case PIX_FMT_BGR565:\
+    case PIX_FMT_RGB565BE:\
+    case PIX_FMT_RGB565LE:\
+    case PIX_FMT_BGR565BE:\
+    case PIX_FMT_BGR565LE:\
         {\
             const int dr1= dither_2x2_8[y&1    ][0];\
             const int dg1= dither_2x2_4[y&1    ][0];\
@@ -780,8 +788,10 @@ static inline void yuv2nv12XinC(const int16_t *lumFilter, const int16_t **lumSrc
             }\
         }\
         break;\
-    case PIX_FMT_RGB555:\
-    case PIX_FMT_BGR555:\
+    case PIX_FMT_RGB555BE:\
+    case PIX_FMT_RGB555LE:\
+    case PIX_FMT_BGR555BE:\
+    case PIX_FMT_BGR555LE:\
         {\
             const int dr1= dither_2x2_8[y&1    ][0];\
             const int dg1= dither_2x2_8[y&1    ][1];\
@@ -789,6 +799,23 @@ static inline void yuv2nv12XinC(const int16_t *lumFilter, const int16_t **lumSrc
             const int dr2= dither_2x2_8[y&1    ][1];\
             const int dg2= dither_2x2_8[y&1    ][0];\
             const int db2= dither_2x2_8[(y&1)^1][1];\
+            func(uint16_t,0)\
+                ((uint16_t*)dest)[i2+0]= r[Y1+dr1] + g[Y1+dg1] + b[Y1+db1];\
+                ((uint16_t*)dest)[i2+1]= r[Y2+dr2] + g[Y2+dg2] + b[Y2+db2];\
+            }\
+        }\
+        break;\
+    case PIX_FMT_RGB444BE:\
+    case PIX_FMT_RGB444LE:\
+    case PIX_FMT_BGR444BE:\
+    case PIX_FMT_BGR444LE:\
+        {\
+            const int dr1= dither_4x4_16[y&3    ][0];\
+            const int dg1= dither_4x4_16[y&3    ][1];\
+            const int db1= dither_4x4_16[(y&3)^3][0];\
+            const int dr2= dither_4x4_16[y&3    ][1];\
+            const int dg2= dither_4x4_16[y&3    ][0];\
+            const int db2= dither_4x4_16[(y&3)^3][1];\
             func(uint16_t,0)\
                 ((uint16_t*)dest)[i2+0]= r[Y1+dr1] + g[Y1+dg1] + b[Y1+db1];\
                 ((uint16_t*)dest)[i2+1]= r[Y2+dr2] + g[Y2+dg2] + b[Y2+db2];\
@@ -1132,7 +1159,7 @@ static inline void monoblack2Y(uint8_t *dst, const uint8_t *src, long width, uin
 #endif
 
 #if ARCH_PPC
-#if HAVE_ALTIVEC || CONFIG_RUNTIME_CPUDETECT
+#if HAVE_ALTIVEC
 #define COMPILE_ALTIVEC
 #endif
 #endif //ARCH_PPC
@@ -1235,7 +1262,7 @@ SwsFunc ff_getSwsFunc(SwsContext *c)
     }
 
 #else
-#if ARCH_PPC
+#ifdef COMPILE_ALTIVEC
     if (flags & SWS_CPU_CAPS_ALTIVEC) {
         sws_init_swScale_altivec(c);
         return swScale_altivec;
@@ -1849,6 +1876,8 @@ int sws_scale(SwsContext *c, const uint8_t* const src[], const int srcStride[], 
                 r= (i>>3    )*255;
                 g= ((i>>1)&3)*85;
                 b= (i&1     )*255;
+            } else if(c->srcFormat == PIX_FMT_GRAY8) {
+                r = g = b = i;
             } else {
                 assert(c->srcFormat == PIX_FMT_BGR4_BYTE);
                 b= (i>>3    )*255;

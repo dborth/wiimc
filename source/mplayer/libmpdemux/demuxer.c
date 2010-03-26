@@ -366,12 +366,13 @@ void free_sh_video(sh_video_t *sh)
 void free_demuxer(demuxer_t *demuxer)
 {
     int i;
+    if(!demuxer) return;
     mp_msg(MSGT_DEMUXER, MSGL_DBG2, "DEMUXER: freeing %s demuxer at %p\n",
            demuxer->desc->shortdesc, demuxer);
-    if (demuxer->desc->close)
+    if (demuxer->desc && demuxer->desc->close)
         demuxer->desc->close(demuxer);
     // Very ugly hack to make it behave like old implementation
-    if (demuxer->desc->type == DEMUXER_TYPE_DEMUXERS)
+    if (demuxer->desc && demuxer->desc->type == DEMUXER_TYPE_DEMUXERS)
         goto skip_streamfree;
     // free streams:
     for (i = 0; i < MAX_A_STREAMS; i++)
@@ -585,11 +586,14 @@ int demux_fill_buffer(demuxer_t *demux, demux_stream_t *ds)
 #define MAX_ACUMULATED_PACKETS 64
 int ds_fill_buffer(demux_stream_t *ds)
 {
+	if(ds==NULL) return 0;
     demuxer_t *demux = ds->demuxer;
     if (ds->current)
         free_demux_packet(ds->current);
     ds->current = NULL;
-    if (mp_msg_test(MSGT_DEMUXER, MSGL_DBG3)) {
+    if(demux==NULL) return 0;
+    if (mp_msg_test(MSGT_DEMUXER, MSGL_DBG3)) 
+	{
         if (ds == demux->audio)
             mp_dbg(MSGT_DEMUXER, MSGL_DBG3,
                    "ds_fill_buffer(d_audio) called\n");
@@ -599,8 +603,11 @@ int ds_fill_buffer(demux_stream_t *ds)
         else if (ds == demux->sub)
             mp_dbg(MSGT_DEMUXER, MSGL_DBG3, "ds_fill_buffer(d_sub) called\n");
         else
+        {
             mp_dbg(MSGT_DEMUXER, MSGL_DBG3,
                    "ds_fill_buffer(unknown 0x%X) called\n", (unsigned int) ds);
+            return 0;
+        }
     }
     while (1) {
         if (ds->packs) {
@@ -686,7 +693,7 @@ int demux_read_data(demux_stream_t *ds, unsigned char *mem, int len)
     int bytes = 0;
     while (len > 0) {
         x = ds->buffer_size - ds->buffer_pos;
-        if (x == 0) {
+        if (x <= 0) {
             if (!ds_fill_buffer(ds))
                 return bytes;
         } else {
@@ -768,6 +775,11 @@ void ds_free_packs(demux_stream_t *ds)
 int ds_get_packet(demux_stream_t *ds, unsigned char **start)
 {
     int len;
+    if(!ds)
+	{
+		*start = NULL;
+		return -1;
+	}
     if (ds->buffer_pos >= ds->buffer_size) {
         if (!ds_fill_buffer(ds)) {
             // EOF
@@ -1248,7 +1260,6 @@ int demux_seek(demuxer_t *demuxer, float rel_seek_secs, float audio_delay,
             mp_msg(MSGT_SEEK, MSGL_WARN, MSGTR_CantSeekFile);
         return 0;
     }
-
     demux_flush(demuxer);
 
     demuxer->stream->eof = 0;
@@ -1256,27 +1267,28 @@ int demux_seek(demuxer_t *demuxer, float rel_seek_secs, float audio_delay,
     demuxer->audio->eof = 0;
 
     if (flags & SEEK_ABSOLUTE)
+    {
         pts = 0.0f;
+    }
     else {
         if (demuxer->stream_pts == MP_NOPTS_VALUE)
             goto dmx_seek;
         pts = demuxer->stream_pts;
     }
-
     if (flags & SEEK_FACTOR) {
         if (stream_control(demuxer->stream, STREAM_CTRL_GET_TIME_LENGTH, &tmp)
             == STREAM_UNSUPPORTED)
+        {
             goto dmx_seek;
+        }
         pts += tmp * rel_seek_secs;
     } else
         pts += rel_seek_secs;
-
     if (stream_control(demuxer->stream, STREAM_CTRL_SEEK_TO_TIME, &pts) !=
         STREAM_UNSUPPORTED) {
         demux_resync(demuxer);
         return 1;
     }
-
   dmx_seek:
     if (demuxer->desc->seek)
         demuxer->desc->seek(demuxer, rel_seek_secs, audio_delay, flags);

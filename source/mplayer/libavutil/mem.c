@@ -83,7 +83,7 @@ void *av_malloc(unsigned int size)
     if (posix_memalign(&ptr,16,size))
         ptr = NULL;
 #elif HAVE_MEMALIGN
-    //ptr = memalign(16,size);
+    //ptr = memalign(16,(size+15)&(~15));
     ptr = memalign(32,(size+31)&(~31));
     /* Why 64?
        Indeed, we should align it:

@@ -34,6 +34,7 @@
 #include "help_mp.h"
 
 #include <ogcsys.h>
+#include "osdep/plat_gekko.h"
 #include "osdep/ave-rvl.h"
 
 
@@ -108,26 +109,23 @@ static int control(int cmd, void *arg)
 	}
 }
 
-static u8 quality = AI_SAMPLERATE_48KHZ;
-
+static bool quality;
 void reinit_audio()  // for newgui
 {
-	AUDIO_SetDSPSampleRate(quality);
-	AUDIO_RegisterDMACallback(switch_buffers);
+        AUDIO_SetDSPSampleRate(quality);
+        AUDIO_RegisterDMACallback(switch_buffers);
 }
 
 static int init(int rate, int channels, int format, int flags)
 {
-	quality = AI_SAMPLERATE_32KHZ;
-	ao_data.samplerate = 32000;
-
-	if(rate > 32000)
-	{
-		quality = AI_SAMPLERATE_48KHZ;
-		ao_data.samplerate = 48000;
-	}
-
+	quality = rate > 32000;
+	
+	AUDIO_Init(NULL);
+	AUDIO_SetDSPSampleRate(quality);
+	AUDIO_RegisterDMACallback(switch_buffers);
+	
 	ao_data.channels = 2;
+	ao_data.samplerate = quality ? 48000 : 32000;
 	ao_data.format = AF_FORMAT_S16_NE;
 	ao_data.bps = ao_data.channels * ao_data.samplerate * 2;
 	ao_data.buffersize = BUFFER_SIZE * BUFFER_COUNT;
@@ -138,17 +136,13 @@ static int init(int rate, int channels, int format, int flags)
 		memset(buffers[counter], 0, BUFFER_SIZE);
 		DCFlushRange(buffers[counter], BUFFER_SIZE);
 	}
-
+	
 	buffer_fill = 0;
 	buffer_play = 0;
 	buffered = 0;
-
+	
 	playing = false;
-
-	AUDIO_Init(NULL);
-	AUDIO_SetDSPSampleRate(quality);
-	AUDIO_RegisterDMACallback(switch_buffers);
-
+	
 	return CONTROL_TRUE;
 }
 

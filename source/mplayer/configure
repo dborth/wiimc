@@ -218,9 +218,6 @@ Installation directories:
                          [PREFIX/etc/mplayer]
   --libdir=DIR           directory for object code libraries [PREFIX/lib]
   --codecsdir=DIR        directory for binary codecs [LIBDIR/codecs]
-  --win32codecsdir=DIR   directory for Windows DLLs [LIBDIR/codecs]
-  --xanimcodecsdir=DIR   directory for XAnim codecs [LIBDIR/codecs]
-  --realcodecsdir=DIR    directory for RealPlayer codecs [LIBDIR/codecs]
 
 Optional features:
   --disable-mencoder     disable MEncoder (A/V encoder) compilation [enable]
@@ -280,7 +277,7 @@ Optional features:
   --disable-vstream      disable TiVo vstream client support [autodetect]
   --disable-pthreads     disable Posix threads support [autodetect]
   --disable-w32threads   disable Win32 threads support [autodetect]
-  --disable-ass-internal disable internal SSA/ASS subtitle support [autodetect]
+--disable-ass-internal disable internal SSA/ASS subtitle support [autodetect]
   --disable-ass          disable SSA/ASS subtitle support [autodetect]
   --enable-rpath         enable runtime linker path for extra libs [disabled]
 
@@ -291,7 +288,7 @@ Codecs:
   --enable-jpeg             enable JPEG input/output support [autodetect]
   --enable-libcdio          enable libcdio support [autodetect]
   --enable-liblzo           enable liblzo support [autodetect]
-  --disable-win32dll        disable Win32 DLL support [enabled]
+  --disable-win32dll        disable Win32 DLL support [autodetect]
   --disable-qtx             disable QuickTime codecs support [enabled]
   --disable-xanim           disable XAnim codecs support [enabled]
   --disable-real            disable RealPlayer codecs support [enabled]
@@ -790,15 +787,6 @@ for ac_option do
     ;;
   --codecsdir=*)
     _codecsdir=$(echo $ac_option | cut -d '=' -f 2)
-    ;;
-  --win32codecsdir=*)
-    _win32codecsdir=$(echo $ac_option | cut -d '=' -f 2)
-    ;;
-  --xanimcodecsdir=*)
-    _xanimcodecsdir=$(echo $ac_option | cut -d '=' -f 2)
-    ;;
-  --realcodecsdir=*)
-    _realcodecsdir=$(echo $ac_option | cut -d '=' -f 2)
     ;;
 
   --with-install=*)
@@ -1777,12 +1765,12 @@ def_fast_64bit='#define HAVE_FAST_64BIT 0'
 def_fast_unaligned='#define HAVE_FAST_UNALIGNED 0'
 def_local_aligned_8='#define HAVE_LOCAL_ALIGNED_8 0'
 def_local_aligned_16='#define HAVE_LOCAL_ALIGNED_16 0'
-_arch_all='X86 X86_32 X86_64 IA64 SPARC ARM AVR32 SH4 PPC PPC64 ALPHA MIPS SGI_MIPS PA_RISC S390 S390X VAX BFIN XTENSA TOMI GENERIC'
+arch_all='X86 IA64 SPARC ARM AVR32 SH4 PPC ALPHA MIPS PA_RISC S390 S390X VAX BFIN XTENSA TOMI GENERIC'
+subarch_all='X86_32 X86_64 PPC64'
 case "$host_arch" in
   i[3-9]86|x86|x86pc|k5|k6|k6-2|k6-3|pentium*|athlon*|i586-i686)
-  _arch='X86 X86_32'
-  _target_arch="ARCH_X86 = yes"
-  _target_subarch="ARCH_X86_32 = yes"
+  arch='x86'
+  subarch='x86_32'
   def_fast_unaligned='#define HAVE_FAST_UNALIGNED 1'
   def_local_aligned_8='#define HAVE_LOCAL_ALIGNED_8 1'
   def_local_aligned_16='#define HAVE_LOCAL_ALIGNED_16 1'
@@ -2021,16 +2009,14 @@ EOF
     ;;
 
   ia64)
-    _arch='IA64'
-    _target_arch='ARCH_IA64 = yes'
+    arch='ia64'
     def_fast_64bit='#define HAVE_FAST_64BIT 1'
     iproc='ia64'
     ;;
 
   x86_64|amd64)
-    _arch='X86 X86_64'
-    _target_subarch='ARCH_X86_64 = yes'
-    _target_arch="ARCH_X86 = yes"
+    arch='x86'
+    subarch='x86_64'
     def_fast_unaligned='#define HAVE_FAST_UNALIGNED 1'
     def_fast_64bit='#define HAVE_FAST_64BIT 1'
     iproc='x86_64'
@@ -2123,8 +2109,7 @@ EOF
     ;;
 
   sparc|sparc64)
-    _arch='SPARC'
-    _target_arch='ARCH_SPARC = yes'
+    arch='sparc'
     iproc='sparc'
     if test "$host_arch" = "sparc64" ; then
       _vis='yes'
@@ -2151,37 +2136,32 @@ EOF
     ;;
 
   arm*)
-    _arch='ARM'
-    _target_arch='ARCH_ARM = yes'
+    arch='arm'
     iproc='arm'
     ;;
 
   avr32)
-    _arch='AVR32'
-    _target_arch='ARCH_AVR32 = yes'
+    arch='avr32'
     def_fast_unaligned='#define HAVE_FAST_UNALIGNED 1'
     iproc='avr32'
     test $_fast_clz = "auto" && _fast_clz=yes
     ;;
 
   sh|sh4)
-    _arch='SH4'
-    _target_arch='ARCH_SH4 = yes'
+    arch='sh4'
     iproc='sh4'
     ;;
 
   ppc|ppc64|powerpc|powerpc64)
-    _arch='PPC'
+    arch='ppc'
     def_dcbzl='#define HAVE_DCBZL 0'
-    _target_arch='ARCH_PPC = yes'
     def_fast_unaligned='#define HAVE_FAST_UNALIGNED 1'
     def_local_aligned_8='#define HAVE_LOCAL_ALIGNED_8 1'
     def_local_aligned_16='#define HAVE_LOCAL_ALIGNED_16 1'
     iproc='ppc'
 
     if test "$host_arch" = "ppc64" -o "$host_arch" = "powerpc64" ; then
-      _arch='PPC PPC64'
-      _target_subarch='ARCH_PPC64 = yes'
+      subarch='ppc64'
       def_fast_64bit='#define HAVE_FAST_64BIT 1'
     fi
     echocheck "CPU type"
@@ -2289,8 +2269,7 @@ EOF
     ;;
 
   alpha*)
-    _arch='ALPHA'
-    _target_arch='ARCH_ALPHA = yes'
+    arch='alpha'
     iproc='alpha'
 
     echocheck "CPU type"
@@ -2332,9 +2311,8 @@ EOF
     ;;
 
   mips)
-    _arch='SGI_MIPS'
-    _target_arch='ARCH_SGI_MIPS = yes'
-    iproc='sgi-mips'
+    arch='mips'
+    iproc='mips'
 
     if irix ; then
         echocheck "CPU type"
@@ -2359,38 +2337,32 @@ EOF
     ;;
 
   hppa)
-    _arch='PA_RISC'
-    _target_arch='ARCH_PA_RISC = yes'
+    arch='pa_risc'
     iproc='PA-RISC'
     ;;
 
   s390)
-    _arch='S390'
-    _target_arch='ARCH_S390 = yes'
+    arch='s390'
     iproc='390'
     ;;
 
   s390x)
-    _arch='S390X'
-    _target_arch='ARCH_S390X = yes'
+    arch='s390x'
     iproc='390x'
     ;;
 
   vax)
-    _arch='VAX'
-    _target_arch='ARCH_VAX = yes'
+    arch='vax'
     iproc='vax'
     ;;
 
   xtensa)
-    _arch='XTENSA'
-    _target_arch='ARCH_XTENSA = yes'
+    arch='xtensa'
     iproc='xtensa'
     ;;
 
   generic)
-    _arch='GENERIC'
-    _target_arch='ARCH_GENERIC = yes'
+    arch='generic'
     ;;
 
   *)
@@ -2531,6 +2503,7 @@ if test "$cc_vendor" = "gnu" ; then
   cc_check -Wdisabled-optimization && CFLAGS="-Wdisabled-optimization $CFLAGS"
   cc_check -Wundef && CFLAGS="-Wundef $CFLAGS"
   cc_check -Wmissing-prototypes && CFLAGS="-Wmissing-prototypes $CFLAGS"
+  cc_check -Wstrict-prototypes && CFLAGS="-Wstrict-prototypes $CFLAGS"
 else
   CFLAGS="-D_ISOC99_SOURCE -D_BSD_SOURCE $CFLAGS"
 fi
@@ -2691,14 +2664,12 @@ fi
 echo "pabsw xmm0, xmm0" > $TMPS
 yasm_check || _yasm=""
 if test $_yasm ; then
-  test "$_mmx" = "yes" && fft_mmx="yes"
   def_yasm='#define HAVE_YASM 1'
-  _have_yasm="yes"
+  have_yasm="yes"
   echores "$_yasm"
 else
   def_yasm='#define HAVE_YASM 0'
-  fft_mmx="no"
-  _have_yasm="no"
+  have_yasm="no"
   echores "no"
 fi
 
@@ -2846,27 +2817,27 @@ EOF
   echores "$_iwmmxt"
 fi
 
-_cpuexts_all='ALTIVEC MMX MMX2 AMD3DNOW AMD3DNOWEXT SSE SSE2 SSSE3 FAST_CMOV CMOV FAST_CLZ PLD ARMV5TE ARMV6 ARMV6T2 ARMVFP NEON IWMMXT MMI VIS MVI'
-test "$_altivec"   = yes && _cpuexts="ALTIVEC $_cpuexts"
-test "$_mmx"       = yes && _cpuexts="MMX $_cpuexts"
-test "$_mmxext"    = yes && _cpuexts="MMX2 $_cpuexts"
-test "$_3dnow"     = yes && _cpuexts="AMD3DNOW $_cpuexts"
-test "$_3dnowext"  = yes && _cpuexts="AMD3DNOWEXT $_cpuexts"
-test "$_sse"       = yes && _cpuexts="SSE $_cpuexts"
-test "$_sse2"      = yes && _cpuexts="SSE2 $_cpuexts"
-test "$_ssse3"     = yes && _cpuexts="SSSE3 $_cpuexts"
-test "$_cmov"      = yes && _cpuexts="CMOV $_cpuexts"
-test "$_fast_cmov" = yes && _cpuexts="FAST_CMOV $_cpuexts"
-test "$_fast_clz"  = yes && _cpuexts="FAST_CLZ $_cpuexts"
-test "$pld"        = yes && _cpuexts="PLD $_cpuexts"
-test "$_armv5te"   = yes && _cpuexts="ARMV5TE $_cpuexts"
-test "$_armv6"     = yes && _cpuexts="ARMV6 $_cpuexts"
-test "$_armv6t2"   = yes && _cpuexts="ARMV6T2 $_cpuexts"
-test "$_armvfp"    = yes && _cpuexts="ARMVFP $_cpuexts"
-test "$neon"       = yes && _cpuexts="NEON $_cpuexts"
-test "$_iwmmxt"    = yes && _cpuexts="IWMMXT $_cpuexts"
-test "$_vis"       = yes && _cpuexts="VIS $_cpuexts"
-test "$_mvi"       = yes && _cpuexts="MVI $_cpuexts"
+cpuexts_all='ALTIVEC MMX MMX2 AMD3DNOW AMD3DNOWEXT SSE SSE2 SSSE3 FAST_CMOV CMOV FAST_CLZ PLD ARMV5TE ARMV6 ARMV6T2 ARMVFP NEON IWMMXT MMI VIS MVI'
+test "$_altivec"   = yes && cpuexts="ALTIVEC $cpuexts"
+test "$_mmx"       = yes && cpuexts="MMX $cpuexts"
+test "$_mmxext"    = yes && cpuexts="MMX2 $cpuexts"
+test "$_3dnow"     = yes && cpuexts="AMD3DNOW $cpuexts"
+test "$_3dnowext"  = yes && cpuexts="AMD3DNOWEXT $cpuexts"
+test "$_sse"       = yes && cpuexts="SSE $cpuexts"
+test "$_sse2"      = yes && cpuexts="SSE2 $cpuexts"
+test "$_ssse3"     = yes && cpuexts="SSSE3 $cpuexts"
+test "$_cmov"      = yes && cpuexts="CMOV $cpuexts"
+test "$_fast_cmov" = yes && cpuexts="FAST_CMOV $cpuexts"
+test "$_fast_clz"  = yes && cpuexts="FAST_CLZ $cpuexts"
+test "$pld"        = yes && cpuexts="PLD $cpuexts"
+test "$_armv5te"   = yes && cpuexts="ARMV5TE $cpuexts"
+test "$_armv6"     = yes && cpuexts="ARMV6 $cpuexts"
+test "$_armv6t2"   = yes && cpuexts="ARMV6T2 $cpuexts"
+test "$_armvfp"    = yes && cpuexts="ARMVFP $cpuexts"
+test "$neon"       = yes && cpuexts="NEON $cpuexts"
+test "$_iwmmxt"    = yes && cpuexts="IWMMXT $cpuexts"
+test "$_vis"       = yes && cpuexts="VIS $cpuexts"
+test "$_mvi"       = yes && cpuexts="MVI $cpuexts"
 
 # Checking kernel version...
 if x86_32 && linux ; then
@@ -4048,6 +4019,17 @@ else
   _need_setenv=yes
 fi
 echores "$_setenv"
+
+
+echocheck "setmode()"
+_setmode=no
+def_setmode='#define HAVE_SETMODE 0'
+cat > $TMPC << EOF
+#include <io.h>
+int main(void) { setmode(0, 0); return 0; }
+EOF
+cc_check && _setmode=yes && def_setmode='#define HAVE_SETMODE 1'
+echores "$_setmode"
 
 
 if sunos; then
@@ -6113,7 +6095,7 @@ fi
 echocheck "VCD support"
 if test "$_vcd" = auto; then
   _vcd=no
-  if linux || freebsd || netbsd || openbsd || dragonfly || bsdos || darwin || sunos; then
+  if linux || freebsd || netbsd || openbsd || dragonfly || bsdos || darwin || sunos || os2; then
     _vcd=yes
   elif mingw32; then
     cat > $TMPC << EOF
@@ -7038,8 +7020,7 @@ fi
 # Fall back on default directory.
 if test -z "$_codecsdir" ; then
   _codecsdir="$_libdir/codecs"
-  mingw32 && _codecsdir="codecs"
-  os2 && _codecsdir="codecs"
+  mingw32 || os2 && _codecsdir="codecs"
 fi
 
 
@@ -7052,8 +7033,6 @@ if test "$_win32dll" = auto ; then
 fi
 if test "$_win32dll" = yes ; then
   def_win32dll='#define CONFIG_WIN32DLL 1'
-  test -z "$_win32codecsdir" && _win32codecsdir=$_codecsdir
-  _res_comment="using $_win32codecsdir"
   if ! win32 ; then
     def_win32_loader='#define WIN32_LOADER 1'
     _win32_emulation=yes
@@ -7079,14 +7058,10 @@ if test "$_xanim" = auto ; then
   fi
 fi
 if test "$_xanim" = yes ; then
-  test -z "$_xanimcodecsdir" && _xanimcodecsdir=$_codecsdir
   def_xanim='#define CONFIG_XANIM 1'
-  def_xanim_path="#define XACODEC_PATH \"$_xanimcodecsdir\""
   _codecmodules="xanim $_codecmodules"
-  _res_comment="using $_xanimcodecsdir"
 else
   def_xanim='#undef CONFIG_XANIM'
-  def_xanim_path='#undef XACODEC_PATH'
   _nocodecmodules="xanim $_nocodecmodules"
 fi
 echores "$_xanim"
@@ -7102,14 +7077,10 @@ if test "$_real" = auto ; then
   fi
 fi
 if test "$_real" = yes ; then
-  test -z "$_realcodecsdir" && _realcodecsdir="$_codecsdir"
   def_real='#define CONFIG_REALCODECS 1'
-  def_real_path="#define REALCODEC_PATH \"$_realcodecsdir\""
   _codecmodules="real $_codecmodules"
-  _res_comment="using $_realcodecsdir"
 else
   def_real='#undef CONFIG_REALCODECS'
-  def_real_path="#undef REALCODEC_PATH"
   _nocodecmodules="real $_nocodecmodules"
 fi
 echores "$_real"
@@ -8436,6 +8407,17 @@ echores "$_dvdnav"
 # DO NOT ADD ANY TESTS THAT USE LINKER FLAGS HERE (like cc_check).
 # Read dvdnav comment above.
 
+mak_enable () {
+list=$(echo $1 | tr '[a-z]' '[A-Z]')
+item=$(echo $2 | tr '[a-z]' '[A-Z]')
+nprefix=$3;
+for part in $list; do
+  if $(echo $item | grep -q -E "(^| )$part($| )"); then
+    echo "${nprefix}_$part = yes"
+  fi
+done
+}
+
 #############################################################################
 echo "Creating config.mak"
 cat > config.mak << EOF
@@ -8501,9 +8483,10 @@ TIMER = $_timer
 EXESUF = $_exesuf
 EXESUFS_ALL = .exe
 
-$_target_arch
-$_target_subarch
-$(echo $_cpuexts | tr '[a-z] ' '[A-Z]\n' | sed 's/^/HAVE_/;s/$/=yes/')
+ARCH = $arch
+$(mak_enable "$arch_all"    "$arch"    ARCH)
+$(mak_enable "$subarch_all" "$subarch" ARCH)
+$(mak_enable "$cpuexts_all" "$cpuexts" HAVE)
 
 MENCODER = $_mencoder
 MPLAYER = $_mplayer
@@ -8713,9 +8696,10 @@ FULLNAME=\$(NAME)\$(BUILDSUF)
 # Some FFmpeg codecs depend on these. Enable them unconditionally for now.
 CONFIG_AANDCT=yes
 CONFIG_DCT=yes
+CONFIG_DWT=yes
 CONFIG_FFT=yes
-CONFIG_FFT_MMX=$fft_mmx
 CONFIG_GOLOMB=yes
+CONFIG_H264DSP=yes
 CONFIG_LPC=yes
 CONFIG_LSP=yes
 CONFIG_MDCT=yes
@@ -8750,7 +8734,7 @@ CONFIG_ZLIB=$_zlib
 HAVE_PTHREADS = $_pthreads
 HAVE_SHM = $_shm
 HAVE_W32THREADS = $_w32threads
-HAVE_YASM = $_have_yasm
+HAVE_YASM = $have_yasm
 
 $(echo $_libavdecoders | tr '[a-z] ' '[A-Z]\n' | sed 's/^/CONFIG_/;s/$/=yes/')
 $(echo $_libavencoders | tr '[a-z] ' '[A-Z]\n' | sed 's/^/CONFIG_/;s/$/=yes/')
@@ -8765,10 +8749,12 @@ EOF
 #############################################################################
 
 ff_config_enable () {
+list=$(echo $1 | tr '[a-z]' '[A-Z]')
+item=$(echo $2 | tr '[a-z]' '[A-Z]')
 _nprefix=$3;
 test -z "$_nprefix" && _nprefix='CONFIG'
-for part in $1; do
-  if $(echo $2 | grep -q -E "(^| )$part($| )"); then
+for part in $list; do
+  if $(echo $item | grep -q -E "(^| )$part($| )"); then
     echo "#define ${_nprefix}_$part 1"
   else
     echo "#define ${_nprefix}_$part 0"
@@ -8870,6 +8856,7 @@ $def_nanosleep
 $def_posix_select
 $def_select
 $def_setenv
+$def_setmode
 $def_shm
 $def_strsep
 $def_swab
@@ -8918,8 +8905,9 @@ $def_pthread_cache
 #define __CPU__ $iproc
 $def_words_endian
 $def_bigendian
-$(ff_config_enable "$_arch_all" "$_arch" "ARCH")
-$(ff_config_enable "$_cpuexts_all" "$_cpuexts" "HAVE")
+$(ff_config_enable "$arch_all" "$arch" "ARCH")
+$(ff_config_enable "$subarch_all" "$subarch" "ARCH")
+$(ff_config_enable "$cpuexts_all" "$cpuexts" "HAVE")
 
 
 /* DVD/VCD/CD */
@@ -8977,13 +8965,11 @@ $def_libnut
 $def_qtx
 $def_qtx_win32
 $def_real
-$def_real_path
 $def_win32_loader
 $def_win32dll
-#define WIN32_PATH "$_win32codecsdir"
 $def_xanim
-$def_xanim_path
 $def_xmms
+#define BINARY_CODECS_PATH "$_codecsdir"
 #define XMMS_INPUT_PLUGIN_DIR "$_xmmsplugindir"
 
 
@@ -9225,15 +9211,17 @@ $def_yasm
 #define HAVE_LDBRX 0
 #define HAVE_POLL_H 1
 #define HAVE_PPC4XX 0
-#define HAVE_SETMODE 0
 #define HAVE_SYS_SELECT_H 0
 #define HAVE_VFP_ARGS 1
 #define HAVE_VIRTUALALLOC 0
 
 /* Some FFmpeg codecs depend on these. Enable them unconditionally for now. */
 #define CONFIG_AANDCT 1
+#define CONFIG_DCT 1
+#define CONFIG_DWT 1
 #define CONFIG_FFT 1
 #define CONFIG_GOLOMB 1
+#define CONFIG_H264DSP 1
 #define CONFIG_LPC 1
 #define CONFIG_MDCT 1
 #define CONFIG_RDFT 1
@@ -9353,7 +9341,7 @@ skipping autodetection. This behavior is unlike what you may be used to from
 autoconf-based configure scripts that can decide to override you. This greater
 level of control comes at a price. You may have to provide the correct compiler
 and linker flags yourself.
-If you used one of these options (except --enable-gui and similar ones that
+If you used one of these options (except --enable-menu and similar ones that
 turn on internal features) and experience a compilation or linking failure,
 make sure you have passed the necessary compiler/linker flags to configure.
 

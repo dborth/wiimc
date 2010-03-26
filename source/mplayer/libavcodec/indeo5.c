@@ -57,8 +57,10 @@ typedef struct {
     IVIPlaneDesc    planes[3];       ///< color planes
     const uint8_t   *frame_data;     ///< input frame data pointer
     int             buf_switch;      ///< used to switch between three buffers
-    int             dst_buf;
-    int             ref_buf;
+    int             inter_scal;      ///< signals a sequence of scalable inter frames
+    int             dst_buf;         ///< buffer index for the currently decoded frame
+    int             ref_buf;         ///< inter frame reference buffer index
+    int             ref2_buf;        ///< temporal storage for switching buffers
     uint32_t        frame_size;      ///< frame size in bytes
     int             frame_type;
     int             prev_frame_type; ///< frame type of the previous frame
@@ -549,7 +551,7 @@ static int decode_mb_info(IVI5DecContext *ctx, IVIBandDesc *band,
 static int decode_band(IVI5DecContext *ctx, int plane_num,
                        IVIBandDesc *band, AVCodecContext *avctx)
 {
-    int         result, i, t, idx1, idx2;
+    int         result, i, t, idx1, idx2, pos;
     IVITile     *tile;
 
     band->buf     = band->bufs[ctx->dst_buf];
@@ -568,6 +570,18 @@ static int decode_band(IVI5DecContext *ctx, int plane_num,
         return -1;
     }
 
+    if (band->blk_size == 8) {
+        band->intra_base  = &ivi5_base_quant_8x8_intra[band->quant_mat][0];
+        band->inter_base  = &ivi5_base_quant_8x8_inter[band->quant_mat][0];
+        band->intra_scale = &ivi5_scale_quant_8x8_intra[band->quant_mat][0];
+        band->inter_scale = &ivi5_scale_quant_8x8_inter[band->quant_mat][0];
+    } else {
+        band->intra_base  = ivi5_base_quant_4x4_intra;
+        band->inter_base  = ivi5_base_quant_4x4_inter;
+        band->intra_scale = ivi5_scale_quant_4x4_intra;
+        band->inter_scale = ivi5_scale_quant_4x4_inter;
+    }
+
     band->rv_map = &ctx->rvmap_tabs[band->rvmap_sel];
 
     /* apply corrections to the selected rvmap table if present */
@@ -578,6 +592,8 @@ static int decode_band(IVI5DecContext *ctx, int plane_num,
         FFSWAP(int16_t, band->rv_map->valtab[idx1], band->rv_map->valtab[idx2]);
     }
 
+    pos = get_bits_count(&ctx->gb);
+
     for (t = 0; t < band->num_tiles; t++) {
         tile = &band->tiles[t];
 
@@ -585,7 +601,6 @@ static int decode_band(IVI5DecContext *ctx, int plane_num,
         if (tile->is_empty) {
             ff_ivi_process_empty_tile(avctx, band, tile,
                                       (ctx->planes[0].bands[0].mb_size >> 3) - (band->mb_size >> 3));
-            align_get_bits(&ctx->gb);
         } else {
             tile->data_size = ff_ivi_dec_tile_data_size(&ctx->gb);
 
@@ -593,23 +608,12 @@ static int decode_band(IVI5DecContext *ctx, int plane_num,
             if (result < 0)
                 break;
 
-            if (band->blk_size == 8) {
-                band->intra_base  = &ivi5_base_quant_8x8_intra[band->quant_mat][0];
-                band->inter_base  = &ivi5_base_quant_8x8_inter[band->quant_mat][0];
-                band->intra_scale = &ivi5_scale_quant_8x8_intra[band->quant_mat][0];
-                band->inter_scale = &ivi5_scale_quant_8x8_inter[band->quant_mat][0];
-            } else {
-                band->intra_base  = ivi5_base_quant_4x4_intra;
-                band->inter_base  = ivi5_base_quant_4x4_inter;
-                band->intra_scale = ivi5_scale_quant_4x4_intra;
-                band->inter_scale = ivi5_scale_quant_4x4_inter;
-            }
-
             result = ff_ivi_decode_blocks(&ctx->gb, band, tile);
-            if (result < 0) {
-                av_log(avctx, AV_LOG_ERROR, "Corrupted blocks data encountered!\n");
+            if (result < 0 || (get_bits_count(&ctx->gb) - pos) >> 3 != tile->data_size) {
+                av_log(avctx, AV_LOG_ERROR, "Corrupted tile data encountered!\n");
                 break;
             }
+            pos += tile->data_size << 3; // skip to next tile
         }
     }
 
@@ -632,6 +636,8 @@ static int decode_band(IVI5DecContext *ctx, int plane_num,
     }
 #endif
 
+    align_get_bits(&ctx->gb);
+
     return result;
 }
 
@@ -644,53 +650,38 @@ static int decode_band(IVI5DecContext *ctx, int plane_num,
  */
 static void switch_buffers(IVI5DecContext *ctx, AVCodecContext *avctx)
 {
-    switch (ctx->frame_type) {
+    switch (ctx->prev_frame_type) {
     case FRAMETYPE_INTRA:
-        ctx->buf_switch = 0;
-        ctx->dst_buf    = 0;
-        ctx->ref_buf    = 0;
-        break;
     case FRAMETYPE_INTER:
-        ctx->buf_switch &= 1;
-        /* swap buffers only if there were no droppable frames */
-        if (ctx->prev_frame_type != FRAMETYPE_INTER_NOREF &&
-            ctx->prev_frame_type != FRAMETYPE_INTER_SCAL)
-            ctx->buf_switch ^= 1;
+        ctx->buf_switch ^= 1;
         ctx->dst_buf = ctx->buf_switch;
         ctx->ref_buf = ctx->buf_switch ^ 1;
         break;
     case FRAMETYPE_INTER_SCAL:
-        if (ctx->prev_frame_type == FRAMETYPE_INTER_NOREF)
-            break;
-        if (ctx->prev_frame_type != FRAMETYPE_INTER_SCAL) {
-            ctx->buf_switch ^= 1;
-            ctx->dst_buf     = ctx->buf_switch;
-            ctx->ref_buf     = ctx->buf_switch ^ 1;
-        } else {
-            ctx->buf_switch ^= 2;
-            ctx->dst_buf = 2;
-            ctx->ref_buf = ctx->buf_switch & 1;
-            if (!(ctx->buf_switch & 2))
-                FFSWAP(int, ctx->dst_buf, ctx->ref_buf);
+        if (!ctx->inter_scal) {
+            ctx->ref2_buf   = 2;
+            ctx->inter_scal = 1;
         }
+        FFSWAP(int, ctx->dst_buf, ctx->ref2_buf);
+        ctx->ref_buf = ctx->ref2_buf;
         break;
     case FRAMETYPE_INTER_NOREF:
-        if (ctx->prev_frame_type == FRAMETYPE_INTER_SCAL) {
-            ctx->buf_switch ^= 2;
-            ctx->dst_buf = 2;
-            ctx->ref_buf = ctx->buf_switch & 1;
-            if (!(ctx->buf_switch & 2))
-                FFSWAP(int, ctx->dst_buf, ctx->ref_buf);
-        } else {
-            ctx->buf_switch ^= 1;
-            ctx->dst_buf     =  ctx->buf_switch & 1;
-            ctx->ref_buf     = (ctx->buf_switch & 1) ^ 1;
-        }
         break;
+    }
+
+    switch (ctx->frame_type) {
+    case FRAMETYPE_INTRA:
+        ctx->buf_switch = 0;
+        /* FALLTHROUGH */
+    case FRAMETYPE_INTER:
+        ctx->inter_scal = 0;
+        ctx->dst_buf = ctx->buf_switch;
+        ctx->ref_buf = ctx->buf_switch ^ 1;
+        break;
+    case FRAMETYPE_INTER_SCAL:
+    case FRAMETYPE_INTER_NOREF:
     case FRAMETYPE_NULL:
-        return;
-    default:
-        av_log(avctx, AV_LOG_ERROR, "unsupported frame type: %d\n", ctx->frame_type);
+        break;
     }
 }
 
@@ -724,6 +715,9 @@ static av_cold int decode_init(AVCodecContext *avctx)
         av_log(avctx, AV_LOG_ERROR, "Couldn't allocate color planes!\n");
         return -1;
     }
+
+    ctx->buf_switch = 0;
+    ctx->inter_scal = 0;
 
     avctx->pix_fmt = PIX_FMT_YUV410P;
 
@@ -762,9 +756,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size,
 
     //START_TIMER;
 
-    if (ctx->frame_type == FRAMETYPE_NULL) {
-        ctx->frame_type = ctx->prev_frame_type;
-    } else {
+    if (ctx->frame_type != FRAMETYPE_NULL) {
         for (p = 0; p < 3; p++) {
             for (b = 0; b < ctx->planes[p].num_bands; b++) {
                 result = decode_band(ctx, p, &ctx->planes[p].bands[b], avctx);

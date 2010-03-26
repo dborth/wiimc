@@ -79,7 +79,7 @@ static const unsigned char sipr_swaps[38][2] = {
     { 67, 83 }, { 77, 80 }
 };
 
-static const unsigned char sipr_subpk_size[4] = { 29, 19, 37, 20 };
+const unsigned char ff_sipr_subpk_size[4] = { 29, 19, 37, 20 };
 
 static inline void get_strl(ByteIOContext *pb, char *buf, int buf_size, int len)
 {
@@ -237,7 +237,7 @@ static int rm_read_audio_stream_info(AVFormatContext *s, ByteIOContext *pb,
                            flavor);
                     return -1;
                 }
-                st->codec->block_align = sipr_subpk_size[flavor];
+                st->codec->block_align = ff_sipr_subpk_size[flavor];
             } else {
                 if(sub_packet_size <= 0){
                     av_log(s, AV_LOG_ERROR, "sub_packet_size is invalid\n");
@@ -696,16 +696,14 @@ rm_ac3_swap_bytes (AVStream *st, AVPacket *pkt)
  * Perform 4-bit block reordering for SIPR data.
  * @todo This can be optimized, e.g. use memcpy() if data blocks are aligned
  */
-static void
-rm_reorder_sipr_data (RMStream *ast)
+void ff_rm_reorder_sipr_data(uint8_t *buf, int sub_packet_h, int framesize)
 {
-    int n, bs = ast->sub_packet_h * ast->audio_framesize * 2 / 96; // nibbles per subpacket
+    int n, bs = sub_packet_h * framesize * 2 / 96; // nibbles per subpacket
 
     for (n = 0; n < 38; n++) {
         int j;
         int i = bs * sipr_swaps[n][0];
         int o = bs * sipr_swaps[n][1];
-        uint8_t *buf = ast->pkt.data;
 
         /* swap 4bit-nibbles of block 'i' with 'o' */
         for (j = 0; j < bs; j++, i++, o++) {
@@ -766,7 +764,7 @@ ff_rm_parse_packet (AVFormatContext *s, ByteIOContext *pb,
             if (++(ast->sub_packet_cnt) < h)
                 return -1;
             if (st->codec->codec_id == CODEC_ID_SIPR)
-                rm_reorder_sipr_data(ast);
+                ff_rm_reorder_sipr_data(ast->pkt.data, h, w);
 
              ast->sub_packet_cnt = 0;
              rm->audio_stream_num = st->index;

@@ -24,10 +24,15 @@
 #include "metadata.h"
 #include "libavutil/avstring.h"
 #include "riff.h"
+#include "audiointerleave.h"
 #include <sys/time.h>
 #include <time.h>
 #ifndef GEKKO
 #include <strings.h>
+#endif
+#include <stdarg.h>
+#if CONFIG_NETWORK
+#include "network.h"
 #endif
 
 #undef NDEBUG
@@ -138,13 +143,6 @@ void av_register_output_format(AVOutputFormat *format)
     *p = format;
     format->next = NULL;
 }
-
-#if LIBAVFORMAT_VERSION_MAJOR < 53
-int match_ext(const char *filename, const char *extensions)
-{
-    return av_match_ext(filename, extensions);
-}
-#endif
 
 int av_match_ext(const char *filename, const char *extensions)
 {
@@ -462,12 +460,76 @@ int av_open_input_stream(AVFormatContext **ic_ptr,
 #define PROBE_BUF_MIN 2048
 #define PROBE_BUF_MAX (1<<20)
 
+int ff_probe_input_buffer(ByteIOContext **pb, AVInputFormat **fmt,
+                          const char *filename, void *logctx,
+                          unsigned int offset, unsigned int max_probe_size)
+{
+    AVProbeData pd = { filename ? filename : "", NULL, -offset };
+    unsigned char *buf = NULL;
+    int ret = 0, probe_size;
+
+    if (!max_probe_size) {
+        max_probe_size = PROBE_BUF_MAX;
+    } else if (max_probe_size > PROBE_BUF_MAX) {
+        max_probe_size = PROBE_BUF_MAX;
+    } else if (max_probe_size < PROBE_BUF_MIN) {
+        return AVERROR(EINVAL);
+    }
+
+    if (offset >= max_probe_size) {
+        return AVERROR(EINVAL);
+    }
+
+    for(probe_size= PROBE_BUF_MIN; probe_size<=max_probe_size && !*fmt && ret >= 0; probe_size<<=1){
+        int ret, score = probe_size < max_probe_size ? AVPROBE_SCORE_MAX/4 : 0;
+        int buf_offset = (probe_size == PROBE_BUF_MIN) ? 0 : probe_size>>1;
+
+        if (probe_size < offset) {
+            continue;
+        }
+
+        /* read probe data */
+        buf = av_realloc(buf, probe_size + AVPROBE_PADDING_SIZE);
+        if ((ret = get_buffer(*pb, buf + buf_offset, probe_size - buf_offset)) < 0) {
+            /* fail if error was not end of file, otherwise, lower score */
+            if (ret != AVERROR_EOF) {
+                av_free(buf);
+                return ret;
+            }
+            score = 0;
+            ret = 0;            /* error was end of file, nothing read */
+        }
+        pd.buf_size += ret;
+        pd.buf = &buf[offset];
+
+        memset(pd.buf + pd.buf_size, 0, AVPROBE_PADDING_SIZE);
+
+        /* guess file format */
+        *fmt = av_probe_input_format2(&pd, 1, &score);
+        if(*fmt){
+            if(score <= AVPROBE_SCORE_MAX/4){ //this can only be true in the last iteration
+                av_log(logctx, AV_LOG_WARNING, "Format detected only with low score of %d, misdetection possible!\n", score);
+            }else
+                av_log(logctx, AV_LOG_DEBUG, "Probed with size=%d and score=%d\n", probe_size, score);
+        }
+    }
+
+    av_free(buf);
+    if (url_fseek(*pb, 0, SEEK_SET) < 0) {
+        url_fclose(*pb);
+        if (url_fopen(pb, filename, URL_RDONLY) < 0)
+            return AVERROR(EIO);
+    }
+
+    return 0;
+}
+
 int av_open_input_file(AVFormatContext **ic_ptr, const char *filename,
                        AVInputFormat *fmt,
                        int buf_size,
                        AVFormatParameters *ap)
 {
-    int err, probe_size;
+    int err;
     AVProbeData probe_data, *pd = &probe_data;
     ByteIOContext *pb = NULL;
     void *logctx= ap && ap->prealloced_context ? *ic_ptr : NULL;
@@ -493,42 +555,14 @@ int av_open_input_file(AVFormatContext **ic_ptr, const char *filename,
         if (buf_size > 0) {
             url_setbufsize(pb, buf_size);
         }
-
-        for(probe_size= PROBE_BUF_MIN; probe_size<=PROBE_BUF_MAX && !fmt; probe_size<<=1){
-            int score= probe_size < PROBE_BUF_MAX ? AVPROBE_SCORE_MAX/4 : 0;
-            /* read probe data */
-            pd->buf= av_realloc(pd->buf, probe_size + AVPROBE_PADDING_SIZE);
-            pd->buf_size = get_buffer(pb, pd->buf, probe_size);
-
-            if ((int)pd->buf_size < 0) {
-                err = pd->buf_size;
-                goto fail;
-            }
-
-            memset(pd->buf+pd->buf_size, 0, AVPROBE_PADDING_SIZE);
-            if (url_fseek(pb, 0, SEEK_SET) < 0) {
-                url_fclose(pb);
-                if (url_fopen(&pb, filename, URL_RDONLY) < 0) {
-                    pb = NULL;
-                    err = AVERROR(EIO);
-                    goto fail;
-                }
-            }
-            /* guess file format */
-            fmt = av_probe_input_format2(pd, 1, &score);
-            if(fmt){
-                if(score <= AVPROBE_SCORE_MAX/4){ //this can only be true in the last iteration
-                    av_log(logctx, AV_LOG_WARNING, "Format detected only with low score of %d, misdetection possible!\n", score);
-                }else
-                    av_log(logctx, AV_LOG_DEBUG, "Probed with size=%d and score=%d\n", probe_size, score);
-            }
+        if ((err = ff_probe_input_buffer(&pb, &fmt, filename, logctx, 0, 0)) < 0) {
+            goto fail;
         }
-        av_freep(&pd->buf);
     }
 
     /* if still no format found, error */
     if (!fmt) {
-        err = AVERROR_NOFMT;
+        err = AVERROR_INVALIDDATA;
         goto fail;
     }
 
@@ -1197,7 +1231,7 @@ int av_find_default_stream_index(AVFormatContext *s)
 /**
  * Flush the frame reader.
  */
-void av_read_frame_flush(AVFormatContext *s)
+void ff_read_frame_flush(AVFormatContext *s)
 {
     AVStream *st;
     int i, j;
@@ -1308,6 +1342,10 @@ int av_index_search_timestamp(AVStream *st, int64_t wanted_timestamp,
 
     a = - 1;
     b = nb_entries;
+
+    //optimize appending index entries at the end
+    if(b && entries[b-1].timestamp < wanted_timestamp)
+        a= b-1;
 
     while (b - a > 1) {
         m = (a + b) >> 1;
@@ -1585,7 +1623,7 @@ static int av_seek_frame_generic(AVFormatContext *s,
     if (index < 0)
         return -1;
 
-    av_read_frame_flush(s);
+    ff_read_frame_flush(s);
     if (s->iformat->read_seek){
         if(s->iformat->read_seek(s, stream_index, timestamp, flags) >= 0)
             return 0;
@@ -1603,7 +1641,7 @@ int av_seek_frame(AVFormatContext *s, int stream_index, int64_t timestamp, int f
     int ret;
     AVStream *st;
 
-    av_read_frame_flush(s);
+    ff_read_frame_flush(s);
 
     if(flags & AVSEEK_FLAG_BYTE)
         return av_seek_frame_byte(s, stream_index, timestamp, flags);
@@ -1638,7 +1676,7 @@ int avformat_seek_file(AVFormatContext *s, int stream_index, int64_t min_ts, int
     if(min_ts > ts || max_ts < ts)
         return -1;
 
-    av_read_frame_flush(s);
+    ff_read_frame_flush(s);
 
     if (s->iformat->read_seek2)
         return s->iformat->read_seek2(s, stream_index, min_ts, ts, max_ts, flags);
@@ -2082,6 +2120,11 @@ int av_find_stream_info(AVFormatContext *ic)
 
     for(i=0;i<ic->nb_streams;i++) {
         st = ic->streams[i];
+        if (st->codec->codec_id == CODEC_ID_AAC) {
+            st->codec->sample_rate = 0;
+            st->codec->frame_size = 0;
+            st->codec->channels = 0;
+        }
         if(st->codec->codec_type == CODEC_TYPE_VIDEO){
 /*            if(!st->time_base.num)
                 st->time_base= */
@@ -2661,7 +2704,7 @@ static int compute_pkt_fields2(AVFormatContext *s, AVStream *st, AVPacket *pkt){
     if(pkt->pts != AV_NOPTS_VALUE && pkt->dts == AV_NOPTS_VALUE && delay <= MAX_REORDER_DELAY){
         st->pts_buffer[0]= pkt->pts;
         for(i=1; i<delay+1 && st->pts_buffer[i] == AV_NOPTS_VALUE; i++)
-            st->pts_buffer[i]= (i-delay-1) * pkt->duration;
+            st->pts_buffer[i]= pkt->pts + (i-delay-1) * pkt->duration;
         for(i=0; i<delay && st->pts_buffer[i] > st->pts_buffer[i+1]; i++)
             FFSWAP(int64_t, st->pts_buffer[i], st->pts_buffer[i+1]);
 
@@ -2867,13 +2910,15 @@ int av_write_trailer(AVFormatContext *s)
 fail:
     if(ret == 0)
        ret=url_ferror(s->pb);
-    for(i=0;i<s->nb_streams;i++)
+    for(i=0;i<s->nb_streams;i++) {
         av_freep(&s->streams[i]->priv_data);
+        av_freep(&s->streams[i]->index_entries);
+    }
     av_freep(&s->priv_data);
     return ret;
 }
 
-void av_program_add_stream_index(AVFormatContext *ac, int progid, unsigned int idx)
+void ff_program_add_stream_index(AVFormatContext *ac, int progid, unsigned int idx)
 {
     int i, j;
     AVProgram *program=NULL;
@@ -3073,6 +3118,11 @@ int64_t av_gettime(void)
     return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
 }
 #endif
+
+uint64_t ff_ntp_time(void)
+{
+  return (av_gettime() / 1000) * 1000 + NTP_OFFSET_US;
+}
 
 int64_t parse_date(const char *datestr, int duration)
 {
@@ -3363,12 +3413,12 @@ void av_pkt_dump_log(void *avcl, int level, AVPacket *pkt, int dump_payload)
     pkt_dump_internal(avcl, NULL, level, pkt, dump_payload);
 }
 
-void url_split(char *proto, int proto_size,
-               char *authorization, int authorization_size,
-               char *hostname, int hostname_size,
-               int *port_ptr,
-               char *path, int path_size,
-               const char *url)
+void ff_url_split(char *proto, int proto_size,
+                  char *authorization, int authorization_size,
+                  char *hostname, int hostname_size,
+                  int *port_ptr,
+                  char *path, int path_size,
+                  const char *url)
 {
     const char *p, *ls, *at, *col, *brk;
 
@@ -3453,4 +3503,49 @@ void av_set_pts_info(AVStream *s, int pts_wrap_bits,
 
     if(!s->time_base.num || !s->time_base.den)
         s->time_base.num= s->time_base.den= 0;
+}
+
+int ff_url_join(char *str, int size, const char *proto,
+                const char *authorization, const char *hostname,
+                int port, const char *fmt, ...)
+{
+#if CONFIG_NETWORK
+    struct addrinfo hints, *ai;
+#endif
+
+    str[0] = '\0';
+    if (proto)
+        av_strlcatf(str, size, "%s://", proto);
+    if (authorization)
+        av_strlcatf(str, size, "%s@", authorization);
+#if CONFIG_NETWORK && defined(AF_INET6)
+    /* Determine if hostname is a numerical IPv6 address,
+     * properly escape it within [] in that case. */
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_flags = AI_NUMERICHOST;
+    if (!getaddrinfo(hostname, NULL, &hints, &ai)) {
+        if (ai->ai_family == AF_INET6) {
+            av_strlcat(str, "[", size);
+            av_strlcat(str, hostname, size);
+            av_strlcat(str, "]", size);
+        } else {
+            av_strlcat(str, hostname, size);
+        }
+        freeaddrinfo(ai);
+    } else
+#endif
+        /* Not an IPv6 address, just output the plain string. */
+        av_strlcat(str, hostname, size);
+
+    if (port >= 0)
+        av_strlcatf(str, size, ":%d", port);
+    if (fmt) {
+        va_list vl;
+        int len = strlen(str);
+
+        va_start(vl, fmt);
+        vsnprintf(str + len, size > len ? size - len : 0, fmt, vl);
+        va_end(vl);
+    }
+    return strlen(str);
 }

@@ -495,14 +495,14 @@ static inline void mc_part_weighted(H264Context *h, int n, int square, int chrom
             chroma_weight_avg(dest_cr, tmp_cr, h->mb_uvlinesize, 5, weight0, weight1, 0);
         }else{
             luma_weight_avg(dest_y, tmp_y, h->mb_linesize, h->luma_log2_weight_denom,
-                            h->luma_weight[0][refn0], h->luma_weight[1][refn1],
-                            h->luma_offset[0][refn0] + h->luma_offset[1][refn1]);
+                            h->luma_weight[refn0][0][0] , h->luma_weight[refn1][1][0],
+                            h->luma_weight[refn0][0][1] + h->luma_weight[refn1][1][1]);
             chroma_weight_avg(dest_cb, tmp_cb, h->mb_uvlinesize, h->chroma_log2_weight_denom,
-                            h->chroma_weight[0][refn0][0], h->chroma_weight[1][refn1][0],
-                            h->chroma_offset[0][refn0][0] + h->chroma_offset[1][refn1][0]);
+                            h->chroma_weight[refn0][0][0][0] , h->chroma_weight[refn1][1][0][0],
+                            h->chroma_weight[refn0][0][0][1] + h->chroma_weight[refn1][1][0][1]);
             chroma_weight_avg(dest_cr, tmp_cr, h->mb_uvlinesize, h->chroma_log2_weight_denom,
-                            h->chroma_weight[0][refn0][1], h->chroma_weight[1][refn1][1],
-                            h->chroma_offset[0][refn0][1] + h->chroma_offset[1][refn1][1]);
+                            h->chroma_weight[refn0][0][1][0] , h->chroma_weight[refn1][1][1][0],
+                            h->chroma_weight[refn0][0][1][1] + h->chroma_weight[refn1][1][1][1]);
         }
     }else{
         int list = list1 ? 1 : 0;
@@ -513,12 +513,12 @@ static inline void mc_part_weighted(H264Context *h, int n, int square, int chrom
                     qpix_put, chroma_put);
 
         luma_weight_op(dest_y, h->mb_linesize, h->luma_log2_weight_denom,
-                       h->luma_weight[list][refn], h->luma_offset[list][refn]);
+                       h->luma_weight[refn][list][0], h->luma_weight[refn][list][1]);
         if(h->use_weight_chroma){
             chroma_weight_op(dest_cb, h->mb_uvlinesize, h->chroma_log2_weight_denom,
-                             h->chroma_weight[list][refn][0], h->chroma_offset[list][refn][0]);
+                             h->chroma_weight[refn][list][0][0], h->chroma_weight[refn][list][0][1]);
             chroma_weight_op(dest_cr, h->mb_uvlinesize, h->chroma_log2_weight_denom,
-                             h->chroma_weight[list][refn][1], h->chroma_offset[list][refn][1]);
+                             h->chroma_weight[refn][list][1][0], h->chroma_weight[refn][list][1][1]);
         }
     }
 }
@@ -678,7 +678,7 @@ static void free_tables(H264Context *h){
 
 static void init_dequant8_coeff_table(H264Context *h){
     int i,q,x;
-    const int transpose = (h->s.dsp.h264_idct8_add != ff_h264_idct8_add_c); //FIXME ugly
+    const int transpose = (h->h264dsp.h264_idct8_add != ff_h264_idct8_add_c); //FIXME ugly
     h->dequant8_coeff[0] = h->dequant8_buffer[0];
     h->dequant8_coeff[1] = h->dequant8_buffer[1];
 
@@ -701,7 +701,7 @@ static void init_dequant8_coeff_table(H264Context *h){
 
 static void init_dequant4_coeff_table(H264Context *h){
     int i,j,q,x;
-    const int transpose = (h->s.dsp.h264_idct_add != ff_h264_idct_add_c); //FIXME ugly
+    const int transpose = (h->h264dsp.h264_idct_add != ff_h264_idct_add_c); //FIXME ugly
     for(i=0; i<6; i++ ){
         h->dequant4_coeff[i] = h->dequant4_buffer[i];
         for(j=0; j<i; j++){
@@ -831,6 +831,7 @@ static av_cold void common_init(H264Context *h){
     s->height = s->avctx->height;
     s->codec_id= s->avctx->codec->id;
 
+    ff_h264dsp_init(&h->h264dsp);
     ff_h264_pred_init(&h->hpc, s->codec_id);
 
     h->dequant_coeff_pps= -1;
@@ -961,9 +962,8 @@ int ff_h264_frame_start(H264Context *h){
         if(!h->thread_context[i]->s.obmc_scratchpad)
             h->thread_context[i]->s.obmc_scratchpad = av_malloc(16*2*s->linesize + 8*2*s->uvlinesize);
 
-    /* some macroblocks will be accessed before they're available */
-    if(FRAME_MBAFF || s->avctx->thread_count > 1)
-        memset(h->slice_table, -1, (s->mb_height*s->mb_stride-1) * sizeof(*h->slice_table));
+    /* some macroblocks can be accessed before they're available in case of lost slices, mbaff or threading*/
+    memset(h->slice_table, -1, (s->mb_height*s->mb_stride-1) * sizeof(*h->slice_table));
 
 //    s->decode= (s->flags&CODEC_FLAG_PSNR) || !s->encoding || s->current_picture.reference /*|| h->contains_intra*/ || 1;
 
@@ -1160,8 +1160,8 @@ static av_always_inline void hl_decode_mb_internal(H264Context *h, int simple){
                             idct_dc_add =
                             idct_add    = s->dsp.add_pixels8;
                         }else{
-                            idct_dc_add = s->dsp.h264_idct8_dc_add;
-                            idct_add    = s->dsp.h264_idct8_add;
+                            idct_dc_add = h->h264dsp.h264_idct8_dc_add;
+                            idct_add    = h->h264dsp.h264_idct8_add;
                         }
                         for(i=0; i<16; i+=4){
                             uint8_t * const ptr= dest_y + block_offset[i];
@@ -1185,8 +1185,8 @@ static av_always_inline void hl_decode_mb_internal(H264Context *h, int simple){
                             idct_dc_add =
                             idct_add    = s->dsp.add_pixels4;
                         }else{
-                            idct_dc_add = s->dsp.h264_idct_dc_add;
-                            idct_add    = s->dsp.h264_idct_add;
+                            idct_dc_add = h->h264dsp.h264_idct_dc_add;
+                            idct_add    = h->h264dsp.h264_idct_add;
                         }
                         for(i=0; i<16; i++){
                             uint8_t * const ptr= dest_y + block_offset[i];
@@ -1237,7 +1237,7 @@ static av_always_inline void hl_decode_mb_internal(H264Context *h, int simple){
             hl_motion(h, dest_y, dest_cb, dest_cr,
                       s->me.qpel_put, s->dsp.put_h264_chroma_pixels_tab,
                       s->me.qpel_avg, s->dsp.avg_h264_chroma_pixels_tab,
-                      s->dsp.weight_h264_pixels_tab, s->dsp.biweight_h264_pixels_tab);
+                      h->h264dsp.weight_h264_pixels_tab, h->h264dsp.biweight_h264_pixels_tab);
         }
 
 
@@ -1254,7 +1254,7 @@ static av_always_inline void hl_decode_mb_internal(H264Context *h, int simple){
                             }
                         }
                     }else{
-                         s->dsp.h264_idct_add16intra(dest_y, block_offset, h->mb, linesize, h->non_zero_count_cache);
+                         h->h264dsp.h264_idct_add16intra(dest_y, block_offset, h->mb, linesize, h->non_zero_count_cache);
                     }
                 }else if(h->cbp&15){
                     if(transform_bypass){
@@ -1267,9 +1267,9 @@ static av_always_inline void hl_decode_mb_internal(H264Context *h, int simple){
                         }
                     }else{
                         if(IS_8x8DCT(mb_type)){
-                            s->dsp.h264_idct8_add4(dest_y, block_offset, h->mb, linesize, h->non_zero_count_cache);
+                            h->h264dsp.h264_idct8_add4(dest_y, block_offset, h->mb, linesize, h->non_zero_count_cache);
                         }else{
-                            s->dsp.h264_idct_add16(dest_y, block_offset, h->mb, linesize, h->non_zero_count_cache);
+                            h->h264dsp.h264_idct_add16(dest_y, block_offset, h->mb, linesize, h->non_zero_count_cache);
                         }
                     }
                 }
@@ -1300,8 +1300,8 @@ static av_always_inline void hl_decode_mb_internal(H264Context *h, int simple){
                 chroma_dc_dequant_idct_c(h->mb + 16*16, h->chroma_qp[0], h->dequant4_coeff[IS_INTRA(mb_type) ? 1:4][h->chroma_qp[0]][0]);
                 chroma_dc_dequant_idct_c(h->mb + 16*16+4*16, h->chroma_qp[1], h->dequant4_coeff[IS_INTRA(mb_type) ? 2:5][h->chroma_qp[1]][0]);
                 if(is_h264){
-                    idct_add = s->dsp.h264_idct_add;
-                    idct_dc_add = s->dsp.h264_idct_dc_add;
+                    idct_add = h->h264dsp.h264_idct_add;
+                    idct_dc_add = h->h264dsp.h264_idct_dc_add;
                     for(i=16; i<16+8; i++){
                         if(h->non_zero_count_cache[ scan8[i] ])
                             idct_add   (dest[(i&4)>>2] + block_offset[i], h->mb + i*16, uvlinesize);
@@ -1368,16 +1368,16 @@ static int pred_weight_table(H264Context *h){
 
             luma_weight_flag= get_bits1(&s->gb);
             if(luma_weight_flag){
-                h->luma_weight[list][i]= get_se_golomb(&s->gb);
-                h->luma_offset[list][i]= get_se_golomb(&s->gb);
-                if(   h->luma_weight[list][i] != luma_def
-                   || h->luma_offset[list][i] != 0) {
+                h->luma_weight[i][list][0]= get_se_golomb(&s->gb);
+                h->luma_weight[i][list][1]= get_se_golomb(&s->gb);
+                if(   h->luma_weight[i][list][0] != luma_def
+                   || h->luma_weight[i][list][1] != 0) {
                     h->use_weight= 1;
                     h->luma_weight_flag[list]= 1;
                 }
             }else{
-                h->luma_weight[list][i]= luma_def;
-                h->luma_offset[list][i]= 0;
+                h->luma_weight[i][list][0]= luma_def;
+                h->luma_weight[i][list][1]= 0;
             }
 
             if(CHROMA){
@@ -1385,10 +1385,10 @@ static int pred_weight_table(H264Context *h){
                 if(chroma_weight_flag){
                     int j;
                     for(j=0; j<2; j++){
-                        h->chroma_weight[list][i][j]= get_se_golomb(&s->gb);
-                        h->chroma_offset[list][i][j]= get_se_golomb(&s->gb);
-                        if(   h->chroma_weight[list][i][j] != chroma_def
-                           || h->chroma_offset[list][i][j] != 0) {
+                        h->chroma_weight[i][list][j][0]= get_se_golomb(&s->gb);
+                        h->chroma_weight[i][list][j][1]= get_se_golomb(&s->gb);
+                        if(   h->chroma_weight[i][list][j][0] != chroma_def
+                           || h->chroma_weight[i][list][j][1] != 0) {
                             h->use_weight_chroma= 1;
                             h->chroma_weight_flag[list]= 1;
                         }
@@ -1396,8 +1396,8 @@ static int pred_weight_table(H264Context *h){
                 }else{
                     int j;
                     for(j=0; j<2; j++){
-                        h->chroma_weight[list][i][j]= chroma_def;
-                        h->chroma_offset[list][i][j]= 0;
+                        h->chroma_weight[i][list][j][0]= chroma_def;
+                        h->chroma_weight[i][list][j][1]= 0;
                     }
                 }
             }
@@ -1435,16 +1435,14 @@ static void implicit_weight_table(H264Context *h){
         for(ref1=0; ref1 < h->ref_count[1]; ref1++){
             int poc1 = h->ref_list[1][ref1].poc;
             int td = av_clip(poc1 - poc0, -128, 127);
+            h->implicit_weight[ref0][ref1] = 32;
             if(td){
                 int tb = av_clip(cur_poc - poc0, -128, 127);
                 int tx = (16384 + (FFABS(td) >> 1)) / td;
-                int dist_scale_factor = av_clip((tb*tx + 32) >> 6, -1024, 1023) >> 2;
-                if(dist_scale_factor < -64 || dist_scale_factor > 128)
-                    h->implicit_weight[ref0][ref1] = 32;
-                else
+                int dist_scale_factor = (tb*tx + 32) >> 8;
+                if(dist_scale_factor >= -64 && dist_scale_factor <= 128)
                     h->implicit_weight[ref0][ref1] = 64 - dist_scale_factor;
-            }else
-                h->implicit_weight[ref0][ref1] = 32;
+            }
         }
     }
 }
@@ -1561,9 +1559,8 @@ static int init_poc(H264Context *h){
  * initialize scan tables
  */
 static void init_scan_tables(H264Context *h){
-    MpegEncContext * const s = &h->s;
     int i;
-    if(s->dsp.h264_idct_add == ff_h264_idct_add_c){ //FIXME little ugly
+    if(h->h264dsp.h264_idct_add == ff_h264_idct_add_c){ //FIXME little ugly
         memcpy(h->zigzag_scan, zigzag_scan, 16*sizeof(uint8_t));
         memcpy(h-> field_scan,  field_scan, 16*sizeof(uint8_t));
     }else{
@@ -1574,7 +1571,7 @@ static void init_scan_tables(H264Context *h){
 #undef T
         }
     }
-    if(s->dsp.h264_idct8_add == ff_h264_idct8_add_c){
+    if(h->h264dsp.h264_idct8_add == ff_h264_idct8_add_c){
         memcpy(h->zigzag_scan8x8,       ff_zigzag_direct,     64*sizeof(uint8_t));
         memcpy(h->zigzag_scan8x8_cavlc, zigzag_scan8x8_cavlc, 64*sizeof(uint8_t));
         memcpy(h->field_scan8x8,        field_scan8x8,        64*sizeof(uint8_t));
@@ -1776,7 +1773,8 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
         s->height= 16*s->mb_height - 4*FFMIN(h->sps.crop_bottom, 3);
 
     if (s->context_initialized
-        && (   s->width != s->avctx->width || s->height != s->avctx->height)) {
+        && (   s->width != s->avctx->width || s->height != s->avctx->height
+            || av_cmp_q(h->sps.sar, s->avctx->sample_aspect_ratio))) {
         if(h != h0)
             return -1;   // width / height changed during parallelized decoding
         free_tables(h);
@@ -2006,9 +2004,9 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
     if(   (h->pps.weighted_pred          && h->slice_type_nos == FF_P_TYPE )
        ||  (h->pps.weighted_bipred_idc==1 && h->slice_type_nos== FF_B_TYPE ) )
         pred_weight_table(h);
-    else if(h->pps.weighted_bipred_idc==2 && h->slice_type_nos== FF_B_TYPE)
+    else if(h->pps.weighted_bipred_idc==2 && h->slice_type_nos== FF_B_TYPE){
         implicit_weight_table(h);
-    else {
+    }else {
         h->use_weight = 0;
         for (i = 0; i < 2; i++) {
             h->luma_weight_flag[i]   = 0;
@@ -3006,7 +3004,7 @@ int main(void){
         }
 //        printf("\n");
 
-        s->dsp.h264_idct_add(ref, block, 4);
+        h->h264dsp.h264_idct_add(ref, block, 4);
 /*        for(j=0; j<16; j++){
             printf("%d ", ref[j]);
         }

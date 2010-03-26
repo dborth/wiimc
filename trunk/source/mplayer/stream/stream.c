@@ -180,6 +180,7 @@ static stream_t* open_stream_plugin(const stream_info_t* sinfo, const char* file
   s = new_stream(-2,-2);
   s->url=strdup(filename);
   s->flags |= mode;
+  
   *ret = sinfo->open(s,mode,arg,file_format);
   if((*ret) != STREAM_OK) {
 #ifdef CONFIG_NETWORK
@@ -267,10 +268,12 @@ stream_t* open_output_stream(const char* filename, char** options) {
 }
 
 //=================== STREAMER =========================
-
+#include <errno.h>
 int stream_fill_buffer(stream_t *s){
   int len;
-  if (/*s->fd == NULL ||*/ s->eof) { return 0; }
+
+  static int try=0;
+  if (/*s->fd == NULL ||*/ s->eof) { s->buf_pos = s->buf_len = 0; return 0; }
   switch(s->type){
   case STREAMTYPE_STREAM:
 #ifdef CONFIG_NETWORK
@@ -291,10 +294,12 @@ int stream_fill_buffer(stream_t *s){
   default:
     len= s->fill_buffer ? s->fill_buffer(s,s->buffer,STREAM_BUFFER_SIZE) : 0;
   }
-  if(len<=0){ s->eof=1; return 0; }
+  if(len==0){ if(try>3)s->eof=1; try++; s->buf_pos=s->buf_len=0; return 0; }
+  if(len<0) { s->eof=1; s->buf_pos=s->buf_len=0;/*printf("errno: %i\n",errno);*/if(s->error==0 && errno==EIO )s->error=1;return 0; } 
   s->buf_pos=0;
   s->buf_len=len;
   s->pos+=len;
+  try=0;
 //  printf("[%d]",len);fflush(stdout);
   return len;
 }
@@ -397,6 +402,8 @@ while(stream_fill_buffer(s) > 0 && pos >= 0) {
 
 
 void stream_reset(stream_t *s){
+//  printf("\n*** stream_reset() called ***\n");
+
   if(s->eof){
     s->pos=0;
     s->buf_pos=s->buf_len=0;
@@ -451,11 +458,11 @@ stream_t* new_stream(int fd,int type){
   s->url=NULL;
   s->cache_pid=0;
   stream_reset(s);
+   
   return s;
 }
 
 void free_stream(stream_t *s){
-//  printf("\n*** free_stream() called ***\n");
 #ifdef CONFIG_STREAM_CACHE
     cache_uninit(s);
 #endif
@@ -466,7 +473,9 @@ void free_stream(stream_t *s){
        network socket and file */
     if(s->url && strstr(s->url,"://"))
       closesocket(s->fd);
-    else close(s->fd);
+    else 
+	  close(s->fd);
+    s->fd=-1;
   }
 #if HAVE_WINSOCK2_H
   mp_msg(MSGT_STREAM,MSGL_V,"WINSOCK2 uninit\n");
@@ -476,6 +485,7 @@ void free_stream(stream_t *s){
   // streams should destroy their priv on close
   //if(s->priv) free(s->priv);
   if(s->url) free(s->url);
+  s->url=NULL;
   free(s);
 }
 

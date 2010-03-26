@@ -119,6 +119,7 @@ free(p);
 p=NULL;
 return;
 #endif
+
   switch(shmem_type){
     case 0:
     case 1:

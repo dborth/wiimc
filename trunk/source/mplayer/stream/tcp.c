@@ -218,11 +218,13 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 		return TCP_ERROR_PORT;
 	}
 	net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) & ~IOS_O_NONBLOCK);		
-#elif !HAVE_WINSOCK2_H
+#else
+#if !HAVE_WINSOCK2_H
 	fcntl( socket_server_fd, F_SETFL, fcntl(socket_server_fd, F_GETFL) | O_NONBLOCK );
 #else
 	val = 1;
 	ioctlsocket( socket_server_fd, FIONBIO, &val );
+#endif
 #endif
 
 #if !defined(GEKKO)

@@ -150,8 +150,6 @@ int sws_isSupportedOutput(enum PixelFormat pix_fmt)
     return isSupportedOut(pix_fmt);
 }
 
-#define usePal(x) (av_pix_fmt_descriptors[x].flags & PIX_FMT_PAL)
-
 extern const int32_t ff_yuv2rgb_coeffs[8][4];
 
 const char *sws_format_name(enum PixelFormat format)
@@ -741,7 +739,7 @@ int sws_setColorspaceDetails(SwsContext *c, const int inv_table[4], int srcRange
     ff_yuv2rgb_c_init_tables(c, inv_table, srcRange, brightness, contrast, saturation);
     //FIXME factorize
 
-#if ARCH_PPC && (HAVE_ALTIVEC || CONFIG_RUNTIME_CPUDETECT)
+#if HAVE_ALTIVEC
     if (c->flags & SWS_CPU_CAPS_ALTIVEC)
         ff_yuv2rgb_init_tables_altivec(c, inv_table, brightness, contrast, saturation);
 #endif
@@ -970,6 +968,8 @@ SwsContext *sws_getContext(int srcW, int srcH, enum PixelFormat srcFormat,
             c->chrMmx2FilterCode = av_malloc(c->chrMmx2FilterCodeSize);
 #endif
 
+            if (!c->lumMmx2FilterCode || !c->chrMmx2FilterCode)
+                goto fail;
             FF_ALLOCZ_OR_GOTO(c, c->hLumFilter   , (dstW        /8+8)*sizeof(int16_t), fail);
             FF_ALLOCZ_OR_GOTO(c, c->hChrFilter   , (c->chrDstW  /4+8)*sizeof(int16_t), fail);
             FF_ALLOCZ_OR_GOTO(c, c->hLumFilterPos, (dstW      /2/8+8)*sizeof(int32_t), fail);
@@ -1021,7 +1021,7 @@ SwsContext *sws_getContext(int srcW, int srcH, enum PixelFormat srcFormat,
                        srcFilter->chrV, dstFilter->chrV, c->param) < 0)
             goto fail;
 
-#if ARCH_PPC && (HAVE_ALTIVEC || CONFIG_RUNTIME_CPUDETECT)
+#if HAVE_ALTIVEC
         FF_ALLOC_OR_GOTO(c, c->vYCoeffsBank, sizeof (vector signed short)*c->vLumFilterSize*c->dstH, fail);
         FF_ALLOC_OR_GOTO(c, c->vCCoeffsBank, sizeof (vector signed short)*c->vChrFilterSize*c->chrDstH, fail);
 
@@ -1115,7 +1115,9 @@ SwsContext *sws_getContext(int srcW, int srcH, enum PixelFormat srcFormat,
         av_log(c, AV_LOG_INFO, "from %s to %s%s ",
                sws_format_name(srcFormat),
 #ifdef DITHER1XBPP
-               dstFormat == PIX_FMT_BGR555 || dstFormat == PIX_FMT_BGR565 ? "dithered " : "",
+               dstFormat == PIX_FMT_BGR555 || dstFormat == PIX_FMT_BGR565 ||
+               dstFormat == PIX_FMT_RGB444BE || dstFormat == PIX_FMT_RGB444LE ||
+               dstFormat == PIX_FMT_BGR444BE || dstFormat == PIX_FMT_BGR444LE ? "dithered " : "",
 #else
                "",
 #endif
@@ -1184,6 +1186,9 @@ SwsContext *sws_getContext(int srcW, int srcH, enum PixelFormat srcFormat,
             av_log(c, AV_LOG_VERBOSE, "using %s YV12->BGR16 converter\n", (flags & SWS_CPU_CAPS_MMX) ? "MMX" : "C");
         else if (dstFormat==PIX_FMT_BGR555)
             av_log(c, AV_LOG_VERBOSE, "using %s YV12->BGR15 converter\n", (flags & SWS_CPU_CAPS_MMX) ? "MMX" : "C");
+        else if (dstFormat == PIX_FMT_RGB444BE || dstFormat == PIX_FMT_RGB444LE ||
+                 dstFormat == PIX_FMT_BGR444BE || dstFormat == PIX_FMT_BGR444LE)
+            av_log(c, AV_LOG_VERBOSE, "using %s YV12->BGR12 converter\n", (flags & SWS_CPU_CAPS_MMX) ? "MMX" : "C");
 
         av_log(c, AV_LOG_VERBOSE, "%dx%d -> %dx%d\n", srcW, srcH, dstW, dstH);
         av_log(c, AV_LOG_DEBUG, "lum srcW=%d srcH=%d dstW=%d dstH=%d xInc=%d yInc=%d\n",
@@ -1525,7 +1530,7 @@ void sws_freeContext(SwsContext *c)
     av_freep(&c->vChrFilter);
     av_freep(&c->hLumFilter);
     av_freep(&c->hChrFilter);
-#if ARCH_PPC && (HAVE_ALTIVEC || CONFIG_RUNTIME_CPUDETECT)
+#if HAVE_ALTIVEC
     av_freep(&c->vYCoeffsBank);
     av_freep(&c->vCCoeffsBank);
 #endif
@@ -1540,8 +1545,8 @@ void sws_freeContext(SwsContext *c)
     if (c->lumMmx2FilterCode) munmap(c->lumMmx2FilterCode, c->lumMmx2FilterCodeSize);
     if (c->chrMmx2FilterCode) munmap(c->chrMmx2FilterCode, c->chrMmx2FilterCodeSize);
 #elif HAVE_VIRTUALALLOC
-    if (c->lumMmx2FilterCode) VirtualFree(c->lumMmx2FilterCode, c->lumMmx2FilterCodeSize, MEM_RELEASE);
-    if (c->chrMmx2FilterCode) VirtualFree(c->chrMmx2FilterCode, c->chrMmx2FilterCodeSize, MEM_RELEASE);
+    if (c->lumMmx2FilterCode) VirtualFree(c->lumMmx2FilterCode, 0, MEM_RELEASE);
+    if (c->chrMmx2FilterCode) VirtualFree(c->chrMmx2FilterCode, 0, MEM_RELEASE);
 #else
     av_free(c->lumMmx2FilterCode);
     av_free(c->chrMmx2FilterCode);

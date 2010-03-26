@@ -71,7 +71,7 @@ void av_fast_malloc(void *ptr, unsigned int *size, unsigned int min_size)
     if (min_size < *size)
         return;
     *size= FFMAX(17*min_size/16 + 32, min_size);
-    av_free(*p);
+    if(*p) av_free(*p);
     *p = av_malloc(*size);
     if (!*p) *size = 0;
 }

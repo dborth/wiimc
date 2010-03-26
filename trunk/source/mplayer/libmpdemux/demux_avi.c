@@ -128,8 +128,8 @@ static int demux_avi_read_packet(demuxer_t *demux,demux_stream_t *ds,unsigned in
   int skip;
   float pts=0;
 
+  if(!ds || !demux)return 0;
   mp_dbg(MSGT_DEMUX,MSGL_DBG3,"demux_avi.read_packet: %X\n",id);
-
   if(ds==demux->audio){
       if(priv->pts_corrected==0){
           if(priv->pts_has_video){
@@ -765,10 +765,14 @@ static void demux_close_avi(demuxer_t *demuxer)
   avi_priv_t* priv=demuxer->priv;
 
   if(!priv)
+  {
     return;
+  }
 
-  if(priv->idx_size > 0)
+  if(priv->idx && priv->idx_size > 0 )
+  {
     free(priv->idx);
+  }
   free(priv);
 }
 

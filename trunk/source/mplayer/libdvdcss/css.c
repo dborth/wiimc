@@ -1157,6 +1157,7 @@ static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
     memset( BigTable, 0 , 16777216 * sizeof(int) );
     if( BigTable == NULL )
     {
+    	free( K1table );
         return -1;
     }
 

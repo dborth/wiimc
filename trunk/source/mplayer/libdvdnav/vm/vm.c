@@ -101,7 +101,6 @@ static pgcit_t* get_PGCIT(vm_t *vm);
 
 
 /* Helper functions */
-
 #ifdef TRACE
 static void vm_print_current_domain_state(vm_t *vm) {
   switch((vm->state).domain) {

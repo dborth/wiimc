@@ -28,3 +28,4 @@ char *strsep(char **stringp, const char *delim);
 #endif
 
 #endif /* MPLAYER_STRSEP_H */
+

@@ -1,6 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # MPlayer mirroring script
-# $Id: update_mplayer_rsync 30675 2010-02-20 21:02:49Z diego $
+# $Id: update_mplayer_rsync 30838 2010-03-04 15:57:21Z diego $
 
 PATH=<set_path_if_necessary>
 LOCK=<path_to_lockfile>
@@ -10,7 +10,7 @@ MAILADR=<report_mail_to_adr>
 #TMPDIR = /tmp
 #export TMPDIR
 
-TMPFILE=`mktemp -t mplayer.XXXXXXXXXXX`
+TMPFILE=$(mktemp -t mplayer.XXXXXXXXXXX)
 
 # Check to see if another sync is in progress
 if lockfile -! -l 43200 -r 0 "$LOCK"; then
@@ -30,9 +30,8 @@ rsync -pxlrHtWv --delete --delete-after --exclude '/benchmark' \
       --exclude '/old_stuff' --exclude '/tests' rsync.mplayerhq.hu::ftp/ \
       MPlayer  >> $TMPFILE 2>&1
 
-x=`wc -l $TMPFILE | awk '{print $1}'`
-if [ "$x" -ne "10" ]
-then
+x=$(wc -l $TMPFILE | awk '{print $1}')
+if [ "$x" -ne "10" ]; then
   mailx -s "MPlayer mirror" $MAILADR < $TMPFILE
 fi
 rm -f $TMPFILE

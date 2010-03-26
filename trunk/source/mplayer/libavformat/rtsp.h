@@ -271,6 +271,9 @@ typedef struct RTSPState {
      * for all subsequent RTSP requests, rather than the input URI; in
      * other cases, this is a copy of AVFormatContext->filename. */
     char control_uri[1024];
+
+    /** The synchronized start time of the output streams. */
+    int64_t start_time;
 } RTSPState;
 
 /**
@@ -394,6 +397,11 @@ void ff_rtsp_send_cmd(AVFormatContext *s, const char *cmd,
 int ff_rtsp_read_reply(AVFormatContext *s, RTSPMessageHeader *reply,
                        unsigned char **content_ptr,
                        int return_on_interleaved_data);
+
+/**
+ * Skip a RTP/TCP interleaved packet.
+ */
+void ff_rtsp_skip_packet(AVFormatContext *s);
 
 /**
  * Connect to the RTSP server and set up the individual media streams.

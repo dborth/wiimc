@@ -467,7 +467,6 @@ if (priv->isodml && (index_mode==-1 || index_mode==0 || index_mode==1)) {
     avisuperindex_chunk *cx;
     AVIINDEXENTRY *idx;
 
-
     if (priv->idx_size) free(priv->idx);
     priv->idx_size = 0;
     priv->idx_offset = 0;

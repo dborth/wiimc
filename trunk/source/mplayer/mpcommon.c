@@ -313,3 +313,4 @@ const m_option_t noconfig_opts[] = {
 #endif /* CONFIG_GUI */
     {NULL, NULL, 0, 0, 0, 0, NULL}
 };
+

@@ -118,6 +118,7 @@ extern const vf_info_t vf_info_yadif;
 extern const vf_info_t vf_info_blackframe;
 extern const vf_info_t vf_info_geq;
 extern const vf_info_t vf_info_ow;
+extern const vf_info_t vf_info_fixpts;
 
 // list of available filters:
 static const vf_info_t* const filter_list[]={
@@ -211,6 +212,7 @@ static const vf_info_t* const filter_list[]={
     &vf_info_yadif,
     &vf_info_blackframe,
     &vf_info_ow,
+    &vf_info_fixpts,
     NULL
 };
 
@@ -717,7 +719,10 @@ vf_instance_t* append_filters(vf_instance_t* last){
     for(i = 0 ; vf_settings[i].name ; i++)
       /* NOP */;
     for(i-- ; i >= 0 ; i--) {
+      //int x;
       //printf("Open filter %s\n",vf_settings[i].name);
+      //for(x=0;vf_settings[i].attribs[x];x++)printf("  attribs[%i]: %s\n",x,vf_settings[i].attribs[x]);
+      //printf("***************************************************************");
       vf = vf_open_filter(last,vf_settings[i].name,vf_settings[i].attribs);
       if(vf) last=vf;
     }
@@ -728,12 +733,14 @@ vf_instance_t* append_filters(vf_instance_t* last){
 //============================================================================
 
 void vf_uninit_filter(vf_instance_t* vf){
+	if(!vf) return;
     if(vf->uninit) vf->uninit(vf);
     free_mp_image(vf->imgctx.static_images[0]);
     free_mp_image(vf->imgctx.static_images[1]);
     free_mp_image(vf->imgctx.temp_images[0]);
     free_mp_image(vf->imgctx.export_images[0]);
     free(vf);
+    vf=NULL;
 }
 
 void vf_uninit_filter_chain(vf_instance_t* vf){

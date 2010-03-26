@@ -368,7 +368,7 @@ retry1:
 
   /* read main data into memory */
   if(!stream_read_frame_body(fr->framesize)){
-    printf("\nBroken frame at 0x%X                                                  \n",resyncpos);
+    //printf("\nBroken frame at 0x%X                                                  \n",resyncpos);
     return 0;
   }
   ++frames;

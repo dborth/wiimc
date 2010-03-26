@@ -25,6 +25,11 @@
 #include <string.h>
 #include <inttypes.h>
 #include <sys/types.h>
+#include <fcntl.h>
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 #define STREAMTYPE_DUMMY -1    // for placeholders, when the actual reading is handled in the demuxer
 #define STREAMTYPE_FILE 0      // read from seekable file
@@ -46,9 +51,7 @@
 #define STREAMTYPE_MF 18
 #define STREAMTYPE_RADIO 19
 
-//#define STREAM_BUFFER_SIZE 2048
-//#define STREAM_BUFFER_SIZE 4096
-#define STREAM_BUFFER_SIZE 8*1024
+#define STREAM_BUFFER_SIZE 4096
 
 #define VCD_SECTOR_SIZE 2352
 #define VCD_SECTOR_OFFS 24
@@ -90,6 +93,7 @@
 #define STREAM_CTRL_GET_NUM_ANGLES 9
 #define STREAM_CTRL_GET_ANGLE 10
 #define STREAM_CTRL_SET_ANGLE 11
+
 
 typedef enum {
 	streaming_stopped_e,
@@ -249,9 +253,8 @@ inline static unsigned int stream_read_int24(stream_t *s){
   y=(y<<8)|stream_read_char(s);
   return y;
 }
-#ifdef GEKKO
 int stream_read(stream_t *s,char* mem,int total);
-#else
+/*
 inline static int stream_read(stream_t *s,char* mem,int total){
   int len=total;
   while(len>0){
@@ -268,7 +271,7 @@ inline static int stream_read(stream_t *s,char* mem,int total){
   }
   return total;
 }
-#endif
+*/
 unsigned char* stream_read_line(stream_t *s,unsigned char* mem, int max, int utf16);
 
 inline static int stream_eof(stream_t *s){

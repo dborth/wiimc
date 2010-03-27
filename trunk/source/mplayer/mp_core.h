@@ -78,7 +78,6 @@ typedef struct MPContext {
 
     stream_t *stream;
     demuxer_t *demuxer;
-    demuxer_t *bg_demuxer; //geexbox bgvideo patch
     sh_audio_t *sh_audio;
     sh_video_t *sh_video;
     demux_stream_t *d_audio;

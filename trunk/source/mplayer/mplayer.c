@@ -1424,7 +1424,7 @@ static mp_osd_msg_t* osd_msg_stack = NULL;
  *
  */
 
-void set_osd_msg(int id, int level, unsigned int time, const char* fmt, ...) {
+void set_osd_msg(int id, int level, int time, const char* fmt, ...) {
     mp_osd_msg_t *msg,*last=NULL;
     va_list va;
     int r;

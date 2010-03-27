@@ -110,7 +110,7 @@ static void scroll_buffer(subtitle* buf)
 void subcc_init(void)
 {
 	int i;
-	printf("subcc_init(): initing...\n");
+	//printf("subcc_init(): initing...\n");
 	build_char_table();
 	for(i=0;i<SUB_MAX_TEXT;i++) {buf1.text[i]=buf2.text[i]=NULL;}
 	buf1.lines=buf2.lines=0;
@@ -122,7 +122,6 @@ void subcc_init(void)
 
 static void append_char(char c)
 {
-	printf("append_char\n");
 	if(!bb->lines) {bb->lines++; cursor_pos=0;}
 	if(bb->text[bb->lines - 1]==NULL)
 	{

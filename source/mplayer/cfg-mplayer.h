@@ -260,7 +260,7 @@ const m_option_t mplayer_opts[]={
 	{"crash-debug", &crash_debug, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
 	{"nocrash-debug", &crash_debug, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
 #endif
-	{"osdlevel", &osd_level, CONF_TYPE_INT, CONF_RANGE, 0, 4, NULL},
+	{"osdlevel", &osd_level, CONF_TYPE_INT, CONF_RANGE, 0, 3, NULL},
 	{"osd-duration", &osd_duration, CONF_TYPE_INT, CONF_MIN, 0, 0, NULL},
 #ifdef CONFIG_MENU
 	{"menu", &use_menu, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
@@ -324,7 +324,7 @@ const m_option_t mplayer_opts[]={
 	{"noenqueue", &enqueue, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 	{"guiwid", &guiWinID, CONF_TYPE_INT, 0, 0, 0, NULL},
 #endif
-	
+
   //
   
 	{"noloop", &mpctx_s.loop_times, CONF_TYPE_FLAG, 0, 0, -1, NULL},

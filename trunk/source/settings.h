@@ -95,9 +95,9 @@ extern struct SWiiSettings WiiSettings;
 
 const char validVideoExtensions[][7] =
 {
-	"3gp", "avi", "asf", "divx", "dvr-ms", "evo", "flv", "m1v", "m2v", "mkv", 
-	"mov", "mp4", "mp4v", "mpe", "mpeg", "mpg", "nsv", "ogm", "qt", "rmvb", 
-	"swf", "ts", "vob", "vro", "wmv", "y4m", ""
+	"3gp", "avi", "asf", "bik", "divx", "dvr-ms", "evo", "flv", "m1v", "m2v",
+	"mkv", "mov", "mp4", "mp4v", "mpe", "mpeg", "mpg", "nsv", "ogm", "qt",
+	"rmvb", "swf", "ts", "vob", "vro", "wmv", "y4m", ""
 };
 
 const char validAudioExtensions[][5] = 

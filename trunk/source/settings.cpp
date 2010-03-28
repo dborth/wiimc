@@ -692,7 +692,12 @@ bool LoadSettings()
 
 	if(settingsFound)
 	{
-		wiiLoadRestorePoints(appPath);
+		sprintf(filepath,"%s/restore_points",appPath);
+		char *buffer = (char *)malloc(50*1024);
+		int size = LoadFile(buffer, filepath, SILENT);
+		if(size > 0)
+			wiiLoadRestorePoints(buffer, size);
+		free(buffer);
 		InitMPlayer();
 	}
 	return settingsFound;

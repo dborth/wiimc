@@ -294,7 +294,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 			else if(fileList[selectedItem+1]->IsVisible())
 			{
 				fileList[selectedItem]->ResetState();
-				fileList[++selectedItem]->SetState(STATE_SELECTED, t->chan);
+				fileList[++selectedItem]->SetState(STATE_SELECTED, -1);
 			}
 		}
 	}
@@ -309,7 +309,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		else if(selectedItem > 0)
 		{
 			fileList[selectedItem]->ResetState();
-			fileList[--selectedItem]->SetState(STATE_SELECTED, t->chan);
+			fileList[--selectedItem]->SetState(STATE_SELECTED, -1);
 		}
 	}
 
@@ -376,15 +376,20 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		if(i != selectedItem && fileList[i]->GetState() == STATE_SELECTED)
 			fileList[i]->ResetState();
 		else if(focus && i == selectedItem && fileList[i]->GetState() == STATE_DEFAULT)
-			fileList[selectedItem]->SetState(STATE_SELECTED, t->chan);
+			fileList[selectedItem]->SetState(STATE_SELECTED, -1);
+		
+		if(!(t->wpad->btns_h & WPAD_BUTTON_DOWN) && !(t->wpad->btns_h & WPAD_BUTTON_UP))
+		{
+			int currChan = t->chan;
+			if(t->wpad->ir.valid && !fileList[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+				t->chan = -1;
+			fileList[i]->Update(t);
+			t->chan = currChan;
 
-		int currChan = t->chan;
-
-		if(t->wpad->ir.valid && !fileList[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
-			t->chan = -1;
-
-		fileList[i]->Update(t);
-		t->chan = currChan;
+			// override state chan
+			if(fileList[i]->GetStateChan() != -1)
+				fileList[i]->SetStateChan(-1);
+		}
 
 		if(fileList[i]->GetState() == STATE_SELECTED)
 		{

@@ -4612,7 +4612,7 @@ static void low_cache_loop(void)
 
 		progress = (int)(cache_fill_status*100.0/percent);
 
-		if(progress >= 100 || progress < 0)
+		if(progress >= 100 || progress <= 0)
 			break; // let's get out of here!
 
 		sprintf(msg, "Buffering (%02d%%)", progress);
@@ -4675,11 +4675,10 @@ void fast_continue()
  * Wii hooks
  ***************************************************************************/
 
-void wiiLoadRestorePoints(char * path)
+void wiiLoadRestorePoints(char *buffer, int size)
 {
-	int i;
-	FILE *f;
-	char filepath[MAXPATHLEN];
+	int c, i = 0, lineptr = 0;
+	char *line = NULL;
 
 	for(i=0; i<MAX_RESTORE_POINTS; i++)
 	{
@@ -4687,15 +4686,31 @@ void wiiLoadRestorePoints(char * path)
 		restore_points[i].position=0;
 	}
 
-	sprintf(filepath,"%s/%s",path,"restore_points");
-	f=fopen(filepath,"r");
+	i=0;
 
-	if(f==NULL)
-		return;
+	while(lineptr < size && i < MAX_RESTORE_POINTS)
+	{
+		// setup next line
+		if(line) free(line);
+		c = 0;
+		while(lineptr+c < size)
+		{
+			if(buffer[lineptr+c] == '\n')
+			{
+				line = strndup(&buffer[lineptr], c);
+				if(line[c-1] == '\r') line[c-1] = 0;
+				break;
+			}
+			c++;
+		}
 
-	for(i=0; i<MAX_RESTORE_POINTS && !feof(f); i++)
-		fscanf(f,"%[^\t]%i\n",restore_points[i].filename,&(restore_points[i].position));
-	fclose(f);
+		if(lineptr+c > size) // we've run out of new lines
+			break; // discard anything remaining
+
+		lineptr += c+1;
+		sscanf(line,"%[^\t]%i",restore_points[i].filename,&(restore_points[i].position));
+		i++;
+	}
 }
 
 char * wiiSaveRestorePoints(char * path)
@@ -4814,6 +4829,14 @@ void wiiGetTimeDisplay(char * buf)
 	sprintf(buf, "%02d:%02d:%02d / %02d:%02d:%02d",
 		pts/3600,(pts/60)%60,pts%60,
 		len/3600,(len/60)%60,len%60);
+}
+
+bool wiiAudioOnly()
+{
+	if(!mpctx || mpctx->sh_video || !mpctx->sh_audio)
+		return false;
+	
+	return true;
 }
 
 char * wiiGetMetaTitle()

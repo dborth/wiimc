@@ -173,10 +173,14 @@ static int UpdateDirName()
 
 	// we started in a playlist, and have nowhere to go back to but the device listing
 	if(browser.selIndex == 0 && strlen(browserList[0].filename) == 0)
+	{
 		browser.dir[0] = 0;
+		return 1;
+	}
 
 	// entering a playlist - this is handled when the playlist is parsed
-	if(browser.selIndex > 0 && browserList[browser.selIndex].isplaylist)
+	if((browser.selIndex > 0 || (menuCurrent == MENU_BROWSE_ONLINEMEDIA && browser.dir[0] == 0))
+		&& browserList[browser.selIndex].isplaylist)
 	{
 		BrowserHistoryStore(browser.dir);
 		GetFullPath(browser.selIndex, browser.dir);
@@ -191,12 +195,12 @@ static int UpdateDirName()
 		return 1;
 	}
 
-	/* current directory doesn't change */
+	// current directory doesn't change
 	if (strcmp(browserList[browser.selIndex].filename,".") == 0)
 	{
 		return 0;
 	}
-	/* go up to parent directory */
+	// go up to parent directory
 	else if (strcmp(browserList[browser.selIndex].filename,"..") == 0)
 	{
 		// already at the top level
@@ -206,7 +210,7 @@ static int UpdateDirName()
 		}
 		else
 		{
-			/* determine last subdirectory namelength */
+			// determine last subdirectory namelength
 			sprintf(temp,"%s",browser.dir);
 			test = strtok(temp,"/");
 			while (test != NULL)
@@ -215,7 +219,7 @@ static int UpdateDirName()
 				test = strtok(NULL,"/");
 			}
 
-			/* remove last subdirectory name */
+			// remove last subdirectory name
 			size = strlen(browser.dir) - size - 1;
 			browser.dir[size] = 0;
 		}
@@ -229,14 +233,14 @@ static int UpdateDirName()
 			return -1;
 	}
 
-	/* Open directory */
+	// Open directory
 
-	/* test new directory namelength */
+	// test new directory namelength
 	if ((strlen(browser.dir)+1+strlen(browserList[browser.selIndex].filename)) < MAXPATHLEN)
 	{
 		if(!browserList[browser.selIndex].isplaylist)
 		{
-			/* update current directory name */
+			// update current directory name
 			sprintf(browser.dir, "%s%s/",browser.dir, browserList[browser.selIndex].filename);
 		}
 		return 1;
@@ -293,7 +297,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	{
 		bool mounted = ChangeInterface(browser.dir, NOTSILENT);
 		if(mounted)
-		{		
+		{
 			char *ext = strrchr(browser.dir,'.');
 			if(ext != NULL) ext++;
 			isPlaylist = IsPlaylistExt(ext);
@@ -314,6 +318,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		if(!ParsePlaylistFile())
 		{
 			strcpy(browser.dir, BrowserHistoryRetrieve());
+			BrowserHistoryDiscard();
 			return BrowserChangeFolder(false, waitParse);
 		}
 	}

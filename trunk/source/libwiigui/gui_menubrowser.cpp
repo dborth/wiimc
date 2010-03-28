@@ -172,15 +172,18 @@ void GuiMenuBrowser::Update(GuiTrigger * t)
 		if(i != selectedItem && itemBtn[i]->GetState() == STATE_SELECTED)
 			itemBtn[i]->ResetState();
 		else if(focus && i == selectedItem && itemBtn[i]->GetState() == STATE_DEFAULT)
-			itemBtn[selectedItem]->SetState(STATE_SELECTED, t->chan);
+			itemBtn[selectedItem]->SetState(STATE_SELECTED, -1);
 
-		int currChan = t->chan;
+		if(!(t->wpad->btns_h & WPAD_BUTTON_DOWN) && !(t->wpad->btns_h & WPAD_BUTTON_UP))		
+		{
+			int currChan = t->chan;
 
-		if(t->wpad->ir.valid && !itemBtn[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
-			t->chan = -1;
+			if(t->wpad->ir.valid && !itemBtn[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+				t->chan = -1;
 
-		itemBtn[i]->Update(t);
-		t->chan = currChan;
+			itemBtn[i]->Update(t);
+			t->chan = currChan;
+		}
 
 		if(itemBtn[i]->GetState() == STATE_SELECTED)
 			selectedItem = i;
@@ -194,13 +197,13 @@ void GuiMenuBrowser::Update(GuiTrigger * t)
 	{
 		itemBtn[selectedItem]->ResetState();
 		selectedItem = this->FindMenuItem(selectedItem, 1);
-		itemBtn[selectedItem]->SetState(STATE_SELECTED, t->chan);
+		itemBtn[selectedItem]->SetState(STATE_SELECTED, -1);
 	}
 	else if(t->Up())
 	{
 		itemBtn[selectedItem]->ResetState();
 		selectedItem = this->FindMenuItem(selectedItem, -1);
-		itemBtn[selectedItem]->SetState(STATE_SELECTED, t->chan);
+		itemBtn[selectedItem]->SetState(STATE_SELECTED, -1);
 	}
 
 	if(updateCB)

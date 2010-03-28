@@ -1229,20 +1229,21 @@ static int ParsePLXPlaylist()
 		// setup next line
 		if(line) free(line);
 		c = 0;
-		while(c < size)
+		while(lineptr+c < size)
 		{
 			if(buffer[lineptr+c] == '\n')
 			{
 				line = strndup(&buffer[lineptr], c);
 				if(line[c-1] == '\r') line[c-1] = 0;
-				lineptr += c+1;
 				break;
 			}
 			c++;
 		}
 
-		if(c >= size)
-			break;
+		if(lineptr+c > size) // we've run out of new lines
+			break; // discard anything remaining
+
+		lineptr += c+1;
 
 		if(sscanf(line, "%[^=]=%[^\n]", attribute, value) == 2)
 		{
@@ -1410,6 +1411,13 @@ int ParsePlaylistFile()
 		}
 		pt_iter_destroy(&pt_iter);
 	}
+
+	if(browser.numEntries == 1)
+	{
+		ResetBrowser();
+		ErrorPrompt("Playlist does not contain any supported entries!");
+	}
+
 	return browser.numEntries;
 }
 

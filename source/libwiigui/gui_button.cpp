@@ -210,46 +210,40 @@ void GuiButton::Update(GuiTrigger * t)
 	else if(parentElement && parentElement->GetState() == STATE_DISABLED)
 		return;
 
-	#ifdef HW_RVL
 	// cursor
-	if(t->wpad->ir.valid && t->chan >= 0)
+	if(t->wpad->ir.valid && this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
 	{
-		if(this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+		if(state == STATE_DEFAULT) // we weren't on the button before!
 		{
-			if(state == STATE_DEFAULT) // we weren't on the button before!
+			this->SetState(STATE_SELECTED, t->chan);
+
+			if(this->Rumble())
+				RequestRumble(t->chan);
+
+			//if(soundOver)
+			//	soundOver->Play();
+
+			if(effectsOver && !effects)
 			{
-				this->SetState(STATE_SELECTED, t->chan);
-
-				if(this->Rumble())
-					RequestRumble(t->chan);
-
-				//if(soundOver)
-				//	soundOver->Play();
-
-				if(effectsOver && !effects)
-				{
-					// initiate effects
-					effects = effectsOver;
-					effectAmount = effectAmountOver;
-					effectTarget = effectTargetOver;
-				}
-			}
-		}
-		else
-		{
-			if(state == STATE_SELECTED && (stateChan == t->chan || stateChan == -1))
-				this->ResetState();
-
-			if(effectTarget == effectTargetOver && effectAmount == effectAmountOver)
-			{
-				// initiate effects (in reverse)
+				// initiate effects
 				effects = effectsOver;
-				effectAmount = -effectAmountOver;
-				effectTarget = 100;
+				effectAmount = effectAmountOver;
+				effectTarget = effectTargetOver;
 			}
 		}
 	}
-	#endif
+	else if(state == STATE_SELECTED && stateChan == t->chan && stateChan != -1)
+	{
+		this->ResetState();
+	}
+
+	if(state == STATE_DEFAULT && effectsOver > 0 && effectTarget == effectTargetOver && effectAmount == effectAmountOver)
+	{
+		// initiate effects (in reverse)
+		effects = effectsOver;
+		effectAmount = -effectAmountOver;
+		effectTarget = 100;
+	}
 
 	// button triggers
 	if(this->IsClickable())

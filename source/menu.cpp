@@ -1205,14 +1205,18 @@ static void MenuBrowse(int menu)
 		if(upOneLevelBtn.GetState() == STATE_CLICKED)
 		{
 			upOneLevelBtn.ResetState();
-			browser.selIndex = 0;
 
-			if(!BrowserChangeFolder())
-				goto done;
-
-			fileBrowser.ResetState();
-			fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-			fileBrowser.TriggerUpdate();
+			if(browser.dir[0] != 0)
+			{
+				browser.selIndex = 0;
+	
+				if(!BrowserChangeFolder())
+					goto done;
+	
+				fileBrowser.ResetState();
+				fileBrowser.fileList[0]->SetState(STATE_SELECTED);
+				fileBrowser.TriggerUpdate();
+			}
 		}
 
 		// update file browser based on arrow buttons
@@ -1248,19 +1252,24 @@ static void MenuBrowse(int menu)
 						{
 							continue;
 						}
-						else if(numItems == 2) // let's load this one file
-						{
-							sprintf(loadedFile, browserList[1].filename);
-							// go up one level
-							browser.selIndex = 0;
-							BrowserChangeFolder();
-						}
 						else
 						{
-							fileBrowser.ResetState();
-							fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-							fileBrowser.TriggerUpdate();
-							continue;
+							char *ext = strrchr(browserList[1].filename,'.');
+							if(ext != NULL) ext++;
+							if(numItems == 2 && !IsPlaylistExt(ext)) // let's load this one file
+							{
+								sprintf(loadedFile, browserList[1].filename);
+								// go up one level
+								browser.selIndex = 0;
+								BrowserChangeFolder();
+							}
+							else
+							{
+								fileBrowser.ResetState();
+								fileBrowser.fileList[0]->SetState(STATE_SELECTED);
+								fileBrowser.TriggerUpdate();
+								continue;
+							}
 						}
 					}
 					else
@@ -1277,43 +1286,50 @@ static void MenuBrowse(int menu)
 						usleep(THREAD_SLEEP);
 
 					CancelAction();
+					playingAudio = false;
 
 					if(guiShutdown)
 					{
-						playingAudio = false;
 						goto done;
 					}
-					else
+					else // failed or we are playing audio
 					{
 						ResumeDeviceThread();
 
-						playingAudio = true;
-						UpdateAudiobarPauseBtn(false);
-
-						// we loaded an audio file - if we already had a video
-						// loaded, we should remove the bg
-						mainWindow->Remove(videoImg);
-
-						// update the audio bar
-						if(wiiGetTimeLength() <= 1) // this is a stream - hide some elements
+						if(!wiiAudioOnly())
 						{
-							audiobar->Remove(audiobarProgressBtn);
-							audiobar->Remove(audiobarProgressLeftImg);
-							audiobar->Remove(audiobarProgressMidImg);
-							audiobar->Remove(audiobarProgressRightImg);
-							audiobar->Remove(audiobarSkipBackwardBtn);
-							audiobar->Remove(audiobarSkipForwardBtn);
-							audiobar->Remove(audiobarModeBtn);
+							ErrorPrompt("Error loading file!");
 						}
 						else
 						{
-							audiobar->Append(audiobarProgressBtn);
-							audiobar->Append(audiobarProgressLeftImg);
-							audiobar->Append(audiobarProgressMidImg);
-							audiobar->Append(audiobarProgressRightImg);
-							audiobar->Append(audiobarSkipBackwardBtn);
-							audiobar->Append(audiobarSkipForwardBtn);
-							audiobar->Append(audiobarModeBtn);
+							playingAudio = true;
+							UpdateAudiobarPauseBtn(false);
+	
+							// we loaded an audio file - if we already had a video
+							// loaded, we should remove the bg
+							mainWindow->Remove(videoImg);
+	
+							// update the audio bar
+							if(wiiGetTimeLength() <= 1) // this is a stream - hide some elements
+							{
+								audiobar->Remove(audiobarProgressBtn);
+								audiobar->Remove(audiobarProgressLeftImg);
+								audiobar->Remove(audiobarProgressMidImg);
+								audiobar->Remove(audiobarProgressRightImg);
+								audiobar->Remove(audiobarSkipBackwardBtn);
+								audiobar->Remove(audiobarSkipForwardBtn);
+								audiobar->Remove(audiobarModeBtn);
+							}
+							else
+							{
+								audiobar->Append(audiobarProgressBtn);
+								audiobar->Append(audiobarProgressLeftImg);
+								audiobar->Append(audiobarProgressMidImg);
+								audiobar->Append(audiobarProgressRightImg);
+								audiobar->Append(audiobarSkipBackwardBtn);
+								audiobar->Append(audiobarSkipForwardBtn);
+								audiobar->Append(audiobarModeBtn);
+							}
 						}
 					}
 				}
@@ -3541,6 +3557,9 @@ static void AudioProgressCallback(void * ptr)
 		char *album = NULL;
 		char *year = NULL;
 		int i;
+
+		audiobarNowPlaying[2]->SetText(NULL);
+		audiobarNowPlaying[3]->SetText(NULL);
 
 		if(wiiGetMetaTitle() != NULL)
 		{

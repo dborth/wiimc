@@ -50,10 +50,11 @@ int MusicPlaylistLoad()
 		return 0;
 	}
 
+	BrowserHistoryStore(browser.dir);
 	ResetBrowser();
 
 	AddBrowserEntry();
-	strcpy(browserList[0].filename, browser.dir);
+	strcpy(browserList[0].filename, BrowserHistoryRetrieve());
 	sprintf(browserList[0].displayname, "Exit Playlist");
 	browserList[0].length = 0;
 	browserList[0].mtime = 0;

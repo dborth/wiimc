@@ -96,7 +96,7 @@ void EnableRumble()
 
 void RequestRumble(int i)
 {
-	if(!WiiSettings.rumble || rumbleDisabled) return;
+	if(!WiiSettings.rumble || rumbleDisabled || i < 0) return;
 	
 	now[i] = gettime();
 

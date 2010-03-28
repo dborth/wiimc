@@ -51,8 +51,8 @@ extern int controlledbygui;
 int mplayer_loadfile(const char* _file); // in mplayer.c
 void DrawMPlayer(); // in gx_supp.c
 
-void wiiLoadRestorePoints(char * path);
-char * wiiSaveRestorePoints(char * path);
+void wiiLoadRestorePoints(char *buffer, int size);
+char * wiiSaveRestorePoints(char *path);
 void wiiGotoGui();
 void wiiPause();
 bool wiiIsPaused();
@@ -64,7 +64,8 @@ void wiiSkipForward();
 void wiiSkipBackward();
 double wiiGetTimeLength();
 double wiiGetTimePos();
-void wiiGetTimeDisplay(char * buf);
+void wiiGetTimeDisplay(char *buf);
+bool wiiAudioOnly();
 char * wiiGetMetaTitle();
 char * wiiGetMetaArtist();
 char * wiiGetMetaAlbum();

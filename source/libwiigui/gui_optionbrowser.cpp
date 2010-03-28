@@ -324,15 +324,18 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 		if(i != selectedItem && optionBtn[i]->GetState() == STATE_SELECTED)
 			optionBtn[i]->ResetState();
 		else if(focus && i == selectedItem && optionBtn[i]->GetState() == STATE_DEFAULT)
-			optionBtn[selectedItem]->SetState(STATE_SELECTED, t->chan);
+			optionBtn[selectedItem]->SetState(STATE_SELECTED, -1);
 
-		int currChan = t->chan;
+		if(!(t->wpad->btns_h & WPAD_BUTTON_DOWN) && !(t->wpad->btns_h & WPAD_BUTTON_UP))		
+		{
+			int currChan = t->chan;
 
-		if(t->wpad->ir.valid && !optionBtn[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
-			t->chan = -1;
+			if(t->wpad->ir.valid && !optionBtn[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+				t->chan = -1;
 
-		optionBtn[i]->Update(t);
-		t->chan = currChan;
+			optionBtn[i]->Update(t);
+			t->chan = currChan;
+		}
 
 		if(optionBtn[i]->GetState() == STATE_SELECTED)
 			selectedItem = i;
@@ -357,7 +360,7 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 			else if(optionBtn[selectedItem+1]->IsVisible())
 			{
 				optionBtn[selectedItem]->ResetState();
-				optionBtn[selectedItem+1]->SetState(STATE_SELECTED, t->chan);
+				optionBtn[selectedItem+1]->SetState(STATE_SELECTED, -1);
 				selectedItem++;
 			}
 		}
@@ -378,7 +381,7 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 			else
 			{
 				optionBtn[selectedItem]->ResetState();
-				optionBtn[selectedItem-1]->SetState(STATE_SELECTED, t->chan);
+				optionBtn[selectedItem-1]->SetState(STATE_SELECTED, -1);
 				selectedItem--;
 			}
 		}

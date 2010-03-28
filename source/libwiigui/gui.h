@@ -313,6 +313,9 @@ class GuiElement
 		//!Gets the controller channel that last changed the element's state
 		//!\return Channel number (0-3, -1 = no channel)
 		int GetStateChan();
+		//!Sets the controller channel that last changed the element's state
+		//!\param c channel number
+		void SetStateChan(int c);
 		//!Sets the element's alpha value
 		//!\param a alpha value
 		void SetAlpha(int a);

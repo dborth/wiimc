@@ -254,6 +254,11 @@ int GuiElement::GetStateChan()
 	return stateChan;
 }
 
+void GuiElement::SetStateChan(int c)
+{
+	stateChan = c;
+}
+
 void GuiElement::SetState(int s, int c)
 {
 	state = s;

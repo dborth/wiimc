@@ -4675,62 +4675,6 @@ void fast_continue()
  * Wii hooks
  ***************************************************************************/
 
-void wiiLoadRestorePoints(char *buffer, int size)
-{
-	int c, i = 0, lineptr = 0;
-	char *line = NULL;
-
-	for(i=0; i<MAX_RESTORE_POINTS; i++)
-	{
-		restore_points[i].filename[0]='\0';
-		restore_points[i].position=0;
-	}
-
-	i=0;
-
-	while(lineptr < size && i < MAX_RESTORE_POINTS)
-	{
-		// setup next line
-		if(line) free(line);
-		c = 0;
-		while(lineptr+c < size)
-		{
-			if(buffer[lineptr+c] == '\n')
-			{
-				line = strndup(&buffer[lineptr], c);
-				if(line[c-1] == '\r') line[c-1] = 0;
-				break;
-			}
-			c++;
-		}
-
-		if(lineptr+c > size) // we've run out of new lines
-			break; // discard anything remaining
-
-		lineptr += c+1;
-		sscanf(line,"%[^\t]%i",restore_points[i].filename,&(restore_points[i].position));
-		i++;
-	}
-}
-
-char * wiiSaveRestorePoints(char * path)
-{
-	int i;
-	char tmppath[MAXPATHLEN];
-	char *buff = malloc(MAX_RESTORE_POINTS*1024 + 1024);
-	buff[0] = 0;
-
-	for(i=0; i<MAX_RESTORE_POINTS; i++)
-	{
-		if(restore_points[i].filename[0]=='\0')
-			continue;
-
-		sprintf(tmppath,"%s\t%i\n",restore_points[i].filename,restore_points[i].position);
-		strcat(buff,tmppath);
-	}
-	return buff;
-}
-
 void wiiGotoGui()
 {
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
@@ -4962,5 +4906,61 @@ void wiiSetProperty(int command, float value)
 			break;
 	}
 	mp_input_queue_cmd(cmd);
+}
+
+void wiiLoadRestorePoints(char *buffer, int size)
+{
+	int c, i = 0, lineptr = 0;
+	char *line = NULL;
+
+	for(i=0; i<MAX_RESTORE_POINTS; i++)
+	{
+		restore_points[i].filename[0]='\0';
+		restore_points[i].position=0;
+	}
+
+	i=0;
+
+	while(lineptr < size && i < MAX_RESTORE_POINTS)
+	{
+		// setup next line
+		if(line) free(line);
+		c = 0;
+		while(lineptr+c < size)
+		{
+			if(buffer[lineptr+c] == '\n')
+			{
+				line = strndup(&buffer[lineptr], c);
+				if(line[c-1] == '\r') line[c-1] = 0;
+				break;
+			}
+			c++;
+		}
+
+		if(lineptr+c > size) // we've run out of new lines
+			break; // discard anything remaining
+
+		lineptr += c+1;
+		sscanf(line,"%[^\t]%i",restore_points[i].filename,&(restore_points[i].position));
+		i++;
+	}
+}
+
+char * wiiSaveRestorePoints(char * path)
+{
+	int i;
+	char tmppath[MAXPATHLEN];
+	char *buff = malloc(MAX_RESTORE_POINTS*1024 + 1024);
+	buff[0] = 0;
+
+	for(i=0; i<MAX_RESTORE_POINTS; i++)
+	{
+		if(restore_points[i].filename[0]=='\0')
+			continue;
+
+		sprintf(tmppath,"%s\t%i\n",restore_points[i].filename,restore_points[i].position);
+		strcat(buff,tmppath);
+	}
+	return buff;
 }
 #endif

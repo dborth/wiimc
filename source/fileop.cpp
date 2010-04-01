@@ -1091,6 +1091,8 @@ static bool ParseDirEntries()
 		// move to this file
 		if(indexFound > 0)
 		{
+			browserList[indexFound].icon = ICON_PLAY;
+
 			if(indexFound > FILE_PAGESIZE)
 			{			
 				browser.pageIndex = (ceil(indexFound/FILE_PAGESIZE*1.0)) * FILE_PAGESIZE;

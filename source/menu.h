@@ -17,12 +17,12 @@ void MPlayerMenu();
 void ErrorPrompt(const char * msg);
 int ErrorPromptRetry(const char * msg);
 void InfoPrompt(const char * msg);
+void InfoPrompt(const char *title, const char *msg);
 void ShowAction (const char *msg);
 void CancelAction();
 int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
 void SuspendPictureThread();
 void ResetText();
-void UpdateAudiobarPauseBtn(bool paused);
 
 extern "C" {
 void ShowProgress (const char *msg, int done, int total);

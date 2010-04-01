@@ -14,10 +14,11 @@
 /**
  * Constructor for the GuiOptionBrowser class.
  */
-GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
+GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 {
 	width = w;
-	height = h;
+	height = s*32;
+	size = s;
 	options = l;
 	selectable = true;
 	listOffset = this->FindMenuItem(-1, 1);
@@ -31,29 +32,36 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
 	//btnSoundOver = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	//btnSoundClick = new GuiSound(button_click_pcm, button_click_pcm_size, SOUND_PCM);
 
-	bgOptions = new GuiImageData(bg_options_png);
-	bgOptionsImg = new GuiImage(bgOptions);
-	bgOptionsImg->SetParent(this);
-	bgOptionsImg->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-
-	bgOptionsEntry = new GuiImageData(bg_options_entry_png);
+	bgOptionsEntry = new GuiImageData(bg_entry_png);
+	bgOptionsEntryOver = new GuiImageData(bg_entry_over_png);
 
 	iconSMB = new GuiImageData(icon_smb_png);
 	iconFTP = new GuiImageData(icon_ftp_png);
 
-	scrollbar = new GuiImageData(scrollbar_png);
-	scrollbarImg = new GuiImage(scrollbar);
-	scrollbarImg->SetParent(this);
-	scrollbarImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	scrollbarImg->SetPosition(0, 30);
+	scrollbarTop = new GuiImageData(scrollbar_top_png);
+	scrollbarMid = new GuiImageData(scrollbar_mid_png);
+	scrollbarBottom = new GuiImageData(scrollbar_bottom_png);
+	scrollbarTopImg = new GuiImage(scrollbarTop);
+	scrollbarTopImg->SetParent(this);
+	scrollbarTopImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	scrollbarTopImg->SetPosition(-30, 35);
+	scrollbarMidImg = new GuiImage(scrollbarMid);
+	scrollbarMidImg->SetParent(this);
+	scrollbarMidImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	scrollbarMidImg->SetPosition(-30, 55);
+	scrollbarMidImg->SetTileVertical((s*32-112)/16);
+	scrollbarBottomImg = new GuiImage(scrollbarBottom);
+	scrollbarBottomImg->SetParent(this);
+	scrollbarBottomImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	scrollbarBottomImg->SetPosition(-30, height-57);
 
-	arrowDown = new GuiImageData(scrollbar_arrowdown_png);
+	arrowDown = new GuiImageData(arrow_down_png);
 	arrowDownImg = new GuiImage(arrowDown);
-	arrowDownOver = new GuiImageData(scrollbar_arrowdown_over_png);
+	arrowDownOver = new GuiImageData(arrow_down_over_png);
 	arrowDownOverImg = new GuiImage(arrowDownOver);
-	arrowUp = new GuiImageData(scrollbar_arrowup_png);
+	arrowUp = new GuiImageData(arrow_up_png);
 	arrowUpImg = new GuiImage(arrowUp);
-	arrowUpOver = new GuiImageData(scrollbar_arrowup_over_png);
+	arrowUpOver = new GuiImageData(arrow_up_over_png);
 	arrowUpOverImg = new GuiImage(arrowUpOver);
 
 	arrowUpBtn = new GuiButton(arrowUpImg->GetWidth(), arrowUpImg->GetHeight());
@@ -61,6 +69,7 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
 	arrowUpBtn->SetImage(arrowUpImg);
 	arrowUpBtn->SetImageOver(arrowUpOverImg);
 	arrowUpBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	arrowUpBtn->SetPosition(-30, 4);
 	arrowUpBtn->SetSelectable(false);
 	arrowUpBtn->SetTrigger(trigA);
 	//arrowUpBtn->SetSoundOver(btnSoundOver);
@@ -71,32 +80,57 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
 	arrowDownBtn->SetImage(arrowDownImg);
 	arrowDownBtn->SetImageOver(arrowDownOverImg);
 	arrowDownBtn->SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
+	arrowDownBtn->SetPosition(-30, -8);
 	arrowDownBtn->SetSelectable(false);
 	arrowDownBtn->SetTrigger(trigA);
 	//arrowDownBtn->SetSoundOver(btnSoundOver);
 	//arrowDownBtn->SetSoundClick(btnSoundClick);
-
-	for(int i=0; i<PAGESIZE; i++)
+	
+	if(options->length <= size) // we don't need a scrollbar
 	{
-		optionTxt[i] = new GuiText(NULL, 20, (GXColor){255, 255, 255, 0xff});
-		optionTxt[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		optionTxt[i]->SetPosition(8,0);
+		scrollbarTopImg->SetVisible(false);
+		scrollbarMidImg->SetVisible(false);
+		scrollbarBottomImg->SetVisible(false);
+		arrowUpBtn->SetVisible(false);
+		arrowUpBtn->SetState(STATE_DISABLED);
+		arrowDownBtn->SetVisible(false);
+		arrowDownBtn->SetState(STATE_DISABLED);
+	}
 
-		optionVal[i] = new GuiText(NULL, 20, (GXColor){255, 255, 255, 0xff});
+	for(int i=0; i<size; i++)
+	{
+		optionTxt[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
+		optionTxt[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+		optionTxt[i]->SetPosition(0,-2);
+
+		optionVal[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
 		optionVal[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		optionVal[i]->SetPosition(250,0);
+		optionVal[i]->SetPosition(250,-2);
 
 		optionBg[i] = new GuiImage(bgOptionsEntry);
-		optionIcon[i] = NULL;
+		optionBg[i]->SetTile(w/20);
+		optionBg[i]->SetPosition(-30, 0);
 
-		optionBtn[i] = new GuiButton(420,26);
+		optionBgOver[i] = new GuiImage(bgOptionsEntryOver);
+		optionBgOver[i]->SetTile(w/20);
+		optionBgOver[i]->SetPosition(-30, -2);
+
+		optionIcon[i] = new GuiImage;
+		optionIcon[i]->SetPosition(0, -2);
+
+		optionBtn[i] = new GuiButton(w-92, 32);
 		optionBtn[i]->SetParent(this);
 		optionBtn[i]->SetLabel(optionTxt[i], 0);
 		optionBtn[i]->SetLabel(optionVal[i], 1);
-		optionBtn[i]->SetImageOver(optionBg[i]);
-		optionBtn[i]->SetPosition(0,26*i+3);
+		optionBtn[i]->SetImage(optionBg[i]);
+		optionBtn[i]->SetImageOver(optionBgOver[i]);
+		optionBtn[i]->SetIcon(optionIcon[i]);
+		optionBtn[i]->SetPosition(30,32*i);
 		optionBtn[i]->SetTrigger(trigA);
 		//optionBtn[i]->SetSoundClick(btnSoundClick);
+		
+		optionBtn[i]->SetVisible(false);
+		optionBtn[i]->SetState(STATE_DISABLED);
 	}
 }
 
@@ -108,18 +142,19 @@ GuiOptionBrowser::~GuiOptionBrowser()
 	delete arrowUpBtn;
 	delete arrowDownBtn;
 
-	delete bgOptionsImg;
-	delete scrollbarImg;
+	delete scrollbarTopImg;
+	delete scrollbarMidImg;
+	delete scrollbarBottomImg;
 	delete arrowDownImg;
 	delete arrowDownOverImg;
 	delete arrowUpImg;
 	delete arrowUpOverImg;
 
-	delete bgOptions;
-	delete bgOptionsEntry;
 	delete iconSMB;
 	delete iconFTP;
-	delete scrollbar;
+	delete scrollbarTop;
+	delete scrollbarMid;
+	delete scrollbarBottom;
 	delete arrowDown;
 	delete arrowDownOver;
 	delete arrowUp;
@@ -129,32 +164,34 @@ GuiOptionBrowser::~GuiOptionBrowser()
 	//delete btnSoundOver;
 	//delete btnSoundClick;
 
-	for(int i=0; i<PAGESIZE; i++)
+	for(int i=0; i<size; i++)
 	{
 		delete optionTxt[i];
 		delete optionVal[i];
 		delete optionBg[i];
+		delete optionBgOver[i];
+		delete optionIcon[i];
 		delete optionBtn[i];
 	}
 }
 
 void GuiOptionBrowser::SetCol1Position(int x)
 {
-	for(int i=0; i<PAGESIZE; i++)
-		optionTxt[i]->SetPosition(x,0);
+	for(int i=0; i<size; i++)
+		optionTxt[i]->SetPosition(x,-2);
 }
 
 void GuiOptionBrowser::SetCol2Position(int x)
 {
-	for(int i=0; i<PAGESIZE; i++)
-		optionVal[i]->SetPosition(x,0);
+	for(int i=0; i<size; i++)
+		optionVal[i]->SetPosition(x,-2);
 }
 
 void GuiOptionBrowser::SetFocus(int f)
 {
 	focus = f;
 
-	for(int i=0; i<PAGESIZE; i++)
+	for(int i=0; i<size; i++)
 		optionBtn[i]->ResetState();
 
 	if(f == 1)
@@ -169,7 +206,7 @@ void GuiOptionBrowser::ResetState()
 		stateChan = -1;
 	}
 
-	for(int i=0; i<PAGESIZE; i++)
+	for(int i=0; i<size; i++)
 	{
 		optionBtn[i]->ResetState();
 	}
@@ -178,7 +215,7 @@ void GuiOptionBrowser::ResetState()
 int GuiOptionBrowser::GetClickedOption()
 {
 	int found = -1;
-	for(int i=0; i<PAGESIZE; i++)
+	for(int i=0; i<size; i++)
 	{
 		if(optionBtn[i]->GetState() == STATE_CLICKED)
 		{
@@ -217,11 +254,9 @@ void GuiOptionBrowser::Draw()
 	if(!this->IsVisible())
 		return;
 
-	bgOptionsImg->Draw();
-
 	int next = listOffset;
 
-	for(int i=0; i<PAGESIZE; i++)
+	for(int i=0; i<size; i++)
 	{
 		if(next >= 0)
 		{
@@ -232,7 +267,9 @@ void GuiOptionBrowser::Draw()
 			break;
 	}
 
-	scrollbarImg->Draw();
+	scrollbarTopImg->Draw();
+	scrollbarMidImg->Draw();
+	scrollbarBottomImg->Draw();
 	arrowUpBtn->Draw();
 	arrowDownBtn->Draw();
 
@@ -248,7 +285,7 @@ void GuiOptionBrowser::ResetText()
 {
 	int next = listOffset;
 
-	for(int i=0; i<PAGESIZE; i++)
+	for(int i=0; i<size; i++)
 	{
 		if(next >= 0)
 		{
@@ -275,7 +312,7 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 	if(listChanged)
 	{
 		listChanged = false;
-		for(int i=0; i<PAGESIZE; i++)
+		for(int i=0; i<size; i++)
 		{
 			if(next >= 0)
 			{
@@ -287,27 +324,21 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 
 				optionTxt[i]->SetText(options->name[next]);
 				optionVal[i]->SetText(options->value[next]);
-				
-				if(optionIcon[i])
-				{
-					delete(optionIcon[i]);
-					optionIcon[i] = NULL;
-				}
-				
+
 				if(options->icon[next] > 0)
 				{
 					switch(options->icon[next])
 					{
 						case ICON_SMB:
-							optionIcon[i] = new GuiImage(iconSMB);
+							optionIcon[i]->SetImage(iconSMB);
 							break;
 						case ICON_FTP:
-							optionIcon[i] = new GuiImage(iconFTP);
+							optionIcon[i]->SetImage(iconFTP);
 							break;
+						default:
+							optionIcon[i]->SetImage(NULL);
 					}
-					optionBtn[i]->SetIcon(optionIcon[i]);
 				}
-				
 				optionIndex[i] = next;
 				next = this->FindMenuItem(next, 1);
 			}
@@ -319,7 +350,7 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 		}
 	}
 
-	for(int i=0; i<PAGESIZE; i++)
+	for(int i=0; i<size; i++)
 	{
 		if(i != selectedItem && optionBtn[i]->GetState() == STATE_SELECTED)
 			optionBtn[i]->ResetState();
@@ -335,6 +366,10 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 
 			optionBtn[i]->Update(t);
 			t->chan = currChan;
+			
+			// override state chan
+			if(optionBtn[i]->GetStateChan() != -1)
+				optionBtn[i]->SetStateChan(-1);
 		}
 
 		if(optionBtn[i]->GetState() == STATE_SELECTED)
@@ -351,7 +386,7 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 
 		if(next >= 0)
 		{
-			if(selectedItem == PAGESIZE-1)
+			if(selectedItem == size-1)
 			{
 				// move list down by 1
 				listOffset = this->FindMenuItem(listOffset, 1);

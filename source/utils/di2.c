@@ -443,27 +443,6 @@ static int _cover_callback(int ret, void* usrdata)
 		DI2_ReadDVDptr = _DI2_ReadDVD_Check;
 		DI2_ReadDVDAsyncptr = _DI2_ReadDVD_Check_Async;
 
-		/*
-		 DI2_ReadDVDptr = _DI_ReadDVD_D0;
-		 DI2_ReadDVDAsyncptr = _DI_ReadDVD_D0_Async;
-		 
-		 _DI_ReadDVD_D0_Async(tmpblock,1,0,_di_read_chipcheck_cb);
-		 */
-		/*
-		 if(IOS_GetVersion() < 200)
-		 {
-		 state |= DVD_D0;
-		 DI2_ReadDVDptr = _DI_ReadDVD_D0;
-		 DI2_ReadDVDAsyncptr = _DI_ReadDVD_D0_Async;
-		 }
-		 else
-		 {
-		 state |= DVD_A8;
-		 DI2_ReadDVDptr = _DI_ReadDVD_A8;
-		 DI2_ReadDVDAsyncptr = _DI_ReadDVD_A8_Async;
-		 }
-		 */
-
 		if (di_cb)
 			di_cb(state, 0);
 

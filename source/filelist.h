@@ -46,29 +46,37 @@ extern const u32	button_png_size;
 extern const u8		button_over_png[];
 extern const u32	button_over_png_size;
 
-extern const u8		button_arrow_left_png[];
-extern const u32	button_arrow_left_png_size;
+extern const u8		button_bottom_png[];
+extern const u32	button_bottom_png_size;
+extern const u8		button_bottom_over_png[];
+extern const u32	button_bottom_over_png_size;
 
-extern const u8		button_arrow_right_png[];
-extern const u32	button_arrow_right_png_size;
+extern const u8		arrow_left_png[];
+extern const u32	arrow_left_png_size;
 
-extern const u8		button_arrow_up_png[];
-extern const u32	button_arrow_up_png_size;
+extern const u8		arrow_right_png[];
+extern const u32	arrow_right_png_size;
 
-extern const u8		button_arrow_down_png[];
-extern const u32	button_arrow_down_png_size;
+extern const u8		arrow_up_png[];
+extern const u32	arrow_up_png_size;
 
-extern const u8		button_arrow_left_over_png[];
-extern const u32	button_arrow_left_over_png_size;
+extern const u8		arrow_down_png[];
+extern const u32	arrow_down_png_size;
 
-extern const u8		button_arrow_right_over_png[];
-extern const u32	button_arrow_right_over_png_size;
+extern const u8		arrow_left_over_png[];
+extern const u32	arrow_left_over_png_size;
 
-extern const u8		button_arrow_up_over_png[];
-extern const u32	button_arrow_up_over_png_size;
+extern const u8		arrow_right_over_png[];
+extern const u32	arrow_right_over_png_size;
 
-extern const u8		button_arrow_down_over_png[];
-extern const u32	button_arrow_down_over_png_size;
+extern const u8		arrow_up_over_png[];
+extern const u32	arrow_up_over_png_size;
+
+extern const u8		arrow_down_over_png[];
+extern const u32	arrow_down_over_png_size;
+
+extern const u8		arrow_right_small_png[];
+extern const u32	arrow_right_small_png_size;
 
 extern const u8     tooltip_left_png[];
 extern const u32    tooltip_left_png_size;
@@ -77,110 +85,84 @@ extern const u32    tooltip_tile_png_size;
 extern const u8     tooltip_right_png[];
 extern const u32    tooltip_right_png_size;
 
-extern const u8		actionbar_circle_png[];
-extern const u32	actionbar_circle_png_size;
-extern const u8		actionbar_circle_over_png[];
-extern const u32	actionbar_circle_over_png_size;
-extern const u8		actionbar_skipbackward_png[];
-extern const u32	actionbar_skipbackward_png_size;
-extern const u8		actionbar_rewind_png[];
-extern const u32	actionbar_rewind_png_size;
+extern const u8		actionbar_backward_png[];
+extern const u32	actionbar_backward_png_size;
+extern const u8		actionbar_close_png[];
+extern const u32	actionbar_close_png_size;
+extern const u8		actionbar_continuous_png[];
+extern const u32	actionbar_continuous_png_size;
+extern const u8		actionbar_forward_png[];
+extern const u32	actionbar_forward_png_size;
+extern const u8		actionbar_left_png[];
+extern const u32	actionbar_left_png_size;
+extern const u8		actionbar_loop_png[];
+extern const u32	actionbar_loop_png_size;
+extern const u8		actionbar_mid_png[];
+extern const u32	actionbar_mid_png_size;
 extern const u8		actionbar_pause_png[];
 extern const u32	actionbar_pause_png_size;
 extern const u8		actionbar_play_png[];
 extern const u32	actionbar_play_png_size;
-extern const u8		actionbar_fastforward_png[];
-extern const u32	actionbar_fastforward_png_size;
-extern const u8		actionbar_skipforward_png[];
-extern const u32	actionbar_skipforward_png_size;
-extern const u8		actionbar_close_png[];
-extern const u32	actionbar_close_png_size;
-extern const u8		actionbar_slideshow_png[];
-extern const u32	actionbar_slideshow_png_size;
-extern const u8		actionbar_progress_bg_png[];
-extern const u32	actionbar_progress_bg_png_size;
-extern const u8		actionbar_progress_bg_short_png[];
-extern const u32	actionbar_progress_bg_short_png_size;
-extern const u8		actionbar_progress_left_png[];
-extern const u32	actionbar_progress_left_png_size;
-extern const u8		actionbar_progress_mid_png[];
-extern const u32	actionbar_progress_mid_png_size;
-extern const u8		actionbar_progress_right_png[];
-extern const u32	actionbar_progress_right_png_size;
-extern const u8		actionbar_continuous_png[];
-extern const u32	actionbar_continuous_png_size;
-extern const u8		actionbar_single_png[];
-extern const u32	actionbar_single_png_size;
+extern const u8		actionbar_playlist_png[];
+extern const u32	actionbar_playlist_png_size;
+extern const u8		actionbar_right_png[];
+extern const u32	actionbar_right_png_size;
 extern const u8		actionbar_shuffle_png[];
 extern const u32	actionbar_shuffle_png_size;
-extern const u8		actionbar_loop_png[];
-extern const u32	actionbar_loop_png_size;
+extern const u8		actionbar_single_png[];
+extern const u32	actionbar_single_png_size;
 
 extern const u8		screen_position_png[];
 extern const u32	screen_position_png_size;
 
-extern const u8		nav_button_png[];
-extern const u32	nav_button_png_size;
+extern const u8		bg_entry_png[];
+extern const u32	bg_entry_png_size;
+extern const u8		bg_entry_over_png[];
+extern const u32	bg_entry_over_png_size;
 
-extern const u8		config_button_png[];
-extern const u32	config_button_png_size;
-
-extern const u8		credits_box_png[];
-extern const u32	credits_box_png_size;
-
-extern const u8		bg_menuitem_png[];
-extern const u32	bg_menuitem_png_size;
-extern const u8		bg_menuitem_over_png[];
-extern const u32	bg_menuitem_over_png_size;
-
-extern const u8		bg_browse_entry_png[];
-extern const u32	bg_browse_entry_png_size;
-extern const u8		bg_browse_entry_over_png[];
-extern const u32	bg_browse_entry_over_png_size;
-
-extern const u8		bg_rounded_png[];
-extern const u32	bg_rounded_png_size;
+extern const u8		bg_png[];
+extern const u32	bg_png_size;
 
 extern const u8		nav_videos_png[];
 extern const u32	nav_videos_png_size;
+extern const u8		nav_videos_over_png[];
+extern const u32	nav_videos_over_png_size;
 extern const u8		nav_music_png[];
 extern const u32	nav_music_png_size;
+extern const u8		nav_music_over_png[];
+extern const u32	nav_music_over_png_size;
 extern const u8		nav_pictures_png[];
 extern const u32	nav_pictures_size;
+extern const u8		nav_pictures_over_png[];
+extern const u32	nav_pictures_over_size;
 extern const u8		nav_dvd_png[];
 extern const u32	nav_dvd_size;
+extern const u8		nav_dvd_over_png[];
+extern const u32	nav_dvd_over_size;
 extern const u8		nav_onlinemedia_png[];
 extern const u32	nav_onlinemedia_size;
+extern const u8		nav_onlinemedia_over_png[];
+extern const u32	nav_onlinemedia_over_size;
 extern const u8		nav_settings_png[];
 extern const u32	nav_settings_size;
-extern const u8		nav_exit_png[];
-extern const u32	nav_exit_size;
-extern const u8		nav_playlist_png[];
-extern const u32	nav_playlist_size;
-
-extern const u8		bg_options_png[];
-extern const u32	bg_options_png_size;
-
-extern const u8		bg_options_entry_png[];
-extern const u32	bg_options_entry_png_size;
+extern const u8		nav_settings_over_png[];
+extern const u32	nav_settings_over_size;
+extern const u8		nav_divider_png[];
+extern const u32	nav_divider_size;
+extern const u8		nav_highlight_png[];
+extern const u32	nav_highlight_size;
 
 extern const u8		dialogue_box_png[];
 extern const u32	dialogue_box_png_size;
 
-extern const u8		scrollbar_png[];
-extern const u32	scrollbar_png_size;
+extern const u8		scrollbar_top_png[];
+extern const u32	scrollbar_top_png_size;
 
-extern const u8		scrollbar_arrowup_png[];
-extern const u32	scrollbar_arrowup_png_size;
+extern const u8		scrollbar_mid_png[];
+extern const u32	scrollbar_mid_png_size;
 
-extern const u8		scrollbar_arrowup_over_png[];
-extern const u32	scrollbar_arrowup_over_png_size;
-
-extern const u8		scrollbar_arrowdown_png[];
-extern const u32	scrollbar_arrowdown_png_size;
-
-extern const u8		scrollbar_arrowdown_over_png[];
-extern const u32	scrollbar_arrowdown_over_png_size;
+extern const u8		scrollbar_bottom_png[];
+extern const u32	scrollbar_bottom_png_size;
 
 extern const u8		scrollbar_box_png[];
 extern const u32	scrollbar_box_png_size;
@@ -209,14 +191,20 @@ extern const u32	keyboard_largekey_png_size;
 extern const u8		keyboard_largekey_over_png[];
 extern const u32	keyboard_largekey_over_png_size;
 
-extern const u8		progressbar_png[];
-extern const u32	progressbar_png_size;
-
 extern const u8		progressbar_empty_png[];
 extern const u32	progressbar_empty_png_size;
 
-extern const u8		progressbar_outline_png[];
-extern const u32	progressbar_outline_png_size;
+extern const u8		progressbar_long_empty_png[];
+extern const u32	progressbar_long_empty_png_size;
+
+extern const u8		progressbar_left_png[];
+extern const u32	progressbar_left_png_size;
+extern const u8		progressbar_mid_png[];
+extern const u32	progressbar_mid_png_size;
+extern const u8		progressbar_right_png[];
+extern const u32	progressbar_right_png_size;
+extern const u8		progressbar_line_png[];
+extern const u32	progressbar_line_png_size;
 
 extern const u8		throbber_png[];
 extern const u32	throbber_png_size;
@@ -247,6 +235,9 @@ extern const u32	icon_smb_png_size;
 
 extern const u8		icon_ftp_png[];
 extern const u32	icon_ftp_png_size;
+
+extern const u8		icon_play_png[];
+extern const u32	icon_play_png_size;
 
 extern const u8		icon_plus_png[];
 extern const u32	icon_plus_png_size;

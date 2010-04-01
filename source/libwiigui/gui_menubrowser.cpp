@@ -13,10 +13,11 @@
 /**
  * Constructor for the GuiMenuBrowser class.
  */
-GuiMenuBrowser::GuiMenuBrowser(int w, int h, MenuItemList * l)
+GuiMenuBrowser::GuiMenuBrowser(int w, int s, MenuItemList * l)
 {
 	width = w;
-	height = h;
+	height = s*32;
+	size = s;
 	items = l;
 	selectable = true;
 	selectedItem = this->FindMenuItem(-1, 1);
@@ -25,26 +26,28 @@ GuiMenuBrowser::GuiMenuBrowser(int w, int h, MenuItemList * l)
 	trigA = new GuiTrigger;
 	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
-	bgItem = new GuiImageData(bg_menuitem_png);
-	bgItemOver = new GuiImageData(bg_menuitem_over_png);
+	bgItem = new GuiImageData(bg_entry_png);
+	bgItemOver = new GuiImageData(bg_entry_over_png);
 
 	for(int i=0; i<items->length; i++)
 	{
-		itemTxt[i] = new GuiText(items->name[i], 20, (GXColor){255, 255, 255, 0xff});
+		itemTxt[i] = new GuiText(items->name[i], 18, (GXColor){255, 255, 255, 0xff});
 		itemTxt[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		itemTxt[i]->SetPosition(25,0);
+		itemTxt[i]->SetPosition(0,-2);
 
 		itemBg[i] = new GuiImage(bgItem);
-		itemBg[i]->SetPosition(0, -8);
+		itemBg[i]->SetPosition(-30, 0);
+		itemBg[i]->SetTile(w/20);
 		itemOverBg[i] = new GuiImage(bgItemOver);
-		itemOverBg[i]->SetPosition(0, -8);
+		itemOverBg[i]->SetPosition(-30, -2);
+		itemOverBg[i]->SetTile(w/20);
 
-		itemBtn[i] = new GuiButton(300,34);
+		itemBtn[i] = new GuiButton(w-92, 32);
 		itemBtn[i]->SetParent(this);
 		itemBtn[i]->SetLabel(itemTxt[i], 0);
 		itemBtn[i]->SetImage(itemBg[i]);
 		itemBtn[i]->SetImageOver(itemOverBg[i]);
-		itemBtn[i]->SetPosition(0,34*i);
+		itemBtn[i]->SetPosition(30,32*i);
 		itemBtn[i]->SetTrigger(trigA);
 
 		if(items->name[i][0] == 0)
@@ -183,6 +186,10 @@ void GuiMenuBrowser::Update(GuiTrigger * t)
 
 			itemBtn[i]->Update(t);
 			t->chan = currChan;
+			
+			// override state chan
+			if(itemBtn[i]->GetStateChan() != -1)
+				itemBtn[i]->SetStateChan(-1);
 		}
 
 		if(itemBtn[i]->GetState() == STATE_SELECTED)

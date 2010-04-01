@@ -180,7 +180,6 @@ void GuiButton::Draw()
 		if(label[2])
 			label[2]->Draw();
 	}
-
 	this->UpdateEffects();
 }
 

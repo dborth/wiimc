@@ -46,7 +46,7 @@ int MusicPlaylistLoad()
 {
 	if(playlistSize == 0)
 	{
-		InfoPrompt("There are no files currently in the playlist.");
+		InfoPrompt("Playlist is Empty", "Hover over items and push the + button to add them to your playlist.");
 		return 0;
 	}
 

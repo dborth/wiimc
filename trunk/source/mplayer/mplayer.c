@@ -4693,6 +4693,9 @@ void wiiPause()
 
 bool wiiIsPaused()
 {
+	if(!mpctx || (!mpctx->sh_video && !mpctx->sh_audio))
+		return true;
+
 	if(mpctx->was_paused == 1)
 		return true;
 	return false;

@@ -53,10 +53,10 @@ extern FreeTypeGX *fontSystem[];
 #define SCROLL_DELAY_INITIAL	200000
 #define SCROLL_DELAY_LOOP		30000
 #define SCROLL_DELAY_DECREASE	300
-#define FILE_PAGESIZE 			9
-#define PAGESIZE 				8
+#define FILE_PAGESIZE 			11
+#define PAGESIZE 				11
 #define MAX_OPTIONS 			30
-#define MAX_MENUITEMS 			10
+#define MAX_MENUITEMS 			11
 #define MAX_KEYBOARD_DISPLAY	32
 
 typedef void (*UpdateCallback)(void * e);
@@ -579,6 +579,9 @@ class GuiImage : public GuiElement
 		//!Sets the number of times to draw the image horizontally
 		//!\param t Number of times to draw the image
 		void SetTile(int t);
+		//!Sets the number of times to draw the image vertically
+		//!\param t Number of times to draw the image
+		void SetTileVertical(int t);
 		//!Constantly called to draw the image
 		void Draw();
 		//!Gets the image data
@@ -614,6 +617,7 @@ class GuiImage : public GuiElement
 		u8 * image; //!< Poiner to image data. May be shared with GuiImageData data
 		f32 imageangle; //!< Angle to draw the image
 		int tile; //!< Number of times to draw (tile) the image horizontally
+		int tileVertical; //!< Number of times to draw (tile) the image vertically
 		int stripe; //!< Alpha value (0-255) to apply a stripe effect to the texture
 };
 
@@ -864,7 +868,7 @@ typedef struct _menuitemlist {
 class GuiMenuBrowser : public GuiElement
 {
 	public:
-		GuiMenuBrowser(int w, int h, MenuItemList * l);
+		GuiMenuBrowser(int w, int s, MenuItemList * l);
 		~GuiMenuBrowser();
 		int FindMenuItem(int c, int d);
 		int GetSelectedItem();
@@ -880,6 +884,7 @@ class GuiMenuBrowser : public GuiElement
 		GuiImageData * bgItem;
 		GuiImageData * bgItemOver;
 		MenuItemList * items;
+		int size;
 		GuiButton * itemBtn[PAGESIZE];
 		GuiText * itemTxt[PAGESIZE];
 		GuiImage * itemBg[PAGESIZE];
@@ -898,7 +903,7 @@ typedef struct _optionlist {
 class GuiOptionBrowser : public GuiElement
 {
 	public:
-		GuiOptionBrowser(int w, int h, OptionList * l);
+		GuiOptionBrowser(int w, int s, OptionList * l);
 		~GuiOptionBrowser();
 		void SetCol1Position(int x);
 		void SetCol2Position(int x);
@@ -916,8 +921,10 @@ class GuiOptionBrowser : public GuiElement
 		GuiButton * optionBtn[PAGESIZE];
 		GuiText * optionTxt[PAGESIZE];
 		GuiImage * optionBg[PAGESIZE];
+		GuiImage * optionBgOver[PAGESIZE];
 		GuiImage * optionIcon[PAGESIZE];
 
+		int size;
 		int selectedItem;
 		int listOffset;
 		OptionList * options;
@@ -925,18 +932,21 @@ class GuiOptionBrowser : public GuiElement
 		GuiButton * arrowUpBtn;
 		GuiButton * arrowDownBtn;
 
-		GuiImage * bgOptionsImg;
-		GuiImage * scrollbarImg;
+		GuiImage * scrollbarTopImg;
+		GuiImage * scrollbarMidImg;
+		GuiImage * scrollbarBottomImg;
 		GuiImage * arrowDownImg;
 		GuiImage * arrowDownOverImg;
 		GuiImage * arrowUpImg;
 		GuiImage * arrowUpOverImg;
 
-		GuiImageData * bgOptions;
 		GuiImageData * bgOptionsEntry;
+		GuiImageData * bgOptionsEntryOver;
 		GuiImageData * iconSMB;
 		GuiImageData * iconFTP;
-		GuiImageData * scrollbar;
+		GuiImageData * scrollbarTop;
+		GuiImageData * scrollbarMid;
+		GuiImageData * scrollbarBottom;
 		GuiImageData * arrowDown;
 		GuiImageData * arrowDownOver;
 		GuiImageData * arrowUp;
@@ -953,10 +963,11 @@ class GuiOptionBrowser : public GuiElement
 class GuiFileBrowser : public GuiElement
 {
 	public:
-		GuiFileBrowser(int w, int h);
+		GuiFileBrowser(int w, int s);
 		~GuiFileBrowser();
 		void ResetState();
 		void SetFocus(int f);
+		void SetRightCutoff();
 		void Draw();
 		void TriggerUpdate();
 		void Update(GuiTrigger * t);
@@ -964,13 +975,18 @@ class GuiFileBrowser : public GuiElement
 	protected:
 		GuiText * fileListText[FILE_PAGESIZE];
 		GuiImage * fileListBg[FILE_PAGESIZE];
+		GuiImage * fileListBgOver[FILE_PAGESIZE];
 		GuiImage * fileListIcon[FILE_PAGESIZE];
+		
+		int size;
 
 		GuiButton * arrowUpBtn;
 		GuiButton * arrowDownBtn;
 		GuiButton * scrollbarBoxBtn;
 
-		GuiImage * scrollbarImg;
+		GuiImage * scrollbarTopImg;
+		GuiImage * scrollbarMidImg;
+		GuiImage * scrollbarBottomImg;
 		GuiImage * arrowDownImg;
 		GuiImage * arrowDownOverImg;
 		GuiImage * arrowUpImg;
@@ -984,12 +1000,15 @@ class GuiFileBrowser : public GuiElement
 		GuiImageData * iconFolderChecked;
 		GuiImageData * iconFile;
 		GuiImageData * iconFileChecked;
+		GuiImageData * iconPlay;
 		GuiImageData * iconSD;
 		GuiImageData * iconUSB;
 		GuiImageData * iconDVD;
 		GuiImageData * iconSMB;
 		GuiImageData * iconFTP;
-		GuiImageData * scrollbar;
+		GuiImageData * scrollbarTop;
+		GuiImageData * scrollbarMid;
+		GuiImageData * scrollbarBottom;
 		GuiImageData * arrowDown;
 		GuiImageData * arrowDownOver;
 		GuiImageData * arrowUp;

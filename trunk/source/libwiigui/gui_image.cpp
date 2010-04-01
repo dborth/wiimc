@@ -23,6 +23,7 @@ GuiImage::GuiImage()
 	height = 0;
 	imageangle = 0;
 	tile = -1;
+	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_DATA;
 }
@@ -40,6 +41,7 @@ GuiImage::GuiImage(GuiImageData * img)
 	}
 	imageangle = 0;
 	tile = -1;
+	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_DATA;
 }
@@ -51,6 +53,7 @@ GuiImage::GuiImage(u8 * img, int w, int h)
 	height = h;
 	imageangle = 0;
 	tile = -1;
+	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_TEXTURE;
 }
@@ -62,6 +65,7 @@ GuiImage::GuiImage(int w, int h, GXColor c)
 	height = h;
 	imageangle = 0;
 	tile = -1;
+	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_COLOR;
 
@@ -126,6 +130,11 @@ void GuiImage::SetAngle(float a)
 void GuiImage::SetTile(int t)
 {
 	tile = t;
+}
+
+void GuiImage::SetTileVertical(int t)
+{
+	tileVertical = t;
 }
 
 GXColor GuiImage::GetPixel(int x, int y)
@@ -233,18 +242,25 @@ void GuiImage::Draw()
 	float currScale = this->GetScale();
 	int currLeft = this->GetLeft();
 	int currTop = this->GetTop();
+	int alpha = this->GetAlpha();
 
-	if(tile > 0)
+	if(tile >= 0)
 	{
-		int alpha = this->GetAlpha();
 		for(int i=0; i<tile; ++i)
 		{
 			Menu_DrawImg(currLeft+width*i, currTop, width, height, image, imageangle, currScale, currScale, alpha);
 		}
 	}
+	else if(tileVertical >= 0)
+	{
+		for(int i=0; i<tileVertical; ++i)
+		{
+			Menu_DrawImg(currLeft, currTop+height*i, width, height, image, imageangle, currScale, currScale, alpha);
+		}
+	}
 	else
 	{
-		Menu_DrawImg(currLeft, currTop, width, height, image, imageangle, currScale, currScale, this->GetAlpha());
+		Menu_DrawImg(currLeft, currTop, width, height, image, imageangle, currScale, currScale, alpha);
 	}
 
 	if(stripe > 0)

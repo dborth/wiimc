@@ -55,5 +55,6 @@ extern bool isInserted[];
 extern int currentDevice;
 extern int currentDeviceNum;
 extern int selectLoadedFile;
+extern size_t loadOffset, loadSize;
 
 #endif

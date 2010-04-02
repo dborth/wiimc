@@ -31,6 +31,8 @@
 #define GSTACK (256*1024)
 static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
 
+// frequently used objects
+
 static GuiImageData * bg = NULL;
 static GuiImageData * pointer[4] = { NULL, NULL, NULL, NULL };
 static GuiImageData throbber(throbber_png);
@@ -41,6 +43,12 @@ static GuiImageData progressEmpty(progressbar_empty_png);
 static GuiImageData progressShortEmpty(progressbar_short_empty_png);
 static GuiImageData progressLongEmpty(progressbar_long_empty_png);
 static GuiImageData progressLine(progressbar_line_png);
+static GuiTrigger * trigA = NULL;
+static GuiTrigger * trigB = NULL;
+static GuiTrigger * trigLeft = NULL;
+static GuiTrigger * trigRight = NULL;
+static GuiTrigger * trigUp = NULL;
+static GuiTrigger * trigDown = NULL;
 
 static GuiImage * videoImg = NULL;
 static GuiButton * videosBtn = NULL;
@@ -63,7 +71,6 @@ static GuiText * statusText = NULL;
 static GuiWindow * videobar = NULL;
 static GuiWindow * audiobar = NULL;
 static GuiWindow * picturebar = NULL;
-static GuiTrigger * actionbarTrigA = NULL;
 
 static GuiImageData * actionbarLeft = NULL;
 static GuiImageData * actionbarMid = NULL;
@@ -412,8 +419,6 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	promptWindow.SetPosition(0, -10);
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
@@ -446,7 +451,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	btn1.SetLabel(&btn1Txt);
 	btn1.SetImage(&btn1Img);
 	btn1.SetImageOver(&btn1ImgOver);
-	btn1.SetTrigger(&trigA);
+	btn1.SetTrigger(trigA);
 	btn1.SetState(STATE_SELECTED);
 	btn1.SetSelectable(false);
 	btn1.SetEffectGrow();
@@ -460,7 +465,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	btn2.SetLabel(&btn2Txt);
 	btn2.SetImage(&btn2Img);
 	btn2.SetImageOver(&btn2ImgOver);
-	btn2.SetTrigger(&trigA);
+	btn2.SetTrigger(trigA);
 	btn2.SetSelectable(false);
 	btn2.SetEffectGrow();
 
@@ -514,8 +519,6 @@ ProgressWindow(char *title, char *msg)
 	promptWindow.SetPosition(0, -10);
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
@@ -762,8 +765,6 @@ static void OnScreenKeyboard(char * var, u16 maxlen)
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
 	GuiText okBtnTxt("OK", 20, (GXColor){255, 255, 255, 255});
 	GuiImage okBtnImg(&btnOutline);
@@ -776,7 +777,7 @@ static void OnScreenKeyboard(char * var, u16 maxlen)
 	okBtn.SetLabel(&okBtnTxt);
 	okBtn.SetImage(&okBtnImg);
 	okBtn.SetImageOver(&okBtnImgOver);
-	okBtn.SetTrigger(&trigA);
+	okBtn.SetTrigger(trigA);
 	okBtn.SetEffectGrow();
 
 	GuiText cancelBtnTxt("Cancel", 20, (GXColor){255, 255, 255, 255});
@@ -788,7 +789,7 @@ static void OnScreenKeyboard(char * var, u16 maxlen)
 	cancelBtn.SetLabel(&cancelBtnTxt);
 	cancelBtn.SetImage(&cancelBtnImg);
 	cancelBtn.SetImageOver(&cancelBtnImgOver);
-	cancelBtn.SetTrigger(&trigA);
+	cancelBtn.SetTrigger(trigA);
 	cancelBtn.SetEffectGrow();
 
 	keyboard.Append(&okBtn);
@@ -836,8 +837,6 @@ SettingWindow(const char * title, GuiWindow * w)
 	promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
@@ -858,7 +857,7 @@ SettingWindow(const char * title, GuiWindow * w)
 	okBtn.SetLabel(&okBtnTxt);
 	okBtn.SetImage(&okBtnImg);
 	okBtn.SetImageOver(&okBtnImgOver);
-	okBtn.SetTrigger(&trigA);
+	okBtn.SetTrigger(trigA);
 	okBtn.SetSelectable(false);
 	okBtn.SetEffectGrow();
 
@@ -871,7 +870,7 @@ SettingWindow(const char * title, GuiWindow * w)
 	cancelBtn.SetLabel(&cancelBtnTxt);
 	cancelBtn.SetImage(&cancelBtnImg);
 	cancelBtn.SetImageOver(&cancelBtnImgOver);
-	cancelBtn.SetTrigger(&trigA);
+	cancelBtn.SetTrigger(trigA);
 	cancelBtn.SetSelectable(false);
 	cancelBtn.SetEffectGrow();
 
@@ -992,12 +991,6 @@ static void CreditsWindow()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -1013,8 +1006,8 @@ static void CreditsWindow()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 	
 	creditsWindow.Append(&backBtn);
 
@@ -1114,19 +1107,15 @@ static void MenuBrowse(int menu)
 			return;
 	}
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 	GuiTrigger trigPlus;
 	trigPlus.SetButtonOnlyTrigger(-1, WPAD_BUTTON_PLUS | WPAD_CLASSIC_BUTTON_PLUS, PAD_BUTTON_X);
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-	
+
 	GuiImageData btnBottom(button_bottom_png);
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
 	GuiButton upOneLevelBtn(0,0);
-	upOneLevelBtn.SetTrigger(&trigB);
+	upOneLevelBtn.SetTrigger(trigB);
 	upOneLevelBtn.SetSelectable(false);
 	
 	GuiText backBtnTxt("Resume", 18, (GXColor){255, 255, 255, 255});
@@ -1144,7 +1133,7 @@ static void MenuBrowse(int menu)
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(trigA);
 
 	int paused = !wiiIsPaused(); // for audiobar Play/Pause button
 
@@ -1225,10 +1214,10 @@ static void MenuBrowse(int menu)
 	while(menuCurrent == menu && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
-		
-		if(selectLoadedFile == 2)
+
+		if(findLoadedFile == 2)
 		{
-			selectLoadedFile = 0;
+			findLoadedFile = 0;
 			mainWindow->ChangeFocus(&fileBrowser);
 			fileBrowser.TriggerUpdate();
 		}
@@ -1580,7 +1569,7 @@ static int loadPictures = 0; // reload pictures
 
 #define NUM_PICTURES 		7 // 1 image with a buffer of +/- 3 on each side
 #define PIC_WIDTH			240
-#define PIC_HEIGHT			180
+#define PIC_HEIGHT			380
 
 static GuiImage *pictureImg = NULL;
 static GuiButton *pictureBtn = NULL;
@@ -1922,35 +1911,32 @@ static void MenuBrowsePictures()
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	fileBrowser.SetPosition(0, 90);
 	fileBrowser.SetRightCutoff();
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 
 	GuiButton upOneLevelBtn(0,0);
-	upOneLevelBtn.SetTrigger(&trigB);
+	upOneLevelBtn.SetTrigger(trigB);
 	upOneLevelBtn.SetSelectable(false);
 	
 	GuiImage progressEmptyImg(&progressShortEmpty);
 	progressEmptyImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	progressEmptyImg.SetPosition(-30, 45);
+	progressEmptyImg.SetPosition(-30, 40);
 	
 	GuiImage progressLeftImg(&progressLeft);
 	progressLeftImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	progressLeftImg.SetPosition(-262, 45);
+	progressLeftImg.SetPosition(-262, 40);
 	progressLeftImg.SetVisible(false);
 	
 	GuiImage progressMidImg(&progressMid);
 	progressMidImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	progressMidImg.SetPosition(-262, 45);
+	progressMidImg.SetPosition(-262, 40);
 	progressMidImg.SetTile(0);
 
 	GuiImage progressLineImg(&progressLine);
 	progressLineImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	progressLineImg.SetPosition(-254, 45);
+	progressLineImg.SetPosition(-254, 40);
 
 	GuiImage progressRightImg(&progressRight);
 	progressRightImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	progressRightImg.SetPosition(-30, 45);
+	progressRightImg.SetPosition(-30, 40);
 	progressRightImg.SetVisible(false);
 
 	SuspendGui();
@@ -2034,7 +2020,7 @@ static void MenuBrowsePictures()
 				tile = 60*(done-0.02);
 				if(tile > 58) tile = 58;
 				progressMidImg.SetTile(tile);
-				progressLineImg.SetPosition(-240 + tile*4, 45);
+				progressLineImg.SetPosition(-240 + tile*4, 40);
 				progressLineImg.SetVisible(true);
 			}
 
@@ -2197,12 +2183,6 @@ static void MenuSettingsGlobal()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -2218,8 +2198,8 @@ static void MenuSettingsGlobal()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 
 	GuiOptionBrowser optionBrowser(640, 7, &options);
 	optionBrowser.SetPosition(0, 150);
@@ -2338,22 +2318,7 @@ static void ScreenZoomWindow()
 {
 	GuiWindow * w = new GuiWindow(200,200);
 	w->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-
-	GuiTrigger trigLeft;
-	trigLeft.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_LEFT | WPAD_CLASSIC_BUTTON_LEFT, PAD_BUTTON_LEFT);
-
-	GuiTrigger trigRight;
-	trigRight.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_RIGHT | WPAD_CLASSIC_BUTTON_RIGHT, PAD_BUTTON_RIGHT);
-
-	GuiTrigger trigUp;
-	trigUp.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_UP | WPAD_CLASSIC_BUTTON_UP, PAD_BUTTON_UP);
-
-	GuiTrigger trigDown;
-	trigDown.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
-
+	
 	GuiImageData arrowLeft(arrow_left_png);
 	GuiImage arrowLeftImg(&arrowLeft);
 	GuiImageData arrowLeftOver(arrow_left_over_png);
@@ -2363,8 +2328,8 @@ static void ScreenZoomWindow()
 	arrowLeftBtn.SetImageOver(&arrowLeftOverImg);
 	arrowLeftBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	arrowLeftBtn.SetPosition(46, 0);
-	arrowLeftBtn.SetTrigger(0, &trigA);
-	arrowLeftBtn.SetTrigger(1, &trigLeft);
+	arrowLeftBtn.SetTrigger(0, trigA);
+	arrowLeftBtn.SetTrigger(1, trigLeft);
 	arrowLeftBtn.SetSelectable(false);
 	arrowLeftBtn.SetUpdateCallback(ScreenZoomWindowLeftClick);
 
@@ -2377,8 +2342,8 @@ static void ScreenZoomWindow()
 	arrowRightBtn.SetImageOver(&arrowRightOverImg);
 	arrowRightBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	arrowRightBtn.SetPosition(136, 0);
-	arrowRightBtn.SetTrigger(0, &trigA);
-	arrowRightBtn.SetTrigger(1, &trigRight);
+	arrowRightBtn.SetTrigger(0, trigA);
+	arrowRightBtn.SetTrigger(1, trigRight);
 	arrowRightBtn.SetSelectable(false);
 	arrowRightBtn.SetUpdateCallback(ScreenZoomWindowRightClick);
 
@@ -2391,8 +2356,8 @@ static void ScreenZoomWindow()
 	arrowUpBtn.SetImageOver(&arrowUpOverImg);
 	arrowUpBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	arrowUpBtn.SetPosition(-76, -27);
-	arrowUpBtn.SetTrigger(0, &trigA);
-	arrowUpBtn.SetTrigger(1, &trigUp);
+	arrowUpBtn.SetTrigger(0, trigA);
+	arrowUpBtn.SetTrigger(1, trigUp);
 	arrowUpBtn.SetSelectable(false);
 	arrowUpBtn.SetUpdateCallback(ScreenZoomWindowUpClick);
 
@@ -2405,8 +2370,8 @@ static void ScreenZoomWindow()
 	arrowDownBtn.SetImageOver(&arrowDownOverImg);
 	arrowDownBtn.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	arrowDownBtn.SetPosition(-76, 27);
-	arrowDownBtn.SetTrigger(0, &trigA);
-	arrowDownBtn.SetTrigger(1, &trigDown);
+	arrowDownBtn.SetTrigger(0, trigA);
+	arrowDownBtn.SetTrigger(1, trigDown);
 	arrowDownBtn.SetSelectable(false);
 	arrowDownBtn.SetUpdateCallback(ScreenZoomWindowDownClick);
 
@@ -2474,21 +2439,6 @@ static void ScreenPositionWindow()
 	w->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	w->SetPosition(0, 0);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-
-	GuiTrigger trigLeft;
-	trigLeft.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_LEFT | WPAD_CLASSIC_BUTTON_LEFT, PAD_BUTTON_LEFT);
-
-	GuiTrigger trigRight;
-	trigRight.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_RIGHT | WPAD_CLASSIC_BUTTON_RIGHT, PAD_BUTTON_RIGHT);
-
-	GuiTrigger trigUp;
-	trigUp.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_UP | WPAD_CLASSIC_BUTTON_UP, PAD_BUTTON_UP);
-
-	GuiTrigger trigDown;
-	trigDown.SetButtonOnlyInFocusTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
-
 	GuiImageData arrowLeft(arrow_left_png);
 	GuiImage arrowLeftImg(&arrowLeft);
 	GuiImageData arrowLeftOver(arrow_left_over_png);
@@ -2497,8 +2447,8 @@ static void ScreenPositionWindow()
 	arrowLeftBtn.SetImage(&arrowLeftImg);
 	arrowLeftBtn.SetImageOver(&arrowLeftOverImg);
 	arrowLeftBtn.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	arrowLeftBtn.SetTrigger(0, &trigA);
-	arrowLeftBtn.SetTrigger(1, &trigLeft);
+	arrowLeftBtn.SetTrigger(0, trigA);
+	arrowLeftBtn.SetTrigger(1, trigLeft);
 	arrowLeftBtn.SetSelectable(false);
 	arrowLeftBtn.SetUpdateCallback(ScreenPositionWindowLeftClick);
 
@@ -2510,8 +2460,8 @@ static void ScreenPositionWindow()
 	arrowRightBtn.SetImage(&arrowRightImg);
 	arrowRightBtn.SetImageOver(&arrowRightOverImg);
 	arrowRightBtn.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	arrowRightBtn.SetTrigger(0, &trigA);
-	arrowRightBtn.SetTrigger(1, &trigRight);
+	arrowRightBtn.SetTrigger(0, trigA);
+	arrowRightBtn.SetTrigger(1, trigRight);
 	arrowRightBtn.SetSelectable(false);
 	arrowRightBtn.SetUpdateCallback(ScreenPositionWindowRightClick);
 
@@ -2523,8 +2473,8 @@ static void ScreenPositionWindow()
 	arrowUpBtn.SetImage(&arrowUpImg);
 	arrowUpBtn.SetImageOver(&arrowUpOverImg);
 	arrowUpBtn.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	arrowUpBtn.SetTrigger(0, &trigA);
-	arrowUpBtn.SetTrigger(1, &trigUp);
+	arrowUpBtn.SetTrigger(0, trigA);
+	arrowUpBtn.SetTrigger(1, trigUp);
 	arrowUpBtn.SetSelectable(false);
 	arrowUpBtn.SetUpdateCallback(ScreenPositionWindowUpClick);
 
@@ -2536,8 +2486,8 @@ static void ScreenPositionWindow()
 	arrowDownBtn.SetImage(&arrowDownImg);
 	arrowDownBtn.SetImageOver(&arrowDownOverImg);
 	arrowDownBtn.SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
-	arrowDownBtn.SetTrigger(0, &trigA);
-	arrowDownBtn.SetTrigger(1, &trigDown);
+	arrowDownBtn.SetTrigger(0, trigA);
+	arrowDownBtn.SetTrigger(1, trigDown);
 	arrowDownBtn.SetSelectable(false);
 	arrowDownBtn.SetUpdateCallback(ScreenPositionWindowDownClick);
 
@@ -2603,12 +2553,6 @@ static void MenuSettingsVideos()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -2624,8 +2568,8 @@ static void MenuSettingsVideos()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 
 	GuiOptionBrowser optionBrowser(640, 7, &options);
 	optionBrowser.SetPosition(0, 150);
@@ -2769,12 +2713,6 @@ static void MenuSettingsMusic()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -2790,8 +2728,8 @@ static void MenuSettingsMusic()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 
 	GuiOptionBrowser optionBrowser(640, 7, &options);
 	optionBrowser.SetPosition(0, 150);
@@ -2877,12 +2815,6 @@ static void MenuSettingsPictures()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -2898,8 +2830,8 @@ static void MenuSettingsPictures()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 
 	GuiOptionBrowser optionBrowser(640, 7, &options);
 	optionBrowser.SetPosition(0, 150);
@@ -3000,12 +2932,6 @@ static void MenuSettingsNetwork()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -3021,8 +2947,8 @@ static void MenuSettingsNetwork()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 
 	GuiText addsmbBtnTxt("Add SMB Share", 20, (GXColor){255, 255, 255, 255});
 	addsmbBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -3038,7 +2964,7 @@ static void MenuSettingsNetwork()
 	addsmbBtn.SetImage(&addsmbBtnImg);
 	addsmbBtn.SetImageOver(&addsmbBtnImgOver);
 	addsmbBtn.SetIcon(&addsmbBtnIcon);
-	addsmbBtn.SetTrigger(&trigA);
+	addsmbBtn.SetTrigger(trigA);
 	addsmbBtn.SetEffectGrow();
 	
 	GuiText addftpBtnTxt("Add FTP Site", 20, (GXColor){255, 255, 255, 255});
@@ -3055,7 +2981,7 @@ static void MenuSettingsNetwork()
 	addftpBtn.SetImage(&addftpBtnImg);
 	addftpBtn.SetImageOver(&addftpBtnImgOver);
 	addftpBtn.SetIcon(&addftpBtnIcon);
-	addftpBtn.SetTrigger(&trigA);
+	addftpBtn.SetTrigger(trigA);
 	addftpBtn.SetEffectGrow();
 
 	GuiOptionBrowser optionBrowser(640, 6, &options);
@@ -3145,12 +3071,6 @@ static void MenuSettingsNetworkSMB()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -3166,8 +3086,8 @@ static void MenuSettingsNetworkSMB()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 	
 	GuiText deleteBtnTxt("Delete", 20, (GXColor){255, 255, 255, 255});
 	GuiImage deleteBtnImg(&btnOutline);
@@ -3178,7 +3098,7 @@ static void MenuSettingsNetworkSMB()
 	deleteBtn.SetLabel(&deleteBtnTxt);
 	deleteBtn.SetImage(&deleteBtnImg);
 	deleteBtn.SetImageOver(&deleteBtnImgOver);
-	deleteBtn.SetTrigger(&trigA);
+	deleteBtn.SetTrigger(trigA);
 	deleteBtn.SetEffectGrow();
 
 	GuiOptionBrowser optionBrowser(640, 6, &options);
@@ -3323,12 +3243,6 @@ static void MenuSettingsNetworkFTP()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -3344,8 +3258,8 @@ static void MenuSettingsNetworkFTP()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 	
 	GuiText deleteBtnTxt("Delete", 20, (GXColor){255, 255, 255, 255});
 	GuiImage deleteBtnImg(&btnOutline);
@@ -3356,7 +3270,7 @@ static void MenuSettingsNetworkFTP()
 	deleteBtn.SetLabel(&deleteBtnTxt);
 	deleteBtn.SetImage(&deleteBtnImg);
 	deleteBtn.SetImageOver(&deleteBtnImgOver);
-	deleteBtn.SetTrigger(&trigA);
+	deleteBtn.SetTrigger(trigA);
 	deleteBtn.SetEffectGrow();
 
 	GuiOptionBrowser optionBrowser(640, 6, &options);
@@ -3488,12 +3402,6 @@ static void MenuSettingsSubtitles()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -3509,8 +3417,8 @@ static void MenuSettingsSubtitles()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 
 	GuiOptionBrowser optionBrowser(640, 7, &options);
 	optionBrowser.SetPosition(0, 150);
@@ -3619,12 +3527,6 @@ static void MenuSettings()
 	GuiImageData btnBottomOver(button_bottom_over_png);
 	GuiImageData arrowRight(arrow_right_small_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
-	GuiTrigger trigB;
-	trigB.SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-16, 10);
@@ -3640,8 +3542,8 @@ static void MenuSettings()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetIcon(&backBtnArrow);
-	backBtn.SetTrigger(&trigA);
-	backBtn.SetTrigger(&trigB);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
 
 	GuiMenuBrowser itemBrowser(640, 7, &items);
 	itemBrowser.SetPosition(0, 150);
@@ -3948,17 +3850,44 @@ static void PictureCloseCallback(void * ptr)
 	}
 }
 
-static void SetupPlaybar()
+static void SetupGui()
 {	
-	static int actionbarSetup = 0;
+	static int guiSetup = 0;
 	
-	if(actionbarSetup)
+	if(guiSetup)
 		return;
+	
+	// pointers
+	
+	pointer[0] = new GuiImageData(player1_point_png);
+	pointer[1] = new GuiImageData(player2_point_png);
+	pointer[2] = new GuiImageData(player3_point_png);
+	pointer[3] = new GuiImageData(player4_point_png);
 
-	actionbarTrigA = new GuiTrigger();
-	actionbarTrigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	// triggers
+
+	trigA = new GuiTrigger();
+	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	
+	trigB = new GuiTrigger();
+	trigB->SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
+	
+	trigLeft = new GuiTrigger();
+	trigLeft->SetButtonOnlyTrigger(-1, WPAD_BUTTON_LEFT | WPAD_CLASSIC_BUTTON_LEFT, PAD_BUTTON_LEFT);
+		
+	trigRight = new GuiTrigger();
+	trigRight->SetButtonOnlyTrigger(-1, WPAD_BUTTON_RIGHT | WPAD_CLASSIC_BUTTON_RIGHT, PAD_BUTTON_RIGHT);
+	
+	trigUp = new GuiTrigger();
+	trigUp->SetButtonOnlyTrigger(-1, WPAD_BUTTON_UP | WPAD_CLASSIC_BUTTON_UP, PAD_BUTTON_UP);
+
+	trigDown = new GuiTrigger();
+	trigDown->SetButtonOnlyTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
+
 	
 	// images
+	
+	bg = new GuiImageData(bg_png);
 
 	actionbarLeft = new GuiImageData(actionbar_left_png);	
 	actionbarMid = new GuiImageData(actionbar_mid_png);
@@ -4011,7 +3940,7 @@ static void SetupPlaybar()
 	videobarProgressBtn = new GuiButton(videobarProgressImg->GetWidth(), videobarProgressImg->GetHeight());
 	videobarProgressBtn->SetImage(videobarProgressImg);
 	videobarProgressBtn->SetPosition(0, 60);
-	videobarProgressBtn->SetTrigger(actionbarTrigA);
+	videobarProgressBtn->SetTrigger(trigA);
 	videobarProgressBtn->SetSelectable(false);
 	videobarProgressBtn->SetUpdateCallback(VideoProgressCallback);
 
@@ -4020,7 +3949,7 @@ static void SetupPlaybar()
 	videobarBackwardBtn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	videobarBackwardBtn->SetImage(videobarBackwardImg);
 	videobarBackwardBtn->SetTooltip(videobarBackwardTip);
-	videobarBackwardBtn->SetTrigger(actionbarTrigA);
+	videobarBackwardBtn->SetTrigger(trigA);
 	videobarBackwardBtn->SetSelectable(false);
 	videobarBackwardBtn->SetUpdateCallback(VideoBackwardCallback);
 	videobarBackwardBtn->SetEffectGrow();
@@ -4030,7 +3959,7 @@ static void SetupPlaybar()
 	videobarPauseBtn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	videobarPauseBtn->SetImage(videobarPauseImg);
 	videobarPauseBtn->SetTooltip(videobarPauseTip);
-	videobarPauseBtn->SetTrigger(actionbarTrigA);
+	videobarPauseBtn->SetTrigger(trigA);
 	videobarPauseBtn->SetSelectable(false);
 	videobarPauseBtn->SetUpdateCallback(VideoPauseCallback);
 	videobarPauseBtn->SetEffectGrow();
@@ -4040,7 +3969,7 @@ static void SetupPlaybar()
 	videobarForwardBtn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	videobarForwardBtn->SetImage(videobarForwardImg);
 	videobarForwardBtn->SetTooltip(videobarForwardTip);
-	videobarForwardBtn->SetTrigger(actionbarTrigA);
+	videobarForwardBtn->SetTrigger(trigA);
 	videobarForwardBtn->SetSelectable(false);
 	videobarForwardBtn->SetUpdateCallback(VideoForwardCallback);
 	videobarForwardBtn->SetEffectGrow();
@@ -4112,7 +4041,7 @@ static void SetupPlaybar()
 	audiobarProgressBtn = new GuiButton(audiobarProgressImg->GetWidth(), audiobarProgressImg->GetHeight());
 	audiobarProgressBtn->SetImage(audiobarProgressImg);
 	audiobarProgressBtn->SetPosition(0, 60);
-	audiobarProgressBtn->SetTrigger(actionbarTrigA);
+	audiobarProgressBtn->SetTrigger(trigA);
 	audiobarProgressBtn->SetSelectable(false);
 	audiobarProgressBtn->SetState(STATE_DISABLED);
 	audiobarProgressBtn->SetAlpha(128);
@@ -4122,14 +4051,14 @@ static void SetupPlaybar()
 	audiobarPlaylistBtn->SetPosition(10, 4);
 	audiobarPlaylistBtn->SetImage(audiobarPlaylistImg);
 	audiobarPlaylistBtn->SetTooltip(audiobarPlaylistTip);
-	audiobarPlaylistBtn->SetTrigger(actionbarTrigA);
+	audiobarPlaylistBtn->SetTrigger(trigA);
 	audiobarPlaylistBtn->SetEffectGrow();
 
 	audiobarBackwardBtn = new GuiButton(40, 40);
 	audiobarBackwardBtn->SetPosition(70, 4);
 	audiobarBackwardBtn->SetImage(audiobarBackwardImg);
 	audiobarBackwardBtn->SetTooltip(audiobarBackwardTip);
-	audiobarBackwardBtn->SetTrigger(actionbarTrigA);
+	audiobarBackwardBtn->SetTrigger(trigA);
 	audiobarBackwardBtn->SetEffectGrow();
 	audiobarBackwardBtn->SetState(STATE_DISABLED);
 	audiobarBackwardBtn->SetAlpha(128);
@@ -4138,7 +4067,7 @@ static void SetupPlaybar()
 	audiobarPauseBtn->SetPosition(130, 4);
 	audiobarPauseBtn->SetImage(audiobarPauseImg);
 	audiobarPauseBtn->SetTooltip(audiobarPauseTip);
-	audiobarPauseBtn->SetTrigger(actionbarTrigA);
+	audiobarPauseBtn->SetTrigger(trigA);
 	audiobarPauseBtn->SetEffectGrow();
 	audiobarPauseBtn->SetState(STATE_DISABLED);
 	audiobarPauseBtn->SetAlpha(128);
@@ -4147,7 +4076,7 @@ static void SetupPlaybar()
 	audiobarForwardBtn->SetPosition(190, 4);
 	audiobarForwardBtn->SetImage(audiobarForwardImg);
 	audiobarForwardBtn->SetTooltip(audiobarForwardTip);
-	audiobarForwardBtn->SetTrigger(actionbarTrigA);
+	audiobarForwardBtn->SetTrigger(trigA);
 	audiobarForwardBtn->SetEffectGrow();
 	audiobarForwardBtn->SetState(STATE_DISABLED);
 	audiobarForwardBtn->SetAlpha(128);
@@ -4156,7 +4085,7 @@ static void SetupPlaybar()
 	audiobarModeBtn->SetPosition(250, 4);
 	audiobarModeBtn->SetImage(audiobarModeImg);
 	audiobarModeBtn->SetTooltip(audiobarModeTip);
-	audiobarModeBtn->SetTrigger(actionbarTrigA);
+	audiobarModeBtn->SetTrigger(trigA);
 	audiobarModeBtn->SetEffectGrow();
 	
 	audiobarNowPlaying[0] = new GuiText("now playing", 16, (GXColor){160, 160, 160, 255});
@@ -4222,7 +4151,8 @@ static void SetupPlaybar()
 	picturebarCloseBtn->SetPosition(10, 4);
 	picturebarCloseBtn->SetImage(picturebarCloseImg);
 	picturebarCloseBtn->SetTooltip(picturebarCloseTip);
-	picturebarCloseBtn->SetTrigger(actionbarTrigA);
+	picturebarCloseBtn->SetTrigger(trigA);
+	picturebarCloseBtn->SetTrigger(trigB);
 	picturebarCloseBtn->SetSelectable(false);
 	picturebarCloseBtn->SetUpdateCallback(PictureCloseCallback);
 	picturebarCloseBtn->SetEffectGrow();
@@ -4231,7 +4161,8 @@ static void SetupPlaybar()
 	picturebarPreviousBtn->SetPosition(70, 4);
 	picturebarPreviousBtn->SetImage(picturebarPreviousImg);
 	picturebarPreviousBtn->SetTooltip(picturebarPreviousTip);
-	picturebarPreviousBtn->SetTrigger(actionbarTrigA);
+	picturebarPreviousBtn->SetTrigger(trigA);
+	picturebarPreviousBtn->SetTrigger(trigLeft);
 	picturebarPreviousBtn->SetSelectable(false);
 	picturebarPreviousBtn->SetUpdateCallback(PicturePreviousCallback);
 	picturebarPreviousBtn->SetEffectGrow();
@@ -4240,7 +4171,7 @@ static void SetupPlaybar()
 	picturebarSlideshowBtn->SetPosition(130, 4);
 	picturebarSlideshowBtn->SetImage(picturebarSlideshowImg);
 	picturebarSlideshowBtn->SetTooltip(picturebarSlideshowTip);
-	picturebarSlideshowBtn->SetTrigger(actionbarTrigA);
+	picturebarSlideshowBtn->SetTrigger(trigA);
 	picturebarSlideshowBtn->SetSelectable(false);
 	picturebarSlideshowBtn->SetUpdateCallback(PictureSlideshowCallback);
 	picturebarSlideshowBtn->SetEffectGrow();
@@ -4249,7 +4180,8 @@ static void SetupPlaybar()
 	picturebarNextBtn->SetPosition(190, 4);
 	picturebarNextBtn->SetImage(picturebarNextImg);
 	picturebarNextBtn->SetTooltip(picturebarNextTip);
-	picturebarNextBtn->SetTrigger(actionbarTrigA);
+	picturebarNextBtn->SetTrigger(trigA);
+	picturebarNextBtn->SetTrigger(trigRight);
 	picturebarNextBtn->SetSelectable(false);
 	picturebarNextBtn->SetUpdateCallback(PictureNextCallback);
 	picturebarNextBtn->SetEffectGrow();
@@ -4266,7 +4198,7 @@ static void SetupPlaybar()
 	picturebar->Append(picturebarSlideshowBtn);
 	picturebar->Append(picturebarNextBtn);
 	
-	actionbarSetup = 1;
+	guiSetup = 1;
 }
 
 void GuiInit()
@@ -4348,18 +4280,8 @@ void WiiMenu()
 {
 	menuMode = 0; // switch to normal GUI mode
 	guiShutdown = false;
-	selectLoadedFile = 1;
 
-	if(pointer[0] == NULL)
-	{
-		pointer[0] = new GuiImageData(player1_point_png);
-		pointer[1] = new GuiImageData(player2_point_png);
-		pointer[2] = new GuiImageData(player3_point_png);
-		pointer[3] = new GuiImageData(player4_point_png);
-	}
-
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	SetupGui();
 
 	mainWindow = new GuiWindow(screenwidth, screenheight);
 
@@ -4368,9 +4290,6 @@ void WiiMenu()
 		videoImg = new GuiImage(videoScreenshot, screenwidth, screenheight);
 		mainWindow->Append(videoImg);
 	}
-
-	if(!bg)
-		bg = new GuiImageData(bg_png);
 
 	GuiImage bgImg(bg);
 	bgImg.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -4390,7 +4309,7 @@ void WiiMenu()
 	logoBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	logoBtn->SetPosition(-32, 40);
 	logoBtn->SetImage(&logoBtnImg);
-	logoBtn->SetTrigger(&trigA);
+	logoBtn->SetTrigger(trigA);
 	logoBtn->SetSelectable(false);
 	logoBtn->SetTooltip(&logoBtnTip);
 	logoBtn->SetUpdateCallback(DisplayCredits);
@@ -4423,7 +4342,7 @@ void WiiMenu()
 	videosBtn->SetImage(&videosBtnImg);
 	videosBtn->SetImageOver(&videosBtnOverImg);
 	videosBtn->SetIconOver(&videosBtnHighlightImg);
-	videosBtn->SetTrigger(&trigA);
+	videosBtn->SetTrigger(trigA);
 	videosBtn->SetSelectable(false);
 	videosBtn->SetEffectGrow();
 	videosBtn->SetUpdateCallback(ChangeMenuVideos);
@@ -4441,7 +4360,7 @@ void WiiMenu()
 	musicBtn->SetImage(&musicBtnImg);
 	musicBtn->SetImageOver(&musicBtnOverImg);
 	musicBtn->SetIconOver(&musicBtnHighlightImg);
-	musicBtn->SetTrigger(&trigA);
+	musicBtn->SetTrigger(trigA);
 	musicBtn->SetSelectable(false);
 	musicBtn->SetEffectGrow();
 	musicBtn->SetUpdateCallback(ChangeMenuMusic);
@@ -4459,7 +4378,7 @@ void WiiMenu()
 	picturesBtn->SetImage(&picturesBtnImg);
 	picturesBtn->SetImageOver(&picturesBtnOverImg);
 	picturesBtn->SetIconOver(&picturesBtnHighlightImg);
-	picturesBtn->SetTrigger(&trigA);
+	picturesBtn->SetTrigger(trigA);
 	picturesBtn->SetSelectable(false);
 	picturesBtn->SetEffectGrow();
 	picturesBtn->SetUpdateCallback(ChangeMenuPictures);
@@ -4477,7 +4396,7 @@ void WiiMenu()
 	dvdBtn->SetImage(&dvdBtnImg);
 	dvdBtn->SetImageOver(&dvdBtnOverImg);
 	dvdBtn->SetIconOver(&dvdBtnHighlightImg);
-	dvdBtn->SetTrigger(&trigA);
+	dvdBtn->SetTrigger(trigA);
 	dvdBtn->SetSelectable(false);
 	dvdBtn->SetEffectGrow();
 	dvdBtn->SetUpdateCallback(ChangeMenuDVD);
@@ -4495,7 +4414,7 @@ void WiiMenu()
 	onlineBtn->SetImage(&onlineBtnImg);
 	onlineBtn->SetImageOver(&onlineBtnOverImg);
 	onlineBtn->SetIconOver(&onlineBtnHighlightImg);
-	onlineBtn->SetTrigger(&trigA);
+	onlineBtn->SetTrigger(trigA);
 	onlineBtn->SetSelectable(false);
 	onlineBtn->SetEffectGrow();
 	onlineBtn->SetUpdateCallback(ChangeMenuOnline);
@@ -4513,7 +4432,7 @@ void WiiMenu()
 	settingsBtn->SetImageOver(&settingsBtnOverImg);
 	settingsBtn->SetIconOver(&settingsBtnHighlightImg);
 	settingsBtn->SetTooltip(&settingsBtnTip);
-	settingsBtn->SetTrigger(&trigA);
+	settingsBtn->SetTrigger(trigA);
 	settingsBtn->SetSelectable(false);
 	settingsBtn->SetEffectGrow();
 	settingsBtn->SetUpdateCallback(ChangeMenuSettings);
@@ -4525,17 +4444,14 @@ void WiiMenu()
 	mainWindow->Append(onlineBtn);
 	mainWindow->Append(settingsBtn);
 
-	// play bar
-	SetupPlaybar();
-
 	pictureImg = new GuiImage;
 	pictureImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	pictureBtn = new GuiButton(PIC_WIDTH, PIC_HEIGHT);
 	pictureBtn->SetImage(pictureImg);
-	pictureBtn->SetTrigger(&trigA);
+	pictureBtn->SetTrigger(trigA);
 	pictureBtn->SetSelectable(false);
 	pictureBtn->SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	pictureBtn->SetPosition(-30, 45);
+	pictureBtn->SetPosition(-30, 40);
 
 	StartGuiThreads();
 	ResumeGui();
@@ -4671,9 +4587,6 @@ void MPlayerMenu()
 {
 	menuMode = 1; // switch to MPlayer GUI mode
 	guiShutdown = false;
-
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
 	mainWindow = new GuiWindow(screenwidth, screenheight);
 

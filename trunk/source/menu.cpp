@@ -1142,7 +1142,7 @@ static void MenuBrowse(int menu)
 	if(menu == MENU_BROWSE_VIDEOS && videoScreenshot)
 		pagesize = 10;
 
-	if(menu == MENU_BROWSE_MUSIC)
+	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
 		pagesize = 8;
 
 	GuiFileBrowser fileBrowser(640, pagesize);

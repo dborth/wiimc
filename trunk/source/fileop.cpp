@@ -1022,7 +1022,7 @@ void FindFile(int start, int end)
 		if(menuCurrent == MENU_BROWSE_VIDEOS && videoScreenshot)
 			pagesize = 10;
 
-		if(menuCurrent == MENU_BROWSE_MUSIC)
+		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 			pagesize = 8;
 		
 		browserList[indexFound].icon = ICON_PLAY;
@@ -1238,11 +1238,11 @@ static int ParsePLXPlaylist()
 	int c, lineptr = 0;
 	char *line = NULL;
 
-	PLXENTRY list[200];
+	PLXENTRY *list = (PLXENTRY *)malloc(sizeof(PLXENTRY));
 	char attribute[1024], value[1024];
 	PLXENTRY newEntry;
 
-	while(lineptr < size && numEntries < 200)
+	while(lineptr < size)
 	{	
 		// setup next line
 		if(line) free(line);
@@ -1272,6 +1272,17 @@ static int ParsePLXPlaylist()
 				{
 					memcpy(&list[numEntries], &newEntry, sizeof(PLXENTRY));
 					numEntries++;
+					PLXENTRY * newList = (PLXENTRY *)realloc(list, (numEntries+1) * sizeof(PLXENTRY));
+					if(!newList) // failed to allocate required memory
+					{
+						ErrorPrompt("Out of memory: too many files!");
+						free(list);
+						return 0;
+					}
+					else
+					{
+						list = newList;
+					}
 				}
 
 				// blank values
@@ -1311,6 +1322,7 @@ static int ParsePLXPlaylist()
 	if(numEntries == 0)
 	{
 		ErrorPrompt("Error loading playlist!");
+		free(list);
 		return 0;
 	}
 	
@@ -1347,6 +1359,14 @@ static int ParsePLXPlaylist()
 
 		browser.numEntries++;
 	}
+	free(list);
+
+	if(browser.numEntries == 1)
+	{
+		ResetBrowser();
+		ErrorPrompt("Playlist does not contain any supported entries!");
+	}
+
 	return browser.numEntries;
 }
 

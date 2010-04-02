@@ -38,6 +38,7 @@ static GuiImageData progressLeft(progressbar_left_png);
 static GuiImageData progressMid(progressbar_mid_png);
 static GuiImageData progressRight(progressbar_right_png);
 static GuiImageData progressEmpty(progressbar_empty_png);
+static GuiImageData progressShortEmpty(progressbar_short_empty_png);
 static GuiImageData progressLongEmpty(progressbar_long_empty_png);
 static GuiImageData progressLine(progressbar_line_png);
 
@@ -1614,31 +1615,17 @@ static void SetPicture(int picIndex, int browserIndex)
 		SuspendGui();
 		pictureImg->SetImage(picture[picIndex]);
 		pictureImg->SetScale(PIC_WIDTH, PIC_HEIGHT);
-		pictureImg->SetEffect(EFFECT_ROTATE, 0);
 		pictureBtn->SetState(STATE_DEFAULT);
+		pictureImg->SetVisible(true);
 		ResumeGui();
 	}
 	else
 	{
-		if(browserList[browser.selIndex].isdir)
-		{
-			if(pictureImg->GetImage() != NULL)
-			{
-				SuspendGui();
-				pictureImg->SetImage(NULL);
-				pictureImg->SetEffect(EFFECT_ROTATE, 0);
-				ResumeGui();
-			}
-		}
-		else
-		{
-			SuspendGui();
-			pictureImg->SetScale(1);
-			pictureImg->SetImage(&throbber);
-			pictureImg->SetEffect(EFFECT_ROTATE, 100);
-			ResumeGui();
-		}
+		SuspendGui();
+		pictureImg->SetImage(NULL);
 		pictureBtn->SetState(STATE_DISABLED);
+		pictureImg->SetVisible(false);
+		ResumeGui();
 		pictureLoaded = -1;
 		pictureIndexLoaded = -1;
 	}
@@ -1880,10 +1867,11 @@ static void PictureViewer()
 
 			if(!slideshow && !setPicture)
 			{
-				ShowAction("Loading...");
 				while(!setPicture) // wait for picture to load
+				{
+					ShowProgress ("Loading...", loadOffset, loadSize);
 					usleep(THREAD_SLEEP);
-
+				}
 				CancelAction();
 			}
 		}
@@ -1927,6 +1915,8 @@ static void MenuBrowsePictures()
 	browser.dir = &WiiSettings.picturesFolder[0];
 
 	int pagesize = 11;
+	float done;
+	int tile = 0;
 
 	GuiFileBrowser fileBrowser(380, pagesize);
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -1939,6 +1929,29 @@ static void MenuBrowsePictures()
 	GuiButton upOneLevelBtn(0,0);
 	upOneLevelBtn.SetTrigger(&trigB);
 	upOneLevelBtn.SetSelectable(false);
+	
+	GuiImage progressEmptyImg(&progressShortEmpty);
+	progressEmptyImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
+	progressEmptyImg.SetPosition(-30, 45);
+	
+	GuiImage progressLeftImg(&progressLeft);
+	progressLeftImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
+	progressLeftImg.SetPosition(-262, 45);
+	progressLeftImg.SetVisible(false);
+	
+	GuiImage progressMidImg(&progressMid);
+	progressMidImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
+	progressMidImg.SetPosition(-262, 45);
+	progressMidImg.SetTile(0);
+
+	GuiImage progressLineImg(&progressLine);
+	progressLineImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+	progressLineImg.SetPosition(-254, 45);
+
+	GuiImage progressRightImg(&progressRight);
+	progressRightImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
+	progressRightImg.SetPosition(-30, 45);
+	progressRightImg.SetVisible(false);
 
 	SuspendGui();
 	mainWindow->Append(&fileBrowser);
@@ -1963,6 +1976,11 @@ static void MenuBrowsePictures()
 
 	SetPicture(-1, -1);
 	SuspendGui();
+	mainWindow->Append(&progressEmptyImg);
+	mainWindow->Append(&progressLeftImg);
+	mainWindow->Append(&progressMidImg);
+	mainWindow->Append(&progressLineImg);
+	mainWindow->Append(&progressRightImg);
 	mainWindow->Append(pictureBtn);
 	ResumeGui();
 
@@ -2003,6 +2021,40 @@ static void MenuBrowsePictures()
 			fileBrowser.ResetState();
 			fileBrowser.fileList[0]->SetState(STATE_SELECTED);
 			fileBrowser.TriggerUpdate();
+		}
+		
+		// update progress bar
+		if(loadSize > 0 && !pictureImg->IsVisible())
+		{
+			done = loadOffset/(float)loadSize;
+
+			if(done > 0.02)
+			{
+				progressLeftImg.SetVisible(true);
+				tile = 60*(done-0.02);
+				if(tile > 58) tile = 58;
+				progressMidImg.SetTile(tile);
+				progressLineImg.SetPosition(-240 + tile*4, 45);
+				progressLineImg.SetVisible(true);
+			}
+
+			if(done < 0.98)
+				progressRightImg.SetVisible(false);
+
+			if(tile == 58)
+			{
+				progressLineImg.SetVisible(false);
+				progressRightImg.SetVisible(true);
+			}
+			progressEmptyImg.SetVisible(true);
+		}
+		else
+		{
+			progressEmptyImg.SetVisible(false);
+			progressLeftImg.SetVisible(false);
+			progressMidImg.SetTile(0);
+			progressLineImg.SetVisible(false);
+			progressRightImg.SetVisible(false);
 		}
 
 		// update displayed picture
@@ -2079,6 +2131,11 @@ done:
 	SuspendParseThread(); // halt parsing
 	SuspendGui();
 	mainWindow->Remove(pictureBtn);
+	mainWindow->Remove(&progressEmptyImg);
+	mainWindow->Remove(&progressLeftImg);
+	mainWindow->Remove(&progressMidImg);
+	mainWindow->Remove(&progressLineImg);
+	mainWindow->Remove(&progressRightImg);
 	mainWindow->Remove(&fileBrowser);
 	mainWindow->Remove(&upOneLevelBtn);
 }
@@ -4478,7 +4535,7 @@ void WiiMenu()
 	pictureBtn->SetTrigger(&trigA);
 	pictureBtn->SetSelectable(false);
 	pictureBtn->SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	pictureBtn->SetPosition(-30, 0);
+	pictureBtn->SetPosition(-30, 45);
 
 	StartGuiThreads();
 	ResumeGui();

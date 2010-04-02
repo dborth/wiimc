@@ -193,7 +193,8 @@ extern const u32	keyboard_largekey_over_png_size;
 
 extern const u8		progressbar_empty_png[];
 extern const u32	progressbar_empty_png_size;
-
+extern const u8		progressbar_short_empty_png[];
+extern const u32	progressbar_short_empty_size;
 extern const u8		progressbar_long_empty_png[];
 extern const u32	progressbar_long_empty_png_size;
 

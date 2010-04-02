@@ -1525,9 +1525,11 @@ void CancelFileOp()
  * 
  * Loads the file specified into the provided buffer
  ***************************************************************************/
+size_t loadOffset = 0, loadSize = 0;
+
 size_t LoadFile (char * buffer, char *filepath, bool silent)
 {
-	size_t size = 0, offset = 0, readsize = 0;
+	size_t readsize = 0;
 	int retry = 1;
 	FILE * file;
 
@@ -1539,7 +1541,7 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 	SuspendParseThread();
 
 	// open the file
-	while(!size && retry)
+	while(!loadSize && retry)
 	{
 		if(!ChangeInterface(filepath, silent))
 			break;
@@ -1556,30 +1558,30 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 		}
 
 		fseeko(file,0,SEEK_END);
-		size = ftello(file);
+		loadSize = ftello(file);
 		fseeko(file,0,SEEK_SET);
 
 		while(!feof(file))
 		{
 			if(!silent)
-				ShowProgress ("Loading...", offset, size);
-			readsize = fread (buffer + offset, 1, 4096, file); // read in next chunk
+				ShowProgress ("Loading...", loadOffset, loadSize);
+			readsize = fread (buffer + loadOffset, 1, 4096, file); // read in next chunk
 
 			if(readsize <= 0)
 				break; // reading finished (or failed)
 
-			offset += readsize;
+			loadOffset += readsize;
 
 			if(cancelFileLoad)
 			{
 				cancelFileLoad = false;
 				retry = 0;
-				offset = 0;
+				loadOffset = 0;
 				break;
 			}
 		}
 		fclose (file);
-		size = offset;
+		loadSize = loadOffset;
 		if(!silent)
 			CancelAction();
 	}
@@ -1588,7 +1590,11 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 	ResumeDeviceThread();
 	if(!silent)
 		CancelAction();
-	return size;
+
+	size_t res = loadSize;
+	loadSize = 0;
+	loadOffset = 0;
+	return res;
 }
 
 /****************************************************************************

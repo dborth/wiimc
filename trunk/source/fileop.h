@@ -42,6 +42,7 @@ bool ChangeInterface(char * filepath, bool silent);
 void CreateAppPath(char * origpath);
 void StripExt(char* string);
 bool IsPlaylistExt(char *ext);
+void FindFile(int start, int end);
 int ParseDirectory(bool waitParse = false);
 int ParsePlaylistFile();
 int ParseOnlineMedia();
@@ -54,7 +55,7 @@ extern bool devicesChanged;
 extern bool isInserted[];
 extern int currentDevice;
 extern int currentDeviceNum;
-extern int selectLoadedFile;
+extern int findLoadedFile;
 extern size_t loadOffset, loadSize;
 
 #endif

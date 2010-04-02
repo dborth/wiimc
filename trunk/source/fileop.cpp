@@ -52,7 +52,7 @@ static lwp_t parsethread = LWP_THREAD_NULL;
 static int parseHalt = 0;
 static DIR_ITER * dirIter = NULL;
 static bool ParseDirEntries();
-int selectLoadedFile = 0;
+int findLoadedFile = 0;
 
 // device thread
 static lwp_t devicethread = LWP_THREAD_NULL;
@@ -987,6 +987,58 @@ static bool AllowedExt(char *ext)
 	return false;
 }
 
+void FindFile(int start, int end)
+{
+	if(loadedFile[0] == 0 || browser.dir[0] == 0)
+	{
+		findLoadedFile = 0;
+		return;
+	}
+
+	int indexFound = -1;
+	int dirLen = strlen(browser.dir);
+	int fileLen = strlen(loadedFile);
+	char file[MAXPATHLEN];
+
+	if(fileLen > dirLen && strncmp(loadedFile, browser.dir, dirLen) == 0)
+		strcpy(file, &loadedFile[dirLen]);
+	else
+		strcpy(file, loadedFile);
+
+	for(int i=start; i < end; i++)
+	{
+		if(strcmp(browserList[i].filename, file) == 0)
+		{
+			indexFound = i;
+			break;
+		}
+	}
+
+	// move to this file
+	if(indexFound > 0)
+	{
+		int pagesize = 11;
+
+		if(menuCurrent == MENU_BROWSE_VIDEOS && videoScreenshot)
+			pagesize = 10;
+
+		if(menuCurrent == MENU_BROWSE_MUSIC)
+			pagesize = 8;
+		
+		browserList[indexFound].icon = ICON_PLAY;
+
+		if(indexFound > pagesize)
+		{
+			browser.pageIndex = (ceil(indexFound/(float)pagesize)) * pagesize;
+			
+			if(browser.pageIndex + pagesize > end)
+				browser.pageIndex = end - pagesize;
+		}
+		browser.selIndex = indexFound;
+		findLoadedFile = 2;
+	}
+}
+
 static bool ParseDirEntries()
 {
 	if(!dirIter)
@@ -997,7 +1049,7 @@ static bool ParseDirEntries()
 	struct stat filestat;
 
 	int i = 0;
-	int j, res;
+	int res;
 
 	while(i < 20)
 	{
@@ -1062,51 +1114,14 @@ static bool ParseDirEntries()
 		}
 	}
 
+	// try to find and select the last loaded file
+	if(findLoadedFile == 1)
+		FindFile(browser.numEntries, browser.numEntries + i);
+
 	// Sort the file list
 	if(i > 0)
 		qsort(browserList, browser.numEntries+i, sizeof(BROWSERENTRY), FileSortCallback);
 
-	// try to find and select the last loaded file
-	if(selectLoadedFile == 1 && res != 0 && loadedFile[0] != 0 && browser.dir[0] != 0)
-	{
-		int indexFound = -1;
-		int dirLen = strlen(browser.dir);
-		int fileLen = strlen(loadedFile);
-		char file[MAXPATHLEN];
-		
-		if(fileLen > dirLen && strncmp(loadedFile, browser.dir, dirLen) == 0)
-			strcpy(file, &loadedFile[dirLen]);
-		else
-			strcpy(file, loadedFile);
-		
-		for(j=1; j < browser.numEntries + i; j++)
-		{
-			if(strcmp(browserList[j].filename, file) == 0)
-			{
-				indexFound = j;
-				break;
-			}
-		}
-
-		// move to this file
-		if(indexFound > 0)
-		{
-			browserList[indexFound].icon = ICON_PLAY;
-
-			if(indexFound > FILE_PAGESIZE)
-			{			
-				browser.pageIndex = (ceil(indexFound/FILE_PAGESIZE*1.0)) * FILE_PAGESIZE;
-				
-				if(browser.pageIndex + FILE_PAGESIZE > browser.numEntries + i)
-				{
-					browser.pageIndex = browser.numEntries + i - FILE_PAGESIZE;
-				}
-			}
-			browser.selIndex = indexFound;
-		}
-		selectLoadedFile = 2; // selecting done
-	}
-	
 	browser.numEntries += i;
 
 	if(res != 0 || parseHalt)
@@ -1179,6 +1194,7 @@ ParseDirectory(bool waitParse)
 
 	SuspendParseThread();
 	parseHalt = 0;
+	findLoadedFile = 1;
 	ParseDirEntries(); // index first 20 entries
 	ResumeParseThread(); // index remaining entries
 

@@ -225,6 +225,18 @@ void FindNextAudioFile()
 		playlistIndex = n;
 	}
 	sprintf(loadedFile, "%s", playlist[playlistIndex].filepath);
+	// clear any play icons
+	for(int i=0; i < browser.numEntries; i++)
+	{
+		if(browserList[i].icon == ICON_PLAY)
+		{
+			if(menuCurrent == MENU_BROWSE_MUSIC)
+				browserList[i].icon = ICON_FILE;
+			else
+				browserList[i].icon = ICON_NONE;
+		}
+	}
+	FindFile(0, browser.numEntries); // try to find this file
 }
 
 static void *

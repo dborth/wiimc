@@ -47,9 +47,12 @@ char loadedFile[1024];
 bool playingAudio = false;
 static bool settingsSet = false;
 
-#define TSTACK (512*1024)
+// MPlayer threads
+#define STACKSIZE (512*1024)
 static lwp_t mthread = LWP_THREAD_NULL;
-static u8 mstack[TSTACK] ATTRIBUTE_ALIGN (32);
+static lwp_t cthread = LWP_THREAD_NULL;
+static u8 mplayerstack[STACKSIZE] ATTRIBUTE_ALIGN (32);
+static u8 cachestack[STACKSIZE] ATTRIBUTE_ALIGN (32);
 
 /****************************************************************************
  * Shutdown / Reboot / Exit
@@ -262,6 +265,19 @@ mplayerthread (void *arg)
 	return NULL;
 }
 
+extern "C" {
+extern void *mplayercachethread(void *arg);
+
+void SuspendCacheThread()
+{
+	LWP_SuspendThread(cthread);
+}
+void ResumeCacheThread()
+{
+	LWP_ResumeThread(cthread);
+}
+}
+
 bool InitMPlayer()
 {
 	static bool init = false;
@@ -376,7 +392,10 @@ main(int argc, char *argv[])
 	InitFreeType((u8*)font_ttf, font_ttf_size);
 
 	// create mplayer thread
-	LWP_CreateThread (&mthread, mplayerthread, NULL, mstack, TSTACK, 68);
+	LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, STACKSIZE, 68);
+
+	// mplayer cache thread
+	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, STACKSIZE, 70);
 	
 	// create GUI thread
 	GuiInit();

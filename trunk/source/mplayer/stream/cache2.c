@@ -52,7 +52,6 @@ static void *ThreadProc( void *s );
 static unsigned char *global_buffer=NULL;
 #include "osdep/mem2_manager.h"
 
-//static unsigned char global_buffer[8*1024*1024];
 #elif defined(PTHREAD_CACHE)
 #include <pthread.h>
 static void *ThreadProc(void *s);
@@ -71,12 +70,11 @@ int stream_fill_buffer(stream_t *s);
 int stream_seek_long(stream_t *s,off_t pos);
 
 #ifdef GEKKO
-//#define GEKKO_THREAD_STACKSIZE (32 * 1024)
-#define GEKKO_THREAD_STACKSIZE (512 * 1024)
-#define GEKKO_THREAD_PRIO 70
-static u8 gekko_stack[GEKKO_THREAD_STACKSIZE] ATTRIBUTE_ALIGN (32);
 #include <ogc/mutex.h>
 static mutex_t cache_mutex = LWP_MUTEX_NULL;
+static void *cachearg = NULL;
+extern void SuspendCacheThread();
+extern void ResumeCacheThread();
 #endif
 
 typedef struct {
@@ -414,7 +412,6 @@ void cache_uninit(stream_t *s) {
   if(!s->cache_pid) return; 
   cache_do_control(s, -2, NULL);
   c->thread_active = 0;
-  LWP_JoinThread(s->cache_pid, NULL);
   s->cache_pid = 0;
 #else  
   if(s->cache_pid) {
@@ -511,9 +508,9 @@ if(size>CACHE_LIMIT)
 #elif defined(GEKKO)
 	s->exited=0;
 	s->thread_active = 1;
-	memset(&gekko_stack, 0, GEKKO_THREAD_STACKSIZE);
-	LWP_CreateThread(&stream->cache_pid, ThreadProc, s, gekko_stack,
-					GEKKO_THREAD_STACKSIZE, GEKKO_THREAD_PRIO);
+	cachearg = s;
+	ResumeCacheThread();
+	stream->cache_pid = 1;
 #elif defined(__OS2__)
     stream->cache_pid = _beginthread( ThreadProc, NULL, 256 * 1024, s );
 #else
@@ -590,6 +587,18 @@ static void ThreadProc( void *s ){
   // make sure forked code never leaves this function
   exit(0);
 }
+
+#ifdef GEKKO
+void *mplayercachethread(void *arg)
+{
+	while(1)
+	{
+		SuspendCacheThread();
+		ThreadProc(cachearg);
+	}
+	return NULL;
+}
+#endif
 
 int cache_stream_fill_buffer(stream_t *s){
   int len;

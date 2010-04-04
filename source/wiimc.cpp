@@ -24,6 +24,7 @@
 #include "filelist.h"
 #include "fileop.h"
 #include "filebrowser.h"
+#include "musicplaylist.h"
 #include "wiimc.h"
 #include "settings.h"
 
@@ -240,12 +241,19 @@ void FindNextAudioFile()
 		if(browserList[i].icon == ICON_PLAY)
 		{
 			if(menuCurrent == MENU_BROWSE_MUSIC)
-				browserList[i].icon = ICON_FILE;
+			{
+				if(MusicPlaylistFind(i))
+					browserList[i].icon = ICON_FILE_CHECKED;
+				else
+					browserList[i].icon = ICON_FILE;
+			}
 			else
+			{
 				browserList[i].icon = ICON_NONE;
+			}
 		}
 	}
-	FindFile(0, browser.numEntries); // try to find this file
+	FindFile(); // try to find this file
 }
 
 static void *
@@ -340,8 +348,6 @@ void SetMPlayerSettings()
 	wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
 	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);
 	wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
-	wiiSetProperty(MP_CMD_SUB_ALIGNMENT, WiiSettings.subtitlePosition);
-	wiiSetProperty(MP_CMD_SUB_SCALE, WiiSettings.subtitleScale);
 	wiiSetProperty(MP_CMD_SUB_DELAY, WiiSettings.subtitleDelay);
 }
 }

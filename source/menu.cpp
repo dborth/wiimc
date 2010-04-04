@@ -467,7 +467,6 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	btn1.SetImage(&btn1Img);
 	btn1.SetImageOver(&btn1ImgOver);
 	btn1.SetTrigger(trigA);
-	btn1.SetState(STATE_SELECTED);
 	btn1.SetSelectable(false);
 	btn1.SetEffectGrow();
 
@@ -492,12 +491,11 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	if(btn2Label)
 		promptWindow.Append(&btn2);
 
-	promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
+	promptWindow.SetEffect(EFFECT_FADE, 50);
 	CancelAction();
 	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
 	mainWindow->Append(&promptWindow);
-	mainWindow->ChangeFocus(&promptWindow);
 	ResumeGui();
 
 	while(choice == -1)
@@ -510,7 +508,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 			choice = 0;
 	}
 
-	promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
+	promptWindow.SetEffect(EFFECT_FADE, -50);
 	while(promptWindow.GetEffect() > 0) usleep(THREAD_SLEEP);
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
@@ -595,6 +593,7 @@ ProgressWindow(char *title, char *msg)
 		return;
 
 	SuspendGui();
+	int oldState = mainWindow->GetState();
 	mainWindow->SetState(STATE_DISABLED);
 	mainWindow->Append(&promptWindow);
 	mainWindow->ChangeFocus(&promptWindow);
@@ -643,7 +642,7 @@ ProgressWindow(char *title, char *msg)
 
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
-	mainWindow->SetState(STATE_DEFAULT);
+	mainWindow->SetState(oldState);
 	ResumeGui();
 }
 
@@ -1233,7 +1232,6 @@ static void MenuBrowse(int menu)
 		if(findLoadedFile == 2)
 		{
 			findLoadedFile = 0;
-			mainWindow->ChangeFocus(&fileBrowser);
 			fileBrowser.TriggerUpdate();
 		}
 
@@ -1330,8 +1328,9 @@ static void MenuBrowse(int menu)
 						GetFullPath(browser.selIndex, loadedFile);
 					}
 
-					ShutdownMPlayer();
+					mainWindow->SetState(STATE_DISABLED);
 					ShowAction("Loading...");
+					ShutdownMPlayer();
 					LoadMPlayer(); // signal MPlayer to load
 
 					// wait until MPlayer is ready to take control (or return control)
@@ -1347,6 +1346,7 @@ static void MenuBrowse(int menu)
 					}
 					else // failed or we are playing audio
 					{
+						mainWindow->SetState(STATE_DEFAULT);
 						ResumeDeviceThread();
 
 						if(!wiiAudioOnly())
@@ -2152,8 +2152,9 @@ static void MenuDVD()
 	}
 
 	sprintf(loadedFile, "dvdnav://");
-	ShutdownMPlayer();
+	mainWindow->SetState(STATE_DISABLED);
 	ShowAction("Loading...");
+	ShutdownMPlayer();
 	LoadMPlayer(); // signal MPlayer to load
 
 	// wait until MPlayer is ready to take or return control
@@ -2164,7 +2165,10 @@ static void MenuDVD()
 	UndoChangeMenu(); // go back to last menu
 	
 	if(!guiShutdown) // load failed
+	{
+		mainWindow->SetState(STATE_DEFAULT);
 		ErrorPrompt("Unrecognized DVD format!");
+	}
 
 	SuspendGui();
 }
@@ -3397,8 +3401,6 @@ static void MenuSettingsSubtitles()
 	OptionList options;
 
 	sprintf(options.name[i++], "Visibility");
-	sprintf(options.name[i++], "Position");
-	sprintf(options.name[i++], "Size");
 	sprintf(options.name[i++], "Delay");
 
 	options.length = i;
@@ -3461,18 +3463,6 @@ static void MenuSettingsSubtitles()
 				break;
 
 			case 1:
-				WiiSettings.subtitlePosition++;
-				if (WiiSettings.subtitlePosition > 3)
-					WiiSettings.subtitlePosition = 0;
-				break;
-
-			case 2:
-				WiiSettings.subtitleScale += 0.1;
-				if (WiiSettings.subtitleScale > 1.5)
-					WiiSettings.subtitleScale = 0.5;
-				break;
-
-			case 3:
 				WiiSettings.subtitleDelay += 0.1;
 				if (WiiSettings.subtitleDelay > 2)
 					WiiSettings.subtitleDelay = -2;
@@ -3483,19 +3473,7 @@ static void MenuSettingsSubtitles()
 		{
 			firstRun = false;
 			sprintf(options.value[0], "%s", WiiSettings.subtitleVisibility ? "On" : "Off");
-			
-			switch(WiiSettings.subtitlePosition)
-			{
-				case SUBTITLE_ALIGN_TOP:
-					sprintf(options.value[1], "Top"); break;
-				case SUBTITLE_ALIGN_CENTER:
-					sprintf(options.value[1], "Center"); break;
-				case SUBTITLE_ALIGN_BOTTOM:
-					sprintf(options.value[1], "Bottom"); break;
-			}
-
-			sprintf(options.value[2], "%.2f%%", WiiSettings.subtitleScale*100);
-			sprintf(options.value[3], "%.1f sec", WiiSettings.subtitleDelay);
+			sprintf(options.value[1], "%.1f sec", WiiSettings.subtitleDelay);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -3755,7 +3733,7 @@ static void VideoBackwardCallback(void * ptr)
 	{
 		b->ResetState();
 		DisableRumble();
-		wiiSkipBackward();
+		wiiRewind();
 	}
 }
 
@@ -3776,7 +3754,7 @@ static void VideoForwardCallback(void * ptr)
 	{
 		b->ResetState();
 		DisableRumble();
-		wiiSkipForward();
+		wiiFastForward();
 	}
 }
 
@@ -3989,7 +3967,6 @@ static void SetupGui()
 	trigDown = new GuiTrigger();
 	trigDown->SetButtonOnlyTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
 
-	
 	// images
 	
 	bg = new GuiImageData(bg_png);
@@ -4442,6 +4419,7 @@ void WiiMenu()
 	{
 		videoImg = new GuiImage(videoScreenshot, screenwidth, screenheight);
 		mainWindow->Append(videoImg);
+		selectLoadedFile = 1; // video loaded - trigger browser to jump to it
 	}
 
 	GuiImage bgImg(bg);

@@ -82,8 +82,6 @@ struct SWiiSettings {
 
 	// Subtitles
 	int		subtitleVisibility; // 0 - off, 1 - on
-	int 	subtitlePosition; // SUBTITLE_ALIGN_TOP, SUBTITLE_ALIGN_CENTER, SUBTITLE_ALIGN_BOTTOM
-	float 	subtitleScale;
 	float 	subtitleDelay; // in secs
 };
 

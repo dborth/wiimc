@@ -2691,7 +2691,6 @@ char *argv[] = {
 	"-vo","gekko",
 	"-ao","gekko",
 	"-osdlevel","0",
-	"-af", "volume=10:1",
 	"-channels", "2",
 	_file
 }; 

@@ -111,6 +111,20 @@ extern const u8		actionbar_shuffle_png[];
 extern const u32	actionbar_shuffle_png_size;
 extern const u8		actionbar_single_png[];
 extern const u32	actionbar_single_png_size;
+extern const u8		actionbar_volume_png[];
+extern const u32	actionbar_volume_png_size;
+
+extern const u8		volume_empty_png[];
+extern const u32	volume_empty_png_size;
+
+extern const u8		volume_top_png[];
+extern const u32	volume_top_png_size;
+extern const u8		volume_mid_png[];
+extern const u32	volume_mid_png_size;
+extern const u8		volume_bottom_png[];
+extern const u32	volume_bottom_png_size;
+extern const u8		volume_line_png[];
+extern const u32	volume_line_png_size;
 
 extern const u8		screen_position_png[];
 extern const u32	screen_position_png_size;

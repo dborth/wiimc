@@ -26,12 +26,15 @@
 
 #define RUMBLE_MAX 		60000
 #define RUMBLE_COOLOFF 	10000000
+#define VOL_DELAY		30000
+#define VOLDISP_MAX 	500000
 
 static bool rumbleDisabled = false;
 static int rumbleOn[4] = {0,0,0,0};
 static u64 prev[4];
 static u64 now[4];
 static int osdLevel = 0;
+static int volprev = 0, volnow = 0;
 
 GuiTrigger userInput[4];
 
@@ -132,11 +135,11 @@ void DoRumble(int i)
 
 void MPlayerInput()
 {
-	int i;
 	bool ir = false;
 	bool inDVDMenu = wiiInDVDMenu();
+	static bool volumeUpdated = false;
 
-	for(i=0; i<4; i++)
+	for(int i=0; i<4; i++)
 	{
 		if(userInput[i].wpad->ir.valid)
 			ir = true;
@@ -155,36 +158,55 @@ void MPlayerInput()
 		if(inDVDMenu)
 			continue;
 
-		if(!drawGui)
+		if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
 		{
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
+			// Hack to allow people to unpause while the OSD GUI is visible by
+			// pointing above the button bar and pressing A. We also need to be outside
+			// the boundaries of the volume bar area, when it is visible
+			int x = userInput[i].wpad->ir.x;
+			int y = userInput[i].wpad->ir.y;
+
+			if(!drawGui || (y < 360 && 
+				(!VolumeLevelBarVisible() || !(x > 20 && x < 100 && y > 180))))
 			{
 				wiiPause();
-			}
-			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
-			{
-				wiiSkipForward();
-			}
-			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
-			{
-				wiiSkipBackward();
-			}
-			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
-			{
-				wiiFastForward();
-			}
-			else if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
-			{
-				wiiRewind();
 			}
 		}
-		else
+
+		if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
 		{
-			// Quick hack to allow people to unpause while the OSD GUI is visible by pointing above the 
-			// button bar and pressing A. We should look at this behavior. 
-			if(userInput[i].wpad->btns_d & WPAD_BUTTON_A && userInput[i].wpad->ir.y < 340)
+			wiiFastForward();
+		}
+		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
+		{
+			wiiRewind();
+		}
+		else if(userInput[i].wpad->btns_h & WPAD_BUTTON_PLUS)
+		{
+			volnow = gettime();
+
+			if(diff_usec(volprev, volnow) > VOL_DELAY)
 			{
-				wiiPause();
+				volprev = volnow;
+				WiiSettings.volume++;
+				if(WiiSettings.volume > 100) WiiSettings.volume = 100;
+				wiiSetVolume(WiiSettings.volume);
+				volumeUpdated = true;
+				ShowVolumeLevelBar();
+			}
+		}
+		else if(userInput[i].wpad->btns_h & WPAD_BUTTON_MINUS)
+		{
+			volnow = gettime();
+
+			if(diff_usec(volprev, volnow) > VOL_DELAY)
+			{
+				volprev = volnow;
+				WiiSettings.volume--;
+				if(WiiSettings.volume < 0) WiiSettings.volume = 0;
+				wiiSetVolume(WiiSettings.volume);
+				volumeUpdated = true;
+				ShowVolumeLevelBar();
 			}
 		}
 	}
@@ -220,6 +242,16 @@ void MPlayerInput()
 			wiiSetProperty(MP_CMD_SUB_SELECT, -1);
 	}
 
+	if(volumeUpdated)
+	{
+		volnow = gettime();
+
+		if(volnow > volprev && diff_usec(volprev, volnow) > VOLDISP_MAX)
+			volumeUpdated = false;
+		else
+			ir = true; // trigger display
+	}
+
 	if(ir || StatusSet() || osdLevel)
 	{
 		drawGui = true;
@@ -227,6 +259,7 @@ void MPlayerInput()
 	else if(drawGui)
 	{
 		drawGui = false;
+		HideVolumeLevelBar();
 		ShutoffRumble();
 	}
 }

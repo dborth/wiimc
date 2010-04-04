@@ -43,6 +43,11 @@ static GuiImageData progressEmpty(progressbar_empty_png);
 static GuiImageData progressShortEmpty(progressbar_short_empty_png);
 static GuiImageData progressLongEmpty(progressbar_long_empty_png);
 static GuiImageData progressLine(progressbar_line_png);
+static GuiImageData volumeTop(volume_top_png);
+static GuiImageData volumeMid(volume_mid_png);
+static GuiImageData volumeBottom(volume_bottom_png);
+static GuiImageData volumeEmpty(volume_empty_png);
+static GuiImageData volumeLine(volume_line_png);
 static GuiTrigger * trigA = NULL;
 static GuiTrigger * trigB = NULL;
 static GuiTrigger * trigLeft = NULL;
@@ -85,6 +90,7 @@ static GuiImageData * actionbarShuffle = NULL;
 static GuiImageData * actionbarLoop = NULL;
 static GuiImageData * actionbarPlaylist = NULL;
 static GuiImageData * actionbarClose = NULL;
+static GuiImageData * actionbarVolume = NULL;
 
 static GuiImage * videobarLeftImg = NULL;
 static GuiImage * videobarMidImg = NULL;
@@ -94,15 +100,24 @@ static GuiImage * videobarProgressLeftImg = NULL;
 static GuiImage * videobarProgressMidImg = NULL;
 static GuiImage * videobarProgressLineImg = NULL;
 static GuiImage * videobarProgressRightImg = NULL;
+static GuiImage * videobarVolumeImg = NULL;
+static GuiImage * videobarVolumeLevelImg = NULL;
+static GuiImage * videobarVolumeLevelTopImg = NULL;
+static GuiImage * videobarVolumeLevelMidImg = NULL;
+static GuiImage * videobarVolumeLevelLineImg = NULL;
+static GuiImage * videobarVolumeLevelBottomImg = NULL;
 static GuiImage * videobarBackwardImg = NULL;
 static GuiImage * videobarPauseImg = NULL;
 static GuiImage * videobarForwardImg = NULL;
 
+static GuiTooltip * videobarVolumeTip = NULL;
 static GuiTooltip * videobarBackwardTip = NULL;
 static GuiTooltip * videobarPauseTip = NULL;
 static GuiTooltip * videobarForwardTip = NULL;
 
 static GuiButton * videobarProgressBtn = NULL;
+static GuiButton * videobarVolumeBtn = NULL;
+static GuiButton * videobarVolumeLevelBtn = NULL;
 static GuiButton * videobarBackwardBtn = NULL;
 static GuiButton * videobarPauseBtn = NULL;
 static GuiButton * videobarForwardBtn = NULL;
@@ -184,7 +199,7 @@ static int progressDone = 0;
 static int progressTotal = 0;
 
 int doMPlayerGuiDraw = 0; // draw MPlayer menu
-static bool menuMode = 0; // 0 - normal GUI, 1 - GUI for MPlayer
+bool menuMode = 0; // 0 - normal GUI, 1 - GUI for MPlayer
 
 static void ChangeMenu(int menu)
 {
@@ -326,7 +341,7 @@ static void *GuiThread (void *arg)
 				ResumeUpdateThread();
 			}
 
-			if(userInput[0].wpad->btns_d & WPAD_BUTTON_HOME)
+			if((userInput[0].wpad->btns_d & WPAD_BUTTON_HOME) && controlledbygui == 1)
 			{
 				ExitRequested = 1; // exit program
 			}
@@ -3610,13 +3625,16 @@ static void VideoProgressCallback(void * ptr)
 	
 	if(b->GetState() == STATE_CLICKED)
 	{
-		percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/560.0;
-		if(percent > 100) percent = 100;
-		else if(percent < 0) percent = 0;
-		done = total*percent;
+		if(b->GetStateChan() >= 0)
+		{
+			percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/560.0;
+			if(percent > 100) percent = 100;
+			else if(percent < 0) percent = 0;
+			done = total*percent;
+			DisableRumble();
+			wiiSeekPos(done);
+		}
 		b->ResetState();
-		DisableRumble();
-		wiiSeekPos(done);
 	}
 	
 	if(percent <= 0.02)
@@ -3647,6 +3665,89 @@ static void VideoProgressCallback(void * ptr)
 	videobarTime->SetText(time);
 }
 
+static void VideoVolumeLevelCallback(void * ptr)
+{
+	GuiButton * b = (GuiButton *)ptr;
+
+	if(b->GetState() == STATE_CLICKED)
+	{
+		if(b->GetStateChan() >= 0)
+		{
+			WiiSettings.volume = 100 - 100*((userInput[b->GetStateChan()].wpad->ir.y-5 - b->GetTop())/140.0);
+
+			if(WiiSettings.volume > 94)
+				WiiSettings.volume = 100;
+			else if(WiiSettings.volume < 8)
+				WiiSettings.volume = 0;
+
+			wiiSetVolume(WiiSettings.volume);
+		}
+		b->ResetState();
+	}
+
+	float percent = WiiSettings.volume/100.0;
+	int tile = 32*percent;
+
+	if(percent < 0.05)
+	{
+		videobarVolumeLevelBottomImg->SetVisible(false);
+		videobarVolumeLevelLineImg->SetVisible(false);
+		videobarVolumeLevelTopImg->SetVisible(false);
+	}
+	else if(percent > 0.95)
+	{
+		videobarVolumeLevelBottomImg->SetVisible(true);
+		videobarVolumeLevelLineImg->SetVisible(false);
+		videobarVolumeLevelTopImg->SetVisible(true);
+		tile = 32;
+	}
+	else
+	{
+		videobarVolumeLevelBottomImg->SetVisible(true);
+		videobarVolumeLevelLineImg->SetPosition(20, -90-tile*4);
+		videobarVolumeLevelLineImg->SetVisible(true);
+		videobarVolumeLevelTopImg->SetVisible(false);
+	}
+	videobarVolumeLevelMidImg->SetTileVertical(tile);
+	videobarVolumeLevelMidImg->SetPosition(20, -90-tile*4);
+}
+
+bool VolumeLevelBarVisible()
+{
+	return videobarVolumeLevelBtn->IsVisible();
+}
+
+void ShowVolumeLevelBar()
+{
+	videobarVolumeLevelBtn->SetVisible(true);
+	videobarVolumeLevelBtn->SetState(STATE_DEFAULT);
+}
+
+void HideVolumeLevelBar()
+{
+	videobarVolumeLevelBtn->SetVisible(false);
+	videobarVolumeLevelBtn->SetState(STATE_DISABLED);
+	videobarVolumeLevelTopImg->SetVisible(false);
+	videobarVolumeLevelMidImg->SetTileVertical(0);
+	videobarVolumeLevelLineImg->SetVisible(false);
+	videobarVolumeLevelBottomImg->SetVisible(false);
+}
+
+static void VideoVolumeCallback(void * ptr)
+{
+	GuiButton * b = (GuiButton *)ptr;
+	if(b->GetState() == STATE_CLICKED)
+	{
+		b->ResetState();
+
+		// show/hide volume level bar
+		if(videobarVolumeLevelBtn->IsVisible())
+			HideVolumeLevelBar();
+		else
+			ShowVolumeLevelBar();
+	}
+}
+
 static void VideoBackwardCallback(void * ptr)
 {
 	GuiButton * b = (GuiButton *)ptr;
@@ -3657,6 +3758,7 @@ static void VideoBackwardCallback(void * ptr)
 		wiiSkipBackward();
 	}
 }
+
 static void VideoPauseCallback(void * ptr)
 {
 	GuiButton * b = (GuiButton *)ptr;
@@ -3769,12 +3871,15 @@ static void AudioProgressCallback(void * ptr)
 
 	if(b->GetState() == STATE_CLICKED)
 	{
-		percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/300.0;
-		if(percent > 100) percent = 100;
-		else if(percent < 0) percent = 0;
-		done = total*percent;
+		if(b->GetStateChan() >= 0)
+		{
+			percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/300.0;
+			if(percent > 100) percent = 100;
+			else if(percent < 0) percent = 0;
+			done = total*percent;
+			wiiSeekPos(done);
+		}
 		b->ResetState();
-		wiiSeekPos(done);
 	}
 
 	if(percent <= 0.01)
@@ -3903,6 +4008,7 @@ static void SetupGui()
 	actionbarLoop = new GuiImageData(actionbar_loop_png);	
 	actionbarClose = new GuiImageData(actionbar_close_png);
 	actionbarPlaylist = new GuiImageData(actionbar_playlist_png);
+	actionbarVolume = new GuiImageData(actionbar_volume_png);
 
 	// video bar
 
@@ -3926,6 +4032,8 @@ static void SetupGui()
 	videobarProgressRightImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	videobarProgressRightImg->SetPosition(0, 60);
 	videobarProgressRightImg->SetVisible(false);
+	videobarVolumeImg = new GuiImage(actionbarVolume);
+	videobarVolumeImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	videobarBackwardImg = new GuiImage(actionbarBackward);
 	videobarBackwardImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	videobarPauseImg = new GuiImage(actionbarPause);
@@ -3933,6 +4041,25 @@ static void SetupGui()
 	videobarForwardImg = new GuiImage(actionbarForward);
 	videobarForwardImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	
+	videobarVolumeLevelImg = new GuiImage(&volumeEmpty);
+	videobarVolumeLevelImg->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+	videobarVolumeLevelTopImg = new GuiImage(&volumeTop);
+	videobarVolumeLevelTopImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	videobarVolumeLevelTopImg->SetPosition(20, -220);
+	videobarVolumeLevelTopImg->SetVisible(false);
+	videobarVolumeLevelMidImg = new GuiImage(&volumeMid);
+	videobarVolumeLevelMidImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	videobarVolumeLevelMidImg->SetTileVertical(0);
+	videobarVolumeLevelLineImg = new GuiImage(&volumeLine);
+	videobarVolumeLevelLineImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	videobarVolumeLevelLineImg->SetPosition(20, 0);
+	videobarVolumeLevelLineImg->SetVisible(false);
+	videobarVolumeLevelBottomImg = new GuiImage(&volumeBottom);
+	videobarVolumeLevelBottomImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	videobarVolumeLevelBottomImg->SetPosition(20, -90);
+	videobarVolumeLevelBottomImg->SetVisible(false);
+	
+	videobarVolumeTip = new GuiTooltip("Volume");
 	videobarBackwardTip = new GuiTooltip("Backward");
 	videobarPauseTip = new GuiTooltip("Pause");
 	videobarForwardTip = new GuiTooltip("Forward");
@@ -3943,6 +4070,26 @@ static void SetupGui()
 	videobarProgressBtn->SetTrigger(trigA);
 	videobarProgressBtn->SetSelectable(false);
 	videobarProgressBtn->SetUpdateCallback(VideoProgressCallback);
+	
+	videobarVolumeLevelBtn = new GuiButton(videobarVolumeLevelImg->GetWidth(), videobarVolumeLevelImg->GetHeight());
+	videobarVolumeLevelBtn->SetImage(videobarVolumeLevelImg);
+	videobarVolumeLevelBtn->SetPosition(20, -90);
+	videobarVolumeLevelBtn->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	videobarVolumeLevelBtn->SetTrigger(trigA);
+	videobarVolumeLevelBtn->SetSelectable(false);
+	videobarVolumeLevelBtn->SetVisible(false);
+	videobarVolumeLevelBtn->SetState(STATE_DISABLED);
+	videobarVolumeLevelBtn->SetUpdateCallback(VideoVolumeLevelCallback);
+
+	videobarVolumeBtn = new GuiButton(40, 40);
+	videobarVolumeBtn->SetPosition(10, 4);
+	videobarVolumeBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	videobarVolumeBtn->SetImage(videobarVolumeImg);
+	videobarVolumeBtn->SetTooltip(videobarVolumeTip);
+	videobarVolumeBtn->SetTrigger(trigA);
+	videobarVolumeBtn->SetSelectable(false);
+	videobarVolumeBtn->SetUpdateCallback(VideoVolumeCallback);
+	videobarVolumeBtn->SetEffectGrow();
 
 	videobarBackwardBtn = new GuiButton(40, 40);
 	videobarBackwardBtn->SetPosition(-60, 4);
@@ -3988,6 +4135,12 @@ static void SetupGui()
 	videobar->Append(videobarProgressMidImg);
 	videobar->Append(videobarProgressLineImg);
 	videobar->Append(videobarProgressRightImg);
+	videobar->Append(videobarVolumeBtn);
+	videobar->Append(videobarVolumeLevelBtn);
+	videobar->Append(videobarVolumeLevelTopImg);
+	videobar->Append(videobarVolumeLevelMidImg);
+	videobar->Append(videobarVolumeLevelLineImg);
+	videobar->Append(videobarVolumeLevelBottomImg);
 	videobar->Append(videobarBackwardBtn);
 	videobar->Append(videobarPauseBtn);
 	videobar->Append(videobarForwardBtn);

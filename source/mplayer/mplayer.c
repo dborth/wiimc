@@ -197,8 +197,6 @@ static int load_restore_point(char *_filename);
 int controlledbygui=1;
 int pause_gui=0;
 int render_texture_time=0;
-float mplayer_volume = -1;
-float amplify_volume = 0.0;
 static bool low_cache=false;
 static char fileplaying[MAXPATHLEN];
 static int enable_restore_points=1;
@@ -2693,6 +2691,8 @@ char *argv[] = {
 	"-vo","gekko",
 	"-ao","gekko",
 	"-osdlevel","0",
+	"-af", "volume=10:1",
+	"-channels", "2",
 	_file
 }; 
 argc = sizeof(argv) / sizeof(char *);
@@ -3111,11 +3111,6 @@ play_next_file:
 #ifdef GEKKO
 m_config_set_option(mconfig,"sws","4");
 m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
-if(amplify_volume!=0.0){
-	char cad[25];
-	sprintf(cad,"volume=%f:0",amplify_volume);
-	m_config_set_option(mconfig,"af",cad);
-}
 #endif
   if (filename) {
     load_per_protocol_config (mconfig, filename);
@@ -3816,10 +3811,7 @@ if(mpctx->sh_video){
     audio_delay += mpctx->sh_video->stream_delay;
 }
 if(mpctx->sh_audio){
-#ifdef GEKKO
-  if (mplayer_volume >= 0)
-    mixer_setvolume(&mpctx->mixer, mplayer_volume, mplayer_volume);
-#endif
+
   if (start_volume >= 0)
     mixer_setvolume(&mpctx->mixer, start_volume, start_volume);
   if (! ignore_start)
@@ -4889,14 +4881,40 @@ void wiiSetAutoResume(int enable)
 	enable_restore_points = enable;
 }
 
+void wiiSetVolume(int vol)
+{
+	if(!mpctx || !mpctx->sh_audio)
+		return;
+
+	mixer_setvolume(&mpctx->mixer, vol, vol);
+}
+
 void wiiSetProperty(int command, float value)
 {
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
-	
 	cmd->id=command;
-	cmd->name=strdup("wiicommand");
 	cmd->nargs = 1;
-	
+
+	switch(command)
+	{
+		case MP_CMD_FRAMEDROPPING:
+			cmd->name = strdup("frame_drop"); break;
+		case MP_CMD_SWITCH_RATIO:
+			cmd->name = strdup("switch_ratio"); break;
+		case MP_CMD_AUDIO_DELAY:
+			cmd->name = strdup("audio_delay"); break;
+		case MP_CMD_SUB_VISIBILITY:
+			cmd->name = strdup("sub_visibility"); break;
+		case MP_CMD_SUB_ALIGNMENT:
+			cmd->name = strdup("sub_alignment"); break;
+		case MP_CMD_SUB_SCALE:
+			cmd->name = strdup("sub_scale"); break;
+		case MP_CMD_SUB_DELAY:
+			cmd->name = strdup("sub_delay"); break;
+		case MP_CMD_SUB_SELECT:
+			cmd->name = strdup("sub"); break;
+	}
+
 	switch(command)
 	{
 		case MP_CMD_FRAMEDROPPING:

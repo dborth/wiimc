@@ -101,11 +101,17 @@ void ExitApp()
 
 static void ShutdownCB()
 {
+	if(controlledbygui != 1 && menuMode == 0)
+		return;
+
 	ConfigRequested = 1;
 	ShutdownRequested = 1;
 }
 static void ResetCB()
 {
+	if(controlledbygui != 1 && menuMode == 0)
+		return;
+
 	ResetRequested = 1;
 }
 
@@ -329,9 +335,9 @@ void SetMPlayerSettings()
 	GX_SetScreenPos(WiiSettings.videoXshift, WiiSettings.videoYshift, 
 					WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
 	wiiSetAutoResume(WiiSettings.autoResume);
+	wiiSetVolume(WiiSettings.volume);
 	wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
 	wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
-	wiiSetProperty(MP_CMD_VOLUME, WiiSettings.volume);
 	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);
 	wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
 	wiiSetProperty(MP_CMD_SUB_ALIGNMENT, WiiSettings.subtitlePosition);

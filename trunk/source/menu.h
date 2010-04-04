@@ -23,6 +23,9 @@ void CancelAction();
 int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
 void SuspendPictureThread();
 void ResetText();
+bool VolumeLevelBarVisible();
+void ShowVolumeLevelBar();
+void HideVolumeLevelBar();
 
 extern "C" {
 void ShowProgress (const char *msg, int done, int total);
@@ -31,6 +34,7 @@ bool StatusSet();
 }
 
 extern int menuCurrent;
+extern bool menuMode;
 extern int doMPlayerGuiDraw;
 extern bool nowPlayingSet;
 extern u8 *picBuffer;

@@ -383,7 +383,7 @@ void DefaultSettings ()
 	WiiSettings.videoYshift = 0;
 
 	// Audio
-	WiiSettings.volume = 100;
+	WiiSettings.volume = 50;
 	WiiSettings.audioDelay = 0;
 
 	// Subtitles
@@ -438,7 +438,7 @@ static void FixInvalidSettings()
 
 	// Audio
 	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
-		WiiSettings.volume = 100;
+		WiiSettings.volume = 50;
 	if(WiiSettings.audioDelay < 0 || WiiSettings.audioDelay > 2)
 		WiiSettings.audioDelay = 0;
 

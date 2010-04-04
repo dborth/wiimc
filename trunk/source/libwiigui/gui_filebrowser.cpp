@@ -105,6 +105,14 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 	scrollbarBoxBtn->SetClickable(false);
 	scrollbarBoxBtn->SetHoldable(true);
 	scrollbarBoxBtn->SetTrigger(trigHeldA);
+	
+	// hide scrollbar until we have sufficient entries
+	scrollbarTopImg->SetVisible(false);
+	scrollbarMidImg->SetVisible(false);
+	scrollbarBottomImg->SetVisible(false);
+	arrowUpBtn->SetVisible(false);
+	arrowDownBtn->SetVisible(false);
+	scrollbarBoxBtn->SetVisible(false);
 
 	for(int i=0; i<size; i++)
 	{
@@ -355,6 +363,28 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	}
 
 	endNavigation:
+	
+	if(listChanged || numEntries != browser.numEntries)
+	{
+		if(browser.numEntries > size)
+		{
+			scrollbarTopImg->SetVisible(true);
+			scrollbarMidImg->SetVisible(true);
+			scrollbarBottomImg->SetVisible(true);
+			arrowUpBtn->SetVisible(true);
+			arrowDownBtn->SetVisible(true);
+			scrollbarBoxBtn->SetVisible(true);
+		}
+		else
+		{
+			scrollbarTopImg->SetVisible(false);
+			scrollbarMidImg->SetVisible(false);
+			scrollbarBottomImg->SetVisible(false);
+			arrowUpBtn->SetVisible(false);
+			arrowDownBtn->SetVisible(false);
+			scrollbarBoxBtn->SetVisible(false);
+		}
+	}
 
 	for(int i=0; i<size; ++i)
 	{

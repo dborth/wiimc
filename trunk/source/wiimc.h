@@ -73,6 +73,7 @@ void wiiUpdatePointer(int x, int y);
 bool wiiInDVDMenu();
 void wiiSetCache(int size, int prefill);
 void wiiSetAutoResume(int enable);
+void wiiSetVolume(int vol);
 void wiiSetProperty(int cmd, float val);
 void wiiLoadRestorePoints(char *buffer, int size);
 char * wiiSaveRestorePoints(char *path);

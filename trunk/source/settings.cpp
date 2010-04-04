@@ -181,8 +181,6 @@ prepareSettingsData ()
 	// Subtitles
 	createXMLSection("Subtitle", "Subtitle Settings");
 	createXMLSetting("subtitleVisibility", "Subtitle visibility", toStr(WiiSettings.subtitleVisibility));
-	createXMLSetting("subtitlePosition", "Subtitle position", toStr(WiiSettings.subtitlePosition));
-	createXMLSetting("subtitleScale", "Subtitle size", toStr(WiiSettings.subtitleScale));
 	createXMLSetting("subtitleDelay", "Subtitle delay", FtoStr(WiiSettings.subtitleDelay));
 
 	int datasize = mxmlSaveString(xml, (char *)savebuffer, SAVEBUFFERSIZE, XMLSaveCallback);
@@ -388,8 +386,6 @@ void DefaultSettings ()
 
 	// Subtitles
 	WiiSettings.subtitleVisibility = 1;
-	WiiSettings.subtitlePosition = SUBTITLE_ALIGN_BOTTOM;
-	WiiSettings.subtitleScale = 1;
 	WiiSettings.subtitleDelay = 0;
 }
 
@@ -445,10 +441,6 @@ static void FixInvalidSettings()
 	// Subtitles
 	if(WiiSettings.subtitleVisibility < 0 || WiiSettings.subtitleVisibility > 1)
 		WiiSettings.subtitleVisibility = 1;
-	if(WiiSettings.subtitlePosition < 0 || WiiSettings.subtitlePosition > 2)
-		WiiSettings.subtitlePosition = 0;
-	if(WiiSettings.subtitleScale < 0.5 || WiiSettings.subtitleScale > 1.5)
-		WiiSettings.subtitleScale = 1;
 	if(WiiSettings.subtitleDelay < -2 || WiiSettings.subtitleDelay > 2)
 		WiiSettings.subtitleDelay = 0;
 }
@@ -636,8 +628,6 @@ static bool LoadSettingsFile(char * filepath)
 
 				// Subtitles
 				loadXMLSetting(&WiiSettings.subtitleVisibility, "subtitleVisibility");
-				loadXMLSetting(&WiiSettings.subtitlePosition, "subtitlePosition");
-				loadXMLSetting(&WiiSettings.subtitleScale, "subtitleScale");
 				loadXMLSetting(&WiiSettings.subtitleDelay, "subtitleDelay");
 			}
 			mxmlDelete(xml);

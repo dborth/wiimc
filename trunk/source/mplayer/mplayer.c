@@ -4727,16 +4727,6 @@ void wiiRewind()
 	wiiSeek(-30, 0);
 }
 
-void wiiSkipForward()
-{
-	wiiSeek(300, 0);
-}
-
-void wiiSkipBackward()
-{
-	wiiSeek(-300, 0);
-}
-
 double wiiGetTimeLength()
 {
 	if(!mpctx || !mpctx->demuxer)
@@ -4905,10 +4895,6 @@ void wiiSetProperty(int command, float value)
 			cmd->name = strdup("audio_delay"); break;
 		case MP_CMD_SUB_VISIBILITY:
 			cmd->name = strdup("sub_visibility"); break;
-		case MP_CMD_SUB_ALIGNMENT:
-			cmd->name = strdup("sub_alignment"); break;
-		case MP_CMD_SUB_SCALE:
-			cmd->name = strdup("sub_scale"); break;
 		case MP_CMD_SUB_DELAY:
 			cmd->name = strdup("sub_delay"); break;
 		case MP_CMD_SUB_SELECT:
@@ -4919,7 +4905,6 @@ void wiiSetProperty(int command, float value)
 	{
 		case MP_CMD_FRAMEDROPPING:
 		case MP_CMD_SUB_VISIBILITY:
-		case MP_CMD_SUB_ALIGNMENT:
 			cmd->args[0].v.i = (int)value;
 			break;
 		default:

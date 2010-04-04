@@ -58,8 +58,6 @@ void wiiMute();
 void wiiSeekPos(int sec);
 void wiiFastForward();
 void wiiRewind();
-void wiiSkipForward();
-void wiiSkipBackward();
 double wiiGetTimeLength();
 double wiiGetTimePos();
 void wiiGetTimeDisplay(char *buf);

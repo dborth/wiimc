@@ -53,6 +53,7 @@ static int parseHalt = 0;
 static DIR_ITER * dirIter = NULL;
 static bool ParseDirEntries();
 int findLoadedFile = 0;
+int selectLoadedFile = 0;
 
 // device thread
 static lwp_t devicethread = LWP_THREAD_NULL;
@@ -987,7 +988,7 @@ static bool AllowedExt(char *ext)
 	return false;
 }
 
-void FindFile(int start, int end)
+void FindFile()
 {
 	if(loadedFile[0] == 0 || browser.dir[0] == 0)
 	{
@@ -1005,7 +1006,7 @@ void FindFile(int start, int end)
 	else
 		strcpy(file, loadedFile);
 
-	for(int i=start; i < end; i++)
+	for(int i=0; i < browser.numEntries; i++)
 	{
 		if(strcmp(browserList[i].filename, file) == 0)
 		{
@@ -1017,6 +1018,12 @@ void FindFile(int start, int end)
 	// move to this file
 	if(indexFound > 0)
 	{
+		browserList[indexFound].icon = ICON_PLAY;
+		findLoadedFile = 2;
+
+		if(!selectLoadedFile) // only move to the file when first returning from the video
+			return;
+
 		int pagesize = 11;
 
 		if(menuCurrent == MENU_BROWSE_VIDEOS && videoScreenshot)
@@ -1024,19 +1031,17 @@ void FindFile(int start, int end)
 
 		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 			pagesize = 8;
-		
-		browserList[indexFound].icon = ICON_PLAY;
 
 		if(indexFound > pagesize)
 		{
 			browser.pageIndex = (ceil(indexFound/(float)pagesize)) * pagesize;
 			
-			if(browser.pageIndex + pagesize > end)
-				browser.pageIndex = end - pagesize;
+			if(browser.pageIndex + pagesize > browser.numEntries)
+				browser.pageIndex = browser.numEntries - pagesize;
 		}
 		browser.selIndex = indexFound;
-		findLoadedFile = 2;
 	}
+	selectLoadedFile = 0; // only try to select loaded file once
 }
 
 static bool ParseDirEntries()
@@ -1114,10 +1119,6 @@ static bool ParseDirEntries()
 		}
 	}
 
-	// try to find and select the last loaded file
-	if(findLoadedFile == 1)
-		FindFile(browser.numEntries, browser.numEntries + i);
-
 	// Sort the file list
 	if(i > 0)
 		qsort(browserList, browser.numEntries+i, sizeof(BROWSERENTRY), FileSortCallback);
@@ -1126,6 +1127,10 @@ static bool ParseDirEntries()
 
 	if(res != 0 || parseHalt)
 	{
+		// try to find and select the last loaded file
+		if(findLoadedFile == 1)
+			FindFile();
+
 		dirclose(dirIter); // close directory
 		dirIter = NULL;
 		return false; // no more entries

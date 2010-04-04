@@ -91,15 +91,15 @@ static int control(int cmd, void *arg)
 			
 			if (cmd == AOCONTROL_SET_VOLUME)
 			{
-				volume.left = (vol->left / 100.0) * 0x80;
-				volume.right = (vol->right / 100.0) * 0x80;
+				volume.left = (vol->left / 100.0) * 0xFF;
+				volume.right = (vol->right / 100.0) * 0xFF;
 				
 				VIWriteI2CRegister8(AVE_AI_VOLUME, clamp(volume.left, 0x00, 0xFF));
 				VIWriteI2CRegister8(AVE_AI_VOLUME + 1, clamp(volume.right, 0x00, 0xFF));
 			}
 			
-			vol->left = (volume.left / 0x80) * 100.0;
-			vol->right = (volume.right / 0x80) * 100.0;
+			vol->left = (volume.left / 0xFF) * 100.0;
+			vol->right = (volume.right / 0xFF) * 100.0;
 			
 			return CONTROL_OK;
 		}

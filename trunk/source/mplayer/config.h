@@ -435,8 +435,6 @@ char MPLAYER_LIBDIR[100];
 #define CONFIG_MUXERS 0
 
 #undef HAVE_ARPA_INET_H
-
-#undef HAVE_ARPA_INET_H
 #define HAVE_BSWAP 1
 #define CONFIG_BZLIB 0
 #define HAVE_DOS_PATHS 1

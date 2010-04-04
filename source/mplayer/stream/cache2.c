@@ -790,7 +790,7 @@ void refillcache(stream_t *stream,float min)
 		  {
 			  if(cmd->id==MP_CMD_PAUSE)
 			  {
-				  cmd = mp_input_get_cmd(time,0,0);
+				  cmd = mp_input_get_cmd(0,0,0);
 				  mp_cmd_free(cmd);
 			  }
 		  }

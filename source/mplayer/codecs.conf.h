@@ -4210,7 +4210,7 @@ NULL, /* comment */
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* outflags */
 { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }, /* infmt */
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* inflags */
-"eatgv", /* name */
+"ffeatgv", /* name */
 "FFmpeg Electronic Arts TGV", /* info */
 NULL, /* comment */
 "eatgv", /* dll */
@@ -6173,7 +6173,7 @@ NULL, /* dll */
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* outflags */
 { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }, /* infmt */
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* inflags */
-"lpcm", /* name */
+"fflpcm", /* name */
 "Bluray LPCM", /* info */
 NULL, /* comment */
 "pcm_bluray", /* dll */

@@ -22,8 +22,8 @@
 #define AVFORMAT_AVFORMAT_H
 
 #define LIBAVFORMAT_VERSION_MAJOR 52
-#define LIBAVFORMAT_VERSION_MINOR 57
-#define LIBAVFORMAT_VERSION_MICRO  1
+#define LIBAVFORMAT_VERSION_MINOR 60
+#define LIBAVFORMAT_VERSION_MICRO  0
 
 #define LIBAVFORMAT_VERSION_INT AV_VERSION_INT(LIBAVFORMAT_VERSION_MAJOR, \
                                                LIBAVFORMAT_VERSION_MINOR, \
@@ -131,6 +131,7 @@ typedef struct AVMetadataConv AVMetadataConv;
 /**
  * Gets a metadata element with matching key.
  * @param prev Set to the previous matching element to find the next.
+ *             If set to NULL the first matching element is returned.
  * @param flags Allows case as well as suffix-insensitive comparisons.
  * @return Found tag or NULL, changing key or value leads to undefined behavior.
  */
@@ -647,6 +648,8 @@ typedef struct AVFormatContext {
 #define AVFMT_FLAG_IGNIDX       0x0002 ///< Ignore index.
 #define AVFMT_FLAG_NONBLOCK     0x0004 ///< Do not block when reading packets from input.
 #define AVFMT_FLAG_IGNDTS       0x0008 ///< Ignore DTS on frames that contain both DTS & PTS
+#define AVFMT_FLAG_NOFILLIN     0x0010 ///< Do not infer any values from other values, just return what is stored in the container
+#define AVFMT_FLAG_NOPARSE      0x0020 ///< Do not use AVParsers, you also must set AVFMT_FLAG_NOFILLIN as the fillin code works on frames and no parsing -> no frames. Also seeking to frames can not work if parsing to find frame boundaries has been disabled
 
     int loop_input;
     /** decoding: size of data to probe; encoding: unused. */
@@ -803,7 +806,7 @@ AVOutputFormat *av_guess_format(const char *short_name,
  */
 enum CodecID av_guess_codec(AVOutputFormat *fmt, const char *short_name,
                             const char *filename, const char *mime_type,
-                            enum CodecType type);
+                            enum AVMediaType type);
 
 /**
  * Sends a nice hexadecimal dump of a buffer to the specified file stream.
@@ -1002,7 +1005,7 @@ int av_seek_frame(AVFormatContext *s, int stream_index, int64_t timestamp,
  * @param ts target timestamp
  * @param max_ts largest acceptable timestamp
  * @param flags flags
- * @returns >=0 on success, error code otherwise
+ * @return >=0 on success, error code otherwise
  *
  * @NOTE This is part of the new seek API which is still under construction.
  *       Thus do not use this yet. It may change at any time, do not expect
@@ -1324,6 +1327,14 @@ int av_filename_number_test(const char *filename);
  */
 int avf_sdp_create(AVFormatContext *ac[], int n_files, char *buff, int size);
 
+/**
+ * Returns a positive value if the given filename has one of the given
+ * extensions, 0 otherwise.
+ *
+ * @param extensions a comma-separated list of filename extensions
+ */
+int av_match_ext(const char *filename, const char *extensions);
+
 #ifdef HAVE_AV_CONFIG_H
 
 void ff_dynarray_add(intptr_t **tab_ptr, int *nb_ptr, intptr_t elem);
@@ -1347,14 +1358,6 @@ time_t mktimegm(struct tm *tm);
 struct tm *brktimegm(time_t secs, struct tm *tm);
 const char *small_strptime(const char *p, const char *fmt,
                            struct tm *dt);
-
-/**
- * Returns a positive value if the given filename has one of the given
- * extensions, 0 otherwise.
- *
- * @param extensions a comma-separated list of filename extensions
- */
-int av_match_ext(const char *filename, const char *extensions);
 
 #endif /* HAVE_AV_CONFIG_H */
 

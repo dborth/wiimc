@@ -225,8 +225,7 @@ OBJS-$(CONFIG_SDP_DEMUXER)               += rtsp.o        \
                                             rtpdec_asf.o  \
                                             rtpdec_h263.o \
                                             rtpdec_h264.o \
-                                            rtpdec_theora.o \
-                                            rtpdec_vorbis.o
+                                            rtpdec_xiph.o
 OBJS-$(CONFIG_SEGAFILM_DEMUXER)          += segafilm.o
 OBJS-$(CONFIG_SHORTEN_DEMUXER)           += raw.o id3v2.o
 OBJS-$(CONFIG_SIFF_DEMUXER)              += siff.o
@@ -260,6 +259,7 @@ OBJS-$(CONFIG_WSAUD_DEMUXER)             += westwood.o
 OBJS-$(CONFIG_WSVQA_DEMUXER)             += westwood.o
 OBJS-$(CONFIG_WV_DEMUXER)                += wv.o apetag.o id3v1.o
 OBJS-$(CONFIG_XA_DEMUXER)                += xa.o
+OBJS-$(CONFIG_YOP_DEMUXER)               += yop.o
 OBJS-$(CONFIG_YUV4MPEGPIPE_MUXER)        += yuv4mpeg.o
 OBJS-$(CONFIG_YUV4MPEGPIPE_DEMUXER)      += yuv4mpeg.o
 
@@ -274,7 +274,12 @@ OBJS-$(CONFIG_FILE_PROTOCOL)             += file.o
 OBJS-$(CONFIG_GOPHER_PROTOCOL)           += gopher.o
 OBJS-$(CONFIG_HTTP_PROTOCOL)             += http.o httpauth.o
 OBJS-$(CONFIG_PIPE_PROTOCOL)             += file.o
-OBJS-$(CONFIG_RTMP_PROTOCOL)             += rtmpproto.o rtmppkt.o
+
+# external or internal rtmp
+RTMP-OBJS-$(CONFIG_LIBRTMP)               = librtmp.o
+RTMP-OBJS-$(!CONFIG_LIBRTMP)              = rtmpproto.o rtmppkt.o
+OBJS-$(CONFIG_RTMP_PROTOCOL)             += $(RTMP-OBJS-yes)
+
 OBJS-$(CONFIG_RTP_PROTOCOL)              += rtpproto.o
 OBJS-$(CONFIG_TCP_PROTOCOL)              += tcp.o
 OBJS-$(CONFIG_UDP_PROTOCOL)              += udp.o

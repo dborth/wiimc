@@ -226,7 +226,7 @@ static int dv_init_dynamic_tables(const DVprofile *d)
         } else {
             iweight1 = &dv_iweight_1080_y[0];
             iweight2 = &dv_iweight_1080_c[0];
-            }
+        }
         if (DV_PROFILE_IS_HD(d)) {
             for (c = 0; c < 4; c++) {
                 for (s = 0; s < 16; s++) {
@@ -244,12 +244,12 @@ static int dv_init_dynamic_tables(const DVprofile *d)
                         for (; i < dv_quant_areas[c]; i++) {
                             *factor1   = iweight1[i] << (dv_quant_shifts[s][c] + 1);
                             *factor2++ = (*factor1++) << 1;
-        }
-    }
+                        }
+                    }
+                }
             }
         }
     }
-}
 
     return 0;
 }
@@ -1282,7 +1282,7 @@ static int dvvideo_close(AVCodecContext *c)
 #if CONFIG_DVVIDEO_ENCODER
 AVCodec dvvideo_encoder = {
     "dvvideo",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_DVVIDEO,
     sizeof(DVVideoContext),
     dvvideo_init_encoder,
@@ -1295,7 +1295,7 @@ AVCodec dvvideo_encoder = {
 #if CONFIG_DVVIDEO_DECODER
 AVCodec dvvideo_decoder = {
     "dvvideo",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_DVVIDEO,
     sizeof(DVVideoContext),
     dvvideo_init,

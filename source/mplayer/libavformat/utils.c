@@ -256,8 +256,8 @@ AVOutputFormat *guess_stream_format(const char *short_name, const char *filename
 #endif
 
 enum CodecID av_guess_codec(AVOutputFormat *fmt, const char *short_name,
-                            const char *filename, const char *mime_type, enum CodecType type){
-    if(type == CODEC_TYPE_VIDEO){
+                            const char *filename, const char *mime_type, enum AVMediaType type){
+    if(type == AVMEDIA_TYPE_VIDEO){
         enum CodecID codec_id= CODEC_ID_NONE;
 
 #if CONFIG_IMAGE2_MUXER
@@ -268,7 +268,7 @@ enum CodecID av_guess_codec(AVOutputFormat *fmt, const char *short_name,
         if(codec_id == CODEC_ID_NONE)
             codec_id= fmt->video_codec;
         return codec_id;
-    }else if(type == CODEC_TYPE_AUDIO)
+    }else if(type == AVMEDIA_TYPE_AUDIO)
         return fmt->audio_codec;
     else
         return CODEC_ID_NONE;
@@ -353,25 +353,28 @@ static int set_codec_from_probe_data(AVFormatContext *s, AVStream *st, AVProbeDa
                pd->buf_size, MAX_PROBE_PACKETS - st->probe_packets, fmt->name, score);
         if (!strcmp(fmt->name, "mp3")) {
             st->codec->codec_id = CODEC_ID_MP3;
-            st->codec->codec_type = CODEC_TYPE_AUDIO;
+            st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
         } else if (!strcmp(fmt->name, "ac3")) {
             st->codec->codec_id = CODEC_ID_AC3;
-            st->codec->codec_type = CODEC_TYPE_AUDIO;
+            st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
         } else if (!strcmp(fmt->name, "eac3")) {
             st->codec->codec_id = CODEC_ID_EAC3;
-            st->codec->codec_type = CODEC_TYPE_AUDIO;
+            st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
         } else if (!strcmp(fmt->name, "mpegvideo")) {
             st->codec->codec_id = CODEC_ID_MPEG2VIDEO;
-            st->codec->codec_type = CODEC_TYPE_VIDEO;
+            st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
         } else if (!strcmp(fmt->name, "m4v")) {
             st->codec->codec_id = CODEC_ID_MPEG4;
-            st->codec->codec_type = CODEC_TYPE_VIDEO;
+            st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
         } else if (!strcmp(fmt->name, "h264")) {
             st->codec->codec_id = CODEC_ID_H264;
-            st->codec->codec_type = CODEC_TYPE_VIDEO;
+            st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
         } else if (!strcmp(fmt->name, "dts")) {
             st->codec->codec_id = CODEC_ID_DTS;
-            st->codec->codec_type = CODEC_TYPE_AUDIO;
+            st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
+        } else if (!strcmp(fmt->name, "aac")) {
+            st->codec->codec_id = CODEC_ID_AAC;
+            st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
         }
     }
     return !!fmt;
@@ -561,7 +564,7 @@ int av_open_input_file(AVFormatContext **ic_ptr, const char *filename,
         if (buf_size > 0) {
             url_setbufsize(pb, buf_size);
         }
-        if ((err = ff_probe_input_buffer(&pb, &fmt, filename, logctx, 0, 0)) < 0) {
+        if ((err = ff_probe_input_buffer(&pb, &fmt, filename, logctx, 0, logctx ? (*ic_ptr)->probesize : 0)) < 0) {
             goto fail;
         }
     }
@@ -648,13 +651,13 @@ int av_read_packet(AVFormatContext *s, AVPacket *pkt)
         st= s->streams[pkt->stream_index];
 
         switch(st->codec->codec_type){
-        case CODEC_TYPE_VIDEO:
+        case AVMEDIA_TYPE_VIDEO:
             if(s->video_codec_id)   st->codec->codec_id= s->video_codec_id;
             break;
-        case CODEC_TYPE_AUDIO:
+        case AVMEDIA_TYPE_AUDIO:
             if(s->audio_codec_id)   st->codec->codec_id= s->audio_codec_id;
             break;
-        case CODEC_TYPE_SUBTITLE:
+        case AVMEDIA_TYPE_SUBTITLE:
             if(s->subtitle_codec_id)st->codec->codec_id= s->subtitle_codec_id;
             break;
         }
@@ -731,7 +734,7 @@ static void compute_frame_duration(int *pnum, int *pden, AVStream *st,
     *pnum = 0;
     *pden = 0;
     switch(st->codec->codec_type) {
-    case CODEC_TYPE_VIDEO:
+    case AVMEDIA_TYPE_VIDEO:
         if(st->time_base.num*1000LL > st->time_base.den){
             *pnum = st->time_base.num;
             *pden = st->time_base.den;
@@ -743,7 +746,7 @@ static void compute_frame_duration(int *pnum, int *pden, AVStream *st,
             }
         }
         break;
-    case CODEC_TYPE_AUDIO:
+    case AVMEDIA_TYPE_AUDIO:
         frame_size = get_audio_frame_size(st->codec, pkt->size);
         if (frame_size < 0)
             break;
@@ -756,9 +759,9 @@ static void compute_frame_duration(int *pnum, int *pden, AVStream *st,
 }
 
 static int is_intra_only(AVCodecContext *enc){
-    if(enc->codec_type == CODEC_TYPE_AUDIO){
+    if(enc->codec_type == AVMEDIA_TYPE_AUDIO){
         return 1;
-    }else if(enc->codec_type == CODEC_TYPE_VIDEO){
+    }else if(enc->codec_type == AVMEDIA_TYPE_VIDEO){
         switch(enc->codec_id){
         case CODEC_ID_MJPEG:
         case CODEC_ID_MJPEGB:
@@ -849,6 +852,9 @@ static void compute_pkt_fields(AVFormatContext *s, AVStream *st,
 {
     int num, den, presentation_delayed, delay, i;
     int64_t offset;
+
+    if (s->flags & AVFMT_FLAG_NOFILLIN)
+        return;
 
     if((s->flags & AVFMT_FLAG_IGNDTS) && pkt->pts != AV_NOPTS_VALUE)
         pkt->dts= AV_NOPTS_VALUE;
@@ -985,14 +991,14 @@ static void compute_pkt_fields(AVFormatContext *s, AVStream *st,
 
     /* update flags */
     if(is_intra_only(st->codec))
-        pkt->flags |= PKT_FLAG_KEY;
+        pkt->flags |= AV_PKT_FLAG_KEY;
     else if (pc) {
         pkt->flags = 0;
         /* keyframe computation */
         if (pc->key_frame == 1)
-            pkt->flags |= PKT_FLAG_KEY;
+            pkt->flags |= AV_PKT_FLAG_KEY;
         else if (pc->key_frame == -1 && pc->pict_type == FF_I_TYPE)
-            pkt->flags |= PKT_FLAG_KEY;
+            pkt->flags |= AV_PKT_FLAG_KEY;
     }
     if (pc)
         pkt->convergence_duration = pc->convergence_duration;
@@ -1017,7 +1023,7 @@ static int av_read_frame_internal(AVFormatContext *s, AVPacket *pkt)
                 compute_pkt_fields(s, st, NULL, pkt);
                 s->cur_st = NULL;
                 if ((s->iformat->flags & AVFMT_GENERIC_INDEX) &&
-                    (pkt->flags & PKT_FLAG_KEY) && pkt->dts != AV_NOPTS_VALUE) {
+                    (pkt->flags & AV_PKT_FLAG_KEY) && pkt->dts != AV_NOPTS_VALUE) {
                     ff_reduce_index(s, st->index);
                     av_add_index_entry(st, pkt->pos, pkt->dts, 0, 0, AVINDEX_KEYFRAME);
                 }
@@ -1044,7 +1050,7 @@ static int av_read_frame_internal(AVFormatContext *s, AVPacket *pkt)
                     pkt->destruct = NULL;
                     compute_pkt_fields(s, st, st->parser, pkt);
 
-                    if((s->iformat->flags & AVFMT_GENERIC_INDEX) && pkt->flags & PKT_FLAG_KEY){
+                    if((s->iformat->flags & AVFMT_GENERIC_INDEX) && pkt->flags & AV_PKT_FLAG_KEY){
                         ff_reduce_index(s, st->index);
                         av_add_index_entry(st, st->parser->frame_offset, pkt->dts,
                                            0, 0, AVINDEX_KEYFRAME);
@@ -1107,7 +1113,7 @@ static int av_read_frame_internal(AVFormatContext *s, AVPacket *pkt)
             s->cur_st = st;
             st->cur_ptr = st->cur_pkt.data;
             st->cur_len = st->cur_pkt.size;
-            if (st->need_parsing && !st->parser) {
+            if (st->need_parsing && !st->parser && !(s->flags & AVFMT_FLAG_NOPARSE)) {
                 st->parser = av_parser_init(st->codec->codec_id);
                 if (!st->parser) {
                     /* no parser available: just output the raw packets */
@@ -1225,10 +1231,10 @@ int av_find_default_stream_index(AVFormatContext *s)
         return -1;
     for(i = 0; i < s->nb_streams; i++) {
         st = s->streams[i];
-        if (st->codec->codec_type == CODEC_TYPE_VIDEO) {
+        if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
             return i;
         }
-        if (first_audio_index < 0 && st->codec->codec_type == CODEC_TYPE_AUDIO)
+        if (first_audio_index < 0 && st->codec->codec_type == AVMEDIA_TYPE_AUDIO)
             first_audio_index = i;
     }
     return first_audio_index >= 0 ? first_audio_index : 0;
@@ -1620,7 +1626,7 @@ static int av_seek_frame_generic(AVFormatContext *s,
                 break;
             av_free_packet(&pkt);
             if(stream_index == pkt.stream_index){
-                if((pkt.flags & PKT_FLAG_KEY) && pkt.dts > timestamp)
+                if((pkt.flags & AV_PKT_FLAG_KEY) && pkt.dts > timestamp)
                     break;
             }
         }
@@ -1955,7 +1961,7 @@ static int has_codec_parameters(AVCodecContext *enc)
 {
     int val;
     switch(enc->codec_type) {
-    case CODEC_TYPE_AUDIO:
+    case AVMEDIA_TYPE_AUDIO:
         val = enc->sample_rate && enc->channels && enc->sample_fmt != SAMPLE_FMT_NONE;
         if(!enc->frame_size &&
            (enc->codec_id == CODEC_ID_VORBIS ||
@@ -1966,7 +1972,7 @@ static int has_codec_parameters(AVCodecContext *enc)
             enc->codec_id == CODEC_ID_SPEEX))
             return 0;
         break;
-    case CODEC_TYPE_VIDEO:
+    case AVMEDIA_TYPE_VIDEO:
         val = enc->width && enc->pix_fmt != PIX_FMT_NONE;
         break;
     default:
@@ -1994,12 +2000,12 @@ static int try_decode_frame(AVStream *st, AVPacket *avpkt)
 
     if(!has_codec_parameters(st->codec)){
         switch(st->codec->codec_type) {
-        case CODEC_TYPE_VIDEO:
+        case AVMEDIA_TYPE_VIDEO:
             avcodec_get_frame_defaults(&picture);
             ret = avcodec_decode_video2(st->codec, &picture,
                                         &got_picture, avpkt);
             break;
-        case CODEC_TYPE_AUDIO:
+        case AVMEDIA_TYPE_AUDIO:
             data_size = FFMAX(avpkt->size, AVCODEC_MAX_AUDIO_FRAME_SIZE);
             samples = av_malloc(data_size);
             if (!samples)
@@ -2131,14 +2137,14 @@ int av_find_stream_info(AVFormatContext *ic)
             st->codec->frame_size = 0;
             st->codec->channels = 0;
         }
-        if(st->codec->codec_type == CODEC_TYPE_VIDEO){
+        if(st->codec->codec_type == AVMEDIA_TYPE_VIDEO){
 /*            if(!st->time_base.num)
                 st->time_base= */
             if(!st->codec->time_base.num)
                 st->codec->time_base= st->time_base;
         }
         //only for the split stuff
-        if (!st->parser) {
+        if (!st->parser && !(ic->flags & AVFMT_FLAG_NOPARSE)) {
             st->parser = av_parser_init(st->codec->codec_id);
             if(st->need_parsing == AVSTREAM_PARSE_HEADERS && st->parser){
                 st->parser->flags |= PARSER_FLAG_COMPLETE_FRAMES;
@@ -2173,7 +2179,7 @@ int av_find_stream_info(AVFormatContext *ic)
                 break;
             /* variable fps and no guess at the real fps */
             if(   tb_unreliable(st->codec) && !(st->r_frame_rate.num && st->avg_frame_rate.num)
-               && duration_count[i]<20 && st->codec->codec_type == CODEC_TYPE_VIDEO)
+               && duration_count[i]<20 && st->codec->codec_type == AVMEDIA_TYPE_VIDEO)
                 break;
             if(st->parser && st->parser->parser->split && !st->codec->extradata)
                 break;
@@ -2245,7 +2251,7 @@ int av_find_stream_info(AVFormatContext *ic)
             if(pkt->dts != AV_NOPTS_VALUE && last != AV_NOPTS_VALUE && duration>0){
                 double dur= duration * av_q2d(st->time_base);
 
-//                if(st->codec->codec_type == CODEC_TYPE_VIDEO)
+//                if(st->codec->codec_type == AVMEDIA_TYPE_VIDEO)
 //                    av_log(NULL, AV_LOG_ERROR, "%f\n", dur);
                 if(duration_count[index] < 2)
                     memset(duration_error[index], 0, sizeof(*duration_error));
@@ -2295,7 +2301,7 @@ int av_find_stream_info(AVFormatContext *ic)
             av_reduce(&st->avg_frame_rate.num, &st->avg_frame_rate.den,
                      (st->codec_info_nb_frames-2)*(int64_t)st->time_base.den,
                       codec_info_duration[i]    *(int64_t)st->time_base.num, 60000);
-        if (st->codec->codec_type == CODEC_TYPE_VIDEO) {
+        if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
             if(st->codec->codec_id == CODEC_ID_RAWVIDEO && !st->codec->codec_tag && !st->codec->bits_per_coded_sample)
                 st->codec->codec_tag= avcodec_pix_fmt_to_codec_tag(st->codec->pix_fmt);
 
@@ -2314,7 +2320,7 @@ int av_find_stream_info(AVFormatContext *ic)
 
                 for(j=1; j<MAX_STD_TIMEBASES; j++){
                     double error= duration_error[i][j] * get_std_framerate(j);
-//                    if(st->codec->codec_type == CODEC_TYPE_VIDEO)
+//                    if(st->codec->codec_type == AVMEDIA_TYPE_VIDEO)
 //                        av_log(NULL, AV_LOG_ERROR, "%f %f\n", get_std_framerate(j) / 12.0/1001, error);
                     if(error < best_error){
                         best_error= error;
@@ -2336,7 +2342,7 @@ int av_find_stream_info(AVFormatContext *ic)
                     st->r_frame_rate.den = st->time_base.num;
                 }
             }
-        }else if(st->codec->codec_type == CODEC_TYPE_AUDIO) {
+        }else if(st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
             if(!st->codec->bits_per_coded_sample)
                 st->codec->bits_per_coded_sample= av_get_bits_per_sample(st->codec->codec_id);
         }
@@ -2350,7 +2356,7 @@ int av_find_stream_info(AVFormatContext *ic)
     /* correct DTS for B-frame streams with no timestamps */
     for(i=0;i<ic->nb_streams;i++) {
         st = ic->streams[i];
-        if (st->codec->codec_type == CODEC_TYPE_VIDEO) {
+        if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
             if(b-frames){
                 ppktl = &ic->packet_buffer;
                 while(ppkt1){
@@ -2583,7 +2589,7 @@ int av_write_header(AVFormatContext *s)
         st = s->streams[i];
 
         switch (st->codec->codec_type) {
-        case CODEC_TYPE_AUDIO:
+        case AVMEDIA_TYPE_AUDIO:
             if(st->codec->sample_rate<=0){
                 av_log(s, AV_LOG_ERROR, "sample rate not set\n");
                 return -1;
@@ -2592,7 +2598,7 @@ int av_write_header(AVFormatContext *s)
                 st->codec->block_align = st->codec->channels *
                     av_get_bits_per_sample(st->codec->codec_id) >> 3;
             break;
-        case CODEC_TYPE_VIDEO:
+        case AVMEDIA_TYPE_VIDEO:
             if(st->codec->time_base.num<=0 || st->codec->time_base.den<=0){ //FIXME audio too?
                 av_log(s, AV_LOG_ERROR, "time base not set\n");
                 return -1;
@@ -2660,10 +2666,10 @@ int av_write_header(AVFormatContext *s)
         st = s->streams[i];
 
         switch (st->codec->codec_type) {
-        case CODEC_TYPE_AUDIO:
+        case AVMEDIA_TYPE_AUDIO:
             den = (int64_t)st->time_base.num * st->codec->sample_rate;
             break;
-        case CODEC_TYPE_VIDEO:
+        case AVMEDIA_TYPE_VIDEO:
             den = (int64_t)st->time_base.num * st->codec->time_base.den;
             break;
         default:
@@ -2734,7 +2740,7 @@ static int compute_pkt_fields2(AVFormatContext *s, AVStream *st, AVPacket *pkt){
 
     /* update pts */
     switch (st->codec->codec_type) {
-    case CODEC_TYPE_AUDIO:
+    case AVMEDIA_TYPE_AUDIO:
         frame_size = get_audio_frame_size(st->codec, pkt->size);
 
         /* HACK/FIXME, we skip the initial 0 size packets as they are most
@@ -2744,7 +2750,7 @@ static int compute_pkt_fields2(AVFormatContext *s, AVStream *st, AVPacket *pkt){
             av_frac_add(&st->pts, (int64_t)st->time_base.den * frame_size);
         }
         break;
-    case CODEC_TYPE_VIDEO:
+    case AVMEDIA_TYPE_VIDEO:
         av_frac_add(&st->pts, (int64_t)st->time_base.den * st->codec->time_base.num);
         break;
     default:
@@ -2861,7 +2867,7 @@ int av_interleaved_write_frame(AVFormatContext *s, AVPacket *pkt){
     AVStream *st= s->streams[ pkt->stream_index];
 
     //FIXME/XXX/HACK drop zero sized packets
-    if(st->codec->codec_type == CODEC_TYPE_AUDIO && pkt->size==0)
+    if(st->codec->codec_type == AVMEDIA_TYPE_AUDIO && pkt->size==0)
         return 0;
 
 //av_log(NULL, AV_LOG_DEBUG, "av_interleaved_write_frame %d %"PRId64" %"PRId64"\n", pkt->size, pkt->dts, pkt->pts);
@@ -3001,7 +3007,7 @@ static void dump_stream_format(AVFormatContext *ic, int i, int index, int is_out
                  st->sample_aspect_ratio.num, st->sample_aspect_ratio.den,
                  display_aspect_ratio.num, display_aspect_ratio.den);
     }
-    if(st->codec->codec_type == CODEC_TYPE_VIDEO){
+    if(st->codec->codec_type == AVMEDIA_TYPE_VIDEO){
         if(st->avg_frame_rate.den && st->avg_frame_rate.num)
             print_fps(av_q2d(st->avg_frame_rate), "fps");
         if(st->r_frame_rate.den && st->r_frame_rate.num)
@@ -3388,7 +3394,7 @@ static void pkt_dump_internal(void *avcl, FILE *f, int level, AVPacket *pkt, int
 #undef fprintf
 #define PRINT(...) do { if (!f) av_log(avcl, level, __VA_ARGS__); else fprintf(f, __VA_ARGS__); } while(0)
     PRINT("stream #%d:\n", pkt->stream_index);
-    PRINT("  keyframe=%d\n", ((pkt->flags & PKT_FLAG_KEY) != 0));
+    PRINT("  keyframe=%d\n", ((pkt->flags & AV_PKT_FLAG_KEY) != 0));
     PRINT("  duration=%0.3f\n", (double)pkt->duration / AV_TIME_BASE);
     /* DTS is _always_ valid after av_read_frame() */
     PRINT("  dts=");

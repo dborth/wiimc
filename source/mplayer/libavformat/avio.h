@@ -113,6 +113,21 @@ int url_read(URLContext *h, unsigned char *buf, int size);
  */
 int url_read_complete(URLContext *h, unsigned char *buf, int size);
 int url_write(URLContext *h, unsigned char *buf, int size);
+
+/**
+ * Changes the position that will be used by the next read/write
+ * operation on the resource accessed by h.
+ *
+ * @param pos specifies the new position to set
+ * @param whence specifies how pos should be interpreted, it must be
+ * one of SEEK_SET (seek from the beginning), SEEK_CUR (seek from the
+ * current position), SEEK_END (seek from the end), or AVSEEK_SIZE
+ * (return the filesize of the requested resource, pos is ignored).
+ * @return a negative value corresponding to an AVERROR code in case
+ * of failure, or the resulting file position, measured in bytes from
+ * the beginning of the file. You can use this feature together with
+ * SEEK_CUR to read the current file position.
+ */
 int64_t url_seek(URLContext *h, int64_t pos, int whence);
 
 /**
@@ -124,7 +139,12 @@ int64_t url_seek(URLContext *h, int64_t pos, int whence);
  */
 int url_close(URLContext *h);
 
+/**
+ * Returns a non-zero value if the resource indicated by url
+ * exists, 0 otherwise.
+ */
 int url_exist(const char *url);
+
 int64_t url_filesize(URLContext *h);
 
 /**
@@ -356,7 +376,7 @@ void put_flush_packet(ByteIOContext *s);
 
 /**
  * Reads size bytes from ByteIOContext into buf.
- * @returns number of bytes read or AVERROR
+ * @return number of bytes read or AVERROR
  */
 int get_buffer(ByteIOContext *s, unsigned char *buf, int size);
 
@@ -364,7 +384,7 @@ int get_buffer(ByteIOContext *s, unsigned char *buf, int size);
  * Reads size bytes from ByteIOContext into buf.
  * This reads at most 1 packet. If that is not enough fewer bytes will be
  * returned.
- * @returns number of bytes read or AVERROR
+ * @return number of bytes read or AVERROR
  */
 int get_partial_buffer(ByteIOContext *s, unsigned char *buf, int size);
 

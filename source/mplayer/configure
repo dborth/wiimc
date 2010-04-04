@@ -1912,7 +1912,9 @@ cat > $TMPC << EOF
 int main(void) { return 0; }
 EOF
   if test "$_runtime_cpudetection" = no ; then
-    cc_check -march=native && proc=native
+    if test $cc_vendor != "intel" ; then
+      cc_check -march=native && proc=native
+    fi
     if test "$proc" = "k8"; then
       cc_check -march=$proc $cpuopt=$proc || proc=athlon-xp
     fi
@@ -2060,7 +2062,9 @@ int main(void) { return 0; }
 EOF
     # This is a stripped-down version of the i386 fallback.
     if test "$_runtime_cpudetection" = no ; then
-      cc_check -march=native && proc=native
+      if test $cc_vendor != "intel" ; then
+        cc_check -march=native && proc=native
+      fi
       # --- AMD processors ---
       if test "$proc" = "k8"; then
         cc_check -march=$proc $cpuopt=$proc || proc=athlon-xp
@@ -8704,6 +8708,7 @@ CONFIG_RDFT=yes
 
 $mak_hardcoded_tables
 $mak_libavcodec_mpegaudio_hp
+!CONFIG_LIBRTMP=yes
 
 CONFIG_BZLIB=$bzlib
 CONFIG_ENCODERS=yes
@@ -9191,6 +9196,7 @@ $def_yasm
 #define CONFIG_FFSERVER 0
 #define CONFIG_GPL 1
 #define CONFIG_GRAY 0
+#define CONFIG_LIBRTMP 0
 #define CONFIG_LIBVORBIS 0
 #define CONFIG_POWERPC_PERF 0
 #define CONFIG_SMALL 0
@@ -9211,6 +9217,7 @@ $def_yasm
 #define HAVE_LDBRX 0
 #define HAVE_POLL_H 1
 #define HAVE_PPC4XX 0
+#define HAVE_STRERROR_R 0
 #define HAVE_SYS_SELECT_H 0
 #define HAVE_VFP_ARGS 1
 #define HAVE_VIRTUALALLOC 0

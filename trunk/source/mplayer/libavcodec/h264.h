@@ -378,7 +378,7 @@ typedef struct H264Context{
     //The following 2 can be changed to int8_t but that causes 10cpu cycles speedloss
     int luma_weight[48][2][2];
     int chroma_weight[48][2][2][2];
-    int implicit_weight[48][48];
+    int implicit_weight[48][48][2];
 
     int direct_spatial_mv_pred;
     int col_parity;
@@ -623,7 +623,7 @@ int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length);
  * @param consumed is the number of bytes used as input
  * @param length is the length of the array
  * @param dst_length is the number of decoded bytes FIXME here or a decode rbsp tailing?
- * @returns decoded bytes, might be src+1 if no escapes
+ * @return decoded bytes, might be src+1 if no escapes
  */
 const uint8_t *ff_h264_decode_nal(H264Context *h, const uint8_t *src, int *dst_length, int *consumed, int length);
 
@@ -685,13 +685,13 @@ av_cold void ff_h264_decode_init_vlc(void);
 
 /**
  * decodes a macroblock
- * @returns 0 if OK, AC_ERROR / DC_ERROR / MV_ERROR if an error is noticed
+ * @return 0 if OK, AC_ERROR / DC_ERROR / MV_ERROR if an error is noticed
  */
 int ff_h264_decode_mb_cavlc(H264Context *h);
 
 /**
  * decodes a CABAC coded macroblock
- * @returns 0 if OK, AC_ERROR / DC_ERROR / MV_ERROR if an error is noticed
+ * @return 0 if OK, AC_ERROR / DC_ERROR / MV_ERROR if an error is noticed
  */
 int ff_h264_decode_mb_cabac(H264Context *h);
 
@@ -1165,7 +1165,7 @@ static void fill_decode_caches(H264Context *h, int mb_type){
 
 /**
  *
- * @returns non zero if the loop filter can be skiped
+ * @return non zero if the loop filter can be skiped
  */
 static int fill_filter_caches(H264Context *h, int mb_type){
     MpegEncContext * const s = &h->s;

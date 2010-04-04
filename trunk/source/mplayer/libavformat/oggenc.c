@@ -121,7 +121,7 @@ static int ogg_build_flac_headers(AVCodecContext *avctx,
     oggstream->header[0] = av_mallocz(51); // per ogg flac specs
     p = oggstream->header[0];
     if (!p)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
     bytestream_put_byte(&p, 0x7F);
     bytestream_put_buffer(&p, "FLAC", 4);
     bytestream_put_byte(&p, 1); // major version
@@ -135,7 +135,7 @@ static int ogg_build_flac_headers(AVCodecContext *avctx,
     // second packet: VorbisComment
     p = ogg_write_vorbiscomment(4, bitexact, &oggstream->header_len[1], m);
     if (!p)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
     oggstream->header[1] = p;
     bytestream_put_byte(&p, 0x84); // last metadata block and vorbis comment
     bytestream_put_be24(&p, oggstream->header_len[1] - 4);
@@ -157,7 +157,7 @@ static int ogg_build_speex_headers(AVCodecContext *avctx,
     // first packet: Speex header
     p = av_mallocz(SPEEX_HEADER_SIZE);
     if (!p)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
     oggstream->header[0] = p;
     oggstream->header_len[0] = SPEEX_HEADER_SIZE;
     bytestream_put_buffer(&p, avctx->extradata, SPEEX_HEADER_SIZE);
@@ -166,7 +166,7 @@ static int ogg_build_speex_headers(AVCodecContext *avctx,
     // second packet: VorbisComment
     p = ogg_write_vorbiscomment(0, bitexact, &oggstream->header_len[1], m);
     if (!p)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
     oggstream->header[1] = p;
 
     return 0;
@@ -178,9 +178,9 @@ static int ogg_write_header(AVFormatContext *s)
     int i, j;
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *st = s->streams[i];
-        if (st->codec->codec_type == CODEC_TYPE_AUDIO)
+        if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO)
             av_set_pts_info(st, 64, 1, st->codec->sample_rate);
-        else if (st->codec->codec_type == CODEC_TYPE_VIDEO)
+        else if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO)
             av_set_pts_info(st, 64, st->codec->time_base.num, st->codec->time_base.den);
         if (st->codec->codec_id != CODEC_ID_VORBIS &&
             st->codec->codec_id != CODEC_ID_THEORA &&
@@ -256,7 +256,7 @@ static int ogg_write_packet(AVFormatContext *s, AVPacket *pkt)
     if (st->codec->codec_id == CODEC_ID_THEORA) {
         int64_t pts = oggstream->vrev < 1 ? pkt->pts : pkt->pts + pkt->duration;
         int pframe_count;
-        if (pkt->flags & PKT_FLAG_KEY)
+        if (pkt->flags & AV_PKT_FLAG_KEY)
             oggstream->last_kf_pts = pts;
         pframe_count = pts - oggstream->last_kf_pts;
         // prevent frame count from overflow if key frame flag is not set

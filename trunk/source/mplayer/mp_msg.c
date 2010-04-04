@@ -38,6 +38,10 @@ int use_gui;
 
 #include "mp_msg.h"
 
+#ifdef GEKKO
+#include "osdep/log_console.h"
+#endif
+
 /* maximum message length of mp_msg */
 #define MSGSIZE_MAX 3072
 

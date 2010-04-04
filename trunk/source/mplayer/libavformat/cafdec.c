@@ -61,10 +61,10 @@ static int read_desc_chunk(AVFormatContext *s)
     /* new audio stream */
     st = av_new_stream(s, 0);
     if (!st)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
 
     /* parse format description */
-    st->codec->codec_type  = CODEC_TYPE_AUDIO;
+    st->codec->codec_type  = AVMEDIA_TYPE_AUDIO;
     st->codec->sample_rate = av_int2dbl(get_be64(pb));
     st->codec->codec_tag   = get_be32(pb);
     flags = get_be32(pb);

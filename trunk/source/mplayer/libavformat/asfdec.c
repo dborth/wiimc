@@ -236,7 +236,7 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             asf->hdr.max_bitrate        = get_le32(pb);
             s->packet_size = asf->hdr.max_pktsize;
         } else if (!guidcmp(&g, &ff_asf_stream_header)) {
-            enum CodecType type;
+            enum AVMediaType type;
             int type_specific_size, sizeX;
             uint64_t total_size;
             unsigned int tag1;
@@ -265,14 +265,14 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
             test_for_ext_stream_audio = 0;
             if (!guidcmp(&g, &ff_asf_audio_stream)) {
-                type = CODEC_TYPE_AUDIO;
+                type = AVMEDIA_TYPE_AUDIO;
             } else if (!guidcmp(&g, &ff_asf_video_stream)) {
-                type = CODEC_TYPE_VIDEO;
+                type = AVMEDIA_TYPE_VIDEO;
             } else if (!guidcmp(&g, &ff_asf_command_stream)) {
-                type = CODEC_TYPE_DATA;
+                type = AVMEDIA_TYPE_DATA;
             } else if (!guidcmp(&g, &ff_asf_ext_stream_embed_stream_header)) {
                 test_for_ext_stream_audio = 1;
-                type = CODEC_TYPE_UNKNOWN;
+                type = AVMEDIA_TYPE_UNKNOWN;
             } else {
                 return -1;
             }
@@ -289,7 +289,7 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             if (test_for_ext_stream_audio) {
                 get_guid(pb, &g);
                 if (!guidcmp(&g, &ff_asf_ext_stream_audio_stream)) {
-                    type = CODEC_TYPE_AUDIO;
+                    type = AVMEDIA_TYPE_AUDIO;
                     is_dvr_ms_audio=1;
                     get_guid(pb, &g);
                     get_le32(pb);
@@ -301,7 +301,7 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             }
 
             st->codec->codec_type = type;
-            if (type == CODEC_TYPE_AUDIO) {
+            if (type == AVMEDIA_TYPE_AUDIO) {
                 ff_get_wav_header(pb, st->codec, type_specific_size);
                 if (is_dvr_ms_audio) {
                     // codec_id and codec_tag are unreliable in dvr_ms
@@ -351,7 +351,7 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                     st->codec->frame_size = 1;
                     break;
                 }
-            } else if (type == CODEC_TYPE_VIDEO) {
+            } else if (type == AVMEDIA_TYPE_VIDEO) {
                 get_le32(pb);
                 get_le32(pb);
                 get_byte(pb);
@@ -638,7 +638,7 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
  * Load a single ASF packet into the demuxer.
  * @param s demux context
  * @param pb context to read data from
- * @returns 0 on success, <0 on error
+ * @return 0 on success, <0 on error
  */
 static int ff_asf_get_packet(AVFormatContext *s, ByteIOContext *pb)
 {
@@ -801,7 +801,7 @@ static int asf_read_frame_header(AVFormatContext *s, ByteIOContext *pb){
  * @param s demux context
  * @param pb context to read data from
  * @param pkt pointer to store packet data into
- * @returns 0 if data was stored in pkt, <0 on error or 1 if more ASF
+ * @return 0 if data was stored in pkt, <0 on error or 1 if more ASF
  *          packets need to be loaded (through asf_get_packet())
  */
 static int ff_asf_parse_packet(AVFormatContext *s, ByteIOContext *pb, AVPacket *pkt)
@@ -888,12 +888,12 @@ static int ff_asf_parse_packet(AVFormatContext *s, ByteIOContext *pb, AVPacket *
             asf_st->pkt.pos =
             asf_st->packet_pos= asf->packet_pos;
 //printf("new packet: stream:%d key:%d packet_key:%d audio:%d size:%d\n",
-//asf->stream_index, asf->packet_key_frame, asf_st->pkt.flags & PKT_FLAG_KEY,
-//s->streams[asf->stream_index]->codec->codec_type == CODEC_TYPE_AUDIO, asf->packet_obj_size);
-            if (s->streams[asf->stream_index]->codec->codec_type == CODEC_TYPE_AUDIO)
+//asf->stream_index, asf->packet_key_frame, asf_st->pkt.flags & AV_PKT_FLAG_KEY,
+//s->streams[asf->stream_index]->codec->codec_type == AVMEDIA_TYPE_AUDIO, asf->packet_obj_size);
+            if (s->streams[asf->stream_index]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
                 asf->packet_key_frame = 1;
             if (asf->packet_key_frame)
-                asf_st->pkt.flags |= PKT_FLAG_KEY;
+                asf_st->pkt.flags |= AV_PKT_FLAG_KEY;
         }
 
         /* read data */
@@ -1068,7 +1068,7 @@ static int64_t asf_read_pts(AVFormatContext *s, int stream_index, int64_t *ppos,
         pts= pkt->pts;
 
         av_free_packet(pkt);
-        if(pkt->flags&PKT_FLAG_KEY){
+        if(pkt->flags&AV_PKT_FLAG_KEY){
             i= pkt->stream_index;
 
             asf_st= s->streams[i]->priv_data;

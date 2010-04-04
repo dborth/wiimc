@@ -1346,14 +1346,12 @@ static int decode_frame(WMAProDecodeCtx *s)
 
     /** interleave samples and write them to the output buffer */
     for (i = 0; i < s->num_channels; i++) {
-        float* ptr;
+        float* ptr  = s->samples + i;
         int incr = s->num_channels;
         float* iptr = s->channel[i].out;
-        int x;
+        float* iend = iptr + s->samples_per_frame;
 
-        ptr = s->samples + i;
-
-        for (x = 0; x < s->samples_per_frame; x++) {
+        while (iptr < iend) {
             *ptr = av_clipf(*iptr++, -1.0, 32767.0 / 32768.0);
             ptr += incr;
         }
@@ -1567,7 +1565,7 @@ static void flush(AVCodecContext *avctx)
  */
 AVCodec wmapro_decoder = {
     "wmapro",
-    CODEC_TYPE_AUDIO,
+    AVMEDIA_TYPE_AUDIO,
     CODEC_ID_WMAPRO,
     sizeof(WMAProDecodeCtx),
     decode_init,

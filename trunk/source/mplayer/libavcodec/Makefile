@@ -386,6 +386,7 @@ OBJS-$(CONFIG_XAN_WC4_DECODER)         += xan.o
 OBJS-$(CONFIG_XL_DECODER)              += xl.o
 OBJS-$(CONFIG_XSUB_DECODER)            += xsubdec.o
 OBJS-$(CONFIG_XSUB_ENCODER)            += xsubenc.o
+OBJS-$(CONFIG_YOP_DECODER)             += yop.o
 OBJS-$(CONFIG_ZLIB_DECODER)            += lcldec.o
 OBJS-$(CONFIG_ZLIB_ENCODER)            += lclenc.o
 OBJS-$(CONFIG_ZMBV_DECODER)            += zmbv.o
@@ -645,5 +646,6 @@ $(SUBDIR)dv.o: $(SUBDIR)dv_tables.h
 $(SUBDIR)mdct.o: $(SUBDIR)mdct_tables.h
 $(SUBDIR)mpegaudiodec.o: $(SUBDIR)mpegaudio_tables.h
 $(SUBDIR)motionpixels.o: $(SUBDIR)motionpixels_tables.h
+$(SUBDIR)pcm.o: $(SUBDIR)pcm_tables.h
 $(SUBDIR)qdm2.o: $(SUBDIR)qdm2_tables.h
 endif

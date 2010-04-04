@@ -37,7 +37,6 @@
 #include "rtpdec.h"
 #include "rdt.h"
 #include "rtpdec_asf.h"
-#include "rtpdec_vorbis.h"
 
 //#define DEBUG
 //#define DEBUG_RTP_TCP
@@ -45,6 +44,12 @@
 #if LIBAVFORMAT_VERSION_INT < (53 << 16)
 int rtsp_default_protocols = (1 << RTSP_LOWER_TRANSPORT_UDP);
 #endif
+
+/* Timeout values for socket select, in ms,
+ * and read_packet(), in seconds  */
+#define SELECT_TIMEOUT_MS 100
+#define READ_PACKET_TIMEOUT_S 10
+#define MAX_TIMEOUTS READ_PACKET_TIMEOUT_S * 1000 / SELECT_TIMEOUT_MS
 
 #define SPACE_CHARS " \t\r\n"
 /* we use memchr() instead of strchr() here because strchr() will return
@@ -135,7 +140,7 @@ static int sdp_parse_rtpmap(AVFormatContext *s,
     get_word_sep(buf, sizeof(buf), "/", &p);
     i = atoi(buf);
     switch (codec->codec_type) {
-    case CODEC_TYPE_AUDIO:
+    case AVMEDIA_TYPE_AUDIO:
         av_log(s, AV_LOG_DEBUG, "audio codec set to: %s\n", c_name);
         codec->sample_rate = RTSP_DEFAULT_AUDIO_SAMPLERATE;
         codec->channels = RTSP_DEFAULT_NB_AUDIO_CHANNELS;
@@ -155,7 +160,7 @@ static int sdp_parse_rtpmap(AVFormatContext *s,
         av_log(s, AV_LOG_DEBUG, "audio channels set to: %i\n",
                codec->channels);
         break;
-    case CODEC_TYPE_VIDEO:
+    case AVMEDIA_TYPE_VIDEO:
         av_log(s, AV_LOG_DEBUG, "video codec set to: %s\n", c_name);
         break;
     default:
@@ -211,9 +216,6 @@ static void sdp_parse_fmtp_config(AVCodecContext * codec, void *ctx,
             hex_to_data(codec->extradata, value);
         }
         break;
-    case CODEC_ID_VORBIS:
-        ff_vorbis_parse_fmtp_config(codec, ctx, attr, value);
-        break;
     default:
         break;
     }
@@ -226,7 +228,7 @@ typedef struct {
     uint32_t    offset;
 } AttrNameMap;
 
-/* All known fmtp parmeters and the corresping RTPAttrTypeEnum */
+/* All known fmtp parameters and the corresponding RTPAttrTypeEnum */
 #define ATTR_NAME_TYPE_INT 0
 #define ATTR_NAME_TYPE_STR 1
 static const AttrNameMap attr_names[]=
@@ -246,7 +248,7 @@ static const AttrNameMap attr_names[]=
     { NULL, -1, -1 },
 };
 
-/* parse the attribute line from the fmtp a line of an sdp resonse. This
+/* parse the attribute line from the fmtp a line of an sdp response. This
  * is broken out as a function because it is used in rtp_h264.c, which is
  * forthcoming. */
 int ff_rtsp_next_attr_and_value(const char **p, char *attr, int attr_size,
@@ -337,7 +339,7 @@ static void sdp_parse_line(AVFormatContext *s, SDPParseState *s1,
     RTSPState *rt = s->priv_data;
     char buf1[64], st_type[64];
     const char *p;
-    enum CodecType codec_type;
+    enum AVMediaType codec_type;
     int payload_type, i;
     AVStream *st;
     RTSPStream *rtsp_st;
@@ -390,11 +392,11 @@ static void sdp_parse_line(AVFormatContext *s, SDPParseState *s1,
         s1->skip_media = 0;
         get_word(st_type, sizeof(st_type), &p);
         if (!strcmp(st_type, "audio")) {
-            codec_type = CODEC_TYPE_AUDIO;
+            codec_type = AVMEDIA_TYPE_AUDIO;
         } else if (!strcmp(st_type, "video")) {
-            codec_type = CODEC_TYPE_VIDEO;
+            codec_type = AVMEDIA_TYPE_VIDEO;
         } else if (!strcmp(st_type, "application")) {
-            codec_type = CODEC_TYPE_DATA;
+            codec_type = AVMEDIA_TYPE_DATA;
         } else {
             s1->skip_media = 1;
             return;
@@ -686,7 +688,7 @@ static int rtsp_open_transport_ctx(AVFormatContext *s, RTSPStream *rtsp_st)
 
     if (s->oformat) {
         rtsp_st->transport_priv = rtsp_rtp_mux_open(s, st, rtsp_st->rtp_handle);
-        /* Ownage of rtp_handle is passed to the rtp mux context */
+        /* Ownership of rtp_handle is passed to the rtp mux context */
         rtsp_st->rtp_handle = NULL;
     } else if (rt->transport == RTSP_TRANSPORT_RDT)
         rtsp_st->transport_priv = ff_rdt_parse_open(s, st->index,
@@ -1074,7 +1076,7 @@ retry:
 }
 
 /**
- * @returns 0 on success, <0 on error, 1 if protocol is unavailable.
+ * @return 0 on success, <0 on error, 1 if protocol is unavailable.
  */
 static int make_setup_request(AVFormatContext *s, const char *host, int port,
                               int lower_transport, const char *real_challenge)
@@ -1175,7 +1177,7 @@ static int make_setup_request(AVFormatContext *s, const char *host, int port,
              * will return an error. Therefore, we skip those streams. */
             if (rt->server_type == RTSP_SERVER_WMS &&
                 s->streams[rtsp_st->stream_index]->codec->codec_type ==
-                    CODEC_TYPE_DATA)
+                    AVMEDIA_TYPE_DATA)
                 continue;
             snprintf(transport, sizeof(transport) - 1,
                      "%s/TCP;", trans_pref);
@@ -1634,7 +1636,7 @@ static int udp_read_packet(AVFormatContext *s, RTSPStream **prtsp_st,
     RTSPState *rt = s->priv_data;
     RTSPStream *rtsp_st;
     fd_set rfds;
-    int fd, fd_max, n, i, ret, tcp_fd;
+    int fd, fd_max, n, i, ret, tcp_fd, timeout_cnt = 0;
     struct timeval tv;
 
     for (;;) {
@@ -1660,9 +1662,10 @@ static int udp_read_packet(AVFormatContext *s, RTSPStream **prtsp_st,
             }
         }
         tv.tv_sec = 0;
-        tv.tv_usec = 100 * 1000;
+        tv.tv_usec = SELECT_TIMEOUT_MS * 1000;
         n = select(fd_max + 1, &rfds, NULL, NULL, &tv);
         if (n > 0) {
+            timeout_cnt = 0;
             for (i = 0; i < rt->nb_rtsp_streams; i++) {
                 rtsp_st = rt->rtsp_streams[i];
                 if (rtsp_st->rtp_handle) {
@@ -1688,7 +1691,10 @@ static int udp_read_packet(AVFormatContext *s, RTSPStream **prtsp_st,
                     return 0;
             }
 #endif
-        }
+        } else if (n == 0 && ++timeout_cnt >= MAX_TIMEOUTS) {
+            return AVERROR(ETIMEDOUT);
+        } else if (n < 0 && errno != EINTR)
+            return AVERROR(errno);
     }
 }
 
@@ -1890,8 +1896,6 @@ static int rtsp_read_pause(AVFormatContext *s)
 {
     RTSPState *rt = s->priv_data;
     RTSPMessageHeader reply1, *reply = &reply1;
-
-    rt = s->priv_data;
 
     if (rt->state != RTSP_STATE_STREAMING)
         return 0;

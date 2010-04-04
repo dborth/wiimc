@@ -170,6 +170,10 @@ static av_cold int aac_encode_init(AVCodecContext *avctx)
         av_log(avctx, AV_LOG_ERROR, "Unsupported number of channels: %d\n", avctx->channels);
         return -1;
     }
+    if (avctx->profile != FF_PROFILE_UNKNOWN && avctx->profile != FF_PROFILE_AAC_LOW) {
+        av_log(avctx, AV_LOG_ERROR, "Unsupported profile %d\n", avctx->profile);
+        return -1;
+    }
     s->samplerate_index = i;
 
     dsputil_init(&s->dsp, avctx);
@@ -629,7 +633,7 @@ static av_cold int aac_encode_end(AVCodecContext *avctx)
 
 AVCodec aac_encoder = {
     "aac",
-    CODEC_TYPE_AUDIO,
+    AVMEDIA_TYPE_AUDIO,
     CODEC_ID_AAC,
     sizeof(AACEncContext),
     aac_encode_init,

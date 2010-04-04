@@ -417,7 +417,7 @@ rdt_parse_sdp_line (AVFormatContext *s, int st_index,
     } else if (av_strstart(p, "StartTime:integer;", &p))
         stream->first_dts = atoi(p);
     else if (av_strstart(p, "ASMRuleBook:string;", &p)) {
-        int n = st_index, first = -1;
+        int n, first = -1;
 
         for (n = 0; n < s->nb_streams; n++)
             if (s->streams[n]->priv_data == stream->priv_data) {
@@ -546,10 +546,10 @@ static RTPDynamicProtocolHandler ff_rdt_ ## n ## _handler = { \
     .parse_packet     = rdt_parse_packet \
 };
 
-RDT_HANDLER(live_video, "x-pn-multirate-realvideo-live", CODEC_TYPE_VIDEO);
-RDT_HANDLER(live_audio, "x-pn-multirate-realaudio-live", CODEC_TYPE_AUDIO);
-RDT_HANDLER(video,      "x-pn-realvideo",                CODEC_TYPE_VIDEO);
-RDT_HANDLER(audio,      "x-pn-realaudio",                CODEC_TYPE_AUDIO);
+RDT_HANDLER(live_video, "x-pn-multirate-realvideo-live", AVMEDIA_TYPE_VIDEO);
+RDT_HANDLER(live_audio, "x-pn-multirate-realaudio-live", AVMEDIA_TYPE_AUDIO);
+RDT_HANDLER(video,      "x-pn-realvideo",                AVMEDIA_TYPE_VIDEO);
+RDT_HANDLER(audio,      "x-pn-realaudio",                AVMEDIA_TYPE_AUDIO);
 
 void av_register_rdt_dynamic_payload_handlers(void)
 {

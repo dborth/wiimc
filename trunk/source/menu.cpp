@@ -1153,10 +1153,9 @@ static void MenuBrowse(int menu)
 
 	int pagesize = 11;
 
-	if(menu == MENU_BROWSE_VIDEOS && videoScreenshot)
+	if(videoScreenshot)
 		pagesize = 10;
-
-	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
+	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && playingAudio))
 		pagesize = 8;
 
 	GuiFileBrowser fileBrowser(640, pagesize);
@@ -1177,7 +1176,7 @@ static void MenuBrowse(int menu)
 	mainWindow->Append(&fileBrowser);
 	mainWindow->Append(&upOneLevelBtn);
 
-	if(menu == MENU_BROWSE_VIDEOS && videoScreenshot) // a video is loaded
+	if(videoScreenshot) // a video is loaded
 	{
 		if(!nowPlaying)
 		{
@@ -1215,14 +1214,27 @@ static void MenuBrowse(int menu)
 
 	SuspendGui();
 
-	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
-		mainWindow->Append(audiobar);
-
-	if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
+	if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && playingAudio))
 	{
-		mainWindow->Append(&playlistAddBtn);
-		UpdateAudiobarModeBtn();
+		if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
+		{
+			audiobar->Append(audiobarPlaylistBtn);
+			audiobar->Append(audiobarModeBtn);
+			audiobar->Append(audiobarBackwardBtn);
+			audiobar->Append(audiobarForwardBtn);
+			mainWindow->Append(&playlistAddBtn);
+			UpdateAudiobarModeBtn();
+		}
+		else // hide playlist functionality for online media area
+		{
+			audiobar->Remove(audiobarPlaylistBtn);
+			audiobar->Remove(audiobarModeBtn);
+			audiobar->Remove(audiobarBackwardBtn);
+			audiobar->Remove(audiobarForwardBtn);
+		}
+		mainWindow->Append(audiobar);
 	}
+
 	ResumeGui();
 
 	while(menuCurrent == menu && !guiShutdown)
@@ -1286,125 +1298,139 @@ static void MenuBrowse(int menu)
 						fileBrowser.ResetState();
 						fileBrowser.fileList[0]->SetState(STATE_SELECTED);
 						fileBrowser.TriggerUpdate();
+						continue;
 					}
 					else
 					{
 						goto done;
+					}
+				}
+
+				// this is a file
+				char *ext = GetExt(browserList[browser.selIndex].filename);
+
+				if(browserList[browser.selIndex].isplaylist || ext == NULL)
+				{
+					// parse list
+					int numItems = BrowserChangeFolder();
+
+					if(numItems > 1)
+					{
+						ext = GetExt(browserList[1].filename);
+						if(numItems == 2 && !IsPlaylistExt(ext)) // let's load this one file
+						{
+							sprintf(loadedFile, browserList[1].filename);
+							// go up one level
+							browser.selIndex = 0;
+							BrowserChangeFolder();
+						}
+						else
+						{
+							fileBrowser.ResetState();
+							fileBrowser.fileList[0]->SetState(STATE_SELECTED);
+							fileBrowser.TriggerUpdate();
+							continue;
+						}
+					}
+					else
+					{
+						continue;
 					}
 				}
 				else
 				{
-					if(browserList[browser.selIndex].isplaylist)
-					{
-						// parse list
-						int numItems = BrowserChangeFolder();
+					GetFullPath(browser.selIndex, loadedFile);
+				}
 
-						if(numItems <= 1)
-						{
-							continue;
-						}
-						else
-						{
-							char *ext = strrchr(browserList[1].filename,'.');
-							if(ext != NULL) ext++;
-							if(numItems == 2 && !IsPlaylistExt(ext)) // let's load this one file
-							{
-								sprintf(loadedFile, browserList[1].filename);
-								// go up one level
-								browser.selIndex = 0;
-								BrowserChangeFolder();
-							}
-							else
-							{
-								fileBrowser.ResetState();
-								fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-								fileBrowser.TriggerUpdate();
-								continue;
-							}
-						}
+				mainWindow->SetState(STATE_DISABLED);
+				ShowAction("Loading...");
+				ShutdownMPlayer();
+				LoadMPlayer(); // signal MPlayer to load
+
+				// wait until MPlayer is ready to take control (or return control)
+				while(!guiShutdown && controlledbygui != 1)
+					usleep(THREAD_SLEEP);
+
+				CancelAction();
+
+				if(guiShutdown)
+				{
+					playingAudio = false;
+					goto done;
+				}
+				else // failed or we are playing audio
+				{
+					mainWindow->SetState(STATE_DEFAULT);
+					ResumeDeviceThread();
+
+					if(!wiiAudioOnly())
+					{
+						playingAudio = false;
+						ErrorPrompt("Error loading file!");
 					}
 					else
 					{
-						GetFullPath(browser.selIndex, loadedFile);
-					}
-
-					mainWindow->SetState(STATE_DISABLED);
-					ShowAction("Loading...");
-					ShutdownMPlayer();
-					LoadMPlayer(); // signal MPlayer to load
-
-					// wait until MPlayer is ready to take control (or return control)
-					while(!guiShutdown && controlledbygui != 1)
-						usleep(THREAD_SLEEP);
-
-					CancelAction();
-					playingAudio = false;
-
-					if(guiShutdown)
-					{
-						goto done;
-					}
-					else // failed or we are playing audio
-					{
-						mainWindow->SetState(STATE_DEFAULT);
-						ResumeDeviceThread();
-
-						if(!wiiAudioOnly())
+						playingAudio = true;
+						
+						// update the audio bar
+						if(wiiGetTimeLength() <= 1) // this is a stream - hide progress bar
 						{
-							ErrorPrompt("Error loading file!");
+							audiobar->Remove(audiobarProgressBtn);
+							audiobar->Remove(audiobarProgressLeftImg);
+							audiobar->Remove(audiobarProgressMidImg);
+							audiobar->Remove(audiobarProgressLineImg);
+							audiobar->Remove(audiobarProgressRightImg);
 						}
 						else
 						{
-							playingAudio = true;
+							audiobar->Append(audiobarProgressBtn);
+							audiobar->Append(audiobarProgressLeftImg);
+							audiobar->Append(audiobarProgressMidImg);
+							audiobar->Append(audiobarProgressLineImg);
+							audiobar->Append(audiobarProgressRightImg);
+						}
 
-							// we loaded an audio file - if we already had a video
-							// loaded, we should remove the bg
+						// we loaded an audio file - if we already had a video
+						// loaded, we should remove the bg
+						if(videoImg)
+						{
+							SuspendGui();
 							mainWindow->Remove(videoImg);
-	
-							// update the audio bar
-							if(wiiGetTimeLength() <= 1) // this is a stream - hide some elements
-							{
-								audiobar->Remove(audiobarProgressBtn);
-								audiobar->Remove(audiobarProgressLeftImg);
-								audiobar->Remove(audiobarProgressMidImg);
-								audiobar->Remove(audiobarProgressLineImg);
-								audiobar->Remove(audiobarProgressRightImg);
-								audiobar->Remove(audiobarPlaylistBtn);
-								audiobar->Remove(audiobarBackwardBtn);
-								audiobar->Remove(audiobarForwardBtn);
-								audiobar->Remove(audiobarModeBtn);
-							}
-							else
-							{
-								audiobar->Append(audiobarProgressBtn);
-								audiobar->Append(audiobarProgressLeftImg);
-								audiobar->Append(audiobarProgressMidImg);
-								audiobar->Append(audiobarProgressLineImg);
-								audiobar->Append(audiobarProgressRightImg);
-								audiobar->Append(audiobarPlaylistBtn);
-								audiobar->Append(audiobarBackwardBtn);
-								audiobar->Append(audiobarForwardBtn);
-								audiobar->Append(audiobarModeBtn);
-							}
+							ResumeGui();
+							delete videoImg;
+							videoImg = NULL;
+							free(videoScreenshot);
+							videoScreenshot = NULL;
+						}
+						
+						// re-adjust for audio bar, if necessary
+						if(pagesize != 8)
+						{
+							pagesize = 8;
+							SuspendGui();
+							fileBrowser.ChangeSize(pagesize);
+							mainWindow->Remove(&backBtn);
+							mainWindow->Append(audiobar);
+							ResumeGui();
+							break;
 						}
 					}
 				}
 			}
 		}
 
-		if(menu == MENU_BROWSE_VIDEOS)
+		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			if(backBtn.GetState() == STATE_CLICKED)
-			{
-				backBtn.ResetState();
-				LoadMPlayer(); // go back to MPlayer
-				
-				// wait until MPlayer is ready to take control (or return control)
-				while(!guiShutdown && controlledbygui != 1)
-					usleep(THREAD_SLEEP);
-			}
-			continue; // updating audio bar elements is not required for Videos area
+			backBtn.ResetState();
+			LoadMPlayer(); // go back to MPlayer
+			
+			// wait until MPlayer is ready to take control (or return control)
+			while(!guiShutdown && controlledbygui != 1)
+				usleep(THREAD_SLEEP);
 		}
+
+		if(!playingAudio)
+			continue; // updating audio bar elements is not required
 
 		if(audiobarPlaylistBtn->GetState() == STATE_CLICKED)
 		{
@@ -1431,7 +1457,6 @@ static void MenuBrowse(int menu)
 				// skip to next song
 				playingAudio = true;
 				ShutdownMPlayer();
-				mainWindow->Remove(videoImg);
 				FindNextAudioFile();
 				LoadMPlayer();
 			}
@@ -1567,7 +1592,7 @@ done:
 	mainWindow->Remove(&fileBrowser);
 	mainWindow->Remove(&upOneLevelBtn);
 
-	if(menu == MENU_BROWSE_VIDEOS && videoScreenshot)
+	if(videoScreenshot)
 		mainWindow->Remove(&backBtn);
 
 	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
@@ -1930,10 +1955,11 @@ static void MenuBrowsePictures()
 	GuiButton upOneLevelBtn(0,0);
 	upOneLevelBtn.SetTrigger(trigB);
 	upOneLevelBtn.SetSelectable(false);
-	
+
 	GuiImage progressEmptyImg(&progressShortEmpty);
 	progressEmptyImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
 	progressEmptyImg.SetPosition(-30, 40);
+	progressEmptyImg.SetVisible(false);
 	
 	GuiImage progressLeftImg(&progressLeft);
 	progressLeftImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
@@ -1948,6 +1974,7 @@ static void MenuBrowsePictures()
 	GuiImage progressLineImg(&progressLine);
 	progressLineImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	progressLineImg.SetPosition(-254, 40);
+	progressLineImg.SetVisible(false);
 
 	GuiImage progressRightImg(&progressRight);
 	progressRightImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
@@ -2025,7 +2052,7 @@ static void MenuBrowsePictures()
 		}
 		
 		// update progress bar
-		if(loadSize > 0 && !pictureImg->IsVisible())
+		if(!browserList[browser.selIndex].isdir && loadSize > 0 && !pictureImg->IsVisible())
 		{
 			done = loadOffset/(float)loadSize;
 
@@ -2897,6 +2924,94 @@ static void MenuSettingsPictures()
 	mainWindow->Remove(&titleTxt);
 }
 
+static void MenuSettingsOnlineMedia()
+{
+	int ret;
+	int i = 0;
+	bool firstRun = true;
+	OptionList options;
+
+	sprintf(options.name[i++], "Online Media Folder");
+
+	options.length = i;
+
+	for(i=0; i < options.length; i++)
+	{
+		options.value[i][0] = 0;
+		options.icon[i] = 0;
+	}
+
+	GuiText titleTxt("Settings - Online Media", 28, (GXColor){255, 255, 255, 255});
+	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	titleTxt.SetPosition(30, 100);
+
+	GuiImageData btnBottom(button_bottom_png);
+	GuiImageData btnBottomOver(button_bottom_over_png);
+	GuiImageData arrowRight(arrow_right_small_png);
+
+	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
+	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	backBtnTxt.SetPosition(-16, 10);
+	GuiImage backBtnImg(&btnBottom);
+	GuiImage backBtnImgOver(&btnBottomOver);
+	GuiImage backBtnArrow(&arrowRight);
+	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	backBtnArrow.SetPosition(26, 11);
+	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	backBtn.SetPosition(0, 0);
+	backBtn.SetLabel(&backBtnTxt);
+	backBtn.SetImage(&backBtnImg);
+	backBtn.SetImageOver(&backBtnImgOver);
+	backBtn.SetIcon(&backBtnArrow);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
+
+	GuiOptionBrowser optionBrowser(640, 7, &options);
+	optionBrowser.SetPosition(0, 150);
+	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+
+	SuspendGui();
+	GuiWindow w(screenwidth, screenheight);
+	w.Append(&backBtn);
+	mainWindow->Append(&optionBrowser);
+	mainWindow->Append(&w);
+	mainWindow->Append(&titleTxt);
+	ResumeGui();
+
+	while(menuCurrent == MENU_SETTINGS_ONLINEMEDIA && !guiShutdown)
+	{
+		usleep(THREAD_SLEEP);
+
+		ret = optionBrowser.GetClickedOption();
+
+		switch (ret)
+		{
+			case 0:
+				OnScreenKeyboard(WiiSettings.onlinemediaFolder, MAXPATHLEN);
+				break;
+		}
+
+		if(ret >= 0 || firstRun)
+		{
+			firstRun = false;
+
+			snprintf(options.value[0], 40, "%s", WiiSettings.onlinemediaFolder);
+			optionBrowser.TriggerUpdate();
+		}
+
+		if(backBtn.GetState() == STATE_CLICKED)
+		{
+			menuCurrent = MENU_SETTINGS;
+		}
+	}
+	SuspendGui();
+	mainWindow->Remove(&optionBrowser);
+	mainWindow->Remove(&w);
+	mainWindow->Remove(&titleTxt);
+}
+
 static void MenuSettingsNetwork()
 {
 	int ret;
@@ -3496,21 +3611,24 @@ static void MenuSettings()
 {
 	int ret;
 	int i = 0;
+	
+	OptionList options;
 
-	MenuItemList items;
-	sprintf(items.name[i], "Global");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Videos");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Music");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Pictures");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Network");
-	items.img[i] = NULL; i++;
-	sprintf(items.name[i], "Subtitles");
-	items.img[i] = NULL; i++;
-	items.length = i;
+	sprintf(options.name[i++], "Global");
+	sprintf(options.name[i++], "Videos");
+	sprintf(options.name[i++], "Music");
+	sprintf(options.name[i++], "Pictures");
+	sprintf(options.name[i++], "Online Media");
+	sprintf(options.name[i++], "Network");
+	sprintf(options.name[i++], "Subtitles");
+
+	options.length = i;
+
+	for(i=0; i < options.length; i++)
+	{
+		options.value[i][0] = 0;
+		options.icon[i] = 0;
+	}
 
 	GuiText titleTxt("Settings", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3538,11 +3656,11 @@ static void MenuSettings()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetTrigger(trigB);
 
-	GuiMenuBrowser itemBrowser(640, 7, &items);
-	itemBrowser.SetPosition(0, 150);
+	GuiOptionBrowser optionBrowser(640, 7, &options);
+	optionBrowser.SetPosition(0, 150);
 
 	SuspendGui();
-	mainWindow->Append(&itemBrowser);
+	mainWindow->Append(&optionBrowser);
 	mainWindow->Append(&backBtn);
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
@@ -3551,7 +3669,7 @@ static void MenuSettings()
 	{
 		usleep(THREAD_SLEEP);
 
-		ret = itemBrowser.GetClickedItem();
+		ret = optionBrowser.GetClickedOption();
 
 		switch (ret)
 		{
@@ -3572,10 +3690,14 @@ static void MenuSettings()
 				break;
 
 			case 4:
-				menuCurrent = MENU_SETTINGS_NETWORK;
+				menuCurrent = MENU_SETTINGS_ONLINEMEDIA;
 				break;
 
 			case 5:
+				menuCurrent = MENU_SETTINGS_NETWORK;
+				break;
+
+			case 6:
 				menuCurrent = MENU_SETTINGS_SUBTITLES;
 				break;
 		}
@@ -3585,7 +3707,7 @@ static void MenuSettings()
 	}
 
 	SuspendGui();
-	mainWindow->Remove(&itemBrowser);
+	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&backBtn);
 	mainWindow->Remove(&titleTxt);
 }
@@ -4413,6 +4535,11 @@ void WiiMenu()
 
 	SetupGui();
 
+	// reset action bars if they were disabled
+	videobar->SetState(STATE_DEFAULT);
+	audiobar->SetState(STATE_DEFAULT);
+	picturebar->SetState(STATE_DEFAULT);
+
 	mainWindow = new GuiWindow(screenwidth, screenheight);
 
 	if(videoScreenshot)
@@ -4622,6 +4749,9 @@ void WiiMenu()
 			case MENU_SETTINGS_PICTURES:
 				MenuSettingsPictures();
 				break;
+			case MENU_SETTINGS_ONLINEMEDIA:
+				MenuSettingsOnlineMedia();
+				break;
 			case MENU_SETTINGS_NETWORK:
 				MenuSettingsNetwork();
 				break;
@@ -4727,6 +4857,7 @@ void MPlayerMenu()
 
 	mainWindow->Append(videobar);
 	mainWindow->Append(statusText);
+	HideVolumeLevelBar();
 
 	ResumeGui();
 	EnableRumble();

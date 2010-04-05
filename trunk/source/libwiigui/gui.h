@@ -858,40 +858,6 @@ class GuiKeyboard : public GuiWindow
 		Key keys[4][11]; // two chars = less space than one pointer
 };
 
-typedef struct _menuitemlist {
-	int length;
-	char name[MAX_MENUITEMS][150];
-	GuiImageData * img[MAX_MENUITEMS];
-} MenuItemList;
-
-//!Display a list of menu items
-class GuiMenuBrowser : public GuiElement
-{
-	public:
-		GuiMenuBrowser(int w, int s, MenuItemList * l);
-		~GuiMenuBrowser();
-		int FindMenuItem(int c, int d);
-		int GetSelectedItem();
-		int GetClickedItem();
-		void ResetState();
-		void SetFocus(int f);
-		void Draw();
-		void ResetText();
-		void Update(GuiTrigger * t);
-	protected:
-		int selectedItem;
-
-		GuiImageData * bgItem;
-		GuiImageData * bgItemOver;
-		MenuItemList * items;
-		int size;
-		GuiButton * itemBtn[PAGESIZE];
-		GuiText * itemTxt[PAGESIZE];
-		GuiImage * itemBg[PAGESIZE];
-		GuiImage * itemOverBg[PAGESIZE];
-		GuiTrigger * trigA;
-};
-
 typedef struct _optionlist {
 	int length;
 	int icon[MAX_OPTIONS]; // icon to display
@@ -968,11 +934,13 @@ class GuiFileBrowser : public GuiElement
 		void ResetState();
 		void SetFocus(int f);
 		void SetRightCutoff();
+		void ChangeSize(int s);
 		void Draw();
 		void TriggerUpdate();
 		void Update(GuiTrigger * t);
 		GuiButton * fileList[FILE_PAGESIZE];
 	protected:
+		void MakeEntry(int i);
 		GuiText * fileListText[FILE_PAGESIZE];
 		GuiImage * fileListBg[FILE_PAGESIZE];
 		GuiImage * fileListBgOver[FILE_PAGESIZE];

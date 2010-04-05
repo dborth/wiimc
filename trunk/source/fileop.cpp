@@ -935,6 +935,24 @@ void StripExt(char* string)
 		*loc_dot = 0; // strip file extension
 }
 
+char *GetExt(char *file)
+{
+	if(!file)
+		return NULL;
+
+	if(file[strlen(file)-1] == '/')
+		return NULL;
+
+	char *ext = strrchr(file,'.');
+	if(ext != NULL)
+	{
+		ext++;
+		if(strlen(ext) > 5)
+			return NULL;
+	}
+	return ext;
+}
+
 bool IsPlaylistExt(char *ext)
 {
 	if(!ext)
@@ -1066,8 +1084,7 @@ static bool ParseDirEntries()
 		if(strcmp(filename,".") == 0)
 			continue;
 
-		ext = strrchr(filename,'.');
-		if(ext != NULL) ext++;
+		ext = GetExt(filename);
 
 		if((filestat.st_mode & _IFDIR) == 0 && !AllowedExt(ext))
 			continue;
@@ -1233,10 +1250,7 @@ static int ParsePLXPlaylist()
 		size = LoadFile(buffer, browser.dir, NOTSILENT);
 
 	if(size == 0)
-	{
-		ErrorPrompt("Error loading playlist!");
 		return 0;
-	}
 
 	// attempt to parse buffer
 	int numEntries = 0;
@@ -1280,9 +1294,8 @@ static int ParsePLXPlaylist()
 					PLXENTRY * newList = (PLXENTRY *)realloc(list, (numEntries+1) * sizeof(PLXENTRY));
 					if(!newList) // failed to allocate required memory
 					{
-						ErrorPrompt("Out of memory: too many files!");
 						free(list);
-						return 0;
+						return -1; // too many files
 					}
 					else
 					{
@@ -1297,6 +1310,8 @@ static int ParsePLXPlaylist()
 					newEntry.type = 1;
 				else if(strncmp(value, "playlist", 8) == 0)
 					newEntry.type = 2;
+				else if(strncmp(value, "search", 6) == 0)
+					newEntry.type = 3;
 			}
 			else if(strncmp(attribute, "name", 4) == 0)
 			{
@@ -1326,13 +1341,11 @@ static int ParsePLXPlaylist()
 
 	if(numEntries == 0)
 	{
-		ErrorPrompt("Error loading playlist!");
 		free(list);
 		return 0;
 	}
-	
-	char *ext = strrchr(BrowserHistoryRetrieve(),'.');
-	if(ext != NULL) ext++;
+
+	char *ext = GetExt((char*)BrowserHistoryRetrieve());
 
 	AddBrowserEntry();
 	strcpy(browserList[0].filename, BrowserHistoryRetrieve());
@@ -1369,7 +1382,7 @@ static int ParsePLXPlaylist()
 	if(browser.numEntries == 1)
 	{
 		ResetBrowser();
-		ErrorPrompt("Playlist does not contain any supported entries!");
+		return -2; // Playlist does not contain any supported entries!
 	}
 
 	return browser.numEntries;
@@ -1382,25 +1395,43 @@ static int ParsePLXPlaylist()
  ***************************************************************************/
 int ParsePlaylistFile()
 {
+	int res;
 	char *playlistEntry;
-	char *ext = strrchr(browser.dir,'.');
-	if(ext != NULL) ext++;
+	char *ext = GetExt(browser.dir);
 
-	if(ext != NULL && ext[0] == 'p' && ext[1] == 'l' && ext[2] == 'x')
+	// if this file has no extension, try parsing it as a plx anyway
+	if(ext == NULL || strcmp(ext, "plx") == 0)
 	{
-		return ParsePLXPlaylist();
+		res = ParsePLXPlaylist();
+		if(res > 0 || ext != NULL) // we parsed the list, or we failed and it was a .plx
+		{
+			switch(res)
+			{
+				case 0:
+					ErrorPrompt("Error loading playlist!");
+					break;
+				case -1:
+					ErrorPrompt("Out of memory: too many files!");
+					res = 0;
+					break;
+				case -2:
+					ErrorPrompt("Playlist does not contain any supported entries!");
+					res = 0;
+					break;
+			}
+			return res;
+		}
 	}
 
 	play_tree_t * list = parse_playlist_file(browser.dir);
-	
+
 	if(!list)
 	{
 		ErrorPrompt("Error loading playlist!");
 		return 0;
 	}
 
-	ext = strrchr(BrowserHistoryRetrieve(),'.');
-	if(ext != NULL) ext++;
+	ext = GetExt((char*)BrowserHistoryRetrieve());
 
 	AddBrowserEntry();
 	strcpy(browserList[0].filename, BrowserHistoryRetrieve());
@@ -1415,7 +1446,7 @@ int ParsePlaylistFile()
 		browserList[0].isdir = 1;
 
 	browser.numEntries++;
-	
+
 	play_tree_iter_t *pt_iter = NULL;
 	char *start;
 
@@ -1423,10 +1454,9 @@ int ParsePlaylistFile()
 	{
 		while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
 		{
-			ext = strrchr(playlistEntry,'.');
-			if(ext != NULL) ext++;
+			ext = GetExt(playlistEntry);
 
-			if(!AllowedExt(ext))
+			if(ext && !AllowedExt(ext))
 				continue;
 
 			if(!AddBrowserEntry()) // add failed
@@ -1496,8 +1526,7 @@ int ParseOnlineMedia()
 		// add file
 		if(strcmp(browser.dir, onlinemediaList[i].filepath) == 0)
 		{
-			ext = strrchr(onlinemediaList[i].address,'.');
-			if(ext != NULL) ext++;
+			ext = GetExt(onlinemediaList[i].address);
 
 			AddBrowserEntry();
 			strncpy(browserList[browser.numEntries].filename, onlinemediaList[i].address, MAXPATHLEN);
@@ -1531,9 +1560,9 @@ int ParseOnlineMedia()
 					break;
 				}
 			}
-			
+
 			if(!matchFound)
-			{			
+			{
 				// add the folder
 				AddBrowserEntry();
 				strncpy(browserList[browser.numEntries].filename, folder, MAXPATHLEN);

@@ -52,6 +52,7 @@ void TakeScreenshot();
 int DrawMPlayerGui();
 int copyScreen = 0;
 extern int pause_gui;
+extern int controlledbygui;
 
 /*** 2D ***/
 extern u32 whichfb;
@@ -378,7 +379,8 @@ void DrawMPlayer()
 
 	if(copyScreen == 1)
 	{
-		TakeScreenshot();
+		if(controlledbygui != 2)
+			TakeScreenshot();
 		copyScreen = 2;
 	}
 	else

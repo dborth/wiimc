@@ -116,32 +116,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 
 	for(int i=0; i<size; i++)
 	{
-		fileListText[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
-		fileListText[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		fileListText[i]->SetPosition(32,-2);
-		fileListText[i]->SetMaxWidth(w-92);
-
-		fileListBg[i] = new GuiImage(bgBrowseEntry);
-		fileListBg[i]->SetTile(w/20);
-		fileListBg[i]->SetPosition(-30, 0);
-		
-		fileListBgOver[i] = new GuiImage(bgBrowseEntryOver);
-		fileListBgOver[i]->SetTile(w/20);
-		fileListBgOver[i]->SetPosition(-30, -2);
-		
-		fileListIcon[i] = new GuiImage;
-		fileListIcon[i]->SetPosition(0, -2);
-
-		fileList[i] = new GuiButton(w-92, 32);
-		fileList[i]->SetParent(this);
-		fileList[i]->SetLabel(fileListText[i]);
-		fileList[i]->SetImage(fileListBg[i]);
-		fileList[i]->SetImageOver(fileListBgOver[i]);
-		fileList[i]->SetIcon(fileListIcon[i]);
-		fileList[i]->SetPosition(30,32*i);
-		fileList[i]->SetTrigger(trigA);
-		fileList[i]->SetVisible(false);
-		fileList[i]->SetState(STATE_DISABLED);
+		MakeEntry(i);
 	}
 }
 
@@ -196,6 +171,36 @@ GuiFileBrowser::~GuiFileBrowser()
 	}
 }
 
+void GuiFileBrowser::MakeEntry(int i)
+{
+	fileListText[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
+	fileListText[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+	fileListText[i]->SetPosition(32,-2);
+	fileListText[i]->SetMaxWidth(width-92);
+
+	fileListBg[i] = new GuiImage(bgBrowseEntry);
+	fileListBg[i]->SetTile(width/20);
+	fileListBg[i]->SetPosition(-30, 0);
+	
+	fileListBgOver[i] = new GuiImage(bgBrowseEntryOver);
+	fileListBgOver[i]->SetTile(width/20);
+	fileListBgOver[i]->SetPosition(-30, -2);
+	
+	fileListIcon[i] = new GuiImage;
+	fileListIcon[i]->SetPosition(0, -2);
+
+	fileList[i] = new GuiButton(width-92, 32);
+	fileList[i]->SetParent(this);
+	fileList[i]->SetLabel(fileListText[i]);
+	fileList[i]->SetImage(fileListBg[i]);
+	fileList[i]->SetImageOver(fileListBgOver[i]);
+	fileList[i]->SetIcon(fileListIcon[i]);
+	fileList[i]->SetPosition(30,32*i);
+	fileList[i]->SetTrigger(trigA);
+	fileList[i]->SetVisible(false);
+	fileList[i]->SetState(STATE_DISABLED);
+}
+
 void GuiFileBrowser::SetFocus(int f)
 {
 	focus = f;
@@ -229,6 +234,32 @@ void GuiFileBrowser::SetRightCutoff()
 		fileListBg[i]->SetTile(width/20-1);
 		fileListBgOver[i]->SetTile(width/20-1);
 	}
+}
+
+void GuiFileBrowser::ChangeSize(int newsize)
+{
+	if(newsize == size)
+		return;
+	
+	if(newsize < size)
+	{
+		for(int i=newsize; i<size; i++)
+		{
+			delete fileListText[i];
+			delete fileList[i];
+			delete fileListBg[i];
+			delete fileListBgOver[i];
+			delete fileListIcon[i];
+		}
+	}
+	else
+	{
+		for(int i=size; i<newsize; i++)
+			MakeEntry(i);
+	}
+	size = newsize;
+	height = size*32;
+	scrollbarMidImg->SetTileVertical((size*32-112)/16);
 }
 
 void GuiFileBrowser::Draw()

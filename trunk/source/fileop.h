@@ -43,6 +43,7 @@ void CreateAppPath(char * origpath);
 void StripExt(char* string);
 char *GetExt(char *file);
 bool IsPlaylistExt(char *ext);
+bool IsAllowedExt(char *ext);
 void FindFile();
 int ParseDirectory(bool waitParse = false);
 int ParsePlaylistFile();

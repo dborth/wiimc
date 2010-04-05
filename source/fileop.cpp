@@ -969,13 +969,10 @@ bool IsPlaylistExt(char *ext)
 }
 
 // check that this file's extension is on the list of visible file types
-static bool AllowedExt(char *ext)
+bool IsAllowedExt(char *ext)
 {
 	if(!ext)
 		return false;
-	
-	if(IsPlaylistExt(ext))
-		return true;
 
 	int j=0;
 
@@ -987,6 +984,7 @@ static bool AllowedExt(char *ext)
 				return true;
 		} while (validVideoExtensions[++j][0] != 0);
 	}
+	j=0;
 	if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 	{
 		do
@@ -995,7 +993,8 @@ static bool AllowedExt(char *ext)
 				return true;
 		} while (validAudioExtensions[++j][0] != 0);
 	}
-	if(menuCurrent == MENU_BROWSE_PICTURES || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
+	j=0;
+	if(menuCurrent == MENU_BROWSE_PICTURES)
 	{
 		do
 		{
@@ -1086,7 +1085,7 @@ static bool ParseDirEntries()
 
 		ext = GetExt(filename);
 
-		if((filestat.st_mode & _IFDIR) == 0 && !AllowedExt(ext))
+		if((filestat.st_mode & _IFDIR) == 0 && !IsAllowedExt(ext) && !IsPlaylistExt(ext))
 			continue;
 
 		// add the entry
@@ -1423,6 +1422,7 @@ int ParsePlaylistFile()
 		}
 	}
 
+	// allow MPlayer to try parsing the file
 	play_tree_t * list = parse_playlist_file(browser.dir);
 
 	if(!list)
@@ -1456,7 +1456,7 @@ int ParsePlaylistFile()
 		{
 			ext = GetExt(playlistEntry);
 
-			if(ext && !AllowedExt(ext))
+			if(ext && !IsAllowedExt(ext) && !IsPlaylistExt(ext))
 				continue;
 
 			if(!AddBrowserEntry()) // add failed

@@ -296,15 +296,13 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	SuspendParseThread(); // halt parsing
 
 	bool isPlaylist = false;
-	char *ext = NULL;
 
 	if(browser.dir[0] != 0)
 	{
 		bool mounted = ChangeInterface(browser.dir, NOTSILENT);
 		if(mounted)
 		{
-			ext = GetExt(browser.dir);
-			isPlaylist = IsPlaylistExt(ext);
+			isPlaylist = IsPlaylistExt(GetExt(browser.dir));
 		}
 		else if(menuCurrent != MENU_BROWSE_ONLINEMEDIA)
 		{
@@ -315,13 +313,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	if(!isPlaylist)
 		CleanupPath(browser.dir);
 
-	if(isPlaylist || // this file has a playlist extension
-		strncmp(browser.dir,"http:", 5) == 0 || // http
-		(
-		browser.numEntries > 0 && updateDir && ( // browser loaded and being navigated
-		browserList[browser.selIndex].isplaylist || // and has a playlist extension
-		(!browserList[browser.selIndex].isdir && ext == NULL) // or not a dir and has no ext
-		)))
+	if(isPlaylist || (strlen(browser.dir) > 10 && strncmp(browser.dir,"http:", 5) == 0))
 	{
 		ResetBrowser();
 		if(!ParsePlaylistFile())

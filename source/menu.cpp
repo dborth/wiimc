@@ -1214,7 +1214,7 @@ static void MenuBrowse(int menu)
 
 	SuspendGui();
 
-	if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && playingAudio))
+	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
 	{
 		if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
 		{
@@ -1224,6 +1224,7 @@ static void MenuBrowse(int menu)
 			audiobar->Append(audiobarForwardBtn);
 			mainWindow->Append(&playlistAddBtn);
 			UpdateAudiobarModeBtn();
+			mainWindow->Append(audiobar);
 		}
 		else // hide playlist functionality for online media area
 		{
@@ -1231,8 +1232,11 @@ static void MenuBrowse(int menu)
 			audiobar->Remove(audiobarModeBtn);
 			audiobar->Remove(audiobarBackwardBtn);
 			audiobar->Remove(audiobarForwardBtn);
+
+			if(playingAudio)
+				mainWindow->Append(audiobar);
 		}
-		mainWindow->Append(audiobar);
+		audiobar->SetState(STATE_DEFAULT);
 	}
 
 	ResumeGui();
@@ -1308,11 +1312,13 @@ static void MenuBrowse(int menu)
 
 				// this is a file
 				char *ext = GetExt(browserList[browser.selIndex].filename);
+				int numItems = 0;
 
-				if(browserList[browser.selIndex].isplaylist || ext == NULL)
+				if(!IsAllowedExt(ext)) // unrecognized audio or video extension
 				{
-					// parse list
-					int numItems = BrowserChangeFolder();
+					bool isPlaylist = IsPlaylistExt(ext);
+					// parse as a playlist
+					numItems = BrowserChangeFolder();
 
 					if(numItems > 1)
 					{
@@ -1332,15 +1338,14 @@ static void MenuBrowse(int menu)
 							continue;
 						}
 					}
-					else
+					else if(isPlaylist)
 					{
 						continue;
 					}
 				}
-				else
-				{
+
+				if(numItems == 0)
 					GetFullPath(browser.selIndex, loadedFile);
-				}
 
 				mainWindow->SetState(STATE_DISABLED);
 				ShowAction("Loading...");
@@ -1373,7 +1378,7 @@ static void MenuBrowse(int menu)
 						playingAudio = true;
 						
 						// update the audio bar
-						if(wiiGetTimeLength() <= 1) // this is a stream - hide progress bar
+						if(MENU_BROWSE_ONLINEMEDIA && wiiGetTimeLength() <= 1) // this is a stream - hide progress bar
 						{
 							audiobar->Remove(audiobarProgressBtn);
 							audiobar->Remove(audiobarProgressLeftImg);
@@ -1429,7 +1434,7 @@ static void MenuBrowse(int menu)
 				usleep(THREAD_SLEEP);
 		}
 
-		if(!playingAudio)
+		if(menu == MENU_BROWSE_VIDEOS)
 			continue; // updating audio bar elements is not required
 
 		if(audiobarPlaylistBtn->GetState() == STATE_CLICKED)
@@ -1490,7 +1495,7 @@ static void MenuBrowse(int menu)
 			playlistAddBtn.ResetState();
 			int addIndex = browser.selIndex;
 
-			if(fileBrowser.IsFocused() && addIndex > 0)
+			if(addIndex > 0)
 			{
 				if(browserList[addIndex].icon == ICON_FILE_CHECKED || 
 					browserList[addIndex].icon == ICON_FOLDER_CHECKED)
@@ -1506,40 +1511,40 @@ static void MenuBrowse(int menu)
 		{
 			if(playlistSize == 1)
 			{
-				if(audiobarForwardBtn->GetState() != STATE_DISABLED)
+				if(audiobarForwardBtn->GetAlpha() == 255)
 				{
 					audiobarForwardBtn->SetState(STATE_DISABLED);
 					audiobarForwardBtn->SetAlpha(128);
 				}
 			}
-			else if(audiobarForwardBtn->GetState() == STATE_DISABLED && playingAudio)
+			else if(audiobarForwardBtn->GetAlpha() == 128)
 			{
 				audiobarForwardBtn->SetState(STATE_DEFAULT);
 				audiobarForwardBtn->SetAlpha(255);
 			}
-			if(audiobarPauseBtn->GetState() == STATE_DISABLED)
+			if(audiobarPauseBtn->GetAlpha() == 128)
 			{
 				audiobarPauseBtn->SetState(STATE_DEFAULT);
 				audiobarPauseBtn->SetAlpha(255);
 			}
 		}
-		else if(playlistSize == 0)
+		else
 		{
-			if(audiobarForwardBtn->GetState() != STATE_DISABLED)
+			if(audiobarForwardBtn->GetAlpha() == 255 || audiobarForwardBtn->GetState() != STATE_DISABLED)
 			{
 				audiobarForwardBtn->SetState(STATE_DISABLED);
 				audiobarForwardBtn->SetAlpha(128);
 			}
-			if(audiobarPauseBtn->GetState() != STATE_DISABLED && !playingAudio)
+			if((audiobarPauseBtn->GetAlpha() == 255 || audiobarPauseBtn->GetState() != STATE_DISABLED) && !wiiAudioOnly())
 			{
 				audiobarPauseBtn->SetState(STATE_DISABLED);
 				audiobarPauseBtn->SetAlpha(128);
 			}
 		}
 
-		if(playingAudio)
+		if(wiiAudioOnly())
 		{
-			if(audiobarProgressBtn->GetState() == STATE_DISABLED && wiiGetTimeLength() > 0)
+			if(audiobarProgressBtn->GetAlpha() == 128 && wiiGetTimeLength() > 0)
 			{
 				audiobarProgressBtn->SetState(STATE_DEFAULT);
 				audiobarProgressBtn->SetAlpha(255);
@@ -1549,7 +1554,14 @@ static void MenuBrowse(int menu)
 				for(int i=0; i < 4; i++)
 					audiobarNowPlaying[i]->SetVisible(true);
 			}
-			if(audiobarPauseBtn->GetState() == STATE_DISABLED)
+			else if(audiobarProgressBtn->GetAlpha() == 255 && wiiGetTimeLength() < 1)
+			{
+				audiobarProgressBtn->SetState(STATE_DISABLED);
+				audiobarProgressBtn->SetAlpha(128);
+				audiobarBackwardBtn->SetState(STATE_DISABLED);
+				audiobarBackwardBtn->SetAlpha(128);
+			}
+			if(audiobarPauseBtn->GetAlpha() == 128)
 			{
 				audiobarPauseBtn->SetState(STATE_DEFAULT);
 				audiobarPauseBtn->SetAlpha(255);
@@ -1557,7 +1569,7 @@ static void MenuBrowse(int menu)
 		}
 		else
 		{
-			if(audiobarProgressBtn->GetState() != STATE_DISABLED)
+			if(audiobarProgressBtn->GetAlpha() == 255 || audiobarProgressBtn->GetState() != STATE_DISABLED)
 			{
 				audiobarProgressBtn->SetState(STATE_DISABLED);
 				audiobarProgressBtn->SetAlpha(128);
@@ -1570,7 +1582,7 @@ static void MenuBrowse(int menu)
 				}
 			}
 		}
-		
+
 		if(paused != wiiIsPaused())
 		{
 			paused = !paused;
@@ -3914,7 +3926,7 @@ static void AudioProgressCallback(void * ptr)
 			if(strlen(title) > 0)
 				audiobarNowPlaying[1]->SetText(title);
 		}
-		else
+		if(!title || title[0] == 0)
 		{
 			char tmp[MAXJOLIET+1];
 			char *start = strrchr(loadedFile,'/');
@@ -4534,11 +4546,6 @@ void WiiMenu()
 	guiShutdown = false;
 
 	SetupGui();
-
-	// reset action bars if they were disabled
-	videobar->SetState(STATE_DEFAULT);
-	audiobar->SetState(STATE_DEFAULT);
-	picturebar->SetState(STATE_DEFAULT);
 
 	mainWindow = new GuiWindow(screenwidth, screenheight);
 

@@ -196,7 +196,6 @@ static int load_restore_point(char *_filename);
 
 int controlledbygui=1;
 int pause_gui=0;
-int render_texture_time=0;
 static bool low_cache=false;
 static char fileplaying[MAXPATHLEN];
 static int enable_restore_points=1;
@@ -4498,17 +4497,15 @@ static double timing_sleep(double time_frame)
 	current_module = "sleep_timer";
 	while (frame > 5)
 	{
-		if(frame>render_texture_time)
+		if(frame>6000) //enough to avoid choppy cursor
 		{
 			DrawMPlayer();
-			VIDEO_WaitVSync();
 		}
 		else
 		{
 			usec_sleep(frame-5);
 		}
 		frame -= GetRelativeTime();
-		break;
 	}
 	time_frame=frame * 0.000001F;
 	return time_frame;

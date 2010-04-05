@@ -1175,7 +1175,7 @@ static void MenuBrowse(int menu)
 
 	int pagesize = 11;
 
-	if(videoScreenshot)
+	if(videoScreenshot && menu != MENU_BROWSE_MUSIC)
 		pagesize = 10;
 	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && playingAudio))
 		pagesize = 8;
@@ -1198,7 +1198,7 @@ static void MenuBrowse(int menu)
 	mainWindow->Append(&fileBrowser);
 	mainWindow->Append(&upOneLevelBtn);
 
-	if(videoScreenshot) // a video is loaded
+	if(videoScreenshot && menu != MENU_BROWSE_MUSIC) // a video is loaded
 	{
 		if(!nowPlaying)
 		{
@@ -1240,20 +1240,20 @@ static void MenuBrowse(int menu)
 	{
 		if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
 		{
-			audiobar->Append(audiobarPlaylistBtn);
-			audiobar->Append(audiobarModeBtn);
-			audiobar->Append(audiobarBackwardBtn);
-			audiobar->Append(audiobarForwardBtn);
+			audiobarPlaylistBtn->SetVisible(true);
+			audiobarModeBtn->SetVisible(true);
+			audiobarBackwardBtn->SetVisible(true);
+			audiobarForwardBtn->SetVisible(true);
 			mainWindow->Append(&playlistAddBtn);
 			UpdateAudiobarModeBtn();
 			mainWindow->Append(audiobar);
 		}
 		else // hide playlist functionality for online media area
 		{
-			audiobar->Remove(audiobarPlaylistBtn);
-			audiobar->Remove(audiobarModeBtn);
-			audiobar->Remove(audiobarBackwardBtn);
-			audiobar->Remove(audiobarForwardBtn);
+			audiobarPlaylistBtn->SetVisible(false);
+			audiobarModeBtn->SetVisible(false);
+			audiobarBackwardBtn->SetVisible(false);
+			audiobarForwardBtn->SetVisible(false);
 
 			if(playingAudio)
 				mainWindow->Append(audiobar);
@@ -1402,19 +1402,15 @@ static void MenuBrowse(int menu)
 						// update the audio bar
 						if(MENU_BROWSE_ONLINEMEDIA && wiiGetTimeLength() <= 1) // this is a stream - hide progress bar
 						{
-							audiobar->Remove(audiobarProgressBtn);
-							audiobar->Remove(audiobarProgressLeftImg);
-							audiobar->Remove(audiobarProgressMidImg);
-							audiobar->Remove(audiobarProgressLineImg);
-							audiobar->Remove(audiobarProgressRightImg);
+							audiobarProgressBtn->SetVisible(false);
+							audiobarProgressLeftImg->SetVisible(false);
+							audiobarProgressMidImg->SetVisible(false);
+							audiobarProgressLineImg->SetVisible(false);
+							audiobarProgressRightImg->SetVisible(false);
 						}
 						else
 						{
-							audiobar->Append(audiobarProgressBtn);
-							audiobar->Append(audiobarProgressLeftImg);
-							audiobar->Append(audiobarProgressMidImg);
-							audiobar->Append(audiobarProgressLineImg);
-							audiobar->Append(audiobarProgressRightImg);
+							audiobarProgressBtn->SetVisible(true);
 						}
 
 						// we loaded an audio file - if we already had a video
@@ -1456,7 +1452,24 @@ static void MenuBrowse(int menu)
 				usleep(THREAD_SLEEP);
 		}
 
-		if(menu == MENU_BROWSE_VIDEOS)
+		if(playlistAddBtn.GetState() == STATE_CLICKED)
+		{
+			playlistAddBtn.ResetState();
+			int addIndex = browser.selIndex;
+
+			if(addIndex > 0)
+			{
+				if(browserList[addIndex].icon == ICON_FILE_CHECKED || 
+					browserList[addIndex].icon == ICON_FOLDER_CHECKED)
+					MusicPlaylistDequeue(addIndex);
+				else
+					MusicPlaylistEnqueue(addIndex);
+
+				fileBrowser.TriggerUpdate();
+			}
+		}
+
+		if(!mainWindow->Find(audiobar))
 			continue; // updating audio bar elements is not required
 
 		if(audiobarPlaylistBtn->GetState() == STATE_CLICKED)
@@ -1510,23 +1523,6 @@ static void MenuBrowse(int menu)
 				WiiSettings.playOrder = 0;
 
 			UpdateAudiobarModeBtn();
-		}
-
-		if(playlistAddBtn.GetState() == STATE_CLICKED)
-		{
-			playlistAddBtn.ResetState();
-			int addIndex = browser.selIndex;
-
-			if(addIndex > 0)
-			{
-				if(browserList[addIndex].icon == ICON_FILE_CHECKED || 
-					browserList[addIndex].icon == ICON_FOLDER_CHECKED)
-					MusicPlaylistDequeue(addIndex);
-				else
-					MusicPlaylistEnqueue(addIndex);
-
-				fileBrowser.TriggerUpdate();
-			}
 		}
 
 		if(playlistSize > 0)

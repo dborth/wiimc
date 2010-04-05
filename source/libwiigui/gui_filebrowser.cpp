@@ -260,6 +260,7 @@ void GuiFileBrowser::ChangeSize(int newsize)
 	size = newsize;
 	height = size*32;
 	scrollbarMidImg->SetTileVertical((size*32-112)/16);
+	scrollbarBottomImg->SetPosition(-30, height-57);
 }
 
 void GuiFileBrowser::Draw()

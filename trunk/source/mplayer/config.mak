@@ -284,7 +284,6 @@ LIBSUF=.a
 LIBNAME=$(LIBPREF)$(NAME)$(LIBSUF)
 
 # Some FFmpeg codecs depend on these. Enable them unconditionally for now.
-# Some FFmpeg codecs depend on these. Enable them unconditionally for now.
 CONFIG_AANDCT=yes
 CONFIG_DCT=yes
 CONFIG_DWT=yes
@@ -295,10 +294,6 @@ CONFIG_LPC=yes
 CONFIG_LSP=yes
 CONFIG_MDCT=yes
 CONFIG_RDFT=yes
-
-
-CONFIG_MPEGAUDIO_HP = yes
-!CONFIG_LIBRTMP=yes
 
 CONFIG_BZLIB=no
 CONFIG_ENCODERS=no
@@ -319,8 +314,6 @@ CONFIG_LIBXVID_ENCODER=no
 CONFIG_MLIB = no
 CONFIG_MUXERS=no
 CONFIG_POSTPROC = yes
-# Prevent building libavcodec/imgresample.c with conflicting symbols
-CONFIG_SWSCALE=yes
 CONFIG_VDPAU=no
 CONFIG_XVMC=no
 CONFIG_ZLIB=yes
@@ -724,7 +717,6 @@ CONFIG_WSAUD_DEMUXER=yes
 CONFIG_WSVQA_DEMUXER=yes
 CONFIG_WV_DEMUXER=yes
 CONFIG_XA_DEMUXER=yes
-CONFIG_YOP_DEMUXER=yes
 CONFIG_YUV4MPEGPIPE_DEMUXER=yes
 CONFIG_=yes
 CONFIG_AAC_ADTSTOASC_BSF=yes

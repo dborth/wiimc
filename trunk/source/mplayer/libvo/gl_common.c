@@ -763,49 +763,98 @@ static void glSetupYUVCombiners(float uvcos, float uvsin) {
 
 /**
  * \brief Setup ATI version of register combiners for YUV to RGB conversion.
- * \param uvcos used for saturation and hue adjustment
- * \param uvsin used for saturation and hue adjustment
- *
- * ATI called this fragment shader, but the name is confusing in the
- * light of a very different OpenGL 2.0 extension with the same name
+ * \param csp_params parameters used for colorspace conversion
+ * \param text if set use the GL_ATI_text_fragment_shader API as
+ *             used on OS X.
  */
-static void glSetupYUVCombinersATI(float uvcos, float uvsin) {
-  GLfloat ucoef[4];
-  GLfloat vcoef[4];
+static void glSetupYUVFragmentATI(struct mp_csp_params *csp_params,
+                                  int text) {
   GLint i;
-  if (!mpglBeginFragmentShader || !mpglEndFragmentShader ||
-      !mpglSetFragmentShaderConstant || !mpglSampleMap ||
-      !mpglColorFragmentOp2 || !mpglColorFragmentOp3) {
-    mp_msg(MSGT_VO, MSGL_FATAL, "[gl] Combiner (ATI) functions missing!\n");
-    return;
-  }
-  mpglGetIntegerv(GL_NUM_FRAGMENT_REGISTERS_ATI, &i);
-  if (i < 3)
-    mp_msg(MSGT_VO, MSGL_ERR,
-           "[gl] 3 registers needed for YUV combiner (ATI) support (found %i)\n", i);
+  float yuv2rgb[3][4];
+
   mpglGetIntegerv (GL_MAX_TEXTURE_UNITS, &i);
   if (i < 3)
     mp_msg(MSGT_VO, MSGL_ERR,
            "[gl] 3 texture units needed for YUV combiner (ATI) support (found %i)\n", i);
-  fillUVcoeff(ucoef, vcoef, uvcos, uvsin);
-  mpglBeginFragmentShader();
-  mpglSetFragmentShaderConstant(GL_CON_0_ATI, ucoef);
-  mpglSetFragmentShaderConstant(GL_CON_1_ATI, vcoef);
-  mpglSampleMap(GL_REG_0_ATI, GL_TEXTURE0, GL_SWIZZLE_STR_ATI);
-  mpglSampleMap(GL_REG_1_ATI, GL_TEXTURE1, GL_SWIZZLE_STR_ATI);
-  mpglSampleMap(GL_REG_2_ATI, GL_TEXTURE2, GL_SWIZZLE_STR_ATI);
-  // UV first, like this green component cannot overflow
-  mpglColorFragmentOp2(GL_MUL_ATI, GL_REG_1_ATI, GL_NONE, GL_NONE,
-                       GL_REG_1_ATI, GL_NONE, GL_BIAS_BIT_ATI,
-                       GL_CON_0_ATI, GL_NONE, GL_BIAS_BIT_ATI);
-  mpglColorFragmentOp3(GL_MAD_ATI, GL_REG_2_ATI, GL_NONE, GL_4X_BIT_ATI,
-                       GL_REG_2_ATI, GL_NONE, GL_BIAS_BIT_ATI,
-                       GL_CON_1_ATI, GL_NONE, GL_BIAS_BIT_ATI,
-                       GL_REG_1_ATI, GL_NONE, GL_NONE);
-  mpglColorFragmentOp2(GL_ADD_ATI, GL_REG_0_ATI, GL_NONE, GL_NONE,
-                       GL_REG_0_ATI, GL_NONE, GL_NONE,
-                       GL_REG_2_ATI, GL_NONE, GL_NONE);
-  mpglEndFragmentShader();
+
+  mp_get_yuv2rgb_coeffs(csp_params, yuv2rgb);
+  for (i = 0; i < 3; i++) {
+    int j;
+    yuv2rgb[i][3] -= -0.5 * (yuv2rgb[i][1] + yuv2rgb[i][2]);
+    for (j = 0; j < 4; j++) {
+      yuv2rgb[i][j] *= 0.125;
+      yuv2rgb[i][j] += 0.5;
+      if (yuv2rgb[i][j] > 1)
+        yuv2rgb[i][j] = 1;
+      if (yuv2rgb[i][j] < 0)
+        yuv2rgb[i][j] = 0;
+    }
+  }
+  if (text == 0) {
+    GLfloat c0[4] = {yuv2rgb[0][0], yuv2rgb[1][0], yuv2rgb[2][0]};
+    GLfloat c1[4] = {yuv2rgb[0][1], yuv2rgb[1][1], yuv2rgb[2][1]};
+    GLfloat c2[4] = {yuv2rgb[0][2], yuv2rgb[1][2], yuv2rgb[2][2]};
+    GLfloat c3[4] = {yuv2rgb[0][3], yuv2rgb[1][3], yuv2rgb[2][3]};
+    if (!mpglBeginFragmentShader || !mpglEndFragmentShader ||
+        !mpglSetFragmentShaderConstant || !mpglSampleMap ||
+        !mpglColorFragmentOp2 || !mpglColorFragmentOp3) {
+      mp_msg(MSGT_VO, MSGL_FATAL, "[gl] Combiner (ATI) functions missing!\n");
+      return;
+    }
+    mpglGetIntegerv(GL_NUM_FRAGMENT_REGISTERS_ATI, &i);
+    if (i < 3)
+      mp_msg(MSGT_VO, MSGL_ERR,
+             "[gl] 3 registers needed for YUV combiner (ATI) support (found %i)\n", i);
+    mpglBeginFragmentShader();
+    mpglSetFragmentShaderConstant(GL_CON_0_ATI, c0);
+    mpglSetFragmentShaderConstant(GL_CON_1_ATI, c1);
+    mpglSetFragmentShaderConstant(GL_CON_2_ATI, c2);
+    mpglSetFragmentShaderConstant(GL_CON_3_ATI, c3);
+    mpglSampleMap(GL_REG_0_ATI, GL_TEXTURE0, GL_SWIZZLE_STR_ATI);
+    mpglSampleMap(GL_REG_1_ATI, GL_TEXTURE1, GL_SWIZZLE_STR_ATI);
+    mpglSampleMap(GL_REG_2_ATI, GL_TEXTURE2, GL_SWIZZLE_STR_ATI);
+    mpglColorFragmentOp2(GL_MUL_ATI, GL_REG_1_ATI, GL_NONE, GL_NONE,
+                         GL_REG_1_ATI, GL_NONE, GL_BIAS_BIT_ATI,
+                         GL_CON_1_ATI, GL_NONE, GL_BIAS_BIT_ATI);
+    mpglColorFragmentOp3(GL_MAD_ATI, GL_REG_2_ATI, GL_NONE, GL_NONE,
+                         GL_REG_2_ATI, GL_NONE, GL_BIAS_BIT_ATI,
+                         GL_CON_2_ATI, GL_NONE, GL_BIAS_BIT_ATI,
+                         GL_REG_1_ATI, GL_NONE, GL_NONE);
+    mpglColorFragmentOp3(GL_MAD_ATI, GL_REG_0_ATI, GL_NONE, GL_NONE,
+                         GL_REG_0_ATI, GL_NONE, GL_NONE,
+                         GL_CON_0_ATI, GL_NONE, GL_BIAS_BIT_ATI,
+                         GL_REG_2_ATI, GL_NONE, GL_NONE);
+    mpglColorFragmentOp2(GL_ADD_ATI, GL_REG_0_ATI, GL_NONE, GL_8X_BIT_ATI,
+                         GL_REG_0_ATI, GL_NONE, GL_NONE,
+                         GL_CON_3_ATI, GL_NONE, GL_BIAS_BIT_ATI);
+    mpglEndFragmentShader();
+  } else {
+    static const char template[] =
+      "!!ATIfs1.0\n"
+      "StartConstants;\n"
+      "  CONSTANT c0 = {%e, %e, %e};\n"
+      "  CONSTANT c1 = {%e, %e, %e};\n"
+      "  CONSTANT c2 = {%e, %e, %e};\n"
+      "  CONSTANT c3 = {%e, %e, %e};\n"
+      "EndConstants;\n"
+      "StartOutputPass;\n"
+      "  SampleMap r0, t0.str;\n"
+      "  SampleMap r1, t1.str;\n"
+      "  SampleMap r2, t2.str;\n"
+      "  MUL r1.rgb, r1.bias, c1.bias;\n"
+      "  MAD r2.rgb, r2.bias, c2.bias, r1;\n"
+      "  MAD r0.rgb, r0, c0.bias, r2;\n"
+      "  ADD r0.rgb.8x, r0, c3.bias;\n"
+      "EndPass;\n";
+    char buffer[512];
+    snprintf(buffer, sizeof(buffer), template,
+             yuv2rgb[0][0], yuv2rgb[1][0], yuv2rgb[2][0],
+             yuv2rgb[0][1], yuv2rgb[1][1], yuv2rgb[2][1],
+             yuv2rgb[0][2], yuv2rgb[1][2], yuv2rgb[2][2],
+             yuv2rgb[0][3], yuv2rgb[1][3], yuv2rgb[2][3]);
+    mp_msg(MSGT_VO, MSGL_DBG2, "[gl] generated fragment program:\n%s\n", buffer);
+    loadGPUProgram(GL_TEXT_FRAGMENT_SHADER_ATI, buffer);
+  }
 }
 
 /**
@@ -1331,6 +1380,20 @@ static void glSetupYUVFragprog(gl_conversion_params_t *params) {
 }
 
 /**
+ * \brief detect the best YUV->RGB conversion method available
+ */
+int glAutodetectYUVConversion(void) {
+  const char *extensions = mpglGetString(GL_EXTENSIONS);
+  if (strstr(extensions, "GL_ARB_fragment_program"))
+    return YUV_CONVERSION_FRAGMENT;
+  if (strstr(extensions, "GL_ATI_text_fragment_shader"))
+    return YUV_CONVERSION_TEXT_FRAGMENT;
+  if (strstr(extensions, "GL_ATI_fragment_shader"))
+    return YUV_CONVERSION_COMBINERS_ATI;
+  return YUV_CONVERSION_NONE;
+}
+
+/**
  * \brief setup YUV->RGB conversion
  * \param parms struct containing parameters like conversion and scaler type,
  *              brightness, ...
@@ -1344,7 +1407,10 @@ void glSetupYUVConversion(gl_conversion_params_t *params) {
       glSetupYUVCombiners(uvcos, uvsin);
       break;
     case YUV_CONVERSION_COMBINERS_ATI:
-      glSetupYUVCombinersATI(uvcos, uvsin);
+      glSetupYUVFragmentATI(&params->csp_params, 0);
+      break;
+    case YUV_CONVERSION_TEXT_FRAGMENT:
+      glSetupYUVFragmentATI(&params->csp_params, 1);
       break;
     case YUV_CONVERSION_FRAGMENT_LOOKUP:
     case YUV_CONVERSION_FRAGMENT_LOOKUP3D:
@@ -1383,6 +1449,14 @@ void glEnableYUVConversion(GLenum target, int type) {
       mpglActiveTexture(GL_TEXTURE0);
       mpglEnable(GL_FRAGMENT_SHADER_ATI);
       break;
+    case YUV_CONVERSION_TEXT_FRAGMENT:
+      mpglActiveTexture(GL_TEXTURE1);
+      mpglEnable(target);
+      mpglActiveTexture(GL_TEXTURE2);
+      mpglEnable(target);
+      mpglActiveTexture(GL_TEXTURE0);
+      mpglEnable(GL_TEXT_FRAGMENT_SHADER_ATI);
+      break;
     case YUV_CONVERSION_FRAGMENT_LOOKUP3D:
     case YUV_CONVERSION_FRAGMENT_LOOKUP:
     case YUV_CONVERSION_FRAGMENT_POW:
@@ -1416,6 +1490,14 @@ void glDisableYUVConversion(GLenum target, int type) {
       mpglDisable(target);
       mpglActiveTexture(GL_TEXTURE0);
       mpglDisable(GL_FRAGMENT_SHADER_ATI);
+      break;
+    case YUV_CONVERSION_TEXT_FRAGMENT:
+      mpglActiveTexture(GL_TEXTURE1);
+      mpglDisable(target);
+      mpglActiveTexture(GL_TEXTURE2);
+      mpglDisable(target);
+      mpglActiveTexture(GL_TEXTURE0);
+      mpglDisable(GL_TEXT_FRAGMENT_SHADER_ATI);
       break;
     case YUV_CONVERSION_FRAGMENT_LOOKUP3D:
     case YUV_CONVERSION_FRAGMENT_LOOKUP:
@@ -1718,6 +1800,12 @@ static int setGlWindow_x11(MPGLContext *ctx)
         appendstr(&glxstr, glXExtStr(mDisplay, GLX_EXTENSIONS));
 
     getFunctions(getProcAddress, glxstr);
+    if (!mpglGenPrograms && mpglGetString &&
+        getProcAddress != (void *)getdladdr &&
+        strstr(mpglGetString(GL_EXTENSIONS), "GL_ARB_vertex_program")) {
+      mp_msg(MSGT_VO, MSGL_WARN, "Broken glXGetProcAddress detected, trying workaround\n");
+      getFunctions((void *)getdladdr, glxstr);
+    }
     free(glxstr);
 
     // and inform that reinit is neccessary

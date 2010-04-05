@@ -60,8 +60,7 @@ int MusicPlaylistLoad()
 	browserList[0].mtime = 0;
 	browserList[0].icon = ICON_FOLDER;
 
-	char *ext = strrchr(browser.dir,'.');
-	if(ext != NULL) ext++;
+	char *ext = GetExt(browser.dir);
 
 	if(IsPlaylistExt(ext))
 		browserList[0].isplaylist = 1;
@@ -121,12 +120,10 @@ static bool EnqueueFile(char * path, char * name)
 	if(path == NULL || name == NULL || strcmp(name,".") == 0 || MusicPlaylistFind(path))
 		return false;
 
-	char *ext = strrchr(path,'.');
+	char *ext = GetExt(path);
 
 	if(ext == NULL)
 		return false; // file does not have an extension - skip it
-
-	ext++;
 
 	// check if this is a playlist	
 	if(IsPlaylistExt(ext))

@@ -144,6 +144,9 @@ static void CleanupPath(char * path)
 {
 	if(!path || path[0] == 0)
 		return;
+	
+	if(strncmp(path, "http:", 5) == 0) // don't touch URLs
+		return;
 
 	int pathlen = strlen(path);
 	int j = 0;
@@ -180,7 +183,8 @@ static int UpdateDirName()
 
 	// entering a playlist - this is handled when the playlist is parsed
 	if((browser.selIndex > 0 || (menuCurrent == MENU_BROWSE_ONLINEMEDIA && browser.dir[0] == 0))
-		&& browserList[browser.selIndex].isplaylist)
+		&& (browserList[browser.selIndex].isplaylist || 
+			strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0))
 	{
 		BrowserHistoryStore(browser.dir);
 		GetFullPath(browser.selIndex, browser.dir);
@@ -292,14 +296,14 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	SuspendParseThread(); // halt parsing
 
 	bool isPlaylist = false;
+	char *ext = NULL;
 
 	if(browser.dir[0] != 0)
 	{
 		bool mounted = ChangeInterface(browser.dir, NOTSILENT);
 		if(mounted)
 		{
-			char *ext = strrchr(browser.dir,'.');
-			if(ext != NULL) ext++;
+			ext = GetExt(browser.dir);
 			isPlaylist = IsPlaylistExt(ext);
 		}
 		else if(menuCurrent != MENU_BROWSE_ONLINEMEDIA)
@@ -311,10 +315,15 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	if(!isPlaylist)
 		CleanupPath(browser.dir);
 
-	ResetBrowser();
-
-	if(isPlaylist || (browser.numEntries > 0 && browserList[browser.selIndex].isplaylist))
+	if(isPlaylist || // this file has a playlist extension
+		strncmp(browser.dir,"http:", 5) == 0 || // http
+		(
+		browser.numEntries > 0 && updateDir && ( // browser loaded and being navigated
+		browserList[browser.selIndex].isplaylist || // and has a playlist extension
+		(!browserList[browser.selIndex].isdir && ext == NULL) // or not a dir and has no ext
+		)))
 	{
+		ResetBrowser();
 		if(!ParsePlaylistFile())
 		{
 			strcpy(browser.dir, BrowserHistoryRetrieve());
@@ -324,10 +333,12 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	}
 	else if(menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 	{
+		ResetBrowser();
 		ParseOnlineMedia();
 	}
 	else 
 	{
+		ResetBrowser();
 		if(browser.dir[0] != 0)
 			ParseDirectory(waitParse);
 	}

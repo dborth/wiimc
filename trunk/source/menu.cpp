@@ -524,6 +524,8 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
  * progress bar showing % completion, or a throbber that only shows that an
  * action is in progress.
  ***************************************************************************/
+static int progsleep = 0;
+
 static void
 ProgressWindow(char *title, char *msg)
 {
@@ -554,6 +556,7 @@ ProgressWindow(char *title, char *msg)
 	GuiImage progressLineImg(&progressLine);
 	progressLineImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	progressLineImg.SetPosition(136, 40);
+	progressLineImg.SetVisible(false);
 
 	GuiImage progressRightImg(&progressRight);
 	progressRightImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
@@ -588,7 +591,17 @@ ProgressWindow(char *title, char *msg)
 		promptWindow.Append(&throbberImg);
 	}
 
-	usleep(400000); // wait to see if progress flag changes soon
+	// wait to see if progress flag changes soon
+	progsleep = 400000;
+
+	while(progsleep > 0)
+	{
+		if(!showProgress)
+			break;
+		usleep(THREAD_SLEEP);
+		progsleep -= THREAD_SLEEP;
+	}
+
 	if(!showProgress || progressThreadHalt > 0)
 		return;
 
@@ -606,7 +619,15 @@ ProgressWindow(char *title, char *msg)
 
 	while(showProgress && progressThreadHalt == 0)
 	{
-		usleep(20000);
+		progsleep = 20000;
+
+		while(progsleep > 0)
+		{
+			if(!showProgress)
+				break;
+			usleep(THREAD_SLEEP);
+			progsleep -= THREAD_SLEEP;
+		}
 
 		if(showProgress == 1)
 		{
@@ -619,6 +640,7 @@ ProgressWindow(char *title, char *msg)
 				if(tile > 71) tile = 71;
 				progressMidImg.SetTile(tile);
 				progressLineImg.SetPosition(136 + tile*4, 40);
+				progressLineImg.SetVisible(true);
 			}
 			
 			if(tile == 71)

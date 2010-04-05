@@ -348,18 +348,7 @@ void DrawMPlayer()
 {
 	// render textures
 	static u32 last_frame=-1;
-	u32 frame=whichtex^1;
-
-	static bool first_frame = true;
-
-	if (first_frame==false)
-	{
-		GX_WaitDrawDone();
-		VIDEO_Flush();
-		VIDEO_WaitVSync();
-		if (vmode->viTVMode & VI_NON_INTERLACE)
-			VIDEO_WaitVSync();
-	}
+	u32 frame=whichtex^1;	
 
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
@@ -398,9 +387,9 @@ void DrawMPlayer()
 
 	whichfb ^= 1;
 	GX_CopyDisp(xfb[whichfb], GX_TRUE);
-	GX_SetDrawDone();
-
+	GX_DrawDone();
 	VIDEO_SetNextFramebuffer(xfb[whichfb]);
+	VIDEO_Flush();
 
 	if(copyScreen == 2)
 	{

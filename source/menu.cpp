@@ -793,7 +793,7 @@ void InfoPrompt(const char *title, const char *msg)
  * Opens an on-screen keyboard window, with the data entered being stored
  * into the specified variable.
  ***************************************************************************/
-static void OnScreenKeyboard(char * var, u16 maxlen)
+void OnScreenKeyboard(char * var, u32 maxlen)
 {
 	int save = -1;
 
@@ -1317,7 +1317,7 @@ static void MenuBrowse(int menu)
 				fileBrowser.fileList[i]->ResetState();
 
 				// check corresponding browser entry
-				if(browserList[browser.selIndex].isdir)
+				if(browserList[browser.selIndex].type == TYPE_FOLDER)
 				{
 					if(BrowserChangeFolder())
 					{
@@ -1338,7 +1338,6 @@ static void MenuBrowse(int menu)
 
 				if(!IsAllowedExt(ext)) // unrecognized audio or video extension
 				{
-					bool isPlaylist = IsPlaylistExt(ext);
 					// parse as a playlist
 					numItems = BrowserChangeFolder();
 
@@ -1360,7 +1359,7 @@ static void MenuBrowse(int menu)
 							continue;
 						}
 					}
-					else if(isPlaylist)
+					else if(browserList[browser.selIndex].type != TYPE_FILE)
 					{
 						continue;
 					}
@@ -1738,7 +1737,7 @@ restart:
 
 			// load missing pictures - starting with selected index
 			if(selIndex > 0 
-				&& !browserList[selIndex].isdir
+				&& !browserList[selIndex].type == TYPE_FOLDER
 				&& pictureIndexLoaded != selIndex
 				&& browserList[selIndex].length < MAX_PICTURE_SIZE)
 			{
@@ -1781,7 +1780,7 @@ restart:
 					continue;
 
 				while(next < browser.numEntries && 
-					(browserList[next].isdir
+					(browserList[next].type == TYPE_FOLDER
 					|| next == selIndex 
 					|| browserList[next].length > MAX_PICTURE_SIZE
 					|| FoundPicture(next) >= 0))
@@ -1859,7 +1858,7 @@ static void ChangePicture(int dir)
 		else if(newIndex < 1)
 			newIndex = browser.numEntries-1;
 
-		if(browserList[newIndex].isdir)
+		if(browserList[newIndex].type == TYPE_FOLDER)
 			continue;
 
 		if(newIndex == browser.selIndex)
@@ -1920,7 +1919,7 @@ static void PictureViewer()
 			int found = FoundPicture(browser.selIndex);
 			if(found >= 0)
 				setPicture = true;
-			else if(!browserList[browser.selIndex].isdir
+			else if(!browserList[browser.selIndex].type == TYPE_FOLDER
 				&& pictureIndexLoading != browser.selIndex)
 				CancelFileOp();
 
@@ -2082,7 +2081,7 @@ static void MenuBrowsePictures()
 		}
 		
 		// update progress bar
-		if(!browserList[browser.selIndex].isdir && loadSize > 0 && !pictureImg->IsVisible())
+		if(!browserList[browser.selIndex].type == TYPE_FOLDER && loadSize > 0 && !pictureImg->IsVisible())
 		{
 			done = loadOffset/(float)loadSize;
 
@@ -2121,7 +2120,7 @@ static void MenuBrowsePictures()
 			currentIndex = browser.selIndex;
 			setPicture = false;
 
-			if(browserList[browser.selIndex].isdir)
+			if(browserList[browser.selIndex].type == TYPE_FOLDER)
 			{
 				SetPicture(-1, -1); // set picture to blank
 			}
@@ -2136,7 +2135,7 @@ static void MenuBrowsePictures()
 				else
 				{
 					SetPicture(-1, -1); // set picture to blank
-					if(!browserList[browser.selIndex].isdir && 
+					if(!browserList[browser.selIndex].type == TYPE_FOLDER && 
 						pictureIndexLoading != browser.selIndex)
 					{
 						CancelFileOp();
@@ -2153,7 +2152,7 @@ static void MenuBrowsePictures()
 			{
 				fileBrowser.fileList[i]->ResetState();
 
-				if(browserList[browser.selIndex].isdir)
+				if(browserList[browser.selIndex].type == TYPE_FOLDER)
 				{
 					SuspendPictureThread();
 					SetPicture(-1, -1); // set picture to blank

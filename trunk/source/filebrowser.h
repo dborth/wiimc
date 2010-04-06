@@ -36,7 +36,6 @@ typedef struct
 {
 	u64 length; // file length
 	time_t mtime; // file modified time
-	int isdir; // 0 - file, 1 - directory
 	int type; // TYPE_FILE,	TYPE_FOLDER, TYPE_PLAYLIST,	TYPE_SEARCH
 	char filename[MAXPATHLEN + 1]; // full filename
 	char displayname[MAXJOLIET + 1]; // name for browser display

@@ -62,10 +62,10 @@ int MusicPlaylistLoad()
 
 	char *ext = GetExt(browser.dir);
 
-	if(IsPlaylistExt(ext))
-		browserList[0].isplaylist = 1;
+	if(IsPlaylistExt(ext) || strncmp(browser.dir, "http:", 5) == 0)
+		browserList[0].type = TYPE_PLAYLIST;
 	else
-		browserList[0].isdir = 1;
+		browserList[0].type = TYPE_FOLDER;
 
 	browser.numEntries++;
 
@@ -80,8 +80,7 @@ int MusicPlaylistLoad()
 		sprintf(browserList[i+1].displayname, playlist[i].displayname);
 		browserList[i+1].length = 0;
 		browserList[i+1].mtime = 0;
-		browserList[i+1].isdir = 0;
-		browserList[i+1].isplaylist = 0;
+		browserList[i+1].type = TYPE_FILE;
 		browserList[i+1].icon = ICON_FILE_CHECKED;
 	}
 	browser.numEntries += i;
@@ -228,12 +227,12 @@ bool MusicPlaylistEnqueue(int index)
 	char fullpath[MAXPATHLEN+1];
 	GetFullPath(index, fullpath);
 	
-	if(browserList[index].isdir)
+	if(browserList[index].type == TYPE_FOLDER)
 		browserList[index].icon = ICON_FOLDER_CHECKED;
 	else
 		browserList[index].icon = ICON_FILE_CHECKED;
 	
-	if(browserList[index].isdir)
+	if(browserList[index].type == TYPE_FOLDER)
 		return EnqueueFolder(fullpath);
 	else
 		return EnqueueFile(fullpath, browserList[index].filename);
@@ -255,7 +254,7 @@ void MusicPlaylistDequeue(int index)
 
 	int len = strlen(fullpath);
 
-	if(browserList[index].isdir)
+	if(browserList[index].type == TYPE_FOLDER)
 		browserList[index].icon = ICON_FOLDER;
 	else
 		browserList[index].icon = ICON_FILE;

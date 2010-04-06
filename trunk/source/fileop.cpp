@@ -1094,10 +1094,11 @@ static bool ParseDirEntries()
 			strncpy(browserList[browser.numEntries+i].filename, filename, MAXJOLIET);
 			browserList[browser.numEntries+i].length = filestat.st_size;
 			browserList[browser.numEntries+i].mtime = filestat.st_mtime;
-			browserList[browser.numEntries+i].isdir = (filestat.st_mode & _IFDIR) == 0 ? 0 : 1; // flag this as a dir
 
-			if(browserList[browser.numEntries+i].isdir)
+			if(filestat.st_mode & _IFDIR)
 			{
+				browserList[browser.numEntries+i].type = TYPE_FOLDER;
+
 				if(strcmp(filename, "..") == 0)
 					sprintf(browserList[browser.numEntries+i].displayname, "Up One Level");
 				else
@@ -1108,7 +1109,7 @@ static bool ParseDirEntries()
 			else
 			{
 				if(IsPlaylistExt(ext))
-					browserList[browser.numEntries+i].isplaylist = 1;
+					browserList[browser.numEntries+i].type = TYPE_PLAYLIST;
 
 				strncpy(browserList[browser.numEntries+i].displayname, browserList[browser.numEntries+i].filename, MAXJOLIET);
 				browserList[browser.numEntries+i].icon = ICON_NONE;
@@ -1209,7 +1210,7 @@ ParseDirectory(bool waitParse)
 		sprintf(browserList[0].displayname, "Up One Level");
 		browserList[0].length = 0;
 		browserList[0].mtime = 0;
-		browserList[0].isdir = 1; // flag this as a dir
+		browserList[0].type = TYPE_FOLDER; // flag this as a dir
 		browserList[0].icon = ICON_FOLDER;
 	}
 
@@ -1231,17 +1232,34 @@ ParseDirectory(bool waitParse)
 
 typedef struct
 {
-	int type; // 0 - unsupported, 1 - video, 2 - playlist
+	int type; // 0 - unsupported, 1 - video, 2 - playlist, 3 - search
 	char name[MAXJOLIET + 1];
 	char url[MAXPATHLEN + 1];
 	char thumb[MAXPATHLEN + 1];
 	char processor[MAXPATHLEN + 1];
 } PLXENTRY;
 
+extern "C" {
+void url_escape_string(char *out, const char *in);
+}
+
 static int ParsePLXPlaylist()
 {
 	char *buffer = (char*)malloc(512*1024);
 	int size = 0;
+
+	if(browser.numEntries > 0 && browserList[browser.selIndex].type == TYPE_SEARCH)
+	{
+		char query[100] = {0};
+		char escquery[100*3+1];
+		OnScreenKeyboard(query, 100);
+
+		if(query[0] == 0)
+			return -3;
+
+		url_escape_string(escquery, query); // escape the string for use in a URL
+		strcat(browser.dir, query); // append query to search URL
+	}
 
 	if(strncmp(browser.dir, "http:", 5) == 0)
 		size = http_request(browser.dir, NULL, (u8*)buffer, NOTSILENT);
@@ -1249,7 +1267,11 @@ static int ParsePLXPlaylist()
 		size = LoadFile(buffer, browser.dir, NOTSILENT);
 
 	if(size == 0)
+	{
+		if(browser.numEntries > 0 && browserList[browser.selIndex].type == TYPE_SEARCH)
+			return -4;
 		return 0;
+	}
 
 	// attempt to parse buffer
 	int numEntries = 0;
@@ -1286,7 +1308,8 @@ static int ParsePLXPlaylist()
 			if(strncmp(attribute, "type", 4) == 0)
 			{
 				// we're on a new entry - add previous entry to list, if complete
-				if(newEntry.type > 0 && strlen(newEntry.name) > 0 && strlen(newEntry.url) > 0)
+				if(newEntry.type > 0 && strlen(newEntry.name) > 0 &&
+					strlen(newEntry.url) > 0 && newEntry.processor[0] == 0)
 				{
 					memcpy(&list[numEntries], &newEntry, sizeof(PLXENTRY));
 					numEntries++;
@@ -1332,7 +1355,7 @@ static int ParsePLXPlaylist()
 	}
 
 	// add the final entry
-	if(newEntry.type > 0 && strlen(newEntry.name) > 0 && strlen(newEntry.url) > 0)
+	if(newEntry.type > 0 && strlen(newEntry.name) > 0 && strlen(newEntry.url) > 0 && newEntry.processor[0] == 0)
 	{
 		memcpy(&list[numEntries], &newEntry, sizeof(PLXENTRY));
 		numEntries++;
@@ -1341,10 +1364,13 @@ static int ParsePLXPlaylist()
 	if(numEntries == 0)
 	{
 		free(list);
-		return 0;
+		return -2;
 	}
 
-	char *ext = GetExt((char*)BrowserHistoryRetrieve());
+	char *root = (char*)BrowserHistoryRetrieve();
+	char *ext = GetExt(root);
+	
+	ResetBrowser();
 
 	AddBrowserEntry();
 	strcpy(browserList[0].filename, BrowserHistoryRetrieve());
@@ -1353,36 +1379,32 @@ static int ParsePLXPlaylist()
 	browserList[0].mtime = 0;
 	browserList[0].icon = ICON_FOLDER;
 
-	if(IsPlaylistExt(ext))
-		browserList[0].isplaylist = 1;
+	if(IsPlaylistExt(ext) || strncmp(root, "http:", 5) == 0)
+		browserList[0].type = TYPE_PLAYLIST;
 	else
-		browserList[0].isdir = 1;
+		browserList[0].type = TYPE_FOLDER;
 
 	browser.numEntries++;
 
 	for(int i=0; i < numEntries; i++)
 	{
-		if(list[i].processor[0] != 0)
-			continue;
-
 		if(!AddBrowserEntry()) // add failed
-			break;
+		{
+			free(list);
+			return -1;
+		}
 
 		strcpy(browserList[browser.numEntries].filename, list[i].url);
 		strcpy(browserList[browser.numEntries].displayname, list[i].name);
-
+		
 		if(list[i].type == 2)
-			browserList[browser.numEntries].isplaylist = 1;
+			browserList[browser.numEntries].type = TYPE_PLAYLIST;
+		else if(list[i].type == 3)
+			browserList[browser.numEntries].type = TYPE_SEARCH;
 
 		browser.numEntries++;
 	}
 	free(list);
-
-	if(browser.numEntries == 1)
-	{
-		ResetBrowser();
-		return -2; // Playlist does not contain any supported entries!
-	}
 
 	return browser.numEntries;
 }
@@ -1402,24 +1424,25 @@ int ParsePlaylistFile()
 	if(ext == NULL || strcmp(ext, "plx") == 0)
 	{
 		res = ParsePLXPlaylist();
-		if(res > 0 || ext != NULL) // we parsed the list, or we failed and it was a .plx
+
+		switch(res)
 		{
-			switch(res)
-			{
-				case 0:
-					ErrorPrompt("Error loading playlist!");
-					break;
-				case -1:
-					ErrorPrompt("Out of memory: too many files!");
-					res = 0;
-					break;
-				case -2:
+			case 0:
+			case -4:
+				ErrorPrompt("Error loading playlist!");
+				break;
+			case -1:
+				ErrorPrompt("Out of memory: too many files!");
+				break;
+			case -2:
+				if(ext != NULL)
 					ErrorPrompt("Playlist does not contain any supported entries!");
-					res = 0;
-					break;
-			}
-			return res;
+				break;
 		}
+
+		// we parsed the list, or we failed and it was a .plx
+		if(res > 0 || res <= -3 || ext != NULL)
+			return res;
 	}
 
 	// allow MPlayer to try parsing the file
@@ -1431,19 +1454,22 @@ int ParsePlaylistFile()
 		return 0;
 	}
 
-	ext = GetExt((char*)BrowserHistoryRetrieve());
+	char *root = (char*)BrowserHistoryRetrieve();
+	ext = GetExt(root);
+
+	ResetBrowser();
 
 	AddBrowserEntry();
-	strcpy(browserList[0].filename, BrowserHistoryRetrieve());
+	strcpy(browserList[0].filename, root);
 	sprintf(browserList[0].displayname, "Up One Level");
 	browserList[0].length = 0;
 	browserList[0].mtime = 0;
 	browserList[0].icon = ICON_FOLDER;
 
-	if(IsPlaylistExt(ext))
-		browserList[0].isplaylist = 1;
+	if(IsPlaylistExt(ext) || strncmp(root, "http:", 5) == 0)
+		browserList[0].type = TYPE_PLAYLIST;
 	else
-		browserList[0].isdir = 1;
+		browserList[0].type = TYPE_FOLDER;
 
 	browser.numEntries++;
 
@@ -1478,7 +1504,7 @@ int ParsePlaylistFile()
 			}
 
 			if(IsPlaylistExt(ext))
-				browserList[browser.numEntries].isplaylist = 1;
+				browserList[browser.numEntries].type = TYPE_PLAYLIST;
 
 			browser.numEntries++;
 		}
@@ -1511,7 +1537,7 @@ int ParseOnlineMedia()
 		sprintf(browserList[0].displayname, "Up One Level");
 		browserList[0].length = 0;
 		browserList[0].mtime = 0;
-		browserList[0].isdir = 1;
+		browserList[0].type = TYPE_FOLDER;
 		browserList[0].icon = ICON_FOLDER;
 		browser.numEntries++;
 	}
@@ -1533,10 +1559,10 @@ int ParseOnlineMedia()
 			strncpy(browserList[browser.numEntries].displayname, onlinemediaList[i].displayname, MAXJOLIET);
 			browserList[browser.numEntries].length = 0;
 			browserList[browser.numEntries].mtime = 0;
-			browserList[browser.numEntries].isdir = 0;
+			browserList[browser.numEntries].type = TYPE_FILE;
 
 			if(IsPlaylistExt(ext))
-				browserList[browser.numEntries].isplaylist = 1;
+				browserList[browser.numEntries].type = TYPE_PLAYLIST;
 
 			browserList[browser.numEntries].icon = ICON_NONE;
 			browser.numEntries++;
@@ -1571,7 +1597,7 @@ int ParseOnlineMedia()
 				browserList[browser.numEntries].displayname[MAXJOLIET] = 0;
 				browserList[browser.numEntries].length = 0;
 				browserList[browser.numEntries].mtime = 0;
-				browserList[browser.numEntries].isdir = 1;
+				browserList[browser.numEntries].type = TYPE_FOLDER;
 				browserList[browser.numEntries].icon = ICON_FOLDER;
 				browser.numEntries++;
 			}

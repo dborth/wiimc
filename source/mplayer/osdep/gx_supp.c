@@ -343,15 +343,12 @@ void GX_UpdatePitch(u16 *pitch)
 	memset(Vtexture[1], 0x80, UVtexsize);
 	GX_ConfigTextureYUV(vo_dwidth, vo_dheight, pitch);
 }
-#include "timer.h"
-extern int render_texture_time;
+
 void DrawMPlayer()
 {
 	// render textures
 	static u32 last_frame=-1;
 	u32 frame=whichtex^1;
-	u64 t1 = 0;
-	if(!render_texture_time)t1=GetTimer();
 
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
@@ -409,11 +406,6 @@ void DrawMPlayer()
 		guOrtho(p, screenheight / 2, -(screenheight / 2), -(screenwidth / 2), screenwidth / 2, 10, 1000);
 		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
-	}
-	if(!render_texture_time)
-	{
-		render_texture_time=(int)(GetTimer()-t1)+200;
-		printf("render_texture_time: %d\n",render_texture_time);
 	}
 }
 
@@ -483,7 +475,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 
 	GX_Flush();
-	render_texture_time=0;
 }
 
 void GX_FillTextureYUV(u16 height,u8 *buffer[3])

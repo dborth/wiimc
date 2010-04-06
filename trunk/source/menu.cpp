@@ -1130,6 +1130,7 @@ static void UpdateAudiobarModeBtn()
 static void MenuBrowse(int menu)
 {
 	ShutoffRumble();
+	ResetBrowser();
 
 	switch(menu)
 	{
@@ -1970,6 +1971,7 @@ static void MenuBrowsePictures()
 {
 	int currentIndex = -1;
 	ShutoffRumble();
+	ResetBrowser();
 	browser.dir = &WiiSettings.picturesFolder[0];
 
 	int pagesize = 11;

@@ -196,7 +196,7 @@ static int load_restore_point(char *_filename);
 
 int controlledbygui=1;
 int pause_gui=0;
-int render_texture_time=0;
+
 static bool low_cache=false;
 static char fileplaying[MAXPATHLEN];
 static int enable_restore_points=1;

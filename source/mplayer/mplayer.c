@@ -189,7 +189,7 @@ void reinit_audio();
 void PauseAndGotoGUI();
 
 static void low_cache_loop(void);
-static double timing_sleep(double time_frame);
+static float timing_sleep(float time_frame);
 static void delete_restore_point(char *_filename);
 static void save_restore_point(char *_filename, int position);
 static int load_restore_point(char *_filename);
@@ -2150,9 +2150,10 @@ static int fill_audio_out_buffers(void)
 	// handle audio-only case:
 	// this is where mplayer sleeps during audio-only playback
 	// to avoid 100% CPU use
-	sleep_time = (ao_data.outburst - bytes_to_write) * 1000 / ao_data.bps;
-	if (sleep_time < 10) sleep_time = 10; // limit to 100 wakeups per second
-	usec_sleep(sleep_time * 1000);
+	//sleep_time = (ao_data.outburst - bytes_to_write) * 1000 / ao_data.bps;
+	//if (sleep_time < 10) sleep_time = 10; // limit to 100 wakeups per second
+	//usec_sleep(sleep_time * 1000);
+	usec_sleep(50);
     }
 
     while (bytes_to_write) {
@@ -2205,12 +2206,12 @@ static int fill_audio_out_buffers(void)
     return 1;
 }
 
-static int sleep_until_update(double *time_frame, double *aq_sleep_time)
+static int sleep_until_update(float *time_frame, float *aq_sleep_time)
 {
     int frame_time_remaining = 0;
     current_module="calc_sleep_time";
 
-    *time_frame -= GetRelativeTime() * (double)0.000001; // reset timer;
+    *time_frame -= GetRelativeTime() * 0.000001F; // reset timer;
 
     if (mpctx->sh_audio && !mpctx->d_audio->eof) {
 	float delay = mpctx->audio_out->get_delay();
@@ -4491,26 +4492,25 @@ static int load_restore_point(char *_filename)
 	return 0;
 }
 
-static double timing_sleep(double time_frame)
+static float timing_sleep(float time_frame)
 {
-	u32 frame=time_frame*1000000; //in us
-
-	current_module = "sleep_timer";
-	while (frame > 5)
+	s64 frame=(s64)(time_frame*1000000); //in us
+	//current_module = "sleep_timer";
+	while (frame > 50)
 	{
-		if(frame>render_texture_time)
+		if(frame>10000) //enough to avoid choppy cursor
 		{
 			DrawMPlayer();
-			VIDEO_WaitVSync();
+			usec_sleep(50);
 		}
 		else
 		{
-			usec_sleep(frame-5);
+			usec_sleep(frame-50);
 		}
-		frame -= GetRelativeTime();
+		frame = frame - GetRelativeTime();
 		break;
 	}
-	time_frame=frame * 0.000001F;
+	time_frame=(float)(frame * 0.000001F);
 	return time_frame;
 }
 

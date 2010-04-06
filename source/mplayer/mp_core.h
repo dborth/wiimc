@@ -93,7 +93,7 @@ typedef struct MPContext {
     // used to retry decoding after startup/seeking to compensate for codec delay
     int startup_decode_retry;
     // how long until we need to display the "current" frame
-    double time_frame;
+    float time_frame;
 
     // AV sync: the next frame should be shown when the audio out has this
     // much (in seconds) buffered data left. Increased when more data is

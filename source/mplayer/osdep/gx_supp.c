@@ -344,11 +344,18 @@ void GX_UpdatePitch(u16 *pitch)
 	GX_ConfigTextureYUV(vo_dwidth, vo_dheight, pitch);
 }
 
+static bool enable_frame_wait = false;
 void DrawMPlayer()
 {
 	// render textures
 	static u32 last_frame=-1;
 	u32 frame=whichtex^1;
+
+	if (enable_frame_wait==true)
+	{
+		GX_WaitDrawDone();
+		VIDEO_WaitVSync();
+	}
 
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
@@ -387,10 +394,10 @@ void DrawMPlayer()
 
 	whichfb ^= 1;
 	GX_CopyDisp(xfb[whichfb], GX_TRUE);
-	GX_DrawDone();
 
+	GX_SetDrawDone();
 	VIDEO_SetNextFramebuffer(xfb[whichfb]);
-	VIDEO_Flush();
+	enable_frame_wait=true;
 
 	if(copyScreen == 2)
 	{
@@ -419,6 +426,8 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 
 	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
 	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
+
+	enable_frame_wait = false;
 
 	// Set new aspect
 	xscale = haspect * hor_zoom;
@@ -474,6 +483,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	guOrtho(p, screenheight / 2, -(screenheight / 2), -(screenwidth / 2), screenwidth / 2, 10, 1000);
 	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 
+	GX_SetDrawDoneCallback(VIDEO_Flush);
 	GX_Flush();
 }
 

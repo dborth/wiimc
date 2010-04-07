@@ -1300,6 +1300,7 @@ static int ParsePLXPlaylist()
 	PLXENTRY *list = (PLXENTRY *)malloc(sizeof(PLXENTRY));
 	char attribute[1024], value[1024];
 	PLXENTRY newEntry;
+	memset(&newEntry, 0, sizeof(PLXENTRY));
 
 	while(lineptr < size)
 	{	

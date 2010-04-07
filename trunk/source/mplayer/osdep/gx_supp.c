@@ -354,6 +354,7 @@ void DrawMPlayer()
 	if (enable_frame_wait==true)
 	{
 		GX_WaitDrawDone();
+		VIDEO_Flush();
 		VIDEO_WaitVSync();
 	}
 
@@ -483,7 +484,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	guOrtho(p, screenheight / 2, -(screenheight / 2), -(screenwidth / 2), screenwidth / 2, 10, 1000);
 	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 
-	GX_SetDrawDoneCallback(VIDEO_Flush);
 	GX_Flush();
 }
 

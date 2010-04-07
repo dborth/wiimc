@@ -72,9 +72,11 @@ int stream_seek_long(stream_t *s,off_t pos);
 #ifdef GEKKO
 #include <ogc/mutex.h>
 static mutex_t cache_mutex = LWP_MUTEX_NULL;
+static int stop_cache_thread = 1;
 static void *cachearg = NULL;
 extern void SuspendCacheThread();
 extern void ResumeCacheThread();
+extern bool CacheThreadSuspended();
 #endif
 
 typedef struct {
@@ -103,10 +105,6 @@ typedef struct {
   volatile int control_res;
   volatile off_t control_new_pos;
   volatile double stream_time_length;
-#ifdef GEKKO
-  int thread_active;
-  int exited;
-#endif
 } cache_vars_t;
 
 static int min_fill=0;
@@ -320,6 +318,7 @@ static int cache_execute_control(cache_vars_t *s) {
   //unsigned now;
   static u64 last;
   u64 now;
+
   if (!s->stream->control) {
     s->stream_time_length = 0;
     s->control_new_pos = 0;
@@ -411,7 +410,9 @@ void cache_uninit(stream_t *s) {
 #if defined(GEKKO)
   if(!s->cache_pid) return; 
   cache_do_control(s, -2, NULL);
-  c->thread_active = 0;
+  stop_cache_thread = 1;
+  while(!CacheThreadSuspended())
+  	usleep(50);
   s->cache_pid = 0;
 #else  
   if(s->cache_pid) {
@@ -506,9 +507,11 @@ if(size>CACHE_LIMIT)
 #if defined(__MINGW32__)
     stream->cache_pid = _beginthread( ThreadProc, 0, s );
 #elif defined(GEKKO)
-	s->exited=0;
-	s->thread_active = 1;
+	stop_cache_thread = 1;
+	while(!CacheThreadSuspended())
+		usleep(50);
 	cachearg = s;
+	stop_cache_thread = 0;
 	ResumeCacheThread();
 	stream->cache_pid = 1;
 #elif defined(__OS2__)
@@ -529,20 +532,22 @@ if(size>CACHE_LIMIT)
     // wait until cache is filled at least prefill_init %
     mp_msg(MSGT_CACHE,MSGL_V,"CACHE_PRE_INIT: %"PRId64" [%"PRId64"] %"PRId64"  pre:%d  eof:%d  \n",
 	(int64_t)s->min_filepos,(int64_t)s->read_filepos,(int64_t)s->max_filepos,min,s->eof);
+
     while(s->read_filepos<s->min_filepos || s->max_filepos-s->read_filepos<min){
 	mp_msg(MSGT_CACHE,MSGL_STATUS,MSGTR_CacheFill,
 	    100.0*(float)(s->max_filepos-s->read_filepos)/(float)(s->buffer_size),
 	    (int64_t)s->max_filepos-s->read_filepos );
 
-	//set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Precache fill: %5.2f%%  ",(float)(100.0*(float)(s->max_filepos)/(float)(min)));
-	//force_osd();
-	
+	if(s->stream->type == STREAMTYPE_STREAM)
+		ShowProgress("Buffering...", (int)(100.0*(float)(s->max_filepos)/(float)(min)), 100);
+
 	if(s->eof) break; // file is smaller than prefill size
 	if(stream_check_interrupt(PREFILL_SLEEP_TIME)) {
 	  res = 0;
 	  goto err_out;
         }
     }
+
     mp_msg(MSGT_CACHE,MSGL_STATUS,"\n");
     return 1; // parent exits
 
@@ -575,8 +580,7 @@ static void ThreadProc( void *s ){
 #ifndef GEKKO
   } while (cache_execute_control(s));
 #else
-  } while (cache_execute_control(s) && ((cache_vars_t*)s)->thread_active);
-  ((cache_vars_t*)s)->exited=1;
+  } while (cache_execute_control(s) && !stop_cache_thread);
 #endif  
 #if defined(__MINGW32__) || defined(__OS2__)
   _endthread();
@@ -779,7 +783,7 @@ void refillcache(stream_t *stream,float min)
 		//set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Cache fill: %5.2f%%  ",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
 		//force_osd();
 		//printf("Cache fill: %5.2f%%  \n",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
-    	ShowProgress("Buffering...", (int)cache_fill_status*10000, (int)min*10000);
+    	ShowProgress("Buffering...", (int)cache_fill_status, (int)min);
 		if(s->eof) break; // file is smaller than prefill size
 			
 		if(out==0)out=stream_check_interrupt(PREFILL_SLEEP_TIME);

@@ -235,24 +235,7 @@ void FindNextAudioFile()
 		playlistIndex = n;
 	}
 	sprintf(loadedFile, "%s", playlist[playlistIndex].filepath);
-	// clear any play icons
-	for(int i=0; i < browser.numEntries; i++)
-	{
-		if(browserList[i].icon == ICON_PLAY)
-		{
-			if(menuCurrent == MENU_BROWSE_MUSIC)
-			{
-				if(MusicPlaylistFind(i))
-					browserList[i].icon = ICON_FILE_CHECKED;
-				else
-					browserList[i].icon = ICON_FILE;
-			}
-			else
-			{
-				browserList[i].icon = ICON_NONE;
-			}
-		}
-	}
+
 	FindFile(); // try to find this file
 }
 
@@ -289,6 +272,12 @@ void SuspendCacheThread()
 void ResumeCacheThread()
 {
 	LWP_ResumeThread(cthread);
+}
+bool CacheThreadSuspended()
+{
+	if(LWP_ThreadIsSuspended(cthread))
+		return true;
+	return false;
 }
 }
 

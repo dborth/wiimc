@@ -424,11 +424,11 @@ static int FindPartitions(int device)
 	}
 
 	// If this is the devices master boot record
-	printf("0x%x\n", sector.mbr.signature);
+	debug_printf("0x%x\n", sector.mbr.signature);
 	if (sector.mbr.signature == MBR_SIGNATURE)
 	{
 		memcpy(&mbr, &sector, sizeof(MASTER_BOOT_RECORD));
-		printf("Valid Master Boot Record found\n");
+		debug_printf("Valid Master Boot Record found\n");
 
 		// Search the partition table for all partitions (max. 4 primary partitions)
 		for (i = 0; i < 4; i++)
@@ -436,7 +436,7 @@ static int FindPartitions(int device)
 			partition = &mbr.partitions[i];
 			part_lba = le32_to_cpu(mbr.partitions[i].lba_start);
 
-			printf(
+			debug_printf(
 					"Partition %i: %s, sector %d, type 0x%x\n",
 					i + 1,
 					partition->status == PARTITION_STATUS_BOOTABLE ? "bootable (active)"
@@ -452,7 +452,7 @@ static int FindPartitions(int device)
 				// NTFS partition
 				case PARTITION_TYPE_NTFS:
 				{
-					printf("Partition %i: Claims to be NTFS\n", i + 1);
+					debug_printf("Partition %i: Claims to be NTFS\n", i + 1);
 
 					// Read and validate the NTFS partition
 					if (interface->readSectors(part_lba, 1, &sector))
@@ -461,12 +461,12 @@ static int FindPartitions(int device)
 						debug_printf("NTFS_OEM_ID: 0x%x\n", NTFS_OEM_ID);
 						if (sector.boot.oem_id == NTFS_OEM_ID)
 						{
-							printf("Partition %i: Valid NTFS boot sector found\n", i + 1);
+							debug_printf("Partition %i: Valid NTFS boot sector found\n", i + 1);
 							AddPartition(part_lba, device, T_NTFS);
 						}
 						else
 						{
-							printf("Partition %i: Invalid NTFS boot sector, not actually NTFS\n", i + 1);
+							debug_printf("Partition %i: Invalid NTFS boot sector, not actually NTFS\n", i + 1);
 						}
 					}
 
@@ -476,7 +476,7 @@ static int FindPartitions(int device)
 				case PARTITION_TYPE_DOS33_EXTENDED:
 				case PARTITION_TYPE_WIN95_EXTENDED:
 				{
-					printf("Partition %i: Claims to be Extended\n", i + 1);
+					debug_printf("Partition %i: Claims to be Extended\n", i + 1);
 
 					// Walk the extended partition chain, finding all NTFS partitions within it
 					sec_t ebr_lba = part_lba;
@@ -510,13 +510,13 @@ static int FindPartitions(int device)
 								{
 									if (sector.boot.oem_id == NTFS_OEM_ID)
 									{
-										printf(
+										debug_printf(
 												"Logical Partition @ %d: Valid NTFS boot sector found\n",
 												part_lba);
 										if (sector.ebr.partition.type
 												!= PARTITION_TYPE_NTFS)
 										{
-											printf(
+											debug_printf(
 													"Logical Partition @ %d: Is NTFS but type is 0x%x; 0x%x was expected\n",
 													part_lba,
 													sector.ebr.partition.type,
@@ -531,7 +531,7 @@ static int FindPartitions(int device)
 													+ BPB_FAT32_fileSysType,
 											FAT_SIG, sizeof(FAT_SIG)))
 									{
-										printf("Partition : Valid FAT boot sector found\n");
+										debug_printf("Partition : Valid FAT boot sector found\n");
 										AddPartition(part_lba, device, T_FAT);
 									}
 								}
@@ -554,10 +554,10 @@ static int FindPartitions(int device)
 					{
 						if (sector.boot.oem_id == NTFS_OEM_ID)
 						{
-							printf("Partition %i: Valid NTFS boot sector found\n",i + 1);
+							debug_printf("Partition %i: Valid NTFS boot sector found\n",i + 1);
 							if (partition->type != PARTITION_TYPE_NTFS)
 							{
-								printf(
+								debug_printf(
 										"Partition %i: Is NTFS but type is 0x%x; 0x%x was expected\n",
 										i + 1, partition->type,
 										PARTITION_TYPE_NTFS);
@@ -569,7 +569,7 @@ static int FindPartitions(int device)
 								sector.buffer + BPB_FAT32_fileSysType, FAT_SIG,
 								sizeof(FAT_SIG)))
 						{
-							printf("Partition : Valid FAT boot sector found\n");
+							debug_printf("Partition : Valid FAT boot sector found\n");
 							AddPartition(part_lba, device, T_FAT);
 						}
 					}
@@ -580,7 +580,7 @@ static int FindPartitions(int device)
 	}
 	else // it is assumed this device has no master boot record
 	{
-		printf("No Master Boot Record was found!\n");
+		debug_printf("No Master Boot Record was found!\n");
 
 		// As a last-ditched effort, search the first 64 sectors of the device for stray NTFS partitions
 		for (i = 0; i < 64; i++)
@@ -589,7 +589,7 @@ static int FindPartitions(int device)
 			{
 				if (sector.boot.oem_id == NTFS_OEM_ID)
 				{
-					printf("Valid NTFS boot sector found at sector %d!\n", i);
+					debug_printf("Valid NTFS boot sector found at sector %d!\n", i);
 					AddPartition(i, device, T_NTFS);
 				}
 			}
@@ -597,7 +597,7 @@ static int FindPartitions(int device)
 					sizeof(FAT_SIG)) || !memcmp(sector.buffer
 					+ BPB_FAT32_fileSysType, FAT_SIG, sizeof(FAT_SIG)))
 			{
-				printf("Partition : Valid FAT boot sector found\n");
+				debug_printf("Partition : Valid FAT boot sector found\n");
 				AddPartition(i, device, T_FAT);
 			}
 		}
@@ -1007,6 +1007,25 @@ bool IsAllowedExt(char *ext)
 
 void FindFile()
 {
+	// clear any play icons
+	for(int i=0; i < browser.numEntries; i++)
+	{
+		if(browserList[i].icon == ICON_PLAY)
+		{
+			if(menuCurrent == MENU_BROWSE_MUSIC)
+			{
+				if(MusicPlaylistFind(i))
+					browserList[i].icon = ICON_FILE_CHECKED;
+				else
+					browserList[i].icon = ICON_FILE;
+			}
+			else
+			{
+				browserList[i].icon = ICON_NONE;
+			}
+		}
+	}
+
 	if(loadedFile[0] == 0 || browser.dir[0] == 0)
 	{
 		findLoadedFile = 0;
@@ -1417,7 +1436,6 @@ static int ParsePLXPlaylist()
 int ParsePlaylistFile()
 {
 	int res;
-	char *playlistEntry;
 	char *ext = GetExt(browser.dir);
 
 	// if this file has no extension, try parsing it as a plx anyway
@@ -1454,6 +1472,31 @@ int ParsePlaylistFile()
 		return 0;
 	}
 
+	// MPlayer thinks it can parse anything. We should check if this list is sane
+	char *playlistEntry;
+	play_tree_iter_t *pt_iter = pt_iter_create(&list, NULL);
+
+	if(!pt_iter)
+	{
+		play_tree_free(list, 1);
+		ErrorPrompt("Error loading playlist!");
+		return 0;
+	}
+
+	while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
+	{
+		if(strncmp(playlistEntry, "http:", 5) == 0)
+			break;
+	}
+
+	if(playlistEntry == NULL) // we reached the end of the list
+	{
+		pt_iter_destroy(&pt_iter);
+		play_tree_free(list, 1);
+		ErrorPrompt("Error loading playlist!");
+		return 0;
+	}
+
 	char *root = (char*)BrowserHistoryRetrieve();
 	ext = GetExt(root);
 
@@ -1473,43 +1516,45 @@ int ParsePlaylistFile()
 
 	browser.numEntries++;
 
-	play_tree_iter_t *pt_iter = NULL;
 	char *start;
 
-	if((pt_iter = pt_iter_create(&list, NULL)))
+	pt_iter_goto_head(pt_iter);
+
+	while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
 	{
-		while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
+		if(strncmp(playlistEntry, "http:", 5) != 0)
+			continue;
+
+		ext = GetExt(playlistEntry);
+
+		if(ext && !IsAllowedExt(ext) && !IsPlaylistExt(ext))
+			continue;
+
+		if(!AddBrowserEntry()) // add failed
+			break;
+
+		strncpy(browserList[browser.numEntries].filename, playlistEntry, MAXPATHLEN);
+		browserList[browser.numEntries].filename[MAXPATHLEN] = 0;
+
+		start = strrchr(playlistEntry,'/');
+		if(start != NULL) // start up starting part of path
 		{
-			ext = GetExt(playlistEntry);
-
-			if(ext && !IsAllowedExt(ext) && !IsPlaylistExt(ext))
-				continue;
-
-			if(!AddBrowserEntry()) // add failed
-				break;
-
-			strncpy(browserList[browser.numEntries].filename, playlistEntry, MAXPATHLEN);
-			browserList[browser.numEntries].filename[MAXPATHLEN] = 0;
-
-			start = strrchr(playlistEntry,'/');
-			if(start != NULL) // start up starting part of path
-			{
-				start++;
-				sprintf(browserList[browser.numEntries].displayname, start);
-			}
-			else
-			{
-				strncpy(browserList[browser.numEntries].displayname, playlistEntry, MAXJOLIET);
-				browserList[browser.numEntries].displayname[MAXJOLIET] = 0;
-			}
-
-			if(IsPlaylistExt(ext))
-				browserList[browser.numEntries].type = TYPE_PLAYLIST;
-
-			browser.numEntries++;
+			start++;
+			sprintf(browserList[browser.numEntries].displayname, start);
 		}
-		pt_iter_destroy(&pt_iter);
+		else
+		{
+			strncpy(browserList[browser.numEntries].displayname, playlistEntry, MAXJOLIET);
+			browserList[browser.numEntries].displayname[MAXJOLIET] = 0;
+		}
+
+		if(IsPlaylistExt(ext))
+			browserList[browser.numEntries].type = TYPE_PLAYLIST;
+
+		browser.numEntries++;
 	}
+	pt_iter_destroy(&pt_iter);
+	play_tree_free(list, 1);
 
 	if(browser.numEntries == 1)
 	{

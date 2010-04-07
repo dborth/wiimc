@@ -113,6 +113,9 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 	arrowUpBtn->SetVisible(false);
 	arrowDownBtn->SetVisible(false);
 	scrollbarBoxBtn->SetVisible(false);
+	arrowUpBtn->SetState(STATE_DISABLED);
+	arrowDownBtn->SetState(STATE_DISABLED);
+	scrollbarBoxBtn->SetState(STATE_DISABLED);
 
 	for(int i=0; i<size; i++)
 	{
@@ -405,6 +408,13 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 			arrowUpBtn->SetVisible(true);
 			arrowDownBtn->SetVisible(true);
 			scrollbarBoxBtn->SetVisible(true);
+
+			if(arrowUpBtn->GetState() == STATE_DISABLED)
+			{
+				arrowUpBtn->SetState(STATE_DEFAULT);
+				arrowDownBtn->SetState(STATE_DEFAULT);
+				scrollbarBoxBtn->SetState(STATE_DEFAULT);
+			}
 		}
 		else
 		{
@@ -414,6 +424,9 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 			arrowUpBtn->SetVisible(false);
 			arrowDownBtn->SetVisible(false);
 			scrollbarBoxBtn->SetVisible(false);
+			arrowUpBtn->SetState(STATE_DISABLED);
+			arrowDownBtn->SetState(STATE_DISABLED);
+			scrollbarBoxBtn->SetState(STATE_DISABLED);
 		}
 	}
 

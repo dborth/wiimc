@@ -4508,7 +4508,6 @@ static float timing_sleep(float time_frame)
 			usec_sleep(frame-50);
 		}
 		frame = frame - GetRelativeTime();
-		break;
 	}
 	time_frame=(float)(frame * 0.000001F);
 	return time_frame;

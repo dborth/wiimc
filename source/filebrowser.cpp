@@ -100,6 +100,14 @@ void BrowserHistoryDiscard()
 	browserHistory.pop_back();
 }
 
+void BrowserHistoryClear()
+{
+	if(browserHistory.empty())
+		return;
+
+	browserHistory.clear();
+}
+
 bool AddPlaylistEntry()
 {
 	MEDIAENTRY * newList = (MEDIAENTRY *)realloc(playlist, (playlistSize+1) * sizeof(MEDIAENTRY));
@@ -174,10 +182,19 @@ static int UpdateDirName()
 	if(browser.numEntries == 0)
 		return 1;
 
-	// we started in a playlist, and have nowhere to go back to but the device listing
+	// we are in a playlist, and have nowhere to go back to but the device listing
 	if(browser.selIndex == 0 && strlen(browserList[0].filename) == 0)
 	{
 		browser.dir[0] = 0;
+		BrowserHistoryClear();
+		return 1;
+	}
+
+	// exiting a playlist - return to specified location
+	if(browser.selIndex == 0 && browserList[0].filename[0] != '.' && browser.dir[0] != 0)
+	{
+		strcpy(browser.dir, browserList[0].filename);
+		BrowserHistoryDiscard();
 		return 1;
 	}
 
@@ -187,14 +204,6 @@ static int UpdateDirName()
 	{
 		BrowserHistoryStore(browser.dir);
 		GetFullPath(browser.selIndex, browser.dir);
-		return 1;
-	}
-
-	// exiting a playlist - return to specified location
-	if(browser.selIndex == 0 && browserList[0].filename[0] != '.' && browser.dir[0] != 0)
-	{
-		strcpy(browser.dir, browserList[0].filename);
-		BrowserHistoryDiscard();
 		return 1;
 	}
 

@@ -48,6 +48,7 @@ static GuiImageData volumeMid(volume_mid_png);
 static GuiImageData volumeBottom(volume_bottom_png);
 static GuiImageData volumeEmpty(volume_empty_png);
 static GuiImageData volumeLine(volume_line_png);
+static GuiImage disabled(screenwidth,screenheight,(GXColor){0, 0, 0, 100});
 static GuiTrigger * trigA = NULL;
 static GuiTrigger * trigB = NULL;
 static GuiTrigger * trigLeft = NULL;
@@ -495,6 +496,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	CancelAction();
 	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
+	mainWindow->Append(&disabled);
 	mainWindow->Append(&promptWindow);
 	ResumeGui();
 
@@ -512,6 +514,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	while(promptWindow.GetEffect() > 0) usleep(THREAD_SLEEP);
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
+	mainWindow->Remove(&disabled);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 	return choice;
@@ -597,6 +600,7 @@ ProgressWindow(char *title, char *msg)
 	SuspendGui();
 	int oldState = mainWindow->GetState();
 	mainWindow->SetState(STATE_DISABLED);
+	mainWindow->Append(&disabled);
 	mainWindow->Append(&promptWindow);
 	mainWindow->ChangeFocus(&promptWindow);
 	ResumeGui();
@@ -653,6 +657,7 @@ ProgressWindow(char *title, char *msg)
 
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
+	mainWindow->Remove(&disabled);
 	mainWindow->SetState(oldState);
 	ResumeGui();
 }
@@ -819,8 +824,8 @@ void OnScreenKeyboard(char * var, u32 maxlen)
 
 	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
+	mainWindow->Append(&disabled);
 	mainWindow->Append(&keyboard);
-	mainWindow->ChangeFocus(&keyboard);
 	ResumeGui();
 
 	while(save == -1)
@@ -840,6 +845,7 @@ void OnScreenKeyboard(char * var, u32 maxlen)
 
 	SuspendGui();
 	mainWindow->Remove(&keyboard);
+	mainWindow->Remove(&disabled);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 }
@@ -903,6 +909,7 @@ SettingWindow(const char * title, GuiWindow * w)
 
 	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
+	mainWindow->Append(&disabled);
 	mainWindow->Append(&promptWindow);
 	mainWindow->Append(w);
 	mainWindow->ChangeFocus(w);
@@ -920,6 +927,7 @@ SettingWindow(const char * title, GuiWindow * w)
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
 	mainWindow->Remove(w);
+	mainWindow->Remove(&disabled);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 	return save;
@@ -1117,6 +1125,7 @@ static int LoadNewFile(int silent)
 {
 	if(!silent)
 	{
+		mainWindow->Append(&disabled);
 		mainWindow->SetState(STATE_DISABLED);
 		ShowAction("Loading...");
 	}
@@ -1140,7 +1149,10 @@ static int LoadNewFile(int silent)
 	// failed or we are playing audio
 
 	if(!silent)
+	{
+		mainWindow->Remove(&disabled);
 		mainWindow->SetState(STATE_DEFAULT);
+	}
 
 	ResumeDeviceThread();
 
@@ -1427,8 +1439,19 @@ static void MenuBrowse(int menu)
 
 				if(!IsAllowedExt(ext)) // unrecognized audio or video extension
 				{
-					// parse as a playlist
-					numItems = BrowserChangeFolder();
+					// parse as a playlist					
+					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
+					{
+						mainWindow->SetState(STATE_DISABLED);
+						mainWindow->Append(&disabled);
+						numItems = BrowserChangeFolder();
+						mainWindow->Remove(&disabled);
+						mainWindow->SetState(STATE_DEFAULT);
+					}
+					else
+					{
+						numItems = BrowserChangeFolder();
+					}
 
 					if(numItems > 1)
 					{
@@ -1595,7 +1618,7 @@ static void MenuBrowse(int menu)
 		{
 			if(playlistSize == 1)
 			{
-				if(audiobarForwardBtn->GetAlpha() == 255)
+				if(audiobarForwardBtn->GetAlpha() == 255 || audiobarForwardBtn->GetState() != STATE_DISABLED)
 				{
 					audiobarForwardBtn->SetState(STATE_DISABLED);
 					audiobarForwardBtn->SetAlpha(128);
@@ -1657,6 +1680,12 @@ static void MenuBrowse(int menu)
 			{
 				audiobarProgressBtn->SetState(STATE_DISABLED);
 				audiobarProgressBtn->SetAlpha(128);
+				audiobarBackwardBtn->SetState(STATE_DISABLED);
+				audiobarBackwardBtn->SetAlpha(128);
+			}
+
+			if(audiobarBackwardBtn->GetState() != STATE_DISABLED)
+			{
 				audiobarBackwardBtn->SetState(STATE_DISABLED);
 				audiobarBackwardBtn->SetAlpha(128);
 			}
@@ -2266,6 +2295,7 @@ static void MenuDVD()
 
 	sprintf(loadedFile, "dvdnav://");
 	mainWindow->SetState(STATE_DISABLED);
+	mainWindow->Append(&disabled);
 	ShowAction("Loading...");
 	ShutdownMPlayer();
 	LoadMPlayer(); // signal MPlayer to load
@@ -2279,8 +2309,13 @@ static void MenuDVD()
 	
 	if(!guiShutdown) // load failed
 	{
+		mainWindow->Remove(&disabled);
 		mainWindow->SetState(STATE_DEFAULT);
 		ErrorPrompt("Unrecognized DVD format!");
+	}
+	else
+	{
+		playingAudio = false;
 	}
 
 	SuspendGui();

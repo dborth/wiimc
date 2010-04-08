@@ -3979,6 +3979,7 @@ static void VideoPauseCallback(void * ptr)
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
+		ShutoffRumble();
 		wiiPause();
 	}
 }
@@ -4967,7 +4968,7 @@ void MPlayerMenu()
 	ResumeGui();
 	EnableRumble();
 
-	bool paused = 0;
+	bool paused = !wiiIsPaused();
 
 	while(controlledbygui == 0)
 	{

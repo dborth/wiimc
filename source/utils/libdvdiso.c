@@ -376,6 +376,18 @@ int _DVD_dirnext_r (struct _reent *r, DIR_ITER *dirState, char *filename, struct
 		return -1;
 	}
 	
+	// skip .. at root
+	if(mydirstate->curdentry->fake_inode == 4 && strcmp(mydirstate->curdentry->name, "..") == 0)
+	{
+		mydirstate->curdentry=mydirstate->curdentry->next;
+
+		if(mydirstate->curdentry==NULL)
+		{
+			r->_errno = ENOENT;
+			return -1;
+		}
+	}
+	
 	strncpy(filename,mydirstate->curdentry->name,MAXNAMELEN);
 	
 	if (filestat != NULL)

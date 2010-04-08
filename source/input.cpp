@@ -73,9 +73,9 @@ void SetupPads()
  * ShutoffRumble
  ***************************************************************************/
 
-static void ShutoffRumble(int i)
+static void ShutoffRumble(int i, int cooloff)
 {
-	prev[i] = gettime() + RUMBLE_COOLOFF;
+	prev[i] = gettime() + cooloff;
 	WPAD_Rumble(i, 0); // rumble off
 	rumbleOn[i] = 0;
 }
@@ -83,7 +83,7 @@ static void ShutoffRumble(int i)
 void ShutoffRumble()
 {
 	for(int i=0;i<4;i++)
-		ShutoffRumble(i);
+		ShutoffRumble(i, RUMBLE_COOLOFF*3);
 }
 
 void DisableRumble()
@@ -125,7 +125,7 @@ void DoRumble(int i)
 		now[i] = gettime();
 
 		if(diff_usec(prev[i], now[i]) > RUMBLE_MAX)
-			ShutoffRumble(i);
+			ShutoffRumble(i, RUMBLE_COOLOFF);
 	}
 }
 

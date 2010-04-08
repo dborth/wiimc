@@ -200,6 +200,10 @@ int pause_gui=0;
 static bool low_cache=false;
 static char fileplaying[MAXPATHLEN];
 static int enable_restore_points=1;
+
+static float orig_stream_cache_min_percent=-1;
+static float orig_stream_cache_seek_min_percent=-1;
+static int orig_stream_cache_size=-1;
 #endif
 
 //**************************************************************************//
@@ -303,7 +307,12 @@ int forced_subs_only=0;
 int file_filter=1;
 
 // cache2:
+#ifdef GEKKO
+       int stream_cache_size=16384; // 16MB cache
+#else
        int stream_cache_size=-1;
+#endif
+       
 #ifdef CONFIG_STREAM_CACHE
 extern float cache_fill_status;
 
@@ -3325,9 +3334,6 @@ int vob_sub_auto = 1;
 
   current_module="open_stream";
   #ifdef GEKKO
-  static float orig_stream_cache_min_percent=-1;
-  static float orig_stream_cache_seek_min_percent=-1;
-  static int orig_stream_cache_size=-1;
 
   if(orig_stream_cache_min_percent==-1 && orig_stream_cache_seek_min_percent==-1)
   {
@@ -4861,10 +4867,12 @@ bool wiiInDVDMenu()
 	return true;
 }
 
-void wiiSetCache(int size, int prefill)
+void wiiSetCacheFill(int fill)
 {
-	stream_cache_size = size;
-	stream_cache_min_percent = prefill;
+	orig_stream_cache_min_percent = fill;
+
+	if(stream_cache_min_percent > 1) // don't change fill for http streams
+		stream_cache_min_percent = fill;
 }
 
 void wiiSetAutoResume(int enable)

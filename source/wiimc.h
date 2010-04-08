@@ -69,7 +69,7 @@ char * wiiGetMetaYear();
 void wiiDVDNav(int cmd);
 void wiiUpdatePointer(int x, int y);
 bool wiiInDVDMenu();
-void wiiSetCache(int size, int prefill);
+void wiiSetCacheFill(int fill);
 void wiiSetAutoResume(int enable);
 void wiiSetVolume(int vol);
 void wiiSetProperty(int cmd, float val);

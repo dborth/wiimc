@@ -2698,8 +2698,7 @@ static void MenuSettingsVideos()
 	sprintf(options.name[i++], "Screen Position");
 	sprintf(options.name[i++], "Frame Dropping");
 	sprintf(options.name[i++], "Aspect Ratio");
-	sprintf(options.name[i++], "Cache Size");
-	sprintf(options.name[i++], "Cache Prefill");
+	sprintf(options.name[i++], "Cache Fill");
 	sprintf(options.name[i++], "Audio Delay");
 	sprintf(options.name[i++], "Auto-Resume");
 	sprintf(options.name[i++], "Videos Files Folder");
@@ -2785,24 +2784,19 @@ static void MenuSettingsVideos()
 					WiiSettings.aspectRatio = -1;
 				break;
 			case 4:
-				WiiSettings.cacheSize += 2048;
-				if(WiiSettings.cacheSize > 16384)
-					WiiSettings.cacheSize = 2048;
+				WiiSettings.cacheFill += 10;
+				if (WiiSettings.cacheFill > 100)
+					WiiSettings.cacheFill = 10;
 				break;
 			case 5:
-				WiiSettings.cachePrefill += 10;
-				if (WiiSettings.cachePrefill > 100)
-					WiiSettings.cachePrefill = 10;
-				break;
-			case 6:
 				WiiSettings.audioDelay += 0.1;
 				if (WiiSettings.audioDelay > 2)
 					WiiSettings.audioDelay = 0;
 				break;
-			case 7:
+			case 6:
 				WiiSettings.autoResume ^= 1;
 				break;
-			case 8:
+			case 7:
 				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);
 				break;
 		}
@@ -2834,11 +2828,10 @@ static void MenuSettingsVideos()
 			else
 				sprintf (options.value[3], "Auto");
 
-			sprintf (options.value[4], "%d MB", WiiSettings.cacheSize/1024);
-			sprintf (options.value[5], "%d%%", WiiSettings.cachePrefill);
-			sprintf (options.value[6], "%.1f sec", WiiSettings.audioDelay);
-			sprintf (options.value[7], "%s", WiiSettings.autoResume ? "On" : "Off");
-			snprintf(options.value[8], 40, "%s", WiiSettings.videosFolder);
+			sprintf (options.value[4], "%d%%", WiiSettings.cacheFill);
+			sprintf (options.value[5], "%.1f sec", WiiSettings.audioDelay);
+			sprintf (options.value[6], "%s", WiiSettings.autoResume ? "On" : "Off");
+			snprintf(options.value[7], 40, "%s", WiiSettings.videosFolder);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -3852,7 +3845,7 @@ static void VideoProgressCallback(void * ptr)
 			if(percent > 100) percent = 100;
 			else if(percent < 0) percent = 0;
 			done = total*percent;
-			DisableRumble();
+			ShutoffRumble();
 			wiiSeekPos(done);
 		}
 		b->ResetState();
@@ -3975,7 +3968,7 @@ static void VideoBackwardCallback(void * ptr)
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
-		DisableRumble();
+		ShutoffRumble();
 		wiiRewind();
 	}
 }
@@ -3996,7 +3989,7 @@ static void VideoForwardCallback(void * ptr)
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
-		DisableRumble();
+		ShutoffRumble();
 		wiiFastForward();
 	}
 }
@@ -4946,14 +4939,10 @@ void SetStatus(const char * txt)
 		return;
 
 	if(txt)
-	{
 		statusText->SetVisible(true);
-	}
 	else
-	{
 		statusText->SetVisible(false);
-		EnableRumble();
-	}
+
 	statusText->SetText(txt);
 }
 
@@ -4978,7 +4967,7 @@ void MPlayerMenu()
 	ResumeGui();
 	EnableRumble();
 
-	bool paused = !wiiIsPaused();
+	bool paused = 0;
 
 	while(controlledbygui == 0)
 	{

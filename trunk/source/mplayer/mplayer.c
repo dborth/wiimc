@@ -2150,10 +2150,13 @@ static int fill_audio_out_buffers(void)
 	// handle audio-only case:
 	// this is where mplayer sleeps during audio-only playback
 	// to avoid 100% CPU use
-	//sleep_time = (ao_data.outburst - bytes_to_write) * 1000 / ao_data.bps;
-	//if (sleep_time < 10) sleep_time = 10; // limit to 100 wakeups per second
-	//usec_sleep(sleep_time * 1000);
-	usec_sleep(50);
+#ifdef GEKKO
+	usec_sleep(5000);
+#else
+	sleep_time = (ao_data.outburst - bytes_to_write) * 1000 / ao_data.bps;
+	if (sleep_time < 10) sleep_time = 10; // limit to 100 wakeups per second
+	usec_sleep(sleep_time * 1000);
+#endif
     }
 
     while (bytes_to_write) {
@@ -4501,7 +4504,7 @@ static float timing_sleep(float time_frame)
 		if(frame>10000) //enough to avoid choppy cursor
 		{
 			DrawMPlayer();
-			usec_sleep(50);
+			VIDEO_WaitVSync();
 		}
 		else
 		{

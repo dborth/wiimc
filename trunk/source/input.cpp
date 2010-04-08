@@ -75,7 +75,7 @@ void SetupPads()
 
 static void ShutoffRumble(int i)
 {
-	prev[i] = now[i] + RUMBLE_COOLOFF;
+	prev[i] = gettime() + RUMBLE_COOLOFF;
 	WPAD_Rumble(i, 0); // rumble off
 	rumbleOn[i] = 0;
 }

@@ -61,8 +61,7 @@ struct SWiiSettings {
 	int		rumble;
 
 	// Cache
-	int 	cacheSize;
-	int 	cachePrefill;
+	int 	cacheFill;
 
 	// Network
 	SMBSettings smbConf[5];

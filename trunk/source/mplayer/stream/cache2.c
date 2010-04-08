@@ -428,6 +428,7 @@ void cache_uninit(stream_t *s) {
 
 if(!c) return;
 #if defined(GEKKO)
+  free(c->stream);
   c->buffer=NULL;
   free(s->cache_data);
   s->cache_data=NULL;

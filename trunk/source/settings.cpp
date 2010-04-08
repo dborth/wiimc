@@ -154,8 +154,7 @@ prepareSettingsData ()
 
 	// Cache
 	createXMLSection("Cache", "Cache Settings");
-	createXMLSetting("cacheSize", "Cache size", toStr(WiiSettings.cacheSize));
-	createXMLSetting("cachePrefill", "Cache prefill %", toStr(WiiSettings.cachePrefill));
+	createXMLSetting("cacheFill", "Cache Fill %", toStr(WiiSettings.cacheFill));
 
 	// Network
 	createXMLSection("Network", "Network Settings");
@@ -367,8 +366,7 @@ void DefaultSettings ()
 	WiiSettings.rumble = 1;
 
 	// Cache
-	WiiSettings.cacheSize = 8192;
-	WiiSettings.cachePrefill = 50;
+	WiiSettings.cacheFill = 30;
 
 	// Network
 
@@ -411,10 +409,8 @@ static void FixInvalidSettings()
 		WiiSettings.rumble = 1;
 
 	// Cache
-	if(WiiSettings.cacheSize < 2048 || WiiSettings.cacheSize > 16384)
-		WiiSettings.cacheSize = 8192;
-	if(WiiSettings.cachePrefill < 10 || WiiSettings.cachePrefill > 100)
-		WiiSettings.cachePrefill = 50;
+	if(WiiSettings.cacheFill < 10 || WiiSettings.cacheFill > 100)
+		WiiSettings.cacheFill = 30;
 
 	// Network
 
@@ -604,8 +600,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.rumble, "rumble");
 
 				// Cache
-				loadXMLSetting(&WiiSettings.cacheSize, "cacheSize");
-				loadXMLSetting(&WiiSettings.cachePrefill, "cachePrefill");
+				loadXMLSetting(&WiiSettings.cacheFill, "cacheFill");
 
 				// Network
 				for(int i=0; i<5; i++)

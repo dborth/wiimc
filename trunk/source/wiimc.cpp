@@ -252,7 +252,6 @@ mplayerthread (void *arg)
 		if(loadedFile[0] != 0)
 		{
 			controlledbygui = 0;
-			wiiSetCache(WiiSettings.cacheSize, WiiSettings.cachePrefill);
 			mplayer_loadfile(loadedFile);
 		}
 
@@ -333,6 +332,7 @@ void SetMPlayerSettings()
 					WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
 	wiiSetAutoResume(WiiSettings.autoResume);
 	wiiSetVolume(WiiSettings.volume);
+	wiiSetCacheFill(WiiSettings.cacheFill);
 	wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
 	wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
 	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);

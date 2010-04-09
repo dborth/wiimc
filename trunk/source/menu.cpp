@@ -1480,21 +1480,27 @@ static void MenuBrowse(int menu)
 				if(numItems == 0)
 					GetFullPath(browser.selIndex, loadedFile);
 
-				if(LoadNewFile(NOTSILENT) == 1)
-					goto done; // loaded a video
+				int res = LoadNewFile(NOTSILENT);
 
-				FindFile();
-
-				// re-adjust for audio bar, if necessary
-				if(pagesize != 8)
+				if(res == 1) // loaded a video file
 				{
-					pagesize = 8;
-					SuspendGui();
-					fileBrowser.ChangeSize(pagesize);
-					mainWindow->Remove(&backBtn);
-					mainWindow->Append(audiobar);
-					ResumeGui();
-					break;
+					goto done;
+				}
+				else if(res == 2) // loaded an audio-only file
+				{
+					FindFile();
+	
+					// re-adjust for audio bar, if necessary
+					if(pagesize != 8)
+					{
+						pagesize = 8;
+						SuspendGui();
+						fileBrowser.ChangeSize(pagesize);
+						mainWindow->Remove(&backBtn);
+						mainWindow->Append(audiobar);
+						ResumeGui();
+						break;
+					}
 				}
 			}
 		}

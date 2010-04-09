@@ -494,9 +494,13 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 
 	promptWindow.SetEffect(EFFECT_FADE, 50);
 	CancelAction();
+
+	bool isDisabled = mainWindow->Find(&disabled);
+
 	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
-	mainWindow->Append(&disabled);
+	if(!isDisabled)
+		mainWindow->Append(&disabled);
 	mainWindow->Append(&promptWindow);
 	ResumeGui();
 
@@ -514,7 +518,8 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	while(promptWindow.GetEffect() > 0) usleep(THREAD_SLEEP);
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
-	mainWindow->Remove(&disabled);
+	if(!isDisabled)
+		mainWindow->Remove(&disabled);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 	return choice;
@@ -593,14 +598,27 @@ ProgressWindow(char *title, char *msg)
 	{
 		promptWindow.Append(&throbberImg);
 	}
+	
+	// wait to see if progress flag changes soon
+	progsleep = 400000;
+
+	while(progsleep > 0)
+	{
+		if(!showProgress)
+			break;
+		usleep(THREAD_SLEEP);
+		progsleep -= THREAD_SLEEP;
+	}
 
 	if(!showProgress || progressThreadHalt > 0)
 		return;
 
 	SuspendGui();
 	int oldState = mainWindow->GetState();
+	bool isDisabled = mainWindow->Find(&disabled);
 	mainWindow->SetState(STATE_DISABLED);
-	mainWindow->Append(&disabled);
+	if(!isDisabled)
+		mainWindow->Append(&disabled);
 	mainWindow->Append(&promptWindow);
 	mainWindow->ChangeFocus(&promptWindow);
 	ResumeGui();
@@ -657,7 +675,8 @@ ProgressWindow(char *title, char *msg)
 
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
-	mainWindow->Remove(&disabled);
+	if(!isDisabled)
+		mainWindow->Remove(&disabled);
 	mainWindow->SetState(oldState);
 	ResumeGui();
 }
@@ -1142,7 +1161,7 @@ static int LoadNewFile(int silent)
 
 	if(guiShutdown)
 	{
-		playingAudio = false;
+		playlistIndex = -1;
 		return 1; // playing a video
 	}
 
@@ -1158,12 +1177,10 @@ static int LoadNewFile(int silent)
 
 	if(!wiiAudioOnly())
 	{
-		playingAudio = false;
+		playlistIndex = -1;
 		ErrorPrompt("Error loading file!");
 		return 0;
 	}
-
-	playingAudio = true;
 	
 	if(wiiIsPaused())
 		wiiPause(); // unpause playback
@@ -1262,7 +1279,7 @@ static void MenuBrowse(int menu)
 
 	if(videoScreenshot && menu != MENU_BROWSE_MUSIC)
 		pagesize = 10;
-	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && playingAudio))
+	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && wiiAudioOnly()))
 		pagesize = 8;
 
 	GuiFileBrowser fileBrowser(640, pagesize);
@@ -1304,19 +1321,20 @@ static void MenuBrowse(int menu)
 	ResumeGui();
 
 	// populate initial directory listing
-	while(BrowserChangeFolder(false) <= 0)
+	if(strncmp(browser.dir, "http:", 5) == 0)
 	{
-		int choice = WindowPrompt(
-		"Error",
-		"Unable to display files on selected load device.",
-		"Retry",
-		"Cancel");
+		mainWindow->Append(&disabled);
+		mainWindow->SetState(STATE_DISABLED);
+		ShowAction("Loading...");
+	}
 
-		if(choice == 0)
-		{
-			UndoChangeMenu();
-			goto done;
-		}
+	BrowserChangeFolder(false);
+
+	if(mainWindow->Find(&disabled))
+	{
+		CancelAction();
+		mainWindow->Remove(&disabled);
+		mainWindow->SetState(STATE_DEFAULT);
 	}
 
 	SuspendGui();
@@ -1349,7 +1367,7 @@ static void MenuBrowse(int menu)
 			for(int i=0; i < 4; i++)
 				audiobarNowPlaying[i]->SetVisible(false);
 
-			if(playingAudio)
+			if(wiiAudioOnly())
 				mainWindow->Append(audiobar);
 		}
 		
@@ -1442,11 +1460,10 @@ static void MenuBrowse(int menu)
 					// parse as a playlist					
 					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
 					{
-						mainWindow->SetState(STATE_DISABLED);
 						mainWindow->Append(&disabled);
+						mainWindow->SetState(STATE_DISABLED);
+						ShowAction("Loading...");
 						numItems = BrowserChangeFolder();
-						mainWindow->Remove(&disabled);
-						mainWindow->SetState(STATE_DEFAULT);
 					}
 					else
 					{
@@ -1465,6 +1482,10 @@ static void MenuBrowse(int menu)
 						}
 						else
 						{
+							CancelAction();
+							mainWindow->Remove(&disabled);
+							mainWindow->SetState(STATE_DEFAULT);
+
 							fileBrowser.ResetState();
 							fileBrowser.fileList[0]->SetState(STATE_SELECTED);
 							fileBrowser.TriggerUpdate();
@@ -1473,6 +1494,9 @@ static void MenuBrowse(int menu)
 					}
 					else if(browserList[browser.selIndex].type != TYPE_FILE)
 					{
+						CancelAction();
+						mainWindow->Remove(&disabled);
+						mainWindow->SetState(STATE_DEFAULT);
 						continue;
 					}
 				}
@@ -1480,13 +1504,24 @@ static void MenuBrowse(int menu)
 				if(numItems == 0)
 					GetFullPath(browser.selIndex, loadedFile);
 
-				int res = LoadNewFile(NOTSILENT);
+				if(!MusicPlaylistFind(loadedFile))
+					playlistIndex = -1; // we aren't playing a file in our playlist
+
+				if(!mainWindow->Find(&disabled))
+					mainWindow->Append(&disabled);
+				mainWindow->SetState(STATE_DISABLED);
+				ShowAction("Loading...");
+
+				int res = LoadNewFile(SILENT);
+				CancelAction();
 
 				if(res == 1) // loaded a video file
-				{
 					goto done;
-				}
-				else if(res == 2) // loaded an audio-only file
+
+				mainWindow->Remove(&disabled);
+				mainWindow->SetState(STATE_DEFAULT);
+
+				if(res == 2) // loaded an audio-only file
 				{
 					FindFile();
 	
@@ -1539,7 +1574,7 @@ static void MenuBrowse(int menu)
 		{
 			audiobarPauseBtn->ResetState();
 
-			if(playingAudio)
+			if(wiiAudioOnly())
 			{
 				wiiPause();
 			}
@@ -1599,6 +1634,10 @@ static void MenuBrowse(int menu)
 				{
 					audiobarProgressBtn->SetState(STATE_DISABLED);
 					audiobarProgressBtn->SetAlpha(128);
+					audiobarProgressLeftImg->SetVisible(false);
+					audiobarProgressMidImg->SetTile(0);
+					audiobarProgressLineImg->SetVisible(false);
+					audiobarProgressRightImg->SetVisible(false);
 				}
 			}
 		}
@@ -1608,6 +1647,10 @@ static void MenuBrowse(int menu)
 			{
 				audiobarProgressBtn->SetState(STATE_DISABLED);
 				audiobarProgressBtn->SetAlpha(128);
+				audiobarProgressLeftImg->SetVisible(false);
+				audiobarProgressMidImg->SetTile(0);
+				audiobarProgressLineImg->SetVisible(false);
+				audiobarProgressRightImg->SetVisible(false);
 			}
 		}
 
@@ -2118,20 +2161,7 @@ static void MenuBrowsePictures()
 	ResumeGui();
 
 	// populate initial directory listing
-	while(BrowserChangeFolder(false, true) <= 0)
-	{
-		int choice = WindowPrompt(
-		"Error",
-		"Unable to display files on selected load device.",
-		"Retry",
-		"Cancel");
-
-		if(choice == 0)
-		{
-			UndoChangeMenu();
-			goto done;
-		}
-	}
+	BrowserChangeFolder(false, true);
 
 	SetPicture(-1, -1);
 	SuspendGui();
@@ -2329,11 +2359,6 @@ static void MenuDVD()
 		mainWindow->SetState(STATE_DEFAULT);
 		ErrorPrompt("Unrecognized DVD format!");
 	}
-	else
-	{
-		playingAudio = false;
-	}
-
 	SuspendGui();
 }
 
@@ -4019,7 +4044,7 @@ static void AudioProgressCallback(void * ptr)
 	int done = wiiGetTimePos();
 	double percent = 0;
 
-	if(!playingAudio)
+	if(!wiiAudioOnly())
 		total = 0; // values are from a loaded video - do not show!
 
 	if(total > 0)

@@ -953,7 +953,7 @@ char *GetExt(char *file)
 			return NULL;
 		// check if this extension contains valid characters
 		for(int i=0; i < extlen; i++)
-			if(!isalpha(ext[i]))
+			if(!isalnum(ext[i]))
 				return NULL;
 	}
 	return ext;

@@ -87,7 +87,7 @@ int MusicPlaylistLoad()
 	return browser.numEntries;
 }
 
-static bool MusicPlaylistFind(char * fullpath)
+bool MusicPlaylistFind(char * fullpath)
 {
 	for(int i=0; i < playlistSize; i++)
 	{
@@ -244,6 +244,9 @@ static void Remove(int index)
 		memmove(&playlist[index], &playlist[index+1], sizeof(MEDIAENTRY)*(playlistSize-index-1));
 	playlistSize--;
 	playlist = (MEDIAENTRY *)realloc(playlist, playlistSize * sizeof(MEDIAENTRY));
+
+	if(playlistIndex >= playlistSize)
+		playlistIndex = playlistSize-1;
 }
 
 void MusicPlaylistDequeue(int index)

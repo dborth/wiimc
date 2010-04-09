@@ -9,6 +9,7 @@
 #include <gccore.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include <ogcsys.h>
 #include <sys/dir.h>
@@ -947,8 +948,13 @@ char *GetExt(char *file)
 	if(ext != NULL)
 	{
 		ext++;
-		if(strlen(ext) > 5)
+		int extlen = strlen(ext);
+		if(extlen > 5)
 			return NULL;
+		// check if this extension contains valid characters
+		for(int i=0; i < extlen; i++)
+			if(!isalpha(ext[i]))
+				return NULL;
 	}
 	return ext;
 }
@@ -1264,7 +1270,7 @@ void url_escape_string(char *out, const char *in);
 
 static int ParsePLXPlaylist()
 {
-	char *buffer = (char*)malloc(512*1024);
+	char *buffer = (char*)malloc(128*1024);
 	int size = 0;
 
 	if(browser.numEntries > 0 && browserList[browser.selIndex].type == TYPE_SEARCH)
@@ -1281,9 +1287,9 @@ static int ParsePLXPlaylist()
 	}
 
 	if(strncmp(browser.dir, "http:", 5) == 0)
-		size = http_request(browser.dir, NULL, (u8*)buffer, NOTSILENT);
+		size = http_request(browser.dir, NULL, (u8*)buffer, 128*1024, SILENT);
 	else
-		size = LoadFile(buffer, browser.dir, NOTSILENT);
+		size = LoadFile(buffer, browser.dir, SILENT);
 
 	if(size == 0)
 	{
@@ -1448,7 +1454,8 @@ int ParsePlaylistFile()
 		{
 			case 0:
 			case -4:
-				ErrorPrompt("Error loading playlist!");
+				if(ext != NULL)
+					ErrorPrompt("Error loading playlist!");
 				break;
 			case -1:
 				ErrorPrompt("Out of memory: too many files!");
@@ -1469,7 +1476,8 @@ int ParsePlaylistFile()
 
 	if(!list)
 	{
-		ErrorPrompt("Error loading playlist!");
+		if(ext != NULL)
+			ErrorPrompt("Error loading playlist!");
 		return 0;
 	}
 
@@ -1526,10 +1534,10 @@ int ParsePlaylistFile()
 		if(strncmp(playlistEntry, "http:", 5) != 0)
 			continue;
 
-		ext = GetExt(playlistEntry);
+		//ext = GetExt(playlistEntry);
 
-		if(ext && !IsAllowedExt(ext) && !IsPlaylistExt(ext))
-			continue;
+		//if(ext && !IsAllowedExt(ext) && !IsPlaylistExt(ext))
+		//	continue;
 
 		if(!AddBrowserEntry()) // add failed
 			break;

@@ -33,10 +33,10 @@ static std::vector<std::string> browserHistory; // browser.dir history - for nes
 MEDIAENTRY * onlinemediaList = NULL; // list of online media files
 int onlinemediaSize = 0; // number of online media files
 
-// audio playlist
+// music playlist
 MEDIAENTRY * playlist = NULL; // list of files in the current playlist
 int playlistSize = 0; // number of playlist files
-int playlistIndex = 0; // index of file currently playing in the playlist
+int playlistIndex = -1; // index of file currently playing in the playlist
 
 /****************************************************************************
  * ResetBrowser()
@@ -323,9 +323,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 
 	if(isPlaylist || (strlen(browser.dir) > 10 && strncmp(browser.dir,"http:", 5) == 0))
 	{
-		ShowAction("Loading...");
 		int res = ParsePlaylistFile();
-		CancelAction();
 
 		if(res > 0)
 			return browser.numEntries;

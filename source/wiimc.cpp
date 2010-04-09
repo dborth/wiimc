@@ -45,7 +45,6 @@ int ResetRequested = 0;
 int ExitRequested = 0;
 char appPath[1024] = { 0 };
 char loadedFile[1024];
-bool playingAudio = false;
 static bool settingsSet = false;
 
 // MPlayer threads
@@ -234,8 +233,11 @@ void FindNextAudioFile()
 		int n = rand() % playlistSize;
 		playlistIndex = n;
 	}
+	else if(playlistIndex == -1 || playlistIndex >= playlistSize)
+	{
+		playlistIndex = 0;
+	}
 	sprintf(loadedFile, "%s", playlist[playlistIndex].filepath);
-
 	FindFile(); // try to find this file
 }
 
@@ -244,7 +246,7 @@ mplayerthread (void *arg)
 {
 	while(1)
 	{
-		if(controlledbygui == 2 || WiiSettings.playOrder == 0 || !playingAudio)
+		if(controlledbygui == 2 || playlistIndex == -1 || playlistSize == 0)
 			LWP_SuspendThread(mthread);
 
 		nowPlayingSet = false;
@@ -255,8 +257,8 @@ mplayerthread (void *arg)
 			mplayer_loadfile(loadedFile);
 		}
 
-		if(controlledbygui != 2 && WiiSettings.playOrder > 0 && playingAudio) // load next file
-			FindNextAudioFile();
+		if(controlledbygui != 2 && playlistIndex >= 0)
+			FindNextAudioFile(); // select next file
 	}
 	return NULL;
 }

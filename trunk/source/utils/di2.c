@@ -73,12 +73,12 @@ read_func DI2_ReadDVDptr = NULL;
 read_func_async DI2_ReadDVDAsyncptr = NULL;
 di_callback di_cb = NULL;
 
-#define DEFAULT_TIME_STOP_MOTOR 60  // 20 secs
+#define DEFAULT_TIME_STOP_MOTOR 60  // 60 secs
 #define MIN_TIME_STOP_MOTOR 8  // the min value accepted
 static bool motorthreadexit = false;
 static lwp_t motorthread = LWP_THREAD_NULL;
 static bool motor_stopped = true;
-static unsigned int LastAccess = 0;
+static u64 LastAccess = 0;
 static unsigned int TimeStopMotor = DEFAULT_TIME_STOP_MOTOR;
 
 int _DI2_ReadDVD_Check(void* buf, uint32_t len, uint32_t lba);
@@ -108,8 +108,7 @@ static bool DVD_DiscPresent()
 
 static void * motorthreadfunc(void *arg)
 {
-	unsigned int t;
-	int sleeptime;
+	long sleeptime;
 	bool first = true;
 	
 	while (1)
@@ -122,22 +121,22 @@ static void * motorthreadfunc(void *arg)
 		{
 			if (first) // change state from stop to start
 			{
-				sleep(10); // time to get full spinning
+				sleeptime = 10*1000*1000; // 10 sec
+
+				while(sleeptime > 0)
+				{
+					if(motorthreadexit)
+						return NULL;
+					usleep(100);
+					sleeptime -= 100;
+				}
 				LastAccess = ticks_to_secs(gettime());
 				first = false;
 			}
-			t = ticks_to_secs(gettime());
-			if ((LastAccess + 1 + (TimeStopMotor * 2)) < LastAccess)
-				LastAccess = t; // prevent overflow (I think is not need, but...)  
-			if (t < LastAccess)
-				LastAccess = t; // strange,  perhaps overflow 
-			if ((t > LastAccess) && ((t - LastAccess) > TimeStopMotor) && ((t
-					- LastAccess) < (TimeStopMotor * 2)))
+			if ((ticks_to_secs(gettime()) - LastAccess) > TimeStopMotor)
 			{ // we have to stop motor        
-				if (DVD_DiscPresent()) // only stop is dvd is present, perhpas 
-				{
+				if (DVD_DiscPresent()) // only stop if dvd is present
 					DI2_StopMotor();
-				}
 			}
 		}
 

@@ -438,7 +438,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
-	dialogBoxImg.SetAlpha(200);
+	dialogBoxImg.SetAlpha(220);
 
 	GuiText titleTxt(title, 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -540,7 +540,7 @@ ProgressWindow(char *title, char *msg)
 
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
-	dialogBoxImg.SetAlpha(200);
+	dialogBoxImg.SetAlpha(220);
 
 	GuiImage progressEmptyImg(&progressEmpty);
 	progressEmptyImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
@@ -868,7 +868,7 @@ SettingWindow(const char * title, GuiWindow * w)
 
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
-	dialogBoxImg.SetAlpha(200);
+	dialogBoxImg.SetAlpha(220);
 
 	GuiText titleTxt(title, 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -1582,6 +1582,34 @@ static void MenuBrowse(int menu)
 				audiobarPauseBtn->SetAlpha(128);
 			}
 		}
+		
+		if(wiiAudioOnly())
+		{
+			if(wiiGetTimeLength() > 0)
+			{
+				if(audiobarProgressBtn->GetAlpha() == 128)
+				{
+					audiobarProgressBtn->SetState(STATE_DEFAULT);
+					audiobarProgressBtn->SetAlpha(255);
+				}
+			}
+			else
+			{
+				if(audiobarProgressBtn->GetState() != STATE_DISABLED)
+				{
+					audiobarProgressBtn->SetState(STATE_DISABLED);
+					audiobarProgressBtn->SetAlpha(128);
+				}
+			}
+		}
+		else
+		{
+			if(audiobarProgressBtn->GetAlpha() == 255 || audiobarProgressBtn->GetState() != STATE_DISABLED)
+			{
+				audiobarProgressBtn->SetState(STATE_DISABLED);
+				audiobarProgressBtn->SetAlpha(128);
+			}
+		}
 
 		if(menu == MENU_BROWSE_ONLINEMEDIA)
 			continue;
@@ -1649,11 +1677,6 @@ static void MenuBrowse(int menu)
 		{
 			if(wiiGetTimeLength() > 0)
 			{
-				if(audiobarProgressBtn->GetAlpha() == 128)
-				{
-					audiobarProgressBtn->SetState(STATE_DEFAULT);
-					audiobarProgressBtn->SetAlpha(255);
-				}
 				if(audiobarBackwardBtn->GetAlpha() == 128)
 				{
 					audiobarBackwardBtn->SetState(STATE_DEFAULT);
@@ -1668,11 +1691,6 @@ static void MenuBrowse(int menu)
 			}
 			else
 			{
-				if(audiobarProgressBtn->GetState() != STATE_DISABLED)
-				{
-					audiobarProgressBtn->SetState(STATE_DISABLED);
-					audiobarProgressBtn->SetAlpha(128);
-				}
 				if(audiobarBackwardBtn->GetState() != STATE_DISABLED)
 				{
 					audiobarBackwardBtn->SetState(STATE_DISABLED);
@@ -1682,14 +1700,6 @@ static void MenuBrowse(int menu)
 		}
 		else
 		{
-			if(audiobarProgressBtn->GetAlpha() == 255 || audiobarProgressBtn->GetState() != STATE_DISABLED)
-			{
-				audiobarProgressBtn->SetState(STATE_DISABLED);
-				audiobarProgressBtn->SetAlpha(128);
-				audiobarBackwardBtn->SetState(STATE_DISABLED);
-				audiobarBackwardBtn->SetAlpha(128);
-			}
-
 			if(audiobarBackwardBtn->GetState() != STATE_DISABLED)
 			{
 				audiobarBackwardBtn->SetState(STATE_DISABLED);

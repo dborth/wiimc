@@ -299,7 +299,7 @@ static bool http_split_url(char **host, char **path, const char *url)
  * http_request
  * Retrieves the specified URL, and stores it in the specified file or buffer
  ***************************************************************************/
-int http_request(const char *url, FILE * hfile, u8 * buffer, bool silent)
+int http_request(const char *url, FILE * hfile, u8 * buffer, u32 maxsize, bool silent)
 {
 	int res = 0;
 	char *http_host;
@@ -311,10 +311,13 @@ int http_request(const char *url, FILE * hfile, u8 * buffer, bool silent)
 	u32 sizeread = 0, content_length = 0;
 
 	int linecount;
-	
+
+	if(maxsize > MAX_SIZE)
+		return 0;
+
 	if (url == NULL || (hfile == NULL && buffer == NULL))
 		return 0;
-	
+
 	if (!http_split_url(&http_host, &http_path, url))
 		return 0;
 
@@ -365,10 +368,6 @@ int http_request(const char *url, FILE * hfile, u8 * buffer, bool silent)
 		line = NULL;
 
 	}
-	
-	// length unknown - just read as much as we can
-	if(content_length == 0)
-		content_length = MAX_SIZE;
 
 	if (http_status != 200)
 	{
@@ -376,7 +375,13 @@ int http_request(const char *url, FILE * hfile, u8 * buffer, bool silent)
 		net_close(s);
 		return 0;
 	}
-	if (content_length > MAX_SIZE)
+
+	// length unknown - just read as much as we can
+	if(content_length == 0)
+	{
+		content_length = maxsize;
+	}
+	else if (content_length > maxsize)
 	{
 		result = HTTPR_ERR_TOOBIG;
 		net_close(s);
@@ -435,7 +440,7 @@ int http_request(const char *url, FILE * hfile, u8 * buffer, bool silent)
 
 	net_close(s);
 
-	if (content_length < MAX_SIZE && sizeread != content_length)
+	if (content_length < maxsize && sizeread != content_length)
 	{
 		result = HTTPR_ERR_RECEIVE;
 		return 0;

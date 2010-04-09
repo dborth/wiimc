@@ -51,7 +51,7 @@ void UpdateCheck()
 
 		u8 * tmpbuffer = (u8 *)memalign(32,32768);
 		memset(tmpbuffer, 0, 32768);
-		retval = http_request(url, NULL, tmpbuffer, SILENT);
+		retval = http_request(url, NULL, tmpbuffer, 32768, SILENT);
 		memset(url, 0, 128);
 
 		if (retval)
@@ -157,7 +157,7 @@ bool DownloadUpdate()
 	if (hfile > 0)
 	{
 		int retval;
-		retval = http_request(updateURL, hfile, NULL, NOTSILENT);
+		retval = http_request(updateURL, hfile, NULL, 1024*1024*15, NOTSILENT);
 		fclose (hfile);
 	}
 

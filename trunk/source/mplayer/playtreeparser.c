@@ -833,7 +833,11 @@ parse_playlist_file(char* file) {
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Parsing playlist file %s...\n",file);
 
+#ifdef GEKKO
+  ret = parse_playtree(stream,0);
+#else
   ret = parse_playtree(stream,1);
+#endif
   free_stream(stream);
 
   play_tree_add_bpf(ret, file);

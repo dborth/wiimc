@@ -323,14 +323,19 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 
 	if(isPlaylist || (strlen(browser.dir) > 10 && strncmp(browser.dir,"http:", 5) == 0))
 	{
-		if(ParsePlaylistFile())
+		ShowAction("Loading...");
+		int res = ParsePlaylistFile();
+		CancelAction();
+
+		if(res > 0)
 			return browser.numEntries;
 
+		// parsing failed - setup last browser dir
 		BrowserHistoryDiscard();
 		strcpy(browser.dir, BrowserHistoryRetrieve());
 
 		if(browser.numEntries > 0) // parsing failed, but we held onto the last listing
-			return browser.numEntries; // so we can return without any more work required
+			return res; // so we can return without any more work required
 	}
 
 	ResetBrowser();

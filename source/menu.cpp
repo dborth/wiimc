@@ -5024,6 +5024,7 @@ void MPlayerMenu()
 		{
 			mainWindow->SetVisible(true);
 			mainWindow->SetState(STATE_DEFAULT);
+			HideVolumeLevelBar();
 			statusText->SetVisible(false);
 		}
 

@@ -425,8 +425,8 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	h = ((int)((height/8.0)))*8;
 
 	// center, to correct difference between pitch and real width
-	diffx = width - w + hor_pos;
-	diffy = height - h + vert_pos;
+	diffx = (w - width)/2.0 + hor_pos;
+	diffy = (h - height)/2.0 + vert_pos;
 
 	square[0] = square[9] = -xscale + diffx;
 	square[3] = square[6] = xscale + diffx;

@@ -41,6 +41,7 @@ extern int ExitRequested;
 extern FreeTypeGX *fontSystem[];
 extern char loadedFile[];
 extern char appPath[];
+extern char loadPath[];
 
 #ifdef __cplusplus
 extern "C" {

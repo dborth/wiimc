@@ -3483,7 +3483,7 @@ static void MenuSettingsNetworkSMB()
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
-	CloseShare(netEditIndex);
+	CloseShare(netEditIndex+1);
 }
 
 static void MenuSettingsNetworkFTP()
@@ -3660,7 +3660,7 @@ static void MenuSettingsNetworkFTP()
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
-	CloseFTP(netEditIndex);
+	CloseFTP(netEditIndex+1);
 }
 
 static void MenuSettingsSubtitles()
@@ -3860,6 +3860,9 @@ static void MenuSettings()
 		if(backBtn.GetState() == STATE_CLICKED)
 			ChangeMenu(menuPrevious);
 	}
+
+	if(menuCurrent <= 4) // leaving settings area
+		SaveSettings(NOTSILENT);
 
 	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
@@ -4866,9 +4869,22 @@ void WiiMenu()
 	ResumeGui();
 	EnableRumble();
 
-	// Load settings
+	// Load settings (only happens once)
 	if(!LoadSettings())
-		SaveSettings(NOTSILENT);
+	{
+		if(!SaveSettings(NOTSILENT))
+		{
+			ExitRequested = 1;
+			while(1) usleep(THREAD_SLEEP);
+		}
+	}
+
+	// Init MPlayer path and vars (only happens once)
+	if(!InitMPlayer())
+	{
+		ExitRequested = 1;
+		while(1) usleep(THREAD_SLEEP);
+	}
 
 	while(!guiShutdown)
 	{

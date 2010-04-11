@@ -44,6 +44,7 @@ int ShutdownRequested = 0;
 int ResetRequested = 0;
 int ExitRequested = 0;
 char appPath[1024] = { 0 };
+char loadPath[1024] = { 0 };
 char loadedFile[1024];
 static bool settingsSet = false;
 
@@ -286,12 +287,24 @@ bool InitMPlayer()
 {
 	static bool init = false;
 	if(init) return true;
-	if(appPath[0] == 0) return false;
+
+	if(appPath[0] == 0)
+	{
+		InfoPrompt("Unable to Initialize MPlayer", "Unable to find a valid working path");
+		return false;
+	}
+
+	if(chdir(appPath) != 0)
+	{
+		char msg[512];
+		sprintf(msg, "Unable to change path to %s.", appPath);
+		InfoPrompt("Unable to Initialize MPlayer", msg);
+		return false;
+	}
 
 	sprintf(MPLAYER_DATADIR,"%s",appPath);
 	sprintf(MPLAYER_CONFDIR,"%s",appPath);
 	sprintf(MPLAYER_LIBDIR,"%s",appPath);
-	chdir(appPath);
 
 	setenv("HOME", MPLAYER_DATADIR, 1);
 	setenv("DVDCSS_CACHE", "off", 1);
@@ -351,7 +364,7 @@ int
 main(int argc, char *argv[])
 {
 	USBGeckoOutput(); // uncomment to enable USB gecko output
-	__exception_setreload(8);
+	//__exception_setreload(8);
 
 	// try to load IOS 202
 	if(IOS_GetVersion() != 202 && FindIOS(202))
@@ -383,7 +396,7 @@ main(int argc, char *argv[])
 
 	// store path app was loaded from
 	if(argc > 0 && argv[0] != NULL)
-		CreateAppPath(argv[0]);
+		CreateLoadPath(argv[0]);
 
 	// Set defaults
 	DefaultSettings();

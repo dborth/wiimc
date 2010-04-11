@@ -900,21 +900,21 @@ bool ChangeInterface(char * filepath, bool silent)
 	return ChangeInterface(device, devnum, silent);
 }
 
-void CreateAppPath(char * origpath)
+void CreateLoadPath(char * origpath)
 {
 	if(!origpath || origpath[0] == 0)
 		return;
 
 	if(strncmp(origpath, "fat", 3) == 0)
-		sprintf(appPath, "sd1:/%s", &origpath[5]);
+		sprintf(loadPath, "sd1:/%s", &origpath[5]);
 	else if(strncmp(origpath, "sd", 2) == 0)
-		sprintf(appPath, "sd1:/%s", &origpath[4]);
+		sprintf(loadPath, "sd1:/%s", &origpath[4]);
 	else if(strncmp(origpath, "usb", 2) == 0)
-		sprintf(appPath, "usb1:/%s", &origpath[5]);
+		sprintf(loadPath, "usb1:/%s", &origpath[5]);
 	else
 		return;
 
-	char * loc = strrchr(appPath,'/');
+	char * loc = strrchr(loadPath,'/');
 	if (loc != NULL)
 		*loc = 0; // strip file name
 }

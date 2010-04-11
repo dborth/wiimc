@@ -39,7 +39,7 @@ void GetFullPath(int index, char *path);
 void MountAllDevices();
 bool ChangeInterface(int device, int devnum, bool silent);
 bool ChangeInterface(char * filepath, bool silent);
-void CreateAppPath(char * origpath);
+void CreateLoadPath(char * origpath);
 void StripExt(char* string);
 char *GetExt(char *file);
 bool IsPlaylistExt(char *ext);

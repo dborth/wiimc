@@ -448,6 +448,7 @@ bool
 SaveSettings (bool silent)
 {
 	char filepath[1024] = { 0 };
+	char msg[512];
 	int datasize;
 	int offset = 0;
 
@@ -470,27 +471,35 @@ SaveSettings (bool silent)
 			sprintf(filepath, "usb3:");
 
 		// could not mount any devices
-		if(strlen(filepath) == 0)
+		if(strlen(filepath) == 0 && !silent)
 		{
-			if(!silent)
-			{
-				ErrorPrompt("Could not find a valid SD or USB device - one is required for normal operation.");
-				if(!InitMPlayer())
-					ExitRequested = 1;
-			}
+			ErrorPrompt("Could not find a valid SD or USB device - one is required for normal operation.");
 			return false;
 		}
 
 		// ensure the necessary folders exists for saving
 		strcat(filepath, "/apps");
 		if (!diropen(filepath))
-			mkdir(filepath, 0777);
-		
+		{
+			if(mkdir(filepath, 0777) != 0 && !silent)
+			{
+				sprintf(msg, "Could not create folder %s", filepath);
+				ErrorPrompt(msg);
+				return false;
+			}
+		}
+
 		strcat(filepath, "/");
 		strcat(filepath, APPFOLDER);
 		if (!diropen(filepath))
-			mkdir(filepath, 0777);
-		
+		{
+			if(mkdir(filepath, 0777) != 0 && !silent)
+			{
+				sprintf(msg, "Could not create folder %s", filepath);
+				ErrorPrompt(msg);
+				return false;
+			}
+		}
 		strcat(filepath, "/settings.xml");
 	}
 
@@ -505,7 +514,9 @@ SaveSettings (bool silent)
 	offset = SaveFile(savebuffer, filepath, datasize, silent);
 
 	free(savebuffer);
-	CancelAction();
+
+	if(!silent)
+		CancelAction();
 
 	if (offset > 0)
 	{
@@ -519,18 +530,13 @@ SaveSettings (bool silent)
 		SaveFile(buff, filepath, strlen(buff), SILENT);
 		free(buff);
 
-		if (!silent)
-			InfoPrompt("Settings saved");
 		return true;
 	}
-	else if(!silent)
+
+	if(!silent)
 	{
-		char msg[512];
 		sprintf(msg, "Could not save settings to %s", filepath);
 		ErrorPrompt(msg);
-
-		if(!InitMPlayer())
-			ExitRequested = 1;
 	}
 	return false;
 }
@@ -637,10 +643,10 @@ static bool LoadSettingsFile(char * filepath)
  * Load settings
  * Checks sources consecutively until we find a settings file
  ***************************************************************************/
-static bool settingsLoaded = false;
-
 bool LoadSettings()
 {
+	static bool settingsLoaded = false;
+
 	if(settingsLoaded) // already attempted loading
 		return true;
 
@@ -648,7 +654,7 @@ bool LoadSettings()
 	char path[5][MAXPATHLEN];
 	char filepath[MAXPATHLEN];
 
-	sprintf(path[0], "%s", appPath);
+	sprintf(path[0], "%s", loadPath);
 	sprintf(path[1], "sd1:/apps/%s", APPFOLDER);
 	sprintf(path[2], "usb1:/apps/%s", APPFOLDER);
 	sprintf(path[3], "usb2:/apps/%s", APPFOLDER);
@@ -656,6 +662,9 @@ bool LoadSettings()
 
 	for(int i=0; i<5; i++)
 	{
+		if(i == 0 && path[0] == 0)
+			continue;
+
 		sprintf(filepath, "%s/settings.xml", path[i]);
 		settingsFound = LoadSettingsFile(filepath);
 		sprintf(filepath, "%s/onlinemedia.xml", path[i]);
@@ -683,7 +692,6 @@ bool LoadSettings()
 		if(size > 0)
 			wiiLoadRestorePoints(buffer, size);
 		free(buffer);
-		InitMPlayer();
 	}
 	return settingsFound;
 }

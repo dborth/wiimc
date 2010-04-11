@@ -216,19 +216,10 @@ u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height)
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr jerr;
 
-	int n = len;
-
-	while (n > 1)
-	{
-		if (src[n - 1] == 0xff && src[n] == 0xd9) 
-			break;
-		n--;
-	}
-
 	jpeg_create_decompress(&cinfo);
 	cinfo.err = jpeg_std_error(&jerr);
 	cinfo.progress = NULL;
-	jpeg_memory_src(&cinfo, src, n);
+	jpeg_memory_src(&cinfo, src, len);
 	jpeg_read_header(&cinfo, TRUE);
 	jpeg_calc_output_dimensions(&cinfo);
 

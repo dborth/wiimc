@@ -152,9 +152,13 @@ static void CleanupPath(char * path)
 {
 	if(!path || path[0] == 0)
 		return;
-	
-	if(strncmp(path, "http:", 5) == 0) // don't touch URLs
+
+	if(strncmp(path, "http:", 5) == 0)
+	{
+		char *c = strchr(&path[7], '/');
+		if(c == NULL) strcat(path, "/"); // should be at least one / in URL
 		return;
+	}
 
 	int pathlen = strlen(path);
 	int j = 0;

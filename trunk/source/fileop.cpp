@@ -1476,7 +1476,7 @@ int ParsePlaylistFile()
 
 	if(!list)
 	{
-		if(ext != NULL)
+		if(ext != NULL && IsPlaylistExt(ext))
 			ErrorPrompt("Error loading playlist!");
 		return 0;
 	}

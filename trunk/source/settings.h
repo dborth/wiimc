@@ -52,6 +52,7 @@ struct SWiiSettings {
 	int 	autoResume;
 	int 	playOrder; // PLAY_SINGLE, PLAY_CONTINUOUS, PLAY_SHUFFLE, PLAY_LOOP
 	int 	hideExtensions;
+	int		slideshowDelay;
 	int 	language;
 	char 	videosFolder[MAXPATHLEN];
 	char	musicFolder[MAXPATHLEN];

@@ -144,6 +144,7 @@ prepareSettingsData ()
 	createXMLSetting("autoResume", "Auto-resume", toStr(WiiSettings.autoResume));
 	createXMLSetting("playOrder", "Play order", toStr(WiiSettings.playOrder));
 	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
+	createXMLSetting("slideshowDelay", "Slideshow delay", toStr(WiiSettings.slideshowDelay));
 	createXMLSetting("language", "Language", toStr(WiiSettings.language));
 	createXMLSetting("videosFolder", "Videos folder", WiiSettings.videosFolder);
 	createXMLSetting("musicFolder", "Music folder", WiiSettings.musicFolder);
@@ -357,6 +358,7 @@ void DefaultSettings ()
 	WiiSettings.autoResume = 1;
 	WiiSettings.playOrder = PLAY_SINGLE;
 	WiiSettings.hideExtensions = 1;
+	WiiSettings.slideshowDelay = 5;
 	WiiSettings.language = LANG_ENGLISH; //CONF_GetLanguage();
 	WiiSettings.videosFolder[0] = 0;
 	WiiSettings.musicFolder[0] = 0;
@@ -401,6 +403,8 @@ static void FixInvalidSettings()
 		WiiSettings.playOrder = PLAY_SINGLE;
 	if(WiiSettings.hideExtensions != 1 && WiiSettings.hideExtensions != 0)
 		WiiSettings.hideExtensions = 1;
+	if(WiiSettings.slideshowDelay > 10 || WiiSettings.slideshowDelay < 1)
+		WiiSettings.slideshowDelay = 5;
 	if(WiiSettings.language < 0 || WiiSettings.language > LANG_KOREAN)
 		WiiSettings.language = LANG_ENGLISH;
 	if(WiiSettings.exitAction < 0 || WiiSettings.exitAction > EXIT_LOADER)
@@ -597,6 +601,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.autoResume, "autoResume");
 				loadXMLSetting(&WiiSettings.playOrder, "playOrder");
 				loadXMLSetting(&WiiSettings.hideExtensions, "hideExtensions");
+				loadXMLSetting(&WiiSettings.slideshowDelay, "slideshowDelay");
 				loadXMLSetting(&WiiSettings.language, "language");
 				loadXMLSetting(WiiSettings.videosFolder, "videosFolder", sizeof(WiiSettings.videosFolder));
 				loadXMLSetting(WiiSettings.musicFolder, "musicFolder", sizeof(WiiSettings.musicFolder));

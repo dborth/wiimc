@@ -71,33 +71,12 @@ void ExitApp()
 	CancelAction();
 	StopGX();
 
-	if(ShutdownRequested == 1)
-		SYS_ResetSystem(SYS_POWEROFF, 0, 0); // Shutdown Wii
-
-	if(WiiSettings.exitAction == EXIT_AUTO)
-	{
-		char * sig = (char *)0x80001804;
-		if(
-			sig[0] == 'S' &&
-			sig[1] == 'T' &&
-			sig[2] == 'U' &&
-			sig[3] == 'B' &&
-			sig[4] == 'H' &&
-			sig[5] == 'A' &&
-			sig[6] == 'X' &&
-			sig[7] == 'X')
-			exit(0); // Exit to HBC
-		else
-			SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0); // HBC not found
-	}
-	else if(WiiSettings.exitAction == EXIT_WIIMENU)
-	{
-		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
-	}
-	else
-	{
+	if(ShutdownRequested == 1 || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
-	}
+	else if(WiiSettings.exitAction == EXIT_WIIMENU)
+		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
+	else
+		exit(0); // Exit to HBC
 }
 
 static void ShutdownCB()

@@ -1783,12 +1783,12 @@ u8* picBuffer;
 #define MAX_PICTURE_SIZE (1024*1024*10) // 10 MB
 static int loadPictures = 0; // reload pictures
 
-#define NUM_PICTURES 		7 // 1 image with a buffer of +/- 3 on each side
+#define NUM_PICTURES 		5 // 1 image with a buffer of +/- 2 on each side
 
 static GuiImage *pictureImg = NULL;
 static GuiButton *pictureBtn = NULL;
-static GuiImageData *picture[NUM_PICTURES] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-static int pictureIndex[NUM_PICTURES] = {-1, -1, -1, -1, -1, -1, -1};
+static GuiImageData *picture[NUM_PICTURES] = {NULL, NULL, NULL, NULL, NULL};
+static int pictureIndex[NUM_PICTURES] = {-1, -1, -1, -1, -1};
 static int pictureIndexLoaded = -1;
 static int pictureIndexLoading = -1;
 static int pictureLoaded = -1;
@@ -1843,7 +1843,7 @@ static void CleanupPictures(int selIndex)
 		if(picture[i] == NULL || i == pictureLoaded)
 			continue;
 
-		if(selIndex == -1 || pictureIndex[i] < selIndex-3 || pictureIndex[i] > selIndex+3)
+		if(selIndex == -1 || pictureIndex[i] < (selIndex-(NUM_PICTURES-1)/2) || pictureIndex[i] > (selIndex+(NUM_PICTURES-1)/2))
 		{
 			delete picture[i];
 			picture[i] = NULL;
@@ -1915,7 +1915,7 @@ restart:
 			}
 
 			// fill up image buffer slots
-			next = selIndex-3;
+			next = selIndex-(NUM_PICTURES-1)/2;
 
 			if(next <= 0)
 				next = 1;
@@ -1932,7 +1932,7 @@ restart:
 					|| FoundPicture(next) >= 0))
 					next++;
 
-				if(next >= browser.numEntries || next > selIndex+3)
+				if(next >= browser.numEntries || next > (selIndex+(NUM_PICTURES-1)/2))
 					break;
 
 				sprintf(filepath, "%s%s", browser.dir, browserList[next].filename);
@@ -2093,15 +2093,39 @@ static void PictureViewer()
 			}
 		}
 
-		if(slideshow) // slideshow mode - change every 3 seconds
+		if(slideshow) // slideshow mode - change every X seconds
 		{
 			slidenow = gettime();
-			if(diff_usec(slideprev, slidenow) > 1000*1000*3)
+			if(slidenow > slideprev && 
+				diff_usec(slideprev, slidenow) > (u32)(1000*1000*WiiSettings.slideshowDelay))
 			{
 				ChangePicture(1); // change to next picture
 				slideprev = slidenow; // reset timer
 			}
 		}
+
+		bool ir = false;
+
+		for(int i=0; i<4; i++)
+		{
+			if(userInput[i].wpad->ir.valid)
+			{
+				ir = true;
+				break;
+			}
+		}
+
+		if(picturebar->GetState() == STATE_DISABLED && ir)
+		{
+			picturebar->SetState(STATE_DEFAULT);
+			picturebar->SetVisible(true);
+		}
+		else if(picturebar->GetState() != STATE_DISABLED && !ir)
+		{
+			picturebar->SetState(STATE_DISABLED);
+			picturebar->SetVisible(false);
+		}
+
 		usleep(THREAD_SLEEP);
 	}
 
@@ -2999,6 +3023,7 @@ static void MenuSettingsPictures()
 	OptionList options;
 
 	sprintf(options.name[i++], "Pictures Files Folder");
+	sprintf(options.name[i++], "Slideshow Delay");
 
 	options.length = i;
 		
@@ -3058,6 +3083,11 @@ static void MenuSettingsPictures()
 			case 0:
 				OnScreenKeyboard(WiiSettings.picturesFolder, MAXPATHLEN);
 				break;
+			case 1:
+				WiiSettings.slideshowDelay++;
+				if(WiiSettings.slideshowDelay > 10)
+					WiiSettings.slideshowDelay = 1;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -3065,6 +3095,7 @@ static void MenuSettingsPictures()
 			firstRun = false;
 
 			snprintf(options.value[0], 40, "%s", WiiSettings.picturesFolder);
+			sprintf(options.value[1], "%d seconds", WiiSettings.slideshowDelay);
 			optionBrowser.TriggerUpdate();
 		}
 

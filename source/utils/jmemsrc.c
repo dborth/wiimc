@@ -14,13 +14,6 @@
  * custom source managers for other purposes.
  */
 
-/* code was taken from:
- * [How to read JPEG resource using JpegLib ?]
- * http://www.smalleranimals.com/vforum/archive/index.php?t-1922.html
- */
-
-/* this is not a core library module, so it doesn't define JPEG_INTERNALS */
-
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -28,6 +21,8 @@
 #include <malloc.h>
 #include <jpeglib.h>
 #include <jerror.h>
+
+#include "video.h"
 
 /* Expanded data source object for memory input */
 
@@ -174,36 +169,48 @@ jpeg_memory_src (j_decompress_ptr cinfo, const JOCTET * buffer, size_t bufsize)
 	src->pub.bytes_in_buffer = bufsize;
 }
 
-// this include must stay down here to avoid typedef conflicts
-#include "video.h"
-
-static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height)
+static inline u32 coordsRGBA8(u32 x, u32 y, u32 w)
 {
-	u32 block, i, c, ar, gb;
-	u32 len = ((width+3)>>2)*((height+3)>>2)*32*2;
-	if(len%32) len += (32-len%32);
-	u8 * dst = (u8 *) memalign(32, len);
-	u8 * p = dst;
+	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
+}
 
-	for (block = 0; block < height; block += 4)
+static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize)
+{
+	u32 newWidth = width;
+	if(newWidth%4) newWidth += (4-newWidth%4);
+	u32 newHeight = height;
+	if(newHeight%4) newHeight += (4-newHeight%4);
+
+	int len = (newWidth * newHeight) << 2;
+	if(len%32) len += (32-len%32);
+	u8 *dst = memalign (32, len);
+
+	if(!dst)
+		return NULL;
+
+	int x, y, offset;
+	u8 *pixel;
+
+	for (y = 0; y < newHeight; y++)
 	{
-		for (i = 0; i < width; i += 4)
+		for (x = 0; x < newWidth; x++)
 		{
-			for (c = 0; c < 4; ++c) // Alpha and Red
+			offset = coordsRGBA8(x, y, newWidth);
+
+			if(x >= width || y >= height)
 			{
-				for (ar = 0; ar < 4; ++ar)
-				{
-					*p++ = 255;
-					*p++ = src[((i + ar) + ((block + c) * width)) * 3];
-				}
+				dst[offset] = 0;
+				dst[offset+1] = 255;
+				dst[offset+32] = 255;
+				dst[offset+33] = 255;
 			}
-			for (c = 0; c < 4; ++c) // Green and Blue
+			else
 			{
-				for (gb = 0; gb < 4; ++gb)
-				{
-					*p++ = src[(((i + gb) + ((block + c) * width)) * 3) + 1];
-					*p++ = src[(((i + gb) + ((block + c) * width)) * 3) + 2];
-				}
+				pixel = &src[rowsize*y+x*3];
+				dst[offset] = 255; // Alpha
+				dst[offset+1] = pixel[0]; // Red
+				dst[offset+32] = pixel[1]; // Green
+				dst[offset+33] = pixel[2]; // Blue
 			}
 		}
 	}
@@ -221,6 +228,9 @@ u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height)
 	cinfo.progress = NULL;
 	jpeg_memory_src(&cinfo, src, len);
 	jpeg_read_header(&cinfo, TRUE);
+	if(cinfo.jpeg_color_space == JCS_GRAYSCALE)
+		cinfo.out_color_space = JCS_RGB; 
+
 	jpeg_calc_output_dimensions(&cinfo);
 
 	if (cinfo.output_width > (u32)screenwidth || cinfo.output_height > (u32)screenheight)
@@ -235,12 +245,18 @@ u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height)
 
 	jpeg_start_decompress(&cinfo);
 
-	int rowsize = cinfo.output_width * cinfo.num_components;
+	int rowsize = cinfo.output_width * cinfo.output_components;
 	u8 *tmpData = (u8 *)malloc(rowsize * cinfo.output_height);
-
 	JSAMPROW row_pointer[1];
-
 	row_pointer[0] = (u8 *)malloc(rowsize);
+
+	if(!tmpData || !row_pointer[0])
+	{
+		jpeg_finish_decompress(&cinfo);
+		jpeg_destroy_decompress(&cinfo);
+		return NULL;
+	}
+
 	size_t location = 0;
 	while (cinfo.output_scanline < cinfo.output_height)
 	{
@@ -249,9 +265,13 @@ u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height)
 		location += rowsize;
 	}
 
-	*width = cinfo.output_width;
-	*height = cinfo.output_height;
-	u8 * dst = RawTo4x4RGBA(tmpData, *width, *height);
+	u8 * dst = RawTo4x4RGBA(tmpData, cinfo.output_width, cinfo.output_height, rowsize);
+
+	if(dst)
+	{
+		*width = cinfo.output_width;
+		*height = cinfo.output_height;
+	}
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);

@@ -48,7 +48,7 @@ static GuiImageData volumeMid(volume_mid_png);
 static GuiImageData volumeBottom(volume_bottom_png);
 static GuiImageData volumeEmpty(volume_empty_png);
 static GuiImageData volumeLine(volume_line_png);
-static GuiImage disabled(screenwidth,screenheight,(GXColor){0, 0, 0, 100});
+static GuiImage * disabled;
 static GuiTrigger * trigA = NULL;
 static GuiTrigger * trigB = NULL;
 static GuiTrigger * trigLeft = NULL;
@@ -76,6 +76,7 @@ static GuiText * statusText = NULL;
 
 static GuiWindow * videobar = NULL;
 static GuiWindow * audiobar = NULL;
+static GuiWindow * audiobar2 = NULL;
 static GuiWindow * picturebar = NULL;
 
 static GuiImageData * actionbarLeft = NULL;
@@ -349,7 +350,7 @@ static void *GuiThread (void *arg)
 
 			if(ExitRequested || ShutdownRequested)
 			{
-				for(i = 0; i < 255; i += 15)
+				for(i = 0; i <= 255; i += 15)
 				{
 					mainWindow->Draw();
 					Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor){0, 0, 0, i},1);
@@ -495,12 +496,12 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	promptWindow.SetEffect(EFFECT_FADE, 50);
 	CancelAction();
 
-	bool isDisabled = mainWindow->Find(&disabled);
+	bool isDisabled = mainWindow->Find(disabled);
 
 	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
 	if(!isDisabled)
-		mainWindow->Append(&disabled);
+		mainWindow->Append(disabled);
 	mainWindow->Append(&promptWindow);
 	ResumeGui();
 
@@ -519,7 +520,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
 	if(!isDisabled)
-		mainWindow->Remove(&disabled);
+		mainWindow->Remove(disabled);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 	return choice;
@@ -615,10 +616,10 @@ ProgressWindow(char *title, char *msg)
 
 	SuspendGui();
 	int oldState = mainWindow->GetState();
-	bool isDisabled = mainWindow->Find(&disabled);
+	bool isDisabled = mainWindow->Find(disabled);
 	mainWindow->SetState(STATE_DISABLED);
 	if(!isDisabled)
-		mainWindow->Append(&disabled);
+		mainWindow->Append(disabled);
 	mainWindow->Append(&promptWindow);
 	mainWindow->ChangeFocus(&promptWindow);
 	ResumeGui();
@@ -676,7 +677,7 @@ ProgressWindow(char *title, char *msg)
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
 	if(!isDisabled)
-		mainWindow->Remove(&disabled);
+		mainWindow->Remove(disabled);
 	mainWindow->SetState(oldState);
 	ResumeGui();
 }
@@ -843,7 +844,7 @@ void OnScreenKeyboard(char * var, u32 maxlen)
 
 	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
-	mainWindow->Append(&disabled);
+	mainWindow->Append(disabled);
 	mainWindow->Append(&keyboard);
 	ResumeGui();
 
@@ -864,7 +865,7 @@ void OnScreenKeyboard(char * var, u32 maxlen)
 
 	SuspendGui();
 	mainWindow->Remove(&keyboard);
-	mainWindow->Remove(&disabled);
+	mainWindow->Remove(disabled);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 }
@@ -928,7 +929,7 @@ SettingWindow(const char * title, GuiWindow * w)
 
 	SuspendGui();
 	mainWindow->SetState(STATE_DISABLED);
-	mainWindow->Append(&disabled);
+	mainWindow->Append(disabled);
 	mainWindow->Append(&promptWindow);
 	mainWindow->Append(w);
 	mainWindow->ChangeFocus(w);
@@ -946,7 +947,7 @@ SettingWindow(const char * title, GuiWindow * w)
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
 	mainWindow->Remove(w);
-	mainWindow->Remove(&disabled);
+	mainWindow->Remove(disabled);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 	return save;
@@ -1048,7 +1049,7 @@ static void CreditsWindow()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -1144,7 +1145,7 @@ static int LoadNewFile(int silent)
 {
 	if(!silent)
 	{
-		mainWindow->Append(&disabled);
+		mainWindow->Append(disabled);
 		mainWindow->SetState(STATE_DISABLED);
 		ShowAction("Loading...");
 	}
@@ -1169,7 +1170,7 @@ static int LoadNewFile(int silent)
 
 	if(!silent)
 	{
-		mainWindow->Remove(&disabled);
+		mainWindow->Remove(disabled);
 		mainWindow->SetState(STATE_DEFAULT);
 	}
 
@@ -1253,7 +1254,7 @@ static void MenuBrowse(int menu)
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	backBtnArrow.SetPosition(-54, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -1282,7 +1283,7 @@ static void MenuBrowse(int menu)
 	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && wiiAudioOnly()))
 		pagesize = 8;
 
-	GuiFileBrowser fileBrowser(640, pagesize);
+	GuiFileBrowser fileBrowser(screenwidth, pagesize);
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	fileBrowser.SetPosition(0, 90);
 
@@ -1323,17 +1324,17 @@ static void MenuBrowse(int menu)
 	// populate initial directory listing
 	if(strncmp(browser.dir, "http:", 5) == 0)
 	{
-		mainWindow->Append(&disabled);
+		mainWindow->Append(disabled);
 		mainWindow->SetState(STATE_DISABLED);
 		ShowAction("Loading...");
 	}
 
 	BrowserChangeFolder(false);
 
-	if(mainWindow->Find(&disabled))
+	if(mainWindow->Find(disabled))
 	{
 		CancelAction();
-		mainWindow->Remove(&disabled);
+		mainWindow->Remove(disabled);
 		mainWindow->SetState(STATE_DEFAULT);
 	}
 
@@ -1460,7 +1461,7 @@ static void MenuBrowse(int menu)
 					// parse as a playlist					
 					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
 					{
-						mainWindow->Append(&disabled);
+						mainWindow->Append(disabled);
 						mainWindow->SetState(STATE_DISABLED);
 						ShowAction("Loading...");
 						numItems = BrowserChangeFolder();
@@ -1483,7 +1484,7 @@ static void MenuBrowse(int menu)
 						else
 						{
 							CancelAction();
-							mainWindow->Remove(&disabled);
+							mainWindow->Remove(disabled);
 							mainWindow->SetState(STATE_DEFAULT);
 
 							fileBrowser.ResetState();
@@ -1495,7 +1496,7 @@ static void MenuBrowse(int menu)
 					else if(browserList[browser.selIndex].type != TYPE_FILE)
 					{
 						CancelAction();
-						mainWindow->Remove(&disabled);
+						mainWindow->Remove(disabled);
 						mainWindow->SetState(STATE_DEFAULT);
 						continue;
 					}
@@ -1507,8 +1508,8 @@ static void MenuBrowse(int menu)
 				if(!MusicPlaylistFind(loadedFile))
 					playlistIndex = -1; // we aren't playing a file in our playlist
 
-				if(!mainWindow->Find(&disabled))
-					mainWindow->Append(&disabled);
+				if(!mainWindow->Find(disabled))
+					mainWindow->Append(disabled);
 				mainWindow->SetState(STATE_DISABLED);
 				ShowAction("Loading...");
 
@@ -1518,7 +1519,7 @@ static void MenuBrowse(int menu)
 				if(res == 1) // loaded a video file
 					goto done;
 
-				mainWindow->Remove(&disabled);
+				mainWindow->Remove(disabled);
 				mainWindow->SetState(STATE_DEFAULT);
 
 				if(res == 2) // loaded an audio-only file
@@ -1781,8 +1782,6 @@ u8* picBuffer;
 static int loadPictures = 0; // reload pictures
 
 #define NUM_PICTURES 		7 // 1 image with a buffer of +/- 3 on each side
-#define PIC_WIDTH			240
-#define PIC_HEIGHT			380
 
 static GuiImage *pictureImg = NULL;
 static GuiButton *pictureBtn = NULL;
@@ -1816,7 +1815,8 @@ static void SetPicture(int picIndex, int browserIndex)
 		pictureIndexLoaded = browserIndex;
 		SuspendGui();
 		pictureImg->SetImage(picture[picIndex]);
-		pictureImg->SetScale(PIC_WIDTH, PIC_HEIGHT);
+		pictureImg->SetScale(screenwidth-410, screenheight-100);
+		pictureBtn->SetSize(picture[picIndex]->GetWidth()*pictureImg->GetScale(), picture[picIndex]->GetHeight()*pictureImg->GetScale());
 		pictureBtn->SetState(STATE_DEFAULT);
 		pictureImg->SetVisible(true);
 		ResumeGui();
@@ -2124,35 +2124,28 @@ static void MenuBrowsePictures()
 	GuiFileBrowser fileBrowser(380, pagesize);
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	fileBrowser.SetPosition(0, 90);
-	fileBrowser.SetRightCutoff();
 
 	GuiButton upOneLevelBtn(0,0);
 	upOneLevelBtn.SetTrigger(trigB);
 	upOneLevelBtn.SetSelectable(false);
 
 	GuiImage progressEmptyImg(&progressShortEmpty);
-	progressEmptyImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	progressEmptyImg.SetPosition(-30, 40);
+	progressEmptyImg.SetPosition(0, 0);
 	progressEmptyImg.SetVisible(false);
 	
 	GuiImage progressLeftImg(&progressLeft);
-	progressLeftImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	progressLeftImg.SetPosition(-262, 40);
+	progressLeftImg.SetPosition(0, 0);
 	progressLeftImg.SetVisible(false);
 	
 	GuiImage progressMidImg(&progressMid);
-	progressMidImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	progressMidImg.SetPosition(-262, 40);
+	progressMidImg.SetPosition(8, 0);
 	progressMidImg.SetTile(0);
 
 	GuiImage progressLineImg(&progressLine);
-	progressLineImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	progressLineImg.SetPosition(-254, 40);
 	progressLineImg.SetVisible(false);
 
 	GuiImage progressRightImg(&progressRight);
-	progressRightImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	progressRightImg.SetPosition(-30, 40);
+	progressRightImg.SetPosition(0, 0);
 	progressRightImg.SetVisible(false);
 
 	SuspendGui();
@@ -2162,15 +2155,24 @@ static void MenuBrowsePictures()
 
 	// populate initial directory listing
 	BrowserChangeFolder(false, true);
+	
+	GuiWindow progressWindow(240, 16);
+	progressWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	progressWindow.Append(&progressEmptyImg);
+	progressWindow.Append(&progressLeftImg);
+	progressWindow.Append(&progressMidImg);
+	progressWindow.Append(&progressLineImg);
+	progressWindow.Append(&progressRightImg);
+	
+	GuiWindow pictureWindow(screenwidth-400, 380);
+	pictureWindow.SetPosition(-30, 100);
+	pictureWindow.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	pictureWindow.Append(&progressWindow);
+	pictureWindow.Append(pictureBtn);
 
 	SetPicture(-1, -1);
 	SuspendGui();
-	mainWindow->Append(&progressEmptyImg);
-	mainWindow->Append(&progressLeftImg);
-	mainWindow->Append(&progressMidImg);
-	mainWindow->Append(&progressLineImg);
-	mainWindow->Append(&progressRightImg);
-	mainWindow->Append(pictureBtn);
+	mainWindow->Append(&pictureWindow);
 	ResumeGui();
 
 	// start picture thread
@@ -2223,7 +2225,7 @@ static void MenuBrowsePictures()
 				tile = 60*(done-0.02);
 				if(tile > 58) tile = 58;
 				progressMidImg.SetTile(tile);
-				progressLineImg.SetPosition(-240 + tile*4, 40);
+				progressLineImg.SetPosition(8 + tile*4, 0);
 				progressLineImg.SetVisible(true);
 			}
 
@@ -2319,12 +2321,7 @@ done:
 	SuspendPictureThread(); // halt picture thread
 	SuspendParseThread(); // halt parsing
 	SuspendGui();
-	mainWindow->Remove(pictureBtn);
-	mainWindow->Remove(&progressEmptyImg);
-	mainWindow->Remove(&progressLeftImg);
-	mainWindow->Remove(&progressMidImg);
-	mainWindow->Remove(&progressLineImg);
-	mainWindow->Remove(&progressRightImg);
+	mainWindow->Remove(&pictureWindow);
 	mainWindow->Remove(&fileBrowser);
 	mainWindow->Remove(&upOneLevelBtn);
 }
@@ -2341,7 +2338,7 @@ static void MenuDVD()
 
 	sprintf(loadedFile, "dvdnav://");
 	mainWindow->SetState(STATE_DISABLED);
-	mainWindow->Append(&disabled);
+	mainWindow->Append(disabled);
 	ShowAction("Loading...");
 	ShutdownMPlayer();
 	LoadMPlayer(); // signal MPlayer to load
@@ -2355,7 +2352,7 @@ static void MenuDVD()
 	
 	if(!guiShutdown) // load failed
 	{
-		mainWindow->Remove(&disabled);
+		mainWindow->Remove(disabled);
 		mainWindow->SetState(STATE_DEFAULT);
 		ErrorPrompt("Unrecognized DVD format!");
 	}
@@ -2399,7 +2396,7 @@ static void MenuSettingsGlobal()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -2409,7 +2406,7 @@ static void MenuSettingsGlobal()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetTrigger(trigB);
 
-	GuiOptionBrowser optionBrowser(640, 7, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol2Position(200);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -2768,7 +2765,7 @@ static void MenuSettingsVideos()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -2778,7 +2775,7 @@ static void MenuSettingsVideos()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetTrigger(trigB);
 
-	GuiOptionBrowser optionBrowser(640, 7, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -2922,7 +2919,7 @@ static void MenuSettingsMusic()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -2932,7 +2929,7 @@ static void MenuSettingsMusic()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetTrigger(trigB);
 
-	GuiOptionBrowser optionBrowser(640, 7, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3024,7 +3021,7 @@ static void MenuSettingsPictures()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3034,7 +3031,7 @@ static void MenuSettingsPictures()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetTrigger(trigB);
 
-	GuiOptionBrowser optionBrowser(640, 7, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3112,7 +3109,7 @@ static void MenuSettingsOnlineMedia()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3122,7 +3119,7 @@ static void MenuSettingsOnlineMedia()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetTrigger(trigB);
 
-	GuiOptionBrowser optionBrowser(640, 7, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3229,7 +3226,7 @@ static void MenuSettingsNetwork()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3243,7 +3240,7 @@ static void MenuSettingsNetwork()
 	addsmbBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	GuiImage addsmbBtnIcon(&iconSMB);
 	addsmbBtnIcon.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	addsmbBtnIcon.SetPosition(4,0);
+	addsmbBtnIcon.SetPosition(10,0);
 	GuiImage addsmbBtnImg(&btnOutline);
 	GuiImage addsmbBtnImgOver(&btnOutlineOver);
 	GuiButton addsmbBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -3260,7 +3257,7 @@ static void MenuSettingsNetwork()
 	addftpBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	GuiImage addftpBtnIcon(&iconFTP);
 	addftpBtnIcon.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	addftpBtnIcon.SetPosition(4,0);
+	addftpBtnIcon.SetPosition(10,0);
 	GuiImage addftpBtnImg(&btnOutline);
 	GuiImage addftpBtnImgOver(&btnOutlineOver);
 	GuiButton addftpBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -3273,7 +3270,7 @@ static void MenuSettingsNetwork()
 	addftpBtn.SetTrigger(trigA);
 	addftpBtn.SetEffectGrow();
 
-	GuiOptionBrowser optionBrowser(640, 6, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 6, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol1Position(30);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3368,7 +3365,7 @@ static void MenuSettingsNetworkSMB()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3390,7 +3387,7 @@ static void MenuSettingsNetworkSMB()
 	deleteBtn.SetTrigger(trigA);
 	deleteBtn.SetEffectGrow();
 
-	GuiOptionBrowser optionBrowser(640, 6, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 6, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3540,7 +3537,7 @@ static void MenuSettingsNetworkFTP()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3562,7 +3559,7 @@ static void MenuSettingsNetworkFTP()
 	deleteBtn.SetTrigger(trigA);
 	deleteBtn.SetEffectGrow();
 
-	GuiOptionBrowser optionBrowser(640, 6, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 6, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3697,7 +3694,7 @@ static void MenuSettingsSubtitles()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3707,7 +3704,7 @@ static void MenuSettingsSubtitles()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetTrigger(trigB);
 
-	GuiOptionBrowser optionBrowser(640, 7, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3801,7 +3798,7 @@ static void MenuSettings()
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(26, 11);
-	GuiButton backBtn(btnBottom.GetWidth(), btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3811,7 +3808,7 @@ static void MenuSettings()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetTrigger(trigB);
 
-	GuiOptionBrowser optionBrowser(640, 7, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
 
 	SuspendGui();
@@ -4251,6 +4248,7 @@ static void SetupGui()
 	// images
 	
 	bg = new GuiImageData(bg_png);
+	disabled = new GuiImage(screenwidth,screenheight,(GXColor){0, 0, 0, 100});
 
 	actionbarLeft = new GuiImageData(actionbar_left_png);	
 	actionbarMid = new GuiImageData(actionbar_mid_png);
@@ -4501,40 +4499,43 @@ static void SetupGui()
 	
 	audiobarNowPlaying[0] = new GuiText("now playing", 16, (GXColor){160, 160, 160, 255});
 	audiobarNowPlaying[0]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	audiobarNowPlaying[0]->SetPosition(-270, 0);
+	audiobarNowPlaying[0]->SetPosition(10, 0);
 	audiobarNowPlaying[0]->SetVisible(false);
 	
 	for(int i=1; i < 4; i++)
 	{
 		audiobarNowPlaying[i] = new GuiText(NULL, 16, (GXColor){255, 255, 255, 255});
 		audiobarNowPlaying[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-		audiobarNowPlaying[i]->SetPosition(-270, 20*i);
+		audiobarNowPlaying[i]->SetPosition(10, 20*i);
 		audiobarNowPlaying[i]->SetMaxWidth(250);
 		audiobarNowPlaying[i]->SetVisible(false);
 	}
 
-	audiobar = new GuiWindow(300, 80);
+	audiobar2 = new GuiWindow(300, 80);
+	audiobar2->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 
-	audiobar->Append(audiobarLeftImg);
-	audiobar->Append(audiobarMidImg);
-	audiobar->Append(audiobarRightImg);
-	audiobar->Append(audiobarProgressBtn);
-	audiobar->Append(audiobarProgressLeftImg);
-	audiobar->Append(audiobarProgressMidImg);
-	audiobar->Append(audiobarProgressLineImg);
-	audiobar->Append(audiobarProgressRightImg);
-	audiobar->Append(audiobarPlaylistBtn);
-	audiobar->Append(audiobarBackwardBtn);
-	audiobar->Append(audiobarPauseBtn);
-	audiobar->Append(audiobarForwardBtn);
-	audiobar->Append(audiobarModeBtn);
+	audiobar2->Append(audiobarLeftImg);
+	audiobar2->Append(audiobarMidImg);
+	audiobar2->Append(audiobarRightImg);
+	audiobar2->Append(audiobarProgressBtn);
+	audiobar2->Append(audiobarProgressLeftImg);
+	audiobar2->Append(audiobarProgressMidImg);
+	audiobar2->Append(audiobarProgressLineImg);
+	audiobar2->Append(audiobarProgressRightImg);
+	audiobar2->Append(audiobarPlaylistBtn);
+	audiobar2->Append(audiobarBackwardBtn);
+	audiobar2->Append(audiobarPauseBtn);
+	audiobar2->Append(audiobarForwardBtn);
+	audiobar2->Append(audiobarModeBtn);
+
+	audiobar = new GuiWindow(screenwidth-60, 80);
+	audiobar->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
+	audiobar->SetPosition(0, -30);
+	audiobar->Append(audiobar2);
 
 	for(int i=0; i < 4; i++)
 		audiobar->Append(audiobarNowPlaying[i]);
 
-	audiobar->SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
-	audiobar->SetPosition(-30, -30);
-	
 	// setup picture bar
 	
 	picturebarLeftImg = new GuiImage(actionbarLeft);
@@ -4698,7 +4699,9 @@ void WiiMenu()
 
 	if(videoScreenshot)
 	{
-		videoImg = new GuiImage(videoScreenshot, screenwidth, screenheight);
+		videoImg = new GuiImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
+		videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
+		videoImg->SetScaleY(screenheight/(float)vmode->viHeight);
 		mainWindow->Append(videoImg);
 		selectLoadedFile = 1; // video loaded - trigger browser to jump to it
 	}
@@ -4858,12 +4861,12 @@ void WiiMenu()
 
 	pictureImg = new GuiImage;
 	pictureImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	pictureBtn = new GuiButton(PIC_WIDTH, PIC_HEIGHT);
+	pictureBtn = new GuiButton(0, 0);
 	pictureBtn->SetImage(pictureImg);
 	pictureBtn->SetTrigger(trigA);
 	pictureBtn->SetSelectable(false);
-	pictureBtn->SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	pictureBtn->SetPosition(-30, 40);
+	pictureBtn->SetState(STATE_DISABLED);
+	pictureBtn->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 
 	StartGuiThreads();
 	ResumeGui();

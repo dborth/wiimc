@@ -108,11 +108,11 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 		optionVal[i]->SetPosition(250,-2);
 
 		optionBg[i] = new GuiImage(bgOptionsEntry);
-		optionBg[i]->SetTile(w/20);
+		optionBg[i]->SetTile(w/16);
 		optionBg[i]->SetPosition(-30, 0);
 
 		optionBgOver[i] = new GuiImage(bgOptionsEntryOver);
-		optionBgOver[i]->SetTile(w/20);
+		optionBgOver[i]->SetTile(w/16);
 		optionBgOver[i]->SetPosition(-30, -2);
 
 		optionIcon[i] = new GuiImage;

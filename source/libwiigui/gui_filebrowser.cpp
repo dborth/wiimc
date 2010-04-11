@@ -182,11 +182,11 @@ void GuiFileBrowser::MakeEntry(int i)
 	fileListText[i]->SetMaxWidth(width-92);
 
 	fileListBg[i] = new GuiImage(bgBrowseEntry);
-	fileListBg[i]->SetTile(width/20);
+	fileListBg[i]->SetTile(width/16);
 	fileListBg[i]->SetPosition(-30, 0);
 	
 	fileListBgOver[i] = new GuiImage(bgBrowseEntryOver);
-	fileListBgOver[i]->SetTile(width/20);
+	fileListBgOver[i]->SetTile(width/16);
 	fileListBgOver[i]->SetPosition(-30, -2);
 	
 	fileListIcon[i] = new GuiImage;
@@ -228,15 +228,6 @@ void GuiFileBrowser::ResetState()
 void GuiFileBrowser::TriggerUpdate()
 {
 	listChanged = true;
-}
-
-void GuiFileBrowser::SetRightCutoff()
-{
-	for(int i=0; i<size; i++)
-	{
-		fileListBg[i]->SetTile(width/20-1);
-		fileListBgOver[i]->SetTile(width/20-1);
-	}
 }
 
 void GuiFileBrowser::ChangeSize(int newsize)

@@ -239,7 +239,8 @@ void GuiImage::Draw()
 	if(!image || !this->IsVisible() || tile == 0)
 		return;
 
-	float currScale = this->GetScale();
+	float currScaleX = this->GetScaleX();
+	float currScaleY = this->GetScaleY();
 	int currLeft = this->GetLeft();
 	int currTop = this->GetTop();
 	int alpha = this->GetAlpha();
@@ -248,19 +249,19 @@ void GuiImage::Draw()
 	{
 		for(int i=0; i<tile; ++i)
 		{
-			Menu_DrawImg(currLeft+width*i, currTop, width, height, image, imageangle, currScale, currScale, alpha);
+			Menu_DrawImg(currLeft+width*i, currTop, width, height, image, imageangle, currScaleX, currScaleY, alpha);
 		}
 	}
 	else if(tileVertical >= 0)
 	{
 		for(int i=0; i<tileVertical; ++i)
 		{
-			Menu_DrawImg(currLeft, currTop+height*i, width, height, image, imageangle, currScale, currScale, alpha);
+			Menu_DrawImg(currLeft, currTop+height*i, width, height, image, imageangle, currScaleX, currScaleY, alpha);
 		}
 	}
 	else
 	{
-		Menu_DrawImg(currLeft, currTop, width, height, image, imageangle, currScale, currScale, alpha);
+		Menu_DrawImg(currLeft, currTop, width, height, image, imageangle, currScaleX, currScaleY, alpha);
 	}
 
 	if(stripe > 0)

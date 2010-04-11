@@ -49,7 +49,7 @@ GuiTooltip::~GuiTooltip()
 
 float GuiTooltip::GetScale()
 {
-	return (scale * scaleDyn);
+	return (xscale * scaleDyn);
 }
 
 /* !Sets the text of the GuiTooltip element

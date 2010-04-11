@@ -58,9 +58,6 @@ extern int controlledbygui;
 extern u32 whichfb;
 extern u32 *xfb[2];
 
-extern int screenwidth;
-extern int screenheight;
-
 static u32 whichtex=0;
 
 static int hor_pos=0, vert_pos=0;
@@ -397,7 +394,7 @@ void DrawMPlayer()
 		Mtx44 p;
 		draw_initYUV();
 		draw_scaling();
-		guOrtho(p, screenheight / 2, -(screenheight / 2), -(screenwidth / 2), screenwidth / 2, 10, 1000);
+		guOrtho(p, 240, -240, -320, 320, 10, 1000);
 		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
 	}
@@ -467,7 +464,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_SetZMode(GX_FALSE, GX_ALWAYS, GX_TRUE);
 	GX_CopyDisp(xfb[whichfb ^ 1], GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
-	guOrtho(p, screenheight / 2, -(screenheight / 2), -(screenwidth / 2), screenwidth / 2, 10, 1000);
+	guOrtho(p, 240, -240, -320, 320, 10, 1000);
 	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);

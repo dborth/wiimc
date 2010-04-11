@@ -1182,7 +1182,9 @@ static int LoadNewFile(int silent)
 		ErrorPrompt("Error loading file!");
 		return 0;
 	}
-	
+
+	wiiSetVolume(WiiSettings.volume);
+
 	if(wiiIsPaused())
 		wiiPause(); // unpause playback
 
@@ -2439,6 +2441,7 @@ static void MenuSettingsGlobal()
 				WiiSettings.volume += 10;
 				if(WiiSettings.volume > 100)
 					WiiSettings.volume = 0;
+				wiiSetVolume(WiiSettings.volume);
 				break;
 			case 3:
 				WiiSettings.exitAction++;

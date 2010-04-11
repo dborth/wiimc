@@ -166,7 +166,7 @@ prepareSettingsData ()
 	// Video
 	createXMLSection("Video", "Video Settings");
 	createXMLSetting("frameDropping", "Frame dropping compensation", toStr(WiiSettings.frameDropping));
-	createXMLSetting("aspectRatio", "Aspect ratio", toStr(WiiSettings.aspectRatio));
+	createXMLSetting("aspectRatio", "Aspect ratio", FtoStr(WiiSettings.aspectRatio));
 	createXMLSetting("videoZoomHor", "Horizontal video zoom", FtoStr(WiiSettings.videoZoomHor));
 	createXMLSetting("videoZoomVert", "Vertical video zoom", FtoStr(WiiSettings.videoZoomVert));
 	createXMLSetting("videoXshift", "Video X offset", toStr(WiiSettings.videoXshift));

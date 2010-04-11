@@ -24,6 +24,8 @@
 #include <malloc.h>
 #include <string.h>
 
+#include "video.h"
+
 #define DefaultXPelsPerMeter 3780 // set to a default of 96 dpi 
 #define DefaultYPelsPerMeter 3780 // set to a default of 96 dpi
 
@@ -1217,6 +1219,10 @@ u8 * BMP::DecodeTo4x4RGB8()
 	if(len%32) len += (32-len%32);
 
 	u8 * dst = (u8 *) memalign(32, len);
+
+	if(!dst)
+		return NULL;
+
 	int x, y, offset;
 
 	for (y = 0; y < newHeight; y++)
@@ -1370,9 +1376,6 @@ static bool Rescale(BMP& InputImage, char mode, int NewDimension)
 	return true;
 }
 
-#define MAX_WIDTH	640
-#define MAX_HEIGHT	480
-
 u8 * DecodeBMP(const u8 * src, u32 srclen, int * width, int * height)
 {
 	BMP bmp;
@@ -1383,14 +1386,20 @@ u8 * DecodeBMP(const u8 * src, u32 srclen, int * width, int * height)
 	if (!bmp.Read(&bmpFile))
 		return NULL;
 
-	if(bmp.TellWidth() > MAX_WIDTH || bmp.TellHeight() > MAX_HEIGHT)
+	if(bmp.TellWidth() > screenwidth || bmp.TellHeight() > screenheight)
 	{
-		if((float)bmp.TellHeight()/(float)bmp.TellWidth() > MAX_HEIGHT/MAX_WIDTH)
-			Rescale(bmp, 'H', MAX_HEIGHT);
+		if((float)bmp.TellHeight()/(float)bmp.TellWidth() > screenheight/screenwidth)
+			Rescale(bmp, 'H', screenheight);
 		else
-			Rescale(bmp, 'W', MAX_WIDTH);
+			Rescale(bmp, 'W', screenwidth);
 	}
-	*width = bmp.TellWidth();
-	*height = bmp.TellHeight();
-	return bmp.DecodeTo4x4RGB8();
+
+	u8 *dst = bmp.DecodeTo4x4RGB8();
+
+	if(dst)
+	{
+		*width = bmp.TellWidth();
+		*height = bmp.TellHeight();
+	}
+	return dst;
 }

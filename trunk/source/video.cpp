@@ -132,9 +132,14 @@ void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[],
 	if(data == NULL)
 		return;
 
+	// if width/height are not multiples of 4, assume that we correctly 
+	// padded the texture and also pad the dimensions
+	if(width%4) width += (4-width%4);
+	if(height%4) height += (4-height%4);
+
 	GXTexObj texObj;
 
-	GX_InitTexObj(&texObj, data, width,height, GX_TF_RGBA8,GX_CLAMP, GX_CLAMP,GX_FALSE);
+	GX_InitTexObj(&texObj, data, width, height, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
 	GX_LoadTexObj(&texObj, GX_TEXMAP0);
 	GX_InvalidateTexAll();
 

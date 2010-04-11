@@ -532,8 +532,11 @@ PNGU_u8 * DecodePNG(const PNGU_u8 *src, int * width, int * height)
 	{
 		dst = PNGU_DecodeTo4x4RGBA8 (ctx, imgProp.imgWidth, imgProp.imgHeight, 255);
 		
-		*width = imgProp.imgWidth;
-		*height = imgProp.imgHeight;
+		if(dst)
+		{
+			*width = imgProp.imgWidth;
+			*height = imgProp.imgHeight;
+		}
 	}
 		
 	PNGU_ReleaseImageContext (ctx);

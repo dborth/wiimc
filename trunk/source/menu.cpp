@@ -1507,8 +1507,7 @@ static void MenuBrowse(int menu)
 				if(numItems == 0)
 					GetFullPath(browser.selIndex, loadedFile);
 
-				if(!MusicPlaylistFind(loadedFile))
-					playlistIndex = -1; // we aren't playing a file in our playlist
+				playlistIndex = MusicPlaylistFindIndex(loadedFile);
 
 				if(!mainWindow->Find(disabled))
 					mainWindow->Append(disabled);
@@ -1527,7 +1526,7 @@ static void MenuBrowse(int menu)
 				if(res == 2) // loaded an audio-only file
 				{
 					FindFile();
-	
+
 					// re-adjust for audio bar, if necessary
 					if(pagesize != 8)
 					{

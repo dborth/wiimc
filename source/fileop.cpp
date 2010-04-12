@@ -1013,25 +1013,6 @@ bool IsAllowedExt(char *ext)
 
 void FindFile()
 {
-	// clear any play icons
-	for(int i=0; i < browser.numEntries; i++)
-	{
-		if(browserList[i].icon == ICON_PLAY)
-		{
-			if(menuCurrent == MENU_BROWSE_MUSIC)
-			{
-				if(MusicPlaylistFind(i))
-					browserList[i].icon = ICON_FILE_CHECKED;
-				else
-					browserList[i].icon = ICON_FILE;
-			}
-			else
-			{
-				browserList[i].icon = ICON_NONE;
-			}
-		}
-	}
-
 	if(loadedFile[0] == 0 || browser.dir[0] == 0)
 	{
 		findLoadedFile = 0;

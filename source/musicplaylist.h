@@ -12,7 +12,7 @@
 
 void MusicPlaylistClear();
 int MusicPlaylistLoad();
-bool MusicPlaylistFind(char *path);
+int MusicPlaylistFindIndex(char *path);
 bool MusicPlaylistFind(int index);
 bool MusicPlaylistEnqueue(int index);
 void MusicPlaylistDequeue(int index);

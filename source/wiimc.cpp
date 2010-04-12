@@ -246,6 +246,29 @@ mplayerthread (void *arg)
 		{
 			controlledbygui = 0;
 			mplayer_loadfile(loadedFile);
+
+			if(WiiSettings.playOrder == PLAY_SINGLE)
+				playlistIndex = -1; // do not play any more files
+
+			// clear any play icons
+			for(int i=0; i < browser.numEntries; i++)
+			{
+				if(browserList[i].icon == ICON_PLAY)
+				{
+					if(menuCurrent == MENU_BROWSE_MUSIC)
+					{
+						if(MusicPlaylistFind(i))
+							browserList[i].icon = ICON_FILE_CHECKED;
+						else
+							browserList[i].icon = ICON_FILE;
+					}
+					else
+					{
+						browserList[i].icon = ICON_NONE;
+					}
+				}
+			}
+			findLoadedFile = 2; // trigger file browser update
 		}
 
 		if(controlledbygui != 2 && playlistIndex >= 0)

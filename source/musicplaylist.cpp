@@ -87,14 +87,14 @@ int MusicPlaylistLoad()
 	return browser.numEntries;
 }
 
-bool MusicPlaylistFind(char * fullpath)
+int MusicPlaylistFindIndex(char * fullpath)
 {
 	for(int i=0; i < playlistSize; i++)
 	{
 		if(strcmp(fullpath, playlist[i].filepath) == 0)
-			return true;
+			return i;
 	}
-	return false;
+	return -1;
 }
 
 bool MusicPlaylistFind(int index)
@@ -105,7 +105,10 @@ bool MusicPlaylistFind(int index)
 	char fullpath[MAXPATHLEN];
 	GetFullPath(index, fullpath);
 
-	return MusicPlaylistFind(fullpath);
+	if(MusicPlaylistFindIndex(fullpath) >= 0)
+		return true;
+
+	return false;
 }
 
 /****************************************************************************
@@ -116,7 +119,7 @@ bool MusicPlaylistFind(int index)
  ***************************************************************************/
 static bool EnqueueFile(char * path, char * name)
 {
-	if(path == NULL || name == NULL || strcmp(name,".") == 0 || MusicPlaylistFind(path))
+	if(path == NULL || name == NULL || strcmp(name,".") == 0 || MusicPlaylistFindIndex(path) >= 0)
 		return false;
 
 	char *ext = GetExt(path);

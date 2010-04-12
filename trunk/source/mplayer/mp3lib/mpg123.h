@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: mpg123.h 30724 2010-02-23 22:29:57Z reimar $
+ * $Id: mpg123.h 31032 2010-04-12 10:56:17Z diego $
  */
 
 /*
@@ -15,10 +15,10 @@
 #include "config.h"
 
 #ifndef M_PI
-#define M_PI		3.141592653589793238462
+#define M_PI            3.141592653589793238462
 #endif
 #ifndef M_SQRT2
-#define M_SQRT2		1.414213562373095048802
+#define M_SQRT2         1.414213562373095048802
 #endif
 #define REAL_IS_FLOAT
 #define NEW_DCT9

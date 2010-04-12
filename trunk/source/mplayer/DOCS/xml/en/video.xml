@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 30818 $ -->
+<!-- $Revision: 31032 $ -->
 <chapter id="video">
 <title>Video output devices</title>
 
@@ -2255,7 +2255,7 @@ issue the following command
 <screen>
 mplayer -vo zr -zrdev /dev/video0 -zrcrop 352x288+352+0 -zrxdoff 0 -zrbw \
     -zrcrop 352x288+0+0 -zrdev /dev/video1 -zrquality 10 \
-	<replaceable>movie.avi</replaceable>
+        <replaceable>movie.avi</replaceable>
 </screen>
 </para>
 

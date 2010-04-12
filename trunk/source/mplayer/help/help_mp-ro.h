@@ -1,5 +1,5 @@
 // FIXME: This needs to be redone properly.
-// Partially sync'ed with help_mp-en.h $Revision: 29305 $
+// Partially sync'ed with help_mp-en.h $Revision: 31032 $
 // This is a retranslation of the file by Bogdan Butnaru <bogdanb@fastmail.fm>,
 // based on the previous translation by Codre Adrian
 // <codreadrian@softhome.net> (address bounces).
@@ -68,7 +68,7 @@ static const char help_text[]=
 #define MSGTR_NoHomeDir "Nu gãsesc directorul HOME.\n"
 #define MSGTR_GetpathProblem "get_path(\"config\") problem\n"
 #define MSGTR_CreatingCfgFile "Creez fiºierul de configurare: %s\n"\
-	"Încearcã '-vo help' pentru o listã cu driveri video disponibili.\n"
+        "Încearcã '-vo help' pentru o listã cu driveri video disponibili.\n"
 #define MSGTR_BuiltinCodecsConf "Folosesc 'codecs.conf' built-in.\n"
 #define MSGTR_CantLoadFont "Nu pot încãrca fontul: %s\n"
 #define MSGTR_CantLoadSub "Nu pot încãrca subtitrarea: %s\n"

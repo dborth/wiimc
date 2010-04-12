@@ -518,19 +518,16 @@ int ff_probe_input_buffer(ByteIOContext **pb, AVInputFormat **fmt,
         }
     }
 
-    av_free(buf);
-
     if (!*fmt) {
+        av_free(buf);
         return AVERROR_INVALIDDATA;
     }
 
-    if (url_fseek(*pb, 0, SEEK_SET) < 0) {
-        url_fclose(*pb);
-        if (url_fopen(pb, filename, URL_RDONLY) < 0)
-            return AVERROR(EIO);
-    }
+    /* rewind. reuse probe buffer to avoid seeking */
+    if ((ret = ff_rewind_with_probe_data(*pb, buf, pd.buf_size)) < 0)
+        av_free(buf);
 
-    return 0;
+    return ret;
 }
 
 int av_open_input_file(AVFormatContext **ic_ptr, const char *filename,
@@ -680,7 +677,8 @@ int av_read_packet(AVFormatContext *s, AVPacket *pkt)
             memset(pd->buf+pd->buf_size, 0, AVPROBE_PADDING_SIZE);
 
             if(av_log2(pd->buf_size) != av_log2(pd->buf_size - pkt->size)){
-                set_codec_from_probe_data(s, st, pd, 1);
+                //FIXME we dont reduce score to 0 for the case of running out of buffer space in bytes
+                set_codec_from_probe_data(s, st, pd, st->probe_packets > 0 ? AVPROBE_SCORE_MAX/4 : 0);
                 if(st->codec->codec_id != CODEC_ID_PROBE){
                     pd->buf_size=0;
                     av_freep(&pd->buf);
@@ -743,6 +741,11 @@ static void compute_frame_duration(int *pnum, int *pden, AVStream *st,
             *pden = st->codec->time_base.den;
             if (pc && pc->repeat_pict) {
                 *pnum = (*pnum) * (1 + pc->repeat_pict);
+            }
+            //If this codec can be interlaced or progressive then we need a parser to compute duration of a packet
+            //Thus if we have no parser in such case leave duration undefined.
+            if(st->codec->ticks_per_frame>1 && !pc){
+                *pnum = *pden = 0;
             }
         }
         break;

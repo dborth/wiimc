@@ -2147,9 +2147,10 @@ static void MenuBrowsePictures()
 	float done;
 	int tile = 0;
 
-	GuiFileBrowser fileBrowser(380, pagesize);
+	GuiFileBrowser fileBrowser(388, pagesize);
 	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	fileBrowser.SetPosition(0, 90);
+	fileBrowser.SetRightCutoff();
 
 	GuiButton upOneLevelBtn(0,0);
 	upOneLevelBtn.SetTrigger(trigB);
@@ -2190,8 +2191,8 @@ static void MenuBrowsePictures()
 	progressWindow.Append(&progressLineImg);
 	progressWindow.Append(&progressRightImg);
 	
-	GuiWindow pictureWindow(screenwidth-400, 380);
-	pictureWindow.SetPosition(-30, 100);
+	GuiWindow pictureWindow(screenwidth-370, 390);
+	pictureWindow.SetPosition(0, 90);
 	pictureWindow.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	pictureWindow.Append(&progressWindow);
 	pictureWindow.Append(pictureBtn);

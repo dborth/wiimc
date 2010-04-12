@@ -909,7 +909,7 @@ void CreateLoadPath(char * origpath)
 		sprintf(loadPath, "sd1:/%s", &origpath[5]);
 	else if(strncmp(origpath, "sd", 2) == 0)
 		sprintf(loadPath, "sd1:/%s", &origpath[4]);
-	else if(strncmp(origpath, "usb", 2) == 0)
+	else if(strncmp(origpath, "usb", 3) == 0)
 		sprintf(loadPath, "usb1:/%s", &origpath[5]);
 	else
 		return;

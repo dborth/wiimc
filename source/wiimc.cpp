@@ -210,8 +210,19 @@ void FindNextAudioFile()
 	}
 	else if(WiiSettings.playOrder == PLAY_SHUFFLE)
 	{
-		int n = (double)(rand() * ( 1.0 / ( RAND_MAX + 1.0 ))) * (playlistSize-1);
-		playlistIndex = n;
+		if(playlistSize == 1)
+		{
+			playlistIndex = 0;
+		}
+		else
+		{
+			int n = -1;
+
+			// don't select the same song twice
+			while(n < 0 || n >= playlistSize || n == playlistIndex)
+				n = (int)(((double)rand() / double(RAND_MAX + 1.0)) * playlistSize);
+			playlistIndex = n;
+		}
 	}
 	else if(playlistIndex == -1 || playlistIndex >= playlistSize)
 	{

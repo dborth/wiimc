@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: decode_i586.c 30209 2010-01-04 19:36:18Z diego $
+ * $Id: decode_i586.c 31032 2010-04-12 10:56:17Z diego $
  */
 
 /*
@@ -27,7 +27,7 @@
 *
 * Stefan Bieschewski <stb@acm.org>
 *
-* $Id: decode_i586.c 30209 2010-01-04 19:36:18Z diego $
+* $Id: decode_i586.c 31032 2010-04-12 10:56:17Z diego $
 */
 #include "config.h"
 #include "mangle.h"
@@ -311,8 +311,8 @@ int synth_1to1_pent(real *bandPtr, int channel, short *samples)
 "        jnz .L68\n\t"
 "        movl %%edi,%%eax\n\t"
 "        movl "MANGLE(saved_ebp)",%%ebp\n\t"
-	:"=a"(retval)
-	:"m"(bandPtr),"m"(channel),"m"(samples),"m"(tmp[0])
-	:"memory","%edi","%esi","%ebx","%ecx","%edx");
+        :"=a"(retval)
+        :"m"(bandPtr),"m"(channel),"m"(samples),"m"(tmp[0])
+        :"memory","%edi","%esi","%ebx","%ecx","%edx");
   return retval;
 }

@@ -30,6 +30,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "libavutil/intmath.h"
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 #include "dsputil.h"
 #include "fft.h"
@@ -230,7 +232,7 @@ typedef struct {
     /* Subband samples history (for ADPCM) */
     float subband_samples_hist[DCA_PRIM_CHANNELS_MAX][DCA_SUBBANDS][4];
     DECLARE_ALIGNED(16, float, subband_fir_hist)[DCA_PRIM_CHANNELS_MAX][512];
-    float subband_fir_noidea[DCA_PRIM_CHANNELS_MAX][32];
+    DECLARE_ALIGNED(16, float, subband_fir_noidea)[DCA_PRIM_CHANNELS_MAX][32];
     int hist_index[DCA_PRIM_CHANNELS_MAX];
     DECLARE_ALIGNED(16, float, raXin)[32];
 
@@ -253,6 +255,7 @@ typedef struct {
     int debug_flag;             ///< used for suppressing repeated error messages output
     DSPContext dsp;
     FFTContext imdct;
+    SynthFilterContext synth;
 } DCAContext;
 
 static const uint16_t dca_vlc_offs[] = {
@@ -755,6 +758,7 @@ static void qmf_32_subbands(DCAContext * s, int chans,
     const float *prCoeff;
     int i;
 
+    int sb_act = s->subband_activity[chans];
     int subindex;
 
     scale *= sqrt(1/8.0);
@@ -768,14 +772,14 @@ static void qmf_32_subbands(DCAContext * s, int chans,
     /* Reconstructed channel sample index */
     for (subindex = 0; subindex < 8; subindex++) {
         /* Load in one sample from each subband and clear inactive subbands */
-        for (i = 0; i < s->subband_activity[chans]; i++){
-            if((i-1)&2) s->raXin[i] = -samples_in[i][subindex];
-            else        s->raXin[i] =  samples_in[i][subindex];
+        for (i = 0; i < sb_act; i++){
+            uint32_t v = AV_RN32A(&samples_in[i][subindex]) ^ ((i-1)&2)<<30;
+            AV_WN32A(&s->raXin[i], v);
         }
         for (; i < 32; i++)
             s->raXin[i] = 0.0;
 
-        ff_synth_filter_float(&s->imdct,
+        s->synth.synth_filter_float(&s->imdct,
                               s->subband_fir_hist[chans], &s->hist_index[chans],
                               s->subband_fir_noidea[chans], prCoeff,
                               samples_out, s->raXin, scale, bias);
@@ -799,28 +803,37 @@ static void lfe_interpolation_fir(int decimation_select,
 
     int decifactor, k, j;
     const float *prCoeff;
-
-    int interp_index = 0;       /* Index to the interpolated samples */
     int deciindex;
 
     /* Select decimation filter */
     if (decimation_select == 1) {
-        decifactor = 128;
+        decifactor = 64;
         prCoeff = lfe_fir_128;
     } else {
-        decifactor = 64;
+        decifactor = 32;
         prCoeff = lfe_fir_64;
     }
     /* Interpolation */
     for (deciindex = 0; deciindex < num_deci_sample; deciindex++) {
-        /* One decimated sample generates decifactor interpolated ones */
+        float *samples_out2 = samples_out + decifactor;
+        const float *cf0 = prCoeff;
+        const float *cf1 = prCoeff + 256;
+
+        /* One decimated sample generates 2*decifactor interpolated ones */
         for (k = 0; k < decifactor; k++) {
-            float rTmp = 0.0;
-            //FIXME the coeffs are symetric, fix that
-            for (j = 0; j < 512 / decifactor; j++)
-                rTmp += samples_in[deciindex - j] * prCoeff[k + j * decifactor];
-            samples_out[interp_index++] = (rTmp * scale) + bias;
+            float v0 = 0.0;
+            float v1 = 0.0;
+            for (j = 0; j < 256 / decifactor; j++) {
+                float s = samples_in[-j];
+                v0 += s * *cf0++;
+                v1 += s * *--cf1;
+            }
+            *samples_out++  = (v0 * scale) + bias;
+            *samples_out2++ = (v1 * scale) + bias;
         }
+
+        samples_in++;
+        samples_out += decifactor;
     }
 }
 
@@ -895,8 +908,9 @@ static int decode_blockcode(int code, int levels, int *values)
     int offset = (levels - 1) >> 1;
 
     for (i = 0; i < 4; i++) {
-        values[i] = (code % levels) - offset;
-        code /= levels;
+        int div = FASTDIV(code, levels);
+        values[i] = code - offset - div*levels;
+        code = div;
     }
 
     if (code == 0)
@@ -1298,6 +1312,7 @@ static av_cold int dca_decode_init(AVCodecContext * avctx)
 
     dsputil_init(&s->dsp, avctx);
     ff_mdct_init(&s->imdct, 6, 1, 1.0);
+    ff_synth_filter_init(&s->synth);
 
     for(i = 0; i < 6; i++)
         s->samples_chanptr[i] = s->samples + i * 256;

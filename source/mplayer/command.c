@@ -2773,6 +2773,17 @@ int run_command(MPContext * mpctx, mp_cmd_t * cmd)
 	    brk_cmd = 1;
 	    break;
 
+	case MP_CMD_OSD_SHOW_PROGRESSION:{
+		int len = demuxer_get_time_length(mpctx->demuxer);
+		int pts = demuxer_get_current_time(mpctx->demuxer);
+		set_osd_bar(0, "Position", 0, 100, demuxer_get_percent_pos(mpctx->demuxer));
+		set_osd_msg(OSD_MSG_TEXT, 1, osd_duration,
+			    "%c %02d:%02d:%02d / %02d:%02d:%02d",
+			    mpctx->osd_function, pts/3600, (pts/60)%60, pts%60,
+			    len/3600, (len/60)%60, len%60);
+	    }
+	    break;
+
 #ifdef CONFIG_RADIO
 	case MP_CMD_RADIO_STEP_CHANNEL:
 	    if (mpctx->demuxer->stream->type == STREAMTYPE_RADIO) {
@@ -3281,6 +3292,43 @@ int run_command(MPContext * mpctx, mp_cmd_t * cmd)
 
 #endif
 
+    case MP_CMD_AF_SWITCH:
+        if (sh_audio)
+        {
+            af_uninit(mpctx->mixer.afilter);
+            af_init(mpctx->mixer.afilter);
+        }
+    case MP_CMD_AF_ADD:
+    case MP_CMD_AF_DEL:
+        if (!sh_audio)
+            break;
+        {
+            char* af_args = strdup(cmd->args[0].v.s);
+            char* af_commands = af_args;
+            char* af_command;
+            af_instance_t* af;
+            while ((af_command = strsep(&af_commands, ",")) != NULL)
+            {
+                if (cmd->id == MP_CMD_AF_DEL)
+                {
+                    af = af_get(mpctx->mixer.afilter, af_command);
+                    if (af != NULL)
+                        af_remove(mpctx->mixer.afilter, af);
+                }
+                else
+                    af_add(mpctx->mixer.afilter, af_command);
+            }
+            build_afilter_chain(sh_audio, &ao_data);
+            free(af_args);
+        }
+        break;
+    case MP_CMD_AF_CLR:
+        if (!sh_audio)
+            break;
+        af_uninit(mpctx->mixer.afilter);
+        af_init(mpctx->mixer.afilter);
+        build_afilter_chain(sh_audio, &ao_data);
+        break;
 	default:
 #ifdef CONFIG_GUI
 	    if ((use_gui) && (cmd->id > MP_CMD_GUI_EVENTS))

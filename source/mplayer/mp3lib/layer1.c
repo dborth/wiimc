@@ -11,7 +11,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: layer1.c 30675 2010-02-20 21:02:49Z diego $
+ * $Id: layer1.c 31032 2010-04-12 10:56:17Z diego $
  *
  * The above-mentioned README file has the following to say about licensing:
  *
@@ -61,7 +61,7 @@ static void I_step_one(unsigned int balloc[], unsigned int scale_index[2][SBLIMI
 }
 
 static void I_step_two(real fraction[2][SBLIMIT],unsigned int balloc[2*SBLIMIT],
-	unsigned int scale_index[2][SBLIMIT],struct frame *fr)
+                       unsigned int scale_index[2][SBLIMIT],struct frame *fr)
 {
   int i,n;
   int smpb[2*SBLIMIT]; /* values: 0-65535 */

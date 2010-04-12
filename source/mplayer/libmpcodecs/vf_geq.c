@@ -37,7 +37,7 @@
 #include "libavcodec/eval.h"
 
 struct vf_priv_s {
-    AVEvalExpr * e[3];
+    AVExpr * e[3];
     int framenum;
     mp_image_t *mpi;
 };
@@ -116,7 +116,8 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
             const_values[3]=y;
             for(x=0; x<w; x++){
                 const_values[2]=x;
-                dst[x+y* dst_stride]= ff_parse_eval(vf->priv->e[plane], const_values, vf);
+                dst[x + y * dst_stride] = ff_eval_expr(vf->priv->e[plane],
+                                                       const_values, vf);
             }
         }
     }

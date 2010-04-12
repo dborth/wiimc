@@ -230,6 +230,15 @@ void GuiFileBrowser::TriggerUpdate()
 	listChanged = true;
 }
 
+void GuiFileBrowser::SetRightCutoff()
+{
+	for(int i=0; i<size; i++)
+	{
+		fileListBg[i]->SetTile(width/16-1); 
+		fileListBgOver[i]->SetTile(width/16-1); 
+	}
+}
+
 void GuiFileBrowser::ChangeSize(int newsize)
 {
 	if(newsize == size)

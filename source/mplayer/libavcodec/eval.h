@@ -44,12 +44,12 @@ typedef struct AVExpr AVExpr;
  * @return the value of the expression
  */
 double ff_parse_and_eval_expr(const char *s, const double *const_value, const char * const *const_name,
-               double (**func1)(void *, double), const char * const *func1_name,
-               double (**func2)(void *, double, double), const char * const *func2_name,
+               double (* const *func1)(void *, double), const char * const *func1_name,
+               double (* const *func2)(void *, double, double), const char * const *func2_name,
                void *opaque, const char **error);
 
 /**
- * Parses a expression.
+ * Parses an expression.
  *
  * @param s expression as a zero terminated string for example "1+2^3+5*5+sin(2/3)"
  * @param func1 NULL terminated array of function pointers for functions which take 1 argument
@@ -62,8 +62,8 @@ double ff_parse_and_eval_expr(const char *s, const double *const_value, const ch
  *         NULL if anything went wrong
  */
 AVExpr *ff_parse_expr(const char *s, const char * const *const_name,
-               double (**func1)(void *, double), const char * const *func1_name,
-               double (**func2)(void *, double, double), const char * const *func2_name,
+               double (* const *func1)(void *, double), const char * const *func1_name,
+               double (* const *func2)(void *, double, double), const char * const *func2_name,
                const char **error);
 
 /**

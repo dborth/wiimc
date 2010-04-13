@@ -2478,6 +2478,7 @@ static double update_video(int *blit_frame)
 static void pause_loop(void)
 {
     mp_cmd_t* cmd = NULL;
+    /*
     if (!quiet) {
         // Small hack to display the pause message on the OSD line.
         // The pause string is: "\n == PAUSE == \r" so we need to
@@ -2492,6 +2493,8 @@ static void pause_loop(void)
             mp_msg(MSGT_CPLAYER,MSGL_STATUS,MSGTR_Paused);
         mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_PAUSED\n");
     }
+    */
+    printf("PAUSE\n");
 #ifdef CONFIG_GUI
     if (use_gui)
         guiGetEvent(guiCEvent, (char *)guiSetPause);
@@ -2532,11 +2535,19 @@ static void pause_loop(void)
     {
     	DrawMPlayer();
     	VIDEO_WaitVSync();
+    	usec_sleep(100);
     }
 
     if(controlledbygui == 2) // mplayer shutdown requested!
+    {
+        if (cmd && cmd->id == MP_CMD_PAUSE) {
+            cmd = mp_input_get_cmd(0,1,0);
+            mp_cmd_free(cmd);
+        }
+        mpctx->osd_function=OSD_PLAY;
     	return;
     }
+   }
 #else
         usec_sleep(20000);
 #endif
@@ -2546,16 +2557,19 @@ static void pause_loop(void)
     }
     mpctx->osd_function=OSD_PLAY;
 #ifdef GEKKO
+
 	cmd = mp_input_get_cmd(0, 0, 1);
 	if(cmd && cmd->id!=MP_CMD_PAUSE)
 	{
 		if (mpctx->audio_out && mpctx->sh_audio)
         	mpctx->audio_out->reset();	// reset audio
 	}
-	else
+//	else
+
 	{
 		if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
 		{
+			//printf("filename: %s\n",filename);
 			//DI_StartMotor();
 			//printf("start motor\n");
 			void *ptr=memalign(32, 0x800*2);
@@ -2564,6 +2578,7 @@ static void pause_loop(void)
 			//printf("read sector 5000\n");
 			DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
 			free(ptr);
+			//printf("read done\n");
 		}
 	    if (mpctx->audio_out && mpctx->sh_audio)
     	    mpctx->audio_out->resume();	// resume audio
@@ -4505,16 +4520,16 @@ static float timing_sleep(float time_frame)
 {
 	s64 frame=(s64)(time_frame*1000000); //in us
 	//current_module = "sleep_timer";
-	while (frame > 50)
+	while (frame > 100)
 	{
-		if(frame>10000) //enough to avoid choppy cursor
+		if(frame>20000) //enough to avoid choppy cursor
 		{
 			DrawMPlayer();
-			VIDEO_WaitVSync();
+			//VIDEO_WaitVSync();
 		}
 		else
 		{
-			usec_sleep(frame-50);
+			usec_sleep(frame-100);
 		}
 		frame = frame - GetRelativeTime();
 	}

@@ -64,6 +64,19 @@ static GuiButton * dvdBtn = NULL;
 static GuiButton * onlineBtn = NULL;
 static GuiButton * settingsBtn = NULL;
 
+static GuiImage * videosBtnImg = NULL;
+static GuiImage * videosBtnOnImg = NULL;
+static GuiImage * musicBtnImg = NULL;
+static GuiImage * musicBtnOnImg = NULL;
+static GuiImage * picturesBtnImg = NULL;
+static GuiImage * picturesBtnOnImg = NULL;
+static GuiImage * dvdBtnImg = NULL;
+static GuiImage * dvdBtnOnImg = NULL;
+static GuiImage * onlineBtnImg = NULL;
+static GuiImage * onlineBtnOnImg = NULL;
+static GuiImage * settingsBtnImg = NULL;
+static GuiImage * settingsBtnOnImg = NULL;
+
 static GuiButton * logoBtn = NULL;
 static GuiWindow * mainWindow = NULL;
 static GuiText * settingText = NULL;
@@ -203,6 +216,58 @@ static int progressTotal = 0;
 int doMPlayerGuiDraw = 0; // draw MPlayer menu
 bool menuMode = 0; // 0 - normal GUI, 1 - GUI for MPlayer
 
+static void UpdateMenuImages(int oldBtn, int newBtn)
+{	
+	if(oldBtn > MENU_SETTINGS)
+		oldBtn = MENU_SETTINGS;
+	if(newBtn > MENU_SETTINGS)
+		newBtn = MENU_SETTINGS;
+
+	if(oldBtn == newBtn)
+		return; // do nothing
+
+	switch(oldBtn)
+	{
+		case MENU_BROWSE_VIDEOS:
+			videosBtn->SetImage(videosBtnImg); break;
+		case MENU_BROWSE_MUSIC:
+			musicBtn->SetImage(musicBtnImg); break;
+		case MENU_BROWSE_PICTURES:
+			picturesBtn->SetImage(picturesBtnImg); break;
+		case MENU_DVD:
+			dvdBtn->SetImage(dvdBtnImg); break;
+		case MENU_BROWSE_ONLINEMEDIA:
+			onlineBtn->SetImage(onlineBtnImg); break;
+		case MENU_SETTINGS:
+			settingsBtn->SetImage(settingsBtnImg); break;
+	}
+
+	switch(newBtn)
+	{
+		case MENU_BROWSE_VIDEOS:
+			videosBtn->SetImage(videosBtnOnImg); break;
+		case MENU_BROWSE_MUSIC:
+			musicBtn->SetImage(musicBtnOnImg); break;
+		case MENU_BROWSE_PICTURES:
+			picturesBtn->SetImage(picturesBtnOnImg); break;
+		case MENU_DVD:
+			dvdBtn->SetImage(dvdBtnOnImg); break;
+		case MENU_BROWSE_ONLINEMEDIA:
+			onlineBtn->SetImage(onlineBtnOnImg); break;
+		case MENU_SETTINGS:
+			settingsBtn->SetImage(settingsBtnOnImg); break;
+	}
+}
+
+static void ChangeMenuNoHistory(int menu)
+{
+	if(menu == menuCurrent)
+		return;
+
+	UpdateMenuImages(menuCurrent, menu);
+	menuCurrent = menu;
+}
+
 static void ChangeMenu(int menu)
 {
 	if(menu == menuCurrent)
@@ -211,12 +276,14 @@ static void ChangeMenu(int menu)
 	menuUndo = menuPrevious;
 	menuPrevious = menuCurrent;
 	menuCurrent = menu;
+	UpdateMenuImages(menuPrevious, menuCurrent);
 }
 
 static void UndoChangeMenu()
 {
 	menuCurrent = menuPrevious;
 	menuPrevious = menuUndo;
+	UpdateMenuImages(menuPrevious, menuCurrent);
 }
 
 static void ChangeMenu(void * ptr, int menu)
@@ -2362,27 +2429,75 @@ static void MenuDVD()
 		return;
 	}
 
-	sprintf(loadedFile, "dvdnav://");
-	mainWindow->SetState(STATE_DISABLED);
-	mainWindow->Append(disabled);
-	ShowAction("Loading...");
-	ShutdownMPlayer();
-	LoadMPlayer(); // signal MPlayer to load
-
-	// wait until MPlayer is ready to take or return control
-	while(!guiShutdown && controlledbygui != 1)
-		usleep(THREAD_SLEEP);
-
-	CancelAction();
-	UndoChangeMenu(); // go back to last menu
-	
-	if(!guiShutdown) // load failed
+	if(!wiiPlayingDVD())
 	{
-		mainWindow->Remove(disabled);
-		mainWindow->SetState(STATE_DEFAULT);
-		ErrorPrompt("Unrecognized DVD format!");
+		sprintf(loadedFile, "dvdnav://");
+		mainWindow->SetState(STATE_DISABLED);
+		mainWindow->Append(disabled);
+		ShowAction("Loading...");
+		ShutdownMPlayer();
+		LoadMPlayer(); // signal MPlayer to load
+	
+		// wait until MPlayer is ready to take or return control
+		while(!guiShutdown && controlledbygui != 1)
+			usleep(THREAD_SLEEP);
+
+		CancelAction();
+		SuspendGui();
+
+		if(!guiShutdown) // load failed
+		{
+			UndoChangeMenu(); // go back to last menu
+			mainWindow->Remove(disabled);
+			mainWindow->SetState(STATE_DEFAULT);
+			ErrorPrompt("Unrecognized DVD format!");
+		}
 	}
-	SuspendGui();
+	else
+	{
+		GuiImageData btnBottom(button_bottom_png);
+		GuiImageData btnBottomOver(button_bottom_over_png);
+		GuiImageData arrowRight(arrow_right_small_png);
+
+		GuiText backBtnTxt("Resume", 18, (GXColor){255, 255, 255, 255});
+		backBtnTxt.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+		backBtnTxt.SetPosition(-74, 10);
+		GuiImage backBtnImg(&btnBottom);
+		GuiImage backBtnImgOver(&btnBottomOver);
+		GuiImage backBtnArrow(&arrowRight);
+		backBtnArrow.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+		backBtnArrow.SetPosition(-54, 11);
+		GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+		backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+		backBtn.SetPosition(0, 0);
+		backBtn.SetLabel(&backBtnTxt);
+		backBtn.SetImage(&backBtnImg);
+		backBtn.SetImageOver(&backBtnImgOver);
+		backBtn.SetIcon(&backBtnArrow);
+		backBtn.SetTrigger(trigA);
+
+		SuspendGui();
+		mainWindow->Append(&backBtn);
+		ResumeGui();
+
+		while(menuCurrent == MENU_DVD)
+		{
+			if(backBtn.GetState() == STATE_CLICKED)
+			{
+				backBtn.ResetState();
+				LoadMPlayer(); // go back to MPlayer
+
+				// wait until MPlayer is ready to take control (or return control)
+				while(!guiShutdown && controlledbygui != 1)
+					usleep(THREAD_SLEEP);
+
+				break;
+			}
+		}
+		CancelAction();
+		SuspendGui();
+		mainWindow->Remove(&backBtn);
+	}
 }
 
 static void MenuSettingsGlobal()
@@ -2514,7 +2629,7 @@ static void MenuSettingsGlobal()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			menuCurrent = MENU_SETTINGS;
+			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
 	SuspendGui();
@@ -2903,7 +3018,7 @@ static void MenuSettingsVideos()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			menuCurrent = MENU_SETTINGS;
+			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
 	SuspendGui();
@@ -3006,7 +3121,7 @@ static void MenuSettingsMusic()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			menuCurrent = MENU_SETTINGS;
+			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
 	SuspendGui();
@@ -3101,7 +3216,7 @@ static void MenuSettingsPictures()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			menuCurrent = MENU_SETTINGS;
+			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
 	SuspendGui();
@@ -3189,7 +3304,7 @@ static void MenuSettingsOnlineMedia()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			menuCurrent = MENU_SETTINGS;
+			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
 	SuspendGui();
@@ -3329,18 +3444,18 @@ static void MenuSettingsNetwork()
 		{
 			if(ret >= 0) netEditIndex = map[ret];
 			else netEditIndex = -1;
-			menuCurrent = MENU_SETTINGS_NETWORK_SMB;
+			ChangeMenuNoHistory(MENU_SETTINGS_NETWORK_SMB);
 		}
 		else if((ret >= 0 && map[ret] >= 5) || addftpBtn.GetState() == STATE_CLICKED)
 		{
 			if(ret >= 0) netEditIndex = map[ret] - 5;
 			else netEditIndex = -1;
-			menuCurrent = MENU_SETTINGS_NETWORK_FTP;
+			ChangeMenuNoHistory(MENU_SETTINGS_NETWORK_FTP);
 		}
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			menuCurrent = MENU_SETTINGS;
+			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
 	SuspendGui();
@@ -3494,7 +3609,7 @@ static void MenuSettingsNetworkSMB()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			menuCurrent = MENU_SETTINGS_NETWORK;
+			ChangeMenuNoHistory(MENU_SETTINGS_NETWORK);
 		}
 		if(deleteBtn.GetState() == STATE_CLICKED)
 		{
@@ -3506,7 +3621,7 @@ static void MenuSettingsNetworkSMB()
 				WiiSettings.smbConf[netEditIndex].share[0] = 0;
 				WiiSettings.smbConf[netEditIndex].user[0] = 0;
 				WiiSettings.smbConf[netEditIndex].pwd[0] = 0;
-				menuCurrent = MENU_SETTINGS_NETWORK;
+				ChangeMenuNoHistory(MENU_SETTINGS_NETWORK);
 			}
 		}
 	}
@@ -3670,7 +3785,7 @@ static void MenuSettingsNetworkFTP()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			menuCurrent = MENU_SETTINGS_NETWORK;
+			ChangeMenuNoHistory(MENU_SETTINGS_NETWORK);
 		}
 		if(deleteBtn.GetState() == STATE_CLICKED)
 		{
@@ -3683,7 +3798,7 @@ static void MenuSettingsNetworkFTP()
 				WiiSettings.ftpConf[netEditIndex].user[0] = 0;
 				WiiSettings.ftpConf[netEditIndex].pwd[0] = 0;
 				WiiSettings.ftpConf[netEditIndex].passive = 0;
-				menuCurrent = MENU_SETTINGS_NETWORK;
+				ChangeMenuNoHistory(MENU_SETTINGS_NETWORK);
 			}
 		}
 	}
@@ -3781,7 +3896,7 @@ static void MenuSettingsSubtitles()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			menuCurrent = MENU_SETTINGS;
+			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
 	SuspendGui();
@@ -3860,31 +3975,31 @@ static void MenuSettings()
 		switch (ret)
 		{
 			case 0:
-				menuCurrent = MENU_SETTINGS_GLOBAL;
+				ChangeMenuNoHistory(MENU_SETTINGS_GLOBAL);
 				break;
 
 			case 1:
-				menuCurrent = MENU_SETTINGS_VIDEOS;
+				ChangeMenuNoHistory(MENU_SETTINGS_VIDEOS);
 				break;
 
 			case 2:
-				menuCurrent = MENU_SETTINGS_MUSIC;
+				ChangeMenuNoHistory(MENU_SETTINGS_MUSIC);
 				break;
 
 			case 3:
-				menuCurrent = MENU_SETTINGS_PICTURES;
+				ChangeMenuNoHistory(MENU_SETTINGS_PICTURES);
 				break;
 
 			case 4:
-				menuCurrent = MENU_SETTINGS_ONLINEMEDIA;
+				ChangeMenuNoHistory(MENU_SETTINGS_ONLINEMEDIA);
 				break;
 
 			case 5:
-				menuCurrent = MENU_SETTINGS_NETWORK;
+				ChangeMenuNoHistory(MENU_SETTINGS_NETWORK);
 				break;
 
 			case 6:
-				menuCurrent = MENU_SETTINGS_SUBTITLES;
+				ChangeMenuNoHistory(MENU_SETTINGS_SUBTITLES);
 				break;
 		}
 
@@ -4767,28 +4882,35 @@ void WiiMenu()
 	GuiImageData navHighlight(nav_highlight_png);
 	GuiImageData videos(nav_videos_png);
 	GuiImageData videosOver(nav_videos_over_png);
+	GuiImageData videosOn(nav_videos_on_png);
 	GuiImageData music(nav_music_png);
 	GuiImageData musicOver(nav_music_over_png);
+	GuiImageData musicOn(nav_music_on_png);
 	GuiImageData pictures(nav_pictures_png);
 	GuiImageData picturesOver(nav_pictures_over_png);
+	GuiImageData picturesOn(nav_pictures_on_png);
 	GuiImageData dvd(nav_dvd_png);
 	GuiImageData dvdOver(nav_dvd_over_png);
+	GuiImageData dvdOn(nav_dvd_on_png);
 	GuiImageData online(nav_onlinemedia_png);
 	GuiImageData onlineOver(nav_onlinemedia_over_png);
+	GuiImageData onlineOn(nav_onlinemedia_on_png);
 	GuiImageData settings(nav_settings_png);
 	GuiImageData settingsOver(nav_settings_over_png);
+	GuiImageData settingsOn(nav_settings_on_png);
 
 	GuiTooltip videosBtnTip("Videos");
-	GuiImage videosBtnImg(&videos);
+	videosBtnImg = new GuiImage(&videos);
+	videosBtnOnImg = new GuiImage(&videosOn);
 	GuiImage videosBtnOverImg(&videosOver);
 	GuiImage videosBtnHighlightImg(&navHighlight);
 	videosBtnHighlightImg.SetPosition(-20, 30);
 	videosBtnHighlightImg.SetAlpha(128);
-	videosBtn = new GuiButton(videosBtnImg.GetWidth(), videosBtnImg.GetHeight());
+	videosBtn = new GuiButton(videosBtnImg->GetWidth(), videosBtnImg->GetHeight());
 	videosBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	videosBtn->SetPosition(30, 30);
 	videosBtn->SetTooltip(&videosBtnTip);
-	videosBtn->SetImage(&videosBtnImg);
+	videosBtn->SetImage(videosBtnImg);
 	videosBtn->SetImageOver(&videosBtnOverImg);
 	videosBtn->SetIconOver(&videosBtnHighlightImg);
 	videosBtn->SetTrigger(trigA);
@@ -4797,16 +4919,17 @@ void WiiMenu()
 	videosBtn->SetUpdateCallback(ChangeMenuVideos);
 
 	GuiTooltip musicBtnTip("Music");
-	GuiImage musicBtnImg(&music);
+	musicBtnImg = new GuiImage(&music);
+	musicBtnOnImg = new GuiImage(&musicOn);
 	GuiImage musicBtnOverImg(&musicOver);
 	GuiImage musicBtnHighlightImg(&navHighlight);
 	musicBtnHighlightImg.SetPosition(-20, 30);
 	musicBtnHighlightImg.SetAlpha(128);
-	musicBtn = new GuiButton(musicBtnImg.GetWidth(), musicBtnImg.GetHeight());
+	musicBtn = new GuiButton(musicBtnImg->GetWidth(), musicBtnImg->GetHeight());
 	musicBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	musicBtn->SetPosition(85, 30);
 	musicBtn->SetTooltip(&musicBtnTip);
-	musicBtn->SetImage(&musicBtnImg);
+	musicBtn->SetImage(musicBtnImg);
 	musicBtn->SetImageOver(&musicBtnOverImg);
 	musicBtn->SetIconOver(&musicBtnHighlightImg);
 	musicBtn->SetTrigger(trigA);
@@ -4815,16 +4938,17 @@ void WiiMenu()
 	musicBtn->SetUpdateCallback(ChangeMenuMusic);
 
 	GuiTooltip picturesBtnTip("Pictures");
-	GuiImage picturesBtnImg(&pictures);
+	picturesBtnImg = new GuiImage(&pictures);
+	picturesBtnOnImg = new GuiImage(&picturesOn);
 	GuiImage picturesBtnOverImg(&picturesOver);
 	GuiImage picturesBtnHighlightImg(&navHighlight);
 	picturesBtnHighlightImg.SetPosition(-20, 30);
 	picturesBtnHighlightImg.SetAlpha(128);
-	picturesBtn = new GuiButton(picturesBtnImg.GetWidth(), picturesBtnImg.GetHeight());
+	picturesBtn = new GuiButton(picturesBtnImg->GetWidth(), picturesBtnImg->GetHeight());
 	picturesBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	picturesBtn->SetPosition(140, 30);
 	picturesBtn->SetTooltip(&picturesBtnTip);
-	picturesBtn->SetImage(&picturesBtnImg);
+	picturesBtn->SetImage(picturesBtnImg);
 	picturesBtn->SetImageOver(&picturesBtnOverImg);
 	picturesBtn->SetIconOver(&picturesBtnHighlightImg);
 	picturesBtn->SetTrigger(trigA);
@@ -4833,16 +4957,17 @@ void WiiMenu()
 	picturesBtn->SetUpdateCallback(ChangeMenuPictures);
 
 	GuiTooltip dvdBtnTip("DVD");
-	GuiImage dvdBtnImg(&dvd);
+	dvdBtnImg = new GuiImage(&dvd);
+	dvdBtnOnImg = new GuiImage(&dvdOn);
 	GuiImage dvdBtnOverImg(&dvdOver);
 	GuiImage dvdBtnHighlightImg(&navHighlight);
 	dvdBtnHighlightImg.SetPosition(-20, 30);
 	dvdBtnHighlightImg.SetAlpha(128);
-	dvdBtn = new GuiButton(dvdBtnImg.GetWidth(), dvdBtnImg.GetHeight());
+	dvdBtn = new GuiButton(dvdBtnImg->GetWidth(), dvdBtnImg->GetHeight());
 	dvdBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	dvdBtn->SetPosition(195, 30);
 	dvdBtn->SetTooltip(&dvdBtnTip);
-	dvdBtn->SetImage(&dvdBtnImg);
+	dvdBtn->SetImage(dvdBtnImg);
 	dvdBtn->SetImageOver(&dvdBtnOverImg);
 	dvdBtn->SetIconOver(&dvdBtnHighlightImg);
 	dvdBtn->SetTrigger(trigA);
@@ -4851,16 +4976,17 @@ void WiiMenu()
 	dvdBtn->SetUpdateCallback(ChangeMenuDVD);
 
 	GuiTooltip onlineBtnTip("Online Media");
-	GuiImage onlineBtnImg(&online);
+	onlineBtnImg = new GuiImage(&online);
+	onlineBtnOnImg = new GuiImage(&onlineOn);
 	GuiImage onlineBtnOverImg(&onlineOver);
 	GuiImage onlineBtnHighlightImg(&navHighlight);
 	onlineBtnHighlightImg.SetPosition(-20, 30);
 	onlineBtnHighlightImg.SetAlpha(128);
-	onlineBtn = new GuiButton(onlineBtnImg.GetWidth(), onlineBtnImg.GetHeight());
+	onlineBtn = new GuiButton(onlineBtnImg->GetWidth(), onlineBtnImg->GetHeight());
 	onlineBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	onlineBtn->SetPosition(250, 30);
 	onlineBtn->SetTooltip(&onlineBtnTip);
-	onlineBtn->SetImage(&onlineBtnImg);
+	onlineBtn->SetImage(onlineBtnImg);
 	onlineBtn->SetImageOver(&onlineBtnOverImg);
 	onlineBtn->SetIconOver(&onlineBtnHighlightImg);
 	onlineBtn->SetTrigger(trigA);
@@ -4869,15 +4995,16 @@ void WiiMenu()
 	onlineBtn->SetUpdateCallback(ChangeMenuOnline);
 
 	GuiTooltip settingsBtnTip("Settings");
-	GuiImage settingsBtnImg(&settings);
+	settingsBtnImg = new GuiImage(&settings);
+	settingsBtnOnImg = new GuiImage(&settingsOn);
 	GuiImage settingsBtnOverImg(&settingsOver);
 	GuiImage settingsBtnHighlightImg(&navHighlight);
 	settingsBtnHighlightImg.SetPosition(-20, 30);
 	settingsBtnHighlightImg.SetAlpha(128);
-	settingsBtn = new GuiButton(settingsBtnImg.GetWidth(), settingsBtnImg.GetHeight());
+	settingsBtn = new GuiButton(settingsBtnImg->GetWidth(), settingsBtnImg->GetHeight());
 	settingsBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	settingsBtn->SetPosition(-200, 30);
-	settingsBtn->SetImage(&settingsBtnImg);
+	settingsBtn->SetImage(settingsBtnImg);
 	settingsBtn->SetImageOver(&settingsBtnOverImg);
 	settingsBtn->SetIconOver(&settingsBtnHighlightImg);
 	settingsBtn->SetTooltip(&settingsBtnTip);
@@ -4885,6 +5012,8 @@ void WiiMenu()
 	settingsBtn->SetSelectable(false);
 	settingsBtn->SetEffectGrow();
 	settingsBtn->SetUpdateCallback(ChangeMenuSettings);
+
+	UpdateMenuImages(-1, menuCurrent);
 
 	mainWindow->Append(videosBtn);
 	mainWindow->Append(musicBtn);
@@ -4995,6 +5124,19 @@ void WiiMenu()
 	onlineBtn = NULL;
 	delete settingsBtn;
 	settingsBtn = NULL;
+	
+	delete videosBtnImg;
+	delete videosBtnOnImg;
+	delete musicBtnImg;
+	delete musicBtnOnImg;
+	delete picturesBtnImg;
+	delete picturesBtnOnImg;
+	delete dvdBtnImg;
+	delete dvdBtnOnImg;
+	delete onlineBtnImg;
+	delete onlineBtnOnImg;
+	delete settingsBtnImg;
+	delete settingsBtnOnImg;
 
 	delete logoBtn;
 	logoBtn = NULL;

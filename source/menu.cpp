@@ -4261,22 +4261,22 @@ static void SetupGui()
 
 	// triggers
 
-	trigA = new GuiTrigger();
+	trigA = new GuiTrigger;
 	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 	
-	trigB = new GuiTrigger();
+	trigB = new GuiTrigger;
 	trigB->SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 	
-	trigLeft = new GuiTrigger();
+	trigLeft = new GuiTrigger;
 	trigLeft->SetButtonOnlyTrigger(-1, WPAD_BUTTON_LEFT | WPAD_CLASSIC_BUTTON_LEFT, PAD_BUTTON_LEFT);
 		
-	trigRight = new GuiTrigger();
+	trigRight = new GuiTrigger;
 	trigRight->SetButtonOnlyTrigger(-1, WPAD_BUTTON_RIGHT | WPAD_CLASSIC_BUTTON_RIGHT, PAD_BUTTON_RIGHT);
 	
-	trigUp = new GuiTrigger();
+	trigUp = new GuiTrigger;
 	trigUp->SetButtonOnlyTrigger(-1, WPAD_BUTTON_UP | WPAD_CLASSIC_BUTTON_UP, PAD_BUTTON_UP);
 
-	trigDown = new GuiTrigger();
+	trigDown = new GuiTrigger;
 	trigDown->SetButtonOnlyTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
 
 	// images

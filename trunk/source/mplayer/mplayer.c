@@ -2494,7 +2494,6 @@ static void pause_loop(void)
         mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_PAUSED\n");
     }
     */
-    printf("PAUSE\n");
 #ifdef CONFIG_GUI
     if (use_gui)
         guiGetEvent(guiCEvent, (char *)guiSetPause);
@@ -2557,19 +2556,16 @@ static void pause_loop(void)
     }
     mpctx->osd_function=OSD_PLAY;
 #ifdef GEKKO
-
 	cmd = mp_input_get_cmd(0, 0, 1);
 	if(cmd && cmd->id!=MP_CMD_PAUSE)
 	{
 		if (mpctx->audio_out && mpctx->sh_audio)
         	mpctx->audio_out->reset();	// reset audio
 	}
-//	else
-
+	//else
 	{
 		if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
 		{
-			//printf("filename: %s\n",filename);
 			//DI_StartMotor();
 			//printf("start motor\n");
 			void *ptr=memalign(32, 0x800*2);
@@ -2578,7 +2574,6 @@ static void pause_loop(void)
 			//printf("read sector 5000\n");
 			DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
 			free(ptr);
-			//printf("read done\n");
 		}
 	    if (mpctx->audio_out && mpctx->sh_audio)
     	    mpctx->audio_out->resume();	// resume audio
@@ -4866,6 +4861,17 @@ typedef struct {
   int              still_length;        /* still frame duration */
   unsigned int     state;
 } dvdnav_priv_t;
+
+bool wiiPlayingDVD()
+{
+	if(!mpctx || !mpctx->stream)
+		return false;
+
+	if (mpctx->stream->type == STREAMTYPE_DVD || mpctx->stream->type == STREAMTYPE_DVDNAV)
+		return true;
+
+	return false;
+}
 
 bool wiiInDVDMenu()
 {

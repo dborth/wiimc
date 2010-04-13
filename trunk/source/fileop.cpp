@@ -1346,7 +1346,7 @@ static int ParsePLXPlaylist()
 			{
 				strcpy(newEntry.name, value);
 			}
-			else if(strncmp(attribute, "URL", 4) == 0)
+			else if(strncmp(attribute, "URL", 3) == 0)
 			{
 				strcpy(newEntry.url, value);
 			}

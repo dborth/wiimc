@@ -52,6 +52,7 @@ static ao_info_t info = {
 LIBAO_EXTERN(gekko)
 
 static u8 buffers[BUFFER_COUNT][BUFFER_SIZE] ATTRIBUTE_ALIGN(32);
+static u8 silence[BUFFER_SIZE] ATTRIBUTE_ALIGN(32);
 static u8 buffer_fill = 0;
 static u8 buffer_play = 0;
 static int buffered = 0;
@@ -63,18 +64,16 @@ static ao_control_vol_t volume = { 0x8E, 0x8E };
 
 static void switch_buffers()
 {
-	if (buffered > 0)
+	if (playing && buffered > 0)
 	{
 		buffered -= BUFFER_SIZE;
 		buffer_play = (buffer_play + 1) % BUFFER_COUNT;
-		
+		DCFlushRange(buffers[buffer_play], BUFFER_SIZE);
 		AUDIO_InitDMA((u32)buffers[buffer_play], BUFFER_SIZE);
-		AUDIO_StartDMA();
 	}
 	else
 	{
-		playing = false;
-		AUDIO_StopDMA();
+		AUDIO_InitDMA((u32)silence, BUFFER_SIZE);
 	}
 }
 
@@ -110,10 +109,10 @@ static int control(int cmd, void *arg)
 
 static u8 quality = AI_SAMPLERATE_48KHZ;
 
-void reinit_audio()  // for newgui
+void reinit_audio()
 {
-	AUDIO_SetDSPSampleRate(quality);
-	AUDIO_RegisterDMACallback(switch_buffers);
+	//AUDIO_SetDSPSampleRate(quality);
+	//AUDIO_RegisterDMACallback(switch_buffers);
 }
 
 static int init(int rate, int channels, int format, int flags)
@@ -139,6 +138,9 @@ static int init(int rate, int channels, int format, int flags)
 		DCFlushRange(buffers[counter], BUFFER_SIZE);
 	}
 
+	memset(silence, 0, BUFFER_SIZE);
+	DCFlushRange(silence, BUFFER_SIZE);
+
 	buffer_fill = 0;
 	buffer_play = 0;
 	buffered = 0;
@@ -154,31 +156,21 @@ static int init(int rate, int channels, int format, int flags)
 
 static void reset(void)
 {
+	playing = false;
+	while (AUDIO_GetDMABytesLeft() > 0)
+		usleep(100); // wait for next DMA
+
 	AUDIO_StopDMA();
-	
+
+	buffer_fill = 0;
+	buffer_play = 0;
+	buffered = 0;
+
 	for (int counter = 0; counter < BUFFER_COUNT; counter++)
 	{
 		memset(buffers[counter], 0, BUFFER_SIZE);
 		DCFlushRange(buffers[counter], BUFFER_SIZE);
 	}
-	
-	AUDIO_RegisterDMACallback(NULL);
-	AUDIO_InitDMA((u32)buffers[0], 32);
-	AUDIO_StartDMA();
-	
-	usleep(100);
-	
-	while (AUDIO_GetDMABytesLeft() > 0)
-		usleep(100);
-	
-	AUDIO_StopDMA();
-	AUDIO_RegisterDMACallback(switch_buffers);
-	
-	buffer_fill = 0;
-	buffer_play = 0;
-	buffered = 0;
-	
-	playing = false;
 }
 
 static void uninit(int immed)
@@ -189,14 +181,12 @@ static void uninit(int immed)
 
 static void audio_pause(void)
 {
-	AUDIO_StopDMA();
 	playing = false;
 }
 
 static void audio_resume(void)
 {
 	playing = true;
-	switch_buffers();
 }
 
 static int get_space(void)
@@ -217,11 +207,10 @@ static int play(void *data, int len, int flags)
 {
 	int result = 0;
 	u8 *source = (u8 *)data;
-	
+
 	while ((len >= BUFFER_SIZE)	&& (get_space() >= BUFFER_SIZE))
 	{
 		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source);
-		DCFlushRange(buffers[buffer_play], BUFFER_SIZE);
 
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
 		
@@ -231,13 +220,14 @@ static int play(void *data, int len, int flags)
 		
 		len -= BUFFER_SIZE;
 	}
-	
+
 	if (!playing && (buffered >= PREBUFFER))
 	{
 		playing = true;
 		switch_buffers();
+		AUDIO_StartDMA();
 	}
-	
+
 	return result;
 }
 

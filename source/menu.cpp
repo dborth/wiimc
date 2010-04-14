@@ -4850,7 +4850,7 @@ void WiiMenu()
 	{
 		videoImg = new GuiImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
 		videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
-		videoImg->SetScaleY(screenheight/(float)vmode->viHeight);
+		videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
 		mainWindow->Append(videoImg);
 		selectLoadedFile = 1; // video loaded - trigger browser to jump to it
 	}

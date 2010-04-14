@@ -431,8 +431,6 @@ main(int argc, char *argv[])
 
 	while(1)
 	{
-		AUDIO_RegisterDMACallback(NULL);
-		AUDIO_StopDMA();
 		ResetVideo_Menu();
 		ResumeDeviceThread();
 		ResumeParseThread();

@@ -2480,7 +2480,7 @@ static void MenuDVD()
 		mainWindow->Append(&backBtn);
 		ResumeGui();
 
-		while(menuCurrent == MENU_DVD)
+		while(menuCurrent == MENU_DVD && !guiShutdown)
 		{
 			if(backBtn.GetState() == STATE_CLICKED)
 			{

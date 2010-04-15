@@ -844,6 +844,8 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
 	    }
 	    dvd_title = longest_title + 1; // remap +1 for the validation
     }
+    if(dvd_angle < 1)
+    	dvd_angle = 1;
 #endif
     /**
      * Make sure our title number is valid.

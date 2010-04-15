@@ -22,11 +22,11 @@
 #include <jpeglib.h>
 #include <jerror.h>
 #include <gctypes.h>
-#include <squish.h>
+//#include <squish.h>
 
 #include "video.h"
 
-using namespace squish;
+//using namespace squish;
 
 /* Expanded data source object for memory input */
 
@@ -261,7 +261,7 @@ static u8 * RawTo4x4Cmpr(u8 *src, u32 width, u32 height, u32 rowsize)
 					sourceRgba[4*i + 3] = 255; // no alpha
 				}
 			}
-			Compress(sourceRgba, targetBlock, kDxt1); // compress this block
+			//Compress(sourceRgba, targetBlock, kDxt1); // compress this block
 			targetBlock += bytesPerBlock; // advance
 		}
 	}

@@ -135,8 +135,8 @@ static void * motorthreadfunc(void *arg)
 			}
 			if ((ticks_to_secs(gettime()) - LastAccess) > TimeStopMotor)
 			{ // we have to stop motor        
-				if (DVD_DiscPresent()) // only stop if dvd is present
-					DI2_StopMotor();
+				//if (DVD_DiscPresent()) // only stop if dvd is present
+					//DI2_StopMotor();
 			}
 		}
 

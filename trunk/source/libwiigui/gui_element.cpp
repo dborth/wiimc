@@ -236,13 +236,10 @@ void GuiElement::SetScaleY(float s)
 void GuiElement::SetScale(int mw, int mh)
 {
 	xscale = 1.0f;
-	if(width > mw || height > mh)
-	{
-		if(width/(height*1.0) > mw/(mh*1.0))
-			xscale = mw/(width*1.0);
-		else
-			xscale = mh/(height*1.0);
-	}
+	if(width/(height*1.0) > mw/(mh*1.0))
+		xscale = mw/(width*1.0);
+	else
+		xscale = mh/(height*1.0);
 	yscale = xscale;
 }
 

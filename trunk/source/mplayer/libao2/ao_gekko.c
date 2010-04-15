@@ -68,7 +68,6 @@ static void switch_buffers()
 	{
 		buffered -= BUFFER_SIZE;
 		buffer_play = (buffer_play + 1) % BUFFER_COUNT;
-		DCFlushRange(buffers[buffer_play], BUFFER_SIZE);
 		AUDIO_InitDMA((u32)buffers[buffer_play], BUFFER_SIZE);
 	}
 	else
@@ -211,6 +210,7 @@ static int play(void *data, int len, int flags)
 	while ((len >= BUFFER_SIZE)	&& (get_space() >= BUFFER_SIZE))
 	{
 		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source);
+		DCFlushRange(buffers[buffer_play], BUFFER_SIZE);
 
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
 		

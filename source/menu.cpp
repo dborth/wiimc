@@ -2181,6 +2181,7 @@ static void PictureViewer()
 			{
 				SuspendGui();
 				pictureFullImg->SetImage(pictures[found].image);
+				pictureFullImg->SetScale(screenwidth, screenheight);
 				ResumeGui();
 			}
 		}

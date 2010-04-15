@@ -303,6 +303,13 @@ u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height, int mode)
 		else
 			factor = 1;
 
+		if(factor > 1 && cinfo.output_width/factor < screenwidth && cinfo.output_height/factor < screenheight)
+		{
+			// try decreasing factor, while still staying below 1024x1024
+			if(cinfo.output_width/(factor/2) <= 1024 && cinfo.output_height/(factor/2) <= 1024)
+				factor /= 2;
+		}
+
 		cinfo.scale_num = 1;
 		cinfo.scale_denom = factor;
 		cinfo.do_fancy_upsampling = true;

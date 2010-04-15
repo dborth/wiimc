@@ -21,8 +21,12 @@
 #include <malloc.h>
 #include <jpeglib.h>
 #include <jerror.h>
+#include <gctypes.h>
+#include <squish.h>
 
 #include "video.h"
+
+using namespace squish;
 
 /* Expanded data source object for memory input */
 
@@ -183,12 +187,12 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize)
 
 	int len = (newWidth * newHeight) << 2;
 	if(len%32) len += (32-len%32);
-	u8 *dst = memalign (32, len);
+	u8 *dst = (u8 *)memalign(32, len);
 
 	if(!dst)
 		return NULL;
 
-	int x, y, offset;
+	u32 x, y, offset;
 	u8 *pixel;
 
 	for (y = 0; y < newHeight; y++)
@@ -218,7 +222,54 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize)
 	return dst;
 }
 
-u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height)
+static u8 * RawTo4x4Cmpr(u8 *src, u32 width, u32 height, u32 rowsize)
+{
+	u32 newWidth = width;
+	if(newWidth%4) newWidth += (4-newWidth%4);
+	u32 newHeight = height;
+	if(newHeight%4) newHeight += (4-newHeight%4);
+
+	int bytesPerBlock = 8;
+	int len = bytesPerBlock*width*height/16;
+	if(len%32) len += (32-len%32);
+	u8 *dst = (u8*)memalign(32, len);
+
+	if(!dst)
+		return NULL;
+
+	u32 x, y, px, py, i, j;
+
+	// loop over blocks and compress them
+	u8* targetBlock = dst;
+
+	for (y = 0; y < newHeight; y += 4)
+	{
+		for (x = 0; x < newWidth; x += 4)
+		{
+			// get the block data
+			u8 sourceRgba[16*4];
+			for(py = 0, i = 0; py < 4; ++py)
+			{
+				u8 const* row = &src[rowsize*y+x*3];
+
+				for(px = 0; px < 4; ++px, ++i)
+				{
+					// get the pixel colour 
+					for(j = 0; j < 3; ++j)
+						sourceRgba[4*i + j] = *row++;
+
+					sourceRgba[4*i + 3] = 255; // no alpha
+				}
+			}
+			Compress(sourceRgba, targetBlock, kDxt1); // compress this block
+			targetBlock += bytesPerBlock; // advance
+		}
+	}
+	DCFlushRange(dst, len);
+	return dst;
+}
+
+u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height, int mode)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr jerr;
@@ -281,7 +332,12 @@ u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height)
 		location += rowsize;
 	}
 
-	u8 * dst = RawTo4x4RGBA(tmpData, cinfo.output_width, cinfo.output_height, rowsize);
+	u8 * dst;
+
+	if(mode == 0)
+		dst = RawTo4x4RGBA(tmpData, cinfo.output_width, cinfo.output_height, rowsize);
+	else
+		dst = RawTo4x4Cmpr(tmpData, cinfo.output_width, cinfo.output_height, rowsize);
 
 	if(dst)
 	{

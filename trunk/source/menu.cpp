@@ -370,7 +370,7 @@ static void *GuiThread (void *arg)
 			{
 				if(userInput[i].wpad->ir.valid)
 					Menu_DrawImg(userInput[i].wpad->ir.x-48, userInput[i].wpad->ir.y-48,
-						96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255);
+						96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
 				DoRumble(i);
 				--i;
 			} while(i>=0);
@@ -1854,13 +1854,10 @@ static int loadPictures = 0; // reload pictures
 
 typedef struct
 {
-	u8 *data;
-	u16 width;
-	u16 height;
+	GuiImageData *image;
 	int index;
 } picData;
 
-static u8 *picture = NULL;
 static GuiImage *pictureImg = NULL;
 static GuiButton *pictureBtn = NULL;
 static picData pictures[NUM_PICTURES];
@@ -1892,11 +1889,9 @@ static void SetPicture(int picIndex, int browserIndex)
 		pictureIndexLoaded = browserIndex;
 
 		SuspendGui();
-		memcpy(picture, pictures[picIndex].data, pictures[picIndex].width*pictures[picIndex].height*4);
-		//decompressDXT(pictures[picIndex].data, picture, pictures[picIndex].width, pictures[picIndex].height);
-		pictureImg->SetImage(picture, pictures[picIndex].width, pictures[picIndex].height);
+		pictureImg->SetImage(pictures[picIndex].image);
 		pictureImg->SetScale(screenwidth-410, screenheight-100);
-		pictureBtn->SetSize(pictures[picIndex].width*pictureImg->GetScale(), pictures[picIndex].height*pictureImg->GetScale());
+		pictureBtn->SetSize(pictures[picIndex].image->GetWidth()*pictureImg->GetScale(), pictures[picIndex].image->GetHeight()*pictureImg->GetScale());
 		pictureBtn->SetState(STATE_DEFAULT);
 		pictureImg->SetVisible(true);
 		ResumeGui();
@@ -1918,15 +1913,13 @@ static void CleanupPictures(int selIndex)
 	// free any unused picture data
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		if(pictures[i].data == NULL || i == pictureLoaded)
+		if(pictures[i].image == NULL || i == pictureLoaded)
 			continue;
 
 		if(selIndex == -1 || pictures[i].index < (selIndex-(NUM_PICTURES-1)/2) || pictures[i].index > (selIndex+(NUM_PICTURES-1)/2))
 		{
-			free(pictures[i].data);
-			pictures[i].data = NULL;
-			pictures[i].width = 0;
-			pictures[i].height = 0;
+			delete pictures[i].image;
+			pictures[i].image = NULL;
 			pictures[i].index = -1;
 		}
 	}
@@ -1982,33 +1975,16 @@ restart:
 						if(pictures[i].index == -1)
 							break;
 
-					GuiImageData *temp = new GuiImageData(picBuffer, size);
-					if(temp->GetImage() != NULL)
+					pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_CMPR);
+					if(pictures[i].image->GetImage() != NULL)
 					{
-						/*pictures[i].data = compressDXT(temp->GetImage(), temp->GetWidth(), temp->GetHeight());
-						if(pictures[i].data != NULL)
-						{
-							pictures[i].width = temp->GetWidth();
-							pictures[i].height = temp->GetHeight();
-							pictures[i].index = selIndex;
-						}
-						*/
-						int width = temp->GetWidth();
-						int height = temp->GetHeight();
-						if(width%4) width += (4-width%4);
-						if(height%4) height += (4-height%4);
-						printf("width: %d, height: %d\n", width, height);
-						pictures[i].data = (u8*)malloc(width*height*4);
-
-						if(pictures[i].data != NULL)
-						{
-							memcpy(pictures[i].data, temp->GetImage(), width*height*4);
-							pictures[i].width = width;
-							pictures[i].height = height;
-							pictures[i].index = selIndex;
-						}
+						pictures[i].index = selIndex;
 					}
-					delete temp;
+					else
+					{
+						delete pictures[i].image;
+						pictures[i].image = NULL;
+					}
 
 					found = i;
 				}
@@ -2048,32 +2024,16 @@ restart:
 				if(size == 0)
 					goto restart;
 
-				GuiImageData *temp = new GuiImageData(picBuffer, size);
-				if(temp->GetImage() != NULL)
+				pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_CMPR);
+				if(pictures[i].image->GetImage() != NULL)
 				{
-					/*pictures[i].data = compressDXT(temp->GetImage(), temp->GetWidth(), temp->GetHeight());
-					if(pictures[i].data != NULL)
-					{
-						pictures[i].width = temp->GetWidth();
-						pictures[i].height = temp->GetHeight();
-						pictures[i].index = next;
-					}*/
-					int width = temp->GetWidth();
-					int height = temp->GetHeight();
-					if(width%4) width += (4-width%4);
-					if(height%4) height += (4-height%4);
-					printf("width: %d, height: %d\n", width, height);
-					pictures[i].data = (u8*)malloc(width*height*4);
-
-					if(pictures[i].data != NULL)
-					{
-						memcpy(pictures[i].data, temp->GetImage(), width*height*4);
-						pictures[i].width = width;
-						pictures[i].height = height;
-						pictures[i].index = next;
-					}
+					pictures[i].index = next;
 				}
-				delete temp;
+				else
+				{
+					delete pictures[i].image;
+					pictures[i].image = NULL;
+				}
 
 				pictureIndexLoading = -1;
 				if(browser.selIndex == next)
@@ -2220,9 +2180,7 @@ static void PictureViewer()
 			if(found >= 0)
 			{
 				SuspendGui();
-				memcpy(picture, pictures[found].data, pictures[found].width*pictures[found].height*4);
-				//decompressDXT(pictures[found].data, picture, pictures[found].width, pictures[found].height);
-				pictureFullImg->SetImage(picture, pictures[found].width, pictures[found].height);
+				pictureFullImg->SetImage(pictures[found].image);
 				ResumeGui();
 			}
 		}
@@ -4835,7 +4793,6 @@ static void SetupGui()
 	picturebar->Append(picturebarSlideshowBtn);
 	picturebar->Append(picturebarNextBtn);
 
-	picture = (u8 *)memalign(32, 768*480*4);
 	pictureImg = new GuiImage;
 	pictureImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 
@@ -4849,9 +4806,7 @@ static void SetupGui()
 	// initialize pictures struct
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		pictures[i].data = NULL;
-		pictures[i].width = 0;
-		pictures[i].height = 0;
+		pictures[i].image = NULL;
 		pictures[i].index = -1;
 	}
 

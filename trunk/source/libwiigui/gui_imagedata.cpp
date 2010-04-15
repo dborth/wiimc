@@ -21,16 +21,18 @@ GuiImageData::GuiImageData(const u8 * i)
 	data = NULL;
 	width = 0;
 	height = 0;
+	format = GX_TF_RGBA8;
 
 	if(i)
 		LoadPNG(i);
 }
 
-GuiImageData::GuiImageData(const u8 * i, int s)
+GuiImageData::GuiImageData(const u8 * i, int s, u8 f)
 {
 	data = NULL;
 	width = 0;
 	height = 0;
+	format = f;
 
 	if(i)
 	{
@@ -64,7 +66,10 @@ void GuiImageData::LoadPNG(const u8 *i)
 
 void GuiImageData::LoadJPEG(const u8 *i, int s)
 {
-	data = DecodeJPEG(i, s, &width, &height);
+	if(format == GX_TF_RGBA8)
+		data = DecodeJPEG(i, s, &width, &height, 0);
+	else
+		data = DecodeJPEG(i, s, &width, &height, 1);
 }
 
 void GuiImageData::LoadBMP(const u8 *i, int s)
@@ -85,4 +90,9 @@ int GuiImageData::GetWidth()
 int GuiImageData::GetHeight()
 {
 	return height;
+}
+
+u8 GuiImageData::GetFormat()
+{
+	return format;
 }

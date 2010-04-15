@@ -546,7 +546,8 @@ class GuiImageData
 		//!\overload
 		//!\param i Image data
 		//!\param s Image data size
-		GuiImageData(const u8 * i, int s);
+		//!\param f Target image format
+		GuiImageData(const u8 * i, int s, u8 f = GX_TF_RGBA8);
 		//!Destructor
 		~GuiImageData();
 		//!Gets a pointer to the image data
@@ -558,11 +559,15 @@ class GuiImageData
 		//!Gets the image height
 		//!\return image height
 		int GetHeight();
+		//!Gets the image texture format
+		//!\return texture format
+		u8 GetFormat();
 	protected:
 		void LoadPNG(const u8 *i); //!< Load a PNG
 		void LoadBMP(const u8 *i, int s); //!< Load a BMP
 		void LoadJPEG(const u8 *i, int s); //!< Load a JPEG
 		u8 * data; //!< Image data
+		u8 format; //!< Texture format
 		int height; //!< Height of image
 		int width; //!< Width of image
 };
@@ -632,6 +637,7 @@ class GuiImage : public GuiElement
 	protected:
 		int imgType; //!< Type of image data (IMAGE_TEXTURE, IMAGE_COLOR, IMAGE_DATA)
 		u8 * image; //!< Poiner to image data. May be shared with GuiImageData data
+		u8 format; //!< Texture format
 		f32 imageangle; //!< Angle to draw the image
 		int tile; //!< Number of times to draw (tile) the image horizontally
 		int tileVertical; //!< Number of times to draw (tile) the image vertically

@@ -909,7 +909,7 @@ u8 * compressDXT(u8 *src, int width, int height)
 	if(width%4) width += (4-width%4);
 	if(height%4) height += (4-height%4);
 
-	stride = width;
+	stride = width*4;
 
 	tempdst = (u16*)malloc(width*height*2); // how much space do we need?
 	dst = (u16*)malloc(width*height*2); // how much space do we need?

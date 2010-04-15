@@ -11,14 +11,6 @@
 
 #include <gctypes.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height);
-
-#ifdef __cplusplus
-}
-#endif
+u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height, int mode);
 
 #endif

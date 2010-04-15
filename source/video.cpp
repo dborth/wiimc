@@ -127,7 +127,7 @@ void Menu_Render()
  * Draws the specified image on screen using GX
  ***************************************************************************/
 void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[],
-	f32 degrees, f32 scaleX, f32 scaleY, u8 alpha)
+	f32 degrees, f32 scaleX, f32 scaleY, u8 alpha, u8 format)
 {
 	if(data == NULL)
 		return;
@@ -139,7 +139,7 @@ void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[],
 
 	GXTexObj texObj;
 
-	GX_InitTexObj(&texObj, data, width, height, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObj(&texObj, data, width, height, format, GX_CLAMP, GX_CLAMP, GX_FALSE);
 	GX_LoadTexObj(&texObj, GX_TEXMAP0);
 	GX_InvalidateTexAll();
 

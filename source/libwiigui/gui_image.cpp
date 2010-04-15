@@ -26,6 +26,7 @@ GuiImage::GuiImage()
 	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_DATA;
+	format = GX_TF_RGBA8;
 }
 
 GuiImage::GuiImage(GuiImageData * img)
@@ -38,6 +39,7 @@ GuiImage::GuiImage(GuiImageData * img)
 		image = img->GetImage();
 		width = img->GetWidth();
 		height = img->GetHeight();
+		format = img->GetFormat();
 	}
 	imageangle = 0;
 	tile = -1;
@@ -57,6 +59,7 @@ GuiImage::GuiImage(u8 * img, int w, int h)
 	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_TEXTURE;
+	format = GX_TF_RGBA8;
 }
 
 GuiImage::GuiImage(int w, int h, GXColor c)
@@ -69,6 +72,7 @@ GuiImage::GuiImage(int w, int h, GXColor c)
 	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_COLOR;
+	format = GX_TF_RGBA8;
 
 	if(!image)
 		return;
@@ -111,6 +115,7 @@ void GuiImage::SetImage(GuiImageData * img)
 		image = img->GetImage();
 		width = img->GetWidth();
 		height = img->GetHeight();
+		format = img->GetFormat();
 	}
 	imgType = IMAGE_DATA;
 }
@@ -122,6 +127,7 @@ void GuiImage::SetImage(u8 * img, int w, int h)
 	width = w;
 	height = h;
 	imgType = IMAGE_TEXTURE;
+	format = GX_TF_RGBA8;
 }
 
 void GuiImage::SetAngle(float a)
@@ -251,19 +257,19 @@ void GuiImage::Draw()
 	{
 		for(int i=0; i<tile; ++i)
 		{
-			Menu_DrawImg(currLeft+width*i, currTop, width, height, image, imageangle, currScaleX, currScaleY, alpha);
+			Menu_DrawImg(currLeft+width*i, currTop, width, height, image, imageangle, currScaleX, currScaleY, alpha, format);
 		}
 	}
 	else if(tileVertical >= 0)
 	{
 		for(int i=0; i<tileVertical; ++i)
 		{
-			Menu_DrawImg(currLeft, currTop+height*i, width, height, image, imageangle, currScaleX, currScaleY, alpha);
+			Menu_DrawImg(currLeft, currTop+height*i, width, height, image, imageangle, currScaleX, currScaleY, alpha, format);
 		}
 	}
 	else
 	{
-		Menu_DrawImg(currLeft, currTop, width, height, image, imageangle, currScaleX, currScaleY, alpha);
+		Menu_DrawImg(currLeft, currTop, width, height, image, imageangle, currScaleX, currScaleY, alpha, format);
 	}
 
 	if(stripe > 0)

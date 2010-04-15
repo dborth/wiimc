@@ -48,6 +48,7 @@ GuiImage::GuiImage(GuiImageData * img)
 
 GuiImage::GuiImage(u8 * img, int w, int h)
 {
+	if(img) DCFlushRange(img, w*h*4);
 	image = img;
 	width = w;
 	height = h;
@@ -116,6 +117,7 @@ void GuiImage::SetImage(GuiImageData * img)
 
 void GuiImage::SetImage(u8 * img, int w, int h)
 {
+	if(img) DCFlushRange(img, w*h*4);
 	image = img;
 	width = w;
 	height = h;

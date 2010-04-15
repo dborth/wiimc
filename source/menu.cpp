@@ -25,6 +25,7 @@
 #include "musicplaylist.h"
 #include "filebrowser.h"
 #include "utils/gettext.h"
+#include "utils/dxtn.h"
 #include "filelist.h"
 
 #define THREAD_SLEEP 100
@@ -1845,16 +1846,24 @@ done:
 }
 
 // Picture Viewer
-u8* picBuffer;
+u8* picBuffer = NULL;
 #define MAX_PICTURE_SIZE (1024*1024*10) // 10 MB
 static int loadPictures = 0; // reload pictures
 
 #define NUM_PICTURES 		5 // 1 image with a buffer of +/- 2 on each side
 
+typedef struct
+{
+	u8 *data;
+	u16 width;
+	u16 height;
+	int index;
+} picData;
+
+static u8 *picture = NULL;
 static GuiImage *pictureImg = NULL;
 static GuiButton *pictureBtn = NULL;
-static GuiImageData *picture[NUM_PICTURES] = {NULL, NULL, NULL, NULL, NULL};
-static int pictureIndex[NUM_PICTURES] = {-1, -1, -1, -1, -1};
+static picData pictures[NUM_PICTURES];
 static int pictureIndexLoaded = -1;
 static int pictureIndexLoading = -1;
 static int pictureLoaded = -1;
@@ -1870,7 +1879,7 @@ static int FoundPicture(int p)
 		return -1;
 
 	for(int i=0; i < NUM_PICTURES; i++)
-		if(pictureIndex[i] == p)
+		if(pictures[i].index == p)
 			return i;
 	return -1;
 }
@@ -1881,10 +1890,13 @@ static void SetPicture(int picIndex, int browserIndex)
 	{
 		pictureLoaded = picIndex;
 		pictureIndexLoaded = browserIndex;
+
 		SuspendGui();
-		pictureImg->SetImage(picture[picIndex]);
+		memcpy(picture, pictures[picIndex].data, pictures[picIndex].width*pictures[picIndex].height*4);
+		//decompressDXT(pictures[picIndex].data, picture, pictures[picIndex].width, pictures[picIndex].height);
+		pictureImg->SetImage(picture, pictures[picIndex].width, pictures[picIndex].height);
 		pictureImg->SetScale(screenwidth-410, screenheight-100);
-		pictureBtn->SetSize(picture[picIndex]->GetWidth()*pictureImg->GetScale(), picture[picIndex]->GetHeight()*pictureImg->GetScale());
+		pictureBtn->SetSize(pictures[picIndex].width*pictureImg->GetScale(), pictures[picIndex].height*pictureImg->GetScale());
 		pictureBtn->SetState(STATE_DEFAULT);
 		pictureImg->SetVisible(true);
 		ResumeGui();
@@ -1906,14 +1918,16 @@ static void CleanupPictures(int selIndex)
 	// free any unused picture data
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		if(picture[i] == NULL || i == pictureLoaded)
+		if(pictures[i].data == NULL || i == pictureLoaded)
 			continue;
 
-		if(selIndex == -1 || pictureIndex[i] < (selIndex-(NUM_PICTURES-1)/2) || pictureIndex[i] > (selIndex+(NUM_PICTURES-1)/2))
+		if(selIndex == -1 || pictures[i].index < (selIndex-(NUM_PICTURES-1)/2) || pictures[i].index > (selIndex+(NUM_PICTURES-1)/2))
 		{
-			delete picture[i];
-			picture[i] = NULL;
-			pictureIndex[i] = -1;
+			free(pictures[i].data);
+			pictures[i].data = NULL;
+			pictures[i].width = 0;
+			pictures[i].height = 0;
+			pictures[i].index = -1;
 		}
 	}
 }
@@ -1965,11 +1979,37 @@ restart:
 
 					// find first empty slot
 					for(i=0; i < NUM_PICTURES; i++)
-						if(pictureIndex[i] == -1)
+						if(pictures[i].index == -1)
 							break;
-					
-					picture[i] = new GuiImageData(picBuffer, size);
-					pictureIndex[i] = selIndex;
+
+					GuiImageData *temp = new GuiImageData(picBuffer, size);
+					if(temp->GetImage() != NULL)
+					{
+						/*pictures[i].data = compressDXT(temp->GetImage(), temp->GetWidth(), temp->GetHeight());
+						if(pictures[i].data != NULL)
+						{
+							pictures[i].width = temp->GetWidth();
+							pictures[i].height = temp->GetHeight();
+							pictures[i].index = selIndex;
+						}
+						*/
+						int width = temp->GetWidth();
+						int height = temp->GetHeight();
+						if(width%4) width += (4-width%4);
+						if(height%4) height += (4-height%4);
+						printf("width: %d, height: %d\n", width, height);
+						pictures[i].data = (u8*)malloc(width*height*4);
+
+						if(pictures[i].data != NULL)
+						{
+							memcpy(pictures[i].data, temp->GetImage(), width*height*4);
+							pictures[i].width = width;
+							pictures[i].height = height;
+							pictures[i].index = selIndex;
+						}
+					}
+					delete temp;
+
 					found = i;
 				}
 
@@ -1988,7 +2028,7 @@ restart:
 
 			for(i=0; i < NUM_PICTURES; i++)
 			{
-				if(pictureIndex[i] > 0)
+				if(pictures[i].index > 0)
 					continue;
 
 				while(next < browser.numEntries && 
@@ -2008,11 +2048,37 @@ restart:
 				if(size == 0)
 					goto restart;
 
-				picture[i] = new GuiImageData(picBuffer, size);
-				pictureIndex[i] = next;
+				GuiImageData *temp = new GuiImageData(picBuffer, size);
+				if(temp->GetImage() != NULL)
+				{
+					/*pictures[i].data = compressDXT(temp->GetImage(), temp->GetWidth(), temp->GetHeight());
+					if(pictures[i].data != NULL)
+					{
+						pictures[i].width = temp->GetWidth();
+						pictures[i].height = temp->GetHeight();
+						pictures[i].index = next;
+					}*/
+					int width = temp->GetWidth();
+					int height = temp->GetHeight();
+					if(width%4) width += (4-width%4);
+					if(height%4) height += (4-height%4);
+					printf("width: %d, height: %d\n", width, height);
+					pictures[i].data = (u8*)malloc(width*height*4);
+
+					if(pictures[i].data != NULL)
+					{
+						memcpy(pictures[i].data, temp->GetImage(), width*height*4);
+						pictures[i].width = width;
+						pictures[i].height = height;
+						pictures[i].index = next;
+					}
+				}
+				delete temp;
+
 				pictureIndexLoading = -1;
 				if(browser.selIndex == next)
 					setPicture = true; // trigger picture to be reloaded
+
 				next++;
 			}
 		}
@@ -2154,7 +2220,9 @@ static void PictureViewer()
 			if(found >= 0)
 			{
 				SuspendGui();
-				pictureFullImg->SetImage(picture[found]);
+				memcpy(picture, pictures[found].data, pictures[found].width*pictures[found].height*4);
+				//decompressDXT(pictures[found].data, picture, pictures[found].width, pictures[found].height);
+				pictureFullImg->SetImage(picture, pictures[found].width, pictures[found].height);
 				ResumeGui();
 			}
 		}
@@ -4758,7 +4826,27 @@ static void SetupGui()
 	picturebar->Append(picturebarPreviousBtn);
 	picturebar->Append(picturebarSlideshowBtn);
 	picturebar->Append(picturebarNextBtn);
-	
+
+	picture = (u8 *)memalign(32, 768*480*4);
+	pictureImg = new GuiImage;
+	pictureImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+
+	pictureBtn = new GuiButton(0, 0);
+	pictureBtn->SetImage(pictureImg);
+	pictureBtn->SetTrigger(trigA);
+	pictureBtn->SetSelectable(false);
+	pictureBtn->SetState(STATE_DISABLED);
+	pictureBtn->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+
+	// initialize pictures struct
+	for(int i=0; i < NUM_PICTURES; i++)
+	{
+		pictures[i].data = NULL;
+		pictures[i].width = 0;
+		pictures[i].height = 0;
+		pictures[i].index = -1;
+	}
+
 	guiSetup = 1;
 }
 
@@ -5022,15 +5110,6 @@ void WiiMenu()
 	mainWindow->Append(onlineBtn);
 	mainWindow->Append(settingsBtn);
 
-	pictureImg = new GuiImage;
-	pictureImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	pictureBtn = new GuiButton(0, 0);
-	pictureBtn->SetImage(pictureImg);
-	pictureBtn->SetTrigger(trigA);
-	pictureBtn->SetSelectable(false);
-	pictureBtn->SetState(STATE_DISABLED);
-	pictureBtn->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-
 	StartGuiThreads();
 	ResumeGui();
 	EnableRumble();
@@ -5140,10 +5219,6 @@ void WiiMenu()
 
 	delete logoBtn;
 	logoBtn = NULL;
-	delete pictureBtn;
-	pictureBtn = NULL;
-	delete pictureImg;
-	pictureImg = NULL;
 
 	if(videoImg)
 	{

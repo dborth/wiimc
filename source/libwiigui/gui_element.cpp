@@ -185,7 +185,6 @@ int GuiElement::GetHeight()
 
 void GuiElement::SetSize(int w, int h)
 {
-
 	width = w;
 	height = h;
 }

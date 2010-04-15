@@ -235,7 +235,23 @@ u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height)
 
 	if (cinfo.output_width > (u32)screenwidth || cinfo.output_height > (u32)screenheight)
 	{
-		float factor = (cinfo.output_width > cinfo.output_height) ? (1.0 * cinfo.output_width) / screenwidth : (1.0 * cinfo.output_height) / screenheight;
+		float factor = (1.0 * cinfo.output_width) / screenwidth;
+
+		if(cinfo.output_height/factor > screenheight)
+			factor = (1.0 * cinfo.output_height) / screenheight;
+
+		// libjpeg only has a simple scaler (1/2, 1/4, 1/8 etc)
+		if(factor > 8)
+			factor = 16;
+		else if(factor > 4)
+			factor = 8;
+		else if(factor > 2)
+			factor = 4;
+		else if(factor > 1)
+			factor = 2;
+		else
+			factor = 1;
+
 		cinfo.scale_num = 1;
 		cinfo.scale_denom = factor;
 		cinfo.do_fancy_upsampling = true;

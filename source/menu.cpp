@@ -1847,7 +1847,7 @@ done:
 
 // Picture Viewer
 u8* picBuffer = NULL;
-#define MAX_PICTURE_SIZE (1024*1024*10) // 10 MB
+#define MAX_PICTURE_SIZE (1024*1024*6) // 6 MB
 static int loadPictures = 0; // reload pictures
 
 #define NUM_PICTURES 		5 // 1 image with a buffer of +/- 2 on each side
@@ -1975,18 +1975,17 @@ restart:
 						if(pictures[i].index == -1)
 							break;
 
-					pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_CMPR);
+					pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
 					if(pictures[i].image->GetImage() != NULL)
 					{
 						pictures[i].index = selIndex;
+						found = i;
 					}
 					else
 					{
 						delete pictures[i].image;
 						pictures[i].image = NULL;
 					}
-
-					found = i;
 				}
 
 				pictureIndexLoading = -1;
@@ -2024,10 +2023,13 @@ restart:
 				if(size == 0)
 					goto restart;
 
-				pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_CMPR);
+				pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
 				if(pictures[i].image->GetImage() != NULL)
 				{
 					pictures[i].index = next;
+
+					if(browser.selIndex == next)
+						setPicture = true; // trigger picture to be reloaded
 				}
 				else
 				{
@@ -2036,16 +2038,13 @@ restart:
 				}
 
 				pictureIndexLoading = -1;
-				if(browser.selIndex == next)
-					setPicture = true; // trigger picture to be reloaded
 
 				next++;
 			}
 		}
 		usleep(THREAD_SLEEP);
 	}
-
-	pictureLoaded = -1;
+	SetPicture(-1, -1); // set picture to blank
 	CleanupPictures(-1);
 	return NULL;
 }
@@ -2080,6 +2079,9 @@ void SuspendPictureThread()
 	// wait for thread to finish
 	while(!LWP_ThreadIsSuspended(picturethread))
 		usleep(THREAD_SLEEP);
+
+	SetPicture(-1, -1); // set picture to blank
+	CleanupPictures(-1);
 }
 
 static void ChangePicture(int dir)
@@ -2137,7 +2139,7 @@ static void PictureViewer()
 	GuiWindow * oldWindow = mainWindow;
 	GuiImage * pictureFullImg = new GuiImage;
 	pictureFullImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	
+
 	GuiWindow * w = new GuiWindow(screenwidth, screenheight);
 	w->Append(pictureFullImg);
 	w->Append(picturebar);
@@ -2208,16 +2210,10 @@ static void PictureViewer()
 			}
 		}
 
-		if(picturebar->GetState() == STATE_DISABLED && ir)
-		{
-			picturebar->SetState(STATE_DEFAULT);
+		if(!picturebar->IsVisible() && ir)
 			picturebar->SetVisible(true);
-		}
-		else if(picturebar->GetState() != STATE_DISABLED && !ir)
-		{
-			picturebar->SetState(STATE_DISABLED);
+		else if(picturebar->IsVisible() && !ir)
 			picturebar->SetVisible(false);
-		}
 
 		usleep(THREAD_SLEEP);
 	}
@@ -2409,8 +2405,6 @@ static void MenuBrowsePictures()
 				if(browserList[browser.selIndex].type == TYPE_FOLDER)
 				{
 					SuspendPictureThread();
-					SetPicture(-1, -1); // set picture to blank
-					CleanupPictures(-1);
 
 					if(BrowserChangeFolder())
 					{
@@ -2523,6 +2517,7 @@ static void MenuDVD()
 
 				break;
 			}
+			usleep(THREAD_SLEEP);
 		}
 		CancelAction();
 		SuspendGui();

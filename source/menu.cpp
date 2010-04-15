@@ -2499,7 +2499,10 @@ static void MenuDVD()
 
 	if(!wiiPlayingDVD())
 	{
-		sprintf(loadedFile, "dvdnav://");
+		if(WiiSettings.dvdMenu)
+			sprintf(loadedFile, "dvdnav://");
+		else
+			sprintf(loadedFile, "dvd://");
 		mainWindow->SetState(STATE_DISABLED);
 		mainWindow->Append(disabled);
 		ShowAction("Loading...");
@@ -2580,6 +2583,8 @@ static void MenuSettingsGlobal()
 	sprintf(options.name[i++], "Volume");
 	sprintf(options.name[i++], "Exit Action");
 	sprintf(options.name[i++], "Wiimote Rumble");
+	sprintf(options.name[i++], "Subtitles");
+	sprintf(options.name[i++], "Subtitle Delay");
 
 	options.length = i;
 		
@@ -2658,6 +2663,14 @@ static void MenuSettingsGlobal()
 			case 4:
 				WiiSettings.rumble ^= 1;
 				break;
+			case 5:
+				WiiSettings.subtitleVisibility ^= 1;
+				break;
+			case 6:
+				WiiSettings.subtitleDelay += 0.1;
+				if (WiiSettings.subtitleDelay > 2)
+					WiiSettings.subtitleDelay = -2;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -2691,6 +2704,8 @@ static void MenuSettingsGlobal()
 			}
 
 			sprintf(options.value[4], "%s", WiiSettings.rumble ? "On" : "Off");
+			sprintf(options.value[5], "%s", WiiSettings.subtitleVisibility ? "On" : "Off");
+			sprintf(options.value[6], "%.1f sec", WiiSettings.subtitleDelay);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -3877,25 +3892,24 @@ static void MenuSettingsNetworkFTP()
 	CloseFTP(netEditIndex+1);
 }
 
-static void MenuSettingsSubtitles()
+static void MenuSettingsDVD()
 {
 	int ret;
 	int i = 0;
 	bool firstRun = true;
 	OptionList options;
 
-	sprintf(options.name[i++], "Visibility");
-	sprintf(options.name[i++], "Delay");
+	sprintf(options.name[i++], "DVD Menu");
 
 	options.length = i;
-		
+
 	for(i=0; i < options.length; i++)
 	{
 		options.value[i][0] = 0;
 		options.icon[i] = 0;
 	}
 
-	GuiText titleTxt("Settings - Subtitles", 28, (GXColor){255, 255, 255, 255});
+	GuiText titleTxt("Settings - DVD", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
@@ -3934,7 +3948,7 @@ static void MenuSettingsSubtitles()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(menuCurrent == MENU_SETTINGS_SUBTITLES && !guiShutdown)
+	while(menuCurrent == MENU_SETTINGS_DVD && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -3943,21 +3957,15 @@ static void MenuSettingsSubtitles()
 		switch (ret)
 		{
 			case 0:
-				WiiSettings.subtitleVisibility ^= 1;
-				break;
-
-			case 1:
-				WiiSettings.subtitleDelay += 0.1;
-				if (WiiSettings.subtitleDelay > 2)
-					WiiSettings.subtitleDelay = -2;
+				WiiSettings.dvdMenu ^= 1;
 				break;
 		}
 
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			sprintf(options.value[0], "%s", WiiSettings.subtitleVisibility ? "On" : "Off");
-			sprintf(options.value[1], "%.1f sec", WiiSettings.subtitleDelay);
+			
+			sprintf(options.value[0], "%s", WiiSettings.dvdMenu ? "Show" : "Skip to Main Title");
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -3987,9 +3995,9 @@ static void MenuSettings()
 	sprintf(options.name[i++], "Videos");
 	sprintf(options.name[i++], "Music");
 	sprintf(options.name[i++], "Pictures");
+	sprintf(options.name[i++], "DVD");
 	sprintf(options.name[i++], "Online Media");
 	sprintf(options.name[i++], "Network");
-	sprintf(options.name[i++], "Subtitles");
 
 	options.length = i;
 
@@ -4057,17 +4065,17 @@ static void MenuSettings()
 			case 3:
 				ChangeMenuNoHistory(MENU_SETTINGS_PICTURES);
 				break;
-
+				
 			case 4:
-				ChangeMenuNoHistory(MENU_SETTINGS_ONLINEMEDIA);
+				ChangeMenuNoHistory(MENU_SETTINGS_DVD);
 				break;
 
 			case 5:
-				ChangeMenuNoHistory(MENU_SETTINGS_NETWORK);
+				ChangeMenuNoHistory(MENU_SETTINGS_ONLINEMEDIA);
 				break;
 
 			case 6:
-				ChangeMenuNoHistory(MENU_SETTINGS_SUBTITLES);
+				ChangeMenuNoHistory(MENU_SETTINGS_NETWORK);
 				break;
 		}
 
@@ -5164,6 +5172,9 @@ void WiiMenu()
 			case MENU_SETTINGS_ONLINEMEDIA:
 				MenuSettingsOnlineMedia();
 				break;
+			case MENU_SETTINGS_DVD:
+				MenuSettingsDVD();
+				break;
 			case MENU_SETTINGS_NETWORK:
 				MenuSettingsNetwork();
 				break;
@@ -5172,9 +5183,6 @@ void WiiMenu()
 				break;
 			case MENU_SETTINGS_NETWORK_FTP:
 				MenuSettingsNetworkFTP();
-				break;
-			case MENU_SETTINGS_SUBTITLES:
-				MenuSettingsSubtitles();
 				break;
 			default: // unrecognized menu
 				MenuBrowse(MENU_BROWSE_VIDEOS);

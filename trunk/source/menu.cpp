@@ -488,6 +488,16 @@ void ResetText()
 		mainWindow->ResetText();
 }
 
+void DisableMainWindow()
+{
+	SuspendGui();
+	if(!mainWindow->Find(disabled))
+		mainWindow->Append(disabled);
+
+	mainWindow->SetState(STATE_DISABLED);
+	ResumeGui();
+}
+
 /****************************************************************************
  * WindowPrompt
  *
@@ -1542,17 +1552,15 @@ static void MenuBrowse(int menu)
 				if(!IsAllowedExt(ext)) // unrecognized audio or video extension
 				{
 					// parse as a playlist					
-					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
+					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0 &&
+						browserList[browser.selIndex].type != TYPE_SEARCH)
 					{
 						mainWindow->Append(disabled);
 						mainWindow->SetState(STATE_DISABLED);
 						ShowAction("Loading...");
-						numItems = BrowserChangeFolder();
 					}
-					else
-					{
-						numItems = BrowserChangeFolder();
-					}
+
+					numItems = BrowserChangeFolder();
 
 					if(numItems > 1)
 					{

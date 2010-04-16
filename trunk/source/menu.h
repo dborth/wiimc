@@ -16,6 +16,7 @@
 void GuiInit();
 void WiiMenu();
 void MPlayerMenu();
+void DisableMainWindow();
 void ErrorPrompt(const char * msg);
 int ErrorPromptRetry(const char * msg);
 void InfoPrompt(const char * msg);

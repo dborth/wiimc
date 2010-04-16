@@ -376,7 +376,7 @@ void SetMPlayerSettings()
 int
 main(int argc, char *argv[])
 {
-	USBGeckoOutput(); // uncomment to enable USB gecko output
+	//USBGeckoOutput(); // uncomment to enable USB gecko output
 	__exception_setreload(8);
 
 	// try to load IOS 202
@@ -403,7 +403,7 @@ main(int argc, char *argv[])
 	SYS_SetResetCallback(ResetCB);
 
 	InitMem2Manager(); // only used for cache_mem
-	picBuffer = (u8 *)memalign(32, 1024*1024*6); // memory for picture viewer
+	picBuffer = (u8 *)memalign(32, MAX_PICTURE_SIZE); // memory for picture viewer
 
 	MountAllDevices(); // Initialize SD and USB devices
 

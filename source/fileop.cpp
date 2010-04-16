@@ -1276,6 +1276,8 @@ static int ParsePLXPlaylist()
 
 		url_escape_string(escquery, query); // escape the string for use in a URL
 		strcat(browser.dir, query); // append query to search URL
+		DisableMainWindow();
+		ShowAction("Loading...");
 	}
 
 	if(strncmp(browser.dir, "http:", 5) == 0)
@@ -1382,7 +1384,11 @@ static int ParsePLXPlaylist()
 	if(numEntries == 0)
 	{
 		free(list);
-		return -2;
+
+		if(browserList[browser.selIndex].type == TYPE_SEARCH)
+			return -5;
+		else
+			return -2;
 	}
 
 	char *root = (char*)BrowserHistoryRetrieve();
@@ -1455,6 +1461,11 @@ int ParsePlaylistFile()
 			case -2:
 				if(ext != NULL)
 					ErrorPrompt("Playlist does not contain any supported entries!");
+				break;
+			case -3: // blank search query
+				break;
+			case -5: // search query - no results
+				InfoPrompt("No Results Found", "Your search did not match any media files.");
 				break;
 		}
 

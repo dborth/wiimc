@@ -1860,7 +1860,6 @@ done:
 
 // Picture Viewer
 u8* picBuffer = NULL;
-#define MAX_PICTURE_SIZE (1024*1024*6) // 6 MB
 static int loadPictures = 0; // reload pictures
 
 #define NUM_PICTURES 		5 // 1 image with a buffer of +/- 2 on each side
@@ -2344,7 +2343,7 @@ static void MenuBrowsePictures()
 		}
 		
 		// update progress bar
-		if(!browserList[browser.selIndex].type == TYPE_FOLDER && loadSize > 0 && !pictureImg->IsVisible())
+		if(pictureIndexLoading == browser.selIndex && !browserList[browser.selIndex].type == TYPE_FOLDER && loadSize > 0 && !pictureImg->IsVisible())
 		{
 			done = loadOffset/(float)loadSize;
 
@@ -2419,7 +2418,7 @@ static void MenuBrowsePictures()
 				{
 					SuspendPictureThread();
 
-					if(BrowserChangeFolder())
+					if(BrowserChangeFolder(true, true))
 					{
 						fileBrowser.ResetState();
 						fileBrowser.fileList[0]->SetState(STATE_SELECTED);

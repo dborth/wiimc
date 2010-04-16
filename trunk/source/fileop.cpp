@@ -1231,6 +1231,17 @@ ParseDirectory(bool waitParse)
 		ShowAction("Loading...");
 		while(dirIter != NULL) usleep(THREAD_SLEEP);
 		CancelAction();
+
+		if(menuCurrent == MENU_BROWSE_PICTURES)
+		{
+			// check if any pictures were > max size and display a warning
+			for(int i=0; i < browser.numEntries; i++)
+				if(browserList[i].length > MAX_PICTURE_SIZE)
+				{
+					InfoPrompt("Warning", "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable.");
+					break;
+				}
+		}
 	}
 
 	return browser.numEntries;

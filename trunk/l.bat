@@ -1,1 +1,0 @@
-wiiload wiimc.dol 

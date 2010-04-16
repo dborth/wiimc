@@ -1050,8 +1050,21 @@ static void CreditsWindow()
 	alignWindow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	creditsWindow.Append(&alignWindow);
 
-	int numEntries = 13;
+	int numEntries = 15;
 	GuiText * txt[numEntries];
+
+	char iosVersion[20];
+	sprintf(iosVersion, "IOS: %d", IOS_GetVersion());
+
+	char appVersion[20];
+	sprintf(appVersion, "Version %s", APPVERSION);
+
+	txt[i] = new GuiText(iosVersion, 16, (GXColor){255, 255, 255, 255});
+	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	txt[i]->SetPosition((screenwidth/2)-30,30); i++;
+	txt[i] = new GuiText(appVersion, 16, (GXColor){255, 255, 255, 255});
+	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	txt[i]->SetPosition((screenwidth/2)-30,56); i++;
 
 	txt[i] = new GuiText("www.wiimc.org", 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);

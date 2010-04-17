@@ -75,6 +75,9 @@ void SetupPads()
 
 static void ShutoffRumble(int i, int cooloff)
 {
+	if(CONF_GetPadMotorMode() == 0)
+		return;
+
 	prev[i] = gettime() + cooloff;
 	WPAD_Rumble(i, 0); // rumble off
 	rumbleOn[i] = 0;
@@ -99,8 +102,9 @@ void EnableRumble()
 
 void RequestRumble(int i)
 {
-	if(!WiiSettings.rumble || rumbleDisabled || i < 0) return;
-	
+	if(CONF_GetPadMotorMode() == 0 || !WiiSettings.rumble || rumbleDisabled || i < 0)
+		return;
+
 	now[i] = gettime();
 
 	if(prev[i] > now[i])

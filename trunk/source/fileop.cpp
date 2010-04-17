@@ -1348,7 +1348,7 @@ static int ParsePLXPlaylist()
 				// blank values
 				memset(&newEntry, 0, sizeof(PLXENTRY));
 
-				if(strncmp(value, "video", 5) == 0)
+				if(strncmp(value, "video", 5) == 0 || strncmp(value, "audio", 5) == 0)
 					newEntry.type = 1;
 				else if(strncmp(value, "playlist", 8) == 0)
 					newEntry.type = 2;

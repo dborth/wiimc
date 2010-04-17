@@ -319,26 +319,26 @@ static int cache_execute_control(cache_vars_t *s) {
   static u64 last;
   u64 now;
 
-  if (!s->stream->control) {
+  int quit = s->control == -2;
+  if (quit || !s->stream->control) {
     s->stream_time_length = 0;
     s->control_new_pos = 0;
     s->control_res = STREAM_UNSUPPORTED;
     s->control = -1;
-    return res;
+    return !quit;
   }
-  //if(s->stream->type==STREAMTYPE_DVD || s->stream->type==STREAMTYPE_DVDNAV)
-  {
-	  now = GetTimerMS();
-	  if (now - last > 99) {
-	    double len;
-	    if (s->stream->control(s->stream, STREAM_CTRL_GET_TIME_LENGTH, &len) == STREAM_OK)
-	      s->stream_time_length = len;
-	    else
-	      s->stream_time_length = 0;
-	    last = now;
-	  }
+
+  now = GetTimerMS();
+  if (now - last > 99) {
+	double len;
+	if (s->stream->control(s->stream, STREAM_CTRL_GET_TIME_LENGTH, &len) == STREAM_OK)
+	  s->stream_time_length = len;
+	else
+	  s->stream_time_length = 0;
+	last = now;
   }
-  if (s->control == -1) return res;
+
+  if (s->control == -1) return 1;
   switch (s->control) {
     case STREAM_CTRL_GET_CURRENT_TIME:
     case STREAM_CTRL_SEEK_TO_TIME:
@@ -353,15 +353,13 @@ static int cache_execute_control(cache_vars_t *s) {
     case STREAM_CTRL_SET_ANGLE:
       s->control_res = s->stream->control(s->stream, s->control, &s->control_uint_arg);
       break;
-    case -2:
-      res = 0;
     default:
       s->control_res = STREAM_UNSUPPORTED;
       break;
   }
   s->control_new_pos = s->stream->pos;
   s->control = -1;
-  return res;
+  return 1;
 }
 
 static cache_vars_t* cache_init(int size,int sector){
@@ -428,7 +426,8 @@ void cache_uninit(stream_t *s) {
 
 if(!c) return;
 #if defined(GEKKO)
-  free(c->stream);
+  if(c->stream)
+    free(c->stream);
   c->buffer=NULL;
   free(s->cache_data);
   s->cache_data=NULL;
@@ -673,52 +672,50 @@ int cache_stream_seek_long(stream_t *stream,off_t pos){
 int cache_do_control(stream_t *stream, int cmd, void *arg) {
   cache_vars_t* s = stream->cache_data;
   switch (cmd) {
-    case STREAM_CTRL_SEEK_TO_TIME:
-      s->control_double_arg = *(double *)arg;
-      s->control = cmd;
-      break;
-    case STREAM_CTRL_SEEK_TO_CHAPTER:
-    case STREAM_CTRL_SET_ANGLE:
-      s->control_uint_arg = *(unsigned *)arg;
-      s->control = cmd;
-      break;
+	case STREAM_CTRL_SEEK_TO_TIME:
+	  s->control_double_arg = *(double *)arg;
+	  s->control = cmd;
+	  break;
+	case STREAM_CTRL_SEEK_TO_CHAPTER:
+	case STREAM_CTRL_SET_ANGLE:
+	  s->control_uint_arg = *(unsigned *)arg;
+	  s->control = cmd;
+	  break;
 // the core might call these every frame, they are too slow for this...
-    case STREAM_CTRL_GET_TIME_LENGTH:
+	case STREAM_CTRL_GET_TIME_LENGTH:
 //    case STREAM_CTRL_GET_CURRENT_TIME:
-      *(double *)arg = s->stream_time_length;
-      return s->stream_time_length ? STREAM_OK : STREAM_UNSUPPORTED;
-    case STREAM_CTRL_GET_NUM_CHAPTERS:
-    case STREAM_CTRL_GET_CURRENT_CHAPTER:
-    case STREAM_CTRL_GET_ASPECT_RATIO:
-    case STREAM_CTRL_GET_NUM_ANGLES:
-    case STREAM_CTRL_GET_ANGLE:
-    case -2:
-      s->control = cmd;
-      break;
-    default:
-      return STREAM_UNSUPPORTED;
+	  *(double *)arg = s->stream_time_length;
+	  return s->stream_time_length ? STREAM_OK : STREAM_UNSUPPORTED;
+	case STREAM_CTRL_GET_NUM_CHAPTERS:
+	case STREAM_CTRL_GET_CURRENT_CHAPTER:
+	case STREAM_CTRL_GET_ASPECT_RATIO:
+	case STREAM_CTRL_GET_NUM_ANGLES:
+	case STREAM_CTRL_GET_ANGLE:
+	case -2:
+	  s->control = cmd;
+	  break;
+	default:
+	  return STREAM_UNSUPPORTED;
   }
-  
-while (s->control != -1)
-	usec_sleep(CONTROL_SLEEP_TIME); 
-
+  while (s->control != -1)
+	usec_sleep(CONTROL_SLEEP_TIME);
   switch (cmd) {
-    case STREAM_CTRL_GET_TIME_LENGTH:
-    case STREAM_CTRL_GET_CURRENT_TIME:
-    case STREAM_CTRL_GET_ASPECT_RATIO:
-      *(double *)arg = s->control_double_arg;
-      break;
-    case STREAM_CTRL_GET_NUM_CHAPTERS:
-    case STREAM_CTRL_GET_CURRENT_CHAPTER:
-    case STREAM_CTRL_GET_NUM_ANGLES:
-    case STREAM_CTRL_GET_ANGLE:
-      *(unsigned *)arg = s->control_uint_arg;
-      break;
-    case STREAM_CTRL_SEEK_TO_CHAPTER:
-    case STREAM_CTRL_SEEK_TO_TIME:
-    case STREAM_CTRL_SET_ANGLE:
-      stream->pos = s->read_filepos = s->control_new_pos;
-      break;
+	case STREAM_CTRL_GET_TIME_LENGTH:
+	case STREAM_CTRL_GET_CURRENT_TIME:
+	case STREAM_CTRL_GET_ASPECT_RATIO:
+	  *(double *)arg = s->control_double_arg;
+	  break;
+	case STREAM_CTRL_GET_NUM_CHAPTERS:
+	case STREAM_CTRL_GET_CURRENT_CHAPTER:
+	case STREAM_CTRL_GET_NUM_ANGLES:
+	case STREAM_CTRL_GET_ANGLE:
+	  *(unsigned *)arg = s->control_uint_arg;
+	  break;
+	case STREAM_CTRL_SEEK_TO_CHAPTER:
+	case STREAM_CTRL_SEEK_TO_TIME:
+	case STREAM_CTRL_SET_ANGLE:
+	  stream->pos = s->read_filepos = s->control_new_pos;
+	  break;
   }
   return s->control_res;
 }
@@ -819,8 +816,10 @@ void refillcache(stream_t *stream,float min)
 }
 int stream_error(stream_t *stream)
 {
-	//cache_vars_t* s;
+	if(!stream || !stream->cache_data)
+		return 0;
 
-	//s=stream->cache_data;
-  	return ((cache_vars_t*)stream->cache_data)->stream->error;
+	cache_vars_t *vars = (cache_vars_t *)stream->cache_data;
+
+	return vars->stream->error;
 }

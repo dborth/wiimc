@@ -81,7 +81,7 @@ void ExitApp()
 
 static void ShutdownCB()
 {
-	if(controlledbygui != 1 && menuMode == 0)
+	if((controlledbygui != 1 && menuMode == 0) || inNetworkInit)
 		return;
 
 	ConfigRequested = 1;
@@ -89,7 +89,7 @@ static void ShutdownCB()
 }
 static void ResetCB()
 {
-	if(controlledbygui != 1 && menuMode == 0)
+	if((controlledbygui != 1 && menuMode == 0) || inNetworkInit)
 		return;
 
 	ResetRequested = 1;

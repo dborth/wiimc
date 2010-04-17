@@ -411,7 +411,7 @@ static void *GuiThread (void *arg)
 				ResumeUpdateThread();
 			}
 
-			if((userInput[0].wpad->btns_d & WPAD_BUTTON_HOME) && controlledbygui == 1)
+			if((userInput[0].wpad->btns_d & WPAD_BUTTON_HOME) && controlledbygui == 1 && !inNetworkInit)
 			{
 				ExitRequested = 1; // exit program
 			}

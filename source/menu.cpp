@@ -1915,14 +1915,16 @@ static void SetPicture(int picIndex, int browserIndex)
 		pictureBtn->SetSize(pictures[picIndex].image->GetWidth()*pictureImg->GetScale(), pictures[picIndex].image->GetHeight()*pictureImg->GetScale());
 		pictureBtn->SetState(STATE_DEFAULT);
 		pictureImg->SetVisible(true);
+		pictureBtn->SetVisible(true);
 		ResumeGui();
 	}
 	else
 	{
 		SuspendGui();
-		pictureImg->SetImage(NULL);
+		pictureBtn->SetVisible(false);
 		pictureBtn->SetState(STATE_DISABLED);
 		pictureImg->SetVisible(false);
+		pictureImg->SetImage(NULL);
 		ResumeGui();
 		pictureLoaded = -1;
 		pictureIndexLoaded = -1;
@@ -1996,7 +1998,11 @@ restart:
 						if(pictures[i].index == -1)
 							break;
 
+					if(i >= NUM_PICTURES) // no empty slot found!
+						goto restart;
+
 					pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
+
 					if(pictures[i].image->GetImage() != NULL)
 					{
 						pictures[i].index = selIndex;
@@ -2045,6 +2051,7 @@ restart:
 					goto restart;
 
 				pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
+
 				if(pictures[i].image->GetImage() != NULL)
 				{
 					pictures[i].index = next;
@@ -4849,6 +4856,7 @@ static void SetupGui()
 	pictureBtn->SetTrigger(trigA);
 	pictureBtn->SetSelectable(false);
 	pictureBtn->SetState(STATE_DISABLED);
+	pictureBtn->SetVisible(false);
 	pictureBtn->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 
 	// initialize pictures struct

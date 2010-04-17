@@ -1685,6 +1685,7 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 	size_t readsize = 0;
 	int retry = 1;
 	FILE * file;
+	cancelFileLoad = false;
 
 	// stop checking if devices were removed/inserted
 	// since we're loading a file

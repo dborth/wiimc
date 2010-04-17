@@ -49,6 +49,9 @@ GuiText::GuiText(const char * t, int s, GXColor c)
 		origText = strdup(t);
 		text = charToWideChar(gettext(t));
 	}
+
+	for(int i=0; i < 20; i++)
+		textDyn[i] = NULL;
 }
 
 /**
@@ -78,6 +81,9 @@ GuiText::GuiText(const char * t)
 		origText = strdup(t);
 		text = charToWideChar(gettext(t));
 	}
+
+	for(int i=0; i < 20; i++)
+		textDyn[i] = NULL;
 }
 
 /**
@@ -93,7 +99,8 @@ GuiText::~GuiText()
 	if(textDynNum > 0)
 	{
 		for(int i=0; i < textDynNum; i++)
-			delete[] textDyn[i];
+			if(textDyn[i])
+				delete[] textDyn[i];
 	}
 }
 
@@ -107,7 +114,8 @@ void GuiText::SetText(const char * t)
 	if(textDynNum > 0)
 	{
 		for(int i=0; i < textDynNum; i++)
-			delete[] textDyn[i];
+			if(textDyn[i])
+				delete[] textDyn[i];
 	}
 
 	origText = NULL;
@@ -142,11 +150,15 @@ void GuiText::SetMaxWidth(int width)
 {
 	maxWidth = width;
 
-	if(textDynNum > 0)
+	for(int i=0; i < textDynNum; i++)
 	{
-		for(int i=0; i < textDynNum; i++)
+		if(textDyn[i])
+		{
 			delete[] textDyn[i];
+			textDyn[i] = NULL;
+		}
 	}
+
 	textDynNum = 0;
 }
 
@@ -155,11 +167,15 @@ void GuiText::SetWrap(bool w, int width)
 	wrap = w;
 	maxWidth = width;
 
-	if(textDynNum > 0)
+	for(int i=0; i < textDynNum; i++)
 	{
-		for(int i=0; i < textDynNum; i++)
+		if(textDyn[i])
+		{
 			delete[] textDyn[i];
+			textDyn[i] = NULL;
+		}
 	}
+
 	textDynNum = 0;
 }
 
@@ -168,11 +184,15 @@ void GuiText::SetScroll(int s)
 	if(textScroll == s)
 		return;
 
-	if(textDynNum > 0)
+	for(int i=0; i < textDynNum; i++)
 	{
-		for(int i=0; i < textDynNum; i++)
+		if(textDyn[i])
+		{
 			delete[] textDyn[i];
+			textDyn[i] = NULL;
+		}
 	}
+
 	textDynNum = 0;
 
 	textScroll = s;
@@ -234,11 +254,15 @@ void GuiText::ResetText()
 
 	text = charToWideChar(gettext(origText));
 
-	if(textDynNum > 0)
+	for(int i=0; i < textDynNum; i++)
 	{
-		for(int i=0; i < textDynNum; i++)
+		if(textDyn[i])
+		{
 			delete[] textDyn[i];
+			textDyn[i] = NULL;
+		}
 	}
+
 	textDynNum = 0;
 }
 
@@ -367,7 +391,6 @@ void GuiText::Draw()
 					}
 
 					wcsncpy(textDyn[0], &text[textScrollPos], maxChar-1);
-					textDyn[maxChar-1] = 0;
 
 					u32 dynlen = wcslen(textDyn[0]);
 

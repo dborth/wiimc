@@ -152,8 +152,7 @@ void MPlayerInput()
 		{
 			osdLevel ^= 1;
 		}
-
-		if(ConfigRequested || userInput[i].wpad->btns_d & WPAD_BUTTON_HOME)
+		else if(ConfigRequested || userInput[i].wpad->btns_d & WPAD_BUTTON_HOME)
 		{
 			ConfigRequested = 0;
 			wiiGotoGui();
@@ -176,8 +175,7 @@ void MPlayerInput()
 				wiiPause();
 			}
 		}
-
-		if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
+		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
 		{
 			wiiFastForward();
 		}
@@ -213,6 +211,14 @@ void MPlayerInput()
 				ShowVolumeLevelBar();
 			}
 		}
+		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
+		{
+			wiiSetProperty(MP_CMD_SUB_SELECT, -2);
+		}
+		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
+		{
+			wiiSetProperty(MP_CMD_SWITCH_AUDIO, -1);
+		}
 	}
 
 	if(inDVDMenu)
@@ -241,9 +247,6 @@ void MPlayerInput()
 	{
 		if(userInput[0].wpad->btns_d & WPAD_BUTTON_2)
 			wiiDVDNav(MP_CMD_DVDNAV_MENU);
-
-		if(userInput[0].wpad->btns_d & WPAD_BUTTON_B)
-			wiiSetProperty(MP_CMD_SUB_SELECT, -1);
 	}
 
 	if(volumeUpdated)

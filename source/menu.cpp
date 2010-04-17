@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <wiiuse/wpad.h>
 #include <ogc/lwp_watchdog.h>
 
@@ -938,7 +939,7 @@ void OnScreenKeyboard(char * var, u32 maxlen)
 
 	if(save)
 	{
-		snprintf(var, maxlen, "%s", keyboard.kbtextstr);
+		snprintf(var, maxlen+1, "%s", keyboard.kbtextstr);
 	}
 
 	SuspendGui();
@@ -3689,6 +3690,16 @@ static void MenuSettingsNetworkSMB()
 	CloseShare(netEditIndex+1);
 }
 
+static bool isnumeric(char *str)
+{
+	while(*str)
+	{
+		if(!isdigit(*str)) return false;
+		str++;
+	}
+	return true;
+}
+
 static void MenuSettingsNetworkFTP()
 {
 	int ret;
@@ -3703,6 +3714,7 @@ static void MenuSettingsNetworkFTP()
 	sprintf(options.name[i++], "Folder");
 	sprintf(options.name[i++], "Username");
 	sprintf(options.name[i++], "Password");
+	sprintf(options.name[i++], "Port");
 	sprintf(options.name[i++], "Mode");
 
 	options.length = i;
@@ -3718,9 +3730,10 @@ static void MenuSettingsNetworkFTP()
 	else if(WiiSettings.ftpConf[netEditIndex].displayname[0] != 0)
 		sprintf(siteName, "%s", WiiSettings.ftpConf[netEditIndex].displayname);
 	else
-		sprintf(siteName, "%s@%s/%s", 
+		sprintf(siteName, "%s@%s:%d/%s", 
 		WiiSettings.ftpConf[netEditIndex].user, 
-		WiiSettings.ftpConf[netEditIndex].ip, 
+		WiiSettings.ftpConf[netEditIndex].ip,
+		WiiSettings.ftpConf[netEditIndex].port,
 		WiiSettings.ftpConf[netEditIndex].folder);
 
 	sprintf(titleStr, "Settings - Network - %s", siteName);
@@ -3765,7 +3778,12 @@ static void MenuSettingsNetworkFTP()
 	deleteBtn.SetTrigger(trigA);
 	deleteBtn.SetEffectGrow();
 
-	GuiOptionBrowser optionBrowser(screenwidth, 6, &options);
+	int size = 7;
+
+	if(netEditIndex >= 0)
+		size = 6;
+
+	GuiOptionBrowser optionBrowser(screenwidth, size, &options);
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol2Position(220);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -3806,37 +3824,50 @@ static void MenuSettingsNetworkFTP()
 			case 0:
 				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].displayname, 80);
 				break;
-			
 			case 1:
 				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].ip, 80);
 				break;
-
 			case 2:
 				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].folder, 80);
 				break;
-
 			case 3:
 				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].user, 20);
 				break;
-
 			case 4:
 				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].pwd, 14);
 				break;
-				
 			case 5:
-				WiiSettings.ftpConf[netEditIndex].passive ^= 1;
+				char tmpPort[6];
+				sprintf(tmpPort, "%d", WiiSettings.ftpConf[netEditIndex].port);
+				OnScreenKeyboard(tmpPort, 5);
+				if(tmpPort[0] == 0)
+					ErrorPrompt("Port cannot be blank!");
+				else if(!isnumeric(tmpPort))
+					ErrorPrompt("Port is not a number!");
+				else
+				{
+					int port = atoi(tmpPort);
+					if(port < 4 || port > 49151)
+						ErrorPrompt("Port is outside the allowed range (4-49151)!");
+					else
+						WiiSettings.ftpConf[netEditIndex].port = port;
+				}
+				break;
+			case 6:
+				//WiiSettings.ftpConf[netEditIndex].passive ^= 1;
 				break;
 		}
 
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			strncpy (options.value[0], WiiSettings.ftpConf[netEditIndex].displayname, 80);
-			strncpy (options.value[1], WiiSettings.ftpConf[netEditIndex].ip, 80);
-			strncpy (options.value[2], WiiSettings.ftpConf[netEditIndex].folder, 80);
-			strncpy (options.value[3], WiiSettings.ftpConf[netEditIndex].user, 20);
-			strncpy (options.value[4], WiiSettings.ftpConf[netEditIndex].pwd, 14);
-			sprintf(options.value[5], "%s", WiiSettings.ftpConf[netEditIndex].passive ? "Passive" : "Active");
+			strncpy(options.value[0], WiiSettings.ftpConf[netEditIndex].displayname, 80);
+			strncpy(options.value[1], WiiSettings.ftpConf[netEditIndex].ip, 80);
+			strncpy(options.value[2], WiiSettings.ftpConf[netEditIndex].folder, 80);
+			strncpy(options.value[3], WiiSettings.ftpConf[netEditIndex].user, 20);
+			strncpy(options.value[4], WiiSettings.ftpConf[netEditIndex].pwd, 14);
+			sprintf(options.value[5], "%d", WiiSettings.ftpConf[netEditIndex].port);
+			sprintf(options.value[6], "%s", WiiSettings.ftpConf[netEditIndex].passive ? "Passive" : "Active");
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -3854,6 +3885,7 @@ static void MenuSettingsNetworkFTP()
 				WiiSettings.ftpConf[netEditIndex].folder[0] = 0;
 				WiiSettings.ftpConf[netEditIndex].user[0] = 0;
 				WiiSettings.ftpConf[netEditIndex].pwd[0] = 0;
+				WiiSettings.ftpConf[netEditIndex].port = 21;
 				WiiSettings.ftpConf[netEditIndex].passive = 0;
 				ChangeMenuNoHistory(MENU_SETTINGS_NETWORK);
 			}

@@ -22,6 +22,7 @@ struct FTPSettings {
 	char	folder[81];
 	char	user[21];
 	char	pwd[21];
+	int		port;
 	int		passive;
 	char	displayname[81];
 };

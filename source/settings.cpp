@@ -97,6 +97,7 @@ static void createXMLFTPSite(int i)
 	createXMLVariable("folder", "FTP Name", WiiSettings.ftpConf[i].folder);
 	createXMLVariable("user", "FTP Username", WiiSettings.ftpConf[i].user);
 	createXMLVariable("pwd", "FTP Password", WiiSettings.ftpConf[i].pwd);
+	createXMLVariable("port", "FTP Port", toStr(WiiSettings.ftpConf[i].port));
 	createXMLVariable("passive", "FTP Passive Mode", toStr(WiiSettings.ftpConf[i].passive));
 	createXMLVariable("displayname", "FTP Display Name", WiiSettings.ftpConf[i].displayname);
 }
@@ -274,6 +275,7 @@ static void loadXMLFTPSite(int i)
 		loadXMLVariable(WiiSettings.ftpConf[i].folder, "folder", sizeof(WiiSettings.ftpConf[i].folder));
 		loadXMLVariable(WiiSettings.ftpConf[i].user, "user", sizeof(WiiSettings.ftpConf[i].user));
 		loadXMLVariable(WiiSettings.ftpConf[i].pwd, "pwd", sizeof(WiiSettings.ftpConf[i].pwd));
+		loadXMLVariable(&WiiSettings.ftpConf[i].port, "port");
 		loadXMLVariable(&WiiSettings.ftpConf[i].passive, "passive");
 		loadXMLVariable(WiiSettings.ftpConf[i].displayname, "displayname", sizeof(WiiSettings.ftpConf[i].displayname));
 	}
@@ -389,6 +391,24 @@ void DefaultSettings ()
 	// Subtitles
 	WiiSettings.subtitleVisibility = 1;
 	WiiSettings.subtitleDelay = 0;
+
+	// SMB and FTP
+	for(int i=0; i<5; i++)
+	{
+		WiiSettings.smbConf[i].displayname[0] = 0;
+		WiiSettings.smbConf[i].ip[0] = 0;
+		WiiSettings.smbConf[i].share[0] = 0;
+		WiiSettings.smbConf[i].user[0] = 0;
+		WiiSettings.smbConf[i].pwd[0] = 0;
+		
+		WiiSettings.ftpConf[i].displayname[0] = 0;
+		WiiSettings.ftpConf[i].ip[0] = 0;
+		WiiSettings.ftpConf[i].folder[0] = 0;
+		WiiSettings.ftpConf[i].user[0] = 0;
+		WiiSettings.ftpConf[i].pwd[0] = 0;
+		WiiSettings.ftpConf[i].port = 21;
+		WiiSettings.ftpConf[i].passive = 0;
+	}
 }
 
 /****************************************************************************
@@ -447,6 +467,16 @@ static void FixInvalidSettings()
 		WiiSettings.subtitleVisibility = 1;
 	if(WiiSettings.subtitleDelay < -2 || WiiSettings.subtitleDelay > 2)
 		WiiSettings.subtitleDelay = 0;
+
+	// SMB and FTP
+	for(int i=0; i<5; i++)
+	{
+		if(WiiSettings.ftpConf[i].port < 4 || WiiSettings.ftpConf[i].port > 49151)
+			WiiSettings.ftpConf[i].port = 21;
+
+		if(WiiSettings.ftpConf[i].passive != 0) // disable PASV support
+			WiiSettings.ftpConf[i].passive = 0;
+	}
 }
 
 /****************************************************************************

@@ -112,6 +112,11 @@ void reinit_audio()
 {
 	//AUDIO_SetDSPSampleRate(quality);
 	//AUDIO_RegisterDMACallback(switch_buffers);
+	if(!playing)
+	{
+		switch_buffers();
+		AUDIO_StartDMA();
+	}
 }
 
 static int init(int rate, int channels, int format, int flags)

@@ -213,11 +213,13 @@ void MPlayerInput()
 		}
 		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
 		{
-			wiiSetProperty(MP_CMD_SUB_SELECT, -2);
+			if(!wiiIsPaused())
+				wiiSetProperty(MP_CMD_SUB_SELECT, -2);
 		}
 		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
 		{
-			wiiSetProperty(MP_CMD_SWITCH_AUDIO, -1);
+			if(!wiiIsPaused())
+				wiiSetProperty(MP_CMD_SWITCH_AUDIO, -1);
 		}
 	}
 

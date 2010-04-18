@@ -388,14 +388,14 @@ static void *GuiThread (void *arg)
 		{
 			for(i=3; i >= 0; i--)
 			{
-				if(userInput[i].wpad->btns_d & WPAD_BUTTON_1)
+				if(userInput[i].wpad->btns_d & (WPAD_BUTTON_1 | WPAD_CLASSIC_BUTTON_X))
 				{
 					int newMenu = menuCurrent + 1;
 					if(newMenu > MENU_SETTINGS)
 						newMenu = MENU_BROWSE_VIDEOS;
 					ChangeMenu(newMenu);
 				}
-				else if(userInput[i].wpad->btns_d & WPAD_BUTTON_2)
+				else if(userInput[i].wpad->btns_d & (WPAD_BUTTON_2 | WPAD_CLASSIC_BUTTON_Y))
 				{
 					int newMenu = menuCurrent - 1;
 					if(newMenu < MENU_BROWSE_VIDEOS)
@@ -412,7 +412,8 @@ static void *GuiThread (void *arg)
 				ResumeUpdateThread();
 			}
 
-			if((userInput[0].wpad->btns_d & WPAD_BUTTON_HOME) && controlledbygui == 1 && !inNetworkInit)
+			if((userInput[0].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
+				controlledbygui == 1 && !inNetworkInit)
 			{
 				ExitRequested = 1; // exit program
 			}

@@ -1,0 +1,21 @@
+¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
+ 
+                                    - WiiMC -
+                              http://www.wiimc.org   
+                               (Under GPL License)
+ 
+¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
+
+[1.0.1 - April 18, 2010]
+
+* Fixed NTFS crashes
+* Fixed Navi-X search, audio files work in Navi-X now
+* Added Down button to switch audio stream, Up is now to switch subtitles
+* Added FTP port setting
+* Fixed potential picture viewer crashes
+* Fixed some pause/resume issues
+* Fixed some cache issues
+
+[1.0.0 - April 16, 2010]
+
+* Initial release

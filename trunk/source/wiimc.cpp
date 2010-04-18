@@ -142,10 +142,10 @@ const devoptab_t gecko_out = {
 
 static void USBGeckoOutput()
 {
-	gecko = usb_isgeckoalive(1);
-	if(!gecko) return;
+	//gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
+
 	LWP_MutexInit(&gecko_mutex, false);
-	
+
 	devoptab_list[STD_OUT] = &gecko_out;
 	devoptab_list[STD_ERR] = &gecko_out;
 }
@@ -376,7 +376,7 @@ void SetMPlayerSettings()
 int
 main(int argc, char *argv[])
 {
-	//USBGeckoOutput(); // uncomment to enable USB gecko output
+	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
 
 	// try to load IOS 202

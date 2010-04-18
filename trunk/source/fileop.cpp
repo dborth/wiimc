@@ -1088,6 +1088,9 @@ static bool ParseDirEntries()
 
 		if(strcmp(filename,".") == 0)
 			continue;
+		
+		if(strcmp(filename, "..") == 0 && IsDeviceRoot(browser.dir))
+			continue;
 
 		ext = GetExt(filename);
 

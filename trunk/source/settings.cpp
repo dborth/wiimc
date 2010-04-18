@@ -499,43 +499,58 @@ SaveSettings (bool silent)
 	}
 	else
 	{
-		if(ChangeInterface(DEVICE_SD, 1, SILENT))
-			sprintf(filepath, "sd1:");
-		else if(ChangeInterface(DEVICE_USB, 1, SILENT))
-			sprintf(filepath, "usb1:");
-		else if(ChangeInterface(DEVICE_USB, 2, SILENT))
-			sprintf(filepath, "usb2:");
-		else if(ChangeInterface(DEVICE_USB, 3, SILENT))
-			sprintf(filepath, "usb3:");
-
-		// could not mount any devices
-		if(strlen(filepath) == 0 && !silent)
+		if(ChangeInterface(DEVICE_SD, 1, SILENT) && diropen("sd1:/apps/wiimc"))
+			sprintf(filepath, "sd1:/apps/wiimc");
+		else if(ChangeInterface(DEVICE_USB, 1, SILENT) && diropen("usb1:/apps/wiimc"))
+			sprintf(filepath, "usb1:/apps/wiimc");
+		else if(ChangeInterface(DEVICE_USB, 2, SILENT) && diropen("usb2:/apps/wiimc"))
+			sprintf(filepath, "usb2:/apps/wiimc");
+		else if(ChangeInterface(DEVICE_USB, 3, SILENT) && diropen("usb3:/apps/wiimc"))
+			sprintf(filepath, "usb3:/apps/wiimc");
+		else if(ChangeInterface(DEVICE_USB, 4, SILENT) && diropen("usb4:/apps/wiimc"))
+			sprintf(filepath, "usb4:/apps/wiimc");
+		else
 		{
-			ErrorPrompt("Could not find a valid SD or USB device - one is required for normal operation.");
-			return false;
-		}
+			if(ChangeInterface(DEVICE_SD, 1, SILENT))
+				sprintf(filepath, "sd1:");
+			else if(ChangeInterface(DEVICE_USB, 1, SILENT))
+				sprintf(filepath, "usb1:");
+			else if(ChangeInterface(DEVICE_USB, 2, SILENT))
+				sprintf(filepath, "usb2:");
+			else if(ChangeInterface(DEVICE_USB, 3, SILENT))
+				sprintf(filepath, "usb3:");
+			else if(ChangeInterface(DEVICE_USB, 4, SILENT))
+				sprintf(filepath, "usb4:");
 
-		// ensure the necessary folders exists for saving
-		strcat(filepath, "/apps");
-		if (!diropen(filepath))
-		{
-			if(mkdir(filepath, 0777) != 0 && !silent)
+			// could not mount any devices
+			if(strlen(filepath) == 0 && !silent)
 			{
-				sprintf(msg, "Could not create folder %s", filepath);
-				ErrorPrompt(msg);
+				ErrorPrompt("Could not find a valid SD or USB device - one is required for normal operation.");
 				return false;
 			}
-		}
 
-		strcat(filepath, "/");
-		strcat(filepath, APPFOLDER);
-		if (!diropen(filepath))
-		{
-			if(mkdir(filepath, 0777) != 0 && !silent)
+			// ensure the necessary folders exists for saving
+			strcat(filepath, "/apps");
+			if (!diropen(filepath))
 			{
-				sprintf(msg, "Could not create folder %s", filepath);
-				ErrorPrompt(msg);
-				return false;
+				if(mkdir(filepath, 0777) != 0 && !silent)
+				{
+					sprintf(msg, "Could not create folder %s", filepath);
+					ErrorPrompt(msg);
+					return false;
+				}
+			}
+	
+			strcat(filepath, "/");
+			strcat(filepath, APPFOLDER);
+			if (!diropen(filepath))
+			{
+				if(mkdir(filepath, 0777) != 0 && !silent)
+				{
+					sprintf(msg, "Could not create folder %s", filepath);
+					ErrorPrompt(msg);
+					return false;
+				}
 			}
 		}
 		strcat(filepath, "/settings.xml");
@@ -691,7 +706,7 @@ bool LoadSettings()
 		return true;
 
 	bool settingsFound = false;
-	char path[5][MAXPATHLEN];
+	char path[6][MAXPATHLEN];
 	char filepath[MAXPATHLEN];
 
 	sprintf(path[0], "%s", loadPath);
@@ -699,8 +714,9 @@ bool LoadSettings()
 	sprintf(path[2], "usb1:/apps/%s", APPFOLDER);
 	sprintf(path[3], "usb2:/apps/%s", APPFOLDER);
 	sprintf(path[4], "usb3:/apps/%s", APPFOLDER);
+	sprintf(path[5], "usb4:/apps/%s", APPFOLDER);
 
-	for(int i=0; i<5; i++)
+	for(int i=0; i<6; i++)
 	{
 		if(i == 0 && path[0] == 0)
 			continue;

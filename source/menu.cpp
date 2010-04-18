@@ -283,9 +283,9 @@ static void ChangeMenu(int menu)
 
 static void UndoChangeMenu()
 {
+	UpdateMenuImages(menuCurrent, menuPrevious);
 	menuCurrent = menuPrevious;
 	menuPrevious = menuUndo;
-	UpdateMenuImages(menuPrevious, menuCurrent);
 }
 
 static void ChangeMenu(void * ptr, int menu)

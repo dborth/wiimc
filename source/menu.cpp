@@ -429,7 +429,7 @@ static void *GuiThread (void *arg)
 				ExitApp();
 			}
 		}
-		usleep(THREAD_SLEEP);
+		usleep(THREAD_SLEEP*2);
 	}
 	return NULL;
 }
@@ -4873,7 +4873,7 @@ static void SetupGui()
 void GuiInit()
 {
 	guiHalt = 1;
-	LWP_CreateThread (&guithread, GuiThread, NULL, guistack, GSTACK, 66);
+	LWP_CreateThread (&guithread, GuiThread, NULL, guistack, GSTACK, 60);
 }
 
 static void StartGuiThreads()

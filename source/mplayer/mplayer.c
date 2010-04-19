@@ -1809,7 +1809,7 @@ static int check_framedrop(double frame_time) {
 	// check for frame-drop:
 	current_module = "check_framedrop";
 	if (mpctx->sh_audio && !mpctx->d_audio->eof) {
-	    static int dropped_frames;
+	    static int dropped_frames=0;
 	    float delay = playback_speed*mpctx->audio_out->get_delay();
 	    float d = delay-mpctx->delay;
 	    ++total_frame_cnt;
@@ -4520,13 +4520,15 @@ static float timing_sleep(float time_frame)
 		if(frame>20000) //enough to avoid choppy cursor
 		{
 			DrawMPlayer();
-			//VIDEO_WaitVSync();
+			VIDEO_WaitVSync();
 		}
 		else
 		{
-			usec_sleep(frame-100);
+			//usec_sleep(frame-100);
+			usec_sleep(50);
 		}
 		frame = frame - GetRelativeTime();
+		break;
 	}
 	time_frame=(float)(frame * 0.000001F);
 	return time_frame;

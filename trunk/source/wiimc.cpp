@@ -376,14 +376,11 @@ void SetMPlayerSettings()
 int
 main(int argc, char *argv[])
 {
-	IOS_ReloadIOS(202);
-
 	__exception_setreload(8);
-/*
 	// try to load IOS 202
 	if(IOS_GetVersion() != 202 && FindIOS(202))
 		IOS_ReloadIOS(202);
-*/
+
 	if(IOS_GetVersion() == 202)
 	{
 		WIIDVD_Init(false);

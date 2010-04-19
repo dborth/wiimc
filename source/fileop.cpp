@@ -66,7 +66,7 @@ static int deviceHalt = 0;
  * This checks our devices for changes (SD/USB removed) and
  * initializes the network in the background
  ***************************************************************************/
-static int devsleep = 1*1000*1000;
+static int devsleep = 2*1000*1000;
 static bool MountPartitions(int device, int silent);
 static void UnmountPartitions(int device);
 
@@ -81,6 +81,8 @@ static void * devicecallback (void *arg)
 		usleep(THREAD_SLEEP);
 		devsleep -= THREAD_SLEEP;
 	}
+
+	InitializeNetwork(SILENT);
 
 	while (1)
 	{
@@ -126,8 +128,7 @@ static void * devicecallback (void *arg)
 		}
 
 		UpdateCheck();
-		InitializeNetwork(SILENT);
-		devsleep = 1000*1000; // 1 sec
+		devsleep = 1000*1000*2; // 2 sec
 
 		while(devsleep > 0)
 		{
@@ -366,6 +367,8 @@ typedef struct _EXTENDED_BOOT_RECORD {
     u8 reserved[32];                        /* Normally empty */
     u16 signature;                          /* EBR signature; 0xAA55 */
 } __attribute__((__packed__)) EXTENDED_BOOT_RECORD;
+
+//#define DEBUG_MOUNTALL
 
 #ifdef DEBUG_MOUNTALL
 #define debug_printf(fmt, args...) \

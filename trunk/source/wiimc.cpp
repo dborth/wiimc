@@ -17,6 +17,7 @@
 #include "utils/FreeTypeGX.h"
 #include "utils/mload.h"
 #include "utils/di2.h"
+#include "utils/usb2storage.h"
 #include "video.h"
 #include "menu.h"
 #include "libwiigui/gui.h"
@@ -35,7 +36,6 @@
 
 extern "C" {
 extern void __exception_setreload(int t);
-extern void USB2Enable(bool e); // in usb2storage.c
 }
 
 int ScreenshotRequested = 0;
@@ -106,7 +106,7 @@ static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len
 {
 	u32 level;
 
-	if (!ptr || len <= 0 || !gecko)
+	if (!gecko || !ptr || len <= 0)
 		return -1;
 
 	LWP_MutexLock(gecko_mutex);
@@ -376,7 +376,9 @@ void SetMPlayerSettings()
 int
 main(int argc, char *argv[])
 {
+	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
+
 	// try to load IOS 202
 	if(IOS_GetVersion() != 202 && FindIOS(202))
 		IOS_ReloadIOS(202);
@@ -392,9 +394,6 @@ main(int argc, char *argv[])
 
 	VIDEO_Init();
 	InitVideo(); // Initialise video
-
-	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
-
 	SetupPads();
 	AUDIO_Init(NULL);
 

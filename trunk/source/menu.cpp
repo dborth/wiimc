@@ -29,7 +29,7 @@
 #include "utils/dxtn.h"
 #include "filelist.h"
 
-#define THREAD_SLEEP 100
+#define THREAD_SLEEP 200
 #define GSTACK (256*1024)
 static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
 
@@ -429,7 +429,7 @@ static void *GuiThread (void *arg)
 				ExitApp();
 			}
 		}
-		usleep(THREAD_SLEEP*2);
+		usleep(THREAD_SLEEP);
 	}
 	return NULL;
 }

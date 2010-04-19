@@ -377,7 +377,7 @@ void DefaultSettings ()
 	// Network
 
 	// Video
-	WiiSettings.frameDropping = FRAMEDROPPING_AUTO;
+	WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
 	WiiSettings.aspectRatio = -1;
 	WiiSettings.videoZoomHor = 1;
 	WiiSettings.videoZoomVert = 1;
@@ -444,7 +444,7 @@ static void FixInvalidSettings()
 
 	// Video
 	if(WiiSettings.frameDropping < 0 || WiiSettings.frameDropping > FRAMEDROPPING_ALWAYS)
-		WiiSettings.frameDropping = FRAMEDROPPING_AUTO;
+		WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
 	if(WiiSettings.aspectRatio <= 0 || WiiSettings.aspectRatio > 2.36)
 		WiiSettings.aspectRatio = -1;
 	if(WiiSettings.videoZoomHor < 0.5 || WiiSettings.videoZoomHor > 1.5)

@@ -376,13 +376,14 @@ void SetMPlayerSettings()
 int
 main(int argc, char *argv[])
 {
-	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
-	__exception_setreload(8);
+	IOS_ReloadIOS(202);
 
+	__exception_setreload(8);
+/*
 	// try to load IOS 202
 	if(IOS_GetVersion() != 202 && FindIOS(202))
 		IOS_ReloadIOS(202);
-
+*/
 	if(IOS_GetVersion() == 202)
 	{
 		WIIDVD_Init(false);
@@ -394,6 +395,9 @@ main(int argc, char *argv[])
 
 	VIDEO_Init();
 	InitVideo(); // Initialise video
+
+	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
+
 	SetupPads();
 	AUDIO_Init(NULL);
 

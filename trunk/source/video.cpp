@@ -231,7 +231,7 @@ int DrawMPlayerGui()
 
 	// wait for draw to complete
 	while(doMPlayerGuiDraw)
-		usleep(100);
+		usleep(50);
 		
 	return 1;
 }

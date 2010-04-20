@@ -256,6 +256,9 @@ static bool __usb2storage_IsInserted(void)
 		debug_printf("__usb2storage_Startup ret: %d  fd: %i\n",retval,__usb2fd);
 	}
 
+	if(usb2_mutex == LWP_MUTEX_NULL)
+		return false;
+
 	LWP_MutexLock(usb2_mutex);
 	if (__usb2fd > 0)
 	{
@@ -295,8 +298,8 @@ static bool __usb2storage_ReadSectors(u32 sector, u32 numSectors, void *buffer)
 	if (currentMode == 1)
 		return __io_usb1storage.readSectors(sector, numSectors, buffer);
 
-	if (__usb2fd < 1)
-		return IPC_ENOENT;
+	if (__usb2fd < 1 || usb2_mutex == LWP_MUTEX_NULL)
+		return false;
 
 	LWP_MutexLock(usb2_mutex);
 
@@ -334,12 +337,12 @@ static bool __usb2storage_WriteSectors(u32 sector, u32 numSectors, const void *b
 	s32 ret = 1;
 	u32 sectors = 0;
 	uint8_t *dest = (uint8_t *) buffer;
-	
+
 	if (currentMode == 1)
 		return __io_usb1storage.writeSectors(sector, numSectors, buffer);
-	
-	if (__usb2fd < 1)
-		return IPC_ENOENT;
+
+	if (__usb2fd < 1 || usb2_mutex == LWP_MUTEX_NULL)
+		return false;
 
 	LWP_MutexLock(usb2_mutex);
 	while (numSectors > 0 && ret > 0)
@@ -383,6 +386,9 @@ static bool __usb2storage_Shutdown(void)
 {
 	if (currentMode == 1)
 		return __io_usb1storage.shutdown();
+
+	if(usb2_mutex == LWP_MUTEX_NULL)
+		return false;
 
 	LWP_MutexLock(usb2_mutex);
 	USB2Storage_Close();

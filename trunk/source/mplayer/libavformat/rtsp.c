@@ -1314,6 +1314,7 @@ static int rtsp_read_play(AVFormatContext *s)
 {
     RTSPState *rt = s->priv_data;
     RTSPMessageHeader reply1, *reply = &reply1;
+    int i;
     char cmd[1024];
 
     av_log(s, AV_LOG_DEBUG, "hello state=%d\n", rt->state);
@@ -1329,6 +1330,22 @@ static int rtsp_read_play(AVFormatContext *s)
         ff_rtsp_send_cmd(s, "PLAY", rt->control_uri, cmd, reply, NULL);
         if (reply->status_code != RTSP_STATUS_OK) {
             return -1;
+        }
+        if (reply->range_start != AV_NOPTS_VALUE &&
+            rt->transport == RTSP_TRANSPORT_RTP) {
+            for (i = 0; i < rt->nb_rtsp_streams; i++) {
+                RTSPStream *rtsp_st = rt->rtsp_streams[i];
+                RTPDemuxContext *rtpctx = rtsp_st->transport_priv;
+                AVStream *st = NULL;
+                if (rtsp_st->stream_index >= 0)
+                    st = s->streams[rtsp_st->stream_index];
+                rtpctx->last_rtcp_ntp_time  = AV_NOPTS_VALUE;
+                rtpctx->first_rtcp_ntp_time = AV_NOPTS_VALUE;
+                if (st)
+                    rtpctx->range_start_offset = av_rescale_q(reply->range_start,
+                                                              AV_TIME_BASE_Q,
+                                                              st->time_base);
+            }
         }
     }
     rt->state = RTSP_STATE_STREAMING;
@@ -1583,7 +1600,7 @@ redirect:
             goto fail;
         lower_transport_mask &= ~(1 << lower_transport);
         if (lower_transport_mask == 0 && err == 1) {
-            err = AVERROR(FF_NETERROR(EPROTONOSUPPORT));
+            err = FF_NETERROR(EPROTONOSUPPORT);
             goto fail;
         }
     } while (err);
@@ -1692,7 +1709,7 @@ static int udp_read_packet(AVFormatContext *s, RTSPStream **prtsp_st,
             }
 #endif
         } else if (n == 0 && ++timeout_cnt >= MAX_TIMEOUTS) {
-            return AVERROR(ETIMEDOUT);
+            return FF_NETERROR(ETIMEDOUT);
         } else if (n < 0 && errno != EINTR)
             return AVERROR(errno);
     }
@@ -1796,8 +1813,27 @@ static int rtsp_fetch_packet(AVFormatContext *s, AVPacket *pkt)
         return AVERROR_EOF;
     if (rt->transport == RTSP_TRANSPORT_RDT) {
         ret = ff_rdt_parse_packet(rtsp_st->transport_priv, pkt, buf, len);
-    } else
+    } else {
         ret = rtp_parse_packet(rtsp_st->transport_priv, pkt, buf, len);
+        if (ret < 0) {
+            /* Either bad packet, or a RTCP packet. Check if the
+             * first_rtcp_ntp_time field was initialized. */
+            RTPDemuxContext *rtpctx = rtsp_st->transport_priv;
+            if (rtpctx->first_rtcp_ntp_time != AV_NOPTS_VALUE) {
+                /* first_rtcp_ntp_time has been initialized for this stream,
+                 * copy the same value to all other uninitialized streams,
+                 * in order to map their timestamp origin to the same ntp time
+                 * as this one. */
+                int i;
+                for (i = 0; i < rt->nb_rtsp_streams; i++) {
+                    RTPDemuxContext *rtpctx2 = rtsp_st->transport_priv;
+                    if (rtpctx2 &&
+                        rtpctx2->first_rtcp_ntp_time == AV_NOPTS_VALUE)
+                        rtpctx2->first_rtcp_ntp_time = rtpctx->first_rtcp_ntp_time;
+                }
+            }
+        }
+    }
     if (ret < 0)
         goto redo;
     if (ret == 1)

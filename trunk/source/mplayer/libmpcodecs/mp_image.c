@@ -30,14 +30,15 @@
 #include "libmpcodecs/mp_image.h"
 
 #include "libvo/fastmemcpy.h"
+#include "libavutil/mem.h"
 
 void mp_image_alloc_planes(mp_image_t *mpi) {
   // IF09 - allocate space for 4. plane delta info - unused
   if (mpi->imgfmt == IMGFMT_IF09) {
-    mpi->planes[0]=memalign(64, mpi->bpp*mpi->width*(mpi->height+2)/8+
+    mpi->planes[0]=av_malloc(mpi->bpp*mpi->width*(mpi->height+2)/8+
                             mpi->chroma_width*mpi->chroma_height);
   } else
-    mpi->planes[0]=memalign(64, mpi->bpp*mpi->width*(mpi->height+2)/8);
+    mpi->planes[0]=av_malloc(mpi->bpp*mpi->width*(mpi->height+2)/8);
   if (mpi->flags&MP_IMGFLAG_PLANAR) {
     int bpp = IMGFMT_IS_YUVP16(mpi->imgfmt)? 2 : 1;
     // YV12/I420/YVU9/IF09. feel free to add other planar formats here...
@@ -65,7 +66,7 @@ void mp_image_alloc_planes(mp_image_t *mpi) {
   } else {
     mpi->stride[0]=mpi->width*mpi->bpp/8;
     if (mpi->flags & MP_IMGFLAG_RGB_PALETTE)
-      mpi->planes[1] = memalign(64, 1024);
+      mpi->planes[1] = av_malloc(1024);
   }
   mpi->flags|=MP_IMGFLAG_ALLOCATED;
 }
@@ -94,19 +95,106 @@ void copy_mpi(mp_image_t *dmpi, mp_image_t *mpi) {
   }
 }
 
-void clear_mpi(mp_image_t *mpi) {
-int s;
-  if (mpi->imgfmt == IMGFMT_IF09)
-  	s=mpi->bpp*mpi->width*(mpi->height+2)/8+mpi->chroma_width*mpi->chroma_height;
-  else
-  	s=mpi->bpp*mpi->width*(mpi->height+2)/8;
-  
-  memset(mpi->planes[0],0,s);
+void mp_image_setfmt(mp_image_t* mpi,unsigned int out_fmt){
+    mpi->flags&=~(MP_IMGFLAG_PLANAR|MP_IMGFLAG_YUV|MP_IMGFLAG_SWAPPED);
+    mpi->imgfmt=out_fmt;
+    // compressed formats
+    if(out_fmt == IMGFMT_MPEGPES ||
+       out_fmt == IMGFMT_ZRMJPEGNI || out_fmt == IMGFMT_ZRMJPEGIT || out_fmt == IMGFMT_ZRMJPEGIB ||
+       IMGFMT_IS_VDPAU(out_fmt) || IMGFMT_IS_XVMC(out_fmt)){
+	mpi->bpp=0;
+	return;
+    }
+    mpi->num_planes=1;
+    if (IMGFMT_IS_RGB(out_fmt)) {
+	if (IMGFMT_RGB_DEPTH(out_fmt) < 8 && !(out_fmt&128))
+	    mpi->bpp = IMGFMT_RGB_DEPTH(out_fmt);
+	else
+	    mpi->bpp=(IMGFMT_RGB_DEPTH(out_fmt)+7)&(~7);
+	return;
+    }
+    if (IMGFMT_IS_BGR(out_fmt)) {
+	if (IMGFMT_BGR_DEPTH(out_fmt) < 8 && !(out_fmt&128))
+	    mpi->bpp = IMGFMT_BGR_DEPTH(out_fmt);
+	else
+	    mpi->bpp=(IMGFMT_BGR_DEPTH(out_fmt)+7)&(~7);
+	mpi->flags|=MP_IMGFLAG_SWAPPED;
+	return;
+    }
+    mpi->flags|=MP_IMGFLAG_YUV;
+    mpi->num_planes=3;
+    if (mp_get_chroma_shift(out_fmt, NULL, NULL)) {
+        mpi->flags|=MP_IMGFLAG_PLANAR;
+        mpi->bpp = mp_get_chroma_shift(out_fmt, &mpi->chroma_x_shift, &mpi->chroma_y_shift);
+        mpi->chroma_width  = mpi->width  >> mpi->chroma_x_shift;
+        mpi->chroma_height = mpi->height >> mpi->chroma_y_shift;
+    }
+    switch(out_fmt){
+    case IMGFMT_I420:
+    case IMGFMT_IYUV:
+	mpi->flags|=MP_IMGFLAG_SWAPPED;
+    case IMGFMT_YV12:
+	return;
+    case IMGFMT_420A:
+    case IMGFMT_IF09:
+	mpi->num_planes=4;
+    case IMGFMT_YVU9:
+    case IMGFMT_444P:
+    case IMGFMT_422P:
+    case IMGFMT_411P:
+    case IMGFMT_440P:
+    case IMGFMT_444P16_LE:
+    case IMGFMT_444P16_BE:
+    case IMGFMT_422P16_LE:
+    case IMGFMT_422P16_BE:
+    case IMGFMT_420P16_LE:
+    case IMGFMT_420P16_BE:
+	return;
+    case IMGFMT_Y800:
+    case IMGFMT_Y8:
+	/* they're planar ones, but for easier handling use them as packed */
+//	mpi->flags|=MP_IMGFLAG_PLANAR;
+	mpi->bpp=8;
+	mpi->num_planes=1;
+	return;
+    case IMGFMT_UYVY:
+	mpi->flags|=MP_IMGFLAG_SWAPPED;
+    case IMGFMT_YUY2:
+	mpi->bpp=16;
+	mpi->num_planes=1;
+	return;
+    case IMGFMT_NV12:
+	mpi->flags|=MP_IMGFLAG_SWAPPED;
+    case IMGFMT_NV21:
+	mpi->flags|=MP_IMGFLAG_PLANAR;
+	mpi->bpp=12;
+	mpi->num_planes=2;
+	mpi->chroma_width=(mpi->width>>0);
+	mpi->chroma_height=(mpi->height>>1);
+	mpi->chroma_x_shift=0;
+	mpi->chroma_y_shift=1;
+	return;
+    }
+    mp_msg(MSGT_DECVIDEO,MSGL_WARN,"mp_image: unknown out_fmt: 0x%X\n",out_fmt);
+    mpi->bpp=0;
+}
 
-  if(mpi->flags&MP_IMGFLAG_PLANAR){
-   if(mpi->flags&MP_IMGFLAG_SWAPPED)
-     memset(mpi->planes[1],128,s-(mpi->planes[1]-mpi->planes[0]));
-   else
-     memset(mpi->planes[2],128,s-(mpi->planes[2]-mpi->planes[0]));
-  }    
+mp_image_t* new_mp_image(int w,int h){
+    mp_image_t* mpi = malloc(sizeof(mp_image_t));
+    if(!mpi) return NULL; // error!
+    memset(mpi,0,sizeof(mp_image_t));
+    mpi->width=mpi->w=w;
+    mpi->height=mpi->h=h;
+    return mpi;
+}
+
+void free_mp_image(mp_image_t* mpi){
+    if(!mpi) return;
+    if(mpi->flags&MP_IMGFLAG_ALLOCATED){
+	/* becouse we allocate the whole image in once */
+	if(mpi->planes[0]) av_free(mpi->planes[0]);
+	if (mpi->flags & MP_IMGFLAG_RGB_PALETTE)
+	    av_free(mpi->planes[1]);
+    }
+    free(mpi);
 }

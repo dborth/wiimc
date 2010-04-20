@@ -180,12 +180,6 @@ void wsWindowDecoration( wsTWindow * win,long d )
 //   Init X Window System.
 // ----------------------------------------------------------------------------------------------
 
-static int wsIOErrorHandler( Display * dpy )
-{
- fprintf( stderr,"[ws] IO error in display.\n" );
- exit( 0 );
-}
-
 static int wsErrorHandler( Display * dpy, XErrorEvent * Event )
 {
  char type[128];
@@ -706,9 +700,6 @@ buttonreleased:
  return !wsTrue;
 }
 
-static Bool wsDummyEvents( Display * display, XEvent * Event, XPointer arg )
-{ return True; }
-
 void wsHandleEvents( void ){
  // handle pending events
  while ( XPending(wsDisplay) ){
@@ -726,8 +717,6 @@ void wsMainLoop( void )
  XLockDisplay( wsDisplay );
 // XIfEvent( wsDisplay,&wsEvent,wsEvents,NULL );
 
-#if 1
-
 while(wsTrue){
  // handle pending events
  while ( XPending(wsDisplay) ){
@@ -738,15 +727,6 @@ while(wsTrue){
  usleep(delay*1000); // FIXME!
  if(delay<10*20) delay+=20; // pump up delay up to 0.2 sec (low activity)
 }
-
-#else
-
- while( wsTrue )
-  {
-   XIfEvent( wsDisplay,&wsEvent,wsDummyEvents,NULL );
-   wsEvents( wsDisplay,&wsEvent,NULL );
-  }
-#endif
 
  XUnlockDisplay( wsDisplay );
 }

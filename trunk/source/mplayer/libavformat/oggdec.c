@@ -362,6 +362,9 @@ ogg_packet (AVFormatContext * s, int *str, int *dstart, int *dsize, int64_t *fpo
             idx, os->psize, os->pstart);
 #endif
 
+    if (os->granule == -1)
+        av_log(s, AV_LOG_WARNING, "Page at %lld is missing granule\n", os->page_pos);
+
     ogg->curidx = idx;
     os->incomplete = 0;
 
@@ -431,7 +434,7 @@ static int
 ogg_get_length (AVFormatContext * s)
 {
     struct ogg *ogg = s->priv_data;
-    int idx = -1, i;
+    int i;
     int64_t size, end;
 
     if(url_is_streamed(s->pb))
@@ -451,18 +454,14 @@ ogg_get_length (AVFormatContext * s)
 
     while (!ogg_read_page (s, &i)){
         if (ogg->streams[i].granule != -1 && ogg->streams[i].granule != 0 &&
-            ogg->streams[i].codec)
-            idx = i;
+            ogg->streams[i].codec) {
+            s->streams[i]->duration =
+                ogg_gptopts (s, i, ogg->streams[i].granule, NULL);
+            if (s->streams[i]->start_time != AV_NOPTS_VALUE)
+                s->streams[i]->duration -= s->streams[i]->start_time;
+        }
     }
 
-    if (idx != -1){
-        s->streams[idx]->duration =
-            ogg_gptopts (s, idx, ogg->streams[idx].granule, NULL);
-        if (s->streams[idx]->start_time != AV_NOPTS_VALUE)
-            s->streams[idx]->duration -= s->streams[idx]->start_time;
-    }
-
-    ogg->size = size;
     ogg_restore (s, 0);
 
     return 0;
@@ -516,8 +515,7 @@ static int64_t ogg_calc_pts(AVFormatContext *s, int idx, int64_t *dts)
             else
                 os->lastpts = ogg_gptopts(s, idx, os->granule, &os->lastdts);
             os->granule = -1LL;
-        } else
-            av_log(s, AV_LOG_WARNING, "Packet is missing granule\n");
+        }
     }
     return pts;
 }

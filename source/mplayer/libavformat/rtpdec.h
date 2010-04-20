@@ -67,8 +67,12 @@ void rtp_parse_set_dynamic_protocol(RTPDemuxContext *s, PayloadContext *ctx,
 int rtp_parse_packet(RTPDemuxContext *s, AVPacket *pkt,
                      const uint8_t *buf, int len);
 void rtp_parse_close(RTPDemuxContext *s);
-
+#if (LIBAVFORMAT_VERSION_MAJOR <= 53)
 int rtp_get_local_port(URLContext *h);
+#endif
+int rtp_get_local_rtp_port(URLContext *h);
+int rtp_get_local_rtcp_port(URLContext *h);
+
 int rtp_set_remote_url(URLContext *h, const char *uri);
 #if (LIBAVFORMAT_VERSION_MAJOR <= 52)
 void rtp_get_file_handles(URLContext *h, int *prtp_fd, int *prtcp_fd);
@@ -158,6 +162,7 @@ struct RTPDemuxContext {
     uint32_t timestamp;
     uint32_t base_timestamp;
     uint32_t cur_timestamp;
+    int64_t  range_start_offset;
     int max_payload_size;
     struct MpegTSContext *ts;   /* only used for MP2T payloads */
     int read_buf_index;
@@ -170,6 +175,7 @@ struct RTPDemuxContext {
 
     /* rtcp sender statistics receive */
     int64_t last_rtcp_ntp_time;    // TODO: move into statistics
+    int64_t first_rtcp_ntp_time;   // TODO: move into statistics
     uint32_t last_rtcp_timestamp;  // TODO: move into statistics
 
     /* rtcp sender statistics */

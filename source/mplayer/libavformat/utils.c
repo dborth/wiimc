@@ -39,7 +39,7 @@
 #include <assert.h>
 
 /**
- * @file libavformat/utils.c
+ * @file
  * various utility functions for use within FFmpeg
  */
 

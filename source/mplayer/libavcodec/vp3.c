@@ -19,7 +19,7 @@
  */
 
 /**
- * @file libavcodec/vp3.c
+ * @file
  * On2 VP3 Video Decoder
  *
  * VP3 Video Decoder by Mike Melanson (mike at multimedia.cx)
@@ -379,7 +379,7 @@ static int unpack_superblocks(Vp3DecodeContext *s, GetBitContext *gb)
 
         /* unpack the list of partially-coded superblocks */
         bit = get_bits1(gb);
-        while (current_superblock < s->superblock_count) {
+        while (current_superblock < s->superblock_count && get_bits_left(gb) > 0) {
                 current_run = get_vlc2(gb,
                     s->superblock_run_length_vlc.table, 6, 2) + 1;
                 if (current_run == 34)
@@ -409,7 +409,8 @@ static int unpack_superblocks(Vp3DecodeContext *s, GetBitContext *gb)
 
             current_superblock = 0;
             bit = get_bits1(gb);
-            while (superblocks_decoded < s->superblock_count - num_partial_superblocks) {
+            while (superblocks_decoded < s->superblock_count - num_partial_superblocks
+                   && get_bits_left(gb) > 0) {
                         current_run = get_vlc2(gb,
                             s->superblock_run_length_vlc.table, 6, 2) + 1;
                         if (current_run == 34)
@@ -458,7 +459,7 @@ static int unpack_superblocks(Vp3DecodeContext *s, GetBitContext *gb)
         int sb_end = sb_start + (plane ? s->c_superblock_count : s->y_superblock_count);
         int num_coded_frags = 0;
 
-    for (i = sb_start; i < sb_end; i++) {
+    for (i = sb_start; i < sb_end && get_bits_left(gb) > 0; i++) {
 
         /* iterate through all 16 fragments in a superblock */
         for (j = 0; j < 16; j++) {
@@ -542,6 +543,8 @@ static int unpack_modes(Vp3DecodeContext *s, GetBitContext *gb)
          * coded fragments */
         for (sb_y = 0; sb_y < s->y_superblock_height; sb_y++) {
             for (sb_x = 0; sb_x < s->y_superblock_width; sb_x++) {
+                if (get_bits_left(gb) <= 0)
+                    return -1;
 
             for (j = 0; j < 4; j++) {
                 int mb_x = 2*sb_x +   (j>>1);
@@ -636,6 +639,8 @@ static int unpack_vectors(Vp3DecodeContext *s, GetBitContext *gb)
      * coded fragments */
     for (sb_y = 0; sb_y < s->y_superblock_height; sb_y++) {
         for (sb_x = 0; sb_x < s->y_superblock_width; sb_x++) {
+            if (get_bits_left(gb) <= 0)
+                return -1;
 
         for (j = 0; j < 4; j++) {
             int mb_x = 2*sb_x +   (j>>1);
@@ -820,7 +825,7 @@ static int unpack_block_qpis(Vp3DecodeContext *s, GetBitContext *gb)
                 bit = get_bits1(gb);
             else
                 bit ^= 1;
-        } while (blocks_decoded < num_blocks);
+        } while (blocks_decoded < num_blocks && get_bits_left(gb) > 0);
 
         num_blocks -= num_blocks_at_qpi;
     }
@@ -1287,8 +1292,7 @@ static inline int vp3_dequant(Vp3DecodeContext *s, Vp3Fragment *frag,
             block[perm[i]] = (token >> 2) * dequantizer[perm[i]];
             s->dct_tokens[plane][i++]++;
             break;
-        default:
-            av_log(s->avctx, AV_LOG_ERROR, "internal: invalid token type\n");
+        default: // shouldn't happen
             return i;
         }
     } while (i < 64);
@@ -1391,8 +1395,6 @@ static void render_slice(Vp3DecodeContext *s, int slice)
 
                 /* transform if this block was coded */
                 if (s->all_fragments[i].coding_method != MODE_COPY) {
-                    int intra = s->all_fragments[i].coding_method == MODE_INTRA;
-
                     if ((s->all_fragments[i].coding_method == MODE_USING_GOLDEN) ||
                         (s->all_fragments[i].coding_method == MODE_GOLDEN_MV))
                         motion_source= golden_plane;
@@ -1452,11 +1454,11 @@ static void render_slice(Vp3DecodeContext *s, int slice)
                     }
 
                         s->dsp.clear_block(block);
-                        vp3_dequant(s, s->all_fragments + i, plane, !intra, block);
 
                     /* invert DCT and place (or add) in final output */
 
                     if (s->all_fragments[i].coding_method == MODE_INTRA) {
+                        vp3_dequant(s, s->all_fragments + i, plane, 0, block);
                         if(s->avctx->idct_algo!=FF_IDCT_VP3)
                             block[0] += 128<<3;
                         s->dsp.idct_put(
@@ -1464,10 +1466,14 @@ static void render_slice(Vp3DecodeContext *s, int slice)
                             stride,
                             block);
                     } else {
+                        if (vp3_dequant(s, s->all_fragments + i, plane, 1, block)) {
                         s->dsp.idct_add(
                             output_plane + first_pixel,
                             stride,
                             block);
+                        } else {
+                            s->dsp.vp3_idct_dc_add(output_plane + first_pixel, stride, block);
+                        }
                     }
                 } else {
 
@@ -1946,6 +1952,8 @@ static int theora_decode_header(AVCodecContext *avctx, GetBitContext *gb)
 {
     Vp3DecodeContext *s = avctx->priv_data;
     int visible_width, visible_height, colorspace;
+    int offset_x = 0, offset_y = 0;
+    AVRational fps;
 
     s->theora = get_bits_long(gb, 24);
     av_log(avctx, AV_LOG_DEBUG, "Theora bitstream version %X\n", s->theora);
@@ -1971,14 +1979,19 @@ static int theora_decode_header(AVCodecContext *avctx, GetBitContext *gb)
         visible_width  = get_bits_long(gb, 24);
         visible_height = get_bits_long(gb, 24);
 
-        skip_bits(gb, 8); /* offset x */
-        skip_bits(gb, 8); /* offset y */
+        offset_x = get_bits(gb, 8); /* offset x */
+        offset_y = get_bits(gb, 8); /* offset y, from bottom */
     }
 
-    skip_bits(gb, 32); /* fps numerator */
-    skip_bits(gb, 32); /* fps denumerator */
-    skip_bits(gb, 24); /* aspect numerator */
-    skip_bits(gb, 24); /* aspect denumerator */
+    fps.num = get_bits_long(gb, 32);
+    fps.den = get_bits_long(gb, 32);
+    if (fps.num && fps.den) {
+        av_reduce(&avctx->time_base.num, &avctx->time_base.den,
+                  fps.den, fps.num, 1<<30);
+    }
+
+    avctx->sample_aspect_ratio.num = get_bits_long(gb, 24);
+    avctx->sample_aspect_ratio.den = get_bits_long(gb, 24);
 
     if (s->theora < 0x030200)
         skip_bits(gb, 5); /* keyframe frequency force */
@@ -1997,7 +2010,8 @@ static int theora_decode_header(AVCodecContext *avctx, GetBitContext *gb)
 //    align_get_bits(gb);
 
     if (   visible_width  <= s->width  && visible_width  > s->width-16
-        && visible_height <= s->height && visible_height > s->height-16)
+        && visible_height <= s->height && visible_height > s->height-16
+        && !offset_x && (offset_y == s->height - visible_height))
         avcodec_set_dimensions(avctx, visible_width, visible_height);
     else
         avcodec_set_dimensions(avctx, s->width, s->height);

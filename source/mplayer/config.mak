@@ -37,7 +37,7 @@ OBJCOPY = $(DEVKITPPC)/bin/powerpc-eabi-objcopy
 EXTRA_INC = -I$(DEVKITPRO)/portlibs/ppc/include -I$(DEVKITPRO)/libogc/include -Ilibdvdread4 -Ilibdvdnav -I$(DEVKITPRO)/portlibs/ppc/include/freetype2 -I$(DEVKITPRO)/libogc/include/ogc/machine -I$(DEVKITPPC)/../buildscripts/powerpc-eabi/gcc/gcc/include
 EXTRAXX_INC = $(EXTRA_INC)
 
-COMMONFLAGS = -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wdisabled-optimization -Wdeclaration-after-statement -std=gnu99 -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -mpaired -ffast-math -I. -Wdeclaration-after-statement -std=gnu99 -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -g -O3 -pipe -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
+COMMONFLAGS = -MD -MP -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wdisabled-optimization -Wdeclaration-after-statement -std=gnu99 -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -mpaired -ffast-math -I. -Wdeclaration-after-statement -std=gnu99 -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -g -O3 -pipe -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
 #COMMONFLAGS = -ffast-math -Wdisabled-optimization -Wno-pointer-sign -I. -Wdeclaration-after-statement -std=gnu99 -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -g -O3 -pipe -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
 CFLAGS = $(EXTRA_INC) $(COMMONFLAGS) 
 OPTFLAGS =  $(EXTRA_INC) $(COMMONFLAGS)
@@ -63,10 +63,6 @@ EXTRA_LIB = -static $(COMMONFLAGS) -lopencore-amrnb -lopencore-amrwb -lopenjpeg 
 EXTRALIBS += $(EXTRA_LIB)
 EXTRALIBS_MPLAYER =  -specs=mplayer.spec 
 EXTRALIBS_MENCODER = 
-DEPEND_CMD   = $(CC) -MM $(CFLAGS) $(filter-out %.h,$^) | sed "s,[0-9a-z._-]*: \($(SRC_DIR)/\)*\([a-z0-9]*/\)[^/]* ,\2&,"
-
-MPDEPEND_CMD     = $(CC) -MM $(CFLAGS)   $(filter-out %.xpm,$(filter-out %.h,$^)) | sed -e "s,[0-9a-z._-]*: \([a-z0-9/]*/\)[^/]* ,\1&," -e "s,\(.*\)\.o: ,\1.d &,"
-MPDEPEND_CMD_CXX = $(CC) -MM $(CXXFLAGS) $(filter-out %.hh,$(filter-out %.h,$^))  | sed -e "s,[0-9a-z._-]*: \([a-z0-9/]*/\)[^/]* ,\1&," -e "s,\(.*\)\.o: ,\1.d &,"
 
 GETCH = getch2-gekko.c
 HELP_FILE = help/help_mp-en.h
@@ -161,7 +157,7 @@ LIBDV = no
 LIBDVDCSS_INTERNAL = yes
 LIBLZO = no
 LIBMAD = no
-LIBMENU = yes
+LIBMENU = no
 LIBMENU_DVBIN = 
 LIBMPEG2 = no
 LIBNEMESI = no

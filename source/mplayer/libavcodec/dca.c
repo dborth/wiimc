@@ -22,10 +22,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/**
- * @file libavcodec/dca.c
- */
-
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -919,7 +915,8 @@ static int dca_subsubframe(DCAContext * s)
     const float *quant_step_table;
 
     /* FIXME */
-    float subband_samples[DCA_PRIM_CHANNELS_MAX][DCA_SUBBANDS][8];
+    LOCAL_ALIGNED_16(float, subband_samples, [DCA_PRIM_CHANNELS_MAX], [DCA_SUBBANDS][8]);
+    LOCAL_ALIGNED_16(int, block, [8]);
 
     /*
      * Audio data
@@ -939,7 +936,6 @@ static int dca_subsubframe(DCAContext * s)
             int abits = s->bitalloc[k][l];
 
             float quant_step_size = quant_step_table[abits];
-            float rscale;
 
             /*
              * Determine quantization index code book and its type
@@ -953,44 +949,38 @@ static int dca_subsubframe(DCAContext * s)
              */
             if(!abits){
                 memset(subband_samples[k][l], 0, 8 * sizeof(subband_samples[0][0][0]));
-            }else if(abits >= 11 || !dca_smpl_bitalloc[abits].vlc[sel].table){
-                if(abits <= 7){
-                    /* Block code */
-                    int block_code1, block_code2, size, levels;
-                    int block[8];
+            } else {
+                /* Deal with transients */
+                int sfi = s->transition_mode[k][l] && subsubframe >= s->transition_mode[k][l];
+                float rscale = quant_step_size * s->scale_factor[k][l][sfi] * s->scalefactor_adj[k][sel];
 
-                    size = abits_sizes[abits-1];
-                    levels = abits_levels[abits-1];
+                if(abits >= 11 || !dca_smpl_bitalloc[abits].vlc[sel].table){
+                    if(abits <= 7){
+                        /* Block code */
+                        int block_code1, block_code2, size, levels;
 
-                    block_code1 = get_bits(&s->gb, size);
-                    /* FIXME Should test return value */
-                    decode_blockcode(block_code1, levels, block);
-                    block_code2 = get_bits(&s->gb, size);
-                    decode_blockcode(block_code2, levels, &block[4]);
-                    for (m = 0; m < 8; m++)
-                        subband_samples[k][l][m] = block[m];
+                        size = abits_sizes[abits-1];
+                        levels = abits_levels[abits-1];
+
+                        block_code1 = get_bits(&s->gb, size);
+                        /* FIXME Should test return value */
+                        decode_blockcode(block_code1, levels, block);
+                        block_code2 = get_bits(&s->gb, size);
+                        decode_blockcode(block_code2, levels, &block[4]);
+                    }else{
+                        /* no coding */
+                        for (m = 0; m < 8; m++)
+                            block[m] = get_sbits(&s->gb, abits - 3);
+                    }
                 }else{
-                    /* no coding */
+                    /* Huffman coded */
                     for (m = 0; m < 8; m++)
-                        subband_samples[k][l][m] = get_sbits(&s->gb, abits - 3);
+                        block[m] = get_bitalloc(&s->gb, &dca_smpl_bitalloc[abits], sel);
                 }
-            }else{
-                /* Huffman coded */
-                for (m = 0; m < 8; m++)
-                    subband_samples[k][l][m] = get_bitalloc(&s->gb, &dca_smpl_bitalloc[abits], sel);
+
+                s->dsp.int32_to_float_fmul_scalar(subband_samples[k][l],
+                                                  block, rscale, 8);
             }
-
-            /* Deal with transients */
-            if (s->transition_mode[k][l] &&
-                subsubframe >= s->transition_mode[k][l])
-                rscale = quant_step_size * s->scale_factor[k][l][1];
-            else
-                rscale = quant_step_size * s->scale_factor[k][l][0];
-
-            rscale *= s->scalefactor_adj[k][sel];
-
-            for (m = 0; m < 8; m++)
-                subband_samples[k][l][m] *= rscale;
 
             /*
              * Inverse ADPCM if in prediction mode

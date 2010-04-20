@@ -20,14 +20,30 @@
  */
 
 /**
- * @file libavformat/librtmp.c
- * RTMP protocol based on http://rtmpdump.mplayerhq.hu librtmp
+ * @file
+ * RTMP protocol based on http://rtmpdump.mplayerhq.hu/ librtmp
  */
 
 #include "avformat.h"
 
 #include <librtmp/rtmp.h>
 #include <librtmp/log.h>
+
+static void rtmp_log(int level, const char *fmt, va_list args)
+{
+    switch (level) {
+    default:
+    case RTMP_LOGCRIT:    level = AV_LOG_FATAL;   break;
+    case RTMP_LOGERROR:   level = AV_LOG_ERROR;   break;
+    case RTMP_LOGWARNING: level = AV_LOG_WARNING; break;
+    case RTMP_LOGINFO:    level = AV_LOG_INFO;    break;
+    case RTMP_LOGDEBUG:   level = AV_LOG_VERBOSE; break;
+    case RTMP_LOGDEBUG2:  level = AV_LOG_DEBUG;   break;
+    }
+
+    av_vlog(NULL, level, fmt, args);
+    av_log(NULL, level, "\n");
+}
 
 static int rtmp_close(URLContext *s)
 {
@@ -59,7 +75,7 @@ static int rtmp_open(URLContext *s, const char *uri, int flags)
     if (!r)
         return AVERROR(ENOMEM);
 
-    switch(av_log_get_level()) {
+    switch (av_log_get_level()) {
     default:
     case AV_LOG_FATAL:   rc = RTMP_LOGCRIT;    break;
     case AV_LOG_ERROR:   rc = RTMP_LOGERROR;   break;
@@ -69,6 +85,7 @@ static int rtmp_open(URLContext *s, const char *uri, int flags)
     case AV_LOG_DEBUG:   rc = RTMP_LOGDEBUG2;  break;
     }
     RTMP_LogSetLevel(rc);
+    RTMP_LogSetCallback(rtmp_log);
 
     RTMP_Init(r);
     if (!RTMP_SetupURL(r, s->filename)) {
@@ -84,7 +101,7 @@ static int rtmp_open(URLContext *s, const char *uri, int flags)
         goto fail;
     }
 
-    s->priv_data = r;
+    s->priv_data   = r;
     s->is_streamed = 1;
     return 0;
 fail:
@@ -124,10 +141,13 @@ static int64_t rtmp_read_seek(URLContext *s, int stream_index,
     RTMP *r = s->priv_data;
 
     if (flags & AVSEEK_FLAG_BYTE)
-        return AVERROR_NOTSUPP;
+        return AVERROR(ENOSYS);
 
     /* seeks are in milliseconds */
-    timestamp = av_rescale(timestamp, AV_TIME_BASE, 1000);
+    if (stream_index < 0)
+        timestamp = av_rescale_rnd(timestamp, 1000, AV_TIME_BASE,
+            flags & AVSEEK_FLAG_BACKWARD ? AV_ROUND_DOWN : AV_ROUND_UP);
+
     if (!RTMP_SendSeek(r, timestamp))
         return -1;
     return timestamp;

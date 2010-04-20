@@ -383,6 +383,7 @@ void DrawMPlayer()
 	VIDEO_SetNextFramebuffer(xfb[whichfb]);
 	VIDEO_Flush();
 
+
 	if(copyScreen == 2)
 	{
 		copyScreen = 0;

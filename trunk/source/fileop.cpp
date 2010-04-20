@@ -394,6 +394,18 @@ static void AddPartition(sec_t sector, int device, int type)
 
 static int FindPartitions(int device)
 {
+	int i;
+
+	// clear list
+	for(i=0; i < MAX_DEVICES; i++)
+	{
+		part[device][i].name[0] = 0;
+		part[device][i].mount[0] = 0;
+		part[device][i].sector = 0;
+		part[device][i].interface = NULL;
+		part[device][i].type = 0;
+	}
+
 	DISC_INTERFACE *interface;
 
 	if(device == DEVICE_SD)
@@ -404,9 +416,7 @@ static int FindPartitions(int device)
 	MASTER_BOOT_RECORD mbr;
 	PARTITION_RECORD *partition = NULL;
 	devnum = 0;
-
 	sec_t part_lba = 0;
-	int i;
 
 	union
 	{
@@ -846,7 +856,7 @@ bool CheckMount(int device, int devnum, bool silent)
 {
 	if(devnum < 1 || devnum > 9 || (device != DEVICE_SD && device != DEVICE_USB))
 		return false;
-	
+
 	if(isInserted[device] && part[device][devnum-1].type > 0)
 		return true;
 

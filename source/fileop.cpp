@@ -90,14 +90,12 @@ static void * devicecallback (void *arg)
 		{
 			if(!sd->isInserted()) // device was removed
 			{
-				isInserted[DEVICE_SD] = false;
 				UnmountPartitions(DEVICE_SD);
 				devicesChanged = true;
 			}
 		}
 		else if(sd->startup() && sd->isInserted()) // device was inserted
 		{
-			isInserted[DEVICE_SD] = true;
 			MountPartitions(DEVICE_SD, SILENT);
 			devicesChanged = true;
 		}
@@ -106,14 +104,12 @@ static void * devicecallback (void *arg)
 		{
 			if(!usb->isInserted()) // device was removed
 			{
-				isInserted[DEVICE_USB] = false;
 				UnmountPartitions(DEVICE_USB);
 				devicesChanged = true;
 			}
 		}
 		else if(usb->startup() && usb->isInserted()) // device was inserted
 		{
-			isInserted[DEVICE_USB] = true;
 			MountPartitions(DEVICE_USB, SILENT);
 			devicesChanged = true;
 		}
@@ -611,6 +607,8 @@ static int FindPartitions(int device)
 
 static void UnmountPartitions(int device)
 {
+	isInserted[device] = false;
+
 	for(int i=0; i < MAX_DEVICES; i++)
 	{
 		if(part[device][i].type == T_FAT)
@@ -624,6 +622,11 @@ static void UnmountPartitions(int device)
 		part[device][i].interface = NULL;
 		part[device][i].type = 0;
 	}
+
+	if(device == DEVICE_SD)
+		sd->shutdown();
+	else
+		usb->shutdown();
 }
 
 /****************************************************************************
@@ -653,8 +656,6 @@ static bool MountPartitions(int device, int silent)
 
 	while(retry)
 	{
-		disc->shutdown();
-
 		if(disc->startup() && disc->isInserted())
 		{
 			int numFound = FindPartitions(device);
@@ -674,11 +675,14 @@ static bool MountPartitions(int device, int silent)
 					strcpy(part[device][i].name, ntfsGetVolumeName(part[device][i].mount));
 				}
 			}
-			mounted = true;
+			if(numFound > 0)
+				mounted = true;
 		}
 
 		if(mounted || silent)
 			break;
+
+		disc->shutdown();
 
 		if(device == DEVICE_SD)
 			retry = ErrorPromptRetry("SD card not found!");
@@ -1189,6 +1193,14 @@ ParseDirectory(bool waitParse)
 		{
 			sprintf(msg, "Error opening %s", browser.dir);
 			retry = ErrorPromptRetry(msg);
+
+			if(retry)
+			{
+				int device, devnum;
+				FindDevice(browser.dir, &device, &devnum);
+				UnmountPartitions(device);
+				MountPartitions(device, NOTSILENT);
+			}
 		}
 	}
 

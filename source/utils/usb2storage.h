@@ -1,8 +1,11 @@
-/********************************************************************************************
-*
-* usb2storage.h
-*
-********************************************************************************************/
+/****************************************************************************
+ * WiiMC
+ * usb2storage.h -- USB mass storage support, inside starlet
+ * Copyright (C) 2008 Kwiirk
+ * Improved for homebrew by rodries and Tantric
+ * 
+ * IOS 202 and the ehcimodule must be loaded before using this!
+ ***************************************************************************/
 
 #ifndef __USB2STORAGE_H__
 #define __USB2STORAGE_H__

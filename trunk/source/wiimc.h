@@ -55,6 +55,7 @@ void wiiGotoGui();
 void wiiPause();
 bool wiiIsPaused();
 void wiiMute();
+void wiiSetSeekTime(int sec);
 void wiiSeekPos(int sec);
 void wiiFastForward();
 void wiiRewind();

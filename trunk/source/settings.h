@@ -48,42 +48,40 @@ enum {
 };
 
 struct SWiiSettings {
-	// Menu
-	int 	autoResume;
-	int 	playOrder; // PLAY_SINGLE, PLAY_CONTINUOUS, PLAY_SHUFFLE, PLAY_LOOP
+	// Global
 	int 	hideExtensions;
-	int		slideshowDelay;
-	int		dvdMenu;
 	int 	language;
-	char 	videosFolder[MAXPATHLEN];
-	char	musicFolder[MAXPATHLEN];
-	char	picturesFolder[MAXPATHLEN];
-	char	onlinemediaFolder[MAXPATHLEN];
+	int		volume;
 	int		exitAction;
 	int		rumble;
-
-	// Cache
-	int 	cacheFill;
-
-	// Network
-	SMBSettings smbConf[5];
-	FTPSettings ftpConf[5];
-
-	// Video
-	int 	frameDropping; // FRAMEDROPPING_DISABLED, FRAMEDROPPING_AUTO, FRAMEDROPPING_ALWAYS
-	float 	aspectRatio;
+	int		subtitleVisibility; // 0 - off, 1 - on
+	float 	subtitleDelay; // in secs
+	
+	// Videos
 	float	videoZoomHor; // horizontal zoom amount
 	float	videoZoomVert; // vertical zoom amount
 	int 	videoXshift;
 	int 	videoYshift;
-
-	// Audio
-	int		volume;
+	int 	frameDropping; // FRAMEDROPPING_DISABLED, FRAMEDROPPING_AUTO, FRAMEDROPPING_ALWAYS
+	float 	aspectRatio;
+	int 	cacheFill;
 	float 	audioDelay; // in secs
-
-	// Subtitles
-	int		subtitleVisibility; // 0 - off, 1 - on
-	float 	subtitleDelay; // in secs
+	int 	autoResume;
+	int		seekTime;
+	char 	videosFolder[MAXPATHLEN];
+	// Music
+	int 	playOrder; // PLAY_SINGLE, PLAY_CONTINUOUS, PLAY_SHUFFLE, PLAY_LOOP
+	char	musicFolder[MAXPATHLEN];
+	// Pictures
+	int		slideshowDelay;
+	char	picturesFolder[MAXPATHLEN];
+	// DVD
+	int		dvdMenu;
+	// Online Media
+	char	onlinemediaFolder[MAXPATHLEN];
+	// Network
+	SMBSettings smbConf[5];
+	FTPSettings ftpConf[5];
 };
 
 void DefaultSettings ();
@@ -94,9 +92,9 @@ extern struct SWiiSettings WiiSettings;
 
 const char validVideoExtensions[][7] =
 {
-	"3gp", "avi", "asf", "bik", "divx", "dvr-ms", "evo", "flv", "m1v", "m2v",
-	"mkv", "mov", "mp4", "mp4v", "mpe", "mpeg", "mpg", "nsv", "ogm", "qt",
-	"rmvb", "swf", "ts", "vob", "vro", "wmv", "y4m", ""
+	"3gp", "avi", "asf", "bik", "divx", "dvr-ms", "evo", "flv", "iso", "m1v",
+	"m2v", "mkv", "mov", "mp4", "mp4v", "mpe", "mpeg", "mpg", "nsv", "ogm",
+	"qt", "rmvb", "swf", "ts", "vob", "vro", "wmv", "y4m", ""
 };
 
 const char validAudioExtensions[][5] = 

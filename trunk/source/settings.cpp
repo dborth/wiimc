@@ -140,50 +140,48 @@ prepareSettingsData ()
 	mxmlElementSetAttr(data, "app", APPNAME);
 	mxmlElementSetAttr(data, "version", APPVERSION);
 
-	// General
-	createXMLSection("General", "General Settings");
-	createXMLSetting("autoResume", "Auto-resume", toStr(WiiSettings.autoResume));
-	createXMLSetting("playOrder", "Play order", toStr(WiiSettings.playOrder));
+	// Global
+	createXMLSection("Global", "Global Settings");
 	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
-	createXMLSetting("slideshowDelay", "Slideshow delay", toStr(WiiSettings.slideshowDelay));
-	createXMLSetting("dvdMenu", "DVD Menu", toStr(WiiSettings.dvdMenu));
 	createXMLSetting("language", "Language", toStr(WiiSettings.language));
-	createXMLSetting("videosFolder", "Videos folder", WiiSettings.videosFolder);
-	createXMLSetting("musicFolder", "Music folder", WiiSettings.musicFolder);
-	createXMLSetting("picturesFolder", "Pictures folder", WiiSettings.picturesFolder);
-	createXMLSetting("onlinemediaFolder", "Online media folder", WiiSettings.onlinemediaFolder);
+	createXMLSetting("volume", "Volume", toStr(WiiSettings.volume));
 	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
-
-	// Cache
-	createXMLSection("Cache", "Cache Settings");
+	createXMLSetting("subtitleVisibility", "Subtitle visibility", toStr(WiiSettings.subtitleVisibility));
+	createXMLSetting("subtitleDelay", "Subtitle delay", FtoStr(WiiSettings.subtitleDelay));
+	// Videos
+	createXMLSection("Videos", "Videos Settings");
+	createXMLSetting("videoZoomHor", "Horizontal video zoom", FtoStr(WiiSettings.videoZoomHor));
+	createXMLSetting("videoZoomVert", "Vertical video zoom", FtoStr(WiiSettings.videoZoomVert));
+	createXMLSetting("videoXshift", "Video X offset", toStr(WiiSettings.videoXshift));
+	createXMLSetting("videoYshift", "Video Y offset", toStr(WiiSettings.videoYshift));
+	createXMLSetting("frameDropping", "Frame dropping compensation", toStr(WiiSettings.frameDropping));
+	createXMLSetting("aspectRatio", "Aspect ratio", FtoStr(WiiSettings.aspectRatio));
 	createXMLSetting("cacheFill", "Cache Fill %", toStr(WiiSettings.cacheFill));
-
+	createXMLSetting("audioDelay", "Audio delay", FtoStr(WiiSettings.audioDelay));
+	createXMLSetting("autoResume", "Auto-resume", toStr(WiiSettings.autoResume));
+	createXMLSetting("seekTime", "Seek time", toStr(WiiSettings.seekTime));
+	createXMLSetting("videosFolder", "Videos folder", WiiSettings.videosFolder);
+	// Music
+	createXMLSection("Music", "Music Settings");
+	createXMLSetting("playOrder", "Play order", toStr(WiiSettings.playOrder));
+	createXMLSetting("musicFolder", "Music folder", WiiSettings.musicFolder);
+	// Pictures
+	createXMLSection("Pictures", "Pictures Settings");
+	createXMLSetting("slideshowDelay", "Slideshow delay", toStr(WiiSettings.slideshowDelay));
+	createXMLSetting("picturesFolder", "Pictures folder", WiiSettings.picturesFolder);
+	// DVD
+	createXMLSection("DVD", "DVD Settings");
+	createXMLSetting("dvdMenu", "DVD Menu", toStr(WiiSettings.dvdMenu));
+	// Online Media
+	createXMLSection("Online Media", "Online Media Settings");
+	createXMLSetting("onlinemediaFolder", "Online media folder", WiiSettings.onlinemediaFolder);
 	// Network
 	createXMLSection("Network", "Network Settings");
 	for(int i=0; i<5; i++)
 		createXMLSMBShare(i);
 	for(int i=0; i<5; i++)
 		createXMLFTPSite(i);
-
-	// Video
-	createXMLSection("Video", "Video Settings");
-	createXMLSetting("frameDropping", "Frame dropping compensation", toStr(WiiSettings.frameDropping));
-	createXMLSetting("aspectRatio", "Aspect ratio", FtoStr(WiiSettings.aspectRatio));
-	createXMLSetting("videoZoomHor", "Horizontal video zoom", FtoStr(WiiSettings.videoZoomHor));
-	createXMLSetting("videoZoomVert", "Vertical video zoom", FtoStr(WiiSettings.videoZoomVert));
-	createXMLSetting("videoXshift", "Video X offset", toStr(WiiSettings.videoXshift));
-	createXMLSetting("videoYshift", "Video Y offset", toStr(WiiSettings.videoYshift));
-
-	// Audio
-	createXMLSection("Audio", "Audio Settings");
-	createXMLSetting("volume", "Volume", toStr(WiiSettings.volume));
-	createXMLSetting("audioDelay", "Audio delay", FtoStr(WiiSettings.audioDelay));
-
-	// Subtitles
-	createXMLSection("Subtitle", "Subtitle Settings");
-	createXMLSetting("subtitleVisibility", "Subtitle visibility", toStr(WiiSettings.subtitleVisibility));
-	createXMLSetting("subtitleDelay", "Subtitle delay", FtoStr(WiiSettings.subtitleDelay));
 
 	int datasize = mxmlSaveString(xml, (char *)savebuffer, SAVEBUFFERSIZE, XMLSaveCallback);
 
@@ -357,42 +355,37 @@ void DefaultSettings ()
 {
 	memset(&WiiSettings, 0, sizeof(SWiiSettings));
 
-	// General
-	WiiSettings.autoResume = 1;
-	WiiSettings.playOrder = PLAY_SINGLE;
+	// Global
 	WiiSettings.hideExtensions = 1;
-	WiiSettings.slideshowDelay = 5;
-	WiiSettings.dvdMenu = 1;
 	WiiSettings.language = LANG_ENGLISH; //CONF_GetLanguage();
-	WiiSettings.videosFolder[0] = 0;
-	WiiSettings.musicFolder[0] = 0;
-	WiiSettings.picturesFolder[0] = 0;
-	WiiSettings.onlinemediaFolder[0] = 0;
+	WiiSettings.volume = 50;
 	WiiSettings.exitAction = EXIT_AUTO;
 	WiiSettings.rumble = 1;
-
-	// Cache
-	WiiSettings.cacheFill = 30;
-
-	// Network
-
-	// Video
-	WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
-	WiiSettings.aspectRatio = -1;
+	WiiSettings.subtitleVisibility = 1;
+	WiiSettings.subtitleDelay = 0;
+	// Videos
 	WiiSettings.videoZoomHor = 1;
 	WiiSettings.videoZoomVert = 1;
 	WiiSettings.videoXshift = 0;
 	WiiSettings.videoYshift = 0;
-
-	// Audio
-	WiiSettings.volume = 50;
+	WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
+	WiiSettings.aspectRatio = -1;
+	WiiSettings.cacheFill = 30;
 	WiiSettings.audioDelay = 0;
-
-	// Subtitles
-	WiiSettings.subtitleVisibility = 1;
-	WiiSettings.subtitleDelay = 0;
-
-	// SMB and FTP
+	WiiSettings.autoResume = 1;
+	WiiSettings.seekTime = 30;
+	WiiSettings.videosFolder[0] = 0;
+	// Music
+	WiiSettings.playOrder = PLAY_SINGLE;
+	WiiSettings.musicFolder[0] = 0;
+	// Pictures
+	WiiSettings.slideshowDelay = 5;
+	WiiSettings.picturesFolder[0] = 0;
+	// DVD
+	WiiSettings.dvdMenu = 1;
+	// Online Media
+	WiiSettings.onlinemediaFolder[0] = 0;
+	// Network
 	for(int i=0; i<5; i++)
 	{
 		WiiSettings.smbConf[i].displayname[0] = 0;
@@ -418,35 +411,23 @@ void DefaultSettings ()
  ***************************************************************************/
 static void FixInvalidSettings()
 {
-	// General
-	if(WiiSettings.autoResume != 1 && WiiSettings.autoResume != 0)
-		WiiSettings.autoResume = 1;
-	if(WiiSettings.playOrder < 0 || WiiSettings.playOrder > PLAY_LOOP)
-		WiiSettings.playOrder = PLAY_SINGLE;
+	// Global
 	if(WiiSettings.hideExtensions != 1 && WiiSettings.hideExtensions != 0)
 		WiiSettings.hideExtensions = 1;
-	if(WiiSettings.slideshowDelay > 10 || WiiSettings.slideshowDelay < 1)
-		WiiSettings.slideshowDelay = 5;
-	if(WiiSettings.dvdMenu != 0 && WiiSettings.dvdMenu != 1)
-		WiiSettings.dvdMenu = 1;
 	if(WiiSettings.language < 0 || WiiSettings.language > LANG_KOREAN)
 		WiiSettings.language = LANG_ENGLISH;
+	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
+		WiiSettings.volume = 50;
 	if(WiiSettings.exitAction < 0 || WiiSettings.exitAction > EXIT_LOADER)
 		WiiSettings.exitAction = EXIT_AUTO;
 	if(WiiSettings.rumble != 1 && WiiSettings.rumble != 0)
 		WiiSettings.rumble = 1;
+	if(WiiSettings.subtitleVisibility < 0 || WiiSettings.subtitleVisibility > 1)
+		WiiSettings.subtitleVisibility = 1;
+	if(WiiSettings.subtitleDelay < -2 || WiiSettings.subtitleDelay > 2)
+		WiiSettings.subtitleDelay = 0;
 
-	// Cache
-	if(WiiSettings.cacheFill < 10 || WiiSettings.cacheFill > 100)
-		WiiSettings.cacheFill = 30;
-
-	// Network
-
-	// Video
-	if(WiiSettings.frameDropping < 0 || WiiSettings.frameDropping > FRAMEDROPPING_ALWAYS)
-		WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
-	if(WiiSettings.aspectRatio <= 0 || WiiSettings.aspectRatio > 2.36)
-		WiiSettings.aspectRatio = -1;
+	// Videos
 	if(WiiSettings.videoZoomHor < 0.5 || WiiSettings.videoZoomHor > 1.5)
 		WiiSettings.videoZoomHor = 1;
 	if(WiiSettings.videoZoomVert < 0.5 || WiiSettings.videoZoomVert > 1.5)
@@ -455,20 +436,34 @@ static void FixInvalidSettings()
 		WiiSettings.videoXshift = 0;
 	if(WiiSettings.videoYshift < -50 || WiiSettings.videoYshift > 50)
 		WiiSettings.videoYshift = 0;
-
-	// Audio
-	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
-		WiiSettings.volume = 50;
+	if(WiiSettings.frameDropping < 0 || WiiSettings.frameDropping > FRAMEDROPPING_ALWAYS)
+		WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
+	if(WiiSettings.aspectRatio <= 0 || WiiSettings.aspectRatio > 2.36)
+		WiiSettings.aspectRatio = -1;
+	if(WiiSettings.cacheFill < 10 || WiiSettings.cacheFill > 100)
+		WiiSettings.cacheFill = 30;
 	if(WiiSettings.audioDelay < 0 || WiiSettings.audioDelay > 2)
 		WiiSettings.audioDelay = 0;
+	if(WiiSettings.autoResume != 1 && WiiSettings.autoResume != 0)
+		WiiSettings.autoResume = 1;
+	if(WiiSettings.seekTime < 30 || WiiSettings.seekTime > 600)
+		WiiSettings.seekTime = 30;
 
-	// Subtitles
-	if(WiiSettings.subtitleVisibility < 0 || WiiSettings.subtitleVisibility > 1)
-		WiiSettings.subtitleVisibility = 1;
-	if(WiiSettings.subtitleDelay < -2 || WiiSettings.subtitleDelay > 2)
-		WiiSettings.subtitleDelay = 0;
+	// Music
+	if(WiiSettings.playOrder < 0 || WiiSettings.playOrder > PLAY_LOOP)
+		WiiSettings.playOrder = PLAY_SINGLE;
 
-	// SMB and FTP
+	// Pictures
+	if(WiiSettings.slideshowDelay > 10 || WiiSettings.slideshowDelay < 1)
+		WiiSettings.slideshowDelay = 5;
+
+	// DVD
+	if(WiiSettings.dvdMenu != 0 && WiiSettings.dvdMenu != 1)
+		WiiSettings.dvdMenu = 1;
+
+	// Online Media
+
+	// Network
 	for(int i=0; i<5; i++)
 	{
 		if(WiiSettings.ftpConf[i].port < 4 || WiiSettings.ftpConf[i].port > 49151)
@@ -523,9 +518,10 @@ SaveSettings (bool silent)
 				sprintf(filepath, "usb4:");
 
 			// could not mount any devices
-			if(strlen(filepath) == 0 && !silent)
+			if(strlen(filepath) == 0)
 			{
-				ErrorPrompt("Could not find a valid SD or USB device - one is required for normal operation.");
+				if(!silent)
+					ErrorPrompt("Could not find a valid SD or USB device - one is required for normal operation.");
 				return false;
 			}
 
@@ -533,10 +529,13 @@ SaveSettings (bool silent)
 			strcat(filepath, "/apps");
 			if (!diropen(filepath))
 			{
-				if(mkdir(filepath, 0777) != 0 && !silent)
+				if(mkdir(filepath, 0777) != 0)
 				{
-					sprintf(msg, "Could not create folder %s", filepath);
-					ErrorPrompt(msg);
+					if(!silent)
+					{
+						sprintf(msg, "Could not create folder %s", filepath);
+						ErrorPrompt(msg);
+					}
 					return false;
 				}
 			}
@@ -545,10 +544,13 @@ SaveSettings (bool silent)
 			strcat(filepath, APPFOLDER);
 			if (!diropen(filepath))
 			{
-				if(mkdir(filepath, 0777) != 0 && !silent)
+				if(mkdir(filepath, 0777) != 0)
 				{
-					sprintf(msg, "Could not create folder %s", filepath);
-					ErrorPrompt(msg);
+					if(!silent)
+					{
+						sprintf(msg, "Could not create folder %s", filepath);
+						ErrorPrompt(msg);
+					}
 					return false;
 				}
 			}
@@ -646,45 +648,42 @@ static bool LoadSettingsFile(char * filepath)
 
 			if(result)
 			{
-				// General
-				loadXMLSetting(&WiiSettings.autoResume, "autoResume");
-				loadXMLSetting(&WiiSettings.playOrder, "playOrder");
+				// Global
 				loadXMLSetting(&WiiSettings.hideExtensions, "hideExtensions");
-				loadXMLSetting(&WiiSettings.slideshowDelay, "slideshowDelay");
-				loadXMLSetting(&WiiSettings.dvdMenu, "dvdMenu");
 				loadXMLSetting(&WiiSettings.language, "language");
-				loadXMLSetting(WiiSettings.videosFolder, "videosFolder", sizeof(WiiSettings.videosFolder));
-				loadXMLSetting(WiiSettings.musicFolder, "musicFolder", sizeof(WiiSettings.musicFolder));
-				loadXMLSetting(WiiSettings.picturesFolder, "picturesFolder", sizeof(WiiSettings.picturesFolder));
-				loadXMLSetting(WiiSettings.onlinemediaFolder, "onlinemediaFolder", sizeof(WiiSettings.onlinemediaFolder));
+				loadXMLSetting(&WiiSettings.volume, "volume");
 				loadXMLSetting(&WiiSettings.exitAction, "exitAction");
 				loadXMLSetting(&WiiSettings.rumble, "rumble");
-
-				// Cache
+				loadXMLSetting(&WiiSettings.subtitleVisibility, "subtitleVisibility");
+				loadXMLSetting(&WiiSettings.subtitleDelay, "subtitleDelay");
+				// Videos
+				loadXMLSetting(&WiiSettings.videoZoomHor, "videoZoomHor");
+				loadXMLSetting(&WiiSettings.videoZoomVert, "videoZoomVert");
+				loadXMLSetting(&WiiSettings.videoXshift, "videoXshift");
+				loadXMLSetting(&WiiSettings.videoYshift, "videoYshift");
+				loadXMLSetting(&WiiSettings.frameDropping, "frameDropping");
+				loadXMLSetting(&WiiSettings.aspectRatio, "aspectRatio");
 				loadXMLSetting(&WiiSettings.cacheFill, "cacheFill");
-
+				loadXMLSetting(&WiiSettings.audioDelay, "audioDelay");
+				loadXMLSetting(&WiiSettings.autoResume, "autoResume");
+				loadXMLSetting(&WiiSettings.seekTime, "seekTime");
+				loadXMLSetting(WiiSettings.videosFolder, "videosFolder", sizeof(WiiSettings.videosFolder));
+				// Music
+				loadXMLSetting(&WiiSettings.playOrder, "playOrder");
+				loadXMLSetting(WiiSettings.musicFolder, "musicFolder", sizeof(WiiSettings.musicFolder));
+				// Pictures
+				loadXMLSetting(&WiiSettings.slideshowDelay, "slideshowDelay");
+				loadXMLSetting(WiiSettings.picturesFolder, "picturesFolder", sizeof(WiiSettings.picturesFolder));
+				// DVD
+				loadXMLSetting(&WiiSettings.dvdMenu, "dvdMenu");
+				// Online Media
+				loadXMLSetting(WiiSettings.onlinemediaFolder, "onlinemediaFolder", sizeof(WiiSettings.onlinemediaFolder));
 				// Network
 				for(int i=0; i<5; i++)
 				{
 					loadXMLSMBShare(i);
 					loadXMLFTPSite(i);
 				}
-
-				// Video
-				loadXMLSetting(&WiiSettings.frameDropping, "frameDropping");
-				loadXMLSetting(&WiiSettings.aspectRatio, "aspectRatio");
-				loadXMLSetting(&WiiSettings.videoZoomHor, "videoZoomHor");
-				loadXMLSetting(&WiiSettings.videoZoomVert, "videoZoomVert");
-				loadXMLSetting(&WiiSettings.videoXshift, "videoXshift");
-				loadXMLSetting(&WiiSettings.videoYshift, "videoYshift");
-
-				// Audio
-				loadXMLSetting(&WiiSettings.volume, "volume");
-				loadXMLSetting(&WiiSettings.audioDelay, "audioDelay");
-
-				// Subtitles
-				loadXMLSetting(&WiiSettings.subtitleVisibility, "subtitleVisibility");
-				loadXMLSetting(&WiiSettings.subtitleDelay, "subtitleDelay");
 			}
 			mxmlDelete(xml);
 		}

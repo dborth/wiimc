@@ -1276,6 +1276,7 @@ static int LoadNewFile(int silent)
 		return 0;
 	}
 
+	// we are playing audio
 	wiiSetVolume(WiiSettings.volume);
 
 	if(wiiIsPaused())
@@ -2947,6 +2948,7 @@ static void MenuSettingsVideos()
 	sprintf(options.name[i++], "Cache Fill");
 	sprintf(options.name[i++], "Audio Delay");
 	sprintf(options.name[i++], "Auto-Resume");
+	sprintf(options.name[i++], "Rewind / Fast Forward");
 	sprintf(options.name[i++], "Videos Files Folder");
 
 	options.length = i;
@@ -3043,6 +3045,11 @@ static void MenuSettingsVideos()
 				WiiSettings.autoResume ^= 1;
 				break;
 			case 7:
+				WiiSettings.seekTime += 30;
+				if(WiiSettings.seekTime > 600)
+					WiiSettings.seekTime = 30;
+				break;
+			case 8:
 				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);
 				break;
 		}
@@ -3077,7 +3084,8 @@ static void MenuSettingsVideos()
 			sprintf (options.value[4], "%d%%", WiiSettings.cacheFill);
 			sprintf (options.value[5], "%.1f sec", WiiSettings.audioDelay);
 			sprintf (options.value[6], "%s", WiiSettings.autoResume ? "On" : "Off");
-			snprintf(options.value[7], 40, "%s", WiiSettings.videosFolder);
+			sprintf (options.value[7], "%d sec", WiiSettings.seekTime);
+			snprintf(options.value[8], 40, "%s", WiiSettings.videosFolder);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -5139,7 +5147,7 @@ void WiiMenu()
 	{
 		if(!SaveSettings(NOTSILENT))
 		{
-			ExitRequested = 1;
+			ExitRequested = 2;
 			while(1) usleep(THREAD_SLEEP);
 		}
 	}
@@ -5147,7 +5155,7 @@ void WiiMenu()
 	// Init MPlayer path and vars (only happens once)
 	if(!InitMPlayer())
 	{
-		ExitRequested = 1;
+		ExitRequested = 2;
 		while(1) usleep(THREAD_SLEEP);
 	}
 

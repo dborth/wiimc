@@ -62,7 +62,8 @@ static u8 cachestack[STACKSIZE] ATTRIBUTE_ALIGN (32);
 void ExitApp()
 {
 	DisableRumble();
-	SaveSettings(SILENT);
+	if(ExitRequested == 1)
+		SaveSettings(SILENT);
 	DI2_Close();
 
 	// shut down some threads
@@ -232,6 +233,8 @@ void FindNextAudioFile()
 	FindFile(); // try to find this file
 }
 
+
+
 static void *
 mplayerthread (void *arg)
 {
@@ -360,6 +363,7 @@ void SetMPlayerSettings()
 					WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
 	wiiSetAutoResume(WiiSettings.autoResume);
 	wiiSetVolume(WiiSettings.volume);
+	wiiSetSeekTime(WiiSettings.seekTime);
 	wiiSetCacheFill(WiiSettings.cacheFill);
 	wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
 	wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
@@ -386,7 +390,7 @@ main(int argc, char *argv[])
 	if(IOS_GetVersion() == 202)
 	{
 		WIIDVD_Init(false);
-
+			
 		// load usb2 driver
 		if(mload_init() >= 0 && load_ehci_module())
 			USB2Enable(true);

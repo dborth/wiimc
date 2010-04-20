@@ -14,7 +14,7 @@ struct SMBSettings {
 	char	share[81];
 	char	user[21];
 	char	pwd[15];
-	char	displayname[81];
+	char	displayname[41];
 };
 
 struct FTPSettings {
@@ -24,7 +24,7 @@ struct FTPSettings {
 	char	pwd[21];
 	int		port;
 	int		passive;
-	char	displayname[81];
+	char	displayname[41];
 };
 
 void UpdateCheck();

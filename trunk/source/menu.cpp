@@ -820,7 +820,7 @@ ShowProgress (const char *msg, int done, int total)
 	if(showProgress != 1)
 		CancelAction(); // wait for previous progress window to finish
 
-	strncpy(progressMsg, msg, 200);
+	snprintf(progressMsg, 200, "%s", msg);
 	sprintf(progressTitle, "Please Wait");
 	progressThreadHalt = 0;
 	showProgress = 1;
@@ -848,7 +848,7 @@ ShowAction (const char *msg)
 	if(showProgress != 2)
 		CancelAction(); // wait for previous progress window to finish
 
-	strncpy(progressMsg, msg, 200);
+	snprintf(progressMsg, 200, "%s", msg);
 	sprintf(progressTitle, "Please Wait");
 	progressThreadHalt = 0;
 	showProgress = 2;
@@ -3650,15 +3650,15 @@ static void MenuSettingsNetworkSMB()
 		switch (ret)
 		{
 			case 0:
-				OnScreenKeyboard(WiiSettings.smbConf[netEditIndex].displayname, 80);
+				OnScreenKeyboard(WiiSettings.smbConf[netEditIndex].displayname, 40);
 				break;
-			
+
 			case 1:
 				OnScreenKeyboard(WiiSettings.smbConf[netEditIndex].ip, 80);
 				break;
 
 			case 2:
-				OnScreenKeyboard(WiiSettings.smbConf[netEditIndex].share, 80);
+				OnScreenKeyboard(WiiSettings.smbConf[netEditIndex].share, 40);
 				break;
 
 			case 3:
@@ -3673,11 +3673,11 @@ static void MenuSettingsNetworkSMB()
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			strncpy (options.value[0], WiiSettings.smbConf[netEditIndex].displayname, 80);
-			strncpy (options.value[1], WiiSettings.smbConf[netEditIndex].ip, 80);
-			strncpy (options.value[2], WiiSettings.smbConf[netEditIndex].share, 80);
-			strncpy (options.value[3], WiiSettings.smbConf[netEditIndex].user, 20);
-			strncpy (options.value[4], WiiSettings.smbConf[netEditIndex].pwd, 14);
+			snprintf(options.value[0], 40, "%s", WiiSettings.smbConf[netEditIndex].displayname);
+			snprintf(options.value[1], 40, "%s", WiiSettings.smbConf[netEditIndex].ip);
+			snprintf(options.value[2], 40, "%s", WiiSettings.smbConf[netEditIndex].share);
+			snprintf(options.value[3], 40, "%s", WiiSettings.smbConf[netEditIndex].user);
+			snprintf(options.value[4], 40, "%s", WiiSettings.smbConf[netEditIndex].pwd);
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -3746,7 +3746,7 @@ static void MenuSettingsNetworkFTP()
 	else if(WiiSettings.ftpConf[netEditIndex].displayname[0] != 0)
 		sprintf(siteName, "%s", WiiSettings.ftpConf[netEditIndex].displayname);
 	else
-		sprintf(siteName, "%s@%s:%d/%s", 
+		snprintf(siteName, 100, "%s@%s:%d/%s", 
 		WiiSettings.ftpConf[netEditIndex].user, 
 		WiiSettings.ftpConf[netEditIndex].ip,
 		WiiSettings.ftpConf[netEditIndex].port,
@@ -3838,7 +3838,7 @@ static void MenuSettingsNetworkFTP()
 		switch (ret)
 		{
 			case 0:
-				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].displayname, 80);
+				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].displayname, 40);
 				break;
 			case 1:
 				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].ip, 80);
@@ -3850,7 +3850,7 @@ static void MenuSettingsNetworkFTP()
 				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].user, 20);
 				break;
 			case 4:
-				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].pwd, 14);
+				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].pwd, 20);
 				break;
 			case 5:
 				char tmpPort[6];
@@ -3877,11 +3877,11 @@ static void MenuSettingsNetworkFTP()
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			strncpy(options.value[0], WiiSettings.ftpConf[netEditIndex].displayname, 80);
-			strncpy(options.value[1], WiiSettings.ftpConf[netEditIndex].ip, 80);
-			strncpy(options.value[2], WiiSettings.ftpConf[netEditIndex].folder, 80);
-			strncpy(options.value[3], WiiSettings.ftpConf[netEditIndex].user, 20);
-			strncpy(options.value[4], WiiSettings.ftpConf[netEditIndex].pwd, 14);
+			snprintf(options.value[0], 40, "%s", WiiSettings.ftpConf[netEditIndex].displayname);
+			snprintf(options.value[1], 40, "%s", WiiSettings.ftpConf[netEditIndex].ip);
+			snprintf(options.value[2], 40, "%s", WiiSettings.ftpConf[netEditIndex].folder);
+			snprintf(options.value[3], 40, "%s", WiiSettings.ftpConf[netEditIndex].user);
+			snprintf(options.value[4], 40, "%s", WiiSettings.ftpConf[netEditIndex].pwd);
 			sprintf(options.value[5], "%d", WiiSettings.ftpConf[netEditIndex].port);
 			sprintf(options.value[6], "%s", WiiSettings.ftpConf[netEditIndex].passive ? "Passive" : "Active");
 			optionBrowser.TriggerUpdate();

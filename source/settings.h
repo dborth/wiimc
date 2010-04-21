@@ -100,7 +100,7 @@ const char validVideoExtensions[][7] =
 const char validAudioExtensions[][5] = 
 {
 	"aac", "ape", "asf", "flac", "m4a", "m4p", "m4v", "mka", "mp2", "mp3", 
-	"mpc", "ogg", "ra", "rm", "shn", "m4b", "wav", "wma", ""
+	"mpc", "ogg", "ra", "rm", "shn", "m4b", "wav", "wma", "wv", ""
 };
 
 const char validImageExtensions[][5] = 

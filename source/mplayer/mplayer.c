@@ -180,6 +180,7 @@ static int max_framesize=0;
 #include "osdep/gx_supp.h"
 #include "../utils/di2.h"
 
+extern int stop_cache_thread;
 extern int prev_dxs , prev_dys;
 
 void wiiPause();
@@ -4545,6 +4546,10 @@ void PauseAndGotoGUI()
 	if(mpctx->sh_video)
 		save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
 
+	stop_cache_thread = 1;
+	while(!CacheThreadSuspended())
+		usleep(50);
+
 	printf("sent control to gui\n");
 	if (controlledbygui == 0)
 		controlledbygui = 1; // send control to gui
@@ -4554,6 +4559,9 @@ void PauseAndGotoGUI()
 
 	if (controlledbygui == 2)
 		return;
+
+	stop_cache_thread = 0;
+	ResumeCacheThread();
 
 	printf("reinit mplayer video/audio\n");
 	reinit_audio();

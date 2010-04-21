@@ -25,7 +25,7 @@
 #define READ_USLEEP_TIME 10000
 #define FILL_USLEEP_TIME 50000
 #define PREFILL_SLEEP_TIME 200
-#define CONTROL_SLEEP_TIME 0
+#define CONTROL_SLEEP_TIME 200
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,7 +72,7 @@ int stream_seek_long(stream_t *s,off_t pos);
 #ifdef GEKKO
 #include <ogc/mutex.h>
 static mutex_t cache_mutex = LWP_MUTEX_NULL;
-static int stop_cache_thread = 1;
+int stop_cache_thread = 1;
 static void *cachearg = NULL;
 extern void SuspendCacheThread();
 extern void ResumeCacheThread();
@@ -407,10 +407,13 @@ void cache_uninit(stream_t *s) {
   
 #if defined(GEKKO)
   if(!s->cache_pid) return; 
-  cache_do_control(s, -2, NULL);
-  stop_cache_thread = 1;
-  while(!CacheThreadSuspended())
-  	usleep(50);
+  if(!CacheThreadSuspended())
+  {
+    cache_do_control(s, -2, NULL);
+    stop_cache_thread = 1;
+    while(!CacheThreadSuspended())
+  	  usleep(50);
+  }
   s->cache_pid = 0;
 #else  
   if(s->cache_pid) {
@@ -484,7 +487,7 @@ if(size>CACHE_LIMIT)
   s->stream=stream; // callback
   s->seek_limit=seek_limit;
   s->stream->error=0;
-
+  s->read_filepos=0;
 
   //make sure that we won't wait from cache_fill
   //more data than it is alowed to fill

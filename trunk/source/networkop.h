@@ -37,4 +37,5 @@ void CloseFTP(int num);
 
 extern bool updateFound;
 extern bool inNetworkInit;
+extern char wiiIP[16];
 #endif

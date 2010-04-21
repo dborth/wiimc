@@ -3051,6 +3051,7 @@ static void MenuSettingsVideos()
 				break;
 			case 8:
 				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);
+				CleanupPath(WiiSettings.videosFolder);
 				break;
 		}
 
@@ -3173,6 +3174,7 @@ static void MenuSettingsMusic()
 				break;
 			case 1:
 				OnScreenKeyboard(WiiSettings.musicFolder, MAXPATHLEN);
+				CleanupPath(WiiSettings.musicFolder);
 				break;
 		}
 
@@ -3271,6 +3273,7 @@ static void MenuSettingsPictures()
 		{
 			case 0:
 				OnScreenKeyboard(WiiSettings.picturesFolder, MAXPATHLEN);
+				CleanupPath(WiiSettings.picturesFolder);
 				break;
 			case 1:
 				WiiSettings.slideshowDelay++;
@@ -3365,6 +3368,8 @@ static void MenuSettingsOnlineMedia()
 		{
 			case 0:
 				OnScreenKeyboard(WiiSettings.onlinemediaFolder, MAXPATHLEN);
+				if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
+					CleanupPath(WiiSettings.onlinemediaFolder);
 				break;
 		}
 
@@ -3618,7 +3623,7 @@ static void MenuSettingsNetworkSMB()
 	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
-	
+
 	if(netEditIndex < 0)
 	{
 		// find a share to put the data into
@@ -3654,6 +3659,17 @@ static void MenuSettingsNetworkSMB()
 				break;
 
 			case 1:
+				if(WiiSettings.smbConf[netEditIndex].ip[0] == 0)
+				{
+					// pre-populate IP
+					if(wiiIP[0] != 0)
+					{
+						strcpy(WiiSettings.smbConf[netEditIndex].ip, wiiIP);
+						char* dot = strrchr(WiiSettings.smbConf[netEditIndex].ip,'.');
+						if (dot != NULL) *++dot = 0; // strip last octet
+					}
+				}
+
 				OnScreenKeyboard(WiiSettings.smbConf[netEditIndex].ip, 80);
 				break;
 

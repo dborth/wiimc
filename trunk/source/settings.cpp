@@ -448,20 +448,25 @@ static void FixInvalidSettings()
 		WiiSettings.autoResume = 1;
 	if(WiiSettings.seekTime < 30 || WiiSettings.seekTime > 600)
 		WiiSettings.seekTime = 30;
+	CleanupPath(WiiSettings.videosFolder);
 
 	// Music
 	if(WiiSettings.playOrder < 0 || WiiSettings.playOrder > PLAY_LOOP)
 		WiiSettings.playOrder = PLAY_SINGLE;
+	CleanupPath(WiiSettings.musicFolder);
 
 	// Pictures
 	if(WiiSettings.slideshowDelay > 10 || WiiSettings.slideshowDelay < 1)
 		WiiSettings.slideshowDelay = 5;
+	CleanupPath(WiiSettings.picturesFolder);
 
 	// DVD
 	if(WiiSettings.dvdMenu != 0 && WiiSettings.dvdMenu != 1)
 		WiiSettings.dvdMenu = 1;
 
 	// Online Media
+	if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
+		CleanupPath(WiiSettings.onlinemediaFolder);
 
 	// Network
 	for(int i=0; i<5; i++)

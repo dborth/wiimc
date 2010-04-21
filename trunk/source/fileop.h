@@ -35,6 +35,8 @@ void SuspendParseThread();
 void StopParseThread();
 void CancelFileOp();
 bool IsDeviceRoot(char * path);
+bool IsOnlineMediaPath(char *path);
+void CleanupPath(char * path);
 void GetFullPath(int index, char *path);
 void MountAllDevices();
 bool ChangeInterface(int device, int devnum, bool silent);

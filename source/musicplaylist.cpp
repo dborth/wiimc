@@ -12,6 +12,7 @@
 #include <malloc.h>
 #include <sys/dir.h>
 
+#include "wiimc.h"
 #include "filebrowser.h"
 #include "menu.h"
 #include "settings.h"
@@ -195,18 +196,21 @@ static bool EnqueueFile(char * path, char * name)
  * 
  * Adds all music files in the specified folder to the playlist
  ***************************************************************************/
-static bool EnqueueFolder(char * path)
+static bool EnqueueFolder(char * path, int silent)
 {
-	char filename[MAXJOLIET+1];
+	char filename[MAXPATHLEN];
 	char filepath[MAXPATHLEN];
 	struct stat filestat;
 	DIR_ITER *dir = diropen(path);
 
 	if(dir == NULL)
 	{
-		char msg[1024];
-		sprintf(msg, "Error opening %s", path);
-		ErrorPrompt(msg);
+		if(!silent)
+		{
+			char msg[1024];
+			sprintf(msg, "Error opening %s", path);
+			ErrorPrompt(msg);
+		}
 		return false;
 	}
 
@@ -218,7 +222,7 @@ static bool EnqueueFolder(char * path)
 		sprintf(filepath, "%s/%s", path, filename);
 
 		if(filestat.st_mode & _IFDIR)
-			EnqueueFolder(filepath); // directory recursion doesn't work properly on SMB
+			EnqueueFolder(filepath, SILENT);
 		else
 			EnqueueFile(filepath, filename);
 	}
@@ -236,7 +240,7 @@ bool MusicPlaylistEnqueue(int index)
 		browserList[index].icon = ICON_FILE_CHECKED;
 	
 	if(browserList[index].type == TYPE_FOLDER)
-		return EnqueueFolder(fullpath);
+		return EnqueueFolder(fullpath, NOTSILENT);
 	else
 		return EnqueueFile(fullpath, browserList[index].filename);
 }

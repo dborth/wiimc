@@ -1105,14 +1105,18 @@ static bool ParseDirEntries()
 
 		if(strcmp(filename,".") == 0)
 			continue;
-		
+
 		if(strcmp(filename, "..") == 0 && IsDeviceRoot(browser.dir))
 			continue;
 
 		ext = GetExt(filename);
 
-		if((filestat.st_mode & _IFDIR) == 0 && !IsAllowedExt(ext) && !IsPlaylistExt(ext))
-			continue;
+		// skip this file if it's not an allowed extension 
+		if((filestat.st_mode & _IFDIR) == 0)
+		{
+			if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
+				continue;
+		}
 
 		// add the entry
 		if(AddBrowserEntry())

@@ -145,35 +145,6 @@ bool AddMediaEntry()
 }
 
 /****************************************************************************
- * CleanupPath()
- * Cleans up the filepath, removing double // and replacing \ with /
- ***************************************************************************/
-static void CleanupPath(char * path)
-{
-	if(!path || path[0] == 0)
-		return;
-
-	if(strncmp(path, "http:", 5) == 0)
-	{
-		char *c = strchr(&path[7], '/');
-		if(c == NULL) strcat(path, "/"); // should be at least one / in URL
-		return;
-	}
-
-	int pathlen = strlen(path);
-	int j = 0;
-	for(int i=0; i < pathlen && i < MAXPATHLEN; i++)
-	{
-		if(path[i] == '\\')
-			path[i] = '/';
-
-		if(j == 0 || !(path[j-1] == '/' && path[i] == '/'))
-			path[j++] = path[i];
-	}
-	path[j] = 0;
-}
-
-/****************************************************************************
  * UpdateDirName()
  * Update curent directory name for file browser
  ***************************************************************************/
@@ -305,6 +276,9 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	if(updateDir && !UpdateDirName())
 		return -1;
 
+	if(!menuCurrent == MENU_BROWSE_ONLINEMEDIA && !IsOnlineMediaPath(browser.dir))
+		CleanupPath(browser.dir);
+
 	SuspendParseThread(); // halt parsing
 
 	bool isPlaylist = false;
@@ -321,9 +295,6 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			browser.dir[0] = 0;
 		}
 	}
-
-	if(!isPlaylist)
-		CleanupPath(browser.dir);
 
 	if(isPlaylist || (strlen(browser.dir) > 10 && strncmp(browser.dir,"http:", 5) == 0))
 	{
@@ -362,7 +333,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			if(!AddBrowserEntry())
 				break;
 
-			sprintf(browserList[browser.numEntries].filename, "%s:/", part[DEVICE_SD][i].mount);
+			sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_SD][i].mount);
 
 			if(strlen(part[DEVICE_SD][i].name) > 0)
 				sprintf(browserList[browser.numEntries].displayname, "SD - %s", part[DEVICE_SD][i].name);
@@ -386,7 +357,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			if(!AddBrowserEntry())
 				break;
 
-			sprintf(browserList[browser.numEntries].filename, "%s:/", part[DEVICE_USB][i].mount);
+			sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_USB][i].mount);
 
 			if(strlen(part[DEVICE_USB][i].name) > 0)
 				sprintf(browserList[browser.numEntries].displayname, "USB - %s", part[DEVICE_USB][i].name);
@@ -404,7 +375,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	}
 
 	AddBrowserEntry();
-	sprintf(browserList[browser.numEntries].filename, "dvd:/");
+	sprintf(browserList[browser.numEntries].filename, "dvd:");
 	sprintf(browserList[browser.numEntries].displayname, "Data DVD");
 	browserList[browser.numEntries].length = 0;
 	browserList[browser.numEntries].mtime = 0;
@@ -419,7 +390,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			if(!AddBrowserEntry())
 				break;
 
-			sprintf(browserList[browser.numEntries].filename, "smb%d:/", i+1);
+			sprintf(browserList[browser.numEntries].filename, "smb%d:", i+1);
 			
 			if(WiiSettings.smbConf[i].displayname[0] != 0)
 				sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.smbConf[i].displayname);
@@ -440,7 +411,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			if(!AddBrowserEntry())
 				break;
 
-			sprintf(browserList[browser.numEntries].filename, "ftp%d:/", i+1);
+			sprintf(browserList[browser.numEntries].filename, "ftp%d:", i+1);
 			if(WiiSettings.ftpConf[i].displayname[0] != 0)
 				sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.ftpConf[i].displayname);
 			else

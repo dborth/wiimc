@@ -27,6 +27,7 @@ static bool networkInit = false;
 static bool autoNetworkInit = true;
 static bool networkShareInit[5] = { false, false, false, false, false };
 static bool ftpInit[5] = { false, false, false, false, false };
+char wiiIP[16] = { 0 };
 
 static bool updateChecked = false; // true if checked for app update
 static char updateURL[128]; // URL of app update
@@ -193,7 +194,6 @@ bool InitializeNetwork(bool silent)
 		return false;
 
 	int retry = 1;
-	char ip[16];
 	char msg[150];
 	s32 initResult;
 
@@ -212,7 +212,7 @@ bool InitializeNetwork(bool silent)
 			if(!silent)
 				ShowAction ("Initializing network...");
 
-			initResult = if_config(ip, NULL, NULL, true);
+			initResult = if_config(wiiIP, NULL, NULL, true);
 
 			if(initResult == 0)
 				networkInit = true;

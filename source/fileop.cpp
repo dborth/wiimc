@@ -835,6 +835,64 @@ bool IsDeviceRoot(char * path)
 	return false;
 }
 
+bool IsOnlineMediaPath(char *path)
+{
+	int dirLen = strlen(path);
+	
+	for(int i=0; i < onlinemediaSize; i++)
+	{
+		int filepathLen = strlen(onlinemediaList[i].filepath);
+		
+		if(filepathLen > dirLen && strncmp(path, onlinemediaList[i].filepath, dirLen) == 0)
+			return true;
+	}
+	return false;
+}
+
+/****************************************************************************
+ * CleanupPath()
+ * Cleans up the filepath, removing double // and replacing \ with /
+ ***************************************************************************/
+void CleanupPath(char * path)
+{
+	if(!path || path[0] == 0)
+		return;
+
+	int device = -1;
+	int devnum = -1;
+	FindDevice(path, &device, &devnum);
+
+	// path is invalid - wipe it
+	if(device == -1)
+	{
+		path[0] = 0;
+		return;
+	}
+
+	if(strncmp(path, "http:", 5) == 0)
+	{
+		char *c = strchr(&path[7], '/');
+		if(c == NULL) strcat(path, "/"); // should be at least one / in URL
+		return;
+	}
+
+	int pathlen = strlen(path);
+	int j = 0;
+	for(int i=0; i < pathlen && i < MAXPATHLEN; i++)
+	{
+		if(path[i] == '\\')
+			path[i] = '/';
+
+		if(j == 0 || !(path[j-1] == '/' && path[i] == '/'))
+			path[j++] = path[i];
+	}
+
+	if(!GetExt(path) && path[j-1] != '/')
+		path[j++] = '/'; // add trailing slash
+
+	path[j] = 0;
+}
+
 void GetFullPath(int i, char *path)
 {
 	if(i >= browser.size)
@@ -1632,11 +1690,11 @@ int ParseOnlineMedia()
 	}
 
 	char *ext;
+	int dirLen = strlen(browser.dir);
 
 	for(int i=0; i < onlinemediaSize; i++)
 	{
 		int filepathLen = strlen(onlinemediaList[i].filepath);
-		int dirLen = strlen(browser.dir);
 
 		// add file
 		if(strcmp(browser.dir, onlinemediaList[i].filepath) == 0)

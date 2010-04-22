@@ -18,6 +18,7 @@
 #include "utils/mload.h"
 #include "utils/di2.h"
 #include "utils/usb2storage.h"
+#include "utils/gettext.h"
 #include "video.h"
 #include "menu.h"
 #include "libwiigui/gui.h"
@@ -313,7 +314,7 @@ bool InitMPlayer()
 	if(chdir(appPath) != 0)
 	{
 		char msg[512];
-		sprintf(msg, "Unable to change path to %s.", appPath);
+		sprintf(msg, "%s %s", gettext("Unable to change path to"), appPath);
 		InfoPrompt("Unable to Initialize MPlayer", msg);
 		return false;
 	}

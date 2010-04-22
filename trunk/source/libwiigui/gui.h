@@ -662,6 +662,8 @@ class GuiText : public GuiElement
 		//!Sets the text of the GuiText element
 		//!\param t Text
 		void SetText(const char * t);
+		//!Gets the translated text length of the GuiText element
+		int GetLength();
 		//!Sets up preset values to be used by GuiText(t)
 		//!Useful when printing multiple text elements, all with the same attributes set
 		//!\param sz Font size

@@ -1,2 +1,422 @@
-msgid " "
-msgstr ""
+msgid "Videos"
+msgstr "Video"
+
+msgid "Music"
+msgstr "Musica"
+
+msgid "Pictures"
+msgstr "Immagini"
+
+msgid "Online Media"
+msgstr "Online Media"
+
+msgid "Please Wait"
+msgstr "Attendere Prego"
+
+msgid "Error"
+msgstr "Errore"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Retry"
+msgstr "Riprova"
+
+msgid "Cancel"
+msgstr "Cancella"
+
+msgid "Information"
+msgstr "Informazioni"
+
+msgid "Credits"
+msgstr "Crediti"
+
+msgid "Play"
+msgstr "Riproduci"
+
+msgid "Pause"
+msgstr "Pausa"
+
+msgid "Single Play"
+msgstr "Singola Esecuzione"
+
+msgid "Continuous Play"
+msgstr "Esecuzione Continua"
+
+msgid "Shuffle"
+msgstr "Casuale"
+
+msgid "Loop"
+msgstr "Ripetizione"
+
+msgid "Playlist"
+msgstr "Playlist"
+
+msgid "Add to Playlist"
+msgstr "Aggiungi alla Playlist"
+
+msgid "Loading..."
+msgstr "Caricamento..."
+
+msgid "Global"
+msgstr "Globali"
+
+msgid "Network"
+msgstr "Rete"
+
+msgid "Subtitles"
+msgstr "Sottotitoli"
+
+msgid "Settings"
+msgstr "Impostazioni"
+
+msgid "On"
+msgstr "Acceso"
+
+msgid "Off"
+msgstr "Spento"
+
+msgid "Always"
+msgstr "Sempre"
+
+msgid "Disabled"
+msgstr "Disabilitato"
+
+msgid "Skip Backward"
+msgstr "Salta Indietro"
+
+msgid "Rewind"
+msgstr "Riavvolgi"
+
+msgid "Pause"
+msgstr "Pausa"
+
+msgid "Fast Forward"
+msgstr "Avanti Veloce"
+
+msgid "Skip Forward"
+msgstr "Salta Avanti"
+
+msgid "Restart Song"
+msgstr "Riavvia canzone"
+
+msgid "Next Song"
+msgstr "Prossima canzone"
+
+msgid "Single Play"
+msgstr "Singola Riproduzione"
+
+msgid "Now Playing:"
+msgstr "Attualmente in riproduzione:"
+
+msgid "Previous"
+msgstr "Precedente"
+
+msgid "Next"
+msgstr "Prossimo"
+
+msgid "Slideshow"
+msgstr "Slideshow"
+
+msgid "Close"
+msgstr "Chiudi"
+
+msgid "Exit"
+msgstr "Esci"
+
+msgid "DVD"
+msgstr "DVD"
+
+msgid "Go Back"
+msgstr "Indietro"
+
+msgid "Up One Level"
+msgstr "Livello superiore"
+
+msgid "Exit Playlist"
+msgstr "Esci dalla Playlist"
+
+msgid "Initializing network..."
+msgstr "Inizializzazione Rete"
+
+msgid "Connecting to FTP site..."
+msgstr "Connessione all'FTP"
+
+msgid "Connecting to network share..."
+msgstr "Connessione alla condivisione SMB"
+
+msgid "Update Available"
+msgstr "Aggiornamento Disponibile"
+
+msgid "An update is available!"
+msgstr "E'disponibile Un aggiornamento!"
+
+msgid "Update now"
+msgstr "Aggiorna ora"
+
+msgid "Update later"
+msgstr "Aggiorna più tardi"
+
+msgid "Saving..."
+msgstr "Salvataggio in corso..."
+
+msgid "Update successful!"
+msgstr "Aggiormamento Completato!"
+
+msgid "Update failed!"
+msgstr "Aggiornamento Fallito!"
+
+msgid "Online media file not found."
+msgstr "File multimediale online non trovato."
+
+msgid "Unable to display files on selected load device."
+msgstr "Impossibile visualizzare files nel dispositivo selezionato."
+
+msgid "Error loading playlist!"
+msgstr "Errore caricando la playlist!"
+
+msgid "Unrecognized DVD format!"
+msgstr "Formato DVD sconosciuto!"
+
+msgid "No disc inserted!"
+msgstr "Nessun Disco Inserito!"
+
+msgid "Invalid DVD."
+msgstr "DVD non valido."
+
+msgid "Error opening"
+msgstr "Errore aprendo"
+
+msgid "Please install IOS 202 for DVD support."
+msgstr "Prego installare IOS 202 per il supporto dei DVD."
+
+msgid "USB drive not found!"
+msgstr "Drive USB non trovato!"
+
+msgid "SD card not found!"
+msgstr "SD card non trovata!"
+
+msgid "Error opening file!"
+msgstr "Errore aprendo il file!"
+
+msgid "Error saving file!"
+msgstr "Errore salvando il file!"
+
+msgid "There are no files currently in the playlist."
+msgstr "Attualmente non ci sono files nella Playlist."
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Impossibile inizializzare la rete (Errore #:"
+
+msgid "Check settings file."
+msgstr "Controlla i settaggi."
+
+msgid "Share name is blank."
+msgstr "Nome condivisione vuoto."
+
+msgid "Share IP is blank."
+msgstr "Indirizzo IP condiviso Vuoto."
+
+msgid "Invalid network share settings"
+msgstr "Settaggi condivisione rete non validi"
+
+msgid "Failed to connect to network share."
+msgstr "Connessione alla condivisione in rete fallita."
+
+msgid "IP is blank."
+msgstr "Indirizzo IP vuoto."
+
+msgid "Username is blank."
+msgstr "Campo nome utente vuoto."
+
+msgid "Password is blank."
+msgstr "Campo Password Vuoto."
+
+msgid "Invalid FTP site settings"
+msgstr "Settaggi FTP non validi"
+
+msgid "Failed to connect to FTP site."
+msgstr "Connessione al sito FTP fallita."
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "Non è possibile trovare un dispositivo SD o USB valido - Almeno uno è necessario per le normali operazioni."
+
+msgid "Port cannot be blank!"
+msgstr "La porta non può essere vuota!"
+
+msgid "Port is not a number!"
+msgstr "La porta FTP non è un numero!"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "La porta è fuori dal range disponibile (4-49151)!"
+
+msgid "Could not create folder"
+msgstr "Non è possibile creare la cartella"
+
+/*************************************
+* Settings Strings
+************************************/
+msgid "Settings - Global"
+msgstr "Impostazioni - Globali"
+
+msgid "Settings - Videos"
+msgstr "Impostazioni - Video"
+
+msgid "Settings - Music"
+msgstr "Impostazioni - Musica"
+
+msgid "Settings - Pictures"
+msgstr "Impostazioni - Immagini"
+
+msgid "Settings - Network"
+msgstr "Impostazioni - Rete"
+
+msgid "Settings - Subtitles"
+msgstr "Impostazioni - Sottotitoli"
+
+msgid "File Extensions"
+msgstr "Estensioni dei files"
+
+msgid "Language"
+msgstr "Lingua"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Exit Action"
+msgstr "Azione di uscita"
+
+msgid "Wiimote Rumble"
+msgstr "Vibrazione Wiimote"
+
+msgid "Hide"
+msgstr "Nascondi"
+
+msgid "Show"
+msgstr "Mostra"
+
+msgid "Auto"
+msgstr "Automatico"
+
+msgid "Return to Wii Menu"
+msgstr "Ritorna al menu Wii"
+
+msgid "Power Off Wii"
+msgstr "Spegni la Wii"
+
+msgid "Return to Loader"
+msgstr "Ritorna al loader"
+
+msgid "Screen Zoom"
+msgstr "Zoom schermo"
+
+msgid "Screen Position"
+msgstr "Posizione schermo"
+
+msgid "Frame Dropping"
+msgstr "Frame Dropping"
+
+msgid "Aspect Ratio"
+msgstr "Rapporto Aspetto Video"
+
+msgid "Cache Size"
+msgstr "Dimensione Cache"
+
+msgid "Cache Prefill"
+msgstr "Precaricamento Cache"
+
+msgid "Audio Delay"
+msgstr "Ritardo Audio"
+
+msgid "Auto-Resume"
+msgstr "Ricomincia automaticamente da dove interrotto"
+
+msgid "Videos Files Folder"
+msgstr "Cartella files video"
+
+msgid "Play Order"
+msgstr "Ordine di esecuzione"
+
+msgid "Music Files Folder"
+msgstr "Cartella files musicali"
+
+msgid "Pictures Files Folder"
+msgstr "Cartella files immagini"
+
+msgid "Add"
+msgstr "Aggiungi"
+
+msgid "Display Name"
+msgstr "Nome Visualizzato"
+
+msgid "Share IP"
+msgstr "IP condivisione"
+
+msgid "Share Name"
+msgstr "Nome condivisione"
+
+msgid "Username"
+msgstr "Nome Utente"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "New Share"
+msgstr "Nuova Condivisione"
+
+msgid "Delete"
+msgstr "Cancella"
+
+msgid "Delete Share"
+msgstr "Cancella Condivisione"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "Sei sicuro di voler cancellare questa condivisione?"
+
+msgid "Folder"
+msgstr "Cartella"
+
+msgid "Mode"
+msgstr "Modo"
+
+msgid "New Site"
+msgstr "Nuovo Sito"
+
+msgid "Passive"
+msgstr "Passivo"
+
+msgid "Active"
+msgstr "Attivo"
+
+msgid "Delete Site"
+msgstr "Cancella Sito"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "Sei sicuro di voler cancellare questo sito?"
+
+msgid "Visibility"
+msgstr "Visibilità"
+
+msgid "Position"
+msgstr "Posizione"
+
+msgid "Size"
+msgstr "Dimensione"
+
+msgid "Delay"
+msgstr "Ritardo"
+
+msgid "Top"
+msgstr "Alto"
+
+msgid "Center"
+msgstr "Centrato"
+
+msgid "Bottom"
+msgstr "Basso"
+
+msgid "Port"
+msgstr "Porta"
+
+msgid "Rewind / Fast Forward"
+msgstr "Riavvolgimento/Avanzamento Veloce"

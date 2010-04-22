@@ -21,6 +21,7 @@
 #include "input.h"
 #include "button_mapping.h"
 #include "settings.h"
+#include "utils/gettext.h"
 
 #define SAVEBUFFERSIZE (64*1024)
 
@@ -357,7 +358,15 @@ void DefaultSettings ()
 
 	// Global
 	WiiSettings.hideExtensions = 1;
-	WiiSettings.language = LANG_ENGLISH; //CONF_GetLanguage();
+	WiiSettings.language = CONF_GetLanguage();
+
+	if(WiiSettings.language != LANG_ENGLISH && 
+		WiiSettings.language != LANG_FRENCH && 
+		WiiSettings.language != LANG_GERMAN && 
+		WiiSettings.language != LANG_ITALIAN && 
+		WiiSettings.language != LANG_SPANISH)
+		WiiSettings.language = LANG_ENGLISH;
+
 	WiiSettings.volume = 50;
 	WiiSettings.exitAction = EXIT_AUTO;
 	WiiSettings.rumble = 1;
@@ -414,7 +423,12 @@ static void FixInvalidSettings()
 	// Global
 	if(WiiSettings.hideExtensions != 1 && WiiSettings.hideExtensions != 0)
 		WiiSettings.hideExtensions = 1;
-	if(WiiSettings.language < 0 || WiiSettings.language > LANG_KOREAN)
+	if(WiiSettings.language != LANG_ENGLISH && 
+		WiiSettings.language != LANG_FRENCH && 
+		WiiSettings.language != LANG_GERMAN && 
+		WiiSettings.language != LANG_ITALIAN && 
+		WiiSettings.language != LANG_SPANISH && 
+		WiiSettings.language != LANG_ROMANIAN)
 		WiiSettings.language = LANG_ENGLISH;
 	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
 		WiiSettings.volume = 50;
@@ -538,7 +552,7 @@ SaveSettings (bool silent)
 				{
 					if(!silent)
 					{
-						sprintf(msg, "Could not create folder %s", filepath);
+						sprintf(msg, "%s %s", gettext("Could not create folder"), filepath);
 						ErrorPrompt(msg);
 					}
 					return false;
@@ -553,7 +567,7 @@ SaveSettings (bool silent)
 				{
 					if(!silent)
 					{
-						sprintf(msg, "Could not create folder %s", filepath);
+						sprintf(msg, "%s %s", gettext("Could not create folder"), filepath);
 						ErrorPrompt(msg);
 					}
 					return false;
@@ -595,7 +609,7 @@ SaveSettings (bool silent)
 
 	if(!silent)
 	{
-		sprintf(msg, "Could not save settings to %s", filepath);
+		sprintf(msg, "%s %s", gettext("Could not save settings to"), filepath);
 		ErrorPrompt(msg);
 	}
 	return false;

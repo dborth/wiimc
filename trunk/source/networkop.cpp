@@ -21,6 +21,7 @@
 #include "utils/http.h"
 #include "utils/unzip/unzip.h"
 #include "utils/unzip/miniunz.h"
+#include "utils/gettext.h"
 
 bool inNetworkInit = false;
 static bool networkInit = false;
@@ -220,7 +221,7 @@ bool InitializeNetwork(bool silent)
 			if(networkInit || silent)
 				break;
 
-			sprintf(msg, "Unable to initialize network (Error #: %i)", initResult);
+			sprintf(msg, "%s %i)", gettext("Unable to initialize network (Error #:"), initResult);
 			retry = ErrorPromptRetry(msg);
 		}
 
@@ -274,7 +275,7 @@ ConnectShare (int num, bool silent)
 			else if(chkI)
 				sprintf(msg, "Share IP is blank.");
 
-			sprintf(msg2, "Invalid network share settings - %s", msg);
+			sprintf(msg2, "%s - %s", gettext("Invalid network share settings"), gettext(msg));
 			ErrorPrompt(msg2);
 		}
 		return false;
@@ -344,7 +345,7 @@ ConnectFTP (int num, bool silent)
 			else if(chkP)
 				sprintf(msg, "Password is blank.");
 
-			sprintf(msg2, "Invalid FTP site settings - %s", msg);
+			sprintf(msg2, "%s - %s", gettext("Invalid FTP site settings"), gettext(msg));
 			ErrorPrompt(msg2);
 		}
 		return false;

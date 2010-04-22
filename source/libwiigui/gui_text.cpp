@@ -131,6 +131,14 @@ void GuiText::SetText(const char * t)
 	}
 }
 
+int GuiText::GetLength()
+{
+	if(!text)
+		return 0;
+
+	return wcslen(text);
+}
+
 void GuiText::SetPresets(int sz, GXColor c, int w, u16 s, int h, int v)
 {
 	presetSize = sz;

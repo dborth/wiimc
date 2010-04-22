@@ -35,6 +35,7 @@ extern "C" {
 #include "musicplaylist.h"
 #include "libwiigui/gui.h"
 #include "utils/http.h"
+#include "utils/gettext.h"
 
 #define THREAD_SLEEP 100
 
@@ -1263,7 +1264,7 @@ ParseDirectory(bool waitParse)
 
 		if(dirIter == NULL)
 		{
-			sprintf(msg, "Error opening %s", browser.dir);
+			sprintf(msg, "%s %s", gettext("Error opening"), browser.dir);
 			retry = ErrorPromptRetry(msg);
 
 			if(retry)

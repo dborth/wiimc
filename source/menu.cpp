@@ -2629,9 +2629,19 @@ static void MenuSettingsGlobal()
 				WiiSettings.hideExtensions ^= 1;
 				break;
 			case 1:
-				//WiiSettings.language++;
-				//if(WiiSettings.language > LANG_KOREAN)
-				//	WiiSettings.language = 0;
+				WiiSettings.language++;
+				while(WiiSettings.language != LANG_ENGLISH && 
+						WiiSettings.language != LANG_FRENCH && 
+						WiiSettings.language != LANG_GERMAN && 
+						WiiSettings.language != LANG_ITALIAN && 
+						WiiSettings.language != LANG_SPANISH && 
+						WiiSettings.language != LANG_ROMANIAN)
+				{
+					WiiSettings.language++;
+
+					if(WiiSettings.language >= LANG_LENGTH)
+						WiiSettings.language = 0;
+				}
 				break;
 			case 2:
 				WiiSettings.volume += 10;
@@ -2675,6 +2685,7 @@ static void MenuSettingsGlobal()
 				case LANG_SIMP_CHINESE:	sprintf(options.value[1], "Chinese (Simplified)"); break;
 				case LANG_TRAD_CHINESE:	sprintf(options.value[1], "Chinese (Traditional)"); break;
 				case LANG_KOREAN:		sprintf(options.value[1], "Korean"); break;
+				case LANG_ROMANIAN:		sprintf(options.value[1], "Romanian"); break;
 			}
 			
 			sprintf (options.value[2], "%d%%", WiiSettings.volume);

@@ -1,2 +1,443 @@
-msgid " "
-msgstr ""
+msgid "Videos"
+msgstr "Vídeos"
+
+msgid "Music"
+msgstr "Música"
+
+msgid "Pictures"
+msgstr "Imágenes"
+
+msgid "Online Media"
+msgstr "Recursos Online"
+
+msgid "Please Wait"
+msgstr "Por favor, espere."
+
+msgid "Error"
+msgstr "Error"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Retry"
+msgstr "Reintentar"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Information"
+msgstr "Información"
+
+msgid "Credits"
+msgstr "Créditos"
+
+msgid "Play"
+msgstr "Reproducir"
+
+msgid "Pause"
+msgstr "Pausa"
+
+msgid "Single Play"
+msgstr "Reproducción Individual"
+
+msgid "Continuous Play"
+msgstr "Reproducción continua"
+
+msgid "Shuffle"
+msgstr "Aleatorio"
+
+msgid "Loop"
+msgstr "Bucle"
+
+msgid "Playlist"
+msgstr "Lista de Reproducción"
+
+msgid "Add to Playlist"
+msgstr "Añadir a Lista de Reproducción"
+
+msgid "Loading..."
+msgstr "Cargando..."
+
+msgid "Global"
+msgstr "Global"
+
+msgid "Network"
+msgstr "Red"
+
+msgid "Subtitles"
+msgstr "Subtítulos"
+
+msgid "Settings"
+msgstr "Configuración"
+
+msgid "On"
+msgstr "On"
+
+msgid "Off"
+msgstr "Off"
+
+msgid "Always"
+msgstr "Siempre"
+
+msgid "Disabled"
+msgstr "Deshabilitado"
+
+msgid "Skip Backward"
+msgstr "Salto Hacia Atrás"
+
+msgid "Rewind"
+msgstr "Rebobinar"
+
+msgid "Pause"
+msgstr "Pausa"
+
+msgid "Fast Forward"
+msgstr "Avance Rapido"
+
+msgid "Skip Forward"
+msgstr "Salto Hacia Adelante"
+
+msgid "Restart Song"
+msgstr "Reiniciar Canción"
+
+msgid "Next Song"
+msgstr "Próxima Canción"
+
+msgid "Single Play"
+msgstr "Reproducción Individual"
+
+msgid "Now Playing:"
+msgstr "En reproducción:"
+
+msgid "Previous"
+msgstr "Previa"
+
+msgid "Next"
+msgstr "Próxima"
+
+msgid "Slideshow"
+msgstr "Pase de Diapositivas"
+
+msgid "Close"
+msgstr "Cerrar"
+
+msgid "Exit"
+msgstr "Salir"
+
+msgid "DVD"
+msgstr "DVD"
+
+msgid "Go Back"
+msgstr "Volver"
+
+msgid "Up One Level"
+msgstr "Nivel Superior"
+
+msgid "Exit Playlist"
+msgstr "Salir de Lista de Reproducción"
+
+msgid "Initializing network..."
+msgstr "Iniciando red..."
+
+msgid "Connecting to FTP site..."
+msgstr "Conectando a FTP..."
+
+msgid "Connecting to network share..."
+msgstr "Conectando a red compartida..."
+
+msgid "seconds"
+msgstr "segundos"
+
+msgid "Update Available"
+msgstr "Actualizaciones Disponibles"
+
+msgid "An update is available!"
+msgstr "¡Una actualización disponible!"
+
+msgid "Update now"
+msgstr "Actualizar Ahora"
+
+msgid "Update later"
+msgstr "Actualizar más tarde"
+
+msgid "Saving..."
+msgstr "Salvando..."
+
+msgid "Update successful!"
+msgstr "¡Actualización completada!"
+
+msgid "Update failed!"
+msgstr "¡Actualización fallida!"
+
+msgid "Online media file not found."
+msgstr "Archivo Online no encontrado."
+
+msgid "Unable to display files on selected load device."
+msgstr "Imposible visualizar archivos en la fuente seleccionada."
+
+msgid "Error loading playlist!"
+msgstr "¡Error cargando la lista de reproducción!"
+
+msgid "Unrecognized DVD format!"
+msgstr "¡Formato de DVD no compatible!"
+
+msgid "No disc inserted!"
+msgstr "¡Nigún disco insertado!"
+
+msgid "Invalid DVD."
+msgstr "DVD no válido."
+
+msgid "Error opening"
+msgstr "Error abriendo"
+
+msgid "Please install IOS 202 for DVD support."
+msgstr "Por favor, instale IOS 202 para soporte de DVD."
+
+msgid "USB drive not found!"
+msgstr "¡Unidad USB no encontrada!"
+
+msgid "SD card not found!"
+msgstr "¡Tarjeta SD no encontrada!"
+
+msgid "Error opening file!"
+msgstr "¡Imposible abrir archivo!"
+
+msgid "Error saving file!"
+msgstr "¡Imposible guardar archivo!"
+
+msgid "There are no files currently in the playlist."
+msgstr "No hay archivos en la lista de reproducción actual"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Incapaz de iniciar la red  (Error #:"
+
+msgid "Check settings file."
+msgstr "Compruebe la configuración de archivo."
+
+msgid "Share name is blank."
+msgstr "Share name en blanco"
+
+msgid "Share IP is blank."
+msgstr "Share IP en blanco"
+
+msgid "Invalid network share settings"
+msgstr "Configuración de la red no valida"
+
+msgid "Failed to connect to network share."
+msgstr "Error al conectar a la red"
+
+msgid "Check settings file."
+msgstr "Comprueba la configuración del archivo"
+
+msgid "IP is blank."
+msgstr "IP en blanco"
+
+msgid "Username is blank."
+msgstr "Usuario en blanco."
+
+msgid "Password is blank."
+msgstr "Contraseña en blanco"
+
+msgid "Port"
+msgstr "Puerto"
+
+msgid "Port cannot be blank!"
+msgstr "¡El Puerto no puede estar en blanco!"
+
+msgid "Port is not a number!"
+msgstr "El Puerto no es un número"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "El Puerto esta fuera de rango permitido (4-49151)"
+
+msgid "Invalid FTP site settings"
+msgstr "Datos incorrectos para la configuración FTP"
+
+msgid "Failed to connect to FTP site."
+msgstr "Error en la conexión FTP"
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "Imposible encontrar una SD o USB válidos - requerido para una operación normal"
+
+msgid "Settings - Global"
+msgstr "Configuración - Global"
+
+msgid "Settings - Videos"
+msgstr "Configuración - Vídeos"
+
+msgid "Settings - Music"
+msgstr "Configuración - Música"
+
+msgid "Settings - Pictures"
+msgstr "Configuración - Imágenes"
+
+msgid "Settings - Network"
+msgstr "Configuración - Red"
+
+msgid "Settings - Subtitles"
+msgstr "Configuración - Subtítulos"
+
+msgid "Settings - Network - New Site"
+msgstr "Configuración - Red - Nuevo Sitio"
+
+msgid "File Extensions"
+msgstr "Extensiones de Archivo"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Volume"
+msgstr "Volumen"
+
+msgid "Exit Action"
+msgstr "Acción al Salir"
+
+msgid "Wiimote Rumble"
+msgstr "Vibración de Wiimote"
+
+msgid "Hide"
+msgstr "Oculto"
+
+msgid "Show"
+msgstr "Mostrar"
+
+msgid "Auto"
+msgstr "Automático"
+
+msgid "Return to Wii Menu"
+msgstr "Volver al Menu Wii"
+
+msgid "Power Off Wii"
+msgstr "Apagar la Wii"
+
+msgid "Return to Loader"
+msgstr "Volver al Lanzador"
+
+msgid "Screen Zoom"
+msgstr "Zoom de Pantalla"
+
+msgid "Screen Position"
+msgstr "Posición de Pantalla"
+
+msgid "Frame Dropping"
+msgstr "Frame Dropping"
+
+msgid "Aspect Ratio"
+msgstr "Formato de Salida de Vídeo"
+
+msgid "Cache Size"
+msgstr "Tamaño de Cache"
+
+msgid "Cache Prefill"
+msgstr "Precarga de Cache"
+
+msgid "Cache Fill"
+msgstr "Carga de Cache"
+
+msgid "Audio Delay"
+msgstr "Retardo en el Audio"
+
+msgid "Auto-Resume"
+msgstr "Auto-Reanudar"
+
+msgid "Videos Files Folder"
+msgstr "Carpeta de Archivos de Vídeo"
+
+msgid "Play Order"
+msgstr "Orden de Reproducción"
+
+msgid "Music Files Folder"
+msgstr "Carpeta de Archivos de Música"
+
+msgid "Pictures Files Folder"
+msgstr "Carpeta de Archivos de Imágenes"
+
+msgid "Add"
+msgstr "Añadir"
+
+msgid "Display Name"
+msgstr "Mostrar Nombre"
+
+msgid "Share IP"
+msgstr "IP Compartida"
+
+msgid "Share Name"
+msgstr "Nombre del Elemento Compartido"
+
+msgid "Username"
+msgstr "Usuario"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "New Share"
+msgstr "Nuevo elemento compartido"
+
+msgid "Delete"
+msgstr "Borrar"
+
+msgid "Delete Share"
+msgstr "Borrar el Elemento Compartido"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "¿Está seguro de borrar el elemento compartido?"
+
+msgid "Folder"
+msgstr "Carpeta"
+
+msgid "Mode"
+msgstr "Modo"
+
+msgid "New Site"
+msgstr "Nuevo Sitio"
+
+msgid "Passive"
+msgstr "Pasivo"
+
+msgid "Active"
+msgstr "Activo"
+
+msgid "Delete Site"
+msgstr "Cancelar Sitio"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "¿Está seguro de que quiere borrar el sitio?"
+
+msgid "Visibility"
+msgstr "Visibilidad"
+
+msgid "Position"
+msgstr "Posición"
+
+msgid "Size"
+msgstr "Tamaño"
+
+msgid "Delay"
+msgstr "Retardo"
+
+msgid "Top"
+msgstr "Arriba"
+
+msgid "Center"
+msgstr "Centro"
+
+msgid "Bottom"
+msgstr "Abajo"
+
+msgid "Slideshow Delay"
+msgstr "Tiempo entre Diapositivas"
+
+msgid "DVD Menu"
+msgstr "Menú del DVD"
+
+msgid "Skip to Main Title"
+msgstr "Salir a la Pantalla Principal"
+
+msgid "Online Media Folder"
+msgstr "Carpeta de Recursos Online"
+
+msgid "Add SMB Share"
+msgstr "Añadir carpeta de red"
+
+msgid "IP"
+msgstr "IP"

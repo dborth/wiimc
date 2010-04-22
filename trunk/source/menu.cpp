@@ -2606,7 +2606,7 @@ static void MenuSettingsGlobal()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(200);
+	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -2998,7 +2998,7 @@ static void MenuSettingsVideos()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3159,7 +3159,7 @@ static void MenuSettingsMusic()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3263,7 +3263,7 @@ static void MenuSettingsPictures()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3358,7 +3358,7 @@ static void MenuSettingsOnlineMedia()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3628,7 +3628,7 @@ static void MenuSettingsNetworkSMB()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 6, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3828,7 +3828,7 @@ static void MenuSettingsNetworkFTP()
 
 	GuiOptionBrowser optionBrowser(screenwidth, size, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3986,7 +3986,7 @@ static void MenuSettingsDVD()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(220);
+	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();

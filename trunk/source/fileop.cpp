@@ -919,9 +919,6 @@ bool CheckMount(int device, int devnum, bool silent)
 	if(isInserted[device] && part[device][devnum-1].type > 0)
 		return true;
 
-	if(MountPartitions(device, silent) >= devnum)
-		return true;
-
 	return false;
 }
 
@@ -1533,6 +1530,7 @@ int ParsePlaylistFile()
 {
 	int res;
 	char *ext = GetExt(browser.dir);
+	
 
 	// if this file has no extension, try parsing it as a plx anyway
 	if(ext == NULL || strcmp(ext, "plx") == 0)
@@ -1585,6 +1583,7 @@ int ParsePlaylistFile()
 		ErrorPrompt("Error loading playlist!");
 		return 0;
 	}
+	
 
 	while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
 	{
@@ -1623,9 +1622,10 @@ int ParsePlaylistFile()
 
 	pt_iter_goto_head(pt_iter);
 
-	while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
+	play_tree_t* i;
+	for(i = pt_iter->tree; i != NULL; i = i->next)
 	{
-		if(strncmp(playlistEntry, "http:", 5) != 0)
+		if(!i->files || strncmp(i->files[0], "http:", 5) != 0)
 			continue;
 
 		//ext = GetExt(playlistEntry);
@@ -1636,21 +1636,36 @@ int ParsePlaylistFile()
 		if(!AddBrowserEntry()) // add failed
 			break;
 
-		strncpy(browserList[browser.numEntries].filename, playlistEntry, MAXPATHLEN);
-		browserList[browser.numEntries].filename[MAXPATHLEN] = 0;
+		snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "%s", i->files[0]);
 
-		start = strrchr(playlistEntry,'/');
-		if(start != NULL) // start up starting part of path
+		// use parameter pt_prettyformat_title for displayname if it exists
+		if(i->params) 
 		{
-			start++;
-			sprintf(browserList[browser.numEntries].displayname, start);
-		}
-		else
-		{
-			strncpy(browserList[browser.numEntries].displayname, playlistEntry, MAXJOLIET);
-			browserList[browser.numEntries].displayname[MAXJOLIET] = 0;
+			for (int n = 0; i->params[n].name != NULL; n++) 
+			{
+				if(strcasecmp(i->params[n].name,PLAY_TREE_PARAM_PRETTYFORMAT_TITLE) != 0)
+					continue;
+				if(i->params[n].value == NULL)
+					break;
+				snprintf(browserList[browser.numEntries].displayname, MAXJOLIET, "%s", i->params[n].value);
+				break;
+			}
 		}
 
+		if(browserList[browser.numEntries].displayname[0] == 0)
+		{
+			start = strrchr(i->files[0],'/');
+			if(start != NULL) // start up starting part of path
+			{
+				start++;
+				sprintf(browserList[browser.numEntries].displayname, start);
+			}
+			else
+			{
+				strncpy(browserList[browser.numEntries].displayname, i->files[0], MAXJOLIET);
+				browserList[browser.numEntries].displayname[MAXJOLIET] = 0;
+			}
+		}
 		if(IsPlaylistExt(ext))
 			browserList[browser.numEntries].type = TYPE_PLAYLIST;
 

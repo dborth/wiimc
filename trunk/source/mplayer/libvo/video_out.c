@@ -139,7 +139,7 @@ extern const vo_functions_t video_out_corevideo;
 extern const vo_functions_t video_out_quartz;
 extern const vo_functions_t video_out_pnm;
 extern const vo_functions_t video_out_md5sum;
-extern vo_functions_t video_out_gekko;
+extern const vo_functions_t video_out_gekko;
 
 const vo_functions_t* const video_out_drivers[] =
 {

@@ -42,7 +42,7 @@
 #define PREBUFFER 32768
 
 
-static ao_info_t info = {
+static const ao_info_t info = {
 	"gekko audio output",
 	"gekko",
 	"Team Twiizers",

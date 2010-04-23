@@ -49,6 +49,8 @@ char *get_path(const char *filename){
 	char *buff;
 #ifdef __MINGW32__
 	static char *config_dir = "/mplayer";
+#elif defined (GEKKO)
+	static char *config_dir = "";
 #else
 	static char *config_dir = "/.mplayer";
 #endif

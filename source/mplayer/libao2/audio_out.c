@@ -56,7 +56,7 @@ extern const ao_functions_t audio_out_mpegpes;
 extern const ao_functions_t audio_out_pcm;
 extern const ao_functions_t audio_out_pss;
 #ifdef GEKKO
-extern ao_functions_t audio_out_gekko;
+extern const ao_functions_t audio_out_gekko;
 #endif
 
 const ao_functions_t* const audio_out_drivers[] =

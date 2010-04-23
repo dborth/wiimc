@@ -21,6 +21,7 @@
    Boston, MA 02110-1301 USA.
 */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,14 +55,15 @@ static const vo_info_t info = {
 };
 
 const LIBVO_EXTERN (gekko)
-static	u16 pitch[3];
+
+static u16 pitch[3];
 static u32 image_width = 0, image_height = 0;
 
 static u32 gx_width, gx_height;
 
 void vo_draw_alpha_gekko(int w, int h, unsigned char* src, unsigned char *srca,
 		int srcstride, unsigned char* dstbase, int dststride, int x0)
-{
+		{
 	// can be optimized
 	int x,y;
 	unsigned char* buf, *bufa, *tmp, *tmpa;
@@ -163,14 +165,10 @@ void vo_draw_alpha_gekko(int w, int h, unsigned char* src, unsigned char *srca,
 
 static void draw_alpha(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
 {
-	int p = image_width / 16;
-	if (p % 2)
-		p++;
-	p = p * 16;
-	y0 = ((int) (y0 / 8.0)) * 8;
-	y0-=8;
+	int rowpitch = MIN(ceil((float)image_width / 8) * 8, 1024);
+	int lines = (floor((float)y0 / 8) * 8) - 8;			// Ok...
 
-	vo_draw_alpha_gekko(w, h, src, srca, stride, GetYtexture() + (y0 * p), pitch[0], x0);
+	vo_draw_alpha_gekko(w, h, src, srca, stride, GetYtexture() + (lines * rowpitch), pitch[0], x0);
 }
 
 static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y)
@@ -178,15 +176,17 @@ static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y
 	if (y == 0)
 	{
 		GX_ResetTextureYUVPointers();
-
+		
 		if (stride[0] != pitch[0])
 		{
 			pitch[0] = stride[0];
 			pitch[1] = stride[1];
 			pitch[2] = stride[2];
+			
 			GX_UpdatePitch(pitch);
 		}
 	}
+	
 	GX_FillTextureYUV(h, image);
 	return 0;
 }
@@ -284,10 +284,10 @@ static int control(uint32_t request, void *data, ...)
 		case VOCTRL_QUERY_FORMAT:
 			return query_format(*((uint32_t *)data));
 		case VOCTRL_UPDATE_SCREENINFO:
-			vo_screenwidth = screenwidth;
-			vo_screenheight = screenheight;
-			aspect_save_screenres(vo_screenwidth, vo_screenheight);
-			return VO_TRUE;
+            vo_screenwidth = screenwidth;
+            vo_screenheight = screenheight;
+            aspect_save_screenres(vo_screenwidth, vo_screenheight);
+            return VO_TRUE;
 		default:
 			return VO_NOTIMPL;
 	}

@@ -1090,6 +1090,7 @@ void free_osd_list(void){
 
 #define FONT_LOAD_DEFER 6
 int prev_dxs = 0, prev_dys = 0;
+
 static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
                              int right_border, int bottom_border, int orig_w,
                              int orig_h)
@@ -1097,7 +1098,7 @@ static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
     mp_osd_obj_t* obj=vo_osd_list;
     int chg=0;
 #ifdef CONFIG_FREETYPE
-    static int defer_counter = 0;//, prev_dxs = 0, prev_dys = 0;
+    static int defer_counter = 0;
 
     // here is the right place to get screen dimensions
     if (((dxs != vo_image_width)
@@ -1118,43 +1119,34 @@ static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
     }
 
     if (force_load_font) {
-    //printf("sub.c force_load_font\n");
-    //ReInitTTFLib();
 	force_load_font = 0;
         load_font_ft(dxs, dys, &vo_font, font_name, osd_font_scale_factor);
-    if (mpctx_get_set_of_sub_size()>0)
-    {
+	if (mpctx_get_set_of_sub_size() > 0)
+	{
 		if (sub_font_name)
-		    load_font_ft(dxs, dys, &sub_font, sub_font_name, text_font_scale_factor);
+			load_font_ft(dxs, dys, &sub_font, sub_font_name, text_font_scale_factor);
 		else
-		    load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
+			load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
 	}
+	else
+		sub_font = vo_font;
 	prev_dxs = dxs;
 	prev_dys = dys;
 	defer_counter = 0;
     } else {
        if (!vo_font)
-       {
-       	//printf("sub.c load_font menu\n");
            load_font_ft(dxs, dys, &vo_font, font_name, osd_font_scale_factor);
-        }
-        if(osd_font_scale_factor==text_font_scale_factor && (!sub_font_name || sub_font_name==font_name))
-	    	sub_font=vo_font;
-    	else
-    	{
-	       	if (mpctx_get_set_of_sub_size()>0 && !sub_font) {
-	       	//printf("sub.c load_font sub\n");
-	           if (sub_font_name)
-	               load_font_ft(dxs, dys, &sub_font, sub_font_name, text_font_scale_factor);
-	           else
-	               load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
-	       }
-       }
-/*
-	prev_dxs = dxs;
-	prev_dys = dys;
-	defer_counter = 0;
-*/       
+		if (!sub_font) {
+			if (mpctx_get_set_of_sub_size() > 0)
+			{
+				if (sub_font_name)
+					load_font_ft(dxs, dys, &sub_font, sub_font_name, text_font_scale_factor);
+				else
+					load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
+			}
+			else
+				sub_font = vo_font;
+		} 
     }
 #endif
 

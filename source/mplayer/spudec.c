@@ -793,6 +793,9 @@ void spudec_draw_scaled(void *me, unsigned int dxs, unsigned int dys, void (*dra
   spudec_handle_t *spu = (spudec_handle_t *)me;
   scale_pixel *table_x;
   scale_pixel *table_y;
+  
+  if (!spu)
+    return;
 
   if (spu->start_pts <= spu->now_pts && spu->now_pts < spu->end_pts) {
 

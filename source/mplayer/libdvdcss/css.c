@@ -1097,6 +1097,10 @@ static int investigate( unsigned char *hash, unsigned char *ckey )
 
 static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
 {
+#ifdef GEKKO
+	return -1; // insufficient memory on the Wii
+#endif
+
     unsigned char B[5] = { 0,0,0,0,0 }; /* Second Stage of mangle cipher */
     unsigned char C[5] = { 0,0,0,0,0 }; /* Output Stage of mangle cipher
                                          * IntermediateKey */

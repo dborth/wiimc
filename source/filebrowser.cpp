@@ -24,6 +24,7 @@ using namespace std;
 #include "fileop.h"
 #include "networkop.h"
 #include "settings.h"
+#include "utils/gettext.h"
 
 BROWSERINFO browser;
 BROWSERENTRY * browserList = NULL; // list of files/folders in browser

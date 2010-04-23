@@ -454,8 +454,14 @@ parse_m3u(play_tree_parser_t* p) {
 #endif
  	  /// start denper's changes
 	  // Get the title of .m3u entry
-	  title = realloc(title, strlen(mp_pretty_title(line))+1);
-	  strcpy(title, mp_pretty_title(line));
+      char *colon = strchr(line, ':');
+      char *comma = strchr(line, ',');
+      int linestart = line;
+
+      if(colon != NULL && comma == NULL) linestart = colon+1;
+      else if(colon != NULL && comma != NULL && (comma-colon) < 4) linestart = comma+1;
+	  title = realloc(title, strlen(mp_pretty_title(linestart))+1);
+	  strcpy(title, mp_pretty_title(linestart));
 	  /// end denper's changes
 	  
       continue;

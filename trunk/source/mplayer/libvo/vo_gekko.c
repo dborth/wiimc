@@ -44,8 +44,8 @@
 
 #include <gccore.h>
 
-extern int screenwidth;
-extern int screenheight;
+extern int mplayerwidth;
+extern int mplayerheight;
 
 static const vo_info_t info = {
 	"gekko video output",
@@ -229,31 +229,25 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
           uint32_t d_height, uint32_t flags, char *title,
           uint32_t format)
 {
-	float sar, par;
-
 	image_width = width;
-	image_height = ((int) ((height / 8.0))) * 8;
+	image_height = height;
 
 	pitch[0] = 0;
 	pitch[1] = 0;
 	pitch[2] = 0;
+	
+	float screen_aspect = (float)mplayerwidth / (float)mplayerheight;
+	float image_aspect = (float)d_width / (float)d_height;
 
-	if (CONF_GetAspectRatio())
-		sar = 16.0f / 9.0f;
-	else
-		sar = 4.0f / 3.0f;
-
-	par = (float) d_width / (float) d_height;
-	par *= (float) vmode->fbWidth / (float) vmode->xfbHeight;
-	par /= sar;
-
-	gx_width = vmode->viWidth;
-	gx_height = (float) gx_width / par;
-
-	if(gx_height > vmode->viHeight)
+	if (image_aspect > screen_aspect)
 	{
-		gx_height = vmode->viHeight;
-		gx_width = (float) gx_height * par + (vmode->viWidth - vmode->fbWidth)*2;
+		gx_width = mplayerwidth;
+		gx_height = (f32)d_height * ((f32)mplayerwidth / (f32)d_width);
+	}
+	else
+	{
+		gx_width = (f32)d_width * ((f32)mplayerheight / (f32)d_height);
+		gx_height = mplayerheight;
 	}
 	reinit_video();
 	return 0;
@@ -271,8 +265,8 @@ static void check_events(void)
 
 static int preinit(const char *arg)
 {
-	vo_screenheight = screenheight;
-	vo_screenwidth = screenwidth;
+	vo_screenheight = mplayerheight;
+	vo_screenwidth = mplayerwidth;
 	vo_fs=1;
 	return 0;
 }
@@ -284,8 +278,8 @@ static int control(uint32_t request, void *data, ...)
 		case VOCTRL_QUERY_FORMAT:
 			return query_format(*((uint32_t *)data));
 		case VOCTRL_UPDATE_SCREENINFO:
-            vo_screenwidth = screenwidth;
-            vo_screenheight = screenheight;
+            vo_screenwidth = mplayerwidth;
+            vo_screenheight = mplayerheight;
             aspect_save_screenres(vo_screenwidth, vo_screenheight);
             return VO_TRUE;
 		default:

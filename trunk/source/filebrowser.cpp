@@ -48,32 +48,14 @@ void ResetBrowser()
 	browser.numEntries = 0;
 	browser.selIndex = 0;
 	browser.pageIndex = 0;
-
-	// Clear any existing values
-	if(browserList != NULL)
-	{
-		free(browserList);
-		browserList = NULL;
-	}
-	// set aside space for 1 entry
-	browserList = (BROWSERENTRY *)malloc(sizeof(BROWSERENTRY));
-	memset(browserList, 0, sizeof(BROWSERENTRY));
-	browser.size = 1;
+	browser.size = 0;
 }
 
 bool AddBrowserEntry()
 {
-	BROWSERENTRY * newBrowserList = (BROWSERENTRY *)realloc(browserList, (browser.size+1) * sizeof(BROWSERENTRY));
+	if(browser.size >= MAX_BROWSER_SIZE)
+		return false; // out of space
 
-	if(!newBrowserList) // failed to allocate required memory
-	{
-		ErrorPrompt("Out of memory: too many files!");
-		return false;
-	}
-	else
-	{
-		browserList = newBrowserList;
-	}
 	memset(&(browserList[browser.size]), 0, sizeof(BROWSERENTRY)); // clear the new entry
 	browser.size++;
 	return true;
@@ -331,8 +313,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	{
 		if(part[DEVICE_SD][i].type > 0)
 		{
-			if(!AddBrowserEntry())
-				break;
+			AddBrowserEntry();
 
 			sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_SD][i].mount);
 
@@ -355,8 +336,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	{
 		if(part[DEVICE_USB][i].type > 0)
 		{
-			if(!AddBrowserEntry())
-				break;
+			AddBrowserEntry();
 
 			sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_USB][i].mount);
 
@@ -388,8 +368,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	{
 		if(WiiSettings.smbConf[i].share[0] != 0)
 		{
-			if(!AddBrowserEntry())
-				break;
+			AddBrowserEntry();
 
 			sprintf(browserList[browser.numEntries].filename, "smb%d:", i+1);
 			
@@ -409,8 +388,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	{
 		if(WiiSettings.ftpConf[i].ip[0] != 0)
 		{
-			if(!AddBrowserEntry())
-				break;
+			AddBrowserEntry();
 
 			sprintf(browserList[browser.numEntries].filename, "ftp%d:", i+1);
 			if(WiiSettings.ftpConf[i].displayname[0] != 0)

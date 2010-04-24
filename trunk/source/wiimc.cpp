@@ -406,10 +406,10 @@ main(int argc, char *argv[])
 	WPAD_SetPowerButtonCallback((WPADShutdownCallback)ShutdownCB);
 	SYS_SetPowerCallback(ShutdownCB);
 	SYS_SetResetCallback(ResetCB);
-
 	InitMem2Manager(); // only used for cache_mem
+	// we want browser to sit at high MEM1 and NOT low MEM2 (to optimize space)
+	browserList = (BROWSERENTRY *)malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE);
 	picBuffer = (u8 *)memalign(32, MAX_PICTURE_SIZE); // memory for picture viewer
-
 	MountAllDevices(); // Initialize SD and USB devices
 
 	// store path app was loaded from

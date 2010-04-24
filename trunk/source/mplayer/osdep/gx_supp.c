@@ -62,7 +62,8 @@ static u32 whichtex=0;
 
 static int hor_pos=0, vert_pos=0;
 static float hor_zoom = 1.0f, vert_zoom = 1.0f;
-
+int mplayerwidth = 640;
+int mplayerheight = 480;
 
 /*** 3D GX ***/
 
@@ -395,7 +396,7 @@ void DrawMPlayer()
 		Mtx44 p;
 		draw_initYUV();
 		draw_scaling();
-		guOrtho(p, 240, -240, -320, 320, 10, 1000);
+		guOrtho(p, mplayerheight/2, -(mplayerheight/2), -(mplayerwidth/2), mplayerwidth/2, 10, 1000);
 		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
 	}
@@ -413,6 +414,9 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
 
 	// Set new aspect
+	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
+		mplayerwidth = 854; // 480 * (16/9)
+
 	xscale = haspect * hor_zoom;
 	yscale = vaspect * vert_zoom;
 
@@ -465,7 +469,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_SetZMode(GX_FALSE, GX_ALWAYS, GX_TRUE);
 	GX_CopyDisp(xfb[whichfb ^ 1], GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
-	guOrtho(p, 240, -240, -320, 320, 10, 1000);
+	guOrtho(p, mplayerheight/2, -(mplayerheight/2), -(mplayerwidth/2), mplayerwidth/2, 10, 1000);
 	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);

@@ -13,7 +13,8 @@
 #include <unistd.h>
 #include <gccore.h>
 
-#define MAXJOLIET 255
+#define MAXJOLIET			255
+#define MAX_BROWSER_SIZE	3000
 
 enum
 {

@@ -3919,8 +3919,8 @@ if (mpctx->sh_video)
 	int aux=mpctx->set_of_sub_size;
 	mpctx->set_of_sub_size=0; // to not load subfonts
 	mpctx->osd_function=OSD_PAUSE;
-	if(stream_cache_size>0)
-		refillcache(mpctx->stream,stream_cache_min_percent);
+	//if(stream_cache_size>0)
+	//	refillcache(mpctx->stream,stream_cache_min_percent);
 	mpctx->osd_function=OSD_PLAY;
 	mpctx->set_of_sub_size=aux;
 

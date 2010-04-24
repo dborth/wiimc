@@ -770,6 +770,7 @@ int stream_read(stream_t *s,char* mem,int total){
   return total;
 }
 
+#if 0
 void refillcache(stream_t *stream,float min)
 {
 	cache_vars_t* s;
@@ -781,8 +782,6 @@ void refillcache(stream_t *stream,float min)
 
     while(cache_fill_status<min)
     {
-		//set_osd_msg(OSD_MSG_TEXT, 1, 2000, "Cache fill: %5.2f%%  ",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
-		//force_osd();
 		//printf("Cache fill: %5.2f%%  \n",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
     	ShowProgress("Buffering...", (int)cache_fill_status, (int)min);
 		if(s->eof) break; // file is smaller than prefill size
@@ -810,13 +809,14 @@ void refillcache(stream_t *stream,float min)
 		
 		//not needed, for security	
 		if(old<cache_fill_status)t1 = GetTimerMS();
-	    if(GetTimerMS()-t1>1500) return ;
+	    if(GetTimerMS()-t1>1500) return;
 		old=cache_fill_status;
 		usleep(50);
     }
-    //printf("end Cache fill: %5.2f%%  \n",cache_fill_status);
-    
+    //printf("end Cache fill: %5.2f%%  \n",cache_fill_status);   
 }
+#endif
+
 int stream_error(stream_t *stream)
 {
 	if(!stream || !stream->cache_data)

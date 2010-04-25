@@ -814,6 +814,9 @@ ShowProgress (const char *msg, int done, int total)
 	if(!mainWindow || ExitRequested || ShutdownRequested)
 		return;
 
+	if(total <= 0 || done < 0) // invalid values
+		return;
+
 	if(done > total) // this shouldn't happen
 		done = total;
 

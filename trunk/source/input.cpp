@@ -261,7 +261,7 @@ void MPlayerInput()
 			ir = true; // trigger display
 	}
 
-	if(ir || StatusSet() || osdLevel)
+	if(ir || BufferingStatusSet() || osdLevel)
 	{
 		drawGui = true;
 	}

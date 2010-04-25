@@ -33,8 +33,8 @@ void HideVolumeLevelBar();
 
 extern "C" {
 void ShowProgress (const char *msg, int done, int total);
-void SetStatus(const char * txt);
-bool StatusSet();
+void SetBufferingStatus(int s);
+bool BufferingStatusSet();
 }
 
 extern int menuCurrent;

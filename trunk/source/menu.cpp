@@ -1236,6 +1236,17 @@ static void UpdateAudiobarModeBtn()
 
 static int LoadNewFile(int silent)
 {
+	if(videoImg)
+	{
+		SuspendGui();
+		mainWindow->Remove(videoImg);
+		ResumeGui();
+		delete videoImg;
+		videoImg = NULL;
+		free(videoScreenshot);
+		videoScreenshot = NULL;
+	}
+
 	if(!silent)
 	{
 		mainWindow->Append(disabled);
@@ -1297,19 +1308,6 @@ static int LoadNewFile(int silent)
 		audiobarProgressMidImg->SetVisible(false);
 		audiobarProgressLineImg->SetVisible(false);
 		audiobarProgressRightImg->SetVisible(false);
-	}
-
-	// we loaded an audio file - if we already had a video
-	// loaded, we should remove the bg
-	if(videoImg)
-	{
-		SuspendGui();
-		mainWindow->Remove(videoImg);
-		ResumeGui();
-		delete videoImg;
-		videoImg = NULL;
-		free(videoScreenshot);
-		videoScreenshot = NULL;
 	}
 	return 2; // playing audio
 }

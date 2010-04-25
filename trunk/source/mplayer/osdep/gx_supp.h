@@ -40,6 +40,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect);
 void GX_RenderTexture();
 void GX_UpdatePitch(u16 *pitch);
 void GX_ResetTextureYUVPointers();
+void GX_AllocTextureMemory();
 void GX_FillTextureYUV(u16 height,u8 *buffer[3]);
 void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch);
 void getStrideInfo(int *_w1,int *_df1,int *_Yrowpitch);

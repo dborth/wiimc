@@ -1072,7 +1072,7 @@ static void CreditsWindow()
 	sprintf(iosVersion, "IOS: %d", IOS_GetVersion());
 
 	char appVersion[20];
-	sprintf(appVersion, "Version %s", APPVERSION);
+	sprintf(appVersion, "%s %s", gettext("Version"), APPVERSION);
 
 	txt[i] = new GuiText(iosVersion, 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
@@ -4903,6 +4903,9 @@ static void SetupGui()
 		pictures[i].index = -1;
 	}
 
+	statusText = new GuiText(NULL, 24, (GXColor){255, 255, 255, 255});
+	statusText->SetVisible(false);
+
 	guiSetup = 1;
 }
 
@@ -5293,24 +5296,22 @@ void WiiMenu()
 	}
 }
 
-bool StatusSet()
+bool BufferingStatusSet()
 {
-	if(!statusText)
-		return false;
-
 	return statusText->IsVisible();
 }
 
-void SetStatus(const char * txt)
+void SetBufferingStatus(int s)
 {
-	if(!statusText)
-		return;
-
-	if(txt)
-		statusText->SetVisible(true);
-	else
+	if(s == 0)
+	{
 		statusText->SetVisible(false);
+		return;
+	}
 
+	statusText->SetVisible(true);
+	char txt[50];
+	sprintf(txt, "%s (%02d%%)", gettext("Buffering"), s);
 	statusText->SetText(txt);
 }
 
@@ -5324,13 +5325,10 @@ void MPlayerMenu()
 
 	mainWindow = new GuiWindow(screenwidth, screenheight);
 
-	// status text
-	statusText = new GuiText(NULL, 24, (GXColor){255, 255, 255, 255});
-	statusText->SetVisible(false);
-
 	mainWindow->Append(videobar);
 	mainWindow->Append(statusText);
 	HideVolumeLevelBar();
+	ResetText();
 
 	ResumeGui();
 	EnableRumble();
@@ -5374,7 +5372,6 @@ void MPlayerMenu()
 	SuspendGui();
 	DisableRumble();
 
-	delete statusText;
 	delete mainWindow;
 	mainWindow = NULL;
 }

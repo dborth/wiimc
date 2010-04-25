@@ -184,7 +184,7 @@ extern int stop_cache_thread;
 extern int prev_dxs , prev_dys;
 
 void wiiPause();
-void SetStatus(const char * txt);
+void SetBufferingStatus(int s);
 void reinit_video();
 void reinit_audio();
 void PauseAndGotoGUI();
@@ -4570,7 +4570,6 @@ void PauseAndGotoGUI()
 
 static void low_cache_loop(void)
 {
-	char msg[512];
 	float percent;
 	int progress;
 	int brk_cmd;
@@ -4615,8 +4614,7 @@ static void low_cache_loop(void)
 		if(progress >= 100 || progress <= 0)
 			break; // let's get out of here!
 
-		sprintf(msg, "Buffering (%02d%%)", progress);
-		SetStatus(msg);
+		SetBufferingStatus(progress);
 
 		if (mpctx->sh_video && mpctx->video_out && vo_config_count)
 			mpctx->video_out->check_events();
@@ -4625,7 +4623,7 @@ static void low_cache_loop(void)
 		VIDEO_WaitVSync();
 	}
 	rm_osd_msg(OSD_MSG_PAUSE);
-	SetStatus(NULL);
+	SetBufferingStatus(0);
 
 	if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
 	{

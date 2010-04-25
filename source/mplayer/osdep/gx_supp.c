@@ -402,6 +402,17 @@ void DrawMPlayer()
 	}
 }
 
+void GX_AllocTextureMemory()
+{
+	//make memory fixed (max texture 1024*1024, gx can't manage more)
+	Ytexture[0] = (u8 *) memalign(32,1024*1024);
+	Utexture[0] = (u8 *) memalign(32,1024*1024/4);
+	Vtexture[0] = (u8 *) memalign(32,1024*1024/4);
+	Ytexture[1] = (u8 *) memalign(32,1024*1024);
+	Utexture[1] = (u8 *) memalign(32,1024*1024/4);
+	Vtexture[1] = (u8 *) memalign(32,1024*1024/4);
+}
+
 /****************************************************************************
  * GX_StartYUV - Initialize GX for given width/height.
  ****************************************************************************/
@@ -439,20 +450,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 
 	Ytexsize = (w*h);
 	UVtexsize = (w*h)/4;
-
-	//make memory fixed (max texture 1024*1024, gx can't manage more)
-	if (!Ytexture[0])
-		Ytexture[0] = (u8 *) memalign(32,1024*1024);
-	if (!Utexture[0])
-		Utexture[0] = (u8 *) memalign(32,1024*1024/4);
-	if (!Vtexture[0])
-		Vtexture[0] = (u8 *) memalign(32,1024*1024/4);
-	if (!Ytexture[1])
-		Ytexture[1] = (u8 *) memalign(32,1024*1024);
-	if (!Utexture[1])
-		Utexture[1] = (u8 *) memalign(32,1024*1024/4);
-	if (!Vtexture[1])
-		Vtexture[1] = (u8 *) memalign(32,1024*1024/4);
 
 	memset(Ytexture[0], 0, Ytexsize);
 	memset(Utexture[0], 0x80, UVtexsize);

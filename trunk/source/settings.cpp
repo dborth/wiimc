@@ -428,7 +428,8 @@ static void FixInvalidSettings()
 		WiiSettings.language != LANG_GERMAN && 
 		WiiSettings.language != LANG_ITALIAN && 
 		WiiSettings.language != LANG_SPANISH && 
-		WiiSettings.language != LANG_ROMANIAN)
+		WiiSettings.language != LANG_ROMANIAN && 
+		WiiSettings.language != LANG_ESTONIAN)
 		WiiSettings.language = LANG_ENGLISH;
 	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
 		WiiSettings.volume = 50;

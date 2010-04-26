@@ -26,7 +26,7 @@ GuiButton::GuiButton(int w, int h)
 	iconHold = NULL;
 	iconClick = NULL;
 
-	for(int i=0; i < 3; i++)
+	for(int i=0; i < 4; i++)
 	{
 		label[i] = NULL;
 		labelOver[i] = NULL;
@@ -150,20 +150,13 @@ void GuiButton::Draw()
 			icon->Draw();
 
 		// draw text
-		if(labelOver[0])
-			labelOver[0]->Draw();
-		else if(label[0])
-			label[0]->Draw();
-			
-		if(labelOver[1])
-			labelOver[1]->Draw();	
-		else if(label[1])
-			label[1]->Draw();
-			
-		if(labelOver[2])
-			labelOver[2]->Draw();
-		else if(label[2])
-			label[2]->Draw();
+		for(int i=0; i < 4; i++)
+		{
+			if(labelOver[i])
+				labelOver[i]->Draw();
+			else if(label[i])
+				label[i]->Draw();
+		}
 	}
 	else
 	{
@@ -173,12 +166,11 @@ void GuiButton::Draw()
 			icon->Draw();
 
 		// draw text
-		if(label[0])
-			label[0]->Draw();
-		if(label[1])
-			label[1]->Draw();
-		if(label[2])
-			label[2]->Draw();
+		for(int i=0; i < 4; i++)
+		{
+			if(label[i])
+				label[i]->Draw();
+		}
 	}
 	this->UpdateEffects();
 }
@@ -191,7 +183,7 @@ void GuiButton::DrawTooltip()
 
 void GuiButton::ResetText()
 {
-	for(int i=0; i<3; i++)
+	for(int i=0; i<4; i++)
 	{
 		if(label[i])
 			label[i]->ResetText();
@@ -210,30 +202,33 @@ void GuiButton::Update(GuiTrigger * t)
 		return;
 
 	// cursor
-	if(t->wpad->ir.valid && this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+	if(this->IsClickable() || this->IsHoldable())
 	{
-		if(state == STATE_DEFAULT) // we weren't on the button before!
+		if(t->wpad->ir.valid && this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
 		{
-			this->SetState(STATE_SELECTED, t->chan);
-
-			if(this->Rumble())
-				RequestRumble(t->chan);
-
-			//if(soundOver)
-			//	soundOver->Play();
-
-			if(effectsOver && !effects)
+			if(state == STATE_DEFAULT) // we weren't on the button before!
 			{
-				// initiate effects
-				effects = effectsOver;
-				effectAmount = effectAmountOver;
-				effectTarget = effectTargetOver;
+				this->SetState(STATE_SELECTED, t->chan);
+	
+				if(this->Rumble())
+					RequestRumble(t->chan);
+	
+				//if(soundOver)
+				//	soundOver->Play();
+	
+				if(effectsOver && !effects)
+				{
+					// initiate effects
+					effects = effectsOver;
+					effectAmount = effectAmountOver;
+					effectTarget = effectTargetOver;
+				}
 			}
 		}
-	}
-	else if(state == STATE_SELECTED && stateChan == t->chan && stateChan != -1)
-	{
-		this->ResetState();
+		else if(state == STATE_SELECTED && stateChan == t->chan && stateChan != -1)
+		{
+			this->ResetState();
+		}
 	}
 
 	if(state == STATE_DEFAULT && effectsOver > 0 && effectTarget == effectTargetOver && effectAmount == effectAmountOver)

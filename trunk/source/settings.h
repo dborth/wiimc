@@ -27,6 +27,7 @@ enum {
 	LANG_TRAD_CHINESE,
 	LANG_KOREAN,
 	LANG_ROMANIAN,
+	LANG_ESTONIAN,
 	LANG_LENGTH
 };
 
@@ -101,8 +102,8 @@ const char validVideoExtensions[][7] =
 
 const char validAudioExtensions[][5] = 
 {
-	"aac", "ape", "asf", "flac", "m4a", "m4p", "m4v", "mka", "mp2", "mp3", 
-	"mpc", "ogg", "ra", "rm", "shn", "m4b", "wav", "wma", "wv", ""
+	"aac", "aif", "aiff", "ape", "asf", "flac", "m4a", "m4p", "m4v", "mka",
+	"mp2", "mp3", "mpc", "ogg", "ra", "rm", "shn", "m4b", "wav", "wma", "wv", ""
 };
 
 const char validImageExtensions[][5] = 

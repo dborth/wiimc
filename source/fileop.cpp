@@ -71,6 +71,24 @@ static int devsleep = 2*1000*1000;
 static bool MountPartitions(int device, int silent);
 static void UnmountPartitions(int device);
 
+extern "C" {
+void File_Threads_State()
+{
+	printf("devicethread suspended: ");
+	if(devicethread!=LWP_THREAD_NULL && !LWP_ThreadIsSuspended(devicethread))
+		printf("no\n");
+	else
+		printf("yes\n");
+
+	printf("parsethread suspended: ");
+	if(parsethread!=LWP_THREAD_NULL && !LWP_ThreadIsSuspended(parsethread))
+		printf("no\n");
+	else
+		printf("yes\n");
+
+}
+}
+
 static void * devicecallback (void *arg)
 {
 	while(devsleep > 0)
@@ -395,7 +413,7 @@ static void AddPartition(sec_t sector, int device, int type)
 
 static int FindPartitions(int device)
 {
-	int i;
+	int i,cnt=0;
 
 	// clear list
 	for(i=0; i < MAX_DEVICES; i++)
@@ -448,7 +466,7 @@ static int FindPartitions(int device)
 			part_lba = le32_to_cpu(mbr.partitions[i].lba_start);
 
 			debug_printf(
-					"Partition %i: %s, sector %d, type 0x%x\n",
+					"Partition %i: %s, sector %lu, type 0x%x\n",
 					i + 1,
 					partition->status == PARTITION_STATUS_BOOTABLE ? "bootable (active)"
 							: "non-bootable", part_lba, partition->type);
@@ -456,10 +474,6 @@ static int FindPartitions(int device)
 			// Figure out what type of partition this is
 			switch (partition->type)
 			{
-				// Ignore empty partitions
-				case PARTITION_TYPE_EMPTY:
-					continue;
-
 				// NTFS partition
 				case PARTITION_TYPE_NTFS:
 				{
@@ -474,6 +488,7 @@ static int FindPartitions(int device)
 						{
 							debug_printf("Partition %i: Valid NTFS boot sector found\n", i + 1);
 							AddPartition(part_lba, device, T_NTFS);
+							cnt++;
 						}
 						else
 						{
@@ -495,8 +510,7 @@ static int FindPartitions(int device)
 					do
 					{
 						// Read and validate the extended boot record
-						if (interface->readSectors(ebr_lba + next_erb_lba, 1,
-								&sector))
+						if (interface->readSectors(ebr_lba + next_erb_lba, 1, &sector))
 						{
 							if (sector.ebr.signature == EBR_SIGNATURE)
 							{
@@ -534,6 +548,7 @@ static int FindPartitions(int device)
 													PARTITION_TYPE_NTFS);
 										}
 										AddPartition(part_lba, device, T_NTFS);
+										cnt++;
 									}
 									else if (!memcmp(sector.buffer
 											+ BPB_FAT16_fileSysType, FAT_SIG,
@@ -544,6 +559,7 @@ static int FindPartitions(int device)
 									{
 										debug_printf("Partition : Valid FAT boot sector found\n");
 										AddPartition(part_lba, device, T_FAT);
+										cnt++;
 									}
 								}
 							}
@@ -556,6 +572,9 @@ static int FindPartitions(int device)
 					break;
 				}
 
+				// Ignore empty partitions
+				case PARTITION_TYPE_EMPTY:
+					debug_printf("Partition %i: Claims to be empty\n", i + 1);
 				// Unknown or unsupported partition type
 				default:
 				{
@@ -574,6 +593,7 @@ static int FindPartitions(int device)
 										PARTITION_TYPE_NTFS);
 							}
 							AddPartition(part_lba, device, T_NTFS);
+							cnt++;
 						}
 						else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType,
 								FAT_SIG, sizeof(FAT_SIG)) || !memcmp(
@@ -582,6 +602,7 @@ static int FindPartitions(int device)
 						{
 							debug_printf("Partition : Valid FAT boot sector found\n");
 							AddPartition(part_lba, device, T_FAT);
+							cnt++;
 						}
 					}
 					break;
@@ -589,11 +610,11 @@ static int FindPartitions(int device)
 			}
 		}
 	}
-	else // it is assumed this device has no master boot record
+	if(cnt==0) // it is assumed this device has no master boot record or no partitions found
 	{
-		debug_printf("No Master Boot Record was found!\n");
+		debug_printf("No Master Boot Record was found or no partitions found!\n");
 
-		// As a last-ditched effort, search the first 64 sectors of the device for stray NTFS partitions
+		// As a last-ditched effort, search the first 64 sectors of the device for stray NTFS/FAT partitions
 		for (i = 0; i < 64; i++)
 		{
 			if (interface->readSectors(i, 1, &sector))
@@ -602,18 +623,22 @@ static int FindPartitions(int device)
 				{
 					debug_printf("Valid NTFS boot sector found at sector %d!\n", i);
 					AddPartition(i, device, T_NTFS);
+					cnt++;
+					break;
 				}
-			}
-			else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
-					sizeof(FAT_SIG)) || !memcmp(sector.buffer
-					+ BPB_FAT32_fileSysType, FAT_SIG, sizeof(FAT_SIG)))
-			{
-				debug_printf("Partition : Valid FAT boot sector found\n");
-				AddPartition(i, device, T_FAT);
+				else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
+						sizeof(FAT_SIG)) || !memcmp(sector.buffer
+						+ BPB_FAT32_fileSysType, FAT_SIG, sizeof(FAT_SIG)))
+				{
+					debug_printf("Partition : Valid FAT boot sector found\n");
+					AddPartition(i, device, T_FAT);
+					cnt++;
+					break;
+				}
 			}
 		}
 	}
-	return devnum;
+	return cnt;
 }
 
 static void UnmountPartitions(int device)

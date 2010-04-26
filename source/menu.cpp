@@ -33,6 +33,9 @@
 #define GSTACK (256*1024)
 static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
 
+extern char streamtitle[128]; // ICY data (http.c)
+extern char streamurl[128]; // ICY data (http.c)
+
 // frequently used objects
 
 static GuiImageData * bg = NULL;
@@ -169,6 +172,7 @@ static GuiButton * audiobarForwardBtn = NULL;
 static GuiButton * audiobarModeBtn = NULL;
 
 static GuiText * audiobarNowPlaying[4] = { NULL, NULL, NULL, NULL };
+static GuiButton * audiobarNowPlayingBtn = NULL;
 bool nowPlayingSet = false;
 
 static GuiImage * picturebarLeftImg = NULL;
@@ -1462,9 +1466,6 @@ static void MenuBrowse(int menu)
 			audiobarBackwardBtn->SetState(STATE_DISABLED);
 			audiobarForwardBtn->SetState(STATE_DISABLED);
 
-			for(int i=0; i < 4; i++)
-				audiobarNowPlaying[i]->SetVisible(false);
-
 			if(wiiAudioOnly())
 				mainWindow->Append(audiobar);
 		}
@@ -1813,18 +1814,14 @@ static void MenuBrowse(int menu)
 
 		if(wiiAudioOnly())
 		{
+			audiobarNowPlayingBtn->SetState(STATE_DEFAULT);
+
 			if(wiiGetTimeLength() > 0)
 			{
 				if(audiobarBackwardBtn->GetAlpha() == 128)
 				{
 					audiobarBackwardBtn->SetState(STATE_DEFAULT);
 					audiobarBackwardBtn->SetAlpha(255);
-				}
-
-				if(!audiobarNowPlaying[0]->IsVisible())
-				{
-					for(int i=0; i < 4; i++)
-						audiobarNowPlaying[i]->SetVisible(true);
 				}
 			}
 			else
@@ -1844,14 +1841,8 @@ static void MenuBrowse(int menu)
 				audiobarBackwardBtn->SetAlpha(128);
 			}
 
-			if(audiobarNowPlaying[0]->IsVisible())
-			{
-				for(int i=0; i < 4; i++)
-				{
-					audiobarNowPlaying[i]->SetVisible(false);
-					if(i > 0) audiobarNowPlaying[i]->SetText(NULL);
-				}
-			}
+			if(audiobarNowPlayingBtn->IsVisible())
+				audiobarNowPlayingBtn->SetVisible(false);
 		}
 	}
 done:
@@ -2636,7 +2627,8 @@ static void MenuSettingsGlobal()
 						WiiSettings.language != LANG_GERMAN && 
 						WiiSettings.language != LANG_ITALIAN && 
 						WiiSettings.language != LANG_SPANISH && 
-						WiiSettings.language != LANG_ROMANIAN)
+						WiiSettings.language != LANG_ROMANIAN &&
+						WiiSettings.language != LANG_ESTONIAN)
 				{
 					WiiSettings.language++;
 
@@ -2687,6 +2679,7 @@ static void MenuSettingsGlobal()
 				case LANG_TRAD_CHINESE:	sprintf(options.value[1], "Chinese (Traditional)"); break;
 				case LANG_KOREAN:		sprintf(options.value[1], "Korean"); break;
 				case LANG_ROMANIAN:		sprintf(options.value[1], "Romanian"); break;
+				case LANG_ESTONIAN:		sprintf(options.value[1], "Estonian"); break;
 			}
 			
 			sprintf (options.value[2], "%d%%", WiiSettings.volume);
@@ -4324,7 +4317,92 @@ static void AudioProgressCallback(void * ptr)
 
 	if(total > 0)
 		percent = done/total;
-	
+
+	if(b->GetState() == STATE_CLICKED)
+	{
+		if(b->GetStateChan() >= 0)
+		{
+			percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/300.0;
+			if(percent > 100) percent = 100;
+			else if(percent < 0) percent = 0;
+			done = total*percent;
+			wiiSeekPos(done);
+		}
+		b->ResetState();
+	}
+
+	if(percent <= 0.01)
+	{
+		audiobarProgressLeftImg->SetVisible(false);
+		audiobarProgressMidImg->SetTile(0);
+		audiobarProgressLineImg->SetVisible(false);
+		audiobarProgressRightImg->SetVisible(false);
+	}
+	else if(percent <= 0.03)
+	{
+		audiobarProgressLeftImg->SetVisible(true);
+		audiobarProgressMidImg->SetTile(0);
+		audiobarProgressLineImg->SetPosition(8, 60);
+		audiobarProgressLineImg->SetVisible(true);
+		audiobarProgressRightImg->SetVisible(false);
+	}
+	else if(percent >= 0.98)
+	{
+		audiobarProgressLeftImg->SetVisible(true);
+		audiobarProgressMidImg->SetTile(71);
+		audiobarProgressLineImg->SetVisible(false);
+		audiobarProgressRightImg->SetVisible(true);
+	}
+	else
+	{
+		audiobarProgressLeftImg->SetVisible(true);
+		int tile = 71*percent;
+		audiobarProgressMidImg->SetTile(tile);
+		audiobarProgressLineImg->SetPosition(8 + tile*4, 60);
+		audiobarProgressLineImg->SetVisible(true);
+		audiobarProgressRightImg->SetVisible(false);
+	}
+}
+
+static void AudioNowPlayingCallback(void * ptr)
+{
+	if(!wiiAudioOnly())
+	{
+		if(audiobarNowPlayingBtn->IsVisible())
+			audiobarNowPlayingBtn->SetVisible(false);
+		return;
+	}
+	else
+	{
+		if(!audiobarNowPlayingBtn->IsVisible())
+			audiobarNowPlayingBtn->SetVisible(true);
+	}
+
+	double total = wiiGetTimeLength();
+
+	// display ICY data
+	if(total <= 0.02)
+	{
+		if(strncmp(loadedFile, "http:", 5) == 0)
+		{
+			if(streamtitle[0] != 0)
+				audiobarNowPlaying[1]->SetText(streamtitle);
+			else
+				audiobarNowPlaying[1]->SetText("Internet Stream");
+			if(streamurl[0] != 0)
+				audiobarNowPlaying[3]->SetText(streamurl);
+			else
+				audiobarNowPlaying[3]->SetText(NULL);
+		}
+		else
+		{
+			audiobarNowPlaying[1]->SetText(NULL);
+			audiobarNowPlaying[3]->SetText(NULL);
+		}
+		audiobarNowPlaying[2]->SetText(NULL);
+		return;
+	}
+
 	if(!nowPlayingSet && total > 0)
 	{
 		nowPlayingSet = true;
@@ -4341,7 +4419,7 @@ static void AudioProgressCallback(void * ptr)
 		{
 			title = strdup(wiiGetMetaTitle());
 			for(i=strlen(title)-1; i >= 0; i--)	if(title[i] == ' ') title[i] = '\0'; else break;
-			
+
 			if(strlen(title) > 0)
 				audiobarNowPlaying[1]->SetText(title);
 		}
@@ -4398,51 +4476,6 @@ static void AudioProgressCallback(void * ptr)
 		if(artist) free(artist);
 		if(album) free(album);
 		if(year) free(year);
-	}
-
-	if(b->GetState() == STATE_CLICKED)
-	{
-		if(b->GetStateChan() >= 0)
-		{
-			percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/300.0;
-			if(percent > 100) percent = 100;
-			else if(percent < 0) percent = 0;
-			done = total*percent;
-			wiiSeekPos(done);
-		}
-		b->ResetState();
-	}
-
-	if(percent <= 0.01)
-	{
-		audiobarProgressLeftImg->SetVisible(false);
-		audiobarProgressMidImg->SetTile(0);
-		audiobarProgressLineImg->SetVisible(false);
-		audiobarProgressRightImg->SetVisible(false);
-	}
-	else if(percent <= 0.03)
-	{
-		audiobarProgressLeftImg->SetVisible(true);
-		audiobarProgressMidImg->SetTile(0);
-		audiobarProgressLineImg->SetPosition(8, 60);
-		audiobarProgressLineImg->SetVisible(true);
-		audiobarProgressRightImg->SetVisible(false);
-	}
-	else if(percent >= 0.98)
-	{
-		audiobarProgressLeftImg->SetVisible(true);
-		audiobarProgressMidImg->SetTile(71);
-		audiobarProgressLineImg->SetVisible(false);
-		audiobarProgressRightImg->SetVisible(true);
-	}
-	else
-	{
-		audiobarProgressLeftImg->SetVisible(true);
-		int tile = 71*percent;
-		audiobarProgressMidImg->SetTile(tile);
-		audiobarProgressLineImg->SetPosition(8 + tile*4, 60);
-		audiobarProgressLineImg->SetVisible(true);
-		audiobarProgressRightImg->SetVisible(false);
 	}
 }
 
@@ -4775,16 +4808,24 @@ static void SetupGui()
 	audiobarNowPlaying[0] = new GuiText("now playing", 16, (GXColor){160, 160, 160, 255});
 	audiobarNowPlaying[0]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	audiobarNowPlaying[0]->SetPosition(10, 0);
-	audiobarNowPlaying[0]->SetVisible(false);
 	
 	for(int i=1; i < 4; i++)
 	{
 		audiobarNowPlaying[i] = new GuiText(NULL, 16, (GXColor){255, 255, 255, 255});
 		audiobarNowPlaying[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 		audiobarNowPlaying[i]->SetPosition(10, 20*i);
-		audiobarNowPlaying[i]->SetMaxWidth(250);
-		audiobarNowPlaying[i]->SetVisible(false);
+		audiobarNowPlaying[i]->SetMaxWidth(screenwidth-370);
 	}
+
+	audiobarNowPlayingBtn = new GuiButton(screenwidth-370,80);
+	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[0], 0);
+	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[1], 1);
+	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[2], 2);
+	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[3], 3);
+	audiobarNowPlayingBtn->SetSelectable(false);
+	audiobarNowPlayingBtn->SetClickable(false);
+	audiobarNowPlayingBtn->SetUpdateCallback(AudioNowPlayingCallback);
+	audiobarNowPlayingBtn->SetVisible(false);
 
 	audiobar2 = new GuiWindow(300, 80);
 	audiobar2->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
@@ -4808,8 +4849,7 @@ static void SetupGui()
 	audiobar->SetPosition(0, -30);
 	audiobar->Append(audiobar2);
 
-	for(int i=0; i < 4; i++)
-		audiobar->Append(audiobarNowPlaying[i]);
+	audiobar->Append(audiobarNowPlayingBtn);
 
 	// setup picture bar
 	

@@ -823,10 +823,10 @@ class GuiButton : public GuiElement
 		GuiImage * iconOver; //!< Button icon for STATE_SELECTED
 		GuiImage * iconHold; //!< Button icon for STATE_HELD
 		GuiImage * iconClick; //!< Button icon for STATE_CLICKED
-		GuiText * label[3]; //!< Label(s) to display (default)
-		GuiText * labelOver[3]; //!< Label(s) to display for STATE_SELECTED
-		GuiText * labelHold[3]; //!< Label(s) to display for STATE_HELD
-		GuiText * labelClick[3]; //!< Label(s) to display for STATE_CLICKED
+		GuiText * label[4]; //!< Label(s) to display (default)
+		GuiText * labelOver[4]; //!< Label(s) to display for STATE_SELECTED
+		GuiText * labelHold[4]; //!< Label(s) to display for STATE_HELD
+		GuiText * labelClick[4]; //!< Label(s) to display for STATE_CLICKED
 		GuiSound * soundOver; //!< Sound to play for STATE_SELECTED
 		GuiSound * soundHold; //!< Sound to play for STATE_HELD
 		GuiSound * soundClick; //!< Sound to play for STATE_CLICKED

@@ -46,6 +46,10 @@
 extern const mime_struct_t mime_type_table[];
 extern int stream_cache_size;
 extern int network_bandwidth;
+#ifdef GEKKO
+char streamtitle[128] = { 0 }; // ICY stream title
+char streamurl[128] = { 0 }; // ICY stream url
+#endif
 
 #ifdef HW_RVL
 extern int controlledbygui;
@@ -141,6 +145,39 @@ static void scast_meta_read(int fd, streaming_ctrl_t *sc) {
       if (info[i] && info[i] < 32) info[i] = '?';
     info[nlen] = 0;
     mp_msg(MSGT_DEMUXER, MSGL_INFO, "\nICY Info: %s\n", info);
+#ifdef GEKKO
+	streamtitle[0] = 0;
+	streamurl[0] = 0;
+    if(info[0] != 0)
+    {
+    	char *title = strstr(info, "StreamTitle");
+    	if(title)
+    	{
+    		title+=13;
+    		char *title_end = strchr(title, ';');
+    		if(title_end && title_end-title > 1)
+    		{
+    			int len = title_end-title;
+    			if(len > 128) len=128;
+    			strncpy(streamtitle, title, len);
+    			streamtitle[len-1] = 0;
+    		}
+    	}
+    	char *url = strstr(info, "StreamUrl");
+		if(url)
+		{
+			url+=11;
+			char *url_end = strchr(url, ';');
+			if(url_end && url_end-url > 1)
+			{
+				int len = url_end-url;
+				if(len > 128) len=128;
+				strncpy(streamurl, url, len);
+				streamurl[len-1] = 0;
+			}
+		}
+    }
+#endif
     free(info);
   }
 }

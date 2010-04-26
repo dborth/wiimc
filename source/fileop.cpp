@@ -413,7 +413,7 @@ static void AddPartition(sec_t sector, int device, int type)
 
 static int FindPartitions(int device)
 {
-	int i,cnt=0;
+	int i;
 
 	// clear list
 	for(i=0; i < MAX_DEVICES; i++)
@@ -488,7 +488,6 @@ static int FindPartitions(int device)
 						{
 							debug_printf("Partition %i: Valid NTFS boot sector found\n", i + 1);
 							AddPartition(part_lba, device, T_NTFS);
-							cnt++;
 						}
 						else
 						{
@@ -548,7 +547,6 @@ static int FindPartitions(int device)
 													PARTITION_TYPE_NTFS);
 										}
 										AddPartition(part_lba, device, T_NTFS);
-										cnt++;
 									}
 									else if (!memcmp(sector.buffer
 											+ BPB_FAT16_fileSysType, FAT_SIG,
@@ -559,7 +557,6 @@ static int FindPartitions(int device)
 									{
 										debug_printf("Partition : Valid FAT boot sector found\n");
 										AddPartition(part_lba, device, T_FAT);
-										cnt++;
 									}
 								}
 							}
@@ -593,7 +590,6 @@ static int FindPartitions(int device)
 										PARTITION_TYPE_NTFS);
 							}
 							AddPartition(part_lba, device, T_NTFS);
-							cnt++;
 						}
 						else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType,
 								FAT_SIG, sizeof(FAT_SIG)) || !memcmp(
@@ -602,7 +598,6 @@ static int FindPartitions(int device)
 						{
 							debug_printf("Partition : Valid FAT boot sector found\n");
 							AddPartition(part_lba, device, T_FAT);
-							cnt++;
 						}
 					}
 					break;
@@ -610,7 +605,7 @@ static int FindPartitions(int device)
 			}
 		}
 	}
-	if(cnt==0) // it is assumed this device has no master boot record or no partitions found
+	if(devnum==0) // it is assumed this device has no master boot record or no partitions found
 	{
 		debug_printf("No Master Boot Record was found or no partitions found!\n");
 
@@ -623,7 +618,6 @@ static int FindPartitions(int device)
 				{
 					debug_printf("Valid NTFS boot sector found at sector %d!\n", i);
 					AddPartition(i, device, T_NTFS);
-					cnt++;
 					break;
 				}
 				else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
@@ -632,13 +626,12 @@ static int FindPartitions(int device)
 				{
 					debug_printf("Partition : Valid FAT boot sector found\n");
 					AddPartition(i, device, T_FAT);
-					cnt++;
 					break;
 				}
 			}
 		}
 	}
-	return cnt;
+	return devnum;
 }
 
 static void UnmountPartitions(int device)

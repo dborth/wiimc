@@ -201,29 +201,35 @@ static int get_space(void)
 #define SWAP(x) ((x >> 16) | (x << 16))
 #define SWAP_LEN (BUFFER_SIZE / 4)
 
-static void copy_swap_channels(u32 *destination, u32 *source)
+static void copy_swap_channels(u32 *destination, u32 *source, int len)
 {
-	for (int counter = 0; counter < SWAP_LEN; counter++)
+	int counter;
+	for (int counter = 0; counter < len/4; counter++)
 		destination[counter] = SWAP(source[counter]);
+	for (; counter < SWAP_LEN; counter++)
+		destination[counter] = 0x0;
 }
 
 static int play(void *data, int len, int flags)
 {
 	int result = 0;
+	int size;
 	u8 *source = (u8 *)data;
 
-	while ((len >= BUFFER_SIZE)	&& (get_space() >= BUFFER_SIZE))
+	while ((len >0)	&& (get_space() >= BUFFER_SIZE))
 	{
-		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source);
-		DCFlushRange(buffers[buffer_play], BUFFER_SIZE);
+		if(len>=BUFFER_SIZE)size=BUFFER_SIZE;
+		else size = len;
+		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source, size);
+		DCStoreRangeNoSync(buffers[buffer_play], BUFFER_SIZE);
 
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
 		
-		result += BUFFER_SIZE;
-		source += BUFFER_SIZE;
-		buffered += BUFFER_SIZE;
+		result += size;
+		source += size;
+		buffered += size;
 		
-		len -= BUFFER_SIZE;
+		len -= size;
 	}
 
 	if (!playing && (buffered >= PREBUFFER))

@@ -219,7 +219,6 @@ static char progressMsg[200];
 static int progressDone = 0;
 static int progressTotal = 0;
 
-int doMPlayerGuiDraw = 0; // draw MPlayer menu
 bool menuMode = 0; // 0 - normal GUI, 1 - GUI for MPlayer
 
 static void UpdateMenuImages(int oldBtn, int newBtn)
@@ -344,6 +343,30 @@ static void ResumeUpdateThread()
 	LWP_ResumeThread(updatethread);
 }
 
+extern "C" void DoMPlayerGuiDraw()
+{
+	if(menuMode != 1)
+		return;
+
+	mainWindow->Draw();
+	mainWindow->DrawTooltip();
+
+	int i = 3;
+	do
+	{
+		if(userInput[i].wpad->ir.valid)
+			Menu_DrawImg(userInput[i].wpad->ir.x-48, userInput[i].wpad->ir.y-48,
+				96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+		DoRumble(i);
+		--i;
+	} while(i>=0);
+
+	mainWindow->Update(&userInput[3]);
+	mainWindow->Update(&userInput[2]);
+	mainWindow->Update(&userInput[1]);
+	mainWindow->Update(&userInput[0]);
+}
+
 /****************************************************************************
  * GuiThread
  *
@@ -360,78 +383,67 @@ static void *GuiThread (void *arg)
 
 		UpdatePads();
 
-		if(menuMode == 1)
-			MPlayerInput();
+		mainWindow->Draw();
 
-		if(menuMode == 0 || doMPlayerGuiDraw)
+		if (mainWindow->GetState() != STATE_DISABLED)
+			mainWindow->DrawTooltip();
+
+		i = 3;
+		do
 		{
-			mainWindow->Draw();
-
-			if (mainWindow->GetState() != STATE_DISABLED)
-				mainWindow->DrawTooltip();
-
-			i = 3;
-			do
-			{
-				if(userInput[i].wpad->ir.valid)
-					Menu_DrawImg(userInput[i].wpad->ir.x-48, userInput[i].wpad->ir.y-48,
-						96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
-				DoRumble(i);
-				--i;
-			} while(i>=0);
-			doMPlayerGuiDraw = 0;
-
-		}
+			if(userInput[i].wpad->ir.valid)
+				Menu_DrawImg(userInput[i].wpad->ir.x-48, userInput[i].wpad->ir.y-48,
+					96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+			DoRumble(i);
+			--i;
+		} while(i>=0);
 
 		mainWindow->Update(&userInput[3]);
 		mainWindow->Update(&userInput[2]);
 		mainWindow->Update(&userInput[1]);
 		mainWindow->Update(&userInput[0]);
 
-		if(menuMode == 0) // normal GUI
+		for(i=3; i >= 0; i--)
 		{
-			for(i=3; i >= 0; i--)
+			if(userInput[i].wpad->btns_d & (WPAD_BUTTON_1 | WPAD_CLASSIC_BUTTON_X))
 			{
-				if(userInput[i].wpad->btns_d & (WPAD_BUTTON_1 | WPAD_CLASSIC_BUTTON_X))
-				{
-					int newMenu = menuCurrent + 1;
-					if(newMenu > MENU_SETTINGS)
-						newMenu = MENU_BROWSE_VIDEOS;
-					ChangeMenu(newMenu);
-				}
-				else if(userInput[i].wpad->btns_d & (WPAD_BUTTON_2 | WPAD_CLASSIC_BUTTON_Y))
-				{
-					int newMenu = menuCurrent - 1;
-					if(newMenu < MENU_BROWSE_VIDEOS)
-						newMenu = MENU_SETTINGS;
-					ChangeMenu(newMenu);
-				}
+				int newMenu = menuCurrent + 1;
+				if(newMenu > MENU_SETTINGS)
+					newMenu = MENU_BROWSE_VIDEOS;
+				ChangeMenu(newMenu);
 			}
-
-			Menu_Render();
-
-			if(updateFound)
+			else if(userInput[i].wpad->btns_d & (WPAD_BUTTON_2 | WPAD_CLASSIC_BUTTON_Y))
 			{
-				updateFound = false;
-				ResumeUpdateThread();
+				int newMenu = menuCurrent - 1;
+				if(newMenu < MENU_BROWSE_VIDEOS)
+					newMenu = MENU_SETTINGS;
+				ChangeMenu(newMenu);
 			}
+		}
 
-			if((userInput[0].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
-				controlledbygui == 1 && !inNetworkInit)
-			{
-				ExitRequested = 1; // exit program
-			}
+		Menu_Render();
 
-			if(ExitRequested || ShutdownRequested)
+		if(updateFound)
+		{
+			updateFound = false;
+			ResumeUpdateThread();
+		}
+
+		if((userInput[0].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
+			controlledbygui == 1 && !inNetworkInit)
+		{
+			ExitRequested = 1; // exit program
+		}
+
+		if(ExitRequested || ShutdownRequested)
+		{
+			for(i = 0; i <= 255; i += 15)
 			{
-				for(i = 0; i <= 255; i += 15)
-				{
-					mainWindow->Draw();
-					Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor){0, 0, 0, i},1);
-					Menu_Render();
-				}
-				ExitApp();
+				mainWindow->Draw();
+				Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor){0, 0, 0, i},1);
+				Menu_Render();
 			}
+			ExitApp();
 		}
 		usleep(THREAD_SLEEP);
 	}
@@ -5361,7 +5373,6 @@ void SetBufferingStatus(int s)
  ***************************************************************************/
 void MPlayerMenu()
 {
-	menuMode = 1; // switch to MPlayer GUI mode
 	guiShutdown = false;
 
 	mainWindow = new GuiWindow(screenwidth, screenheight);
@@ -5370,8 +5381,7 @@ void MPlayerMenu()
 	mainWindow->Append(statusText);
 	HideVolumeLevelBar();
 	ResetText();
-
-	ResumeGui();
+	menuMode = 1; // switch to MPlayer GUI mode
 	EnableRumble();
 
 	bool paused = !wiiIsPaused();
@@ -5409,8 +5419,6 @@ void MPlayerMenu()
 		}
 	}
 
-	CancelAction();
-	SuspendGui();
 	DisableRumble();
 
 	delete mainWindow;

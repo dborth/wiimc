@@ -214,25 +214,17 @@ void Menu_DrawRectangle(f32 x, f32 y, f32 width, f32 height, GXColor color, u8 f
 
 int DrawMPlayerGui()
 {
+	UpdatePads();
+	MPlayerInput();
+
 	if(!drawGui && wiiIsPaused())
-	{
-		UpdatePads();
-		MPlayerInput();
 		return 1;
-	}
 
 	if(!drawGui)
 		return 0;
 
 	ResetVideo_Menu(); // reconfigure GX for GUI
-
-	// signal GUI to draw
-	doMPlayerGuiDraw = 1;
-
-	// wait for draw to complete
-	while(doMPlayerGuiDraw)
-		usleep(50);
-		
+	DoMPlayerGuiDraw(); // draw GUI
 	return 1;
 }
 

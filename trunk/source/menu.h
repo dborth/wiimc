@@ -32,6 +32,7 @@ void ShowVolumeLevelBar();
 void HideVolumeLevelBar();
 
 extern "C" {
+void DoMPlayerGuiDraw();
 void ShowProgress (const char *msg, int done, int total);
 void SetBufferingStatus(int s);
 bool BufferingStatusSet();
@@ -39,7 +40,6 @@ bool BufferingStatusSet();
 
 extern int menuCurrent;
 extern bool menuMode;
-extern int doMPlayerGuiDraw;
 extern bool nowPlayingSet;
 extern u8 *picBuffer;
 

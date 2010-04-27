@@ -160,10 +160,8 @@ static int init(int rate, int channels, int format, int flags)
 
 static void reset(void)
 {
-	while(buffered > 0)usleep(100);
+	while(buffered > 0) usleep(100);
 	playing = false;
-	while (AUDIO_GetDMABytesLeft() > 0)
-		usleep(100); // wait for next DMA
 
 	AUDIO_StopDMA();
 
@@ -202,15 +200,9 @@ static int get_space(void)
 #define SWAP(x) ((x >> 16) | (x << 16))
 #define SWAP_LEN (BUFFER_SIZE / 4)
 
-static void copy_swap_channels(u32 *destination, u32 *source)
+static void copy_swap_channels(u32 *destination, u32 *source, int len)
 {
-	for (int counter; counter < SWAP_LEN; counter++)
-		destination[counter] = SWAP(source[counter]);
-}
-
-static void copy_swap_channels_len(u32 *destination, u32 *source,int len)
-{
-	for (int counter; counter < len/4; counter++)
+	for (int counter; counter < len; counter++)
 		destination[counter] = SWAP(source[counter]);
 }
 
@@ -220,11 +212,11 @@ static int play(void *data, int len, int flags)
 
 	u8 *source = (u8 *)data;
 
-	while ((len >BUFFER_SIZE)	&& (get_space() >= BUFFER_SIZE))
+	while ((len >BUFFER_SIZE) && (get_space() >= BUFFER_SIZE))
 	{
-		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source);
+		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source, SWAP_LEN);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
-		last=buffer_fill;
+
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
 		
 		result += BUFFER_SIZE;
@@ -237,7 +229,7 @@ static int play(void *data, int len, int flags)
 	if ((flags & AOPLAY_FINAL_CHUNK) && len>0)
 	{
 		memset(buffers[buffer_fill], 0, BUFFER_SIZE);
-		copy_swap_channels_len((u32 *)buffers[buffer_fill], (u32 *)source,len);
+		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source, len/4);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
 
@@ -245,7 +237,6 @@ static int play(void *data, int len, int flags)
 		buffered += BUFFER_SIZE;
 	}
 
-	//if (!playing && (buffered >= PREBUFFER))
 	if (!playing && (buffered > BUFFER_SIZE))
 	{
 		playing = true;

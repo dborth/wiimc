@@ -242,7 +242,7 @@ static int play(void *data, int len, int flags)
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
 
 		result += len;
-		buffered += len;
+		buffered += BUFFER_SIZE;
 	}
 
 	//if (!playing && (buffered >= PREBUFFER))

@@ -15,9 +15,9 @@ include $(DEVKITPPC)/wii_rules
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-TARGET		:=	$(notdir $(CURDIR))
+TARGET		:=	boot
 BUILD		:=	build
-SOURCES		:=	source 
+SOURCES		:=	source source/images
 DATA		:=	data  
 INCLUDES	:=
 
@@ -31,22 +31,18 @@ CXXFLAGS	=	$(CFLAGS)
 #---------------------------------------------------------------------------------
 # move loader to another location - THANKS CREDIAR - 0x81330000 for HBC
 #---------------------------------------------------------------------------------
-#LDFLAGS=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
-LDFLAGS = -g $(MACHDEP) -Wl,-Map,$(notdir $@).map,--section-start,.init=0x81000000
-
+LDFLAGS = -g $(MACHDEP) -Wl,-Map,$(notdir $@).map -Wl,--section-start,.init=0x81230000
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-#LIBS	:=	-lz -lwiiuse -lfat -lbte  -ltinysmb  -logc -lm
-LIBS	:=	-lz -lfat -logc
-#LIBS	:=	-lwiiuse -lbte -ldb -lfat -logc -lm
+LIBS	:=	-logc -lfat -lntfs -lpng -lz
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= $(CURDIR)
+LIBDIRS	:= $(PORTLIBS)
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
@@ -70,6 +66,7 @@ CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+PNGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.png)))
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -82,7 +79,8 @@ endif
 
 export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
 					$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
-					$(sFILES:.s=.o) $(SFILES:.S=.o)
+					$(sFILES:.s=.o) $(SFILES:.S=.o) \
+					$(PNGFILES:.png=.png.o)
 
 #---------------------------------------------------------------------------------
 # build a list of include paths
@@ -117,11 +115,6 @@ run:
 
 
 #---------------------------------------------------------------------------------
-pack:
-	zip -9 loadMii.zip $(TARGET).dol ../icon.png ../meta.xml ../README
-
-
-#---------------------------------------------------------------------------------
 else
 
 DEPENDS	:=	$(OFILES:.o=.d)
@@ -132,26 +125,14 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT).dol: $(OUTPUT).elf
 $(OUTPUT).elf: $(OFILES)
 
-%.certs.o : %.certs
+#---------------------------------------------------------------------------------
+# This rule links in binary data with the .png extension
+#---------------------------------------------------------------------------------
+%.png.o : %.png
 	@echo $(notdir $<)
 	$(bin2o)
 
 %.elf.o : %.elf
-	@echo $(notdir $<)
-	$(bin2o)
-
-%.bin.o : %.bin
-	@echo $(notdir $<)
-	$(bin2o)
-%.raw.o : %.raw
-	@echo $(notdir $<)
-	$(bin2o)
-
-#---------------------------------------------------------------------------------
-# This rule links in binary data with the .jpg extension
-#---------------------------------------------------------------------------------
-%.jpg.o	:	%.jpg
-#---------------------------------------------------------------------------------
 	@echo $(notdir $<)
 	$(bin2o)
 

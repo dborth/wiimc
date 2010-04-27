@@ -1,305 +1,188 @@
-/*
+/****************************************************************************
+ * WiiMC
+ * Tantric 2009-2010
+ ***************************************************************************/
 
-Elf/Dol FOrwarder -- loads an elf or dol specified in the code.
-
-by SpaceJump (2008)
-
-Thanks to svpe, the creator of Front SD Loader and TCPLoad for giving me permission for using some of his
-functions.
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from
-the use of this software.
-
-*/
-
-#include <stdio.h>
+#include <malloc.h>
 #include <stdlib.h>
-#include <gccore.h>
-#include <wiiuse/wpad.h>
-#include <sys/stat.h>
-#include <fat.h>
-#include <string.h>
-#include <gccore.h>
-
-//#include "elf_abi.h"
 #include <ogc/machine/processor.h>
+#include <sys/iosupport.h>
 
-//USB2 includes
-#include "mload.h"
-#include "../build/ehcmodule_elf.h"
+#include "pngu.h"
+#include "fileop.h"
 
-u32 load_dol_image (void *dolstart, struct __argv *argv);
-void __exception_closeall();
-
-static void *xfb = NULL;
-static GXRModeObj *rmode = NULL;
-
-//u32 load_dol_image (void *);
-
-long get_filesize(char *FileName)
-{
-    struct stat file;
-    if(!stat(FileName,&file))
-    {
-        return file.st_size;
-    }
-    return 0;
-}
-
-void restart()
-{
-printf("Rebooting Wii...\n");
-sleep(3);
-SYS_ResetSystem(SYS_RESTART,0,0);
-/*
-	WPAD_Init();
-		printf("Press A to reboot Wii...\n");
-		while (1) {
-			WPAD_ScanPads();
-			u32 pressed = WPAD_ButtonsDown(0);
-			if (pressed & WPAD_BUTTON_A) {
-				SYS_ResetSystem(SYS_RESTART,0,0);
-				//exit(0);
-			}
-		}
-*/		
-}
-
+int mload_init();
+int mload_close();
+bool load_ehci_module();
+void USB2Enable(bool e);
+extern void __exception_closeall();
 typedef void (*entrypoint) (void);
-#include <sdcard/wiisd_io.h>
-#include <sdcard/gcsd.h>
-#include <ogc/usbstorage.h>
+u32 load_dol_image (void *dolstart, struct __argv *argv);
 
-const DISC_INTERFACE* sd = &__io_wiisd;
-const DISC_INTERFACE* usb = &__io_usbstorage;
+extern const u8		background_png[];
+extern const u32	background_png_size;
+extern const u8		background_wide_png[];
+extern const u32	background_wide_png_size;
 
+void InitVideo();
+void StopGX();
+void Menu_Render();
+void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[], f32 degrees, f32 scaleX, f32 scaleY, u8 alphaF );
 
-void load_USB2_driver()
+static bool FindIOS(u32 ios)
 {
-	//Try to load IOS202 to use usb2
-	int ret;
-	IOS_ReloadIOS(202);
-	ret=-1;
-	ret=mload_init();
-	data_elf my_data_elf;
-	
-	if(ret)
+	s32 ret;
+	u32 n;
+
+	u64 *titles = NULL;
+	u32 num_titles=0;
+
+	ret = ES_GetNumTitles(&num_titles);
+	if (ret < 0)
+		return false;
+
+	if(num_titles < 1) 
+		return false;
+
+	titles = (u64 *)memalign(32, num_titles * sizeof(u64) + 32);
+	if (!titles)
+		return false;
+
+	ret = ES_GetTitles(titles, num_titles);
+	if (ret < 0)
 	{
-		printf("usb2 IOS detectected!\n");
-		mload_elf((void *) ehcmodule_elf, &my_data_elf);
-		mload_run_thread(my_data_elf.start, my_data_elf.stack, my_data_elf.size_stack, my_data_elf.prio);
-		usleep(2000);
-		//printf("Running... at 0x%x\n", (u32) my_data_elf.start);
+		free(titles);
+		return false;
 	}
-	
+		
+	for(n=0; n < num_titles; n++)
+	{
+		if((titles[n] & 0xFFFFFFFF)==ios) 
+		{
+			free(titles); 
+			return true;
+		}
+	}
+    free(titles); 
+	return false;
 }
 
-//---------------------------------------------------------------------------------
-#define CHUNCK 64*1024
-int main(int argc, char **argv) {
-//---------------------------------------------------------------------------------
-	
-	// Initialise the video system
-	VIDEO_Init();
-	
-	// This function initialises the attached controllers
-	//WPAD_Init();
-	
-	// Obtain the preferred video mode from the system
-	// This will correspond to the settings in the Wii menu
-	rmode = VIDEO_GetPreferredMode(NULL);
+static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
+{
+	return -1;
+}
 
-	// Allocate memory for the display in the uncached region
-	xfb = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-	
-	// Initialise the console, required for printf
-	console_init(xfb,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	
-	// Set up the video registers with the chosen mode
-	VIDEO_Configure(rmode);
-	
-	// Tell the video hardware where our display memory is
-	VIDEO_SetNextFramebuffer(xfb);
-	
-	// Make the display visible
-	VIDEO_SetBlack(FALSE);
+const devoptab_t phony_out = 
+{ "stdout",0,NULL,NULL,__out_write,
+  NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL, NULL,0,NULL,NULL,NULL,NULL,NULL };
 
-	// Flush the video register changes to the hardware
-	VIDEO_Flush();
+int main(int argc, char **argv)
+{
+	void *buffer = (void *)0x92000000;
+	devoptab_list[STD_OUT] = &phony_out; // to keep libntfs happy
+	devoptab_list[STD_ERR] = &phony_out; // to keep libntfs happy
 
-	// Wait for Video setup to complete
-	VIDEO_WaitVSync();
-	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
-	
-	//------------------------------------------------------------------------------------------------------
-	
-	printf("\x1b[2;0H");
-	
-	
-	VIDEO_WaitVSync();
+	// try to load IOS 202
+	if(IOS_GetVersion() != 202 && FindIOS(202))
+		IOS_ReloadIOS(202);
 
-	FILE* inputFile=NULL;
-	long size=0;
+	if(IOS_GetVersion() == 202)
+	{
+		// load usb2 driver
+		if(mload_init() >= 0 && load_ehci_module())
+			USB2Enable(true);
+	}
+	else if(IOS_GetVersion() != 61 && FindIOS(61))
+	{
+		IOS_ReloadIOS(61);
+	}
 
-	if(!fatMount("sd",sd,0,3,256)) {
-		load_USB2_driver();
-		printf("Detecting usb device...\n");
-		if(usb->isInserted()) 
+	InitVideo();
+
+	u8 *bg;
+	int bgWidth, bgHeight;
+	int a,i,j;
+
+	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
+		bg = DecodePNG(background_wide_png, &bgWidth, &bgHeight);
+	else
+		bg = DecodePNG(background_png, &bgWidth, &bgHeight);
+
+	for(a = 0; a <= 255; a+=15)
+	{
+		Menu_DrawImg(0, 0, bgWidth, bgHeight, bg, 0, 1, 1, a);
+		Menu_Render();
+	}
+
+	// mount devices and look for file
+	MountAllDevices();
+	char filepath[1024] = { 0 };
+	FILE *fp = NULL;
+
+	for(i=0; i < 2; i++)
+	{
+		for(j=0; j < MAX_DEVICES; j++)
 		{
-			printf("Mounting USB fat\n");
-			if (!fatMount("usb",usb,0,3,256)) {
-			printf("FAT could not be initialized!\n");
-			restart();		
-			}
+			if(part[i][j].type == 0)
+				continue;
+
+			sprintf(filepath, "%s:/apps/wiimc/boot.dol", part[i][j].mount);
+			fp = fopen(filepath, "rb");
+			if(fp)
+				goto found;
 		}
 	}
-	else 
-	{ // try sd
-		inputFile = fopen( "sd:/apps/mplayer_ce/boot.dol", "rb");
-		if(inputFile == NULL) {
-			inputFile = fopen( "sd:/mplayer/boot.dol", "rb");
-			if(inputFile != NULL)
-				size = get_filesize("sd:/mplayer/boot.dol");
-		}else size = get_filesize("sd:/apps/mplayer_ce/boot.dol");	
-	}
-	
-	if(inputFile == NULL)
+
+	if(!fp)
 	{
-		if (!fatMount("usb",usb,0,3,256)) {
-			printf("FAT could not be initialized!\n");
-			restart();		
-		}
-		inputFile = fopen( "usb:/apps/mplayer_ce/boot.dol", "rb");
-		if(inputFile == NULL) {
-			inputFile = fopen( "usb:/mplayer/boot.dol", "rb");
-			if(inputFile == NULL) {
-				printf("boot.dol does not exist in the /apps/mplayer_ce or /mplayer folder on sd/usb !\n");
-				restart();		
-			}
-			size = get_filesize("usb:/mplayer/boot.dol");
-		}else size = get_filesize("usb:/apps/mplayer_ce/boot.dol");
+		StopGX();
+		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
+	}
+found:
+	fseek (fp, 0, SEEK_END);
+	int len = ftell(fp);
+	fseek (fp, 0, SEEK_SET);
+	fread(buffer, 1, len, fp);
+	fclose (fp);
+	UnmountAllDevices();
+
+	// load entry point
+	struct __argv args;
+	bzero(&args, sizeof(args));
+	args.argvMagic = ARGV_MAGIC;
+	args.length = strlen(filepath) + 2;
+	args.commandLine = (char*)malloc(args.length);
+	strcpy(args.commandLine, filepath);
+	args.commandLine[args.length - 1] = '\0';
+	args.argc = 1;
+	args.argv = &args.commandLine;
+	args.endARGV = args.argv + 1;
+
+	u32 exeEntryPointAddress = load_dol_image(buffer, &args);
+
+	entrypoint exeEntryPoint = (entrypoint) exeEntryPointAddress;
+
+	for(a = 255; a >= 0; a-=15)
+	{
+		Menu_DrawImg(0, 0, bgWidth, bgHeight, bg, 0, 1, 1, a);
+		Menu_Render();
 	}
 
-	//create a buffer for the elf/dol content
-	void* myBuffer=NULL;
-	//u8 *myBuffer = (u8 *)0x92000000;
-	
-	//read elf/dol from given path:
-	
-	setvbuf(inputFile,NULL,_IONBF,0);
-	printf("Found boot.dol on sd or usb!\n");
-	
-	/*
-	int pos = ftell(inputFile);
-	fseek(inputFile, 0, SEEK_END);
-	int size = ftell(inputFile);
-	fseek(inputFile, pos, SEEK_SET); //return to previous position
-	*/
-
-  printf("File size: %ld bytes\n",size);
-  myBuffer = malloc(size);
-  if(myBuffer == NULL) {
-    printf("Error allocating memory\n");
-    restart();	
-  } 
-  else
-    printf("Memory allocated\n");
-      
-  printf("Reading file file, please wait\n");
-  
-  printf("[");
-  printf("\x1b[s");  
-  printf("                                                 ]");
-  printf("\x1b[u");
-  
-  
-  u32 bytes_read,readed=0;
-  int aux,old=0;
-  while(1)	
-	{
-	   bytes_read = fread(myBuffer+readed, 1, CHUNCK, inputFile); 
-	   if (bytes_read < CHUNCK)
-	   {
-        s32 result = -!feof(inputFile);
-        readed+=bytes_read;
-        if (result < 0 || readed!=size) 
-        {
-          printf("fread error: [%i] %s\n", ferror(inputFile), strerror(ferror(inputFile)));
-          fclose(inputFile);
-          restart();	
-        }
-        break;
-       }
-     
-     readed+=bytes_read;
-     aux=(readed*50)/size;
-     if(old!=aux)
-     {
-       old=aux;
-       printf(".");
-       VIDEO_WaitVSync();
-     }
-  }  
-	fclose(inputFile);
-    
-	//fread (myBuffer, 1, size, inputFile);
-	
-  printf("\nFile readed successfully\n"); 
-	
-	//is a dol
-	printf("Loading dol...\n");
+	StopGX();
 	VIDEO_WaitVSync();
-	
-	
-    u32 exeEntryPointAddress = 0;
-    entrypoint exeEntryPoint;
-	
-	struct __argv args[10];
-	exeEntryPointAddress = load_dol_image(myBuffer,args);		
-	printf("dol loaded, executing...\n");
-	
-  if (exeEntryPointAddress == 0) {
-        printf ("Invalid entry point, press any key to quit\n");
-        restart();
-    }
 
-    exeEntryPoint = (entrypoint) exeEntryPointAddress;	
-	//dol_relocstart(myBuffer);
-	
-	//not need it, we know is a dol
-	//Check if valid elf file:
-	/*
-	s32 res;
-	res = valid_elf_image(myBuffer);
-    if(res == 1) {
-		//elf ok! -> Load entry point of elf file:
-		ep = (void(*)())load_elf_image(myBuffer);
-	} else {
-		//Elf not valid, load dol:
-		ep = (void(*)())load_dol_image(myBuffer);		
-	}*/
-		
-	
-	//printf("Entry point: 0x%X\n", (unsigned int)ep);
-  fatUnmount("usb:");
-  //sdio_Deinitialize();
-//  printf("1\n");VIDEO_WaitVSync();sleep(3);
-	VIDEO_WaitVSync();	
-	//sleep(5);
-	// code from geckoloader
+	// cleanup and reload
+	if(IOS_GetVersion() == 202)
+	{
+		IOS_ReloadIOS(202);
+		mload_close();
+	}
+
 	u32 level;
-	__IOS_ShutdownSubsystems ();
-	//printf("IOS_ShutdownSubsystems() done\n");
-//  printf("2\n");VIDEO_WaitVSync();sleep(3);
-	_CPU_ISR_Disable (level);
-	//printf("_CPU_ISR_Disable() done\n");
-	__exception_closeall ();
-	//printf("__exception_closeall() done. Jumping to ep now...\n");
-//  printf("3\n");VIDEO_WaitVSync();sleep(3);
+	SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);
+	_CPU_ISR_Disable(level);
+	__exception_closeall();
 	exeEntryPoint();
-	_CPU_ISR_Restore (level);
-		
-	exit(0);
+	_CPU_ISR_Restore(level);
 	return 0;
 }

@@ -208,19 +208,23 @@ static void copy_swap_channels(u32 *destination, u32 *source)
 		destination[counter] = SWAP(source[counter]);
 }
 
+static void copy_swap_channels_len(u32 *destination, u32 *source,int len)
+{
+	for (int counter; counter < len/4; counter++)
+		destination[counter] = SWAP(source[counter]);
+}
+
 static int play(void *data, int len, int flags)
 {
 	int result = 0;
-	int size=len;
 
 	u8 *source = (u8 *)data;
 
-	while ((len >0)	&& (get_space() >= BUFFER_SIZE))
+	while ((len >BUFFER_SIZE)	&& (get_space() >= BUFFER_SIZE))
 	{
-		if (flags & AOPLAY_FINAL_CHUNK) memset(buffers[buffer_fill], 0, BUFFER_SIZE);
 		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source);
-		DCStoreRangeNoSync(buffers[buffer_play], BUFFER_SIZE);
-
+		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
+		last=buffer_fill;
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
 		
 		result += BUFFER_SIZE;
@@ -230,6 +234,17 @@ static int play(void *data, int len, int flags)
 		len -= BUFFER_SIZE;
 	}
 
+	if ((flags & AOPLAY_FINAL_CHUNK) && len>0)
+	{
+		memset(buffers[buffer_fill], 0, BUFFER_SIZE);
+		copy_swap_channels_len((u32 *)buffers[buffer_fill], (u32 *)source,len);
+		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
+		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
+
+		result += len;
+		buffered += len;
+	}
+
 	//if (!playing && (buffered >= PREBUFFER))
 	if (!playing && (buffered > BUFFER_SIZE))
 	{
@@ -237,7 +252,6 @@ static int play(void *data, int len, int flags)
 		switch_buffers();
 		AUDIO_StartDMA();
 	}
-	if (flags & AOPLAY_FINAL_CHUNK)	return size;
 	return result;
 }
 

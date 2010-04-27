@@ -95,15 +95,18 @@ extern struct SWiiSettings WiiSettings;
 
 const char validVideoExtensions[][7] =
 {
-	"3gp", "avi", "asf", "bik", "divx", "dvr-ms", "evo", "flv", "iso", "m1v",
-	"m2v", "mkv", "mov", "mp4", "mp4v", "mpe", "mpeg", "mpg", "nsv", "ogm",
-	"qt", "rmvb", "swf", "ts", "vob", "vro", "wmv", "y4m", ""
+	"3gp", "asf", "avi", "bik", "divx", "dpg", "dv", "dvr-ms", "evo", "f4v", 
+	"flc", "fli", "flv", "iso", "m1v", "m2t", "m2ts", "m2v", "mkv", "mov", 
+	"mp4", "mp4v", "mpe", "mpeg", "mpg", "mqv", "nsv", "nuv", "ogm", "qt", 
+	"rmvb", "swf", "trp", "ts", "vdr", "vfw", "viv", "vob", "vro", "wmv", 
+	"y4m", ""
 };
 
 const char validAudioExtensions[][5] = 
 {
-	"aac", "aif", "aiff", "ape", "asf", "flac", "m4a", "m4p", "m4v", "mka",
-	"mp2", "mp3", "mpc", "ogg", "ra", "rm", "shn", "m4b", "wav", "wma", "wv", ""
+	"aac", "ac3", "aif", "aiff", "amr", "ape", "apl", "asf", "flac", "m4a", 
+	"m4b", "m4p", "m4v", "mka", "mp2", "mp3", "mpc", "ogg", "ra", "ram", "rm", 
+	"shn", "wav", "wma", "wv", ""
 };
 
 const char validImageExtensions[][5] = 

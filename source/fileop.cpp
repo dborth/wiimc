@@ -71,24 +71,6 @@ static int devsleep = 2*1000*1000;
 static bool MountPartitions(int device, int silent);
 static void UnmountPartitions(int device);
 
-extern "C" {
-void File_Threads_State()
-{
-	printf("devicethread suspended: ");
-	if(devicethread!=LWP_THREAD_NULL && !LWP_ThreadIsSuspended(devicethread))
-		printf("no\n");
-	else
-		printf("yes\n");
-
-	printf("parsethread suspended: ");
-	if(parsethread!=LWP_THREAD_NULL && !LWP_ThreadIsSuspended(parsethread))
-		printf("no\n");
-	else
-		printf("yes\n");
-
-}
-}
-
 static void * devicecallback (void *arg)
 {
 	while(devsleep > 0)
@@ -620,12 +602,12 @@ static int FindPartitions(int device)
 					AddPartition(i, device, T_NTFS);
 					break;
 				}
-				else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
-						sizeof(FAT_SIG)) || !memcmp(sector.buffer
-						+ BPB_FAT32_fileSysType, FAT_SIG, sizeof(FAT_SIG)))
-				{
-					debug_printf("Partition : Valid FAT boot sector found\n");
-					AddPartition(i, device, T_FAT);
+			else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
+					sizeof(FAT_SIG)) || !memcmp(sector.buffer
+					+ BPB_FAT32_fileSysType, FAT_SIG, sizeof(FAT_SIG)))
+			{
+				debug_printf("Partition : Valid FAT boot sector found\n");
+				AddPartition(i, device, T_FAT);
 					break;
 				}
 			}

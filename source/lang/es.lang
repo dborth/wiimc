@@ -1,5 +1,5 @@
 msgid "Videos"
-msgstr "Vídeos"
+msgstr "Vídeo"
 
 msgid "Music"
 msgstr "Música"
@@ -11,7 +11,7 @@ msgid "Online Media"
 msgstr "Recursos Online"
 
 msgid "Please Wait"
-msgstr "Por favor, espere."
+msgstr "Por favor, espere"
 
 msgid "Error"
 msgstr "Error"
@@ -32,40 +32,46 @@ msgid "Credits"
 msgstr "Créditos"
 
 msgid "Play"
-msgstr "Reproducir"
+msgstr "Play"
 
 msgid "Pause"
 msgstr "Pausa"
 
 msgid "Single Play"
-msgstr "Reproducción Individual"
+msgstr "Individual"
 
 msgid "Continuous Play"
-msgstr "Reproducción continua"
+msgstr "Reprodución Continua"
 
 msgid "Shuffle"
 msgstr "Aleatorio"
 
 msgid "Loop"
-msgstr "Bucle"
+msgstr "Repetir"
+
+msgid "Continuous"
+msgstr "Continua"
 
 msgid "Playlist"
-msgstr "Lista de Reproducción"
+msgstr "Lista de reprodución"
 
-msgid "Add to Playlist"
-msgstr "Añadir a Lista de Reproducción"
+msgid "Restart"
+msgstr "Reiniciar"
 
 msgid "Loading..."
 msgstr "Cargando..."
 
 msgid "Global"
-msgstr "Global"
+msgstr "General"
 
 msgid "Network"
 msgstr "Red"
 
 msgid "Subtitles"
 msgstr "Subtítulos"
+
+msgid "Subtitle Delay"
+msgstr "Retardo en subtítulo"
 
 msgid "Settings"
 msgstr "Configuración"
@@ -82,188 +88,68 @@ msgstr "Siempre"
 msgid "Disabled"
 msgstr "Deshabilitado"
 
-msgid "Skip Backward"
-msgstr "Salto Hacia Atrás"
-
-msgid "Rewind"
-msgstr "Rebobinar"
+msgid "Backward"
+msgstr "Hacia atrás"
 
 msgid "Pause"
 msgstr "Pausa"
 
-msgid "Fast Forward"
-msgstr "Avance Rapido"
+msgid "Forward"
+msgstr "Hacia adelante"
 
-msgid "Skip Forward"
-msgstr "Salto Hacia Adelante"
-
-msgid "Restart Song"
-msgstr "Reiniciar Canción"
-
-msgid "Next Song"
-msgstr "Próxima Canción"
-
-msgid "Single Play"
+msgid "Single"
 msgstr "Reproducción Individual"
 
-msgid "Now Playing:"
+msgid "Now Playing"
 msgstr "En reproducción:"
 
 msgid "Previous"
-msgstr "Previa"
+msgstr "Previo"
 
 msgid "Next"
-msgstr "Próxima"
-
-msgid "Slideshow"
-msgstr "Pase de Diapositivas"
+msgstr "Siguiente"
 
 msgid "Close"
 msgstr "Cerrar"
 
-msgid "Exit"
-msgstr "Salir"
-
 msgid "DVD"
 msgstr "DVD"
 
-msgid "Go Back"
+msgid "Go back"
 msgstr "Volver"
 
-msgid "Up One Level"
-msgstr "Nivel Superior"
-
-msgid "Exit Playlist"
-msgstr "Salir de Lista de Reproducción"
-
-msgid "Initializing network..."
-msgstr "Iniciando red..."
-
-msgid "Connecting to FTP site..."
-msgstr "Conectando a FTP..."
-
-msgid "Connecting to network share..."
-msgstr "Conectando a red compartida..."
-
-msgid "seconds"
-msgstr "segundos"
-
 msgid "Update Available"
-msgstr "Actualizaciones Disponibles"
+msgstr "Actualización disponible"
 
 msgid "An update is available!"
 msgstr "¡Una actualización disponible!"
 
 msgid "Update now"
-msgstr "Actualizar Ahora"
+msgstr "Actualizar ahora"
 
 msgid "Update later"
-msgstr "Actualizar más tarde"
-
-msgid "Saving..."
-msgstr "Salvando..."
-
-msgid "Update successful!"
-msgstr "¡Actualización completada!"
-
-msgid "Update failed!"
-msgstr "¡Actualización fallida!"
+msgstr "Actualizar mas tarde"
 
 msgid "Online media file not found."
-msgstr "Archivo Online no encontrado."
-
-msgid "Unable to display files on selected load device."
-msgstr "Imposible visualizar archivos en la fuente seleccionada."
-
-msgid "Error loading playlist!"
-msgstr "¡Error cargando la lista de reproducción!"
+msgstr "Archivo online no encontrado"
 
 msgid "Unrecognized DVD format!"
-msgstr "¡Formato de DVD no compatible!"
-
-msgid "No disc inserted!"
-msgstr "¡Nigún disco insertado!"
-
-msgid "Invalid DVD."
-msgstr "DVD no válido."
-
-msgid "Error opening"
-msgstr "Error abriendo"
-
-msgid "Please install IOS 202 for DVD support."
-msgstr "Por favor, instale IOS 202 para soporte de DVD."
-
-msgid "USB drive not found!"
-msgstr "¡Unidad USB no encontrada!"
-
-msgid "SD card not found!"
-msgstr "¡Tarjeta SD no encontrada!"
-
-msgid "Error opening file!"
-msgstr "¡Imposible abrir archivo!"
-
-msgid "Error saving file!"
-msgstr "¡Imposible guardar archivo!"
-
-msgid "There are no files currently in the playlist."
-msgstr "No hay archivos en la lista de reproducción actual"
-
-msgid "Unable to initialize network (Error #:"
-msgstr "Incapaz de iniciar la red  (Error #:"
-
-msgid "Check settings file."
-msgstr "Compruebe la configuración de archivo."
-
-msgid "Share name is blank."
-msgstr "Share name en blanco"
-
-msgid "Share IP is blank."
-msgstr "Share IP en blanco"
-
-msgid "Invalid network share settings"
-msgstr "Configuración de la red no valida"
-
-msgid "Failed to connect to network share."
-msgstr "Error al conectar a la red"
-
-msgid "Check settings file."
-msgstr "Comprueba la configuración del archivo"
-
-msgid "IP is blank."
-msgstr "IP en blanco"
-
-msgid "Username is blank."
-msgstr "Usuario en blanco."
-
-msgid "Password is blank."
-msgstr "Contraseña en blanco"
-
-msgid "Port"
-msgstr "Puerto"
+msgstr "¡Formato de DVD desconocido!"
 
 msgid "Port cannot be blank!"
-msgstr "¡El Puerto no puede estar en blanco!"
+msgstr "¡Puerto sin cumplimentar!"
 
 msgid "Port is not a number!"
-msgstr "El Puerto no es un número"
+msgstr "¡El puerto deber ser un número!"
 
 msgid "Port is outside the allowed range (4-49151)!"
-msgstr "El Puerto esta fuera de rango permitido (4-49151)"
-
-msgid "Invalid FTP site settings"
-msgstr "Datos incorrectos para la configuración FTP"
-
-msgid "Failed to connect to FTP site."
-msgstr "Error en la conexión FTP"
-
-msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "Imposible encontrar una SD o USB válidos - requerido para una operación normal"
+msgstr "¡Puerto fuera de rango (4-49151)!"
 
 msgid "Settings - Global"
-msgstr "Configuración - Global"
+msgstr "Configuración - General"
 
 msgid "Settings - Videos"
-msgstr "Configuración - Vídeos"
+msgstr "Configuración - Vídeo"
 
 msgid "Settings - Music"
 msgstr "Configuración - Música"
@@ -271,17 +157,17 @@ msgstr "Configuración - Música"
 msgid "Settings - Pictures"
 msgstr "Configuración - Imágenes"
 
+msgid "Settings - Online Media"
+msgstr "Configuración - Medios Online"
+
 msgid "Settings - Network"
-msgstr "Configuración - Red"
+msgstr "Configuración - Network"
 
-msgid "Settings - Subtitles"
-msgstr "Configuración - Subtítulos"
-
-msgid "Settings - Network - New Site"
-msgstr "Configuración - Red - Nuevo Sitio"
+msgid "Settings - DVD"
+msgstr "Configuración - DVD"
 
 msgid "File Extensions"
-msgstr "Extensiones de Archivo"
+msgstr "Extensión de archivo"
 
 msgid "Language"
 msgstr "Idioma"
@@ -290,10 +176,10 @@ msgid "Volume"
 msgstr "Volumen"
 
 msgid "Exit Action"
-msgstr "Acción al Salir"
+msgstr "Acción de salida"
 
 msgid "Wiimote Rumble"
-msgstr "Vibración de Wiimote"
+msgstr "Vibración para Wiimote"
 
 msgid "Hide"
 msgstr "Oculto"
@@ -308,61 +194,52 @@ msgid "Return to Wii Menu"
 msgstr "Volver al Menu Wii"
 
 msgid "Power Off Wii"
-msgstr "Apagar la Wii"
+msgstr "Apagar Wii"
 
 msgid "Return to Loader"
-msgstr "Volver al Lanzador"
+msgstr "Volver a la aplicación"
 
 msgid "Screen Zoom"
-msgstr "Zoom de Pantalla"
+msgstr "Zoom de pantalla"
 
 msgid "Screen Position"
-msgstr "Posición de Pantalla"
+msgstr "Posición de pantalla"
 
 msgid "Frame Dropping"
 msgstr "Frame Dropping"
 
 msgid "Aspect Ratio"
-msgstr "Formato de Salida de Vídeo"
-
-msgid "Cache Size"
-msgstr "Tamaño de Cache"
-
-msgid "Cache Prefill"
-msgstr "Precarga de Cache"
+msgstr "Formato de pantalla"
 
 msgid "Cache Fill"
-msgstr "Carga de Cache"
+msgstr "Cache en carga"
 
 msgid "Audio Delay"
-msgstr "Retardo en el Audio"
+msgstr "Retardo de audio"
 
 msgid "Auto-Resume"
-msgstr "Auto-Reanudar"
+msgstr "Reinicio automático"
 
 msgid "Videos Files Folder"
-msgstr "Carpeta de Archivos de Vídeo"
+msgstr "Carpeta de archivos de vídeo"
 
 msgid "Play Order"
-msgstr "Orden de Reproducción"
+msgstr "Orden de ejecución"
 
 msgid "Music Files Folder"
-msgstr "Carpeta de Archivos de Música"
+msgstr "Carpeta de archivos de audio"
 
 msgid "Pictures Files Folder"
-msgstr "Carpeta de Archivos de Imágenes"
-
-msgid "Add"
-msgstr "Añadir"
+msgstr "Carpeta de archivos de imágenes"
 
 msgid "Display Name"
-msgstr "Mostrar Nombre"
+msgstr "Nombre visualizado"
 
 msgid "Share IP"
-msgstr "IP Compartida"
+msgstr "IP compartida"
 
 msgid "Share Name"
-msgstr "Nombre del Elemento Compartido"
+msgstr "Nombre del elemento compartido"
 
 msgid "Username"
 msgstr "Usuario"
@@ -377,10 +254,10 @@ msgid "Delete"
 msgstr "Borrar"
 
 msgid "Delete Share"
-msgstr "Borrar el Elemento Compartido"
+msgstr "Borrar elemento compartido"
 
 msgid "Are you sure that you want to delete this share?"
-msgstr "¿Está seguro de borrar el elemento compartido?"
+msgstr "¿Esta seguro de borrar el elemento compartido en SMB?"
 
 msgid "Folder"
 msgstr "Carpeta"
@@ -389,7 +266,7 @@ msgid "Mode"
 msgstr "Modo"
 
 msgid "New Site"
-msgstr "Nuevo Sitio"
+msgstr "Nueva dirección"
 
 msgid "Passive"
 msgstr "Pasivo"
@@ -398,46 +275,214 @@ msgid "Active"
 msgstr "Activo"
 
 msgid "Delete Site"
-msgstr "Cancelar Sitio"
+msgstr "Borrar dirección"
 
 msgid "Are you sure that you want to delete this site?"
-msgstr "¿Está seguro de que quiere borrar el sitio?"
+msgstr "¿Esta seguro de que quiere borrar esta dirección?"
 
-msgid "Visibility"
-msgstr "Visibilidad"
+msgid "Port"
+msgstr "Puerto"
 
-msgid "Position"
-msgstr "Posición"
+msgid "Rewind / Fast Forward"
+msgstr "Rebobinar / Avance rápido"
 
-msgid "Size"
-msgstr "Tamaño"
+msgid "Error loading file!"
+msgstr "¡Error cargando archivo!"
 
-msgid "Delay"
-msgstr "Retardo"
+msgid "Resume"
+msgstr "Reiniciar"
 
-msgid "Top"
-msgstr "Arriba"
+msgid "Stop Slideshow"
+msgstr "Parar diapositivas"
 
-msgid "Center"
-msgstr "Centro"
+msgid "Start Slideshow"
+msgstr "Reproducir diapositivas"
 
-msgid "Bottom"
-msgstr "Abajo"
-
-msgid "Slideshow Delay"
-msgstr "Tiempo entre Diapositivas"
-
-msgid "DVD Menu"
-msgstr "Menú del DVD"
-
-msgid "Skip to Main Title"
-msgstr "Salir a la Pantalla Principal"
+msgid  "Slideshow Delay"
+msgstr "Retardo de diapositivas"
 
 msgid "Online Media Folder"
-msgstr "Carpeta de Recursos Online"
+msgstr "Carpeta de recursos Online"
 
 msgid "Add SMB Share"
-msgstr "Añadir carpeta de red"
+msgstr "Agregar elemento compartido SMB"
 
-msgid "IP"
-msgstr "IP"
+msgid "Add FTP Site"
+msgstr "Agregar dirección FTP"
+
+msgid "DVD Menu"
+msgstr "Menu DVD"
+
+msgid "Skip to Main Title"
+msgstr "Salir del Título Principal"
+
+msgid "Unable to Initialize MPlayer"
+msgstr "Imposible iniciar MPlayer"
+
+msgid "Unable to find a valid working path"
+msgstr "Imposible encontrar una ruta válida"
+
+msgid "Unable to change path to"
+msgstr "Imposible de cambiar ruta a"
+
+msgid "Out of memory: too many files!"
+msgstr "¡Excedida la capacidad de memoria: demasiados archivos!"
+
+msgid "Directory name is too long!"
+msgstr "¡Nombre de directorio demasiado largo!"
+
+msgid "SD Card"
+msgstr "Tarjeta SD"
+
+msgid "USB Mass Storage"
+msgstr "Unidad de almacenamiento USB"
+
+msgid "Data DVD"
+msgstr "Data DVD"
+
+msgid "USB drive not found!"
+msgstr "¡Medio USB no encontrado!"
+
+msgid "SD card not found!"
+msgstr "¡SD card no encontrada!"
+
+msgid "Please install IOS 202 for DVD support."
+msgstr "La instalación del IOS 202 le dara soporte a DVDs."
+
+msgid "Loading DVD..."
+msgstr "Cargando DVD..."
+
+msgid "No disc inserted!"
+msgstr "¡Ningún disco insertado!"
+
+msgid "Invalid DVD."
+msgstr "DVD no válido."
+
+msgid "Up One Level"
+msgstr "Volver al nivel superior"
+
+msgid "Error opening"
+msgstr "Error en la apertura"
+
+msgid "Warning"
+msgstr "Atención"
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "Una o más imágenes de la carpeta exceden el tamaño máximo (6 MB) y no serán visualizadas"
+
+msgid "Error loading playlist!"
+msgstr "¡Error en la carga de la lista de reproducción!"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr "¡La lista de reprodución no contiene items compatibles!"
+
+msgid "No Results Found"
+msgstr "Ningun archivo encontrado"
+
+msgid "Your search did not match any media files."
+msgstr "Esta búsqueda no encuentra ningún archivo."
+
+msgid "Error opening file!"
+msgstr "¡Error en la apertura del archivo!"
+
+msgid "Saving..."
+msgstr "Guardándose..."
+
+msgid "Error creating file!"
+msgstr "¡Error en la creación del archivo!"
+
+msgid "Error saving file!"
+msgstr "¡Error, archivo no guardado!"
+
+msgid "Playlist is Empty"
+msgstr "Lista de reproducción vacia"
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "Situese sobre los items y pulse el botón + para agregarlos a la lista de reproducción."
+
+msgid "Exit Playlist"
+msgstr "Salir de la lista de reproducción"
+
+msgid "Update successful!"
+msgstr "¡Actualización completada!"
+
+msgid "Update failed!"
+msgstr "¡Error en la actualización!"
+
+msgid "Initializing network..."
+msgstr "Iniciando red..."
+
+msgid "Check settings file."
+msgstr "Compruebe la configuración del archivo."
+
+msgid "Share name is blank."
+msgstr "Nombre del elemento compartido sin cumplimentar."
+
+msgid "Share IP is blank."
+msgstr "IP compartida sin cumplimentar."
+
+msgid "Invalid network share settings"
+msgstr "Configuración de red para SMB no válida"
+
+msgid "Connecting to network share..."
+msgstr "Conectando via SMB..."
+
+msgid "Failed to connect to network share."
+msgstr "Error en la conexión vía SMB."
+
+msgid "IP is blank."
+msgstr "IP sin cumplimentar."
+
+msgid "Username is blank."
+msgstr "Usuario sin cumplimentar."
+
+msgid "Password is blank."
+msgstr "Contraseña sin cumplimentar."
+
+msgid "Invalid FTP site settings"
+msgstr "Dirección FTP con configuración no válida"
+
+msgid "Connecting to FTP site..."
+msgstr "Conectando a la dirección FTP..."
+
+msgid "Failed to connect to FTP site."
+msgstr "Conexión a la dirección FTP fallida."
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "SD o USB válidos imposible de encontrar - es necesario para continuar."
+
+msgid "Could not create folder"
+msgstr "Imposible crear carpeta"
+
+msgid "Saving settings..."
+msgstr "Guardado en configuración..."
+
+msgid "Could not save settings to"
+msgstr "Imposible guardar la configuración a"
+
+msgid "Thanks to"
+msgstr "Gracias a"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "Este software es de fuente abierta y puede ser copiado, distribuido y/o modificado bajo las normas de GNU: General Public License (GPL) Versión 2."
+
+msgid "Menu artwork"
+msgstr "Menu artwork"
+
+msgid "Coding"
+msgstr "Programación"
+
+msgid "Coding & menu design"
+msgstr "Programación y diseno del menu"
+
+msgid "Version"
+msgstr "Versión"
+
+msgid "Buffering..."
+msgstr "Buffering..."
+
+msgid "Buffering"
+msgstr "Buffering"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Imposible iniciar red (Error #:"

@@ -227,7 +227,7 @@ static int play(void *data, int len, int flags)
 		
 		result += size;
 		source += size;
-		buffered += size;
+		buffered += BUFFER_SIZE;
 		
 		len -= size;
 	}

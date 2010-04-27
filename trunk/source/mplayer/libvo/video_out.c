@@ -32,7 +32,7 @@
 
 #include "mp_msg.h"
 #include "help_mp.h"
-
+#include "input/input.h"
 #include "osdep/shmem.h"
 
 //int vo_flags=0;
@@ -375,7 +375,7 @@ int config_video_out(const vo_functions_t *vo, uint32_t width, uint32_t height,
  * \result translation corresponding to key or "to" value of last mapping
  *         if not found.
  */
-int lookup_keymap_table(const struct keymap *map, int key) {
+int lookup_keymap_table(const struct mp_keymap *map, int key) {
   while (map->from && map->from != key) map++;
   return map->to;
 }
@@ -448,6 +448,21 @@ void calc_src_dst_rects(int src_width, int src_height, struct vo_rect *src, stru
   src->height = src->bottom - src->top;
   dst->width  = dst->right  - dst->left;
   dst->height = dst->bottom - dst->top;
+}
+
+/**
+ * Generates a mouse movement message if those are enable and sends it
+ * to the "main" MPlayer.
+ *
+ * \param posx new x position of mouse
+ * \param posy new y position of mouse
+ */
+void vo_mouse_movement(int posx, int posy) {
+  char cmd_str[40];
+  if (!enable_mouse_movements)
+    return;
+  snprintf(cmd_str, sizeof(cmd_str), "set_mouse_pos %i %i", posx, posy);
+  mp_input_queue_cmd(mp_input_parse_cmd(cmd_str));
 }
 
 #if defined(CONFIG_FBDEV) || defined(CONFIG_VESA)

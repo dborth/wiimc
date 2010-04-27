@@ -497,7 +497,7 @@ static const StreamType ISO_types[] = {
     { 0x04, AVMEDIA_TYPE_AUDIO,        CODEC_ID_MP3 },
     { 0x0f, AVMEDIA_TYPE_AUDIO,        CODEC_ID_AAC },
     { 0x10, AVMEDIA_TYPE_VIDEO,      CODEC_ID_MPEG4 },
-    { 0x11, AVMEDIA_TYPE_AUDIO,        CODEC_ID_AAC }, /* LATM syntax */
+  //{ 0x11, AVMEDIA_TYPE_AUDIO,        CODEC_ID_AAC }, /* LATM syntax */
     { 0x1b, AVMEDIA_TYPE_VIDEO,       CODEC_ID_H264 },
     { 0xd1, AVMEDIA_TYPE_VIDEO,      CODEC_ID_DIRAC },
     { 0xea, AVMEDIA_TYPE_VIDEO,        CODEC_ID_VC1 },
@@ -594,6 +594,9 @@ static int mpegts_set_stream_info(AVStream *st, PESContext *pes,
             sub_pes->sub_st = pes->sub_st = sub_st;
         }
     }
+    if (pes->stream_type == 0x11)
+        av_log(pes->stream, AV_LOG_WARNING,
+               "AAC LATM not currently supported, patch welcome\n");
     if (st->codec->codec_id == CODEC_ID_NONE)
         mpegts_find_stream_type(st, pes->stream_type, MISC_types);
 
@@ -960,7 +963,7 @@ static void pmt_cb(MpegTSFilter *filter, const uint8_t *section, int section_len
                 language[1] = get8(&p, desc_end);
                 language[2] = get8(&p, desc_end);
                 language[3] = 0;
-                av_metadata_set(&st->metadata, "language", language);
+                av_metadata_set2(&st->metadata, "language", language, 0);
                 break;
             case 0x59: /* subtitling descriptor */
                 language[0] = get8(&p, desc_end);
@@ -971,14 +974,14 @@ static void pmt_cb(MpegTSFilter *filter, const uint8_t *section, int section_len
                 comp_page = get16(&p, desc_end);
                 anc_page = get16(&p, desc_end);
                 st->codec->sub_id = (anc_page << 16) | comp_page;
-                av_metadata_set(&st->metadata, "language", language);
+                av_metadata_set2(&st->metadata, "language", language, 0);
                 break;
             case 0x0a: /* ISO 639 language descriptor */
                 language[0] = get8(&p, desc_end);
                 language[1] = get8(&p, desc_end);
                 language[2] = get8(&p, desc_end);
                 language[3] = 0;
-                av_metadata_set(&st->metadata, "language", language);
+                av_metadata_set2(&st->metadata, "language", language, 0);
                 break;
             case 0x05: /* registration descriptor */
                 st->codec->codec_tag = bytestream_get_le32(&p);
@@ -1106,8 +1109,8 @@ static void sdt_cb(MpegTSFilter *filter, const uint8_t *section, int section_len
                 if (name) {
                     AVProgram *program = av_new_program(ts->stream, sid);
                     if(program) {
-                        av_metadata_set(&program->metadata, "name", name);
-                        av_metadata_set(&program->metadata, "provider_name", provider_name);
+                        av_metadata_set2(&program->metadata, "name", name, 0);
+                        av_metadata_set2(&program->metadata, "provider_name", provider_name, 0);
                     }
                 }
                 av_free(name);

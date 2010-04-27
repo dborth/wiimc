@@ -2273,6 +2273,9 @@ static int sleep_until_update(float *time_frame, float *aq_sleep_time)
     // flag 256 means: libvo driver does its timing (dvb card)
     if (*time_frame > 0.001 && !(vo_flags&256))
     	*time_frame = timing_sleep(*time_frame);
+#ifdef GEKKO
+    else usleep(10);
+#endif
     return frame_time_remaining;
 }
 
@@ -2741,6 +2744,7 @@ int gui_no_filename=0;
 
   // Preparse the command line
   m_config_preparse_command_line(mconfig,argc,argv);
+
 
 #if (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(CONFIG_WIN32DLL)
   set_path_env();
@@ -3919,8 +3923,10 @@ if (mpctx->sh_video)
 	int aux=mpctx->set_of_sub_size;
 	mpctx->set_of_sub_size=0; // to not load subfonts
 	mpctx->osd_function=OSD_PAUSE;
-	//if(stream_cache_size>0)
-	//	refillcache(mpctx->stream,stream_cache_min_percent);
+
+//	if(stream_cache_size>0)
+//		refillcache(mpctx->stream,stream_cache_min_percent);
+
 	mpctx->osd_function=OSD_PLAY;
 	mpctx->set_of_sub_size=aux;
 
@@ -4136,7 +4142,8 @@ if(auto_quality>0){
 
    if (mp_dvdnav_stream_has_changed(mpctx->stream)) {
      double ar = -1.0;
-     if (stream_control (mpctx->demuxer->stream,
+     if (mpctx->sh_video &&
+         stream_control (mpctx->demuxer->stream,
                          STREAM_CTRL_GET_ASPECT_RATIO, &ar)
          != STREAM_UNSUPPORTED)
        mpctx->sh_video->stream_aspect = ar;
@@ -4309,7 +4316,9 @@ if(benchmark){
 
 // time to uninit all, except global stuff:
 printf("mplayer: end film. UNINIT\n");
-uninit_player(INITIALIZED_ALL);
+//uninit_player(INITIALIZED_ALL);
+//uninit_player(INITIALIZED_ALL-(INITIALIZED_DEMUXER+INITIALIZED_INPUT+INITIALIZED_VCODEC+INITIALIZED_GETCH2+INITIALIZED_GUI+(fixed_vo?INITIALIZED_VO:0)));
+uninit_player(INITIALIZED_ALL-(INITIALIZED_INPUT+INITIALIZED_GETCH2+INITIALIZED_VO+INITIALIZED_AO));
 
 if(mpctx->set_of_sub_size > 0) {
     current_module="sub_free";
@@ -4495,7 +4504,7 @@ static int load_restore_point(char *_filename)
 
 static float timing_sleep(float time_frame)
 {
-	s64 frame=(s64)(time_frame*1000000); //in us
+	s32 frame=time_frame*1000000; //in us
 	//current_module = "sleep_timer";
 	while (frame > 100)
 	{
@@ -4506,8 +4515,8 @@ static float timing_sleep(float time_frame)
 		}
 		else
 		{
-			//usec_sleep(frame-100);
-			usec_sleep(50);
+			usec_sleep(frame-100);
+			//usec_sleep(50);
 		}
 		frame = frame - GetRelativeTime();
 		break;

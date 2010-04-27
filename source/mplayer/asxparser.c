@@ -497,6 +497,10 @@ asx_parse_entry(ASX_Parser_t* parser,char* buffer,char** _attribs) {
       asx_parse_ref(parser,attribs,ref);
       mp_msg(MSGT_PLAYTREE,MSGL_DBG2,"Adding element %s to entry\n",element);
       nref++;
+#ifdef GEKKO
+	} else if(strcasecmp(element,"TITLE") == 0) {
+	  play_tree_set_param(ref, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, body);
+#endif
     } else
       mp_msg(MSGT_PLAYTREE,MSGL_DBG2,"Ignoring element %s\n",element);
     if(body) free(body);

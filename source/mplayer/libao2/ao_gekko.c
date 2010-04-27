@@ -202,7 +202,7 @@ static int get_space(void)
 
 static void copy_swap_channels(u32 *destination, u32 *source, int len)
 {
-	for (int counter; counter < len; counter++)
+	for (int counter = 0; counter < len; counter++)
 		destination[counter] = SWAP(source[counter]);
 }
 
@@ -212,7 +212,7 @@ static int play(void *data, int len, int flags)
 
 	u8 *source = (u8 *)data;
 
-	while ((len >BUFFER_SIZE) && (get_space() >= BUFFER_SIZE))
+	while ((len >= BUFFER_SIZE) && (get_space() >= BUFFER_SIZE))
 	{
 		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source, SWAP_LEN);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
@@ -226,7 +226,7 @@ static int play(void *data, int len, int flags)
 		len -= BUFFER_SIZE;
 	}
 
-	if ((flags & AOPLAY_FINAL_CHUNK) && len>0)
+	if ((flags & AOPLAY_FINAL_CHUNK) && len > 0)
 	{
 		memset(buffers[buffer_fill], 0, BUFFER_SIZE);
 		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source, len/4);

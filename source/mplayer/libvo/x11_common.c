@@ -85,7 +85,6 @@
 #define WIN_LAYER_ONTOP                  6
 #define WIN_LAYER_ABOVE_DOCK             10
 
-extern int enable_mouse_movements;
 int fs_layer = WIN_LAYER_ABOVE_DOCK;
 static int orig_layer = 0;
 static int old_gravity = NorthWestGravity;
@@ -367,9 +366,9 @@ static void init_atoms(void)
 }
 
 void update_xinerama_info(void) {
-    int screen = xinerama_screen;
     xinerama_x = xinerama_y = 0;
 #ifdef CONFIG_XINERAMA
+    int screen = xinerama_screen;
     if (screen >= -1 && XineramaIsActive(mDisplay))
     {
         XineramaScreenInfo *screens;
@@ -561,7 +560,7 @@ void vo_uninit(void)
 #include "wskeys.h"
 
 #ifdef XF86XK_AudioPause
-static const struct keymap keysym_map[] = {
+static const struct mp_keymap keysym_map[] = {
     {XF86XK_MenuKB, KEY_MENU},
     {XF86XK_AudioPlay, KEY_PLAY}, {XF86XK_AudioPause, KEY_PAUSE}, {XF86XK_AudioStop, KEY_STOP},
     {XF86XK_AudioPrev, KEY_PREV}, {XF86XK_AudioNext, KEY_NEXT},
@@ -577,7 +576,7 @@ static void vo_x11_putkey_ext(int keysym)
 }
 #endif
 
-static const struct keymap keymap[] = {
+static const struct mp_keymap keymap[] = {
     // special keys
     {wsEscape, KEY_ESC}, {wsBackSpace, KEY_BS}, {wsTab, KEY_TAB}, {wsEnter, KEY_ENTER},
 
@@ -874,12 +873,7 @@ int vo_x11_check_events(Display * mydisplay)
                 }
                 break;
             case MotionNotify:
-                if(enable_mouse_movements)
-                {
-                    char cmd_str[40];
-                    sprintf(cmd_str,"set_mouse_pos %i %i",Event.xmotion.x, Event.xmotion.y);
-                    mp_input_queue_cmd(mp_input_parse_cmd(cmd_str));
-                }
+                vo_mouse_movement(Event.xmotion.x, Event.xmotion.y);
 
                 if (vo_mouse_autohide)
                 {

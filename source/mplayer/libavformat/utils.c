@@ -2546,7 +2546,7 @@ AVChapter *ff_new_chapter(AVFormatContext *s, int id, AVRational time_base, int6
 #if LIBAVFORMAT_VERSION_INT < (53<<16)
     av_free(chapter->title);
 #endif
-    av_metadata_set(&chapter->metadata, "title", title);
+    av_metadata_set2(&chapter->metadata, "title", title, 0);
     chapter->id    = id;
     chapter->time_base= time_base;
     chapter->start = start;
@@ -3119,20 +3119,12 @@ int parse_frame_rate(int *frame_rate_num, int *frame_rate_den, const char *arg)
 }
 #endif
 
-#ifdef GEKKO
-#include <ogc/lwp_watchdog.h>
-int64_t av_gettime(void)
-{
-	return tick_microsecs(gettime());
-}
-#else
 int64_t av_gettime(void)
 {
     struct timeval tv;
     gettimeofday(&tv,NULL);
     return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
 }
-#endif
 
 uint64_t ff_ntp_time(void)
 {

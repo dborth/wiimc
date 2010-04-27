@@ -456,6 +456,7 @@ char MPLAYER_LIBDIR[100];
 #undef HAVE_YASM
 */
 #define HAVE_EXP2 1
+#define HAVE_LLRINTF 1
 #define HAVE_EXP2F 1
 #define HAVE_FAST_64BIT 0
 #define HAVE_FAST_UNALIGNED 1

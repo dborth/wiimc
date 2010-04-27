@@ -578,7 +578,7 @@ static void ThreadProc( void *s ){
   do {
     if(!cache_fill(s)){
 	 usec_sleep(FILL_USLEEP_TIME); // idle
-    }else usleep(50);
+    }else usec_sleep(500);
 //	 cache_stats(s->cache_data);
 #ifndef GEKKO
   } while (cache_execute_control(s));
@@ -725,6 +725,7 @@ int cache_do_control(stream_t *stream, int cmd, void *arg) {
 
 int stream_read(stream_t *s,char* mem,int total){
   int len=total;
+  if(!mem) return 0;
   while(len>0){
     int x;
     //debug_str="stream_read";
@@ -770,7 +771,7 @@ int stream_read(stream_t *s,char* mem,int total){
   return total;
 }
 
-#if 0
+#if 1
 void refillcache(stream_t *stream,float min)
 {
 	cache_vars_t* s;
@@ -783,7 +784,9 @@ void refillcache(stream_t *stream,float min)
     while(cache_fill_status<min)
     {
 		//printf("Cache fill: %5.2f%%  \n",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
+    	printf("refiilcache1\n");
     	ShowProgress("Buffering...", (int)cache_fill_status, (int)min);
+    	printf("refiilcache2\n");
 		if(s->eof) break; // file is smaller than prefill size
 			
 		if(out==0)out=stream_check_interrupt(PREFILL_SLEEP_TIME);
@@ -800,10 +803,12 @@ void refillcache(stream_t *stream,float min)
 		  }
 
 		}
+		printf("refiilcache3\n");
 		//printf("Cache fill: %5.2f%%  \n",cache_fill_status);
 		if(cache_fill_status > 5 && out)
 		{
 			//printf("break Cache fill: %5.2f%%  \n",cache_fill_status);
+			printf("refiilcache4\n");
 			return ;
 		}	
 		
@@ -811,6 +816,7 @@ void refillcache(stream_t *stream,float min)
 		if(old<cache_fill_status)t1 = GetTimerMS();
 	    if(GetTimerMS()-t1>1500) return;
 		old=cache_fill_status;
+		printf("refiilcache2\n");
 		usleep(50);
     }
     //printf("end Cache fill: %5.2f%%  \n",cache_fill_status);   

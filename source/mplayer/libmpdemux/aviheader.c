@@ -384,6 +384,11 @@ while(1){
       mp_msg(MSGT_HEADER,MSGL_V,MSGTR_MPDEMUX_AVIHDR_ReadingIndexBlockChunksForFrames,
         priv->idx_size,avih.dwTotalFrames, (int64_t)stream_tell(demuxer->stream));
       priv->idx=malloc(priv->idx_size<<4);
+      if(priv->idx==NULL)
+    {
+    	  printf("error no mem!!! libmpdemux/aviheader.c (line 386) size: %d\n",priv->idx_size<<4);
+
+    }
 //      printf("\nindex to %p !!!!! (priv=%p)\n",priv->idx,priv);
       stream_read(demuxer->stream,(char*)priv->idx,priv->idx_size<<4);
       for (i = 0; i < priv->idx_size; i++) {	// swap index to machine endian

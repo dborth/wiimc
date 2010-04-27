@@ -204,7 +204,7 @@ static int get_space(void)
 static void copy_swap_channels(u32 *destination, u32 *source, int len)
 {
 	int counter;
-	for (int counter = 0; counter < len/4; counter++)
+	for (counter = 0; counter < len/4; counter++)
 		destination[counter] = SWAP(source[counter]);
 	for (; counter < SWAP_LEN; counter++)
 		destination[counter] = 0x0;

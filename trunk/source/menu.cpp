@@ -2625,7 +2625,8 @@ static void MenuSettingsGlobal()
 				while(WiiSettings.language != LANG_ENGLISH && 
 						WiiSettings.language != LANG_FRENCH && 
 						WiiSettings.language != LANG_GERMAN && 
-						WiiSettings.language != LANG_ITALIAN && 
+						WiiSettings.language != LANG_ITALIAN &&
+						WiiSettings.language != LANG_DUTCH && 
 						WiiSettings.language != LANG_SPANISH && 
 						WiiSettings.language != LANG_ROMANIAN &&
 						WiiSettings.language != LANG_ESTONIAN)

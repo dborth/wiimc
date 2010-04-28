@@ -1568,7 +1568,7 @@ static void MenuBrowse(int menu)
 
 				if(!IsAllowedExt(ext)) // unrecognized audio or video extension
 				{
-					// parse as a playlist					
+					// parse as a playlist
 					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0 &&
 						browserList[browser.selIndex].type != TYPE_SEARCH)
 					{

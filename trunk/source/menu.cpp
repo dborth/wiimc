@@ -2182,6 +2182,9 @@ static void PictureViewer()
 	mainWindow = w;
 	ResumeGui();
 
+	int irCount = 0;
+	bool irLast = false;
+
 	while(closePictureViewer == 0 && !guiShutdown)
 	{
 		if(browser.selIndex != currentIndex)
@@ -2244,12 +2247,23 @@ static void PictureViewer()
 			}
 		}
 
+		if(ir != irLast)
+			irCount++;
+		else if(irCount > 0)
+			irCount--;
+
+		usleep(THREAD_SLEEP);
+
+		if(irCount < 10) // only change state if we've had 10 consecutive reports
+			continue;
+
+		irCount = 0;
+		irLast = ir;
+
 		if(!picturebar->IsVisible() && ir)
 			picturebar->SetVisible(true);
 		else if(picturebar->IsVisible() && !ir)
 			picturebar->SetVisible(false);
-
-		usleep(THREAD_SLEEP);
 	}
 
 	SuspendGui();
@@ -5379,6 +5393,8 @@ void MPlayerMenu()
 
 	mainWindow->Append(videobar);
 	mainWindow->Append(statusText);
+	mainWindow->SetVisible(false);
+	mainWindow->SetState(STATE_DISABLED);
 	HideVolumeLevelBar();
 	ResetText();
 	menuMode = 1; // switch to MPlayer GUI mode
@@ -5389,6 +5405,9 @@ void MPlayerMenu()
 	while(controlledbygui == 0)
 	{
 		usleep(THREAD_SLEEP);
+
+		if(!drawGui)
+			continue;
 
 		if(mainWindow->IsVisible() && wiiInDVDMenu())
 		{

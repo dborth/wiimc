@@ -194,7 +194,7 @@ static void audio_resume(void)
 
 static int get_space(void)
 {
-	return (BUFFER_SIZE * (BUFFER_COUNT - 1)) - buffered;
+	return (BUFFER_SIZE * (BUFFER_COUNT - 2)) - buffered;
 }
 
 #define SWAP(x) ((x >> 16) | (x << 16))
@@ -212,7 +212,7 @@ static int play(void *data, int len, int flags)
 
 	u8 *source = (u8 *)data;
 
-	while (len >= BUFFER_SIZE && get_space() > BUFFER_SIZE)
+	while (len >= BUFFER_SIZE && get_space() >= BUFFER_SIZE)
 	{
 		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source, SWAP_LEN);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);

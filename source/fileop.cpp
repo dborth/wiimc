@@ -839,12 +839,15 @@ bool IsDeviceRoot(char * path)
 bool IsOnlineMediaPath(char *path)
 {
 	int dirLen = strlen(path);
-	
+
+	if(dirLen < 2 || path[dirLen-1] != '/')
+		return false;
+
 	for(int i=0; i < onlinemediaSize; i++)
 	{
 		int filepathLen = strlen(onlinemediaList[i].filepath);
-		
-		if(filepathLen > dirLen && strncmp(path, onlinemediaList[i].filepath, dirLen) == 0)
+
+		if(filepathLen >= dirLen && strncmp(path, onlinemediaList[i].filepath, dirLen) == 0)
 			return true;
 	}
 	return false;
@@ -1519,6 +1522,9 @@ static int ParsePLXPlaylist()
 	}
 	free(list);
 
+	// try to find and select the last loaded file
+	FindFile();
+
 	return browser.numEntries;
 }
 
@@ -1679,7 +1685,11 @@ int ParsePlaylistFile()
 	{
 		ResetBrowser();
 		ErrorPrompt("Playlist does not contain any supported entries!");
+		return 0;
 	}
+
+	// try to find and select the last loaded file
+	FindFile();
 
 	return browser.numEntries;
 }
@@ -1719,8 +1729,11 @@ int ParseOnlineMedia()
 			ext = GetExt(onlinemediaList[i].address);
 
 			AddBrowserEntry();
-			strncpy(browserList[browser.numEntries].filename, onlinemediaList[i].address, MAXPATHLEN);
-			strncpy(browserList[browser.numEntries].displayname, onlinemediaList[i].displayname, MAXJOLIET);
+			if(strncmp(onlinemediaList[i].address, "http:", 5) == 0 || strncmp(onlinemediaList[i].address, "mms:", 4) == 0)
+				snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "%s", onlinemediaList[i].address);
+			else
+				snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "http://%s", onlinemediaList[i].address);
+			snprintf(browserList[browser.numEntries].displayname, MAXJOLIET, "%s", onlinemediaList[i].displayname);
 			browserList[browser.numEntries].length = 0;
 			browserList[browser.numEntries].mtime = 0;
 			browserList[browser.numEntries].type = TYPE_FILE;
@@ -1767,9 +1780,13 @@ int ParseOnlineMedia()
 			}
 		}
 	}
-	
+
 	// Sort the file list
 	qsort(browserList, browser.numEntries, sizeof(BROWSERENTRY), FileSortCallback);
+
+	// try to find and select the last loaded file
+	FindFile();
+
 	return browser.numEntries;
 }
 

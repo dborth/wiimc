@@ -259,7 +259,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	if(updateDir && !UpdateDirName())
 		return -1;
 
-	if(!menuCurrent == MENU_BROWSE_ONLINEMEDIA && !IsOnlineMediaPath(browser.dir))
+	if(!(menuCurrent == MENU_BROWSE_ONLINEMEDIA && IsOnlineMediaPath(browser.dir)))
 		CleanupPath(browser.dir);
 
 	SuspendParseThread(); // halt parsing

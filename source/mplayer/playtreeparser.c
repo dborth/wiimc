@@ -702,12 +702,25 @@ parse_textplain(play_tree_parser_t* p) {
   char* line;
   char *c;
   int embedded;
+#ifdef GEKKO
+  int linenum = 0;
+#endif
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying plaintext playlist...\n");
   play_tree_parser_stop_keeping(p);
 
   while((line = play_tree_parser_get_line(p)) != NULL) {
+#ifdef GEKKO
+	linenum++;
+	
+	if(linenum > 10)
+	{
+		if(list) play_tree_free(list, 1);
+		return NULL; // abort - this might be a stream
+	}
+#endif	
+
     strstrip(line);
     if(line[0] == '\0' || line[0] == '#' || (line[0] == '/' && line[1] == '/'))
       continue;
@@ -839,11 +852,8 @@ parse_playlist_file(char* file) {
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Parsing playlist file %s...\n",file);
 
-#ifdef GEKKO
-  ret = parse_playtree(stream,0);
-#else
   ret = parse_playtree(stream,1);
-#endif
+
   free_stream(stream);
 
   play_tree_add_bpf(ret, file);

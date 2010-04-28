@@ -64,11 +64,11 @@ static ao_control_vol_t volume = { 0x8E, 0x8E };
 
 static void switch_buffers()
 {
-	if (playing && buffered > 0)
+	if (playing && ((buffered) > BUFFER_SIZE))
 	{
 		buffered -= BUFFER_SIZE;
-		buffer_play = (buffer_play + 1) % BUFFER_COUNT;
 		AUDIO_InitDMA((u32)buffers[buffer_play], BUFFER_SIZE);
+		buffer_play = (buffer_play + 1) % BUFFER_COUNT;
 	}
 	else
 	{
@@ -160,7 +160,7 @@ static int init(int rate, int channels, int format, int flags)
 
 static void reset(void)
 {
-	while(buffered > 0) usleep(100);
+	//while(buffered > 0) usleep(100);
 	playing = false;
 
 	AUDIO_StopDMA();
@@ -237,11 +237,12 @@ static int play(void *data, int len, int flags)
 		buffered += BUFFER_SIZE;
 	}
 
-	if (!playing && (buffered > BUFFER_SIZE))
+	if (!playing && (buffered > PREBUFFER))
 	{
 		playing = true;
-		switch_buffers();
 		AUDIO_StartDMA();
+		switch_buffers();
+		//AUDIO_StartDMA();
 	}
 	return result;
 }

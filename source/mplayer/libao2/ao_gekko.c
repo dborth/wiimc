@@ -64,11 +64,11 @@ static ao_control_vol_t volume = { 0x8E, 0x8E };
 
 static void switch_buffers()
 {
-	if (playing && ((buffered) > BUFFER_SIZE))
+	if (playing && buffered > 0)
 	{
-		buffered -= BUFFER_SIZE;
 		AUDIO_InitDMA((u32)buffers[buffer_play], BUFFER_SIZE);
 		buffer_play = (buffer_play + 1) % BUFFER_COUNT;
+		buffered -= BUFFER_SIZE;
 	}
 	else
 	{
@@ -160,7 +160,7 @@ static int init(int rate, int channels, int format, int flags)
 
 static void reset(void)
 {
-	//while(buffered > 0) usleep(100);
+	while(buffered > 0) usleep(100);
 	playing = false;
 
 	AUDIO_StopDMA();
@@ -212,7 +212,7 @@ static int play(void *data, int len, int flags)
 
 	u8 *source = (u8 *)data;
 
-	while ((len >= BUFFER_SIZE) && (get_space() >= BUFFER_SIZE))
+	while (len >= BUFFER_SIZE && get_space() > BUFFER_SIZE)
 	{
 		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source, SWAP_LEN);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
@@ -237,12 +237,11 @@ static int play(void *data, int len, int flags)
 		buffered += BUFFER_SIZE;
 	}
 
-	if (!playing && (buffered > PREBUFFER))
+	if (!playing && buffered > BUFFER_SIZE)
 	{
 		playing = true;
-		AUDIO_StartDMA();
 		switch_buffers();
-		//AUDIO_StartDMA();
+		AUDIO_StartDMA();
 	}
 	return result;
 }

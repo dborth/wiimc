@@ -371,6 +371,8 @@ void SetMPlayerSettings()
 	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);
 	wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
 	wiiSetProperty(MP_CMD_SUB_DELAY, WiiSettings.subtitleDelay);
+	wiiSetLanguage(WiiSettings.subtitleLanguage);
+	wiiSetCodepage(WiiSettings.subtitleCodepage);
 }
 }
 

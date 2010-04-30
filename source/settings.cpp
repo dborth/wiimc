@@ -28,6 +28,177 @@
 struct SWiiSettings WiiSettings;
 static char * savebuffer = NULL;
 
+LANG languages[LANGUAGE_SIZE] = {
+	{ "Default", "" },
+	{ "Afar", "aa" },
+	{ "Abkhazian", "ab" },
+	{ "Afrikaans", "af" },
+	{ "Albanian", "sq" },
+	{ "Amharic", "am" },
+	{ "Arabic", "ar" },
+	{ "Armenian", "ia" },
+	{ "Assamese", "as" },
+	{ "Aymara", "ay" },
+	{ "Azerbaijani", "az" },
+	{ "Bashkir", "ba" },
+	{ "Basque", "eu" },
+	{ "Bhutani", "dz" },
+	{ "Bihari", "bh" },
+	{ "Bislama", "bi" },
+	{ "Bengali", "bn" },
+	{ "Breton", "br" },
+	{ "Bulgarian", "bg" },
+	{ "Burmese", "my" },
+	{ "Byelorussian", "be" },
+	{ "Cambodian", "km" },
+	{ "Català", "ca" },
+	{ "Chinese", "zh" },
+	{ "Corsican", "co" },
+	{ "Ceske", "cs" },
+	{ "Dansk", "da" },
+	{ "Deutsch", "de" },
+	{ "English", "en" },
+	{ "Esperanto", "eo" },
+	{ "Español", "es" },
+	{ "Estonian", "et" },
+	{ "Finnish", "fi" },
+	{ "Fiji", "fj" },
+	{ "Faroese", "fo" },
+	{ "Français", "fr" },
+	{ "Frisian", "fy" },
+	{ "Galician", "gl" },
+	{ "Georgian", "ka" },
+	{ "Greek", "el" },
+	{ "Greenlandic", "kl" },
+	{ "Guarani", "gn" },
+	{ "Gujarati", "gu" },
+	{ "Hausa", "ha" },
+	{ "Hebrew", "he" },
+	{ "Hebrew", "iw" },
+	{ "Hindi", "hi" },
+	{ "Hrvatski", "hr" },
+	{ "Indonesian", "id" },
+	{ "Indonesian", "in" },
+	{ "Interlingue", "ie" },
+	{ "Inupiak", "ik" },
+	{ "Irish", "ga" },
+	{ "Islenska", "is" },
+	{ "Italiano", "it" },
+	{ "Inuktitut", "iu" },
+	{ "Japanese", "ja" },
+	{ "Javanese", "jw" },
+	{ "Kannada", "kn" },
+	{ "Kashmiri", "ks" },
+	{ "Kazakh", "kk" },
+	{ "Korean", "ko" },
+	{ "Kurdish", "ku" },
+	{ "Kinyarwanda", "rw" },
+	{ "Kirghiz", "ky" },
+	{ "Kirundi", "rn" },
+	{ "Latin", "la" },
+	{ "Lingala", "ln" },
+	{ "Laothian", "lo" },
+	{ "Lithuanian", "lt" },
+	{ "Latvian", "lv" },
+	{ "Macedonian", "mk" },
+	{ "Magyar", "hu" },
+	{ "Malagasy", "mg" },
+	{ "Malay", "ms" },
+	{ "Malayalam", "ml" },
+	{ "Maltese", "mt" },
+	{ "Maori", "mi" },
+	{ "Marathi", "mr" },
+	{ "Moldavian", "mo" },
+	{ "Mongolian", "mn" },
+	{ "Nauru", "na" },
+	{ "Nederlands", "nl" },
+	{ "Nepali", "ne" },
+	{ "Norsk", "no" },
+	{ "Occitan", "oc" },
+	{ "Oriya", "or" },
+	{ "Oromo", "om" },
+	{ "Pashto,", "ps" },
+	{ "Persian", "fa" },
+	{ "Polish", "pl" },
+	{ "Portugues", "pt" },
+	{ "Punjabi", "pa" },
+	{ "Quechua", "qu" },
+	{ "Rhaeto-Romance", "rm" },
+	{ "Romanian", "ro" },
+	{ "Russian", "ru" },
+	{ "Sangho", "sg" },
+	{ "Samoan", "sm" },
+	{ "Sanskrit", "sa" },
+	{ "Scots", "gd" },
+	{ "Serbian", "sr" },
+	{ "Serbo-Croatian", "sh" },
+	{ "Sesotho", "st" },
+	{ "Setswana", "tn" },
+	{ "Shona", "sn" },
+	{ "Sinhalese", "si" },
+	{ "Sindhi", "sd" },
+	{ "Siswati", "ss" },
+	{ "Slovak", "sk" },
+	{ "Slovenian", "sl" },
+	{ "Somali", "so" },
+	{ "Sundanese", "su" },
+	{ "Svenska", "sv" },
+	{ "Swahili", "sw" },
+	{ "Tagalog", "tl" },
+	{ "Tajik", "tg" },
+	{ "Tamil", "ta" },
+	{ "Tatar", "tt" },
+	{ "Telugu", "te" },
+	{ "Thai", "th" },
+	{ "Tibetan", "bo" },
+	{ "Tigrinya", "ti" },
+	{ "Tonga", "to" },
+	{ "Tsonga", "ts" },
+	{ "Turkish", "tr" },
+	{ "Turkmen", "tk" },
+	{ "Twi", "tw" },
+	{ "Uighur", "ug" },
+	{ "Ukrainian", "uk" },
+	{ "Urdu", "ur" },
+	{ "Uzbek", "uz" },
+	{ "Vietnamese", "ui" },
+	{ "Volapuk", "vo" },
+	{ "Welsh", "cy" },
+	{ "Wolof", "wo" },
+	{ "Xhosa", "xh" },
+	{ "Yiddish", "ji" },
+	{ "Yiddish", "yi" },
+	{ "Yoruba", "yo" },
+	{ "Zhuang", "za" },
+	{ "Zulu", "zu" }
+};
+
+CP codepages[CODEPAGE_SIZE] = {
+	{ "", "" },
+	{ "ISO-8859-1", "Western European" },
+	{ "ISO-8859-2", "Eastern European" },
+	{ "ISO-8859-3", "South European" },
+	{ "ISO-8859-4", "North European" },
+	{ "ISO-8859-5", "Cyrillic alphabets" },
+	{ "ISO-8859-6", "Arabic" },
+	{ "ISO-8859-7", "Greek" },
+	{ "ISO-8859-8", "Hebrew" },
+	{ "ISO-8859-9", "Turkish" },
+	{ "ISO-8859-10", "Nordic" },
+	{ "ISO-8859-11", "Thai" },
+	{ "ISO-8859-13", "Baltic and Polish" },
+	{ "ISO-8859-14", "Celtic" },
+	{ "Windows-1250", "Central/Eastern European" },
+	{ "Windows-1251", "Cyrillic alphabets" },
+	{ "Windows-1252", "Western European" },
+	{ "Windows-1253", "Greek" },
+	{ "Windows-1254", "Turkish" },
+	{ "Windows-1255", "Hebrew" },
+	{ "Windows-1256", "Arabic" },
+	{ "Windows-1257", "Baltic" },
+	{ "Windows-1258", "Vietnamese" }
+};
+
 /****************************************************************************
  * Prepare settings data
  *
@@ -150,6 +321,8 @@ prepareSettingsData ()
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
 	createXMLSetting("subtitleVisibility", "Subtitle visibility", toStr(WiiSettings.subtitleVisibility));
 	createXMLSetting("subtitleDelay", "Subtitle delay", FtoStr(WiiSettings.subtitleDelay));
+	createXMLSetting("subtitleLanguage", "Subtitle language", WiiSettings.subtitleLanguage);
+	createXMLSetting("subtitleCodepage", "Subtitle codepage", WiiSettings.subtitleCodepage);
 	// Videos
 	createXMLSection("Videos", "Videos Settings");
 	createXMLSetting("videoZoomHor", "Horizontal video zoom", FtoStr(WiiSettings.videoZoomHor));
@@ -360,12 +533,9 @@ void DefaultSettings ()
 	WiiSettings.hideExtensions = 1;
 	WiiSettings.language = CONF_GetLanguage();
 
-	if(WiiSettings.language != LANG_ENGLISH && 
-		WiiSettings.language != LANG_FRENCH && 
-		WiiSettings.language != LANG_GERMAN && 
-		WiiSettings.language != LANG_ITALIAN && 
-		WiiSettings.language != LANG_DUTCH && 
-		WiiSettings.language != LANG_SPANISH)
+	if(WiiSettings.language == LANG_JAPANESE || 
+		WiiSettings.language == LANG_TRAD_CHINESE ||
+		WiiSettings.language == LANG_KOREAN)
 		WiiSettings.language = LANG_ENGLISH;
 
 	WiiSettings.volume = 50;
@@ -373,6 +543,8 @@ void DefaultSettings ()
 	WiiSettings.rumble = 1;
 	WiiSettings.subtitleVisibility = 1;
 	WiiSettings.subtitleDelay = 0;
+	WiiSettings.subtitleLanguage[0] = 0;
+	WiiSettings.subtitleCodepage[0] = 0;
 	// Videos
 	WiiSettings.videoZoomHor = 1;
 	WiiSettings.videoZoomVert = 1;
@@ -424,14 +596,12 @@ static void FixInvalidSettings()
 	// Global
 	if(WiiSettings.hideExtensions != 1 && WiiSettings.hideExtensions != 0)
 		WiiSettings.hideExtensions = 1;
-	if(WiiSettings.language != LANG_ENGLISH && 
-		WiiSettings.language != LANG_FRENCH && 
-		WiiSettings.language != LANG_GERMAN && 
-		WiiSettings.language != LANG_ITALIAN && 
-		WiiSettings.language != LANG_DUTCH && 
-		WiiSettings.language != LANG_SPANISH && 
-		WiiSettings.language != LANG_ROMANIAN && 
-		WiiSettings.language != LANG_ESTONIAN)
+	if(WiiSettings.language < 0 ||
+		WiiSettings.language > LANG_LENGTH ||
+		WiiSettings.language == LANG_JAPANESE || 
+		WiiSettings.language == LANG_TRAD_CHINESE ||
+		WiiSettings.language == LANG_KOREAN
+		)
 		WiiSettings.language = LANG_ENGLISH;
 	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
 		WiiSettings.volume = 50;
@@ -443,6 +613,37 @@ static void FixInvalidSettings()
 		WiiSettings.subtitleVisibility = 1;
 	if(WiiSettings.subtitleDelay < -2 || WiiSettings.subtitleDelay > 2)
 		WiiSettings.subtitleDelay = 0;
+
+	if(WiiSettings.subtitleLanguage[0] != 0)
+	{
+		bool found = false;
+		
+		for(int i=0; i < LANGUAGE_SIZE; i++)
+		{
+			if(strcmp(WiiSettings.subtitleLanguage, languages[i].abbrev) == 0)
+			{
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+			WiiSettings.subtitleLanguage[0] = 0;
+	}
+
+	if(WiiSettings.subtitleCodepage[0] != 0)
+	{
+		bool found = false;
+		for(int i=0; i < CODEPAGE_SIZE; i++)
+		{
+			if(strcmp(WiiSettings.subtitleCodepage, codepages[i].cpname) == 0)
+			{
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+			WiiSettings.subtitleCodepage[0] = 0;
+	}
 
 	// Videos
 	if(WiiSettings.videoZoomHor < 0.5 || WiiSettings.videoZoomHor > 1.5)
@@ -459,7 +660,7 @@ static void FixInvalidSettings()
 		WiiSettings.aspectRatio = -1;
 	if(WiiSettings.cacheFill < 10 || WiiSettings.cacheFill > 100)
 		WiiSettings.cacheFill = 30;
-	if(WiiSettings.audioDelay < 0 || WiiSettings.audioDelay > 2)
+	if(WiiSettings.audioDelay < -2 || WiiSettings.audioDelay > 2)
 		WiiSettings.audioDelay = 0;
 	if(WiiSettings.autoResume != 1 && WiiSettings.autoResume != 0)
 		WiiSettings.autoResume = 1;
@@ -678,6 +879,8 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.rumble, "rumble");
 				loadXMLSetting(&WiiSettings.subtitleVisibility, "subtitleVisibility");
 				loadXMLSetting(&WiiSettings.subtitleDelay, "subtitleDelay");
+				loadXMLSetting(WiiSettings.subtitleLanguage, "subtitleLanguage", sizeof(WiiSettings.subtitleLanguage));
+				loadXMLSetting(WiiSettings.subtitleCodepage, "subtitleCodepage", sizeof(WiiSettings.subtitleCodepage));
 				// Videos
 				loadXMLSetting(&WiiSettings.videoZoomHor, "videoZoomHor");
 				loadXMLSetting(&WiiSettings.videoZoomVert, "videoZoomVert");
@@ -757,12 +960,10 @@ bool LoadSettings()
 	settingsLoaded = true; // attempted to load settings
 
 	if(settingsFound)
-		FixInvalidSettings();
-
-	ResetText();
-
-	if(settingsFound)
 	{
+		FixInvalidSettings();
+		ChangeLanguage();
+
 		sprintf(filepath,"%s/restore_points",appPath);
 		char *buffer = (char *)malloc(50*1024);
 		int size = LoadFile(buffer, filepath, SILENT);

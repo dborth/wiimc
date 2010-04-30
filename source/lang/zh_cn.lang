@@ -1,0 +1,488 @@
+msgid "Videos"
+msgstr "ÊÓÆµ"
+
+msgid "Music"
+msgstr "ÒôÀÖ"
+
+msgid "Pictures"
+msgstr "Í¼Æ¬"
+
+msgid "Online Media"
+msgstr "ÔÚÏßÃ½Ìå"
+
+msgid "Please Wait"
+msgstr "ÇëµÈ´ý"
+
+msgid "Error"
+msgstr "´íÎó"
+
+msgid "OK"
+msgstr "È·¶¨"
+
+msgid "Retry"
+msgstr "ÖØÊÔ"
+
+msgid "Cancel"
+msgstr "È¡Ïû"
+
+msgid "Information"
+msgstr "ÐÅÏ¢"
+
+msgid "Credits"
+msgstr "¸ÐÐ»"
+
+msgid "Play"
+msgstr "²¥·Å"
+
+msgid "Pause"
+msgstr "ÔÝÍ£"
+
+msgid "Single Play"
+msgstr "µ¥¶À²¥·Å"
+
+msgid "Continuous Play"
+msgstr "Á¬Ðø²¥·Å"
+
+msgid "Shuffle"
+msgstr "»º³å"
+
+msgid "Loop"
+msgstr "Ñ­»·"
+
+msgid "Continuous"
+msgstr "¼ÌÐø"
+
+msgid "Playlist"
+msgstr "²¥·ÅÁÐ±í"
+
+msgid "Restart"
+msgstr "ÖØÐÂÆô¶¯"
+
+msgid "Loading..."
+msgstr "¶ÁÈ¡ÖÐ..."
+
+msgid "Global"
+msgstr "È«¾ÖÉèÖÃ"
+
+msgid "Network"
+msgstr "ÍøÂç"
+
+msgid "Subtitles"
+msgstr "×ÖÄ»"
+
+msgid "Subtitle Delay"
+msgstr "×ÖÄ»ÑÓ³Ù"
+
+msgid "Settings"
+msgstr "ÉèÖÃ"
+
+msgid "On"
+msgstr "¿ªÆô"
+
+msgid "Off"
+msgstr "¹Ø±Õ"
+
+msgid "Always"
+msgstr "Ê¼ÖÕ"
+
+msgid "Disabled"
+msgstr "½ûÓÃ"
+
+msgid "Backward"
+msgstr "ºóÍË"
+
+msgid "Pause"
+msgstr "ÔÝÍ£"
+
+msgid "Forward"
+msgstr "ÏòÇ°"
+
+msgid "Single"
+msgstr "µ¥¶À²¥·Å"
+
+msgid "Now Playing"
+msgstr "ÕýÔÚ²¥·ÅÖÐ"
+
+msgid "Previous"
+msgstr "ÏòÇ°"
+
+msgid "Next"
+msgstr "Ïòºó"
+
+msgid "Close"
+msgstr "¹Ø±Õ"
+
+msgid "DVD"
+msgstr "DVD¹âÅÌ"
+
+msgid "Go Back"
+msgstr "·µ»Ø"
+
+msgid "Update Available"
+msgstr "¿ÉÓÃ¸üÐÂ"
+
+msgid "An update is available!"
+msgstr "´æÔÚ¿ÉÓÃ¸üÐÂ£¡"
+
+msgid "Update now"
+msgstr "Á¢¿Ì¸üÐÂ"
+
+msgid "Update later"
+msgstr "ÉÔºó¸üÐÂ"
+
+msgid "Online media file not found."
+msgstr "Ã»ÓÐÕÒµ½ÔÚÏßÃ½ÌåÎÄ¼þ."
+
+msgid "Unrecognized DVD format!"
+msgstr "ÎÞ·¨Ê¶±ðµÄDVD¸ñÊ½!"
+
+msgid "Port cannot be blank!"
+msgstr "¶Ë¿Ú²»ÄÜÎª¿Õ!"
+
+msgid "Port is not a number!"
+msgstr "¶Ë¿Ú±ØÐëÊÇÒ»¸öÊý×Ö"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "¶Ë¿ÚµÄÊýÖµ·¶Î§±ØÐëÔÚ (4-49151)Ö®¼ä"
+
+msgid "Settings - Global"
+msgstr "ÉèÖÃ - È«¾Ö"
+
+msgid "Settings - Videos"
+msgstr "ÉèÖÃ - ÊÓÆµ"
+
+msgid "Settings - Music"
+msgstr "ÉèÖÃ - ÒôÀÖ"
+
+msgid "Settings - Pictures"
+msgstr "ÉèÖÃ - Í¼Æ¬"
+
+msgid "Settings - Online Media"
+msgstr "ÉèÖÃ - ÔÚÏßÍøÂç"
+
+msgid "Settings - Network"
+msgstr "ÉèÖÃ - ÍøÂçk"
+
+msgid "Settings - DVD"
+msgstr "ÉèÖÃ - DVD"
+
+msgid "File Extensions"
+msgstr "ÎÄ¼þÀ©Õ¹"
+
+msgid "Language"
+msgstr "ÓïÑÔ"
+
+msgid "Volume"
+msgstr "ÒôÁ¿"
+
+msgid "Exit Action"
+msgstr "ÍË³ö²Ù×÷"
+
+msgid "Wiimote Rumble"
+msgstr "WiimoteÕð¶¯"
+
+msgid "Hide"
+msgstr "Òþ²Ø"
+
+msgid "Show"
+msgstr "ÏÔÊ¾"
+
+msgid "Auto"
+msgstr "×Ô¶¯"
+
+msgid "Return to Wii Menu"
+msgstr "·µ»ØWiiÖ÷½çÃæ"
+
+msgid "Power Off Wii"
+msgstr "¹Ø±ÕWii"
+
+msgid "Return to Loader"
+msgstr "·µ»ØHBC"
+
+msgid "Screen Zoom"
+msgstr "ÆÁÄ»Ëõ·Å"
+
+msgid "Screen Position"
+msgstr "ÆÁÄ»Î»ÖÃ"
+
+msgid "Frame Dropping"
+msgstr "µôÖ¡"
+
+msgid "Aspect Ratio"
+msgstr "ÆÁÄ»¸ß¿í±È"
+
+msgid "Cache Size"
+msgstr "»º´æ´óÐ¡"
+
+msgid "Audio Delay"
+msgstr "ÒôÆµÑÓ³Ù"
+
+msgid "Auto-Resume"
+msgstr "×Ô¶¯»Ö¸´"
+
+msgid "Videos Files Folder"
+msgstr "ÊÓÆµÎÄ¼þ¼Ð"
+
+msgid "Play Order"
+msgstr "²¥·ÅË³Ðò"
+
+msgid "Music Files Folder"
+msgstr "ÒôÀÖÎÄ¼þ¼Ð"
+
+msgid "Pictures Files Folder"
+msgstr "Í¼Æ¬ÎÄ¼þ¼Ð"
+
+msgid "Display Name"
+msgstr "ÏÔÊ¾Ãû×Ö"
+
+msgid "Share IP"
+msgstr "¹²Ïíip"
+
+msgid "Share Name"
+msgstr "¹²ÏíÎÄ¼þÃû"
+
+msgid "Username"
+msgstr "ÓÃ»§Ãû"
+
+msgid "Password"
+msgstr "ÃÜÂë"
+
+msgid "New Share"
+msgstr "ÐÂ½¨ÍøÂç¹²Ïí"
+
+msgid "Delete"
+msgstr "É¾³ý"
+
+msgid "Delete Share"
+msgstr "É¾³ýÍøÂç¹²Ïí"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "ÊÇ·ñÉ¾³ý´ËÍøÂç¹²ÏíÉèÖÃ?"
+
+msgid "Folder"
+msgstr "ÎÄ¼þ¼Ð"
+
+msgid "Mode"
+msgstr "Ä£Ê½"
+
+msgid "New Site"
+msgstr "ÐÂÕ¾µã"
+
+msgid "Passive"
+msgstr "±»¶¯"
+
+msgid "Active"
+msgstr "»î¶¯"
+
+msgid "Delete Site"
+msgstr "É¾³ýÕ¾µã"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "ÊÇ·ñÉ¾³ý´ËÕ¾µã£¿"
+
+msgid "Port"
+msgstr "¶Ë¿Ú"
+
+msgid "Rewind / Fast Forward"
+msgstr "µ¹´ø / ¿ì½ø"
+
+msgid "Error loading file!"
+msgstr "¶ÁÈ¡ÎÄ¼þ´íÎó!"
+
+msgid "Resume"
+msgstr "¼ÌÐø"
+
+msgid "Stop Slideshow"
+msgstr "Í£Ö¹²¥·Å»ÃµÆÆ¬"
+
+msgid "Start Slideshow"
+msgstr "¿ªÊ¼»ÃµÆÆ¬²¥·Å"
+
+msgid  "Slideshow Delay"
+msgstr "»ÃµÆÆ¬ÑÓ³Ù"
+
+msgid "Online Media Folder"
+msgstr "ÔÚÏßÃ½ÌåÎÄ¼þ¼Ð"
+
+msgid "Add SMB Share"
+msgstr "Ìí¼ÓÍøÂç¹²Ïí"
+
+msgid "Add FTP Site"
+msgstr "Ìí¼ÓFTPÕ¾µã"
+
+msgid "DVD Menu"
+msgstr "DVD²Ëµ¥"
+
+msgid "Skip to Main Title"
+msgstr "ÂÔ¹ýÖ÷±êÌâ"
+
+msgid "Unable to Initialize MPlayer"
+msgstr "ÎÞ·¨³õÊ¼»¯MPlayer"
+
+msgid "Unable to find a valid working path"
+msgstr "Ã»ÓÐÕÒµ½¿ÉÒÔÔËÐÐ³ÌÐòµÄÂ·¾¶"
+
+msgid "Unable to change path to"
+msgstr "²»ÄÜ¸ü¸ÄÂ·¾¶µ½"
+
+msgid "Out of memory: too many files!"
+msgstr "ÄÚ´æÒç³ö: ÎÄ¼þ¹ý¶à!"
+
+msgid "Directory name is too long!"
+msgstr "ÎÄ¼þ¼ÐÃû×Ö¹ý³¤£¡"
+
+msgid "SD Card"
+msgstr "SD¿¨"
+
+msgid "USB Mass Storage"
+msgstr "USB´æ´¢Éè±¸"
+
+msgid "Data DVD"
+msgstr "Êý¾ÝDVD¹âÅÌ"
+
+msgid "USB drive not found!"
+msgstr "Ã»ÓÐ·¢ÏÖusbÉè±¸!"
+
+msgid "SD card not found!"
+msgstr "Ã»ÓÐ·¢ÏÖSD¿¨!"
+
+msgid "Please install IOS 202 for DVD support."
+msgstr "Ö»ÓÐ°²×°herms ios 202²Å¿ÉÒÔ²¥·Ådvd¹âÅÌ¡£"
+
+msgid "Loading DVD..."
+msgstr "¶ÁÈ¡DVD..."
+
+msgid "No disc inserted!"
+msgstr "Ã»ÓÐ·ÅÈëDVD¹âÅÌ!"
+
+msgid "Invalid DVD."
+msgstr "ÎÞÐ§µÄDVD¹âÅÌ¡£"
+
+msgid "Up One Level"
+msgstr "·µ»ØÉÏ¼¶²Ëµ¥"
+
+msgid "Error opening"
+msgstr "ÔËÐÐ´íÎó"
+
+msgid "Warning"
+msgstr "¾¯¸æ"
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "ÔÚ´ËÎÄ¼þ¼ÐÖÐÓÐÒ»¸ö»ò¶à¸öÍ¼Æ¬ÎÄ¼þ³¬¹ý6mËùÒÔÎÞ·¨²é¿´£¡"
+
+msgid "Error loading playlist!"
+msgstr "¶ÁÈ¡²¥·ÅÁÐ±í´íÎó!"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr "²¥·ÅÁÐ±íÃ»ÓÐ°üº¬¿ÉÖ§³ÖµÄÎÄ¼þ!"
+
+msgid "No Results Found"
+msgstr "Ã»ÓÐ·¢ÏÖÈÎºÎÎÄ¼þ¡£"
+
+msgid "Your search did not match any media files."
+msgstr "Ã»ÓÐÕÒµ½ÈÎºÎ¿ÉÒÔ²¥·ÅµÄÃ½ÌåÎÄ¼þ¡£"
+
+msgid "Error opening file!"
+msgstr "ÎÄ¼þ²¥·Å´íÎó!"
+
+msgid "Saving..."
+msgstr "±£´æÖÐ..."
+
+msgid "Error creating file!"
+msgstr "ÎÄ¼þ½¨Á¢´íÎó!"
+
+msgid "Error saving file!"
+msgstr "ÎÄ¼þ±£´æ´íÎó!"
+
+msgid "Playlist is Empty"
+msgstr "²¥·ÅÁÐ±í¿Õ"
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "Ñ¡Ôñ²¥·ÅÎÄ¼þ²¢ÇÒ°´+¼üÌí¼Óµ½²¥·ÅÁÐ±íÖÐ¡£"
+
+msgid "Exit Playlist"
+msgstr "ÍË³ö²¥·ÅÁÐ±í"
+
+msgid "Update successful!"
+msgstr "¸üÐÂ³É¹¦!"
+
+msgid "Update failed!"
+msgstr "¸üÐÂÊ§°Ü!"
+
+msgid "Initializing network..."
+msgstr "³õÊ¼»¯ÍøÂç»ãÖÐ..."
+
+msgid "Check settings file."
+msgstr "¼ì²éÉèÖÃÎÄ¼þ"
+
+msgid "Share name is blank."
+msgstr "Ã»ÓÐÉèÖÃ¹²ÏíÃû"
+
+msgid "Share IP is blank."
+msgstr "Ã»ÓÐÊäÈë¹²ÏíipµØÖ·"
+
+msgid "Invalid network share settings"
+msgstr "ÎÞÐ§µÄÍøÂç¹²ÏíÉèÖÃ"
+
+msgid "Connecting to network share..."
+msgstr "ÕýÔÚÁ¬½Óµ½ÍøÂç¹²Ïí..."
+
+msgid "Failed to connect to network share."
+msgstr "ÍøÂç¹²ÏíÁ¬½ÓÊ§°Ü"
+
+msgid "IP is blank."
+msgstr "IPµØÖ·Îª¿Õ"
+
+msgid "Username is blank."
+msgstr "ÓÃ»§ÃûÊÇ¿Õ"
+
+msgid "Password is blank."
+msgstr "ÃÜÂëÎª¿Õ"
+
+msgid "Invalid FTP site settings"
+msgstr "FTPÕ¾µãÉèÖÃÎÞÐ§"
+
+msgid "Connecting to FTP site..."
+msgstr "ÕýÔÚÁ¬½Óµ½FTPÕ¾µã..."
+
+msgid "Failed to connect to FTP site."
+msgstr "Á¬½Óµ½FTPÕ¾µãÊ§°Ü"
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "ÎÞ·¨µ½Ò»¸ö¿ÉÓÃµÄSD¿¨»òÕßUSbÉè±¸-ÐèÒªÒ»¸öÉè±¸²ÅÄÜ½øÐÐÕý³£²Ù×÷"
+
+msgid "Could not create folder"
+msgstr "ÎÞ·¨½¨Á¢ÎÄ¼þ¼Ð"
+
+msgid "Saving settings..."
+msgstr "ÉèÖÃ±£´æÖÐ..."
+
+msgid "Could not save settings to"
+msgstr "ÎÞ·¨±£´æÉèÖÃ"
+
+msgid "Thanks to"
+msgstr "¸ÐÐ»"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "´ËÈí¼þÊÇ¿ªÔ´Èí¼þ²¢Äã¿ÉÒÔ¸´ÖÆ£¬·¢ÐÐºÍÔÚGNU General Public License (GPL) Version 2¹æÔòÏÂÐÞ¸Ä¡£"
+
+msgid "Menu artwork"
+msgstr "²Ëµ¥Í¼Æ¬"
+
+msgid "Coding"
+msgstr "´úÂë±àÐ´"
+
+msgid "Coding & menu design"
+msgstr "´úÂëºÍ²Ëµ¥Éè¼Æ"
+
+msgid "Version"
+msgstr "°æ±¾"
+
+msgid "Buffering..."
+msgstr "»º³åÖÐ..."
+
+msgid "Buffering"
+msgstr "»º³åÖÐ"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "ÎÞ·¨³õÊ¼»¯ÍøÂç (´íÎó #:"

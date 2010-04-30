@@ -4951,6 +4951,28 @@ void wiiSetProperty(int command, float value)
 	mp_input_queue_cmd(cmd);
 }
 
+void wiiSetLanguage(char *lang)
+{
+	if(dvdsub_lang)
+		free(dvdsub_lang);
+	
+	if(lang[0] == 0)
+		dvdsub_lang = NULL;
+	else
+		dvdsub_lang = strdup(lang);
+}
+
+void wiiSetCodepage(char *cp)
+{
+	if(sub_cp)
+		free(sub_cp);
+	
+	if(cp[0] == 0)
+		sub_cp = NULL;
+	else
+		sub_cp = strdup(sub_cp);
+}
+
 void wiiLoadRestorePoints(char *buffer, int size)
 {
 	int c, i = 0, lineptr = 0;

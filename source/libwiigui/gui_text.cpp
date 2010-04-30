@@ -272,6 +272,7 @@ void GuiText::ResetText()
 	}
 
 	textDynNum = 0;
+	currentSize = 0;
 }
 
 /**

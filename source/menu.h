@@ -26,7 +26,7 @@ void ShowAction (const char *msg);
 void CancelAction();
 int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
 void SuspendPictureThread();
-void ResetText();
+void ChangeLanguage();
 bool VolumeLevelBarVisible();
 void ShowVolumeLevelBar();
 void HideVolumeLevelBar();
@@ -59,7 +59,8 @@ enum
 	MENU_SETTINGS_ONLINEMEDIA,
 	MENU_SETTINGS_NETWORK,
 	MENU_SETTINGS_NETWORK_SMB,
-	MENU_SETTINGS_NETWORK_FTP
+	MENU_SETTINGS_NETWORK_FTP,
+	MENU_SETTINGS_SUBTITLES
 };
 
 #endif

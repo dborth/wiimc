@@ -13987,7 +13987,7 @@ MISC_PACKAGES="$GLIB_PACKAGE"
 
 
 # Generate output
-ac_config_files="$ac_config_files fribidi.pc lib/fribidi-config.h Makefile charset/Makefile gen.tab/Makefile lib/Makefile bin/Makefile doc/Makefile test/Makefile"
+ac_config_files="$ac_config_files fribidi.pc lib/fribidi-config.h Makefile charset/Makefile gen.tab/Makefile lib/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -14901,9 +14901,6 @@ do
     "charset/Makefile") CONFIG_FILES="$CONFIG_FILES charset/Makefile" ;;
     "gen.tab/Makefile") CONFIG_FILES="$CONFIG_FILES gen.tab/Makefile" ;;
     "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
-    "bin/Makefile") CONFIG_FILES="$CONFIG_FILES bin/Makefile" ;;
-    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
-    "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
 
   *) { { $as_echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 $as_echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

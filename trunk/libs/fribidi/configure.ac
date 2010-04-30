@@ -204,8 +204,5 @@ AC_CONFIG_FILES([fribidi.pc
 		 Makefile
 		 charset/Makefile
 		 gen.tab/Makefile
-		 lib/Makefile
-		 bin/Makefile
-		 doc/Makefile
-		 test/Makefile])
+		 lib/Makefile])
 AC_OUTPUT

@@ -66,10 +66,7 @@ void GuiImageData::LoadPNG(const u8 *i)
 
 void GuiImageData::LoadJPEG(const u8 *i, int s)
 {
-	if(format == GX_TF_RGBA8)
-		data = DecodeJPEG(i, s, &width, &height, 0);
-	else
-		data = DecodeJPEG(i, s, &width, &height, 1);
+	data = DecodeJPEG(i, s, &width, &height);
 }
 
 void GuiImageData::LoadBMP(const u8 *i, int s)

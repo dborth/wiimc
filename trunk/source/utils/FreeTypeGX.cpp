@@ -38,6 +38,13 @@ void InitFreeType(uint8_t* fontBuffer, FT_Long bufferSize)
 		fontSystem[i] = NULL;
 }
 
+void DeinitFreeType()
+{
+	ClearFontData();
+	FT_Done_FreeType(ftLibrary);
+	ftLibrary = NULL;
+}
+
 void ChangeFontSize(FT_UInt pixelSize)
 {
 	FT_Set_Pixel_Sizes(ftFace, 0, pixelSize);

@@ -1,0 +1,443 @@
+msgid "Videos" 
+msgstr "¼v¤ù"
+
+msgid "Music" 
+msgstr "­µ¼Ö" 
+
+msgid "Pictures" 
+msgstr "¹Ï¤ù" 
+
+msgid "Online Media" 
+msgstr "½u¤W´CÅé" 
+
+msgid "Please Wait" 
+msgstr "½Ðµ¥«Ý" 
+
+msgid "Error" 
+msgstr "¿ù»~" 
+
+msgid "OK" 
+msgstr "½T©w" 
+
+msgid "Retry" 
+msgstr "­«¸Õ" 
+
+msgid "Cancel" 
+msgstr "¨ú®ø" 
+
+msgid "Information" 
+msgstr "°T®§"
+
+msgid "Credits" 
+msgstr "·PÁÂ" 
+
+msgid "Play" 
+msgstr "¼½©ñ" 
+
+msgid "Pause" 
+msgstr "¼È°±" 
+
+msgid "Single Play" 
+msgstr "³æ¿W¼½©ñ" 
+
+msgid "Continuous Play" 
+msgstr "³sÄò¼½©ñ" 
+
+msgid "Shuffle" 
+msgstr "½w½Ä" 
+
+msgid "Loop" 
+msgstr "´`Àô" 
+
+msgid "Playlist" 
+msgstr "¼½©ñ²M³æ" 
+
+msgid "Add to Playlist" 
+msgstr "¥[¤J¼½©ñ²M³æ" 
+
+msgid "Loading..." 
+msgstr "Åª¨ú¤¤..." 
+
+msgid "Global" 
+msgstr "¤@¯ë³]¸m" 
+
+msgid "Network" 
+msgstr "ºô¸ô" 
+
+msgid "Subtitles" 
+msgstr "¦r¹õ" 
+
+msgid "Settings" 
+msgstr "³]¸m" 
+
+msgid "On" 
+msgstr "¶}±Ò" 
+
+msgid "Off" 
+msgstr "Ãö³¬" 
+
+msgid "Always" 
+msgstr "¥Ã»·" 
+
+msgid "Disabled" 
+msgstr "¸T¥Î" 
+
+msgid "Skip Backward" 
+msgstr "«á°h" 
+
+msgid "Rewind" 
+msgstr "­«·s¼½©ñ" 
+
+msgid "Pause" 
+msgstr "¼È°±" 
+
+msgid "Fast Forward" 
+msgstr "§Ö³t¦V«e" 
+
+msgid "Skip Forward" 
+msgstr "¦V«e¼½©ñ" 
+
+msgid "Restart Song" 
+msgstr "­«·s¶}©l­µ¼Ö" 
+
+msgid "Next Song" 
+msgstr "¤U¤@­ººq" 
+
+msgid "Single Play" 
+msgstr "³æ¿W¼½©ñ" 
+
+msgid "Now Playing:" 
+msgstr "¥Ø«e¼½©ñ¤¤:" 
+
+msgid "Previous" 
+msgstr "¦V«e" 
+
+msgid "Next" 
+msgstr "¦V«á" 
+
+msgid "Slideshow" 
+msgstr "¤Û¿O¼½©ñ" 
+
+msgid "Close" 
+msgstr "Ãö³¬" 
+
+msgid "Exit" 
+msgstr "°h¥X" 
+
+msgid "DVD" 
+msgstr "DVD¥úºÐ" 
+
+msgid "Go Back" 
+msgstr "ªð¦^" 
+
+msgid "Up One Level" 
+msgstr "ªð¦^¤W¼h¿ï³æ" 
+
+msgid "Exit Playlist" 
+msgstr "°h¥X¼½©ñ²M³æ" 
+
+msgid "Initializing network..." 
+msgstr "ºô¸ôªì©l¤Æ..." 
+
+msgid "Connecting to FTP site..." 
+msgstr "¥¿¦b³s±µ¨ìFTPºô¯¸..." 
+
+msgid "Connecting to network share..." 
+msgstr "¥¿¦b³s±µºô¸ô¦@¨É..." 
+
+msgid "seconds" 
+msgstr "¬í" 
+
+msgid "Update Available" 
+msgstr "¨t²Î§ó·s" 
+
+msgid "An update is available!" 
+msgstr "¨t²Î¥Ø«e¥i§ó·s¡I" 
+
+msgid "Update now" 
+msgstr "¥ß¨è§ó·s¨t²Î" 
+
+msgid "Update later" 
+msgstr "µy«á§ó·s¨t²Î" 
+
+msgid "Saving..." 
+msgstr "«O¦s¤¤..." 
+
+msgid "Update successful!" 
+msgstr "§ó·s¨t²Î¦¨¥\¡I" 
+
+msgid "Update failed!" 
+msgstr "§ó·s¨t²Î¥¢±Ñ!" 
+
+msgid "Online media file not found." 
+msgstr "¨S¦³§ä¨ì½u¤W´CÅé." 
+
+msgid "Unable to display files on selected load device." 
+msgstr "¦b¿ï¾ÜÅª¨úªº³]³Æ¤¤ÀÉ®×µLªkÅã¥Ü¡C" 
+
+msgid "Error loading playlist!" 
+msgstr "¼½©ñ²M³æÅª¨ú¿ù»~!" 
+
+msgid "Unrecognized DVD format!" 
+msgstr "µLªkÃÑ§OªºDVD®æ¦¡!" 
+
+msgid "No disc inserted!" 
+msgstr "¨S¦³´¡¤J¥úºÐ!" 
+
+msgid "Invalid DVD." 
+msgstr "µL®ÄªºDVD¥úºÐ." 
+
+msgid "Error opening" 
+msgstr "¼½©ñ¿ù»~" 
+
+msgid "Please install IOS 202 for DVD support." 
+msgstr "¦pªG­n¼½©ñDVD¥úºÐ½Ð¦w¸ËHerms IOS 202." 
+
+msgid "USB drive not found!" 
+msgstr "¨S¦³§ä¨ìUSB³]³Æ!" 
+
+msgid "SD card not found!" 
+msgstr "¨S¦³µo²{SD¥d!" 
+
+msgid "Error opening file!" 
+msgstr "ÀÉ®×¶}±Ò¿ù»~!" 
+
+msgid "Error saving file!" 
+msgstr "ÀÉ®×«O¦s¿ù»~!" 
+
+msgid "There are no files currently in the playlist." 
+msgstr "¼½©ñ²M³æ¤¤¨S¦³¥ô¦óÀÉ®×¡C" 
+
+msgid "Unable to initialize network (Error #:" 
+msgstr "µLªkªì©l¤Æºô¸ô(¿ù»~#:" 
+
+msgid "Check settings file." 
+msgstr "ÀË¬d³]¸mÀÉ®×" 
+
+msgid "Share name is blank." 
+msgstr "¨S¦³³]¸m¦@¨É¦WºÙ" 
+
+msgid "Share IP is blank." 
+msgstr "¨S¦³¿é¤J¦@¨Éip¦ì§}" 
+
+msgid "Invalid network share settings" 
+msgstr "µL®Äªººô¸ô¦@¨É³]¸m" 
+
+msgid "Failed to connect to network share." 
+msgstr "ºô¸ô¦@¨É³s±µ¥¢±Ñ" 
+
+msgid "Check settings file." 
+msgstr "ÀË¬d³]¸mÀÉ®×" 
+
+msgid "IP is blank." 
+msgstr "IP¦ì§}¬°ªÅ" 
+
+msgid "Username is blank." 
+msgstr "¥Î¤á¦W¬°ªÅ" 
+
+msgid "Password is blank." 
+msgstr "±K½X¬°ªÅ" 
+
+msgid "Port" 
+msgstr "°ð¸¹" 
+
+msgid "Port cannot be blank!" 
+msgstr "°ð¸¹¤£¯à¬°ªÅ!" 
+
+msgid "Port is not a number!" 
+msgstr "°ð¸¹¥²¶·¬O¤@­Ó¼Æ¦r" 
+
+msgid "Port is outside the allowed range (4-49151)!" 
+msgstr "°ð¸¹ªº¼Æ­È½d³ò¥²¶·¦b(4-49151)¤§¶¡" 
+
+msgid "Invalid FTP site settings" 
+msgstr "FTP¯¸ÂI³]¸mµL®Ä" 
+
+msgid "Failed to connect to FTP site." 
+msgstr "³s±µ¨ìFTP¯¸ÂI¥¢±Ñ" 
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation." 
+msgstr "µLªk¨ì¤@­Ó¥i¥ÎªºSD¥d©ÎªÌUSb³]³Æ-»Ý­n¤@­Ó³]³Æ¤~¯à¶i¦æ¥¿±`¾Þ§@" 
+
+msgid "Settings - Global" 
+msgstr "³]¸m- ¤@¯ë" 
+
+msgid "Settings - Videos" 
+msgstr "³]¸m- ¼v¤ù" 
+
+msgid "Settings - Music" 
+msgstr "³]¸m- ­µ¼Ö" 
+
+msgid "Settings - Pictures" 
+msgstr "³]¸m- ¹Ï¤ù" 
+
+msgid "Settings - Network" 
+msgstr "³]¸m- ºô¸ô" 
+
+msgid "Settings - Subtitles" 
+msgstr "³]¸m- ¦r¹õ" 
+
+msgid "Settings - Network - New Site" 
+msgstr "³]¸m- ºô¸ô- ·s¯¸ÂI" 
+
+msgid "File Extensions" 
+msgstr "ÀÉ®×ÂX®i" 
+
+msgid "Language" 
+msgstr "»y¨¥" 
+
+msgid "Volume" 
+msgstr "­µ¶q" 
+
+msgid "Exit Action" 
+msgstr "°h¥X¾Þ§@" 
+
+msgid "Wiimote Rumble" 
+msgstr "Wiimote¾_°Ê" 
+
+msgid "Hide" 
+msgstr "ÁôÂÃ" 
+
+msgid "Show" 
+msgstr "Åã¥Ü" 
+
+msgid "Auto" 
+msgstr "¦Û°Ê" 
+
+msgid "Return to Wii Menu" 
+msgstr "ªð¦^Wii¥D¬É­±" 
+
+msgid "Power Off Wii" 
+msgstr "Ãö³¬Wii" 
+
+msgid "Return to Loader" 
+msgstr "ªð¦^HBC" 
+
+msgid "Screen Zoom" 
+msgstr "µe­±ÁY©ñ" 
+
+msgid "Screen Position" 
+msgstr "µe­±¦ì¸m" 
+
+msgid "Frame Dropping" 
+msgstr "±¼´V" 
+
+msgid "Aspect Ratio" 
+msgstr "µe­±¤ñ¨Ò" 
+
+msgid "Cache Size" 
+msgstr "½w½Ä¤j¤p" 
+
+msgid "Cache Prefill " 
+msgstr "½w½Ä¹w¶ñ¥R" 
+
+msgid "Cache Fill" 
+msgstr "½w½Ä¶ñ¥R" 
+
+msgid "Audio Delay" 
+msgstr "­µ¼Ö©µ¿ð" 
+
+msgid "Auto-Resume" 
+msgstr "¦Û°Ê«ì´_" 
+
+msgid "Videos Files Folder" 
+msgstr "¼v¤ùÀÉ®×§¨" 
+
+msgid "Play Order" 
+msgstr "¼½©ñ¶¶§Ç" 
+
+msgid "Music Files Folder" 
+msgstr "­µ¼ÖÀÉ®×§¨" 
+
+msgid "Pictures Files Folder" 
+msgstr "¹Ï¤ùÀÉ®×§¨" 
+
+msgid "Add" 
+msgstr "¥[¤J" 
+
+msgid "Display Name" 
+msgstr "Åã¥Ü¦WºÙ" 
+
+msgid "Share IP" 
+msgstr "¦@¨Éip" 
+
+msgid "Share Name" 
+msgstr "¦@¨ÉÀÉ®×¦WºÙ" 
+
+msgid "Username" 
+msgstr "¥Î¤á¦W" 
+
+msgid "Password" 
+msgstr "±K½X" 
+
+msgid "New Share" 
+msgstr "·s«Øºô¸ô¦@¨É" 
+
+msgid "Delete" 
+msgstr "§R°£" 
+
+msgid "Delete Share" 
+msgstr "§R°£ºô¸ô¦@¨É" 
+
+msgid "Are you sure that you want to delete this share?" 
+msgstr "¬O§_§R°£¦¹ºô¸ô¦@¨É³]¸m?" 
+
+msgid "Folder" 
+msgstr "ÀÉ®×§¨" 
+
+msgid "Mode" 
+msgstr "¼Ò¦¡" 
+
+msgid "New Site" 
+msgstr "·s¯¸ÂI" 
+
+msgid "Passive" 
+msgstr "³Q°Ê" 
+
+msgid "Active" 
+msgstr "¬¡°Ê" 
+
+msgid "Delete Site" 
+msgstr "§R°£¯¸ÂI" 
+
+msgid "Are you sure that you want to delete this site?" 
+msgstr "¬O§_§R°£¦¹¯¸ÂI¡H" 
+
+msgid "Visibility" 
+msgstr "¥iµø¤Æ" 
+
+msgid "Position" 
+msgstr "¦ì¸m" 
+
+msgid "Size" 
+msgstr "¤j¤p" 
+
+msgid "Delay" 
+msgstr "©µ¿ð" 
+
+msgid "Top" 
+msgstr "³»ºÝ" 
+
+msgid "Center" 
+msgstr "¤¤¶¡" 
+
+msgid "Bottom" 
+msgstr "©³³¡" 
+
+msgid "Slideshow Delay" 
+msgstr "¤Û¿O©µ¿ð" 
+
+msgid "DVD Menu" 
+msgstr "DVD¿ï³æ" 
+
+msgid "Skip to Main Title" 
+msgstr "²¤¹L¥D¼ÐÃD" 
+
+msgid "Online Media Folder" 
+msgstr "½u¤W´CÅé¸ê®Æ§X" 
+
+msgid "Add SMB Share" 
+msgstr "¥[¤Jºô¸ô¦@¨É" 
+
+msgid "IP" 
+msgstr "IP¦ì§}"

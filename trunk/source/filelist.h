@@ -30,8 +30,10 @@ extern const u8		it_lang[];
 extern const u32	it_lang_size;
 extern const u8		nl_lang[];
 extern const u32	nl_lang_size;
-extern const u8		zh_lang[];
-extern const u32	zh_lang_size;
+extern const u8		zh_cn_lang[];
+extern const u32	zh_cn_lang_size;
+extern const u8		zh_tw_lang[];
+extern const u32	zh_tw_lang_size;
 extern const u8		ko_lang[];
 extern const u32	ko_lang_size;
 extern const u8		ro_lang[];
@@ -44,6 +46,8 @@ extern const u32	et_lang_size;
 // Graphics
 extern const u8		logo_png[];
 extern const u32	logo_png_size;
+extern const u8		foundmy_png[];
+extern const u32	foundmy_png_size;
 
 extern const u8		button_png[];
 extern const u32	button_png_size;

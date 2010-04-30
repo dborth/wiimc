@@ -26,7 +26,7 @@
 #include "musicplaylist.h"
 #include "filebrowser.h"
 #include "utils/gettext.h"
-#include "utils/dxtn.h"
+#include "utils/http.h"
 #include "filelist.h"
 
 #define THREAD_SLEEP 200
@@ -486,8 +486,7 @@ static void SuspendGui()
 		usleep(THREAD_SLEEP);
 }
 
-extern "C" {
-void ShutdownGui()
+extern "C" void ShutdownGui()
 {
 	if(menuMode == 1) // prevent MPlayer from shutting down OSD
 		return;
@@ -496,14 +495,110 @@ void ShutdownGui()
 	CancelAction();
 	SuspendGui();
 }
-}
 
-void ResetText()
+static void ResetText()
 {
 	LoadLanguage();
 
 	if(mainWindow)
 		mainWindow->ResetText();
+}
+
+static int currentFont = FONT_STANDARD;
+static u8 *ext_font_ttf = NULL;
+
+void ChangeLanguage()
+{
+	if(WiiSettings.language == LANG_JAPANESE ||
+		WiiSettings.language == LANG_SIMP_CHINESE ||
+		WiiSettings.language == LANG_TRAD_CHINESE ||
+		WiiSettings.language == LANG_KOREAN)
+	{
+		char filepath[MAXPATHLEN];
+
+		switch(WiiSettings.language)
+		{
+			case LANG_SIMP_CHINESE:
+				if(currentFont == FONT_SIMP_CHINESE) return;
+				sprintf(filepath, "%s/zh_cn.ttf", appPath);
+				break;
+		}
+
+		// try to load font
+restart:
+		FILE * file = fopen (filepath, "rb");
+
+		if(file)
+		{
+			fseeko(file,0,SEEK_END);
+			int loadSize = ftello(file);
+			fseeko(file,0,SEEK_SET);
+			if(ext_font_ttf)
+			{
+				SuspendGui();
+				free(ext_font_ttf);
+			}
+			ext_font_ttf = (u8 *)memalign(32, loadSize);
+			fread (ext_font_ttf, 1, loadSize, file);
+			fclose(file);
+
+			if(ext_font_ttf)
+			{
+				SuspendGui();
+				DeinitFreeType();
+				InitFreeType(ext_font_ttf, loadSize);
+				currentFont = FONT_SIMP_CHINESE;
+				ResetText();
+				ResumeGui();
+				return;
+			}
+			else
+			{
+				ErrorPrompt("Could not change language. Not enough memory!");
+			}
+		}
+		else
+		{
+			bool installFont = WindowPrompt(
+				"Font Required",
+				"A new font is required to display this language.",
+				"Download font",
+				"Cancel");
+
+			if(installFont)
+			{
+				FILE * hfile = fopen (filepath, "wb");
+
+				if (hfile > 0)
+				{
+					http_request("http://wiimc.googlecode.com/svn/trunk/zh_cn.ttf", hfile, NULL, 1024*1024*2, NOTSILENT);
+					fclose (hfile);
+					goto restart;
+				}
+				else
+				{
+					ErrorPrompt("Unable to write font file!");
+				}
+			}
+		}
+		WiiSettings.language = LANG_ENGLISH;
+	}
+
+	if(currentFont != FONT_STANDARD)
+	{
+		SuspendGui();
+		DeinitFreeType();
+		if(ext_font_ttf) free(ext_font_ttf);
+		ext_font_ttf = NULL;
+		InitFreeType((u8*)font_ttf, font_ttf_size);
+		currentFont = FONT_STANDARD;
+		ResetText();
+		ResumeGui();
+	}
+	else
+	{
+		ResetText();
+	}
 }
 
 void DisableMainWindow()
@@ -1132,14 +1227,20 @@ static void CreditsWindow()
 	txt[i] = new GuiText("Thanks to", 20, (GXColor){160, 160, 160, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	txt[i]->SetPosition(0,y); i++; y+=36;
+	
+	GuiImageData foundmy(foundmy_png);
+	GuiImage foundmyImg(&foundmy);
+	foundmyImg.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	foundmyImg.SetPosition(-15, y);
+	alignWindow.Append(&foundmyImg);
 
 	txt[i] = new GuiText("MPlayer Team", 18, (GXColor){255, 255, 255, 255});
-	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	txt[i]->SetPosition(0,y); i++; y+=22;
+	txt[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	txt[i]->SetPosition(15,y); i++; y+=22;
 
 	txt[i] = new GuiText("shagkur & wintermute (libogc / devkitPPC)",18, (GXColor){255, 255, 255, 255});
-	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	txt[i]->SetPosition(0,y); i++; y+=44;
+	txt[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	txt[i]->SetPosition(15,y); i++; y+=44;
 
 	txt[i] = new GuiText("This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2.", 14, (GXColor){160, 160, 160, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -2585,8 +2686,6 @@ static void MenuSettingsGlobal()
 	sprintf(options.name[i++], "Volume");
 	sprintf(options.name[i++], "Exit Action");
 	sprintf(options.name[i++], "Wiimote Rumble");
-	sprintf(options.name[i++], "Subtitles");
-	sprintf(options.name[i++], "Subtitle Delay");
 
 	options.length = i;
 		
@@ -2648,19 +2747,15 @@ static void MenuSettingsGlobal()
 				break;
 			case 1:
 				WiiSettings.language++;
-				while(WiiSettings.language != LANG_ENGLISH && 
-						WiiSettings.language != LANG_FRENCH && 
-						WiiSettings.language != LANG_GERMAN && 
-						WiiSettings.language != LANG_ITALIAN &&
-						WiiSettings.language != LANG_DUTCH && 
-						WiiSettings.language != LANG_SPANISH && 
-						WiiSettings.language != LANG_ROMANIAN &&
-						WiiSettings.language != LANG_ESTONIAN)
+
+				if(WiiSettings.language >= LANG_LENGTH)
+					WiiSettings.language = 0;
+
+				while(WiiSettings.language == LANG_JAPANESE || 
+						WiiSettings.language == LANG_TRAD_CHINESE ||
+						WiiSettings.language == LANG_KOREAN)
 				{
 					WiiSettings.language++;
-
-					if(WiiSettings.language >= LANG_LENGTH)
-						WiiSettings.language = 0;
 				}
 				break;
 			case 2:
@@ -2676,14 +2771,6 @@ static void MenuSettingsGlobal()
 				break;
 			case 4:
 				WiiSettings.rumble ^= 1;
-				break;
-			case 5:
-				WiiSettings.subtitleVisibility ^= 1;
-				break;
-			case 6:
-				WiiSettings.subtitleDelay += 0.1;
-				if (WiiSettings.subtitleDelay > 2)
-					WiiSettings.subtitleDelay = -2;
 				break;
 		}
 
@@ -2720,8 +2807,6 @@ static void MenuSettingsGlobal()
 			}
 
 			sprintf(options.value[4], "%s", WiiSettings.rumble ? "On" : "Off");
-			sprintf(options.value[5], "%s", WiiSettings.subtitleVisibility ? "On" : "Off");
-			sprintf(options.value[6], "%.1f sec", WiiSettings.subtitleDelay);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -2731,11 +2816,11 @@ static void MenuSettingsGlobal()
 			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
+	ChangeLanguage();
 	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
-	ResetText();
 }
 
 static void ScreenZoomWindowUpdate(void * ptr, float h, float v)
@@ -3071,7 +3156,7 @@ static void MenuSettingsVideos()
 			case 5:
 				WiiSettings.audioDelay += 0.1;
 				if (WiiSettings.audioDelay > 2)
-					WiiSettings.audioDelay = 0;
+					WiiSettings.audioDelay = -2;
 				break;
 			case 6:
 				WiiSettings.autoResume ^= 1;
@@ -3320,6 +3405,95 @@ static void MenuSettingsPictures()
 
 			snprintf(options.value[0], 40, "%s", WiiSettings.picturesFolder);
 			sprintf(options.value[1], "%d seconds", WiiSettings.slideshowDelay);
+			optionBrowser.TriggerUpdate();
+		}
+
+		if(backBtn.GetState() == STATE_CLICKED)
+		{
+			ChangeMenuNoHistory(MENU_SETTINGS);
+		}
+	}
+	SuspendGui();
+	mainWindow->Remove(&optionBrowser);
+	mainWindow->Remove(&w);
+	mainWindow->Remove(&titleTxt);
+}
+
+static void MenuSettingsDVD()
+{
+	int ret;
+	int i = 0;
+	bool firstRun = true;
+	OptionList options;
+
+	sprintf(options.name[i++], "DVD Menu");
+
+	options.length = i;
+
+	for(i=0; i < options.length; i++)
+	{
+		options.value[i][0] = 0;
+		options.icon[i] = 0;
+	}
+
+	GuiText titleTxt("Settings - DVD", 28, (GXColor){255, 255, 255, 255});
+	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	titleTxt.SetPosition(30, 100);
+
+	GuiImageData btnBottom(button_bottom_png);
+	GuiImageData btnBottomOver(button_bottom_over_png);
+	GuiImageData arrowRight(arrow_right_small_png);
+
+	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
+	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	backBtnTxt.SetPosition(-16, 10);
+	GuiImage backBtnImg(&btnBottom);
+	GuiImage backBtnImgOver(&btnBottomOver);
+	GuiImage backBtnArrow(&arrowRight);
+	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	backBtnArrow.SetPosition(26, 11);
+	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	backBtn.SetPosition(0, 0);
+	backBtn.SetLabel(&backBtnTxt);
+	backBtn.SetImage(&backBtnImg);
+	backBtn.SetImageOver(&backBtnImgOver);
+	backBtn.SetIcon(&backBtnArrow);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetTrigger(trigB);
+
+	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
+	optionBrowser.SetPosition(0, 150);
+	optionBrowser.SetCol2Position(275);
+	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+
+	SuspendGui();
+	GuiWindow w(screenwidth, screenheight);
+	w.Append(&backBtn);
+	mainWindow->Append(&optionBrowser);
+	mainWindow->Append(&w);
+	mainWindow->Append(&titleTxt);
+	ResumeGui();
+
+	while(menuCurrent == MENU_SETTINGS_DVD && !guiShutdown)
+	{
+		usleep(THREAD_SLEEP);
+
+		ret = optionBrowser.GetClickedOption();
+
+		switch (ret)
+		{
+			case 0:
+				WiiSettings.dvdMenu ^= 1;
+				break;
+		}
+
+		if(ret >= 0 || firstRun)
+		{
+			firstRun = false;
+			
+			sprintf(options.value[0], "%s", WiiSettings.dvdMenu ? "Show" : "Skip to Main Title");
+
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -3962,24 +4136,49 @@ static void MenuSettingsNetworkFTP()
 	CloseFTP(netEditIndex+1);
 }
 
-static void MenuSettingsDVD()
+static int GetLangIndex()
+{
+	if(WiiSettings.subtitleLanguage[0] == 0)
+		return 0;
+
+	for(int i=1; i < LANGUAGE_SIZE; i++)
+		if(strcmp(WiiSettings.subtitleLanguage, languages[i].abbrev) == 0)
+			return i;
+	return 0;
+}
+
+static int GetCodepageIndex()
+{
+	if(WiiSettings.subtitleCodepage[0] == 0)
+		return 0;
+
+	for(int i=1; i < CODEPAGE_SIZE; i++)
+		if(strcmp(WiiSettings.subtitleCodepage, codepages[i].cpname) == 0)
+			return i;
+	return 0;
+}
+
+static void MenuSettingsSubtitles()
 {
 	int ret;
 	int i = 0;
 	bool firstRun = true;
 	OptionList options;
 
-	sprintf(options.name[i++], "DVD Menu");
+	sprintf(options.name[i++], "Visibility");
+	sprintf(options.name[i++], "Delay");
+	sprintf(options.name[i++], "Language");
+	sprintf(options.name[i++], "Codepage");
 
 	options.length = i;
-
+		
 	for(i=0; i < options.length; i++)
 	{
 		options.value[i][0] = 0;
 		options.icon[i] = 0;
 	}
 
-	GuiText titleTxt("Settings - DVD", 28, (GXColor){255, 255, 255, 255});
+	GuiText titleTxt("Settings - Subtitles", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
@@ -4018,7 +4217,9 @@ static void MenuSettingsDVD()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	while(menuCurrent == MENU_SETTINGS_DVD && !guiShutdown)
+	int tmpindex;
+
+	while(menuCurrent == MENU_SETTINGS_SUBTITLES && !guiShutdown)
 	{
 		usleep(THREAD_SLEEP);
 
@@ -4027,15 +4228,36 @@ static void MenuSettingsDVD()
 		switch (ret)
 		{
 			case 0:
-				WiiSettings.dvdMenu ^= 1;
+				WiiSettings.subtitleVisibility ^= 1;
+				break;
+			case 1:
+				WiiSettings.subtitleDelay += 0.1;
+				if (WiiSettings.subtitleDelay > 2)
+					WiiSettings.subtitleDelay = -2;
+				break;
+			case 2:
+				tmpindex = GetLangIndex() + 1;
+				if(tmpindex >= LANGUAGE_SIZE) tmpindex = 0;
+				strcpy(WiiSettings.subtitleLanguage, languages[tmpindex].abbrev);
+				break;
+			case 3:
+				tmpindex = GetCodepageIndex() + 1;
+				if(tmpindex >= CODEPAGE_SIZE) tmpindex = 0;
+				strcpy(WiiSettings.subtitleCodepage, codepages[tmpindex].cpname);
 				break;
 		}
 
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			
-			sprintf(options.value[0], "%s", WiiSettings.dvdMenu ? "Show" : "Skip to Main Title");
+
+			sprintf(options.value[0], "%s", WiiSettings.subtitleVisibility ? "On" : "Off");
+			sprintf(options.value[1], "%.1f sec", WiiSettings.subtitleDelay);
+			strcpy(options.value[2], languages[GetLangIndex()].language);
+			if(GetCodepageIndex() == 0)
+				sprintf(options.value[3], "Default");
+			else
+				sprintf(options.value[3], "%s (%s)", codepages[GetCodepageIndex()].cpname, codepages[GetCodepageIndex()].language);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -4068,6 +4290,7 @@ static void MenuSettings()
 	sprintf(options.name[i++], "DVD");
 	sprintf(options.name[i++], "Online Media");
 	sprintf(options.name[i++], "Network");
+	sprintf(options.name[i++], "Subtitles");
 
 	options.length = i;
 
@@ -4103,7 +4326,7 @@ static void MenuSettings()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetTrigger(trigB);
 
-	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
+	GuiOptionBrowser optionBrowser(screenwidth, 8, &options);
 	optionBrowser.SetPosition(0, 150);
 
 	SuspendGui();
@@ -4123,29 +4346,26 @@ static void MenuSettings()
 			case 0:
 				ChangeMenuNoHistory(MENU_SETTINGS_GLOBAL);
 				break;
-
 			case 1:
 				ChangeMenuNoHistory(MENU_SETTINGS_VIDEOS);
 				break;
-
 			case 2:
 				ChangeMenuNoHistory(MENU_SETTINGS_MUSIC);
 				break;
-
 			case 3:
 				ChangeMenuNoHistory(MENU_SETTINGS_PICTURES);
 				break;
-				
 			case 4:
 				ChangeMenuNoHistory(MENU_SETTINGS_DVD);
 				break;
-
 			case 5:
 				ChangeMenuNoHistory(MENU_SETTINGS_ONLINEMEDIA);
 				break;
-
 			case 6:
 				ChangeMenuNoHistory(MENU_SETTINGS_NETWORK);
+				break;
+			case 7:
+				ChangeMenuNoHistory(MENU_SETTINGS_SUBTITLES);
 				break;
 		}
 
@@ -5301,6 +5521,9 @@ void WiiMenu()
 				break;
 			case MENU_SETTINGS_NETWORK_FTP:
 				MenuSettingsNetworkFTP();
+				break;
+			case MENU_SETTINGS_SUBTITLES:
+				MenuSettingsSubtitles();
 				break;
 			default: // unrecognized menu
 				MenuBrowse(MENU_BROWSE_VIDEOS);

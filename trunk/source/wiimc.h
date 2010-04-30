@@ -75,6 +75,8 @@ void wiiSetCacheFill(int fill);
 void wiiSetAutoResume(int enable);
 void wiiSetVolume(int vol);
 void wiiSetProperty(int cmd, float val);
+void wiiSetLanguage(char *lang);
+void wiiSetCodepage(char *cp);
 void wiiLoadRestorePoints(char *buffer, int size);
 char * wiiSaveRestorePoints(char *path);
 

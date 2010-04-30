@@ -32,6 +32,27 @@ enum {
 };
 
 enum {
+	FONT_STANDARD,
+	FONT_SIMP_CHINESE
+};
+
+typedef struct _cp {
+	const char *cpname;
+	const char *language;
+} CP;
+
+typedef struct _lang {
+	const char *language;
+	const char *abbrev;
+} LANG;
+
+#define LANGUAGE_SIZE 142
+#define CODEPAGE_SIZE 23
+
+extern LANG languages[LANGUAGE_SIZE];
+extern CP codepages[CODEPAGE_SIZE];
+
+enum {
 	EXIT_AUTO,
 	EXIT_WIIMENU,
 	EXIT_POWEROFF,
@@ -57,9 +78,6 @@ struct SWiiSettings {
 	int		volume;
 	int		exitAction;
 	int		rumble;
-	int		subtitleVisibility; // 0 - off, 1 - on
-	float 	subtitleDelay; // in secs
-	
 	// Videos
 	float	videoZoomHor; // horizontal zoom amount
 	float	videoZoomVert; // vertical zoom amount
@@ -85,6 +103,11 @@ struct SWiiSettings {
 	// Network
 	SMBSettings smbConf[5];
 	FTPSettings ftpConf[5];
+	// Subtitles
+	int		subtitleVisibility; // 0 - off, 1 - on
+	float 	subtitleDelay; // in secs
+	char	subtitleLanguage[3];
+	char	subtitleCodepage[13];
 };
 
 void DefaultSettings ();

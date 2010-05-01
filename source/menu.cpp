@@ -577,7 +577,7 @@ restart:
 				}
 				else
 				{
-					ErrorPrompt("Unable to write font file!");
+					ErrorPrompt("Unable to save font file!");
 				}
 			}
 		}
@@ -1519,13 +1519,7 @@ static void MenuBrowse(int menu)
 	{
 		if(!nowPlaying)
 		{
-			char name[1024];
-			char * loc = strrchr(loadedFile, '/');
-			if(loc) loc++;
-			else loc = loadedFile;
-			strcpy(name, loc);
-			StripExt(name);
-			nowPlaying = new GuiText(name, 18, (GXColor){255, 255, 255, 255});
+			nowPlaying = new GuiText(loadedFileDisplay, 18, (GXColor){255, 255, 255, 255});
 			nowPlaying->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 			nowPlaying->SetPosition(30, 10);
 		}
@@ -1686,6 +1680,7 @@ static void MenuBrowse(int menu)
 						if(numItems == 2 && !IsPlaylistExt(ext)) // let's load this one file
 						{
 							sprintf(loadedFile, browserList[1].filename);
+							snprintf(loadedFileDisplay, 128, "%s", browserList[1].displayname);
 							// go up one level
 							browser.selIndex = 0;
 							BrowserChangeFolder();
@@ -1712,7 +1707,10 @@ static void MenuBrowse(int menu)
 				}
 
 				if(numItems == 0)
+				{
 					GetFullPath(browser.selIndex, loadedFile);
+					snprintf(loadedFileDisplay, 128, "%s", browserList[browser.selIndex].displayname);
+				}
 
 				playlistIndex = MusicPlaylistFindIndex(loadedFile);
 

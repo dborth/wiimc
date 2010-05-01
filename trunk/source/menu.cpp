@@ -500,6 +500,10 @@ static void ResetText()
 {
 	LoadLanguage();
 
+	videobar->ResetText();
+	audiobar->ResetText();
+	picturebar->ResetText();
+
 	if(mainWindow)
 		mainWindow->ResetText();
 }
@@ -5713,7 +5717,6 @@ void MPlayerMenu()
 	mainWindow->SetVisible(false);
 	mainWindow->SetState(STATE_DISABLED);
 	HideVolumeLevelBar();
-	ResetText();
 	menuMode = 1; // switch to MPlayer GUI mode
 	EnableRumble();
 

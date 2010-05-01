@@ -46,7 +46,8 @@ int ResetRequested = 0;
 int ExitRequested = 0;
 char appPath[1024] = { 0 };
 char loadPath[1024] = { 0 };
-char loadedFile[1024];
+char loadedFile[1024] = { 0 };
+char loadedFileDisplay[128] = { 0 };
 static bool settingsSet = false;
 
 // MPlayer threads
@@ -231,6 +232,7 @@ void FindNextAudioFile()
 		playlistIndex = 0;
 	}
 	sprintf(loadedFile, "%s", playlist[playlistIndex].filepath);
+	loadedFileDisplay[0] = 0;
 	FindFile(); // try to find this file
 }
 
@@ -411,20 +413,15 @@ main(int argc, char *argv[])
 	InitMem2Manager(); // only used for cache_mem
 	// we want browser to sit at high MEM1 and NOT low MEM2 (to optimize space)
 	browserList = (BROWSERENTRY *)malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE);
-	// low MEM2 - texture memory
-	GX_AllocTextureMemory();
-	// picture viewer memory
-	picBuffer = (u8 *)memalign(32, MAX_PICTURE_SIZE);
+	GX_AllocTextureMemory(); // low MEM2 - texture memory
+	picBuffer = (u8 *)memalign(32, MAX_PICTURE_SIZE); // picture viewer memory
 	MountAllDevices(); // Initialize SD and USB devices
 
 	// store path app was loaded from
 	if(argc > 0 && argv[0] != NULL)
 		CreateLoadPath(argv[0]);
 
-	// Set defaults
-	DefaultSettings();
-
-	loadedFile[0] = 0;
+	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
 
 	// Initialize font system

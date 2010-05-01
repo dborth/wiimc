@@ -70,9 +70,6 @@ msgstr "Rete"
 msgid "Subtitles"
 msgstr "Sottotitoli"
 
-msgid "Subtitle Delay"
-msgstr "Ritardo Sottotitoli"
-
 msgid "Settings"
 msgstr "Impostazioni"
 
@@ -100,7 +97,7 @@ msgstr "Avanti"
 msgid "Single"
 msgstr "Singola"
 
-msgid "Now Playing"
+msgid "now playing"
 msgstr "In riproduzione:"
 
 msgid "Previous"
@@ -284,7 +281,7 @@ msgid "Port"
 msgstr "Porta"
 
 msgid "Rewind / Fast Forward"
-msgstr "Riavvolgimento/Avanzamento Veloce"
+msgstr "Riavvolgi/Avanza Veloce"
 
 msgid "Error loading file!"
 msgstr "Errore caricando il file!"
@@ -486,3 +483,42 @@ msgstr "Buffering"
 
 msgid "Unable to initialize network (Error #:"
 msgstr "Impossibile inizializzare la rete (Errore #:"
+
+msgid "Settings - Subtitles"
+msgstr "Impostazioni - Sottotitoli"
+
+msgid "Visibility"
+msgstr "Visibilità"
+
+msgid "Delay"
+msgstr "Ritardo"
+
+msgid "Codepage"
+msgstr "Codifica"
+
+msgid "Subtitle Language"
+msgstr "Lingua Sottotitoli"
+
+msgid "Default"
+msgstr "Default"
+
+msgid "Settings - Network - New Share"
+msgstr "Impostazioni - Rete - Nuova Condivisione"
+
+msgid "Settings - Network - New Site"
+msgstr "Impostazioni - Rete - Nuovo Sito"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "Non è possibile cambiare lingua. Memoria insufficiente!"
+
+msgid "Font Required"
+msgstr "Font Richiesto"
+
+msgid "A new font is required to display this language."
+msgstr "un nuovo font è richiesto per visualizzare questa lingua."
+
+msgid "Download font"
+msgstr "Scarica font"
+
+msgid "Unable to save font file!"
+msgstr "Impossibile salvare il font!"

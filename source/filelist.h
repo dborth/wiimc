@@ -188,6 +188,8 @@ extern const u32	nav_highlight_size;
 
 extern const u8		dialogue_box_png[];
 extern const u32	dialogue_box_png_size;
+extern const u8		dialogue_box_large_png[];
+extern const u32	dialogue_box_large_png_size;
 
 extern const u8		scrollbar_top_png[];
 extern const u32	scrollbar_top_png_size;

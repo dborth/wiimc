@@ -227,6 +227,20 @@ int GuiOptionBrowser::GetClickedOption()
 	return found;
 }
 
+int GuiOptionBrowser::GetSelectedOption()
+{
+	int found = -1;
+	for(int i=0; i<size; i++)
+	{
+		if(optionBtn[i]->GetState() == STATE_SELECTED)
+		{
+			found = optionIndex[i];
+			break;
+		}
+	}
+	return found;
+}
+
 /****************************************************************************
  * FindMenuItem
  *
@@ -375,10 +389,6 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 		if(optionBtn[i]->GetState() == STATE_SELECTED)
 			selectedItem = i;
 	}
-
-	// pad/joystick navigation
-	if(!focus)
-		return; // skip navigation
 
 	if(t->Down() || arrowDownBtn->GetState() == STATE_CLICKED)
 	{

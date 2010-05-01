@@ -338,13 +338,6 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 			((GuiWindow *)this->GetParent())->ChangeFocus(this);
 	}
 
-	// pad/joystick navigation
-	if(!focus)
-	{
-		goto endNavigation; // skip navigation
-		listChanged = false;
-	}
-
 	if(t->Right())
 	{
 		if(browser.pageIndex < browser.numEntries && browser.numEntries > size)
@@ -397,8 +390,6 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		}
 	}
 
-	endNavigation:
-	
 	if(listChanged || numEntries != browser.numEntries)
 	{
 		if(browser.numEntries > size)

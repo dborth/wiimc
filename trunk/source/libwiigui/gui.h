@@ -55,7 +55,7 @@ extern FreeTypeGX *fontSystem[];
 #define SCROLL_DELAY_DECREASE	300
 #define FILE_PAGESIZE 			11
 #define PAGESIZE 				11
-#define MAX_OPTIONS 			30
+#define MAX_OPTIONS 			150
 #define MAX_MENUITEMS 			11
 #define MAX_KEYBOARD_DISPLAY	32
 
@@ -900,6 +900,7 @@ class GuiOptionBrowser : public GuiElement
 		void SetCol2Position(int x);
 		int FindMenuItem(int c, int d);
 		int GetClickedOption();
+		int GetSelectedOption();
 		void ResetState();
 		void SetFocus(int f);
 		void Draw();

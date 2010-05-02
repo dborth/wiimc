@@ -176,7 +176,8 @@ int WIIDVD_Mount()
 	return DVD_ScanContent();
 }
 
-void WIIDVD_Unmount(){
+void WIIDVD_Unmount()
+{
 	freedirentrieslist();
 	DestroyReadAheadCache();
 }

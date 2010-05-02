@@ -2435,6 +2435,17 @@ static void MenuBrowsePictures()
 			return;
 		}
 		ShutdownMPlayer();
+
+		if(videoImg)
+		{
+			SuspendGui();
+			mainWindow->Remove(videoImg);
+			ResumeGui();
+			delete videoImg;
+			videoImg = NULL;
+			free(videoScreenshot);
+			videoScreenshot = NULL;
+		}
 	}
 
 	browser.dir = &WiiSettings.picturesFolder[0];

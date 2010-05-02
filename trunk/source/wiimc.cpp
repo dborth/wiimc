@@ -414,7 +414,6 @@ main(int argc, char *argv[])
 	// we want browser to sit at high MEM1 and NOT low MEM2 (to optimize space)
 	browserList = (BROWSERENTRY *)malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE);
 	GX_AllocTextureMemory(); // low MEM2 - texture memory
-	picBuffer = (u8 *)memalign(32, MAX_PICTURE_SIZE); // picture viewer memory
 	MountAllDevices(); // Initialize SD and USB devices
 
 	// store path app was loaded from

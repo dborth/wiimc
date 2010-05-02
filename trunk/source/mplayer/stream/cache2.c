@@ -186,7 +186,7 @@ int cache_fill(cache_vars_t* s){
 
 retry:
   
-  if(s->eof) 
+  if(!s || s->eof) 
   {
       cache_fill_status=-1;
 	  return 0;
@@ -319,6 +319,9 @@ static int cache_execute_control(cache_vars_t *s) {
   static u64 last;
   u64 now;
 
+  if(!s || !s->stream)
+	  return 0;
+
   int quit = s->control == -2;
   if (quit || !s->stream->control) {
     s->stream_time_length = 0;
@@ -415,6 +418,7 @@ void cache_uninit(stream_t *s) {
   	  usleep(50);
   }
   s->cache_pid = 0;
+  cachearg = NULL;
 #else  
   if(s->cache_pid) {
 #if defined(__MINGW32__) || defined(PTHREAD_CACHE) || defined(__OS2__)
@@ -601,7 +605,9 @@ void *mplayercachethread(void *arg)
 	while(1)
 	{
 		SuspendCacheThread();
-		ThreadProc(cachearg);
+
+		if(cachearg != NULL)
+			ThreadProc(cachearg);
 	}
 	return NULL;
 }

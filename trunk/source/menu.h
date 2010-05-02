@@ -41,7 +41,6 @@ bool BufferingStatusSet();
 extern int menuCurrent;
 extern bool menuMode;
 extern bool nowPlayingSet;
-extern u8 *picBuffer;
 
 enum
 {

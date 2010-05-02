@@ -285,7 +285,7 @@ static void ChangeMenu(int menu)
 	UpdateMenuImages(menuPrevious, menuCurrent);
 }
 
-static void UndoChangeMenu()
+void UndoChangeMenu()
 {
 	UpdateMenuImages(menuCurrent, menuPrevious);
 	menuCurrent = menuPrevious;
@@ -1366,22 +1366,27 @@ static void UpdateAudiobarModeBtn()
 	}
 }
 
+void RemoveVideoImg()
+{
+	if(!videoImg)
+		return;
+
+	SuspendGui();
+	mainWindow->Remove(videoImg);
+	ResumeGui();
+	delete videoImg;
+	videoImg = NULL;
+	free(videoScreenshot);
+	videoScreenshot = NULL;
+}
+
 /****************************************************************************
  * MenuBrowse
  ***************************************************************************/
 
 static int LoadNewFile(int silent)
 {
-	if(videoImg)
-	{
-		SuspendGui();
-		mainWindow->Remove(videoImg);
-		ResumeGui();
-		delete videoImg;
-		videoImg = NULL;
-		free(videoScreenshot);
-		videoScreenshot = NULL;
-	}
+	RemoveVideoImg();
 
 	if(!silent)
 	{
@@ -1508,7 +1513,7 @@ static void MenuBrowse(int menu)
 
 	int pagesize = 11;
 
-	if(videoScreenshot && menu != MENU_BROWSE_MUSIC)
+	if(videoImg && menu != MENU_BROWSE_MUSIC)
 		pagesize = 10;
 	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && wiiAudioOnly()))
 		pagesize = 8;
@@ -1618,6 +1623,16 @@ static void MenuBrowse(int menu)
 		if(devicesChanged)
 		{
 			devicesChanged = false;
+
+			// video is no longer loaded - remove back button
+			if(pagesize == 10 && !videoImg)
+			{
+				pagesize = 11;
+				SuspendGui();
+				fileBrowser.ChangeSize(pagesize);
+				mainWindow->Remove(&backBtn);
+				ResumeGui();
+			}
 
 			if(BrowserChangeFolder(false))
 			{
@@ -2435,17 +2450,7 @@ static void MenuBrowsePictures()
 			return;
 		}
 		ShutdownMPlayer();
-
-		if(videoImg)
-		{
-			SuspendGui();
-			mainWindow->Remove(videoImg);
-			ResumeGui();
-			delete videoImg;
-			videoImg = NULL;
-			free(videoScreenshot);
-			videoScreenshot = NULL;
-		}
+		RemoveVideoImg();
 	}
 
 	browser.dir = &WiiSettings.picturesFolder[0];

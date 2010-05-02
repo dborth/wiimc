@@ -135,8 +135,8 @@ static void * motorthreadfunc(void *arg)
 			}
 			if ((ticks_to_secs(gettime()) - LastAccess) > TimeStopMotor)
 			{ // we have to stop motor        
-				//if (DVD_DiscPresent()) // only stop if dvd is present
-					//DI2_StopMotor();
+				if (DVD_DiscPresent()) // only stop if dvd is present
+					DI2_StopMotor();
 			}
 		}
 
@@ -176,21 +176,16 @@ int DI2_StartMotor()
 
 	if (motor_stopped && motorthreadexit == false)
 	{
-		DI2_Reset();
-		uint32_t val;
-		int i = 200;
-		do
+		DI2_Mount();
+		unsigned int t1,t2;
+		t1=ticks_to_secs(gettime());
+		while(DI2_GetStatus() & DVD_INIT)
 		{
-			usleep(100);
-			DI2_GetCoverRegister(&val);
-			i--;
-			if (i == 0)
-				break;
-		} while (!(val & 0x2)); // wait until dvd is ok
-		LastAccess = ticks_to_secs(gettime());
-		if (i > 0)
-			motor_stopped = false; // if you can't start motor then dvd is hang	
-		return 1;
+			t2=ticks_to_secs(gettime());
+			if(t2-t1 > 15) return -1;
+			usleep(5000);
+		}
+		motor_stopped = false;
 	}
 	return 0;
 }

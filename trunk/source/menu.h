@@ -30,6 +30,8 @@ void ChangeLanguage();
 bool VolumeLevelBarVisible();
 void ShowVolumeLevelBar();
 void HideVolumeLevelBar();
+void UndoChangeMenu();
+void RemoveVideoImg();
 
 extern "C" {
 void DoMPlayerGuiDraw();

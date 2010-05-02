@@ -92,6 +92,14 @@ static void * devicecallback (void *arg)
 			if(!sd->isInserted()) // device was removed
 			{
 				UnmountPartitions(DEVICE_SD);
+
+				if(strncmp(loadedFile, "sd", 2) == 0)
+				{
+					loadedFile[0] = 0;
+					ShutdownMPlayer();
+					RemoveVideoImg();
+				}
+
 				devicesChanged = true;
 			}
 		}
@@ -106,6 +114,14 @@ static void * devicecallback (void *arg)
 			if(!usb->isInserted()) // device was removed
 			{
 				UnmountPartitions(DEVICE_USB);
+
+				if(strncmp(loadedFile, "usb", 3) == 0)
+				{
+					loadedFile[0] = 0;
+					ShutdownMPlayer();
+					RemoveVideoImg();
+				}
+
 				devicesChanged = true;
 			}
 		}
@@ -121,6 +137,16 @@ static void * devicecallback (void *arg)
 			{
 				isInserted[DEVICE_DVD] = false;
 				WIIDVD_Unmount();
+
+				if(strncmp(loadedFile, "dvd", 3) == 0)
+				{
+					loadedFile[0] = 0;
+					ShutdownMPlayer();
+					RemoveVideoImg();
+					if(menuCurrent == MENU_DVD)
+						UndoChangeMenu();
+				}
+				devicesChanged = true;
 			}
 		}
 

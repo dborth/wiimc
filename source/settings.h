@@ -33,7 +33,8 @@ enum {
 
 enum {
 	FONT_STANDARD,
-	FONT_SIMP_CHINESE
+	FONT_SIMP_CHINESE,
+	FONT_JAPANESE
 };
 
 typedef struct _cp {

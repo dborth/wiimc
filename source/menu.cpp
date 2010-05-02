@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include <wiiuse/wpad.h>
 #include <ogc/lwp_watchdog.h>
+#include <ogc/machine/processor.h>
 
 #include "libwiigui/gui.h"
 #include "menu.h"
@@ -519,12 +520,23 @@ void ChangeLanguage()
 		WiiSettings.language == LANG_KOREAN)
 	{
 		char filepath[MAXPATHLEN];
+		char httppath[MAXPATHLEN];
+		char httpRoot[] = "http://wiimc.googlecode.com/svn/trunk/fonts";
+		int newFont;
 
 		switch(WiiSettings.language)
 		{
 			case LANG_SIMP_CHINESE:
 				if(currentFont == FONT_SIMP_CHINESE) return;
 				sprintf(filepath, "%s/zh_cn.ttf", appPath);
+				sprintf(httppath, "%s/zh_cn.ttf", httpRoot);
+				newFont = FONT_SIMP_CHINESE;
+				break;
+			case LANG_JAPANESE:
+				if(currentFont == FONT_JAPANESE) return;
+				sprintf(filepath, "%s/jp.ttf", appPath);
+				sprintf(httppath, "%s/jp.ttf", httpRoot);
+				newFont = FONT_JAPANESE;
 				break;
 		}
 
@@ -551,7 +563,7 @@ restart:
 				SuspendGui();
 				DeinitFreeType();
 				InitFreeType(ext_font_ttf, loadSize);
-				currentFont = FONT_SIMP_CHINESE;
+				currentFont = newFont;
 				ResetText();
 				ResumeGui();
 				return;
@@ -575,7 +587,7 @@ restart:
 
 				if (hfile > 0)
 				{
-					http_request("http://wiimc.googlecode.com/svn/trunk/zh_cn.ttf", hfile, NULL, 1024*1024*2, NOTSILENT);
+					http_request(httppath, hfile, NULL, 1024*1024*2, NOTSILENT);
 					fclose (hfile);
 					goto restart;
 				}
@@ -2000,6 +2012,30 @@ static bool setPicture = false;
 static int slideshow = 0; // slideshow mode
 static u64 slideprev, slidenow; // slideshow timer
 
+static void AllocPicBuffer()
+{
+	if(picBuffer)
+		return;
+
+	u32 level;
+	_CPU_ISR_Disable(level);
+	picBuffer = (u8*)((u32)SYS_GetArena2Hi()-MAX_PICTURE_SIZE);
+	SYS_SetArena2Hi(picBuffer);
+	_CPU_ISR_Restore(level);
+}
+
+static void FreePicBuffer()
+{
+	if(!picBuffer)
+		return;
+	
+	u32 level;
+	_CPU_ISR_Disable(level);
+	SYS_SetArena2Hi(picBuffer+MAX_PICTURE_SIZE);
+	_CPU_ISR_Restore(level);
+	picBuffer = NULL;
+}
+
 static int FoundPicture(int p)
 {
 	if(p <= 0)
@@ -2066,6 +2102,7 @@ static void *PictureThread (void *arg)
 	pictureLoaded = -1;
 	pictureIndexLoaded = -1;
 	pictureIndexLoading = -1;
+	AllocPicBuffer();
 
 	while(1)
 	{
@@ -2183,6 +2220,7 @@ restart:
 	}
 	SetPicture(-1, -1); // set picture to blank
 	CleanupPictures(-1);
+	FreePicBuffer();
 	return NULL;
 }
 
@@ -2381,6 +2419,24 @@ static void MenuBrowsePictures()
 	int currentIndex = -1;
 	ShutoffRumble();
 	ResetBrowser();
+
+	if(SYS_GetArena2Size() < 14680064) // 14 MB
+	{
+		ResumeGui();
+		bool closeMPlayer = WindowPrompt(
+			"Out of Memory",
+			"WiiMC does not have enough free memory to load the picture viewer.",
+			"Close MPlayer",
+			"Cancel");
+
+		if(!closeMPlayer)
+		{
+			UndoChangeMenu(); // go back to last menu
+			return;
+		}
+		ShutdownMPlayer();
+	}
+
 	browser.dir = &WiiSettings.picturesFolder[0];
 
 	int pagesize = 11;
@@ -2753,12 +2809,8 @@ static void MenuSettingsGlobal()
 				if(WiiSettings.language >= LANG_LENGTH)
 					WiiSettings.language = 0;
 
-				while(WiiSettings.language == LANG_JAPANESE || 
-						WiiSettings.language == LANG_TRAD_CHINESE ||
-						WiiSettings.language == LANG_KOREAN)
-				{
+				if(WiiSettings.language == LANG_KOREAN)
 					WiiSettings.language++;
-				}
 				break;
 			case 2:
 				WiiSettings.volume += 10;

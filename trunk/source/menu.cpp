@@ -3849,7 +3849,7 @@ static void MenuSettingsNetworkSMB()
 	else
 		sprintf(shareName, "%s", WiiSettings.smbConf[netEditIndex].share);
 
-	sprintf(titleStr, "Settings - Network - %s", shareName);
+	sprintf(titleStr, "%s - %s", gettext("Settings - Network"), shareName);
 
 	GuiText titleTxt(titleStr, 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -4044,7 +4044,7 @@ static void MenuSettingsNetworkFTP()
 		WiiSettings.ftpConf[netEditIndex].port,
 		WiiSettings.ftpConf[netEditIndex].folder);
 
-	sprintf(titleStr, "Settings - Network - %s", siteName);
+	sprintf(titleStr, "%s - %s", gettext("Settings - Network"), siteName);
 
 	GuiText titleTxt(titleStr, 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);

@@ -2744,6 +2744,7 @@ static int seek(MPContext *mpctx, double amount, int style)
 
     if (mpctx->sh_audio) {
 	current_module = "seek_audio_reset";
+	mpctx->audio_out->pause();
 	mpctx->audio_out->reset(); // stop audio, throwing away buffered data
 	if (!mpctx->sh_video)
 	    update_subtitles(NULL, mpctx->sh_audio->pts, mpctx->d_sub, 1);

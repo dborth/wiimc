@@ -442,6 +442,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	if(w % 2) w++;
 	w=w*16;
 	h = ((int)((height/8.0)))*8;
+	old_h1_2=-1;
 
 	// center, to correct difference between pitch and real width
 	diffx = (w - width)/2.0 + hor_pos;
@@ -498,8 +499,11 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 	if(height!=old_h1_2)
 	{
 		old_h1_2 = height;
-		h1 = ((height/8)*8) >> 2;
-    	h2 = height >> 3 ;
+		//h1 = ((height/8)*8) >> 2;
+    	//h2 = height >> 3 ;
+		h1 = ceil(height / 4.0);
+    	h2 = ceil((height / 2.0) / 4.0);
+//    	printf("h: %d\n",height);
 	}
 
 	//Convert YUV frame to GX textures

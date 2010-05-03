@@ -236,8 +236,6 @@ void FindNextAudioFile()
 	FindFile(); // try to find this file
 }
 
-
-
 static void *
 mplayerthread (void *arg)
 {

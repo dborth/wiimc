@@ -549,7 +549,7 @@ void DefaultSettings ()
 	WiiSettings.videoXshift = 0;
 	WiiSettings.videoYshift = 0;
 	WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
-	WiiSettings.aspectRatio = -1;
+	WiiSettings.aspectRatio = -2;
 	WiiSettings.cacheFill = 30;
 	WiiSettings.audioDelay = 0;
 	WiiSettings.autoResume = 1;
@@ -653,7 +653,7 @@ static void FixInvalidSettings()
 	if(WiiSettings.frameDropping < 0 || WiiSettings.frameDropping > FRAMEDROPPING_ALWAYS)
 		WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
 	if(WiiSettings.aspectRatio <= 0 || WiiSettings.aspectRatio > 2.36)
-		WiiSettings.aspectRatio = -1;
+		WiiSettings.aspectRatio = -2;
 	if(WiiSettings.cacheFill < 10 || WiiSettings.cacheFill > 100)
 		WiiSettings.cacheFill = 30;
 	if(WiiSettings.audioDelay < -2 || WiiSettings.audioDelay > 2)

@@ -777,7 +777,7 @@ int stream_read(stream_t *s,char* mem,int total){
   return total;
 }
 
-#if 0
+#if 1
 void refillcache(stream_t *stream,float min)
 {
 	cache_vars_t* s;

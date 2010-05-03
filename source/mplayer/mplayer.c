@@ -198,7 +198,7 @@ static int load_restore_point(char *_filename);
 int controlledbygui=1;
 int pause_gui=0;
 
-static bool low_cache=false;
+//static bool low_cache=false;
 static char fileplaying[MAXPATHLEN];
 static int enable_restore_points=1;
 
@@ -1837,6 +1837,7 @@ static int generate_video_frame(sh_video_t *sh_video, demux_stream_t *d_video)
 
     while (1) {
 	int drop_frame = check_framedrop(sh_video->frametime);
+	if( drop_frame >0)printf("drop\n");
 	void *decoded_frame;
 	current_module = "decode video";
 	// XXX Time used in this call is not counted in any performance
@@ -2274,7 +2275,7 @@ static int sleep_until_update(float *time_frame, float *aq_sleep_time)
     if (*time_frame > 0.001 && !(vo_flags&256))
     	*time_frame = timing_sleep(*time_frame);
 #ifdef GEKKO
-    else usleep(10);
+    else usleep(1);// to help LWP threads
 #endif
     return frame_time_remaining;
 }
@@ -2484,6 +2485,71 @@ static double update_video(int *blit_frame)
 
 static void pause_loop(void)
 {
+  mp_cmd_t* cmd=NULL;
+
+  if (mpctx->audio_out && mpctx->sh_audio)
+    mpctx->audio_out->pause(); // pause audio, keep data if possible
+
+  if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+    mpctx->video_out->control(VOCTRL_PAUSE, NULL);
+
+  while ( (cmd = mp_input_get_cmd(20, 1, 1)) == NULL || cmd->pausing == 4)
+  {
+    if (cmd)
+    {
+      cmd = mp_input_get_cmd(0,1,0);
+      run_command(mpctx, cmd);
+      mp_cmd_free(cmd);
+      continue;
+    }
+    if (mpctx->sh_video && mpctx->video_out && vo_config_count)
+      mpctx->video_out->check_events();
+
+    if(!mpctx->sh_video || !mpctx->video_out)
+    {
+      usec_sleep(20000);
+    }
+    else
+    {
+      DrawMPlayer();
+      usec_sleep(100);
+    }
+
+    if(controlledbygui == 2) // mplayer shutdown requested!
+      break;
+  }  //end while
+
+  mpctx->osd_function=OSD_PLAY;
+
+  if(controlledbygui != 2 && (strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0) )
+  {
+    void *ptr=memalign(32, 0x800*2);
+    DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
+    DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
+    free(ptr);
+  }
+
+  if (cmd && cmd->id == MP_CMD_PAUSE)
+  { //unpause
+    cmd = mp_input_get_cmd(0,1,0);
+    mp_cmd_free(cmd);
+  }
+  else
+  {
+	  if (mpctx->audio_out && mpctx->sh_audio) mpctx->audio_out->reset();	// reset audio  (seek or exit)
+  }
+
+  if (mpctx->audio_out && mpctx->sh_audio)
+    mpctx->audio_out->resume(); // resume audio
+
+  if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+    mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
+
+  (void)GetRelativeTime(); // ignore time that passed during pause
+}
+/*
+static void pause_loop(void)
+{
     mp_cmd_t* cmd=NULL;
 
 #ifdef CONFIG_GUI
@@ -2524,8 +2590,8 @@ static void pause_loop(void)
     }
     else
     {
-    	DrawMPlayer();
-    	VIDEO_WaitVSync();
+    	DrawMPlayer(true);
+    	//VIDEO_WaitVSync();
     	usec_sleep(100);
     }
 
@@ -2594,7 +2660,7 @@ static void pause_loop(void)
     }
 #endif
 }
-
+*/
 
 // Find the right mute status and record position for new file position
 static void edl_seek_reset(MPContext *mpctx)
@@ -4157,25 +4223,30 @@ if(auto_quality>0){
 
     //low cache
 	if (stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0) {
-   		if(mpctx->osd_function == OSD_PAUSE)
+   		//if(mpctx->osd_function == OSD_PAUSE)
    		{
+  			mpctx->osd_function = OSD_PAUSE;
 		   mpctx->was_paused = 1;
-   		   low_cache=false;
+   		   //low_cache=false;
    		   low_cache_loop();
-   		}else 
+   		}
+   		/*
+   		else
 		{
 			mpctx->osd_function = OSD_PAUSE;
 			low_cache=true;
-		}
+		}*/
 	}
 	else if (mpctx->osd_function == OSD_PAUSE) {
-      
+      /*
       if(low_cache) 
 	  {
 	  	low_cache=false;
 	  	mpctx->osd_function = OSD_PLAY;
 	  }	  
-      else if(pause_gui)
+      else
+    	*/
+      if(pause_gui)
 	  {
 	  	pause_gui=0;
 	  	mpctx->was_paused = 1;
@@ -4506,20 +4577,15 @@ static float timing_sleep(float time_frame)
 {
 	s32 frame=time_frame*1000000; //in us
 	//current_module = "sleep_timer";
-	while (frame > 100)
+	while (frame > 10)
 	{
-		if(frame>20000) //enough to avoid choppy cursor
+		if(frame>2000) usec_sleep(1000);
+		else if(frame>500) usec_sleep(100);
+		else //burn cpu (I don't want to switch thread)
 		{
-			DrawMPlayer();
-			VIDEO_WaitVSync();
-		}
-		else
-		{
-			usec_sleep(frame-100);
-			//usec_sleep(50);
+			while(frame>5) frame = frame - GetRelativeTime();
 		}
 		frame = frame - GetRelativeTime();
-		break;
 	}
 	time_frame=(float)(frame * 0.000001F);
 	return time_frame;
@@ -4629,7 +4695,7 @@ static void low_cache_loop(void)
 			mpctx->video_out->check_events();
 
 		DrawMPlayer();
-		VIDEO_WaitVSync();
+		//VIDEO_WaitVSync();
 	}
 	rm_osd_msg(OSD_MSG_PAUSE);
 	SetBufferingStatus(0);

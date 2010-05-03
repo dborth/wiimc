@@ -114,8 +114,8 @@ void Menu_Render()
 	GX_SetColorUpdate(GX_TRUE);
 	GX_CopyDisp(xfb[whichfb],GX_TRUE);
 	GX_DrawDone();
-	VIDEO_SetNextFramebuffer(xfb[whichfb]);
-	VIDEO_Flush();
+	//VIDEO_SetNextFramebuffer(xfb[whichfb]);
+	//VIDEO_Flush();
 	VIDEO_WaitVSync();
 
 	++FrameTimer;
@@ -234,7 +234,11 @@ int DrawMPlayerGui()
  * This function MUST be called at startup.
  * - also sets up menu video mode
  ***************************************************************************/
-
+void Draw_VIDEO()
+{
+	VIDEO_SetNextFramebuffer(xfb[whichfb]);
+	VIDEO_Flush ();
+}
 void
 InitVideo ()
 {
@@ -321,6 +325,9 @@ InitVideo ()
 	GX_SetDispCopyDst(vmode->fbWidth,xfbHeight);
 	GX_SetCopyFilter(vmode->aa,vmode->sample_pattern,GX_TRUE,vmode->vfilter);
 	GX_SetFieldMode(vmode->field_rendering,((vmode->viHeight==2*vmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
+
+	GX_SetDrawDoneCallback(Draw_VIDEO);
+	GX_Flush();
 }
 
 }

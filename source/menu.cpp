@@ -5792,7 +5792,9 @@ void MPlayerMenu()
 
 	while(controlledbygui == 0)
 	{
-		usleep(THREAD_SLEEP);
+		//usleep(THREAD_SLEEP);
+		usleep(5000);
+		if(!drawGui) continue;
 
 		if(!drawGui)
 			continue;
@@ -5824,6 +5826,7 @@ void MPlayerMenu()
 				videobarPauseTip->SetText("Pause");
 			}
 		}
+
 	}
 
 	DisableRumble();

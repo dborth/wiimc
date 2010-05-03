@@ -499,11 +499,8 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 	if(height!=old_h1_2)
 	{
 		old_h1_2 = height;
-		//h1 = ((height/8)*8) >> 2;
-    	//h2 = height >> 3 ;
 		h1 = ceil(height / 4.0);
     	h2 = ceil((height / 2.0) / 4.0);
-//    	printf("h: %d\n",height);
 	}
 
 	//Convert YUV frame to GX textures

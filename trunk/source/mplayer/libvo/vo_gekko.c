@@ -223,6 +223,7 @@ void reinit_video()
 {
 	GX_StartYUV(image_width, image_height, gx_width / 2, gx_height / 2 ); 
 	GX_ConfigTextureYUV(image_width, image_height, pitch);	
+	Set_vsync(vo_vsync);
 }
 
 static int config(uint32_t width, uint32_t height, uint32_t d_width,

@@ -50,7 +50,7 @@ extern "C" {
 
 extern int controlledbygui;
 int mplayer_loadfile(const char* _file); // in mplayer.c
-void DrawMPlayer(); // in gx_supp.c
+//void DrawMPlayer(); // in gx_supp.c
 
 void wiiGotoGui();
 void wiiPause();

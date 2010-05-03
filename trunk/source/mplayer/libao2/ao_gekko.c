@@ -160,7 +160,7 @@ static int init(int rate, int channels, int format, int flags)
 
 static void reset(void)
 {
-	while(buffered > 0) usleep(100);
+	while(playing && (buffered > 0)) usleep(100);
 	playing = false;
 
 	AUDIO_StopDMA();

@@ -52,10 +52,11 @@ static bool settingsSet = false;
 
 // MPlayer threads
 #define STACKSIZE (512*1024)
+#define CACHE_STACKSIZE (8*1024)
 static lwp_t mthread = LWP_THREAD_NULL;
 static lwp_t cthread = LWP_THREAD_NULL;
 static u8 mplayerstack[STACKSIZE] ATTRIBUTE_ALIGN (32);
-static u8 cachestack[STACKSIZE] ATTRIBUTE_ALIGN (32);
+static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
 
 /****************************************************************************
  * Shutdown / Reboot / Exit
@@ -145,7 +146,7 @@ const devoptab_t gecko_out = {
 
 static void USBGeckoOutput()
 {
-	//gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
+	gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
 
 	LWP_MutexInit(&gecko_mutex, false);
 
@@ -379,7 +380,6 @@ void SetMPlayerSettings()
 /****************************************************************************
  * Main
  ***************************************************************************/
-
 int
 main(int argc, char *argv[])
 {
@@ -428,7 +428,7 @@ main(int argc, char *argv[])
 	LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, STACKSIZE, 68);
 
 	// mplayer cache thread
-	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, STACKSIZE, 70);
+	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
 	
 	// create GUI thread
 	GuiInit();

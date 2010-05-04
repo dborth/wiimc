@@ -533,9 +533,6 @@ void DefaultSettings ()
 	WiiSettings.hideExtensions = 1;
 	WiiSettings.language = CONF_GetLanguage();
 
-	if(WiiSettings.language == LANG_KOREAN)
-		WiiSettings.language = LANG_ENGLISH;
-
 	WiiSettings.volume = 50;
 	WiiSettings.exitAction = EXIT_AUTO;
 	WiiSettings.rumble = 1;
@@ -594,10 +591,7 @@ static void FixInvalidSettings()
 	// Global
 	if(WiiSettings.hideExtensions != 1 && WiiSettings.hideExtensions != 0)
 		WiiSettings.hideExtensions = 1;
-	if(WiiSettings.language < 0 ||
-		WiiSettings.language > LANG_LENGTH ||
-		WiiSettings.language == LANG_KOREAN
-		)
+	if(WiiSettings.language < 0 || WiiSettings.language > LANG_LENGTH)
 		WiiSettings.language = LANG_ENGLISH;
 	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
 		WiiSettings.volume = 50;

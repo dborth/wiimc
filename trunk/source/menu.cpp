@@ -2885,9 +2885,6 @@ static void MenuSettingsGlobal()
 
 				if(WiiSettings.language >= LANG_LENGTH)
 					WiiSettings.language = 0;
-
-				if(WiiSettings.language == LANG_KOREAN)
-					WiiSettings.language++;
 				break;
 			case 2:
 				WiiSettings.volume += 10;

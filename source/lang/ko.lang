@@ -1,2 +1,488 @@
-msgid " "
-msgstr ""
+﻿msgid "Videos"
+msgstr "비디오"
+ 
+msgid "Music"
+msgstr "음악"
+ 
+msgid "Pictures"
+msgstr "그림"
+ 
+msgid "Online Media"
+msgstr "온라인 미디어"
+ 
+msgid "Please Wait"
+msgstr "잠시만 기다리세요"
+ 
+msgid "Error"
+msgstr "에러"
+ 
+msgid "OK"
+msgstr "확인"
+ 
+msgid "Retry"
+msgstr "재시도"
+ 
+msgid "Cancel"
+msgstr "취소"
+ 
+msgid "Information"
+msgstr "만든이"
+ 
+msgid "Credits"
+msgstr "저작권"
+ 
+msgid "Play"
+msgstr "재생"
+ 
+msgid "Pause"
+msgstr "일시정지"
+ 
+msgid "Single Play"
+msgstr "한번 재생"
+ 
+msgid "Continuous Play"
+msgstr "연결 재생"
+ 
+msgid "Shuffle"
+msgstr "무작위"
+ 
+msgid "Loop"
+msgstr "반복재생"
+ 
+msgid "Continuous"
+msgstr "계속"
+ 
+msgid "Playlist"
+msgstr "재생목록"
+ 
+msgid "Restart"
+msgstr "재시작"
+ 
+msgid "Loading..."
+msgstr "로딩중..."
+ 
+msgid "Global"
+msgstr "글로벌"
+ 
+msgid "Network"
+msgstr "네트워크"
+ 
+msgid "Subtitles"
+msgstr "자막들"
+ 
+msgid "Subtitle Delay"
+msgstr "자막 지연됨"
+ 
+msgid "Settings"
+msgstr "환경설정"
+ 
+msgid "On"
+msgstr "켜기"
+ 
+msgid "Off"
+msgstr "끄기"
+ 
+msgid "Always"
+msgstr "항상"
+ 
+msgid "Disabled"
+msgstr "불활성"
+ 
+msgid "Backward"
+msgstr "뒤로"
+ 
+msgid "Pause"
+msgstr "일시정지"
+ 
+msgid "Forward"
+msgstr "앞으로"
+ 
+msgid "Single"
+msgstr "한번"
+ 
+msgid "Now Playing"
+msgstr "현재 재생중"
+ 
+msgid "Previous"
+msgstr "이전"
+ 
+msgid "Next"
+msgstr "다음"
+ 
+msgid "Close"
+msgstr "닫기"
+ 
+msgid "DVD"
+msgstr "DVD"
+ 
+msgid "Go back"
+msgstr "뒤로 감기"
+ 
+msgid "Update Available"
+msgstr "업데이트 있음"
+ 
+msgid "An update is available!"
+msgstr "하나의 업데이트 있음!"
+ 
+msgid "Update now"
+msgstr "지금 업데이트"
+ 
+msgid "Update later"
+msgstr "나중에 업데이트"
+ 
+msgid "Online media file not found."
+msgstr "온라인 미디어파일 없음"
+ 
+msgid "Unrecognized DVD format!"
+msgstr "인식되지 않는 DVD 형식!"
+ 
+msgid "Port cannot be blank!"
+msgstr "포트를 비울수 없음!"
+ 
+msgid "Port is not a number!"
+msgstr "포트가 숫자가 아닙니다!"
+ 
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "포트가 허용된 범위는 넘었읍니다.(4-49151)!"
+ 
+msgid "Settings - Global"
+msgstr "설정 - 글로벌"
+ 
+msgid "Settings - Videos"
+msgstr "설정 - 비디오"
+ 
+msgid "Settings - Music"
+msgstr "설정 - 음악"
+ 
+msgid "Settings - Pictures"
+msgstr "설정 - 그림"
+ 
+msgid "Settings - Online Media"
+msgstr "설정 - 온라인미디어"
+ 
+msgid "Settings - Network"
+msgstr "설정 - 네트워크"
+ 
+msgid "Settings - DVD"
+msgstr "설정 - DVD"
+ 
+msgid "File Extensions"
+msgstr "화일 확장자"
+ 
+msgid "Language"
+msgstr "언어"
+ 
+msgid "Volume"
+msgstr "소리크기"
+ 
+msgid "Exit Action"
+msgstr "나가는 역활"
+ 
+msgid "Wiimote Rumble"
+msgstr "위모트 럼블"
+ 
+msgid "Hide"
+msgstr "숨기기"
+ 
+msgid "Show"
+msgstr "보이기"
+ 
+msgid "Auto"
+msgstr "자동"
+ 
+msgid "Return to Wii Menu"
+msgstr "위메뉴로 돌아가기Volver al Menu Wii"
+ 
+msgid "Power Off Wii"
+msgstr "위 전원 끄기"
+ 
+msgid "Return to Loader"
+msgstr "로더로 돌아가기"
+ 
+msgid "Screen Zoom"
+msgstr "스크린 확대/축소"
+ 
+msgid "Screen Position"
+msgstr "스크린 위치"
+ 
+msgid "Frame Dropping"
+msgstr "프레임수"
+ 
+msgid "Aspect Ratio"
+msgstr "화면비율"
+ 
+msgid "Cache Fill"
+msgstr "예비메모리 준비됨"
+ 
+msgid "Audio Delay"
+msgstr "오디오 늦어짐"
+ 
+msgid "Auto-Resume"
+msgstr "자동 다시재생"
+ 
+msgid "Videos Files Folder"
+msgstr "비디오 파일 폴더"
+ 
+msgid "Play Order"
+msgstr "재생 명령"
+ 
+msgid "Music Files Folder"
+msgstr "음악 파일 폴더"
+ 
+msgid "Pictures Files Folder"
+msgstr "그림 파일 폴더"
+ 
+msgid "Display Name"
+msgstr "디스플레이 이름"
+ 
+msgid "Share IP"
+msgstr "공유 IP"
+ 
+msgid "Share Name"
+msgstr "공유 이름"
+ 
+msgid "Username"
+msgstr "사용자이름"
+ 
+msgid "Password"
+msgstr "암호"
+ 
+msgid "New Share"
+msgstr "새로운 공유"
+ 
+msgid "Delete"
+msgstr "지우기"
+ 
+msgid "Delete Share"
+msgstr "공유 지우기"
+ 
+msgid "Are you sure that you want to delete this share?"
+msgstr "정말 이 공유를 지우시길 원하십니까?"
+ 
+msgid "Folder"
+msgstr "폴더"
+ 
+msgid "Mode"
+msgstr "모드"
+ 
+msgid "New Site"
+msgstr "새로움 사이트"
+ 
+msgid "Passive"
+msgstr "수동적"
+ 
+msgid "Active"
+msgstr "활동적"
+ 
+msgid "Delete Site"
+msgstr "사이트 지우기"
+ 
+msgid "Are you sure that you want to delete this site?"
+msgstr "이 사이트를 지우기를 원하십니까?"
+ 
+msgid "Port"
+msgstr "포트"
+ 
+msgid "Rewind / Fast Forward"
+msgstr "되감기 / 빨리 감기"
+ 
+msgid "Error loading file!"
+msgstr "파일 로딩 에러!"
+ 
+msgid "Resume"
+msgstr "재시작"
+ 
+msgid "Stop Slideshow"
+msgstr "슬라이드쇼 멈춤"
+ 
+msgid "Start Slideshow"
+msgstr "슬라이드쇼 시작"
+ 
+msgid  "Slideshow Delay"
+msgstr "슬라이드쇼 지연"
+ 
+msgid "Online Media Folder"
+msgstr "온라인 미디어 폴더"
+ 
+msgid "Add SMB Share"
+msgstr "SMB공유 추가"
+ 
+msgid "Add FTP Site"
+msgstr "FTP사이트 추가"
+ 
+msgid "DVD Menu"
+msgstr "DVD메뉴"
+ 
+msgid "Skip to Main Title"
+msgstr "메인타이틀 넘어가기"
+ 
+msgid "Unable to Initialize MPlayer"
+msgstr "MPlayer를 시작할 수 없음"
+ 
+msgid "Unable to find a valid working path"
+msgstr "유효한 작업경로를 찾을 수 없음"
+ 
+msgid "Unable to change path to"
+msgstr "경로를 바꿀수 없음"
+ 
+msgid "Out of memory: too many files!"
+msgstr "메모리 초과: 너무나 많은 화일!"
+ 
+msgid "Directory name is too long!"
+msgstr "디렉토리 이름이 너무 길어요!"
+ 
+msgid "SD Card"
+msgstr "SD 카드"
+ 
+msgid "USB Mass Storage"
+msgstr "USB 대용량 하드"
+ 
+msgid "Data DVD"
+msgstr "Data DVD"
+ 
+msgid "USB drive not found!"
+msgstr "USB 드라이브가 없음!"
+ 
+msgid "SD card not found!"
+msgstr "SD card가 없음!"
+ 
+msgid "Please install IOS 202 for DVD support."
+msgstr "제발 IOS 202을 DVD 지원을 위해 설치해 주세요."
+ 
+msgid "Loading DVD..."
+msgstr "DVD로딩중..."
+ 
+msgid "No disc inserted!"
+msgstr "삽입된 디스크 없음!"
+ 
+msgid "Invalid DVD."
+msgstr "유효하지 않은 DVD."
+ 
+msgid "Up One Level"
+msgstr "하나 높은 단계로 올라가기"
+ 
+msgid "Error opening"
+msgstr "열기 에러"
+ 
+msgid "Warning"
+msgstr "경고"
+ 
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "이 폴더안에 한개 이상의 그림이 최대 사이즈(6 MB)를 넘으면 볼수 없읍니다."
+ 
+msgid "Error loading playlist!"
+msgstr "재생목록 로딩 에러!"
+ 
+msgid "Playlist does not contain any supported entries!"
+msgstr "재생목록에 지원가능한 것이 없읍니다!"
+ 
+msgid "No Results Found"
+msgstr "결과가 없음"
+ 
+msgid "Your search did not match any media files."
+msgstr "찾기에서 맞는 미디어파일이 없음."
+ 
+msgid "Error opening file!"
+msgstr "파일 열기 에러!"
+ 
+msgid "Saving..."
+msgstr "저장중..."
+ 
+msgid "Error creating file!"
+msgstr "파일 만들기 에러!"
+ 
+msgid "Error saving file!"
+msgstr "파일 저장하기 에러!"
+ 
+msgid "Playlist is Empty"
+msgstr "재생목록 비었음"
+ 
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "파일 위에 포인를 두고 +를 누르면 재생목록에 추가 됩니다."
+ 
+msgid "Exit Playlist"
+msgstr "재생목록 나가기"
+ 
+msgid "Update successful!"
+msgstr "업데이트 성공!"
+ 
+msgid "Update failed!"
+msgstr "업데이트 실패"
+ 
+msgid "Initializing network..."
+msgstr "네트워크 시작중..."
+ 
+msgid "Check settings file."
+msgstr "설정 화일을 확인."
+ 
+msgid "Share name is blank."
+msgstr "공유이름이 비었음."
+ 
+msgid "Share IP is blank."
+msgstr "공유 IP가 비었음."
+ 
+msgid "Invalid network share settings"
+msgstr "사용 할 수 없는 네트워크 공유 설정"
+ 
+msgid "Connecting to network share..."
+msgstr "네트워크 공유 연결 중..."
+ 
+msgid "Failed to connect to network share."
+msgstr "네트워크 공유연결에 실패함."
+ 
+msgid "IP is blank."
+msgstr "IP가 비었음."
+ 
+msgid "Username is blank."
+msgstr "사용자 이름이 비었음."
+ 
+msgid "Password is blank."
+msgstr "암호가 비었음."
+ 
+msgid "Invalid FTP site settings"
+msgstr "사용할 수 없는 FTP사이트 설정"
+ 
+msgid "Connecting to FTP site..."
+msgstr "FTP사이트에 연결 중..."
+ 
+msgid "Failed to connect to FTP site."
+msgstr "FTP 사이트 연결 실패"
+ 
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "사용할 수 있는 SD 나 USB 장치를 찾을 수 없읍니다. 정상적인 작동을 위해 하나가 필요합니다."
+ 
+msgid "Could not create folder"
+msgstr "폴더를 만들 수가 없읍니다."
+ 
+msgid "Saving settings..."
+msgstr "설정 저장 중..."
+ 
+msgid "Could not save settings to"
+msgstr "이 곳에 설정을 저장할수가 없읍니다."
+ 
+msgid "Thanks to"
+msgstr "고마운 사람들"
+ 
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "이 소프트웨어는 GNU General Public License (GPL) Version 2에 의거하여 오픈소스이며 복사하거나 배포 혹은 변형이 가능합니다. 번역 파이널판타지 하마잉"
+ 
+msgid "Menu artwork"
+msgstr "메뉴 아트워크"
+ 
+msgid "Coding"
+msgstr "코딩"
+ 
+msgid "Coding & menu design"
+msgstr "코딩과 메뉴디자인"
+ 
+msgid "Version"
+msgstr "버전"
+ 
+msgid "Buffering..."
+msgstr "버퍼링중..."
+ 
+msgid "Buffering"
+msgstr "버퍼링"
+ 
+msgid "Unable to initialize network (Error #:"
+msgstr "네트워크 시작을 할수 없음 (Error #:"

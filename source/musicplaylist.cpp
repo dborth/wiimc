@@ -17,6 +17,7 @@
 #include "menu.h"
 #include "settings.h"
 #include "fileop.h"
+#include "utils/gettext.h"
 
 extern "C" {
 #include "mplayer/playtree.h"
@@ -207,8 +208,8 @@ static bool EnqueueFolder(char * path, int silent)
 	{
 		if(!silent)
 		{
-			char msg[1024];
-			sprintf(msg, "Error opening %s", path);
+			wchar_t msg[512];
+			swprintf(msg, 512, L"%s %s", gettext("Error opening"), path);
 			ErrorPrompt(msg);
 		}
 		return false;

@@ -131,6 +131,30 @@ void GuiText::SetText(const char * t)
 	}
 }
 
+void GuiText::SetWText(wchar_t * t)
+{
+	if(origText)
+		free(origText);
+	if(text)
+		delete[] text;
+
+	if(textDynNum > 0)
+	{
+		for(int i=0; i < textDynNum; i++)
+			if(textDyn[i])
+				delete[] textDyn[i];
+	}
+
+	origText = NULL;
+	text = NULL;
+	textDynNum = 0;
+	textScrollPos = 0;
+	textScrollInitialDelay = TEXT_SCROLL_INITIAL_DELAY;
+
+	if(t)
+		text = wcsdup(t);
+}
+
 int GuiText::GetLength()
 {
 	if(!text)
@@ -168,6 +192,23 @@ void GuiText::SetMaxWidth(int width)
 	}
 
 	textDynNum = 0;
+}
+
+int GuiText::GetTextWidth()
+{
+	if(!text)
+		return 0;
+
+	if(currentSize != size)
+	{
+		ChangeFontSize(size);
+
+		if(!fontSystem[size])
+			fontSystem[size] = new FreeTypeGX(size);
+
+		currentSize = size;
+	}
+	return fontSystem[size]->getWidth(text);
 }
 
 void GuiText::SetWrap(bool w, int width)
@@ -309,7 +350,6 @@ void GuiText::Draw()
 		return;
 	}
 
-	u32 maxChar = int((float((maxWidth<<1))) / (float(newSize))); // approximate
 	u32 textlen = wcslen(text);
 
 	if(wrap)
@@ -331,7 +371,7 @@ void GuiText::Draw()
 
 				if(text[ch] == ' ' || ch == textlen-1)
 				{
-					if(wcslen(textDyn[linenum]) >= maxChar)
+					if(fontSystem[currentSize]->getWidth(textDyn[linenum]) > maxWidth)
 					{
 						if(lastSpace >= 0)
 						{
@@ -377,14 +417,15 @@ void GuiText::Draw()
 		{
 			textDynNum = 1;
 			textDyn[0] = wcsdup(text);
+			int len = wcslen(textDyn[0]);
 
-			if(textlen > maxChar)
-				textDyn[0][maxChar] = 0;
+			while(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+				textDyn[0][--len] = 0;
 		}
 
 		if(textScroll == SCROLL_HORIZONTAL)
 		{
-			if(textlen > maxChar && (FrameTimer % textScrollDelay == 0))
+			if(fontSystem[currentSize]->getWidth(text) > maxWidth && (FrameTimer % textScrollDelay == 0))
 			{
 				if(textScrollInitialDelay)
 				{
@@ -399,15 +440,36 @@ void GuiText::Draw()
 						textScrollInitialDelay = TEXT_SCROLL_INITIAL_DELAY;
 					}
 
-					wcsncpy(textDyn[0], &text[textScrollPos], maxChar-1);
-
+					wcscpy(textDyn[0], &text[textScrollPos]);
 					u32 dynlen = wcslen(textDyn[0]);
 
-					if(dynlen+2 < maxChar)
+					if(dynlen+2 < textlen)
 					{
 						textDyn[0][dynlen] = ' ';
 						textDyn[0][dynlen+1] = ' ';
-						wcsncat(&textDyn[0][dynlen+2], text, maxChar - dynlen - 2);
+						textDyn[0][dynlen+2] = 0;
+						dynlen += 2;
+					}
+
+					if(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+					{
+						while(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+							textDyn[0][--dynlen] = 0;
+					}
+					else
+					{
+						int i = 0;
+
+						while(fontSystem[currentSize]->getWidth(textDyn[0]) < maxWidth && dynlen+1 < textlen)
+						{
+							textDyn[0][dynlen] = text[i++];
+							textDyn[0][++dynlen] = 0;
+						}
+
+						if(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+							textDyn[0][dynlen-2] = 0;
+						else
+							textDyn[0][dynlen-1] = 0;
 					}
 				}
 			}

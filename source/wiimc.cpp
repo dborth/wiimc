@@ -146,7 +146,7 @@ const devoptab_t gecko_out = {
 
 static void USBGeckoOutput()
 {
-	gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
+	//gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
 
 	LWP_MutexInit(&gecko_mutex, false);
 
@@ -314,8 +314,8 @@ bool InitMPlayer()
 
 	if(chdir(appPath) != 0)
 	{
-		char msg[512];
-		sprintf(msg, "%s %s", gettext("Unable to change path to"), appPath);
+		wchar_t msg[512];
+		swprintf(msg, 512, L"%s %s", gettext("Unable to change path to"), appPath);
 		InfoPrompt("Unable to Initialize MPlayer", msg);
 		return false;
 	}
@@ -380,8 +380,8 @@ void SetMPlayerSettings()
 /****************************************************************************
  * Main
  ***************************************************************************/
-int
-main(int argc, char *argv[])
+
+int main(int argc, char *argv[])
 {
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);

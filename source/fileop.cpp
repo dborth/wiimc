@@ -1278,7 +1278,7 @@ static bool ParseDirEntries()
 int
 ParseDirectory(bool waitParse)
 {
-	char msg[128];
+	wchar_t msg[512];
 	int retry = 1;
 
 	ResetBrowser(); // reset browser
@@ -1290,7 +1290,7 @@ ParseDirectory(bool waitParse)
 
 		if(dirIter == NULL)
 		{
-			sprintf(msg, "%s %s", gettext("Error opening"), browser.dir);
+			swprintf(msg, 512, L"%s %s", gettext("Error opening"), browser.dir);
 			retry = ErrorPromptRetry(msg);
 
 			if(retry)

@@ -8,7 +8,7 @@ msgid "Pictures"
 msgstr "ピクチャー"
 
 msgid "Online Media"
-msgstr "オンライン・メディア"
+msgstr "オンラインメディア"
 
 msgid "Please Wait"
 msgstr "お待ちください.."
@@ -44,15 +44,15 @@ msgid "Continuous Play"
 msgstr "連続再生"
 
 msgid "Shuffle"
-msgstr "シャッフル"
+msgstr "シャッフル再生"
 
 msgid "Loop"
-msgstr "ループ"
+msgstr "ループ再生"
 
 msgid "Continuous"
-msgstr "続ける"
+msgstr "連続再生"
 
-msgid "Playlist"
+msgid  "Playlist"
 msgstr "プレイリスト"
 
 msgid "Restart"
@@ -71,7 +71,7 @@ msgid "Subtitles"
 msgstr "字幕"
 
 msgid "Subtitle Delay"
-msgstr "字幕表遅延設定"
+msgstr "字幕表示遅延設定"
 
 msgid "Settings"
 msgstr "設定"
@@ -95,13 +95,13 @@ msgid "Pause"
 msgstr "中断"
 
 msgid "Forward"
-msgstr "早送り"
+msgstr "先送り"
 
 msgid "Single"
-msgstr "シングル"
+msgstr "１曲再生"
 
 msgid "Now Playing"
-msgstr "再生中:"
+msgstr "再生中："
 
 msgid "Previous"
 msgstr "前へ"
@@ -176,7 +176,7 @@ msgid "Volume"
 msgstr "ボリューム"
 
 msgid "Exit Action"
-msgstr "終了処理"
+msgstr "WiiMC終了処理"
 
 msgid "Wiimote Rumble"
 msgstr "Ｗｉｉリモコン振動"
@@ -197,7 +197,7 @@ msgid "Power Off Wii"
 msgstr "電源を切る"
 
 msgid "Return to Loader"
-msgstr "ローダーに戻る"
+msgstr "ＨＢＣに戻る"
 
 msgid "Screen Zoom"
 msgstr "スクリーンズーム"
@@ -224,7 +224,7 @@ msgid "Videos Files Folder"
 msgstr "ビデオフォルダ"
 
 msgid "Play Order"
-msgstr "再生順序"
+msgstr "再生指定"
 
 msgid "Music Files Folder"
 msgstr "ミュージックフォルダ"
@@ -269,10 +269,10 @@ msgid "New Site"
 msgstr "新しいサイト"
 
 msgid "Passive"
-msgstr "パッシブ"
+msgstr "パッシブモード"
 
 msgid "Active"
-msgstr "アクティブ"
+msgstr "アクティブモード"
 
 msgid "Delete Site"
 msgstr "サイトを削除する"
@@ -284,7 +284,7 @@ msgid "Port"
 msgstr "ポート"
 
 msgid "Rewind / Fast Forward"
-msgstr "巻戻し/早送り"
+msgstr "後戻し/先送り秒数"
 
 msgid "Error loading file!"
 msgstr "ファイルが読み込めません"
@@ -298,17 +298,17 @@ msgstr "スライドショーを中止"
 msgid "Start Slideshow"
 msgstr "スライドショーを開始"
 
-msgid  "Slideshow Delay"
-msgstr "スライドショーの遅延設定"
+msgid "Slideshow Delay"
+msgstr "スライドショー切替秒数"
 
 msgid "Online Media Folder"
 msgstr "オンラインメディアフォルダ"
 
 msgid "Add SMB Share"
-msgstr "ＳＭＢ共有を追加"
+msgstr "共有フォルダ設定"
 
 msgid "Add FTP Site"
-msgstr "ＦＴＰサイトを追加"
+msgstr "ＦＴＰ設定"
 
 msgid "DVD Menu"
 msgstr "ＤＶＤメニュー"
@@ -404,10 +404,10 @@ msgid "Exit Playlist"
 msgstr "プレイリストを中止"
 
 msgid "Update successful!"
-msgstr "Aggiormamento Completato!"
+msgstr "アップデートが完了しました"
 
 msgid "Update failed!"
-msgstr "Aggiornamento Fallito!"
+msgstr "アップデートに失敗しました"
 
 msgid "Initializing network..."
 msgstr "ネットワークを初期化中.."
@@ -461,22 +461,21 @@ msgid "Could not save settings to"
 msgstr "設定をセーブできませんでした"
 
 msgid "Thanks to"
-msgstr "貢献者"
+msgstr "hanks to"
 
 msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
-msgstr "このソフトはオープンソースでありGNU General Public License (GPL) Versione 2の下、コピー、配布、変更が許可されます。"
-
+msgstr "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
 msgid "Menu artwork"
-msgstr "メニューアートワーク"
+msgstr "Menu artwork"
 
 msgid "Coding"
-msgstr "コーディング"
+msgstr "Coding"
 
 msgid "Coding & menu design"
-msgstr "コーディング＆メニューデザイン"
+msgstr "Coding & menu design"
 
 msgid "Version"
-msgstr "バージョン"
+msgstr "Version"
 
 msgid "Buffering..."
 msgstr "バッファ中.."
@@ -486,3 +485,49 @@ msgstr "バッファ中"
 
 msgid "Unable to initialize network (Error #:"
 msgstr "ネットワーク初期化エラー (Error #:"
+
+msgid "Settings - Subtitles"
+msgstr "設定 - 字幕"
+
+msgid "Visibility"
+msgstr "字幕表示"
+
+msgid "Delay"
+msgstr "遅延秒数
+
+msgid "Codepage"
+msgstr "文字コード"
+
+msgid "Subtitle Language"
+msgstr "字幕言語"
+
+msgid "Default"
+msgstr "デフォルト"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "メモリ不足で言語設定の変更ができませんでした"
+
+msgid "Font Required"
+msgstr "フォントが必要です"
+
+msgid "A new font is required to display this language."
+msgstr "選択した言語の表示には新しいフォントが必要です"
+
+msgid "Download font"
+msgstr "フォントのダウンロード"
+
+msgid "Unable to save font file!"
+msgstr "フォントをセーブできませんでした"
+
+msgid "Out of Memory"
+msgstr "メモリ不足エラー"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr "画像を読み込むために十分な空きメモリがありません"
+
+msgid "Close MPlayer"
+msgstr "ＭＰｌａｙｅｒを閉じる"
+
+msgid "IP"
+msgstr "ＩＰ"
+

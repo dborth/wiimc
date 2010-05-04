@@ -198,7 +198,6 @@ static int load_restore_point(char *_filename);
 int controlledbygui=1;
 int pause_gui=0;
 
-//static bool low_cache=false;
 static char fileplaying[MAXPATHLEN];
 static int enable_restore_points=1;
 
@@ -1837,7 +1836,6 @@ static int generate_video_frame(sh_video_t *sh_video, demux_stream_t *d_video)
 
     while (1) {
 	int drop_frame = check_framedrop(sh_video->frametime);
-	if( drop_frame >0)printf("drop\n");
 	void *decoded_frame;
 	current_module = "decode video";
 	// XXX Time used in this call is not counted in any performance
@@ -2275,7 +2273,7 @@ static int sleep_until_update(float *time_frame, float *aq_sleep_time)
     if (*time_frame > 0.001 && !(vo_flags&256))
     	*time_frame = timing_sleep(*time_frame);
 #ifdef GEKKO
-    else usleep(1);// to help LWP threads
+    else usleep(1); // to help LWP threads
 #endif
     return frame_time_remaining;
 }
@@ -2547,120 +2545,6 @@ static void pause_loop(void)
 
   (void)GetRelativeTime(); // ignore time that passed during pause
 }
-/*
-static void pause_loop(void)
-{
-    mp_cmd_t* cmd=NULL;
-
-#ifdef CONFIG_GUI
-    if (use_gui)
-	guiGetEvent(guiCEvent, (char *)guiSetPause);
-#endif
-    if (mpctx->audio_out && mpctx->sh_audio)
-        mpctx->audio_out->pause(); // pause audio, keep data if possible
-
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-        mpctx->video_out->control(VOCTRL_PAUSE, NULL);
-
-    while ( (cmd = mp_input_get_cmd(20, 1, 1)) == NULL || cmd->pausing == 4) {
-	if (cmd) {
-	  cmd = mp_input_get_cmd(0,1,0);	  
-	  run_command(mpctx, cmd);
-	  mp_cmd_free(cmd);
-	  continue;
-	}
-	if (mpctx->sh_video && mpctx->video_out && vo_config_count)
-	    mpctx->video_out->check_events();
-#ifdef CONFIG_GUI
-        if (use_gui) {
-            guiEventHandling();
-            guiGetEvent(guiReDraw, NULL);
-            if (guiIntfStruct.Playing!=2 || (rel_seek_secs || abs_seek_pos))
-                break;
-        }
-#endif
-#ifdef CONFIG_MENU
-        if (vf_menu)
-            vf_menu_pause_update(vf_menu);
-#endif
-#ifdef GEKKO
-	if(!mpctx->sh_video || !mpctx->video_out)
-    {
-    	usec_sleep(20000);
-    }
-    else
-    {
-    	DrawMPlayer(true);
-    	//VIDEO_WaitVSync();
-    	usec_sleep(100);
-    }
-
-    if(controlledbygui == 2) // mplayer shutdown requested!
-    {
-        if (cmd && cmd->id == MP_CMD_PAUSE) {
-            cmd = mp_input_get_cmd(0,1,0);
-            mp_cmd_free(cmd);
-        }
-        mpctx->osd_function=OSD_PLAY;
-    	return;
-    }
-#else
-        usec_sleep(20000);
-#endif
-    }
-
-    if (cmd && cmd->id == MP_CMD_PAUSE) {
-        cmd = mp_input_get_cmd(0,1,0);
-        mp_cmd_free(cmd);
-    }
-    
-    mpctx->osd_function=OSD_PLAY;
-#ifdef GEKKO
-    cmd = mp_input_get_cmd(0, 0, 1);
-	if(cmd && cmd->id!=MP_CMD_PAUSE)
-	{
-		if (mpctx->audio_out && mpctx->sh_audio)
-        	mpctx->audio_out->reset();	// reset audio
-	}
-	//else
-	{    
-    	    
-		if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
-		{
-			//DI_StartMotor();
-			//printf("start motor\n");
-			void *ptr=memalign(32, 0x800*2);
-			//printf("read sector 1\n");
-			DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
-			//printf("read sector 5000\n");
-			DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
-			free(ptr);
-		}
-
-	    if (mpctx->audio_out && mpctx->sh_audio)
-    	    mpctx->audio_out->resume();	// resume audio
-    }
-#else
-    if (mpctx->audio_out && mpctx->sh_audio) {
-        if (mpctx->eof) // do not play remaining audio if we e.g.  switch to the next file
-          mpctx->audio_out->reset();
-        else
-          mpctx->audio_out->resume(); // resume audio
-    }
-#endif
-    if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-        mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
-    (void)GetRelativeTime(); // ignore time that passed during pause
-#ifdef CONFIG_GUI
-    if (use_gui) {
-        if (guiIntfStruct.Playing == guiSetStop)
-            mpctx->eof = 1;
-        else
-            guiGetEvent(guiCEvent, (char *)guiSetPlay);
-    }
-#endif
-}
-*/
 
 // Find the right mute status and record position for new file position
 static void edl_seek_reset(MPContext *mpctx)
@@ -4223,30 +4107,14 @@ if(auto_quality>0){
   current_module="pause";
 
     //low cache
-	if (stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0) {
-   		//if(mpctx->osd_function == OSD_PAUSE)
-   		{
-  			mpctx->osd_function = OSD_PAUSE;
-		   mpctx->was_paused = 1;
-   		   //low_cache=false;
-   		   low_cache_loop();
-   		}
-   		/*
-   		else
-		{
-			mpctx->osd_function = OSD_PAUSE;
-			low_cache=true;
-		}*/
+	if (stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0)
+	{
+   		mpctx->osd_function = OSD_PAUSE;
+   		mpctx->was_paused = 1;
+   		low_cache_loop();
 	}
-	else if (mpctx->osd_function == OSD_PAUSE) {
-      /*
-      if(low_cache) 
-	  {
-	  	low_cache=false;
-	  	mpctx->osd_function = OSD_PLAY;
-	  }	  
-      else
-    	*/
+	else if (mpctx->osd_function == OSD_PAUSE)
+	{ 
       if(pause_gui)
 	  {
 	  	pause_gui=0;
@@ -4258,7 +4126,7 @@ if(auto_quality>0){
 	  	mpctx->was_paused = 1;
 	  	pause_loop();
 	  }
-  }
+    }
 
 
 // handle -sstep
@@ -4696,7 +4564,6 @@ static void low_cache_loop(void)
 			mpctx->video_out->check_events();
 
 		DrawMPlayer();
-		//VIDEO_WaitVSync();
 	}
 	rm_osd_msg(OSD_MSG_PAUSE);
 	SetBufferingStatus(0);

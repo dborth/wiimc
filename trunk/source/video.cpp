@@ -114,8 +114,6 @@ void Menu_Render()
 	GX_SetColorUpdate(GX_TRUE);
 	GX_CopyDisp(xfb[whichfb],GX_TRUE);
 	GX_DrawDone();
-	//VIDEO_SetNextFramebuffer(xfb[whichfb]);
-	//VIDEO_Flush();
 	VIDEO_WaitVSync();
 
 	++FrameTimer;
@@ -237,7 +235,7 @@ int DrawMPlayerGui()
 void Draw_VIDEO()
 {
 	VIDEO_SetNextFramebuffer(xfb[whichfb]);
-	VIDEO_Flush ();
+	VIDEO_Flush();
 }
 void
 InitVideo ()

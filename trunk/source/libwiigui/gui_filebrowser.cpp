@@ -179,7 +179,7 @@ void GuiFileBrowser::MakeEntry(int i)
 	fileListText[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
 	fileListText[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	fileListText[i]->SetPosition(32,-2);
-	fileListText[i]->SetMaxWidth(width-92);
+	fileListText[i]->SetMaxWidth(width-120);
 
 	fileListBg[i] = new GuiImage(bgBrowseEntry);
 	fileListBg[i]->SetTile(width/16);

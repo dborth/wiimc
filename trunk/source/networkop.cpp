@@ -195,7 +195,7 @@ bool InitializeNetwork(bool silent)
 		return false;
 
 	int retry = 1;
-	char msg[150];
+	wchar_t msg[150];
 	s32 initResult;
 
 	if(!silent)
@@ -221,7 +221,7 @@ bool InitializeNetwork(bool silent)
 			if(networkInit || silent)
 				break;
 
-			sprintf(msg, "%s %i)", gettext("Unable to initialize network (Error #:"), initResult);
+			swprintf(msg, 150, L"%s %i)", gettext("Unable to initialize network (Error #:"), initResult);
 			retry = ErrorPromptRetry(msg);
 		}
 
@@ -267,7 +267,7 @@ ConnectShare (int num, bool silent)
 		if(!silent)
 		{
 			char msg[50];
-			char msg2[100];
+			wchar_t msg2[100];
 			if(chkS + chkI > 1) // more than one thing is wrong
 				sprintf(msg, "Check settings file.");
 			else if(chkS)
@@ -275,7 +275,7 @@ ConnectShare (int num, bool silent)
 			else if(chkI)
 				sprintf(msg, "Share IP is blank.");
 
-			sprintf(msg2, "%s - %s", gettext("Invalid network share settings"), gettext(msg));
+			swprintf(msg2, 100, L"%s - %s", gettext("Invalid network share settings"), gettext(msg));
 			ErrorPrompt(msg2);
 		}
 		return false;
@@ -335,7 +335,7 @@ ConnectFTP (int num, bool silent)
 		if(!silent)
 		{
 			char msg[50];
-			char msg2[100];
+			wchar_t msg2[100];
 			if(chkI + chkU + chkP > 1) // more than one thing is wrong
 				sprintf(msg, "Check settings file.");
 			else if(chkI)
@@ -345,7 +345,7 @@ ConnectFTP (int num, bool silent)
 			else if(chkP)
 				sprintf(msg, "Password is blank.");
 
-			sprintf(msg2, "%s - %s", gettext("Invalid FTP site settings"), gettext(msg));
+			swprintf(msg2, 100, L"%s - %s", gettext("Invalid FTP site settings"), gettext(msg));
 			ErrorPrompt(msg2);
 		}
 		return false;

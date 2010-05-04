@@ -662,6 +662,9 @@ class GuiText : public GuiElement
 		//!Sets the text of the GuiText element
 		//!\param t Text
 		void SetText(const char * t);
+		//!Sets the text of the GuiText element
+		//!\param t UTF-8 Text
+		void SetWText(wchar_t * t);
 		//!Gets the translated text length of the GuiText element
 		int GetLength();
 		//!Sets up preset values to be used by GuiText(t)
@@ -679,6 +682,8 @@ class GuiText : public GuiElement
 		//!Sets the maximum width of the drawn texture image
 		//!\param w Maximum width
 		void SetMaxWidth(int w);
+		//!Gets the width of the text when rendered
+		int GetTextWidth();
 		//!Enables/disables text scrolling
 		//!\param s Scrolling on/off
 		void SetScroll(int s);

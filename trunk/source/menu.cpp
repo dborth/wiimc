@@ -344,6 +344,8 @@ static void ResumeUpdateThread()
 	LWP_ResumeThread(updatethread);
 }
 
+static bool videoPaused;
+
 extern "C" void DoMPlayerGuiDraw()
 {
 	if(menuMode != 1)
@@ -366,6 +368,34 @@ extern "C" void DoMPlayerGuiDraw()
 	mainWindow->Update(&userInput[2]);
 	mainWindow->Update(&userInput[1]);
 	mainWindow->Update(&userInput[0]);
+
+	if(mainWindow->IsVisible() && wiiInDVDMenu())
+	{
+		mainWindow->SetVisible(false);
+		mainWindow->SetState(STATE_DISABLED);
+	}
+	else if(!mainWindow->IsVisible() && !wiiInDVDMenu())
+	{
+		mainWindow->SetVisible(true);
+		mainWindow->SetState(STATE_DEFAULT);
+		HideVolumeLevelBar();
+		statusText->SetVisible(false);
+	}
+
+	if(videoPaused != wiiIsPaused())
+	{
+		videoPaused = !videoPaused;
+		if(videoPaused)
+		{
+			videobarPauseImg->SetImage(actionbarPlay);
+			videobarPauseTip->SetText("Play");
+		}
+		else
+		{
+			videobarPauseImg->SetImage(actionbarPause);
+			videobarPauseTip->SetText("Pause");
+		}
+	}
 }
 
 /****************************************************************************
@@ -634,7 +664,7 @@ void DisableMainWindow()
  * presenting a user with a choice
  ***************************************************************************/
 int
-WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label)
+WindowPrompt(const char *title, wchar_t *msg, const char *btn1Label, const char *btn2Label)
 {
 	int choice = -1;
 
@@ -651,7 +681,8 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	GuiText titleTxt(title, 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	titleTxt.SetPosition(0,18);
-	GuiText msgTxt(msg, 20, (GXColor){255, 255, 255, 255});
+	GuiText msgTxt(NULL, 20, (GXColor){255, 255, 255, 255});
+	msgTxt.SetWText(msg);
 	msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	msgTxt.SetPosition(0,-20);
 	msgTxt.SetWrap(true, 430);
@@ -731,6 +762,14 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 	return choice;
+}
+
+int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label)
+{
+	wchar_t *tempmsg = charToWideChar(msg);
+	int res = WindowPrompt(title, tempmsg, btn1Label, btn2Label);
+	delete[] tempmsg;
+	return res;
 }
 
 /****************************************************************************
@@ -998,12 +1037,32 @@ int ErrorPromptRetry(const char *msg)
 	return WindowPrompt("Error", msg, "Retry", "Cancel");
 }
 
+void ErrorPrompt(wchar_t *msg)
+{
+	WindowPrompt("Error", msg, "OK", NULL);
+}
+
+int ErrorPromptRetry(wchar_t *msg)
+{
+	return WindowPrompt("Error", msg, "Retry", "Cancel");
+}
+
 void InfoPrompt(const char *msg)
 {
 	WindowPrompt("Information", msg, "OK", NULL);
 }
 
 void InfoPrompt(const char *title, const char *msg)
+{
+	WindowPrompt(title, msg, "OK", NULL);
+}
+
+void InfoPrompt(wchar_t *msg)
+{
+	WindowPrompt("Information", msg, "OK", NULL);
+}
+
+void InfoPrompt(const char *title, wchar_t *msg)
 {
 	WindowPrompt(title, msg, "OK", NULL);
 }
@@ -1195,16 +1254,17 @@ static void CreditsWindow()
 	int numEntries = 15;
 	GuiText * txt[numEntries];
 
-	char iosVersion[20];
+	char iosVersion[10];
 	sprintf(iosVersion, "IOS: %d", IOS_GetVersion());
 
-	char appVersion[20];
-	sprintf(appVersion, "%s %s", gettext("Version"), APPVERSION);
+	wchar_t appVersion[20];
+	swprintf(appVersion, 20, L"%s %s", gettext("Version"), APPVERSION);
 
 	txt[i] = new GuiText(iosVersion, 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	txt[i]->SetPosition((screenwidth/2)-30,30); i++;
-	txt[i] = new GuiText(appVersion, 16, (GXColor){255, 255, 255, 255});
+	txt[i] = new GuiText(NULL, 16, (GXColor){255, 255, 255, 255});
+	txt[i]->SetWText(appVersion);
 	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	txt[i]->SetPosition((screenwidth/2)-30,56); i++;
 
@@ -1218,7 +1278,7 @@ static void CreditsWindow()
 	txt[i] = new GuiText("Tantric", 20, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	txt[i]->SetPosition(15,y); i++; y+=26;
-	
+
 	txt[i] = new GuiText("Coding", 20, (GXColor){160, 160, 160, 255});
 	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	txt[i]->SetPosition(-15,y); i++;
@@ -1261,7 +1321,7 @@ static void CreditsWindow()
 	txt[i] = new GuiText("This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2.", 14, (GXColor){160, 160, 160, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	txt[i]->SetPosition(0,y);
-	txt[i]->SetWrap(true, 580);
+	txt[i]->SetWrap(true, 500);
 
 	for(i=0; i < numEntries; i++)
 		alignWindow.Append(txt[i]);
@@ -2679,6 +2739,7 @@ static void MenuDVD()
 			sprintf(loadedFile, "dvdnav://");
 		else
 			sprintf(loadedFile, "dvd://");
+		sprintf(loadedFileDisplay, "DVD");
 		mainWindow->SetState(STATE_DISABLED);
 		mainWindow->Append(disabled);
 		ShowAction("Loading...");
@@ -3474,7 +3535,7 @@ static void MenuSettingsPictures()
 			firstRun = false;
 
 			snprintf(options.value[0], 40, "%s", WiiSettings.picturesFolder);
-			sprintf(options.value[1], "%d seconds", WiiSettings.slideshowDelay);
+			sprintf(options.value[1], "%d sec", WiiSettings.slideshowDelay);
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -3825,7 +3886,7 @@ static void MenuSettingsNetworkSMB()
 	int i = 0;
 	bool firstRun = true;
 	OptionList options;
-	char titleStr[100];
+	wchar_t titleStr[100];
 	char shareName[100];
 
 	sprintf(options.name[i++], "Display Name");
@@ -3849,9 +3910,10 @@ static void MenuSettingsNetworkSMB()
 	else
 		sprintf(shareName, "%s", WiiSettings.smbConf[netEditIndex].share);
 
-	sprintf(titleStr, "%s - %s", gettext("Settings - Network"), shareName);
+	swprintf(titleStr, 100, L"%s - %s", gettext("Settings - Network"), shareName);
 
-	GuiText titleTxt(titleStr, 28, (GXColor){255, 255, 255, 255});
+	GuiText titleTxt(NULL, 28, (GXColor){255, 255, 255, 255});
+	titleTxt.SetWText(titleStr);
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
@@ -4014,7 +4076,7 @@ static void MenuSettingsNetworkFTP()
 	int i = 0;
 	bool firstRun = true;
 	OptionList options;
-	char titleStr[100];
+	wchar_t titleStr[100];
 	char siteName[100];
 
 	sprintf(options.name[i++], "Display Name");
@@ -4044,9 +4106,10 @@ static void MenuSettingsNetworkFTP()
 		WiiSettings.ftpConf[netEditIndex].port,
 		WiiSettings.ftpConf[netEditIndex].folder);
 
-	sprintf(titleStr, "%s - %s", gettext("Settings - Network"), siteName);
+	swprintf(titleStr, 100, L"%s - %s", gettext("Settings - Network"), siteName);
 
-	GuiText titleTxt(titleStr, 28, (GXColor){255, 255, 255, 255});
+	GuiText titleTxt(NULL, 28, (GXColor){255, 255, 255, 255});
+	titleTxt.SetWText(titleStr);
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
@@ -5766,9 +5829,9 @@ void SetBufferingStatus(int s)
 	}
 
 	statusText->SetVisible(true);
-	char txt[50];
-	sprintf(txt, "%s (%02d%%)", gettext("Buffering"), s);
-	statusText->SetText(txt);
+	wchar_t txt[50];
+	swprintf(txt, 50, L"%s (%02d%%)", gettext("Buffering"), s);
+	statusText->SetWText(txt);
 }
 
 /****************************************************************************
@@ -5788,46 +5851,10 @@ void MPlayerMenu()
 	menuMode = 1; // switch to MPlayer GUI mode
 	EnableRumble();
 
-	bool paused = !wiiIsPaused();
+	videoPaused = !wiiIsPaused();
 
 	while(controlledbygui == 0)
-	{
-		//usleep(THREAD_SLEEP);
-		usleep(5000);
-		if(!drawGui) continue;
-
-		if(!drawGui)
-			continue;
-
-		if(mainWindow->IsVisible() && wiiInDVDMenu())
-		{
-			mainWindow->SetVisible(false);
-			mainWindow->SetState(STATE_DISABLED);
-		}
-		else if(!mainWindow->IsVisible() && !wiiInDVDMenu())
-		{
-			mainWindow->SetVisible(true);
-			mainWindow->SetState(STATE_DEFAULT);
-			HideVolumeLevelBar();
-			statusText->SetVisible(false);
-		}
-
-		if(paused != wiiIsPaused())
-		{
-			paused = !paused;
-			if(paused)
-			{
-				videobarPauseImg->SetImage(actionbarPlay);
-				videobarPauseTip->SetText("Play");
-			}
-			else
-			{
-				videobarPauseImg->SetImage(actionbarPause);
-				videobarPauseTip->SetText("Pause");
-			}
-		}
-
-	}
+		usleep(300000);
 
 	DisableRumble();
 

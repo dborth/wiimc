@@ -25,10 +25,11 @@ GuiTooltip::GuiTooltip(const char *t)
 	rightImage.SetImage(&tooltipRight);
 	
 	height = leftImage.GetHeight();
-	
-	text = new GuiText(t);
-	SetText(t);
-	
+
+	text = NULL;
+	if(t)
+		SetText(t);
+
 	leftImage.SetParent(this);
 	tileImage.SetParent(this);
 	rightImage.SetParent(this);
@@ -62,14 +63,14 @@ void GuiTooltip::SetText(const char * t)
 		delete text;
 		text = NULL;
 	}
-	
+
 	if(!t)
 		return;
-	
+
 	text = new GuiText(t, 16, (GXColor){0, 0, 0, 255});
 	text->SetParent(this);
 
-	int tile = (text->GetLength()*8) / tileImage.GetWidth();
+	int tile = ((float)text->GetTextWidth() / (float)tileImage.GetWidth()) + 1;
 
 	if(tile < 0)
 		tile = 0;
@@ -85,7 +86,7 @@ void GuiTooltip::ResetText()
 	if(text)
 		text->ResetText();
 
-	int tile = (text->GetLength()*8) / tileImage.GetWidth();
+	int tile = ((float)text->GetTextWidth() / (float)tileImage.GetWidth()) + 1;
 
 	if(tile < 0)
 		tile = 0;

@@ -700,7 +700,7 @@ bool
 SaveSettings (bool silent)
 {
 	char filepath[1024] = { 0 };
-	char msg[512];
+	wchar_t msg[512];
 	int datasize;
 	int offset = 0;
 
@@ -752,7 +752,7 @@ SaveSettings (bool silent)
 				{
 					if(!silent)
 					{
-						sprintf(msg, "%s %s", gettext("Could not create folder"), filepath);
+						swprintf(msg, 512, L"%s %s", gettext("Could not create folder"), filepath);
 						ErrorPrompt(msg);
 					}
 					return false;
@@ -767,7 +767,7 @@ SaveSettings (bool silent)
 				{
 					if(!silent)
 					{
-						sprintf(msg, "%s %s", gettext("Could not create folder"), filepath);
+						swprintf(msg, 512, L"%s %s", gettext("Could not create folder"), filepath);
 						ErrorPrompt(msg);
 					}
 					return false;
@@ -809,7 +809,7 @@ SaveSettings (bool silent)
 
 	if(!silent)
 	{
-		sprintf(msg, "%s %s", gettext("Could not save settings to"), filepath);
+		swprintf(msg, 512, L"%s %s", gettext("Could not save settings to"), filepath);
 		ErrorPrompt(msg);
 	}
 	return false;

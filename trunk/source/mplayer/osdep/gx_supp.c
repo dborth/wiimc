@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <ogc/mutex.h>
 #include <ogc/lwp.h>
+#include <ogc/lwp_watchdog.h>
 #include <wiiuse/wpad.h>
 
 #include "../libvo/video_out.h"
@@ -55,6 +56,7 @@ extern int pause_gui;
 extern int controlledbygui;
 
 /*** 2D ***/
+static bool need_wait=false;
 extern u32 whichfb;
 extern u32 *xfb[2];
 
@@ -327,32 +329,24 @@ void GX_UpdatePitch(u16 *pitch)
 	memset(Vtexture, 0x80, UVtexsize);
 	GX_ConfigTextureYUV(vo_dwidth, vo_dheight, pitch);
 }
-#include <ogc/lwp_watchdog.h>
-static bool need_wait=false;
+
 void DrawMPlayer()
 {
-	//u64 t1,t2,t3;
-	//t1=gettime();
-
 	DCStoreRangeNoSync(Ytexture, Ytexsize);
 	DCStoreRangeNoSync(Utexture, UVtexsize);
 	DCStoreRangeNoSync(Vtexture, UVtexsize);
-
 
 	if(need_wait)
 	{
 		GX_WaitDrawDone();
 		if (vsync )
 		{
-			printf("vsync\n");
 			VIDEO_WaitVSync();
 
 			if (vmode->viTVMode & VI_NON_INTERLACE)
 				VIDEO_WaitVSync();
 		}
 	}
-
-	//t2=gettime();
 
 	whichfb ^=1;
 
@@ -404,10 +398,6 @@ void DrawMPlayer()
 
 	GX_SetDrawDone();
 	need_wait=true;
-
-	//t3=gettime();
-	//printf("t1: %lld   t2 :%lld\n",ticks_to_microsecs(t2-t1),ticks_to_microsecs(t3-t2));
-
 }
 
 void GX_AllocTextureMemory()
@@ -547,10 +537,12 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 		Vsrc4 += UVrowpitch;
 	}
 }
+
 void Set_vsync(int _vsync)
 {
 	vsync=_vsync;
 }
+
 void GX_RenderTexture()
 {
 	DrawMPlayer();

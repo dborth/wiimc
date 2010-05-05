@@ -249,10 +249,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	pitch[0] = 0;
 	pitch[1] = 0;
 	pitch[2] = 0;
-	
-	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
-		mplayerwidth = 854; // 480 * (16/9)
-
 
 	float screen_aspect = (float)mplayerwidth / (float)mplayerheight;
 	float image_aspect = (float)d_width / (float)d_height;
@@ -283,6 +279,9 @@ static void check_events(void)
 
 static int preinit(const char *arg)
 {
+	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
+		mplayerwidth = 854; // 480 * (16/9)
+
 	vo_screenheight = mplayerheight;
 	vo_screenwidth = mplayerwidth;
 	vo_fs=1;

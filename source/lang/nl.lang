@@ -259,6 +259,9 @@ msgstr "Verwijder gedeelde map"
 msgid "Are you sure that you want to delete this share?"
 msgstr "Weet u zeker dat u de gedeelde map wilt verwijderen?"
 
+msgid "IP"
+msgstr ""
+
 msgid "Folder"
 msgstr "Map"
 
@@ -475,6 +478,9 @@ msgstr "Programmeur"
 msgid "Coding & menu design"
 msgstr "Programmeur en vormgever"
 
+msgid "Logo"
+msgstr ""
+
 msgid "Version"
 msgstr "Versie"
 
@@ -486,3 +492,45 @@ msgstr "Bufferen"
 
 msgid "Unable to initialize network (Error #:"
 msgstr "Niet mogelijk verbinding te maken met het netwerk (Error #:"
+
+msgid "Settings - Subtitles"
+msgstr ""
+
+msgid "Visibility"
+msgstr ""
+
+msgid "Delay"
+msgstr ""
+
+msgid "Codepage"
+msgstr ""
+
+msgid "Subtitle Language"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "Could not change language. Not enough memory!"
+msgstr ""
+
+msgid "Font Required"
+msgstr ""
+
+msgid "A new font is required to display this language."
+msgstr ""
+
+msgid "Download font"
+msgstr ""
+
+msgid "Unable to save font file!"
+msgstr ""
+
+msgid "Out of Memory"
+msgstr ""
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr ""
+
+msgid "Close MPlayer"
+msgstr ""

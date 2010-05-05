@@ -259,6 +259,9 @@ msgstr "Kustuta Jagatud Kaust"
 msgid "Are you sure that you want to delete this share?"
 msgstr "Oled kindel et tahad kustutada selle jagatud kausta?"
 
+msgid "IP"
+msgstr ""
+
 msgid "Folder"
 msgstr "Kaust"
 
@@ -475,6 +478,9 @@ msgstr "Kood"
 msgid "Coding & menu design"
 msgstr "Kood & Menüü Disain"
 
+msgid "Logo"
+msgstr ""
+
 msgid "Version"
 msgstr "Versioon"
 
@@ -486,3 +492,45 @@ msgstr "Puhverdan"
 
 msgid "Unable to initialize network (Error #:"
 msgstr "Võrku pole võimalik ühendada (Viga #:"
+
+msgid "Settings - Subtitles"
+msgstr ""
+
+msgid "Visibility"
+msgstr ""
+
+msgid "Delay"
+msgstr ""
+
+msgid "Codepage"
+msgstr ""
+
+msgid "Subtitle Language"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "Could not change language. Not enough memory!"
+msgstr ""
+
+msgid "Font Required"
+msgstr ""
+
+msgid "A new font is required to display this language."
+msgstr ""
+
+msgid "Download font"
+msgstr ""
+
+msgid "Unable to save font file!"
+msgstr ""
+
+msgid "Out of Memory"
+msgstr ""
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr ""
+
+msgid "Close MPlayer"
+msgstr ""

@@ -2342,7 +2342,6 @@ int reinit_video_chain(void) {
 
 #ifdef GEKKO
 //rodries patch for big resolution on wii
-
 if(sh_video->disp_w>1024)
  {
 		char *arg_scale[]={"w","xxxx","h","-2",NULL};
@@ -3028,6 +3027,8 @@ stream_set_interrupt_callback(mp_input_check_interrupt);
    }
  }
 #endif
+
+SetMPlayerSettings();
 
 initialized_flags|=INITIALIZED_INPUT;
 current_module = NULL;
@@ -4901,10 +4902,10 @@ void wiiSetCodepage(char *cp)
 	if(sub_cp)
 		free(sub_cp);
 	
-	if(cp[0] == 0)
+	if(cp == NULL || cp[0] == 0)
 		sub_cp = NULL;
 	else
-		sub_cp = strdup(sub_cp);
+		sub_cp = strdup(cp);
 }
 
 void wiiLoadRestorePoints(char *buffer, int size)

@@ -31,9 +31,9 @@ enum {
 
 void ExitApp();
 bool InitMPlayer();
-void LoadMPlayer();
-void ShutdownMPlayer();
-void FindNextAudioFile();
+void LoadMPlayerFile();
+void ResumeMPlayerFile();
+void StopMPlayerFile();
 extern int ScreenshotRequested;
 extern int ConfigRequested;
 extern int ShutdownRequested;
@@ -44,13 +44,14 @@ extern char loadedFileDisplay[];
 extern char appPath[];
 extern char loadPath[];
 
-#ifdef __cplusplus
 extern "C" {
-#endif
+	
+void FindNextFile(bool load);
 
 extern int controlledbygui;
-int mplayer_loadfile(const char* _file); // in mplayer.c
+int mplayer_main(); // in mplayer.c
 
+void wiiLoadFile(char *file);
 void wiiGotoGui();
 void wiiPause();
 bool wiiIsPaused();
@@ -80,8 +81,6 @@ void wiiSetCodepage(char *cp);
 void wiiLoadRestorePoints(char *buffer, int size);
 char * wiiSaveRestorePoints(char *path);
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif

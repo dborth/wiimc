@@ -52,7 +52,7 @@ msgstr "ループ再生"
 msgid "Continuous"
 msgstr "連続再生"
 
-msgid  "Playlist"
+msgid "Playlist"
 msgstr "プレイリスト"
 
 msgid "Restart"
@@ -71,7 +71,7 @@ msgid "Subtitles"
 msgstr "字幕"
 
 msgid "Subtitle Delay"
-msgstr "字幕表示遅延設定"
+msgstr "字幕表示遅延秒数"
 
 msgid "Settings"
 msgstr "設定"
@@ -100,8 +100,8 @@ msgstr "先送り"
 msgid "Single"
 msgstr "１曲再生"
 
-msgid "Now Playing"
-msgstr "再生中："
+msgid "now playing"
+msgstr "再生ファイル："
 
 msgid "Previous"
 msgstr "前へ"
@@ -143,7 +143,7 @@ msgid "Port is not a number!"
 msgstr "ポートは数字でなければなりません"
 
 msgid "Port is outside the allowed range (4-49151)!"
-msgstr "ポートは(4-49151)の範囲で設定しなければなりません"
+msgstr "ポートは(4-49151)の範囲で設定してください"
 
 msgid "Settings - Global"
 msgstr "設定 - 共通"
@@ -200,13 +200,13 @@ msgid "Return to Loader"
 msgstr "ＨＢＣに戻る"
 
 msgid "Screen Zoom"
-msgstr "スクリーンズーム"
+msgstr "スクリーン拡大率"
 
 msgid "Screen Position"
 msgstr "スクリーン位置"
 
 msgid "Frame Dropping"
-msgstr "フレームドロップ"
+msgstr "フレームドロップ機能"
 
 msgid "Aspect Ratio"
 msgstr "アスペクト比"
@@ -215,10 +215,10 @@ msgid "Cache Fill"
 msgstr "キャッシュサイズ"
 
 msgid "Audio Delay"
-msgstr "オーディオディレイ"
+msgstr "音声遅延秒数"
 
 msgid "Auto-Resume"
-msgstr "レジューム再生"
+msgstr "自動レジューム再生"
 
 msgid "Videos Files Folder"
 msgstr "ビデオフォルダ"
@@ -258,6 +258,9 @@ msgstr "共有を削除する"
 
 msgid "Are you sure that you want to delete this share?"
 msgstr "本当に削除してよいですか？"
+
+msgid "IP"
+msgstr "ＩＰ"
 
 msgid "Folder"
 msgstr "フォルダ"
@@ -305,7 +308,7 @@ msgid "Online Media Folder"
 msgstr "オンラインメディアフォルダ"
 
 msgid "Add SMB Share"
-msgstr "共有フォルダ設定"
+msgstr "ＳＭＢ設定"
 
 msgid "Add FTP Site"
 msgstr "ＦＴＰ設定"
@@ -347,7 +350,7 @@ msgid "SD card not found!"
 msgstr "ＳＤカードが見つかりません"
 
 msgid "Please install IOS 202 for DVD support."
-msgstr "ＤＶＤのサポートのためIOS 202をインストールしてください"
+msgstr "ＤＶＤのサポートのため IOS 202をインストールしてください"
 
 msgid "Loading DVD..."
 msgstr "ＤＶＤをロード中.."
@@ -368,19 +371,19 @@ msgid "Warning"
 msgstr "警告"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "このフォルダに６ＭＢ以上の画像ファイルが存在するため表示できません。"
+msgstr "６ＭＢ以上の画像ファイルがフォルダ内に存在します 該当する画像ファイルは表示できません"
 
 msgid "Error loading playlist!"
 msgstr "プレイリストをロードできません"
 
 msgid "Playlist does not contain any supported entries!"
-msgstr "プレイリストにサポートしているエントリが含まれていません"
+msgstr "プレイリストにサポートしているエントリが 含まれていません"
 
 msgid "No Results Found"
 msgstr "該当なし"
 
 msgid "Your search did not match any media files."
-msgstr "検索条件にヒットするメディアファイルが見つかりませんでした"
+msgstr "検索条件にヒットするメディアファイルが 見つかりませんでした"
 
 msgid "Error opening file!"
 msgstr "ファイルの表示に失敗しました"
@@ -398,10 +401,10 @@ msgid "Playlist is Empty"
 msgstr "プレイリストが空です"
 
 msgid "Hover over items and push the + button to add them to your playlist."
-msgstr "アイテムにカーソルを合わせて+ボタンを押下しプレイリストに追加します"
+msgstr "アイテムにカーソルを合わせて+ボタンをクリックし プレイリストに追加します"
 
 msgid "Exit Playlist"
-msgstr "プレイリストを中止"
+msgstr "プレイリストから出る"
 
 msgid "Update successful!"
 msgstr "アップデートが完了しました"
@@ -449,7 +452,7 @@ msgid "Failed to connect to FTP site."
 msgstr "ＦＴＰサイトへの接続に失敗しました"
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "有効なＳＤ・ＵＳＢデバイスが見つかりません - 少なくとも１つ必要です."
+msgstr "有効なＳＤ・ＵＳＢデバイスが見つかりません - 少なくとも１つ必要です"
 
 msgid "Could not create folder"
 msgstr "フォルダを作成できませんでした"
@@ -461,21 +464,25 @@ msgid "Could not save settings to"
 msgstr "設定をセーブできませんでした"
 
 msgid "Thanks to"
-msgstr "hanks to"
+msgstr "次の方々に感謝します"
 
 msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
-msgstr "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "このソフトウェアはオープンソースであり、GNU General Public License (GPL) Version 2の条件下において、複製、配布、編集が許可されます"
+
 msgid "Menu artwork"
-msgstr "Menu artwork"
+msgstr "メニューアートワーク"
 
 msgid "Coding"
-msgstr "Coding"
+msgstr "コーディング"
 
 msgid "Coding & menu design"
-msgstr "Coding & menu design"
+msgstr "コーディング＆メニューデザイン"
+
+msgid "Logo"
+msgstr "ロゴデザイン"
 
 msgid "Version"
-msgstr "Version"
+msgstr "バージョン"
 
 msgid "Buffering..."
 msgstr "バッファ中.."
@@ -493,7 +500,7 @@ msgid "Visibility"
 msgstr "字幕表示"
 
 msgid "Delay"
-msgstr "遅延秒数
+msgstr "遅延秒数"
 
 msgid "Codepage"
 msgstr "文字コード"
@@ -508,26 +515,22 @@ msgid "Could not change language. Not enough memory!"
 msgstr "メモリ不足で言語設定の変更ができませんでした"
 
 msgid "Font Required"
-msgstr "フォントが必要です"
+msgstr "他言語フォントの導入"
 
 msgid "A new font is required to display this language."
-msgstr "選択した言語の表示には新しいフォントが必要です"
+msgstr "選択した言語のフォントをダウンロードします"
 
 msgid "Download font"
-msgstr "フォントのダウンロード"
+msgstr "ダウンロード"
 
 msgid "Unable to save font file!"
-msgstr "フォントをセーブできませんでした"
+msgstr "フォントの導入に失敗しました"
 
 msgid "Out of Memory"
 msgstr "メモリ不足エラー"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr "画像を読み込むために十分な空きメモリがありません"
+msgstr "画像を読み込むために 十分な空きメモリがありません"
 
 msgid "Close MPlayer"
 msgstr "ＭＰｌａｙｅｒを閉じる"
-
-msgid "IP"
-msgstr "ＩＰ"
-

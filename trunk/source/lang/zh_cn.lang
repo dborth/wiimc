@@ -1,488 +1,488 @@
 msgid "Videos"
-msgstr "脢脫脝碌"
+msgstr "视频"
 
 msgid "Music"
-msgstr "脪么脌脰"
+msgstr "音乐"
 
 msgid "Pictures"
-msgstr "脥录脝卢"
+msgstr "图片"
 
 msgid "Online Media"
-msgstr "脭脷脧脽脙陆脤氓"
+msgstr "在线媒体"
 
 msgid "Please Wait"
-msgstr "脟毛碌脠麓媒"
+msgstr "请等待"
 
 msgid "Error"
-msgstr "麓铆脦贸"
+msgstr "错误"
 
 msgid "OK"
-msgstr "脠路露篓"
+msgstr "确定"
 
 msgid "Retry"
-msgstr "脰脴脢脭"
+msgstr "重试"
 
 msgid "Cancel"
-msgstr "脠隆脧没"
+msgstr "取消"
 
 msgid "Information"
-msgstr "脨脜脧垄"
+msgstr "信息"
 
 msgid "Credits"
-msgstr "赂脨脨禄"
+msgstr "感谢"
 
 msgid "Play"
-msgstr "虏楼路脜"
+msgstr "播放"
 
 msgid "Pause"
-msgstr "脭脻脥拢"
+msgstr "暂停"
 
 msgid "Single Play"
-msgstr "碌楼露脌虏楼路脜"
+msgstr "单独播放"
 
 msgid "Continuous Play"
-msgstr "脕卢脨酶虏楼路脜"
+msgstr "连续播放"
 
 msgid "Shuffle"
-msgstr "禄潞鲁氓"
+msgstr "缓冲"
 
 msgid "Loop"
-msgstr "脩颅禄路"
+msgstr "循环"
 
 msgid "Continuous"
-msgstr "录脤脨酶"
+msgstr "继续"
 
 msgid "Playlist"
-msgstr "虏楼路脜脕脨卤铆"
+msgstr "播放列表"
 
 msgid "Restart"
-msgstr "脰脴脨脗脝么露炉"
+msgstr "重新启动"
 
 msgid "Loading..."
-msgstr "露脕脠隆脰脨..."
+msgstr "读取中..."
 
 msgid "Global"
-msgstr "脠芦戮脰脡猫脰脙"
+msgstr "全局设置"
 
 msgid "Network"
-msgstr "脥酶脗莽"
+msgstr "网络"
 
 msgid "Subtitles"
-msgstr "脳脰脛禄"
+msgstr "字幕"
 
 msgid "Subtitle Delay"
-msgstr "脳脰脛禄脩脫鲁脵"
+msgstr "字幕延迟"
 
 msgid "Settings"
-msgstr "脡猫脰脙"
+msgstr "设置"
 
 msgid "On"
-msgstr "驴陋脝么"
+msgstr "开启"
 
 msgid "Off"
-msgstr "鹿脴卤脮"
+msgstr "关闭"
 
 msgid "Always"
-msgstr "脢录脰脮"
+msgstr "始终"
 
 msgid "Disabled"
-msgstr "陆没脫脙"
+msgstr "禁用"
 
 msgid "Backward"
-msgstr "潞贸脥脣"
+msgstr "后退"
 
 msgid "Pause"
-msgstr "脭脻脥拢"
+msgstr "暂停"
 
 msgid "Forward"
-msgstr "脧貌脟掳"
+msgstr "向前"
 
 msgid "Single"
-msgstr "碌楼露脌虏楼路脜"
+msgstr "单独播放"
 
 msgid "Now Playing"
-msgstr "脮媒脭脷虏楼路脜脰脨"
+msgstr "正在播放中"
 
 msgid "Previous"
-msgstr "脧貌脟掳"
+msgstr "向前"
 
 msgid "Next"
-msgstr "脧貌潞贸"
+msgstr "向后"
 
 msgid "Close"
-msgstr "鹿脴卤脮"
+msgstr "关闭"
 
 msgid "DVD"
-msgstr "DVD鹿芒脜脤"
+msgstr "DVD光盘"
 
 msgid "Go Back"
-msgstr "路碌禄脴"
+msgstr "返回"
 
 msgid "Update Available"
-msgstr "驴脡脫脙赂眉脨脗"
+msgstr "可用更新"
 
 msgid "An update is available!"
-msgstr "麓忙脭脷驴脡脫脙赂眉脨脗拢隆"
+msgstr "存在可用更新！"
 
 msgid "Update now"
-msgstr "脕垄驴脤赂眉脨脗"
+msgstr "立刻更新"
 
 msgid "Update later"
-msgstr "脡脭潞贸赂眉脨脗"
+msgstr "稍后更新"
 
 msgid "Online media file not found."
-msgstr "脙禄脫脨脮脪碌陆脭脷脧脽脙陆脤氓脦脛录镁."
+msgstr "没有找到在线媒体文件."
 
 msgid "Unrecognized DVD format!"
-msgstr "脦脼路篓脢露卤冒碌脛DVD赂帽脢陆!"
+msgstr "无法识别的DVD格式!"
 
 msgid "Port cannot be blank!"
-msgstr "露脣驴脷虏禄脛脺脦陋驴脮!"
+msgstr "端口不能为空!"
 
 msgid "Port is not a number!"
-msgstr "露脣驴脷卤脴脨毛脢脟脪禄赂枚脢媒脳脰"
+msgstr "端口必须是一个数字"
 
 msgid "Port is outside the allowed range (4-49151)!"
-msgstr "露脣驴脷碌脛脢媒脰碌路露脦搂卤脴脨毛脭脷 (4-49151)脰庐录盲"
+msgstr "端口的数值范围必须在 (4-49151)之间"
 
 msgid "Settings - Global"
-msgstr "脡猫脰脙 - 脠芦戮脰"
+msgstr "设置 - 全局"
 
 msgid "Settings - Videos"
-msgstr "脡猫脰脙 - 脢脫脝碌"
+msgstr "设置 - 视频"
 
 msgid "Settings - Music"
-msgstr "脡猫脰脙 - 脪么脌脰"
+msgstr "设置 - 音乐"
 
 msgid "Settings - Pictures"
-msgstr "脡猫脰脙 - 脥录脝卢"
+msgstr "设置 - 图片"
 
 msgid "Settings - Online Media"
-msgstr "脡猫脰脙 - 脭脷脧脽脥酶脗莽"
+msgstr "设置 - 在线网络"
 
 msgid "Settings - Network"
-msgstr "脡猫脰脙 - 脥酶脗莽k"
+msgstr "设置 - 网络k"
 
 msgid "Settings - DVD"
-msgstr "脡猫脰脙 - DVD"
+msgstr "设置 - DVD"
 
 msgid "File Extensions"
-msgstr "脦脛录镁脌漏脮鹿"
+msgstr "文件扩展"
 
 msgid "Language"
-msgstr "脫茂脩脭"
+msgstr "语言"
 
 msgid "Volume"
-msgstr "脪么脕驴"
+msgstr "音量"
 
 msgid "Exit Action"
-msgstr "脥脣鲁枚虏脵脳梅"
+msgstr "退出操作"
 
 msgid "Wiimote Rumble"
-msgstr "Wiimote脮冒露炉"
+msgstr "Wiimote震动"
 
 msgid "Hide"
-msgstr "脪镁虏脴"
+msgstr "隐藏"
 
 msgid "Show"
-msgstr "脧脭脢戮"
+msgstr "显示"
 
 msgid "Auto"
-msgstr "脳脭露炉"
+msgstr "自动"
 
 msgid "Return to Wii Menu"
-msgstr "路碌禄脴Wii脰梅陆莽脙忙"
+msgstr "返回Wii主界面"
 
 msgid "Power Off Wii"
-msgstr "鹿脴卤脮Wii"
+msgstr "关闭Wii"
 
 msgid "Return to Loader"
-msgstr "路碌禄脴HBC"
+msgstr "返回HBC"
 
 msgid "Screen Zoom"
-msgstr "脝脕脛禄脣玫路脜"
+msgstr "屏幕缩放"
 
 msgid "Screen Position"
-msgstr "脝脕脛禄脦禄脰脙"
+msgstr "屏幕位置"
 
 msgid "Frame Dropping"
-msgstr "碌么脰隆"
+msgstr "掉帧"
 
 msgid "Aspect Ratio"
-msgstr "脝脕脛禄赂脽驴铆卤脠"
+msgstr "屏幕高宽比"
 
 msgid "Cache Size"
-msgstr "禄潞麓忙麓贸脨隆"
+msgstr "缓存大小"
 
 msgid "Audio Delay"
-msgstr "脪么脝碌脩脫鲁脵"
+msgstr "音频延迟"
 
 msgid "Auto-Resume"
-msgstr "脳脭露炉禄脰赂麓"
+msgstr "自动恢复"
 
 msgid "Videos Files Folder"
-msgstr "脢脫脝碌脦脛录镁录脨"
+msgstr "视频文件夹"
 
 msgid "Play Order"
-msgstr "虏楼路脜脣鲁脨貌"
+msgstr "播放顺序"
 
 msgid "Music Files Folder"
-msgstr "脪么脌脰脦脛录镁录脨"
+msgstr "音乐文件夹"
 
 msgid "Pictures Files Folder"
-msgstr "脥录脝卢脦脛录镁录脨"
+msgstr "图片文件夹"
 
 msgid "Display Name"
-msgstr "脧脭脢戮脙没脳脰"
+msgstr "显示名字"
 
 msgid "Share IP"
-msgstr "鹿虏脧铆ip"
+msgstr "共享ip"
 
 msgid "Share Name"
-msgstr "鹿虏脧铆脦脛录镁脙没"
+msgstr "共享文件名"
 
 msgid "Username"
-msgstr "脫脙禄搂脙没"
+msgstr "用户名"
 
 msgid "Password"
-msgstr "脙脺脗毛"
+msgstr "密码"
 
 msgid "New Share"
-msgstr "脨脗陆篓脥酶脗莽鹿虏脧铆"
+msgstr "新建网络共享"
 
 msgid "Delete"
-msgstr "脡戮鲁媒"
+msgstr "删除"
 
 msgid "Delete Share"
-msgstr "脡戮鲁媒脥酶脗莽鹿虏脧铆"
+msgstr "删除网络共享"
 
 msgid "Are you sure that you want to delete this share?"
-msgstr "脢脟路帽脡戮鲁媒麓脣脥酶脗莽鹿虏脧铆脡猫脰脙?"
+msgstr "是否删除此网络共享设置?"
 
 msgid "Folder"
-msgstr "脦脛录镁录脨"
+msgstr "文件夹"
 
 msgid "Mode"
-msgstr "脛拢脢陆"
+msgstr "模式"
 
 msgid "New Site"
-msgstr "脨脗脮戮碌茫"
+msgstr "新站点"
 
 msgid "Passive"
-msgstr "卤禄露炉"
+msgstr "被动"
 
 msgid "Active"
-msgstr "禄卯露炉"
+msgstr "活动"
 
 msgid "Delete Site"
-msgstr "脡戮鲁媒脮戮碌茫"
+msgstr "删除站点"
 
 msgid "Are you sure that you want to delete this site?"
-msgstr "脢脟路帽脡戮鲁媒麓脣脮戮碌茫拢驴"
+msgstr "是否删除此站点？"
 
 msgid "Port"
-msgstr "露脣驴脷"
+msgstr "端口"
 
 msgid "Rewind / Fast Forward"
-msgstr "碌鹿麓酶 / 驴矛陆酶"
+msgstr "倒带 / 快进"
 
 msgid "Error loading file!"
-msgstr "露脕脠隆脦脛录镁麓铆脦贸!"
+msgstr "读取文件错误!"
 
 msgid "Resume"
-msgstr "录脤脨酶"
+msgstr "继续"
 
 msgid "Stop Slideshow"
-msgstr "脥拢脰鹿虏楼路脜禄脙碌脝脝卢"
+msgstr "停止播放幻灯片"
 
 msgid "Start Slideshow"
-msgstr "驴陋脢录禄脙碌脝脝卢虏楼路脜"
+msgstr "开始幻灯片播放"
 
 msgid  "Slideshow Delay"
-msgstr "禄脙碌脝脝卢脩脫鲁脵"
+msgstr "幻灯片延迟"
 
 msgid "Online Media Folder"
-msgstr "脭脷脧脽脙陆脤氓脦脛录镁录脨"
+msgstr "在线媒体文件夹"
 
 msgid "Add SMB Share"
-msgstr "脤铆录脫脥酶脗莽鹿虏脧铆"
+msgstr "添加网络共享"
 
 msgid "Add FTP Site"
-msgstr "脤铆录脫FTP脮戮碌茫"
+msgstr "添加FTP站点"
 
 msgid "DVD Menu"
-msgstr "DVD虏脣碌楼"
+msgstr "DVD菜单"
 
 msgid "Skip to Main Title"
-msgstr "脗脭鹿媒脰梅卤锚脤芒"
+msgstr "略过主标题"
 
 msgid "Unable to Initialize MPlayer"
-msgstr "脦脼路篓鲁玫脢录禄炉MPlayer"
+msgstr "无法初始化MPlayer"
 
 msgid "Unable to find a valid working path"
-msgstr "脙禄脫脨脮脪碌陆驴脡脪脭脭脣脨脨鲁脤脨貌碌脛脗路戮露"
+msgstr "没有找到可以运行程序的路径"
 
 msgid "Unable to change path to"
-msgstr "虏禄脛脺赂眉赂脛脗路戮露碌陆"
+msgstr "不能更改路径到"
 
 msgid "Out of memory: too many files!"
-msgstr "脛脷麓忙脪莽鲁枚: 脦脛录镁鹿媒露脿!"
+msgstr "内存溢出: 文件过多!"
 
 msgid "Directory name is too long!"
-msgstr "脦脛录镁录脨脙没脳脰鹿媒鲁陇拢隆"
+msgstr "文件夹名字过长！"
 
 msgid "SD Card"
-msgstr "SD驴篓"
+msgstr "SD卡"
 
 msgid "USB Mass Storage"
-msgstr "USB麓忙麓垄脡猫卤赂"
+msgstr "USB存储设备"
 
 msgid "Data DVD"
-msgstr "脢媒戮脻DVD鹿芒脜脤"
+msgstr "数据DVD光盘"
 
 msgid "USB drive not found!"
-msgstr "脙禄脫脨路垄脧脰usb脡猫卤赂!"
+msgstr "没有发现usb设备!"
 
 msgid "SD card not found!"
-msgstr "脙禄脫脨路垄脧脰SD驴篓!"
+msgstr "没有发现SD卡!"
 
 msgid "Please install IOS 202 for DVD support."
-msgstr "脰禄脫脨掳虏脳掳IOS 202虏脜驴脡脪脭虏楼路脜dvd鹿芒脜脤隆拢"
+msgstr "只有安装herms ios 202才可以播放dvd光盘。"
 
 msgid "Loading DVD..."
-msgstr "露脕脠隆DVD..."
+msgstr "读取DVD..."
 
 msgid "No disc inserted!"
-msgstr "脙禄脫脨路脜脠毛DVD鹿芒脜脤!"
+msgstr "没有放入DVD光盘!"
 
 msgid "Invalid DVD."
-msgstr "脦脼脨搂碌脛DVD鹿芒脜脤隆拢"
+msgstr "无效的DVD光盘。"
 
 msgid "Up One Level"
-msgstr "路碌禄脴脡脧录露虏脣碌楼"
+msgstr "返回上级菜单"
 
 msgid "Error opening"
-msgstr "脭脣脨脨麓铆脦贸"
+msgstr "运行错误"
 
 msgid "Warning"
-msgstr "戮炉赂忙"
+msgstr "警告"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "脭脷麓脣脦脛录镁录脨脰脨脫脨脪禄赂枚禄貌露脿赂枚脥录脝卢脦脛录镁鲁卢鹿媒6m脣霉脪脭脦脼路篓虏茅驴麓拢隆"
+msgstr "在此文件夹中有一个或多个图片文件超过6m所以无法查看！"
 
 msgid "Error loading playlist!"
-msgstr "露脕脠隆虏楼路脜脕脨卤铆麓铆脦贸!"
+msgstr "读取播放列表错误!"
 
 msgid "Playlist does not contain any supported entries!"
-msgstr "虏楼路脜脕脨卤铆脙禄脫脨掳眉潞卢驴脡脰搂鲁脰碌脛脦脛录镁!"
+msgstr "播放列表没有包含可支持的文件!"
 
 msgid "No Results Found"
-msgstr "脙禄脫脨路垄脧脰脠脦潞脦脦脛录镁隆拢"
+msgstr "没有发现任何文件。"
 
 msgid "Your search did not match any media files."
-msgstr "脙禄脫脨脮脪碌陆脠脦潞脦驴脡脪脭虏楼路脜碌脛脙陆脤氓脦脛录镁隆拢"
+msgstr "没有找到任何可以播放的媒体文件。"
 
 msgid "Error opening file!"
-msgstr "脦脛录镁虏楼路脜麓铆脦贸!"
+msgstr "文件播放错误!"
 
 msgid "Saving..."
-msgstr "卤拢麓忙脰脨..."
+msgstr "保存中..."
 
 msgid "Error creating file!"
-msgstr "脦脛录镁陆篓脕垄麓铆脦贸!"
+msgstr "文件建立错误!"
 
 msgid "Error saving file!"
-msgstr "脦脛录镁卤拢麓忙麓铆脦贸!"
+msgstr "文件保存错误!"
 
 msgid "Playlist is Empty"
-msgstr "虏楼路脜脕脨卤铆驴脮"
+msgstr "播放列表空"
 
 msgid "Hover over items and push the + button to add them to your playlist."
-msgstr "脩隆脭帽虏楼路脜脦脛录镁虏垄脟脪掳麓+录眉脤铆录脫碌陆虏楼路脜脕脨卤铆脰脨隆拢"
+msgstr "选择播放文件并且按+键添加到播放列表中。"
 
 msgid "Exit Playlist"
-msgstr "脥脣鲁枚虏楼路脜脕脨卤铆"
+msgstr "退出播放列表"
 
 msgid "Update successful!"
-msgstr "赂眉脨脗鲁脡鹿娄!"
+msgstr "更新成功!"
 
 msgid "Update failed!"
-msgstr "赂眉脨脗脢搂掳脺!"
+msgstr "更新失败!"
 
 msgid "Initializing network..."
-msgstr "鲁玫脢录禄炉脥酶脗莽禄茫脰脨..."
+msgstr "初始化网络汇中..."
 
 msgid "Check settings file."
-msgstr "录矛虏茅脡猫脰脙脦脛录镁"
+msgstr "检查设置文件"
 
 msgid "Share name is blank."
-msgstr "脙禄脫脨脡猫脰脙鹿虏脧铆脙没"
+msgstr "没有设置共享名"
 
 msgid "Share IP is blank."
-msgstr "脙禄脫脨脢盲脠毛鹿虏脧铆ip碌脴脰路"
+msgstr "没有输入共享ip地址"
 
 msgid "Invalid network share settings"
-msgstr "脦脼脨搂碌脛脥酶脗莽鹿虏脧铆脡猫脰脙"
+msgstr "无效的网络共享设置"
 
 msgid "Connecting to network share..."
-msgstr "脮媒脭脷脕卢陆脫碌陆脥酶脗莽鹿虏脧铆..."
+msgstr "正在连接到网络共享..."
 
 msgid "Failed to connect to network share."
-msgstr "脥酶脗莽鹿虏脧铆脕卢陆脫脢搂掳脺"
+msgstr "网络共享连接失败"
 
 msgid "IP is blank."
-msgstr "IP碌脴脰路脦陋驴脮"
+msgstr "IP地址为空"
 
 msgid "Username is blank."
-msgstr "脫脙禄搂脙没脢脟驴脮"
+msgstr "用户名是空"
 
 msgid "Password is blank."
-msgstr "脙脺脗毛脦陋驴脮"
+msgstr "密码为空"
 
 msgid "Invalid FTP site settings"
-msgstr "FTP脮戮碌茫脡猫脰脙脦脼脨搂"
+msgstr "FTP站点设置无效"
 
 msgid "Connecting to FTP site..."
-msgstr "脮媒脭脷脕卢陆脫碌陆FTP脮戮碌茫..."
+msgstr "正在连接到FTP站点..."
 
 msgid "Failed to connect to FTP site."
-msgstr "脕卢陆脫碌陆FTP脮戮碌茫脢搂掳脺"
+msgstr "连接到FTP站点失败"
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "脦脼路篓碌陆脪禄赂枚驴脡脫脙碌脛SD驴篓禄貌脮脽USb脡猫卤赂-脨猫脪陋脪禄赂枚脡猫卤赂虏脜脛脺陆酶脨脨脮媒鲁拢虏脵脳梅"
+msgstr "无法到一个可用的SD卡或者USb设备-需要一个设备才能进行正常操作"
 
 msgid "Could not create folder"
-msgstr "脦脼路篓陆篓脕垄脦脛录镁录脨"
+msgstr "无法建立文件夹"
 
 msgid "Saving settings..."
-msgstr "脡猫脰脙卤拢麓忙脰脨..."
+msgstr "设置保存中..."
 
 msgid "Could not save settings to"
-msgstr "脦脼路篓卤拢麓忙脡猫脰脙"
+msgstr "无法保存设置"
 
 msgid "Thanks to"
-msgstr "赂脨脨禄"
+msgstr "感谢"
 
 msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
-msgstr "麓脣脠铆录镁脢脟驴陋脭麓脠铆录镁虏垄脛茫驴脡脪脭赂麓脰脝拢卢路垄脨脨潞脥脭脷GNU General Public License (GPL) Version 2鹿忙脭貌脧脗脨脼赂脛隆拢"
+msgstr "此软件是开源软件并你可以复制，发行和在GNU General Public License (GPL) Version 2规则下修改。"
 
 msgid "Menu artwork"
-msgstr "虏脣碌楼脥录脝卢"
+msgstr "菜单图片"
 
 msgid "Coding"
-msgstr "麓煤脗毛卤脿脨麓"
+msgstr "代码编写"
 
 msgid "Coding & menu design"
-msgstr "麓煤脗毛潞脥虏脣碌楼脡猫录脝"
+msgstr "代码和菜单设计"
 
 msgid "Version"
-msgstr "掳忙卤戮"
+msgstr "版本"
 
 msgid "Buffering..."
-msgstr "禄潞鲁氓脰脨..."
+msgstr "缓冲中..."
 
 msgid "Buffering"
-msgstr "禄潞鲁氓脰脨"
+msgstr "缓冲中"
 
 msgid "Unable to initialize network (Error #:"
-msgstr "脦脼路篓鲁玫脢录禄炉脥酶脗莽 (麓铆脦贸 #:"
+msgstr "无法初始化网络 (错误 #:"

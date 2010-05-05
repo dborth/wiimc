@@ -96,7 +96,7 @@ static void * devicecallback (void *arg)
 				if(strncmp(loadedFile, "sd", 2) == 0)
 				{
 					loadedFile[0] = 0;
-					ShutdownMPlayer();
+					StopMPlayerFile();
 					RemoveVideoImg();
 				}
 
@@ -118,7 +118,7 @@ static void * devicecallback (void *arg)
 				if(strncmp(loadedFile, "usb", 3) == 0)
 				{
 					loadedFile[0] = 0;
-					ShutdownMPlayer();
+					StopMPlayerFile();
 					RemoveVideoImg();
 				}
 
@@ -141,7 +141,7 @@ static void * devicecallback (void *arg)
 				if(strncmp(loadedFile, "dvd", 3) == 0)
 				{
 					loadedFile[0] = 0;
-					ShutdownMPlayer();
+					StopMPlayerFile();
 					RemoveVideoImg();
 					if(menuCurrent == MENU_DVD)
 						UndoChangeMenu();

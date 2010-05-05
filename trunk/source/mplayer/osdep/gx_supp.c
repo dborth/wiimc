@@ -417,12 +417,8 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	Mtx44 p;
 
 	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
-	//SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
+	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
 	need_wait=false;
-
-	// Set new aspect
-	//if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
-	//	mplayerwidth = 854; // 480 * (16/9)
 
 	xscale = haspect * hor_zoom;
 	yscale = vaspect * vert_zoom;

@@ -29,7 +29,7 @@ msgid "Information"
 msgstr "Information"
 
 msgid "Credits"
-msgstr "Credits"
+msgstr "Über"
 
 msgid "Play"
 msgstr "Wiedergabe"
@@ -62,7 +62,7 @@ msgid "Loading..."
 msgstr "Laden..."
 
 msgid "Global"
-msgstr "Global"
+msgstr "Allgemein"
 
 msgid "Network"
 msgstr "Netzwerk"
@@ -71,7 +71,7 @@ msgid "Subtitles"
 msgstr "Untertitel"
 
 msgid "Subtitle Delay"
-msgstr "Untertitel Verzögerung"
+msgstr "Untertitelverzögerung"
 
 msgid "Settings"
 msgstr "Einstellungen"
@@ -100,14 +100,14 @@ msgstr "Vorwärts"
 msgid "Single"
 msgstr "Einzeln"
 
-msgid "Now Playing"
+msgid "now playing"
 msgstr "Aktueller Titel"
 
 msgid "Previous"
-msgstr "Vorheriger"
+msgstr "Vorheriges"
 
 msgid "Next"
-msgstr "Nächster"
+msgstr "Nächstes"
 
 msgid "Close"
 msgstr "Schließen"
@@ -146,7 +146,7 @@ msgid "Port is outside the allowed range (4-49151)!"
 msgstr "Port liegt nicht im gültigen Bereich (4-49151)!"
 
 msgid "Settings - Global"
-msgstr "Einstellungen - Global"
+msgstr "Einstellungen - Allgemein"
 
 msgid "Settings - Videos"
 msgstr "Einstellungen - Videos"
@@ -185,7 +185,7 @@ msgid "Hide"
 msgstr "Verbergen"
 
 msgid "Show"
-msgstr "Zeigen"
+msgstr "Anzeigen"
 
 msgid "Auto"
 msgstr "Auto"
@@ -212,7 +212,7 @@ msgid "Aspect Ratio"
 msgstr "Seitenverhältnis"
 
 msgid "Cache Fill"
-msgstr "Cache Füllung"
+msgstr "Zwischenspeicher Füllung"
 
 msgid "Audio Delay"
 msgstr "Tonverzögerung"
@@ -298,17 +298,17 @@ msgstr "Slideshow beenden"
 msgid "Start Slideshow"
 msgstr "Slideshow starten"
 
-msgid  "Slideshow Delay"
+msgid "Slideshow Delay"
 msgstr "Slideshow Verzögerung"
 
 msgid "Online Media Folder"
 msgstr "Online Medien Verzeichnis"
 
 msgid "Add SMB Share"
-msgstr "SMB-Freigabe hinzufügen"
+msgstr "Neuer SMB Share"
 
 msgid "Add FTP Site"
-msgstr "FTP Seite hinzufügen"
+msgstr "Neue FTP Seite"
 
 msgid "DVD Menu"
 msgstr "DVD Menü"
@@ -486,3 +486,45 @@ msgstr "Puffern"
 
 msgid "Unable to initialize network (Error #:"
 msgstr "Konnte Netzwerk nicht initialisieren (Fehler #:"
+
+msgid "Settings - Subtitles"
+msgstr "Einstellungen - Untertitel"
+
+msgid "Visibility"
+msgstr "Sichtbarkeit"
+
+msgid "Delay"
+msgstr "Verzögerung"
+
+msgid "Codepage"
+msgstr "Zeichentabelle"
+
+msgid "Subtitle Language"
+msgstr "Untertitelsprache"
+
+msgid "Default"
+msgstr "Standard"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "Konnte Sprache nicht ändern. Nicht genug Speicher!"
+
+msgid "Font Required"
+msgstr "Schriftart benötigt"
+
+msgid "A new font is required to display this language."
+msgstr "Zum anzeigen dieser Sprache wird eine neue Schriftart benötigt."
+
+msgid "Download font"
+msgstr "Schriftart herunterladen"
+
+msgid "Unable to save font file!"
+msgstr "Konnte die Schriftartdatei nicht speichern!"
+
+msgid "Out of Memory"
+msgstr "Arbeitsspeicher voll"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr "WiiMC hat nicht genug freien Speicher um den Bildbetrachter zu laden."
+
+msgid "Close MPlayer"
+msgstr "MPlayer schließen"

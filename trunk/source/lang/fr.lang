@@ -106,8 +106,8 @@ msgstr "Titre suivant"
 msgid "Single Play"
 msgstr "Lire le titre"
 
-msgid "Now Playing:"
-msgstr "Actuellement en cours :"
+msgid "now playing"
+msgstr "Actuellement en cours"
 
 msgid "Previous"
 msgstr "Précédent"
@@ -127,7 +127,7 @@ msgstr "Quitter"
 msgid "DVD"
 msgstr "DVD"
 
-msgid "Go Back"
+msgid "Go back"
 msgstr "Retour"
 
 msgid "Up One Level"

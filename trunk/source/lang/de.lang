@@ -259,6 +259,9 @@ msgstr "Freigabe löschen"
 msgid "Are you sure that you want to delete this share?"
 msgstr "Wollen Sie diese Freigabe wirklich löschen?"
 
+msgid "IP"
+msgstr ""
+
 msgid "Folder"
 msgstr "Verzeichnis"
 
@@ -474,6 +477,9 @@ msgstr "Programmierung"
 
 msgid "Coding & menu design"
 msgstr "Programmierung & Menü Design"
+
+msgid "Logo"
+msgstr ""
 
 msgid "Version"
 msgstr "Version"

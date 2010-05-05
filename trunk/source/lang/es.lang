@@ -100,8 +100,8 @@ msgstr "Hacia adelante"
 msgid "Single"
 msgstr "Reproducción Individual"
 
-msgid "Now Playing"
-msgstr "En reproducción:"
+msgid "now playing"
+msgstr "En reproducción"
 
 msgid "Previous"
 msgstr "Previo"

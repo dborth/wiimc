@@ -557,6 +557,8 @@ void ChangeLanguage()
 		switch(WiiSettings.language)
 		{
 			case LANG_SIMP_CHINESE:
+			case LANG_TRAD_CHINESE:
+			case LANG_KOREAN:
 				if(currentFont == FONT_SIMP_CHINESE) return;
 				sprintf(filepath, "%s/zh_cn.ttf", appPath);
 				sprintf(httppath, "%s/zh_cn.ttf", httpRoot);
@@ -607,7 +609,7 @@ restart:
 		{
 			bool installFont = WindowPrompt(
 				"Font Required",
-				"A new font is required to display this language.",
+				gettext("A new font is required to display this language."),
 				"Download font",
 				"Cancel");
 
@@ -1029,12 +1031,12 @@ ShowAction (const char *msg)
 
 void ErrorPrompt(const char *msg)
 {
-	WindowPrompt("Error", msg, "OK", NULL);
+	WindowPrompt("Error", gettext(msg), "OK", NULL);
 }
 
 int ErrorPromptRetry(const char *msg)
 {
-	return WindowPrompt("Error", msg, "Retry", "Cancel");
+	return WindowPrompt("Error", gettext(msg), "Retry", "Cancel");
 }
 
 void ErrorPrompt(wchar_t *msg)
@@ -1049,12 +1051,12 @@ int ErrorPromptRetry(wchar_t *msg)
 
 void InfoPrompt(const char *msg)
 {
-	WindowPrompt("Information", msg, "OK", NULL);
+	WindowPrompt("Information", gettext(msg), "OK", NULL);
 }
 
 void InfoPrompt(const char *title, const char *msg)
 {
-	WindowPrompt(title, msg, "OK", NULL);
+	WindowPrompt(title, gettext(msg), "OK", NULL);
 }
 
 void InfoPrompt(wchar_t *msg)
@@ -1310,11 +1312,11 @@ static void CreditsWindow()
 	foundmyImg.SetPosition(-15, y);
 	alignWindow.Append(&foundmyImg);
 
-	txt[i] = new GuiText("MPlayer Team", 18, (GXColor){255, 255, 255, 255});
+	txt[i] = new GuiText("MPlayer Team", 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	txt[i]->SetPosition(15,y); i++; y+=22;
+	txt[i]->SetPosition(15,y); i++; y+=20;
 
-	txt[i] = new GuiText("shagkur & wintermute (libogc / devkitPPC)",18, (GXColor){255, 255, 255, 255});
+	txt[i] = new GuiText("shagkur & wintermute (libogc / devkitPPC)", 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	txt[i]->SetPosition(15,y); i++; y+=44;
 
@@ -1444,26 +1446,15 @@ void RemoveVideoImg()
  * MenuBrowse
  ***************************************************************************/
 
-static int LoadNewFile(int silent)
+static int LoadNewFile()
 {
 	RemoveVideoImg();
 
-	if(!silent)
-	{
-		mainWindow->Append(disabled);
-		mainWindow->SetState(STATE_DISABLED);
-		ShowAction("Loading...");
-	}
-
-	ShutdownMPlayer();
-	LoadMPlayer(); // signal MPlayer to load
+	LoadMPlayerFile();
 
 	// wait until MPlayer is ready to take control (or return control)
 	while(!guiShutdown && controlledbygui != 1)
 		usleep(THREAD_SLEEP);
-
-	if(!silent)
-		CancelAction();
 
 	if(guiShutdown)
 	{
@@ -1472,13 +1463,6 @@ static int LoadNewFile(int silent)
 	}
 
 	// failed or we are playing audio
-
-	if(!silent)
-	{
-		mainWindow->Remove(disabled);
-		mainWindow->SetState(STATE_DEFAULT);
-	}
-
 	ResumeDeviceThread();
 
 	if(!wiiAudioOnly())
@@ -1810,7 +1794,7 @@ static void MenuBrowse(int menu)
 				mainWindow->SetState(STATE_DISABLED);
 				ShowAction("Loading...");
 
-				int res = LoadNewFile(SILENT);
+				int res = LoadNewFile();
 				CancelAction();
 
 				if(res == 1) // loaded a video file
@@ -1841,7 +1825,7 @@ static void MenuBrowse(int menu)
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
 			backBtn.ResetState();
-			LoadMPlayer(); // go back to MPlayer
+			ResumeMPlayerFile(); // go back to MPlayer
 			
 			// wait until MPlayer is ready to take control (or return control)
 			while(!guiShutdown && controlledbygui != 1)
@@ -1878,9 +1862,18 @@ static void MenuBrowse(int menu)
 			}
 			else if(playlistSize > 0)
 			{
-				// skip to next song
-				FindNextAudioFile();
-				LoadNewFile(SILENT);
+				// start playlist
+				if(!mainWindow->Find(disabled))
+					mainWindow->Append(disabled);
+				mainWindow->SetState(STATE_DISABLED);
+				ShowAction("Loading...");
+
+				FindNextFile(false);
+				LoadNewFile();
+
+				CancelAction();
+				mainWindow->Remove(disabled);
+				mainWindow->SetState(STATE_DEFAULT);
 			}
 		}
 
@@ -1973,9 +1966,25 @@ static void MenuBrowse(int menu)
 
 			if(playlistSize > 0)
 			{
-				// skip to next song
-				FindNextAudioFile();
-				LoadNewFile(SILENT);
+				if(wiiAudioOnly())
+				{
+					StopMPlayerFile(); // skip to next song
+				}
+				else
+				{
+					// start playlist
+					if(!mainWindow->Find(disabled))
+						mainWindow->Append(disabled);
+					mainWindow->SetState(STATE_DISABLED);
+					ShowAction("Loading...");
+
+					FindNextFile(false);
+					LoadNewFile();
+
+					CancelAction();
+					mainWindow->Remove(disabled);
+					mainWindow->SetState(STATE_DEFAULT);
+				}
 			}
 		}
 
@@ -2509,7 +2518,7 @@ static void MenuBrowsePictures()
 			UndoChangeMenu(); // go back to last menu
 			return;
 		}
-		ShutdownMPlayer();
+		StopMPlayerFile();
 		RemoveVideoImg();
 	}
 
@@ -2743,8 +2752,7 @@ static void MenuDVD()
 		mainWindow->SetState(STATE_DISABLED);
 		mainWindow->Append(disabled);
 		ShowAction("Loading...");
-		ShutdownMPlayer();
-		LoadMPlayer(); // signal MPlayer to load
+		LoadMPlayerFile();
 	
 		// wait until MPlayer is ready to take or return control
 		while(!guiShutdown && controlledbygui != 1)
@@ -2793,7 +2801,7 @@ static void MenuDVD()
 			if(backBtn.GetState() == STATE_CLICKED)
 			{
 				backBtn.ResetState();
-				LoadMPlayer(); // go back to MPlayer
+				ResumeMPlayerFile(); // go back to MPlayer
 
 				// wait until MPlayer is ready to take control (or return control)
 				while(!guiShutdown && controlledbygui != 1)
@@ -3907,7 +3915,7 @@ static void MenuSettingsNetworkSMB()
 	else
 		sprintf(shareName, "%s", WiiSettings.smbConf[netEditIndex].share);
 
-	swprintf(titleStr, 100, L"%s - %s", gettext("Settings - Network"), shareName);
+	swprintf(titleStr, 100, L"%s - %s", gettext("Settings - Network"), gettext(shareName));
 
 	GuiText titleTxt(NULL, 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetWText(titleStr);
@@ -4039,7 +4047,7 @@ static void MenuSettingsNetworkSMB()
 		if(deleteBtn.GetState() == STATE_CLICKED)
 		{
 			deleteBtn.ResetState();
-			if (WindowPrompt("Delete Share", "Are you sure that you want to delete this share?", "OK", "Cancel"))
+			if (WindowPrompt("Delete Share", gettext("Are you sure that you want to delete this share?"), "OK", "Cancel"))
 			{
 				WiiSettings.smbConf[netEditIndex].displayname[0] = 0;
 				WiiSettings.smbConf[netEditIndex].ip[0] = 0;
@@ -4103,7 +4111,7 @@ static void MenuSettingsNetworkFTP()
 		WiiSettings.ftpConf[netEditIndex].port,
 		WiiSettings.ftpConf[netEditIndex].folder);
 
-	swprintf(titleStr, 100, L"%s - %s", gettext("Settings - Network"), siteName);
+	swprintf(titleStr, 100, L"%s - %s", gettext("Settings - Network"), gettext(siteName));
 
 	GuiText titleTxt(NULL, 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetWText(titleStr);
@@ -4246,7 +4254,7 @@ static void MenuSettingsNetworkFTP()
 		if(deleteBtn.GetState() == STATE_CLICKED)
 		{
 			deleteBtn.ResetState();
-			if (WindowPrompt("Delete Site", "Are you sure that you want to delete this site?", "OK", "Cancel"))
+			if (WindowPrompt("Delete Site", gettext("Are you sure that you want to delete this site?"), "OK", "Cancel"))
 			{
 				WiiSettings.ftpConf[netEditIndex].displayname[0] = 0;
 				WiiSettings.ftpConf[netEditIndex].ip[0] = 0;

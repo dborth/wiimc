@@ -70,7 +70,6 @@ void ExitApp()
 	DI2_Close();
 
 	// shut down some threads
-	ShutdownMPlayer();
 	SuspendDeviceThread();
 	CancelAction();
 	StopGX();
@@ -200,10 +199,34 @@ static bool FindIOS(u32 ios)
  * MPlayer interface
  ***************************************************************************/
 
-void FindNextAudioFile()
+extern "C" void FindNextFile(bool load)
 {
-	if(playlistSize == 0)
+	// clear any play icons
+	for(int i=0; i < browser.numEntries; i++)
+	{
+		if(browserList[i].icon == ICON_PLAY)
+		{
+			if(menuCurrent == MENU_BROWSE_MUSIC)
+			{
+				if(MusicPlaylistFind(i))
+					browserList[i].icon = ICON_FILE_CHECKED;
+				else
+					browserList[i].icon = ICON_FILE;
+			}
+			else
+			{
+				browserList[i].icon = ICON_NONE;
+			}
+		}
+	}
+	findLoadedFile = 2; // trigger file browser update
+
+	if(playlistSize == 0 || (WiiSettings.playOrder == PLAY_SINGLE && loadedFile[0] != 0))
+	{
+		loadedFile[0] = 0;
+		playlistIndex = -1;
 		return;
+	}
 
 	if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 	{
@@ -233,6 +256,8 @@ void FindNextAudioFile()
 		playlistIndex = 0;
 	}
 	sprintf(loadedFile, "%s", playlist[playlistIndex].filepath);
+	if(load) wiiLoadFile(loadedFile);
+	nowPlayingSet = false;
 	loadedFileDisplay[0] = 0;
 	FindFile(); // try to find this file
 }
@@ -240,45 +265,7 @@ void FindNextAudioFile()
 static void *
 mplayerthread (void *arg)
 {
-	while(1)
-	{
-		if(controlledbygui == 2 || playlistIndex == -1 || playlistSize == 0)
-			LWP_SuspendThread(mthread);
-
-		nowPlayingSet = false;
-
-		if(loadedFile[0] != 0)
-		{
-			controlledbygui = 0;
-			mplayer_loadfile(loadedFile);
-
-			if(WiiSettings.playOrder == PLAY_SINGLE)
-				playlistIndex = -1; // do not play any more files
-
-			// clear any play icons
-			for(int i=0; i < browser.numEntries; i++)
-			{
-				if(browserList[i].icon == ICON_PLAY)
-				{
-					if(menuCurrent == MENU_BROWSE_MUSIC)
-					{
-						if(MusicPlaylistFind(i))
-							browserList[i].icon = ICON_FILE_CHECKED;
-						else
-							browserList[i].icon = ICON_FILE;
-					}
-					else
-					{
-						browserList[i].icon = ICON_NONE;
-					}
-				}
-			}
-			findLoadedFile = 2; // trigger file browser update
-		}
-
-		if(controlledbygui != 2 && playlistIndex >= 0)
-			FindNextAudioFile(); // select next file
-	}
+	mplayer_main();
 	return NULL;
 }
 
@@ -330,27 +317,46 @@ bool InitMPlayer()
 	setenv("DVDREAD_VERBOSE", "0", 1);
 	setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
 
+	// create mplayer thread
+	LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, STACKSIZE, 68);
+
 	init = true;
 	return true;
 }
 
-void LoadMPlayer()
+void LoadMPlayerFile()
 {
 	SuspendDeviceThread();
 	SuspendPictureThread();
 	SuspendParseThread();
 	settingsSet = false;
-	controlledbygui = 0;
+	nowPlayingSet = false;
+	controlledbygui = 2; // signal any previous file to end
 
-	if(LWP_ThreadIsSuspended(mthread))
-		LWP_ResumeThread(mthread);
+	// wait for previous file to end
+	while(controlledbygui == 2)
+		usleep(100);
+
+	// set new file to load
+	wiiLoadFile(loadedFile);
+
+	while(controlledbygui != 0)
+		usleep(100);
 }
 
-void ShutdownMPlayer()
+void ResumeMPlayerFile()
 {
-	controlledbygui=2;
-	while(!LWP_ThreadIsSuspended(mthread))
-		usleep(500);
+	SuspendDeviceThread();
+	SuspendPictureThread();
+	SuspendParseThread();
+	settingsSet = false;
+	nowPlayingSet = false;
+	controlledbygui = 0;
+}
+
+void StopMPlayerFile()
+{
+	controlledbygui = 2; // signal any previous file to end
 }
 
 extern "C" {
@@ -424,12 +430,9 @@ int main(int argc, char *argv[])
 	// Initialize font system
 	InitFreeType((u8*)font_ttf, font_ttf_size);
 
-	// create mplayer thread
-	LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, STACKSIZE, 68);
-
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
-	
+
 	// create GUI thread
 	GuiInit();
 

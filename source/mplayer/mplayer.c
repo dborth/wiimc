@@ -188,6 +188,7 @@ void SetBufferingStatus(int s);
 void reinit_video();
 void reinit_audio();
 void PauseAndGotoGUI();
+void FindNextFile(bool load);
 
 static void low_cache_loop(void);
 static float timing_sleep(float time_frame);
@@ -2342,6 +2343,7 @@ int reinit_video_chain(void) {
 
 #ifdef GEKKO
 //rodries patch for big resolution on wii
+
 if(sh_video->disp_w>1024)
  {
 		char *arg_scale[]={"w","xxxx","h","-2",NULL};
@@ -2653,17 +2655,7 @@ static int seek(MPContext *mpctx, double amount, int style)
  * file for some tools to link against. */
 #ifndef DISABLE_MAIN
 #ifdef GEKKO
-int mplayer_loadfile(const char* _file){
-int argc;
-char *argv[] = {
-	"",
-	"-vo","gekko",
-	"-ao","gekko",
-	"-osdlevel","0",
-	"-channels", "2",
-	_file
-}; 
-argc = sizeof(argv) / sizeof(char *);
+int mplayer_main(){
 #else
 int main(int argc,char* argv[]){
 #endif
@@ -2693,8 +2685,15 @@ int gui_no_filename=0;
   
 
   // Preparse the command line
+#ifdef GEKKO
+m_config_set_option(mconfig,"vo","gekko");
+m_config_set_option(mconfig,"ao","gekko");
+m_config_set_option(mconfig,"osdlevel","0");
+m_config_set_option(mconfig,"channels","2");
+m_config_set_option(mconfig,"sws","4");
+m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
+#else
   m_config_preparse_command_line(mconfig,argc,argv);
-
 
 #if (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(CONFIG_WIN32DLL)
   set_path_env();
@@ -2807,7 +2806,7 @@ int gui_no_filename=0;
       import_initial_playtree_into_gui(mpctx->playtree, mconfig, enqueue);
     }
 #endif /* CONFIG_GUI */
-
+#endif // end else !GEKKO
     if(video_driver_list && strcmp(video_driver_list[0],"help")==0){
       list_video_out();
       opt_exit = 1;
@@ -2896,7 +2895,7 @@ if(!codecs_file || !parse_codec_cfg(codecs_file)){
         mp_msg(MSGT_CPLAYER, MSGL_FATAL, MSGTR_NoIdleAndGui);
         exit_player_with_rc(EXIT_NONE, 1);
     }
-
+#ifndef GEKKO
     if(!filename && !player_idle_mode){
       if(!use_gui){
 	// no file/vcd/dvd -> show HELP:
@@ -2914,7 +2913,7 @@ if(!codecs_file || !parse_codec_cfg(codecs_file)){
       for(i=1;i<argc;i++)mp_msg(MSGT_CPLAYER, MSGL_INFO," '%s'",argv[i]);
       mp_msg(MSGT_CPLAYER, MSGL_INFO, "\n");
     }
-    
+#endif
     
 //------ load global data first ------
 // check font
@@ -3028,8 +3027,6 @@ stream_set_interrupt_callback(mp_input_check_interrupt);
  }
 #endif
 
-SetMPlayerSettings();
-
 initialized_flags|=INITIALIZED_INPUT;
 current_module = NULL;
 
@@ -3075,13 +3072,34 @@ current_module = NULL;
 // ******************* Now, let's see the per-file stuff ********************
 play_next_file:
 
+#ifdef GEKKO
+controlledbygui = 1; // send control back to GUI
+
+if(filename)
+{
+	free(filename);
+	filename = NULL;
+}
+
+FindNextFile(true);
+
+while (!filename)
+{
+	usleep(50000);
+
+	// received the signal to stop playing
+	if(controlledbygui == 2)
+		controlledbygui = 0; // none playing, so discard
+}
+
+controlledbygui = 0;
+mpctx->eof=0;
+SetMPlayerSettings();
+#endif
+
   // init global sub numbers
   mpctx->global_sub_size = 0;
   { int i; for (i = 0; i < SUB_SOURCES; i++) mpctx->global_sub_indices[i] = -1; }
-#ifdef GEKKO
-m_config_set_option(mconfig,"sws","4");
-m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
-#endif
 if (filename) {
     load_per_protocol_config (mconfig, filename);
     load_per_extension_config (mconfig, filename);
@@ -3095,6 +3113,7 @@ if (filename) {
 
 // We must enable getch2 here to be able to interrupt network connection
 // or cache filling
+#ifndef GEKKO
 if(!noconsolecontrols && !slave_mode){
   if(initialized_flags&INITIALIZED_GETCH2)
   {}//mp_msg(MSGT_CPLAYER,MSGL_WARN,MSGTR_Getch2InitializedTwice);
@@ -3105,6 +3124,7 @@ if(!noconsolecontrols && !slave_mode){
   }
   mp_msg(MSGT_CPLAYER,MSGL_DBG2,"\n[[[init getch2]]]\n");
 }
+#endif
 
 // =================== GUI idle loop (STOP state) ===========================
 #ifdef CONFIG_GUI
@@ -4284,13 +4304,10 @@ if(ass_library)
 if (mpctx->sh_audio) mpctx->audio_out->reset();
 
 printf("mplayer: exit\n");
-if(controlledbygui == 0) // not a forced exit, video ended naturally
-{
-	delete_restore_point(fileplaying);
-	controlledbygui = 1;
-}
-#endif
-return 1;
+
+goto play_next_file;
+
+#else
 
 load_next_file:
 
@@ -4348,6 +4365,7 @@ if(use_gui || mpctx->playtree_iter != NULL || player_idle_mode){
 }
 
 exit_player_with_rc(EXIT_EOF, 0);
+#endif
 return 1;
 }
 #endif /* DISABLE_MAIN */
@@ -4616,6 +4634,14 @@ void fast_continue()
 /****************************************************************************
  * Wii hooks
  ***************************************************************************/
+
+void wiiLoadFile(char * file)
+{
+	if(filename)
+		free(filename);
+
+	filename = strdup(file);
+}
 
 void wiiGotoGui()
 {
@@ -4890,7 +4916,7 @@ void wiiSetLanguage(char *lang)
 {
 	if(dvdsub_lang)
 		free(dvdsub_lang);
-	
+
 	if(lang[0] == 0)
 		dvdsub_lang = NULL;
 	else
@@ -4901,7 +4927,7 @@ void wiiSetCodepage(char *cp)
 {
 	if(sub_cp)
 		free(sub_cp);
-	
+
 	if(cp == NULL || cp[0] == 0)
 		sub_cp = NULL;
 	else

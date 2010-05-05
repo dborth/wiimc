@@ -162,14 +162,27 @@ void vo_draw_alpha_gekko(int w, int h, unsigned char* src, unsigned char *srca,
 	free(buf);
 	free(bufa);
 }
-
+/*
 static void draw_alpha(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
 {
 	int rowpitch = MIN(ceil((float)image_width / 8) * 8, 1024);
 	int lines = (floor((float)y0 / 8) * 8) - 8;			// Ok...
 
 	vo_draw_alpha_gekko(w, h, src, srca, stride, GetYtexture() + (lines * rowpitch), pitch[0], x0);
+}*/
+
+static void draw_alpha(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
+{
+        int p = image_width / 16;
+        if (p % 2)
+                p++;
+        p = p * 16;
+        y0 = ((int) (y0 / 8.0)) * 8;
+        y0-=8;
+
+        vo_draw_alpha_gekko(w, h, src, srca, stride, GetYtexture() + (y0 * p), pitch[0], x0);
 }
+
 
 static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y)
 {
@@ -237,6 +250,10 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	pitch[1] = 0;
 	pitch[2] = 0;
 	
+	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
+		mplayerwidth = 854; // 480 * (16/9)
+
+
 	float screen_aspect = (float)mplayerwidth / (float)mplayerheight;
 	float image_aspect = (float)d_width / (float)d_height;
 

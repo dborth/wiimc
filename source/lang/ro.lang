@@ -106,8 +106,8 @@ msgstr "Melodia Următoare"
 msgid "Single Play"
 msgstr "Redare Singură"
 
-msgid "Now Playing:"
-msgstr "Redare Actuală:"
+msgid "now playing"
+msgstr "Redare Actuală"
 
 msgid "Previous"
 msgstr "Precedent"
@@ -127,7 +127,7 @@ msgstr "Ieșire"
 msgid "DVD"
 msgstr "DVD"
 
-msgid "Go Back"
+msgid "Go back"
 msgstr "Înapoi"
 
 msgid "Up One Level"

@@ -100,7 +100,7 @@ msgstr "向前"
 msgid "Single"
 msgstr "单独播放"
 
-msgid "Now Playing"
+msgid "now playing"
 msgstr "正在播放中"
 
 msgid "Previous"
@@ -115,7 +115,7 @@ msgstr "关闭"
 msgid "DVD"
 msgstr "DVD光盘"
 
-msgid "Go Back"
+msgid "Go back"
 msgstr "返回"
 
 msgid "Update Available"

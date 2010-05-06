@@ -51,7 +51,7 @@ typedef struct _lang {
 } LANG;
 
 #define LANGUAGE_SIZE 142
-#define CODEPAGE_SIZE 23
+#define CODEPAGE_SIZE 25
 
 extern LANG languages[LANGUAGE_SIZE];
 extern CP codepages[CODEPAGE_SIZE];

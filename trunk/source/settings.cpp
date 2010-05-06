@@ -175,6 +175,7 @@ LANG languages[LANGUAGE_SIZE] = {
 
 CP codepages[CODEPAGE_SIZE] = {
 	{ "", "" },
+	{ "utf-8", "UTF-8" },
 	{ "ISO-8859-1", "Western European" },
 	{ "ISO-8859-2", "Eastern European" },
 	{ "ISO-8859-3", "South European" },
@@ -196,7 +197,8 @@ CP codepages[CODEPAGE_SIZE] = {
 	{ "Windows-1255", "Hebrew" },
 	{ "Windows-1256", "Arabic" },
 	{ "Windows-1257", "Baltic" },
-	{ "Windows-1258", "Vietnamese" }
+	{ "Windows-1258", "Vietnamese" },
+	{ "shift_jis", "Japanese (Shift JIS)" }
 };
 
 /****************************************************************************

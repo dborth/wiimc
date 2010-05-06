@@ -534,3 +534,9 @@ msgstr "画像を読み込むために 十分な空きメモリがありませ�
 
 msgid "Close MPlayer"
 msgstr "ＭＰｌａｙｅｒを閉じる"
+
+msgid "Subtitle Codepage"
+msgstr "字幕コードページの設定"
+
+msgid "Japanese"
+msgstr "日本語"

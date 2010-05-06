@@ -4929,13 +4929,58 @@ void wiiSetLanguage(char *lang)
 
 void wiiSetCodepage(char *cp)
 {
-	if(sub_cp)
-		free(sub_cp);
+	bool has_subs=false;
+	int i;
 
+	if(mpctx && mpctx->set_of_sub_size > 0) has_subs=true;
+
+	if(sub_cp == NULL && cp[0] == 0) return; //cp not changed
+
+	if(sub_cp)
+	{
+		if(strcmp(sub_cp,cp)==0) return; //cp not changed
+		free(sub_cp);
+	}
+	
 	if(cp == NULL || cp[0] == 0)
 		sub_cp = NULL;
 	else
 		sub_cp = strdup(cp);
+
+	if(!has_subs) return; //no subs so return;
+
+	//clear subs loaded
+	int j=mpctx->set_of_sub_size;
+	for(i = 0; i < mpctx->set_of_sub_size; ++i)
+	{
+		sub_free(mpctx->set_of_subtitles[i]);
+		mpctx->global_sub_size --;
+#ifdef CONFIG_ASS
+		if(mpctx->set_of_ass_tracks[i])
+			ass_free_track( mpctx->set_of_ass_tracks[i] );
+#endif
+	}
+	mpctx->set_of_sub_size = 0;
+
+	//reload subs with new cp
+	int n = mpctx->set_of_sub_size;
+	char **tmp = sub_filenames("", filename);
+	i = 0;
+
+	while (tmp[i]) {
+		add_subtitles (tmp[i], mpctx->sh_video->fps, 1);
+		free(tmp[i++]);
+	}
+	free(tmp);
+
+	if (n != mpctx->set_of_sub_size)
+	{
+		if (mpctx->global_sub_indices[SUB_SOURCE_SUBS] < 0)
+			mpctx->global_sub_indices[SUB_SOURCE_SUBS] = mpctx->global_sub_size;
+		mpctx->global_sub_size+=mpctx->set_of_sub_size;
+	}
+	mpctx->global_sub_pos=mpctx->global_sub_size-1;
+	wiiSetProperty(MP_CMD_SUB_SELECT,1);
 }
 
 void wiiLoadRestorePoints(char *buffer, int size)

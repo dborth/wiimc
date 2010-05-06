@@ -223,6 +223,7 @@ bool LoadLanguage()
 		case LANG_KOREAN: file = (char *)ko_lang; eof = file + ko_lang_size; break;
 		case LANG_ROMANIAN: file = (char *)ro_lang; eof = file + ro_lang_size; break;
 		case LANG_ESTONIAN: file = (char *)et_lang; eof = file + et_lang_size; break;
+		case LANG_BRAZILIAN_PORTUGUESE: file = (char *)br_pt_lang; eof = file + br_pt_lang_size; break;
 		default: return false;
 	}
 

@@ -1978,7 +1978,10 @@ static void MenuBrowse(int menu)
 			{
 				if(wiiAudioOnly())
 				{
-					StopMPlayerFile(); // skip to next song
+					StopMPlayerFile(); // end this song
+					while(controlledbygui != 1) // wait for song to end
+						usleep(THREAD_SLEEP);
+					FindNextFile(true); // find next song
 				}
 				else
 				{

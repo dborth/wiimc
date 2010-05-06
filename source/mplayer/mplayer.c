@@ -3077,8 +3077,6 @@ current_module = NULL;
 play_next_file:
 
 #ifdef GEKKO
-controlledbygui = 1; // send control back to GUI
-
 if(filename)
 {
 	free(filename);
@@ -3086,6 +3084,7 @@ if(filename)
 }
 
 FindNextFile(true);
+controlledbygui = 1; // send control back to GUI
 
 while (!filename)
 {
@@ -3098,7 +3097,6 @@ while (!filename)
 
 controlledbygui = 0;
 mpctx->eof=0;
-SetMPlayerSettings();
 #endif
 
   // init global sub numbers

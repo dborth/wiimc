@@ -2918,18 +2918,19 @@ static void MenuSettingsGlobal()
 
 			switch(WiiSettings.language)
 			{
-				case LANG_JAPANESE:		sprintf(options.value[1], "Japanese"); break;
-				case LANG_ENGLISH:		sprintf(options.value[1], "English"); break;
-				case LANG_GERMAN:		sprintf(options.value[1], "German"); break;
-				case LANG_FRENCH:		sprintf(options.value[1], "French"); break;
-				case LANG_SPANISH:		sprintf(options.value[1], "Spanish"); break;
-				case LANG_ITALIAN:		sprintf(options.value[1], "Italian"); break;
-				case LANG_DUTCH:		sprintf(options.value[1], "Dutch"); break;
-				case LANG_SIMP_CHINESE:	sprintf(options.value[1], "Chinese (Simplified)"); break;
-				case LANG_TRAD_CHINESE:	sprintf(options.value[1], "Chinese (Traditional)"); break;
-				case LANG_KOREAN:		sprintf(options.value[1], "Korean"); break;
-				case LANG_ROMANIAN:		sprintf(options.value[1], "Romanian"); break;
-				case LANG_ESTONIAN:		sprintf(options.value[1], "Estonian"); break;
+				case LANG_JAPANESE:				sprintf(options.value[1], "Japanese"); break;
+				case LANG_ENGLISH:				sprintf(options.value[1], "English"); break;
+				case LANG_GERMAN:				sprintf(options.value[1], "German"); break;
+				case LANG_FRENCH:				sprintf(options.value[1], "French"); break;
+				case LANG_SPANISH:				sprintf(options.value[1], "Spanish"); break;
+				case LANG_ITALIAN:				sprintf(options.value[1], "Italian"); break;
+				case LANG_DUTCH:				sprintf(options.value[1], "Dutch"); break;
+				case LANG_SIMP_CHINESE:			sprintf(options.value[1], "Chinese (Simplified)"); break;
+				case LANG_TRAD_CHINESE:			sprintf(options.value[1], "Chinese (Traditional)"); break;
+				case LANG_KOREAN:				sprintf(options.value[1], "Korean"); break;
+				case LANG_ROMANIAN:				sprintf(options.value[1], "Romanian"); break;
+				case LANG_ESTONIAN:				sprintf(options.value[1], "Estonian"); break;
+				case LANG_BRAZILIAN_PORTUGUESE: sprintf(options.value[1], "Brazilian Portuguese"); break;
 			}
 			
 			sprintf (options.value[2], "%d%%", WiiSettings.volume);

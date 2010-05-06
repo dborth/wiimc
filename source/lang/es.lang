@@ -65,7 +65,7 @@ msgid "Global"
 msgstr "Generales"
 
 msgid "Network"
-msgstr "Conexción"
+msgstr "Conexión"
 
 msgid "Subtitles"
 msgstr "Subtítulos"
@@ -113,7 +113,7 @@ msgid "Close"
 msgstr "Cerrar"
 
 msgid "DVD"
-msgstr "DVD video"
+msgstr "DVD vídeo"
 
 msgid "Go back"
 msgstr "Atras"
@@ -128,7 +128,7 @@ msgid "Update now"
 msgstr "Actualizar ahora"
 
 msgid "Update later"
-msgstr "Actualizar mas tarde"
+msgstr "Actualizar más tarde"
 
 msgid "Online media file not found."
 msgstr "Archivo no encontrado"
@@ -161,7 +161,7 @@ msgid "Settings - Online Media"
 msgstr "Opciones - Medios online"
 
 msgid "Settings - Network"
-msgstr "Opciones - Conexción"
+msgstr "Opciones - Conexión"
 
 msgid "Settings - DVD"
 msgstr "Opciones - DVD"
@@ -308,10 +308,10 @@ msgid "Online Media Folder"
 msgstr "Carpeta medios online"
 
 msgid "Add SMB Share"
-msgstr "Conexción al PC"
+msgstr "Conexión al PC"
 
 msgid "Add FTP Site"
-msgstr "Conexción FTP"
+msgstr "Conexión FTP"
 
 msgid "DVD Menu"
 msgstr "Menu DVD"
@@ -350,7 +350,7 @@ msgid "SD card not found!"
 msgstr "¡Tarjeta SD no encontrada!"
 
 msgid "Please install IOS 202 for DVD support."
-msgstr "Istale CIOS 202 para reproducir DVD."
+msgstr "Instale CIOS 202 para reproducir DVD."
 
 msgid "Loading DVD..."
 msgstr "Cargando DVD..."
@@ -413,7 +413,7 @@ msgid "Update failed!"
 msgstr "¡Error en la actualización!"
 
 msgid "Initializing network..."
-msgstr "Iniciando conexción..."
+msgstr "Iniciando conexión..."
 
 msgid "Check settings file."
 msgstr "Compruebe archivo de opciones."
@@ -425,10 +425,10 @@ msgid "Share IP is blank."
 msgstr "Añada IP."
 
 msgid "Invalid network share settings"
-msgstr "Opciones conexción inválidas"
+msgstr "Opciones conexión inválidas"
 
 msgid "Connecting to network share..."
-msgstr "Estableciendo conexción..."
+msgstr "Estableciendo conexión..."
 
 msgid "Failed to connect to network share."
 msgstr "Error en la conexión."

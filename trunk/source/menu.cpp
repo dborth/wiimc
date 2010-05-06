@@ -556,13 +556,23 @@ void ChangeLanguage()
 
 		switch(WiiSettings.language)
 		{
-			case LANG_SIMP_CHINESE:
-			case LANG_TRAD_CHINESE:
-			case LANG_KOREAN:
+			case LANG_SIMP_CHINESE:			
 				if(currentFont == FONT_SIMP_CHINESE) return;
 				sprintf(filepath, "%s/zh_cn.ttf", appPath);
 				sprintf(httppath, "%s/zh_cn.ttf", httpRoot);
 				newFont = FONT_SIMP_CHINESE;
+				break;
+			case LANG_TRAD_CHINESE:
+				if(currentFont == FONT_TRAD_CHINESE) return;
+				sprintf(filepath, "%s/zh_cn.ttf", appPath);
+				sprintf(httppath, "%s/zh_cn.ttf", httpRoot);
+				newFont = FONT_TRAD_CHINESE;
+				break;
+			case LANG_KOREAN:
+				if(currentFont == FONT_KOREAN) return;
+				sprintf(filepath, "%s/ko.ttf", appPath);
+				sprintf(httppath, "%s/ko.ttf", httpRoot);
+				newFont = FONT_KOREAN;
 				break;
 			case LANG_JAPANESE:
 				if(currentFont == FONT_JAPANESE) return;

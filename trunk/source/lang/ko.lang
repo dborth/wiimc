@@ -26,7 +26,7 @@ msgid "Cancel"
 msgstr "취소"
  
 msgid "Information"
-msgstr "만든이"
+msgstr "정보"
  
 msgid "Credits"
 msgstr "저작권"
@@ -341,7 +341,7 @@ msgid "USB Mass Storage"
 msgstr "USB 대용량 하드"
  
 msgid "Data DVD"
-msgstr "Data DVD"
+msgstr "데이타 DVD"
  
 msgid "USB drive not found!"
 msgstr "USB 드라이브가 없음!"
@@ -494,43 +494,43 @@ msgid "Unable to initialize network (Error #:"
 msgstr "네트워크 시작을 할수 없음 (Error #:"
 
 msgid "Settings - Subtitles"
-msgstr ""
+msgstr "설정 - 자막"
 
 msgid "Visibility"
-msgstr ""
+msgstr "보이기"
 
 msgid "Delay"
-msgstr ""
+msgstr "지연"
 
 msgid "Codepage"
-msgstr ""
+msgstr "코드페이지"
 
 msgid "Subtitle Language"
-msgstr ""
+msgstr "자막 언어"
 
 msgid "Default"
-msgstr ""
+msgstr "기본설정"
 
 msgid "Could not change language. Not enough memory!"
-msgstr ""
+msgstr "언어를 바꿀수 없읍니다. 메모리가 부족합니다."
 
 msgid "Font Required"
-msgstr ""
+msgstr "폰트화일이 필요합니다."
 
 msgid "A new font is required to display this language."
-msgstr ""
+msgstr "이 언어를 보여주기 위해서는 새로운 폰트가 필요합니다."
 
 msgid "Download font"
-msgstr ""
+msgstr "폰트 다운로드"
 
 msgid "Unable to save font file!"
-msgstr ""
+msgstr "폰트파일을 저장할 수가 없읍니다."
 
 msgid "Out of Memory"
-msgstr ""
+msgstr "메모리 초과"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr ""
+msgstr "WiiMC가 그림보이기를 로드하기에 충분한 여유 메모리가 없읍니다."
 
 msgid "Close MPlayer"
-msgstr ""
+msgstr "Mplayer 닫기"

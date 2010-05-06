@@ -479,7 +479,7 @@ msgid "Coding & menu design"
 msgstr "Programmeur en vormgever"
 
 msgid "Logo"
-msgstr ""
+msgstr "Beeldmerk"
 
 msgid "Version"
 msgstr "Versie"
@@ -494,43 +494,43 @@ msgid "Unable to initialize network (Error #:"
 msgstr "Niet mogelijk verbinding te maken met het netwerk (Error #:"
 
 msgid "Settings - Subtitles"
-msgstr ""
+msgstr "Instellingen - ONdertiteling"
 
 msgid "Visibility"
-msgstr ""
+msgstr "Zichtbaarheid"
 
 msgid "Delay"
-msgstr ""
+msgstr "Vertraging"
 
 msgid "Codepage"
 msgstr ""
 
 msgid "Subtitle Language"
-msgstr ""
+msgstr "Taal Ondertiteling"
 
 msgid "Default"
-msgstr ""
+msgstr "Standaard"
 
 msgid "Could not change language. Not enough memory!"
-msgstr ""
+msgstr "Kon nieuwe taal niet instellen. Onvoldoende geheugen."
 
 msgid "Font Required"
-msgstr ""
+msgstr "Lettertype benodigd"
 
 msgid "A new font is required to display this language."
-msgstr ""
+msgstr "Een nieuwe lettertype is nodig voor deze taal."
 
 msgid "Download font"
-msgstr ""
+msgstr "Download lettertype"
 
 msgid "Unable to save font file!"
-msgstr ""
+msgstr "Kon Lettertype bestand niet opslaan"
 
 msgid "Out of Memory"
-msgstr ""
+msgstr "Onvoldoende geheugen"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr ""
+msgstr "WIIMC heeft niet genoeg geheugen om de foto viewer te laden."
 
 msgid "Close MPlayer"
-msgstr ""
+msgstr "MPlayer afsluiten"

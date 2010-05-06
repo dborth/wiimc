@@ -221,9 +221,11 @@ extern "C" void FindNextFile(bool load)
 	}
 	findLoadedFile = 2; // trigger file browser update
 
-	if(playlistSize == 0 || (WiiSettings.playOrder == PLAY_SINGLE && loadedFile[0] != 0))
+	if(controlledbygui == 2) // file termination requested, do not load another file
+		return;
+
+	if(playlistSize == 0 || (WiiSettings.playOrder == PLAY_SINGLE && playlistIndex != -1))
 	{
-		loadedFile[0] = 0;
 		playlistIndex = -1;
 		return;
 	}

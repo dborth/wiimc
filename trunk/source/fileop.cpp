@@ -1246,6 +1246,7 @@ static bool ParseDirEntries()
 		}
 		else
 		{
+			InfoPrompt("Warning", "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible.");
 			res = -1;
 			break;
 		}
@@ -1297,8 +1298,12 @@ ParseDirectory(bool waitParse)
 			{
 				int device, devnum;
 				FindDevice(browser.dir, &device, &devnum);
-				UnmountPartitions(device);
-				MountPartitions(device, NOTSILENT);
+
+				if(device == DEVICE_SD || device == DEVICE_USB)
+				{
+					UnmountPartitions(device);
+					MountPartitions(device, NOTSILENT);
+				}
 			}
 		}
 	}
@@ -1667,7 +1672,10 @@ int ParsePlaylistFile()
 		//	continue;
 
 		if(!AddBrowserEntry()) // add failed
+		{
+			InfoPrompt("Warning", "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible.");
 			break;
+		}
 
 		snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "%s", i->files[0]);
 

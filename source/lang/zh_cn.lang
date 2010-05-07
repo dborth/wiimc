@@ -260,7 +260,7 @@ msgid "Are you sure that you want to delete this share?"
 msgstr "是否删除此网络共享设置?"
 
 msgid "IP"
-msgstr ""
+msgstr "IP地址"
 
 msgid "Folder"
 msgstr "文件夹"
@@ -479,7 +479,7 @@ msgid "Coding & menu design"
 msgstr "代码和菜单设计"
 
 msgid "Logo"
-msgstr ""
+msgstr "标识"
 
 msgid "Version"
 msgstr "版本"
@@ -494,43 +494,46 @@ msgid "Unable to initialize network (Error #:"
 msgstr "无法初始化网络 (错误 #:"
 
 msgid "Settings - Subtitles"
-msgstr ""
+msgstr "设置 - 字幕"
 
 msgid "Visibility"
-msgstr ""
+msgstr "清晰度"
 
 msgid "Delay"
-msgstr ""
+msgstr "延迟"
 
 msgid "Codepage"
-msgstr ""
+msgstr "代码页"
 
 msgid "Subtitle Language"
-msgstr ""
+msgstr "字幕语言"
 
 msgid "Default"
-msgstr ""
+msgstr "缺省"
 
 msgid "Could not change language. Not enough memory!"
-msgstr ""
+msgstr "不能更换语言。内存不足！"
 
 msgid "Font Required"
-msgstr ""
+msgstr "需要字库支持"
 
 msgid "A new font is required to display this language."
-msgstr ""
+msgstr "为了能正确显示此语言需要一个字库。"
 
 msgid "Download font"
-msgstr ""
+msgstr "下载字库"
 
 msgid "Unable to save font file!"
-msgstr ""
+msgstr "无法保存字库文件！"
 
 msgid "Out of Memory"
-msgstr ""
+msgstr "内存溢出"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr ""
+msgstr "Wiimc内存不足用来读取图片查看器"
 
 msgid "Close MPlayer"
-msgstr ""
+msgstr "关闭Mplayer播放器"
+
+msgid "Subtitle Codepage"
+msgstr "字幕代码页"

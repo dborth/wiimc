@@ -467,7 +467,7 @@ msgid "Thanks to"
 msgstr "고마운 사람들"
  
 msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
-msgstr "이 소프트웨어는 GNU General Public License (GPL) Version 2에 의거하여 오픈소스이며 복사하거나 배포 혹은 변형이 가능합니다. 번역 파이널판타지 하마잉"
+msgstr "이 소프트웨어는 GNU General Public License (GPL) Version 2에 의거하여 오픈소스이며 복사하거나 배포 혹은 변형이 가능합니다."
  
 msgid "Menu artwork"
 msgstr "메뉴 아트워크"
@@ -497,7 +497,7 @@ msgid "Settings - Subtitles"
 msgstr "설정 - 자막"
 
 msgid "Visibility"
-msgstr "보이기"
+msgstr "자막표시"
 
 msgid "Delay"
 msgstr "지연"
@@ -534,3 +534,6 @@ msgstr "WiiMC가 그림보이기를 로드하기에 충분한 여유 메모리�
 
 msgid "Close MPlayer"
 msgstr "Mplayer 닫기"
+
+msgid "Subtitle Codepage"
+msgstr "자막 코드페이지"

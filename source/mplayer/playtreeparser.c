@@ -351,7 +351,7 @@ parse_pls(play_tree_parser_t* p) {
       entry = play_tree_new();
 #ifdef GEKKO
 	  // Get the title of .pls entry
-	  if(entries[num].title[0] != 0) play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, entries[num].title);
+	  if(entries[num].title != NULL && entries[num].title[0] != 0) play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, entries[num].title);
 #endif
       play_tree_add_file(entry,entries[num].file);
       free(entries[num].file);

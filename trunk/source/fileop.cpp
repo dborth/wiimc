@@ -1452,7 +1452,8 @@ static int ParsePLXPlaylist()
 			{
 				// we're on a new entry - add previous entry to list, if complete
 				if(newEntry.type > 0 && strlen(newEntry.name) > 0 &&
-					strlen(newEntry.url) > 0 && newEntry.processor[0] == 0)
+					strlen(newEntry.url) > 0 && newEntry.processor[0] == 0 && 
+					strncmp(newEntry.url, "http:", 5) == 0)
 				{
 					memcpy(&list[numEntries], &newEntry, sizeof(PLXENTRY));
 					numEntries++;
@@ -1498,7 +1499,9 @@ static int ParsePLXPlaylist()
 	}
 
 	// add the final entry
-	if(newEntry.type > 0 && strlen(newEntry.name) > 0 && strlen(newEntry.url) > 0 && newEntry.processor[0] == 0)
+	if(newEntry.type > 0 && strlen(newEntry.name) > 0 && 
+		strlen(newEntry.url) > 0 && newEntry.processor[0] == 0 && 
+		strncmp(newEntry.url, "http:", 5) == 0)
 	{
 		memcpy(&list[numEntries], &newEntry, sizeof(PLXENTRY));
 		numEntries++;
@@ -1760,17 +1763,21 @@ int ParseOnlineMedia()
 		// add file
 		if(strcmp(browser.dir, onlinemediaList[i].filepath) == 0)
 		{
-			ext = GetExt(onlinemediaList[i].address);
+			// unknown protocol - reject entry
+			if(strncmp(onlinemediaList[i].address, "http:", 5) != 0 && strstr(onlinemediaList[i].address, "://") != NULL)
+				continue;
 
 			AddBrowserEntry();
-			if(strncmp(onlinemediaList[i].address, "http:", 5) == 0 || strncmp(onlinemediaList[i].address, "mms:", 4) == 0)
+			if(strncmp(onlinemediaList[i].address, "http:", 5) == 0)
 				snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "%s", onlinemediaList[i].address);
-			else
+			else // protocol not specified - assume http:// and append
 				snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "http://%s", onlinemediaList[i].address);
 			snprintf(browserList[browser.numEntries].displayname, MAXJOLIET, "%s", onlinemediaList[i].displayname);
 			browserList[browser.numEntries].length = 0;
 			browserList[browser.numEntries].mtime = 0;
 			browserList[browser.numEntries].type = TYPE_FILE;
+
+			ext = GetExt(onlinemediaList[i].address);
 
 			if(IsPlaylistExt(ext))
 				browserList[browser.numEntries].type = TYPE_PLAYLIST;

@@ -534,3 +534,6 @@ msgstr "WiiMC hat nicht genug freien Speicher um den Bildbetrachter zu laden."
 
 msgid "Close MPlayer"
 msgstr "MPlayer schließen"
+
+msgid "Subtitle Codepage"
+msgstr "Untertitel Zeichentabelle"

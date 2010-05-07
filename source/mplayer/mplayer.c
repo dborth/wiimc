@@ -2696,6 +2696,7 @@ m_config_set_option(mconfig,"subfont-autoscale","0");
 m_config_set_option(mconfig,"subfont-text-scale","16");
 m_config_set_option(mconfig,"sws","4");
 m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
+ass_enabled = 1;
 #else
   m_config_preparse_command_line(mconfig,argc,argv);
 

@@ -404,7 +404,7 @@ msgid "Hover over items and push the + button to add them to your playlist."
 msgstr "アイテムにカーソルを合わせて+ボタンをクリックし プレイリストに追加します"
 
 msgid "Exit Playlist"
-msgstr "プレイリストから出る"
+msgstr "プレイリスト表示を中止"
 
 msgid "Update successful!"
 msgstr "アップデートが完了しました"
@@ -540,3 +540,9 @@ msgstr "字幕コードページの設定"
 
 msgid "Japanese"
 msgstr "日本語"
+
+msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr "ディレクトリ内のエントリ数が多過ぎます 全てを表示できません (最大値:3,000)"
+
+msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr "プレイリストのエントリ数が多過ぎます 全てを表示できません (最大値:3,000)"

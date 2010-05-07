@@ -534,3 +534,6 @@ msgstr "WiiMC não possui memória livre suficiente para carregar o visualizador
 
 msgid "Close MPlayer"
 msgstr "Fechar o MPlayer"
+
+msgid "Subtitle Codepage"
+msgstr "Código de página da legenda"

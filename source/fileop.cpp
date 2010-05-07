@@ -1699,7 +1699,9 @@ int ParsePlaylistFile()
 		if(browserList[browser.numEntries].displayname[0] == 0)
 		{
 			start = strrchr(i->files[0],'/');
-			if(start != NULL) // start up starting part of path
+
+			// use part after last / for display name, if it's not already the end of the string
+			if(start != NULL && start[1] != 0)
 			{
 				start++;
 				sprintf(browserList[browser.numEntries].displayname, start);

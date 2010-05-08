@@ -196,6 +196,7 @@ static void delete_restore_point(char *_filename);
 static void save_restore_point(char *_filename, int position);
 static int load_restore_point(char *_filename);
 static void remove_subtitles();
+static void reload_subtitles();
 
 int controlledbygui=1;
 int pause_gui=0;
@@ -4525,6 +4526,33 @@ static void remove_subtitles()
     }
 }
 
+static void reload_subtitles()
+{
+	remove_subtitles(); //clear subs loaded
+
+	//reload subs with new cp
+	char **tmp = sub_filenames("", filename);
+	i = 0;
+
+	while (tmp[i]) {
+		add_subtitles (tmp[i], mpctx->sh_video->fps, 1);
+		free(tmp[i++]);
+	}
+	free(tmp);
+
+	 if (mpctx->set_of_sub_size > 0)  {
+	      // setup global sub numbering
+	      mpctx->global_sub_indices[SUB_SOURCE_SUBS] = mpctx->global_sub_size; // the global # of the first sub.
+	      mpctx->global_sub_size += mpctx->set_of_sub_size;
+	  }
+
+	if (mpctx->global_sub_size) {
+	  select_subtitle(mpctx);
+	  force_load_font = 1;
+	}
+
+}
+
 static float timing_sleep(float time_frame)
 {
 	s32 frame=time_frame*1000000; //in us
@@ -5009,31 +5037,7 @@ void wiiSetCodepage(char *cp)
 
 	if(!has_subs) return; //no subs so return;
 
-
-	remove_subtitles(); //clear subs loaded
-
-	//reload subs with new cp
-	char **tmp = sub_filenames("", filename);
-	i = 0;
-
-	while (tmp[i]) {
-		add_subtitles (tmp[i], mpctx->sh_video->fps, 1);
-		free(tmp[i++]);
-	}
-	free(tmp);
-
-	 if (mpctx->set_of_sub_size > 0)  {
-	      // setup global sub numbering
-	      mpctx->global_sub_indices[SUB_SOURCE_SUBS] = mpctx->global_sub_size; // the global # of the first sub.
-	      mpctx->global_sub_size += mpctx->set_of_sub_size;
-	  }
-
-	if (mpctx->global_sub_size) {
-	  select_subtitle(mpctx);
-	  force_load_font = 1;
-	}
-
-//	printf("sub reloaded\n");
+	reload_subtitles();
 }
 
 void wiiLoadRestorePoints(char *buffer, int size)

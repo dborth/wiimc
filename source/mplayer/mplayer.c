@@ -2701,7 +2701,6 @@ m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2");
 m_config_set_option(mconfig,"sws","4");
 m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
-SetMPlayerSettings();
 #else
   m_config_preparse_command_line(mconfig,argc,argv);
 
@@ -5020,7 +5019,6 @@ void wiiSetLanguage(char *lang)
 void wiiSetCodepage(char *cp)
 {
 	bool has_subs=false;
-	int i;
 
 	if(mpctx && mpctx->set_of_sub_size > 0) has_subs=true;
 

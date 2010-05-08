@@ -6,6 +6,29 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.0.2 - May 8, 2010]
+
+* Significant changes to improve stability
+* Significant improvements to video performance
+* Frame dropping now disabled by default (change it to Disabled in the Video
+  settings to improve performance if you are updating from a previous version)
+* Corrections to device mounting code (fixes crashes on startup)
+* Translations to the following languages: Japanese, German, French, Spanish, 
+  Italian, Dutch, Chinese (Simplified), Chinese (Traditional), Korean,
+  Romanian, Estonian, and Brazilian Portuguese
+* Video scaling issues fixed
+* Audio static bug at EOF fixed
+* Fixed issues with radio streams
+* Fixed DVD issues
+* Improvements to settings loading code
+* FF/RW time is now configurable
+* Friendly names now shown for playlists
+* Radio stream information now shown in the now playing area
+* Allowed file extensions list expanded
+* ASS subtitle file support added
+* Added settings for subtitle language and codepage
+* Other various bugfixes and improvements
+
 [1.0.1 - April 18, 2010]
 
 * Fixed NTFS crashes

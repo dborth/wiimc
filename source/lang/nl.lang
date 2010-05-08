@@ -534,3 +534,12 @@ msgstr "WIIMC heeft niet genoeg geheugen om de foto viewer te laden."
 
 msgid "Close MPlayer"
 msgstr "MPlayer afsluiten"
+
+msgid "Subtitle Codepage"
+msgstr ""
+
+msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr ""
+
+msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr ""

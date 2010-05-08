@@ -377,7 +377,7 @@ msgid "Error loading playlist!"
 msgstr "Erro carregando a lista de reprodução!"
 
 msgid "Playlist does not contain any supported entries!"
-msgstr "Lista de reprodução não contém nehuma entrada suportada!"
+msgstr "A lista de reprodução não contém nehuma entrada suportada!"
 
 msgid "No Results Found"
 msgstr "Nenhum resultado encontrado"
@@ -398,7 +398,7 @@ msgid "Error saving file!"
 msgstr "Erro ao salvar o arquivo!"
 
 msgid "Playlist is Empty"
-msgstr "Lista de reprodução vazia"
+msgstr "A lista de reprodução está vazia"
 
 msgid "Hover over items and push the + button to add them to your playlist."
 msgstr "Passe o cursor sobre os items e pressione o botão + para adicioná-los à sua lista de reprodução."
@@ -491,7 +491,7 @@ msgid "Buffering"
 msgstr "Buffering"
 
 msgid "Unable to initialize network (Error #:"
-msgstr "Impossível iniciar a rede (Errore #:"
+msgstr "Impossível iniciar a rede (Erro #:"
 
 msgid "Settings - Subtitles"
 msgstr "Configurações - Legendas"
@@ -530,7 +530,7 @@ msgid "Out of Memory"
 msgstr "Memória Esgotada"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr "WiiMC não possui memória livre suficiente para carregar o visualizador de imagens."
+msgstr "O WiiMC não possui memória livre suficiente para carregar o visualizador de imagens."
 
 msgid "Close MPlayer"
 msgstr "Fechar o MPlayer"
@@ -539,7 +539,7 @@ msgid "Subtitle Codepage"
 msgstr "Código de página da legenda"
 
 msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr ""
+msgstr "Este diretório contém mais entradas do que o máximo permitido (3000). Nem todas entradas serão visualizadas"
 
 msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr ""
+msgstr "Esta lista de reprodução contém mais entradas do que o máximo permitido (3000). Nem todas entradas serão visualizadas"

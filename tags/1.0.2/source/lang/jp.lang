@@ -1,0 +1,548 @@
+msgid "Videos"
+msgstr "ビデオ"
+
+msgid "Music"
+msgstr "ミュージック"
+
+msgid "Pictures"
+msgstr "ピクチャー"
+
+msgid "Online Media"
+msgstr "オンラインメディア"
+
+msgid "Please Wait"
+msgstr "お待ちください.."
+
+msgid "Error"
+msgstr "エラー"
+
+msgid "OK"
+msgstr "ＯＫ"
+
+msgid "Retry"
+msgstr "リトライ"
+
+msgid "Cancel"
+msgstr "キャンセル"
+
+msgid "Information"
+msgstr "インフォメーション"
+
+msgid "Credits"
+msgstr "クレジット"
+
+msgid "Play"
+msgstr "再生"
+
+msgid "Pause"
+msgstr "一時停止"
+
+msgid "Single Play"
+msgstr "１曲再生"
+
+msgid "Continuous Play"
+msgstr "連続再生"
+
+msgid "Shuffle"
+msgstr "シャッフル再生"
+
+msgid "Loop"
+msgstr "ループ再生"
+
+msgid "Continuous"
+msgstr "連続再生"
+
+msgid "Playlist"
+msgstr "プレイリスト"
+
+msgid "Restart"
+msgstr "リスタート"
+
+msgid "Loading..."
+msgstr "ロード中.."
+
+msgid "Global"
+msgstr "共通設定"
+
+msgid "Network"
+msgstr "ネットワーク"
+
+msgid "Subtitles"
+msgstr "字幕"
+
+msgid "Subtitle Delay"
+msgstr "字幕表示遅延秒数"
+
+msgid "Settings"
+msgstr "設定"
+
+msgid "On"
+msgstr "ＯＮ"
+
+msgid "Off"
+msgstr "ＯＦＦ"
+
+msgid "Always"
+msgstr "常時"
+
+msgid "Disabled"
+msgstr "無効"
+
+msgid "Backward"
+msgstr "後戻し"
+
+msgid "Pause"
+msgstr "中断"
+
+msgid "Forward"
+msgstr "先送り"
+
+msgid "Single"
+msgstr "１曲再生"
+
+msgid "now playing"
+msgstr "再生ファイル"
+
+msgid "Previous"
+msgstr "前へ"
+
+msgid "Next"
+msgstr "次へ"
+
+msgid "Close"
+msgstr "閉じる"
+
+msgid "DVD"
+msgstr "ＤＶＤ"
+
+msgid "Go back"
+msgstr "戻る"
+
+msgid "Update Available"
+msgstr "アップデートできます"
+
+msgid "An update is available!"
+msgstr "最新版にアップデートできます"
+
+msgid "Update now"
+msgstr "今すぐアップデートする"
+
+msgid "Update later"
+msgstr "後でアップデートする"
+
+msgid "Online media file not found."
+msgstr "オンラインメディアファイルが見つかりません"
+
+msgid "Unrecognized DVD format!"
+msgstr "ＤＶＤのフォーマットが認識できません"
+
+msgid "Port cannot be blank!"
+msgstr "ポートの設定は必須です"
+
+msgid "Port is not a number!"
+msgstr "ポートは数字でなければなりません"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "ポートは(4-49151)の範囲で設定してください"
+
+msgid "Settings - Global"
+msgstr "設定 - 共通"
+
+msgid "Settings - Videos"
+msgstr "設定 - ビデオ"
+
+msgid "Settings - Music"
+msgstr "設定 - ミュージック"
+
+msgid "Settings - Pictures"
+msgstr "設定 - ピクチャ"
+
+msgid "Settings - Online Media"
+msgstr "設定 - オンラインメディア"
+
+msgid "Settings - Network"
+msgstr "設定 - ネットワーク"
+
+msgid "Settings - DVD"
+msgstr "設定 - ＤＶＤ"
+
+msgid "File Extensions"
+msgstr "ファイル拡張子"
+
+msgid "Language"
+msgstr "言語"
+
+msgid "Volume"
+msgstr "ボリューム"
+
+msgid "Exit Action"
+msgstr "WiiMC終了処理"
+
+msgid "Wiimote Rumble"
+msgstr "Ｗｉｉリモコン振動"
+
+msgid "Hide"
+msgstr "非表示"
+
+msgid "Show"
+msgstr "表示"
+
+msgid "Auto"
+msgstr "自動"
+
+msgid "Return to Wii Menu"
+msgstr "Ｗｉｉメニューに戻る"
+
+msgid "Power Off Wii"
+msgstr "電源を切る"
+
+msgid "Return to Loader"
+msgstr "ＨＢＣに戻る"
+
+msgid "Screen Zoom"
+msgstr "スクリーン拡大率"
+
+msgid "Screen Position"
+msgstr "スクリーン位置"
+
+msgid "Frame Dropping"
+msgstr "フレームドロップ機能"
+
+msgid "Aspect Ratio"
+msgstr "アスペクト比"
+
+msgid "Cache Fill"
+msgstr "キャッシュサイズ"
+
+msgid "Audio Delay"
+msgstr "音声遅延秒数"
+
+msgid "Auto-Resume"
+msgstr "自動レジューム再生"
+
+msgid "Videos Files Folder"
+msgstr "ビデオフォルダ"
+
+msgid "Play Order"
+msgstr "再生指定"
+
+msgid "Music Files Folder"
+msgstr "ミュージックフォルダ"
+
+msgid "Pictures Files Folder"
+msgstr "ピクチャーフォルダ"
+
+msgid "Display Name"
+msgstr "表示名"
+
+msgid "Share IP"
+msgstr "共有ＩＰ"
+
+msgid "Share Name"
+msgstr "共有名"
+
+msgid "Username"
+msgstr "ユーザー名"
+
+msgid "Password"
+msgstr "パスワード"
+
+msgid "New Share"
+msgstr "新しい共有"
+
+msgid "Delete"
+msgstr "削除"
+
+msgid "Delete Share"
+msgstr "共有を削除する"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "本当に削除してよいですか？"
+
+msgid "IP"
+msgstr "ＩＰ"
+
+msgid "Folder"
+msgstr "フォルダ"
+
+msgid "Mode"
+msgstr "モード"
+
+msgid "New Site"
+msgstr "新しいサイト"
+
+msgid "Passive"
+msgstr "パッシブモード"
+
+msgid "Active"
+msgstr "アクティブモード"
+
+msgid "Delete Site"
+msgstr "サイトを削除する"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "本当に削除してよいですか？"
+
+msgid "Port"
+msgstr "ポート"
+
+msgid "Rewind / Fast Forward"
+msgstr "後戻し/先送り秒数"
+
+msgid "Error loading file!"
+msgstr "ファイルが読み込めません"
+
+msgid "Resume"
+msgstr "レジューム"
+
+msgid "Stop Slideshow"
+msgstr "スライドショーを中止"
+
+msgid "Start Slideshow"
+msgstr "スライドショーを開始"
+
+msgid "Slideshow Delay"
+msgstr "スライドショー切替秒数"
+
+msgid "Online Media Folder"
+msgstr "オンラインメディアフォルダ"
+
+msgid "Add SMB Share"
+msgstr "ＳＭＢ設定"
+
+msgid "Add FTP Site"
+msgstr "ＦＴＰ設定"
+
+msgid "DVD Menu"
+msgstr "ＤＶＤメニュー"
+
+msgid "Skip to Main Title"
+msgstr "メインタイトルをスキップ"
+
+msgid "Unable to Initialize MPlayer"
+msgstr "ＭＰｌａｙｅｒの初期化に失敗しました"
+
+msgid "Unable to find a valid working path"
+msgstr "有効なパスがありません"
+
+msgid "Unable to change path to"
+msgstr "変更できません"
+
+msgid "Out of memory: too many files!"
+msgstr "メモリ不足エラー: ファイルが多すぎます！"
+
+msgid "Directory name is too long!"
+msgstr "ディレクトリ名が長すぎます！"
+
+msgid "SD Card"
+msgstr "ＳＤカード"
+
+msgid "USB Mass Storage"
+msgstr "ＵＳＢストレージ"
+
+msgid "Data DVD"
+msgstr "ＤＶＤデータ"
+
+msgid "USB drive not found!"
+msgstr "ＵＳＢドライブが見つかりません"
+
+msgid "SD card not found!"
+msgstr "ＳＤカードが見つかりません"
+
+msgid "Please install IOS 202 for DVD support."
+msgstr "ＤＶＤのサポートのため IOS 202をインストールしてください"
+
+msgid "Loading DVD..."
+msgstr "ＤＶＤをロード中.."
+
+msgid "No disc inserted!"
+msgstr "ディスクが挿入されていません！"
+
+msgid "Invalid DVD."
+msgstr "ＤＶＤが無効です"
+
+msgid "Up One Level"
+msgstr "上へ.."
+
+msgid "Error opening"
+msgstr "開けません"
+
+msgid "Warning"
+msgstr "警告"
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "６ＭＢ以上の画像ファイルがフォルダ内に存在します 該当する画像ファイルは表示できません"
+
+msgid "Error loading playlist!"
+msgstr "プレイリストをロードできません"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr "プレイリストにサポートしているエントリが 含まれていません"
+
+msgid "No Results Found"
+msgstr "該当なし"
+
+msgid "Your search did not match any media files."
+msgstr "検索条件にヒットするメディアファイルが 見つかりませんでした"
+
+msgid "Error opening file!"
+msgstr "ファイルの表示に失敗しました"
+
+msgid "Saving..."
+msgstr "セーブ中.."
+
+msgid "Error creating file!"
+msgstr "ファイルの作成に失敗しました"
+
+msgid "Error saving file!"
+msgstr "ファイルのセーブに失敗しました"
+
+msgid "Playlist is Empty"
+msgstr "プレイリストが空です"
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "アイテムにカーソルを合わせて+ボタンをクリックし プレイリストに追加します"
+
+msgid "Exit Playlist"
+msgstr "プレイリスト表示を中止"
+
+msgid "Update successful!"
+msgstr "アップデートが完了しました"
+
+msgid "Update failed!"
+msgstr "アップデートに失敗しました"
+
+msgid "Initializing network..."
+msgstr "ネットワークを初期化中.."
+
+msgid "Check settings file."
+msgstr "設定ファイルを確認してください"
+
+msgid "Share name is blank."
+msgstr "共有名が設定されていません"
+
+msgid "Share IP is blank."
+msgstr "共有ＩＰが設定されていません"
+
+msgid "Invalid network share settings"
+msgstr "ネットワーク共有設定が無効です"
+
+msgid "Connecting to network share..."
+msgstr "共有フォルダに接続中.."
+
+msgid "Failed to connect to network share."
+msgstr "共有フォルダへの接続に失敗しました"
+
+msgid "IP is blank."
+msgstr "ＩＰアドレスが設定されていません"
+
+msgid "Username is blank."
+msgstr "ユーザー名が設定されていません"
+
+msgid "Password is blank."
+msgstr "パスワードが設定されていません"
+
+msgid "Invalid FTP site settings"
+msgstr "ＦＴＰの設定が無効です"
+
+msgid "Connecting to FTP site..."
+msgstr "ＦＴＰサイトに接続中.."
+
+msgid "Failed to connect to FTP site."
+msgstr "ＦＴＰサイトへの接続に失敗しました"
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "有効なＳＤ・ＵＳＢデバイスが見つかりません - 少なくとも１つ必要です"
+
+msgid "Could not create folder"
+msgstr "フォルダを作成できませんでした"
+
+msgid "Saving settings..."
+msgstr "設定をセーブ中.."
+
+msgid "Could not save settings to"
+msgstr "設定をセーブできませんでした"
+
+msgid "Thanks to"
+msgstr "次の方々に感謝します"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "このソフトウェアはオープンソースであり、GNU General Public License (GPL) Version 2の条件下において、複製、配布、編集が許可されます"
+
+msgid "Menu artwork"
+msgstr "メニューアートワーク"
+
+msgid "Coding"
+msgstr "コーディング"
+
+msgid "Coding & menu design"
+msgstr "コーディング＆メニューデザイン"
+
+msgid "Logo"
+msgstr "ロゴデザイン"
+
+msgid "Version"
+msgstr "バージョン"
+
+msgid "Buffering..."
+msgstr "バッファ中.."
+
+msgid "Buffering"
+msgstr "バッファ中"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "ネットワーク初期化エラー (Error #:"
+
+msgid "Settings - Subtitles"
+msgstr "設定 - 字幕"
+
+msgid "Visibility"
+msgstr "字幕表示"
+
+msgid "Delay"
+msgstr "遅延秒数"
+
+msgid "Codepage"
+msgstr "文字コード"
+
+msgid "Subtitle Language"
+msgstr "字幕言語"
+
+msgid "Default"
+msgstr "デフォルト"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "メモリ不足で言語設定の変更ができませんでした"
+
+msgid "Font Required"
+msgstr "他言語フォントの導入"
+
+msgid "A new font is required to display this language."
+msgstr "選択した言語のフォントをダウンロードします"
+
+msgid "Download font"
+msgstr "ダウンロード"
+
+msgid "Unable to save font file!"
+msgstr "フォントの導入に失敗しました"
+
+msgid "Out of Memory"
+msgstr "メモリ不足エラー"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr "画像を読み込むために 十分な空きメモリがありません"
+
+msgid "Close MPlayer"
+msgstr "閉じる"
+
+msgid "Subtitle Codepage"
+msgstr "字幕コードページの設定"
+
+msgid "Japanese"
+msgstr "日本語"
+
+msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr "ディレクトリ内のエントリ数が多過ぎます 全てを表示できません (最大値:3,000)"
+
+msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr "プレイリストのエントリ数が多過ぎます 全てを表示できません (最大値:3,000)"

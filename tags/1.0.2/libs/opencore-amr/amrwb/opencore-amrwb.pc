@@ -1,0 +1,10 @@
+prefix=${DEVKITPRO}/portlibs/ppc
+exec_prefix=${prefix}
+libdir=${DEVKITPRO}/portlibs/ppc/lib
+includedir=${prefix}/include/opencore-amrwb
+
+Name: OpenCORE AMR-WB
+Description: Adaptive Multi-Rate Wideband speech codec library
+Version: 0.1.2
+Libs: -L${libdir} -lopencore-amrwb
+Cflags: -I${includedir}

@@ -482,12 +482,11 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 	u64 *Vsrc3 = (u64 *) (buffer[2] + p12);
 	u64 *Vsrc4 = (u64 *) (buffer[2] + p13);
 
-	//if(old_h1_2 == -1)
 	if(old_h1_2 != height)
 	{
 		old_h1_2 = height;
-    	h1 = ((height/8)*8) >> 2;
-    	h2 = height >> 3 ;
+    	h1 = ceil((float)height / 4);
+    	h2 = ceil((float)h1/2);
 	}
 
 	//Convert YUV frame to GX textures

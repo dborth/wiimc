@@ -537,3 +537,9 @@ msgstr "关闭Mplayer播放器"
 
 msgid "Subtitle Codepage"
 msgstr "字幕代码页"
+
+msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr ""
+
+msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr ""

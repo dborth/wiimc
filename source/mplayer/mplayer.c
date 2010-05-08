@@ -4528,6 +4528,8 @@ static void remove_subtitles()
 
 static void reload_subtitles()
 {
+	int i;
+
 	remove_subtitles(); //clear subs loaded
 
 	//reload subs with new cp

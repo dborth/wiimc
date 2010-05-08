@@ -195,6 +195,7 @@ static float timing_sleep(float time_frame);
 static void delete_restore_point(char *_filename);
 static void save_restore_point(char *_filename, int position);
 static int load_restore_point(char *_filename);
+static void remove_subtitles();
 
 int controlledbygui=1;
 int pause_gui=0;
@@ -2692,11 +2693,14 @@ m_config_set_option(mconfig,"osdlevel","0");
 m_config_set_option(mconfig,"channels","6");
 m_config_set_option(mconfig,"af", "pan=2:0.5:0:0:0.5:0.33:0:0:0.33:0.5:0.5:0.5:0.5");
 m_config_set_option(mconfig,"sub-fuzziness","1");
-m_config_set_option(mconfig,"subfont-autoscale","0");
-m_config_set_option(mconfig,"subfont-text-scale","16");
+m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
+m_config_set_option(mconfig,"subfont-osd-scale","3.5");
+m_config_set_option(mconfig,"subfont-text-scale","3.5");
+m_config_set_option(mconfig,"ass","1");
+m_config_set_option(mconfig,"ass-font-scale","2");
 m_config_set_option(mconfig,"sws","4");
 m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
-ass_enabled = 1;
+SetMPlayerSettings();
 #else
   m_config_preparse_command_line(mconfig,argc,argv);
 
@@ -3655,7 +3659,7 @@ if(vo_spudec==NULL && mpctx->sh_video &&
      (mpctx->stream->type==STREAMTYPE_DVD || mpctx->stream->type == STREAMTYPE_DVDNAV)){
   init_vo_spudec();
 }
-if(1 || mpctx->sh_video) {
+if(mpctx->sh_video) {
 // after reading video params we should load subtitles because
 // we know fps so now we can adjust subtitle time to ~6 seconds AST
 // check .sub
@@ -4302,6 +4306,7 @@ ass_track = NULL;
 if(ass_library)
     ass_clear_fonts(ass_library);
 #endif
+remove_subtitles();
 
 #ifdef GEKKO
 if (mpctx->sh_audio) mpctx->audio_out->reset();
@@ -4462,6 +4467,62 @@ static int load_restore_point(char *_filename)
 			return restore_points[i].position;
 	}
 	return 0;
+}
+
+static void remove_subtitles()
+{
+    int idx;
+    int start = 0;
+    int count = mpctx->set_of_sub_size;
+    int end = start + count;
+    int after = mpctx->set_of_sub_size - end;
+    sub_data **subs = mpctx->set_of_subtitles;
+#ifdef CONFIG_ASS
+    ass_track_t **ass_tracks = mpctx->set_of_ass_tracks;
+#endif
+    if (count < 0 || count > mpctx->set_of_sub_size ||
+        start < 0 || start > mpctx->set_of_sub_size - count) {
+        mp_msg(MSGT_CPLAYER, MSGL_ERR,
+               "Cannot remove invalid subtitle range %i +%i\n", start, count);
+        return;
+    }
+    for (idx = start; idx < end; idx++) {
+        sub_data *subd = subs[idx];
+        mp_msg(MSGT_CPLAYER, MSGL_STATUS,
+               MSGTR_RemovedSubtitleFile, idx + 1,
+               filename_recode(subd->filename));
+        sub_free(subd);
+        subs[idx] = NULL;
+#ifdef CONFIG_ASS
+        if (ass_tracks[idx])
+            ass_free_track(ass_tracks[idx]);
+        ass_tracks[idx] = NULL;
+#endif
+    }
+
+    mpctx->global_sub_size -= count;
+    mpctx->set_of_sub_size -= count;
+    if (mpctx->set_of_sub_size <= 0)
+        mpctx->global_sub_indices[SUB_SOURCE_SUBS] = -1;
+
+    memmove(subs + start, subs + end, after * sizeof(*subs));
+    memset(subs + start + after, 0, count * sizeof(*subs));
+#ifdef CONFIG_ASS
+    memmove(ass_tracks + start, ass_tracks + end, after * sizeof(*ass_tracks));
+    memset(ass_tracks + start + after, 0, count * sizeof(*ass_tracks));
+#endif
+
+    if (mpctx->set_of_sub_pos >= start && mpctx->set_of_sub_pos < end) {
+        mpctx->global_sub_pos = -2;
+        subdata = NULL;
+#ifdef CONFIG_ASS
+        ass_track = NULL;
+#endif
+        mp_input_queue_cmd(mp_input_parse_cmd("sub_select"));
+    } else if (mpctx->set_of_sub_pos >= end) {
+        mpctx->set_of_sub_pos -= count;
+        mpctx->global_sub_pos -= count;
+    }
 }
 
 static float timing_sleep(float time_frame)
@@ -4948,21 +5009,10 @@ void wiiSetCodepage(char *cp)
 
 	if(!has_subs) return; //no subs so return;
 
-	//clear subs loaded
-	int j=mpctx->set_of_sub_size;
-	for(i = 0; i < mpctx->set_of_sub_size; ++i)
-	{
-		sub_free(mpctx->set_of_subtitles[i]);
-		mpctx->global_sub_size --;
-#ifdef CONFIG_ASS
-		if(mpctx->set_of_ass_tracks[i])
-			ass_free_track( mpctx->set_of_ass_tracks[i] );
-#endif
-	}
-	mpctx->set_of_sub_size = 0;
+
+	remove_subtitles(); //clear subs loaded
 
 	//reload subs with new cp
-	int n = mpctx->set_of_sub_size;
 	char **tmp = sub_filenames("", filename);
 	i = 0;
 
@@ -4972,14 +5022,18 @@ void wiiSetCodepage(char *cp)
 	}
 	free(tmp);
 
-	if (n != mpctx->set_of_sub_size)
-	{
-		if (mpctx->global_sub_indices[SUB_SOURCE_SUBS] < 0)
-			mpctx->global_sub_indices[SUB_SOURCE_SUBS] = mpctx->global_sub_size;
-		mpctx->global_sub_size+=mpctx->set_of_sub_size;
+	 if (mpctx->set_of_sub_size > 0)  {
+	      // setup global sub numbering
+	      mpctx->global_sub_indices[SUB_SOURCE_SUBS] = mpctx->global_sub_size; // the global # of the first sub.
+	      mpctx->global_sub_size += mpctx->set_of_sub_size;
+	  }
+
+	if (mpctx->global_sub_size) {
+	  select_subtitle(mpctx);
+	  force_load_font = 1;
 	}
-	mpctx->global_sub_pos=mpctx->global_sub_size-1;
-	wiiSetProperty(MP_CMD_SUB_SELECT,1);
+
+//	printf("sub reloaded\n");
 }
 
 void wiiLoadRestorePoints(char *buffer, int size)

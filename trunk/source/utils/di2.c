@@ -48,7 +48,7 @@ distribution.
 
 #include "di2.h"
 
-int di_fd = -1;
+extern int di_fd;
 
 int _DI2_ReadDVD_ReadID(void* buf, uint32_t len, uint32_t lba);
 int _DI2_ReadDVD_ReadID_Async(void* buf, uint32_t len, uint32_t lba, ipccallback ipc_cb);
@@ -974,7 +974,7 @@ bool diio_IsInitialized()
 	return true;
 }
 
-const DISC_INTERFACE __io_wiidvd = {
+const DISC_INTERFACE __io_wiidvd2 = {
 	DEVICE_TYPE_WII_DVD,
 	FEATURE_MEDIUM_CANREAD | FEATURE_WII_DVD,
 	(FN_MEDIUM_STARTUP)&diio_Startup,

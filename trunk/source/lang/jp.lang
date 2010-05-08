@@ -533,7 +533,7 @@ msgid "WiiMC does not have enough free memory to load the picture viewer."
 msgstr "画像を読み込むために 十分な空きメモリがありません"
 
 msgid "Close MPlayer"
-msgstr "ＭＰｌａｙｅｒを閉じる"
+msgstr "閉じる"
 
 msgid "Subtitle Codepage"
 msgstr "字幕コードページの設定"

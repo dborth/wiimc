@@ -778,7 +778,7 @@ WindowPrompt(const char *title, wchar_t *msg, const char *btn1Label, const char 
 
 int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label)
 {
-	wchar_t *tempmsg = charToWideChar(msg);
+	wchar_t *tempmsg = charToWideChar(gettext(msg));
 	int res = WindowPrompt(title, tempmsg, btn1Label, btn2Label);
 	delete[] tempmsg;
 	return res;

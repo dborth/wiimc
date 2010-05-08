@@ -764,16 +764,11 @@ static void demux_close_avi(demuxer_t *demuxer)
 {
   avi_priv_t* priv=demuxer->priv;
 
-  if(!priv)
-  {
-    return;
-  }
+  if(!priv) return;
 
   if(priv->idx && priv->idx_size > 0 )
-  {
-	  printf("free avi index\n");
     free(priv->idx);
-  }
+
   free(priv);
 }
 

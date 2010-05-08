@@ -242,11 +242,11 @@ static void draw_initYUV(void)
 	GX_SetArray(GX_VA_TEX1, texcoords, 2 * sizeof(u8));
 
 	//init YUV texture objects
-	GX_InitTexObj(&YtexObj, Ytexture[0], (u16) Ywidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObj(&YtexObj, Ytexture, (u16) Ywidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
 	GX_InitTexObjLOD(&YtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&UtexObj, Utexture[0], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObj(&UtexObj, Utexture, (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
 	GX_InitTexObjLOD(&UtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&VtexObj, Vtexture[0], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObj(&VtexObj, Vtexture, (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
 	GX_InitTexObjLOD(&VtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
 
 }
@@ -482,7 +482,8 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 	u64 *Vsrc3 = (u64 *) (buffer[2] + p12);
 	u64 *Vsrc4 = (u64 *) (buffer[2] + p13);
 
-	if(old_h1_2==-1)
+	//if(old_h1_2 == -1)
+	if(old_h1_2 != height)
 	{
 		old_h1_2 = height;
     	h1 = ((height/8)*8) >> 2;

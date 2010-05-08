@@ -3822,9 +3822,6 @@ static void MenuSettingsNetwork()
 
 	GuiText addsmbBtnTxt("Add SMB Share", 20, (GXColor){255, 255, 255, 255});
 	addsmbBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	GuiImage addsmbBtnIcon(&iconSMB);
-	addsmbBtnIcon.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	addsmbBtnIcon.SetPosition(10,0);
 	GuiImage addsmbBtnImg(&btnOutline);
 	GuiImage addsmbBtnImgOver(&btnOutlineOver);
 	GuiButton addsmbBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -3833,15 +3830,11 @@ static void MenuSettingsNetwork()
 	addsmbBtn.SetLabel(&addsmbBtnTxt);
 	addsmbBtn.SetImage(&addsmbBtnImg);
 	addsmbBtn.SetImageOver(&addsmbBtnImgOver);
-	addsmbBtn.SetIcon(&addsmbBtnIcon);
 	addsmbBtn.SetTrigger(trigA);
 	addsmbBtn.SetEffectGrow();
 	
 	GuiText addftpBtnTxt("Add FTP Site", 20, (GXColor){255, 255, 255, 255});
 	addftpBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	GuiImage addftpBtnIcon(&iconFTP);
-	addftpBtnIcon.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	addftpBtnIcon.SetPosition(10,0);
 	GuiImage addftpBtnImg(&btnOutline);
 	GuiImage addftpBtnImgOver(&btnOutlineOver);
 	GuiButton addftpBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -3850,7 +3843,6 @@ static void MenuSettingsNetwork()
 	addftpBtn.SetLabel(&addftpBtnTxt);
 	addftpBtn.SetImage(&addftpBtnImg);
 	addftpBtn.SetImageOver(&addftpBtnImgOver);
-	addftpBtn.SetIcon(&addftpBtnIcon);
 	addftpBtn.SetTrigger(trigA);
 	addftpBtn.SetEffectGrow();
 

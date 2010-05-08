@@ -49,11 +49,14 @@ msgstr "Amestecare"
 msgid "Loop"
 msgstr "Reluare"
 
+msgid "Continuous"
+msgstr ""
+
 msgid "Playlist"
 msgstr "Playlist"
 
-msgid "Add to Playlist"
-msgstr "Adaugă la Playlist"
+msgid "Restart"
+msgstr ""
 
 msgid "Loading..."
 msgstr "Încărcare..."
@@ -66,6 +69,9 @@ msgstr "Rețea"
 
 msgid "Subtitles"
 msgstr "Subtitrare"
+
+msgid "Subtitle Delay"
+msgstr ""
 
 msgid "Settings"
 msgstr "Setări"
@@ -82,28 +88,16 @@ msgstr "Întotdeauna"
 msgid "Disabled"
 msgstr "Stins"
 
-msgid "Skip Backward"
+msgid "Backward"
 msgstr "Sari Înapoi"
-
-msgid "Rewind"
-msgstr "Înapoi"
 
 msgid "Pause"
 msgstr "Pauză"
 
-msgid "Fast Forward"
+msgid "Forward"
 msgstr "Înainte"
 
-msgid "Skip Forward"
-msgstr "Sari Înainte"
-
-msgid "Restart Song"
-msgstr "Reîncepe Melodia"
-
-msgid "Next Song"
-msgstr "Melodia Următoare"
-
-msgid "Single Play"
+msgid "Single"
 msgstr "Redare Singură"
 
 msgid "now playing"
@@ -115,35 +109,14 @@ msgstr "Precedent"
 msgid "Next"
 msgstr "Următor"
 
-msgid "Slideshow"
-msgstr "Prezentare"
-
 msgid "Close"
 msgstr "Închide"
-
-msgid "Exit"
-msgstr "Ieșire"
 
 msgid "DVD"
 msgstr "DVD"
 
 msgid "Go back"
 msgstr "Înapoi"
-
-msgid "Up One Level"
-msgstr "Un Nivel În Sus"
-
-msgid "Exit Playlist"
-msgstr "Ieșire Din Playlist"
-
-msgid "Initializing network..."
-msgstr "Inițializare rețea..."
-
-msgid "Connecting to FTP site..."
-msgstr "Conectare la site FTP"
-
-msgid "Connecting to network share..."
-msgstr "Conectare la rețeaua partajată..."
 
 msgid "Update Available"
 msgstr "Update disponibil"
@@ -157,89 +130,11 @@ msgstr "Update acum"
 msgid "Update later"
 msgstr "Update mai târziu"
 
-msgid "Saving..."
-msgstr "Salvare..."
-
-msgid "Update successful!"
-msgstr "Update de succes!"
-
-msgid "Update failed!"
-msgstr "Update eșuat!"
-
 msgid "Online media file not found."
 msgstr "Fișier media online nu a fost găsit."
 
-msgid "Unable to display files on selected load device."
-msgstr "Incapabil de a afișa fișierele selectate pe dispozitivul de sarcină."
-
-msgid "Error loading playlist!"
-msgstr "Eroare la încărcarea playlist!"
-
 msgid "Unrecognized DVD format!"
 msgstr "Format DVD necunoscut!"
-
-msgid "No disc inserted!"
-msgstr "Nici un disc întrodus!"
-
-msgid "Invalid DVD."
-msgstr "DVD invalid"
-
-msgid "Error opening"
-msgstr "Eroare la deschiderea"
-
-msgid "Please install IOS 202 for DVD support."
-msgstr "Instalați vă rog IOS 202 pentru suport DVD."
-
-msgid "USB drive not found!"
-msgstr "Drive USB nu a fost găsit!"
-
-msgid "SD card not found!"
-msgstr "Card SD nu a fost găsit!"
-
-msgid "Error opening file!"
-msgstr "Eroare la deschiderea unui fișier!"
-
-msgid "Error saving file!"
-msgstr "Eroare la salvarea unui fișier!"
-
-msgid "There are no files currently in the playlist."
-msgstr "Nu sunt fișiere in playlistul curent."
-
-msgid "Unable to initialize network (Error #:"
-msgstr "Rețeaua nu poate fi inițializată (Eroare #:"
-
-msgid "Check settings file."
-msgstr "Verificați fișierul de configurație."
-
-msgid "Share name is blank."
-msgstr "Numele de partajare este gol."
-
-msgid "Share IP is blank."
-msgstr "IP-ul de partajare este gol."
-
-msgid "Invalid network share settings"
-msgstr "Setările pentru partajarea de rețea sunt invalide"
-
-msgid "Failed to connect to network share."
-msgstr "Nu a reusit sa se conecteze la rețeaua partajata."
-
-msgid "IP is blank."
-msgstr "IP-ul este gol."
-
-msgid "Username is blank."
-msgstr "Utilizatorul este gol."
-
-msgid "Password is blank."
-msgstr "Parola e goala."
-
-msgid "Invalid FTP site settings"
-msgstr "Setări FTP invalide"
-
-msgid "Failed to connect to FTP site."
-msgstr "Nu a reușit sa se conecteze la site-ul FTP."
-
-msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "Nu s-a putut gasi un dispozitiv SD sau USB - aceasta este necesară pentru funcţionarea normală."
 
 msgid "Port cannot be blank!"
 msgstr "Port nu poate să fie gol!"
@@ -249,9 +144,6 @@ msgstr "Port-ul acesta nu este un număr!"
 
 msgid "Port is outside the allowed range (4-49151)!"
 msgstr "Port-ul este înafara intervalului permis (4-49151)!"
-
-msgid "Could not create folder"
-msgstr "Nu am putut crea dosarul"
 
 msgid "Settings - Global"
 msgstr "Setări - Globale"
@@ -265,11 +157,14 @@ msgstr "Setări - Muzică"
 msgid "Settings - Pictures"
 msgstr "Setări - Poze"
 
+msgid "Settings - Online Media"
+msgstr ""
+
 msgid "Settings - Network"
 msgstr "Setări - Rețea"
 
-msgid "Settings - Subtitles"
-msgstr "Setări - Subtitrare"
+msgid "Settings - DVD"
+msgstr ""
 
 msgid "File Extensions"
 msgstr "Tip Fișier"
@@ -316,11 +211,8 @@ msgstr "Frame Dropping"
 msgid "Aspect Ratio"
 msgstr "Raport lațime / înalțime"
 
-msgid "Cache Size"
-msgstr "Mărime Cache"
-
-msgid "Cache Prefill"
-msgstr "Cache Prefill"
+msgid "Cache Fill"
+msgstr ""
 
 msgid "Audio Delay"
 msgstr "Întărziere Audio"
@@ -339,9 +231,6 @@ msgstr "Folder Fișiere Muzică"
 
 msgid "Pictures Files Folder"
 msgstr "Folder Fișiere Poze"
-
-msgid "Add"
-msgstr "Adaugă"
 
 msgid "Display Name"
 msgstr "Numele de Afișare"
@@ -370,6 +259,9 @@ msgstr "Șterge Partajare"
 msgid "Are you sure that you want to delete this share?"
 msgstr "Esti sigur că vrei să ștergi această partajare?"
 
+msgid "IP"
+msgstr ""
+
 msgid "Folder"
 msgstr "Folder"
 
@@ -391,29 +283,263 @@ msgstr "Șterge Site"
 msgid "Are you sure that you want to delete this site?"
 msgstr "Esti sigur că vrei să ștergi acest site?"
 
-msgid "Visibility"
-msgstr "Vizibilitate"
-
-msgid "Position"
-msgstr "Poziție"
-
-msgid "Size"
-msgstr "Mărime"
-
-msgid "Delay"
-msgstr "Întărziere"
-
-msgid "Top"
-msgstr "Sus"
-
-msgid "Center"
-msgstr "Centru"
-
-msgid "Bottom"
-msgstr "Jos"
-
 msgid "Port"
 msgstr "Port"
 
 msgid "Rewind / Fast Forward"
 msgstr "Înapoi / Repede Înainte"
+
+msgid "Error loading file!"
+msgstr ""
+
+msgid "Resume"
+msgstr ""
+
+msgid "Stop Slideshow"
+msgstr ""
+
+msgid "Start Slideshow"
+msgstr ""
+
+msgid "Slideshow Delay"
+msgstr ""
+
+msgid "Online Media Folder"
+msgstr ""
+
+msgid "Add SMB Share"
+msgstr ""
+
+msgid "Add FTP Site"
+msgstr ""
+
+msgid "DVD Menu"
+msgstr ""
+
+msgid "Skip to Main Title"
+msgstr ""
+
+msgid "Unable to Initialize MPlayer"
+msgstr ""
+
+msgid "Unable to find a valid working path"
+msgstr ""
+
+msgid "Unable to change path to"
+msgstr ""
+
+msgid "Out of memory: too many files!"
+msgstr ""
+
+msgid "Directory name is too long!"
+msgstr ""
+
+msgid "SD Card"
+msgstr ""
+
+msgid "USB Mass Storage"
+msgstr ""
+
+msgid "Data DVD"
+msgstr ""
+
+msgid "USB drive not found!"
+msgstr "Drive USB nu a fost găsit!"
+
+msgid "SD card not found!"
+msgstr "Card SD nu a fost găsit!"
+
+msgid "Please install IOS 202 for DVD support."
+msgstr "Instalați vă rog IOS 202 pentru suport DVD."
+
+msgid "Loading DVD..."
+msgstr ""
+
+msgid "No disc inserted!"
+msgstr "Nici un disc întrodus!"
+
+msgid "Invalid DVD."
+msgstr "DVD invalid"
+
+msgid "Up One Level"
+msgstr "Un Nivel În Sus"
+
+msgid "Error opening"
+msgstr "Eroare la deschiderea"
+
+msgid "Warning"
+msgstr ""
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr ""
+
+msgid "Error loading playlist!"
+msgstr "Eroare la încărcarea playlist!"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr ""
+
+msgid "No Results Found"
+msgstr ""
+
+msgid "Your search did not match any media files."
+msgstr ""
+
+msgid "Error opening file!"
+msgstr "Eroare la deschiderea unui fișier!"
+
+msgid "Saving..."
+msgstr "Salvare..."
+
+msgid "Error creating file!"
+msgstr ""
+
+msgid "Error saving file!"
+msgstr "Eroare la salvarea unui fișier!"
+
+msgid "Playlist is Empty"
+msgstr ""
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr ""
+
+msgid "Exit Playlist"
+msgstr "Ieșire Din Playlist"
+
+msgid "Update successful!"
+msgstr "Update de succes!"
+
+msgid "Update failed!"
+msgstr "Update eșuat!"
+
+msgid "Initializing network..."
+msgstr "Inițializare rețea..."
+
+msgid "Check settings file."
+msgstr "Verificați fișierul de configurație."
+
+msgid "Share name is blank."
+msgstr "Numele de partajare este gol."
+
+msgid "Share IP is blank."
+msgstr "IP-ul de partajare este gol."
+
+msgid "Invalid network share settings"
+msgstr "Setările pentru partajarea de rețea sunt invalide"
+
+msgid "Connecting to network share..."
+msgstr "Conectare la rețeaua partajată..."
+
+msgid "Failed to connect to network share."
+msgstr "Nu a reusit sa se conecteze la rețeaua partajata."
+
+msgid "IP is blank."
+msgstr "IP-ul este gol."
+
+msgid "Username is blank."
+msgstr "Utilizatorul este gol."
+
+msgid "Password is blank."
+msgstr "Parola e goala."
+
+msgid "Invalid FTP site settings"
+msgstr "Setări FTP invalide"
+
+msgid "Connecting to FTP site..."
+msgstr "Conectare la site FTP"
+
+msgid "Failed to connect to FTP site."
+msgstr "Nu a reușit sa se conecteze la site-ul FTP."
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "Nu s-a putut gasi un dispozitiv SD sau USB - aceasta este necesară pentru funcţionarea normală."
+
+msgid "Could not create folder"
+msgstr "Nu am putut crea dosarul"
+
+msgid "Saving settings..."
+msgstr ""
+
+msgid "Could not save settings to"
+msgstr ""
+
+msgid "Thanks to"
+msgstr ""
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr ""
+
+msgid "Menu artwork"
+msgstr ""
+
+msgid ""
+msgstr ""
+
+msgid "Coding & menu design"
+msgstr ""
+
+msgid "Logo"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Buffering..."
+msgstr ""
+
+msgid "Buffering"
+msgstr ""
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Rețeaua nu poate fi inițializată (Eroare #:"
+
+msgid "Settings - Subtitles"
+msgstr "Setări - Subtitrare"
+
+msgid "Visibility"
+msgstr "Vizibilitate"
+
+msgid "Delay"
+msgstr "Întărziere"
+
+msgid "Codepage"
+msgstr ""
+
+msgid "Subtitle Language"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "Could not change language. Not enough memory!"
+msgstr ""
+
+msgid "Font Required"
+msgstr ""
+
+msgid "A new font is required to display this language."
+msgstr ""
+
+msgid "Download font"
+msgstr ""
+
+msgid "Unable to save font file!"
+msgstr ""
+
+msgid "Out of Memory"
+msgstr ""
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr ""
+
+msgid "Close MPlayer"
+msgstr ""
+
+msgid "Subtitle Codepage"
+msgstr ""
+
+msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr ""
+
+msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr ""

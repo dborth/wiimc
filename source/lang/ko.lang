@@ -191,7 +191,7 @@ msgid "Auto"
 msgstr "자동"
  
 msgid "Return to Wii Menu"
-msgstr "위메뉴로 돌아가기Volver al Menu Wii"
+msgstr "위메뉴로 돌아가기"
  
 msgid "Power Off Wii"
 msgstr "위 전원 끄기"
@@ -537,3 +537,9 @@ msgstr "Mplayer 닫기"
 
 msgid "Subtitle Codepage"
 msgstr "자막 코드페이지"
+
+msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr "이 디렉토리는 허용된 최대값(3000)이상의 내용물을 담고 있읍니다. 모든 것이 안보일수 있읍니다."
+
+msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr "이 재생목록은 허용된 최대값(3000)이상의 내용물을 담고 있읍니다. 모든 것이 안보일수 있읍니다."

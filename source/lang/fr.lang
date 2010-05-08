@@ -49,11 +49,14 @@ msgstr "Mélanger"
 msgid "Loop"
 msgstr "Répéter"
 
+msgid "Continuous"
+msgstr ""
+
 msgid "Playlist"
 msgstr "Playlist"
 
-msgid "Add to Playlist"
-msgstr "Ajouter à la Playlist"
+msgid "Restart"
+msgstr ""
 
 msgid "Loading..."
 msgstr "Chargement..."
@@ -66,6 +69,9 @@ msgstr "Réseau"
 
 msgid "Subtitles"
 msgstr "Sous-titres"
+
+msgid "Subtitle Delay"
+msgstr ""
 
 msgid "Settings"
 msgstr "Paramètres"
@@ -82,28 +88,16 @@ msgstr "Toujours"
 msgid "Disabled"
 msgstr "Désactivé"
 
-msgid "Skip Backward"
+msgid "Backward"
 msgstr "Reculer"
-
-msgid "Rewind"
-msgstr "Rembobiner"
 
 msgid "Pause"
 msgstr "Pause"
 
-msgid "Fast Forward"
-msgstr "Avance Rapide"
-
-msgid "Skip Forward"
+msgid "Forward"
 msgstr "Avancer"
 
-msgid "Restart Song"
-msgstr "Relire le titre"
-
-msgid "Next Song"
-msgstr "Titre suivant"
-
-msgid "Single Play"
+msgid "Single"
 msgstr "Lire le titre"
 
 msgid "now playing"
@@ -115,35 +109,14 @@ msgstr "Précédent"
 msgid "Next"
 msgstr "Suivant"
 
-msgid "Slideshow"
-msgstr "Diaporama"
-
 msgid "Close"
 msgstr "Fermer"
-
-msgid "Exit"
-msgstr "Quitter"
 
 msgid "DVD"
 msgstr "DVD"
 
 msgid "Go back"
 msgstr "Retour"
-
-msgid "Up One Level"
-msgstr "Aller à"
-
-msgid "Exit Playlist"
-msgstr "Quitter la Playlist"
-
-msgid "Initializing network..."
-msgstr "Initialisation du réseau..."
-
-msgid "Connecting to FTP site..."
-msgstr "Connexion au site FTP..."
-
-msgid "Connecting to network share..."
-msgstr "Connexion à un partage réseau..."
 
 msgid "Update Available"
 msgstr "Mise à jour disponible"
@@ -157,92 +130,20 @@ msgstr "Mettre à jour maintenant"
 msgid "Update later"
 msgstr "Mettre à jour plus tard"
 
-msgid "Saving..."
-msgstr "Enregistrement..."
-
-msgid "Update successful!"
-msgstr "Mise à jour réussie !"
-
-msgid "Update failed!"
-msgstr "La Mise à jour a échoué !"
-
 msgid "Online media file not found."
 msgstr "Fichier en ligne non trouvé."
-
-msgid "Unable to display files on selected load device."
-msgstr "Impossible d'afficher les fichiers dans le périphérique sélectionné."
-
-msgid "Error loading playlist!"
-msgstr "Erreur lors du chargement de la playlist !"
 
 msgid "Unrecognized DVD format!"
 msgstr "Format de DVD inconnu !"
 
-msgid "No disc inserted!"
-msgstr "Aucun disque inséré !"
+msgid "Port cannot be blank!"
+msgstr ""
 
-msgid "Invalid DVD."
-msgstr "DVD non valide."
+msgid "Port is not a number!"
+msgstr ""
 
-msgid "Error opening"
-msgstr "Erreur d'ouverture"
-
-msgid "Please install IOS 202 for DVD support."
-msgstr "S'il vous plaît installez l'IOS 202 pour le support DVD."
-
-msgid "USB drive not found!"
-msgstr "Clé USB non trouvée !"
-
-msgid "SD card not found!"
-msgstr "Carte SD non trouvée !"
-
-msgid "Error opening file!"
-msgstr "Erreur d'ouverture du fichier !"
-
-msgid "Error saving file!"
-msgstr "Erreur lors de la sauvegarde du fichier !"
-
-msgid "There are no files currently in the playlist."
-msgstr "Il n'y a pas de fichiers actuellement dans la Playlist."
-
-msgid "Unable to initialize network (Error #:"
-msgstr "Impossible d'initialiser le réseau (Erreur #:"
-
-msgid "Check settings file."
-msgstr "Vérifications des fichiers paramètres"
-
-msgid "Share name is blank."
-msgstr "Nom de partage est vide."
-
-msgid "Share IP is blank."
-msgstr "IP de partage "est vide."
-
-msgid "Invalid network share settings"
-msgstr "Paramètres du partage réseau invalides"
-
-msgid "Failed to connect to network share."
-msgstr "Impossible de se connecter au partage réseau."
-
-msgid "Check settings file."
-msgstr "Vérifications des fichiers paramètres."
-
-msgid "IP is blank."
-msgstr "Pas d'IP."
-
-msgid "Username is blank."
-msgstr "Pas de nom d'utilisateur."
-
-msgid "Password is blank."
-msgstr "Pas de Mot de passe."
-
-msgid "Invalid FTP site settings"
-msgstr "Paramètres du site FTP invalides"
-
-msgid "Failed to connect to FTP site."
-msgstr "Impossible de se connecter à des sites FTP."
-
-msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "Impossible de trouver un périphérique SD ou USB valide - C'est est requis pour un fonctionnement normal."
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr ""
 
 msgid "Settings - Global"
 msgstr "Paramètres - Global"
@@ -256,11 +157,14 @@ msgstr "Paramètres - Musique"
 msgid "Settings - Pictures"
 msgstr "Paramètres - Images"
 
+msgid "Settings - Online Media"
+msgstr ""
+
 msgid "Settings - Network"
 msgstr "Paramètres - Réseau"
 
-msgid "Settings - Subtitles"
-msgstr "Paramètres - Sous-titres"
+msgid "Settings - DVD"
+msgstr ""
 
 msgid "File Extensions"
 msgstr "Extensions de fichiers"
@@ -307,11 +211,8 @@ msgstr "Images par seconde"
 msgid "Aspect Ratio"
 msgstr "Ratio de la vidéo"
 
-msgid "Cache Size"
-msgstr "Taille du cache"
-
-msgid "Cache Prefill"
-msgstr "Préchargement du cache"
+msgid "Cache Fill"
+msgstr "Chargement du cache"
 
 msgid "Audio Delay"
 msgstr "Délai de l'audio"
@@ -330,9 +231,6 @@ msgstr "Dossier des fichiers de Musique"
 
 msgid "Pictures Files Folder"
 msgstr "Dossier des fichiers d'Images"
-
-msgid "Add"
-msgstr "Ajouter"
 
 msgid "Display Name"
 msgstr "Nom complet"
@@ -361,6 +259,9 @@ msgstr "Supprimer le reseau de partage"
 msgid "Are you sure that you want to delete this share?"
 msgstr "Êtes-vous sûr de vouloir supprimer ce reseau ?"
 
+msgid "IP"
+msgstr ""
+
 msgid "Folder"
 msgstr "Dossier"
 
@@ -382,23 +283,263 @@ msgstr "Supprimer le site"
 msgid "Are you sure that you want to delete this site?"
 msgstr "Êtes-vous sûr de vouloir supprimer ce site ?"
 
+msgid "Port"
+msgstr ""
+
+msgid "Rewind / Fast Forward"
+msgstr ""
+
+msgid "Error loading file!"
+msgstr ""
+
+msgid "Resume"
+msgstr ""
+
+msgid "Stop Slideshow"
+msgstr ""
+
+msgid "Start Slideshow"
+msgstr ""
+
+msgid "Slideshow Delay"
+msgstr ""
+
+msgid "Online Media Folder"
+msgstr ""
+
+msgid "Add SMB Share"
+msgstr ""
+
+msgid "Add FTP Site"
+msgstr ""
+
+msgid "DVD Menu"
+msgstr ""
+
+msgid "Skip to Main Title"
+msgstr ""
+
+msgid "Unable to Initialize MPlayer"
+msgstr ""
+
+msgid "Unable to find a valid working path"
+msgstr ""
+
+msgid "Unable to change path to"
+msgstr ""
+
+msgid "Out of memory: too many files!"
+msgstr ""
+
+msgid "Directory name is too long!"
+msgstr ""
+
+msgid "SD Card"
+msgstr ""
+
+msgid "USB Mass Storage"
+msgstr ""
+
+msgid "Data DVD"
+msgstr ""
+
+msgid "USB drive not found!"
+msgstr "Clé USB non trouvée !"
+
+msgid "SD card not found!"
+msgstr "Carte SD non trouvée !"
+
+msgid "Please install IOS 202 for DVD support."
+msgstr "S'il vous plaît installez l'IOS 202 pour le support DVD."
+
+msgid "Loading DVD..."
+msgstr ""
+
+msgid "No disc inserted!"
+msgstr "Aucun disque inséré !"
+
+msgid "Invalid DVD."
+msgstr "DVD non valide."
+
+msgid "Up One Level"
+msgstr "Aller à"
+
+msgid "Error opening"
+msgstr "Erreur d'ouverture"
+
+msgid "Warning"
+msgstr ""
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr ""
+
+msgid "Error loading playlist!"
+msgstr "Erreur lors du chargement de la playlist !"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr ""
+
+msgid "No Results Found"
+msgstr ""
+
+msgid "Your search did not match any media files."
+msgstr ""
+
+msgid "Error opening file!"
+msgstr "Eroare la deschiderea unui fișier!"
+
+msgid "Saving..."
+msgstr "Enregistrement..."
+
+msgid "Error creating file!"
+msgstr ""
+
+msgid "Error saving file!"
+msgstr "Erreur lors de la sauvegarde du fichier !"
+
+msgid "Playlist is Empty"
+msgstr ""
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr ""
+
+msgid "Exit Playlist"
+msgstr "Quitter la Playlist"
+
+msgid "Update successful!"
+msgstr "Mise à jour réussie !"
+
+msgid "Update failed!"
+msgstr "La Mise à jour a échoué !"
+
+msgid "Initializing network..."
+msgstr "Initialisation du réseau..."
+
+msgid "Check settings file."
+msgstr "Vérifications des fichiers paramètres"
+
+msgid "Share name is blank."
+msgstr "Nom de partage est vide."
+
+msgid "Share IP is blank."
+msgstr "IP de partage "est vide."
+
+msgid "Invalid network share settings"
+msgstr "Paramètres du partage réseau invalides"
+
+msgid "Connecting to network share..."
+msgstr "Connexion à un partage réseau..."
+
+msgid "Failed to connect to network share."
+msgstr "Impossible de se connecter au partage réseau."
+
+msgid "IP is blank."
+msgstr "Pas d'IP."
+
+msgid "Username is blank."
+msgstr "Pas de nom d'utilisateur."
+
+msgid "Password is blank."
+msgstr "Pas de Mot de passe."
+
+msgid "Invalid FTP site settings"
+msgstr "Paramètres du site FTP invalides"
+
+msgid "Connecting to FTP site..."
+msgstr "Connexion au site FTP..."
+
+msgid "Failed to connect to FTP site."
+msgstr "Impossible de se connecter à des sites FTP."
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "Impossible de trouver un périphérique SD ou USB valide - C'est est requis pour un fonctionnement normal."
+
+msgid "Could not create folder"
+msgstr ""
+
+msgid "Saving settings..."
+msgstr ""
+
+msgid "Could not save settings to"
+msgstr ""
+
+msgid "Thanks to"
+msgstr ""
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr ""
+
+msgid "Menu artwork"
+msgstr ""
+
+msgid ""
+msgstr ""
+
+msgid "Coding & menu design"
+msgstr ""
+
+msgid "Logo"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Buffering..."
+msgstr ""
+
+msgid "Buffering"
+msgstr ""
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Impossible d'initialiser le réseau (Erreur #:"
+
+msgid "Settings - Subtitles"
+msgstr "Paramètres - Sous-titres"
+
 msgid "Visibility"
 msgstr "Visibilité"
-
-msgid "Position"
-msgstr "Position"
-
-msgid "Size"
-msgstr "Taille"
 
 msgid "Delay"
 msgstr "Délai"
 
-msgid "Top"
-msgstr "Haut"
+msgid "Codepage"
+msgstr ""
 
-msgid "Center"
-msgstr "Centre"
+msgid "Subtitle Language"
+msgstr ""
 
-msgid "Bottom"
-msgstr "Bas"
+msgid "Default"
+msgstr ""
+
+msgid "Could not change language. Not enough memory!"
+msgstr ""
+
+msgid "Font Required"
+msgstr ""
+
+msgid "A new font is required to display this language."
+msgstr ""
+
+msgid "Download font"
+msgstr ""
+
+msgid "Unable to save font file!"
+msgstr ""
+
+msgid "Out of Memory"
+msgstr ""
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr ""
+
+msgid "Close MPlayer"
+msgstr ""
+
+msgid "Subtitle Codepage"
+msgstr ""
+
+msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr ""
+
+msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgstr ""

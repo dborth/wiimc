@@ -545,7 +545,7 @@ msgid "This playlist contains more entries than the maximum allowed (3000). Not 
 msgstr "이 재생목록은 허용된 최대값(3000)이상의 내용물을 담고 있읍니다. 모든 것이 안보일수 있읍니다."
 
 msgid "Downloading..."
-msgstr ""
+msgstr "다운로드중..."
 
 msgid "Unzipping..."
-msgstr ""
+msgstr "압축푸는중..."

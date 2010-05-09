@@ -543,3 +543,9 @@ msgstr "Questa cartella contiene più voci rispetto al massimo consentito(3000).
 
 msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
 msgstr "Questa playlist contiene più voci rispetto al massimo consentito(3000). Non tutti i files saranno visibili"
+
+msgid "Downloading..."
+msgstr ""
+
+msgid "Unzipping..."
+msgstr ""

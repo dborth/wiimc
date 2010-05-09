@@ -5,10 +5,10 @@ msgid "Music"
 msgstr "ミュージック"
 
 msgid "Pictures"
-msgstr "ピクチャー"
+msgstr "ピクチャ"
 
 msgid "Online Media"
-msgstr "オンラインメディア"
+msgstr "オンライン・メディア"
 
 msgid "Please Wait"
 msgstr "お待ちください.."
@@ -20,16 +20,16 @@ msgid "OK"
 msgstr "ＯＫ"
 
 msgid "Retry"
-msgstr "リトライ"
+msgstr "再試行する"
 
 msgid "Cancel"
-msgstr "キャンセル"
+msgstr "やめる"
 
 msgid "Information"
-msgstr "インフォメーション"
+msgstr "情報"
 
 msgid "Credits"
-msgstr "クレジット"
+msgstr "ﾊﾞｰｼﾞｮﾝ情報"
 
 msgid "Play"
 msgstr "再生"
@@ -38,7 +38,7 @@ msgid "Pause"
 msgstr "一時停止"
 
 msgid "Single Play"
-msgstr "１曲再生"
+msgstr "１曲ずつ再生"
 
 msgid "Continuous Play"
 msgstr "連続再生"
@@ -53,10 +53,10 @@ msgid "Continuous"
 msgstr "連続再生"
 
 msgid "Playlist"
-msgstr "プレイリスト"
+msgstr "再生リスト"
 
 msgid "Restart"
-msgstr "リスタート"
+msgstr "再スタート"
 
 msgid "Loading..."
 msgstr "ロード中.."
@@ -71,16 +71,16 @@ msgid "Subtitles"
 msgstr "字幕"
 
 msgid "Subtitle Delay"
-msgstr "字幕表示遅延秒数"
+msgstr "字幕表示の遅延(秒)"
 
 msgid "Settings"
 msgstr "設定"
 
 msgid "On"
-msgstr "ＯＮ"
+msgstr "使う"
 
 msgid "Off"
-msgstr "ＯＦＦ"
+msgstr "使わない"
 
 msgid "Always"
 msgstr "常時"
@@ -89,16 +89,16 @@ msgid "Disabled"
 msgstr "無効"
 
 msgid "Backward"
-msgstr "後戻し"
+msgstr "巻戻し"
 
 msgid "Pause"
 msgstr "中断"
 
 msgid "Forward"
-msgstr "先送り"
+msgstr "早送り"
 
 msgid "Single"
-msgstr "１曲再生"
+msgstr "１曲ずつ再生"
 
 msgid "now playing"
 msgstr "再生ファイル"
@@ -131,16 +131,16 @@ msgid "Update later"
 msgstr "後でアップデートする"
 
 msgid "Online media file not found."
-msgstr "オンラインメディアファイルが見つかりません"
+msgstr "オンライン・メディアファイルが見つかりません"
 
 msgid "Unrecognized DVD format!"
-msgstr "ＤＶＤのフォーマットが認識できません"
+msgstr "認識できない種類のＤＶＤです"
 
 msgid "Port cannot be blank!"
 msgstr "ポートの設定は必須です"
 
 msgid "Port is not a number!"
-msgstr "ポートは数字でなければなりません"
+msgstr "ポートの指定は数字にしてください"
 
 msgid "Port is outside the allowed range (4-49151)!"
 msgstr "ポートは(4-49151)の範囲で設定してください"
@@ -158,7 +158,7 @@ msgid "Settings - Pictures"
 msgstr "設定 - ピクチャ"
 
 msgid "Settings - Online Media"
-msgstr "設定 - オンラインメディア"
+msgstr "設定 - オンライン・メディア"
 
 msgid "Settings - Network"
 msgstr "設定 - ネットワーク"
@@ -167,19 +167,19 @@ msgid "Settings - DVD"
 msgstr "設定 - ＤＶＤ"
 
 msgid "File Extensions"
-msgstr "ファイル拡張子"
+msgstr "ファイルの拡張子"
 
 msgid "Language"
 msgstr "言語"
 
 msgid "Volume"
-msgstr "ボリューム"
+msgstr "音量"
 
 msgid "Exit Action"
-msgstr "WiiMC終了処理"
+msgstr "WiiMCの終了処理"
 
 msgid "Wiimote Rumble"
-msgstr "Ｗｉｉリモコン振動"
+msgstr "Wiiリモコンの振動"
 
 msgid "Hide"
 msgstr "非表示"
@@ -200,13 +200,13 @@ msgid "Return to Loader"
 msgstr "ＨＢＣに戻る"
 
 msgid "Screen Zoom"
-msgstr "スクリーン拡大率"
+msgstr "スクリーンの拡大率"
 
 msgid "Screen Position"
-msgstr "スクリーン位置"
+msgstr "スクリーンの位置"
 
 msgid "Frame Dropping"
-msgstr "フレームドロップ機能"
+msgstr "フレームドロップ"
 
 msgid "Aspect Ratio"
 msgstr "アスペクト比"
@@ -215,22 +215,22 @@ msgid "Cache Fill"
 msgstr "キャッシュサイズ"
 
 msgid "Audio Delay"
-msgstr "音声遅延秒数"
+msgstr "音声の遅延(秒)"
 
 msgid "Auto-Resume"
 msgstr "自動レジューム再生"
 
 msgid "Videos Files Folder"
-msgstr "ビデオフォルダ"
+msgstr "ビデオのフォルダ"
 
 msgid "Play Order"
 msgstr "再生指定"
 
 msgid "Music Files Folder"
-msgstr "ミュージックフォルダ"
+msgstr "ミュージックのフォルダ"
 
 msgid "Pictures Files Folder"
-msgstr "ピクチャーフォルダ"
+msgstr "ピクチャのフォルダ"
 
 msgid "Display Name"
 msgstr "表示名"
@@ -287,10 +287,10 @@ msgid "Port"
 msgstr "ポート"
 
 msgid "Rewind / Fast Forward"
-msgstr "後戻し/先送り秒数"
+msgstr "巻戻し/早送りの秒数"
 
 msgid "Error loading file!"
-msgstr "ファイルが読み込めません"
+msgstr "ファイルが読込めません"
 
 msgid "Resume"
 msgstr "レジューム"
@@ -302,10 +302,10 @@ msgid "Start Slideshow"
 msgstr "スライドショーを開始"
 
 msgid "Slideshow Delay"
-msgstr "スライドショー切替秒数"
+msgstr "スライドの切替秒数"
 
 msgid "Online Media Folder"
-msgstr "オンラインメディアフォルダ"
+msgstr "ｵﾝﾗｲﾝ･ﾒﾃﾞｨｱのﾌｫﾙﾀﾞ"
 
 msgid "Add SMB Share"
 msgstr "ＳＭＢ設定"
@@ -317,10 +317,10 @@ msgid "DVD Menu"
 msgstr "ＤＶＤメニュー"
 
 msgid "Skip to Main Title"
-msgstr "メインタイトルをスキップ"
+msgstr "メインメニューをスキップ"
 
 msgid "Unable to Initialize MPlayer"
-msgstr "ＭＰｌａｙｅｒの初期化に失敗しました"
+msgstr "プレイヤの初期化に失敗しました"
 
 msgid "Unable to find a valid working path"
 msgstr "有効なパスがありません"
@@ -329,19 +329,19 @@ msgid "Unable to change path to"
 msgstr "変更できません"
 
 msgid "Out of memory: too many files!"
-msgstr "メモリ不足エラー: ファイルが多すぎます！"
+msgstr "メモリ不足エラー:ファイルが多すぎます！"
 
 msgid "Directory name is too long!"
-msgstr "ディレクトリ名が長すぎます！"
+msgstr "パス名が長すぎます！"
 
 msgid "SD Card"
 msgstr "ＳＤカード"
 
 msgid "USB Mass Storage"
-msgstr "ＵＳＢストレージ"
+msgstr "ＵＳＢ機器"
 
 msgid "Data DVD"
-msgstr "ＤＶＤデータ"
+msgstr "データＤＶＤ"
 
 msgid "USB drive not found!"
 msgstr "ＵＳＢドライブが見つかりません"
@@ -350,7 +350,7 @@ msgid "SD card not found!"
 msgstr "ＳＤカードが見つかりません"
 
 msgid "Please install IOS 202 for DVD support."
-msgstr "ＤＶＤのサポートのため IOS 202をインストールしてください"
+msgstr "DVD再生には、cIOS202のｲﾝｽﾄｰﾙが必要です"
 
 msgid "Loading DVD..."
 msgstr "ＤＶＤをロード中.."
@@ -359,10 +359,10 @@ msgid "No disc inserted!"
 msgstr "ディスクが挿入されていません！"
 
 msgid "Invalid DVD."
-msgstr "ＤＶＤが無効です"
+msgstr "無効なＤＶＤです"
 
 msgid "Up One Level"
-msgstr "上へ.."
+msgstr "上の階層へ.."
 
 msgid "Error opening"
 msgstr "開けません"
@@ -371,40 +371,40 @@ msgid "Warning"
 msgstr "警告"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "６ＭＢ以上の画像ファイルがフォルダ内に存在します 該当する画像ファイルは表示できません"
+msgstr "フォルダ内にある６ＭＢを超える画像ファイルは表示できません"
 
 msgid "Error loading playlist!"
-msgstr "プレイリストをロードできません"
+msgstr "再生リストを読み込めません"
 
 msgid "Playlist does not contain any supported entries!"
-msgstr "プレイリストにサポートしているエントリが 含まれていません"
+msgstr "無効な再生リストです"
 
 msgid "No Results Found"
 msgstr "該当なし"
 
 msgid "Your search did not match any media files."
-msgstr "検索条件にヒットするメディアファイルが 見つかりませんでした"
+msgstr "検索条件に合うファイルが見つかりませんでした"
 
 msgid "Error opening file!"
 msgstr "ファイルの表示に失敗しました"
 
 msgid "Saving..."
-msgstr "セーブ中.."
+msgstr "保存中.."
 
 msgid "Error creating file!"
 msgstr "ファイルの作成に失敗しました"
 
 msgid "Error saving file!"
-msgstr "ファイルのセーブに失敗しました"
+msgstr "ファイルの保存に失敗しました"
 
 msgid "Playlist is Empty"
-msgstr "プレイリストが空です"
+msgstr "再生リストが空です"
 
 msgid "Hover over items and push the + button to add them to your playlist."
-msgstr "アイテムにカーソルを合わせて+ボタンをクリックし プレイリストに追加します"
+msgstr "カーソルを合わせて[＋]ボタンを押すと再生リストに追加します"
 
 msgid "Exit Playlist"
-msgstr "プレイリスト表示を中止"
+msgstr "再生リストを終了"
 
 msgid "Update successful!"
 msgstr "アップデートが完了しました"
@@ -452,22 +452,22 @@ msgid "Failed to connect to FTP site."
 msgstr "ＦＴＰサイトへの接続に失敗しました"
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "有効なＳＤ・ＵＳＢデバイスが見つかりません - 少なくとも１つ必要です"
+msgstr "有効なＳＤ・ＵＳＢデバイスが見つかりません"
 
 msgid "Could not create folder"
 msgstr "フォルダを作成できませんでした"
 
 msgid "Saving settings..."
-msgstr "設定をセーブ中.."
+msgstr "設定を保存中.."
 
 msgid "Could not save settings to"
-msgstr "設定をセーブできませんでした"
+msgstr "設定を保存できませんでした"
 
 msgid "Thanks to"
 msgstr "次の方々に感謝します"
 
 msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
-msgstr "このソフトウェアはオープンソースであり、GNU General Public License (GPL) Version 2の条件下において、複製、配布、編集が許可されます"
+msgstr "このソフトウェアはオープンソースです。GNU General Public License (GPL) Version 2に従い、複製、配布、編集が許可されます"
 
 msgid "Menu artwork"
 msgstr "メニューアートワーク"
@@ -500,19 +500,19 @@ msgid "Visibility"
 msgstr "字幕表示"
 
 msgid "Delay"
-msgstr "遅延秒数"
+msgstr "遅延(秒)"
 
 msgid "Codepage"
 msgstr "文字コード"
 
 msgid "Subtitle Language"
-msgstr "字幕言語"
+msgstr "字幕の言語"
 
 msgid "Default"
-msgstr "デフォルト"
+msgstr "初期値"
 
 msgid "Could not change language. Not enough memory!"
-msgstr "メモリ不足で言語設定の変更ができませんでした"
+msgstr "メモリ不足のため使用言語を変更できません！"
 
 msgid "Font Required"
 msgstr "他言語フォントの導入"
@@ -530,10 +530,10 @@ msgid "Out of Memory"
 msgstr "メモリ不足エラー"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr "画像を読み込むために 十分な空きメモリがありません"
+msgstr "画像を読み込むための空きメモリが不足しています"
 
 msgid "Close MPlayer"
-msgstr "閉じる"
+msgstr "ＭＰｌａｙｅｒを閉じる"
 
 msgid "Subtitle Codepage"
 msgstr "字幕コードページの設定"
@@ -545,4 +545,10 @@ msgid "This directory contains more entries than the maximum allowed (3000). Not
 msgstr "ディレクトリ内のエントリ数が多過ぎます 全てを表示できません (最大値:3,000)"
 
 msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "プレイリストのエントリ数が多過ぎます 全てを表示できません (最大値:3,000)"
+msgstr "再生リストのエントリ数が多過ぎます 全てを表示できません (最大値:3,000)"
+
+msgid "Downloading..."
+msgstr "ダウンロード中..."
+
+msgid "Unzipping..."
+msgstr "インストール中..."

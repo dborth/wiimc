@@ -1001,7 +1001,7 @@ ShowProgress (const char *msg, int done, int total)
 	if(showProgress != 1)
 		CancelAction(); // wait for previous progress window to finish
 
-	snprintf(progressMsg, 200, "%s", msg);
+	snprintf(progressMsg, 200, "%s", gettext(msg));
 	sprintf(progressTitle, "Please Wait");
 	progressThreadHalt = 0;
 	showProgress = 1;
@@ -1029,7 +1029,7 @@ ShowAction (const char *msg)
 	if(showProgress != 2)
 		CancelAction(); // wait for previous progress window to finish
 
-	snprintf(progressMsg, 200, "%s", msg);
+	snprintf(progressMsg, 200, "%s", gettext(msg));
 	sprintf(progressTitle, "Please Wait");
 	progressThreadHalt = 0;
 	showProgress = 2;

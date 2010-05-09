@@ -539,13 +539,13 @@ msgid "Subtitle Codepage"
 msgstr "Codificación Subtítulo"
 
 msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "El directorio sobrepasa el máximo de elementos permitidos (3000). No todos serán visible"
+msgstr "Este directorio contiene más entradas del máximo permitido (3000). No todas serán visibles."
 
 msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "La lista de reproducción sobrepasa el máximo de entradas permitidas (3000). No todas serán visible"
+msgstr "Esta lista de reproducción contiene más entradas del máximo permitido (3000). No todas serán visibles."
 
 msgid "Downloading..."
-msgstr ""
+msgstr "Descargando..."
 
 msgid "Unzipping..."
-msgstr ""
+msgstr "Descomprimiendo..."

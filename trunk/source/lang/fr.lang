@@ -152,7 +152,7 @@ msgid "Settings - Videos"
 msgstr "Paramètres - Vidéos"
 
 msgid "Settings - Music"
-msgstr "Paramètres - Musique"
+msgstr "Paramètres - Musiques"
 
 msgid "Settings - Pictures"
 msgstr "Paramètres - Images"
@@ -530,7 +530,7 @@ msgid "Out of Memory"
 msgstr "Mémoire pleine"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr "WiiMC n'a pas assez de mémoire pour charger le lecteur d'image."
+msgstr "WiiMC n'a pas assez de mémoire pour charger le visualisateur d'images."
 
 msgid "Close MPlayer"
 msgstr "Fermer MPlayer"

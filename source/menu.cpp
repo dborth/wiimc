@@ -3293,7 +3293,7 @@ static void MenuSettingsVideos()
 					WiiSettings.aspectRatio = 1.85;
 				else if(WiiSettings.aspectRatio > 1.32)
 					WiiSettings.aspectRatio = 1.7778;
-				else if(WiiSettings.aspectRatio > -1.01)
+				else if(WiiSettings.aspectRatio > -2.01)
 					WiiSettings.aspectRatio = 1.3333;
 				else
 					WiiSettings.aspectRatio = -2;

@@ -543,3 +543,9 @@ msgstr ""
 
 msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
 msgstr ""
+
+msgid "Downloading..."
+msgstr ""
+
+msgid "Unzipping..."
+msgstr ""

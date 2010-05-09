@@ -543,3 +543,9 @@ msgstr "Dieses Verzeichnis hat mehr Einträge als maximal erlaubt sind (3000). N
 
 msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
 msgstr "Diese Wiedergabeliste hat mehr Einträge als maximal erlaubt sind (3000). Nicht alle Einträge werden angezeigt."
+
+msgid "Downloading..."
+msgstr ""
+
+msgid "Unzipping..."
+msgstr ""

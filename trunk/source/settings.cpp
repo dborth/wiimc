@@ -198,7 +198,8 @@ CP codepages[CODEPAGE_SIZE] = {
 	{ "Windows-1256", "Arabic" },
 	{ "Windows-1257", "Baltic" },
 	{ "Windows-1258", "Vietnamese" },
-	{ "shift_jis", "Japanese (Shift JIS)" }
+	{ "shift_jis", "Japanese (Shift JIS)" },
+	{ "CP949", "Korean (CP949)" }
 };
 
 /****************************************************************************

@@ -68,7 +68,7 @@ msgid "Network"
 msgstr "네트워크"
  
 msgid "Subtitles"
-msgstr "자막들"
+msgstr "자막"
  
 msgid "Subtitle Delay"
 msgstr "자막 지연됨"
@@ -116,7 +116,7 @@ msgid "DVD"
 msgstr "DVD"
  
 msgid "Go back"
-msgstr "뒤로 감기"
+msgstr "뒤로"
  
 msgid "Update Available"
 msgstr "업데이트 있음"
@@ -543,3 +543,9 @@ msgstr "이 디렉토리는 허용된 최대값(3000)이상의 내용물을 담�
 
 msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
 msgstr "이 재생목록은 허용된 최대값(3000)이상의 내용물을 담고 있읍니다. 모든 것이 안보일수 있읍니다."
+
+msgid "Downloading..."
+msgstr ""
+
+msgid "Unzipping..."
+msgstr ""

@@ -99,13 +99,14 @@ static void * devicecallback (void *arg)
 					StopMPlayerFile();
 					RemoveVideoImg();
 				}
-
+				isInserted[DEVICE_SD] = false;
 				devicesChanged = true;
 			}
 		}
 		else if(sd->startup() && sd->isInserted()) // device was inserted
 		{
 			MountPartitions(DEVICE_SD, SILENT);
+			isInserted[DEVICE_SD] = true;
 			devicesChanged = true;
 		}
 
@@ -121,13 +122,14 @@ static void * devicecallback (void *arg)
 					StopMPlayerFile();
 					RemoveVideoImg();
 				}
-
+				isInserted[DEVICE_USB] = false;
 				devicesChanged = true;
 			}
 		}
 		else if(usb->startup() && usb->isInserted()) // device was inserted
 		{
 			MountPartitions(DEVICE_USB, SILENT);
+			isInserted[DEVICE_USB] = true;
 			devicesChanged = true;
 		}
 
@@ -644,8 +646,6 @@ static int FindPartitions(int device)
 
 static void UnmountPartitions(int device)
 {
-	isInserted[device] = false;
-
 	for(int i=0; i < MAX_DEVICES; i++)
 	{
 		if(part[device][i].type == T_FAT)
@@ -726,14 +726,13 @@ static bool MountPartitions(int device, int silent)
 		else
 			retry = ErrorPromptRetry("USB drive not found!");
 	}
-	isInserted[device] = mounted;
 	return mounted;
 }
 
 void MountAllDevices()
 {
-	MountPartitions(DEVICE_SD, SILENT);
-	MountPartitions(DEVICE_USB, SILENT);
+	isInserted[DEVICE_SD] = MountPartitions(DEVICE_SD, SILENT);
+	isInserted[DEVICE_USB] = MountPartitions(DEVICE_USB, SILENT);
 }
 
 /****************************************************************************

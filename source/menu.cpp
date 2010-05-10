@@ -1621,10 +1621,9 @@ static void MenuBrowse(int menu)
 		mainWindow->SetState(STATE_DEFAULT);
 	}
 
-	SuspendGui();
-
 	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
 	{
+		SuspendGui();
 		audiobar->SetState(STATE_DEFAULT);
 
 		if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
@@ -1659,9 +1658,8 @@ static void MenuBrowse(int menu)
 			audiobarProgressLeftImg->SetVisible(false);
 			audiobarProgressMidImg->SetVisible(false);
 		}
+		ResumeGui();
 	}
-
-	ResumeGui();
 
 	while(menuCurrent == menu && !guiShutdown)
 	{

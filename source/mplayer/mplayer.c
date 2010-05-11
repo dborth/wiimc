@@ -200,6 +200,7 @@ static void reload_subtitles();
 
 int controlledbygui=1;
 int pause_gui=0;
+static int pause_low_cache=0;
 
 static char fileplaying[MAXPATHLEN];
 static int enable_restore_points=1;
@@ -2533,7 +2534,7 @@ static void pause_loop(void)
   if (cmd && cmd->id == MP_CMD_PAUSE)
   { //unpause
     cmd = mp_input_get_cmd(0,1,0);
-    mp_cmd_free(cmd);
+    if(cmd) mp_cmd_free(cmd);
   }
   else
   {
@@ -2613,6 +2614,11 @@ static int seek(MPContext *mpctx, double amount, int style)
     if (demux_seek(mpctx->demuxer, amount, audio_delay, style) == 0)
 	return -1;
 
+    if (mpctx->osd_function != OSD_PAUSE && stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0)
+    {
+    	if(mpctx->startup_decode_retry==0) low_cache_loop();
+    }
+
     mpctx->startup_decode_retry = DEFAULT_STARTUP_DECODE_RETRY;
     if (mpctx->sh_video) {
 	current_module = "seek_video_reset";
@@ -2631,7 +2637,6 @@ static int seek(MPContext *mpctx, double amount, int style)
 
     if (mpctx->sh_audio) {
 	current_module = "seek_audio_reset";
-	mpctx->audio_out->pause();
 	mpctx->audio_out->reset(); // stop audio, throwing away buffered data
 	if (!mpctx->sh_video)
 	    update_subtitles(NULL, mpctx->sh_audio->pts, mpctx->d_sub, 1);
@@ -3960,10 +3965,24 @@ else
 	seek_to_sec = 0;
 }
 
-total_time_usage_start=GetTimer();
 mpctx->eof=0;
-#endif
 
+{
+
+	mp_cmd_t* cmd;
+while ( (cmd = mp_input_get_cmd(0, 0, 0)) != NULL )
+  {
+    if (cmd)
+    {
+      run_command(mpctx, cmd);
+      mp_cmd_free(cmd);
+    }
+  }
+}
+#endif
+pause_low_cache=0;
+GetRelativeTime();
+total_time_usage_start=GetTimer();
 while(!mpctx->eof){
     float aq_sleep_time=0;
 
@@ -4135,15 +4154,20 @@ if(auto_quality>0){
   current_module="pause";
 
     //low cache
-	if (stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0)
+	if (mpctx->osd_function != OSD_PAUSE && stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0)
 	{
-   		mpctx->osd_function = OSD_PAUSE;
-   		mpctx->was_paused = 1;
-   		low_cache_loop();
+		pause_low_cache=1;
+		mpctx->osd_function = OSD_PAUSE;
 	}
 	else if (mpctx->osd_function == OSD_PAUSE)
 	{ 
-      if(pause_gui)
+	  if(pause_low_cache)
+	  {
+			pause_low_cache=0;
+	   		mpctx->was_paused = 1;
+	   		low_cache_loop();
+	  }
+	  else if(pause_gui)
 	  {
 	  	pause_gui=0;
 	  	mpctx->was_paused = 1;
@@ -4164,7 +4188,7 @@ if(step_sec>0) {
 }
 
  edl_update(mpctx);
-
+ mpctx->was_paused = 0;
 //================= Keyboard events, SEEKing ====================
 
 	if(controlledbygui==2) // new film - we have to exit
@@ -4183,8 +4207,6 @@ if(step_sec>0) {
   }
 }
   
-  mpctx->was_paused = 0;
-
   /* Looping. */
   if(mpctx->eof==1 && mpctx->loop_times>=0) {
     mp_msg(MSGT_CPLAYER,MSGL_V,"loop_times = %d, eof = %d\n", mpctx->loop_times,mpctx->eof);
@@ -4556,16 +4578,16 @@ static void reload_subtitles()
 
 static float timing_sleep(float time_frame)
 {
-	s32 frame=time_frame*1000000; //in us
+	s64 frame=time_frame*1000000; //in us
+	int cnt=5000;
+
+	//printf("frame: %lld   time_frame: %f\n",frame,time_frame);
 	//current_module = "sleep_timer";
 	while (frame > 10)
 	{
+		if(--cnt<=0) return 0.0;
 		if(frame>2000) usec_sleep(1000);
 		else if(frame>500) usec_sleep(100);
-		else //burn cpu (I don't want to switch thread)
-		{
-			while(frame>5) frame = frame - GetRelativeTime();
-		}
 		frame = frame - GetRelativeTime();
 	}
 	time_frame=(float)(frame * 0.000001F);
@@ -4628,8 +4650,14 @@ static void low_cache_loop(void)
 {
 	float percent;
 	int progress;
-	int brk_cmd;
-	mp_cmd_t* cmd;
+	//int brk_cmd;
+	mp_cmd_t* cmd=NULL;
+
+	if (mpctx->audio_out && mpctx->sh_audio)
+		mpctx->audio_out->pause(); // pause audio, keep data if possible
+
+	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
+		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
 
 	if(stream_cache_min_percent < 10 || stream_cache_min_percent > 100)
 		stream_cache_min_percent = 50; // reset to a sane number
@@ -4641,29 +4669,22 @@ static void low_cache_loop(void)
 	else
 		percent=stream_cache_min_percent;
 
-	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
-		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
-
-	if (mpctx->audio_out && mpctx->sh_audio)
-		mpctx->audio_out->pause(); // pause audio, keep data if possible
-
-	while (cache_fill_status < percent && cache_fill_status>=0 && percent < 100)
+	while ( (cmd = mp_input_get_cmd(0, 0, 1)) == NULL || cmd->pausing == 4)
 	{
-		cmd = mp_input_get_cmd(20, 1, 1);
-		if (cmd)
-		{
-			cmd = mp_input_get_cmd(0,1,0);
-			brk_cmd = run_command(mpctx, cmd);
-			if(cmd->pausing != 4)
-				brk_cmd=1;
-			if (cmd->id == MP_CMD_PAUSE)
-			{
-				mp_cmd_free(cmd);
-				cmd = mp_input_get_cmd(0,1,0);
-			}
-			mp_cmd_free(cmd);
-			if(brk_cmd > 0) break;
-		}
+
+		if(cache_fill_status >= percent || cache_fill_status<0) break;
+
+	    if (cmd)
+	    {
+	      cmd = mp_input_get_cmd(0,1,0);
+	      run_command(mpctx, cmd);
+	      mp_cmd_free(cmd);
+	      cmd=NULL;
+	      continue;
+	    }
+
+		if(controlledbygui == 2) // mplayer shutdown requested!
+		  break;
 
 		progress = (int)(cache_fill_status*100.0/percent);
 
@@ -4676,10 +4697,10 @@ static void low_cache_loop(void)
 			mpctx->video_out->check_events();
 
 		DrawMPlayer();
+		usleep(100);
 	}
-	rm_osd_msg(OSD_MSG_PAUSE);
+	mpctx->osd_function=OSD_PLAY;
 	SetBufferingStatus(0);
-
 	if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
 	{
 		void *ptr=(void *)memalign(32, 0x800*2);
@@ -4687,7 +4708,12 @@ static void low_cache_loop(void)
 		DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
 		free(ptr);
 	}
-	mpctx->osd_function=OSD_PLAY;
+
+	if (cmd && cmd->id == MP_CMD_PAUSE)
+	{ //manual unpause
+		cmd = mp_input_get_cmd(0,0,0);
+		mp_cmd_free(cmd);
+	}
 
 	if (mpctx->audio_out && mpctx->sh_audio)
 		mpctx->audio_out->resume(); // resume audio

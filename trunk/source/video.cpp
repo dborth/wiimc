@@ -21,7 +21,7 @@
 
 extern "C" {
 
-#define DEFAULT_FIFO_SIZE 256 * 1024
+#define DEFAULT_FIFO_SIZE 384 * 1024
 static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32);
 static Mtx GXmodelView2D;
 

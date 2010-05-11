@@ -348,6 +348,7 @@ void LoadMPlayerFile()
 
 void ResumeMPlayerFile()
 {
+	DisableRumble();
 	SuspendDeviceThread();
 	SuspendPictureThread();
 	SuspendParseThread();

@@ -1597,6 +1597,7 @@ static void MenuBrowse(int menu)
 			nowPlaying = new GuiText(loadedFileDisplay, 18, (GXColor){255, 255, 255, 255});
 			nowPlaying->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 			nowPlaying->SetPosition(30, 10);
+			nowPlaying->SetMaxWidth(screenwidth-180);
 		}
 
 		backBtn.SetLabel(nowPlaying, 1);

@@ -107,11 +107,10 @@ static mutex_t gecko_mutex = 0;
 
 static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
 {
-	u32 level;
-
 	if (!gecko || !ptr || len <= 0)
 		return -1;
 
+	u32 level;
 	LWP_MutexLock(gecko_mutex);
 	level = IRQ_Disable();
 	usb_sendbuffer(1, ptr, len);
@@ -145,7 +144,7 @@ const devoptab_t gecko_out = {
 
 static void USBGeckoOutput()
 {
-	//gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
+	gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
 
 	LWP_MutexInit(&gecko_mutex, false);
 

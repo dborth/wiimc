@@ -2614,11 +2614,6 @@ static int seek(MPContext *mpctx, double amount, int style)
     if (demux_seek(mpctx->demuxer, amount, audio_delay, style) == 0)
 	return -1;
 
-    if (mpctx->osd_function != OSD_PAUSE && stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0)
-    {
-    	if(mpctx->startup_decode_retry==0) low_cache_loop();
-    }
-
     mpctx->startup_decode_retry = DEFAULT_STARTUP_DECODE_RETRY;
     if (mpctx->sh_video) {
 	current_module = "seek_video_reset";
@@ -2697,7 +2692,7 @@ m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
 m_config_set_option(mconfig,"channels","6");
-m_config_set_option(mconfig,"af", "pan=2:0.5:0:0:0.5:0.33:0:0:0.33:0.5:0.5:0.5:0.5");
+m_config_set_option(mconfig,"af", "pan=2:1:0:0:1:0.2041225:0.4330125:0.14435:0.612375:0.7071:0.7071:0:0");
 m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","3.5");
@@ -4660,7 +4655,7 @@ static void low_cache_loop(void)
 		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
 
 	if(stream_cache_min_percent < 10 || stream_cache_min_percent > 100)
-		stream_cache_min_percent = 50; // reset to a sane number
+		stream_cache_min_percent = 30; // reset to a sane number
 
 	if(!strncmp(fileplaying,"usb",3) || !strncmp(fileplaying,"sd",2))
 		percent=stream_cache_min_percent/6;
@@ -4671,7 +4666,6 @@ static void low_cache_loop(void)
 
 	while ( (cmd = mp_input_get_cmd(0, 0, 1)) == NULL || cmd->pausing == 4)
 	{
-
 		if(cache_fill_status >= percent || cache_fill_status<0) break;
 
 	    if (cmd)
@@ -4699,6 +4693,7 @@ static void low_cache_loop(void)
 		DrawMPlayer();
 		usleep(100);
 	}
+
 	mpctx->osd_function=OSD_PLAY;
 	SetBufferingStatus(0);
 	if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)

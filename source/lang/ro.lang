@@ -1,17 +1,17 @@
 msgid "Videos"
-msgstr "Videouri"
+msgstr "Video"
 
 msgid "Music"
-msgstr "Muzică"
+msgstr "Audio"
 
 msgid "Pictures"
-msgstr "Poze"
+msgstr "Imagini"
 
 msgid "Online Media"
-msgstr "Media Online"
+msgstr "Media online"
 
 msgid "Please Wait"
-msgstr "Așteptati"
+msgstr "Așteptati..."
 
 msgid "Error"
 msgstr "Eroare"
@@ -26,61 +26,61 @@ msgid "Cancel"
 msgstr "Anulare"
 
 msgid "Information"
-msgstr "Informatie"
+msgstr "Informaţii"
 
 msgid "Credits"
-msgstr "Credite"
+msgstr "Despre..."
 
 msgid "Play"
-msgstr "Reda"
+msgstr "Redare"
 
 msgid "Pause"
 msgstr "Pauză"
 
 msgid "Single Play"
-msgstr "Singură Redare"
+msgstr "Redare unică"
 
 msgid "Continuous Play"
-msgstr "Redare in Continuu"
+msgstr "Redare continuă"
 
 msgid "Shuffle"
-msgstr "Amestecare"
+msgstr "Redare aleatoare"
 
 msgid "Loop"
-msgstr "Reluare"
+msgstr "Redare in buclă"
 
 msgid "Continuous"
-msgstr "În Continuu"
+msgstr "Redare continuă"
 
 msgid "Playlist"
-msgstr "Playlist"
+msgstr "Listă de redare"
 
 msgid "Restart"
-msgstr "Reîncepere"
+msgstr "Restart"
 
 msgid "Loading..."
 msgstr "Încărcare..."
 
 msgid "Global"
-msgstr "Global"
+msgstr "Setări generale"
 
 msgid "Network"
-msgstr "Retea"
+msgstr "Reţea"
 
 msgid "Subtitles"
-msgstr "Subtitrare"
+msgstr "Subtitrări"
 
 msgid "Subtitle Delay"
-msgstr "Întârziere Subtitrare"
+msgstr "Decalare subtitrare"
 
 msgid "Settings"
-msgstr "Setări"
+msgstr "Configurare"
 
 msgid "On"
-msgstr "Pornit"
+msgstr "Activat"
 
 msgid "Off"
-msgstr "Oprit"
+msgstr "Dezactivat"
 
 msgid "Always"
 msgstr "Întotdeauna"
@@ -89,7 +89,7 @@ msgid "Disabled"
 msgstr "Dezactivat"
 
 msgid "Backward"
-msgstr "Sari Înapoi"
+msgstr "Înapoi"
 
 msgid "Pause"
 msgstr "Pauză"
@@ -98,16 +98,16 @@ msgid "Forward"
 msgstr "Înainte"
 
 msgid "Single"
-msgstr "Singură"
+msgstr "Redare unică"
 
 msgid "now playing"
-msgstr "redare actuală"
+msgstr "Fisier redat:"
 
 msgid "Previous"
-msgstr "Precedent"
+msgstr "Fişierul precedent"
 
 msgid "Next"
-msgstr "Următor"
+msgstr "Fişierul următor"
 
 msgid "Close"
 msgstr "Închide"
@@ -119,55 +119,55 @@ msgid "Go back"
 msgstr "Înapoi"
 
 msgid "Update Available"
-msgstr "Update disponibil"
+msgstr "Actualizare disponibilă"
 
 msgid "An update is available!"
-msgstr "Un update este disponibil!"
+msgstr "O nouă actualizare este disponibilă!"
 
 msgid "Update now"
-msgstr "Update acum"
+msgstr "Actualizează acum"
 
 msgid "Update later"
-msgstr "Update mai târziu"
+msgstr "Actualizează mai târziu"
 
 msgid "Online media file not found."
-msgstr "Fișier media online nu a fost găsit."
+msgstr "Fișier media online negăsit."
 
 msgid "Unrecognized DVD format!"
 msgstr "Format DVD necunoscut!"
 
 msgid "Port cannot be blank!"
-msgstr "Port-ul nu poate să fie gol!"
+msgstr "Nu aţi completat portul!"
 
 msgid "Port is not a number!"
-msgstr "Port-ul acesta nu este un număr!"
+msgstr "Portul trebuie să fie un număr!"
 
 msgid "Port is outside the allowed range (4-49151)!"
-msgstr "Port-ul este înafara intervalului permis (4-49151)!"
+msgstr "Portul nu este în intervalul permis (4-49151)!"
 
 msgid "Settings - Global"
-msgstr "Setări - Globale"
+msgstr "Setări  generale"
 
 msgid "Settings - Videos"
-msgstr "Setări - Video"
+msgstr "Setări video"
 
 msgid "Settings - Music"
-msgstr "Setări - Muzică"
+msgstr "Setări audio"
 
 msgid "Settings - Pictures"
-msgstr "Setări - Poze"
+msgstr "Setări imagini"
 
 msgid "Settings - Online Media"
-msgstr "Setări - Media Online"
+msgstr "Setări media online"
 
 msgid "Settings - Network"
-msgstr "Setări - Retea"
+msgstr "Setări retea"
 
 msgid "Settings - DVD"
-msgstr "Setări - DVD"
+msgstr "Setări DVD"
 
 msgid "File Extensions"
-msgstr "Tip Fișier"
+msgstr "Extensii fişiere"
 
 msgid "Language"
 msgstr "Limbă"
@@ -176,10 +176,10 @@ msgid "Volume"
 msgstr "Volum"
 
 msgid "Exit Action"
-msgstr "Ieșire Actiune"
+msgstr "La ieșire ..."
 
 msgid "Wiimote Rumble"
-msgstr "Vibrare Wiimote "
+msgstr "Vibraţii Wiimote"
 
 msgid "Hide"
 msgstr "Ascunde"
@@ -191,70 +191,70 @@ msgid "Auto"
 msgstr "Auto"
 
 msgid "Return to Wii Menu"
-msgstr "Înapoi la Meniul Wii"
+msgstr "Întoarcere la meniul Wii"
 
 msgid "Power Off Wii"
-msgstr "Stinge Wii"
+msgstr "Oprire Wii"
 
 msgid "Return to Loader"
-msgstr "Înapoi la Loader"
+msgstr "Întoarcere la loader"
 
 msgid "Screen Zoom"
-msgstr "Zoom Ecran"
+msgstr "Dimensiune imagine"
 
 msgid "Screen Position"
-msgstr "Pozitie Ecran"
+msgstr "Poziţionare imagine"
 
 msgid "Frame Dropping"
-msgstr "Frame Dropping"
+msgstr "Renunţare la unele cadre"
 
 msgid "Aspect Ratio"
-msgstr "Raport latime / înaltime"
+msgstr "Format imagine"
 
 msgid "Cache Fill"
-msgstr "Umplere Cache"
+msgstr "Nivel de umplere memorie tampon"
 
 msgid "Audio Delay"
-msgstr "Întărziere Audio"
+msgstr "Decalare audio"
 
 msgid "Auto-Resume"
-msgstr "Reluare Automată"
+msgstr "Continuare automată"
 
 msgid "Videos Files Folder"
-msgstr "Folder Fișiere Video"
+msgstr "Folder fișiere video"
 
 msgid "Play Order"
-msgstr "Ordonare de Redare"
+msgstr "Mod de redare"
 
 msgid "Music Files Folder"
-msgstr "Folder Fișiere Muzică"
+msgstr "Folder fișiere audio"
 
 msgid "Pictures Files Folder"
-msgstr "Folder Fișiere Poze"
+msgstr "Folder fișiere imagini"
 
 msgid "Display Name"
-msgstr "Numele de Afișare"
+msgstr "Numele afișat"
 
 msgid "Share IP"
-msgstr "IP Partajat"
+msgstr "IP partajare"
 
 msgid "Share Name"
-msgstr "Nume Partajat"
+msgstr "Nume partajare"
 
 msgid "Username"
-msgstr "Nume Utilizator"
+msgstr "Nume utilizator"
 
 msgid "Password"
 msgstr "Parolă"
 
 msgid "New Share"
-msgstr "Partajare Nouă"
+msgstr "Partajare nouă"
 
 msgid "Delete"
 msgstr "Șterge"
 
 msgid "Delete Share"
-msgstr "Șterge Partajare"
+msgstr "Șterge partajare"
 
 msgid "Are you sure that you want to delete this share?"
 msgstr "Esti sigur că vrei să ștergi această partajare?"
@@ -281,58 +281,58 @@ msgid "Delete Site"
 msgstr "Șterge Site"
 
 msgid "Are you sure that you want to delete this site?"
-msgstr "Esti sigur că vrei să ștergi acest site?"
+msgstr "Eşti sigur că vrei să ștergi acest site?"
 
 msgid "Port"
 msgstr "Port"
 
 msgid "Rewind / Fast Forward"
-msgstr "Înapoi / Repede Înainte"
+msgstr "Mărime salt înainte-inapoi"
 
 msgid "Error loading file!"
 msgstr "Eroare la încărcarea fişierului!"
 
 msgid "Resume"
-msgstr "Reluare"
+msgstr "Continuare"
 
 msgid "Stop Slideshow"
-msgstr "Stop Prezentare"
+msgstr "Opreşte afişarea automată"
 
 msgid "Start Slideshow"
-msgstr "Start Prezentare"
+msgstr "Porneşte afişarea automată"
 
 msgid "Slideshow Delay"
-msgstr "Întârziere Prezentare"
+msgstr "Interval între imagini"
 
 msgid "Online Media Folder"
-msgstr "Folder Media Online"
+msgstr "Folder media online"
 
 msgid "Add SMB Share"
-msgstr "Adăuga Partajare SMB"
+msgstr "Adăuga partajare SMB"
 
 msgid "Add FTP Site"
-msgstr "Adăuga Site FTP"
+msgstr "Adăuga site FTP"
 
 msgid "DVD Menu"
 msgstr "Meniu DVD"
 
 msgid "Skip to Main Title"
-msgstr "Sari la titlul principal"
+msgstr "Salt direct la titlul principal"
 
 msgid "Unable to Initialize MPlayer"
-msgstr "Imposibil de Iniţializa MPlayer"
+msgstr "MPlayer nu poate fi iniţializat"
 
 msgid "Unable to find a valid working path"
-msgstr "Imposibil de a găsi o cale validă care functionează"
+msgstr "Nu a fost găsita o cale validă"
 
 msgid "Unable to change path to"
-msgstr "Imposibil de a schimba calea la"
+msgstr "Nu se poate schimba calea la"
 
 msgid "Out of memory: too many files!"
 msgstr "Memorie insuficientă: prea multe fişiere!"
 
 msgid "Directory name is too long!"
-msgstr "Numele de director este prea lung!"
+msgstr "Numele directorului este prea lung!"
 
 msgid "SD Card"
 msgstr "Card SD"
@@ -341,52 +341,52 @@ msgid "USB Mass Storage"
 msgstr "USB Mass Storage"
 
 msgid "Data DVD"
-msgstr "Data DVD"
+msgstr "DVD date"
 
 msgid "USB drive not found!"
-msgstr "Drive USB nu a fost găsit!"
+msgstr "Drive-ul USB nu a fost găsit!"
 
 msgid "SD card not found!"
-msgstr "Card SD nu a fost găsit!"
+msgstr "Cardul SD nu a fost găsit!"
 
 msgid "Please install IOS 202 for DVD support."
-msgstr "Instalati vă rog IOS 202 pentru suport DVD."
+msgstr "Instalaţi IOS 202 pentru a avea suport DVD."
 
 msgid "Loading DVD..."
 msgstr "Încărcare DVD..."
 
 msgid "No disc inserted!"
-msgstr "Nici un disc întrodus!"
+msgstr "Nici un disc introdus!"
 
 msgid "Invalid DVD."
 msgstr "DVD invalid."
 
 msgid "Up One Level"
-msgstr "Un Nivel În Sus"
+msgstr "Un nivel mai sus"
 
 msgid "Error opening"
-msgstr "Eroare la deschiderea"
+msgstr "Eroare la deschidere"
 
 msgid "Warning"
 msgstr "Avertisment"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "Unul sau mai multe imagini în acest folder depăşeşte dimensiunea maximă (6 MB) şi nu vor fi vizibile."
+msgstr "Una sau mai multe imagini din acest folder depăşeşte dimensiunea maximă (6 MB) şi nu va fi vizibilă."
 
 msgid "Error loading playlist!"
-msgstr "Eroare la încărcarea playlist!"
+msgstr "Eroare la încărcarea listei de redare!"
 
 msgid "Playlist does not contain any supported entries!"
-msgstr "Playlist-ul nu conţine date acceptate!"
+msgstr "Lista de redare nu conţine date acceptate!"
 
 msgid "No Results Found"
-msgstr "Nici un rezultat găsit"
+msgstr "Nu a fost găsit nici un rezultat"
 
 msgid "Your search did not match any media files."
 msgstr "Căutarea dvs. nu corespunde niciunui fişier media."
 
 msgid "Error opening file!"
-msgstr "Eroare la deschiderea unui fișier!"
+msgstr "Eroare la deschiderea fişierului!"
 
 msgid "Saving..."
 msgstr "Salvare..."
@@ -395,88 +395,88 @@ msgid "Error creating file!"
 msgstr "Eroare la crearea fişierului!"
 
 msgid "Error saving file!"
-msgstr "Eroare la salvarea unui fișier!"
+msgstr "Eroare la salvarea fişierului!"
 
 msgid "Playlist is Empty"
-msgstr "Playlist-ul este Gol"
+msgstr "Lista de redare este goala"
 
 msgid "Hover over items and push the + button to add them to your playlist."
-msgstr "Planati peste fișiere şi apăsaţi butonul + pentru a le adăuga la playlist."
+msgstr "Pozitionati cursorul peste fișiere şi apăsaţi butonul + pentru a le adăuga la lista de redare."
 
 msgid "Exit Playlist"
-msgstr "Ieșire Din Playlist"
+msgstr "Ieșire din lista de redare"
 
 msgid "Update successful!"
-msgstr "Update de succes!"
+msgstr "Actualizare reuşită!"
 
 msgid "Update failed!"
-msgstr "Update eșuat!"
+msgstr "Actualizare nereuşită!"
 
 msgid "Initializing network..."
-msgstr "Initializare retea..."
+msgstr "Se initializează reţeaua..."
 
 msgid "Check settings file."
-msgstr "Verificati fișierul de configuratie."
+msgstr "Verificaţi fișierul de configurare."
 
 msgid "Share name is blank."
-msgstr "Numele de partajare este gol."
+msgstr "Nu aţi introdus numele partajării."
 
 msgid "Share IP is blank."
-msgstr "IP-ul de partajare este gol."
+msgstr "Nu aţi introdus IP-ul partajării"
 
 msgid "Invalid network share settings"
-msgstr "Setările pentru partajarea de retea sunt invalide"
+msgstr "Setările pentru partajare sunt invalide"
 
 msgid "Connecting to network share..."
-msgstr "Conectare la reteaua partajată..."
+msgstr "Conectare la reţeaua partajată..."
 
 msgid "Failed to connect to network share."
-msgstr "Nu a reusit sa se conecteze la reteaua partajata."
+msgstr "Conectare nereuşită la reţeaua partajată."
 
 msgid "IP is blank."
-msgstr "IP-ul este gol."
+msgstr "Nu aţi introdus Ip-ul"
 
 msgid "Username is blank."
-msgstr "Utilizatorul este gol."
+msgstr "Nu aţi introdus numele de utilizator"
 
 msgid "Password is blank."
-msgstr "Parola e goala."
+msgstr "Nu aţi introdus parola"
 
 msgid "Invalid FTP site settings"
 msgstr "Setări FTP invalide"
 
 msgid "Connecting to FTP site..."
-msgstr "Conectare la site FTP..."
+msgstr "Conectare la FTP..."
 
 msgid "Failed to connect to FTP site."
-msgstr "Nu a reușit sa se conecteze la site-ul FTP."
+msgstr "Conectare la FTP nereuşită."
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "Nu s-a putut gasi un dispozitiv SD sau USB - aceasta este necesar pentru funcţionarea normală."
+msgstr "Nu s-a putut găsi un dispozitiv SD sau USB - pentru funcţionarea normală este nevoie de unul."
 
 msgid "Could not create folder"
-msgstr "Nu am putut crea dosarul"
+msgstr "Nu s-a putut crea folderul"
 
 msgid "Saving settings..."
-msgstr "Salvarea setărilor..."
+msgstr "Salvare setări..."
 
 msgid "Could not save settings to"
-msgstr "Salvarea setările nu a fost posibil la"
+msgstr "Nu se pot salva setările pe  "
 
 msgid "Thanks to"
-msgstr "Multumiri la"
+msgstr "Multumiri :"
 
 msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
 msgstr "Acest software este open source şi poate fi copiat, distribuit, sau modificat în conformitate cu termenii GNU General Public License (GPL) versiunea 2."
 
 msgid "Menu artwork"
-msgstr "Artă meniu"
+msgstr "Realizarea grafică a meniului"
 
 msgid ""
 msgstr ""
 
 msgid "Coding & menu design"
-msgstr "Codificare & design meniu"
+msgstr "Programare & concepţie interfaţa grafica"
 
 msgid "Logo"
 msgstr "Logo"
@@ -485,40 +485,40 @@ msgid "Version"
 msgstr "Versiune"
 
 msgid "Buffering..."
-msgstr "Încârcare"
+msgstr "Încărcare..."
 
 msgid "Buffering"
-msgstr "Încârcare"
+msgstr "Încărcare..."
 
 msgid "Unable to initialize network (Error #:"
-msgstr "Reteaua nu poate fi initializată (Eroare #:"
+msgstr "Reţeaua nu poate fi iniţializată (Eroare #:"
 
 msgid "Settings - Subtitles"
-msgstr "Setări - Subtitrare"
+msgstr "Setări - Subtitrări"
 
 msgid "Visibility"
 msgstr "Vizibilitate"
 
 msgid "Delay"
-msgstr "Întărziere"
+msgstr "Decalare"
 
 msgid "Codepage"
-msgstr "Pagina de Codificare"
+msgstr "Codepage"
 
 msgid "Subtitle Language"
-msgstr "Limba Subtitrare"
+msgstr "Limbă subtitrare"
 
 msgid "Default"
-msgstr "Standard"
+msgstr "Implicit(ă)"
 
 msgid "Could not change language. Not enough memory!"
 msgstr "Nu s-a putut schimba limba. Memorie insuficientă."
 
 msgid "Font Required"
-msgstr "Font Necesar"
+msgstr "Font necesar"
 
 msgid "A new font is required to display this language."
-msgstr "Un font nou este necesar pentru a afişa această limbă."
+msgstr "Pentru a afişa această limbă este necesar un font nou."
 
 msgid "Download font"
 msgstr "Descărcare font"
@@ -530,19 +530,19 @@ msgid "Out of Memory"
 msgstr "Memorie insuficientă"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr "WiiMC nu are suficientă memorie liberă pentru a încărca vizualizatorul de imagini."
+msgstr "WiiMC nu are suficientă memorie liberă pentru a încărca programul de afisat imagini."
 
 msgid "Close MPlayer"
-msgstr "Închide MPlazer"
+msgstr "Închide MPlayer"
 
 msgid "Subtitle Codepage"
-msgstr "Pagina de Codificare pentru Subtitrări"
+msgstr "Codepage pentru subtitrări"
 
 msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Acest director conţine mai multe date decât suma maximă permisă (3000). Nu toate datele vor fi vizibile."
+msgstr "Acest director conţine mai multe fişiere decât valoarea maximă permisă (3000). Nu toate fişierele vor fi vizibile."
 
 msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Aceast plazlist conţine mai multe date decât suma maximă permisă (3000). Nu toate datele vor fi vizibile."
+msgstr "Această listă de redare conţine mai multe inregistrări decât valoarea maximă permisă (3000). Nu toate inregistrările vor fi vizibile."
 
 msgid "Downloading..."
 msgstr "Descărcare..."

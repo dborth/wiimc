@@ -204,7 +204,7 @@ static char * memfgets(char * dst, int maxlen, char * src)
 
 bool LoadLanguage()
 {
-	char line[200];
+	char line[250];
 	char *lastID = NULL;
 	
 	char *file, *eof;

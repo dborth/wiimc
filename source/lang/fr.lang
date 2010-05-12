@@ -38,19 +38,19 @@ msgid "Pause"
 msgstr "Pause"
 
 msgid "Single Play"
-msgstr "Lire le titre"
+msgstr "Lire le titre une fois"
 
 msgid "Continuous Play"
-msgstr "Continuer à lire"
+msgstr "Lecture en continu"
 
 msgid "Shuffle"
-msgstr "Mélanger"
+msgstr "Aléatoire"
 
 msgid "Loop"
-msgstr "Répéter"
+msgstr "Répéter le titre"
 
 msgid "Continuous"
-msgstr "En continu"
+msgstr "Répéter tout"
 
 msgid "Playlist"
 msgstr "Playlist"
@@ -65,7 +65,7 @@ msgid "Global"
 msgstr "Général"
 
 msgid "Network"
-msgstr "Réseau"
+msgstr "Réseau et partage"
 
 msgid "Subtitles"
 msgstr "Sous-titres"
@@ -77,10 +77,10 @@ msgid "Settings"
 msgstr "Paramètres"
 
 msgid "On"
-msgstr "Allumer"
+msgstr "Activé"
 
 msgid "Off"
-msgstr "Éteindre"
+msgstr "Désactivé"
 
 msgid "Always"
 msgstr "Toujours"
@@ -101,7 +101,7 @@ msgid "Single"
 msgstr "Lire le titre"
 
 msgid "now playing"
-msgstr "Actuellement en cours"
+msgstr "Actuellement à l'écoute"
 
 msgid "Previous"
 msgstr "Précédent"
@@ -167,7 +167,7 @@ msgid "Settings - DVD"
 msgstr "Paramètres - DVD"
 
 msgid "File Extensions"
-msgstr "Extensions de fichiers"
+msgstr "Extensions des fichiers"
 
 msgid "Language"
 msgstr "Langue"
@@ -224,7 +224,7 @@ msgid "Videos Files Folder"
 msgstr "Dossier des fichiers Vidéos"
 
 msgid "Play Order"
-msgstr "Ordre de lecture"
+msgstr "Mode de lecture"
 
 msgid "Music Files Folder"
 msgstr "Dossier des fichiers musicaux"
@@ -308,7 +308,7 @@ msgid "Online Media Folder"
 msgstr "Dossier des médias en ligne"
 
 msgid "Add SMB Share"
-msgstr "Ajouter un réseau de partage"
+msgstr "Nouveau réseau de partage"
 
 msgid "Add FTP Site"
 msgstr "Ajouter un site FTP"
@@ -371,7 +371,7 @@ msgid "Warning"
 msgstr "Attention"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "Une ou plusieurs images excèdent la taille maximale autorisée (6MB) et ne seront pas ouvrables"
+msgstr "Une ou plusieurs images excèdent la taille maximale autorisée (6MB) et ne seront pas visionnables."
 
 msgid "Error loading playlist!"
 msgstr "Erreur lors du chargement de la playlist !"
@@ -401,7 +401,7 @@ msgid "Playlist is Empty"
 msgstr "La playlist est vide"
 
 msgid "Hover over items and push the + button to add them to your playlist."
-msgstr "Placez le curseur sur les fichiers et appuyez sur le bouton + pour l'ajouter à la playlist."
+msgstr "Placez le curseur sur le fichier et appuyez sur le bouton + pour l'ajouter à la playlist."
 
 msgid "Exit Playlist"
 msgstr "Quitter la Playlist"
@@ -488,7 +488,7 @@ msgid "Buffering..."
 msgstr "Mise en mémoire tampon..."
 
 msgid "Buffering"
-msgstr "Mise en mémoire tampom"
+msgstr "Mise en mémoire tampon"
 
 msgid "Unable to initialize network (Error #:"
 msgstr "Impossible d'initialiser le réseau (Erreur #:"

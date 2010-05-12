@@ -545,7 +545,7 @@ msgid "This playlist contains more entries than the maximum allowed (3000). Not 
 msgstr "播放列表文件数最大不能超过3000条，超过3000将会有文件不会显示出"
 
 msgid "Downloading..."
-msgstr ""
+msgstr "下载中..."
 
 msgid "Unzipping..."
-msgstr ""
+msgstr "解压缩中..."

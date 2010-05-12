@@ -6,6 +6,16 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.0.3 - May 12, 2010]
+
+* Fixed issue with browser reloading
+* Fixed freeze on seek issue
+* Fixed a back-to-menu freeze
+* Changed stereo downmixing
+* Added codepages
+* Translation updates (and added Hungarian and Polish translations)
+* Other minor changes
+
 [1.0.2 - May 8, 2010]
 
 * Significant changes to improve stability

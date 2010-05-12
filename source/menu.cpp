@@ -1282,7 +1282,7 @@ static void CreditsWindow()
 
 	txt[i] = new GuiText("www.wiimc.org", 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	txt[i]->SetPosition(0,y); i++; y+=50;
+	txt[i]->SetPosition(0,y); i++; y+=44;
 
 	txt[i] = new GuiText("Coding & menu design", 20, (GXColor){160, 160, 160, 255});
 	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
@@ -1310,7 +1310,7 @@ static void CreditsWindow()
 	txt[i]->SetPosition(-15,y); i++;
 	txt[i] = new GuiText("Psyche & drmr", 20, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	txt[i]->SetPosition(15,y); i++; y+=50;
+	txt[i]->SetPosition(15,y); i++; y+=44;
 
 	txt[i] = new GuiText("Thanks to", 20, (GXColor){160, 160, 160, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);

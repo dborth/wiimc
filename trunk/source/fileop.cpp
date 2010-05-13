@@ -403,27 +403,50 @@ typedef struct _EXTENDED_BOOT_RECORD {
 #endif
 
 DEVICE_STRUCT part[2][MAX_DEVICES];
-static int devnum = 0;
 
-static void AddPartition(sec_t sector, int device, int type)
+static void AddPartition(sec_t sector, int device, int type, int *devnum)
 {
-	if (devnum >= MAX_DEVICES)
+	if (*devnum >= MAX_DEVICES)
 		return;
 
-	part[device][devnum].sector = sector;
+	DISC_INTERFACE *disc = (DISC_INTERFACE *)sd;
 
-	if(device == DEVICE_SD)
-		part[device][devnum].interface = (DISC_INTERFACE *)sd;
+	if(device == DEVICE_USB)
+		disc = (DISC_INTERFACE *)usb;
+
+	char mount[10];
+	sprintf(mount, "%s%i", prefix[device], *devnum+1);
+
+	if(type == T_FAT)
+	{
+		if(!fatMount(mount, disc, sector, 3, 256))
+			return;
+		fatGetVolumeLabel(mount, part[device][*devnum].name);
+	}
 	else
-		part[device][devnum].interface = (DISC_INTERFACE *)usb;
+	{
+		if(!ntfsMount(mount, disc, sector, 256, 3, NTFS_DEFAULT | NTFS_RECOVER))
+			return;
 
-	part[device][devnum].type = type;
-	devnum++;
+		const char *name = ntfsGetVolumeName(mount);
+
+		if(name)
+			strcpy(part[device][*devnum].name, name);
+		else
+			part[device][*devnum].name[0] = 0;
+	}
+
+	strcpy(part[device][*devnum].mount, mount);
+	part[device][*devnum].type = type;
+	part[device][*devnum].interface = disc;
+	part[device][*devnum].sector = sector;
+	++*devnum;
 }
 
 static int FindPartitions(int device)
 {
 	int i;
+	int devnum = 0;
 
 	// clear list
 	for(i=0; i < MAX_DEVICES; i++)
@@ -497,7 +520,7 @@ static int FindPartitions(int device)
 						if (sector.boot.oem_id == NTFS_OEM_ID)
 						{
 							debug_printf("Partition %i: Valid NTFS boot sector found\n", i + 1);
-							AddPartition(part_lba, device, T_NTFS);
+							AddPartition(part_lba, device, T_NTFS, &devnum);
 						}
 						else
 						{
@@ -556,7 +579,7 @@ static int FindPartitions(int device)
 													sector.ebr.partition.type,
 													PARTITION_TYPE_NTFS);
 										}
-										AddPartition(part_lba, device, T_NTFS);
+										AddPartition(part_lba, device, T_NTFS, &devnum);
 									}
 									else if (!memcmp(sector.buffer
 											+ BPB_FAT16_fileSysType, FAT_SIG,
@@ -566,7 +589,7 @@ static int FindPartitions(int device)
 											FAT_SIG, sizeof(FAT_SIG)))
 									{
 										debug_printf("Partition : Valid FAT boot sector found\n");
-										AddPartition(part_lba, device, T_FAT);
+										AddPartition(part_lba, device, T_FAT, &devnum);
 									}
 								}
 							}
@@ -599,7 +622,7 @@ static int FindPartitions(int device)
 										i + 1, partition->type,
 										PARTITION_TYPE_NTFS);
 							}
-							AddPartition(part_lba, device, T_NTFS);
+							AddPartition(part_lba, device, T_NTFS, &devnum);
 						}
 						else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType,
 								FAT_SIG, sizeof(FAT_SIG)) || !memcmp(
@@ -607,7 +630,7 @@ static int FindPartitions(int device)
 								sizeof(FAT_SIG)))
 						{
 							debug_printf("Partition : Valid FAT boot sector found\n");
-							AddPartition(part_lba, device, T_FAT);
+							AddPartition(part_lba, device, T_FAT, &devnum);
 						}
 					}
 					break;
@@ -627,15 +650,15 @@ static int FindPartitions(int device)
 				if (sector.boot.oem_id == NTFS_OEM_ID)
 				{
 					debug_printf("Valid NTFS boot sector found at sector %d!\n", i);
-					AddPartition(i, device, T_NTFS);
+					AddPartition(i, device, T_NTFS, &devnum);
 					break;
 				}
-			else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
-					sizeof(FAT_SIG)) || !memcmp(sector.buffer
-					+ BPB_FAT32_fileSysType, FAT_SIG, sizeof(FAT_SIG)))
-			{
-				debug_printf("Partition : Valid FAT boot sector found\n");
-				AddPartition(i, device, T_FAT);
+				else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
+						sizeof(FAT_SIG)) || !memcmp(sector.buffer
+						+ BPB_FAT32_fileSysType, FAT_SIG, sizeof(FAT_SIG)))
+				{
+					debug_printf("Partition : Valid FAT boot sector found\n");
+					AddPartition(i, device, T_FAT, &devnum);
 					break;
 				}
 			}
@@ -695,24 +718,7 @@ static bool MountPartitions(int device, int silent)
 	{
 		if(disc->startup() && disc->isInserted())
 		{
-			int numFound = FindPartitions(device);
-
-			for(int i=0; i < numFound; i++)
-			{
-				sprintf(part[device][i].mount, "%s%i", prefix[device], i+1);
-
-				if(part[device][i].type == T_FAT)
-				{
-					fatMount(part[device][i].mount, disc, part[device][i].sector, 3, 256);
-					fatGetVolumeLabel(part[device][i].mount, part[device][i].name);
-				}
-				else
-				{
-					ntfsMount(part[device][i].mount, disc, part[device][i].sector, 256, 3, NTFS_DEFAULT | NTFS_RECOVER);
-					strcpy(part[device][i].name, ntfsGetVolumeName(part[device][i].mount));
-				}
-			}
-			if(numFound > 0)
+			if(FindPartitions(device) > 0)
 				mounted = true;
 		}
 

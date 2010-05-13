@@ -322,7 +322,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			else if(i == 0 && part[DEVICE_SD][1].type == 0) // only one SD partition
 				sprintf(browserList[browser.numEntries].displayname, "SD Card");
 			else
-				sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("SD Card"), i);
+				sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("SD Card"), i+1);
 
 			browserList[browser.numEntries].length = 0;
 			browserList[browser.numEntries].mtime = 0;
@@ -345,7 +345,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			else if(i == 0 && part[DEVICE_USB][1].type == 0) // only one USB partition
 				sprintf(browserList[browser.numEntries].displayname, "USB Mass Storage");
 			else
-				sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("USB Mass Storage"), i);
+				sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("USB Mass Storage"), i+1);
 
 			browserList[browser.numEntries].length = 0;
 			browserList[browser.numEntries].mtime = 0;

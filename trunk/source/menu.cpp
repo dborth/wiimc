@@ -3313,8 +3313,19 @@ static void MenuSettingsVideos()
 				WiiSettings.autoResume ^= 1;
 				break;
 			case 7:
-				WiiSettings.seekTime += 30;
-				if(WiiSettings.seekTime > 600)
+				if(WiiSettings.seekTime >= 1200)
+					WiiSettings.seekTime = 5;
+				else if(WiiSettings.seekTime >= 600)
+					WiiSettings.seekTime = 1200;
+				else if(WiiSettings.seekTime >= 300)
+					WiiSettings.seekTime = 600;
+				else if(WiiSettings.seekTime >= 180)
+					WiiSettings.seekTime = 300;
+				else if(WiiSettings.seekTime >= 60)
+					WiiSettings.seekTime = 180;
+				else if(WiiSettings.seekTime >= 30)
+					WiiSettings.seekTime = 60;
+				else
 					WiiSettings.seekTime = 30;
 				break;
 			case 8:
@@ -4510,6 +4521,8 @@ static void MenuSettingsSubtitles()
 	sprintf(options.name[i++], "Delay");
 	sprintf(options.name[i++], "Language");
 	sprintf(options.name[i++], "Codepage");
+	sprintf(options.name[i++], "Color");
+	sprintf(options.name[i++], "Size");
 
 	options.length = i;
 		
@@ -4580,6 +4593,21 @@ static void MenuSettingsSubtitles()
 			case 3:
 				CodepageWindow();
 				break;
+			case 4:
+				if(strcmp(WiiSettings.subtitleColor, "FFFFFF00") == 0) // white
+					sprintf(WiiSettings.subtitleColor, "00000000"); // black
+				else if(strcmp(WiiSettings.subtitleColor, "00000000") == 0) // black
+					sprintf(WiiSettings.subtitleColor, "FFFF0000"); // yellow
+				else if(strcmp(WiiSettings.subtitleColor, "FFFF0000") == 0) // yellow
+					sprintf(WiiSettings.subtitleColor, "FF000000"); // red
+				else
+					sprintf(WiiSettings.subtitleColor, "FFFFFF00"); // white
+				break;
+			case 5:
+				WiiSettings.subtitleSize += 0.5;
+				if(WiiSettings.subtitleSize > 5)
+					WiiSettings.subtitleSize = 1;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -4593,6 +4621,17 @@ static void MenuSettingsSubtitles()
 				sprintf(options.value[3], "Default");
 			else
 				sprintf(options.value[3], "%s (%s)", codepages[GetCodepageIndex()].cpname, codepages[GetCodepageIndex()].language);
+
+			if(strcmp(WiiSettings.subtitleColor, "FFFFFF00") == 0)
+				sprintf(options.value[4], "White");
+			else if(strcmp(WiiSettings.subtitleColor, "00000000") == 0)
+				sprintf(options.value[4], "Black");
+			else if(strcmp(WiiSettings.subtitleColor, "FFFF0000") == 0)
+				sprintf(options.value[4], "Yellow");
+			else
+				sprintf(options.value[4], "Red");
+
+			sprintf(options.value[5], "%.1f", WiiSettings.subtitleSize);
 
 			optionBrowser.TriggerUpdate();
 		}

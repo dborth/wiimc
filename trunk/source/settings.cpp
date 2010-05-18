@@ -322,10 +322,6 @@ prepareSettingsData ()
 	createXMLSetting("volume", "Volume", toStr(WiiSettings.volume));
 	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
-	createXMLSetting("subtitleVisibility", "Subtitle visibility", toStr(WiiSettings.subtitleVisibility));
-	createXMLSetting("subtitleDelay", "Subtitle delay", FtoStr(WiiSettings.subtitleDelay));
-	createXMLSetting("subtitleLanguage", "Subtitle language", WiiSettings.subtitleLanguage);
-	createXMLSetting("subtitleCodepage", "Subtitle codepage", WiiSettings.subtitleCodepage);
 	// Videos
 	createXMLSection("Videos", "Videos Settings");
 	createXMLSetting("videoZoomHor", "Horizontal video zoom", FtoStr(WiiSettings.videoZoomHor));
@@ -359,6 +355,13 @@ prepareSettingsData ()
 		createXMLSMBShare(i);
 	for(int i=0; i<5; i++)
 		createXMLFTPSite(i);
+	// Subtitles
+	createXMLSetting("subtitleVisibility", "Subtitle visibility", toStr(WiiSettings.subtitleVisibility));
+	createXMLSetting("subtitleDelay", "Subtitle delay", FtoStr(WiiSettings.subtitleDelay));
+	createXMLSetting("subtitleLanguage", "Subtitle language", WiiSettings.subtitleLanguage);
+	createXMLSetting("subtitleCodepage", "Subtitle codepage", WiiSettings.subtitleCodepage);
+	createXMLSetting("subtitleColor", "Subtitle color", WiiSettings.subtitleColor);
+	createXMLSetting("subtitleSize", "Subtitle size", FtoStr(WiiSettings.subtitleSize));
 
 	int datasize = mxmlSaveString(xml, (char *)savebuffer, SAVEBUFFERSIZE, XMLSaveCallback);
 
@@ -535,14 +538,9 @@ void DefaultSettings ()
 	// Global
 	WiiSettings.hideExtensions = 1;
 	WiiSettings.language = CONF_GetLanguage();
-
 	WiiSettings.volume = 50;
 	WiiSettings.exitAction = EXIT_AUTO;
 	WiiSettings.rumble = 1;
-	WiiSettings.subtitleVisibility = 1;
-	WiiSettings.subtitleDelay = 0;
-	WiiSettings.subtitleLanguage[0] = 0;
-	WiiSettings.subtitleCodepage[0] = 0;
 	// Videos
 	WiiSettings.videoZoomHor = 1;
 	WiiSettings.videoZoomVert = 1;
@@ -573,7 +571,7 @@ void DefaultSettings ()
 		WiiSettings.smbConf[i].share[0] = 0;
 		WiiSettings.smbConf[i].user[0] = 0;
 		WiiSettings.smbConf[i].pwd[0] = 0;
-		
+	
 		WiiSettings.ftpConf[i].displayname[0] = 0;
 		WiiSettings.ftpConf[i].ip[0] = 0;
 		WiiSettings.ftpConf[i].folder[0] = 0;
@@ -582,6 +580,13 @@ void DefaultSettings ()
 		WiiSettings.ftpConf[i].port = 21;
 		WiiSettings.ftpConf[i].passive = 0;
 	}
+	// Subtitles
+	WiiSettings.subtitleVisibility = 1;
+	WiiSettings.subtitleDelay = 0;
+	WiiSettings.subtitleLanguage[0] = 0;
+	WiiSettings.subtitleCodepage[0] = 0;
+	sprintf(WiiSettings.subtitleColor, "FFFFFF00");
+	WiiSettings.subtitleSize = 2.0;
 }
 
 /****************************************************************************
@@ -602,6 +607,59 @@ static void FixInvalidSettings()
 		WiiSettings.exitAction = EXIT_AUTO;
 	if(WiiSettings.rumble != 1 && WiiSettings.rumble != 0)
 		WiiSettings.rumble = 1;
+
+	// Videos
+	if(WiiSettings.videoZoomHor < 0.5 || WiiSettings.videoZoomHor > 1.5)
+		WiiSettings.videoZoomHor = 1;
+	if(WiiSettings.videoZoomVert < 0.5 || WiiSettings.videoZoomVert > 1.5)
+		WiiSettings.videoZoomVert = 1;
+	if(WiiSettings.videoXshift < -50 || WiiSettings.videoXshift > 50)
+		WiiSettings.videoXshift = 0;
+	if(WiiSettings.videoYshift < -50 || WiiSettings.videoYshift > 50)
+		WiiSettings.videoYshift = 0;
+	if(WiiSettings.frameDropping < 0 || WiiSettings.frameDropping > FRAMEDROPPING_ALWAYS)
+		WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
+	if(WiiSettings.aspectRatio <= 0 || WiiSettings.aspectRatio > 2.36)
+		WiiSettings.aspectRatio = -2;
+	if(WiiSettings.cacheFill < 10 || WiiSettings.cacheFill > 100)
+		WiiSettings.cacheFill = 30;
+	if(WiiSettings.audioDelay < -2 || WiiSettings.audioDelay > 2)
+		WiiSettings.audioDelay = 0;
+	if(WiiSettings.autoResume != 1 && WiiSettings.autoResume != 0)
+		WiiSettings.autoResume = 1;
+	if(WiiSettings.seekTime < 5 || WiiSettings.seekTime > 1200)
+		WiiSettings.seekTime = 30;
+	CleanupPath(WiiSettings.videosFolder);
+
+	// Music
+	if(WiiSettings.playOrder < 0 || WiiSettings.playOrder > PLAY_LOOP)
+		WiiSettings.playOrder = PLAY_SINGLE;
+	CleanupPath(WiiSettings.musicFolder);
+
+	// Pictures
+	if(WiiSettings.slideshowDelay > 10 || WiiSettings.slideshowDelay < 1)
+		WiiSettings.slideshowDelay = 5;
+	CleanupPath(WiiSettings.picturesFolder);
+
+	// DVD
+	if(WiiSettings.dvdMenu != 0 && WiiSettings.dvdMenu != 1)
+		WiiSettings.dvdMenu = 1;
+
+	// Online Media
+	if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
+		CleanupPath(WiiSettings.onlinemediaFolder);
+
+	// Network
+	for(int i=0; i<5; i++)
+	{
+		if(WiiSettings.ftpConf[i].port < 4 || WiiSettings.ftpConf[i].port > 49151)
+			WiiSettings.ftpConf[i].port = 21;
+
+		if(WiiSettings.ftpConf[i].passive != 0) // disable PASV support
+			WiiSettings.ftpConf[i].passive = 0;
+	}
+	
+	// Subtitles
 	if(WiiSettings.subtitleVisibility < 0 || WiiSettings.subtitleVisibility > 1)
 		WiiSettings.subtitleVisibility = 1;
 	if(WiiSettings.subtitleDelay < -2 || WiiSettings.subtitleDelay > 2)
@@ -637,57 +695,16 @@ static void FixInvalidSettings()
 		if(!found)
 			WiiSettings.subtitleCodepage[0] = 0;
 	}
-
-	// Videos
-	if(WiiSettings.videoZoomHor < 0.5 || WiiSettings.videoZoomHor > 1.5)
-		WiiSettings.videoZoomHor = 1;
-	if(WiiSettings.videoZoomVert < 0.5 || WiiSettings.videoZoomVert > 1.5)
-		WiiSettings.videoZoomVert = 1;
-	if(WiiSettings.videoXshift < -50 || WiiSettings.videoXshift > 50)
-		WiiSettings.videoXshift = 0;
-	if(WiiSettings.videoYshift < -50 || WiiSettings.videoYshift > 50)
-		WiiSettings.videoYshift = 0;
-	if(WiiSettings.frameDropping < 0 || WiiSettings.frameDropping > FRAMEDROPPING_ALWAYS)
-		WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
-	if(WiiSettings.aspectRatio <= 0 || WiiSettings.aspectRatio > 2.36)
-		WiiSettings.aspectRatio = -2;
-	if(WiiSettings.cacheFill < 10 || WiiSettings.cacheFill > 100)
-		WiiSettings.cacheFill = 30;
-	if(WiiSettings.audioDelay < -2 || WiiSettings.audioDelay > 2)
-		WiiSettings.audioDelay = 0;
-	if(WiiSettings.autoResume != 1 && WiiSettings.autoResume != 0)
-		WiiSettings.autoResume = 1;
-	if(WiiSettings.seekTime < 30 || WiiSettings.seekTime > 600)
-		WiiSettings.seekTime = 30;
-	CleanupPath(WiiSettings.videosFolder);
-
-	// Music
-	if(WiiSettings.playOrder < 0 || WiiSettings.playOrder > PLAY_LOOP)
-		WiiSettings.playOrder = PLAY_SINGLE;
-	CleanupPath(WiiSettings.musicFolder);
-
-	// Pictures
-	if(WiiSettings.slideshowDelay > 10 || WiiSettings.slideshowDelay < 1)
-		WiiSettings.slideshowDelay = 5;
-	CleanupPath(WiiSettings.picturesFolder);
-
-	// DVD
-	if(WiiSettings.dvdMenu != 0 && WiiSettings.dvdMenu != 1)
-		WiiSettings.dvdMenu = 1;
-
-	// Online Media
-	if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
-		CleanupPath(WiiSettings.onlinemediaFolder);
-
-	// Network
-	for(int i=0; i<5; i++)
-	{
-		if(WiiSettings.ftpConf[i].port < 4 || WiiSettings.ftpConf[i].port > 49151)
-			WiiSettings.ftpConf[i].port = 21;
-
-		if(WiiSettings.ftpConf[i].passive != 0) // disable PASV support
-			WiiSettings.ftpConf[i].passive = 0;
-	}
+	
+	if(WiiSettings.subtitleColor[0] == 0 || strlen(WiiSettings.subtitleColor) < 8 ||
+	(strcmp(WiiSettings.subtitleColor, "00000000") != 0 && 
+		strcmp(WiiSettings.subtitleColor, "FFFFFF00") != 0 && 
+		strcmp(WiiSettings.subtitleColor, "FFFF0000") != 0 && 
+		strcmp(WiiSettings.subtitleColor, "FF000000") != 0))
+		sprintf(WiiSettings.subtitleColor, "FFFFFF00");
+	
+	if(WiiSettings.subtitleSize > 5 || WiiSettings.subtitleSize < 1)
+		WiiSettings.subtitleSize = 2.0;
 }
 
 /****************************************************************************
@@ -870,10 +887,6 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.volume, "volume");
 				loadXMLSetting(&WiiSettings.exitAction, "exitAction");
 				loadXMLSetting(&WiiSettings.rumble, "rumble");
-				loadXMLSetting(&WiiSettings.subtitleVisibility, "subtitleVisibility");
-				loadXMLSetting(&WiiSettings.subtitleDelay, "subtitleDelay");
-				loadXMLSetting(WiiSettings.subtitleLanguage, "subtitleLanguage", sizeof(WiiSettings.subtitleLanguage));
-				loadXMLSetting(WiiSettings.subtitleCodepage, "subtitleCodepage", sizeof(WiiSettings.subtitleCodepage));
 				// Videos
 				loadXMLSetting(&WiiSettings.videoZoomHor, "videoZoomHor");
 				loadXMLSetting(&WiiSettings.videoZoomVert, "videoZoomVert");
@@ -902,6 +915,13 @@ static bool LoadSettingsFile(char * filepath)
 					loadXMLSMBShare(i);
 					loadXMLFTPSite(i);
 				}
+				// Subtitles
+				loadXMLSetting(&WiiSettings.subtitleVisibility, "subtitleVisibility");
+				loadXMLSetting(&WiiSettings.subtitleDelay, "subtitleDelay");
+				loadXMLSetting(WiiSettings.subtitleLanguage, "subtitleLanguage", sizeof(WiiSettings.subtitleLanguage));
+				loadXMLSetting(WiiSettings.subtitleCodepage, "subtitleCodepage", sizeof(WiiSettings.subtitleCodepage));
+				loadXMLSetting(WiiSettings.subtitleColor, "subtitleColor", sizeof(WiiSettings.subtitleColor));
+				loadXMLSetting(&WiiSettings.subtitleSize, "subtitleSize");
 			}
 			mxmlDelete(xml);
 		}

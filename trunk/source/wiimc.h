@@ -78,6 +78,8 @@ void wiiSetVolume(int vol);
 void wiiSetProperty(int cmd, float val);
 void wiiSetLanguage(char *lang);
 void wiiSetCodepage(char *cp);
+void wiiSetSubtitleColor(char *color);
+void wiiSetSubtitleSize(float size);
 void wiiLoadRestorePoints(char *buffer, int size);
 char * wiiSaveRestorePoints(char *path);
 

@@ -3325,8 +3325,10 @@ static void MenuSettingsVideos()
 					WiiSettings.seekTime = 180;
 				else if(WiiSettings.seekTime >= 30)
 					WiiSettings.seekTime = 60;
-				else
+				else if(WiiSettings.seekTime >= 15)
 					WiiSettings.seekTime = 30;
+				else
+					WiiSettings.seekTime = 15;
 				break;
 			case 8:
 				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);

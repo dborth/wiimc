@@ -146,7 +146,7 @@ msgid "Port is outside the allowed range (4-49151)!"
 msgstr "Portul nu este în intervalul permis (4-49151)!"
 
 msgid "Settings - Global"
-msgstr "Setări  generale"
+msgstr "Setări generale"
 
 msgid "Settings - Videos"
 msgstr "Setări video"
@@ -461,7 +461,7 @@ msgid "Saving settings..."
 msgstr "Salvare setări..."
 
 msgid "Could not save settings to"
-msgstr "Nu se pot salva setările pe  "
+msgstr "Nu se pot salva setările pe"
 
 msgid "Thanks to"
 msgstr "Multumiri :"

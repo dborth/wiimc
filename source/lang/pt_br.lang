@@ -182,7 +182,7 @@ msgid "Wiimote Rumble"
 msgstr "Vibração do Wiimote"
 
 msgid "Hide"
-msgstr "Esconder"
+msgstr "Ocultar"
 
 msgid "Show"
 msgstr "Mostrar"
@@ -197,10 +197,10 @@ msgid "Power Off Wii"
 msgstr "Desligar o Wii"
 
 msgid "Return to Loader"
-msgstr "Retornar ao HBC"
+msgstr "Retornar ao loader"
 
 msgid "Screen Zoom"
-msgstr "Zoom de tela"
+msgstr "Zoom da tela"
 
 msgid "Screen Position"
 msgstr "Posição da tela"
@@ -320,7 +320,7 @@ msgid "Skip to Main Title"
 msgstr "Pular para o título principal"
 
 msgid "Unable to Initialize MPlayer"
-msgstr "Impossível iniciar o Mplayer"
+msgstr "Impossível inicializar o Mplayer"
 
 msgid "Unable to find a valid working path"
 msgstr "Impossível encontrar um caminho de rede válido"
@@ -431,7 +431,7 @@ msgid "Connecting to network share..."
 msgstr "Conectando ao compartilhamento..."
 
 msgid "Failed to connect to network share."
-msgstr "Falha na conexão do compartilhamento."
+msgstr "Falha ao conectar ao compartilhamento."
 
 msgid "IP is blank."
 msgstr "O campo IP está em branco."
@@ -449,7 +449,7 @@ msgid "Connecting to FTP site..."
 msgstr "Conectando ao FTP..."
 
 msgid "Failed to connect to FTP site."
-msgstr "Falha na conexão do FTP."
+msgstr "Falha ao conectar ao FTP."
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
 msgstr "Não foi possível encontrar um cartão SD válido ou dispositivo USB - um é requerido para operação normal."
@@ -512,7 +512,7 @@ msgid "Default"
 msgstr "Padrão"
 
 msgid "Could not change language. Not enough memory!"
-msgstr "Não foi possível modificar o idioma. Memória insuficiente!"
+msgstr "Não foi possível alterar o idioma. Memória insuficiente!"
 
 msgid "Font Required"
 msgstr "Fonte requerida"
@@ -524,7 +524,7 @@ msgid "Download font"
 msgstr "Download de fonte"
 
 msgid "Unable to save font file!"
-msgstr "Impossível salvar arquivo de fonte!"
+msgstr "Impossível salvar o arquivo de fonte!"
 
 msgid "Out of Memory"
 msgstr "Memória esgotada"

@@ -112,7 +112,11 @@ ass_track_t* ass_default_track(ass_library_t* library) {
 		style->BackColour = 0x00000000;
 		style->BorderStyle = 1;
 		style->Alignment = 2;
+#ifdef GEKKO
+		style->Outline = 1;
+#else
 		style->Outline = 2;
+#endif
 		style->MarginL = 10;
 		style->MarginR = 10;
 		style->MarginV = 5;

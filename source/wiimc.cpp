@@ -382,6 +382,8 @@ void SetMPlayerSettings()
 	wiiSetProperty(MP_CMD_SUB_DELAY, WiiSettings.subtitleDelay);
 	wiiSetLanguage(WiiSettings.subtitleLanguage);
 	wiiSetCodepage(WiiSettings.subtitleCodepage);
+	wiiSetSubtitleColor(WiiSettings.subtitleColor);
+	wiiSetSubtitleSize(WiiSettings.subtitleSize);
 }
 }
 

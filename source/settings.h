@@ -114,6 +114,8 @@ struct SWiiSettings {
 	float 	subtitleDelay; // in secs
 	char	subtitleLanguage[3];
 	char	subtitleCodepage[13];
+	char	subtitleColor[9];
+	float	subtitleSize;
 };
 
 void DefaultSettings ();

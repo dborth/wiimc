@@ -2695,12 +2695,13 @@ m_config_set_option(mconfig,"channels","6");
 m_config_set_option(mconfig,"af", "pan=2:1:0:0:1:0.2041225:0.4330125:0.14435:0.612375:0.7071:0.7071:0:0");
 m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
-m_config_set_option(mconfig,"subfont-osd-scale","3.5");
-m_config_set_option(mconfig,"subfont-text-scale","3.5");
+m_config_set_option(mconfig,"subfont-osd-scale","2.5");
+m_config_set_option(mconfig,"subfont-text-scale","2.5");
 m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2");
 m_config_set_option(mconfig,"sws","4");
 m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
+SetMPlayerSettings();
 #else
   m_config_preparse_command_line(mconfig,argc,argv);
 
@@ -4544,31 +4545,57 @@ static void remove_subtitles()
 
 static void reload_subtitles()
 {
+	if(!mpctx || mpctx->set_of_sub_size <= 0)
+		return; // no subs
+
 	int i;
+
+	for(i = 0; i < mpctx->set_of_sub_size; ++i)
+	{
+		sub_free(mpctx->set_of_subtitles[i]);
+		#ifdef CONFIG_ASS
+		if(mpctx->set_of_ass_tracks[i])
+		ass_free_track( mpctx->set_of_ass_tracks[i] );
+		#endif
+	}
+
+	mpctx->set_of_sub_size = 0;
+	vo_sub_last = vo_sub=NULL;
+	subdata=NULL;
+
+	#ifdef CONFIG_ASS
+	ass_track = NULL;
+	if(ass_library)
+		ass_clear_fonts(ass_library);
+	#endif
 
 	remove_subtitles(); //clear subs loaded
 
 	//reload subs with new cp
 	char **tmp = sub_filenames("", filename);
-	i = 0;
 
-	while (tmp[i]) {
+	i=0;
+
+	while (tmp[i])
+	{
 		add_subtitles (tmp[i], mpctx->sh_video->fps, 1);
 		free(tmp[i++]);
 	}
 	free(tmp);
 
-	 if (mpctx->set_of_sub_size > 0)  {
-	      // setup global sub numbering
-	      mpctx->global_sub_indices[SUB_SOURCE_SUBS] = mpctx->global_sub_size; // the global # of the first sub.
-	      mpctx->global_sub_size += mpctx->set_of_sub_size;
-	  }
-
-	if (mpctx->global_sub_size) {
-	  select_subtitle(mpctx);
-	  force_load_font = 1;
+	if (mpctx->set_of_sub_size > 0)
+	{
+		// setup global sub numbering
+		mpctx->global_sub_indices[SUB_SOURCE_SUBS] = mpctx->global_sub_size; // the global # of the first sub.
+		mpctx->global_sub_size += mpctx->set_of_sub_size;
 	}
 
+	if (mpctx->global_sub_size)
+	{
+		select_subtitle(mpctx);
+		force_load_font = 1;
+		ass_force_reload = 1;
+	}
 }
 
 static float timing_sleep(float time_frame)
@@ -4970,6 +4997,9 @@ bool wiiInDVDMenu()
 
 void wiiSetCacheFill(int fill)
 {
+	if(orig_stream_cache_min_percent == -1)
+		return;
+
 	orig_stream_cache_min_percent = fill;
 
 	if(stream_cache_min_percent > 1) // don't change fill for http streams
@@ -5039,10 +5069,6 @@ void wiiSetLanguage(char *lang)
 
 void wiiSetCodepage(char *cp)
 {
-	bool has_subs=false;
-
-	if(mpctx && mpctx->set_of_sub_size > 0) has_subs=true;
-
 	if(sub_cp == NULL && cp[0] == 0) return; //cp not changed
 
 	if(sub_cp)
@@ -5050,15 +5076,36 @@ void wiiSetCodepage(char *cp)
 		if(strcmp(sub_cp,cp)==0) return; //cp not changed
 		free(sub_cp);
 	}
-	
+
 	if(cp == NULL || cp[0] == 0)
 		sub_cp = NULL;
 	else
 		sub_cp = strdup(cp);
 
-	if(!has_subs) return; //no subs so return;
-
 	reload_subtitles();
+}
+
+void wiiSetSubtitleColor(char *color)
+{
+	if(ass_color && strcmp(color, ass_color) == 0)
+		return;
+
+	if(ass_color) free(ass_color);
+	ass_color = strdup(color);
+	if(ass_border_color) free(ass_border_color);
+	if(strcmp(color, "00000000") == 0)
+		ass_border_color = strdup("FFFFFF00");
+	else
+		ass_border_color = strdup("00000000");
+	reload_subtitles();
+}
+
+void wiiSetSubtitleSize(float size)
+{
+	if(size == ass_font_scale)
+		return;
+
+	ass_font_scale = size;
 }
 
 void wiiLoadRestorePoints(char *buffer, int size)

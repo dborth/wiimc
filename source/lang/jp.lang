@@ -359,7 +359,7 @@ msgid "No disc inserted!"
 msgstr "ディスクが挿入されていません！"
 
 msgid "Invalid DVD."
-msgstr "ＤＶＤが無効です"
+msgstr "無効なＤＶＤです"
 
 msgid "Up One Level"
 msgstr "上の階層へ.."
@@ -512,7 +512,7 @@ msgid "Default"
 msgstr "初期値"
 
 msgid "Could not change language. Not enough memory!"
-msgstr "メモリ不足のため使用言語を変更できませんでした"
+msgstr "メモリ不足のため言語設定を変更できませんでした"
 
 msgid "Font Required"
 msgstr "他言語フォントの導入"
@@ -552,3 +552,21 @@ msgstr "ダウンロード中.."
 
 msgid "Unzipping..."
 msgstr "ファイル展開中.."
+
+msgid "Color"
+msgstr "色"
+
+msgid "Size"
+msgstr "サイズ"
+
+msgid "White"
+msgstr "白"
+
+msgid "Black"
+msgstr "黒"
+
+msgid "Yellow"
+msgstr "黄"
+
+msgid "Red"
+msgstr "赤"

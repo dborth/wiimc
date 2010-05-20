@@ -549,3 +549,21 @@ msgstr "Baixando..."
 
 msgid "Unzipping..."
 msgstr "Extraindo..."
+
+msgid "Color"
+msgstr "Cor"
+
+msgid "Size"
+msgstr "Tamanho"
+
+msgid "White"
+msgstr "Branco"
+
+msgid "Black"
+msgstr "Preto"
+
+msgid "Yellow"
+msgstr "Amarelo"
+
+msgid "Red"
+msgstr "Vermelho"

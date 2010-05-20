@@ -77,10 +77,10 @@ msgid "Settings"
 msgstr "Impostazioni"
 
 msgid "On"
-msgstr "Acceso"
+msgstr "On"
 
 msgid "Off"
-msgstr "Spento"
+msgstr "Off"
 
 msgid "Always"
 msgstr "Sempre"
@@ -188,7 +188,7 @@ msgid "Show"
 msgstr "Mostra"
 
 msgid "Auto"
-msgstr "Automatico"
+msgstr "Auto"
 
 msgid "Return to Wii Menu"
 msgstr "Ritorna al menu Wii"
@@ -260,7 +260,7 @@ msgid "Are you sure that you want to delete this share?"
 msgstr "Sei sicuro di voler cancellare questa condivisione?"
 
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 msgid "Folder"
 msgstr "Cartella"
@@ -317,7 +317,7 @@ msgid "DVD Menu"
 msgstr "Menu DVD"
 
 msgid "Skip to Main Title"
-msgstr "Salta al Titolo"
+msgstr "Vai al Titolo Principale"
 
 msgid "Unable to Initialize MPlayer"
 msgstr "Impossibile inizializzare Mplayer"
@@ -479,7 +479,7 @@ msgid "Coding & menu design"
 msgstr "Programmazione & menu design"
 
 msgid "Logo"
-msgstr ""
+msgstr "Logo"
 
 msgid "Version"
 msgstr "Versione"
@@ -545,7 +545,25 @@ msgid "This playlist contains more entries than the maximum allowed (3000). Not 
 msgstr "Questa playlist contiene più voci rispetto al massimo consentito(3000). Non tutti i files saranno visibili"
 
 msgid "Downloading..."
-msgstr ""
+msgstr "Downloading..."
 
 msgid "Unzipping..."
-msgstr ""
+msgstr "Unzipping..."
+
+msgid "Color"
+msgstr "Colore"
+
+msgid "Size"
+msgstr "Dimensione"
+
+msgid "White"
+msgstr "Bianco"
+
+msgid "Black"
+msgstr "Nero"
+
+msgid "Yellow"
+msgstr "Giallo"
+
+msgid "Red"
+msgstr "Rosso"

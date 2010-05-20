@@ -50,7 +50,7 @@ msgid "Loop"
 msgstr "Kordus"
 
 msgid "Continuous"
-msgstr "Järjestikku"
+msgstr "Järjestikune"
 
 msgid "Playlist"
 msgstr "Esitusloend"
@@ -62,7 +62,7 @@ msgid "Loading..."
 msgstr "Laen..."
 
 msgid "Global"
-msgstr "Globaalne"
+msgstr "Üldine"
 
 msgid "Network"
 msgstr "Võrk"
@@ -71,7 +71,7 @@ msgid "Subtitles"
 msgstr "Subtiitrid"
 
 msgid "Subtitle Delay"
-msgstr "Subtiitrite Hilinemine"
+msgstr "Subtiitrite Ajastus"
 
 msgid "Settings"
 msgstr "Seaded"
@@ -101,7 +101,7 @@ msgid "Single"
 msgstr "Üksikesitus"
 
 msgid "now playing"
-msgstr "Hetkel Mängib"
+msgstr "Hetkel mängib"
 
 msgid "Previous"
 msgstr "Eelmine"
@@ -125,10 +125,10 @@ msgid "An update is available!"
 msgstr "Uuendus on saadaval!"
 
 msgid "Update now"
-msgstr "Uuenda Nüüd"
+msgstr "Uuenda nüüd"
 
 msgid "Update later"
-msgstr "Uuenda Hiljem"
+msgstr "Uuenda hiljem"
 
 msgid "Online media file not found."
 msgstr Online meedia faili ei leitud."
@@ -143,10 +143,10 @@ msgid "Port is not a number!"
 msgstr "Port ei ole number!"
 
 msgid "Port is outside the allowed range (4-49151)!"
-msgstr "Port on väljaspool lubatud vahemikku (4-49151)"
+msgstr "Port on väljaspool lubatud vahemikku (4-49151)!"
 
 msgid "Settings - Global"
-msgstr "Seaded - Globaalsed"
+msgstr "Seaded - Üldised"
 
 msgid "Settings - Videos"
 msgstr "Seaded - Videod"
@@ -197,7 +197,7 @@ msgid "Power Off Wii"
 msgstr "Lülita Wii Välja"
 
 msgid "Return to Loader"
-msgstr "tagasi Alglaadijasse"
+msgstr "Tagasi Alglaadijasse"
 
 msgid "Screen Zoom"
 msgstr "Ekraani Zoom"
@@ -206,7 +206,7 @@ msgid "Screen Position"
 msgstr "Ekraani Positsioon"
 
 msgid "Frame Dropping"
-msgstr "Frame Dropping"
+msgstr "Kaadri Hülgamine"
 
 msgid "Aspect Ratio"
 msgstr "Pildi Suhe"
@@ -215,7 +215,7 @@ msgid "Cache Fill"
 msgstr "Vahemälu"
 
 msgid "Audio Delay"
-msgstr "Heli Hilinemine"
+msgstr "Heli Ajastus"
 
 msgid "Auto-Resume"
 msgstr "Automaatne Jätkamine"
@@ -224,7 +224,7 @@ msgid "Videos Files Folder"
 msgstr "Videod - Failide Kaust"
 
 msgid "Play Order"
-msgstr "Esitus Järjestus"
+msgstr "Esituse Järjestus"
 
 msgid "Music Files Folder"
 msgstr "Muusika - Failide Kaust"
@@ -248,13 +248,13 @@ msgid "Password"
 msgstr "Parool"
 
 msgid "New Share"
-msgstr "Uus Jagatud Kaust"
+msgstr "Uus Kaust"
 
 msgid "Delete"
 msgstr "Kustuta"
 
 msgid "Delete Share"
-msgstr "Kustuta Jagatud Kaust"
+msgstr "Kustuta Kaust"
 
 msgid "Are you sure that you want to delete this share?"
 msgstr "Oled kindel et tahad kustutada selle jagatud kausta?"
@@ -302,16 +302,16 @@ msgid "Start Slideshow"
 msgstr "Alusta Slideshow"
 
 msgid "Slideshow Delay"
-msgstr "Slideshow Aeg"
+msgstr "Slideshow Ajastus"
 
 msgid "Online Media Folder"
 msgstr "Online Meedia - Kaust"
 
 msgid "Add SMB Share"
-msgstr "Lisa SMB Kaust"
+msgstr "Lisa Kaust"
 
 msgid "Add FTP Site"
-msgstr "Lisa FTP Laust"
+msgstr "Lisa Kaust"
 
 msgid "DVD Menu"
 msgstr "DVD Menüü"
@@ -323,7 +323,7 @@ msgid "Unable to Initialize MPlayer"
 msgstr "Viga MPlayer'i Käivitamisel"
 
 msgid "Unable to find a valid working path"
-msgstr "Ei leia töökausta"
+msgstr "Ei leia toimivat töökausta"
 
 msgid "Unable to change path to"
 msgstr "Ei saa navigeerida"
@@ -365,13 +365,13 @@ msgid "Up One Level"
 msgstr "Aste Üles"
 
 msgid "Error opening"
-msgstr "Viga avamisel"
+msgstr "Viga avades"
 
 msgid "Warning"
 msgstr "Hoiatus"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "Üks või enam pilte siin kaustas ületab maksimumsuuruse (6 BM) ning ei ole vaadatav."
+msgstr "Üks või enam pilte siin kaustas ületab maksimumsuuruse (6 MB) ning ei ole vaadatavad."
 
 msgid "Error loading playlist!"
 msgstr "Viga esitusloendi avamisel!"
@@ -398,7 +398,7 @@ msgid "Error saving file!"
 msgstr "Viga faili salvestamisel!"
 
 msgid "Playlist is Empty"
-msgstr "Esitusloend on tühi"
+msgstr "Esitusloend On Tühi"
 
 msgid "Hover over items and push the + button to add them to your playlist."
 msgstr "Liigu objektide kohale ning vajuta + nuppu nende esitusloendisse lisamiseks."
@@ -419,13 +419,13 @@ msgid "Check settings file."
 msgstr "Kontrolli seadete faili."
 
 msgid "Share name is blank."
-msgstr "Võrgu kausta nimi on tühi."
+msgstr "Kausta nimi on tühi."
 
 msgid "Share IP is blank."
-msgstr "Võrgu kausta IP on tühi."
+msgstr "Kausta IP on tühi."
 
 msgid "Invalid network share settings"
-msgstr "Võrgu kausta seaded on vigased"
+msgstr "Kausta seaded on vigased"
 
 msgid "Connecting to network share..."
 msgstr "Ühendan võrgu kausta..."
@@ -467,7 +467,7 @@ msgid "Thanks to"
 msgstr "Tänud"
 
 msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
-msgstr "See tarkvara on avatud lähtekoodiga ja seda võib kopeerida, paljundada või modifitseerida GNU General Public License (GPL) Version 2 alusel."
+msgstr "See tarkvara on avatud lähtekoodiga ja seda võib kopeerida, paljundada või modifitseerida GNU General Public License (GPL) Versioon 2 alusel."
 
 msgid "Menu artwork"
 msgstr "Menüü Disain"
@@ -500,7 +500,7 @@ msgid "Visibility"
 msgstr "Nähtavus"
 
 msgid "Delay"
-msgstr "Hilinemine"
+msgstr "Ajastus"
 
 msgid "Codepage"
 msgstr "Codepage"
@@ -515,7 +515,7 @@ msgid "Could not change language. Not enough memory!"
 msgstr "Keelt ei õnnestunud muuta. Ei ole piisavalt mälu!"
 
 msgid "Font Required"
-msgstr "Vajalik font"
+msgstr "Vajalik Font"
 
 msgid "A new font is required to display this language."
 msgstr "Selle keele näitamiseks on vaja uut fonti."
@@ -524,7 +524,7 @@ msgid "Download font"
 msgstr "Lae font alla"
 
 msgid "Unable to save font file!"
-msgstr "Ei õnnestu fonti salvestada!"
+msgstr "Ei õnnestu fondi faili salvestada!"
 
 msgid "Out of Memory"
 msgstr "Mälu on otsas"

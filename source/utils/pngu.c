@@ -374,34 +374,57 @@ static inline PNGU_u32 coordsRGBA8(PNGU_u32 x, PNGU_u32 y, PNGU_u32 w)
 	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
 }
 
-static PNGU_u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, PNGU_u8 default_alpha)
+static PNGU_u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, int * dstWidth, int * dstHeight)
 {
+	PNGU_u8 default_alpha = 255;
 	PNGU_u8 *dst;
-	PNGU_u32 x, y, offset;
+	int x, y, x2, y2, offset;
+	int xRatio = 0, yRatio = 0;
 	png_byte *pixel;
 
 	if (pngu_decode (ctx, width, height, 0) != PNGU_OK)
 		return NULL;
 
-	PNGU_u32 newWidth = width;
-	if(newWidth%4) newWidth += (4-newWidth%4);
-	PNGU_u32 newHeight = height;
-	if(newHeight%4) newHeight += (4-newHeight%4);
+	int newWidth = width;
+	int newHeight = height;
 
-	int len = (newWidth * newHeight) << 2;
+	if(width > 1024 || height > 1024)
+	{
+		float ratio = (float)width/(float)height;
+
+		if(ratio > 1)
+		{
+			newWidth = 1024;
+			newHeight = 1024/ratio;
+		}
+		else
+		{
+			newWidth = 1024*ratio;
+			newHeight = 1024;
+		}
+		xRatio = (int)((width<<16)/newWidth)+1;
+		yRatio = (int)((height<<16)/newHeight)+1;
+	}
+
+	int padWidth = newWidth;
+	int padHeight = newHeight;
+	if(padWidth%4) padWidth += (4-padWidth%4);
+	if(padHeight%4) padHeight += (4-padHeight%4);
+
+	int len = (padWidth * padHeight) << 2;
 	if(len%32) len += (32-len%32);
 	dst = memalign (32, len);
 
 	if(!dst)
 		return NULL;
 
-	for (y = 0; y < newHeight; y++)
+	for (y = 0; y < padHeight; y++)
 	{
-		for (x = 0; x < newWidth; x++)
+		for (x = 0; x < padWidth; x++)
 		{
-			offset = coordsRGBA8(x, y, newWidth);
-			
-			if(y >= height || x >= width)
+			offset = coordsRGBA8(x, y, padWidth);
+
+			if(y >= newHeight || x >= newWidth)
 			{
 				dst[offset] = 0;
 				dst[offset+1] = 255;
@@ -410,10 +433,20 @@ static PNGU_u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 hei
 			}
 			else
 			{
+				if(xRatio > 0)
+				{
+					x2 = ((x*xRatio)>>16);
+					y2 = ((y*yRatio)>>16);
+				}
+
 				if (ctx->prop.imgColorType == PNGU_COLOR_TYPE_GRAY_ALPHA || 
 					ctx->prop.imgColorType == PNGU_COLOR_TYPE_RGB_ALPHA)
 				{
-					pixel = &(ctx->row_pointers[y][x*4]);
+					if(xRatio > 0)
+						pixel = &(ctx->row_pointers[y2][x2*4]);
+					else
+						pixel = &(ctx->row_pointers[y][x*4]);
+
 					dst[offset] = pixel[3]; // Alpha
 					dst[offset+1] = pixel[0]; // Red
 					dst[offset+32] = pixel[1]; // Green
@@ -421,7 +454,11 @@ static PNGU_u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 hei
 				}
 				else
 				{
-					pixel = &(ctx->row_pointers[y][x*3]);
+					if(xRatio > 0)
+						pixel = &(ctx->row_pointers[y2][x2*3]);
+					else
+						pixel = &(ctx->row_pointers[y][x*3]);
+
 					dst[offset] = default_alpha; // Alpha
 					dst[offset+1] = pixel[0]; // Red
 					dst[offset+32] = pixel[1]; // Green
@@ -435,6 +472,8 @@ static PNGU_u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 hei
 	free (ctx->img_data);
 	free (ctx->row_pointers);
 
+	*dstWidth = padWidth;
+	*dstHeight = padHeight;
 	DCFlushRange(dst, len);
 	return dst;
 }
@@ -529,16 +568,8 @@ PNGU_u8 * DecodePNG(const PNGU_u8 *src, int * width, int * height)
 		return NULL;
 
 	if(PNGU_GetImageProperties(ctx, &imgProp) == PNGU_OK)
-	{
-		dst = PNGU_DecodeTo4x4RGBA8 (ctx, imgProp.imgWidth, imgProp.imgHeight, 255);
-		
-		if(dst)
-		{
-			*width = imgProp.imgWidth;
-			*height = imgProp.imgHeight;
-		}
-	}
-		
+		dst = PNGU_DecodeTo4x4RGBA8 (ctx, imgProp.imgWidth, imgProp.imgHeight, width, height);
+
 	PNGU_ReleaseImageContext (ctx);
 	return dst;
 }

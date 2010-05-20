@@ -716,11 +716,8 @@ static bool MountPartitions(int device, int silent)
 
 	while(retry)
 	{
-		if(disc->startup() && disc->isInserted())
-		{
-			if(FindPartitions(device) > 0)
-				mounted = true;
-		}
+		if(disc->startup() && disc->isInserted() && FindPartitions(device) > 0)
+			mounted = true;
 
 		if(mounted || silent)
 			break;
@@ -801,7 +798,7 @@ static bool FindDevice(char * filepath, int * device, int * devnum)
 		*device = DEVICE_DVD;
 		return true;
 	}
-	
+
 	if(strncmp(filepath, "http:", 5) == 0)
 	{
 		*device = DEVICE_HTTP;
@@ -1301,7 +1298,8 @@ ParseDirectory(bool waitParse)
 
 			if(retry)
 			{
-				int device, devnum;
+				int device = -1;
+				int devnum = -1;
 				FindDevice(browser.dir, &device, &devnum);
 
 				if(device == DEVICE_SD || device == DEVICE_USB)

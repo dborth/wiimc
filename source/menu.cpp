@@ -1354,12 +1354,12 @@ static void CreditsWindow()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -2870,12 +2870,12 @@ static void MenuSettingsGlobal()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -3248,12 +3248,12 @@ static void MenuSettingsVideos()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -3422,12 +3422,12 @@ static void MenuSettingsMusic()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -3526,12 +3526,12 @@ static void MenuSettingsPictures()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -3621,12 +3621,12 @@ static void MenuSettingsDVD()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -3710,12 +3710,12 @@ static void MenuSettingsOnlineMedia()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -3829,12 +3829,12 @@ static void MenuSettingsNetwork()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -3961,12 +3961,12 @@ static void MenuSettingsNetworkSMB()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -4157,12 +4157,12 @@ static void MenuSettingsNetworkFTP()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -4555,12 +4555,12 @@ static void MenuSettingsSubtitles()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
@@ -4697,12 +4697,12 @@ static void MenuSettings()
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnTxt.SetPosition(-16, 10);
+	backBtnTxt.SetPosition(-6, 10);
 	GuiImage backBtnImg(&btnBottom);
 	GuiImage backBtnImgOver(&btnBottomOver);
 	GuiImage backBtnArrow(&arrowRight);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	backBtnArrow.SetPosition(26, 11);
+	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
 	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);

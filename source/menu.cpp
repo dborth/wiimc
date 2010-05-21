@@ -460,10 +460,13 @@ static void *GuiThread (void *arg)
 			ResumeUpdateThread();
 		}
 
-		if((userInput[0].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
-			controlledbygui == 1 && !inNetworkInit)
+		for(i = 0; i < 4; i++)
 		{
-			ExitRequested = 1; // exit program
+			if((userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
+				controlledbygui == 1 && !inNetworkInit)
+			{
+				ExitRequested = 1; // exit program
+			}
 		}
 
 		if(ExitRequested || ShutdownRequested)
@@ -539,7 +542,7 @@ static void ResetText()
 		mainWindow->ResetText();
 }
 
-static int currentFont = FONT_STANDARD;
+static int currentFont = FONT_DEFAULT;
 static u8 *ext_font_ttf = NULL;
 
 void ChangeLanguage()
@@ -547,7 +550,8 @@ void ChangeLanguage()
 	if(WiiSettings.language == LANG_JAPANESE ||
 		WiiSettings.language == LANG_SIMP_CHINESE ||
 		WiiSettings.language == LANG_TRAD_CHINESE ||
-		WiiSettings.language == LANG_KOREAN)
+		WiiSettings.language == LANG_KOREAN ||
+		WiiSettings.language == LANG_RUSSIAN)
 	{
 		char filepath[MAXPATHLEN];
 		char httppath[MAXPATHLEN];
@@ -579,6 +583,12 @@ void ChangeLanguage()
 				sprintf(filepath, "%s/jp.ttf", appPath);
 				sprintf(httppath, "%s/jp.ttf", httpRoot);
 				newFont = FONT_JAPANESE;
+				break;
+			case LANG_RUSSIAN:
+				if(currentFont == FONT_GENERIC) return;
+				sprintf(filepath, "%s/gen.ttf", appPath);
+				sprintf(httppath, "%s/gen.ttf", httpRoot);
+				newFont = FONT_GENERIC;
 				break;
 		}
 
@@ -642,14 +652,14 @@ restart:
 		WiiSettings.language = LANG_ENGLISH;
 	}
 
-	if(currentFont != FONT_STANDARD)
+	if(currentFont != FONT_DEFAULT)
 	{
 		SuspendGui();
 		DeinitFreeType();
 		if(ext_font_ttf) free(ext_font_ttf);
 		ext_font_ttf = NULL;
 		InitFreeType((u8*)font_ttf, font_ttf_size);
-		currentFont = FONT_STANDARD;
+		currentFont = FONT_DEFAULT;
 		ResetText();
 		ResumeGui();
 	}
@@ -2945,6 +2955,7 @@ static void MenuSettingsGlobal()
 				case LANG_BRAZILIAN_PORTUGUESE: sprintf(options.value[1], "Brazilian Portuguese"); break;
 				case LANG_HUNGARIAN:			sprintf(options.value[1], "Hungarian"); break;
 				case LANG_POLISH:				sprintf(options.value[1], "Polish"); break;
+				case LANG_RUSSIAN:				sprintf(options.value[1], "Russian"); break;
 			}
 			
 			sprintf (options.value[2], "%d%%", WiiSettings.volume);

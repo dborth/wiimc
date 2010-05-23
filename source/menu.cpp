@@ -205,11 +205,13 @@ static lwp_t progressthread = LWP_THREAD_NULL;
 static lwp_t creditsthread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
 static lwp_t picturethread = LWP_THREAD_NULL;
+static lwp_t thumbthread = LWP_THREAD_NULL;
 
 static int progressThreadHalt = 0;
 static int creditsThreadHalt = 0;
 static int updateThreadHalt = 0;
 static int pictureThreadHalt = 0;
+static int thumbThreadHalt = 0;
 
 static int guiHalt = 0;
 static bool guiShutdown = true;
@@ -1466,6 +1468,70 @@ void RemoveVideoImg()
  * MenuBrowse
  ***************************************************************************/
 
+static GuiImage *thumbImg;
+static int thumbIndex = -1;
+static bool thumbLoad = false;
+
+static void *ThumbThread (void *arg)
+{
+	GuiImageData *thumb = NULL;
+	u8 *thumbBuffer = (u8*)malloc(200*1024);
+	thumbLoad = false;
+	thumbThreadHalt = 0;
+
+	while(!thumbThreadHalt)
+	{
+		if(thumbLoad)
+		{
+			thumbLoad = false;
+
+			SuspendGui();
+			thumbImg->SetVisible(false);
+			thumbImg->SetImage(NULL);
+			ResumeGui();
+
+			if(thumb)
+			{
+				delete thumb;
+				thumb = NULL;
+			}
+
+			if(thumbIndex >= 0)
+			{
+				int loadIndex = thumbIndex;
+				int read = 0;
+				if(strncmp(browserList[loadIndex].image, "http:", 5) == 0)
+					read = http_request(browserList[loadIndex].image, NULL, thumbBuffer, 200*1024, SILENT);
+				else
+					read = LoadFile(browserList[loadIndex].image, (char *)thumbBuffer, SILENT);
+	
+				if(read > 0 && loadIndex == thumbIndex) // file loaded and index has not changed
+				{
+					thumb = new GuiImageData(thumbBuffer, read, GX_TF_RGBA8);
+					
+					if(thumb->GetImage())
+					{
+						SuspendGui();
+						thumbImg->SetImage(thumb);
+						thumbImg->SetScale(185, screenheight-100);
+						thumbImg->SetVisible(true);
+						ResumeGui();
+					}
+					else
+					{
+						delete thumb;
+						thumb = NULL;
+					}
+				}
+			}
+		}
+		usleep(THREAD_SLEEP);
+	}
+	if(thumb) delete thumb;
+	free(thumbBuffer);
+	return NULL;
+}
+
 static int LoadNewFile()
 {
 	RemoveVideoImg();
@@ -1582,22 +1648,45 @@ static void MenuBrowse(int menu)
 	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && wiiAudioOnly()))
 		pagesize = 8;
 
-	GuiFileBrowser fileBrowser(screenwidth, pagesize);
-	fileBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	fileBrowser.SetPosition(0, 90);
+	GuiFileBrowser *fileBrowser;
+
+	if(menu == MENU_BROWSE_ONLINEMEDIA)
+	{
+		fileBrowser = new GuiFileBrowser(screenwidth-200, pagesize);
+		fileBrowser->SetRightCutoff();
+		LWP_CreateThread (&thumbthread, ThumbThread, NULL, NULL, 0, 60);
+	}
+	else
+	{
+		fileBrowser = new GuiFileBrowser(screenwidth, pagesize);
+	}
+
+	fileBrowser->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	fileBrowser->SetPosition(0, 90);
 
 	GuiButton playlistAddBtn(0, 0);
 	playlistAddBtn.SetTrigger(&trigPlus);
 	playlistAddBtn.SetSelectable(false);
 
-	if(menu == MENU_BROWSE_ONLINEMEDIA && onlinemediaSize == 0)
+	int currentIndex = -1;
+
+	if(menu == MENU_BROWSE_ONLINEMEDIA)
 	{
-		ErrorPrompt("Online media file not found.");
-		UndoChangeMenu();
-		goto done;
+		if(onlinemediaSize == 0)
+		{
+			ErrorPrompt("Online media file not found.");
+			UndoChangeMenu();
+			goto done;
+		}
+
+		thumbImg = new GuiImage;
+		thumbImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+		thumbImg->SetVisible(false);
+		thumbImg->SetPosition(-30, 95);
+		mainWindow->Append(thumbImg);
 	}
 
-	mainWindow->Append(&fileBrowser);
+	mainWindow->Append(fileBrowser);
 	mainWindow->Append(&upOneLevelBtn);
 
 	if(videoScreenshot && menu != MENU_BROWSE_MUSIC) // a video is loaded
@@ -1679,7 +1768,7 @@ static void MenuBrowse(int menu)
 		if(findLoadedFile == 2)
 		{
 			findLoadedFile = 0;
-			fileBrowser.TriggerUpdate();
+			fileBrowser->TriggerUpdate();
 		}
 
 		// devices were inserted or removed - update the filebrowser!
@@ -1692,16 +1781,16 @@ static void MenuBrowse(int menu)
 			{
 				pagesize = 11;
 				SuspendGui();
-				fileBrowser.ChangeSize(pagesize);
+				fileBrowser->ChangeSize(pagesize);
 				mainWindow->Remove(&backBtn);
 				ResumeGui();
 			}
 
 			if(BrowserChangeFolder(false))
 			{
-				fileBrowser.ResetState();
-				fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-				fileBrowser.TriggerUpdate();
+				fileBrowser->ResetState();
+				fileBrowser->fileList[0]->SetState(STATE_SELECTED);
+				fileBrowser->TriggerUpdate();
 			}
 			else
 			{
@@ -1721,9 +1810,9 @@ static void MenuBrowse(int menu)
 				if(!BrowserChangeFolder())
 					goto done;
 	
-				fileBrowser.ResetState();
-				fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-				fileBrowser.TriggerUpdate();
+				fileBrowser->ResetState();
+				fileBrowser->fileList[0]->SetState(STATE_SELECTED);
+				fileBrowser->TriggerUpdate();
 			}
 		}
 
@@ -1731,18 +1820,18 @@ static void MenuBrowse(int menu)
 		// request guiShutdown if A button pressed on a file
 		for(int i=0; i<pagesize; i++)
 		{
-			if(fileBrowser.fileList[i]->GetState() == STATE_CLICKED)
+			if(fileBrowser->fileList[i]->GetState() == STATE_CLICKED)
 			{
-				fileBrowser.fileList[i]->ResetState();
+				fileBrowser->fileList[i]->ResetState();
 
 				// check corresponding browser entry
 				if(browserList[browser.selIndex].type == TYPE_FOLDER)
 				{
 					if(BrowserChangeFolder())
 					{
-						fileBrowser.ResetState();
-						fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-						fileBrowser.TriggerUpdate();
+						fileBrowser->ResetState();
+						fileBrowser->fileList[0]->SetState(STATE_SELECTED);
+						fileBrowser->TriggerUpdate();
 						continue;
 					}
 					else
@@ -1785,9 +1874,9 @@ static void MenuBrowse(int menu)
 							mainWindow->Remove(disabled);
 							mainWindow->SetState(STATE_DEFAULT);
 
-							fileBrowser.ResetState();
-							fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-							fileBrowser.TriggerUpdate();
+							fileBrowser->ResetState();
+							fileBrowser->fileList[0]->SetState(STATE_SELECTED);
+							fileBrowser->TriggerUpdate();
 							continue;
 						}
 					}
@@ -1831,13 +1920,26 @@ static void MenuBrowse(int menu)
 					{
 						pagesize = 8;
 						SuspendGui();
-						fileBrowser.ChangeSize(pagesize);
+						fileBrowser->ChangeSize(pagesize);
 						mainWindow->Remove(&backBtn);
 						mainWindow->Append(audiobar);
 						ResumeGui();
 						break;
 					}
 				}
+			}
+
+			if(menu == MENU_BROWSE_ONLINEMEDIA && browser.selIndex != currentIndex)
+			{
+				currentIndex = browser.selIndex;
+				thumbIndex = -1;
+
+				if(browserList[currentIndex].image[0] != 0)
+				{
+					char *ext = GetExt(browserList[currentIndex].image);
+					if(IsImageExt(ext))	thumbIndex = browser.selIndex;
+				}
+				thumbLoad = true;
 			}
 		}
 
@@ -1864,7 +1966,7 @@ static void MenuBrowse(int menu)
 				else
 					MusicPlaylistEnqueue(addIndex);
 
-				fileBrowser.TriggerUpdate();
+				fileBrowser->TriggerUpdate();
 			}
 		}
 
@@ -2081,8 +2183,17 @@ static void MenuBrowse(int menu)
 done:
 	SuspendParseThread(); // halt parsing
 	SuspendGui();
-	mainWindow->Remove(&fileBrowser);
+	if(menu == MENU_BROWSE_ONLINEMEDIA)
+	{
+		thumbThreadHalt = 1;
+		LWP_JoinThread(thumbthread, NULL);
+		thumbthread = LWP_THREAD_NULL;
+		mainWindow->Remove(thumbImg);
+		delete thumbImg;
+	}
+	mainWindow->Remove(fileBrowser);
 	mainWindow->Remove(&upOneLevelBtn);
+	delete fileBrowser;
 
 	if(videoScreenshot)
 		mainWindow->Remove(&backBtn);
@@ -2152,6 +2263,7 @@ static int FoundPicture(int p)
 			return i;
 	return -1;
 }
+
 
 static void SetPicture(int picIndex, int browserIndex)
 {

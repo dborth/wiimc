@@ -301,7 +301,7 @@ msgstr "슬라이드쇼 멈춤"
 msgid "Start Slideshow"
 msgstr "슬라이드쇼 시작"
  
-msgid "Slideshow Delay"
+msgid  "Slideshow Delay"
 msgstr "슬라이드쇼 지연"
  
 msgid "Online Media Folder"
@@ -545,7 +545,25 @@ msgid "This playlist contains more entries than the maximum allowed (3000). Not 
 msgstr "이 재생목록은 허용된 최대값(3000)이상의 내용물을 담고 있읍니다. 모든 것이 안보일수 있읍니다."
 
 msgid "Downloading..."
-msgstr "다운로드중..."
+msgstr "다운로드중..." 
+ 
+msgid "Unzipping..." 
+msgstr "압축푸는중..." 
 
-msgid "Unzipping..."
-msgstr "압축푸는중..."
+msgid "Color"
+msgstr "색깔"
+
+msgid "Size"
+msgstr "크기"
+
+msgid "White"
+msgstr "하얀색"
+
+msgid "Black"
+msgstr "검은색"
+
+msgid "Yellow"
+msgstr "노란색"
+
+msgid "Red"
+msgstr "빨간색"

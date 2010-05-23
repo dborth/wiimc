@@ -55,7 +55,7 @@ typedef struct _lang {
 } LANG;
 
 #define LANGUAGE_SIZE 142
-#define CODEPAGE_SIZE 26
+#define CODEPAGE_SIZE 28
 
 extern LANG languages[LANGUAGE_SIZE];
 extern CP codepages[CODEPAGE_SIZE];
@@ -144,7 +144,7 @@ const char validAudioExtensions[][5] =
 
 const char validImageExtensions[][5] = 
 {
-	"bmp", "jpeg", "jpg", "png", ""
+	"bmp", "gif", "jpeg", "jpg", "png", ""
 };
 
 const char validPlaylistExtensions[][5] =

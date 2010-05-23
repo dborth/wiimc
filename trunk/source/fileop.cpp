@@ -1078,40 +1078,64 @@ bool IsPlaylistExt(char *ext)
 	return false;
 }
 
+bool IsVideoExt(char *ext)
+{
+	if(!ext)
+		return false;
+
+	int j=0;
+	do
+	{
+		if (strcasecmp(ext, validVideoExtensions[j]) == 0)
+			return true;
+	} while (validVideoExtensions[++j][0] != 0);
+
+	return false;
+}
+
+bool IsAudioExt(char *ext)
+{
+	if(!ext)
+		return false;
+
+	int j=0;
+	do
+	{
+		if (strcasecmp(ext, validAudioExtensions[j]) == 0)
+			return true;
+	} while (validAudioExtensions[++j][0] != 0);
+
+	return false;
+}
+
+bool IsImageExt(char *ext)
+{
+	if(!ext)
+		return false;
+
+	int j=0;
+	do
+	{
+		if (strcasecmp(ext, validImageExtensions[j]) == 0)
+			return true;
+	} while (validImageExtensions[++j][0] != 0);
+
+	return false;
+}
+
 // check that this file's extension is on the list of visible file types
 bool IsAllowedExt(char *ext)
 {
 	if(!ext)
 		return false;
 
-	int j=0;
-
 	if(menuCurrent == MENU_BROWSE_VIDEOS || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
-	{
-		do
-		{
-			if (strcasecmp(ext, validVideoExtensions[j]) == 0)
-				return true;
-		} while (validVideoExtensions[++j][0] != 0);
-	}
-	j=0;
+		if(IsVideoExt(ext)) return true;
 	if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
-	{
-		do
-		{
-			if (strcasecmp(ext, validAudioExtensions[j]) == 0)
-				return true;
-		} while (validAudioExtensions[++j][0] != 0);
-	}
-	j=0;
+		if(IsAudioExt(ext)) return true;
 	if(menuCurrent == MENU_BROWSE_PICTURES)
-	{
-		do
-		{
-			if (strcasecmp(ext, validImageExtensions[j]) == 0)
-				return true;
-		} while (validImageExtensions[++j][0] != 0);
-	}
+		if(IsImageExt(ext)) return true;
+
 	return false;
 }
 
@@ -1549,6 +1573,7 @@ static int ParsePLXPlaylist()
 
 		strcpy(browserList[browser.numEntries].filename, list[i].url);
 		strcpy(browserList[browser.numEntries].displayname, list[i].name);
+		strcpy(browserList[browser.numEntries].image, list[i].thumb);
 		
 		if(list[i].type == 2)
 			browserList[browser.numEntries].type = TYPE_PLAYLIST;
@@ -1778,6 +1803,7 @@ int ParseOnlineMedia()
 			else // protocol not specified - assume http:// and append
 				snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "http://%s", onlinemediaList[i].address);
 			snprintf(browserList[browser.numEntries].displayname, MAXJOLIET, "%s", onlinemediaList[i].displayname);
+			snprintf(browserList[browser.numEntries].image, MAXPATHLEN, "%s", onlinemediaList[i].image);
 			browserList[browser.numEntries].length = 0;
 			browserList[browser.numEntries].mtime = 0;
 			browserList[browser.numEntries].type = TYPE_FILE;

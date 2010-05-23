@@ -40,6 +40,7 @@ typedef struct
 	int type; // TYPE_FILE,	TYPE_FOLDER, TYPE_PLAYLIST,	TYPE_SEARCH
 	char filename[MAXPATHLEN + 1]; // full filename
 	char displayname[MAXJOLIET + 1]; // name for browser display
+	char image[MAXPATHLEN + 1];
 	int icon; // icon to display
 } BROWSERENTRY;
 
@@ -48,6 +49,7 @@ typedef struct
 	char filepath[MAXPATHLEN + 1]; // virtual filepath
 	char address[MAXPATHLEN + 1]; // address (URL)
 	char displayname[MAXJOLIET + 1]; // name for browser display
+	char image[MAXPATHLEN + 1]; // image to display
 } MEDIAENTRY;
 
 enum

@@ -199,7 +199,9 @@ CP codepages[CODEPAGE_SIZE] = {
 	{ "Windows-1257", "Baltic" },
 	{ "Windows-1258", "Vietnamese" },
 	{ "shift_jis", "Japanese (Shift JIS)" },
-	{ "CP949", "Korean (CP949)" }
+	{ "gb2312", "Chinese Simplified (GB2312)" },
+	{ "big5", "Chinese Traditional (Big5)" },
+	{ "cp949", "Korean (CP949)" }
 };
 
 /****************************************************************************
@@ -469,24 +471,23 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 	{
 		const char * name = mxmlElementGetAttr(next, "name");
 		const char * addr = mxmlElementGetAttr(next, "addr");
-		
+		const char * image = mxmlElementGetAttr(next, "image");
+
 		if(name && addr) // this is a link
 		{
 			if(!AddMediaEntry())
 				break;
 
-			strncpy(onlinemediaList[onlinemediaSize-1].filepath, path, MAXPATHLEN);
-			strncpy(onlinemediaList[onlinemediaSize-1].address, addr, MAXPATHLEN);
-			strncpy(onlinemediaList[onlinemediaSize-1].displayname, name, MAXJOLIET);
-			onlinemediaList[onlinemediaSize-1].filepath[MAXPATHLEN] = 0;
-			onlinemediaList[onlinemediaSize-1].address[MAXPATHLEN] = 0;
-			onlinemediaList[onlinemediaSize-1].displayname[MAXJOLIET] = 0;
+			snprintf(onlinemediaList[onlinemediaSize-1].filepath, MAXPATHLEN, "%s", path);
+			snprintf(onlinemediaList[onlinemediaSize-1].address, MAXPATHLEN, "%s", addr);
+			snprintf(onlinemediaList[onlinemediaSize-1].displayname, MAXJOLIET, "%s", name);
+			snprintf(onlinemediaList[onlinemediaSize-1].image, MAXPATHLEN, "%s", image);
 		}
 		next = mxmlFindElement(next, top, "link", NULL, NULL, MXML_NO_DESCEND);
 	}
-	
+
 	next = mxmlFindElement(top, top, "folder", NULL, NULL, MXML_DESCEND_FIRST);
-	
+
 	while(next != NULL)
 	{
 		const char * name = mxmlElementGetAttr(next, "name");

@@ -1190,7 +1190,6 @@ void FindFile()
 			if(browser.pageIndex + pagesize > browser.numEntries)
 				browser.pageIndex = browser.numEntries - pagesize;
 		}
-		browser.selIndex = indexFound;
 	}
 	selectLoadedFile = 0; // only try to select loaded file once
 }

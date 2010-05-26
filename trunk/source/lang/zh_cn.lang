@@ -549,3 +549,21 @@ msgstr "下载中..."
 
 msgid "Unzipping..."
 msgstr "解压缩中..."
+
+msgid "Color"
+msgstr "颜色"
+
+msgid "Size"
+msgstr "尺寸"
+
+msgid "White"
+msgstr "白色"
+
+msgid "Black"
+msgstr "黑色"
+
+msgid "Yellow"
+msgstr "黄色"
+
+msgid "Red"
+msgstr "红色"

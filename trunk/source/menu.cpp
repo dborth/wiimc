@@ -891,7 +891,6 @@ ProgressWindow(char *title, char *msg)
 	if(!isDisabled)
 		mainWindow->Append(disabled);
 	mainWindow->Append(&promptWindow);
-	mainWindow->ChangeFocus(&promptWindow);
 	ResumeGui();
 
 	float angle = 0;
@@ -1225,7 +1224,6 @@ SettingWindow(const char * title, GuiWindow * w)
 	mainWindow->Append(disabled);
 	mainWindow->Append(&promptWindow);
 	mainWindow->Append(w);
-	mainWindow->ChangeFocus(w);
 	ResumeGui();
 
 	while(save == -1)
@@ -1806,7 +1804,7 @@ static void MenuBrowse(int menu)
 			if(browser.dir[0] != 0)
 			{
 				browser.selIndex = 0;
-	
+
 				if(!BrowserChangeFolder())
 					goto done;
 	
@@ -1926,6 +1924,16 @@ static void MenuBrowse(int menu)
 						ResumeGui();
 						break;
 					}
+				}
+				else if(pagesize == 10 && !videoImg) // video is no longer loaded
+				{
+					// remove back button
+					pagesize = 11;
+					SuspendGui();
+					fileBrowser->ChangeSize(pagesize);
+					mainWindow->Remove(&backBtn);
+					ResumeGui();
+					break;
 				}
 			}
 

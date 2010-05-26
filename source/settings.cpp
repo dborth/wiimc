@@ -358,6 +358,7 @@ prepareSettingsData ()
 	for(int i=0; i<5; i++)
 		createXMLFTPSite(i);
 	// Subtitles
+	createXMLSection("Subtitles", "Subtitle Settings");
 	createXMLSetting("subtitleVisibility", "Subtitle visibility", toStr(WiiSettings.subtitleVisibility));
 	createXMLSetting("subtitleDelay", "Subtitle delay", FtoStr(WiiSettings.subtitleDelay));
 	createXMLSetting("subtitleLanguage", "Subtitle language", WiiSettings.subtitleLanguage);

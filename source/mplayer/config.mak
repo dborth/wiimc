@@ -33,12 +33,10 @@ RANLIB = $(DEVKITPPC)/bin/powerpc-eabi-ranlib
 WINDRES = windres
 OBJCOPY = $(DEVKITPPC)/bin/powerpc-eabi-objcopy
 
-#EXTRA_INC = -I$(DEVKITPRO)/libogc/include -Ilibdvdread4 -Ilibdvdnav -I$(DEVKITPRO)/libogc/include/ogc/machine -I$(DEVKITPPC)/../buildscripts/powerpc-eabi/gcc/gcc/include
 EXTRA_INC = -I$(DEVKITPRO)/portlibs/ppc/include -I$(DEVKITPRO)/libogc/include -Ilibdvdread4 -Ilibdvdnav -I$(DEVKITPRO)/portlibs/ppc/include/freetype2 -I$(DEVKITPRO)/libogc/include/ogc/machine -I$(DEVKITPPC)/../buildscripts/powerpc-eabi/gcc/gcc/include
 EXTRAXX_INC = $(EXTRA_INC)
 
-COMMONFLAGS = -MD -MP -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wdisabled-optimization -Wdeclaration-after-statement -std=gnu99 -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -mpaired -ffast-math -I. -Wdeclaration-after-statement -std=gnu99 -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -g -O3 -pipe -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
-#COMMONFLAGS = -ffast-math -Wdisabled-optimization -Wno-pointer-sign -I. -Wdeclaration-after-statement -std=gnu99 -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -g -O3 -pipe -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
+COMMONFLAGS = -MD -MP -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wdisabled-optimization -Wno-pointer-sign -Wdeclaration-after-statement -std=gnu99 -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -mpaired -ffast-math -I. -Wdeclaration-after-statement -Wall -Wno-switch -Wpointer-arith -Wredundant-decls -g -O3 -pipe -DGEKKO -mrvl -mcpu=750 -mtune=750 -meabi -mhard-float -mdouble-float
 CFLAGS = $(EXTRA_INC) $(COMMONFLAGS) 
 OPTFLAGS =  $(EXTRA_INC) $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -D__STDC_LIMIT_MACROS $(EXTRAXX_INC)
@@ -53,13 +51,8 @@ CFLAGS_SVGALIB_HELPER =
 CFLAGS_TREMOR_LOW = 
 YASMFLAGS =
 
-#EXTRALIBS = -L$(DEVKITPRO)/libogc/lib/wii -L$(DEVKITPRO)/3rd/wii/lib
 EXTRALIBS = -L$(DEVKITPRO)/libogc/lib/wii -L$(DEVKITPRO)/portlibs/ppc/lib
-#EXTRA_LIB = -static $(COMMONFLAGS) -ldvdread -ldvdnav -lwiiuse -lbte -lfat -ldi -ltinysmb -logc -ldb -lm
-#EXTRA_LIB = -static $(COMMONFLAGS) -liconv -lfreetype -ljpeg -lz -ldb -ldi -ltinysmb -lwiiuse -lbte -lfat -logc -lm
-EXTRA_LIB = -static $(COMMONFLAGS) -lopencore-amrnb -lopencore-amrwb -lopenjpeg -lfreetype -liconv -lfribidi -lz -ljpeg -ldi -ltinysmb -lwiiuse -lbte -lfat -lntfs -logc -lm
-#EXTRALIBS = 
-#EXTRA_LIB =  -lwinmm -ffast-math  -liconv -lfreetype -lz -lfontconfig  -lz -ladvapi32 -lole32 -lole32 -luuid     -lm
+EXTRA_LIB = -static $(COMMONFLAGS) -lopencore-amrnb -lopencore-amrwb -lopenjpeg -lfreetype -liconv -lfribidi -lz -ljpeg -ldi -logc -lm
 EXTRALIBS += $(EXTRA_LIB)
 EXTRALIBS_MPLAYER =  -specs=mplayer.spec 
 EXTRALIBS_MENCODER = 
@@ -77,7 +70,7 @@ ARCH_POWERPC = yes
 ARCH_PPC = yes
 HAVE_FAST_CMOV = yes
 HAVE_CMOV = yes
-
+HAVE_FAST_CLZ=yes
 
 MENCODER = no
 MPLAYER = yes

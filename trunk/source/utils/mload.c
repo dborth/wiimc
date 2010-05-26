@@ -31,6 +31,8 @@
 #define MLOAD_STOP_THREAD		0x4D4C4484
 #define MLOAD_CONTINUE_THREAD   0x4D4C4485
 
+#define MLOAD_GET_MLOAD_VERSION 0x4D4C4402
+#define MLOAD_GET_IOS_BASE      0x4D4C4401
 #define MLOAD_GET_LOAD_BASE     0x4D4C4490
 #define MLOAD_MEMSET			0x4D4C4491
 
@@ -83,6 +85,9 @@ typedef struct
 static const char mload_fs[] ATTRIBUTE_ALIGN(32) = "/dev/mload";
 static s32 mload_fd = -1;
 
+int mloadVersion = -1;
+int iosBase = -1;
+
 // to init/test if the device is running
 int mload_init()
 {
@@ -100,6 +105,16 @@ int mload_init()
 
 		usleep(250 * 1000);
 	}
+	
+	s32 hid = iosCreateHeap(0x800);
+
+	if (hid < 0)
+		return hid;
+
+	mloadVersion = IOS_IoctlvFormat(hid, mload_fd, MLOAD_GET_MLOAD_VERSION, ":"); 
+	iosBase = IOS_IoctlvFormat(hid, mload_fd, MLOAD_GET_IOS_BASE, ":");
+
+	iosDestroyHeap(hid);
 
 	return mload_fd;
 }

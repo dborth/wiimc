@@ -28,6 +28,7 @@
 #include "filebrowser.h"
 #include "utils/gettext.h"
 #include "utils/http.h"
+#include "utils/mload.h"
 #include "filelist.h"
 
 #define THREAD_SLEEP 200
@@ -1276,17 +1277,22 @@ static void CreditsWindow()
 	int numEntries = 15;
 	GuiText * txt[numEntries];
 
-	char iosVersion[10];
-	sprintf(iosVersion, "IOS: %d", IOS_GetVersion());
-
 	wchar_t appVersion[20];
 	swprintf(appVersion, 20, L"%s %s", gettext("Version"), APPVERSION);
 
-	txt[i] = new GuiText(iosVersion, 16, (GXColor){255, 255, 255, 255});
-	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	txt[i]->SetPosition((screenwidth/2)-30,30); i++;
+	char iosVersion[30];
+
+	if(IOS_GetVersion() == 202)
+		sprintf(iosVersion, "IOS: 202 (%d / %d.%d)", iosBase, mloadVersion >> 4, mloadVersion & 0x0f);
+	else
+		sprintf(iosVersion, "IOS: %d", IOS_GetVersion());
+
 	txt[i] = new GuiText(NULL, 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetWText(appVersion);
+	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	txt[i]->SetPosition((screenwidth/2)-30,30); i++;
+
+	txt[i] = new GuiText(iosVersion, 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	txt[i]->SetPosition((screenwidth/2)-30,56); i++;
 

@@ -4403,7 +4403,7 @@ return 1;
 #include <stdlib.h>
 #include <ogc/system.h>
 
-#define MAX_RESTORE_POINTS 20
+#define MAX_RESTORE_POINTS 50
 
 typedef struct st_restore_points restore_points_t;
 struct st_restore_points {
@@ -5106,6 +5106,16 @@ void wiiSetSubtitleSize(float size)
 		return;
 
 	ass_font_scale = size;
+}
+
+bool wiiFindRestorePoint(char *filename)
+{
+	int i;
+
+	for(i=0; i<MAX_RESTORE_POINTS; i++)
+		if(strcmp(filename, restore_points[i].filename) == 0)
+			return true;
+	return false;
 }
 
 void wiiLoadRestorePoints(char *buffer, int size)

@@ -268,6 +268,9 @@ extern const u32	icon_file_png_size;
 extern const u8		icon_file_checked_png[];
 extern const u32	icon_file_checked_png_size;
 
+extern const u8		icon_check_png[];
+extern const u32	icon_check_png_size;
+
 extern const u8		icon_sd_png[];
 extern const u32	icon_sd_png_size;
 

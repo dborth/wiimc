@@ -82,6 +82,7 @@ void wiiSetLanguage(char *lang);
 void wiiSetCodepage(char *cp);
 void wiiSetSubtitleColor(char *color);
 void wiiSetSubtitleSize(float size);
+bool wiiFindRestorePoint(char *filename);
 void wiiLoadRestorePoints(char *buffer, int size);
 char * wiiSaveRestorePoints(char *path);
 

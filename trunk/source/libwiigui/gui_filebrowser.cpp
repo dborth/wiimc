@@ -34,6 +34,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 	iconFolderChecked = new GuiImageData(icon_folder_checked_png);
 	iconFile = new GuiImageData(icon_file_png);
 	iconFileChecked = new GuiImageData(icon_file_checked_png);
+	iconCheck = new GuiImageData(icon_check_png);
 	iconPlay = new GuiImageData(icon_play_png);
 	iconSD = new GuiImageData(icon_sd_png);
 	iconUSB = new GuiImageData(icon_usb_png);
@@ -145,6 +146,7 @@ GuiFileBrowser::~GuiFileBrowser()
 	delete iconFolderChecked;
 	delete iconFile;
 	delete iconFileChecked;
+	delete iconCheck;
 	delete iconPlay;
 	delete iconSD;
 	delete iconUSB;
@@ -449,6 +451,9 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 						break;
 					case ICON_FILE_CHECKED:
 						fileListIcon[i]->SetImage(iconFileChecked);
+						break;
+					case ICON_CHECK:
+						fileListIcon[i]->SetImage(iconCheck);
 						break;
 					case ICON_PLAY:
 						fileListIcon[i]->SetImage(iconPlay);

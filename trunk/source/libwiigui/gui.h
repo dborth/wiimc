@@ -1000,6 +1000,7 @@ class GuiFileBrowser : public GuiElement
 		GuiImageData * iconFolderChecked;
 		GuiImageData * iconFile;
 		GuiImageData * iconFileChecked;
+		GuiImageData * iconCheck;
 		GuiImageData * iconPlay;
 		GuiImageData * iconSD;
 		GuiImageData * iconUSB;

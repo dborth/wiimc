@@ -1213,11 +1213,15 @@ static bool ParseDirEntries()
 		if(res != 0)
 			break;
 
-		if(strcmp(filename, "..") == 0 && IsDeviceRoot(browser.dir))
+		if(strcmp(filename, "..") == 0)
+		{
+			if(IsDeviceRoot(browser.dir))
+				continue;
+		}
+		else if(filename[0] == '.' || filename[0] == '$')
+		{
 			continue;
-
-		if(filename[0] == '.' || filename[0] == '$')
-			continue;
+		}
 
 		ext = GetExt(filename);
 
@@ -1254,7 +1258,14 @@ static bool ParseDirEntries()
 				strncpy(browserList[browser.numEntries+i].displayname, browserList[browser.numEntries+i].filename, MAXJOLIET);
 				browserList[browser.numEntries+i].icon = ICON_NONE;
 
-				if(menuCurrent == MENU_BROWSE_MUSIC)
+				if(menuCurrent == MENU_BROWSE_VIDEOS)
+				{
+					// check if this file was watched
+					GetFullPath(browser.numEntries+i, filename);
+					if(wiiFindRestorePoint(filename))
+						browserList[browser.numEntries+i].icon = ICON_CHECK;
+				}
+				else if(menuCurrent == MENU_BROWSE_MUSIC)
 				{
 					// check if this file is in the playlist
 					if(MusicPlaylistFind(browser.numEntries+i))

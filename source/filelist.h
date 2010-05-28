@@ -54,6 +54,8 @@ extern const u32	ru_lang_size;
 // Graphics
 extern const u8		logo_png[];
 extern const u32	logo_png_size;
+extern const u8		logo_large_png[];
+extern const u32	logo_large_png_size;
 extern const u8		foundmy_png[];
 extern const u32	foundmy_png_size;
 

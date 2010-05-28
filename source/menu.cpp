@@ -203,12 +203,14 @@ static int netEditIndex = 0; // current index of FTP/SMB share being edited
 // threads
 static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t progressthread = LWP_THREAD_NULL;
+static lwp_t screensaverthread = LWP_THREAD_NULL;
 static lwp_t creditsthread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
 static lwp_t picturethread = LWP_THREAD_NULL;
 static lwp_t thumbthread = LWP_THREAD_NULL;
 
 static int progressThreadHalt = 0;
+static int screensaverThreadHalt = 0;
 static int creditsThreadHalt = 0;
 static int updateThreadHalt = 0;
 static int pictureThreadHalt = 0;
@@ -313,6 +315,42 @@ static void ChangeMenuOnline(void * ptr) { ChangeMenu(ptr, MENU_BROWSE_ONLINEMED
 static void ChangeMenuSettings(void * ptr) { ChangeMenu(ptr, MENU_SETTINGS); }
 
 /****************************************************************************
+ * ResumeGui
+ *
+ * Signals the GUI thread to start, and resumes the thread. This is called
+ * after finishing the removal/insertion of new elements, and after initial
+ * GUI setup.
+ ***************************************************************************/
+static void ResumeGui()
+{
+	if(guithread == LWP_THREAD_NULL || guiShutdown)
+		return;
+
+	guiHalt = 0;
+	LWP_ResumeThread (guithread);
+}
+
+/****************************************************************************
+ * SuspendGui
+ *
+ * Signals the GUI thread to stop, and waits for GUI thread to stop
+ * This is necessary whenever removing/inserting new elements into the GUI.
+ * This eliminates the possibility that the GUI is in the middle of accessing
+ * an element that is being changed.
+ ***************************************************************************/
+static void SuspendGui()
+{
+	if(guithread == LWP_THREAD_NULL)
+		return;
+
+	guiHalt = 1;
+
+	// wait for thread to finish
+	while(!LWP_ThreadIsSuspended(guithread))
+		usleep(THREAD_SLEEP);
+}
+
+/****************************************************************************
  * UpdateThread
  *
  * Prompts for confirmation, and downloads/installs updates
@@ -345,6 +383,71 @@ static void ResumeUpdateThread()
 
 	updateThreadHalt = 0;
 	LWP_ResumeThread(updatethread);
+}
+
+static void *ScreensaverThread(void *arg)
+{
+	GuiWindow * oldWindow;
+
+	GuiImageData logo(logo_large_png);
+	GuiImage logoImg(&logo);
+	logoImg.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	logoImg.SetPosition(screenwidth/2-logoImg.GetWidth()/2, screenheight/2-logoImg.GetHeight()/2);
+
+	GuiWindow screensaverWindow(screenwidth, screenheight);
+	screensaverWindow.Append(&logoImg);
+
+	int threadsleep;
+
+	while(1)
+	{
+		LWP_SuspendThread (screensaverthread);
+
+		if(screensaverThreadHalt == 2)
+			break;
+
+		oldWindow = mainWindow;
+
+		SuspendGui();
+		mainWindow = &screensaverWindow;
+		ResumeGui();
+
+		while(1)
+		{
+			threadsleep = 1000*1000*4; // 4 sec
+
+			while(threadsleep > 0)
+			{
+				if(screensaverThreadHalt != 0)
+					goto done;
+				usleep(THREAD_SLEEP);
+				threadsleep -= THREAD_SLEEP;
+			}
+
+			int x=0,y=0;
+
+			while(x < 30 || x > screenwidth-logoImg.GetWidth()-30)
+				x = (int)(((double)rand() / double(RAND_MAX + 1.0)) * screenwidth);
+			while(y < 30 || y > screenheight-logoImg.GetHeight()-30)
+				y = (int)(((double)rand() / double(RAND_MAX + 1.0)) * screenheight);
+
+			logoImg.SetPosition(x, y);
+		}
+done:
+		SuspendGui();
+		mainWindow = oldWindow;
+		ResumeGui();
+	}
+	return NULL;
+}
+
+static void ResumeScreensaverThread()
+{
+	if(screensaverthread == LWP_THREAD_NULL || guiShutdown)
+		return;
+
+	screensaverThreadHalt = 0;
+	LWP_ResumeThread(screensaverthread);
 }
 
 static bool videoPaused;
@@ -409,6 +512,7 @@ extern "C" void DoMPlayerGuiDraw()
 static void *GuiThread (void *arg)
 {
 	int i;
+	u64 ssTimer = 0;
 
 	while(1)
 	{
@@ -462,6 +566,34 @@ static void *GuiThread (void *arg)
 			ResumeUpdateThread();
 		}
 
+		bool dataFound = false;
+
+		for(i = 0; i < 4; i++)
+		{
+			if(userInput[0].wpad->data_present > 0)
+			{
+				dataFound = true;
+				break;
+			}
+		}
+
+		if(dataFound)
+		{
+			if(ssTimer != 0)
+			{
+				ssTimer = 0;
+				screensaverThreadHalt = 1;
+			}
+		}
+		else
+		{
+			if(ssTimer == 0)
+				ssTimer = gettime();
+
+			if(diff_usec(ssTimer, gettime()) > 4*60*1000000) // 4 minutes
+				ResumeScreensaverThread();
+		}
+
 		CheckSleepTimer();
 
 		for(i = 0; i < 4; i++)
@@ -486,42 +618,6 @@ static void *GuiThread (void *arg)
 		usleep(THREAD_SLEEP);
 	}
 	return NULL;
-}
-
-/****************************************************************************
- * ResumeGui
- *
- * Signals the GUI thread to start, and resumes the thread. This is called
- * after finishing the removal/insertion of new elements, and after initial
- * GUI setup.
- ***************************************************************************/
-static void ResumeGui()
-{
-	if(guithread == LWP_THREAD_NULL || guiShutdown)
-		return;
-
-	guiHalt = 0;
-	LWP_ResumeThread (guithread);
-}
-
-/****************************************************************************
- * SuspendGui
- *
- * Signals the GUI thread to stop, and waits for GUI thread to stop
- * This is necessary whenever removing/inserting new elements into the GUI.
- * This eliminates the possibility that the GUI is in the middle of accessing
- * an element that is being changed.
- ***************************************************************************/
-static void SuspendGui()
-{
-	if(guithread == LWP_THREAD_NULL)
-		return;
-
-	guiHalt = 1;
-
-	// wait for thread to finish
-	while(!LWP_ThreadIsSuspended(guithread))
-		usleep(THREAD_SLEEP);
 }
 
 extern "C" void ShutdownGui()
@@ -5733,11 +5829,13 @@ static void StartGuiThreads()
 	showProgress = 0;
 	progressThreadHalt = 1;
 	pictureThreadHalt = 1;
+	screensaverThreadHalt = 1;
 	creditsThreadHalt = 1;
 	updateThreadHalt = 1;
 	
 	LWP_CreateThread (&progressthread, ProgressThread, NULL, NULL, 0, 60);
 	LWP_CreateThread (&picturethread, PictureThread, NULL, NULL, 0, 60);
+	LWP_CreateThread (&screensaverthread, ScreensaverThread, NULL, NULL, 0, 60);
 	LWP_CreateThread (&creditsthread, CreditsThread, NULL, NULL, 0, 60);
 	LWP_CreateThread (&updatethread, UpdateThread, NULL, NULL, 0, 60);
 }
@@ -5767,6 +5865,18 @@ static void StopGuiThreads()
 		// wait for thread to finish
 		LWP_JoinThread(picturethread, NULL);
 		picturethread = LWP_THREAD_NULL;
+	}
+
+	screensaverThreadHalt = 2;
+
+	if(screensaverthread != LWP_THREAD_NULL)
+	{
+		if(LWP_ThreadIsSuspended(screensaverthread))
+			LWP_ResumeThread (screensaverthread);
+		
+		// wait for thread to finish
+		LWP_JoinThread(screensaverthread, NULL);
+		screensaverthread = LWP_THREAD_NULL;
 	}
 
 	creditsThreadHalt = 2;

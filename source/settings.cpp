@@ -543,6 +543,7 @@ void DefaultSettings ()
 	WiiSettings.volume = 50;
 	WiiSettings.exitAction = EXIT_AUTO;
 	WiiSettings.rumble = 1;
+	WiiSettings.sleepTimer = 0;
 	// Videos
 	WiiSettings.videoZoomHor = 1;
 	WiiSettings.videoZoomVert = 1;

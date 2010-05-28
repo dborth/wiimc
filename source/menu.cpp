@@ -416,7 +416,6 @@ static void *GuiThread (void *arg)
 			LWP_SuspendThread(guithread);
 
 		UpdatePads();
-
 		mainWindow->Draw();
 
 		if (mainWindow->GetState() != STATE_DISABLED)
@@ -462,6 +461,8 @@ static void *GuiThread (void *arg)
 			updateFound = false;
 			ResumeUpdateThread();
 		}
+
+		CheckSleepTimer();
 
 		for(i = 0; i < 4; i++)
 		{
@@ -2977,9 +2978,10 @@ static void MenuSettingsGlobal()
 	sprintf(options.name[i++], "Volume");
 	sprintf(options.name[i++], "Exit Action");
 	sprintf(options.name[i++], "Wiimote Rumble");
+	sprintf(options.name[i++], "Sleep Timer");
 
 	options.length = i;
-		
+
 	for(i=0; i < options.length; i++)
 	{
 		options.value[i][0] = 0;
@@ -3056,6 +3058,11 @@ static void MenuSettingsGlobal()
 			case 4:
 				WiiSettings.rumble ^= 1;
 				break;
+			case 5:
+				WiiSettings.sleepTimer += 30;
+				if(WiiSettings.sleepTimer > 180)
+					WiiSettings.sleepTimer = 0;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -3096,6 +3103,11 @@ static void MenuSettingsGlobal()
 
 			sprintf(options.value[4], "%s", WiiSettings.rumble ? "On" : "Off");
 
+			if(WiiSettings.sleepTimer > 0)
+				sprintf(options.value[5], "%d min", WiiSettings.sleepTimer);
+			else
+				sprintf(options.value[5], "Off");
+
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -3105,6 +3117,7 @@ static void MenuSettingsGlobal()
 		}
 	}
 	ChangeLanguage();
+	SetSleepTimer();
 	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
@@ -6138,7 +6151,10 @@ void MPlayerMenu()
 	videoPaused = !wiiIsPaused();
 
 	while(controlledbygui == 0)
-		usleep(300000);
+	{
+		CheckSleepTimer();
+		usleep(500000);
+	}
 
 	DisableRumble();
 

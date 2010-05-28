@@ -30,6 +30,8 @@ enum {
 #define SILENT 1
 
 void ExitApp();
+void SetSleepTimer();
+void CheckSleepTimer();
 bool InitMPlayer();
 void LoadMPlayerFile();
 void ResumeMPlayerFile();

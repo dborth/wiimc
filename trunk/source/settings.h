@@ -86,6 +86,7 @@ struct SWiiSettings {
 	int		volume;
 	int		exitAction;
 	int		rumble;
+	int		sleepTimer;
 	// Videos
 	float	videoZoomHor; // horizontal zoom amount
 	float	videoZoomVert; // vertical zoom amount

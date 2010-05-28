@@ -1213,10 +1213,10 @@ static bool ParseDirEntries()
 		if(res != 0)
 			break;
 
-		if(strcmp(filename,".") == 0)
+		if(strcmp(filename, "..") == 0 && IsDeviceRoot(browser.dir))
 			continue;
 
-		if(strcmp(filename, "..") == 0 && IsDeviceRoot(browser.dir))
+		if(filename[0] == '.' || filename[0] == '$')
 			continue;
 
 		ext = GetExt(filename);

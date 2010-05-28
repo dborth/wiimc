@@ -62,6 +62,28 @@ static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
  * Shutdown / Reboot / Exit
  ***************************************************************************/
 
+static u64 sleepStart = 0;
+
+void SetSleepTimer()
+{
+	if(WiiSettings.sleepTimer == 0)
+		sleepStart = 0;
+	else
+		sleepStart = gettime();
+}
+
+void CheckSleepTimer()
+{
+	if(sleepStart == 0)
+		return;
+
+	if(diff_usec(sleepStart, gettime()) > (u64)(WiiSettings.sleepTimer*60*1000000))
+	{
+		ShutdownRequested = 1;
+		controlledbygui = 2;
+	}
+}
+
 void ExitApp()
 {
 	DisableRumble();

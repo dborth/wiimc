@@ -1,34 +1,31 @@
-/*-------------------------------------------------------------
-
-usb2storage.c -- USB mass storage support, inside starlet
-Copyright (C) 2008 Kwiirk
-Improved for homebrew by rodries and Tantric
-
-If this driver is linked before libogc, this will replace the original 
-usbstorage driver by svpe from libogc
-
-CIOS_usb2 must be loaded!
-
-This software is provided 'as-is', without any express or implied
-warranty.	In no event will the authors be held liable for any
-damages arising from the use of this software.
-
-Permission is granted to anyone to use this software for any
-purpose, including commercial applications, and to alter it and
-redistribute it freely, subject to the following restrictions:
-
-1.	The origin of this software must not be misrepresented; you
-must not claim that you wrote the original software. If you use
-this software in a product, an acknowledgment in the product
-documentation would be appreciated but is not required.
-
-2.	Altered source versions must be plainly marked as such, and
-must not be misrepresented as being the original software.
-
-3.	This notice may not be removed or altered from any source
-distribution.
-
- -------------------------------------------------------------*/
+/****************************************************************************
+ * WiiMC
+ * usb2storage.c -- USB mass storage support, inside starlet
+ * Copyright (C) 2008 Kwiirk
+ * Improved for homebrew by rodries and Tantric
+ * 
+ * IOS 202 and the ehcmodule must be loaded before using this!
+ * 
+ * This software is provided 'as-is', without any express or implied
+ * warranty. In no event will the authors be held liable for any
+ * damages arising from the use of this software.
+ * 
+ * Permission is granted to anyone to use this software for any
+ * purpose, including commercial applications, and to alter it and
+ * redistribute it freely, subject to the following restrictions:
+ * 
+ * 1. The origin of this software must not be misrepresented; you
+ * must not claim that you wrote the original software. If you use
+ * this software in a product, an acknowledgment in the product
+ * documentation would be appreciated but is not required.
+ * 
+ * 2. Altered source versions must be plainly marked as such, and
+ * must not be misrepresented as being the original software.
+ * 
+ * 3. This notice may not be removed or altered from any source
+ * distribution.
+ * 
+ ***************************************************************************/
 
 #include <gccore.h>
 
@@ -226,64 +223,50 @@ void USB2Enable(bool enable)
 
 static bool __usb2storage_Startup(void)
 {
-	bool ret;
+	if(__usb2fd > 0)
+		return true;
 
 	USB2Storage_Open(0);
 
 	if(__usb2fd > 0)
 	{
 		currentMode = 2;
-		ret = true;
+		return true;
 	}
-	else
-	{
-		ret = __io_usb1storage.startup();
 
-		if(ret)
-			currentMode = 1;
+	if(__io_usb1storage.startup())
+	{
+		currentMode = 1;
+		return true;
 	}
-	return ret;
+	return false;
 }
 
 static bool __usb2storage_IsInserted(void)
 {
-	int retval;
-	bool ret = false;
+	if (!__usb2storage_Startup())
+		return false;
 
-	if (__usb2fd <= 0)
-	{
-		retval = __usb2storage_Startup();
-		debug_printf("__usb2storage_Startup ret: %d  fd: %i\n",retval,__usb2fd);
-	}
+	if(usb2_mutex == LWP_MUTEX_NULL)
+		return false;
 
-	LWP_MutexLock(usb2_mutex);
 	if (__usb2fd > 0)
 	{
-		retval = IOS_IoctlvFormat(hId, __usb2fd, USB_IOCTL_UMS_IS_INSERTED, ":");
+		LWP_MutexLock(usb2_mutex);
+		int retval = IOS_IoctlvFormat(hId, __usb2fd, USB_IOCTL_UMS_IS_INSERTED, ":");
+		LWP_MutexUnlock(usb2_mutex);
 		debug_printf("isinserted usb2 retval: %d  ret: %d\n",retval,ret);
 
 		if (retval > 0)
-		{
-			currentMode = 2;
-			ret = true;
-			debug_printf("isinserted(2) usb2 retval: %d  ret: %d\n",retval,ret);
-		}
-		
+			return true;
 	}
-	if(ret==false)
-	{
-		retval = __io_usb1storage.isInserted();
 
-		if (retval > 0)
-		{
-			debug_printf("isinserted usb1 retval: %d\n",retval);
-			currentMode = 1;
-			ret = true;
-		}
+	if (__io_usb1storage.isInserted() > 0)
+	{
+		debug_printf("isinserted usb1 retval: %d\n",retval);
+		return true;
 	}
-	debug_printf("final isinserted usb2 retval: %d  ret: %d\n",retval,ret);
-	LWP_MutexUnlock(usb2_mutex);
-	return ret;
+	return false;
 }
 
 static bool __usb2storage_ReadSectors(u32 sector, u32 numSectors, void *buffer)
@@ -295,8 +278,8 @@ static bool __usb2storage_ReadSectors(u32 sector, u32 numSectors, void *buffer)
 	if (currentMode == 1)
 		return __io_usb1storage.readSectors(sector, numSectors, buffer);
 
-	if (__usb2fd < 1)
-		return IPC_ENOENT;
+	if (__usb2fd < 1 || usb2_mutex == LWP_MUTEX_NULL)
+		return false;
 
 	LWP_MutexLock(usb2_mutex);
 
@@ -334,12 +317,12 @@ static bool __usb2storage_WriteSectors(u32 sector, u32 numSectors, const void *b
 	s32 ret = 1;
 	u32 sectors = 0;
 	uint8_t *dest = (uint8_t *) buffer;
-	
+
 	if (currentMode == 1)
 		return __io_usb1storage.writeSectors(sector, numSectors, buffer);
-	
-	if (__usb2fd < 1)
-		return IPC_ENOENT;
+
+	if (__usb2fd < 1 || usb2_mutex == LWP_MUTEX_NULL)
+		return false;
 
 	LWP_MutexLock(usb2_mutex);
 	while (numSectors > 0 && ret > 0)
@@ -384,10 +367,6 @@ static bool __usb2storage_Shutdown(void)
 	if (currentMode == 1)
 		return __io_usb1storage.shutdown();
 
-	LWP_MutexLock(usb2_mutex);
-	USB2Storage_Close();
-	debug_printf("__usb2storage_Shutdown\n");
-	LWP_MutexUnlock(usb2_mutex);
 	return true;
 }
 

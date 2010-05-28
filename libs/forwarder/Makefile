@@ -80,7 +80,7 @@ endif
 export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
 					$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
 					$(sFILES:.s=.o) $(SFILES:.S=.o) \
-					$(PNGFILES:.png=.png.o)
+					$(PNGFILES:.png=.png.o) $(CURDIR)/source/ehcmodule.elf.o
 
 #---------------------------------------------------------------------------------
 # build a list of include paths
@@ -129,10 +129,6 @@ $(OUTPUT).elf: $(OFILES)
 # This rule links in binary data with the .png extension
 #---------------------------------------------------------------------------------
 %.png.o : %.png
-	@echo $(notdir $<)
-	$(bin2o)
-
-%.elf.o : %.elf
 	@echo $(notdir $<)
 	$(bin2o)
 

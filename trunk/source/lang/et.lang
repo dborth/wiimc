@@ -549,3 +549,24 @@ msgstr "Laen alla..."
 
 msgid "Unzipping..."
 msgstr "Pakin lahti..."
+
+msgid "Color"
+msgstr "Värv"
+
+msgid "Size"
+msgstr "Suurus"
+
+msgid "White"
+msgstr "Valge"
+
+msgid "Black"
+msgstr "Must"
+
+msgid "Yellow"
+msgstr "Kollane"
+
+msgid "Red"
+msgstr "Punane"
+
+msgid "Sleep Timer"
+msgstr "Unetaimer"

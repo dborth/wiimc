@@ -287,7 +287,7 @@ msgid "Port"
 msgstr "ポート"
 
 msgid "Rewind / Fast Forward"
-msgstr "後戻し／先送り秒数"
+msgstr "後戻し／先送り時間"
 
 msgid "Error loading file!"
 msgstr "ファイルが読み込めません"
@@ -302,7 +302,7 @@ msgid "Start Slideshow"
 msgstr "スライドショーを開始"
 
 msgid "Slideshow Delay"
-msgstr "スライドショーの切替秒数"
+msgstr "スライドショーの切替時間"
 
 msgid "Online Media Folder"
 msgstr "オンライン・メディアフォルダ"
@@ -570,3 +570,33 @@ msgstr "黄"
 
 msgid "Red"
 msgstr "赤"
+
+msgid "Sleep Timer"
+msgstr "スリープタイマー"
+
+msgid "sec"
+msgstr "秒"
+
+msgid "min"
+msgstr "分"
+
+msgid "Theme"
+msgstr "テーマ"
+
+msgid "Blue"
+msgstr "青"
+
+msgid "Green"
+msgstr "緑"
+
+msgid "Grey"
+msgstr "灰色"
+
+msgid "Orange"
+msgstr "オレンジ"
+
+msgid "Purple (Default)"
+msgstr "紫（初期値）"
+
+msgid "Auto-Play Next Video"
+msgstr "自動連続再生"

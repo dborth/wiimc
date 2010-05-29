@@ -188,7 +188,7 @@ void SetBufferingStatus(int s);
 void reinit_video();
 void reinit_audio();
 void PauseAndGotoGUI();
-void FindNextFile(bool load);
+bool FindNextFile(bool load);
 
 static void low_cache_loop(void);
 static float timing_sleep(float time_frame);
@@ -312,7 +312,7 @@ int file_filter=1;
 
 // cache2:
 #ifdef GEKKO
-       int stream_cache_size=16384; // 16MB cache
+       int stream_cache_size=12288; // 12MB cache
 #else
        int stream_cache_size=-1;
 #endif
@@ -320,7 +320,7 @@ int file_filter=1;
 #ifdef CONFIG_STREAM_CACHE
 extern float cache_fill_status;
 
-float stream_cache_min_percent=20.0;
+float stream_cache_min_percent=30.0;
 float stream_cache_seek_min_percent=50.0;
 #else
 #define cache_fill_status 0
@@ -3089,8 +3089,8 @@ if(filename)
 	filename = NULL;
 }
 
-FindNextFile(true);
-controlledbygui = 1; // send control back to GUI
+if(!FindNextFile(true))
+	controlledbygui = 1; // send control back to GUI
 
 while (!filename)
 {

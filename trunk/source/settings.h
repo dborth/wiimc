@@ -81,6 +81,7 @@ enum {
 
 struct SWiiSettings {
 	// Global
+	char	theme[10];
 	int 	hideExtensions;
 	int 	language;
 	int		volume;
@@ -97,6 +98,7 @@ struct SWiiSettings {
 	int 	cacheFill;
 	float 	audioDelay; // in secs
 	int 	autoResume;
+	int 	autoPlayNextVideo;
 	int		seekTime;
 	char 	videosFolder[MAXPATHLEN];
 	// Music

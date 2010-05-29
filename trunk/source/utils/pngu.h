@@ -10,6 +10,8 @@
 #ifndef __PNGU__
 #define __PNGU__
 
+#include <gccore.h>
+
 #ifdef __cplusplus
 	extern "C" {
 #endif
@@ -67,7 +69,7 @@ int PNGU_GetImageProperties (IMGCTX ctx, PNGUPROP *fileproperties);
 * Image conversion								                            *
 ****************************************************************************/
 
-PNGU_u8 * DecodePNG(const PNGU_u8 *src, int *width, int *height);
+PNGU_u8 * DecodePNG(const PNGU_u8 *src, int *width, int *height, u8 *dst);
 int PNGU_EncodeFromRGB (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffer, PNGU_u32 stride);
 int PNGU_EncodeFromGXTexture (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffer, PNGU_u32 stride);
 

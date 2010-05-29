@@ -31,13 +31,19 @@ BROWSERENTRY * browserList = NULL; // list of files/folders in browser
 
 static std::vector<std::string> browserHistory; // browser.dir history - for nested playlists
 
-MEDIAENTRY * onlinemediaList = NULL; // list of online media files
-int onlinemediaSize = 0; // number of online media files
+// video playlist
+int videoPlaylistIndex = 0;
+int videoPlaylistSize = 0;
+char videoPlaylist[20][1024];
 
 // music playlist
 MEDIAENTRY * playlist = NULL; // list of files in the current playlist
 int playlistSize = 0; // number of playlist files
 int playlistIndex = -1; // index of file currently playing in the playlist
+
+// online media
+MEDIAENTRY * onlinemediaList = NULL; // list of online media files
+int onlinemediaSize = 0; // number of online media files
 
 /****************************************************************************
  * ResetBrowser()
@@ -89,6 +95,27 @@ void BrowserHistoryClear()
 		return;
 
 	browserHistory.clear();
+}
+
+void PopulateVideoPlaylist()
+{
+	if(!WiiSettings.autoPlayNextVideo)
+		return;
+
+	for(int i=0; i < 20; i++)
+	{
+		GetFullPath(browser.selIndex+i, videoPlaylist[i]);
+		videoPlaylistSize++;
+
+		if(browser.selIndex+i+1 >= browser.numEntries)
+			break;
+	}
+}
+
+void ClearVideoPlaylist()
+{
+	videoPlaylistIndex = 0;
+	videoPlaylistSize = 0;
 }
 
 bool AddPlaylistEntry()

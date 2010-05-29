@@ -48,7 +48,7 @@ extern char loadPath[];
 
 extern "C" {
 	
-void FindNextFile(bool load);
+bool FindNextFile(bool load);
 
 extern int controlledbygui;
 int mplayer_main(); // in mplayer.c

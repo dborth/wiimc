@@ -178,7 +178,7 @@ static inline u32 coordsRGBA8(u32 x, u32 y, u32 w)
 	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
 }
 
-static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize)
+static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, u8 *dstPtr)
 {
 	u32 newWidth = width;
 	if(newWidth%4) newWidth += (4-newWidth%4);
@@ -187,7 +187,13 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize)
 
 	int len = (newWidth * newHeight) << 2;
 	if(len%32) len += (32-len%32);
-	u8 *dst = (u8 *)memalign(32, len);
+
+	u8 *dst;
+
+	if(dstPtr)
+		dst = dstPtr; // use existing allocation
+	else
+		dst = (u8 *)memalign (32, len);
 
 	if(!dst)
 		return NULL;
@@ -222,7 +228,7 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize)
 	return dst;
 }
 
-u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height)
+u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr jerr;
@@ -292,7 +298,7 @@ u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height)
 		location += rowsize;
 	}
 
-	u8 * dst = RawTo4x4RGBA(tmpData, cinfo.output_width, cinfo.output_height, rowsize);
+	u8 *dst = RawTo4x4RGBA(tmpData, cinfo.output_width, cinfo.output_height, rowsize, dstPtr);
 
 	if(dst)
 	{

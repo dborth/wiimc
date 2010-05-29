@@ -1235,7 +1235,7 @@ static bool ParseDirEntries()
 		// add the entry
 		if(AddBrowserEntry())
 		{
-			strncpy(browserList[browser.numEntries+i].filename, filename, MAXJOLIET);
+			snprintf(browserList[browser.numEntries+i].filename, MAXJOLIET, "%s", filename);
 			browserList[browser.numEntries+i].length = filestat.st_size;
 			browserList[browser.numEntries+i].mtime = filestat.st_mtime;
 
@@ -1246,7 +1246,7 @@ static bool ParseDirEntries()
 				if(strcmp(filename, "..") == 0)
 					sprintf(browserList[browser.numEntries+i].displayname, "Up One Level");
 				else
-					strncpy(browserList[browser.numEntries+i].displayname, browserList[browser.numEntries+i].filename, MAXJOLIET);
+					snprintf(browserList[browser.numEntries+i].displayname, MAXJOLIET, "%s", browserList[browser.numEntries+i].filename);
 
 				browserList[browser.numEntries+i].icon = ICON_FOLDER;
 			}
@@ -1255,7 +1255,7 @@ static bool ParseDirEntries()
 				if(IsPlaylistExt(ext))
 					browserList[browser.numEntries+i].type = TYPE_PLAYLIST;
 
-				strncpy(browserList[browser.numEntries+i].displayname, browserList[browser.numEntries+i].filename, MAXJOLIET);
+				snprintf(browserList[browser.numEntries+i].displayname, MAXJOLIET, "%s", browserList[browser.numEntries+i].filename);
 				browserList[browser.numEntries+i].icon = ICON_NONE;
 
 				if(menuCurrent == MENU_BROWSE_VIDEOS)
@@ -1412,7 +1412,7 @@ typedef struct
 	int type; // 0 - unsupported, 1 - video, 2 - playlist, 3 - search
 	char name[MAXJOLIET + 1];
 	char url[MAXPATHLEN + 1];
-	char thumb[MAXPATHLEN + 1];
+	char thumb[MAXJOLIET + 1];
 	char processor[MAXPATHLEN + 1];
 } PLXENTRY;
 
@@ -1518,19 +1518,19 @@ static int ParsePLXPlaylist()
 			}
 			else if(strncmp(attribute, "name", 4) == 0)
 			{
-				strcpy(newEntry.name, value);
+				snprintf(newEntry.name, MAXJOLIET, "%s", value);
 			}
 			else if(strncmp(attribute, "URL", 3) == 0)
 			{
-				strcpy(newEntry.url, value);
+				snprintf(newEntry.url, MAXPATHLEN, "%s", value);
 			}
 			else if(strncmp(attribute, "thumb", 5) == 0)
 			{
-				strcpy(newEntry.thumb, value);
+				snprintf(newEntry.thumb, MAXJOLIET, "%s", value);
 			}
 			else if(strncmp(attribute, "processor", 9) == 0)
 			{
-				strcpy(newEntry.processor, value);
+				snprintf(newEntry.processor, MAXPATHLEN, "%s", value);
 			}
 		}
 	}
@@ -1746,8 +1746,7 @@ int ParsePlaylistFile()
 			}
 			else
 			{
-				strncpy(browserList[browser.numEntries].displayname, i->files[0], MAXJOLIET);
-				browserList[browser.numEntries].displayname[MAXJOLIET] = 0;
+				snprintf(browserList[browser.numEntries].displayname, MAXJOLIET, "%s", i->files[0]);
 			}
 		}
 		if(IsPlaylistExt(ext))
@@ -1813,7 +1812,7 @@ int ParseOnlineMedia()
 			else // protocol not specified - assume http:// and append
 				snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "http://%s", onlinemediaList[i].address);
 			snprintf(browserList[browser.numEntries].displayname, MAXJOLIET, "%s", onlinemediaList[i].displayname);
-			snprintf(browserList[browser.numEntries].image, MAXPATHLEN, "%s", onlinemediaList[i].image);
+			snprintf(browserList[browser.numEntries].image, MAXJOLIET, "%s", onlinemediaList[i].image);
 			browserList[browser.numEntries].length = 0;
 			browserList[browser.numEntries].mtime = 0;
 			browserList[browser.numEntries].type = TYPE_FILE;

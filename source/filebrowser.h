@@ -14,7 +14,7 @@
 #include <gccore.h>
 
 #define MAXJOLIET			255
-#define MAX_BROWSER_SIZE	3000
+#define MAX_BROWSER_SIZE	2500
 
 enum
 {
@@ -40,7 +40,7 @@ typedef struct
 	int type; // TYPE_FILE,	TYPE_FOLDER, TYPE_PLAYLIST,	TYPE_SEARCH
 	char filename[MAXPATHLEN + 1]; // full filename
 	char displayname[MAXJOLIET + 1]; // name for browser display
-	char image[MAXPATHLEN + 1];
+	char image[MAXJOLIET + 1];
 	int icon; // icon to display
 } BROWSERENTRY;
 
@@ -68,21 +68,31 @@ enum
 	ICON_FTP
 };
 
+// Browser
 extern BROWSERINFO browser;
 extern BROWSERENTRY * browserList;
 
-extern MEDIAENTRY * onlinemediaList;
-extern int onlinemediaSize;
+// Video playlist
+extern int videoPlaylistIndex;
+extern int videoPlaylistSize;
+extern char videoPlaylist[20][1024];
 
+// Music playlist
 extern MEDIAENTRY * playlist;
 extern int playlistSize;
 extern int playlistIndex;
+
+// Online media
+extern MEDIAENTRY * onlinemediaList;
+extern int onlinemediaSize;
 
 int FileSortCallback(const void *f1, const void *f2);
 void ResetBrowser();
 void BrowserHistoryStore(char *path);
 const char * BrowserHistoryRetrieve();
 void BrowserHistoryDiscard();
+void PopulateVideoPlaylist();
+void ClearVideoPlaylist();
 bool AddBrowserEntry();
 bool AddMediaEntry();
 bool AddPlaylistEntry();

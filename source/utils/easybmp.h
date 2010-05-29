@@ -23,6 +23,6 @@
 #ifndef EASYBMP_H
 #define EASYBMP_H
 
-u8 * DecodeBMP(const u8 * src, u32 len, int * width, int * height);
+u8 * DecodeBMP(const u8 *src, u32 len, int *width, int *height, u8 *dst);
 
 #endif

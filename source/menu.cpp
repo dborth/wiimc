@@ -41,6 +41,10 @@ extern char streamurl[128]; // ICY data (http.c)
 // frequently used objects
 
 static GuiImageData * bg = NULL;
+static GuiImageData * navDivider = NULL;
+static GuiImageData * btnBottom = NULL;
+static GuiImageData * btnBottomOver = NULL;
+static GuiImageData * arrowRightSmall = NULL;
 static GuiImageData * pointer[4] = { NULL, NULL, NULL, NULL };
 static GuiImageData throbber(throbber_png);
 static GuiImageData progressLeft(progressbar_left_png);
@@ -55,7 +59,7 @@ static GuiImageData volumeMid(volume_mid_png);
 static GuiImageData volumeBottom(volume_bottom_png);
 static GuiImageData volumeEmpty(volume_empty_png);
 static GuiImageData volumeLine(volume_line_png);
-static GuiImage * disabled;
+static GuiImage * disabled = NULL;
 static GuiTrigger * trigA = NULL;
 static GuiTrigger * trigB = NULL;
 static GuiTrigger * trigLeft = NULL;
@@ -765,8 +769,65 @@ restart:
 	}
 	else
 	{
+		SuspendGui();
 		ResetText();
+		ResumeGui();
 	}
+}
+
+void ChangeTheme()
+{
+	SuspendGui();
+
+	if(WiiSettings.theme[0] == 0)
+	{
+		bg->SetImage(bg_jpg, bg_blue_jpg_size);
+		navDivider->SetImage(nav_divider_png);
+		btnBottom->SetImage(button_bottom_png);
+		btnBottomOver->SetImage(button_bottom_over_png);
+		arrowRightSmall->SetImage(arrow_right_small_png);
+	}
+	else if(strcmp(WiiSettings.theme, "blue") == 0)
+	{
+		bg->SetImage(bg_blue_jpg, bg_blue_jpg_size);
+		navDivider->SetImage(nav_divider_blue_png);
+		btnBottom->SetImage(button_bottom_blue_png);
+		btnBottomOver->SetImage(button_bottom_over_blue_png);
+		arrowRightSmall->SetImage(arrow_right_small_blue_png);
+	}
+	else if(strcmp(WiiSettings.theme, "green") == 0)
+	{
+		bg->SetImage(bg_green_jpg, bg_green_jpg_size);
+		navDivider->SetImage(nav_divider_green_png);
+		btnBottom->SetImage(button_bottom_green_png);
+		btnBottomOver->SetImage(button_bottom_over_green_png);
+		arrowRightSmall->SetImage(arrow_right_small_green_png);
+	}
+	else if(strcmp(WiiSettings.theme, "grey") == 0)
+	{
+		bg->SetImage(bg_grey_jpg, bg_grey_jpg_size);
+		navDivider->SetImage(nav_divider_grey_png);
+		btnBottom->SetImage(button_bottom_grey_png);
+		btnBottomOver->SetImage(button_bottom_over_grey_png);
+		arrowRightSmall->SetImage(arrow_right_small_grey_png);
+	}
+	else if(strcmp(WiiSettings.theme, "orange") == 0)
+	{
+		bg->SetImage(bg_orange_jpg, bg_orange_jpg_size);
+		navDivider->SetImage(nav_divider_orange_png);
+		btnBottom->SetImage(button_bottom_orange_png);
+		btnBottomOver->SetImage(button_bottom_over_orange_png);
+		arrowRightSmall->SetImage(arrow_right_small_orange_png);
+	}
+	else if(strcmp(WiiSettings.theme, "red") == 0)
+	{
+		bg->SetImage(bg_red_jpg, bg_red_jpg_size);
+		navDivider->SetImage(nav_divider_red_png);
+		btnBottom->SetImage(button_bottom_red_png);
+		btnBottomOver->SetImage(button_bottom_over_red_png);
+		arrowRightSmall->SetImage(arrow_right_small_red_png);
+	}
+	ResumeGui();
 }
 
 void DisableMainWindow()
@@ -1451,19 +1512,15 @@ static void CreditsWindow()
 	for(i=0; i < numEntries; i++)
 		alignWindow.Append(txt[i]);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -1609,7 +1666,7 @@ static void *ThumbThread (void *arg)
 				if(read > 0 && loadIndex == thumbIndex) // file loaded and index has not changed
 				{
 					thumb = new GuiImageData(thumbBuffer, read, GX_TF_RGBA8);
-					
+
 					if(thumb->GetImage())
 					{
 						SuspendGui();
@@ -1635,8 +1692,8 @@ static void *ThumbThread (void *arg)
 
 static int LoadNewFile()
 {
+	ClearVideoPlaylist();
 	RemoveVideoImg();
-
 	LoadMPlayerFile();
 
 	// wait until MPlayer is ready to take control (or return control)
@@ -1646,6 +1703,7 @@ static int LoadNewFile()
 	if(guiShutdown)
 	{
 		playlistIndex = -1;
+		PopulateVideoPlaylist();
 		return 1; // playing a video
 	}
 
@@ -1704,10 +1762,6 @@ static void MenuBrowse(int menu)
 	GuiTrigger trigPlus;
 	trigPlus.SetButtonOnlyTrigger(-1, WPAD_BUTTON_PLUS | WPAD_CLASSIC_BUTTON_PLUS, PAD_BUTTON_X);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiButton upOneLevelBtn(0,0);
 	upOneLevelBtn.SetTrigger(trigB);
 	upOneLevelBtn.SetSelectable(false);
@@ -1715,12 +1769,12 @@ static void MenuBrowse(int menu)
 	GuiText backBtnTxt("Resume", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	backBtnTxt.SetPosition(-74, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	backBtnArrow.SetPosition(-54, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3016,19 +3070,15 @@ static void MenuDVD()
 	}
 	else
 	{
-		GuiImageData btnBottom(button_bottom_png);
-		GuiImageData btnBottomOver(button_bottom_over_png);
-		GuiImageData arrowRight(arrow_right_small_png);
-
 		GuiText backBtnTxt("Resume", 18, (GXColor){255, 255, 255, 255});
 		backBtnTxt.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 		backBtnTxt.SetPosition(-74, 10);
-		GuiImage backBtnImg(&btnBottom);
-		GuiImage backBtnImgOver(&btnBottomOver);
-		GuiImage backBtnArrow(&arrowRight);
+		GuiImage backBtnImg(btnBottom);
+		GuiImage backBtnImgOver(btnBottomOver);
+		GuiImage backBtnArrow(arrowRightSmall);
 		backBtnArrow.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 		backBtnArrow.SetPosition(-54, 11);
-		GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+		GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 		backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 		backBtn.SetPosition(0, 0);
 		backBtn.SetLabel(&backBtnTxt);
@@ -3068,10 +3118,11 @@ static void MenuSettingsGlobal()
 	int i = 0;
 	bool firstRun = true;
 	OptionList options;
-	
-	sprintf(options.name[i++], "File Extensions");
+
+	sprintf(options.name[i++], "Theme");
 	sprintf(options.name[i++], "Language");
 	sprintf(options.name[i++], "Volume");
+	sprintf(options.name[i++], "File Extensions");
 	sprintf(options.name[i++], "Exit Action");
 	sprintf(options.name[i++], "Wiimote Rumble");
 	sprintf(options.name[i++], "Sleep Timer");
@@ -3088,19 +3139,15 @@ static void MenuSettingsGlobal()
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3132,7 +3179,18 @@ static void MenuSettingsGlobal()
 		switch (ret)
 		{
 			case 0:
-				WiiSettings.hideExtensions ^= 1;
+				if(WiiSettings.theme[0] == 0)
+					sprintf(WiiSettings.theme, "blue");
+				else if(strcmp(WiiSettings.theme, "blue") == 0)
+					sprintf(WiiSettings.theme, "green");
+				else if(strcmp(WiiSettings.theme, "green") == 0)
+					sprintf(WiiSettings.theme, "grey");
+				else if(strcmp(WiiSettings.theme, "grey") == 0)
+					sprintf(WiiSettings.theme, "orange");
+				else if(strcmp(WiiSettings.theme, "orange") == 0)
+					sprintf(WiiSettings.theme, "red");
+				else if(strcmp(WiiSettings.theme, "red") == 0)
+					WiiSettings.theme[0] = 0;
 				break;
 			case 1:
 				WiiSettings.language++;
@@ -3147,14 +3205,17 @@ static void MenuSettingsGlobal()
 				wiiSetVolume(WiiSettings.volume);
 				break;
 			case 3:
+				WiiSettings.hideExtensions ^= 1;
+				break;
+			case 4:
 				WiiSettings.exitAction++;
 				if(WiiSettings.exitAction > EXIT_LOADER)
 					WiiSettings.exitAction = 0;
 				break;
-			case 4:
+			case 5:
 				WiiSettings.rumble ^= 1;
 				break;
-			case 5:
+			case 6:
 				WiiSettings.sleepTimer += 30;
 				if(WiiSettings.sleepTimer > 180)
 					WiiSettings.sleepTimer = 0;
@@ -3165,7 +3226,15 @@ static void MenuSettingsGlobal()
 		{
 			firstRun = false;
 
-			sprintf(options.value[0], "%s", WiiSettings.hideExtensions ? "Hide" : "Show");
+			if(WiiSettings.theme[0] == 0)
+			{
+				sprintf(options.value[0], "Purple (Default)");
+			}
+			else
+			{
+				strcpy(options.value[0], WiiSettings.theme);
+				options.value[0][0] -= 32; // change letter to uppercase
+			}
 
 			switch(WiiSettings.language)
 			{
@@ -3188,21 +3257,22 @@ static void MenuSettingsGlobal()
 			}
 			
 			sprintf (options.value[2], "%d%%", WiiSettings.volume);
+			sprintf(options.value[3], "%s", WiiSettings.hideExtensions ? "Hide" : "Show");
 
 			switch(WiiSettings.exitAction)
 			{
-				case EXIT_AUTO:		sprintf(options.value[3], "Auto"); break;
-				case EXIT_WIIMENU:	sprintf(options.value[3], "Return to Wii Menu"); break;
-				case EXIT_POWEROFF:	sprintf(options.value[3], "Power Off Wii"); break;
-				case EXIT_LOADER:	sprintf(options.value[3], "Return to Loader"); break;
+				case EXIT_AUTO:		sprintf(options.value[4], "Auto"); break;
+				case EXIT_WIIMENU:	sprintf(options.value[4], "Return to Wii Menu"); break;
+				case EXIT_POWEROFF:	sprintf(options.value[4], "Power Off Wii"); break;
+				case EXIT_LOADER:	sprintf(options.value[4], "Return to Loader"); break;
 			}
 
-			sprintf(options.value[4], "%s", WiiSettings.rumble ? "On" : "Off");
+			sprintf(options.value[5], "%s", WiiSettings.rumble ? "On" : "Off");
 
 			if(WiiSettings.sleepTimer > 0)
-				sprintf(options.value[5], "%d min", WiiSettings.sleepTimer);
+				sprintf(options.value[6], "%d %s", WiiSettings.sleepTimer, gettext("min"));
 			else
-				sprintf(options.value[5], "Off");
+				sprintf(options.value[6], "Off");
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -3212,9 +3282,10 @@ static void MenuSettingsGlobal()
 			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
+	ChangeTheme();
 	ChangeLanguage();
-	SetSleepTimer();
 	SuspendGui();
+	SetSleepTimer();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
@@ -3462,6 +3533,7 @@ static void MenuSettingsVideos()
 	sprintf(options.name[i++], "Cache Fill");
 	sprintf(options.name[i++], "Audio Delay");
 	sprintf(options.name[i++], "Auto-Resume");
+	sprintf(options.name[i++], "Auto-Play Next Video");
 	sprintf(options.name[i++], "Rewind / Fast Forward");
 	sprintf(options.name[i++], "Videos Files Folder");
 
@@ -3477,19 +3549,15 @@ static void MenuSettingsVideos()
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3559,6 +3627,9 @@ static void MenuSettingsVideos()
 				WiiSettings.autoResume ^= 1;
 				break;
 			case 7:
+				WiiSettings.autoPlayNextVideo ^= 1;
+				break;
+			case 8:
 				if(WiiSettings.seekTime >= 1200)
 					WiiSettings.seekTime = 5;
 				else if(WiiSettings.seekTime >= 600)
@@ -3576,7 +3647,7 @@ static void MenuSettingsVideos()
 				else
 					WiiSettings.seekTime = 15;
 				break;
-			case 8:
+			case 9:
 				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);
 				CleanupPath(WiiSettings.videosFolder);
 				break;
@@ -3610,10 +3681,11 @@ static void MenuSettingsVideos()
 				sprintf (options.value[3], "Auto");
 
 			sprintf (options.value[4], "%d%%", WiiSettings.cacheFill);
-			sprintf (options.value[5], "%.1f sec", WiiSettings.audioDelay);
+			sprintf (options.value[5], "%.1f %s", WiiSettings.audioDelay, gettext("sec"));
 			sprintf (options.value[6], "%s", WiiSettings.autoResume ? "On" : "Off");
-			sprintf (options.value[7], "%d sec", WiiSettings.seekTime);
-			snprintf(options.value[8], 40, "%s", WiiSettings.videosFolder);
+			sprintf (options.value[7], "%s", WiiSettings.autoPlayNextVideo ? "On" : "Off");
+			sprintf (options.value[8], "%d %s", WiiSettings.seekTime, gettext("sec"));
+			snprintf(options.value[9], 40, "%s", WiiSettings.videosFolder);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -3651,19 +3723,15 @@ static void MenuSettingsMusic()
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3755,19 +3823,15 @@ static void MenuSettingsPictures()
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3814,7 +3878,7 @@ static void MenuSettingsPictures()
 			firstRun = false;
 
 			snprintf(options.value[0], 40, "%s", WiiSettings.picturesFolder);
-			sprintf(options.value[1], "%d sec", WiiSettings.slideshowDelay);
+			sprintf(options.value[1], "%d %s", WiiSettings.slideshowDelay, gettext("sec"));
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -3850,19 +3914,15 @@ static void MenuSettingsDVD()
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -3939,19 +3999,15 @@ static void MenuSettingsOnlineMedia()
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -4058,19 +4114,16 @@ static void MenuSettingsNetwork()
 	GuiImageData btnOutlineOver(button_over_png);
 	GuiImageData iconSMB(icon_smb_png);
 	GuiImageData iconFTP(icon_ftp_png);
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -4190,19 +4243,16 @@ static void MenuSettingsNetworkSMB()
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -4386,19 +4436,16 @@ static void MenuSettingsNetworkFTP()
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -4784,19 +4831,15 @@ static void MenuSettingsSubtitles()
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -4863,7 +4906,7 @@ static void MenuSettingsSubtitles()
 			firstRun = false;
 
 			sprintf(options.value[0], "%s", WiiSettings.subtitleVisibility ? "On" : "Off");
-			sprintf(options.value[1], "%.1f sec", WiiSettings.subtitleDelay);
+			sprintf(options.value[1], "%.1f %s", WiiSettings.subtitleDelay, gettext("sec"));
 			strcpy(options.value[2], languages[GetLangIndex()].language);
 			if(GetCodepageIndex() == 0)
 				sprintf(options.value[3], "Default");
@@ -4926,19 +4969,15 @@ static void MenuSettings()
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(30, 100);
 
-	GuiImageData btnBottom(button_bottom_png);
-	GuiImageData btnBottomOver(button_bottom_over_png);
-	GuiImageData arrowRight(arrow_right_small_png);
-
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnTxt.SetPosition(-6, 10);
-	GuiImage backBtnImg(&btnBottom);
-	GuiImage backBtnImgOver(&btnBottomOver);
-	GuiImage backBtnArrow(&arrowRight);
+	GuiImage backBtnImg(btnBottom);
+	GuiImage backBtnImgOver(btnBottomOver);
+	GuiImage backBtnArrow(arrowRightSmall);
 	backBtnArrow.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	backBtnArrow.SetPosition(backBtnTxt.GetTextWidth()/2 + 6, 11);
-	GuiButton backBtn(screenwidth, btnBottom.GetHeight());
+	GuiButton backBtn(screenwidth, btnBottom->GetHeight());
 	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	backBtn.SetPosition(0, 0);
 	backBtn.SetLabel(&backBtnTxt);
@@ -5423,8 +5462,13 @@ static void SetupGui()
 	trigDown->SetButtonOnlyTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
 
 	// images
-	
-	bg = new GuiImageData(bg_png);
+
+	bg = new GuiImageData(bg_jpg, bg_blue_jpg_size, GX_TF_RGBA8);
+	navDivider = new GuiImageData(nav_divider_png);
+	btnBottom = new GuiImageData(button_bottom_png);
+	btnBottomOver = new GuiImageData(button_bottom_over_png);
+	arrowRightSmall = new GuiImageData(arrow_right_small_png);
+
 	disabled = new GuiImage(screenwidth,screenheight,(GXColor){0, 0, 0, 100});
 
 	actionbarLeft = new GuiImageData(actionbar_left_png);	
@@ -5923,13 +5967,12 @@ void WiiMenu()
 		videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
 		mainWindow->Append(videoImg);
 		selectLoadedFile = 1; // video loaded - trigger browser to jump to it
-	}
+	}	
 
 	GuiImage bgImg(bg);
 	bgImg.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	bgImg.SetAlpha(200);
-	GuiImageData navDivider(nav_divider_png);
-	GuiImage navDividerImg(&navDivider);
+	GuiImage navDividerImg(navDivider);
 	navDividerImg.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	navDividerImg.SetPosition(0, 85);
 

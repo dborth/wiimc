@@ -67,8 +67,8 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 TTFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ttf)))
 LANGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.lang)))
 PNGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.png)))
+JPGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.jpg)))
 
-	
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
 #---------------------------------------------------------------------------------
@@ -81,8 +81,8 @@ endif
 export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
 					$(sFILES:.s=.o) $(SFILES:.S=.o) \
 					$(TTFFILES:.ttf=.ttf.o) $(LANGFILES:.lang=.lang.o) \
-					$(PNGFILES:.png=.png.o) $(CURDIR)/source/utils/ehcmodule.elf.o
-					
+					$(PNGFILES:.png=.png.o) $(JPGFILES:.jpg=.jpg.o) \
+					$(CURDIR)/source/utils/ehcmodule.elf.o
 
 #---------------------------------------------------------------------------------
 # build a list of include paths
@@ -139,19 +139,22 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT).dol: $(OUTPUT).elf
 $(OUTPUT).elf: $(OFILES)
 
-
 #---------------------------------------------------------------------------------
-# This rule links in binary data with .ttf, .lang, and .png extensions
+# This rule links in binary data with .ttf, .lang, .png, and .jpg extensions
 #---------------------------------------------------------------------------------
 %.ttf.o : %.ttf
 	@echo $(notdir $<)
 	$(bin2o)
-	
+
 %.lang.o : %.lang
 	@echo $(notdir $<)
 	$(bin2o)
 
 %.png.o : %.png
+	@echo $(notdir $<)
+	$(bin2o)
+
+%.jpg.o : %.jpg
 	@echo $(notdir $<)
 	$(bin2o)
 

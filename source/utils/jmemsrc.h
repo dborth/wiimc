@@ -11,6 +11,6 @@
 
 #include <gctypes.h>
 
-u8 * DecodeJPEG(const u8 * src, u32 len, int * width, int * height);
+u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dst);
 
 #endif

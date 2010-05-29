@@ -550,6 +550,11 @@ class GuiImageData
 		GuiImageData(const u8 * i, int s, u8 f = GX_TF_RGBA8);
 		//!Destructor
 		~GuiImageData();
+		//!Sets the GuiImageData to a new image (assumes the same dimensions)
+		//!\param i Image data
+		//!\param s Image data size
+		//!\param f Target image format
+		void SetImage(const u8 * i, int s = 0);
 		//!Gets a pointer to the image data
 		//!\return pointer to image data
 		u8 * GetImage();

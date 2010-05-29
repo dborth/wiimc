@@ -220,69 +220,104 @@ static bool FindIOS(u32 ios)
  * MPlayer interface
  ***************************************************************************/
 
-extern "C" void FindNextFile(bool load)
+extern "C" bool FindNextFile(bool load)
 {
-	// clear any play icons
-	for(int i=0; i < browser.numEntries; i++)
-	{
-		if(browserList[i].icon == ICON_PLAY)
-		{
-			if(menuCurrent == MENU_BROWSE_MUSIC)
-			{
-				if(MusicPlaylistFind(i))
-					browserList[i].icon = ICON_FILE_CHECKED;
-				else
-					browserList[i].icon = ICON_FILE;
-			}
-			else
-			{
-				browserList[i].icon = ICON_NONE;
-			}
-		}
-	}
-	findLoadedFile = 2; // trigger file browser update
+	nowPlayingSet = false;
 
 	if(controlledbygui == 2) // file termination requested, do not load another file
-		return;
+		return false;
 
-	if(playlistSize == 0 || (WiiSettings.playOrder == PLAY_SINGLE && playlistIndex != -1))
+	if(controlledbygui == 0) // playing a video
 	{
-		playlistIndex = -1;
-		return;
-	}
+		if(!load)
+			return false;
 
-	if(WiiSettings.playOrder == PLAY_CONTINUOUS)
-	{
-		playlistIndex++;
-
-		if(playlistIndex >= playlistSize)
-			playlistIndex = 0;
-	}
-	else if(WiiSettings.playOrder == PLAY_SHUFFLE)
-	{
-		if(playlistSize == 1)
+		if(!WiiSettings.autoPlayNextVideo || videoPlaylistIndex+1 >= videoPlaylistSize)
 		{
-			playlistIndex = 0;
+			loadedFile[0] = 0;
+			loadedFileDisplay[0] = 0;
+			ClearVideoPlaylist();
+			return false;
 		}
 		else
 		{
-			int n = -1;
+			strcpy(loadedFile, videoPlaylist[++videoPlaylistIndex]);
 
-			// don't select the same song twice
-			while(n < 0 || n >= playlistSize || n == playlistIndex)
-				n = (int)(((double)rand() / double(RAND_MAX + 1.0)) * playlistSize);
-			playlistIndex = n;
+			char *start = strrchr(loadedFile,'/');
+
+			// use part after last / for display name, if it's not already the end of the string
+			if(start != NULL && start[1] != 0)
+			{
+				start++;
+				snprintf(loadedFileDisplay, 128, "%s", start);
+			}
+			else
+			{
+				snprintf(loadedFileDisplay, 128, "%s", loadedFile);
+			}
 		}
 	}
-	else if(playlistIndex == -1 || playlistIndex >= playlistSize)
+	else
 	{
-		playlistIndex = 0;
+		// clear any play icons
+		if(menuCurrent == MENU_BROWSE_MUSIC)
+		{
+			for(int i=0; i < browser.numEntries; i++)
+			{
+				if(browserList[i].icon == ICON_PLAY)
+				{
+					if(MusicPlaylistFind(i))
+						browserList[i].icon = ICON_FILE_CHECKED;
+					else
+						browserList[i].icon = ICON_FILE;
+				}
+			}
+			findLoadedFile = 2; // trigger file browser update
+		}
+
+		if(playlistSize == 0 || (WiiSettings.playOrder == PLAY_SINGLE && playlistIndex != -1))
+		{
+			playlistIndex = -1;
+			return false;
+		}
+	
+		if(WiiSettings.playOrder == PLAY_CONTINUOUS)
+		{
+			playlistIndex++;
+	
+			if(playlistIndex >= playlistSize)
+				playlistIndex = 0;
+		}
+		else if(WiiSettings.playOrder == PLAY_SHUFFLE)
+		{
+			if(playlistSize == 1)
+			{
+				playlistIndex = 0;
+			}
+			else
+			{
+				int n = -1;
+	
+				// don't select the same song twice
+				while(n < 0 || n >= playlistSize || n == playlistIndex)
+					n = (int)(((double)rand() / double(RAND_MAX + 1.0)) * playlistSize);
+				playlistIndex = n;
+			}
+		}
+		else if(playlistIndex == -1 || playlistIndex >= playlistSize)
+		{
+			playlistIndex = 0;
+		}
+		sprintf(loadedFile, "%s", playlist[playlistIndex].filepath);
 	}
-	sprintf(loadedFile, "%s", playlist[playlistIndex].filepath);
-	if(load) wiiLoadFile(loadedFile);
-	nowPlayingSet = false;
-	loadedFileDisplay[0] = 0;
-	FindFile(); // try to find this file
+
+	if(load)
+		wiiLoadFile(loadedFile);
+
+	if(controlledbygui == 1)
+		FindFile(); // try to find this file
+
+	return true;
 }
 
 static void *
@@ -425,7 +460,7 @@ int main(int argc, char *argv[])
 	if(IOS_GetVersion() == 202)
 	{
 		WIIDVD_Init(false);
-			
+
 		// load usb2 driver
 		if(mload_init() >= 0 && load_ehci_module())
 			USB2Enable(true);

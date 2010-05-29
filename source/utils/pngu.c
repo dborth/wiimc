@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 #include <malloc.h>
-#include <gccore.h>
 #include "pngu.h"
 #include <png.h>
 
@@ -374,10 +373,10 @@ static inline PNGU_u32 coordsRGBA8(PNGU_u32 x, PNGU_u32 y, PNGU_u32 w)
 	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
 }
 
-static PNGU_u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, int * dstWidth, int * dstHeight)
+static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, int * dstWidth, int * dstHeight, u8 *dstPtr)
 {
 	PNGU_u8 default_alpha = 255;
-	PNGU_u8 *dst;
+	u8 *dst;
 	int x, y, x2, y2, offset;
 	int xRatio = 0, yRatio = 0;
 	png_byte *pixel;
@@ -413,7 +412,11 @@ static PNGU_u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 hei
 
 	int len = (padWidth * padHeight) << 2;
 	if(len%32) len += (32-len%32);
-	dst = memalign (32, len);
+
+	if(dstPtr)
+		dst = dstPtr; // use existing allocation
+	else
+		dst = memalign (32, len);
 
 	if(!dst)
 		return NULL;
@@ -558,17 +561,17 @@ int PNGU_GetImageProperties (IMGCTX ctx, PNGUPROP *imgprop)
 	return PNGU_OK;
 }
 
-PNGU_u8 * DecodePNG(const PNGU_u8 *src, int * width, int * height)
+u8 * DecodePNG(const PNGU_u8 *src, int * width, int * height, u8 *dstPtr)
 {
 	PNGUPROP imgProp;
 	IMGCTX ctx = PNGU_SelectImageFromBuffer(src);
-	PNGU_u8 *dst = NULL;
+	u8 *dst = NULL;
 
 	if(!ctx)
 		return NULL;
 
 	if(PNGU_GetImageProperties(ctx, &imgProp) == PNGU_OK)
-		dst = PNGU_DecodeTo4x4RGBA8 (ctx, imgProp.imgWidth, imgProp.imgHeight, width, height);
+		dst = PNGU_DecodeTo4x4RGBA8 (ctx, imgProp.imgWidth, imgProp.imgHeight, width, height, dstPtr);
 
 	PNGU_ReleaseImageContext (ctx);
 	return dst;

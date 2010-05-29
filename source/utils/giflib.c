@@ -975,7 +975,7 @@ static GifFileType *DGifOpenMem(const unsigned char *img, int imgSize)
 	return DGifOpen(gifMemoryType, DGifOpenFromMemoryCallback);
 }
 
-static u8* DGifDecodeTo4x4RGB8(GifFileType *gifFile, GifRowType *rowType, short transparentColor)
+static u8* DGifDecodeTo4x4RGB8(GifFileType *gifFile, GifRowType *rowType, short transparentColor, u8 *dstPtr)
 {
 	unsigned int vert, hor, col, row;
 
@@ -995,7 +995,12 @@ static u8* DGifDecodeTo4x4RGB8(GifFileType *gifFile, GifRowType *rowType, short 
 	if (len % 32)
 		len += (32 - len % 32);
 
-	u8 * dst = (u8 *) memalign(32, len);
+	u8 * dst;
+
+	if(dstPtr)
+		dst = dstPtr; // use existing allocation
+	else
+		dst = memalign (32, len);
 
 	if (!dst)
 		return NULL;
@@ -1171,7 +1176,7 @@ static GifRowType *DGifDecompress(GifFileType *gifFile, short *transparentColor)
 	finish: return ScreenBuffer;
 }
 
-u8 * DecodeGIF(const u8 * src, u32 srclen, int * width, int * height)
+u8 * DecodeGIF(const u8 *src, u32 srclen, int *width, int *height, u8 *dstPtr)
 {
 	GifFileType *gifFile = DGifOpenMem(src, srclen);
 
@@ -1185,7 +1190,7 @@ u8 * DecodeGIF(const u8 * src, u32 srclen, int * width, int * height)
 	if (rows == NULL)
 		return NULL;
 
-	u8 *dst = DGifDecodeTo4x4RGB8(gifFile, rows, transparentColor);
+	u8 *dst = DGifDecodeTo4x4RGB8(gifFile, rows, transparentColor, dstPtr);
 
 	if (dst)
 	{

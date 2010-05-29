@@ -319,9 +319,10 @@ prepareSettingsData ()
 
 	// Global
 	createXMLSection("Global", "Global Settings");
-	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
+	createXMLSetting("theme", "Theme", WiiSettings.theme);
 	createXMLSetting("language", "Language", toStr(WiiSettings.language));
 	createXMLSetting("volume", "Volume", toStr(WiiSettings.volume));
+	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
 	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
 	// Videos
@@ -335,6 +336,7 @@ prepareSettingsData ()
 	createXMLSetting("cacheFill", "Cache Fill %", toStr(WiiSettings.cacheFill));
 	createXMLSetting("audioDelay", "Audio delay", FtoStr(WiiSettings.audioDelay));
 	createXMLSetting("autoResume", "Auto-resume", toStr(WiiSettings.autoResume));
+	createXMLSetting("autoPlayNextVideo", "Auto-play next video", toStr(WiiSettings.autoPlayNextVideo));
 	createXMLSetting("seekTime", "Seek time", toStr(WiiSettings.seekTime));
 	createXMLSetting("videosFolder", "Videos folder", WiiSettings.videosFolder);
 	// Music
@@ -538,9 +540,10 @@ void DefaultSettings ()
 	memset(&WiiSettings, 0, sizeof(SWiiSettings));
 
 	// Global
-	WiiSettings.hideExtensions = 1;
+	WiiSettings.theme[0] = 0;
 	WiiSettings.language = CONF_GetLanguage();
 	WiiSettings.volume = 50;
+	WiiSettings.hideExtensions = 1;
 	WiiSettings.exitAction = EXIT_AUTO;
 	WiiSettings.rumble = 1;
 	WiiSettings.sleepTimer = 0;
@@ -554,6 +557,7 @@ void DefaultSettings ()
 	WiiSettings.cacheFill = 30;
 	WiiSettings.audioDelay = 0;
 	WiiSettings.autoResume = 1;
+	WiiSettings.autoPlayNextVideo = 0;
 	WiiSettings.seekTime = 30;
 	WiiSettings.videosFolder[0] = 0;
 	// Music
@@ -600,12 +604,16 @@ void DefaultSettings ()
 static void FixInvalidSettings()
 {
 	// Global
-	if(WiiSettings.hideExtensions != 1 && WiiSettings.hideExtensions != 0)
-		WiiSettings.hideExtensions = 1;
+	if(WiiSettings.theme[0] != 0 && strcmp(WiiSettings.theme, "blue") != 0 && 
+		strcmp(WiiSettings.theme, "green") != 0 && strcmp(WiiSettings.theme, "grey") != 0 && 
+		strcmp(WiiSettings.theme, "orange") != 0 && strcmp(WiiSettings.theme, "red") != 0)
+		WiiSettings.theme[0] = 0;
 	if(WiiSettings.language < 0 || WiiSettings.language > LANG_LENGTH)
 		WiiSettings.language = LANG_ENGLISH;
 	if(WiiSettings.volume < 0 || WiiSettings.volume > 100)
 		WiiSettings.volume = 50;
+	if(WiiSettings.hideExtensions != 1 && WiiSettings.hideExtensions != 0)
+		WiiSettings.hideExtensions = 1;
 	if(WiiSettings.exitAction < 0 || WiiSettings.exitAction > EXIT_LOADER)
 		WiiSettings.exitAction = EXIT_AUTO;
 	if(WiiSettings.rumble != 1 && WiiSettings.rumble != 0)
@@ -630,6 +638,8 @@ static void FixInvalidSettings()
 		WiiSettings.audioDelay = 0;
 	if(WiiSettings.autoResume != 1 && WiiSettings.autoResume != 0)
 		WiiSettings.autoResume = 1;
+	if(WiiSettings.autoPlayNextVideo != 1 && WiiSettings.autoPlayNextVideo != 0)
+		WiiSettings.autoPlayNextVideo = 1;
 	if(WiiSettings.seekTime < 5 || WiiSettings.seekTime > 1200)
 		WiiSettings.seekTime = 30;
 	CleanupPath(WiiSettings.videosFolder);
@@ -885,9 +895,10 @@ static bool LoadSettingsFile(char * filepath)
 			if(result)
 			{
 				// Global
-				loadXMLSetting(&WiiSettings.hideExtensions, "hideExtensions");
+				loadXMLSetting(WiiSettings.theme, "theme", sizeof(WiiSettings.theme));
 				loadXMLSetting(&WiiSettings.language, "language");
 				loadXMLSetting(&WiiSettings.volume, "volume");
+				loadXMLSetting(&WiiSettings.hideExtensions, "hideExtensions");
 				loadXMLSetting(&WiiSettings.exitAction, "exitAction");
 				loadXMLSetting(&WiiSettings.rumble, "rumble");
 				// Videos
@@ -900,6 +911,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.cacheFill, "cacheFill");
 				loadXMLSetting(&WiiSettings.audioDelay, "audioDelay");
 				loadXMLSetting(&WiiSettings.autoResume, "autoResume");
+				loadXMLSetting(&WiiSettings.autoPlayNextVideo, "autoPlayNextVideo");
 				loadXMLSetting(&WiiSettings.seekTime, "seekTime");
 				loadXMLSetting(WiiSettings.videosFolder, "videosFolder", sizeof(WiiSettings.videosFolder));
 				// Music
@@ -979,6 +991,9 @@ bool LoadSettings()
 	{
 		FixInvalidSettings();
 		ChangeLanguage();
+
+		if(WiiSettings.theme[0] != 0)
+			ChangeTheme();
 
 		sprintf(filepath,"%s/restore_points",appPath);
 		char *buffer = (char *)malloc(50*1024);

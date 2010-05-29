@@ -258,7 +258,7 @@ class BMP
 		bool SetColor(int ColorNumber, RGBApixel NewColor);
 	
 		bool Read(struct BMPFile *bmpFile);
-		u8 * DecodeTo4x4RGB8();
+		u8 * DecodeTo4x4RGB8(u8 *dst);
 };
 
 BMP::BMP()
@@ -1208,7 +1208,7 @@ static inline u32 coordsRGBA8(u32 x, u32 y, u32 w)
 	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
 }
 
-u8 * BMP::DecodeTo4x4RGB8()
+u8 * BMP::DecodeTo4x4RGB8(u8 *dstPtr)
 {
 	int newWidth = Width;
 	if(newWidth%4) newWidth += (4-newWidth%4);
@@ -1218,7 +1218,12 @@ u8 * BMP::DecodeTo4x4RGB8()
 	int len = (newWidth * newHeight) << 2;
 	if(len%32) len += (32-len%32);
 
-	u8 * dst = (u8 *) memalign(32, len);
+	u8 * dst;
+
+	if(dstPtr)
+		dst = dstPtr; // use existing allocation
+	else
+		dst = (u8 *)memalign (32, len);
 
 	if(!dst)
 		return NULL;
@@ -1376,7 +1381,7 @@ static bool Rescale(BMP& InputImage, char mode, int NewDimension)
 	return true;
 }
 
-u8 * DecodeBMP(const u8 * src, u32 srclen, int * width, int * height)
+u8 * DecodeBMP(const u8 *src, u32 srclen, int *width, int *height, u8 *dstPtr)
 {
 	BMP bmp;
 	struct BMPFile bmpFile;
@@ -1394,7 +1399,7 @@ u8 * DecodeBMP(const u8 * src, u32 srclen, int * width, int * height)
 			Rescale(bmp, 'W', screenwidth);
 	}
 
-	u8 *dst = bmp.DecodeTo4x4RGB8();
+	u8 *dst = bmp.DecodeTo4x4RGB8(dstPtr);
 
 	if(dst)
 	{

@@ -538,11 +538,11 @@ msgstr "Mplayer bezárása"
 msgid "Subtitle Codepage"
 msgstr "Felirat kódlapja"
 
-msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Ebben a mappában a megengedettnél (3000) több elem van. Nem mind fog látszani."
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Ebben a mappában a megengedettnél (2000) több elem van. Nem mind fog látszani."
 
-msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Ebben a dallistában a megengedettnél (3000) több elem van. Nem mind fog látszani."
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Ebben a dallistában a megengedettnél (2000) több elem van. Nem mind fog látszani."
 
 msgid "Downloading..."
 msgstr "Letöltés..."

@@ -538,10 +538,10 @@ msgstr "MPlayer afsluiten"
 msgid "Subtitle Codepage"
 msgstr ""
 
-msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
 msgstr ""
 
-msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
 msgstr ""
 
 msgid "Downloading..."

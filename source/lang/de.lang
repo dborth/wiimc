@@ -538,11 +538,11 @@ msgstr "MPlayer schließen"
 msgid "Subtitle Codepage"
 msgstr "Untertitel Zeichentabelle"
 
-msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Dieses Verzeichnis hat mehr Einträge als maximal erlaubt sind (3000). Nicht alle Einträge werden angezeigt."
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Dieses Verzeichnis hat mehr Einträge als maximal erlaubt sind (2000). Nicht alle Einträge werden angezeigt."
 
-msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Diese Wiedergabeliste hat mehr Einträge als maximal erlaubt sind (3000). Nicht alle Einträge werden angezeigt."
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Diese Wiedergabeliste hat mehr Einträge als maximal erlaubt sind (2000). Nicht alle Einträge werden angezeigt."
 
 msgid "Downloading..."
 msgstr "Lade herunter..."
@@ -570,3 +570,30 @@ msgstr "Rot"
 
 msgid "Sleep Timer"
 msgstr "Sleep-Timer"
+
+msgid "sec"
+msgstr "sek"
+
+msgid "min"
+msgstr "min"
+
+msgid "Theme"
+msgstr "Oberfläche"
+
+msgid "Blue"
+msgstr "Blau"
+
+msgid "Green"
+msgstr "Grün"
+
+msgid "Grey"
+msgstr "Grau"
+
+msgid "Orange"
+msgstr "Orange"
+
+msgid "Purple (Default)"
+msgstr "Violett (Standard)"
+
+msgid "Auto-Play Next Video"
+msgstr "nächstes Video automatisch spielen"

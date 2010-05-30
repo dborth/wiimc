@@ -538,11 +538,11 @@ msgstr "Zamknij MPlayer"
 msgid "Subtitle Codepage"
 msgstr "Strona kodowa napisów"
 
-msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Ten folder zawiera więcej źródeł niż dozwolone maksimum (3000). Nie wszystkie źródła są widoczne."
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Ten folder zawiera więcej źródeł niż dozwolone maksimum (2000). Nie wszystkie źródła są widoczne."
 
-msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Ta lista odtwarzania zawiera więcej źródeł niż dozwolone maksimum (3000). Nie wszystkei źródł są widoczne."
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Ta lista odtwarzania zawiera więcej źródeł niż dozwolone maksimum (2000). Nie wszystkei źródł są widoczne."
 
 msgid "Downloading..."
 msgstr "Ściąganie..."

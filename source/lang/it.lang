@@ -538,11 +538,11 @@ msgstr "Chiudi MPlayer"
 msgid "Subtitle Codepage"
 msgstr "Codifica Sottotitoli"
 
-msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Questa cartella contiene più voci rispetto al massimo consentito(3000). Non tutti i files saranno visibili"
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Questa cartella contiene più voci rispetto al massimo consentito(2000). Non tutti i files saranno visibili"
 
-msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Questa playlist contiene più voci rispetto al massimo consentito(3000). Non tutti i files saranno visibili"
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Questa playlist contiene più voci rispetto al massimo consentito(2000). Non tutti i files saranno visibili"
 
 msgid "Downloading..."
 msgstr "Downloading..."
@@ -567,3 +567,33 @@ msgstr "Giallo"
 
 msgid "Red"
 msgstr "Rosso"
+
+msgid "Sleep Timer"
+msgstr ""
+
+msgid "sec"
+msgstr ""
+
+msgid "min"
+msgstr ""
+
+msgid "Blue"
+msgstr "Blu"
+
+msgid "Green"
+msgstr "Verde"
+
+msgid "Grey"
+msgstr "Grigio"
+
+msgid "Orange"
+msgstr "Arancio"
+
+msgid "Theme"
+msgstr "Tema"
+
+msgid "Purple (Default)"
+msgstr "Viola (Default)"
+
+msgid "Auto-Play Next Video"
+msgstr "Auto-Play Video Successivo"

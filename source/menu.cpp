@@ -2127,9 +2127,15 @@ static void MenuBrowse(int menu)
 			{
 				if(browserList[addIndex].icon == ICON_FILE_CHECKED || 
 					browserList[addIndex].icon == ICON_FOLDER_CHECKED)
+				{
 					MusicPlaylistDequeue(addIndex);
+				}
 				else
+				{
+					ShowAction("Adding files to playlist...");
 					MusicPlaylistEnqueue(addIndex);
+					CancelAction();
+				}
 
 				fileBrowser->TriggerUpdate();
 			}

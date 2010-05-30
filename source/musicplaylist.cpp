@@ -129,44 +129,6 @@ static bool EnqueueFile(char * path, char * name)
 	if(ext == NULL)
 		return false; // file does not have an extension - skip it
 
-	// check if this is a playlist	
-	if(IsPlaylistExt(ext))
-	{
-		// this is a playlist - parse it and add the files inside
-		char fullpath[MAXPATHLEN];
-		GetFullPath(browser.selIndex, fullpath);
-		play_tree_t * list = parse_playlist_file(fullpath);
-
-		if(!list)
-			return false;
-
-		char * playlistEntry;
-		char display[MAXJOLIET+1];
-		char *start;
-		play_tree_iter_t *pt_iter = NULL;
-
-		if((pt_iter = pt_iter_create(&list, NULL)))
-		{
-			while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
-			{
-				start = strrchr(playlistEntry,'/');
-				if(start != NULL) // start up starting part of path
-				{
-					start++;
-					sprintf(display, start);
-				}
-				else
-				{
-					strncpy(display, playlistEntry, MAXJOLIET);
-					display[MAXJOLIET] = 0;
-				}
-				EnqueueFile(playlistEntry, display);
-			}
-			pt_iter_destroy(&pt_iter);
-		}
-		return true;
-	}
-
 	// check if this is a valid audio file
 	int i=0;
 	do

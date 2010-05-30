@@ -538,11 +538,11 @@ msgstr "Fechar o MPlayer"
 msgid "Subtitle Codepage"
 msgstr "Código de página da legenda"
 
-msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Este diretório contém mais entradas do que o máximo permitido (3000). Nem todas entradas serão visualizadas"
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Este diretório contém mais entradas do que o máximo permitido (2000). Nem todas entradas serão visualizadas"
 
-msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Esta lista de reprodução contém mais entradas do que o máximo permitido (3000). Nem todas entradas serão visualizadas"
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Esta lista de reprodução contém mais entradas do que o máximo permitido (2000). Nem todas entradas serão visualizadas"
 
 msgid "Downloading..."
 msgstr "Baixando..."

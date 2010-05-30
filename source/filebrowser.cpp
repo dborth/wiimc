@@ -120,6 +120,12 @@ void ClearVideoPlaylist()
 
 bool AddPlaylistEntry()
 {
+	if(playlistSize+1 >= MAX_BROWSER_SIZE)
+	{
+		ErrorPrompt("Out of memory: too many files!");
+		return false; // out of space
+	}
+
 	MEDIAENTRY * newList = (MEDIAENTRY *)realloc(playlist, (playlistSize+1) * sizeof(MEDIAENTRY));
 
 	if(!newList) // failed to allocate required memory
@@ -138,6 +144,12 @@ bool AddPlaylistEntry()
 
 bool AddMediaEntry()
 {
+	if(onlinemediaSize+1 >= MAX_BROWSER_SIZE)
+	{
+		ErrorPrompt("Out of memory: too many files!");
+		return false; // out of space
+	}
+
 	MEDIAENTRY * newList = (MEDIAENTRY *)realloc(onlinemediaList, (onlinemediaSize+1) * sizeof(MEDIAENTRY));
 
 	if(!newList) // failed to allocate required memory

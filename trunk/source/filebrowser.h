@@ -14,7 +14,7 @@
 #include <gccore.h>
 
 #define MAXJOLIET			255
-#define MAX_BROWSER_SIZE	2500
+#define MAX_BROWSER_SIZE	2000
 
 enum
 {

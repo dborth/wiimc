@@ -1282,7 +1282,7 @@ static bool ParseDirEntries()
 		}
 		else
 		{
-			InfoPrompt("Warning", "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible.");
+			InfoPrompt("Warning", "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible.");
 			res = -1;
 			break;
 		}
@@ -1714,7 +1714,7 @@ int ParsePlaylistFile()
 
 		if(!AddBrowserEntry()) // add failed
 		{
-			InfoPrompt("Warning", "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible.");
+			InfoPrompt("Warning", "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible.");
 			break;
 		}
 

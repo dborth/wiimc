@@ -538,11 +538,11 @@ msgstr "Sulge MPlayer"
 msgid "Subtitle Codepage"
 msgstr "Subtiitrite codepage"
 
-msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "See kaust sisaldab rohkem objekte kui maksimaalselt lubatud (3000). Kõik objektid ei ole nähtavad."
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "See kaust sisaldab rohkem objekte kui maksimaalselt lubatud (2000). Kõik objektid ei ole nähtavad."
 
-msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "See esitusloend sisaldab rohkem objekte kui maksimaalselt lubatud (3000). Kõik objektid ei ole nähtavad."
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "See esitusloend sisaldab rohkem objekte kui maksimaalselt lubatud (2000). Kõik objektid ei ole nähtavad."
 
 msgid "Downloading..."
 msgstr "Laen alla..."

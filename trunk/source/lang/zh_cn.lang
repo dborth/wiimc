@@ -538,11 +538,11 @@ msgstr "关闭Mplayer播放器"
 msgid "Subtitle Codepage"
 msgstr "字幕代码页"
 
-msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "此目录中文件超过3000个，超过3000将会有文件不会显示出来。"
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "此目录中文件超过2000个，超过2000将会有文件不会显示出来。"
 
-msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "播放列表文件数最大不能超过3000条，超过3000将会有文件不会显示出"
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "播放列表文件数最大不能超过2000条，超过2000将会有文件不会显示出"
 
 msgid "Downloading..."
 msgstr "下载中..."

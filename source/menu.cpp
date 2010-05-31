@@ -3197,6 +3197,7 @@ static void MenuSettingsGlobal()
 					sprintf(WiiSettings.theme, "red");
 				else if(strcmp(WiiSettings.theme, "red") == 0)
 					WiiSettings.theme[0] = 0;
+				ChangeTheme();
 				break;
 			case 1:
 				WiiSettings.language++;
@@ -3288,7 +3289,6 @@ static void MenuSettingsGlobal()
 			ChangeMenuNoHistory(MENU_SETTINGS);
 		}
 	}
-	ChangeTheme();
 	ChangeLanguage();
 	SuspendGui();
 	SetSleepTimer();

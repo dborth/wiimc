@@ -596,4 +596,7 @@ msgid "Purple (Default)"
 msgstr "Púrpura (Por defecto)"
 
 msgid "Auto-Play Next Video"
-msgstr "Auto-Play siguiente video"
+msgstr "Auto-Play siguiente vídeo"
+
+msgid "Adding files to playlist..."
+msgstr "Añadiendo ficheros a la lista de reproducción..."

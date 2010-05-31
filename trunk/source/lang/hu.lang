@@ -567,3 +567,36 @@ msgstr "Sárga"
 
 msgid "Red"
 msgstr "Piros"
+
+msgid "Sleep Timer"
+msgstr "Elalvás-kikapcsoló"
+
+msgid "sec"
+msgstr "mp"
+
+msgid "min"
+msgstr "perc"
+
+msgid "Blue"
+msgstr "Kék"
+
+msgid "Green"
+msgstr "Zöld"
+
+msgid "Grey"
+msgstr "Szürke"
+
+msgid "Orange"
+msgstr "Narancs"
+
+msgid "Theme"
+msgstr "Téma"
+
+msgid "Purple (Default)"
+msgstr ""
+
+msgid "Auto-Play Next Video"
+msgstr ""
+
+msgid "Adding files to playlist..."
+msgstr "Fájlok hozzáadása a lejátszási listához..."

@@ -569,4 +569,34 @@ msgid "Red"
 msgstr "Vermelho"
 
 msgid "Sleep Timer"
-msgstr "Temporizador"
+msgstr "Temporizador para adormecer"
+
+msgid "sec"
+msgstr "seg"
+
+msgid "min"
+msgstr "min"
+
+msgid "Blue"
+msgstr "Azul"
+
+msgid "Green"
+msgstr "Verde"
+
+msgid "Grey"
+msgstr "Cinza"
+
+msgid "Orange"
+msgstr "Laranja"
+
+msgid "Theme"
+msgstr "Tema"
+
+msgid "Purple (Default)"
+msgstr "Roxo (Padrão)"
+
+msgid "Auto-Play Next Video"
+msgstr "Reprodução automática do próximo vídeo"
+
+msgid "Adding files to playlist..."
+msgstr "Adicionando arquivos para lista de reprodução"

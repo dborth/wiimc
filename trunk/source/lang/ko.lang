@@ -567,3 +567,33 @@ msgstr "노란색"
 
 msgid "Red"
 msgstr "빨간색"
+
+msgid "Sleep Timer"
+msgstr "슬립 타이머"
+
+msgid "sec"
+msgstr "초"
+
+msgid "min"
+msgstr "분"
+
+msgid "Theme"
+msgstr "테마"
+
+msgid "Blue"
+msgstr "파랑"
+
+msgid "Green"
+msgstr "초록"
+
+msgid "Grey"
+msgstr "회색"
+
+msgid "Orange"
+msgstr "오렌지색"
+
+msgid "Purple (Default)"
+msgstr "보라색（기본）"
+
+msgid "Auto-Play Next Video"
+msgstr "다음 동영상으로 자동재생"

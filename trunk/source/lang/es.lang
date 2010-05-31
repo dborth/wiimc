@@ -570,3 +570,30 @@ msgstr "Rojo"
 
 msgid "Sleep Timer"
 msgstr "Temporizador"
+
+msgid "sec"
+msgstr "seg"
+
+msgid "min"
+msgstr "min"
+
+msgid "Blue"
+msgstr "Azul"
+
+msgid "Green"
+msgstr "Verde"
+
+msgid "Grey"
+msgstr "Gris"
+
+msgid "Orange"
+msgstr "Naranja"
+
+msgid "Theme"
+msgstr "Tema"
+
+msgid "Purple (Default)"
+msgstr "Púrpura (Por defecto)"
+
+msgid "Auto-Play Next Video"
+msgstr "Auto-Play siguiente video"

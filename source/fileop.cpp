@@ -24,6 +24,7 @@
 
 extern "C" {
 #include "mplayer/playtree.h"
+#include "mplayer/stream/url.h"
 }
 
 #include "wiimc.h"
@@ -1793,6 +1794,7 @@ int ParseOnlineMedia()
 	}
 
 	char *ext;
+	char tmpaddress[MAXPATHLEN];
 	int dirLen = strlen(browser.dir);
 
 	for(int i=0; i < onlinemediaSize; i++)
@@ -1808,9 +1810,11 @@ int ParseOnlineMedia()
 
 			AddBrowserEntry();
 			if(strncmp(onlinemediaList[i].address, "http:", 5) == 0)
-				snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "%s", onlinemediaList[i].address);
+				snprintf(tmpaddress, MAXPATHLEN, "%s", onlinemediaList[i].address);
 			else // protocol not specified - assume http:// and append
-				snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "http://%s", onlinemediaList[i].address);
+				snprintf(tmpaddress, MAXPATHLEN, "http://%s", onlinemediaList[i].address);
+
+			url_unescape_string(browserList[browser.numEntries].filename, tmpaddress);
 			snprintf(browserList[browser.numEntries].displayname, MAXJOLIET, "%s", onlinemediaList[i].displayname);
 			snprintf(browserList[browser.numEntries].image, MAXJOLIET, "%s", onlinemediaList[i].image);
 			browserList[browser.numEntries].length = 0;

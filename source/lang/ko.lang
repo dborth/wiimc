@@ -597,3 +597,6 @@ msgstr "보라색（기본）"
 
 msgid "Auto-Play Next Video"
 msgstr "다음 동영상으로 자동재생"
+
+msgid "Adding files to playlist..."
+msgstr "재생목록에 파일추가중.."

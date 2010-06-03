@@ -1255,7 +1255,7 @@ void InfoPrompt(const char *title, wchar_t *msg)
  * Opens an on-screen keyboard window, with the data entered being stored
  * into the specified variable.
  ***************************************************************************/
-void OnScreenKeyboard(char * var, u32 maxlen)
+bool OnScreenKeyboard(char * var, u32 maxlen)
 {
 	int save = -1;
 
@@ -1310,15 +1310,15 @@ void OnScreenKeyboard(char * var, u32 maxlen)
 	}
 
 	if(save)
-	{
 		snprintf(var, maxlen+1, "%s", keyboard.kbtextstr);
-	}
 
 	SuspendGui();
 	mainWindow->Remove(&keyboard);
 	mainWindow->Remove(disabled);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
+
+	return save;
 }
 
 /****************************************************************************
@@ -2261,7 +2261,7 @@ static void MenuBrowse(int menu)
 				if(wiiAudioOnly())
 				{
 					StopMPlayerFile(); // end this song
-					while(controlledbygui != 1) // wait for song to end
+					while(controlledbygui == 2) // wait for song to end
 						usleep(THREAD_SLEEP);
 					FindNextFile(true); // find next song
 				}
@@ -3058,7 +3058,7 @@ static void MenuDVD()
 		mainWindow->Append(disabled);
 		ShowAction("Loading...");
 		LoadMPlayerFile();
-	
+
 		// wait until MPlayer is ready to take or return control
 		while(!guiShutdown && controlledbygui != 1)
 			usleep(THREAD_SLEEP);
@@ -3165,7 +3165,6 @@ static void MenuSettingsGlobal()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3575,7 +3574,6 @@ static void MenuSettingsVideos()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3691,7 +3689,7 @@ static void MenuSettingsVideos()
 			sprintf (options.value[6], "%s", WiiSettings.autoResume ? "On" : "Off");
 			sprintf (options.value[7], "%s", WiiSettings.autoPlayNextVideo ? "On" : "Off");
 			sprintf (options.value[8], "%d %s", WiiSettings.seekTime, gettext("sec"));
-			snprintf(options.value[9], 40, "%s", WiiSettings.videosFolder);
+			snprintf(options.value[9], 60, "%s", WiiSettings.videosFolder);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -3749,7 +3747,6 @@ static void MenuSettingsMusic()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3791,7 +3788,7 @@ static void MenuSettingsMusic()
 				case PLAY_SHUFFLE:		sprintf(options.value[0], "Shuffle"); break;
 				case PLAY_LOOP:			sprintf(options.value[0], "Loop"); break;
 			}
-			snprintf(options.value[1], 40, "%s", WiiSettings.musicFolder);
+			snprintf(options.value[1], 60, "%s", WiiSettings.musicFolder);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -3849,7 +3846,6 @@ static void MenuSettingsPictures()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -3883,7 +3879,7 @@ static void MenuSettingsPictures()
 		{
 			firstRun = false;
 
-			snprintf(options.value[0], 40, "%s", WiiSettings.picturesFolder);
+			snprintf(options.value[0], 60, "%s", WiiSettings.picturesFolder);
 			sprintf(options.value[1], "%d %s", WiiSettings.slideshowDelay, gettext("sec"));
 			optionBrowser.TriggerUpdate();
 		}
@@ -3940,7 +3936,6 @@ static void MenuSettingsDVD()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -4025,7 +4020,6 @@ static void MenuSettingsOnlineMedia()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -4055,7 +4049,7 @@ static void MenuSettingsOnlineMedia()
 		{
 			firstRun = false;
 
-			snprintf(options.value[0], 40, "%s", WiiSettings.onlinemediaFolder);
+			snprintf(options.value[0], 60, "%s", WiiSettings.onlinemediaFolder);
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -4282,7 +4276,6 @@ static void MenuSettingsNetworkSMB()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 6, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -4347,7 +4340,9 @@ static void MenuSettingsNetworkSMB()
 				break;
 
 			case 4:
-				OnScreenKeyboard(WiiSettings.smbConf[netEditIndex].pwd, 14);
+				char tmp[14] = { 0 };
+				if(OnScreenKeyboard(tmp, 14))
+					strcpy(WiiSettings.smbConf[netEditIndex].pwd, tmp);
 				break;
 		}
 
@@ -4358,7 +4353,7 @@ static void MenuSettingsNetworkSMB()
 			snprintf(options.value[1], 40, "%s", WiiSettings.smbConf[netEditIndex].ip);
 			snprintf(options.value[2], 40, "%s", WiiSettings.smbConf[netEditIndex].share);
 			snprintf(options.value[3], 40, "%s", WiiSettings.smbConf[netEditIndex].user);
-			snprintf(options.value[4], 40, "%s", WiiSettings.smbConf[netEditIndex].pwd);
+			sprintf(options.value[4], "********");
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -4480,7 +4475,6 @@ static void MenuSettingsNetworkFTP()
 
 	GuiOptionBrowser optionBrowser(screenwidth, size, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();
@@ -4529,23 +4523,27 @@ static void MenuSettingsNetworkFTP()
 				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].user, 20);
 				break;
 			case 4:
-				OnScreenKeyboard(WiiSettings.ftpConf[netEditIndex].pwd, 20);
+				char tmp[20];
+				if(OnScreenKeyboard(tmp, 20))
+					strcpy(WiiSettings.ftpConf[netEditIndex].pwd, tmp);
 				break;
 			case 5:
 				char tmpPort[6];
 				sprintf(tmpPort, "%d", WiiSettings.ftpConf[netEditIndex].port);
-				OnScreenKeyboard(tmpPort, 5);
-				if(tmpPort[0] == 0)
-					ErrorPrompt("Port cannot be blank!");
-				else if(!isnumeric(tmpPort))
-					ErrorPrompt("Port is not a number!");
-				else
+				if(OnScreenKeyboard(tmpPort, 5))
 				{
-					int port = atoi(tmpPort);
-					if(port < 4 || port > 49151)
-						ErrorPrompt("Port is outside the allowed range (4-49151)!");
+					if(tmpPort[0] == 0)
+						ErrorPrompt("Port cannot be blank!");
+					else if(!isnumeric(tmpPort))
+						ErrorPrompt("Port is not a number!");
 					else
-						WiiSettings.ftpConf[netEditIndex].port = port;
+					{
+						int port = atoi(tmpPort);
+						if(port < 4 || port > 49151)
+							ErrorPrompt("Port is outside the allowed range (4-49151)!");
+						else
+							WiiSettings.ftpConf[netEditIndex].port = port;
+					}
 				}
 				break;
 			case 6:
@@ -4560,7 +4558,7 @@ static void MenuSettingsNetworkFTP()
 			snprintf(options.value[1], 40, "%s", WiiSettings.ftpConf[netEditIndex].ip);
 			snprintf(options.value[2], 40, "%s", WiiSettings.ftpConf[netEditIndex].folder);
 			snprintf(options.value[3], 40, "%s", WiiSettings.ftpConf[netEditIndex].user);
-			snprintf(options.value[4], 40, "%s", WiiSettings.ftpConf[netEditIndex].pwd);
+			sprintf(options.value[4], "********");
 			sprintf(options.value[5], "%d", WiiSettings.ftpConf[netEditIndex].port);
 			sprintf(options.value[6], "%s", WiiSettings.ftpConf[netEditIndex].passive ? "Passive" : "Active");
 			optionBrowser.TriggerUpdate();
@@ -4857,7 +4855,6 @@ static void MenuSettingsSubtitles()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 7, &options);
 	optionBrowser.SetPosition(0, 150);
-	optionBrowser.SetCol2Position(275);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
 	SuspendGui();

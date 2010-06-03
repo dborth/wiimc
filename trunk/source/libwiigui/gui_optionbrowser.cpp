@@ -105,7 +105,8 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 
 		optionVal[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
 		optionVal[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		optionVal[i]->SetPosition(250,-2);
+		optionVal[i]->SetPosition(325,-2);
+		optionVal[i]->SetMaxWidth(screenwidth-325-60);
 
 		optionBg[i] = new GuiImage(bgOptionsEntry);
 		optionBg[i]->SetTile(w/16);
@@ -184,7 +185,10 @@ void GuiOptionBrowser::SetCol1Position(int x)
 void GuiOptionBrowser::SetCol2Position(int x)
 {
 	for(int i=0; i<size; i++)
+	{
 		optionVal[i]->SetPosition(x,-2);
+		optionVal[i]->SetMaxWidth(screenwidth-x-60);
+	}
 }
 
 void GuiOptionBrowser::SetFocus(int f)

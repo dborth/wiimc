@@ -224,6 +224,22 @@ extern "C" bool FindNextFile(bool load)
 {
 	nowPlayingSet = false;
 
+	if(menuMode == 0 && menuCurrent == MENU_BROWSE_MUSIC)
+	{
+		// clear any play icons
+		for(int i=0; i < browser.numEntries; i++)
+		{
+			if(browserList[i].icon == ICON_PLAY)
+			{
+				if(MusicPlaylistFind(i))
+					browserList[i].icon = ICON_FILE_CHECKED;
+				else
+					browserList[i].icon = ICON_FILE;
+			}
+		}
+		findLoadedFile = 2; // trigger file browser update
+	}
+
 	if(controlledbygui == 2) // file termination requested, do not load another file
 		return false;
 
@@ -259,22 +275,6 @@ extern "C" bool FindNextFile(bool load)
 	}
 	else
 	{
-		// clear any play icons
-		if(menuCurrent == MENU_BROWSE_MUSIC)
-		{
-			for(int i=0; i < browser.numEntries; i++)
-			{
-				if(browserList[i].icon == ICON_PLAY)
-				{
-					if(MusicPlaylistFind(i))
-						browserList[i].icon = ICON_FILE_CHECKED;
-					else
-						browserList[i].icon = ICON_FILE;
-				}
-			}
-			findLoadedFile = 2; // trigger file browser update
-		}
-
 		if(playlistSize == 0 || (WiiSettings.playOrder == PLAY_SINGLE && playlistIndex != -1))
 		{
 			playlistIndex = -1;

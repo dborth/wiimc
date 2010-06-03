@@ -1,3 +1,6 @@
+msgid "********"
+msgstr "••••••••"
+
 msgid "Videos"
 msgstr "Video"
 
@@ -26,7 +29,7 @@ msgid "Cancel"
 msgstr "Anulare"
 
 msgid "Information"
-msgstr "Informaţii"
+msgstr "Informatii"
 
 msgid "Credits"
 msgstr "Despre..."
@@ -65,7 +68,7 @@ msgid "Global"
 msgstr "Setări generale"
 
 msgid "Network"
-msgstr "Reţea"
+msgstr "Retea"
 
 msgid "Subtitles"
 msgstr "Subtitrări"
@@ -77,16 +80,16 @@ msgid "Settings"
 msgstr "Configurare"
 
 msgid "On"
-msgstr "Activat"
+msgstr "Activat(ă)"
 
 msgid "Off"
-msgstr "Dezactivat"
+msgstr "Dezactivat(ă)"
 
 msgid "Always"
 msgstr "Întotdeauna"
 
 msgid "Disabled"
-msgstr "Dezactivat"
+msgstr "Dezactivat(ă)"
 
 msgid "Backward"
 msgstr "Înapoi"
@@ -137,7 +140,7 @@ msgid "Unrecognized DVD format!"
 msgstr "Format DVD necunoscut!"
 
 msgid "Port cannot be blank!"
-msgstr "Nu aţi completat portul!"
+msgstr "Nu ati completat portul!"
 
 msgid "Port is not a number!"
 msgstr "Portul trebuie să fie un număr!"
@@ -161,7 +164,7 @@ msgid "Settings - Online Media"
 msgstr "Setări media online"
 
 msgid "Settings - Network"
-msgstr "Setări retea"
+msgstr "Setări reta"
 
 msgid "Settings - DVD"
 msgstr "Setări DVD"
@@ -179,7 +182,7 @@ msgid "Exit Action"
 msgstr "La ieșire ..."
 
 msgid "Wiimote Rumble"
-msgstr "Vibraţii Wiimote"
+msgstr "Vibratie Wiimote"
 
 msgid "Hide"
 msgstr "Ascunde"
@@ -203,10 +206,10 @@ msgid "Screen Zoom"
 msgstr "Dimensiune imagine"
 
 msgid "Screen Position"
-msgstr "Poziţionare imagine"
+msgstr "Pozitionare imagine"
 
 msgid "Frame Dropping"
-msgstr "Renunţare la unele cadre"
+msgstr "Renuntare la unele cadre"
 
 msgid "Aspect Ratio"
 msgstr "Format imagine"
@@ -320,7 +323,7 @@ msgid "Skip to Main Title"
 msgstr "Salt direct la titlul principal"
 
 msgid "Unable to Initialize MPlayer"
-msgstr "MPlayer nu poate fi iniţializat"
+msgstr "MPlayer nu poate fi initializat"
 
 msgid "Unable to find a valid working path"
 msgstr "Nu a fost găsita o cale validă"
@@ -350,7 +353,7 @@ msgid "SD card not found!"
 msgstr "Cardul SD nu a fost găsit!"
 
 msgid "Please install IOS 202 for DVD support."
-msgstr "Instalaţi IOS 202 pentru a avea suport DVD."
+msgstr "Instalati IOS 202 pentru a avea suport DVD."
 
 msgid "Loading DVD..."
 msgstr "Încărcare DVD..."
@@ -377,7 +380,7 @@ msgid "Error loading playlist!"
 msgstr "Eroare la încărcarea listei de redare!"
 
 msgid "Playlist does not contain any supported entries!"
-msgstr "Lista de redare nu conţine date acceptate!"
+msgstr "Lista de redare nu contine date acceptate!"
 
 msgid "No Results Found"
 msgstr "Nu a fost găsit nici un rezultat"
@@ -401,7 +404,7 @@ msgid "Playlist is Empty"
 msgstr "Lista de redare este goala"
 
 msgid "Hover over items and push the + button to add them to your playlist."
-msgstr "Pozitionati cursorul peste fișiere şi apăsaţi butonul + pentru a le adăuga la lista de redare."
+msgstr "Pozitionati cursorul peste fișiere şi apăsati butonul + pentru a le adăuga la lista de redare."
 
 msgid "Exit Playlist"
 msgstr "Ieșire din lista de redare"
@@ -413,34 +416,34 @@ msgid "Update failed!"
 msgstr "Actualizare nereuşită!"
 
 msgid "Initializing network..."
-msgstr "Se initializează reţeaua..."
+msgstr "Se initializează reteaua..."
 
 msgid "Check settings file."
-msgstr "Verificaţi fișierul de configurare."
+msgstr "Verificati fișierul de configurare."
 
 msgid "Share name is blank."
-msgstr "Nu aţi introdus numele partajării."
+msgstr "Nu ati introdus numele partajării."
 
 msgid "Share IP is blank."
-msgstr "Nu aţi introdus IP-ul partajării"
+msgstr "Nu ati introdus IP-ul partajării"
 
 msgid "Invalid network share settings"
 msgstr "Setările pentru partajare sunt invalide"
 
 msgid "Connecting to network share..."
-msgstr "Conectare la reţeaua partajată..."
+msgstr "Conectare la reteaua partajată..."
 
 msgid "Failed to connect to network share."
-msgstr "Conectare nereuşită la reţeaua partajată."
+msgstr "Conectare nereuşită la reteaua partajată."
 
 msgid "IP is blank."
-msgstr "Nu aţi introdus Ip-ul"
+msgstr "Nu ati introdus Ip-ul"
 
 msgid "Username is blank."
-msgstr "Nu aţi introdus numele de utilizator"
+msgstr "Nu ati introdus numele de utilizator"
 
 msgid "Password is blank."
-msgstr "Nu aţi introdus parola"
+msgstr "Nu ati introdus parola"
 
 msgid "Invalid FTP site settings"
 msgstr "Setări FTP invalide"
@@ -452,7 +455,7 @@ msgid "Failed to connect to FTP site."
 msgstr "Conectare la FTP nereuşită."
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "Nu s-a putut găsi un dispozitiv SD sau USB - pentru funcţionarea normală este nevoie de unul."
+msgstr "Nu s-a putut găsi un dispozitiv SD sau USB - pentru functionarea normală este nevoie de unul."
 
 msgid "Could not create folder"
 msgstr "Nu s-a putut crea folderul"
@@ -476,7 +479,7 @@ msgid ""
 msgstr ""
 
 msgid "Coding & menu design"
-msgstr "Programare & concepţie interfaţa grafica"
+msgstr "Programare & conceptie interfata grafica"
 
 msgid "Logo"
 msgstr "Logo"
@@ -491,7 +494,7 @@ msgid "Buffering"
 msgstr "Încărcare..."
 
 msgid "Unable to initialize network (Error #:"
-msgstr "Reţeaua nu poate fi iniţializată (Eroare #:"
+msgstr "Reteaua nu poate fi initializată (Eroare #:"
 
 msgid "Settings - Subtitles"
 msgstr "Setări - Subtitrări"
@@ -539,13 +542,64 @@ msgid "Subtitle Codepage"
 msgstr "Codepage pentru subtitrări"
 
 msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Acest director conţine mai multe fişiere decât valoarea maximă permisă (2000). Nu toate fişierele vor fi vizibile."
+msgstr "Acest director contine mai multe fişiere decât valoarea maximă permisă (2000). Nu toate fişierele vor fi vizibile."
 
 msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Această listă de redare conţine mai multe inregistrări decât valoarea maximă permisă (2000). Nu toate inregistrările vor fi vizibile."
+msgstr "Această listă de redare contine mai multe inregistrări decât valoarea maximă permisă (2000). Nu toate inregistrările vor fi vizibile."
 
 msgid "Downloading..."
 msgstr "Descărcare..."
 
 msgid "Unzipping..."
 msgstr "Dezarhivare..."
+
+msgid "Color"
+msgstr "Culoare"
+
+msgid "Size"
+msgstr "Mărime"
+
+msgid "White"
+msgstr "Alb"
+
+msgid "Black"
+msgstr "Negru"
+
+msgid "Yellow"
+msgstr "Galben"
+
+msgid "Red"
+msgstr "Rosu"
+
+msgid "Sleep Timer"
+msgstr "Temporizator de oprire"
+
+msgid "sec"
+msgstr "sec"
+
+msgid "min"
+msgstr "min"
+
+msgid "Theme"
+msgstr "Temă"
+
+msgid "Blue"
+msgstr "Albastru"
+
+msgid "Green"
+msgstr "Verde"
+
+msgid "Grey"
+msgstr "Gri"
+
+msgid "Orange"
+msgstr "Portocaliu"
+
+msgid "Purple (Default)"
+msgstr "Violet (Standard)"
+
+msgid "Auto-Play Next Video"
+msgstr "Auto-redarea fişierului următor"
+
+msgid "Adding files to playlist..."
+msgstr "Fişierele sunt adăugate la lista de redare..."

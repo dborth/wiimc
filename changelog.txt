@@ -6,6 +6,26 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.0.4 - June 3, 2010]
+
+* Subtitle color/size adjustment
+* Added checkmark next to viewed files
+* Added sleep timer
+* Improved device mounting
+* Improved stability
+* Fixed artifacts issue with online media files (VP6 codec)
+* Synced to MPlayer r31303
+* Added option to auto-play next video
+* Add GIF image viewing
+* More codepages added
+* Thumbnail support for online media (Navi-X)
+* Hide folders beginning with '.' and '$'
+* Added screensaver
+* Add ability to view PNG's over 1024x1024
+* Added theme color options
+* Add more seek time options
+* Language updates
+
 [1.0.3 - May 12, 2010]
 
 * Fixed issue with browser reloading

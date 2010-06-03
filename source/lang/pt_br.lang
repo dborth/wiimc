@@ -1,3 +1,6 @@
+msgid "********"
+msgstr "••••••••"
+
 msgid "Videos"
 msgstr "Vídeos"
 
@@ -569,7 +572,7 @@ msgid "Red"
 msgstr "Vermelho"
 
 msgid "Sleep Timer"
-msgstr "Temporizador para adormecer"
+msgstr "Desligar o Wii em..."
 
 msgid "sec"
 msgstr "seg"
@@ -596,7 +599,7 @@ msgid "Purple (Default)"
 msgstr "Roxo (Padrão)"
 
 msgid "Auto-Play Next Video"
-msgstr "Reprodução automática do próximo vídeo"
+msgstr "Reproduzir o próximo vídeo"
 
 msgid "Adding files to playlist..."
-msgstr "Adicionando arquivos para lista de reprodução"
+msgstr "Adicionando arquivos à lista..."

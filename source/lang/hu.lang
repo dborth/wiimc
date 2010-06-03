@@ -1,3 +1,6 @@
+msgid "********"
+msgstr "••••••••"
+
 msgid "Videos"
 msgstr "Videók"
 
@@ -173,7 +176,7 @@ msgid "Language"
 msgstr "Nyelv"
 
 msgid "Volume"
-msgstr "Kötet"
+msgstr "Hangerő"
 
 msgid "Exit Action"
 msgstr "Kilépéskor"
@@ -593,10 +596,10 @@ msgid "Theme"
 msgstr "Téma"
 
 msgid "Purple (Default)"
-msgstr ""
+msgstr "Lila (Alap)"
 
 msgid "Auto-Play Next Video"
-msgstr ""
+msgstr "Következő video auto-játszása"
 
 msgid "Adding files to playlist..."
 msgstr "Fájlok hozzáadása a lejátszási listához..."

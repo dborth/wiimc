@@ -1,452 +1,605 @@
 msgid "********"
 msgstr "········"
 
-msgid "Videos" 
-msgstr "录v陇霉"
+msgid "Videos"
+msgstr "視訊"
 
-msgid "Music" 
-msgstr "颅碌录脰" 
+msgid "Music"
+msgstr "音樂"
 
-msgid "Pictures" 
-msgstr "鹿脧陇霉" 
+msgid "Pictures"
+msgstr "圖片"
 
-msgid "Online Media" 
-msgstr "陆u陇W麓C脜茅" 
+msgid "Online Media"
+msgstr "線上媒體"
 
-msgid "Please Wait" 
-msgstr "陆脨碌楼芦脻" 
+msgid "Please Wait"
+msgstr "請稍待"
 
-msgid "Error" 
-msgstr "驴霉禄~" 
+msgid "Error"
+msgstr "錯誤"
 
-msgid "OK" 
-msgstr "陆T漏w" 
+msgid "OK"
+msgstr "確定"
 
-msgid "Retry" 
-msgstr "颅芦赂脮" 
+msgid "Retry"
+msgstr "重試"
 
-msgid "Cancel" 
-msgstr "篓煤庐酶" 
+msgid "Cancel"
+msgstr "取消"
 
-msgid "Information" 
-msgstr "掳T庐搂"
+msgid "Information"
+msgstr "信息"
 
-msgid "Credits" 
-msgstr "路P脕脗" 
+msgid "Credits"
+msgstr "感謝"
 
-msgid "Play" 
-msgstr "录陆漏帽" 
+msgid "Play"
+msgstr "播放"
 
-msgid "Pause" 
-msgstr "录脠掳卤" 
+msgid "Pause"
+msgstr "暫停"
 
-msgid "Single Play" 
-msgstr "鲁忙驴W录陆漏帽" 
+msgid "Single Play"
+msgstr "單獨播放"
 
-msgid "Continuous Play" 
-msgstr "鲁s脛貌录陆漏帽" 
+msgid "Continuous Play"
+msgstr "連續播放"
 
-msgid "Shuffle" 
-msgstr "陆w陆脛" 
+msgid "Shuffle"
+msgstr "緩衝"
 
-msgid "Loop" 
-msgstr "麓`脌么" 
+msgid "Loop"
+msgstr "迴圈"
 
-msgid "Playlist" 
-msgstr "录陆漏帽虏M鲁忙" 
+msgid "Continuous"
+msgstr "繼續"
 
-msgid "Add to Playlist" 
-msgstr "楼[陇J录陆漏帽虏M鲁忙" 
+msgid "Playlist"
+msgstr "播放清單"
 
-msgid "Loading..." 
-msgstr "脜陋篓煤陇陇..." 
+msgid "Restart"
+msgstr "重新啟動"
 
-msgid "Global" 
-msgstr "陇@炉毛鲁]赂m" 
+msgid "Loading..."
+msgstr "載入中..."
 
-msgid "Network" 
-msgstr "潞么赂么" 
+msgid "Global"
+msgstr "整體設定"
 
-msgid "Subtitles" 
-msgstr "娄r鹿玫" 
+msgid "Network"
+msgstr "網路"
 
-msgid "Settings" 
-msgstr "鲁]赂m" 
+msgid "Subtitles"
+msgstr "字幕"
 
-msgid "On" 
-msgstr "露}卤脪" 
+msgid "Subtitle Delay"
+msgstr "字幕延遲"
 
-msgid "Off" 
-msgstr "脙枚鲁卢" 
+msgid "Settings"
+msgstr "設定"
 
-msgid "Always" 
-msgstr "楼脙禄路" 
+msgid "On"
+msgstr "開啟"
 
-msgid "Disabled" 
-msgstr "赂T楼脦" 
+msgid "Off"
+msgstr "關閉"
 
-msgid "Skip Backward" 
-msgstr "芦谩掳h" 
+msgid "Always"
+msgstr "總是"
 
-msgid "Rewind" 
-msgstr "颅芦路s录陆漏帽" 
+msgid "Disabled"
+msgstr "關閉"
 
-msgid "Pause" 
-msgstr "录脠掳卤" 
+msgid "Backward"
+msgstr "後退"
 
-msgid "Fast Forward" 
-msgstr "搂脰鲁t娄V芦e" 
+msgid "Pause"
+msgstr "暫停"
 
-msgid "Skip Forward" 
-msgstr "娄V芦e录陆漏帽" 
+msgid "Forward"
+msgstr "向前"
 
-msgid "Restart Song" 
-msgstr "颅芦路s露}漏l颅碌录脰" 
+msgid "Single"
+msgstr "單獨播放"
 
-msgid "Next Song" 
-msgstr "陇U陇@颅潞潞q" 
+msgid "now playing"
+msgstr "現正播放中"
 
-msgid "Single Play" 
-msgstr "鲁忙驴W录陆漏帽" 
+msgid "Previous"
+msgstr "向前"
 
-msgid "now playing" 
-msgstr "楼脴芦e录陆漏帽陇陇" 
+msgid "Next"
+msgstr "向後"
 
-msgid "Previous" 
-msgstr "娄V芦e" 
+msgid "Close"
+msgstr "關閉"
 
-msgid "Next" 
-msgstr "娄V芦谩" 
+msgid "DVD"
+msgstr "DVD光碟"
 
-msgid "Slideshow" 
-msgstr "陇脹驴O录陆漏帽" 
+msgid "Go back"
+msgstr "返回"
 
-msgid "Close" 
-msgstr "脙枚鲁卢" 
+msgid "Update Available"
+msgstr "可用的更新"
 
-msgid "Exit" 
-msgstr "掳h楼X" 
+msgid "An update is available!"
+msgstr "存在可用的更新檔！"
 
-msgid "DVD" 
-msgstr "DVD楼煤潞脨" 
+msgid "Update now"
+msgstr "立刻更新"
 
-msgid "Go back" 
-msgstr "陋冒娄^" 
+msgid "Update later"
+msgstr "稍後更新"
 
-msgid "Up One Level" 
-msgstr "陋冒娄^陇W录h驴茂鲁忙" 
+msgid "Online media file not found."
+msgstr "沒找到線上媒體檔。"
 
-msgid "Exit Playlist" 
-msgstr "掳h楼X录陆漏帽虏M鲁忙" 
+msgid "Unrecognized DVD format!"
+msgstr "無法識別的DVD格式!"
 
-msgid "Initializing network..." 
-msgstr "潞么赂么陋矛漏l陇脝..." 
+msgid "Port cannot be blank!"
+msgstr "埠值不能是空白!"
 
-msgid "Connecting to FTP site..." 
-msgstr "楼驴娄b鲁s卤碌篓矛FTP潞么炉赂..." 
+msgid "Port is not a number!"
+msgstr "埠值不是一個數字"
 
-msgid "Connecting to network share..." 
-msgstr "楼驴娄b鲁s卤碌潞么赂么娄@篓脡..." 
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "埠值範圍允許在 (4-49151)之間!"
 
-msgid "seconds" 
-msgstr "卢铆" 
+msgid "Settings - Global"
+msgstr "設定 – 整體"
 
-msgid "Update Available" 
-msgstr "篓t虏脦搂贸路s" 
+msgid "Settings - Videos"
+msgstr "設定 - 視訊"
 
-msgid "An update is available!" 
-msgstr "篓t虏脦楼脴芦e楼i搂贸路s隆I" 
+msgid "Settings - Music"
+msgstr "設定 - 音樂"
 
-msgid "Update now" 
-msgstr "楼脽篓猫搂贸路s篓t虏脦" 
+msgid "Settings - Pictures"
+msgstr "設定 - 圖片"
 
-msgid "Update later" 
-msgstr "碌y芦谩搂贸路s篓t虏脦" 
+msgid "Settings - Online Media"
+msgstr "設定 - 線上媒體"
 
-msgid "Saving..." 
-msgstr "芦O娄s陇陇..." 
+msgid "Settings - Network"
+msgstr "設定 - 網路"
 
-msgid "Update successful!" 
-msgstr "搂贸路s篓t虏脦娄篓楼\隆I" 
+msgid "Settings - DVD"
+msgstr "設定 - DVD"
 
-msgid "Update failed!" 
-msgstr "搂贸路s篓t虏脦楼垄卤脩!" 
+msgid "File Extensions"
+msgstr "檔案副檔名"
 
-msgid "Online media file not found." 
-msgstr "篓S娄鲁搂盲篓矛陆u陇W麓C脜茅." 
+msgid "Language"
+msgstr "語言"
 
-msgid "Unable to display files on selected load device." 
-msgstr "娄b驴茂戮脺脜陋篓煤陋潞鲁]鲁脝陇陇脌脡庐脳碌L陋k脜茫楼脺隆C" 
+msgid "Volume"
+msgstr "音量"
 
-msgid "Error loading playlist!" 
-msgstr "录陆漏帽虏M鲁忙脜陋篓煤驴霉禄~!" 
+msgid "Exit Action"
+msgstr "退出操作"
 
-msgid "Unrecognized DVD format!" 
-msgstr "碌L陋k脙脩搂O陋潞DVD庐忙娄隆!" 
+msgid "Wiimote Rumble"
+msgstr "Wiimote震動"
 
-msgid "No disc inserted!" 
-msgstr "篓S娄鲁麓隆陇J楼煤潞脨!" 
+msgid "Hide"
+msgstr "隱藏"
 
-msgid "Invalid DVD." 
-msgstr "碌L庐脛陋潞DVD楼煤潞脨." 
+msgid "Show"
+msgstr "顯示"
 
-msgid "Error opening" 
-msgstr "录陆漏帽驴霉禄~" 
+msgid "Auto"
+msgstr "自動"
 
-msgid "Please install IOS 202 for DVD support." 
-msgstr "娄p陋G颅n录陆漏帽DVD楼煤潞脨陆脨娄w赂脣Herms IOS 202." 
+msgid "Return to Wii Menu"
+msgstr "返回Wii主選單"
 
-msgid "USB drive not found!" 
-msgstr "篓S娄鲁搂盲篓矛USB鲁]鲁脝!" 
+msgid "Power Off Wii"
+msgstr "關閉Wii主機"
 
-msgid "SD card not found!" 
-msgstr "篓S娄鲁碌o虏{SD楼d!" 
+msgid "Return to Loader"
+msgstr "返回HBC"
 
-msgid "Error opening file!" 
-msgstr "脌脡庐脳露}卤脪驴霉禄~!" 
+msgid "Screen Zoom"
+msgstr "螢幕縮放"
 
-msgid "Error saving file!" 
-msgstr "脌脡庐脳芦O娄s驴霉禄~!" 
+msgid "Screen Position"
+msgstr "螢幕位置"
 
-msgid "There are no files currently in the playlist." 
-msgstr "录陆漏帽虏M鲁忙陇陇篓S娄鲁楼么娄贸脌脡庐脳隆C" 
+msgid "Frame Dropping"
+msgstr "掉格"
 
-msgid "Unable to initialize network (Error #:" 
-msgstr "碌L陋k陋矛漏l陇脝潞么赂么(驴霉禄~#:" 
+msgid "Aspect Ratio"
+msgstr "螢幕高寬比"
 
-msgid "Check settings file." 
-msgstr "脌脣卢d鲁]赂m脌脡庐脳" 
+msgid "Cache Size"
+msgstr "快取大小"
 
-msgid "Share name is blank." 
-msgstr "篓S娄鲁鲁]赂m娄@篓脡娄W潞脵" 
+msgid "Audio Delay"
+msgstr "音訊延遲"
 
-msgid "Share IP is blank." 
-msgstr "篓S娄鲁驴茅陇J娄@篓脡ip娄矛搂}" 
+msgid "Auto-Resume"
+msgstr "自動恢復"
 
-msgid "Invalid network share settings" 
-msgstr "碌L庐脛陋潞潞么赂么娄@篓脡鲁]赂m" 
+msgid "Videos Files Folder"
+msgstr "視訊檔案夾"
 
-msgid "Failed to connect to network share." 
-msgstr "潞么赂么娄@篓脡鲁s卤碌楼垄卤脩" 
+msgid "Play Order"
+msgstr "播放順序"
 
-msgid "Check settings file." 
-msgstr "脌脣卢d鲁]赂m脌脡庐脳" 
+msgid "Music Files Folder"
+msgstr "音樂檔案夾"
 
-msgid "IP is blank." 
-msgstr "IP娄矛搂}卢掳陋脜" 
+msgid "Pictures Files Folder"
+msgstr "圖片檔案夾"
 
-msgid "Username is blank." 
-msgstr "楼脦陇谩娄W卢掳陋脜" 
+msgid "Display Name"
+msgstr "顯示名稱"
 
-msgid "Password is blank." 
-msgstr "卤K陆X卢掳陋脜" 
+msgid "Share IP"
+msgstr "共享IP "
 
-msgid "Port" 
-msgstr "掳冒赂鹿" 
+msgid "Share Name"
+msgstr "共享檔案名稱"
 
-msgid "Port cannot be blank!" 
-msgstr "掳冒赂鹿陇拢炉脿卢掳陋脜!" 
+msgid "Username"
+msgstr "使用者名稱"
 
-msgid "Port is not a number!" 
-msgstr "掳冒赂鹿楼虏露路卢O陇@颅脫录脝娄r" 
+msgid "Password"
+msgstr "密碼"
 
-msgid "Port is outside the allowed range (4-49151)!" 
-msgstr "掳冒赂鹿陋潞录脝颅脠陆d鲁貌楼虏露路娄b(4-49151)陇搂露隆" 
+msgid "New Share"
+msgstr "新建網路共享"
 
-msgid "Invalid FTP site settings" 
-msgstr "FTP炉赂脗I鲁]赂m碌L庐脛" 
+msgid "Delete"
+msgstr "刪除"
 
-msgid "Failed to connect to FTP site." 
-msgstr "鲁s卤碌篓矛FTP炉赂脗I楼垄卤脩" 
+msgid "Delete Share"
+msgstr "刪除網路共享"
 
-msgid "Could not find a valid SD or USB device - one is required for normal operation." 
-msgstr "碌L陋k篓矛陇@颅脫楼i楼脦陋潞SD楼d漏脦陋脤USb鲁]鲁脝-禄脻颅n陇@颅脫鲁]鲁脝陇~炉脿露i娄忙楼驴卤`戮脼搂@" 
+msgid "Are you sure that you want to delete this share?"
+msgstr "你確定要刪除此網路共享設定嗎?"
 
-msgid "Settings - Global" 
-msgstr "鲁]赂m- 陇@炉毛" 
+msgid "IP"
+msgstr "IP位址"
 
-msgid "Settings - Videos" 
-msgstr "鲁]赂m- 录v陇霉" 
+msgid "Folder"
+msgstr "檔案夾"
 
-msgid "Settings - Music" 
-msgstr "鲁]赂m- 颅碌录脰" 
+msgid "Mode"
+msgstr "模式"
 
-msgid "Settings - Pictures" 
-msgstr "鲁]赂m- 鹿脧陇霉" 
+msgid "New Site"
+msgstr "新的網址"
 
-msgid "Settings - Network" 
-msgstr "鲁]赂m- 潞么赂么" 
+msgid "Passive"
+msgstr "被動"
 
-msgid "Settings - Subtitles" 
-msgstr "鲁]赂m- 娄r鹿玫" 
+msgid "Active"
+msgstr "活動"
 
-msgid "Settings - Network - New Site" 
-msgstr "鲁]赂m- 潞么赂么- 路s炉赂脗I" 
+msgid "Delete Site"
+msgstr "刪除網址"
 
-msgid "File Extensions" 
-msgstr "脌脡庐脳脗X庐i" 
+msgid "Are you sure that you want to delete this site?"
+msgstr "你確定要刪除此網址？"
 
-msgid "Language" 
-msgstr "禄y篓楼" 
+msgid "Port"
+msgstr "埠值"
 
-msgid "Volume" 
-msgstr "颅碌露q" 
+msgid "Rewind / Fast Forward"
+msgstr "倒帶 / 向前快轉"
 
-msgid "Exit Action" 
-msgstr "掳h楼X戮脼搂@" 
+msgid "Error loading file!"
+msgstr "載入檔案錯誤!"
 
-msgid "Wiimote Rumble" 
-msgstr "Wiimote戮_掳脢" 
+msgid "Resume"
+msgstr "繼續"
 
-msgid "Hide" 
-msgstr "脕么脗脙" 
+msgid "Stop Slideshow"
+msgstr "停止播放幻燈片"
 
-msgid "Show" 
-msgstr "脜茫楼脺" 
+msgid "Start Slideshow"
+msgstr "開始幻燈片播放"
 
-msgid "Auto" 
-msgstr "娄脹掳脢" 
+msgid "Slideshow Delay"
+msgstr "幻燈片延遲"
 
-msgid "Return to Wii Menu" 
-msgstr "陋冒娄^Wii楼D卢脡颅卤" 
+msgid "Online Media Folder"
+msgstr "線上媒體檔案夾"
 
-msgid "Power Off Wii" 
-msgstr "脙枚鲁卢Wii" 
+msgid "Add SMB Share"
+msgstr "增加SMB網路共享"
 
-msgid "Return to Loader" 
-msgstr "陋冒娄^HBC" 
+msgid "Add FTP Site"
+msgstr "增加FTP網址"
 
-msgid "Screen Zoom" 
-msgstr "碌e颅卤脕Y漏帽" 
+msgid "DVD Menu"
+msgstr "DVD選單"
 
-msgid "Screen Position" 
-msgstr "碌e颅卤娄矛赂m" 
+msgid "Skip to Main Title"
+msgstr "略過主要標題"
 
-msgid "Frame Dropping" 
-msgstr "卤录麓V" 
+msgid "Unable to Initialize MPlayer"
+msgstr "無法初始化MPlayer"
 
-msgid "Aspect Ratio" 
-msgstr "碌e颅卤陇帽篓脪" 
+msgid "Unable to find a valid working path"
+msgstr "沒有找到有效的執行路徑"
 
-msgid "Cache Size" 
-msgstr "陆w陆脛陇j陇p" 
+msgid "Unable to change path to"
+msgstr "不能更改路徑到"
 
-msgid "Cache Prefill " 
-msgstr "陆w陆脛鹿w露帽楼R" 
+msgid "Out of memory: too many files!"
+msgstr "記憶體溢出: 檔案太多!"
 
-msgid "Cache Fill" 
-msgstr "陆w陆脛露帽楼R" 
+msgid "Directory name is too long!"
+msgstr "檔案夾名稱太長！"
 
-msgid "Audio Delay" 
-msgstr "颅碌录脰漏碌驴冒" 
+msgid "SD Card"
+msgstr "SD記憶卡"
 
-msgid "Auto-Resume" 
-msgstr "娄脹掳脢芦矛麓_" 
+msgid "USB Mass Storage"
+msgstr "USB存儲設備"
 
-msgid "Videos Files Folder" 
-msgstr "录v陇霉脌脡庐脳搂篓" 
+msgid "Data DVD"
+msgstr " DVD資料光碟"
 
-msgid "Play Order" 
-msgstr "录陆漏帽露露搂脟" 
+msgid "USB drive not found!"
+msgstr "找不到USB設備!"
 
-msgid "Music Files Folder" 
-msgstr "颅碌录脰脌脡庐脳搂篓" 
+msgid "SD card not found!"
+msgstr "找不到SD記憶卡!"
 
-msgid "Pictures Files Folder" 
-msgstr "鹿脧陇霉脌脡庐脳搂篓" 
+msgid "Please install IOS 202 for DVD support."
+msgstr "請安裝Herms IOS 202才可支援DVD播放。"
 
-msgid "Add" 
-msgstr "楼[陇J" 
+msgid "Loading DVD..."
+msgstr "載入DVD中..."
 
-msgid "Display Name" 
-msgstr "脜茫楼脺娄W潞脵" 
+msgid "No disc inserted!"
+msgstr "沒有插入DVD光碟!"
 
-msgid "Share IP" 
-msgstr "娄@篓脡ip" 
+msgid "Invalid DVD."
+msgstr "無效的DVD光碟。"
 
-msgid "Share Name" 
-msgstr "娄@篓脡脌脡庐脳娄W潞脵" 
+msgid "Up One Level"
+msgstr "返回上層選單"
 
-msgid "Username" 
-msgstr "楼脦陇谩娄W" 
+msgid "Error opening"
+msgstr "開啟錯誤"
 
-msgid "Password" 
-msgstr "卤K陆X" 
+msgid "Warning"
+msgstr "警告"
 
-msgid "New Share" 
-msgstr "路s芦脴潞么赂么娄@篓脡" 
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "在這檔案夾中有一個或更多圖片檔超過6MB而無法檢視。"
 
-msgid "Delete" 
-msgstr "搂R掳拢" 
+msgid "Error loading playlist!"
+msgstr "載入播放清單錯誤!"
 
-msgid "Delete Share" 
-msgstr "搂R掳拢潞么赂么娄@篓脡" 
+msgid "Playlist does not contain any supported entries!"
+msgstr "播放清單沒有包含任何可支援的項目!"
 
-msgid "Are you sure that you want to delete this share?" 
-msgstr "卢O搂_搂R掳拢娄鹿潞么赂么娄@篓脡鲁]赂m?" 
+msgid "No Results Found"
+msgstr "沒有找到任何檔。"
 
-msgid "Folder" 
-msgstr "脌脡庐脳搂篓" 
+msgid "Your search did not match any media files."
+msgstr "搜尋結果沒有任何符合條件之媒體檔。"
 
-msgid "Mode" 
-msgstr "录脪娄隆" 
+msgid "Error opening file!"
+msgstr "開啟檔案錯誤!"
 
-msgid "New Site" 
-msgstr "路s炉赂脗I" 
+msgid "Saving..."
+msgstr "儲存中..."
 
-msgid "Passive" 
-msgstr "鲁Q掳脢" 
+msgid "Error creating file!"
+msgstr "建立檔案錯誤!"
 
-msgid "Active" 
-msgstr "卢隆掳脢" 
+msgid "Error saving file!"
+msgstr "儲存檔案錯誤!"
 
-msgid "Delete Site" 
-msgstr "搂R掳拢炉赂脗I" 
+msgid "Playlist is Empty"
+msgstr "播放清單是空的"
 
-msgid "Are you sure that you want to delete this site?" 
-msgstr "卢O搂_搂R掳拢娄鹿炉赂脗I隆H" 
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "選取播放檔並按+鍵增加到你的播放清單中。"
 
-msgid "Visibility" 
-msgstr "楼i碌酶陇脝" 
+msgid "Exit Playlist"
+msgstr "退出播放清單"
 
-msgid "Position" 
-msgstr "娄矛赂m" 
+msgid "Update successful!"
+msgstr "更新成功!"
 
-msgid "Size" 
-msgstr "陇j陇p" 
+msgid "Update failed!"
+msgstr "更新失敗!"
 
-msgid "Delay" 
-msgstr "漏碌驴冒" 
+msgid "Initializing network..."
+msgstr "網路初始化中..."
 
-msgid "Top" 
-msgstr "鲁禄潞脻" 
+msgid "Check settings file."
+msgstr "檢查設定檔。"
 
-msgid "Center" 
-msgstr "陇陇露隆" 
+msgid "Share name is blank."
+msgstr "共享名稱空白。"
 
-msgid "Bottom" 
-msgstr "漏鲁鲁隆" 
+msgid "Share IP is blank."
+msgstr "共享IP位址空白。"
 
-msgid "Slideshow Delay" 
-msgstr "陇脹驴O漏碌驴冒" 
+msgid "Invalid network share settings"
+msgstr "無效的網路共享設定"
 
-msgid "DVD Menu" 
-msgstr "DVD驴茂鲁忙" 
+msgid "Connecting to network share..."
+msgstr "正在連線到網路共享..."
 
-msgid "Skip to Main Title" 
-msgstr "虏陇鹿L楼D录脨脙D" 
+msgid "Failed to connect to network share."
+msgstr "網路共享連線失敗。"
 
-msgid "Online Media Folder" 
-msgstr "陆u陇W麓C脜茅赂锚庐脝搂X" 
+msgid "IP is blank."
+msgstr "IP位址空白。"
 
-msgid "Add SMB Share" 
-msgstr "楼[陇J潞么赂么娄@篓脡" 
+msgid "Username is blank."
+msgstr "使用者名稱空白。"
 
-msgid "IP" 
-msgstr "IP娄矛搂}"
+msgid "Password is blank."
+msgstr "密碼空白。"
+
+msgid "Invalid FTP site settings"
+msgstr "FTP網址設定無效"
+
+msgid "Connecting to FTP site..."
+msgstr "正在連線到FTP網址..."
+
+msgid "Failed to connect to FTP site."
+msgstr "連線到FTP網址失敗。"
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "無法找到一個可用的SD記憶卡或USB設備 - 需要其中一樣設備才可正常操作。"
+
+msgid "Could not create folder"
+msgstr "無法建立檔案夾"
+
+msgid "Saving settings..."
+msgstr "儲存設定中..."
+
+msgid "Could not save settings to"
+msgstr "無法儲存設定"
+
+msgid "Thanks to"
+msgstr "感謝"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "這是開放源碼軟體而你可以複製、發行或在GNU General Public License (GPL) Version 2規則下修改。"
+
+msgid "Menu artwork"
+msgstr "功能表圖片"
+
+msgid "Coding"
+msgstr "代碼編寫"
+
+msgid "Coding & menu design"
+msgstr "代碼和功能表設計"
+
+msgid "Logo"
+msgstr "標識"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "Buffering..."
+msgstr "緩衝中..."
+
+msgid "Buffering"
+msgstr "緩衝中"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "無法初始化網路 (錯誤 #:"
+
+msgid "Settings - Subtitles"
+msgstr "設定 - 字幕"
+
+msgid "Visibility"
+msgstr "清晰度"
+
+msgid "Delay"
+msgstr "延遲"
+
+msgid "Codepage"
+msgstr "內碼表"
+
+msgid "Subtitle Language"
+msgstr "字幕語言"
+
+msgid "Default"
+msgstr "預設"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "不能變更語言。沒有足夠記憶體！"
+
+msgid "Font Required"
+msgstr "需要字型檔支援"
+
+msgid "A new font is required to display this language."
+msgstr "為能正確顯示這語言需要一個新的字型。"
+
+msgid "Download font"
+msgstr "下載字型檔"
+
+msgid "Unable to save font file!"
+msgstr "無法儲存字型檔檔案！"
+
+msgid "Out of Memory"
+msgstr "記憶體溢出"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr " WiiMC沒有不足記憶體來載入圖片檢視器。"
+
+msgid "Close MPlayer"
+msgstr "關閉Mplayer播放器"
+
+msgid "Subtitle Codepage"
+msgstr "字幕內碼表"
+
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "這目錄中項目數包含超過最大允許數(2000)時，將不會顯示所有項目。"
+
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "這播放清單項目數包含超過最大允許數(2000)時，將不會顯示所有項目。"
 
 msgid "Downloading..."
-msgstr ""
+msgstr "下載中..."
 
 msgid "Unzipping..."
-msgstr ""
+msgstr "解壓縮中..."
+
+msgid "Color"
+msgstr "顏色"
+
+msgid "Size"
+msgstr "尺寸"
+
+msgid "White"
+msgstr "白色"
+
+msgid "Black"
+msgstr "黑色"
+
+msgid "Yellow"
+msgstr "黃色"
+
+msgid "Red"
+msgstr "紅色"
+
+msgid "Sleep Timer"
+msgstr "睡眠計時器"
+
+msgid "sec"
+msgstr "秒"
+
+msgid "min"
+msgstr "分"
+
+msgid "Blue"
+msgstr "藍色"
+
+msgid "Green"
+msgstr "綠色"
+
+msgid "Grey"
+msgstr "灰色"
+
+msgid "Orange"
+msgstr "橙色"
+
+msgid "Theme"
+msgstr "主題"
+
+msgid "Purple (Default)"
+msgstr "紫色(預設)"
+
+msgid "Auto-Play Next Video"
+msgstr "自動播放下一個視訊"
+
+msgid "Adding files to playlist..."
+msgstr "正在增加檔案至播放清單..."

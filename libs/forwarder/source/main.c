@@ -174,8 +174,8 @@ found:
 	// cleanup and reload
 	if(IOS_GetVersion() == 202)
 	{
-		IOS_ReloadIOS(202);
 		mload_close();
+		IOS_ReloadIOS(202);
 	}
 
 	u32 level;

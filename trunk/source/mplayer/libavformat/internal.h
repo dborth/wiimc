@@ -24,6 +24,11 @@
 #include <stdint.h>
 #include "avformat.h"
 
+typedef struct AVCodecTag {
+    enum CodecID id;
+    unsigned int tag;
+} AVCodecTag;
+
 void ff_dynarray_add(intptr_t **tab_ptr, int *nb_ptr, intptr_t elem);
 
 #ifdef __GNUC__
@@ -136,5 +141,36 @@ void ff_url_split(char *proto, int proto_size,
 int ff_url_join(char *str, int size, const char *proto,
                 const char *authorization, const char *hostname,
                 int port, const char *fmt, ...);
+
+/**
+ * Appends the media-specific SDP fragment for the media stream c
+ * to the buffer buff.
+ *
+ * Note, the buffer needs to be initialized, since it is appended to
+ * existing content.
+ *
+ * @param buff the buffer to append the SDP fragment to
+ * @param size the size of the buff buffer
+ * @param c the AVCodecContext of the media to describe
+ * @param dest_addr the destination address of the media stream, may be NULL
+ * @param port the destination port of the media stream, 0 if unknown
+ * @param ttl the time to live of the stream, 0 if not multicast
+ */
+void ff_sdp_write_media(char *buff, int size, AVCodecContext *c,
+                        const char *dest_addr, int port, int ttl);
+
+/**
+ * Write a packet to another muxer than the one the user originally
+ * intended. Useful when chaining muxers, where one muxer internally
+ * writes a received packet to another muxer.
+ *
+ * @param dst the muxer to write the packet to
+ * @param dst_stream the stream index within dst to write the packet to
+ * @param pkt the packet to be written
+ * @param src the muxer the packet originally was intended for
+ * @return the value av_write_frame returned
+ */
+int ff_write_chained(AVFormatContext *dst, int dst_stream, AVPacket *pkt,
+                     AVFormatContext *src);
 
 #endif /* AVFORMAT_INTERNAL_H */

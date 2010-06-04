@@ -284,6 +284,7 @@ void vo_draw_alpha_rgb32(int w,int h, unsigned char* src, unsigned char *srca, i
 }
 
 #ifdef FAST_OSD_TABLE
+static unsigned short fast_osd_12bpp_table[256];
 static unsigned short fast_osd_15bpp_table[256];
 static unsigned short fast_osd_16bpp_table[256];
 #endif
@@ -292,6 +293,7 @@ void vo_draw_alpha_init(void){
 #ifdef FAST_OSD_TABLE
     int i;
     for(i=0;i<256;i++){
+        fast_osd_12bpp_table[i]=((i>>4)<< 8)|((i>>4)<<4)|(i>>4);
         fast_osd_15bpp_table[i]=((i>>3)<<10)|((i>>3)<<5)|(i>>3);
         fast_osd_16bpp_table[i]=((i>>3)<<11)|((i>>2)<<5)|(i>>3);
     }
@@ -327,6 +329,39 @@ void vo_draw_alpha_init(void){
 #endif
 #endif //!CONFIG_RUNTIME_CPUDETECT
 	}
+}
+
+void vo_draw_alpha_rgb12(int w, int h, unsigned char* src, unsigned char *srca,
+                         int srcstride, unsigned char* dstbase, int dststride) {
+    int y;
+    for (y = 0; y < h; y++) {
+        register unsigned short *dst = (unsigned short*) dstbase;
+        register int x;
+        for (x = 0; x < w; x++) {
+            if(srca[x]){
+#ifdef FAST_OSD
+#ifdef FAST_OSD_TABLE
+                dst[x] = fast_osd_12bpp_table[src[x]];
+#else
+                register unsigned int a = src[x] >> 4;
+                dst[x] = (a << 8) | (a << 4) | a;
+#endif
+#else
+                unsigned char r = dst[x] & 0x0F;
+                unsigned char g = (dst[x] >> 4) & 0x0F;
+                unsigned char b = (dst[x] >> 8) & 0x0F;
+                r = (((r*srca[x]) >> 4) + src[x]) >> 4;
+                g = (((g*srca[x]) >> 4) + src[x]) >> 4;
+                b = (((b*srca[x]) >> 4) + src[x]) >> 4;
+                dst[x] = (b << 8) | (g << 4) | r;
+#endif
+            }
+        }
+        src += srcstride;
+        srca += srcstride;
+        dstbase += dststride;
+    }
+    return;
 }
 
 void vo_draw_alpha_rgb15(int w,int h, unsigned char* src, unsigned char *srca, int srcstride, unsigned char* dstbase,int dststride){

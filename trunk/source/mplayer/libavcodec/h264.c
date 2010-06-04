@@ -51,6 +51,13 @@ static const uint8_t div6[52]={
 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8,
 };
 
+static const enum PixelFormat hwaccel_pixfmt_list_h264_jpeg_420[] = {
+    PIX_FMT_DXVA2_VLD,
+    PIX_FMT_VAAPI_VLD,
+    PIX_FMT_YUVJ420P,
+    PIX_FMT_NONE
+};
+
 void ff_h264_write_back_intra_pred_mode(H264Context *h){
     int8_t *mode= h->intra4x4_pred_mode + h->mb2br_xy[h->mb_xy];
 
@@ -844,41 +851,11 @@ static av_cold void common_init(H264Context *h){
     memset(h->pps.scaling_matrix8, 16, 2*64*sizeof(uint8_t));
 }
 
-av_cold int ff_h264_decode_init(AVCodecContext *avctx){
-    H264Context *h= avctx->priv_data;
-    MpegEncContext * const s = &h->s;
+int ff_h264_decode_extradata(H264Context *h)
+{
+    AVCodecContext *avctx = h->s.avctx;
 
-    MPV_decode_defaults(s);
-
-    s->avctx = avctx;
-    common_init(h);
-
-    s->out_format = FMT_H264;
-    s->workaround_bugs= avctx->workaround_bugs;
-
-    // set defaults
-//    s->decode_mb= ff_h263_decode_mb;
-    s->quarter_sample = 1;
-    if(!avctx->has_b_frames)
-    s->low_delay= 1;
-
-    avctx->chroma_sample_location = AVCHROMA_LOC_LEFT;
-
-    ff_h264_decode_init_vlc();
-
-    h->thread_context[0] = h;
-    h->outputed_poc = INT_MIN;
-    h->prev_poc_msb= 1<<16;
-    h->x264_build = -1;
-    ff_h264_reset_sei(h);
-    if(avctx->codec_id == CODEC_ID_H264){
-        if(avctx->ticks_per_frame == 1){
-            s->avctx->time_base.den *=2;
-        }
-        avctx->ticks_per_frame = 2;
-    }
-
-    if(avctx->extradata_size > 0 && avctx->extradata && *(char *)avctx->extradata == 1){
+    if(*(char *)avctx->extradata == 1){
         int i, cnt, nalsize;
         unsigned char *p = avctx->extradata;
 
@@ -916,9 +893,50 @@ av_cold int ff_h264_decode_init(AVCodecContext *avctx){
         h->nal_length_size = ((*(((char*)(avctx->extradata))+4))&0x03)+1;
     } else {
         h->is_avc = 0;
-        if(decode_nal_units(h, s->avctx->extradata, s->avctx->extradata_size) < 0)
+        if(decode_nal_units(h, avctx->extradata, avctx->extradata_size) < 0)
             return -1;
     }
+    return 0;
+}
+
+av_cold int ff_h264_decode_init(AVCodecContext *avctx){
+    H264Context *h= avctx->priv_data;
+    MpegEncContext * const s = &h->s;
+
+    MPV_decode_defaults(s);
+
+    s->avctx = avctx;
+    common_init(h);
+
+    s->out_format = FMT_H264;
+    s->workaround_bugs= avctx->workaround_bugs;
+
+    // set defaults
+//    s->decode_mb= ff_h263_decode_mb;
+    s->quarter_sample = 1;
+    if(!avctx->has_b_frames)
+    s->low_delay= 1;
+
+    avctx->chroma_sample_location = AVCHROMA_LOC_LEFT;
+
+    ff_h264_decode_init_vlc();
+
+    h->thread_context[0] = h;
+    h->outputed_poc = INT_MIN;
+    h->prev_poc_msb= 1<<16;
+    h->x264_build = -1;
+    ff_h264_reset_sei(h);
+    if(avctx->codec_id == CODEC_ID_H264){
+        if(avctx->ticks_per_frame == 1){
+            s->avctx->time_base.den *=2;
+        }
+        avctx->ticks_per_frame = 2;
+    }
+
+    if(avctx->extradata_size > 0 && avctx->extradata &&
+        ff_h264_decode_extradata(h))
+        return -1;
+
     if(h->sps.bitstream_restriction_flag && s->avctx->has_b_frames < h->sps.num_reorder_frames){
         s->avctx->has_b_frames = h->sps.num_reorder_frames;
         s->low_delay = 0;
@@ -1831,7 +1849,12 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
             av_reduce(&s->avctx->time_base.num, &s->avctx->time_base.den,
                       h->sps.num_units_in_tick, den, 1<<30);
         }
-        s->avctx->pix_fmt = s->avctx->get_format(s->avctx, s->avctx->codec->pix_fmts);
+        s->avctx->pix_fmt = s->avctx->get_format(s->avctx,
+                                                 s->avctx->codec->pix_fmts ?
+                                                 s->avctx->codec->pix_fmts :
+                                                 s->avctx->color_range == AVCOL_RANGE_JPEG ?
+                                                 hwaccel_pixfmt_list_h264_jpeg_420 :
+                                                 ff_hwaccel_pixfmt_list_420);
         s->avctx->hwaccel = ff_find_hwaccel(s->avctx->codec->id, s->avctx->pix_fmt);
 
         if (MPV_common_init(s) < 0)
@@ -3371,7 +3394,6 @@ AVCodec h264_decoder = {
     /*CODEC_CAP_DRAW_HORIZ_BAND |*/ CODEC_CAP_DR1 | CODEC_CAP_DELAY,
     .flush= flush_dpb,
     .long_name = NULL_IF_CONFIG_SMALL("H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"),
-    .pix_fmts= ff_hwaccel_pixfmt_list_420,
 };
 
 #if CONFIG_H264_VDPAU_DECODER

@@ -2,7 +2,7 @@
  * libdvdcss.h: private DVD reading library data
  *****************************************************************************
  * Copyright (C) 1998-2001 VideoLAN
- * $Id: libdvdcss.h 27494 2008-08-29 20:22:36Z diego $
+ * $Id: libdvdcss.h 31156 2010-05-11 10:58:50Z diego $
  *
  * Authors: Stéphane Borel <stef@via.ecp.fr>
  *          Sam Hocevar <sam@zoy.org>
@@ -17,11 +17,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with libdvdcss; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *****************************************************************************/
-#include <sys/syslimits.h>
+
 struct iovec;
 
 /*****************************************************************************
@@ -62,7 +62,7 @@ struct dvdcss_s
     int    i_readv_buf_size;
 #endif
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(SYS_OS2)
     int    i_raw_fd;
 #endif
 };

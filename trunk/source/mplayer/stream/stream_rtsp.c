@@ -28,7 +28,7 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include "config.h"
-#if !HAVE_WINSOCK2_H 
+#if !HAVE_WINSOCK2_H
 #ifndef GEKKO
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -132,7 +132,7 @@ rtsp_streaming_start (stream_t *stream)
 }
 
 static void
-rtsp_streaming_close (struct stream_st *s)
+rtsp_streaming_close (struct stream *s)
 {
   rtsp_session_t *rtsp = NULL;
 

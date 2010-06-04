@@ -37,8 +37,10 @@ int av_strerror(int errnum, char *errbuf, size_t errbuf_size)
 #if HAVE_STRERROR_R
         ret = strerror_r(AVUNERROR(errnum), errbuf, errbuf_size);
 #else
-        snprintf(errbuf, errbuf_size, "Error number %d occurred", errnum);
+        ret = -1;
 #endif
+        if (ret < 0)
+            snprintf(errbuf, errbuf_size, "Error number %d occurred", errnum);
     }
 
     return ret;

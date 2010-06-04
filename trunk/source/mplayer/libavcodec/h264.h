@@ -464,6 +464,7 @@ typedef struct H264Context{
      */
     int is_avc; ///< this flag is != 0 if codec is avc1
     int nal_length_size; ///< Number of bytes used for nal length (1, 2 or 4)
+    int got_first; ///< this flag is != 0 if we've parsed a frame
 
     SPS *sps_buffers[MAX_SPS_COUNT];
     PPS *pps_buffers[MAX_PPS_COUNT];
@@ -679,6 +680,7 @@ int ff_h264_check_intra_pred_mode(H264Context *h, int mode);
 void ff_h264_write_back_intra_pred_mode(H264Context *h);
 void ff_h264_hl_decode_mb(H264Context *h);
 int ff_h264_frame_start(H264Context *h);
+int ff_h264_decode_extradata(H264Context *h);
 av_cold int ff_h264_decode_init(AVCodecContext *avctx);
 av_cold int ff_h264_decode_end(AVCodecContext *avctx);
 av_cold void ff_h264_decode_init_vlc(void);

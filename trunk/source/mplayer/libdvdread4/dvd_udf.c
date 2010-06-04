@@ -930,7 +930,7 @@ static int UDFGetPVD(dvd_reader_t *device, struct pvd_t *pvd)
   if(GetUDFCache(device, PVDCache, 0, pvd))
     return 1;
 
-  if(!UDFGetDescriptor( device, 1, pvd_buf, sizeof(pvd_buf)))
+  if(!UDFGetDescriptor( device, 1, pvd_buf, DVD_VIDEO_LB_LEN))
     return 0;
 
   memcpy(pvd->VolumeIdentifier, &pvd_buf[24], 32);

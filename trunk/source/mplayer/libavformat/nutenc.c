@@ -23,6 +23,7 @@
 #include "libavutil/tree.h"
 #include "libavcodec/mpegaudiodata.h"
 #include "nut.h"
+#include "internal.h"
 
 static int find_expected_header(AVCodecContext *c, int size, int key_frame, uint8_t out[64]){
     int sample_rate= c->sample_rate;
@@ -823,6 +824,6 @@ AVOutputFormat nut_muxer = {
     write_packet,
     write_trailer,
     .flags = AVFMT_GLOBALHEADER | AVFMT_VARIABLE_FPS,
-    .codec_tag= (const AVCodecTag* const []){ff_codec_bmp_tags, ff_codec_wav_tags, ff_nut_subtitle_tags, 0},
+    .codec_tag = (const AVCodecTag * const []){ ff_codec_bmp_tags, ff_nut_video_tags, ff_codec_wav_tags, ff_nut_subtitle_tags, 0 },
     .metadata_conv = ff_nut_metadata_conv,
 };

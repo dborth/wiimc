@@ -583,7 +583,6 @@ double af_calc_filter_multiplier(af_stream_t* s)
 /* Calculate the total delay [bytes output] caused by the filters */
 double af_calc_delay(af_stream_t* s)
 {
-  if(!s) return 0.0;
   af_instance_t* af=s->first;
   register double delay = 0.0;
   // Iterate through all filters

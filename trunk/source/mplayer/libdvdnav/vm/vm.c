@@ -101,6 +101,7 @@ static pgcit_t* get_PGCIT(vm_t *vm);
 
 
 /* Helper functions */
+
 #ifdef TRACE
 static void vm_print_current_domain_state(vm_t *vm) {
   switch((vm->state).domain) {
@@ -357,8 +358,6 @@ int vm_reset(vm_t *vm, const char *dvdroot) {
       fprintf(MSG_OUT, "libdvdnav: vm: failed to open/read the DVD\n");
       return 0;
     }
-    dvd_read_name(vm->dvd_name, vm->dvd_serial, dvdroot);
-    vm->map  = remap_loadmap(vm->dvd_name);
     vm->vmgi = ifoOpenVMGI(vm->dvd);
     if(!vm->vmgi) {
       fprintf(MSG_OUT, "libdvdnav: vm: failed to read VIDEO_TS.IFO\n");
@@ -389,6 +388,8 @@ int vm_reset(vm_t *vm, const char *dvdroot) {
       /* return 0; Not really used for now.. */
     }
     /* ifoRead_TXTDT_MGI(vmgi); Not implemented yet */
+    dvd_read_name(vm->dvd_name, vm->dvd_serial, dvdroot);
+    vm->map  = remap_loadmap(vm->dvd_name);
   }
   if (vm->vmgi) {
     int i, mask;
@@ -857,8 +858,8 @@ void vm_get_subp_info(vm_t *vm, int *current, int *num_avail) {
     break;
   }
 }
+#endif
 
-/* currently unused */
 void vm_get_video_res(vm_t *vm, int *width, int *height) {
   video_attr_t attr = vm_get_video_attr(vm);
 
@@ -882,7 +883,6 @@ void vm_get_video_res(vm_t *vm, int *width, int *height) {
     break;
   }
 }
-#endif
 
 int vm_get_video_aspect(vm_t *vm) {
   int aspect = vm_get_video_attr(vm).display_aspect_ratio;
@@ -1689,6 +1689,7 @@ static int set_PGCN(vm_t *vm, int pgcN) {
 /* Figure out the correct pgN from the cell and update (vm->state). */
 static int set_PGN(vm_t *vm) {
   int new_pgN = 0;
+  int dummy, part;
 
   while(new_pgN < (vm->state).pgc->nr_of_programs
 	&& (vm->state).cellN >= (vm->state).pgc->program_map[new_pgN])
@@ -1705,14 +1706,8 @@ static int set_PGN(vm_t *vm) {
     if((vm->state).TTN_REG > vm->vmgi->tt_srpt->nr_of_srpts)
       return 0; /* ?? */
     pb_ty = &vm->vmgi->tt_srpt->title[(vm->state).TTN_REG - 1].pb_ty;
-    if(pb_ty->multi_or_random_pgc_title == /* One_Sequential_PGC_Title */ 0) {
-      int dummy, part;
       vm_get_current_title_part(vm, &dummy, &part);
       (vm->state).PTTN_REG = part;
-    } else {
-      /* FIXME: Handle RANDOM or SHUFFLE titles. */
-      fprintf(MSG_OUT, "libdvdnav: RANDOM or SHUFFLE titles are NOT handled yet.\n");
-    }
   }
   return 1;
 }

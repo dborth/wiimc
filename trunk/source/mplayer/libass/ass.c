@@ -17,6 +17,7 @@
  * with libass; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+
 #include "config.h"
 
 #include <stdio.h>
@@ -906,6 +907,20 @@ void ass_process_chunk(ASS_Track *track, char *data, int size,
     ass_free_event(track, eid);
     track->n_events--;
     free(str);
+}
+
+/**
+ * \brief Flush buffered events.
+ * \param track track
+*/
+void ass_flush_events(ASS_Track *track)
+{
+    if (track->events) {
+        int eid;
+        for (eid = 0; eid < track->n_events; eid++)
+            ass_free_event(track, eid);
+        track->n_events = 0;
+    }
 }
 
 #ifdef CONFIG_ICONV

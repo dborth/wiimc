@@ -2,7 +2,7 @@
  * ioctl.h: DVD ioctl replacement function
  *****************************************************************************
  * Copyright (C) 1999-2001 VideoLAN
- * $Id: ioctl.h 27494 2008-08-29 20:22:36Z diego $
+ * $Id: ioctl.h 31155 2010-05-11 10:51:46Z diego $
  *
  * Authors: Sam Hocevar <sam@zoy.org>
  *
@@ -16,9 +16,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with libdvdcss; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *****************************************************************************/
 
 int ioctl_ReadCopyright     ( int, int, int * );

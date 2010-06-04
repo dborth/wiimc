@@ -42,7 +42,7 @@ typedef CRITICAL_SECTION pthread_mutex_t;
 #define pthread_mutex_init(a, b) InitializeCriticalSection(a)
 #define pthread_mutex_lock(a)    EnterCriticalSection(a)
 #define pthread_mutex_unlock(a)  LeaveCriticalSection(a)
-#define pthread_mutex_destroy(a)
+#define pthread_mutex_destroy(a) DeleteCriticalSection(a)
 
 #ifndef HAVE_GETTIMEOFDAY
 /* replacement gettimeofday implementation */
@@ -62,6 +62,7 @@ static inline int _private_gettimeofday( struct timeval *tv, void *tz )
 #define lseek64 _lseeki64
 
 #else
+
 #ifndef GEKKO
 #include <pthread.h>
 #endif
@@ -69,7 +70,7 @@ static inline int _private_gettimeofday( struct timeval *tv, void *tz )
 #endif /* WIN32 */
 
 /* where should libdvdnav write its messages (stdout/stderr) */
-#define MSG_OUT stdout
+#define MSG_OUT stderr
 
 /* Maximum length of an error string */
 #define MAX_ERR_LEN 255
@@ -175,6 +176,7 @@ struct dvdnav_s {
 #else
   pthread_mutex_t vm_lock;
 #endif
+
   /* Read-ahead cache */
   read_cache_t *cache;
 

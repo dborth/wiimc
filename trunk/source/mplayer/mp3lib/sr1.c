@@ -18,7 +18,6 @@
 #include "mp3.h"
 #include "mpbswap.h"
 #include "cpudetect.h"
-//#include "liba52/mm_accel.h"
 #include "mp_msg.h"
 #include "libmpcodecs/ad_mp3lib.h"
 #include "libvo/fastmemcpy.h"
@@ -68,7 +67,7 @@ int mp3_read(char *buf,int size);
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: sr1.c 31032 2010-04-12 10:56:17Z diego $
+ * $Id: sr1.c 31140 2010-05-07 18:24:41Z diego $
  */
 
 
@@ -368,7 +367,7 @@ retry1:
 
   /* read main data into memory */
   if(!stream_read_frame_body(fr->framesize)){
-    //printf("\nBroken frame at 0x%X                                                  \n",resyncpos);
+    printf("\nBroken frame at 0x%X                                                  \n",resyncpos);
     return 0;
   }
   ++frames;

@@ -1,4 +1,4 @@
-.\" $Revision: 31096 $
+.\" $Revision: 31292 $
 .\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -1173,6 +1173,7 @@ Select the Dynamic Range Compression level for AC-3 audio streams.
 <level> is a float value ranging from 0 to 1, where 0 means no compression
 and 1 (which is the default) means full compression (make loud passages more
 silent and vice versa).
+Values up to 2 are also accepted, but are purely experimental.
 This option only shows an effect if the AC-3 stream contains the required range
 compression information.
 .
@@ -1787,6 +1788,10 @@ Play the famous "foreman" sample video.
 Play a raw YUV sample.
 .RE
 .PD 1
+.
+.TP
+.B \-referrer <string> (network only)
+Specify a referrer path or URL for HTTP requests.
 .
 .TP
 .B \-rtsp\-port
@@ -4176,11 +4181,11 @@ Explicitly choose the Matrox device name to use (default: /dev/\:mga_vid).
 .PD 1
 .
 .TP
-.B s3fb (Linux only) (also see \-vf yuv2 and \-dr)
+.B s3fb (Linux only) (also see \-dr)
 S3 Virge specific video output driver.
 This driver supports the card's YUV conversion and scaling, double
 buffering and direct rendering features.
-Use \-vf yuy2 to get hardware-accelerated YUY2 rendering, which is
+Use \-vf format=yuy2 to get hardware-accelerated YUY2 rendering, which is
 much faster than YV12 on this card.
 .PD 0
 .RSs
@@ -6069,11 +6074,6 @@ to keep aspect.
 .IPs "<r>\ \ "
 Rounds up to make both width and height divisible by <r> (default: 1).
 .RE
-.
-.TP
-.B "yuy2\ \ \ "
-Forces software YV12/\:I420/\:422P to YUY2 conversion.
-Useful for video cards/\:drivers with slow YV12 but fast YUY2 support.
 .
 .TP
 .B "yvu9\ \ \ "

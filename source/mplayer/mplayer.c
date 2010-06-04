@@ -61,6 +61,8 @@
 #include "m_option.h"
 #include "m_config.h"
 #include "m_property.h"
+#include "mplayer.h"
+#include "access_mpcontext.h"
 
 #include "cfg-mplayer-def.h"
 
@@ -83,10 +85,8 @@
 #include "codec-cfg.h"
 
 #include "edl.h"
-#include "mplayer.h"
 #include "spudec.h"
 #include "vobsub.h"
-#include "access_mpcontext.h"
 
 #include "osdep/getch2.h"
 #include "osdep/timer.h"
@@ -1851,7 +1851,7 @@ static int generate_video_frame(sh_video_t *sh_video, demux_stream_t *d_video)
 	if (in_size < 0) {
 	    // try to extract last frames in case of decoder lag
 	    in_size = 0;
-	    pts = 1e300;
+	    pts = MP_NOPTS_VALUE;
 	    hit_eof = 1;
 	}
 	if (in_size > max_framesize)
@@ -1913,7 +1913,8 @@ static float timing_sleep(float time_frame)
 }
 #endif
 
-static void select_subtitle(MPContext *mpctx) {
+static void select_subtitle(MPContext *mpctx)
+{
   // find the best sub to use
   int vobsub_index_id = vobsub_get_index_by_id(vo_vobsub, vobsub_id);
   mpctx->global_sub_pos = -1; // no subs by default
@@ -2422,9 +2423,12 @@ static double update_video(int *blit_frame)
 #ifdef CONFIG_DVDNAV
 	/// wait, still frame or EOF
 	if (mpctx->stream->type == STREAMTYPE_DVDNAV && in_size < 0) {
-	    if (mp_dvdnav_is_eof(mpctx->stream)) return -1;
-	    if (mpctx->d_video) mpctx->d_video->eof = 0;
-	    if (mpctx->d_audio) mpctx->d_audio->eof = 0;
+	    if (mp_dvdnav_is_eof(mpctx->stream))
+	    	return -1;
+	    if (mpctx->d_video)
+	    	mpctx->d_video->eof = 0;
+	    if (mpctx->d_audio)
+	    	mpctx->d_audio->eof = 0;
 	    mpctx->stream->eof = 0;
 	} else
 #endif
@@ -2641,6 +2645,11 @@ static int seek(MPContext *mpctx, double amount, int style)
 	current_module = "seek_vobsub_reset";
 	vobsub_seek(vo_vobsub, mpctx->sh_video->pts);
     }
+
+#ifdef CONFIG_ASS
+    if (ass_enabled && mpctx->d_sub->sh && ((sh_sub_t *)mpctx->d_sub->sh)->ass_track)
+        ass_flush_events(((sh_sub_t *)mpctx->d_sub->sh)->ass_track);
+#endif
 
     edl_seek_reset(mpctx);
 
@@ -3734,7 +3743,11 @@ if (mpctx->global_sub_size) {
   mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_SEEKABLE=%d\n",
          mpctx->stream->seek && (!mpctx->demuxer || mpctx->demuxer->seekable));
   if (mpctx->demuxer) {
+#ifdef GEKKO
+      if (mpctx->demuxer->num_chapters == 0 && mpctx->sh_video)
+#else
       if (mpctx->demuxer->num_chapters == 0)
+#endif
           stream_control(mpctx->demuxer->stream, STREAM_CTRL_GET_NUM_CHAPTERS, &mpctx->demuxer->num_chapters);
       mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_CHAPTERS=%d\n", mpctx->demuxer->num_chapters);
   }

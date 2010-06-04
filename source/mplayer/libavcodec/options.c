@@ -411,6 +411,9 @@ static const AVOption options[]={
 {"aq_strength", "specify aq strength", OFFSET(aq_strength), FF_OPT_TYPE_FLOAT, 1.0, 0, FLT_MAX, V|E},
 {"rc_lookahead", "specify number of frames to look ahead for frametype", OFFSET(rc_lookahead), FF_OPT_TYPE_INT, 40, 0, INT_MAX, V|E},
 {"ssim", "ssim will be calculated during encoding", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_SSIM, INT_MIN, INT_MAX, V|E, "flags2"},
+{"intra_refresh", "use periodic insertion of intra blocks instead of keyframes", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_INTRA_REFRESH, INT_MIN, INT_MAX, V|E, "flags2"},
+{"crf_max", "in crf mode, prevents vbv from lowering quality beyond this point", OFFSET(crf_max), FF_OPT_TYPE_FLOAT, DEFAULT, 0, 51, V|E},
+{"log_level_offset", "set the log level offset", OFFSET(log_level_offset), FF_OPT_TYPE_INT, 0, INT_MIN, INT_MAX },
 {NULL},
 };
 
@@ -421,7 +424,7 @@ static const AVOption options[]={
 #undef D
 #undef DEFAULT
 
-static const AVClass av_codec_context_class = { "AVCodecContext", context_to_name, options, LIBAVUTIL_VERSION_INT };
+static const AVClass av_codec_context_class = { "AVCodecContext", context_to_name, options, LIBAVUTIL_VERSION_INT, OFFSET(log_level_offset) };
 
 void avcodec_get_context_defaults2(AVCodecContext *s, enum AVMediaType codec_type){
     int flags=0;
@@ -488,9 +491,6 @@ int avcodec_copy_context(AVCodecContext *dest, const AVCodecContext *src)
     dest->slice_offset    = NULL;
     dest->internal_buffer = NULL;
     dest->hwaccel         = NULL;
-    dest->execute         = NULL;
-    dest->execute2        = NULL;
-    dest->reget_buffer    = NULL;
     dest->thread_opaque   = NULL;
 
     /* reallocate values that should be allocated separately */

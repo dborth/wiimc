@@ -553,6 +553,11 @@ dvdnav_status_t dvdnav_get_serial_string(dvdnav_t *self, const char **serial_str
 uint8_t dvdnav_get_video_aspect(dvdnav_t *self);
 
 /*
+ * Get video resolution.
+ */
+int dvdnav_get_video_resolution(dvdnav_t *self, uint32_t *width, uint32_t *height);
+
+/*
  * Get video scaling permissions.
  * The scaling permission does only change on VTS boundaries.
  * See the DVDNAV_VTS_CHANGE event.

@@ -15,6 +15,9 @@ MPlayer (1.0)
     * Kega Game video codec (KGV1) via binary DLL
     * SoftLab-NSK Forward MPEG-2 I-frames (SLIF) via binary DLL
     * JPEG 2000 support via OpenJPEG
+    * internal liba52 copy removed
+    * CineForm HD (CFHD) via binary DLL
+    * VP8 decoding through libvpx wrapper in FFmpeg
 
     Demuxers:
     * support for TrueHD in Blu-ray streams in libmpdemux
@@ -22,7 +25,13 @@ MPlayer (1.0)
     * fix length in ASF/WMV files
     * support ISDB-Tb DVB streams
 
+    Filters:
+    * remove vf_yuy2, functionality is replaced by -vf format=yuv2
+
     Drivers:
+    * X11: Window manager choses Window position by default.
+      Add geometry=50%:50% to your configuration to get the old behaviour.
+    * -vo md5sum md5 calculation changed so output matches FFmpeg's -f framemd5
     * Support for more formats in OpenGL video output drivers (different YUV
       subsampling, 16 bit per component)
     * Selectable YUV to RGB conversion standard for -vo gl
@@ -51,11 +60,14 @@ MPlayer (1.0)
     * better out-of-the-box support for compiling for ARM, IA64,
       MinGW32 and MinGW-w64, MinGW has ASLR enabled with recent
       enough binutils.
+    * libdvdcss synced with upstream Subversion snapshot
 
     MEncoder:
     * add -tsprog for demuxer lavf
 
-  rc3: "BikeshedCounter" March 27, 2009
+
+
+  rc3: "BikeshedCounter AKA Godot" May 30, 2010
     Decoders:
     * support for X8 frames (fixes "J-type picture is not supported" for WMV2)
     * support for DTS WAV/DTS-CD passthrough by ad_hwac3
@@ -75,7 +87,7 @@ MPlayer (1.0)
     * GeoVision Advanced MPEG-4 (GMP4, GM40) via binary DLL
     * Xiricam JPEG from Veo PC Camera (XJPG) via binary DLL
     * WorldConnect Wavelet Video (SMSV) via binary DLL
-    * VDOWave 3 advanced (VDO3,VDOM,VDOW) via binary DLL
+    * VDOWave 3 advanced (VDO3, VDOM, VDOW) via binary DLL
     * VoxWare MetaVoice (format 0x0074) via binary DLL
     * Ulead DV Audio (0x215,0x216) via binary DLL
     * GoToMeeting codec (G2M2,G2M3) via binary DLL
@@ -84,10 +96,10 @@ MPlayer (1.0)
     * ZDSoft screen recorder (ZDSV) via binary DLL
     * WebTrain Communication lossless screen recorder (WTVC) via binary DLL
     * xfire video (XFR1) via binary DLL
-    * VFAPI rgb transcode (vifp) via binary DLL
+    * VFAPI RGB transcode (vifp) via binary DLL
     * ETI CamCorder EYECON (NUB0,NUB1,NUB2) via binary DLL
     * fox motion (FMVC) via binary DLL
-    * Trident video (TY2C,TY2N,TY0N) via binary DLL
+    * Trident video (TY2C, TY2N, TY0N) via binary DLL
     * 10-bit video (v210) via Cinewave binary DLL
     * Brooktree YUV 4:1:1 Raw (Y41P) via binary DLL
     * many rare/obscure fourccs for known formats added
@@ -118,7 +130,7 @@ MPlayer (1.0)
     * change vf_screenshot dependency from libpng to lavc
     * add af_scaletempo which maintains audio pitch when changing playback speed
     * fix multi-channel reordering
-    * af_stats, filter to print information about the audio stream
+    * af_stats filter to print information about the audio stream
 
     Streaming:
     * tv:// support for Windows
@@ -236,10 +248,10 @@ MPlayer (1.0)
     Ports:
     * small crash with vo_macosx fixed
     * AC3/DTS passthrough for ao_macosx
-    * fix frozen OSD on Mac OS X
+    * fix frozen OSD on OS X
     * vo_gl now works with -wid and nVidia drivers on Windows (this is a hack)
     * VIDIX on SuperH
-    * workarounds for AltiVec on Apple gcc 3.3 on Mac OS X dropped
+    * workarounds for AltiVec on Apple gcc 3.3 on OS X dropped
     * vo_macosx can now be compiled in 64-bits mode
     * allow multiple MPlayer instances with vo_macosx using buffer_name
     * OpenGL support for unmodified MinGW64

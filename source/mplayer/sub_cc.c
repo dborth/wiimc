@@ -145,7 +145,7 @@ static void append_char(char c)
 	{
 		if(cursor_pos==CC_MAX_LINE_LENGTH-1)
 		{
-			//fprintf(stderr,"CC: append_char() reached CC_MAX_LINE_LENGTH!\n");
+			fprintf(stderr,"CC: append_char() reached CC_MAX_LINE_LENGTH!\n");
 			return;
 		}
 		bb->text[bb->lines - 1][cursor_pos++]=c;
@@ -287,7 +287,7 @@ static void subcc_decode(unsigned char *inputbuffer, unsigned int inputlength)
 
     if (inputlength - curbytes < 2) {
 #ifdef LOG_DEBUG
-      //fprintf(stderr, "Not enough data for 2-byte CC encoding\n");
+      fprintf(stderr, "Not enough data for 2-byte CC encoding\n");
 #endif
       break;
     }
@@ -327,7 +327,7 @@ static void subcc_decode(unsigned char *inputbuffer, unsigned int inputlength)
 
     default:
 //#ifdef LOG_DEBUG
-      //fprintf(stderr, "Unknown CC encoding: %x\n", cc_code);
+      fprintf(stderr, "Unknown CC encoding: %x\n", cc_code);
 //#endif
       skip = 2;
       break;

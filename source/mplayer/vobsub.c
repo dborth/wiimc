@@ -61,7 +61,6 @@ static rar_stream_t *rar_open(const char *const filename,
                               const char *const mode)
 {
     rar_stream_t *stream;
-    
     /* unrar_exec can only read */
     if (strcmp("r", mode) && strcmp("rb", mode)) {
         errno = EINVAL;
@@ -134,15 +133,9 @@ static rar_stream_t *rar_open(const char *const filename,
                 return NULL;
             }
         }
-		else
-		{
-			free(rar_filename);
-			free(stream);
-			return NULL;
 
-	        free(rar_filename);
-	        stream->pos = 0;
-	    }
+        free(rar_filename);
+        stream->pos = 0;
     }
     return stream;
 }

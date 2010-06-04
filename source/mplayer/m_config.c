@@ -282,18 +282,14 @@ static m_config_option_t*
 m_config_get_co(m_config_t *config, char* arg) {
   m_config_option_t *co;
 
-  if(!arg)return NULL;
   for(co = config->opts ; co ; co = co->next ) {
-    if(co->name && co->opt && co->opt->type)
-    {
-        int l = strlen(co->name) - 1;
-		if((co->opt->type->flags & M_OPT_TYPE_ALLOW_WILDCARD) &&
-		   (co->name[l] == '*')) {
-		  if(strncasecmp(co->name,arg,l) == 0)
-		return co;
-		} else if(strcasecmp(co->name,arg) == 0)
-		  return co;
-    }else printf("arg: %s\n",arg);
+    int l = strlen(co->name) - 1;
+    if((co->opt->type->flags & M_OPT_TYPE_ALLOW_WILDCARD) &&
+       (co->name[l] == '*')) {
+      if(strncasecmp(co->name,arg,l) == 0)
+	return co;
+    } else if(strcasecmp(co->name,arg) == 0)
+      return co;
   }
   return NULL;
 }

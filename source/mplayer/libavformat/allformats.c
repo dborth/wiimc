@@ -89,6 +89,7 @@ void av_register_all(void)
     REGISTER_MUXDEMUX (FLV, flv);
     REGISTER_DEMUXER  (FOURXM, fourxm);
     REGISTER_MUXER    (FRAMECRC, framecrc);
+    REGISTER_MUXER    (FRAMEMD5, framemd5);
     REGISTER_MUXER    (GIF, gif);
     REGISTER_DEMUXER  (GSM, gsm);
     REGISTER_MUXDEMUX (GXF, gxf);
@@ -104,8 +105,10 @@ void av_register_all(void)
     REGISTER_MUXER    (IPOD, ipod);
     REGISTER_DEMUXER  (ISS, iss);
     REGISTER_DEMUXER  (IV8, iv8);
+    REGISTER_DEMUXER  (IVF, ivf);
     REGISTER_DEMUXER  (LMLM4, lmlm4);
     REGISTER_MUXDEMUX (M4V, m4v);
+    REGISTER_MUXER    (MD5, md5);
     REGISTER_MUXDEMUX (MATROSKA, matroska);
     REGISTER_MUXER    (MATROSKA_AUDIO, matroska_audio);
     REGISTER_MUXDEMUX (MJPEG, mjpeg);
@@ -217,6 +220,7 @@ void av_register_all(void)
     REGISTER_PROTOCOL (FILE, file);
     REGISTER_PROTOCOL (GOPHER, gopher);
     REGISTER_PROTOCOL (HTTP, http);
+    REGISTER_PROTOCOL (MMST, mmst);
     REGISTER_PROTOCOL (PIPE, pipe);
     REGISTER_PROTOCOL (RTMP, rtmp);
 #if CONFIG_LIBRTMP

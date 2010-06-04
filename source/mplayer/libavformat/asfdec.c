@@ -204,9 +204,10 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
     get_byte(pb);
     memset(&asf->asfid2avid, -1, sizeof(asf->asfid2avid));
     for(;;) {
+        uint64_t gpos= url_ftell(pb);
         get_guid(pb, &g);
         gsize = get_le64(pb);
-        dprintf(s, "%08"PRIx64": ", url_ftell(pb) - 24);
+        dprintf(s, "%08"PRIx64": ", gpos);
         print_guid(&g);
         dprintf(s, "  size=0x%"PRIx64"\n", gsize);
         if (!guidcmp(&g, &ff_asf_data_header)) {
@@ -391,6 +392,8 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 st->codec->codec_id = ff_codec_get_id(ff_codec_bmp_tags, tag1);
                 if(tag1 == MKTAG('D', 'V', 'R', ' '))
                     st->need_parsing = AVSTREAM_PARSE_FULL;
+                if(st->codec->codec_id == CODEC_ID_H264)
+                    st->need_parsing = AVSTREAM_PARSE_FULL_ONCE;
             }
             pos2 = url_ftell(pb);
             url_fskip(pb, gsize - (pos2 - pos1 + 24));
@@ -584,8 +587,10 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                     av_log(s, AV_LOG_WARNING, "Digital signature detected, decoding will likely fail!\n");
                 }
             }
-            url_fseek(pb, gsize - 24, SEEK_CUR);
         }
+        if(url_ftell(pb) != gpos + gsize)
+            av_log(s, AV_LOG_DEBUG, "gpos mismatch our pos=%"PRIu64", end=%"PRIu64"\n", url_ftell(pb)-gpos, gsize);
+        url_fseek(pb, gpos + gsize, SEEK_SET);
     }
     get_guid(pb, &g);
     get_le64(pb);

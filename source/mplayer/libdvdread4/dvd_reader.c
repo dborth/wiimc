@@ -375,7 +375,7 @@ dvd_reader_t *DVDOpen( const char *ppath )
                     free(path);
             return ret_val;
     }
-
+    
 #ifdef GEKKO
 		if (!strcmp(path,"/dev/di")) {
 			ret_val = DVDOpenImageFile( path, have_css );
@@ -461,6 +461,13 @@ dvd_reader_t *DVDOpen( const char *ppath )
       }
     }
 
+#ifdef _WIN32
+    if(strlen(path_copy) > TITLES_MAX) {
+      if(!strcasecmp(&(path_copy[strlen( path_copy ) - TITLES_MAX]),
+                       "\\video_ts"))
+        path_copy[strlen(path_copy) - (TITLES_MAX-1)] = '\0';
+    }
+#endif
     if( strlen( path_copy ) > TITLES_MAX ) {
       if( !strcasecmp( &(path_copy[ strlen( path_copy ) - TITLES_MAX ]),
                        "/video_ts" ) ) {
@@ -622,7 +629,6 @@ static dvd_file_t *DVDOpenFileUDF( dvd_reader_t *dvd, char *filename )
 static int findDirFile( const char *path, const char *file, char *filename )
 {
 #ifndef GEKKO
-
   DIR *dir;
   struct dirent *ent;
 
@@ -639,7 +645,7 @@ static int findDirFile( const char *path, const char *file, char *filename )
     }
   }
   closedir(dir);
-#endif  
+#endif 
   return -1;
 }
 

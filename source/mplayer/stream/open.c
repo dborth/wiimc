@@ -23,7 +23,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-#include <locale.h>
 
 #include "config.h"
 #include "mp_msg.h"
@@ -36,6 +35,7 @@
 #include "m_option.h"
 #include "stream.h"
 #include "libmpdemux/demuxer.h"
+
 
 /// We keep these 2 for the gui atm, but they will be removed.
 int vcd_track=0;

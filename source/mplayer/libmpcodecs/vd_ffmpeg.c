@@ -612,9 +612,8 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
 
     if (IMGFMT_IS_XVMC(ctx->best_csp) || IMGFMT_IS_VDPAU(ctx->best_csp)) {
         type =  MP_IMGTYPE_NUMBERED | (0xffff << 16);
-    }
-    else if (!pic->buffer_hints) {
-/*
+    } else
+    if (!pic->buffer_hints) {
         if(ctx->b_count>1 || ctx->ip_count>2){
             mp_msg(MSGT_DECVIDEO, MSGL_WARN, MSGTR_MPCODECS_DRIFailure);
 
@@ -622,16 +621,15 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
             avctx->get_buffer= avcodec_default_get_buffer;
             return avctx->get_buffer(avctx, pic);
         }
-*/
-/*
+
         if(avctx->has_b_frames){
             type= MP_IMGTYPE_IPB;
         }else{
             type= MP_IMGTYPE_IP;
         }
         mp_msg(MSGT_DECVIDEO, MSGL_DBG2, type== MP_IMGTYPE_IPB ? "using IPB\n" : "using IP\n");
-*/
     }
+
     if (ctx->best_csp == IMGFMT_RGB8 || ctx->best_csp == IMGFMT_BGR8)
         flags |= MP_IMGFLAG_RGB_PALETTE;
     mpi= mpcodecs_get_image(sh, type, flags, width, height);
@@ -803,7 +801,6 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
     if(len<=0) return NULL; // skipped frame
 
 //ffmpeg interlace (mpeg2) bug have been fixed. no need of -noslices
-
     if (!dr1)
     avctx->draw_horiz_band=NULL;
     if(ctx->vo_initialized && !(flags&3) && !dr1){
@@ -916,12 +913,10 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
         avctx->width, avctx->height);
     if(!mpi){        // temporary!
         mp_msg(MSGT_DECVIDEO, MSGL_WARN, MSGTR_MPCODECS_CouldntAllocateImageForCodec);
-        printf(MSGT_DECVIDEO, MSGL_WARN, MSGTR_MPCODECS_CouldntAllocateImageForCodec);
         return NULL;
     }
 
-    if(!dr1)
-	{
+    if(!dr1){
         mpi->planes[0]=pic->data[0];
         mpi->planes[1]=pic->data[1];
         mpi->planes[2]=pic->data[2];

@@ -22,10 +22,12 @@
 #include "mpc_info.h"
 #include "libmpdemux/stheader.h"
 
+extern float drc_level;
+
 typedef mp_codec_info_t ad_info_t;
 
 /* interface of video decoder drivers */
-typedef struct ad_functions_s
+typedef struct ad_functions
 {
         const ad_info_t *info;
         int (*preinit)(sh_audio_t *sh);

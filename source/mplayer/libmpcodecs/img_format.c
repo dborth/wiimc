@@ -29,6 +29,7 @@ const char *vo_format_name(int format)
 	case IMGFMT_RGB4: return "RGB 4-bit";
 	case IMGFMT_RG4B: return "RGB 4-bit per byte";
 	case IMGFMT_RGB8: return "RGB 8-bit";
+	case IMGFMT_RGB12: return "RGB 12-bit";
 	case IMGFMT_RGB15: return "RGB 15-bit";
 	case IMGFMT_RGB16: return "RGB 16-bit";
 	case IMGFMT_RGB24: return "RGB 24-bit";
@@ -39,6 +40,7 @@ const char *vo_format_name(int format)
 	case IMGFMT_BGR4: return "BGR 4-bit";
 	case IMGFMT_BG4B: return "BGR 4-bit per byte";
 	case IMGFMT_BGR8: return "BGR 8-bit";
+	case IMGFMT_BGR12: return "BGR 12-bit";
 	case IMGFMT_BGR15: return "BGR 15-bit";
 	case IMGFMT_BGR16: return "BGR 16-bit";
 	case IMGFMT_BGR24: return "BGR 24-bit";
@@ -149,13 +151,18 @@ int mp_get_chroma_shift(int format, int *x_shift, int *y_shift)
         xs = 0;
         ys = 1;
         break;
+    case IMGFMT_Y8:
+    case IMGFMT_Y800:
+        xs = 31;
+        ys = 31;
+        break;
     default:
         err = 1;
         break;
     }
     if (x_shift) *x_shift = xs;
     if (y_shift) *y_shift = ys;
-    bpp = 8 + (16 >> (xs + ys));
+    bpp = 8 + ((16 >> xs) >> ys);
     if (format == IMGFMT_420A)
         bpp += 8;
     bpp *= bpp_factor;

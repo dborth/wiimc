@@ -541,17 +541,17 @@ typedef struct mp_input_fd {
   int pos,size;
 } mp_input_fd_t;
 
-typedef struct mp_cmd_filter_st mp_cmd_filter_t;
+typedef struct mp_cmd_filter mp_cmd_filter_t;
 
-struct mp_cmd_filter_st {
+struct mp_cmd_filter {
   mp_input_cmd_filter filter;
   void* ctx;
   mp_cmd_filter_t* next;
 };
 
-typedef struct mp_cmd_bind_section_st mp_cmd_bind_section_t;
+typedef struct mp_cmd_bind_section mp_cmd_bind_section_t;
 
-struct mp_cmd_bind_section_st {
+struct mp_cmd_bind_section {
   mp_cmd_bind_t* cmd_binds;
   char* section;
   mp_cmd_bind_section_t* next;
@@ -1203,6 +1203,9 @@ static mp_cmd_t *check_autorepeat(int paused)
 }
 
 
+/**
+ * \param time time to wait at most for an event in milliseconds
+ */
 static mp_cmd_t *read_events(int time, int paused)
 {
     int i;
@@ -1904,6 +1907,9 @@ static int mp_input_print_cmd_list(m_option_t* cfg) {
   exit(0);
 }
 
+/**
+ * \param time time to wait for an interruption in milliseconds
+ */
 int
 mp_input_check_interrupt(int time) {
   mp_cmd_t* cmd;
@@ -1915,11 +1921,6 @@ mp_input_check_interrupt(int time) {
   case MP_CMD_PLAY_TREE_UP_STEP:
   case MP_CMD_PLAY_ALT_SRC_STEP:
     // The cmd will be executed when we are back in the main loop
-    return 1;
-  case MP_CMD_PAUSE:
-	  // remove the cmd from the queue
-	  cmd = mp_input_get_cmd(time,0,0);
-	  mp_cmd_free(cmd);
     return 1;
   }
   // remove the cmd from the queue

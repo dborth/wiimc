@@ -273,7 +273,7 @@ static inline demux_packet_t* new_demux_packet(int len){
   dp->master=NULL;
   dp->buffer=NULL;
   if (len > 0 && (dp->buffer = (unsigned char *)malloc(len + MP_INPUT_BUFFER_PADDING_SIZE)))
-    memset(dp->buffer + len, 0, MP_INPUT_BUFFER_PADDING_SIZE);
+    memset(dp->buffer + len, 0, 8);
   else
     dp->len = 0;
   return dp;

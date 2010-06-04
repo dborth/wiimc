@@ -355,9 +355,9 @@ prepareSettingsData ()
 	createXMLSetting("onlinemediaFolder", "Online media folder", WiiSettings.onlinemediaFolder);
 	// Network
 	createXMLSection("Network", "Network Settings");
-	for(int i=0; i<5; i++)
+	for(int i=0; i<MAX_SHARES; i++)
 		createXMLSMBShare(i);
-	for(int i=0; i<5; i++)
+	for(int i=0; i<MAX_SHARES; i++)
 		createXMLFTPSite(i);
 	// Subtitles
 	createXMLSection("Subtitles", "Subtitle Settings");
@@ -571,7 +571,7 @@ void DefaultSettings ()
 	// Online Media
 	WiiSettings.onlinemediaFolder[0] = 0;
 	// Network
-	for(int i=0; i<5; i++)
+	for(int i=0; i<MAX_SHARES; i++)
 	{
 		WiiSettings.smbConf[i].displayname[0] = 0;
 		WiiSettings.smbConf[i].ip[0] = 0;

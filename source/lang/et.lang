@@ -573,3 +573,33 @@ msgstr "Punane"
 
 msgid "Sleep Timer"
 msgstr "Unetaimer"
+
+msgid "sec"
+msgstr "sek"
+
+msgid "min"
+msgstr "min"
+
+msgid "Blue"
+msgstr "Sinine"
+
+msgid "Green"
+msgstr "Roheline"
+
+msgid "Grey"
+msgstr "Hall"
+
+msgid "Orange"
+msgstr "Oranž"
+
+msgid "Theme"
+msgstr "Välimus"
+
+msgid "Purple (Default)"
+msgstr "Lilla (Algne)"
+
+msgid "Auto-Play Next Video"
+msgstr "Esita Automaatselt Järgmine Video"
+
+msgid "Adding files to playlist..."
+msgstr "Lisan faile esitusloendisse..."

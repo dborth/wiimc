@@ -454,8 +454,10 @@ int main(int argc, char *argv[])
 	__exception_setreload(8);
 
 	// try to load IOS 202
-	if(IOS_GetVersion() != 202 && FindIOS(202))
+	if(FindIOS(202))
 		IOS_ReloadIOS(202);
+	else if(IOS_GetVersion() < 61 && FindIOS(61))
+		IOS_ReloadIOS(61);
 
 	if(IOS_GetVersion() == 202)
 	{

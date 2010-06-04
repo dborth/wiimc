@@ -4073,7 +4073,7 @@ static void MenuSettingsNetwork()
 	// find all currently set SMB/FTP entries
 	int map[MAX_OPTIONS];
 	
-	for(int j=0; j < 5; j++)
+	for(int j=0; j < MAX_SHARES; j++)
 	{
 		if(WiiSettings.smbConf[j].share[0] != 0)
 		{
@@ -4088,13 +4088,13 @@ static void MenuSettingsNetwork()
 			i++;
 		}
 	}
-	for(int j=0; j < 5; j++)
+	for(int j=0; j < MAX_SHARES; j++)
 	{
 		if(WiiSettings.ftpConf[j].ip[0] != 0)
 		{
 			options.icon[i] = ICON_FTP;
 			options.value[i][0] = 0;
-			map[i] = j + 5;
+			map[i] = j + MAX_SHARES;
 
 			if(WiiSettings.ftpConf[j].displayname[0] != 0)
 				sprintf(options.name[i], "%s", WiiSettings.ftpConf[j].displayname);
@@ -4180,15 +4180,15 @@ static void MenuSettingsNetwork()
 
 		ret = optionBrowser.GetClickedOption();
 
-		if((ret >= 0 && map[ret] < 5) || addsmbBtn.GetState() == STATE_CLICKED)
+		if((ret >= 0 && map[ret] < MAX_SHARES) || addsmbBtn.GetState() == STATE_CLICKED)
 		{
 			if(ret >= 0) netEditIndex = map[ret];
 			else netEditIndex = -1;
 			ChangeMenuNoHistory(MENU_SETTINGS_NETWORK_SMB);
 		}
-		else if((ret >= 0 && map[ret] >= 5) || addftpBtn.GetState() == STATE_CLICKED)
+		else if((ret >= 0 && map[ret] >= MAX_SHARES) || addftpBtn.GetState() == STATE_CLICKED)
 		{
-			if(ret >= 0) netEditIndex = map[ret] - 5;
+			if(ret >= 0) netEditIndex = map[ret] - MAX_SHARES;
 			else netEditIndex = -1;
 			ChangeMenuNoHistory(MENU_SETTINGS_NETWORK_FTP);
 		}
@@ -4285,7 +4285,7 @@ static void MenuSettingsNetworkSMB()
 	if(netEditIndex < 0)
 	{
 		// find a share to put the data into
-		for(i=0; i < 5; i++)
+		for(i=0; i < MAX_SHARES; i++)
 		{
 			if(WiiSettings.smbConf[i].share[0] == 0)
 			{
@@ -4484,7 +4484,7 @@ static void MenuSettingsNetworkFTP()
 	if(netEditIndex < 0)
 	{
 		// find a site to put the data into
-		for(i=0; i < 5; i++)
+		for(i=0; i < MAX_SHARES; i++)
 		{
 			if(WiiSettings.ftpConf[i].ip[0] == 0)
 			{

@@ -570,3 +570,36 @@ msgstr "黄色"
 
 msgid "Red"
 msgstr "红色"
+
+msgid "Sleep Timer"
+msgstr "睡眠定时器"
+
+msgid "sec"
+msgstr "秒"
+
+msgid "min"
+msgstr "分"
+
+msgid "Blue"
+msgstr "蓝色"
+
+msgid "Green"
+msgstr "绿色"
+
+msgid "Grey"
+msgstr "灰色"
+
+msgid "Orange"
+msgstr "橙色"
+
+msgid "Theme"
+msgstr "主题"
+
+msgid "Purple (Default)"
+msgstr "紫色(默认)"
+
+msgid "Auto-Play Next Video"
+msgstr "自动播放下一个视频"
+
+msgid "Adding files to playlist..."
+msgstr "正在添加播放列表..."

@@ -3905,7 +3905,8 @@ if (mpctx->sh_video)
 	stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
 
 	seek_to_sec=load_restore_point(fileplaying)-8;
-	if(seek_to_sec < 0) seek_to_sec = 0;
+	if(seek_to_sec < 0 || seek_to_sec+120 > demuxer_get_time_length(mpctx->demuxer))
+		seek_to_sec = 0;
 
 	if(seek_to_sec && strncmp(fileplaying,"dvd:",4) != 0 && strncmp(fileplaying,"dvdnav:",7) != 0)
 	{
@@ -4312,7 +4313,7 @@ if(benchmark){
                total_frame_cnt,
                (total_time_usage>0.5)?(total_frame_cnt/total_time_usage):0);
 }
-
+save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
 // time to uninit all, except global stuff:
 printf("mplayer: end film. UNINIT\n");
 //uninit_player(INITIALIZED_ALL);

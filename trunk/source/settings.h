@@ -56,6 +56,7 @@ typedef struct _lang {
 
 #define LANGUAGE_SIZE 142
 #define CODEPAGE_SIZE 28
+#define MAX_SHARES 9
 
 extern LANG languages[LANGUAGE_SIZE];
 extern CP codepages[CODEPAGE_SIZE];
@@ -112,8 +113,8 @@ struct SWiiSettings {
 	// Online Media
 	char	onlinemediaFolder[MAXPATHLEN];
 	// Network
-	SMBSettings smbConf[5];
-	FTPSettings ftpConf[5];
+	SMBSettings smbConf[MAX_SHARES];
+	FTPSettings ftpConf[MAX_SHARES];
 	// Subtitles
 	int		subtitleVisibility; // 0 - off, 1 - on
 	float 	subtitleDelay; // in secs

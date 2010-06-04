@@ -26,8 +26,8 @@
 bool inNetworkInit = false;
 static bool networkInit = false;
 static bool autoNetworkInit = true;
-static bool networkShareInit[5] = { false, false, false, false, false };
-static bool ftpInit[5] = { false, false, false, false, false };
+static bool networkShareInit[MAX_SHARES] = { false, false, false, false, false };
+static bool ftpInit[MAX_SHARES] = { false, false, false, false, false };
 char wiiIP[16] = { 0 };
 
 static bool updateChecked = false; // true if checked for app update
@@ -252,7 +252,7 @@ void CloseShare(int num)
 bool
 ConnectShare (int num, bool silent)
 {
-	char mountpoint[6];
+	char mountpoint[10];
 	sprintf(mountpoint, "smb%d", num);
 	int retry = 1;
 	int chkS = (strlen(WiiSettings.smbConf[num-1].share) > 0) ? 0:1;
@@ -322,7 +322,7 @@ void CloseFTP(int num)
 bool
 ConnectFTP (int num, bool silent)
 {
-	char mountpoint[6];
+	char mountpoint[10];
 	sprintf(mountpoint, "ftp%d", num);
 
 	int chkI = (strlen(WiiSettings.ftpConf[num-1].ip) > 0) ? 0:1;

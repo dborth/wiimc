@@ -403,7 +403,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	browserList[browser.numEntries].icon = ICON_DVD;
 	browser.numEntries++;
 
-	for(i=0; i < 5; i++)
+	for(i=0; i < MAX_SHARES; i++)
 	{
 		if(WiiSettings.smbConf[i].share[0] != 0)
 		{
@@ -423,7 +423,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		}
 	}
 
-	for(i=0; i < 5; i++)
+	for(i=0; i < MAX_SHARES; i++)
 	{
 		if(WiiSettings.ftpConf[i].ip[0] != 0)
 		{

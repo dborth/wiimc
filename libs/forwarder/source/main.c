@@ -83,18 +83,16 @@ int main(int argc, char **argv)
 	devoptab_list[STD_ERR] = &phony_out; // to keep libntfs happy
 
 	// try to load IOS 202
-	if(IOS_GetVersion() != 202 && FindIOS(202))
+	if(FindIOS(202))
 		IOS_ReloadIOS(202);
+	else if(IOS_GetVersion() < 61 && FindIOS(61))
+		IOS_ReloadIOS(61);
 
 	if(IOS_GetVersion() == 202)
 	{
 		// load usb2 driver
 		if(mload_init() >= 0 && load_ehci_module())
 			USB2Enable(true);
-	}
-	else if(IOS_GetVersion() != 61 && FindIOS(61))
-	{
-		IOS_ReloadIOS(61);
 	}
 
 	InitVideo();
@@ -171,12 +169,9 @@ found:
 	StopGX();
 	VIDEO_WaitVSync();
 
-	// cleanup and reload
+	// cleanup
 	if(IOS_GetVersion() == 202)
-	{
 		mload_close();
-		IOS_ReloadIOS(202);
-	}
 
 	u32 level;
 	SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);

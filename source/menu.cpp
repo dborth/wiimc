@@ -230,6 +230,7 @@ static int progressDone = 0;
 static int progressTotal = 0;
 
 bool menuMode = 0; // 0 - normal GUI, 1 - GUI for MPlayer
+static int slideshow = 0; // slideshow mode
 
 static void UpdateMenuImages(int oldBtn, int newBtn)
 {	
@@ -589,12 +590,12 @@ static void *GuiThread (void *arg)
 				screensaverThreadHalt = 1;
 			}
 		}
-		else
+		else if(!slideshow)
 		{
 			if(ssTimer == 0)
 				ssTimer = gettime();
 
-			if(diff_usec(ssTimer, gettime()) > 4*60*1000000) // 4 minutes
+			if(diff_sec(ssTimer, gettime()) > 240) // 4 minutes
 				ResumeScreensaverThread();
 		}
 
@@ -2397,7 +2398,6 @@ static int pictureLoaded = -1;
 
 static int closePictureViewer = 1; // 0 = picture viewer is open
 static bool setPicture = false;
-static int slideshow = 0; // slideshow mode
 static u64 slideprev, slidenow; // slideshow timer
 
 static void AllocPicBuffer()
@@ -2698,8 +2698,7 @@ static void PictureViewer()
 {
 	int currentIndex = -1;
 	closePictureViewer = 0;
-	if(slideshow != 0)
-		ToggleSlideshow();
+
 	GuiWindow * oldWindow = mainWindow;
 	GuiImage * pictureFullImg = new GuiImage;
 	pictureFullImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -2759,7 +2758,7 @@ static void PictureViewer()
 		{
 			slidenow = gettime();
 			if(slidenow > slideprev && 
-				diff_usec(slideprev, slidenow) > (u32)(1000*1000*WiiSettings.slideshowDelay))
+				diff_sec(slideprev, slidenow) > (u32)WiiSettings.slideshowDelay)
 			{
 				ChangePicture(1); // change to next picture
 				slideprev = slidenow; // reset timer
@@ -2801,6 +2800,9 @@ static void PictureViewer()
 	ResumeGui();
 	delete w;
 	delete pictureFullImg;
+
+	if(slideshow != 0)
+		ToggleSlideshow();
 }
 
 static void MenuBrowsePictures()

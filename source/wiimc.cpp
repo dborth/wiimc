@@ -77,7 +77,7 @@ void CheckSleepTimer()
 	if(sleepStart == 0)
 		return;
 
-	if(diff_usec(sleepStart, gettime()) > (u64)(WiiSettings.sleepTimer*60*1000000))
+	if(diff_sec(sleepStart, gettime()) > WiiSettings.sleepTimer*60)
 	{
 		ShutdownRequested = 1;
 		controlledbygui = 2;

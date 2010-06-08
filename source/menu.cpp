@@ -37,6 +37,7 @@ static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
 
 extern char streamtitle[128]; // ICY data (http.c)
 extern char streamurl[128]; // ICY data (http.c)
+extern char streamname[128]; // ICY data (http.c)
 
 // frequently used objects
 
@@ -2000,7 +2001,8 @@ static void MenuBrowse(int menu)
 				char *ext = GetExt(browserList[browser.selIndex].filename);
 				int numItems = 0;
 
-				if(!IsAllowedExt(ext)) // unrecognized audio or video extension
+				// unrecognized audio or video extension or allowed protocol
+				if(!IsAllowedExt(ext) && (!IsAllowedProtocol(browserList[browser.selIndex].filename) || strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0))
 				{
 					// parse as a playlist
 					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0 &&
@@ -2044,7 +2046,7 @@ static void MenuBrowse(int menu)
 						continue;
 					}
 				}
-
+				
 				if(numItems == 0)
 				{
 					GetFullPath(browser.selIndex, loadedFile);
@@ -5302,6 +5304,10 @@ static void AudioNowPlayingCallback(void * ptr)
 				audiobarNowPlaying[1]->SetText(streamtitle);
 			else
 				audiobarNowPlaying[1]->SetText("Internet Stream");
+			if(streamname[0] != 0)
+				audiobarNowPlaying[2]->SetText(streamname);
+			else
+				audiobarNowPlaying[2]->SetText(NULL);
 			if(streamurl[0] != 0)
 				audiobarNowPlaying[3]->SetText(streamurl);
 			else
@@ -5310,9 +5316,9 @@ static void AudioNowPlayingCallback(void * ptr)
 		else
 		{
 			audiobarNowPlaying[1]->SetText(NULL);
+			audiobarNowPlaying[2]->SetText(NULL);
 			audiobarNowPlaying[3]->SetText(NULL);
 		}
-		audiobarNowPlaying[2]->SetText(NULL);
 		return;
 	}
 

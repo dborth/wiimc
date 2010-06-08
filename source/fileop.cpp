@@ -800,9 +800,9 @@ static bool FindDevice(char * filepath, int * device, int * devnum)
 		return true;
 	}
 
-	if(strncmp(filepath, "http:", 5) == 0)
+	if(IsAllowedProtocol(filepath))
 	{
-		*device = DEVICE_HTTP;
+		*device = DEVICE_INTERNET;
 		return true;
 	}
 
@@ -977,7 +977,7 @@ bool ChangeInterface(int device, int devnum, bool silent)
 		case DEVICE_FTP:
 			mounted = ConnectFTP(devnum, silent);
 			break;
-		case DEVICE_HTTP:
+		case DEVICE_INTERNET:
 			mounted = InitializeNetwork(silent);
 			break;
 	}
@@ -1136,6 +1136,29 @@ bool IsAllowedExt(char *ext)
 		if(IsAudioExt(ext)) return true;
 	if(menuCurrent == MENU_BROWSE_PICTURES)
 		if(IsImageExt(ext)) return true;
+
+	return false;
+}
+
+bool IsAllowedProtocol(char *file)
+{
+	if(!file)
+		return false;
+
+	char *pos = strchr(file,':');
+	if(pos == NULL || pos-file > 5 || pos[1] != '/' || pos[2] != '/')
+		return false;
+
+    char protocol[6];
+	strncpy(protocol,file,pos-file);
+	protocol[(pos-file)]='\0';
+
+	int j=0;
+	do
+	{
+		if (strcasecmp(protocol, validInternetProtocols[j]) == 0) 
+			return true;	
+	} while (validInternetProtocols[++j][0] != 0);
 
 	return false;
 }
@@ -1491,7 +1514,7 @@ static int ParsePLXPlaylist()
 				// we're on a new entry - add previous entry to list, if complete
 				if(newEntry.type > 0 && strlen(newEntry.name) > 0 &&
 					strlen(newEntry.url) > 0 && newEntry.processor[0] == 0 && 
-					strncmp(newEntry.url, "http:", 5) == 0)
+					IsAllowedProtocol(newEntry.url))
 				{
 					memcpy(&list[numEntries], &newEntry, sizeof(PLXENTRY));
 					numEntries++;
@@ -1539,7 +1562,7 @@ static int ParsePLXPlaylist()
 	// add the final entry
 	if(newEntry.type > 0 && strlen(newEntry.name) > 0 && 
 		strlen(newEntry.url) > 0 && newEntry.processor[0] == 0 && 
-		strncmp(newEntry.url, "http:", 5) == 0)
+		IsAllowedProtocol(newEntry.url))
 	{
 		memcpy(&list[numEntries], &newEntry, sizeof(PLXENTRY));
 		numEntries++;
@@ -1705,7 +1728,7 @@ int ParsePlaylistFile()
 	play_tree_t* i;
 	for(i = pt_iter->tree; i != NULL; i = i->next)
 	{
-		if(!i->files || strncmp(i->files[0], "http:", 5) != 0)
+		if(!i->files || !IsAllowedProtocol(i->files[0]))
 			continue;
 
 		//ext = GetExt(playlistEntry);
@@ -1805,11 +1828,11 @@ int ParseOnlineMedia()
 		if(strcmp(browser.dir, onlinemediaList[i].filepath) == 0)
 		{
 			// unknown protocol - reject entry
-			if(strncmp(onlinemediaList[i].address, "http:", 5) != 0 && strstr(onlinemediaList[i].address, "://") != NULL)
+			if(!IsAllowedProtocol(onlinemediaList[i].address) && strstr(onlinemediaList[i].address, "://") != NULL)
 				continue;
 
 			AddBrowserEntry();
-			if(strncmp(onlinemediaList[i].address, "http:", 5) == 0)
+			if(IsAllowedProtocol(onlinemediaList[i].address))
 				snprintf(tmpaddress, MAXPATHLEN, "%s", onlinemediaList[i].address);
 			else // protocol not specified - assume http:// and append
 				snprintf(tmpaddress, MAXPATHLEN, "http://%s", onlinemediaList[i].address);

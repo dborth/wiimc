@@ -49,6 +49,7 @@ bool IsVideoExt(char *ext);
 bool IsAudioExt(char *ext);
 bool IsImageExt(char *ext);
 bool IsAllowedExt(char *ext);
+bool IsAllowedProtocol(char *file);
 void FindFile();
 int ParseDirectory(bool waitParse = false);
 int ParsePlaylistFile();

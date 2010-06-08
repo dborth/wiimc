@@ -1394,7 +1394,7 @@ ac_config_guess="$SHELL $ac_aux_dir/config.guess"
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"
 ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 
-ac_config_files="$ac_config_files Makefile autotools/Makefile include/Makefile test/Makefile doc/Makefile src/Makefile liba52/Makefile libao/Makefile vc++/Makefile"
+ac_config_files="$ac_config_files Makefile autotools/Makefile include/Makefile liba52/Makefile"
 
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -10411,12 +10411,7 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "autotools/Makefile" ) CONFIG_FILES="$CONFIG_FILES autotools/Makefile" ;;
   "include/Makefile" ) CONFIG_FILES="$CONFIG_FILES include/Makefile" ;;
-  "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
-  "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
-  "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "liba52/Makefile" ) CONFIG_FILES="$CONFIG_FILES liba52/Makefile" ;;
-  "libao/Makefile" ) CONFIG_FILES="$CONFIG_FILES libao/Makefile" ;;
-  "vc++/Makefile" ) CONFIG_FILES="$CONFIG_FILES vc++/Makefile" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "include/config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS include/config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

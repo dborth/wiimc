@@ -76,7 +76,7 @@ RANLIB = @RANLIB@
 STRIP = @STRIP@
 VERSION = @VERSION@
 
-SUBDIRS = autotools include doc liba52 libao src vc++ test
+SUBDIRS = autotools include liba52
 
 EXTRA_DIST = HISTORY bootstrap
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4

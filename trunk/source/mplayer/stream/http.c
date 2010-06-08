@@ -49,6 +49,7 @@ extern int network_bandwidth;
 #ifdef GEKKO
 char streamtitle[128] = { 0 }; // ICY stream title
 char streamurl[128] = { 0 }; // ICY stream url
+char streamname[128] = { 0 }; // ICY stream name
 #endif
 
 #ifdef HW_RVL
@@ -147,7 +148,6 @@ static void scast_meta_read(int fd, streaming_ctrl_t *sc) {
     mp_msg(MSGT_DEMUXER, MSGL_INFO, "\nICY Info: %s\n", info);
 #ifdef GEKKO
 	streamtitle[0] = 0;
-	streamurl[0] = 0;
     if(info[0] != 0)
     {
     	char *title = strstr(info, "StreamTitle");
@@ -163,19 +163,6 @@ static void scast_meta_read(int fd, streaming_ctrl_t *sc) {
     			streamtitle[len-1] = 0;
     		}
     	}
-    	char *url = strstr(info, "StreamUrl");
-		if(url)
-		{
-			url+=11;
-			char *url_end = strchr(url, ';');
-			if(url_end && url_end-url > 1)
-			{
-				int len = url_end-url;
-				if(len > 128) len=128;
-				strncpy(streamurl, url, len);
-				streamurl[len-1] = 0;
-			}
-		}
     }
 #endif
     free(info);
@@ -788,13 +775,29 @@ static void print_icy_metadata(HTTP_header_t *http_hdr) {
 	const char *field_data;
 	// note: I skip icy-notice1 and 2, as they contain html <BR>
 	// and are IMHO useless info ::atmos
-	if( (field_data = http_get_field(http_hdr, "icy-name")) != NULL )
+	if( (field_data = http_get_field(http_hdr, "icy-name")) != NULL ) {
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Name   : %s\n", field_data);
+#ifdef GEKKO		
+		streamname[0] = 0;
+		int len = strlen(field_data);
+    	if(len > 128) len=128;
+    	strncpy(streamname, field_data, len);
+    	streamname[len] = 0;
+#endif
+		}
 	if( (field_data = http_get_field(http_hdr, "icy-genre")) != NULL )
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Genre  : %s\n", field_data);
-	if( (field_data = http_get_field(http_hdr, "icy-url")) != NULL )
+	if( (field_data = http_get_field(http_hdr, "icy-url")) != NULL ) {
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Website: %s\n", field_data);
 	// XXX: does this really mean public server? ::atmos
+#ifdef GEKKO		
+		streamurl[0] = 0;
+		int len = strlen(field_data);
+    	if(len > 128) len=128;
+    	strncpy(streamurl, field_data, len);
+    	streamurl[len] = 0;
+#endif
+		}
 	if( (field_data = http_get_field(http_hdr, "icy-pub")) != NULL )
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Public : %s\n", atoi(field_data)?"yes":"no");
 	if( (field_data = http_get_field(http_hdr, "icy-br")) != NULL )

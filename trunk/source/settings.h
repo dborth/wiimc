@@ -155,3 +155,8 @@ const char validPlaylistExtensions[][5] =
 {
 	"asx", "m3u", "pls", "plx", "ram", "smil", ""
 };
+
+const char validInternetProtocols[][5] =
+{
+	"http", "mms", ""
+};

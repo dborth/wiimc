@@ -3743,11 +3743,7 @@ if (mpctx->global_sub_size) {
   mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_SEEKABLE=%d\n",
          mpctx->stream->seek && (!mpctx->demuxer || mpctx->demuxer->seekable));
   if (mpctx->demuxer) {
-#ifdef GEKKO
-      if (mpctx->demuxer->num_chapters == 0 && mpctx->sh_video)
-#else
       if (mpctx->demuxer->num_chapters == 0)
-#endif
           stream_control(mpctx->demuxer->stream, STREAM_CTRL_GET_NUM_CHAPTERS, &mpctx->demuxer->num_chapters);
       mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_CHAPTERS=%d\n", mpctx->demuxer->num_chapters);
   }
@@ -4834,6 +4830,9 @@ void wiiMute()
 
 static void wiiSeek(int sec, int mode)
 {
+	if(controlledbygui == 2)
+		return;
+
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
 	cmd->id=MP_CMD_SEEK;
 	cmd->name=strdup("seek");
@@ -4867,7 +4866,10 @@ void wiiRewind()
 
 double wiiGetTimeLength()
 {
-	if(!mpctx || !mpctx->demuxer)
+	if(controlledbygui == 2 || !mpctx || !mpctx->demuxer || !mpctx->stream)
+		return 0;
+
+	if(mpctx->eof || mpctx->d_audio->eof || mpctx->stream->eof)
 		return 0;
 
 	return demuxer_get_time_length(mpctx->demuxer);
@@ -4876,6 +4878,12 @@ double wiiGetTimeLength()
 double wiiGetTimePos()
 {
 	double pos = 0;
+
+	if(controlledbygui == 2)
+		return 0;
+
+	if(!mpctx->d_audio || !mpctx->stream || mpctx->eof || mpctx->d_audio->eof || mpctx->stream->eof)
+		return 0;
 
 	if (mpctx && mpctx->sh_video)
 		pos = mpctx->sh_video->pts;
@@ -4887,7 +4895,10 @@ double wiiGetTimePos()
 
 void wiiGetTimeDisplay(char * buf)
 {
-	if(!mpctx || !mpctx->demuxer)
+	if(controlledbygui == 2 || !mpctx || !mpctx->demuxer)
+		return;
+
+	if(!mpctx->d_audio || !mpctx->stream || mpctx->eof || mpctx->d_audio->eof || mpctx->stream->eof)
 		return;
 
 	int len = demuxer_get_time_length(mpctx->demuxer);
@@ -4900,9 +4911,9 @@ void wiiGetTimeDisplay(char * buf)
 
 bool wiiAudioOnly()
 {
-	if(!mpctx || mpctx->sh_video || !mpctx->sh_audio)
+	if(controlledbygui == 2 || !mpctx || mpctx->sh_video || !mpctx->sh_audio || mpctx->eof)
 		return false;
-	
+
 	return true;
 }
 
@@ -4939,7 +4950,7 @@ void wiiUpdatePointer(int x, int y)
 
 void wiiDVDNav(int command)
 {
-	if (mpctx->stream->type != STREAMTYPE_DVDNAV)
+	if (!mpctx->stream || mpctx->stream->type != STREAMTYPE_DVDNAV)
 		return;
 
 	mp_cmd_t *cmd = calloc( 1,sizeof( *cmd ) );
@@ -4985,7 +4996,7 @@ typedef struct {
 
 bool wiiPlayingDVD()
 {
-	if(!mpctx || !mpctx->stream)
+	if(controlledbygui != 0 || !mpctx || !mpctx->stream)
 		return false;
 
 	if (mpctx->stream->type == STREAMTYPE_DVD || mpctx->stream->type == STREAMTYPE_DVDNAV)
@@ -4996,7 +5007,7 @@ bool wiiPlayingDVD()
 
 bool wiiInDVDMenu()
 {
-	if(!mpctx || !mpctx->stream || !mpctx->stream->priv)
+	if(controlledbygui != 0 || !mpctx || !mpctx->stream || !mpctx->stream->priv)
 		return false;
 
 	if (mpctx->stream->type != STREAMTYPE_DVDNAV)

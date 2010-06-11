@@ -34,7 +34,7 @@ static std::vector<std::string> browserHistory; // browser.dir history - for nes
 // video playlist
 int videoPlaylistIndex = 0;
 int videoPlaylistSize = 0;
-char videoPlaylist[20][1024];
+char videoPlaylist[VIDEO_PLAYLIST_SIZE][1024];
 
 // music playlist
 MEDIAENTRY * playlist = NULL; // list of files in the current playlist
@@ -102,7 +102,7 @@ void PopulateVideoPlaylist()
 	if(!WiiSettings.autoPlayNextVideo)
 		return;
 
-	for(int i=0; i < 20; i++)
+	for(int i=0; i < VIDEO_PLAYLIST_SIZE; i++)
 	{
 		GetFullPath(browser.selIndex+i, videoPlaylist[i]);
 		videoPlaylistSize++;

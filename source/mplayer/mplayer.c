@@ -208,7 +208,7 @@ static int enable_restore_points=1;
 static float orig_stream_cache_min_percent=-1;
 static float orig_stream_cache_seek_min_percent=-1;
 static int orig_stream_cache_size=-1;
-static bool playing_stream=false;
+static bool playing_file=false;
 #endif
 
 //**************************************************************************//
@@ -3113,7 +3113,6 @@ while (!filename)
 
 controlledbygui = 0;
 mpctx->eof=0;
-playing_stream=false;
 #endif
 
   // init global sub numbers
@@ -3987,9 +3986,9 @@ while ( (cmd = mp_input_get_cmd(0, 0, 0)) != NULL )
     }
   }
 }
+playing_file=true;
 #endif
 pause_low_cache=0;
-playing_stream=true;
 GetRelativeTime();
 total_time_usage_start=GetTimer();
 while(!mpctx->eof){
@@ -4285,6 +4284,11 @@ if(mpctx->dvbin_reopen)
 }
 #endif
 }
+
+#ifdef GEKKO
+playing_file=false;
+#endif
+
 goto_next_file:  // don't jump here after ao/vo/getch initialization!
 mp_msg(MSGT_CPLAYER,MSGL_INFO,"\n");
 
@@ -4558,7 +4562,7 @@ static void remove_subtitles()
 
 static void reload_subtitles()
 {
-	if(!mpctx || mpctx->set_of_sub_size <= 0)
+	if(!mpctx->sh_video || mpctx->set_of_sub_size <= 0)
 		return; // no subs
 
 	int i;
@@ -4815,7 +4819,10 @@ void wiiPause()
 
 bool wiiIsPaused()
 {
-	if(!mpctx || (!mpctx->sh_video && !mpctx->sh_audio))
+	if(!playing_file || controlledbygui == 2)
+		return true;
+
+	if(!mpctx->sh_video && !mpctx->sh_audio)
 		return true;
 
 	if(mpctx->was_paused == 1)
@@ -4833,7 +4840,10 @@ void wiiMute()
 
 static void wiiSeek(int sec, int mode)
 {
-	if(controlledbygui == 2)
+	if(!playing_file || controlledbygui == 2)
+		return;
+
+	if(!mpctx->demuxer || !mpctx->demuxer->seekable)
 		return;
 
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
@@ -4869,7 +4879,10 @@ void wiiRewind()
 
 double wiiGetTimeLength()
 {
-	if(controlledbygui == 2 || !mpctx || !mpctx->demuxer || !mpctx->stream)
+	if(!playing_file || controlledbygui == 2)
+		return 0;
+
+	if(!mpctx->demuxer || !mpctx->stream)
 		return 0;
 
 	if(mpctx->eof || mpctx->d_audio->eof || mpctx->stream->eof)
@@ -4882,15 +4895,12 @@ double wiiGetTimePos()
 {
 	double pos = 0;
 
-	if(controlledbygui == 2)
+	if(!playing_file || controlledbygui == 2)
 		return 0;
 
-	if(!playing_stream)
-		return 0;
-
-	if (mpctx && mpctx->sh_video)
+	if (mpctx->sh_video)
 		pos = mpctx->sh_video->pts;
-	else if (mpctx && mpctx->sh_audio && mpctx->audio_out)
+	else if (mpctx->sh_audio && mpctx->audio_out)
 		pos = playing_audio_pts(mpctx->sh_audio, mpctx->d_audio, mpctx->audio_out);
 	
 	return pos;
@@ -4898,10 +4908,10 @@ double wiiGetTimePos()
 
 void wiiGetTimeDisplay(char * buf)
 {
-	if(controlledbygui == 2 || !mpctx || !mpctx->demuxer)
+	if(!playing_file || controlledbygui == 2)
 		return;
 
-	if(!mpctx->d_audio || !mpctx->stream || mpctx->eof || mpctx->d_audio->eof || mpctx->stream->eof)
+	if(!mpctx->demuxer || !mpctx->d_audio || !mpctx->stream || mpctx->eof || mpctx->d_audio->eof || mpctx->stream->eof)
 		return;
 
 	int len = demuxer_get_time_length(mpctx->demuxer);
@@ -4914,7 +4924,10 @@ void wiiGetTimeDisplay(char * buf)
 
 bool wiiAudioOnly()
 {
-	if(controlledbygui == 2 || !mpctx || mpctx->sh_video || !mpctx->sh_audio || mpctx->eof)
+	if(!playing_file || controlledbygui == 2)
+		return false;
+
+	if(mpctx->sh_video || !mpctx->sh_audio || mpctx->eof)
 		return false;
 
 	return true;
@@ -4953,7 +4966,10 @@ void wiiUpdatePointer(int x, int y)
 
 void wiiDVDNav(int command)
 {
-	if (!mpctx->stream || mpctx->stream->type != STREAMTYPE_DVDNAV)
+	if (!playing_file || controlledbygui == 2)
+		return;
+
+	if(!mpctx->stream || mpctx->stream->type != STREAMTYPE_DVDNAV)
 		return;
 
 	mp_cmd_t *cmd = calloc( 1,sizeof( *cmd ) );
@@ -4999,7 +5015,10 @@ typedef struct {
 
 bool wiiPlayingDVD()
 {
-	if(controlledbygui != 0 || !mpctx || !mpctx->stream)
+	if(!playing_file || controlledbygui != 0)
+		return false;
+
+	if(!mpctx->stream)
 		return false;
 
 	if (mpctx->stream->type == STREAMTYPE_DVD || mpctx->stream->type == STREAMTYPE_DVDNAV)
@@ -5010,10 +5029,10 @@ bool wiiPlayingDVD()
 
 bool wiiInDVDMenu()
 {
-	if(controlledbygui != 0 || !mpctx || !mpctx->stream || !mpctx->stream->priv)
+	if(!playing_file || controlledbygui != 0)
 		return false;
 
-	if (mpctx->stream->type != STREAMTYPE_DVDNAV)
+	if(!mpctx->stream || !mpctx->stream->priv || mpctx->stream->type != STREAMTYPE_DVDNAV)
 		return false;
 
 	dvdnav_priv_t* priv = mpctx->stream->priv;
@@ -5041,7 +5060,7 @@ void wiiSetAutoResume(int enable)
 
 void wiiSetVolume(int vol)
 {
-	if(!mpctx || !mpctx->sh_audio)
+	if(!mpctx->sh_audio)
 		return;
 
 	mixer_setvolume(&mpctx->mixer, vol, vol);

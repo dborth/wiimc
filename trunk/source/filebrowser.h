@@ -15,6 +15,7 @@
 
 #define MAXJOLIET			255
 #define MAX_BROWSER_SIZE	2000
+#define VIDEO_PLAYLIST_SIZE 50
 
 enum
 {
@@ -75,7 +76,7 @@ extern BROWSERENTRY * browserList;
 // Video playlist
 extern int videoPlaylistIndex;
 extern int videoPlaylistSize;
-extern char videoPlaylist[20][1024];
+extern char videoPlaylist[VIDEO_PLAYLIST_SIZE][1024];
 
 // Music playlist
 extern MEDIAENTRY * playlist;

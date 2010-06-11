@@ -208,6 +208,7 @@ static int enable_restore_points=1;
 static float orig_stream_cache_min_percent=-1;
 static float orig_stream_cache_seek_min_percent=-1;
 static int orig_stream_cache_size=-1;
+static bool playing_stream=false;
 #endif
 
 //**************************************************************************//
@@ -3112,6 +3113,7 @@ while (!filename)
 
 controlledbygui = 0;
 mpctx->eof=0;
+playing_stream=false;
 #endif
 
   // init global sub numbers
@@ -3987,6 +3989,7 @@ while ( (cmd = mp_input_get_cmd(0, 0, 0)) != NULL )
 }
 #endif
 pause_low_cache=0;
+playing_stream=true;
 GetRelativeTime();
 total_time_usage_start=GetTimer();
 while(!mpctx->eof){
@@ -4882,7 +4885,7 @@ double wiiGetTimePos()
 	if(controlledbygui == 2)
 		return 0;
 
-	if(!mpctx->d_audio || !mpctx->stream || mpctx->eof || mpctx->d_audio->eof || mpctx->stream->eof)
+	if(!playing_stream)
 		return 0;
 
 	if (mpctx && mpctx->sh_video)

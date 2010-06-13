@@ -1694,6 +1694,9 @@ static void *ThumbThread (void *arg)
 
 static int LoadNewFile()
 {
+	if(!ChangeInterface(browser.dir, NOTSILENT))
+		return 0;
+
 	ClearVideoPlaylist();
 	RemoveVideoImg();
 	LoadMPlayerFile();

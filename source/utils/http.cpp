@@ -22,6 +22,12 @@
 #include "menu.h"
 #include "http.h"
 
+#define TCP_CONNECT_TIMEOUT 5000
+#define TCP_TCP_BLOCK_SIZE (16 * 1024)
+#define TCP_BLOCK_RECV_TIMEOUT 4000
+#define TCP_BLOCK_SEND_TIMEOUT 4000
+#define HTTP_TIMEOUT 300000
+
 static s32 tcp_socket(void)
 {
 	s32 s, res;
@@ -172,11 +178,10 @@ static char * tcp_readln(const s32 s, const u16 max_length, const u64 start_time
 static int tcp_read(const s32 s, u8 **buffer, const u32 length)
 {
 	u8 *p;
-	u32 step, left, block, received;
+	u32 left, block, received;
 	s64 t;
 	s32 res;
 
-	step = 0;
 	p = *buffer;
 	left = length;
 	received = 0;
@@ -191,8 +196,8 @@ static int tcp_read(const s32 s, u8 **buffer, const u32 length)
 		}
 
 		block = left;
-		if (block > 2048)
-			block = 2048;
+		if (block > TCP_BLOCK_SIZE)
+			block = TCP_BLOCK_SIZE;
 
 		res = net_read(s, p, block);
 
@@ -203,19 +208,12 @@ static int tcp_read(const s32 s, u8 **buffer, const u32 length)
 		}
 
 		if (res < 0)
-		{
 			break;
-		}
 
 		received += res;
 		left -= res;
 		p += res;
-
-		if ((received / TCP_BLOCK_SIZE) > step)
-		{
-			t = gettime();
-			step++;
-		}
+		usleep(100);
 	}
 	return received;
 }
@@ -223,11 +221,10 @@ static int tcp_read(const s32 s, u8 **buffer, const u32 length)
 static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
 {
 	const u8 *p;
-	u32 step, left, block, sent;
+	u32 left, block, sent;
 	s64 t;
 	s32 res;
 
-	step = 0;
 	p = buffer;
 	left = length;
 	sent = 0;
@@ -238,13 +235,12 @@ static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
 		if (ticks_to_millisecs(diff_ticks(t, gettime()))
 				> TCP_BLOCK_SEND_TIMEOUT)
 		{
-
 			break;
 		}
 
 		block = left;
-		if (block > 2048)
-			block = 2048;
+		if (block > TCP_BLOCK_SIZE)
+			block = TCP_BLOCK_SIZE;
 
 		res = net_write(s, p, block);
 
@@ -255,20 +251,12 @@ static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
 		}
 
 		if (res < 0)
-		{
-
 			break;
-		}
 
 		sent += res;
 		left -= res;
 		p += res;
-
-		if ((sent / TCP_BLOCK_SIZE) > step)
-		{
-			t = gettime();
-			step++;
-		}
+		usleep(100);
 	}
 
 	return left == 0;

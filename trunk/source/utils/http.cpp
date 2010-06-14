@@ -23,7 +23,8 @@
 #include "http.h"
 
 #define TCP_CONNECT_TIMEOUT 5000
-#define TCP_BLOCK_SIZE (16 * 1024)
+#define TCP_BLOCK_RECV_SIZE (16 * 1024)
+#define TCP_BLOCK_SEND_SIZE (4 * 1024)
 #define TCP_BLOCK_RECV_TIMEOUT 4000
 #define TCP_BLOCK_SEND_TIMEOUT 4000
 #define HTTP_TIMEOUT 300000
@@ -34,15 +35,11 @@ static s32 tcp_socket(void)
 
 	s = net_socket(PF_INET, SOCK_STREAM, 0);
 	if (s < 0)
-	{
-
 		return s;
-	}
 
 	res = net_fcntl(s, F_GETFL, 0);
 	if (res < 0)
 	{
-
 		net_close(s);
 		return res;
 	}
@@ -50,7 +47,6 @@ static s32 tcp_socket(void)
 	res = net_fcntl(s, F_SETFL, res | 4);
 	if (res < 0)
 	{
-
 		net_close(s);
 		return res;
 	}
@@ -67,10 +63,7 @@ static s32 tcp_connect(char *host, const u16 port)
 
 	hp = net_gethostbyname(host);
 	if (!hp || !(hp->h_addrtype == PF_INET))
-	{
-
 		return errno;
-	}
 
 	s = tcp_socket();
 	if (s < 0)
@@ -87,14 +80,11 @@ static s32 tcp_connect(char *host, const u16 port)
 	{
 		if (ticks_to_millisecs(diff_ticks(t, gettime())) > TCP_CONNECT_TIMEOUT)
 		{
-
 			net_close(s);
-
 			return -ETIMEDOUT;
 		}
 
-		res = net_connect(s, (struct sockaddr *) &sa,
-				sizeof(struct sockaddr_in));
+		res = net_connect(s, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
 
 		if (res < 0)
 		{
@@ -104,18 +94,14 @@ static s32 tcp_connect(char *host, const u16 port)
 			if (res == -EINPROGRESS || res == -EALREADY)
 			{
 				usleep(20 * 1000);
-
 				continue;
 			}
 
 			net_close(s);
-
 			return res;
 		}
-
 		break;
 	}
-
 	return s;
 }
 
@@ -196,8 +182,8 @@ static int tcp_read(const s32 s, u8 **buffer, const u32 length)
 		}
 
 		block = left;
-		if (block > TCP_BLOCK_SIZE)
-			block = TCP_BLOCK_SIZE;
+		if (block > TCP_BLOCK_RECV_SIZE)
+			block = TCP_BLOCK_RECV_SIZE;
 
 		res = net_read(s, p, block);
 
@@ -213,7 +199,7 @@ static int tcp_read(const s32 s, u8 **buffer, const u32 length)
 		received += res;
 		left -= res;
 		p += res;
-		usleep(100);
+		usleep(3000);
 	}
 	return received;
 }
@@ -239,8 +225,8 @@ static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
 		}
 
 		block = left;
-		if (block > TCP_BLOCK_SIZE)
-			block = TCP_BLOCK_SIZE;
+		if (block > TCP_BLOCK_SEND_SIZE)
+			block = TCP_BLOCK_SEND_SIZE;
 
 		res = net_write(s, p, block);
 
@@ -256,7 +242,7 @@ static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
 		sent += res;
 		left -= res;
 		p += res;
-		usleep(100);
+		usleep(3000);
 	}
 
 	return left == 0;

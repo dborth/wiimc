@@ -136,7 +136,7 @@ const char validVideoExtensions[][7] =
 	"flc", "fli", "flv", "iso", "ivf", "m1v", "m2t", "m2ts", "m2v", "m4v", 
 	"mkv", "mov", "mp4", "mp4v", "mpe", "mpeg", "mpg", "mqv", "nsv", "nuv", 
 	"ogm", "qt", "rmvb", "swf", "trp", "ts", "vdr", "vfw", "viv", "vob", "vro",
-	"wmv", "y4m", ""
+	"webm", "wmv", "y4m", ""
 };
 
 const char validAudioExtensions[][5] = 

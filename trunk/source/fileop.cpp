@@ -1686,11 +1686,10 @@ int ParsePlaylistFile()
 		ErrorPrompt("Error loading playlist!");
 		return 0;
 	}
-	
 
 	while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
 	{
-		if(strncmp(playlistEntry, "http:", 5) == 0)
+		if(IsAllowedProtocol(playlistEntry))
 			break;
 	}
 

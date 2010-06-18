@@ -87,8 +87,11 @@ void CheckSleepTimer()
 void ExitApp()
 {
 	DisableRumble();
-	if(ExitRequested == 1)
+	if(ShutdownRequested == 1 || ExitRequested == 1)
+	{
+		SaveFolder();
 		SaveSettings(SILENT);
+	}
 	DI2_Close();
 
 	// shut down some threads
@@ -437,8 +440,20 @@ void SetMPlayerSettings()
 	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);
 	wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
 	wiiSetProperty(MP_CMD_SUB_DELAY, WiiSettings.subtitleDelay);
-	wiiSetLanguage(WiiSettings.subtitleLanguage);
 	wiiSetCodepage(WiiSettings.subtitleCodepage);
+
+	char audioLang[14] = { 0 };
+	char subtitleLang[14] = { 0 };
+
+	if(WiiSettings.audioLanguage[0] != 0)
+		sprintf(audioLang, "%s,%s,en,eng", 
+			WiiSettings.audioLanguage, languages[GetLangIndex(WiiSettings.audioLanguage)].abbrev2);
+	if(WiiSettings.subtitleLanguage[0] != 0)
+		sprintf(subtitleLang, "%s,%s,en,eng", 
+			WiiSettings.subtitleLanguage, languages[GetLangIndex(WiiSettings.subtitleLanguage)].abbrev2);
+
+	wiiSetAudioLanguage(audioLang);
+	wiiSetSubtitleLanguage(subtitleLang);
 	wiiSetSubtitleColor(WiiSettings.subtitleColor);
 	wiiSetSubtitleSize(WiiSettings.subtitleSize);
 }

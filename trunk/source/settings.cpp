@@ -29,149 +29,156 @@ struct SWiiSettings WiiSettings;
 static char * savebuffer = NULL;
 
 LANG languages[LANGUAGE_SIZE] = {
-	{ "Default", "" },
-	{ "Afar", "aa" },
-	{ "Abkhazian", "ab" },
-	{ "Afrikaans", "af" },
-	{ "Albanian", "sq" },
-	{ "Amharic", "am" },
-	{ "Arabic", "ar" },
-	{ "Armenian", "ia" },
-	{ "Assamese", "as" },
-	{ "Aymara", "ay" },
-	{ "Azerbaijani", "az" },
-	{ "Bashkir", "ba" },
-	{ "Basque", "eu" },
-	{ "Bhutani", "dz" },
-	{ "Bihari", "bh" },
-	{ "Bislama", "bi" },
-	{ "Bengali", "bn" },
-	{ "Breton", "br" },
-	{ "Bulgarian", "bg" },
-	{ "Burmese", "my" },
-	{ "Byelorussian", "be" },
-	{ "Cambodian", "km" },
-	{ "Català", "ca" },
-	{ "Chinese", "zh" },
-	{ "Corsican", "co" },
-	{ "Ceske", "cs" },
-	{ "Dansk", "da" },
-	{ "Deutsch", "de" },
-	{ "English", "en" },
-	{ "Esperanto", "eo" },
-	{ "Español", "es" },
-	{ "Estonian", "et" },
-	{ "Finnish", "fi" },
-	{ "Fiji", "fj" },
-	{ "Faroese", "fo" },
-	{ "Français", "fr" },
-	{ "Frisian", "fy" },
-	{ "Galician", "gl" },
-	{ "Georgian", "ka" },
-	{ "Greek", "el" },
-	{ "Greenlandic", "kl" },
-	{ "Guarani", "gn" },
-	{ "Gujarati", "gu" },
-	{ "Hausa", "ha" },
-	{ "Hebrew", "he" },
-	{ "Hebrew", "iw" },
-	{ "Hindi", "hi" },
-	{ "Hrvatski", "hr" },
-	{ "Indonesian", "id" },
-	{ "Indonesian", "in" },
-	{ "Interlingue", "ie" },
-	{ "Inupiak", "ik" },
-	{ "Irish", "ga" },
-	{ "Islenska", "is" },
-	{ "Italiano", "it" },
-	{ "Inuktitut", "iu" },
-	{ "Japanese", "ja" },
-	{ "Javanese", "jw" },
-	{ "Kannada", "kn" },
-	{ "Kashmiri", "ks" },
-	{ "Kazakh", "kk" },
-	{ "Korean", "ko" },
-	{ "Kurdish", "ku" },
-	{ "Kinyarwanda", "rw" },
-	{ "Kirghiz", "ky" },
-	{ "Kirundi", "rn" },
-	{ "Latin", "la" },
-	{ "Lingala", "ln" },
-	{ "Laothian", "lo" },
-	{ "Lithuanian", "lt" },
-	{ "Latvian", "lv" },
-	{ "Macedonian", "mk" },
-	{ "Magyar", "hu" },
-	{ "Malagasy", "mg" },
-	{ "Malay", "ms" },
-	{ "Malayalam", "ml" },
-	{ "Maltese", "mt" },
-	{ "Maori", "mi" },
-	{ "Marathi", "mr" },
-	{ "Moldavian", "mo" },
-	{ "Mongolian", "mn" },
-	{ "Nauru", "na" },
-	{ "Nederlands", "nl" },
-	{ "Nepali", "ne" },
-	{ "Norsk", "no" },
-	{ "Occitan", "oc" },
-	{ "Oriya", "or" },
-	{ "Oromo", "om" },
-	{ "Pashto,", "ps" },
-	{ "Persian", "fa" },
-	{ "Polish", "pl" },
-	{ "Portugues", "pt" },
-	{ "Punjabi", "pa" },
-	{ "Quechua", "qu" },
-	{ "Rhaeto-Romance", "rm" },
-	{ "Romanian", "ro" },
-	{ "Russian", "ru" },
-	{ "Sangho", "sg" },
-	{ "Samoan", "sm" },
-	{ "Sanskrit", "sa" },
-	{ "Scots", "gd" },
-	{ "Serbian", "sr" },
-	{ "Serbo-Croatian", "sh" },
-	{ "Sesotho", "st" },
-	{ "Setswana", "tn" },
-	{ "Shona", "sn" },
-	{ "Sinhalese", "si" },
-	{ "Sindhi", "sd" },
-	{ "Siswati", "ss" },
-	{ "Slovak", "sk" },
-	{ "Slovenian", "sl" },
-	{ "Somali", "so" },
-	{ "Sundanese", "su" },
-	{ "Svenska", "sv" },
-	{ "Swahili", "sw" },
-	{ "Tagalog", "tl" },
-	{ "Tajik", "tg" },
-	{ "Tamil", "ta" },
-	{ "Tatar", "tt" },
-	{ "Telugu", "te" },
-	{ "Thai", "th" },
-	{ "Tibetan", "bo" },
-	{ "Tigrinya", "ti" },
-	{ "Tonga", "to" },
-	{ "Tsonga", "ts" },
-	{ "Turkish", "tr" },
-	{ "Turkmen", "tk" },
-	{ "Twi", "tw" },
-	{ "Uighur", "ug" },
-	{ "Ukrainian", "uk" },
-	{ "Urdu", "ur" },
-	{ "Uzbek", "uz" },
-	{ "Vietnamese", "ui" },
-	{ "Volapuk", "vo" },
-	{ "Welsh", "cy" },
-	{ "Wolof", "wo" },
-	{ "Xhosa", "xh" },
-	{ "Yiddish", "ji" },
-	{ "Yiddish", "yi" },
-	{ "Yoruba", "yo" },
-	{ "Zhuang", "za" },
-	{ "Zulu", "zu" }
+	{ "Default", "", "" },
+	{ "Abkhazian", "ab", "abk" },
+	{ "Afar", "aa", "aar" },
+	{ "Afrikaans", "af", "afr" },
+	{ "Albanian", "sq", "sqi" },
+	{ "Amharic", "am", "amh" },
+	{ "Arabic", "ar", "ara" },
+	{ "Aragonese", "an", "arg" },
+	{ "Armenian", "hy", "hye" },
+	{ "Assamese", "as", "asm" },
+	{ "Avestan", "ae", "ave" },
+	{ "Aymara", "ay", "aym" },
+	{ "Azerbaijani", "az", "aze" },
+	{ "Bashkir", "ba", "bak" },
+	{ "Basque", "eu", "baq" },
+	{ "Bashkir", "ba", "bak" },
+	{ "Basque", "eu", "baq" },
+	{ "Belarusian", "be", "bel" },
+	{ "Bengali", "bn", "ben" },
+	{ "Bihari", "bh", "bih" },
+	{ "Bislama", "bi", "bis" },
+	{ "Bosnian", "bs", "bos" },
+	{ "Breton", "br", "bre" },
+	{ "Bulgarian", "bg", "bul" },
+	{ "Burmese", "my", "mya" },
+	{ "Byelorussian", "be", "bel" },
+	{ "Cambodian", "km", "khm" },
+	{ "Catalan", "ca", "cat" },
+	{ "Chinese", "zh", "chi" },
+	{ "Corsican", "co", "cos" },
+	{ "Ceske", "cs", "cze" },
+	{ "Dansk", "da", "dan" },
+	{ "Deutsch", "de", "ger" },
+	{ "English", "en", "eng" },
+	{ "Esperanto", "eo", "epo" },
+	{ "Español", "es", "spa" },
+	{ "Estonian", "et", "est" },
+	{ "Finnish", "fi", "fin" },
+	{ "Fiji", "fj", "fij" },
+	{ "Faroese", "fo", "fao" },
+	{ "Français", "fr", "fre" },
+	{ "Frisian", "fy", "fry" },
+	{ "Galician", "gl", "glg" },
+	{ "Georgian", "ka", "geo" },
+	{ "Greek", "el", "gre" },
+	{ "Greenlandic", "kl", "kal" },
+	{ "Guarani", "gn", "grn" },
+	{ "Gujarati", "gu", "guj" },
+	{ "Hausa", "ha", "hau" },
+	{ "Hebrew", "he", "heb" },
+	{ "Hindi", "hi", "hin" },
+	{ "Hrvatski", "hr", "scr" },
+	{ "Indonesian", "id", "ind" },
+	{ "Interlingue", "ie", "ile" },
+	{ "Inupiak", "ik", "ipk" },
+	{ "Irish", "ga", "gle" },
+	{ "Islenska", "is", "ice" },
+	{ "Italiano", "it", "ita" },
+	{ "Inuktitut", "iu", "iku" },
+	{ "Japanese", "ja", "jpn" },
+	{ "Javanese", "jw", "jav" },
+	{ "Kannada", "kn", "kan" },
+	{ "Kashmiri", "ks", "kas" },
+	{ "Kazakh", "kk", "kaz" },
+	{ "Korean", "ko", "kor" },
+	{ "Kurdish", "ku", "kur" },
+	{ "Kinyarwanda", "rw", "kin" },
+	{ "Kirghiz", "ky", "kir" },
+	{ "Kirundi", "rn", "run" },
+	{ "Latin", "la", "lat" },
+	{ "Lingala", "ln", "lin" },
+	{ "Laothian", "lo", "lao" },
+	{ "Lithuanian", "lt", "lit" },
+	{ "Latvian", "lv", "lav" },
+	{ "Macedonian", "mk", "mac" },
+	{ "Magyar", "hu", "hun" },
+	{ "Malagasy", "mg", "mlg" },
+	{ "Malay", "ms", "may" },
+	{ "Malayalam", "ml", "mal" },
+	{ "Maltese", "mt", "mlt" },
+	{ "Maori", "mi", "mao" },
+	{ "Marathi", "mr", "mar" },
+	{ "Moldavian", "mo", "mol" },
+	{ "Mongolian", "mn", "mon" },
+	{ "Nauru", "na", "nau" },
+	{ "Nederlands", "nl", "dut" },
+	{ "Nepali", "ne", "nep" },
+	{ "Norsk", "no", "nno" },
+	{ "Occitan", "oc", "oci" },
+	{ "Oriya", "or", "ori" },
+	{ "Oromo", "om", "orm" },
+	{ "Pashto,", "ps", "pus" },
+	{ "Persian", "fa", "per" },
+	{ "Polish", "pl", "pol" },
+	{ "Portugues", "pt", "por" },
+	{ "Panjabi", "pa", "pan" },
+	{ "Quechua", "qu", "que" },
+	{ "Romanian", "ro", "rum" },
+	{ "Russian", "ru", "rus" },
+	{ "Sangho", "sg", "sag" },
+	{ "Samoan", "sm", "smo" },
+	{ "Sanskrit", "sa", "san" },
+	{ "Scots", "gd", "sco" },
+	{ "Serbian", "sr", "scc" },
+	{ "Shona", "sn", "sna" },
+	{ "Sinhalese", "si", "sin" },
+	{ "Sindhi", "sd", "snd" },
+	{ "Slovak", "sk", "slo" },
+	{ "Slovenian", "sl", "slv" },
+	{ "Somali", "so", "som" },
+	{ "Sundanese", "su", "sun" },
+	{ "Swahili", "sw", "swa" },
+	{ "Tagalog", "tl", "tgl" },
+	{ "Tajik", "tg", "tgk" },
+	{ "Tamil", "ta", "tam" },
+	{ "Tatar", "tt", "tat" },
+	{ "Telugu", "te", "tel" },
+	{ "Thai", "th", "tha" },
+	{ "Tibetan", "bo", "tib" },
+	{ "Tigrinya", "ti", "tir" },
+	{ "Tonga", "to", "ton" },
+	{ "Tsonga", "ts", "tso" },
+	{ "Turkish", "tr", "tur" },
+	{ "Turkmen", "tk", "tuk" },
+	{ "Twi", "tw", "twi" },
+	{ "Uighur", "ug", "uig" },
+	{ "Ukrainian", "uk", "ukr" },
+	{ "Urdu", "ur", "urd" },
+	{ "Uzbek", "uz", "uzb" },
+	{ "Vietnamese", "ui", "vie" },
+	{ "Volapuk", "vo", "Vol" },
+	{ "Welsh", "cy", "wel" },
+	{ "Wolof", "wo", "wol" },
+	{ "Xhosa", "xh", "xho" },
+	{ "Yiddish", "yi", "yid" },
+	{ "Yoruba", "yo", "yor" },
+	{ "Zhuang", "za", "zha" },
+	{ "Zulu", "zu", "zul" }
 };
+
+int GetLangIndex(char *lang)
+{
+	if(lang[0] == 0)
+		return 0;
+
+	for(int i=1; i < LANGUAGE_SIZE; i++)
+		if(strcmp(lang, languages[i].abbrev) == 0)
+			return i;
+	return 0;
+}
 
 CP codepages[CODEPAGE_SIZE] = {
 	{ "", "" },
@@ -325,6 +332,7 @@ prepareSettingsData ()
 	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
 	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
+	createXMLSetting("lockFolders", "Lock folders", toStr(WiiSettings.lockFolders));
 	// Videos
 	createXMLSection("Videos", "Videos Settings");
 	createXMLSetting("videoZoomHor", "Horizontal video zoom", FtoStr(WiiSettings.videoZoomHor));
@@ -334,6 +342,7 @@ prepareSettingsData ()
 	createXMLSetting("frameDropping", "Frame dropping compensation", toStr(WiiSettings.frameDropping));
 	createXMLSetting("aspectRatio", "Aspect ratio", FtoStr(WiiSettings.aspectRatio));
 	createXMLSetting("cacheFill", "Cache Fill %", toStr(WiiSettings.cacheFill));
+	createXMLSetting("audioLanguage", "Audio language", WiiSettings.audioLanguage);
 	createXMLSetting("audioDelay", "Audio delay", FtoStr(WiiSettings.audioDelay));
 	createXMLSetting("autoResume", "Auto-resume", toStr(WiiSettings.autoResume));
 	createXMLSetting("autoPlayNextVideo", "Auto-play next video", toStr(WiiSettings.autoPlayNextVideo));
@@ -547,6 +556,7 @@ void DefaultSettings ()
 	WiiSettings.exitAction = EXIT_AUTO;
 	WiiSettings.rumble = 1;
 	WiiSettings.sleepTimer = 0;
+	WiiSettings.lockFolders = 0;
 	// Videos
 	WiiSettings.videoZoomHor = 1;
 	WiiSettings.videoZoomVert = 1;
@@ -555,6 +565,7 @@ void DefaultSettings ()
 	WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
 	WiiSettings.aspectRatio = -2;
 	WiiSettings.cacheFill = 30;
+	WiiSettings.audioLanguage[0] = 0;
 	WiiSettings.audioDelay = 0;
 	WiiSettings.autoResume = 1;
 	WiiSettings.autoPlayNextVideo = 0;
@@ -618,6 +629,8 @@ static void FixInvalidSettings()
 		WiiSettings.exitAction = EXIT_AUTO;
 	if(WiiSettings.rumble != 1 && WiiSettings.rumble != 0)
 		WiiSettings.rumble = 1;
+	if(WiiSettings.lockFolders != 1 && WiiSettings.lockFolders != 0)
+		WiiSettings.lockFolders = 0;
 
 	// Videos
 	if(WiiSettings.videoZoomHor < 0.5 || WiiSettings.videoZoomHor > 1.5)
@@ -634,6 +647,23 @@ static void FixInvalidSettings()
 		WiiSettings.aspectRatio = -2;
 	if(WiiSettings.cacheFill < 10 || WiiSettings.cacheFill > 100)
 		WiiSettings.cacheFill = 30;
+
+	if(WiiSettings.audioLanguage[0] != 0)
+	{
+		bool found = false;
+		
+		for(int i=0; i < LANGUAGE_SIZE; i++)
+		{
+			if(strcmp(WiiSettings.audioLanguage, languages[i].abbrev) == 0)
+			{
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+			WiiSettings.audioLanguage[0] = 0;
+	}
+
 	if(WiiSettings.audioDelay < -2 || WiiSettings.audioDelay > 2)
 		WiiSettings.audioDelay = 0;
 	if(WiiSettings.autoResume != 1 && WiiSettings.autoResume != 0)
@@ -901,6 +931,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.hideExtensions, "hideExtensions");
 				loadXMLSetting(&WiiSettings.exitAction, "exitAction");
 				loadXMLSetting(&WiiSettings.rumble, "rumble");
+				loadXMLSetting(&WiiSettings.lockFolders, "lockFolders");
 				// Videos
 				loadXMLSetting(&WiiSettings.videoZoomHor, "videoZoomHor");
 				loadXMLSetting(&WiiSettings.videoZoomVert, "videoZoomVert");
@@ -909,6 +940,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.frameDropping, "frameDropping");
 				loadXMLSetting(&WiiSettings.aspectRatio, "aspectRatio");
 				loadXMLSetting(&WiiSettings.cacheFill, "cacheFill");
+				loadXMLSetting(WiiSettings.audioLanguage, "audioLanguage", sizeof(WiiSettings.audioLanguage));
 				loadXMLSetting(&WiiSettings.audioDelay, "audioDelay");
 				loadXMLSetting(&WiiSettings.autoResume, "autoResume");
 				loadXMLSetting(&WiiSettings.autoPlayNextVideo, "autoPlayNextVideo");

@@ -1163,6 +1163,43 @@ bool IsAllowedProtocol(char *file)
 	return false;
 }
 
+static void FindDirectory()
+{
+	int indexFound = -1;
+
+	for(int i=0; i < browser.numEntries; i++)
+	{
+		if(strcmp(browserList[i].filename, browser.lastdir) == 0)
+		{
+			indexFound = i;
+			break;
+		}
+	}
+
+	// move to this file
+	if(indexFound > 0)
+	{
+		int pagesize = 11;
+
+		if(menuCurrent == MENU_BROWSE_VIDEOS && videoScreenshot)
+			pagesize = 10;
+
+		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
+			pagesize = 8;
+
+		if(indexFound > pagesize)
+		{
+			browser.pageIndex = (ceil(indexFound/(float)pagesize)) * pagesize;
+
+			if(browser.pageIndex + pagesize > browser.numEntries)
+				browser.pageIndex = browser.numEntries - pagesize;
+		}
+		browser.selIndex = indexFound;
+		findLoadedFile = 2;
+	}
+	browser.lastdir[0] = 0; // only try to select the directory once
+}
+
 void FindFile()
 {
 	if(loadedFile[0] == 0 || browser.dir[0] == 0)
@@ -1194,7 +1231,6 @@ void FindFile()
 	if(indexFound > 0)
 	{
 		browserList[indexFound].icon = ICON_PLAY;
-		findLoadedFile = 2;
 
 		if(!selectLoadedFile) // only move to the file when first returning from the video
 			return;
@@ -1214,6 +1250,8 @@ void FindFile()
 			if(browser.pageIndex + pagesize > browser.numEntries)
 				browser.pageIndex = browser.numEntries - pagesize;
 		}
+		browser.selIndex = indexFound;
+		findLoadedFile = 2;
 	}
 	selectLoadedFile = 0; // only try to select loaded file once
 }
@@ -1268,7 +1306,7 @@ static bool ParseDirEntries()
 				browserList[browser.numEntries+i].type = TYPE_FOLDER;
 
 				if(strcmp(filename, "..") == 0)
-					sprintf(browserList[browser.numEntries+i].displayname, "Up One Level");
+					sprintf(browserList[browser.numEntries+i].displayname, "%s (%s)", gettext("Up One Level"), GetParentDir());
 				else
 					snprintf(browserList[browser.numEntries+i].displayname, MAXJOLIET, "%s", browserList[browser.numEntries+i].filename);
 
@@ -1320,9 +1358,10 @@ static bool ParseDirEntries()
 
 	if(res != 0 || parseHalt)
 	{
-		// try to find and select the last loaded file
-		if(findLoadedFile == 1)
-			FindFile();
+		if(browser.lastdir[0] != 0)
+			FindDirectory(); // try to find and select the last directory
+		else if(findLoadedFile == 1)
+			FindFile(); // try to find and select the last loaded file
 
 		dirclose(dirIter); // close directory
 		dirIter = NULL;

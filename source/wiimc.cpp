@@ -37,6 +37,7 @@
 
 extern "C" {
 extern void __exception_setreload(int t);
+extern char *network_useragent;
 }
 
 int ScreenshotRequested = 0;
@@ -377,6 +378,10 @@ bool InitMPlayer()
 	setenv("DVDCSS_VERBOSE", "0", 1);
 	setenv("DVDREAD_VERBOSE", "0", 1);
 	setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
+
+	char agent[15];
+	sprintf(agent, "%s/%s", APPNAME, APPVERSION);
+	network_useragent = strdup(agent);
 
 	// create mplayer thread
 	LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, STACKSIZE, 68);

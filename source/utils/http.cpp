@@ -21,6 +21,7 @@
 
 #include "menu.h"
 #include "http.h"
+#include "wiimc.h"
 
 #define TCP_CONNECT_TIMEOUT 	4000  // 4 secs to make a connection
 #define TCP_SEND_SIZE 			(32 * 1024)
@@ -315,7 +316,7 @@ int http_request(const char *url, FILE * hfile, u8 * buffer, u32 maxsize, bool s
 
 	r += sprintf(r, "GET %s HTTP/1.1\r\n", http_path);
 	r += sprintf(r, "Host: %s\r\n", http_host);
-	r += sprintf(r, "User-Agent: WiiMC/1.0\r\n");
+	r += sprintf(r, "User-Agent: %s/%s\r\n", APPNAME, APPVERSION);
 	r += sprintf(r, "Cache-Control: no-cache\r\n\r\n");
 
 	res = tcp_write(s, (u8 *) request, strlen(request));

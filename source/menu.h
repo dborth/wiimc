@@ -13,6 +13,7 @@
 
 #define MAX_PICTURE_SIZE (1024*1024*6) // 6 MB
 
+void SaveFolder();
 void GuiInit();
 void WiiMenu();
 void MPlayerMenu();

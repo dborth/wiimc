@@ -5103,17 +5103,6 @@ void wiiSetProperty(int command, float value)
 	mp_input_queue_cmd(cmd);
 }
 
-void wiiSetLanguage(char *lang)
-{
-	if(dvdsub_lang)
-		free(dvdsub_lang);
-
-	if(lang[0] == 0)
-		dvdsub_lang = NULL;
-	else
-		dvdsub_lang = strdup(lang);
-}
-
 void wiiSetCodepage(char *cp)
 {
 	if(sub_cp == NULL && cp[0] == 0) return; //cp not changed
@@ -5130,6 +5119,34 @@ void wiiSetCodepage(char *cp)
 		sub_cp = strdup(cp);
 
 	reload_subtitles();
+}
+
+void wiiSetAudioLanguage(char *lang)
+{
+	if(audio_lang && lang[0] != 0 && strcmp(lang, audio_lang) == 0)
+		return;
+
+	if(audio_lang)
+		free(audio_lang);
+
+	if(lang[0] == 0)
+		audio_lang = NULL;
+	else
+		audio_lang = strdup(lang);
+}
+
+void wiiSetSubtitleLanguage(char *lang)
+{
+	if(dvdsub_lang && lang[0] != 0 && strcmp(lang, dvdsub_lang) == 0)
+		return;
+
+	if(dvdsub_lang)
+		free(dvdsub_lang);
+
+	if(lang[0] == 0)
+		dvdsub_lang = NULL;
+	else
+		dvdsub_lang = strdup(lang);
 }
 
 void wiiSetSubtitleColor(char *color)

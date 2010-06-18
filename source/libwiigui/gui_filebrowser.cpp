@@ -229,6 +229,9 @@ void GuiFileBrowser::ResetState()
 
 void GuiFileBrowser::TriggerUpdate()
 {
+	if(browser.selIndex > 0)
+		selectedItem = browser.selIndex - browser.pageIndex;
+
 	listChanged = true;
 }
 

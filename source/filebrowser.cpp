@@ -172,10 +172,6 @@ bool AddMediaEntry()
  ***************************************************************************/
 static int UpdateDirName()
 {
-	int size=0;
-	char * test;
-	char temp[MAXPATHLEN];
-
 	if(browser.numEntries == 0)
 		return 1;
 
@@ -220,17 +216,15 @@ static int UpdateDirName()
 		else
 		{
 			// determine last subdirectory namelength
-			sprintf(temp,"%s",browser.dir);
-			test = strtok(temp,"/");
-			while (test != NULL)
-			{
-				size = strlen(test);
-				test = strtok(NULL,"/");
-			}
+			int size = strlen(browser.dir);
+			browser.dir[--size] = 0;
+			char *test = strrchr(browser.dir,'/');
 
-			// remove last subdirectory name
-			size = strlen(browser.dir) - size - 1;
-			browser.dir[size] = 0;
+			if(test == NULL)
+				return 1;
+
+			*test = 0; // remove last subdirectory name
+			strcpy(browser.lastdir, ++test); // record last folder
 		}
 		return 1;
 	}
@@ -259,6 +253,22 @@ static int UpdateDirName()
 		ErrorPrompt("Directory name is too long!");
 		return -1;
 	}
+}
+
+static char parentdir[1024];
+
+char *GetParentDir()
+{
+	int size = strlen(browser.dir);
+	strcpy(parentdir, browser.dir);
+	parentdir[--size] = 0;
+	char *test = strrchr(parentdir,'/');
+
+	if(test == NULL)
+		return (char *)"";
+
+	*test = 0; // remove last subdirectory name
+	return parentdir;
 }
 
 /****************************************************************************

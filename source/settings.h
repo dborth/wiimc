@@ -52,9 +52,10 @@ typedef struct _cp {
 typedef struct _lang {
 	const char *language;
 	const char *abbrev;
+	const char *abbrev2;
 } LANG;
 
-#define LANGUAGE_SIZE 142
+#define LANGUAGE_SIZE 138
 #define CODEPAGE_SIZE 28
 #define MAX_SHARES 9
 
@@ -89,6 +90,7 @@ struct SWiiSettings {
 	int		exitAction;
 	int		rumble;
 	int		sleepTimer;
+	int		lockFolders;
 	// Videos
 	float	videoZoomHor; // horizontal zoom amount
 	float	videoZoomVert; // vertical zoom amount
@@ -97,6 +99,7 @@ struct SWiiSettings {
 	int 	frameDropping; // FRAMEDROPPING_DISABLED, FRAMEDROPPING_AUTO, FRAMEDROPPING_ALWAYS
 	float 	aspectRatio;
 	int 	cacheFill;
+	char	audioLanguage[3];
 	float 	audioDelay; // in secs
 	int 	autoResume;
 	int 	autoPlayNextVideo;
@@ -124,6 +127,7 @@ struct SWiiSettings {
 	float	subtitleSize;
 };
 
+int GetLangIndex(char *lang);
 void DefaultSettings ();
 bool SaveSettings (bool silent);
 bool LoadSettings ();

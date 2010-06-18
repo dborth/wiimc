@@ -276,11 +276,34 @@ static void UpdateMenuImages(int oldBtn, int newBtn)
 	}
 }
 
+void SaveFolder()
+{
+	if(WiiSettings.lockFolders)
+		return;
+
+	switch(menuCurrent)
+	{
+		case MENU_BROWSE_VIDEOS:
+			strcpy(WiiSettings.videosFolder, browser.dir);
+			break;
+		case MENU_BROWSE_MUSIC:
+			strcpy(WiiSettings.musicFolder, browser.dir);
+			break;
+		case MENU_BROWSE_PICTURES:
+			strcpy(WiiSettings.picturesFolder, browser.dir);
+			break;
+		case MENU_BROWSE_ONLINEMEDIA:
+			strcpy(WiiSettings.onlinemediaFolder, browser.dir);
+			break;
+	}
+}
+
 static void ChangeMenuNoHistory(int menu)
 {
 	if(menu == menuCurrent)
 		return;
 
+	SaveFolder();
 	UpdateMenuImages(menuCurrent, menu);
 	menuCurrent = menu;
 }
@@ -290,6 +313,7 @@ static void ChangeMenu(int menu)
 	if(menu == menuCurrent)
 		return;
 
+	SaveFolder();
 	menuUndo = menuPrevious;
 	menuPrevious = menuCurrent;
 	menuCurrent = menu;
@@ -298,6 +322,7 @@ static void ChangeMenu(int menu)
 
 void UndoChangeMenu()
 {
+	SaveFolder();
 	UpdateMenuImages(menuCurrent, menuPrevious);
 	menuCurrent = menuPrevious;
 	menuPrevious = menuUndo;
@@ -1694,7 +1719,7 @@ static void *ThumbThread (void *arg)
 
 static int LoadNewFile()
 {
-	if(!ChangeInterface(browser.dir, NOTSILENT))
+	if(!ChangeInterface(loadedFile, NOTSILENT))
 		return 0;
 
 	ClearVideoPlaylist();
@@ -1755,11 +1780,14 @@ static void MenuBrowse(int menu)
 	switch(menu)
 	{
 		case MENU_BROWSE_VIDEOS:
-			browser.dir = &WiiSettings.videosFolder[0]; break;
+			strcpy(browser.dir, WiiSettings.videosFolder);
+			break;
 		case MENU_BROWSE_MUSIC:
-			browser.dir = &WiiSettings.musicFolder[0]; break;
+			strcpy(browser.dir, WiiSettings.musicFolder);
+			break;
 		case MENU_BROWSE_ONLINEMEDIA:
-			browser.dir = &WiiSettings.onlinemediaFolder[0]; break;
+			strcpy(browser.dir, WiiSettings.onlinemediaFolder);
+			break;
 		default:
 			return;
 	}
@@ -2834,7 +2862,7 @@ static void MenuBrowsePictures()
 		RemoveVideoImg();
 	}
 
-	browser.dir = &WiiSettings.picturesFolder[0];
+	strcpy(browser.dir, WiiSettings.picturesFolder);
 
 	int pagesize = 11;
 	float done;
@@ -3139,6 +3167,7 @@ static void MenuSettingsGlobal()
 	sprintf(options.name[i++], "Exit Action");
 	sprintf(options.name[i++], "Wiimote Rumble");
 	sprintf(options.name[i++], "Sleep Timer");
+	sprintf(options.name[i++], "Browser Folders");
 
 	options.length = i;
 
@@ -3233,6 +3262,9 @@ static void MenuSettingsGlobal()
 				if(WiiSettings.sleepTimer > 180)
 					WiiSettings.sleepTimer = 0;
 				break;
+			case 7:
+				WiiSettings.lockFolders ^= 1;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -3286,6 +3318,8 @@ static void MenuSettingsGlobal()
 				sprintf(options.value[6], "%d %s", WiiSettings.sleepTimer, gettext("min"));
 			else
 				sprintf(options.value[6], "Off");
+
+			sprintf(options.value[7], "%s", WiiSettings.lockFolders ? "Lock to Current Setting" : "Set to Last Browsed");
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -3531,6 +3565,110 @@ static void ScreenPositionWindow()
 	delete(settingText);
 }
 
+static void LanguageWindow(char *lang)
+{
+	GuiWindow promptWindow(556,352);
+	promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	GuiImageData btnOutline(button_png);
+	GuiImageData btnOutlineOver(button_over_png);
+
+	GuiImageData dialogBox(dialogue_box_large_png);
+	GuiImage dialogBoxImg(&dialogBox);
+	dialogBoxImg.SetAlpha(220);
+
+	GuiText titleTxt(NULL, 28, (GXColor){255, 255, 255, 255});
+
+	if(lang == WiiSettings.subtitleLanguage)
+		titleTxt.SetText("Subtitle Language");
+	else
+		titleTxt.SetText("Audio Language");
+
+	titleTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	titleTxt.SetPosition(0,18);
+
+	GuiText okBtnTxt("OK", 20, (GXColor){255, 255, 255, 255});
+	GuiImage okBtnImg(&btnOutline);
+	GuiImage okBtnImgOver(&btnOutlineOver);
+	GuiButton okBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+
+	okBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	okBtn.SetPosition(20, -25);
+
+	okBtn.SetLabel(&okBtnTxt);
+	okBtn.SetImage(&okBtnImg);
+	okBtn.SetImageOver(&okBtnImgOver);
+	okBtn.SetTrigger(trigA);
+	okBtn.SetSelectable(false);
+	okBtn.SetEffectGrow();
+
+	GuiText cancelBtnTxt("Cancel", 20, (GXColor){255, 255, 255, 255});
+	GuiImage cancelBtnImg(&btnOutline);
+	GuiImage cancelBtnImgOver(&btnOutlineOver);
+	GuiButton cancelBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+	cancelBtn.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
+	cancelBtn.SetPosition(-20, -25);
+	cancelBtn.SetLabel(&cancelBtnTxt);
+	cancelBtn.SetImage(&cancelBtnImg);
+	cancelBtn.SetImageOver(&cancelBtnImgOver);
+	cancelBtn.SetTrigger(trigA);
+	cancelBtn.SetSelectable(false);
+	cancelBtn.SetEffectGrow();
+
+	int i;
+	OptionList options;
+	sprintf(options.name[0], "Default");
+
+	for(i=1; i < LANGUAGE_SIZE; i++)
+		sprintf(options.name[i], "%s (%s)", languages[i].language, languages[i].abbrev);
+
+	options.length = i;
+
+	for(i=0; i < options.length; i++)
+	{
+		options.value[i][0] = 0;
+		options.icon[i] = 0;
+	}
+
+	GuiOptionBrowser optionBrowser(544, 6, &options);
+	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	optionBrowser.SetPosition(6, 70);
+
+	promptWindow.Append(&dialogBoxImg);
+	promptWindow.Append(&titleTxt);
+	promptWindow.Append(&optionBrowser);
+	promptWindow.Append(&okBtn);
+	promptWindow.Append(&cancelBtn);
+
+	SuspendGui();
+	mainWindow->SetState(STATE_DISABLED);
+	mainWindow->Append(disabled);
+	mainWindow->Append(&promptWindow);
+	ResumeGui();
+
+	int save = -1;
+
+	while(save == -1)
+	{
+		usleep(THREAD_SLEEP);
+
+		if(okBtn.GetState() == STATE_CLICKED)
+			save = 1;
+		else if(cancelBtn.GetState() == STATE_CLICKED)
+			save = 0;
+		else if(optionBrowser.GetClickedOption() >= 0)
+			save = 1;
+	}
+
+	if(save && optionBrowser.GetSelectedOption() >= 0)
+		strcpy(lang, languages[optionBrowser.GetSelectedOption()].abbrev);
+
+	SuspendGui();
+	mainWindow->Remove(&promptWindow);
+	mainWindow->Remove(disabled);
+	mainWindow->SetState(STATE_DEFAULT);
+	ResumeGui();
+}
+
 static void MenuSettingsVideos()
 {
 	int ret;
@@ -3543,6 +3681,7 @@ static void MenuSettingsVideos()
 	sprintf(options.name[i++], "Frame Dropping");
 	sprintf(options.name[i++], "Aspect Ratio");
 	sprintf(options.name[i++], "Cache Fill");
+	sprintf(options.name[i++], "Audio Language");
 	sprintf(options.name[i++], "Audio Delay");
 	sprintf(options.name[i++], "Auto-Resume");
 	sprintf(options.name[i++], "Auto-Play Next Video");
@@ -3630,17 +3769,20 @@ static void MenuSettingsVideos()
 					WiiSettings.cacheFill = 10;
 				break;
 			case 5:
+				LanguageWindow(WiiSettings.audioLanguage);
+				break;
+			case 6:
 				WiiSettings.audioDelay += 0.1;
 				if (WiiSettings.audioDelay > 2)
 					WiiSettings.audioDelay = -2;
 				break;
-			case 6:
+			case 7:
 				WiiSettings.autoResume ^= 1;
 				break;
-			case 7:
+			case 8:
 				WiiSettings.autoPlayNextVideo ^= 1;
 				break;
-			case 8:
+			case 9:
 				if(WiiSettings.seekTime >= 1200)
 					WiiSettings.seekTime = 5;
 				else if(WiiSettings.seekTime >= 600)
@@ -3658,7 +3800,7 @@ static void MenuSettingsVideos()
 				else
 					WiiSettings.seekTime = 15;
 				break;
-			case 9:
+			case 10:
 				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);
 				CleanupPath(WiiSettings.videosFolder);
 				break;
@@ -3692,11 +3834,12 @@ static void MenuSettingsVideos()
 				sprintf (options.value[3], "Auto");
 
 			sprintf (options.value[4], "%d%%", WiiSettings.cacheFill);
-			sprintf (options.value[5], "%.1f %s", WiiSettings.audioDelay, gettext("sec"));
-			sprintf (options.value[6], "%s", WiiSettings.autoResume ? "On" : "Off");
-			sprintf (options.value[7], "%s", WiiSettings.autoPlayNextVideo ? "On" : "Off");
-			sprintf (options.value[8], "%d %s", WiiSettings.seekTime, gettext("sec"));
-			snprintf(options.value[9], 60, "%s", WiiSettings.videosFolder);
+			strcpy(options.value[5], languages[GetLangIndex(WiiSettings.audioLanguage)].language);
+			sprintf (options.value[6], "%.1f %s", WiiSettings.audioDelay, gettext("sec"));
+			sprintf (options.value[7], "%s", WiiSettings.autoResume ? "On" : "Off");
+			sprintf (options.value[8], "%s", WiiSettings.autoPlayNextVideo ? "On" : "Off");
+			sprintf (options.value[9], "%d %s", WiiSettings.seekTime, gettext("sec"));
+			snprintf(options.value[10], 60, "%s", WiiSettings.videosFolder);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -4598,17 +4741,6 @@ static void MenuSettingsNetworkFTP()
 	CloseFTP(netEditIndex+1);
 }
 
-static int GetLangIndex()
-{
-	if(WiiSettings.subtitleLanguage[0] == 0)
-		return 0;
-
-	for(int i=1; i < LANGUAGE_SIZE; i++)
-		if(strcmp(WiiSettings.subtitleLanguage, languages[i].abbrev) == 0)
-			return i;
-	return 0;
-}
-
 static int GetCodepageIndex()
 {
 	if(WiiSettings.subtitleCodepage[0] == 0)
@@ -4618,104 +4750,6 @@ static int GetCodepageIndex()
 		if(strcmp(WiiSettings.subtitleCodepage, codepages[i].cpname) == 0)
 			return i;
 	return 0;
-}
-
-static void LanguageWindow()
-{
-	GuiWindow promptWindow(556,352);
-	promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	GuiImageData btnOutline(button_png);
-	GuiImageData btnOutlineOver(button_over_png);
-
-	GuiImageData dialogBox(dialogue_box_large_png);
-	GuiImage dialogBoxImg(&dialogBox);
-	dialogBoxImg.SetAlpha(220);
-
-	GuiText titleTxt("Subtitle Language", 28, (GXColor){255, 255, 255, 255});
-	titleTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	titleTxt.SetPosition(0,18);
-
-	GuiText okBtnTxt("OK", 20, (GXColor){255, 255, 255, 255});
-	GuiImage okBtnImg(&btnOutline);
-	GuiImage okBtnImgOver(&btnOutlineOver);
-	GuiButton okBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
-
-	okBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
-	okBtn.SetPosition(20, -25);
-
-	okBtn.SetLabel(&okBtnTxt);
-	okBtn.SetImage(&okBtnImg);
-	okBtn.SetImageOver(&okBtnImgOver);
-	okBtn.SetTrigger(trigA);
-	okBtn.SetSelectable(false);
-	okBtn.SetEffectGrow();
-
-	GuiText cancelBtnTxt("Cancel", 20, (GXColor){255, 255, 255, 255});
-	GuiImage cancelBtnImg(&btnOutline);
-	GuiImage cancelBtnImgOver(&btnOutlineOver);
-	GuiButton cancelBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
-	cancelBtn.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
-	cancelBtn.SetPosition(-20, -25);
-	cancelBtn.SetLabel(&cancelBtnTxt);
-	cancelBtn.SetImage(&cancelBtnImg);
-	cancelBtn.SetImageOver(&cancelBtnImgOver);
-	cancelBtn.SetTrigger(trigA);
-	cancelBtn.SetSelectable(false);
-	cancelBtn.SetEffectGrow();
-
-	int i;
-	OptionList options;
-	sprintf(options.name[0], "Default");
-
-	for(i=1; i < LANGUAGE_SIZE; i++)
-		sprintf(options.name[i], "%s (%s)", languages[i].language, languages[i].abbrev);
-
-	options.length = i;
-
-	for(i=0; i < options.length; i++)
-	{
-		options.value[i][0] = 0;
-		options.icon[i] = 0;
-	}
-
-	GuiOptionBrowser optionBrowser(544, 6, &options);
-	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	optionBrowser.SetPosition(6, 70);
-
-	promptWindow.Append(&dialogBoxImg);
-	promptWindow.Append(&titleTxt);
-	promptWindow.Append(&optionBrowser);
-	promptWindow.Append(&okBtn);
-	promptWindow.Append(&cancelBtn);
-
-	SuspendGui();
-	mainWindow->SetState(STATE_DISABLED);
-	mainWindow->Append(disabled);
-	mainWindow->Append(&promptWindow);
-	ResumeGui();
-
-	int save = -1;
-
-	while(save == -1)
-	{
-		usleep(THREAD_SLEEP);
-
-		if(okBtn.GetState() == STATE_CLICKED)
-			save = 1;
-		else if(cancelBtn.GetState() == STATE_CLICKED)
-			save = 0;
-		else if(optionBrowser.GetClickedOption() >= 0)
-			save = 1;
-	}
-
-	if(save && optionBrowser.GetSelectedOption() >= 0)
-		strcpy(WiiSettings.subtitleLanguage, languages[optionBrowser.GetSelectedOption()].abbrev);
-
-	SuspendGui();
-	mainWindow->Remove(&promptWindow);
-	mainWindow->Remove(disabled);
-	mainWindow->SetState(STATE_DEFAULT);
-	ResumeGui();
 }
 
 static void CodepageWindow()
@@ -4889,7 +4923,7 @@ static void MenuSettingsSubtitles()
 					WiiSettings.subtitleDelay = -2;
 				break;
 			case 2:
-				LanguageWindow();
+				LanguageWindow(WiiSettings.subtitleLanguage);
 				break;
 			case 3:
 				CodepageWindow();
@@ -4917,7 +4951,7 @@ static void MenuSettingsSubtitles()
 
 			sprintf(options.value[0], "%s", WiiSettings.subtitleVisibility ? "On" : "Off");
 			sprintf(options.value[1], "%.1f %s", WiiSettings.subtitleDelay, gettext("sec"));
-			strcpy(options.value[2], languages[GetLangIndex()].language);
+			strcpy(options.value[2], languages[GetLangIndex(WiiSettings.subtitleLanguage)].language);
 			if(GetCodepageIndex() == 0)
 				sprintf(options.value[3], "Default");
 			else

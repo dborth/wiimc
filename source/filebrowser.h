@@ -27,7 +27,8 @@ enum
 
 typedef struct
 {
-	char * dir; // directory path of browserList
+	char dir[MAXPATHLEN]; // directory path of browserList
+	char lastdir[MAXPATHLEN]; // last browsed directory
 	int numEntries; // # of entries in browserList
 	int selIndex; // currently selected index of browserList
 	int pageIndex; // starting index of browserList page display
@@ -87,6 +88,7 @@ extern int playlistIndex;
 extern MEDIAENTRY * onlinemediaList;
 extern int onlinemediaSize;
 
+char *GetParentDir();
 int FileSortCallback(const void *f1, const void *f2);
 void ResetBrowser();
 void BrowserHistoryStore(char *path);

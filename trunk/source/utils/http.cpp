@@ -29,7 +29,7 @@
 #define TCP_BLOCK_RECV_TIMEOUT 	4000 // 4 secs to receive
 #define TCP_BLOCK_SEND_TIMEOUT 	4000 // 4 secs to send
 #define TCP_BLOCK_SIZE 			1024
-#define HTTP_TIMEOUT 			5000 // 5 secs to get an http response
+#define HTTP_TIMEOUT 			10000 // 10 secs to get an http response
 #define IOS_O_NONBLOCK			0x04
 
 static s32 tcp_socket(void)

@@ -424,7 +424,7 @@ bool ntfsMount (const char *name, const DISC_INTERFACE *interface, sec_t startSe
     
 	char devname[10];
 	sprintf(devname, "%s:", name);
-	if(FindDevice(devname))
+	if(FindDevice(devname) >= 0)
 		return false;
     
     // Initialise ntfs-3g

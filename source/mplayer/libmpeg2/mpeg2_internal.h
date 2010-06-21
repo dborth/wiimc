@@ -22,7 +22,7 @@
  *
  * Modified for use with MPlayer, see libmpeg2_changes.diff for the exact changes.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: mpeg2_internal.h 28325 2009-01-16 09:21:21Z reimar $
+ * $Id: mpeg2_internal.h 31395 2010-06-14 08:55:32Z lu_zero $
  */
 
 #ifndef LIBMPEG2_MPEG2_INTERNAL_H
@@ -232,9 +232,6 @@ struct mpeg2dec_s {
     //int8_t q_scale_type, scaled[4];
     uint8_t quantizer_matrix[4][64];
     uint8_t new_quantizer_matrix[4][64];
-
-    unsigned char *pending_buffer;
-    int pending_length;
 };
 
 typedef struct {

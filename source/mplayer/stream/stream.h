@@ -51,7 +51,7 @@
 #define STREAMTYPE_MF 18
 #define STREAMTYPE_RADIO 19
 
-#define STREAM_BUFFER_SIZE 4096
+#define STREAM_BUFFER_SIZE 2048
 
 #define VCD_SECTOR_SIZE 2352
 #define VCD_SECTOR_OFFS 24
@@ -272,6 +272,7 @@ inline static int stream_read(stream_t *s,char* mem,int total){
   return total;
 }
 */
+
 unsigned char* stream_read_line(stream_t *s,unsigned char* mem, int max, int utf16);
 
 inline static int stream_eof(stream_t *s){
@@ -286,8 +287,6 @@ inline static int stream_seek(stream_t *s,off_t pos){
 
   mp_dbg(MSGT_DEMUX, MSGL_DBG3, "seek to 0x%qX\n",(long long)pos);
 
-  if(s->eof)
-    return 0;
   if(pos<s->pos){
     off_t x=pos-(s->pos-s->buf_len);
     if(x>=0){
@@ -301,7 +300,7 @@ inline static int stream_seek(stream_t *s,off_t pos){
 }
 
 inline static int stream_skip(stream_t *s,off_t len){
-  if( (len<0 && (s->flags & MP_STREAM_SEEK_BW)) || (len>2*STREAM_BUFFER_SIZE && (s->flags & MP_STREAM_SEEK_FW)) ) {
+  if( len<0 || (len>2*STREAM_BUFFER_SIZE && (s->flags & MP_STREAM_SEEK_FW)) ) {
     // negative or big skip!
     return stream_seek(s,stream_tell(s)+len);
   }
@@ -337,8 +336,10 @@ extern int dvd_title;
 extern int dvd_chapter;
 extern int dvd_last_chapter;
 extern int dvd_angle;
+extern int vcd_track;
 
 extern char * audio_stream;
+extern char *cdrom_device;
 
 typedef struct {
  int id; // 0 - 31 mpeg; 128 - 159 ac3; 160 - 191 pcm

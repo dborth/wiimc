@@ -26,12 +26,14 @@
 #include <sys/soundcard.h>
 
 #include "config.h"
+#include "libmpcodecs/ad_mp3lib.h"
 #include "mp3lib/mp3.h"
 #include "cpudetect.h"
 
 static FILE* mp3file=NULL;
 
-int mplayer_audio_read(char *buf,int size){
+int mplayer_audio_read(char *buf, int size)
+{
     return fread(buf,1,size,mp3file);
 }
 

@@ -1,4 +1,4 @@
-// Synced with help_mp-en.h rev. 31032 (MSGTR_AudioStreamRedefined)
+// Synced with help_mp-en.h rev. 31430 (MSGTR_MPDEMUX_AVIHDR_EmptyList)
 // Reminder of hard terms which need better/final solution later:
 //   (file links to be updated later if available!);
 //   NAV; section/subsection;  XScreenSaver; keycolor;
@@ -821,8 +821,6 @@ static const char help_text[]=
 #define MSGTR_VO_CantCreateDirectory "无法创建输出目录。"
 #define MSGTR_VO_CantCreateFile "无法创建输出文件。"
 #define MSGTR_VO_DirectoryCreateSuccess "输出目录创建成功。"
-#define MSGTR_VO_ParsingSuboptions "解析子选项。"
-#define MSGTR_VO_SuboptionsParsedOK "子选项解析成功。"
 #define MSGTR_VO_ValueOutOfRange "值超出范围"
 #define MSGTR_VO_NoValueSpecified "未指定值。"
 #define MSGTR_VO_UnknownSuboptions "未知子选项"
@@ -931,7 +929,7 @@ static const char help_text[]=
 #define MSGTR_LIBVO_MGA_AspectResized "[VO_MGA] aspect()：改变大小为 %dx%d。\n"
 #define MSGTR_LIBVO_MGA_Uninit "[VO] 卸载！\n"
 
-// mga_common.c
+// mga_template.c
 #define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] mga_vid_config ioctl 错误（mga_vid.o 版本错误？）"
 #define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] 无法在内核模块中获得亮度值！\n"
 #define MSGTR_LIBVO_MGA_CouldNotSetLumaValuesFromTheKernelModule "[MGA] 无法在内核模块中设置亮度值！\n"
@@ -1092,9 +1090,7 @@ static const char help_text[]=
 // vo_yuv4mpeg.c
 #define MSGTR_VO_YUV4MPEG_InterlacedHeightDivisibleBy4 "隔行扫描模式要求图像高度能被 4 整除。"
 #define MSGTR_VO_YUV4MPEG_InterlacedLineBufAllocFail "无法为隔行扫描模式分配扫描行缓冲。"
-#define MSGTR_VO_YUV4MPEG_InterlacedInputNotRGB "输入信号不是 RGB 格式，不能按色彩域拆分色度信息！"
 #define MSGTR_VO_YUV4MPEG_WidthDivisibleBy2 "图像宽度必须能被 2 整除。"
-#define MSGTR_VO_YUV4MPEG_NoMemRGBFrameBuf "内存不够，无法分配 RGB 帧缓冲。"
 #define MSGTR_VO_YUV4MPEG_OutFileOpenError "无法获取内存或文件句柄以写入“%s”！"
 #define MSGTR_VO_YUV4MPEG_OutFileWriteError "图像写入输出错误！"
 #define MSGTR_VO_YUV4MPEG_UnknownSubDev "未知子设备：%s"
@@ -1376,8 +1372,8 @@ static const char help_text[]=
 #define MSGTR_WritingTrailer "正在写入索引...\n"
 
 // demuxer.c, demux_*.c
-#define MSGTR_AudioStreamRedefined "警告：重复定义音频流头部 %d。\n"
-#define MSGTR_VideoStreamRedefined "警告: 重复定义视频流头部 %d。\n"
+#define MSGTR_AudioStreamRedefined "警告：重复定义了音频流头部 %d。\n"
+#define MSGTR_VideoStreamRedefined "警告: 重复定义了视频流头部 %d。\n"
 #define MSGTR_TooManyAudioInBuffer "\n缓冲中音频包太多（%d 个包存在于 %d 字节中）。\n"
 #define MSGTR_TooManyVideoInBuffer "\n缓冲中视频包太多（%d 个包存在于 %d 字节中）。\n"
 #define MSGTR_MaybeNI "可能播放了一个非交错合并的媒体流/文件，或者是编解码运行失败？\n" \

@@ -40,6 +40,7 @@
 #include "mp_core.h"
 #include "mplayer.h"
 #include "libmpcodecs/vd.h"
+#include "libmpcodecs/vf.h"
 #include "libvo/x11_common.h"
 #include "libvo/video_out.h"
 #include "libvo/font_load.h"
@@ -51,8 +52,6 @@
 #include "libaf/equalizer.h"
 #include "libass/ass_mp.h"
 
-extern af_cfg_t af_cfg;
-
 #ifdef CONFIG_ICONV
 #include <iconv.h>
 #endif
@@ -60,6 +59,7 @@ extern af_cfg_t af_cfg;
 #include "stream/stream.h"
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/stheader.h"
+#include "libmpcodecs/dec_audio.h"
 #include "libmpcodecs/dec_video.h"
 
 #ifdef CONFIG_DVDREAD
@@ -232,8 +232,6 @@ void guiInit( void )
  mplMenuInit();
  mplPBInit();
 
- vo_setwindow( appMPlayer.subWindow.WindowID, appMPlayer.subWindow.wGC );
-
 // i=wsHideFrame|wsMaxSize|wsHideWindow;
 // if ( appMPlayer.mainDecoration ) i=wsShowFrame|wsMaxSize|wsHideWindow;
  i=wsShowFrame|wsMaxSize|wsHideWindow;
@@ -356,22 +354,7 @@ void guiDone( void )
  wsXDone();
 }
 
-int guiCMDArray[] =
- {
-  evLoadPlay,
-  evLoadSubtitle,
-  evAbout,
-  evPlay,
-  evStop,
-  evPlayList,
-  evPreferences,
-  evFullScreen,
-  evSkinBrowser
- };
-
 extern int              stream_dump_type;
-extern int  		vcd_track;
-extern m_obj_settings_t * vf_settings;
 
 void guiLoadFont( void )
 {
@@ -414,8 +397,6 @@ void guiLoadFont( void )
    }
 #endif
 }
-
-extern mp_osd_obj_t* vo_osd_list;
 
 extern char **sub_name;
 
@@ -565,6 +546,7 @@ int guiGetEvent( int type,void * arg )
 	  guiIntfStruct.MovieHeight=vo_dheight;
           if (guiWinID>=0)
             wsMoveWindow( &appMPlayer.mainWindow,0,0, vo_dheight);
+          WinID = appMPlayer.subWindow.WindowID;
          }
 	break;
 #ifdef CONFIG_DVDREAD
@@ -621,8 +603,6 @@ int guiGetEvent( int type,void * arg )
 	  case MP_CMD_VO_FULLSCREEN:
 	       mplEventHandling( evFullScreen,0 );
 	       break;
-          default:
-	       mplEventHandling( guiCMDArray[ (int)arg - MP_CMD_GUI_EVENTS - 1 ],0 );
 	 }
 	break;
    case guiReDraw:

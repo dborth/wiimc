@@ -824,8 +824,6 @@ static const char help_text[]=
 #define MSGTR_VO_CantCreateDirectory "Не можу створити директорію виводу."
 #define MSGTR_VO_CantCreateFile "Не можу створити файл виводу."
 #define MSGTR_VO_DirectoryCreateSuccess "Директорія виводу успішно створена."
-#define MSGTR_VO_ParsingSuboptions "Перевіряю синтаксис субопцій."
-#define MSGTR_VO_SuboptionsParsedOK "Перевірка синтаксису закінчилась успішно."
 #define MSGTR_VO_ValueOutOfRange "значення за межами доступного діапазону"
 #define MSGTR_VO_NoValueSpecified "Не вказано значення."
 #define MSGTR_VO_UnknownSuboptions "невідома(і) субопція(ї)"
@@ -935,7 +933,7 @@ static const char help_text[]=
 #define MSGTR_LIBVO_MGA_AspectResized "[VO_MGA] aspect(): розмір змінений до %dx%d.\n"
 #define MSGTR_LIBVO_MGA_Uninit "[VO] деініціялізація!\n"
 
-// mga_common.c
+// mga_template.c
 #define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] помилка у mga_vid_config ioctl (неправильна версія mga_vid.o?)"
 #define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] Не можу отримати значення luma з модуля ядра!\n"
 #define MSGTR_LIBVO_MGA_CouldNotSetLumaValuesFromTheKernelModule "[MGA] Не можу встановити значення luma з модуля ядра!\n"

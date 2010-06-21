@@ -1029,8 +1029,6 @@ static const char help_text[]=
 #define MSGTR_VO_CantCreateDirectory "Çıktı dizini oluşturulamıyor."
 #define MSGTR_VO_CantCreateFile "Çıktı dosyası oluşturulamıyor."
 #define MSGTR_VO_DirectoryCreateSuccess "Çıktı dizini başarıyla oluşturuldu."
-#define MSGTR_VO_ParsingSuboptions "Ayrıştırma altseçenekleri."
-#define MSGTR_VO_SuboptionsParsedOK "Altseçenekler ayrıştırıldı tamam."
 #define MSGTR_VO_ValueOutOfRange "Değer erişim dışı"
 #define MSGTR_VO_NoValueSpecified "Değer tanımlanmadı."
 #define MSGTR_VO_UnknownSuboptions "Bilinmeyen altseçenek(ler)"
@@ -1688,7 +1686,7 @@ static const char help_text[]=
 
 // ================================== LIBMPVO ====================================
 
-// mga_common.c
+// mga_template.c
 
 #define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] mga_video_ayarı'nda ioctl hatası (yanlış mga_vid.o sürümü?)"
 #define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] Kernel modülünden luma değerlerine ulaşılamadı!\n"

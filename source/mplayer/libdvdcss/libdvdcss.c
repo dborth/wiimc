@@ -5,7 +5,7 @@
  *          Håkan Hjort <d95hjort@dtek.chalmers.se>
  *
  * Copyright (C) 1998-2008 VideoLAN
- * $Id: libdvdcss.c 31157 2010-05-11 11:10:28Z diego $
+ * $Id: libdvdcss.c 31319 2010-06-05 06:41:43Z reimar $
  *
  * This library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -367,12 +367,12 @@ LIBDVDCSS_EXPORT dvdcss_t dvdcss_open ( char *psz_target )
     if( dvdcss->b_ioctls )
     {
         i_ret = _dvdcss_test( dvdcss );
-        if( i_ret == -2 )
+
+        if( i_ret == -3 )
         {
-            /* Scrambled disk, RPC-II drive, no region set: bail out */
-            free( dvdcss->psz_device );
-            free( dvdcss );
-            return NULL;
+            print_debug( dvdcss, "scrambled disc on a region-free RPC-II "
+                                 "drive: possible failure, but continuing "
+                                 "anyway" );
         }
         else if( i_ret < 0 )
         {

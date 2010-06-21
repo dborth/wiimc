@@ -322,7 +322,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_
 {
 	int tmp1, tmp2, size;
 	em8300_register_t reg;
-	extern float monitor_aspect;
 
 	/* Softzoom turned on, downscale */
 	/* This activates the subpicture processor, you can safely disable this and still send */
@@ -586,9 +585,6 @@ static void draw_alpha(int x, int y, int w, int h, unsigned char* src, unsigned 
 	pixbuf_encode_rle(x, y, osdpicbuf_w, osdpicbuf_h - 1, osdpicbuf, osdpicbuf_w, spued);
 #endif
 }
-
-extern int vo_osd_changed_flag;
-extern mp_osd_obj_t* vo_osd_list;
 
 static void draw_osd(void)
 {

@@ -23,7 +23,7 @@
 # Thanks to Melchior Franz of the FlightGear project for the original idea
 # of a source-tree checker and Torinthiel for the feedback along the way.
 
-# $Id: checktree.sh 27231 2008-07-07 09:32:21Z diego $
+# $Id: checktree.sh 31415 2010-06-14 15:17:48Z diego $
 
 # -----------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ all_filenames() {
     if [ "$_svn" = "no" ]; then
         find . -type f \
         | grep -v "\.\#\|\~$\|\.depend\|\/\.svn\/\|config.mak\|^\./config\.h" \
-        | grep -v "^\./version\.h\|\.o$\|\.a$\|configure.log\|^\./help_mp.h"
+        | grep -v "^\./version\.h\|\.o$\|\.a$\|config.log\|^\./help_mp.h"
     else
         for p in . libavcodec libavutil libavformat libpostproc ; do
             svn info -R $p 2>/dev/null | sed -n \

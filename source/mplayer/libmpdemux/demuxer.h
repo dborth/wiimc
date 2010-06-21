@@ -147,7 +147,7 @@ typedef struct {
 //---------------
   int packs;              // number of packets in buffer
   int bytes;              // total bytes of packets in buffer
-  demux_packet_t *first;  // read to current buffer from here
+  demux_packet_t *first;  // read to first buffer after the current buffer from here
   demux_packet_t *last;   // append new packets from input stream to here
   demux_packet_t *current;// needed for refcounting of the buffer
   int id;                 // stream ID  (for multiple audio/video streams)
@@ -175,8 +175,17 @@ typedef struct demuxer_info {
 
 struct demuxer;
 
+extern int demuxer_type;
+extern int audio_demuxer_type;
+extern int sub_demuxer_type;
+extern int audio_stream_cache;
 extern int correct_pts;
 extern int user_correct_pts;
+extern char *sub_stream;
+
+extern int rtsp_transport_http;
+extern int rtsp_transport_sctp;
+extern int rtsp_transport_tcp;
 
 /**
  * Demuxer description structure

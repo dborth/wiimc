@@ -24,50 +24,18 @@
  */
 
 #include "cfg-common.h"
+#include "gui/interface.h"
+#include "input/lirc.h"
 #include "libmpcodecs/vd.h"
-#include "libmpdemux/demux_ts.h"
+#include "libmenu/menu.h"
+#include "libvo/aspect.h"
+#include "libvo/geometry.h"
+#include "libvo/vo_dxr2.h"
+#include "libvo/vo_fbdev.h"
 #include "libvo/vo_zr.h"
+#include "mp_fifo.h"
+#include "unrar_exec.h"
 
-extern int key_fifo_size;
-extern unsigned doubleclick_time;
-
-extern char *fb_mode_cfgfile;
-extern char *fb_mode_name;
-extern char *dfb_params;
-
-extern char *lirc_configfile;
-
-extern float vo_panscanrange;
-/* only used at startup (setting these values from configfile) */
-extern char *vo_geometry;
-
-extern char *ao_outputfilename;
-extern int ao_pcm_waveheader;
-
-extern int fs_layer;
-extern int stop_xscreensaver;
-
-extern int menu_startup;
-extern int menu_keepdir;
-extern char *menu_chroot;
-extern char *menu_fribidi_charset;
-extern int menu_flip_hebrew;
-extern int menu_fribidi_flip_commas;
-
-extern char *unrar_executable;
-
-extern const m_option_t dxr2_opts[];
-
-extern char * skinName;
-extern int guiWinID;
-
-
-/* from libvo/aspect.c */
-extern float force_monitor_aspect;
-extern float monitor_pixel_aspect;
-
-extern int sws_flags;
-extern char* pp_help;
 
 const m_option_t vd_conf[]={
     {"help", "Use MPlayer with an appropriate video file instead of live partners to avoid vd.\n", CONF_TYPE_PRINT, CONF_NOCFG|CONF_GLOBAL, 0, 0, NULL},
@@ -368,8 +336,6 @@ const m_option_t mplayer_opts[]={
 #else
     {"tvscan", "MPlayer was compiled without TV interface support.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 #endif /* CONFIG_TV */
-
-#include "cfg-common-opts.h"
 
     {"list-properties", &list_properties, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
     {"identify", &mp_msg_levels[MSGT_IDENTIFY], CONF_TYPE_FLAG, CONF_GLOBAL, 0, MSGL_V, NULL},

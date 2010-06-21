@@ -69,6 +69,8 @@
 
 static void compute_antialias_integer(MPADecodeContext *s, GranuleDef *g);
 static void compute_antialias_float(MPADecodeContext *s, GranuleDef *g);
+static void apply_window_mp3_c(MPA_INT *synth_buf, MPA_INT *window,
+                               int *dither_state, OUT_INT *samples, int incr);
 
 /* vlc structure for decoding layer 3 huffman tables */
 static VLC huff_vlc[16];
@@ -305,6 +307,7 @@ static av_cold int decode_init(AVCodecContext * avctx)
     int i, j, k;
 
     s->avctx = avctx;
+    s->apply_window_mp3 = apply_window_mp3_c;
 
     avctx->sample_fmt= OUT_FMT;
     s->error_recognition= avctx->error_recognition;
@@ -528,45 +531,58 @@ static av_cold int decode_init(AVCodecContext * avctx)
 /* butterfly operator */
 #define BF(a, b, c, s)\
 {\
+    tmp0 = val##a + val##b;\
+    tmp1 = val##a - val##b;\
+    val##a = tmp0;\
+    val##b = MULH3(tmp1, c, 1<<(s));\
+}
+
+#define BF0(a, b, c, s)\
+{\
     tmp0 = tab[a] + tab[b];\
     tmp1 = tab[a] - tab[b];\
-    tab[a] = tmp0;\
-    tab[b] = MULH3(tmp1, c, 1<<(s));\
+    val##a = tmp0;\
+    val##b = MULH3(tmp1, c, 1<<(s));\
 }
 
 #define BF1(a, b, c, d)\
 {\
     BF(a, b, COS4_0, 1);\
     BF(c, d,-COS4_0, 1);\
-    tab[c] += tab[d];\
+    val##c += val##d;\
 }
 
 #define BF2(a, b, c, d)\
 {\
     BF(a, b, COS4_0, 1);\
     BF(c, d,-COS4_0, 1);\
-    tab[c] += tab[d];\
-    tab[a] += tab[c];\
-    tab[c] += tab[b];\
-    tab[b] += tab[d];\
+    val##c += val##d;\
+    val##a += val##c;\
+    val##c += val##b;\
+    val##b += val##d;\
 }
 
-#define ADD(a, b) tab[a] += tab[b]
+#define ADD(a, b) val##a += val##b
 
 /* DCT32 without 1/sqrt(2) coef zero scaling. */
-static void dct32(INTFLOAT *out, INTFLOAT *tab)
+static void dct32(INTFLOAT *out, const INTFLOAT *tab)
 {
     INTFLOAT tmp0, tmp1;
 
+    INTFLOAT val0 , val1 , val2 , val3 , val4 , val5 , val6 , val7 ,
+             val8 , val9 , val10, val11, val12, val13, val14, val15,
+             val16, val17, val18, val19, val20, val21, val22, val23,
+             val24, val25, val26, val27, val28, val29, val30, val31;
+
     /* pass 1 */
-    BF( 0, 31, COS0_0 , 1);
-    BF(15, 16, COS0_15, 5);
+    BF0( 0, 31, COS0_0 , 1);
+    BF0(15, 16, COS0_15, 5);
     /* pass 2 */
     BF( 0, 15, COS1_0 , 1);
     BF(16, 31,-COS1_0 , 1);
     /* pass 1 */
-    BF( 7, 24, COS0_7 , 1);
-    BF( 8, 23, COS0_8 , 1);
+    BF0( 7, 24, COS0_7 , 1);
+    BF0( 8, 23, COS0_8 , 1);
     /* pass 2 */
     BF( 7,  8, COS1_7 , 4);
     BF(23, 24,-COS1_7 , 4);
@@ -576,14 +592,14 @@ static void dct32(INTFLOAT *out, INTFLOAT *tab)
     BF(16, 23, COS2_0 , 1);
     BF(24, 31,-COS2_0 , 1);
     /* pass 1 */
-    BF( 3, 28, COS0_3 , 1);
-    BF(12, 19, COS0_12, 2);
+    BF0( 3, 28, COS0_3 , 1);
+    BF0(12, 19, COS0_12, 2);
     /* pass 2 */
     BF( 3, 12, COS1_3 , 1);
     BF(19, 28,-COS1_3 , 1);
     /* pass 1 */
-    BF( 4, 27, COS0_4 , 1);
-    BF(11, 20, COS0_11, 2);
+    BF0( 4, 27, COS0_4 , 1);
+    BF0(11, 20, COS0_11, 2);
     /* pass 2 */
     BF( 4, 11, COS1_4 , 1);
     BF(20, 27,-COS1_4 , 1);
@@ -605,14 +621,14 @@ static void dct32(INTFLOAT *out, INTFLOAT *tab)
 
 
     /* pass 1 */
-    BF( 1, 30, COS0_1 , 1);
-    BF(14, 17, COS0_14, 3);
+    BF0( 1, 30, COS0_1 , 1);
+    BF0(14, 17, COS0_14, 3);
     /* pass 2 */
     BF( 1, 14, COS1_1 , 1);
     BF(17, 30,-COS1_1 , 1);
     /* pass 1 */
-    BF( 6, 25, COS0_6 , 1);
-    BF( 9, 22, COS0_9 , 1);
+    BF0( 6, 25, COS0_6 , 1);
+    BF0( 9, 22, COS0_9 , 1);
     /* pass 2 */
     BF( 6,  9, COS1_6 , 2);
     BF(22, 25,-COS1_6 , 2);
@@ -623,14 +639,14 @@ static void dct32(INTFLOAT *out, INTFLOAT *tab)
     BF(25, 30,-COS2_1 , 1);
 
     /* pass 1 */
-    BF( 2, 29, COS0_2 , 1);
-    BF(13, 18, COS0_13, 3);
+    BF0( 2, 29, COS0_2 , 1);
+    BF0(13, 18, COS0_13, 3);
     /* pass 2 */
     BF( 2, 13, COS1_2 , 1);
     BF(18, 29,-COS1_2 , 1);
     /* pass 1 */
-    BF( 5, 26, COS0_5 , 1);
-    BF(10, 21, COS0_10, 1);
+    BF0( 5, 26, COS0_5 , 1);
+    BF0(10, 21, COS0_10, 1);
     /* pass 2 */
     BF( 5, 10, COS1_5 , 2);
     BF(21, 26,-COS1_5 , 2);
@@ -669,22 +685,22 @@ static void dct32(INTFLOAT *out, INTFLOAT *tab)
     ADD(13, 11);
     ADD(11, 15);
 
-    out[ 0] = tab[0];
-    out[16] = tab[1];
-    out[ 8] = tab[2];
-    out[24] = tab[3];
-    out[ 4] = tab[4];
-    out[20] = tab[5];
-    out[12] = tab[6];
-    out[28] = tab[7];
-    out[ 2] = tab[8];
-    out[18] = tab[9];
-    out[10] = tab[10];
-    out[26] = tab[11];
-    out[ 6] = tab[12];
-    out[22] = tab[13];
-    out[14] = tab[14];
-    out[30] = tab[15];
+    out[ 0] = val0;
+    out[16] = val1;
+    out[ 8] = val2;
+    out[24] = val3;
+    out[ 4] = val4;
+    out[20] = val5;
+    out[12] = val6;
+    out[28] = val7;
+    out[ 2] = val8;
+    out[18] = val9;
+    out[10] = val10;
+    out[26] = val11;
+    out[ 6] = val12;
+    out[22] = val13;
+    out[14] = val14;
+    out[30] = val15;
 
     ADD(24, 28);
     ADD(28, 26);
@@ -694,22 +710,22 @@ static void dct32(INTFLOAT *out, INTFLOAT *tab)
     ADD(29, 27);
     ADD(27, 31);
 
-    out[ 1] = tab[16] + tab[24];
-    out[17] = tab[17] + tab[25];
-    out[ 9] = tab[18] + tab[26];
-    out[25] = tab[19] + tab[27];
-    out[ 5] = tab[20] + tab[28];
-    out[21] = tab[21] + tab[29];
-    out[13] = tab[22] + tab[30];
-    out[29] = tab[23] + tab[31];
-    out[ 3] = tab[24] + tab[20];
-    out[19] = tab[25] + tab[21];
-    out[11] = tab[26] + tab[22];
-    out[27] = tab[27] + tab[23];
-    out[ 7] = tab[28] + tab[18];
-    out[23] = tab[29] + tab[19];
-    out[15] = tab[30] + tab[17];
-    out[31] = tab[31];
+    out[ 1] = val16 + val24;
+    out[17] = val17 + val25;
+    out[ 9] = val18 + val26;
+    out[25] = val19 + val27;
+    out[ 5] = val20 + val28;
+    out[21] = val21 + val29;
+    out[13] = val22 + val30;
+    out[29] = val23 + val31;
+    out[ 3] = val24 + val20;
+    out[19] = val25 + val21;
+    out[11] = val26 + val22;
+    out[27] = val27 + val23;
+    out[ 7] = val28 + val18;
+    out[23] = val29 + val19;
+    out[15] = val30 + val17;
+    out[31] = val31;
 }
 
 #if CONFIG_FLOAT
@@ -823,39 +839,18 @@ void av_cold RENAME(ff_mpa_synth_init)(MPA_INT *window)
     }
 }
 
-/* 32 sub band synthesis filter. Input: 32 sub band samples, Output:
-   32 samples. */
-/* XXX: optimize by avoiding ring buffer usage */
-void RENAME(ff_mpa_synth_filter)(MPA_INT *synth_buf_ptr, int *synth_buf_offset,
-                         MPA_INT *window, int *dither_state,
-                         OUT_INT *samples, int incr,
-                         INTFLOAT sb_samples[SBLIMIT])
+static void apply_window_mp3_c(MPA_INT *synth_buf, MPA_INT *window,
+                               int *dither_state, OUT_INT *samples, int incr)
 {
-    register MPA_INT *synth_buf;
     register const MPA_INT *w, *w2, *p;
-    int j, offset;
+    int j;
     OUT_INT *samples2;
 #if CONFIG_FLOAT
     float sum, sum2;
 #elif FRAC_BITS <= 15
-    int32_t tmp[32];
     int sum, sum2;
 #else
     int64_t sum, sum2;
-#endif
-
-    offset = *synth_buf_offset;
-    synth_buf = synth_buf_ptr + offset;
-
-#if FRAC_BITS <= 15 && !CONFIG_FLOAT
-    dct32(tmp, sb_samples);
-    for(j=0;j<32;j++) {
-        /* NOTE: can cause a loss in precision if very high amplitude
-           sound */
-        synth_buf[j] = av_clip_int16(tmp[j]);
-    }
-#else
-    dct32(synth_buf, sb_samples);
 #endif
 
     /* copy to avoid wrap */
@@ -896,10 +891,64 @@ void RENAME(ff_mpa_synth_filter)(MPA_INT *synth_buf_ptr, int *synth_buf_offset,
     SUM8(MLSS, sum, w + 32, p);
     *samples = round_sample(&sum);
     *dither_state= sum;
+}
+
+
+/* 32 sub band synthesis filter. Input: 32 sub band samples, Output:
+   32 samples. */
+/* XXX: optimize by avoiding ring buffer usage */
+#if CONFIG_FLOAT
+void ff_mpa_synth_filter_float(MPADecodeContext *s, float *synth_buf_ptr,
+                               int *synth_buf_offset,
+                               float *window, int *dither_state,
+                               float *samples, int incr,
+                               float sb_samples[SBLIMIT])
+{
+    float *synth_buf;
+    int offset;
+
+    offset = *synth_buf_offset;
+    synth_buf = synth_buf_ptr + offset;
+
+    dct32(synth_buf, sb_samples);
+    s->apply_window_mp3(synth_buf, window, dither_state, samples, incr);
 
     offset = (offset - 32) & 511;
     *synth_buf_offset = offset;
 }
+#else
+void ff_mpa_synth_filter(MPA_INT *synth_buf_ptr, int *synth_buf_offset,
+                         MPA_INT *window, int *dither_state,
+                         OUT_INT *samples, int incr,
+                         INTFLOAT sb_samples[SBLIMIT])
+{
+    register MPA_INT *synth_buf;
+    int offset;
+#if FRAC_BITS <= 15
+    int32_t tmp[32];
+    int j;
+#endif
+
+    offset = *synth_buf_offset;
+    synth_buf = synth_buf_ptr + offset;
+
+#if FRAC_BITS <= 15 && !CONFIG_FLOAT
+    dct32(tmp, sb_samples);
+    for(j=0;j<32;j++) {
+        /* NOTE: can cause a loss in precision if very high amplitude
+           sound */
+        synth_buf[j] = av_clip_int16(tmp[j]);
+    }
+#else
+    dct32(synth_buf, sb_samples);
+#endif
+
+    apply_window_mp3_c(synth_buf, window, dither_state, samples, incr);
+
+    offset = (offset - 32) & 511;
+    *synth_buf_offset = offset;
+}
+#endif
 
 #define C3 FIXHR(0.86602540378443864676/2)
 
@@ -2214,7 +2263,11 @@ static int mp_decode_frame(MPADecodeContext *s,
     for(ch=0;ch<s->nb_channels;ch++) {
         samples_ptr = samples + ch;
         for(i=0;i<nb_frames;i++) {
-            RENAME(ff_mpa_synth_filter)(s->synth_buf[ch], &(s->synth_buf_offset[ch]),
+            RENAME(ff_mpa_synth_filter)(
+#if CONFIG_FLOAT
+                         s,
+#endif
+                         s->synth_buf[ch], &(s->synth_buf_offset[ch]),
                          RENAME(ff_mpa_synth_window), &s->dither_state,
                          samples_ptr, s->nb_channels,
                          s->sb_samples[ch][i]);

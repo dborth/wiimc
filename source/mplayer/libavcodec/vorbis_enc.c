@@ -681,7 +681,7 @@ static void floor_fit(vorbis_enc_context *venc, vorbis_enc_floor *fc,
         float average = averages[i];
         int j;
 
-        average *= pow(tot_average / average, 0.5) * pow(1.25, position/200.); // MAGIC!
+        average = sqrt(tot_average * average) * pow(1.25f, position*0.005f); // MAGIC!
         for (j = 0; j < range - 1; j++)
             if (ff_vorbis_floor1_inverse_db_table[j * fc->multiplier] > average)
                 break;
@@ -955,7 +955,7 @@ static av_cold int vorbis_encode_init(AVCodecContext *avccontext)
     if (avccontext->flags & CODEC_FLAG_QSCALE)
         venc->quality = avccontext->global_quality / (float)FF_QP2LAMBDA / 10.;
     else
-        venc->quality = 1.;
+        venc->quality = 0.03;
     venc->quality *= venc->quality;
 
     avccontext->extradata_size = put_main_header(venc, (uint8_t**)&avccontext->extradata);

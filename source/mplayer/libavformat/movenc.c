@@ -622,15 +622,18 @@ static const struct {
 } mov_pix_fmt_tags[] = {
     { PIX_FMT_YUYV422, MKTAG('y','u','v','s'),  0 },
     { PIX_FMT_UYVY422, MKTAG('2','v','u','y'),  0 },
-    { PIX_FMT_BGR555,  MKTAG('r','a','w',' '), 16 },
+    { PIX_FMT_RGB555BE,MKTAG('r','a','w',' '), 16 },
     { PIX_FMT_RGB555LE,MKTAG('L','5','5','5'), 16 },
     { PIX_FMT_RGB565LE,MKTAG('L','5','6','5'), 16 },
     { PIX_FMT_RGB565BE,MKTAG('B','5','6','5'), 16 },
+    { PIX_FMT_GRAY16BE,MKTAG('b','1','6','g'), 16 },
     { PIX_FMT_RGB24,   MKTAG('r','a','w',' '), 24 },
     { PIX_FMT_BGR24,   MKTAG('2','4','B','G'), 24 },
     { PIX_FMT_ARGB,    MKTAG('r','a','w',' '), 32 },
     { PIX_FMT_BGRA,    MKTAG('B','G','R','A'), 32 },
     { PIX_FMT_RGBA,    MKTAG('R','G','B','A'), 32 },
+    { PIX_FMT_ABGR,    MKTAG('A','B','G','R'), 32 },
+    { PIX_FMT_RGB48BE, MKTAG('b','4','8','r'), 48 },
 };
 
 static int mov_get_rawvideo_codec_tag(AVFormatContext *s, MOVTrack *track)

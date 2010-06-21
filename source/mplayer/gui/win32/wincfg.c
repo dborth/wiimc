@@ -45,7 +45,7 @@ int   gtkCacheSize = 2048;
 int   gtkAutoSyncOn = 0;
 int   gtkAutoSync = 0;
 
-int sub_window = 0;
+int sub_window = 1;
 int console = 0;
 
 int gui_save_pos = 1;
@@ -88,22 +88,6 @@ static const m_option_t gui_opts[] =
     {   "console", &console, CONF_TYPE_FLAG, 0, 0, 1, NULL},
     {   NULL, NULL, 0, 0, 0, 0, NULL }
 };
-
-char *gfgets(char *str, int size, FILE *f)
-{
-    char *s = fgets(str, size, f);
-    char c;
-    if(s)
-    {
-        c = s[strlen(s) - 1];
-        if ((c == '\n') || (c == '\r'))
-            s[strlen(s) - 1]=0;
-        c = s[strlen(s) - 1];
-        if ((c == '\n') || (c == '\r'))
-            s[strlen(s) - 1]=0;
-    }
-    return s;
-}
 
 int cfg_read(void)
 {

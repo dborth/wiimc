@@ -1015,8 +1015,6 @@ static const char help_text[]=
 #define MSGTR_VO_CantCreateDirectory "Impossible de créer répertoire de sortie."
 #define MSGTR_VO_CantCreateFile "Impossible de créer fichier de sortie."
 #define MSGTR_VO_DirectoryCreateSuccess "Répertoire de sortie créé avec succès."
-#define MSGTR_VO_ParsingSuboptions "Analyse de sous-options."
-#define MSGTR_VO_SuboptionsParsedOK "sous-options analysées OK."
 #define MSGTR_VO_ValueOutOfRange "Valeur hors plage"
 #define MSGTR_VO_NoValueSpecified "Aucune valeur spécifiée."
 #define MSGTR_VO_UnknownSuboptions "Sous-option(s) inconnue(s)"
@@ -1681,7 +1679,7 @@ static const char help_text[]=
 
 // ================================== LIBMPVO ====================================
 
-// mga_common.c
+// mga_template.c
 
 #define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] Erreur dans mga_vid_config ioctl (mauvaise version de mga_vid.o ?)"
 #define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] Impossible d'avoir les valeurs de luma depuis le module du noyau !\n"

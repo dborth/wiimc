@@ -56,11 +56,6 @@ static int CompletionType = -1;
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#ifdef CONFIG_GUI
-#include "gui/interface.h"
-#include "mplayer.h"
-#endif
-
 static const vo_info_t info = {
     "X11 ( XImage/Shm )",
     "x11",
@@ -154,7 +149,6 @@ static void draw_alpha_null(int x0, int y0, int w, int h,
 
 static struct SwsContext *swsContext = NULL;
 static int dst_width;
-extern int sws_flags;
 
 static XVisualInfo vinfo;
 
@@ -358,11 +352,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
     image_width = (width + 7) & (~7);
     image_height = height;
 
-#ifdef CONFIG_GUI
-    if (use_gui)
-        guiGetEvent(guiSetShVideo, 0);  // the GUI will set up / resize the window
-    else
-#endif
     {
 #ifdef CONFIG_XF86VM
         if (vm)

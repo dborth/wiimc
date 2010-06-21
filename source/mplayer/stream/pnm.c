@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: pnm.c 29305 2009-05-13 02:58:57Z diego $
+ * $Id: pnm.c 31493 2010-06-20 16:01:17Z diego $
  *
  * pnm protocol implementation
  * based upon code from joschka
@@ -55,8 +55,6 @@
 #include "pnm.h"
 #include "tcp.h"
 //#include "libreal/rmff.h"
-
-extern int network_bandwidth;
 
 #define FOURCC_TAG( ch0, ch1, ch2, ch3 ) \
         (((long)(unsigned char)(ch3)       ) | \

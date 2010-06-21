@@ -836,8 +836,6 @@ static const char help_text[]=
 #define MSGTR_VO_CantCreateDirectory "Nem tudtam létrehozni a célkönyvtárat."
 #define MSGTR_VO_CantCreateFile "A kimeneti fájl nem hozható létre."
 #define MSGTR_VO_DirectoryCreateSuccess "A célkönyvtárat sikeresen létrehoztam."
-#define MSGTR_VO_ParsingSuboptions "Alopciók értelmezése."
-#define MSGTR_VO_SuboptionsParsedOK "Alopciók értelmezése rendben."
 #define MSGTR_VO_ValueOutOfRange "érték határon kívül"
 #define MSGTR_VO_NoValueSpecified "Nincs érték megadva."
 #define MSGTR_VO_UnknownSuboptions "ismeretlen alopció(k)"
@@ -947,7 +945,7 @@ static const char help_text[]=
 #define MSGTR_LIBVO_MGA_AspectResized "[VO_MGA] aspect(): átméretezve erre: %dx%d.\n"
 #define MSGTR_LIBVO_MGA_Uninit "[VO] uninit!\n"
 
-// mga_common.c
+// mga_template.c
 #define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] hiba az mga_vid_config ioctl-ben (hibás verziójú mga_vid.o?)"
 #define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] Nem kérdezhetőek le a luma értékek a kernel modulból!\n"
 #define MSGTR_LIBVO_MGA_CouldNotSetLumaValuesFromTheKernelModule "[MGA] Nem állíthatóak be a luma értékek a kernel modulból!\n"

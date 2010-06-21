@@ -1001,8 +1001,6 @@ static const char help_text[]=
 #define MSGTR_VO_CantCreateDirectory "無法創建輸出目録。"
 #define MSGTR_VO_CantCreateFile "無法創建輸出文件。"
 #define MSGTR_VO_DirectoryCreateSuccess "輸出目録創建成功。"
-#define MSGTR_VO_ParsingSuboptions "解析子選項。"
-#define MSGTR_VO_SuboptionsParsedOK "子選項解析成功。"
 #define MSGTR_VO_ValueOutOfRange "值超出範圍"
 #define MSGTR_VO_NoValueSpecified "没有指定值。"
 #define MSGTR_VO_UnknownSuboptions "未知子選項"
@@ -1654,7 +1652,7 @@ static const char help_text[]=
 
 // ================================== LIBMPVO ====================================
 
-// mga_common.c
+// mga_template.c
 
 #define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] mga_vid_config ioctl 錯誤 (mga_vid.o 版本錯誤?)"
 #define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] 無法在内核模塊中獲得 luma 值!\n"

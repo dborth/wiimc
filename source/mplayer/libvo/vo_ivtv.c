@@ -46,6 +46,7 @@
 #include "subopt-helper.h"
 #include "video_out.h"
 #include "video_out_internal.h"
+#include "vo_ivtv.h"
 #include "libmpdemux/mpeg_packetizer.h"
 
 #define DEFAULT_MPEG_DECODER "/dev/video16"
@@ -108,7 +109,7 @@ ivtv_reset (int blank_screen)
 }
 
 int
-ivtv_write (unsigned char *data, int len)
+ivtv_write (const unsigned char *data, int len)
 {
   if (ivtv_fd < 0)
     return 0;

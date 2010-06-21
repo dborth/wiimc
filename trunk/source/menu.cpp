@@ -3319,7 +3319,7 @@ static void MenuSettingsGlobal()
 			else
 				sprintf(options.value[6], "Off");
 
-			sprintf(options.value[7], "%s", WiiSettings.lockFolders ? "Lock to Current Setting" : "Set to Last Browsed");
+			sprintf(options.value[7], "%s", WiiSettings.lockFolders ? "Static" : "Use Last Browsed");
 
 			optionBrowser.TriggerUpdate();
 		}

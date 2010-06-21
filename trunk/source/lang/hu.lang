@@ -603,3 +603,15 @@ msgstr "Következő video auto-játszása"
 
 msgid "Adding files to playlist..."
 msgstr "Fájlok hozzáadása a lejátszási listához..."
+
+msgid "Browser Folders"
+msgstr "Böngésző mappák"
+
+msgid "Static"
+msgstr "Mostani beálltás rögzitése"
+
+msgid "Use Last Browsed"
+msgstr "Legutóbb nézettre állít"
+
+msgid "Audio Language"
+msgstr "Hangsáv nyelve"

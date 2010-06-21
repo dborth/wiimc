@@ -26,7 +26,7 @@ msgid "Retry"
 msgstr "Riprova"
 
 msgid "Cancel"
-msgstr "Cancella"
+msgstr "Annulla"
 
 msgid "Information"
 msgstr "Informazioni"
@@ -603,3 +603,15 @@ msgstr "Auto-Play Video Successivo"
 
 msgid "Adding files to playlist..."
 msgstr "Aggiungi files alla playlist..."
+
+msgid "Browser Folders"
+msgstr "Sfoglia Cartelle"
+
+msgid "Static"
+msgstr "Blocca Impostazioni Correnti"
+
+msgid "Use Last Browsed"
+msgstr "Imposta all'ultimo visualizzato"
+
+msgid "Audio Language"
+msgstr "Linguaggio Audio"

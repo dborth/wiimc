@@ -113,7 +113,8 @@ void GuiWindow::DrawTooltip()
 	if(_elements.size() == 0 || !this->IsVisible())
 		return;
 
-	for (u8 i = 0; i < _elements.size(); i++)
+	u32 elemSize = _elements.size();
+	for (u32 i = 0; i < elemSize; i++)
 	{
 		try	{ _elements.at(i)->DrawTooltip(); }
 		catch (const std::exception& e) { }
@@ -370,7 +371,8 @@ void GuiWindow::MoveSelectionVert(int dir)
 
 void GuiWindow::ResetText()
 {
-	for (u8 i = 0; i < _elements.size(); i++)
+	u32 elemSize = _elements.size();
+	for (u32 i = 0; i < elemSize; i++)
 	{
 		try { _elements.at(i)->ResetText(); }
 		catch (const std::exception& e) { }

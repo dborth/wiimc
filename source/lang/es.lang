@@ -603,3 +603,15 @@ msgstr "Auto-Play siguiente vídeo"
 
 msgid "Adding files to playlist..."
 msgstr "Añadiendo ficheros a la lista de reproducción..."
+
+msgid "Browser Folders"
+msgstr "Buscador de Carpetas"
+
+msgid "Static"
+msgstr "Bloquear la Configuración Actual"
+
+msgid "Use Last Browsed"
+msgstr "Última Búsqueda"
+
+msgid "Audio Language"
+msgstr "Idioma para el Audio"

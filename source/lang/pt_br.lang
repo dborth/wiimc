@@ -603,3 +603,15 @@ msgstr "Reproduzir o próximo vídeo"
 
 msgid "Adding files to playlist..."
 msgstr "Adicionando arquivos à lista..."
+
+msgid "Browser Folders"
+msgstr "Navegador de pastas"
+
+msgid "Static"
+msgstr "Bloquear a configuração atual"
+
+msgid "Use Last Browsed"
+msgstr "Setar para o último navegado"
+
+msgid "Audio Language"
+msgstr "Idioma do áudio"

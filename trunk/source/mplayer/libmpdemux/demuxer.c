@@ -30,6 +30,7 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 #include "m_config.h"
+#include "mplayer.h"
 
 #include "libvo/fastmemcpy.h"
 
@@ -37,6 +38,7 @@
 #include "demuxer.h"
 #include "stheader.h"
 #include "mf.h"
+#include "demux_audio.h"
 
 #include "libaf/af_format.h"
 #include "libmpcodecs/dec_teletext.h"
@@ -251,8 +253,6 @@ demuxer_t *new_demuxer(stream_t *stream, int type, int a_id, int v_id,
     stream_seek(stream, stream->start_pos);
     return d;
 }
-
-extern int dvdsub_id;
 
 sh_sub_t *new_sh_sub_sid(demuxer_t *demuxer, int id, int sid)
 {
@@ -813,7 +813,9 @@ int ds_get_packet_sub(demux_stream_t *ds, unsigned char **start)
 double ds_get_next_pts(demux_stream_t *ds)
 {
     demuxer_t *demux = ds->demuxer;
-    while (!ds->first) {
+    // if we have not read from the "current" packet, consider it
+    // as the next, otherwise we never get the pts for the first packet.
+    while (!ds->first && (!ds->current || ds->buffer_pos)) {
         if (demux->audio->packs >= MAX_PACKS
             || demux->audio->bytes >= MAX_PACK_BYTES) {
             mp_msg(MSGT_DEMUXER, MSGL_ERR, MSGTR_TooManyAudioInBuffer,
@@ -831,6 +833,9 @@ double ds_get_next_pts(demux_stream_t *ds)
         if (!demux_fill_buffer(demux, ds))
             return MP_NOPTS_VALUE;
     }
+    // take pts from "current" if we never read from it.
+    if (ds->current && !ds->buffer_pos)
+        return ds->current->pts;
     return ds->first->pts;
 }
 
@@ -1087,8 +1092,6 @@ char *demuxer_name = NULL;       // parameter from -demuxer
 char *audio_demuxer_name = NULL; // parameter from -audio-demuxer
 char *sub_demuxer_name = NULL;   // parameter from -sub-demuxer
 
-extern int hr_mp3_seek;
-
 extern float stream_cache_min_percent;
 extern float stream_cache_seek_min_percent;
 
@@ -1196,7 +1199,7 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
 
     correct_pts = user_correct_pts;
     if (correct_pts < 0)
-        correct_pts = demux_control(res, DEMUXER_CTRL_CORRECT_PTS, NULL)
+        correct_pts = !force_fps && demux_control(res, DEMUXER_CTRL_CORRECT_PTS, NULL)
                       == DEMUXER_CTRL_OK;
     return res;
 }

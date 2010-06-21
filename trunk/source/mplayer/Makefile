@@ -156,17 +156,17 @@ SRCS_COMMON-$(LIBDVDCSS_INTERNAL)    += libdvdcss/css.c \
 
 SRCS_COMMON-$(LIBMAD)                += libmpcodecs/ad_libmad.c
 
-SRCS_LIBMPEG2-$(ARCH_ALPHA)          += libmpeg2/idct_alpha.c \
+SRCS_COMMON-$(LIBMPEG2)              += libmpcodecs/vd_libmpeg2.c
+SRCS_LIBMPEG2-INTERNAL-$(ARCH_ALPHA) += libmpeg2/idct_alpha.c \
                                         libmpeg2/motion_comp_alpha.c
-SRCS_LIBMPEG2-$(ARCH_ARM)            += libmpeg2/motion_comp_arm.c \
+SRCS_LIBMPEG2-INTERNAL-$(ARCH_ARM)   += libmpeg2/motion_comp_arm.c \
                                         libmpeg2/motion_comp_arm_s.S
-SRCS_LIBMPEG2-$(HAVE_ALTIVEC)        += libmpeg2/idct_altivec.c \
+SRCS_LIBMPEG2-INTERNAL-$(HAVE_ALTIVEC) += libmpeg2/idct_altivec.c \
                                         libmpeg2/motion_comp_altivec.c
-SRCS_LIBMPEG2-$(HAVE_MMX)            += libmpeg2/idct_mmx.c \
+SRCS_LIBMPEG2-INTERNAL-$(HAVE_MMX)   += libmpeg2/idct_mmx.c \
                                         libmpeg2/motion_comp_mmx.c
-SRCS_LIBMPEG2-$(HAVE_VIS)            += libmpeg2/motion_comp_vis.c
-SRCS_COMMON-$(LIBMPEG2)              += libmpcodecs/vd_libmpeg2.c \
-                                        libmpeg2/alloc.c \
+SRCS_LIBMPEG2-INTERNAL-$(HAVE_VIS)   += libmpeg2/motion_comp_vis.c
+SRCS_COMMON-$(LIBMPEG2_INTERNAL)     += libmpeg2/alloc.c \
                                         libmpeg2/cpu_accel.c\
                                         libmpeg2/cpu_state.c \
                                         libmpeg2/decode.c \
@@ -174,7 +174,7 @@ SRCS_COMMON-$(LIBMPEG2)              += libmpcodecs/vd_libmpeg2.c \
                                         libmpeg2/idct.c \
                                         libmpeg2/motion_comp.c \
                                         libmpeg2/slice.c \
-                                        $(SRCS_LIBMPEG2-yes)
+                                        $(SRCS_LIBMPEG2-INTERNAL-yes)
 
 SRCS_COMMON-$(LIBNEMESI)             += libmpdemux/demux_nemesi.c \
                                         stream/stream_nemesi.c
@@ -337,6 +337,7 @@ SRCS_COMMON = asxparser.c \
               m_config.c \
               m_option.c \
               m_struct.c \
+              mp_msg.c \
               mpcommon.c \
               parser-cfg.c \
               path.c \
@@ -445,7 +446,6 @@ SRCS_COMMON = asxparser.c \
               libmpcodecs/vf_pullup.c \
               libmpcodecs/vf_rectangle.c \
               libmpcodecs/vf_remove_logo.c \
-              libmpcodecs/vf_rgb2bgr.c \
               libmpcodecs/vf_rgbtest.c \
               libmpcodecs/vf_rotate.c \
               libmpcodecs/vf_sab.c \
@@ -675,7 +675,6 @@ SRCS_MPLAYER = command.c \
                m_property.c \
                mixer.c \
                mp_fifo.c \
-               mp_msg.c \
                mplayer.c \
                parser-mpcmd.c \
                input/input.c \
@@ -707,7 +706,6 @@ SRCS_MENCODER-$(X264)             += libmpcodecs/ve_x264.c
 SRCS_MENCODER-$(XVID4)            += libmpcodecs/ve_xvid4.c
 
 SRCS_MENCODER = mencoder.c \
-                mp_msg-mencoder.c \
                 parser-mecmd.c \
                 xvid_vbr.c \
                 libmpcodecs/ae.c \
@@ -833,15 +831,6 @@ all: $(MPLAYERWIILIB) $(COMMON_LIBS)
 	$(AR) rc libmplayerwii.a $(MPLAYERWIILIB)
 	$(RANLIB) libmplayerwii.a
 
-%.d: %.c
-	$(MPDEPEND_CMD) > $@
-
-%.d: %.cpp
-	$(MPDEPEND_CMD_CXX) > $@
-
-%.d: %.m
-	$(MPDEPEND_CMD) > $@
-
 %.ho: %.h
 	$(CC) $(CFLAGS) -Wno-unused -c -o $@ -x c $<
 
@@ -898,7 +887,8 @@ endif
 version.h: version.sh
 	./$< `$(CC) -dumpversion`
 
-%(EXESUF): %.c
+%$(EXESUF): %.c
+	$(CC) $(CFLAGS) -o $@ $^
 
 
 
@@ -1005,7 +995,7 @@ clean:
 distclean: clean testsclean toolsclean driversclean dhahelperclean dhahelperwinclean
 	-rm -rf DOCS/tech/doxygen
 	-rm -f $(call ADD_ALL_DIRS,/*.d)
-	-rm -f configure.log config.mak config.h codecs.conf.h help_mp.h \
+	-rm -f config.log config.mak config.h codecs.conf.h help_mp.h \
            version.h $(VIDIX_PCI_FILES) TAGS tags
 	-rm -f $(call ADD_ALL_EXESUFS,codec-cfg cpuinfo)
 
@@ -1022,7 +1012,7 @@ tags:
 
 ###### tests / tools #######
 
-TEST_OBJS = mp_msg-mencoder.o mp_fifo.o osdep/$(GETCH) osdep/$(TIMER) -ltermcap -lm
+TEST_OBJS = mp_msg.o mp_fifo.o osdep/$(GETCH) osdep/$(TIMER) -ltermcap -lm
 
 codec-cfg-test$(EXESUF): codec-cfg.c codecs.conf.h help_mp.h $(TEST_OBJS)
 	$(CC) -I. -DTESTING -o $@ $^
@@ -1032,7 +1022,7 @@ codecs2html$(EXESUF): codec-cfg.c help_mp.h $(TEST_OBJS)
 
 libvo/aspecttest$(EXESUF): libvo/aspect.o libvo/geometry.o $(TEST_OBJS)
 
-LOADER_TEST_OBJS = $(SRCS_WIN32_EMULATION:.c=.o) $(SRCS_QTX_EMULATION:.S=.o) libavutil/libavutil.a osdep/mmap_anon.o cpudetect.o $(TEST_OBJS)
+LOADER_TEST_OBJS = $(SRCS_WIN32_EMULATION:.c=.o) $(SRCS_QTX_EMULATION:.S=.o) libavutil/libavutil.a osdep/mmap_anon.o cpudetect.o path.o $(TEST_OBJS)
 
 loader/qtx/list$(EXESUF) loader/qtx/qtxload$(EXESUF): CFLAGS += -g
 loader/qtx/list$(EXESUF) loader/qtx/qtxload$(EXESUF): $(LOADER_TEST_OBJS)

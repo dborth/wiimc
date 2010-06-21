@@ -998,7 +998,7 @@ static int mp_property_fullscreen(m_option_t *prop, int action, void *arg,
     case M_PROPERTY_STEP_DOWN:
 #ifdef CONFIG_GUI
         if (use_gui)
-            guiGetEvent(guiIEvent, (char *) MP_CMD_GUI_FULLSCREEN);
+            guiGetEvent(guiIEvent, (char *) MP_CMD_VO_FULLSCREEN);
         else
 #endif
         if (vo_config_count)
@@ -2995,43 +2995,6 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
                             mpctx->global_sub_size;
                     ++mpctx->global_sub_size;
                 }
-                else {  // error loading subtitle, trying to read vobsub
-					char ext[10];		
-					char *tmp;
-					
-					tmp = strrchr(cmd->args[0].v.s,'.');
-					if (!tmp || strlen(tmp)>9) ext[0]='\0';
-					else strcpy(ext, tmp+1);
-		
-					if (strcasecmp("sub", ext) == 0 || strcasecmp("idx", ext) == 0) { // found sub extension
-						char * vobsub_filename;
-						void* aux_vobsub;
-						extern char* dvdsub_lang;
-						int i,j;
-		
-						vobsub_filename=strdup(cmd->args[0].v.s);
-						j=strlen(vobsub_filename);
-						for(i=j-1;i>0 && vobsub_filename[i]!='.';i--);
-						vobsub_filename[i]='\0';							
-						
-						aux_vobsub=vobsub_open(vobsub_filename,NULL,0,&vo_spudec);
-						if(aux_vobsub){
-						  if(vo_vobsub) 
-						  {
-							mpctx->global_sub_size -= vobsub_get_indexes_count(vo_vobsub);
-							vobsub_close(vo_vobsub);
-						  }
-						  vo_vobsub = aux_vobsub;
-						  vobsub_set_from_lang(vo_vobsub, dvdsub_lang);
-					
-						  // setup global sub numbering
-						  mpctx->global_sub_indices[SUB_SOURCE_VOBSUB] = mpctx->global_sub_size; // the global # of the first vobsub.
-						  mpctx->global_sub_size += vobsub_get_indexes_count(vo_vobsub);
-						  rm_osd_msg(OSD_MSG_TEXT);
-						}else set_osd_msg(OSD_MSG_TEXT, 1, osd_duration, "Error loading subs");
-						free(vobsub_filename);			    			    
-					}
-                }
             }
             break;
 
@@ -3327,11 +3290,6 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
         build_afilter_chain(sh_audio, &ao_data);
         break;
         default:
-#ifdef CONFIG_GUI
-            if ((use_gui) && (cmd->id > MP_CMD_GUI_EVENTS))
-                guiGetEvent(guiIEvent, (char *) cmd->id);
-            else
-#endif
                 mp_msg(MSGT_CPLAYER, MSGL_V,
                        "Received unknown cmd %s\n", cmd->name);
         }

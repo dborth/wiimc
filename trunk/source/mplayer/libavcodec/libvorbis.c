@@ -60,16 +60,18 @@ static av_cold int oggvorbis_init_encoder(vorbis_info *vi, AVCodecContext *avcco
                 avccontext->global_quality / (float)FF_QP2LAMBDA / 10.0))
             return -1;
     } else {
+        int minrate = avccontext->rc_min_rate > 0 ? avccontext->rc_min_rate : -1;
+        int maxrate = avccontext->rc_min_rate > 0 ? avccontext->rc_max_rate : -1;
+
         /* constant bitrate */
         if(vorbis_encode_setup_managed(vi, avccontext->channels,
-                avccontext->sample_rate, -1, avccontext->bit_rate, -1))
+                avccontext->sample_rate, minrate, avccontext->bit_rate, maxrate))
             return -1;
 
-#ifdef OGGVORBIS_VBR_BY_ESTIMATE
-        /* variable bitrate by estimate */
-        if(vorbis_encode_ctl(vi, OV_ECTL_RATEMANAGE_AVG, NULL))
-            return -1;
-#endif
+        /* variable bitrate by estimate, disable slow rate management */
+        if(minrate == -1 && maxrate == -1)
+            if(vorbis_encode_ctl(vi, OV_ECTL_RATEMANAGE2_SET, NULL))
+                return -1;
     }
 
     /* cutoff frequency */
@@ -190,7 +192,7 @@ static int oggvorbis_encode_frame(AVCodecContext *avccontext,
 
         memcpy(packets, op2->packet, l);
         context->buffer_index -= l + sizeof(ogg_packet);
-        memcpy(context->buffer, context->buffer + l + sizeof(ogg_packet), context->buffer_index);
+        memmove(context->buffer, context->buffer + l + sizeof(ogg_packet), context->buffer_index);
 //        av_log(avccontext, AV_LOG_DEBUG, "E%d\n", l);
     }
 

@@ -57,6 +57,7 @@ void avcodec_register_all(void)
     REGISTER_HWACCEL (H263_VAAPI, h263_vaapi);
     REGISTER_HWACCEL (H264_DXVA2, h264_dxva2);
     REGISTER_HWACCEL (H264_VAAPI, h264_vaapi);
+    REGISTER_HWACCEL (MPEG2_DXVA2, mpeg2_dxva2);
     REGISTER_HWACCEL (MPEG2_VAAPI, mpeg2_vaapi);
     REGISTER_HWACCEL (MPEG4_VAAPI, mpeg4_vaapi);
     REGISTER_HWACCEL (VC1_DXVA2, vc1_dxva2);
@@ -152,6 +153,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (PCX, pcx);
     REGISTER_ENCDEC  (PGM, pgm);
     REGISTER_ENCDEC  (PGMYUV, pgmyuv);
+    REGISTER_DECODER (PICTOR, pictor);
     REGISTER_ENCDEC  (PNG, png);
     REGISTER_ENCDEC  (PPM, ppm);
     REGISTER_DECODER (PTX, ptx);
@@ -246,7 +248,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (NELLYMOSER, nellymoser);
     REGISTER_DECODER (QCELP, qcelp);
     REGISTER_DECODER (QDM2, qdm2);
-    REGISTER_DECODER (RA_144, ra_144);
+    REGISTER_ENCDEC  (RA_144, ra_144);
     REGISTER_DECODER (RA_288, ra_288);
     REGISTER_DECODER (SHORTEN, shorten);
     REGISTER_DECODER (SIPR, sipr);
@@ -338,7 +340,6 @@ void avcodec_register_all(void)
     /* external libraries */
     REGISTER_ENCDEC  (LIBDIRAC, libdirac);
     REGISTER_ENCODER (LIBFAAC, libfaac);
-    REGISTER_DECODER (LIBFAAD, libfaad);
     REGISTER_ENCDEC  (LIBGSM, libgsm);
     REGISTER_ENCDEC  (LIBGSM_MS, libgsm_ms);
     REGISTER_ENCODER (LIBMP3LAME, libmp3lame);
@@ -349,7 +350,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (LIBSPEEX, libspeex);
     REGISTER_ENCODER (LIBTHEORA, libtheora);
     REGISTER_ENCODER (LIBVORBIS, libvorbis);
-    REGISTER_DECODER (LIBVPX, libvpx);
+    REGISTER_ENCDEC  (LIBVPX, libvpx);
     REGISTER_ENCODER (LIBX264, libx264);
     REGISTER_ENCODER (LIBXVID, libxvid);
 

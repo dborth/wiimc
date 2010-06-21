@@ -2,7 +2,7 @@
  * css.c: Functions for DVD authentication and descrambling
  *****************************************************************************
  * Copyright (C) 1999-2008 VideoLAN
- * $Id: css.c 31157 2010-05-11 11:10:28Z diego $
+ * $Id: css.c 31319 2010-06-05 06:41:43Z reimar $
  *
  * Authors: Stéphane Borel <stef@via.ecp.fr>
  *          Håkan Hjort <d95hjort@dtek.chalmers.se>
@@ -158,7 +158,7 @@ int _dvdcss_test( dvdcss_t dvdcss )
         default: psz_type = "unknown status"; break;
     }
 
-    print_debug( dvdcss, "drive region mask %x, %s, %s",
+    print_debug( dvdcss, "drive region mask 0x%x, %s, %s",
                          i_mask, psz_rpc, psz_type );
 
     if( i_copyright && i_rpc == 1 && i_type == 0 )

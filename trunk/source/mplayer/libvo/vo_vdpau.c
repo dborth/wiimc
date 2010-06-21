@@ -40,12 +40,11 @@
 #include "video_out_internal.h"
 #include "x11_common.h"
 #include "aspect.h"
+#include "font_load.h"
 #include "sub.h"
 #include "subopt-helper.h"
 
 #include "libavcodec/vdpau.h"
-
-#include "gui/interface.h"
 
 #include "libavutil/common.h"
 #include "libavutil/mathematics.h"
@@ -668,11 +667,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
     int_pause   = 0;
     visible_buf = 0;
 
-#ifdef CONFIG_GUI
-    if (use_gui)
-        guiGetEvent(guiSetShVideo, 0);  // the GUI will set up / resize our window
-    else
-#endif
     {
 #ifdef CONFIG_XF86VM
         if (vm)

@@ -55,20 +55,31 @@
 #include "url.h"
 #include "http.h"
 
-//#if !HAVE_CLOSESOCKET
-//#define closesocket close
-//#endif
+#ifndef GEKKO
+#if !HAVE_CLOSESOCKET
+#define closesocket close
+#endif
+#endif
 #if !HAVE_SOCKLEN_T
 typedef int socklen_t;
 #endif
 
-//#define BUFFER_SIZE		2048
-#define BUFFER_SIZE		4096
+#define BUFFER_SIZE		2048
 
 typedef struct {
 	const char *mime_type;
 	int demuxer_type;
 } mime_struct_t;
+
+extern char *cookies_file;
+extern char *network_password;
+extern char *network_referrer;
+extern char *network_useragent;
+extern char *network_username;
+
+extern int   network_bandwidth;
+extern int   network_cookies_enabled;
+extern int   network_ipv4_only_proxy;
 
 streaming_ctrl_t *streaming_ctrl_new(void);
 int streaming_bufferize( streaming_ctrl_t *streaming_ctrl, char *buffer, int size);

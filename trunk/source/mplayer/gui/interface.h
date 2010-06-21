@@ -160,6 +160,7 @@ extern guiInterface_t guiIntfStruct;
 #define guiALL		0xffffffff
 
 extern int use_gui;
+extern int guiWinID;
 
 void guiInit( void );
 void guiDone( void );
@@ -183,6 +184,7 @@ typedef struct urlItem
  char    * url;
 } URLItem;
 
+extern char   * skinName;
 extern plItem * plList;
 extern plItem * plCurrent;
 extern plItem * plLastPlayed;

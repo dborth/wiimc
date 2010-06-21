@@ -23,6 +23,11 @@
 extern int vo_panscan_x;
 extern int vo_panscan_y;
 extern float vo_panscan_amount;
+extern float monitor_aspect;
+extern float force_monitor_aspect;
+extern float monitor_pixel_aspect;
+extern float vo_panscanrange;
+
 
 void panscan_init(void);
 void panscan_calc(void);

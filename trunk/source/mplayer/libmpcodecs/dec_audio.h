@@ -19,7 +19,13 @@
 #ifndef MPLAYER_DEC_AUDIO_H
 #define MPLAYER_DEC_AUDIO_H
 
+#include "libaf/af.h"
 #include "libmpdemux/stheader.h"
+
+extern af_cfg_t af_cfg;
+
+extern int audio_output_channels;
+extern int fakemono;
 
 // dec_audio.c:
 void afm_help(void);

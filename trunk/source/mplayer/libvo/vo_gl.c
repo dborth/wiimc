@@ -14,6 +14,11 @@
  * You should have received a copy of the GNU General Public License along
  * with MPlayer; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * You can alternatively redistribute this file and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  */
 
 #include <stdio.h>
@@ -31,9 +36,6 @@
 
 #include "gl_common.h"
 #include "aspect.h"
-#ifdef CONFIG_GUI
-#include "gui/interface.h"
-#endif
 #include "fastmemcpy.h"
 #include "libass/ass_mp.h"
 
@@ -177,7 +179,7 @@ static void resize(int x,int y){
   mp_msg(MSGT_VO, MSGL_V, "[gl] Resize: %dx%d\n",x,y);
   if (WinID >= 0) {
     int top = 0, left = 0, w = x, h = y;
-    geometry(&top, &left, &w, &h, vo_screenwidth, vo_screenheight);
+    geometry(&top, &left, &w, &h, vo_dwidth, vo_dheight);
     mpglViewport(top, left, w, h);
   } else
     mpglViewport( 0, 0, x, y );
@@ -633,17 +635,9 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
   int_pause = 0;
   vo_flipped = !!(flags & VOFLAG_FLIPPING);
 
-#ifdef CONFIG_GUI
-  if (use_gui) {
-    // GUI creates and manages window for us
-    guiGetEvent(guiSetShVideo, 0);
-    goto glconfig;
-  }
-#endif
   if (create_window(d_width, d_height, flags, title) < 0)
     return -1;
 
-glconfig:
   if (vo_config_count)
     uninitGl();
   if (glctx.setGlWindow(&glctx) == SET_WINDOW_FAILED)
@@ -821,7 +815,6 @@ static void redraw(void) {
   flip_page();
 }
 
-//static inline uint32_t draw_slice_x11(uint8_t *src[], uint32_t slice_num)
 static int draw_slice(uint8_t *src[], int stride[], int w,int h,int x,int y)
 {
   mpi_flipped = stride[0] < 0;

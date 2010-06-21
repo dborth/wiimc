@@ -108,7 +108,13 @@ unsigned long        wsKeyTable[512];
 int                  wsUseXShm = 1;
 int                  wsUseXShape = 1;
 
-inline int wsSearch( Window win );
+static int wsSearch( Window win )
+{
+ int i;
+ for ( i=0;i<wsWLCount;i++ ) if ( wsWindowList[i] && wsWindowList[i]->WindowID == win ) return i;
+ return -1;
+}
+
 
 // ---
 
@@ -189,7 +195,7 @@ static int wsErrorHandler( Display * dpy, XErrorEvent * Event )
  fprintf(stderr,"[ws]  Request code: %d\n",Event->request_code );
  fprintf(stderr,"[ws]  Minor code: %d\n",Event->minor_code );
  fprintf(stderr,"[ws]  Modules: %s\n",current_module?current_module:"(NULL)" );
- exit( 0 );
+ return 0;
 }
 
 void wsXInit( void* mDisplay )
@@ -209,6 +215,8 @@ if(mDisplay){
    exit( 0 );
   }
 }
+
+ XSetErrorHandler( wsErrorHandler );
 
 /* enable DND atoms */
 wsXDNDInitialize();
@@ -330,7 +338,6 @@ wsXDNDInitialize();
      wsConvFunc=rgb32tobgr15;
      break;
   }
- XSetErrorHandler( wsErrorHandler );
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -545,13 +552,6 @@ void wsDestroyWindow( wsTWindow * win )
 // ----------------------------------------------------------------------------------------------
 //   Handle events.
 // ----------------------------------------------------------------------------------------------
-
-inline int wsSearch( Window win )
-{
- int i;
- for ( i=0;i<wsWLCount;i++ ) if ( wsWindowList[i] && wsWindowList[i]->WindowID == win ) return i;
- return -1;
-}
 
 Bool wsEvents( Display * display,XEvent * Event,XPointer arg )
 {

@@ -421,7 +421,7 @@ void cache_uninit(stream_t *s) {
   cachearg = NULL;
 #else  
   if(s->cache_pid) {
-#if defined(__MINGW32__) || defined(PTHREAD_CACHE) || defined(__OS2__)
+#if defined(__MINGW32__) || defined(PTHREAD_CACHE) || defined(__OS2__) || defined(GEKKO)
     cache_do_control(s, -2, NULL);
 #else
     kill(s->cache_pid,SIGKILL);
@@ -563,9 +563,9 @@ err_out:
     return res;
   }
 
-#if defined(__MINGW32__) || defined(PTHREAD_CACHE) || defined(__OS2__)
+#if defined(__MINGW32__) || defined(PTHREAD_CACHE) || defined(__OS2__) || defined(GEKKO)
 }
-#ifdef PTHREAD_CACHE || defined(GEKKO)
+#if defined(PTHREAD_CACHE) || defined(GEKKO)
 static void *ThreadProc( void *s ){
 #else
 static void ThreadProc( void *s ){

@@ -54,7 +54,7 @@
 export LC_ALL=C
 
 # Store the configure line that was used
-_configuration="$*"
+configuration="$*"
 
 # Prefer these macros to full length text !
 # These macros only return an error code - NO display is done
@@ -79,6 +79,15 @@ cc_check() {
 
 cxx_check() {
   compile_check $TMPCPP $@ -lstdc++
+}
+
+header_check() {
+  cat > $TMPC << EOF
+#include <$1>
+int main(void) { return 0; }
+EOF
+  shift
+  compile_check $TMPC $@
 }
 
 yasm_check() {
@@ -227,7 +236,6 @@ Optional features:
   --enable-gui           enable GMPlayer compilation (GTK+ GUI) [disable]
   --enable-gtk1          force using GTK 1.2 for the GUI  [disable]
   --disable-largefiles   disable support for files > 2GB [enable]
-  --enable-linux-devfs   set default devices to devfs [disable]
   --enable-termcap       use termcap database for key codes [autodetect]
   --enable-termios       use termios database for key codes [autodetect]
   --disable-iconv        disable iconv for encoding conversion [autodetect]
@@ -339,7 +347,8 @@ Codecs:
   --enable-libdca           enable libdca support [autodetect]
   --disable-mp3lib          disable builtin mp3lib [autodetect]
   --disable-liba52          disable liba52 [autodetect]
-  --disable-libmpeg2        disable builtin libmpeg2 [autodetect]
+  --disable-libmpeg2        disable libmpeg2 [autodetect]
+  --disable-libmpeg2-internal disable builtin libmpeg2 [autodetect]
   --disable-musepack        disable musepack support [autodetect]
   --disable-libopencore_amrnb disable libopencore_amr narrowband [autodetect]
   --disable-libopencore_amrwb disable libopencore_amr wideband [autodetect]
@@ -635,6 +644,7 @@ _mp3lib=auto
 _liba52=auto
 _libdca=auto
 _libmpeg2=auto
+_libmpeg2_internal=auto
 _faad=auto
 _faad_internal=auto
 _faad_fixed=no
@@ -721,7 +731,6 @@ _bl=no
 _largefiles=yes
 #language=en
 _shm=auto
-_linux_devfs=no
 _charset="UTF-8"
 _dynamic_plugins=no
 _crash_debug=no
@@ -1033,6 +1042,8 @@ for ac_option do
   --disable-libdca)     _libdca=no      ;;
   --enable-libmpeg2)    _libmpeg2=yes   ;;
   --disable-libmpeg2)   _libmpeg2=no    ;;
+  --enable-libmpeg2-internal)    _libmpeg2_internal=yes   ;;
+  --disable-libmpeg2-internal)   _libmpeg2_internal=no    ;;
   --enable-musepack)    _musepack=yes   ;;
   --disable-musepack)   _musepack=no    ;;
   --enable-faad)        _faad=yes       ;;
@@ -1232,8 +1243,6 @@ for ac_option do
   --disable-shm)        _shm=no         ;;
   --enable-select)      _select=yes     ;;
   --disable-select)     _select=no      ;;
-  --enable-linux-devfs)    _linux_devfs=yes ;;
-  --disable-linux-devfs)   _linux_devfs=no  ;;
   --enable-cdparanoia)  _cdparanoia=yes ;;
   --disable-cdparanoia) _cdparanoia=no  ;;
   --enable-cddb)        _cddb=yes       ;;
@@ -1524,7 +1533,7 @@ for I in "$TMPDIR" "$TEMPDIR" "/tmp" ; do
 done
 
 
-TMPLOG="configure.log"
+TMPLOG="config.log"
 TMPC="$I/mplayer-conf-$RANDOM-$$.c"
 TMPCPP="$I/mplayer-conf-$RANDOM-$$.cpp"
 TMPEXE="$I/mplayer-conf-$RANDOM-$$$_exesuf"
@@ -1532,7 +1541,7 @@ TMPH="$I/mplayer-conf-$RANDOM-$$.h"
 TMPS="$I/mplayer-conf-$RANDOM-$$.S"
 
 rm -f "$TMPLOG"
-echo configuration: $_configuration > "$TMPLOG"
+echo configuration: $configuration > "$TMPLOG"
 echo >> "$TMPLOG"
 
 
@@ -2076,6 +2085,9 @@ EOF
         cc_check -march=native && proc=native
       fi
       # --- AMD processors ---
+      if test "$proc" = "amdfam10"; then
+        cc_check -march=$proc $cpuopt=$proc || proc=k8
+      fi
       if test "$proc" = "k8"; then
         cc_check -march=$proc $cpuopt=$proc || proc=athlon-xp
       fi
@@ -3983,9 +3995,8 @@ echores "$_select"
 
 echocheck "gettimeofday()"
 cat > $TMPC << EOF
-#include <stdio.h>
 #include <sys/time.h>
-int main(void) {struct timeval tv_start; gettimeofday(&tv_start, NULL); return 0; }
+int main(void) {struct timeval tv; struct timezone tz; gettimeofday(&tv, &tz); return 0; }
 EOF
 _gettimeofday=no
 cc_check && _gettimeofday=yes
@@ -4782,34 +4793,6 @@ else
   novomodules="xvidix $novomodules"
 fi
 
-echocheck "/dev/mga_vid"
-if test "$_mga" = auto ; then
-  _mga=no
-  test -c /dev/mga_vid && _mga=yes
-fi
-if test "$_mga" = yes ; then
-  def_mga='#define CONFIG_MGA 1'
-  vomodules="mga $vomodules"
-else
-  def_mga='#undef CONFIG_MGA'
-  novomodules="mga $novomodules"
-fi
-echores "$_mga"
-
-echocheck "xmga"
-if test "$_xmga" = auto ; then
-  _xmga=no
-  test "$_x11" = yes && test "$_mga" = yes && _xmga=yes
-fi
-if test "$_xmga" = yes ; then
-  def_xmga='#define CONFIG_XMGA 1'
-  vomodules="xmga $vomodules"
-else
-  def_xmga='#undef CONFIG_XMGA'
-  novomodules="xmga $novomodules"
-fi
-echores "$_xmga"
-
 
 echocheck "GGI"
 if test "$_ggi" = auto ; then
@@ -5180,7 +5163,7 @@ if test "$_gif" = auto ; then
   _gif=no
 cat > $TMPC << EOF
 #include <gif_lib.h>
-int main(void) { return 0; }
+int main(void) { QuantizeBuffer(0, 0, 0, 0, 0, 0, 0, 0); return 0; }
 EOF
   for _ld_gif in "-lungif" "-lgif" ; do
     cc_check $_ld_gif && _gif=yes && break
@@ -5669,11 +5652,7 @@ fi
 if test "$_ossaudio" = yes ; then
   def_ossaudio='#define CONFIG_OSS_AUDIO 1'
   aomodules="oss $aomodules"
-  if test "$_linux_devfs" = yes; then
-    def_ossaudio_devdsp='#define PATH_DEV_DSP "/dev/sound/dsp"'
-    def_ossaudio_devmixer='#define PATH_DEV_MIXER "/dev/sound/mixer"'
-  else
-     cat > $TMPC << EOF
+  cat > $TMPC << EOF
 #include <sys/ioctl.h>
 #include <$_soundcard_header>
 #ifdef OPEN_SOUND_SYSTEM
@@ -5682,18 +5661,17 @@ int main(void) { return 0; }
 #error Not the real thing
 #endif
 EOF
-     _real_ossaudio=no
-     cc_check && _real_ossaudio=yes
-     if test "$_real_ossaudio" = yes; then
-       def_ossaudio_devdsp='#define PATH_DEV_DSP "/dev/dsp"'
-     elif netbsd || openbsd ; then
-       def_ossaudio_devdsp='#define PATH_DEV_DSP "/dev/sound"'
-       extra_ldflags="$extra_ldflags -lossaudio"
-     else
-       def_ossaudio_devdsp='#define PATH_DEV_DSP "/dev/dsp"'
-     fi
-    def_ossaudio_devmixer='#define PATH_DEV_MIXER "/dev/mixer"'
+  _real_ossaudio=no
+  cc_check && _real_ossaudio=yes
+  if test "$_real_ossaudio" = yes; then
+      def_ossaudio_devdsp='#define PATH_DEV_DSP "/dev/dsp"'
+  elif netbsd || openbsd ; then
+      def_ossaudio_devdsp='#define PATH_DEV_DSP "/dev/sound"'
+      extra_ldflags="$extra_ldflags -lossaudio"
+  else
+      def_ossaudio_devdsp='#define PATH_DEV_DSP "/dev/dsp"'
   fi
+  def_ossaudio_devmixer='#define PATH_DEV_MIXER "/dev/mixer"'
 else
   def_ossaudio='#undef CONFIG_OSS_AUDIO'
   def_ossaudio_devdsp='#define PATH_DEV_DSP ""'
@@ -6467,16 +6445,13 @@ _inc_tmp=""
 _ld_tmp=""
 if test "$_fribidi" = auto ; then
     cat > $TMPC << EOF
-#include <stdio.h>
 #include <stdlib.h>
 /* workaround for fribidi 0.10.4 and below */
 #define FRIBIDI_CHARSET_UTF8 FRIBIDI_CHAR_SET_UTF8
 #include <fribidi/fribidi.h>
 int main(void) {
-    if (fribidi_parse_charset("UTF-8") != FRIBIDI_CHAR_SET_UTF8) {
-       printf("Fribidi headers are not consistents with the library!\n");
+    if (fribidi_parse_charset("UTF-8") != FRIBIDI_CHAR_SET_UTF8)
        exit(1);
-    }
     return 0;
 }
 EOF
@@ -6833,26 +6808,46 @@ else
 fi
 echores "$_liba52"
 
-echocheck "internal libmpeg2 support"
-if test "$_libmpeg2" = auto ; then
-  _libmpeg2=yes
+
+echocheck "libmpeg2 support"
+if test "$_libmpeg2_internal" = auto ; then
   if alpha && test cc_vendor=gnu; then
     case $cc_version in
       2*|3.0*|3.1*) # cannot compile MVI instructions
-        _libmpeg2=no
-        res_comment="broken gcc"
+        _libmpeg2_internal=no
         ;;
     esac
+  else
+    _libmpeg2=yes
+    _libmpeg2_internal=yes
+    res_comment="internal"
   fi
 fi
+if test "$_libmpeg2" = auto ; then
+  _libmpeg2=no
+  cat > $TMPC << EOF
+#include <stdint.h>
+#include <mpeg2dec/mpeg2.h>
+int main(void) { return 0; }
+EOF
+  cc_check -lmpeg2 && _libmpeg2=yes && extra_ldflags="$extra_ldflags -lmpeg2"
+fi
+
+def_libmpeg2='#undef CONFIG_LIBMPEG2'
+def_libmpeg2_internal='#undef CONFIG_LIBMPEG2_INTERNAL'
 if test "$_libmpeg2" = yes ; then
   def_libmpeg2='#define CONFIG_LIBMPEG2 1'
-  codecmodules="libmpeg2(internal) $codecmodules"
+  if test "$_libmpeg2_internal" = yes ; then
+    def_libmpeg2_internal='#define CONFIG_LIBMPEG2_INTERNAL 1'
+    codecmodules="libmpeg2(internal) $codecmodules"
+  else
+    codecmodules="libmpeg2 $codecmodules"
+  fi
 else
-  def_libmpeg2='#undef CONFIG_LIBMPEG2'
-  nocodecmodules="libmpeg2(internal) $nocodecmodules"
+  nocodecmodules="libmpeg2 $nocodecmodules"
 fi
 echores "$_libmpeg2"
+
 
 echocheck "libdca support"
 if test "$_libdca" = auto ; then
@@ -7240,7 +7235,7 @@ if test "$_librtmp" = yes && test "$_network" = yes; then
 else
   nolibrtmp=yes
   _librtmp=no
-  def_librtmp='#undef CONFIG_LIBRTMP'
+  def_librtmp='#define CONFIG_LIBRTMP 0'
   noinputmodules="librtmp $noinputmodules"
 fi
 echores "$_librtmp"
@@ -7340,7 +7335,6 @@ elif test "$_libavformat_so" = auto ; then
   _libavformat_so=no
   cat > $TMPC <<EOF
   #include <libavformat/avformat.h>
-  #include <libavcodec/opt.h>
   int main(void) { av_alloc_format_context(); return 0; }
 EOF
   if $_pkg_config --exists libavformat ; then
@@ -7375,7 +7369,6 @@ if test "$_libpostproc_a" = auto ; then
 elif test "$_libpostproc_so" = auto ; then
   _libpostproc_so=no
   cat > $TMPC << EOF
-  #include <inttypes.h>
   #include <libpostproc/postprocess.h>
   int main(void) { pp_get_mode_by_name_and_quality("de", 0); return 0; }
 EOF
@@ -7430,6 +7423,34 @@ test "$_libswscale_a"  = yes && def_libswscale_a='#define CONFIG_LIBSWSCALE_A 1'
 test "$_libswscale_so" = yes \
   && def_libswscale_so='#define CONFIG_LIBSWSCALE_SO 1'
 echores "$_libswscale"
+
+echocheck "/dev/mga_vid"
+if test "$_mga" = auto ; then
+  _mga=no
+  test -c /dev/mga_vid && _mga=yes
+fi
+if test "$_mga" = yes ; then
+  def_mga='#define CONFIG_MGA 1'
+  vomodules="mga $vomodules"
+else
+  def_mga='#undef CONFIG_MGA'
+  novomodules="mga $novomodules"
+fi
+echores "$_mga"
+
+echocheck "xmga"
+if test "$_xmga" = auto ; then
+  _xmga=no
+  test "$_x11" = yes && test "$_mga" = yes && _xmga=yes
+fi
+if test "$_xmga" = yes ; then
+  def_xmga='#define CONFIG_XMGA 1'
+  vomodules="xmga $vomodules"
+else
+  def_xmga='#undef CONFIG_XMGA'
+  novomodules="xmga $novomodules"
+fi
+echores "$_xmga"
 
 echocheck "libopencore_amr narrowband"
 if test "$_libopencore_amrnb" = auto ; then
@@ -7547,7 +7568,7 @@ if test "$_x264" = auto ; then
   cat > $TMPC << EOF
 #include <inttypes.h>
 #include <x264.h>
-#if X264_BUILD < 89
+#if X264_BUILD < 98
 #error We do not support old versions of x264. Get the latest from git.
 #endif
 int main(void) { x264_encoder_open((void*)0); return 0; }
@@ -7659,6 +7680,7 @@ if test "$_libvpx_lavc" = auto; then
     cat > $TMPC << EOF
 #include <vpx/vpx_decoder.h>
 #include <vpx/vp8dx.h>
+struct vpx_codec_ctx decoder;
 int main(void) { vpx_codec_dec_init(NULL, &vpx_codec_vp8_dx_algo, NULL, 0); return 0; }
 EOF
     cc_check -lvpx && _libvpx_lavc=yes && extra_ldflags="$extra_ldflags -lvpx"
@@ -8520,7 +8542,7 @@ cat > config.mak << EOF
 # Ensure that locale settings do not interfere with shell commands.
 export LC_ALL = C
 
-CONFIGURATION = $_configuration
+CONFIGURATION = $configuration
 
 CHARSET = $_charset
 DOC_LANGS = $language_doc
@@ -8655,6 +8677,7 @@ LIBMAD = $_mad
 LIBMENU = $_menu
 LIBMENU_DVBIN = $_menu_dvbin
 LIBMPEG2 = $_libmpeg2
+LIBMPEG2_INTERNAL = $_libmpeg2_internal
 LIBNEMESI = $_nemesi
 LIBNUT = $_libnut
 LIBSMBCLIENT = $_smb
@@ -8770,6 +8793,7 @@ CC_O       = -o \$@
 LD         = gcc
 RANLIB     = $_ranlib
 YASM       = $_yasm
+YASMDEP    = $_yasm
 YASMFLAGS  = $YASMFLAGS
 
 CONFIG_STATIC = yes
@@ -8807,8 +8831,8 @@ CONFIG_LIBMP3LAME_ENCODER  = $_mp3lame_lavc
 CONFIG_LIBOPENCORE_AMRNB_DECODER = $_libopencore_amrnb
 CONFIG_LIBOPENCORE_AMRNB_ENCODER = $_libopencore_amrnb
 CONFIG_LIBOPENCORE_AMRWB_DECODER = $_libopencore_amrwb
-OCNFIG_LIBOPENJPEG_DECODER       = $libopenjpeg
-OCNFIG_LIBOPENJPEG_ENCODER       = $libopenjpeg
+CONFIG_LIBOPENJPEG_DECODER       = $libopenjpeg
+CONFIG_LIBOPENJPEG_ENCODER       = $libopenjpeg
 CONFIG_LIBSCHROEDINGER_DECODER   = $_libschroedinger_lavc
 CONFIG_LIBSCHROEDINGER_ENCODER   = $_libschroedinger_lavc
 CONFIG_LIBVORBIS_ENCODER   = $_libvorbis
@@ -8887,7 +8911,7 @@ cat > $TMPH << EOF
 
 
 
-#define CONFIGURATION "$_configuration"
+#define CONFIGURATION "$configuration"
 
 #define MPLAYER_DATADIR "$_datadir"
 #define MPLAYER_CONFDIR "$_confdir"
@@ -9031,6 +9055,7 @@ $def_libdca
 $def_libdv
 $def_liblzo
 $def_libmpeg2
+$def_libmpeg2_internal
 $def_mad
 $def_mp3lame
 $def_mp3lame_preset
@@ -9295,10 +9320,13 @@ $def_yasm
 #define HAVE_ATTRIBUTE_PACKED 1
 #define HAVE_GETHRTIME 0
 #define HAVE_INLINE_ASM 1
+#define HAVE_ISATTY 0
 #define HAVE_LDBRX 0
 #define HAVE_POLL_H 1
 #define HAVE_PPC4XX 0
 #define HAVE_STRERROR_R 0
+#define HAVE_SYMVER_ASM_LABEL 0
+#define HAVE_SYMVER_GNU_ASM 0
 #define HAVE_SYS_SELECT_H 0
 #define HAVE_VFP_ARGS 1
 #define HAVE_VIRTUALALLOC 0
@@ -9370,7 +9398,7 @@ cmp -s "$TMPH" libavutil/avconfig.h || mv -f "$TMPH" libavutil/avconfig.h
 
 cat << EOF
 
-Config files successfully generated by ./configure $_configuration !
+Config files successfully generated by ./configure $configuration !
 
   Install prefix: $_prefix
   Data directory: $_datadir

@@ -1,4 +1,4 @@
-// $Revision: 31032 $
+// $Revision: 31430 $
 // MASTER FILE. Use this file as base for translations.
 // Translated files should be sent to the mplayer-DOCS mailing list or
 // to the help messages maintainer, see DOCS/tech/MAINTAINERS.
@@ -837,8 +837,6 @@ static const char help_text[]=
 #define MSGTR_VO_CantCreateDirectory "Unable to create output directory."
 #define MSGTR_VO_CantCreateFile "Unable to create output file."
 #define MSGTR_VO_DirectoryCreateSuccess "Output directory successfully created."
-#define MSGTR_VO_ParsingSuboptions "Parsing suboptions."
-#define MSGTR_VO_SuboptionsParsedOK "Suboptions parsed OK."
 #define MSGTR_VO_ValueOutOfRange "value out of range"
 #define MSGTR_VO_NoValueSpecified "No value specified."
 #define MSGTR_VO_UnknownSuboptions "unknown suboption(s)"
@@ -948,7 +946,7 @@ static const char help_text[]=
 #define MSGTR_LIBVO_MGA_AspectResized "[VO_MGA] aspect(): resized to %dx%d.\n"
 #define MSGTR_LIBVO_MGA_Uninit "[VO] uninit!\n"
 
-// mga_common.c
+// mga_template.c
 #define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] error in mga_vid_config ioctl (wrong mga_vid.o version?)"
 #define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] Could not get luma values from the kernel module!\n"
 #define MSGTR_LIBVO_MGA_CouldNotSetLumaValuesFromTheKernelModule "[MGA] Could not set luma values from the kernel module!\n"
@@ -1110,9 +1108,7 @@ static const char help_text[]=
 // vo_yuv4mpeg.c
 #define MSGTR_VO_YUV4MPEG_InterlacedHeightDivisibleBy4 "Interlaced mode requires image height to be divisible by 4."
 #define MSGTR_VO_YUV4MPEG_InterlacedLineBufAllocFail "Unable to allocate line buffer for interlaced mode."
-#define MSGTR_VO_YUV4MPEG_InterlacedInputNotRGB "Input not RGB, can't separate chrominance by fields!"
 #define MSGTR_VO_YUV4MPEG_WidthDivisibleBy2 "Image width must be divisible by 2."
-#define MSGTR_VO_YUV4MPEG_NoMemRGBFrameBuf "Not enough memory to allocate RGB framebuffer."
 #define MSGTR_VO_YUV4MPEG_OutFileOpenError "Can't get memory or file handle to write \"%s\"!"
 #define MSGTR_VO_YUV4MPEG_OutFileWriteError "Error writing image to output!"
 #define MSGTR_VO_YUV4MPEG_UnknownSubDev "Unknown subdevice: %s"

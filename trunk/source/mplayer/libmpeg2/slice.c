@@ -23,7 +23,7 @@
  *
  * Modified for use with MPlayer, see libmpeg2_changes.diff for the exact changes.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: slice.c 29306 2009-05-13 15:22:13Z bircoph $
+ * $Id: slice.c 31395 2010-06-14 08:55:32Z lu_zero $
  */
 
 #include "config.h"

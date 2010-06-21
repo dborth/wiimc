@@ -214,6 +214,7 @@ typedef struct {
     int num_levels;
     MatroskaLevel levels[EBML_MAX_DEPTH];
     int level_up;
+    uint32_t current_id;
 
     uint64_t time_scale;
     double   duration;
@@ -234,7 +235,6 @@ typedef struct {
     AVPacket *prev_pkt;
 
     int done;
-    int has_cluster_id;
 
     /* What to skip before effectively reading a packet. */
     int skip_to_keyframe;
@@ -426,6 +426,7 @@ static EbmlSyntax matroska_simpletag[] = {
     { MATROSKA_ID_TAGSTRING,          EBML_UTF8, 0, offsetof(MatroskaTag,string) },
     { MATROSKA_ID_TAGLANG,            EBML_STR,  0, offsetof(MatroskaTag,lang), {.s="und"} },
     { MATROSKA_ID_TAGDEFAULT,         EBML_UINT, 0, offsetof(MatroskaTag,def) },
+    { MATROSKA_ID_TAGDEFAULT_BUG,     EBML_UINT, 0, offsetof(MatroskaTag,def) },
     { MATROSKA_ID_SIMPLETAG,          EBML_NEST, sizeof(MatroskaTag), offsetof(MatroskaTag,sub), {.n=matroska_simpletag} },
     { 0 }
 };
@@ -469,7 +470,7 @@ static EbmlSyntax matroska_segment[] = {
     { MATROSKA_ID_CUES,           EBML_NEST, 0, 0, {.n=matroska_index      } },
     { MATROSKA_ID_TAGS,           EBML_NEST, 0, 0, {.n=matroska_tags       } },
     { MATROSKA_ID_SEEKHEAD,       EBML_NEST, 0, 0, {.n=matroska_seekhead   } },
-    { MATROSKA_ID_CLUSTER,        EBML_STOP, 0, offsetof(MatroskaDemuxContext,has_cluster_id) },
+    { MATROSKA_ID_CLUSTER,        EBML_STOP },
     { 0 }
 };
 
@@ -517,7 +518,7 @@ static int ebml_level_end(MatroskaDemuxContext *matroska)
 
     if (matroska->num_levels > 0) {
         MatroskaLevel *level = &matroska->levels[matroska->num_levels - 1];
-        if (pos - level->start >= level->length) {
+        if (pos - level->start >= level->length || matroska->current_id) {
             matroska->num_levels--;
             return 1;
         }
@@ -656,7 +657,7 @@ static int ebml_read_binary(ByteIOContext *pb, int length, EbmlBin *bin)
  * are supposed to be sub-elements which can be read separately.
  * 0 is success, < 0 is failure.
  */
-static int ebml_read_master(MatroskaDemuxContext *matroska, int length)
+static int ebml_read_master(MatroskaDemuxContext *matroska, uint64_t length)
 {
     ByteIOContext *pb = matroska->ctx->pb;
     MatroskaLevel *level;
@@ -715,6 +716,10 @@ static int ebml_parse_id(MatroskaDemuxContext *matroska, EbmlSyntax *syntax,
     for (i=0; syntax[i].id; i++)
         if (id == syntax[i].id)
             break;
+    if (!syntax[i].id && id == MATROSKA_ID_CLUSTER &&
+        matroska->num_levels > 0 &&
+        matroska->levels[matroska->num_levels-1].length == 0xffffffffffffff)
+        return 0;  // we reached the end of an unknown size cluster
     if (!syntax[i].id && id != EBML_ID_VOID && id != EBML_ID_CRC32)
         av_log(matroska->ctx, AV_LOG_INFO, "Unknown entry 0x%X\n", id);
     return ebml_parse_elem(matroska, &syntax[i], data);
@@ -723,10 +728,14 @@ static int ebml_parse_id(MatroskaDemuxContext *matroska, EbmlSyntax *syntax,
 static int ebml_parse(MatroskaDemuxContext *matroska, EbmlSyntax *syntax,
                       void *data)
 {
-    uint64_t id;
-    int res = ebml_read_num(matroska, matroska->ctx->pb, 4, &id);
-    id |= 1 << 7*res;
-    return res < 0 ? res : ebml_parse_id(matroska, syntax, id, data);
+    if (!matroska->current_id) {
+        uint64_t id;
+        int res = ebml_read_num(matroska, matroska->ctx->pb, 4, &id);
+        if (res < 0)
+            return res;
+        matroska->current_id = id | 1 << 7*res;
+    }
+    return ebml_parse_id(matroska, syntax, matroska->current_id, data);
 }
 
 static int ebml_parse_nest(MatroskaDemuxContext *matroska, EbmlSyntax *syntax,
@@ -771,9 +780,11 @@ static int ebml_parse_elem(MatroskaDemuxContext *matroska,
         list->nb_elem++;
     }
 
-    if (syntax->type != EBML_PASS && syntax->type != EBML_STOP)
+    if (syntax->type != EBML_PASS && syntax->type != EBML_STOP) {
+        matroska->current_id = 0;
         if ((res = ebml_read_num(matroska, pb, 8, &length)) < 0)
             return res;
+    }
 
     switch (syntax->type) {
     case EBML_UINT:  res = ebml_read_uint  (pb, length, data);  break;
@@ -787,7 +798,7 @@ static int ebml_parse_elem(MatroskaDemuxContext *matroska,
                          matroska->segment_start = url_ftell(matroska->ctx->pb);
                      return ebml_parse_nest(matroska, syntax->def.n, data);
     case EBML_PASS:  return ebml_parse_id(matroska, syntax->def.n, id, data);
-    case EBML_STOP:  *(int *)data = 1;      return 1;
+    case EBML_STOP:  return 1;
     default:         return url_fseek(pb,length,SEEK_CUR)<0 ? AVERROR(EIO) : 0;
     }
     if (res == AVERROR_INVALIDDATA)
@@ -1060,8 +1071,14 @@ static void matroska_execute_seekhead(MatroskaDemuxContext *matroska)
     MatroskaSeekhead *seekhead = seekhead_list->elem;
     uint32_t level_up = matroska->level_up;
     int64_t before_pos = url_ftell(matroska->ctx->pb);
+    uint32_t saved_id = matroska->current_id;
     MatroskaLevel level;
     int i;
+
+    // we should not do any seeking in the streaming case
+    if (url_is_streamed(matroska->ctx->pb) ||
+        (matroska->ctx->flags & AVFMT_FLAG_IGNIDX))
+        return;
 
     for (i=0; i<seekhead_list->nb_elem; i++) {
         int64_t offset = seekhead[i].pos + matroska->segment_start;
@@ -1088,6 +1105,7 @@ static void matroska_execute_seekhead(MatroskaDemuxContext *matroska)
         level.length = (uint64_t)-1;
         matroska->levels[matroska->num_levels] = level;
         matroska->num_levels++;
+        matroska->current_id = 0;
 
         ebml_parse(matroska, matroska_segment, matroska);
 
@@ -1102,6 +1120,7 @@ static void matroska_execute_seekhead(MatroskaDemuxContext *matroska)
     /* seek back */
     url_fseek(matroska->ctx->pb, before_pos, SEEK_SET);
     matroska->level_up = level_up;
+    matroska->current_id = saved_id;
 }
 
 static int matroska_aac_profile(char *codec_id)
@@ -1139,7 +1158,7 @@ static int matroska_read_header(AVFormatContext *s, AVFormatParameters *ap)
     uint64_t max_start = 0;
     Ebml ebml = { 0 };
     AVStream *st;
-    int i, j;
+    int i, j, res;
 
     matroska->ctx = s;
 
@@ -1163,8 +1182,8 @@ static int matroska_read_header(AVFormatContext *s, AVFormatParameters *ap)
     ebml_free(ebml_syntax, &ebml);
 
     /* The next thing is a segment. */
-    if (ebml_parse(matroska, matroska_segments, matroska) < 0)
-        return -1;
+    if ((res = ebml_parse(matroska, matroska_segments, matroska)) < 0)
+        return res;
     matroska_execute_seekhead(matroska);
 
     if (!matroska->time_scale)
@@ -1781,15 +1800,9 @@ static int matroska_parse_cluster(MatroskaDemuxContext *matroska)
     int i, res;
     int64_t pos = url_ftell(matroska->ctx->pb);
     matroska->prev_pkt = NULL;
-    if (matroska->has_cluster_id){
-        /* For the first cluster we parse, its ID was already read as
-           part of matroska_read_header(), so don't read it again */
-        res = ebml_parse_id(matroska, matroska_clusters,
-                            MATROSKA_ID_CLUSTER, &cluster);
+    if (matroska->current_id)
         pos -= 4;  /* sizeof the ID which was already read */
-        matroska->has_cluster_id = 0;
-    } else
-        res = ebml_parse(matroska, matroska_clusters, &cluster);
+    res = ebml_parse(matroska, matroska_clusters, &cluster);
     blocks_list = &cluster.blocks;
     blocks = blocks_list->elem;
     for (i=0; i<blocks_list->nb_elem; i++)

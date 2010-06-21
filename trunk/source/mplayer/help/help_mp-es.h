@@ -842,8 +842,6 @@ static const char help_text[]=
 #define MSGTR_VO_CantCreateDirectory "No es posible crear el directorio de salida."
 #define MSGTR_VO_CantCreateFile "No es posible crear archivo de salida."
 #define MSGTR_VO_DirectoryCreateSuccess "Directorio de salida creado exitosamente."
-#define MSGTR_VO_ParsingSuboptions "Analizando subopciones."
-#define MSGTR_VO_SuboptionsParsedOK "Subopciones analizadas correctamente."
 #define MSGTR_VO_ValueOutOfRange "Valor fuera de rango"
 #define MSGTR_VO_NoValueSpecified "Valor no especificado."
 #define MSGTR_VO_UnknownSuboptions "Subopción(es) desconocida(s)"
@@ -952,7 +950,7 @@ static const char help_text[]=
 #define MSGTR_LIBVO_MGA_AspectResized "[VO_MGA] aspect(): redimencionado a %dx%d.\n"
 #define MSGTR_LIBVO_MGA_Uninit "[VO] uninit!\n"
 
-// mga_common.c
+// mga_template.c
 #define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] Error en mga_vid_config ioctl (versión de mga_vid.o erronea?)"
 #define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] No pude obtener los valores de luma desde el módulo del kernel!\n"
 #define MSGTR_LIBVO_MGA_CouldNotSetLumaValuesFromTheKernelModule "[MGA] No pude setear los valores de luma que obtuve desde el módulo del kernel!\n"

@@ -606,3 +606,15 @@ msgstr "自動連続再生"
 
 msgid "Adding files to playlist..."
 msgstr "再生リストに追加中.."
+
+msgid "Browser Folders"
+msgstr "フォルダ表示設定"
+
+msgid "Static"
+msgstr "固定"
+
+msgid "Use Last Browsed"
+msgstr "最後に表示したフォルダ"
+
+msgid "Audio Language"
+msgstr "音声の言語"

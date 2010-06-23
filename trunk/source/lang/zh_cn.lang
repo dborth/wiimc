@@ -603,3 +603,15 @@ msgstr "自动播放下一个视频"
 
 msgid "Adding files to playlist..."
 msgstr "正在添加播放列表..."
+
+msgid "Browser Folders"
+msgstr "查看文件夹"
+
+msgid "Static"
+msgstr "状态"
+
+msgid "Use Last Browsed"
+msgstr "使用最后查看过的"
+
+msgid "Audio Language"
+msgstr "音频语言"

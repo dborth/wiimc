@@ -5040,10 +5040,7 @@ typedef struct {
 
 bool wiiPlayingDVD()
 {
-	if(!playing_file || controlledbygui != 0)
-		return false;
-
-	if(!mpctx->stream)
+	if(!playing_file || !mpctx->stream)
 		return false;
 
 	if (mpctx->stream->type == STREAMTYPE_DVD || mpctx->stream->type == STREAMTYPE_DVDNAV)

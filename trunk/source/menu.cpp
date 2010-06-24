@@ -6256,7 +6256,6 @@ void WiiMenu()
 				MenuBrowse(MENU_BROWSE_VIDEOS);
 				break;
 		}
-		
 		usleep(THREAD_SLEEP);
 	}
 

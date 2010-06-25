@@ -611,10 +611,16 @@ msgid "Browser Folders"
 msgstr "フォルダ表示設定"
 
 msgid "Static"
-msgstr "固定"
+msgstr "表示中のフォルダに固定"
 
 msgid "Use Last Browsed"
 msgstr "最後に表示したフォルダ"
 
 msgid "Audio Language"
 msgstr "音声の言語"
+
+msgid "DVD Support"
+msgstr "ＤＶＤのサポート"
+
+msgid "Enabled"
+msgstr "有効"

@@ -113,6 +113,7 @@ struct SWiiSettings {
 	char	picturesFolder[MAXPATHLEN];
 	// DVD
 	int		dvdMenu;
+	int		dvdDisabled;
 	// Online Media
 	char	onlinemediaFolder[MAXPATHLEN];
 	// Network

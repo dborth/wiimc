@@ -164,12 +164,19 @@ static GuiImage * audiobarBackwardImg = NULL;
 static GuiImage * audiobarPauseImg = NULL;
 static GuiImage * audiobarForwardImg = NULL;
 static GuiImage * audiobarModeImg = NULL;
+static GuiImage * audiobarVolumeImg = NULL;
+static GuiImage * audiobarVolumeLevelImg = NULL;
+static GuiImage * audiobarVolumeLevelTopImg = NULL;
+static GuiImage * audiobarVolumeLevelMidImg = NULL;
+static GuiImage * audiobarVolumeLevelLineImg = NULL;
+static GuiImage * audiobarVolumeLevelBottomImg = NULL;
 
 static GuiTooltip * audiobarPlaylistTip = NULL;
 static GuiTooltip * audiobarBackwardTip = NULL;
 static GuiTooltip * audiobarPauseTip = NULL;
 static GuiTooltip * audiobarForwardTip = NULL;
 static GuiTooltip * audiobarModeTip = NULL;
+static GuiTooltip * audiobarVolumeTip = NULL;
 
 static GuiButton * audiobarProgressBtn = NULL;
 static GuiButton * audiobarPlaylistBtn = NULL;
@@ -177,6 +184,8 @@ static GuiButton * audiobarBackwardBtn = NULL;
 static GuiButton * audiobarPauseBtn = NULL;
 static GuiButton * audiobarForwardBtn = NULL;
 static GuiButton * audiobarModeBtn = NULL;
+static GuiButton * audiobarVolumeBtn = NULL;
+static GuiButton * audiobarVolumeLevelBtn = NULL;
 
 static GuiText * audiobarNowPlaying[4] = { NULL, NULL, NULL, NULL };
 static GuiButton * audiobarNowPlayingBtn = NULL;
@@ -515,7 +524,7 @@ extern "C" void DoMPlayerGuiDraw()
 	{
 		mainWindow->SetVisible(true);
 		mainWindow->SetState(STATE_DEFAULT);
-		HideVolumeLevelBar();
+		HideVideoVolumeLevelBar();
 		statusText->SetVisible(false);
 	}
 
@@ -576,6 +585,8 @@ static void *GuiThread (void *arg)
 			if(userInput[i].wpad->btns_d & (WPAD_BUTTON_1 | WPAD_CLASSIC_BUTTON_X))
 			{
 				int newMenu = menuCurrent + 1;
+				if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
+					newMenu++;
 				if(newMenu > MENU_SETTINGS)
 					newMenu = MENU_BROWSE_VIDEOS;
 				ChangeMenu(newMenu);
@@ -583,6 +594,8 @@ static void *GuiThread (void *arg)
 			else if(userInput[i].wpad->btns_d & (WPAD_BUTTON_2 | WPAD_CLASSIC_BUTTON_Y))
 			{
 				int newMenu = menuCurrent - 1;
+				if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
+					newMenu--;
 				if(newMenu < MENU_BROWSE_VIDEOS)
 					newMenu = MENU_SETTINGS;
 				ChangeMenu(newMenu);
@@ -1772,6 +1785,8 @@ static int LoadNewFile()
 	return 2; // playing audio
 }
 
+static void HideAudioVolumeLevelBar();
+
 static void MenuBrowse(int menu)
 {
 	ShutoffRumble();
@@ -1913,6 +1928,7 @@ static void MenuBrowse(int menu)
 	{
 		SuspendGui();
 		audiobar->SetState(STATE_DEFAULT);
+		HideAudioVolumeLevelBar();
 
 		if(menu == MENU_BROWSE_MUSIC) // add playlist functionality
 		{
@@ -4053,6 +4069,7 @@ static void MenuSettingsDVD()
 	OptionList options;
 
 	sprintf(options.name[i++], "DVD Menu");
+	sprintf(options.name[i++], "DVD Support");
 
 	options.length = i;
 
@@ -4107,14 +4124,16 @@ static void MenuSettingsDVD()
 			case 0:
 				WiiSettings.dvdMenu ^= 1;
 				break;
+			case 1:
+				WiiSettings.dvdDisabled ^= 1;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			
 			sprintf(options.value[0], "%s", WiiSettings.dvdMenu ? "Show" : "Skip to Main Title");
-
+			sprintf(options.value[1], "%s", WiiSettings.dvdDisabled ? "Disabled" : "Enabled");
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -4127,6 +4146,19 @@ static void MenuSettingsDVD()
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
+
+	if(WiiSettings.dvdDisabled)
+	{
+		dvdBtn->SetVisible(false);
+		dvdBtn->SetState(STATE_DISABLED);
+		onlineBtn->SetPosition(195, 30);
+	}
+	else
+	{
+		dvdBtn->SetVisible(true);
+		dvdBtn->ResetState();
+		onlineBtn->SetPosition(250, 30);
+	}
 }
 
 static void MenuSettingsOnlineMedia()
@@ -5187,18 +5219,18 @@ static void VideoVolumeLevelCallback(void * ptr)
 	videobarVolumeLevelMidImg->SetPosition(20, -90-tile*4);
 }
 
-bool VolumeLevelBarVisible()
+bool VideoVolumeLevelBarVisible()
 {
 	return videobarVolumeLevelBtn->IsVisible();
 }
 
-void ShowVolumeLevelBar()
+void ShowVideoVolumeLevelBar()
 {
 	videobarVolumeLevelBtn->SetVisible(true);
 	videobarVolumeLevelBtn->SetState(STATE_DEFAULT);
 }
 
-void HideVolumeLevelBar()
+void HideVideoVolumeLevelBar()
 {
 	videobarVolumeLevelBtn->SetVisible(false);
 	videobarVolumeLevelBtn->SetState(STATE_DISABLED);
@@ -5217,9 +5249,9 @@ static void VideoVolumeCallback(void * ptr)
 
 		// show/hide volume level bar
 		if(videobarVolumeLevelBtn->IsVisible())
-			HideVolumeLevelBar();
+			HideVideoVolumeLevelBar();
 		else
-			ShowVolumeLevelBar();
+			ShowVideoVolumeLevelBar();
 	}
 }
 
@@ -5274,7 +5306,7 @@ static void AudioProgressCallback(void * ptr)
 	{
 		if(b->GetStateChan() >= 0)
 		{
-			percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/300.0;
+			percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/360.0;
 			if(percent > 100) percent = 100;
 			else if(percent < 0) percent = 0;
 			done = total*percent;
@@ -5301,18 +5333,96 @@ static void AudioProgressCallback(void * ptr)
 	else if(percent >= 0.98)
 	{
 		audiobarProgressLeftImg->SetVisible(true);
-		audiobarProgressMidImg->SetTile(71);
+		audiobarProgressMidImg->SetTile(86);
 		audiobarProgressLineImg->SetVisible(false);
 		audiobarProgressRightImg->SetVisible(true);
 	}
 	else
 	{
 		audiobarProgressLeftImg->SetVisible(true);
-		int tile = 71*percent;
+		int tile = 86*percent;
 		audiobarProgressMidImg->SetTile(tile);
 		audiobarProgressLineImg->SetPosition(8 + tile*4, 60);
 		audiobarProgressLineImg->SetVisible(true);
 		audiobarProgressRightImg->SetVisible(false);
+	}
+}
+
+static void AudioVolumeLevelCallback(void * ptr)
+{
+	GuiButton * b = (GuiButton *)ptr;
+
+	if(b->GetState() == STATE_CLICKED)
+	{
+		if(b->GetStateChan() >= 0)
+		{
+			WiiSettings.volume = 100 - 100*((userInput[b->GetStateChan()].wpad->ir.y-5 - b->GetTop())/140.0);
+
+			if(WiiSettings.volume > 94)
+				WiiSettings.volume = 100;
+			else if(WiiSettings.volume < 8)
+				WiiSettings.volume = 0;
+
+			wiiSetVolume(WiiSettings.volume);
+		}
+		b->ResetState();
+	}
+
+	float percent = WiiSettings.volume/100.0;
+	int tile = 32*percent;
+
+	if(percent < 0.05)
+	{
+		audiobarVolumeLevelBottomImg->SetVisible(false);
+		audiobarVolumeLevelLineImg->SetVisible(false);
+		audiobarVolumeLevelTopImg->SetVisible(false);
+	}
+	else if(percent > 0.95)
+	{
+		audiobarVolumeLevelBottomImg->SetVisible(true);
+		audiobarVolumeLevelLineImg->SetVisible(false);
+		audiobarVolumeLevelTopImg->SetVisible(true);
+		tile = 32;
+	}
+	else
+	{
+		audiobarVolumeLevelBottomImg->SetVisible(true);
+		audiobarVolumeLevelLineImg->SetPosition(320, -90-tile*4);
+		audiobarVolumeLevelLineImg->SetVisible(true);
+		audiobarVolumeLevelTopImg->SetVisible(false);
+	}
+	audiobarVolumeLevelMidImg->SetTileVertical(tile);
+	audiobarVolumeLevelMidImg->SetPosition(320, -90-tile*4);
+}
+
+static void ShowAudioVolumeLevelBar()
+{
+	audiobarVolumeLevelBtn->SetVisible(true);
+	audiobarVolumeLevelBtn->SetState(STATE_DEFAULT);
+}
+
+static void HideAudioVolumeLevelBar()
+{
+	audiobarVolumeLevelBtn->SetVisible(false);
+	audiobarVolumeLevelBtn->SetState(STATE_DISABLED);
+	audiobarVolumeLevelTopImg->SetVisible(false);
+	audiobarVolumeLevelMidImg->SetTileVertical(0);
+	audiobarVolumeLevelLineImg->SetVisible(false);
+	audiobarVolumeLevelBottomImg->SetVisible(false);
+}
+
+static void AudioVolumeCallback(void * ptr)
+{
+	GuiButton * b = (GuiButton *)ptr;
+	if(b->GetState() == STATE_CLICKED)
+	{
+		b->ResetState();
+
+		// show/hide volume level bar
+		if(audiobarVolumeLevelBtn->IsVisible())
+			HideAudioVolumeLevelBar();
+		else
+			ShowAudioVolumeLevelBar();
 	}
 }
 
@@ -5679,9 +5789,9 @@ static void SetupGui()
 	audiobarLeftImg = new GuiImage(actionbarLeft);
 	audiobarMidImg = new GuiImage(actionbarMid);
 	audiobarMidImg->SetPosition(20, 0);
-	audiobarMidImg->SetTile(12); // 20x12 = 240
+	audiobarMidImg->SetTile(15); // 20x15 = 300
 	audiobarRightImg = new GuiImage(actionbarRight);
-	audiobarRightImg->SetPosition(260, 0);
+	audiobarRightImg->SetPosition(320, 0);
 
 	audiobarProgressImg = new GuiImage(&progressEmpty);
 	audiobarProgressLeftImg = new GuiImage(&progressLeft);
@@ -5707,12 +5817,32 @@ static void SetupGui()
 	audiobarForwardImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	audiobarModeImg = new GuiImage;
 	audiobarModeImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	audiobarVolumeImg = new GuiImage(actionbarVolume);
+	audiobarVolumeImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	audiobarVolumeLevelImg = new GuiImage(&volumeEmpty);
+	audiobarVolumeLevelImg->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+	audiobarVolumeLevelTopImg = new GuiImage(&volumeTop);
+	audiobarVolumeLevelTopImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	audiobarVolumeLevelTopImg->SetPosition(320, -220);
+	audiobarVolumeLevelTopImg->SetVisible(false);
+	audiobarVolumeLevelMidImg = new GuiImage(&volumeMid);
+	audiobarVolumeLevelMidImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	audiobarVolumeLevelMidImg->SetTileVertical(0);
+	audiobarVolumeLevelLineImg = new GuiImage(&volumeLine);
+	audiobarVolumeLevelLineImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	audiobarVolumeLevelLineImg->SetPosition(320, 0);
+	audiobarVolumeLevelLineImg->SetVisible(false);
+	audiobarVolumeLevelBottomImg = new GuiImage(&volumeBottom);
+	audiobarVolumeLevelBottomImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	audiobarVolumeLevelBottomImg->SetPosition(320, -90);
+	audiobarVolumeLevelBottomImg->SetVisible(false);
 
 	audiobarPlaylistTip = new GuiTooltip("Playlist");
 	audiobarBackwardTip = new GuiTooltip("Restart");
 	audiobarPauseTip = new GuiTooltip("Play");
 	audiobarForwardTip = new GuiTooltip("Next");
 	audiobarModeTip = new GuiTooltip("Single Play");
+	audiobarVolumeTip = new GuiTooltip("Volume");
 
 	UpdateAudiobarModeBtn();
 
@@ -5766,6 +5896,24 @@ static void SetupGui()
 	audiobarModeBtn->SetTrigger(trigA);
 	audiobarModeBtn->SetEffectGrow();
 	
+	audiobarVolumeLevelBtn = new GuiButton(audiobarVolumeLevelImg->GetWidth(), audiobarVolumeLevelImg->GetHeight());
+	audiobarVolumeLevelBtn->SetImage(audiobarVolumeLevelImg);
+	audiobarVolumeLevelBtn->SetPosition(320, -90);
+	audiobarVolumeLevelBtn->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	audiobarVolumeLevelBtn->SetTrigger(trigA);
+	audiobarVolumeLevelBtn->SetSelectable(false);
+	audiobarVolumeLevelBtn->SetVisible(false);
+	audiobarVolumeLevelBtn->SetState(STATE_DISABLED);
+	audiobarVolumeLevelBtn->SetUpdateCallback(AudioVolumeLevelCallback);
+
+	audiobarVolumeBtn = new GuiButton(40, 40);
+	audiobarVolumeBtn->SetPosition(310, 4);
+	audiobarVolumeBtn->SetImage(audiobarVolumeImg);
+	audiobarVolumeBtn->SetTooltip(audiobarVolumeTip);
+	audiobarVolumeBtn->SetTrigger(trigA);
+	audiobarVolumeBtn->SetUpdateCallback(AudioVolumeCallback);
+	audiobarVolumeBtn->SetEffectGrow();
+	
 	audiobarNowPlaying[0] = new GuiText("now playing", 16, (GXColor){160, 160, 160, 255});
 	audiobarNowPlaying[0]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	audiobarNowPlaying[0]->SetPosition(10, 0);
@@ -5775,10 +5923,10 @@ static void SetupGui()
 		audiobarNowPlaying[i] = new GuiText(NULL, 16, (GXColor){255, 255, 255, 255});
 		audiobarNowPlaying[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 		audiobarNowPlaying[i]->SetPosition(10, 20*i);
-		audiobarNowPlaying[i]->SetMaxWidth(screenwidth-370);
+		audiobarNowPlaying[i]->SetMaxWidth(screenwidth-430);
 	}
 
-	audiobarNowPlayingBtn = new GuiButton(screenwidth-370,80);
+	audiobarNowPlayingBtn = new GuiButton(screenwidth-430, 80);
 	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[0], 0);
 	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[1], 1);
 	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[2], 2);
@@ -5788,7 +5936,7 @@ static void SetupGui()
 	audiobarNowPlayingBtn->SetUpdateCallback(AudioNowPlayingCallback);
 	audiobarNowPlayingBtn->SetVisible(false);
 
-	audiobar2 = new GuiWindow(300, 80);
+	audiobar2 = new GuiWindow(360, 80);
 	audiobar2->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 
 	audiobar2->Append(audiobarLeftImg);
@@ -5804,6 +5952,12 @@ static void SetupGui()
 	audiobar2->Append(audiobarPauseBtn);
 	audiobar2->Append(audiobarForwardBtn);
 	audiobar2->Append(audiobarModeBtn);
+	audiobar2->Append(audiobarVolumeBtn);
+	audiobar2->Append(audiobarVolumeLevelBtn);
+	audiobar2->Append(audiobarVolumeLevelTopImg);
+	audiobar2->Append(audiobarVolumeLevelMidImg);
+	audiobar2->Append(audiobarVolumeLevelLineImg);
+	audiobar2->Append(audiobarVolumeLevelBottomImg);
 
 	audiobar = new GuiWindow(screenwidth-60, 80);
 	audiobar->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
@@ -6136,6 +6290,12 @@ void WiiMenu()
 	dvdBtn->SetEffectGrow();
 	dvdBtn->SetUpdateCallback(ChangeMenuDVD);
 
+	if(WiiSettings.dvdDisabled)
+	{
+		dvdBtn->SetVisible(false);
+		dvdBtn->SetState(STATE_DISABLED);
+	}
+
 	GuiTooltip onlineBtnTip("Online Media");
 	onlineBtnImg = new GuiImage(&online);
 	onlineBtnOnImg = new GuiImage(&onlineOn);
@@ -6145,7 +6305,11 @@ void WiiMenu()
 	onlineBtnHighlightImg.SetAlpha(128);
 	onlineBtn = new GuiButton(onlineBtnImg->GetWidth(), onlineBtnImg->GetHeight());
 	onlineBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	onlineBtn->SetPosition(250, 30);
+	if(WiiSettings.dvdDisabled)
+		onlineBtn->SetPosition(195, 30);
+	else
+		onlineBtn->SetPosition(250, 30);
+
 	onlineBtn->SetTooltip(&onlineBtnTip);
 	onlineBtn->SetImage(onlineBtnImg);
 	onlineBtn->SetImageOver(&onlineBtnOverImg);
@@ -6184,7 +6348,6 @@ void WiiMenu()
 	mainWindow->Append(settingsBtn);
 
 	StartGuiThreads();
-	ResumeGui();
 	EnableRumble();
 
 	// Load settings (only happens once)
@@ -6203,6 +6366,8 @@ void WiiMenu()
 		ExitRequested = 2;
 		while(1) usleep(THREAD_SLEEP);
 	}
+
+	ResumeGui();
 
 	while(!guiShutdown)
 	{
@@ -6344,7 +6509,7 @@ void MPlayerMenu()
 	mainWindow->Append(statusText);
 	mainWindow->SetVisible(false);
 	mainWindow->SetState(STATE_DISABLED);
-	HideVolumeLevelBar();
+	HideVideoVolumeLevelBar();
 	menuMode = 1; // switch to MPlayer GUI mode
 	EnableRumble();
 

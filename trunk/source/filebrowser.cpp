@@ -404,14 +404,17 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		}
 	}
 
-	AddBrowserEntry();
-	sprintf(browserList[browser.numEntries].filename, "dvd:");
-	sprintf(browserList[browser.numEntries].displayname, "Data DVD");
-	browserList[browser.numEntries].length = 0;
-	browserList[browser.numEntries].mtime = 0;
-	browserList[browser.numEntries].type = TYPE_FOLDER;
-	browserList[browser.numEntries].icon = ICON_DVD;
-	browser.numEntries++;
+	if(!WiiSettings.dvdDisabled)
+	{
+		AddBrowserEntry();
+		sprintf(browserList[browser.numEntries].filename, "dvd:");
+		sprintf(browserList[browser.numEntries].displayname, "Data DVD");
+		browserList[browser.numEntries].length = 0;
+		browserList[browser.numEntries].mtime = 0;
+		browserList[browser.numEntries].type = TYPE_FOLDER;
+		browserList[browser.numEntries].icon = ICON_DVD;
+		browser.numEntries++;
+	}
 
 	for(i=0; i < MAX_SHARES; i++)
 	{

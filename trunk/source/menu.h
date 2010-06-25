@@ -33,9 +33,9 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 void SuspendPictureThread();
 void ChangeLanguage();
 void ChangeTheme();
-bool VolumeLevelBarVisible();
-void ShowVolumeLevelBar();
-void HideVolumeLevelBar();
+bool VideoVolumeLevelBarVisible();
+void ShowVideoVolumeLevelBar();
+void HideVideoVolumeLevelBar();
 void UndoChangeMenu();
 void RemoveVideoImg();
 

@@ -332,7 +332,7 @@ prepareSettingsData ()
 	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
 	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
-	createXMLSetting("lockFolders", "Lock folders", toStr(WiiSettings.lockFolders));
+	createXMLSetting("lockFolders", "Static folders", toStr(WiiSettings.lockFolders));
 	// Videos
 	createXMLSection("Videos", "Videos Settings");
 	createXMLSetting("videoZoomHor", "Horizontal video zoom", FtoStr(WiiSettings.videoZoomHor));
@@ -359,6 +359,7 @@ prepareSettingsData ()
 	// DVD
 	createXMLSection("DVD", "DVD Settings");
 	createXMLSetting("dvdMenu", "DVD Menu", toStr(WiiSettings.dvdMenu));
+	createXMLSetting("dvdDisabled", "DVD Disabled", toStr(WiiSettings.dvdDisabled));
 	// Online Media
 	createXMLSection("Online Media", "Online Media Settings");
 	createXMLSetting("onlinemediaFolder", "Online media folder", WiiSettings.onlinemediaFolder);
@@ -579,6 +580,7 @@ void DefaultSettings ()
 	WiiSettings.picturesFolder[0] = 0;
 	// DVD
 	WiiSettings.dvdMenu = 1;
+	WiiSettings.dvdDisabled = 0;
 	// Online Media
 	WiiSettings.onlinemediaFolder[0] = 0;
 	// Network
@@ -687,6 +689,8 @@ static void FixInvalidSettings()
 	// DVD
 	if(WiiSettings.dvdMenu != 0 && WiiSettings.dvdMenu != 1)
 		WiiSettings.dvdMenu = 1;
+	if(WiiSettings.dvdDisabled != 0 && WiiSettings.dvdDisabled != 1)
+		WiiSettings.dvdDisabled = 0;
 
 	// Online Media
 	if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
@@ -954,6 +958,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(WiiSettings.picturesFolder, "picturesFolder", sizeof(WiiSettings.picturesFolder));
 				// DVD
 				loadXMLSetting(&WiiSettings.dvdMenu, "dvdMenu");
+				loadXMLSetting(&WiiSettings.dvdDisabled, "dvdDisabled");
 				// Online Media
 				loadXMLSetting(WiiSettings.onlinemediaFolder, "onlinemediaFolder", sizeof(WiiSettings.onlinemediaFolder));
 				// Network

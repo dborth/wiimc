@@ -170,7 +170,7 @@ void MPlayerInput()
 			int y = userInput[i].wpad->ir.y;
 
 			if(!drawGui || (y < 360 && 
-				(!VolumeLevelBarVisible() || !(x > 20 && x < 100 && y > 180))))
+				(!VideoVolumeLevelBarVisible() || !(x > 20 && x < 100 && y > 180))))
 			{
 				wiiPause();
 			}
@@ -194,7 +194,7 @@ void MPlayerInput()
 				if(WiiSettings.volume > 100) WiiSettings.volume = 100;
 				wiiSetVolume(WiiSettings.volume);
 				volumeUpdated = true;
-				ShowVolumeLevelBar();
+				ShowVideoVolumeLevelBar();
 			}
 		}
 		else if(userInput[i].wpad->btns_h & WPAD_BUTTON_MINUS)
@@ -208,7 +208,7 @@ void MPlayerInput()
 				if(WiiSettings.volume < 0) WiiSettings.volume = 0;
 				wiiSetVolume(WiiSettings.volume);
 				volumeUpdated = true;
-				ShowVolumeLevelBar();
+				ShowVideoVolumeLevelBar();
 			}
 		}
 		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
@@ -268,7 +268,7 @@ void MPlayerInput()
 	else if(drawGui)
 	{
 		drawGui = false;
-		HideVolumeLevelBar();
+		HideVideoVolumeLevelBar();
 		ShutoffRumble();
 	}
 }

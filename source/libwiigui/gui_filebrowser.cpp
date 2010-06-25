@@ -194,7 +194,7 @@ void GuiFileBrowser::MakeEntry(int i)
 	fileListIcon[i] = new GuiImage;
 	fileListIcon[i]->SetPosition(0, -2);
 
-	fileList[i] = new GuiButton(width-92, 32);
+	fileList[i] = new GuiButton(width-110, 32);
 	fileList[i]->SetParent(this);
 	fileList[i]->SetLabel(fileListText[i]);
 	fileList[i]->SetImage(fileListBg[i]);

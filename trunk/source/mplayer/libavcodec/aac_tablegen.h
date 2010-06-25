@@ -1,6 +1,7 @@
 /*
- * Microsoft RTP/ASF support.
- * Copyright (c) 2008 Ronald S. Bultje
+ * Header file for hardcoded AAC tables
+ *
+ * Copyright (c) 2010 Alex Converse <alex.converse@gmail.com>
  *
  * This file is part of FFmpeg.
  *
@@ -19,25 +20,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVFORMAT_RTP_ASF_H
-#define AVFORMAT_RTP_ASF_H
+#ifndef AAC_TABLEGEN_H
+#define AAC_TABLEGEN_H
 
-#include "avformat.h"
-#include "rtpdec.h"
+#include "aac_tablegen_decl.h"
 
-/**
- * Parse a Windows Media Server-specific SDP line
- *
- * @param s RTSP demux context
- * @param line the SDP line to be parsed
- */
-void ff_wms_parse_sdp_a_line(AVFormatContext *s, const char *p);
+#if CONFIG_HARDCODED_TABLES
+#include "libavcodec/aac_tables.h"
+#else
+#include "../libavutil/mathematics.h"
+float ff_aac_pow2sf_tab[428];
 
-/**
- * Handlers for the x-asf-pf payloads (the payload ID for RTP/ASF).
- * Defined and implemented in rtp_asf.c, registered in rtpdec.c.
- */
-extern RTPDynamicProtocolHandler ff_ms_rtp_asf_pfv_handler,
-                                 ff_ms_rtp_asf_pfa_handler;
+void ff_aac_tableinit(void)
+{
+    int i;
+    for (i = 0; i < 428; i++)
+        ff_aac_pow2sf_tab[i] = pow(2, (i - 200) / 4.);
+}
+#endif /* CONFIG_HARDCODED_TABLES */
 
-#endif /* AVFORMAT_RTP_ASF_H */
+#endif /* AAC_TABLEGEN_H */

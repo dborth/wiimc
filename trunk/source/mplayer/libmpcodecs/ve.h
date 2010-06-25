@@ -1,6 +1,4 @@
 /*
- * Get path to config dir/file.
- *
  * This file is part of MPlayer.
  *
  * MPlayer is free software; you can redistribute it and/or modify
@@ -18,10 +16,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MPLAYER_GET_PATH_H
-#define MPLAYER_GET_PATH_H
+#ifndef MPLAYER_VE_H
+#define MPLAYER_VE_H
 
-char *get_path(const char *filename);
-void set_path_env(void);
+#include "m_option.h"
 
-#endif /* MPLAYER_GET_PATH_H */
+extern const m_option_t lavcopts_conf[];
+extern const m_option_t vfwopts_conf[];
+extern const m_option_t xvidencopts_conf[];
+
+#endif /* MPLAYER_VE_H */

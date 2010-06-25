@@ -29,7 +29,7 @@
 #include "config.h"
 #include "timer.h"
 
-const char *timer_name =
+const char timer_name[] =
 #ifdef HAVE_NANOSLEEP
     "nanosleep()";
 #else
@@ -86,17 +86,3 @@ void InitTimer(void)
 {
     GetRelativeTime();
 }
-
-
-#if 0
-#include <stdio.h>
-int main(void)
-{
-    float t = 0;
-    InitTimer();
-    while (1) {
-        t += GetRelativeTime();
-        printf("time = %10.6f\r", t);
-        fflush(stdout); }
-}
-#endif

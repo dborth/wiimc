@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2008 Siarhei Siamashka <ssvb@users.sourceforge.net>
+ * Header file for hardcoded AAC tables
+ *
+ * Copyright (c) 2010 Alex Converse <alex.converse@gmail.com>
  *
  * This file is part of FFmpeg.
  *
@@ -18,18 +20,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavcodec/dsputil.h"
+#ifndef AAC_TABLEGEN_INIT_H
+#define AAC_TABLEGEN_INIT_H
 
-void ff_vector_fmul_vfp(float *dst, const float *src, int len);
-void ff_vector_fmul_reverse_vfp(float *dst, const float *src0,
-                                const float *src1, int len);
-void ff_float_to_int16_vfp(int16_t *dst, const float *src, long len);
+#if CONFIG_HARDCODED_TABLES
+#define ff_aac_tableinit()
+extern const float ff_aac_pow2sf_tab[428];
+#else
+void ff_aac_tableinit(void);
+extern       float ff_aac_pow2sf_tab[428];
+#endif /* CONFIG_HARDCODED_TABLES */
 
-void ff_float_init_arm_vfp(DSPContext* c, AVCodecContext *avctx)
-{
-    c->vector_fmul = ff_vector_fmul_vfp;
-    c->vector_fmul_reverse = ff_vector_fmul_reverse_vfp;
-#if HAVE_ARMV6
-    c->float_to_int16 = ff_float_to_int16_vfp;
-#endif
-}
+#endif /* AAC_TABLEGEN_INIT_H */

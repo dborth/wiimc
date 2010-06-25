@@ -79,6 +79,24 @@
 #define DEFAULT_FREEDB_SERVER "freedb.freedb.org"
 #define DEFAULT_CACHE_DIR     "/.cddb/"
 
+typedef struct {
+	char cddb_hello[1024];
+	unsigned long disc_id;
+	unsigned int tracks;
+	char *cache_dir;
+	char *freedb_server;
+	int freedb_proto_level;
+	int anonymous;
+	char category[100];
+	char *xmcd_file;
+	size_t xmcd_file_size;
+	void *user_data;
+} cddb_data_t;
+
+typedef struct {
+	unsigned int min, sec, frame;
+} cd_toc_t;
+
 static cd_toc_t cdtoc[100];
 static int cdtoc_last_track;
 
@@ -719,35 +737,6 @@ static int cddb_get_proto_level(cddb_data_t *cddb_data)
     return cddb_http_request("stat", cddb_proto_level_parse, cddb_data);
 }
 
-static int cddb_freedb_sites_parse(HTTP_header_t *http_hdr, cddb_data_t *cddb_data)
-{
-    int ret, status;
-
-    ret = sscanf(http_hdr->body, "%d ", &status);
-    if (ret != 1) {
-        mp_msg(MSGT_DEMUX, MSGL_ERR, MSGTR_ParseError);
-        return -1;
-    }
-
-    switch (status) {
-    case 210:
-        // TODO: Parse the sites
-        ret = cddb_data->anonymous;    // For gcc complaining about unused parameter.
-        return 0;
-    case 401:
-        mp_msg(MSGT_DEMUX, MSGL_FIXME, MSGTR_MPDEMUX_CDDB_NoSitesInfoAvailable);
-        break;
-    default:
-        mp_msg(MSGT_DEMUX, MSGL_FIXME, MSGTR_MPDEMUX_CDDB_UnhandledCode);
-    }
-    return -1;
-}
-
-static int cddb_get_freedb_sites(cddb_data_t *cddb_data)
-{
-    return cddb_http_request("sites", cddb_freedb_sites_parse, cddb_data);
-}
-
 static void cddb_create_hello(cddb_data_t *cddb_data)
 {
     char host_name[51];
@@ -796,8 +785,6 @@ static int cddb_retrieve(cddb_data_t *cddb_data)
                MSGTR_MPDEMUX_CDDB_FailedToGetProtocolLevel);
         return -1;
     }
-
-    //cddb_get_freedb_sites(&cddb_data);
 
     sprintf(command, "cddb+query+%08lx+%d+%s%d", cddb_data->disc_id,
             cddb_data->tracks, offsets, time_len);

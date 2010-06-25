@@ -31,7 +31,7 @@
 #include "aacsbr.h"
 #include "aacsbrdata.h"
 #include "fft.h"
-#include "ps.h"
+#include "aacps.h"
 
 #include <stdint.h>
 #include <float.h>
@@ -379,8 +379,7 @@ static int sbr_make_f_master(AACContext *ac, SpectralBandReplication *sbr,
     }
 
     if (!spectrum->bs_freq_scale) {
-        unsigned int dk;
-        int k2diff;
+        int dk, k2diff;
 
         dk = spectrum->bs_alter_scale + 1;
         sbr->n_master = ((sbr->k[2] - sbr->k[0] + (dk&2)) >> dk) << 1;
@@ -393,7 +392,7 @@ static int sbr_make_f_master(AACContext *ac, SpectralBandReplication *sbr,
         k2diff = sbr->k[2] - sbr->k[0] - sbr->n_master * dk;
         if (k2diff < 0) {
             sbr->f_master[1]--;
-            sbr->f_master[2]-= (k2diff < 1);
+            sbr->f_master[2]-= (k2diff < -1);
         } else if (k2diff) {
             sbr->f_master[sbr->n_master]++;
         }

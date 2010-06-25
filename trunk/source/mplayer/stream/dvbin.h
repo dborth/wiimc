@@ -2,7 +2,7 @@
  *
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: dvbin.h 30818 2010-03-02 19:57:17Z diego $
+ * $Id: dvbin.h 31516 2010-06-21 14:39:24Z diego $
  */
 
 #ifndef MPLAYER_DVBIN_H
@@ -15,6 +15,7 @@
 #define LOF1 (9750*1000UL)
 #define LOF2 (10600*1000UL)
 
+#include <inttypes.h>
 #include <linux/dvb/dmx.h>
 #include <linux/dvb/frontend.h>
 #include <linux/dvb/version.h>
@@ -36,8 +37,6 @@
 
 #define DVB_CHANNEL_LOWER -1
 #define DVB_CHANNEL_HIGHER 1
-
-#include "inttypes.h"
 
 #ifndef DMX_FILTER_SIZE
 #define DMX_FILTER_SIZE 16

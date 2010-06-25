@@ -20,6 +20,7 @@
 #define MPLAYER_STREAM_H
 
 #include "config.h"
+#include "m_option.h"
 #include "mp_msg.h"
 #include "url.h"
 #include <string.h>
@@ -152,7 +153,9 @@ typedef struct stream {
   unsigned int buf_pos,buf_len;
   off_t pos,start_pos,end_pos;
   int eof;
+#ifdef GEKKO
   int error;
+#endif
   int mode; //STREAM_READ or STREAM_WRITE
   unsigned int cache_pid;
   void* cache_data;
@@ -253,8 +256,9 @@ inline static unsigned int stream_read_int24(stream_t *s){
   y=(y<<8)|stream_read_char(s);
   return y;
 }
+#ifdef GEKKO
 int stream_read(stream_t *s,char* mem,int total);
-/*
+#else
 inline static int stream_read(stream_t *s,char* mem,int total){
   int len=total;
   while(len>0){
@@ -271,8 +275,7 @@ inline static int stream_read(stream_t *s,char* mem,int total){
   }
   return total;
 }
-*/
-
+#endif
 unsigned char* stream_read_line(stream_t *s,unsigned char* mem, int max, int utf16);
 
 inline static int stream_eof(stream_t *s){
@@ -340,6 +343,11 @@ extern int vcd_track;
 
 extern char * audio_stream;
 extern char *cdrom_device;
+extern char *dvd_device;
+
+extern const m_option_t dvbin_opts_conf[];
+
+extern char *rtsp_destination;
 
 typedef struct {
  int id; // 0 - 31 mpeg; 128 - 159 ac3; 160 - 191 pcm

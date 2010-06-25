@@ -26,7 +26,7 @@
 #include <sys/time.h>
 #include "timer.h"
 
-const char *timer_name = "gekko";
+const char timer_name[] = "gekko";
 
 
 /*

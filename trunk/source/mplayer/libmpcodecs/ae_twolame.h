@@ -20,12 +20,9 @@
 #define MPLAYER_AE_TWOLAME_H
 
 #include "ae.h"
-#include <twolame.h>
+#include "m_option.h"
 
-typedef struct {
-	twolame_options *twolame_ctx;
-	int vbr;
-} mpae_twolame_ctx;
+extern const m_option_t twolameopts_conf[];
 
 int mpae_init_twolame(audio_encoder_t *encoder);
 

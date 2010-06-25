@@ -1,6 +1,7 @@
 /*
- * RTP Vorbis Protocol (RFC 5215)
- * Copyright (c) 2009 Colin McQuillan
+ * Generate a header file for hardcoded AAC tables
+ *
+ * Copyright (c) 2010 Alex Converse <alex.converse@gmail.com>
  *
  * This file is part of FFmpeg.
  *
@@ -19,27 +20,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVFORMAT_RTP_VORBIS_H
-#define AVFORMAT_RTP_VORBIS_H
+#include <stdlib.h>
+#define CONFIG_HARDCODED_TABLES 0
+#include "aac_tablegen.h"
+#include "tableprint.h"
 
-#include "libavcodec/avcodec.h"
-#include "rtpdec.h"
+int main(void)
+{
+    ff_aac_tableinit();
 
-/**
- * Handle a Vorbis-specific FMTP parameter
- *
- * @param codec The context of the codec
- * @param ctx Private Vorbis RTP context
- * @param attr Format-specific parameter name
- * @param value Format-specific paremeter value
- */
-int
-ff_vorbis_parse_fmtp_config(AVCodecContext * codec,
-                            void *ctx, char *attr, char *value);
+    write_fileheader();
 
-/**
- * Vorbis RTP callbacks.
- */
-extern RTPDynamicProtocolHandler ff_vorbis_dynamic_handler;
+    printf("const float ff_aac_pow2sf_tab[428] = {\n");
+    write_float_array(ff_aac_pow2sf_tab, 428);
+    printf("};\n");
 
-#endif /* AVFORMAT_RTP_VORBIS_H */
+    return 0;
+}

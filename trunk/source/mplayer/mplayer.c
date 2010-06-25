@@ -193,7 +193,7 @@ bool FindNextFile(bool load);
 static void low_cache_loop(void);
 static float timing_sleep(float time_frame);
 static void delete_restore_point(char *_filename);
-static void save_restore_point(char *_filename, int position);
+static void save_restore_point(char *_filename);
 static int load_restore_point(char *_filename);
 static void remove_subtitles();
 static void reload_subtitles();
@@ -4377,7 +4377,7 @@ if(benchmark){
                total_frame_cnt,
                (total_time_usage>0.5)?(total_frame_cnt/total_time_usage):0);
 }
-save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
+save_restore_point(fileplaying);
 // time to uninit all, except global stuff:
 printf("mplayer: end film. UNINIT\n");
 //uninit_player(INITIALIZED_ALL);
@@ -4510,17 +4510,22 @@ static void delete_restore_point(char *_filename)
 	}
 }
 
-static void save_restore_point(char *_filename, int position)
+static void save_restore_point(char *_filename)
 {
 	int i;
 
 	if(!enable_restore_points || strlen(_filename) == 0)
 		return;
 
+	if(!mpctx->demuxer || !mpctx->sh_video)
+		return;
+
 	if(	strncmp(_filename,"dvd:",4) == 0 || 
 		strncmp(_filename,"dvdnav:",7) == 0 || 
 		strncmp(_filename,"http:",5) == 0)
 		return;
+
+	int position = demuxer_get_current_time(mpctx->demuxer);
 
 	if(position <= 8 || !( mpctx->demuxer->seekable))
 	{
@@ -4703,7 +4708,7 @@ void PauseAndGotoGUI()
 		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
 
 	if(mpctx->sh_video)
-		save_restore_point(fileplaying,demuxer_get_current_time(mpctx->demuxer));
+		save_restore_point(fileplaying);
 
 	stop_cache_thread = 1;
 	while(!CacheThreadSuspended())

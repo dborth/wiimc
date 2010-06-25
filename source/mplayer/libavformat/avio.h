@@ -31,6 +31,7 @@
 #include <stdint.h>
 
 #include "libavutil/common.h"
+#include "libavutil/log.h"
 
 /* unbuffered I/O */
 
@@ -51,6 +52,7 @@ typedef struct URLContext {
     int max_packet_size;  /**< if non zero, the stream is packetized with this max packet size */
     void *priv_data;
     char *filename; /**< specified URL */
+    int is_connected;
 } URLContext;
 
 typedef struct URLPollEntry {
@@ -78,6 +80,24 @@ typedef int URLInterruptCB(void);
  */
 int url_open_protocol (URLContext **puc, struct URLProtocol *up,
                        const char *url, int flags);
+
+/**
+ * Creates an URLContext for accessing to the resource indicated by
+ * url, but doesn't initiate the connection yet.
+ *
+ * @param puc pointer to the location where, in case of success, the
+ * function puts the pointer to the created URLContext
+ * @param flags flags which control how the resource indicated by url
+ * is to be opened
+ * @return 0 in case of success, a negative value corresponding to an
+ * AVERROR code in case of failure
+ */
+int url_alloc(URLContext **h, const char *url, int flags);
+
+/**
+ * Connect an URLContext that has been allocated by url_alloc
+ */
+int url_connect(URLContext *h);
 
 /**
  * Creates an URLContext for accessing to the resource indicated by
@@ -232,6 +252,8 @@ typedef struct URLProtocol {
     int64_t (*url_read_seek)(URLContext *h, int stream_index,
                              int64_t timestamp, int flags);
     int (*url_get_file_handle)(URLContext *h);
+    int priv_data_size;
+    const AVClass *priv_data_class;
 } URLProtocol;
 
 #if LIBAVFORMAT_VERSION_MAJOR < 53
@@ -252,12 +274,19 @@ URLProtocol *av_protocol_next(URLProtocol *p);
  * @deprecated Use av_register_protocol() instead.
  */
 attribute_deprecated int register_protocol(URLProtocol *protocol);
+
+/**
+ * @deprecated Use av_register_protocol2() instead.
+ */
+attribute_deprecated int av_register_protocol(URLProtocol *protocol);
 #endif
 
 /**
  * Registers the URLProtocol protocol.
+ *
+ * @param size the size of the URLProtocol struct referenced
  */
-int av_register_protocol(URLProtocol *protocol);
+int av_register_protocol2(URLProtocol *protocol, int size);
 
 /**
  * Bytestream IO Context.

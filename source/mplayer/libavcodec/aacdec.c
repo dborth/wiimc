@@ -537,7 +537,6 @@ static void reset_predictor_group(PredictorState *ps, int group_num)
 static av_cold int aac_decode_init(AVCodecContext *avctx)
 {
     AACContext *ac = avctx->priv_data;
-    int i;
 
     ac->avctx = avctx;
     ac->m4ac.sample_rate = avctx->sample_rate;
@@ -581,10 +580,7 @@ static av_cold int aac_decode_init(AVCodecContext *avctx)
         ac->sf_offset = 60;
     }
 
-#if !CONFIG_HARDCODED_TABLES
-    for (i = 0; i < 428; i++)
-        ff_aac_pow2sf_tab[i] = pow(2, (i - 200) / 4.);
-#endif /* CONFIG_HARDCODED_TABLES */
+    ff_aac_tableinit();
 
     INIT_VLC_STATIC(&vlc_scalefactors,7,FF_ARRAY_ELEMS(ff_aac_scalefactor_code),
                     ff_aac_scalefactor_bits, sizeof(ff_aac_scalefactor_bits[0]), sizeof(ff_aac_scalefactor_bits[0]),
@@ -1985,7 +1981,7 @@ static int aac_decode_frame(AVCodecContext *avctx, void *data,
     enum RawDataBlockType elem_type, elem_type_prev = TYPE_END;
     int err, elem_id, data_size_tmp;
     int buf_consumed;
-    int samples = 1024, multiplier;
+    int samples = 0, multiplier;
     int buf_offset;
 
     init_get_bits(&gb, buf, buf_size * 8);
@@ -2006,9 +2002,13 @@ static int aac_decode_frame(AVCodecContext *avctx, void *data,
     while ((elem_type = get_bits(&gb, 3)) != TYPE_END) {
         elem_id = get_bits(&gb, 4);
 
-        if (elem_type < TYPE_DSE && !(che=get_che(ac, elem_type, elem_id))) {
-            av_log(ac->avctx, AV_LOG_ERROR, "channel element %d.%d is not allocated\n", elem_type, elem_id);
-            return -1;
+        if (elem_type < TYPE_DSE) {
+            if (!(che=get_che(ac, elem_type, elem_id))) {
+                av_log(ac->avctx, AV_LOG_ERROR, "channel element %d.%d is not allocated\n",
+                       elem_type, elem_id);
+                return -1;
+            }
+            samples = 1024;
         }
 
         switch (elem_type) {
@@ -2093,7 +2093,8 @@ static int aac_decode_frame(AVCodecContext *avctx, void *data,
     }
     *data_size = data_size_tmp;
 
-    ac->dsp.float_to_int16_interleave(data, (const float **)ac->output_data, samples, avctx->channels);
+    if (samples)
+        ac->dsp.float_to_int16_interleave(data, (const float **)ac->output_data, samples, avctx->channels);
 
     if (ac->output_configured)
         ac->output_configured = OC_LOCKED;

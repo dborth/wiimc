@@ -19,7 +19,7 @@
 #ifndef MPLAYER_TIMER_H
 #define MPLAYER_TIMER_H
 
-extern const char *timer_name;
+extern const char timer_name[];
 
 void InitTimer(void);
 #ifdef GEKKO
@@ -32,9 +32,9 @@ u64 GetRelativeTime(void);
 #else
 unsigned int GetTimer(void);
 unsigned int GetTimerMS(void);
-//int uGetTimer(void);
 float GetRelativeTime(void);
-int usec_sleep(unsigned int usec_delay);
+
+int usec_sleep(int usec_delay);
 #endif
 /* timer's callback handling */
 typedef void timer_callback( void );

@@ -31,14 +31,14 @@
 #include "config.h"
 #include "mp_msg.h"
 #include "help_mp.h"
-
+#include "mpcommon.h"
 #include "img_format.h"
 #include "mp_image.h"
 #include "vd.h"
 #include "vf.h"
 
 #include "libvo/fastmemcpy.h"
-
+#include "libvo/sub.h"
 #include "m_option.h"
 #include "m_struct.h"
 
@@ -68,9 +68,6 @@ static const struct vf_priv_s {
 	unsigned char* dirty_rows;
 } vf_priv_dflt;
 
-extern ass_track_t* ass_track;
-extern float sub_delay;
-extern int sub_visibility;
 
 static int config(struct vf_instance *vf,
 	int width, int height, int d_width, int d_height,

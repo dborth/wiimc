@@ -20,10 +20,6 @@
 #define MPLAYER_CFG_COMMON_H
 
 #include <sys/types.h>
-#include "config.h"
-#include "m_config.h"
-#include "m_option.h"
-#include "mp_msg.h"
 
 #include "libmpcodecs/ad.h"
 #include "libmpcodecs/dec_audio.h"
@@ -37,26 +33,23 @@
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/mf.h"
 #include "libpostproc/postprocess.h"
+#include "libvo/sub.h"
 #include "osdep/priority.h"
+#include "stream/cdd.h"
 #include "stream/network.h"
 #include "stream/pvr.h"
+#include "stream/stream.h"
 #include "stream/stream_dvd_common.h"
+#include "stream/stream_radio.h"
 #include "stream/tcp.h"
+#include "stream/tv.h"
 #include "stream/udp.h"
 #include "codec-cfg.h"
+#include "config.h"
+#include "m_config.h"
+#include "m_option.h"
+#include "mp_msg.h"
 #include "mpcommon.h"
-
-#ifdef CONFIG_CDDA
-#include "stream/cdd.h"
-#endif
-
-/* defined in libmpdemux: */
-extern const m_option_t demux_rawaudio_opts[];
-extern const m_option_t demux_rawvideo_opts[];
-
-
-#include "stream/tv.h"
-#include "stream/stream_radio.h"
 
 
 
@@ -157,12 +150,6 @@ const m_option_t pvropts_conf[]={
     {NULL, NULL, 0, 0, 0, 0, NULL}
 };
 #endif /* CONFIG_PVR */
-
-extern const m_config_t dvbin_opts_conf[];
-extern const m_option_t lavfdopts_conf[];
-
-extern int rtsp_port;
-extern char *rtsp_destination;
 
 const m_option_t scaler_filter_conf[]={
     {"lgb", &sws_lum_gblur, CONF_TYPE_FLOAT, 0, 0, 100.0, NULL},
@@ -301,9 +288,6 @@ const m_option_t msgl_config[]={
     {NULL, NULL, 0, 0, 0, 0, NULL}
 
 };
-
-extern const m_option_t lavc_decode_opts_conf[];
-extern const m_option_t xvid_dec_opts[];
 
 const m_option_t common_opts[] = {
 // ------------------------- common options --------------------

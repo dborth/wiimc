@@ -1578,7 +1578,7 @@ redirect:
                  av_get_random_seed(), av_get_random_seed());
 
         /* GET requests */
-        if (url_open(&rt->rtsp_hd, httpname, URL_RDONLY) < 0) {
+        if (url_alloc(&rt->rtsp_hd, httpname, URL_RDONLY) < 0) {
             err = AVERROR(EIO);
             goto fail;
         }
@@ -1593,13 +1593,13 @@ redirect:
         ff_http_set_headers(rt->rtsp_hd, headers);
 
         /* complete the connection */
-        if (url_read(rt->rtsp_hd, NULL, 0)) {
+        if (url_connect(rt->rtsp_hd)) {
             err = AVERROR(EIO);
             goto fail;
         }
 
         /* POST requests */
-        if (url_open(&rt->rtsp_hd_out, httpname, URL_WRONLY) < 0 ) {
+        if (url_alloc(&rt->rtsp_hd_out, httpname, URL_WRONLY) < 0 ) {
             err = AVERROR(EIO);
             goto fail;
         }
@@ -1616,6 +1616,29 @@ redirect:
         ff_http_set_headers(rt->rtsp_hd_out, headers);
         ff_http_set_chunked_transfer_encoding(rt->rtsp_hd_out, 0);
 
+        /* Initialize the authentication state for the POST session. The HTTP
+         * protocol implementation doesn't properly handle multi-pass
+         * authentication for POST requests, since it would require one of
+         * the following:
+         * - implementing Expect: 100-continue, which many HTTP servers
+         *   don't support anyway, even less the RTSP servers that do HTTP
+         *   tunneling
+         * - sending the whole POST data until getting a 401 reply specifying
+         *   what authentication method to use, then resending all that data
+         * - waiting for potential 401 replies directly after sending the
+         *   POST header (waiting for some unspecified time)
+         * Therefore, we copy the full auth state, which works for both basic
+         * and digest. (For digest, we would have to synchronize the nonce
+         * count variable between the two sessions, if we'd do more requests
+         * with the original session, though.)
+         */
+        ff_http_init_auth_state(rt->rtsp_hd_out, rt->rtsp_hd);
+
+        /* complete the connection */
+        if (url_connect(rt->rtsp_hd_out)) {
+            err = AVERROR(EIO);
+            goto fail;
+        }
     } else {
         /* open the tcp connection */
         ff_url_join(tcpname, sizeof(tcpname), "tcp", NULL, host, port, NULL);

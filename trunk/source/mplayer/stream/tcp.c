@@ -203,6 +203,10 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 
 	// Turn the socket as non blocking so we can timeout on the connection
 #if defined(GEKKO)
+	// turn off Nagle
+	u32 nodelay = 1;
+	net_setsockopt(socket_server_fd,IPPROTO_TCP,TCP_NODELAY,&nodelay,sizeof(nodelay));
+
 	net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) | IOS_O_NONBLOCK);
 	u64 t1,t2;
 	t1=ticks_to_millisecs(gettime());

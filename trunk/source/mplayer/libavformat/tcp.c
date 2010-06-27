@@ -61,6 +61,11 @@ static int tcp_open(URLContext *h, const char *uri, int flags)
 
  restart:
     fd = socket(cur_ai->ai_family, cur_ai->ai_socktype, cur_ai->ai_protocol);
+#ifdef GEKKO
+	// turn off Nagle
+	u32 nodelay = 1;
+	net_setsockopt(cur_ai->ai_family, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
+#endif
     if (fd < 0)
         goto fail;
     ff_socket_nonblock(fd, 1);

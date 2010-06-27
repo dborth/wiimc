@@ -611,7 +611,13 @@ msgid "Static"
 msgstr "Estático"
 
 msgid "Use Last Browsed"
-msgstr "Utilizar a última navegada"
+msgstr "Fixar na última navegada"
 
 msgid "Audio Language"
 msgstr "Idioma do áudio"
+
+msgid "DVD Support"
+msgstr "Suporte à DVD"
+
+msgid "Enabled"
+msgstr "Habilitado"

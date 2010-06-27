@@ -3206,6 +3206,7 @@ while (!filename)
 
 controlledbygui = 0;
 mpctx->eof=0;
+pause_low_cache=1;
 #endif
 
   // init global sub numbers

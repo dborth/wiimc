@@ -2162,7 +2162,7 @@ static void MenuBrowse(int menu)
 		{
 			backBtn.ResetState();
 			ResumeMPlayerFile(); // go back to MPlayer
-			
+
 			// wait until MPlayer is ready to take control (or return control)
 			while(!guiShutdown && controlledbygui != 1)
 				usleep(THREAD_SLEEP);
@@ -2424,6 +2424,9 @@ done:
 
 	if(menu == MENU_BROWSE_MUSIC) // remove playlist functionality
 		mainWindow->Remove(&playlistAddBtn);
+
+	if(guiShutdown)
+		SaveFolder();
 }
 
 // Picture Viewer
@@ -3108,6 +3111,8 @@ static void MenuDVD()
 		mainWindow->SetState(STATE_DISABLED);
 		mainWindow->Append(disabled);
 		ShowAction("Loading...");
+		ClearVideoPlaylist();
+		RemoveVideoImg();
 		LoadMPlayerFile();
 
 		// wait until MPlayer is ready to take or return control
@@ -4156,7 +4161,7 @@ static void MenuSettingsDVD()
 	else
 	{
 		dvdBtn->SetVisible(true);
-		dvdBtn->ResetState();
+		dvdBtn->SetState(STATE_DEFAULT);
 		onlineBtn->SetPosition(250, 30);
 	}
 }

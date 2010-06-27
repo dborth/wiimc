@@ -603,3 +603,21 @@ msgstr "다음 동영상으로 자동재생"
 
 msgid "Adding files to playlist..."
 msgstr "재생목록에 파일추가중.."
+
+msgid "Browser Folders"
+msgstr "폴더보기 설정"
+
+msgid "Static"
+msgstr "현재보고있는 폴더에 고정"
+
+msgid "Use Last Browsed"
+msgstr "마지막으로 본 폴더"
+
+msgid "Audio Language"
+msgstr "음성 언어"
+
+msgid "DVD Support"
+msgstr "ＤＶＤ지원"
+
+msgid "Enabled"
+msgstr "효과"

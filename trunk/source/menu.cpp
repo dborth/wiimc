@@ -3316,6 +3316,7 @@ static void MenuSettingsGlobal()
 				case LANG_KOREAN:				sprintf(options.value[1], "Korean"); break;
 				case LANG_ROMANIAN:				sprintf(options.value[1], "Romanian"); break;
 				case LANG_ESTONIAN:				sprintf(options.value[1], "Estonian"); break;
+				case LANG_PORTUGUESE: 			sprintf(options.value[1], "Portuguese"); break;
 				case LANG_BRAZILIAN_PORTUGUESE: sprintf(options.value[1], "Brazilian Portuguese"); break;
 				case LANG_HUNGARIAN:			sprintf(options.value[1], "Hungarian"); break;
 				case LANG_POLISH:				sprintf(options.value[1], "Polish"); break;

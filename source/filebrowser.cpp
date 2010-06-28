@@ -186,6 +186,7 @@ static int UpdateDirName()
 	// exiting a playlist - return to specified location
 	if(browser.selIndex == 0 && browserList[0].filename[0] != '.' && browser.dir[0] != 0)
 	{
+		strcpy(browser.lastdir, browser.dir);
 		strcpy(browser.dir, browserList[0].filename);
 		BrowserHistoryDiscard();
 		return 1;
@@ -211,20 +212,27 @@ static int UpdateDirName()
 		// already at the top level
 		if(IsDeviceRoot(browser.dir))
 		{
+			strcpy(browser.lastdir, browser.dir);
+			browser.lastdir[strlen(browser.lastdir)-1] = 0; // strip trailing slash
 			browser.dir[0] = 0; // remove device - we are going to the device listing screen
 		}
 		else
 		{
 			// determine last subdirectory namelength
 			int size = strlen(browser.dir);
-			browser.dir[--size] = 0;
+			browser.dir[--size] = 0; // remove trailing slash
 			char *test = strrchr(browser.dir,'/');
 
 			if(test == NULL)
-				return 1;
-
-			*test = 0; // remove last subdirectory name
-			strcpy(browser.lastdir, ++test); // record last folder
+			{
+				strcpy(browser.lastdir, browser.dir);
+				browser.dir[0] = 0;
+			}
+			else
+			{
+				*test = 0; // remove last subdirectory name
+				strcpy(browser.lastdir, ++test); // record last folder
+			}
 		}
 		return 1;
 	}
@@ -454,5 +462,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			browser.numEntries++;
 		}
 	}
+	if(browser.lastdir[0] != 0)
+		FindDirectory(); // try to find and select the last directory
 	return browser.numEntries;
 }

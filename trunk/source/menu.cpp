@@ -1936,6 +1936,10 @@ static void MenuBrowse(int menu)
 			audiobarModeBtn->SetVisible(true);
 			audiobarBackwardBtn->SetVisible(true);
 			audiobarForwardBtn->SetVisible(true);
+			audiobarPlaylistBtn->SetState(STATE_DEFAULT);
+			audiobarModeBtn->SetState(STATE_DEFAULT);
+			audiobarBackwardBtn->SetState(STATE_DEFAULT);
+			audiobarForwardBtn->SetState(STATE_DEFAULT);
 			mainWindow->Append(&playlistAddBtn);
 			UpdateAudiobarModeBtn();
 			mainWindow->Append(audiobar);

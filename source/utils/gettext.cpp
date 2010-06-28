@@ -43,8 +43,7 @@ static inline u32 hash_string(const char *str_param)
 }
 
 /* Expand some escape sequences found in the argument string.  */
-static char *
-expand_escape(const char *str)
+static char * expand_escape(const char *str)
 {
 	char *retval, *rp;
 	const char *cp = str;
@@ -60,7 +59,6 @@ expand_escape(const char *str)
 		goto terminate;
 	do
 	{
-
 		/* Here cp[0] == '\\'.  */
 		switch (*++cp)
 		{
@@ -168,7 +166,6 @@ static MSG *setMSG(const char *msgid, const char *msgstr)
 		{
 			if (msg->msgstr)
 				free(msg->msgstr);
-			//msg->msgstr = strdup(msgstr);
 			msg->msgstr = expand_escape(msgstr);
 		}
 		return msg;
@@ -223,6 +220,7 @@ bool LoadLanguage()
 		case LANG_KOREAN: file = (char *)ko_lang; eof = file + ko_lang_size; break;
 		case LANG_ROMANIAN: file = (char *)ro_lang; eof = file + ro_lang_size; break;
 		case LANG_ESTONIAN: file = (char *)et_lang; eof = file + et_lang_size; break;
+		case LANG_PORTUGUESE: file = (char *)pt_lang; eof = file + pt_lang_size; break;
 		case LANG_BRAZILIAN_PORTUGUESE: file = (char *)pt_br_lang; eof = file + pt_br_lang_size; break;
 		case LANG_HUNGARIAN: file = (char *)hu_lang; eof = file + hu_lang_size; break;
 		case LANG_POLISH: file = (char *)pl_lang; eof = file + pl_lang_size; break;

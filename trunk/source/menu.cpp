@@ -6295,12 +6295,6 @@ void WiiMenu()
 	dvdBtn->SetEffectGrow();
 	dvdBtn->SetUpdateCallback(ChangeMenuDVD);
 
-	if(WiiSettings.dvdDisabled)
-	{
-		dvdBtn->SetVisible(false);
-		dvdBtn->SetState(STATE_DISABLED);
-	}
-
 	GuiTooltip onlineBtnTip("Online Media");
 	onlineBtnImg = new GuiImage(&online);
 	onlineBtnOnImg = new GuiImage(&onlineOn);
@@ -6363,6 +6357,12 @@ void WiiMenu()
 			ExitRequested = 2;
 			while(1) usleep(THREAD_SLEEP);
 		}
+	}
+	
+	if(WiiSettings.dvdDisabled)
+	{
+		dvdBtn->SetVisible(false);
+		dvdBtn->SetState(STATE_DISABLED);
 	}
 
 	// Init MPlayer path and vars (only happens once)

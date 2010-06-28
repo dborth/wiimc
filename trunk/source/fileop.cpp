@@ -1163,7 +1163,7 @@ bool IsAllowedProtocol(char *file)
 	return false;
 }
 
-static void FindDirectory()
+void FindDirectory()
 {
 	int indexFound = -1;
 
@@ -1930,8 +1930,10 @@ int ParseOnlineMedia()
 	// Sort the file list
 	qsort(browserList, browser.numEntries, sizeof(BROWSERENTRY), FileSortCallback);
 
-	// try to find and select the last loaded file
-	FindFile();
+	if(browser.lastdir[0] != 0)
+		FindDirectory(); // try to find and select the last directory
+	else if(findLoadedFile == 1)
+		FindFile(); // try to find and select the last loaded file
 
 	return browser.numEntries;
 }

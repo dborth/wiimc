@@ -27,7 +27,7 @@
 
 /* Define this to enable MPEG-1/2 image postprocessing in libmpeg2 */
 #define MPEG12_POSTPROC 1
-#define ATTRIBUTE_ALIGNED_MAX 16
+#define ATTRIBUTE_ALIGNED_MAX 64
 
 
 
@@ -84,7 +84,7 @@ char MPLAYER_LIBDIR[100];
 #undef HAVE_GLOB
 #undef HAVE_LANGINFO
 #define HAVE_LRINTF 1
-//#define memalign(a,b) malloc(b)
+
 #define HAVE_MEMALIGN 1
 #undef HAVE_NANOSLEEP
 #undef HAVE_POSIX_SELECT
@@ -102,7 +102,7 @@ char MPLAYER_LIBDIR[100];
 
 
 /* system-specific features */
-#define ASMALIGN(ZEROBITS) ".align 1<<" #ZEROBITS "\n\t"
+#define ASMALIGN(ZEROBITS) ".align " #ZEROBITS "\n\t"
 #define HAVE_BUILTIN_EXPECT 1
 #undef HAVE_LIBDL
 #define HAVE_DOS_PATHS 0
@@ -129,7 +129,7 @@ char MPLAYER_LIBDIR[100];
 #define CONFIG_FASTMEMCPY 0
 #undef CONFIG_MENU
 #define CONFIG_RUNTIME_CPUDETECT 0
-#define CONFIG_SIGHANDLER 1
+#define CONFIG_SIGHANDLER 0
 #define CONFIG_SORTSUB 1
 #define CONFIG_STREAM_CACHE 1
 #undef PTHREAD_CACHE
@@ -206,7 +206,7 @@ char MPLAYER_LIBDIR[100];
 
 /* codec libraries */
 #undef CONFIG_FAAC
-#define CONFIG_FAAD 1
+#undef CONFIG_FAAD
 #define CONFIG_FAAD_INTERNAL 1
 #define CONFIG_LIBA52 1
 #undef CONFIG_LIBDCA
@@ -234,18 +234,20 @@ char MPLAYER_LIBDIR[100];
 
 
 /* binary codecs */
-/*
-#define CONFIG_QTX_CODECS 1
-#define CONFIG_QTX_CODECS_WIN32 1
-#define CONFIG_REALCODECS 1
 
-#define CONFIG_WIN32DLL 1
+#undef CONFIG_QTX_CODECS
+#undef CONFIG_QTX_CODECS_WIN32
+#undef CONFIG_REALCODECS
+
+#undef WIN32_LOADER
+#undef CONFIG_WIN32DLL
 #undef CONFIG_XANIM
-*/
+
 
 #undef CONFIG_XMMS
-//#define XMMS_INPUT_PLUGIN_DIR ""
+
 #define BINARY_CODECS_PATH "codecs"
+//#define XMMS_INPUT_PLUGIN_DIR ""
 
 /* GUI */
 #undef CONFIG_GTK2
@@ -436,16 +438,16 @@ char MPLAYER_LIBDIR[100];
 #define HAVE_BSWAP 0
 #define CONFIG_BZLIB 0
 
-#define HAVE_EXP2 0
-#define HAVE_EXP2F 0
+#define HAVE_EXP2 1
+#define HAVE_EXP2F 1
 #define HAVE_FAST_64BIT 0
 #define HAVE_FAST_UNALIGNED 0
 #define CONFIG_HARDCODED_TABLES 0
 #define CONFIG_MPEGAUDIO_HP 0
-#define HAVE_LLRINT 0
-#define HAVE_LLRINTF 0
-#define HAVE_LOCAL_ALIGNED_8 0
-#define HAVE_LOCAL_ALIGNED_16 0
+#define HAVE_LLRINT 1
+#define HAVE_LLRINTF 1
+#define HAVE_LOCAL_ALIGNED_8 1
+#define HAVE_LOCAL_ALIGNED_16 1
 #define HAVE_LOG2 1
 #define HAVE_LOG2F 1
 #define HAVE_LRINT 1
@@ -456,12 +458,8 @@ char MPLAYER_LIBDIR[100];
 #undef HAVE_PTHREADS
 #define HAVE_ROUND 1
 #define HAVE_ROUNDF 1
-#define HAVE_TEN_OPERANDS 0
 #define HAVE_THREADS 0
 #define HAVE_TRUNCF 1
-
-#define HAVE_YASM 0
-
 #define CONFIG_FASTDIV 0
 #define CONFIG_FFSERVER 0
 #define CONFIG_GPL 1

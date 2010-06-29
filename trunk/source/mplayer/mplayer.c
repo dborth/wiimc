@@ -2795,7 +2795,7 @@ m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
 m_config_set_option(mconfig,"channels","6");
-m_config_set_option(mconfig,"af", "pan=2:1:0:0:1:0.2041225:0.4330125:0.14435:0.612375:0.7071:0.7071:0:0");
+m_config_set_option(mconfig,"af", "pan=2:0.5:0:0:0.5:0.33:0:0:0.33:0.5:0.5:0.5:0.5");
 m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");

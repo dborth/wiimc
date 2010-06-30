@@ -191,7 +191,7 @@ static av_cold int aac_encode_init(AVCodecContext *avctx)
 
     s->samples            = av_malloc(2 * 1024 * avctx->channels * sizeof(s->samples[0]));
     s->cpe                = av_mallocz(sizeof(ChannelElement) * aac_chan_configs[avctx->channels-1][0]);
-    avctx->extradata      = av_malloc(2);
+    avctx->extradata      = av_mallocz(2 + FF_INPUT_BUFFER_PADDING_SIZE);
     avctx->extradata_size = 2;
     put_audio_specific_config(avctx);
 
@@ -519,7 +519,7 @@ static int aac_encode_frame(AVCodecContext *avctx,
         chans    = tag == TYPE_CPE ? 2 : 1;
         cpe      = &s->cpe[i];
         samples2 = samples + start_ch;
-        la       = samples2 + 1024 * avctx->channels + start_ch;
+        la       = samples2 + (448+64) * avctx->channels + start_ch;
         if (!data)
             la = NULL;
         for (j = 0; j < chans; j++) {

@@ -1,4 +1,4 @@
-// Synced with help_mp-en.h rev. 31430 (MSGTR_MPDEMUX_AVIHDR_EmptyList)
+// Synced with help_mp-en.h rev. 31512 (MSGTR_MPDEMUX_MKV_ZlibInitializationFailed)
 // Reminder of hard terms which need better/final solution later:
 //   (file links to be updated later if available!);
 //   NAV; section/subsection;  XScreenSaver; keycolor;
@@ -9,7 +9,6 @@
 
 // ========================= MPlayer help ===========================
 
-#ifdef HELP_MP_DEFINE_STATIC
 static const char help_text[]=
 "用法：            mplayer [选项] [URL|路径/]文件名\n"
 "\n"
@@ -49,7 +48,6 @@ static const char help_text[]=
 "\n"
 " * * * 参见手册相关页面可获取具体内容，及更多（高级）选项和控制键的信息 * * *\n"
 "\n";
-#endif
 
 // ========================= MPlayer messages ===========================
 
@@ -1472,10 +1470,10 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_AVIHDR_IdxFileSaved "已保存索引文件：%s\n"
 
 // demux_audio.c
-#define MSGTR_MPDEMUX_AUDIO_UnknownFormat "音频分路器: 未知格式 %d。\n"
+#define MSGTR_MPDEMUX_AUDIO_UnknownFormat "音频流分解器：未知格式 %d。\n"
 
 // demux_demuxers.c
-#define MSGTR_MPDEMUX_DEMUXERS_FillBufferError "fill_buffer 错误: 分路器错误: 不是 vd, ad 或 sd。\n"
+#define MSGTR_MPDEMUX_DEMUXERS_FillBufferError "fill_buffer 错误：流分解器错误：非 vd、ad 或 sd。\n"
 
 // demux_mkv.c
 #define MSGTR_MPDEMUX_MKV_ZlibInitializationFailed "[mkv] zlib 初始化失败。\n"

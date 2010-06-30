@@ -53,19 +53,6 @@ int rtsp_default_protocols = (1 << RTSP_LOWER_TRANSPORT_UDP);
 #define READ_PACKET_TIMEOUT_S 10
 #define MAX_TIMEOUTS READ_PACKET_TIMEOUT_S * 1000 / SELECT_TIMEOUT_MS
 
-#define SPACE_CHARS " \t\r\n"
-/* we use memchr() instead of strchr() here because strchr() will return
- * the terminating '\0' of SPACE_CHARS instead of NULL if c is '\0'. */
-#define redir_isspace(c) memchr(SPACE_CHARS, c, 4)
-static void skip_spaces(const char **pp)
-{
-    const char *p;
-    p = *pp;
-    while (redir_isspace(*p))
-        p++;
-    *pp = p;
-}
-
 static void get_word_until_chars(char *buf, int buf_size,
                                  const char *sep, const char **pp)
 {
@@ -73,7 +60,7 @@ static void get_word_until_chars(char *buf, int buf_size,
     char *q;
 
     p = *pp;
-    skip_spaces(&p);
+    p += strspn(p, SPACE_CHARS);
     q = buf;
     while (!strchr(sep, *p) && *p != '\0') {
         if ((q - buf) < buf_size - 1)
@@ -171,92 +158,13 @@ static int sdp_parse_rtpmap(AVFormatContext *s,
     return 0;
 }
 
-/* return the length and optionally the data */
-static int hex_to_data(uint8_t *data, const char *p)
-{
-    int c, len, v;
-
-    len = 0;
-    v = 1;
-    for (;;) {
-        skip_spaces(&p);
-        if (*p == '\0')
-            break;
-        c = toupper((unsigned char) *p++);
-        if (c >= '0' && c <= '9')
-            c = c - '0';
-        else if (c >= 'A' && c <= 'F')
-            c = c - 'A' + 10;
-        else
-            break;
-        v = (v << 4) | c;
-        if (v & 0x100) {
-            if (data)
-                data[len] = v;
-            len++;
-            v = 1;
-        }
-    }
-    return len;
-}
-
-static void sdp_parse_fmtp_config(AVCodecContext * codec, void *ctx,
-                                  char *attr, char *value)
-{
-    switch (codec->codec_id) {
-    case CODEC_ID_MPEG4:
-    case CODEC_ID_AAC:
-        if (!strcmp(attr, "config")) {
-            /* decode the hexa encoded parameter */
-            int len = hex_to_data(NULL, value);
-            if (codec->extradata)
-                av_free(codec->extradata);
-            codec->extradata = av_mallocz(len + FF_INPUT_BUFFER_PADDING_SIZE);
-            if (!codec->extradata)
-                return;
-            codec->extradata_size = len;
-            hex_to_data(codec->extradata, value);
-        }
-        break;
-    default:
-        break;
-    }
-    return;
-}
-
-typedef struct {
-    const char *str;
-    uint16_t    type;
-    uint32_t    offset;
-} AttrNameMap;
-
-/* All known fmtp parameters and the corresponding RTPAttrTypeEnum */
-#define ATTR_NAME_TYPE_INT 0
-#define ATTR_NAME_TYPE_STR 1
-static const AttrNameMap attr_names[]=
-{
-    { "SizeLength",       ATTR_NAME_TYPE_INT,
-      offsetof(RTPPayloadData, sizelength) },
-    { "IndexLength",      ATTR_NAME_TYPE_INT,
-      offsetof(RTPPayloadData, indexlength) },
-    { "IndexDeltaLength", ATTR_NAME_TYPE_INT,
-      offsetof(RTPPayloadData, indexdeltalength) },
-    { "profile-level-id", ATTR_NAME_TYPE_INT,
-      offsetof(RTPPayloadData, profile_level_id) },
-    { "StreamType",       ATTR_NAME_TYPE_INT,
-      offsetof(RTPPayloadData, streamtype) },
-    { "mode",             ATTR_NAME_TYPE_STR,
-      offsetof(RTPPayloadData, mode) },
-    { NULL, -1, -1 },
-};
-
 /* parse the attribute line from the fmtp a line of an sdp response. This
  * is broken out as a function because it is used in rtp_h264.c, which is
  * forthcoming. */
 int ff_rtsp_next_attr_and_value(const char **p, char *attr, int attr_size,
                                 char *value, int value_size)
 {
-    skip_spaces(p);
+    *p += strspn(*p, SPACE_CHARS);
     if (**p) {
         get_word_sep(attr, attr_size, "=", p);
         if (**p == '=')
@@ -269,37 +177,6 @@ int ff_rtsp_next_attr_and_value(const char **p, char *attr, int attr_size,
     return 0;
 }
 
-/* parse a SDP line and save stream attributes */
-static void sdp_parse_fmtp(AVStream *st, const char *p)
-{
-    char attr[256];
-    char value[4096];
-    int i;
-    RTSPStream *rtsp_st = st->priv_data;
-    AVCodecContext *codec = st->codec;
-    RTPPayloadData *rtp_payload_data = &rtsp_st->rtp_payload_data;
-
-    /* loop on each attribute */
-    while (ff_rtsp_next_attr_and_value(&p, attr, sizeof(attr),
-                                       value, sizeof(value))) {
-        /* grab the codec extra_data from the config parameter of the fmtp
-         * line */
-        sdp_parse_fmtp_config(codec, rtsp_st->dynamic_protocol_context,
-                              attr, value);
-        /* Looking for a known attribute */
-        for (i = 0; attr_names[i].str; ++i) {
-            if (!strcasecmp(attr, attr_names[i].str)) {
-                if (attr_names[i].type == ATTR_NAME_TYPE_INT) {
-                    *(int *)((char *)rtp_payload_data +
-                        attr_names[i].offset) = atoi(value);
-                } else if (attr_names[i].type == ATTR_NAME_TYPE_STR)
-                    *(char **)((char *)rtp_payload_data +
-                        attr_names[i].offset) = av_strdup(value);
-            }
-        }
-    }
-}
-
 /** Parse a string p in the form of Range:npt=xx-xx, and determine the start
  *  and end time.
  *  Used for seeking in the rtp stream.
@@ -308,7 +185,7 @@ static void rtsp_parse_range_npt(const char *p, int64_t *start, int64_t *end)
 {
     char buf[256];
 
-    skip_spaces(&p);
+    p += strspn(p, SPACE_CHARS);
     if (!av_stristart(p, "npt=", &p))
         return;
 
@@ -450,7 +327,7 @@ static void sdp_parse_line(AVFormatContext *s, SDPParseState *s1,
             rtsp_st = st->priv_data;
 
             /* XXX: may need to add full url resolution */
-            ff_url_split(proto, sizeof(proto), NULL, 0, NULL, 0,
+            av_url_split(proto, sizeof(proto), NULL, 0, NULL, 0,
                          NULL, NULL, 0, p);
             if (proto[0] == '\0') {
                 /* relative control URL */
@@ -470,22 +347,9 @@ static void sdp_parse_line(AVFormatContext *s, SDPParseState *s1,
             st = s->streams[s->nb_streams - 1];
             rtsp_st = st->priv_data;
             sdp_parse_rtpmap(s, st->codec, rtsp_st, payload_type, p);
-        } else if (av_strstart(p, "fmtp:", &p)) {
+        } else if (av_strstart(p, "fmtp:", &p) ||
+                   av_strstart(p, "framesize:", &p)) {
             /* NOTE: fmtp is only supported AFTER the 'a=rtpmap:xxx' tag */
-            get_word(buf1, sizeof(buf1), &p);
-            payload_type = atoi(buf1);
-            for (i = 0; i < s->nb_streams; i++) {
-                st      = s->streams[i];
-                rtsp_st = st->priv_data;
-                if (rtsp_st->sdp_payload_type == payload_type) {
-                    if (!(rtsp_st->dynamic_handler &&
-                          rtsp_st->dynamic_handler->parse_sdp_a_line &&
-                          rtsp_st->dynamic_handler->parse_sdp_a_line(s,
-                              i, rtsp_st->dynamic_protocol_context, buf)))
-                        sdp_parse_fmtp(st, p);
-                }
-            }
-        } else if (av_strstart(p, "framesize:", &p)) {
             // let dynamic protocol handlers have a stab at the line.
             get_word(buf1, sizeof(buf1), &p);
             payload_type = atoi(buf1);
@@ -547,7 +411,7 @@ static int sdp_parse(AVFormatContext *s, const char *content)
     memset(s1, 0, sizeof(SDPParseState));
     p = content;
     for (;;) {
-        skip_spaces(&p);
+        p += strspn(p, SPACE_CHARS);
         letter = *p;
         if (letter == '\0')
             break;
@@ -697,8 +561,7 @@ static int rtsp_open_transport_ctx(AVFormatContext *s, RTSPStream *rtsp_st)
                                             rtsp_st->dynamic_handler);
     else
         rtsp_st->transport_priv = rtp_parse_open(s, st, rtsp_st->rtp_handle,
-                                         rtsp_st->sdp_payload_type,
-                                         &rtsp_st->rtp_payload_data);
+                                         rtsp_st->sdp_payload_type);
 
     if (!rtsp_st->transport_priv) {
          return AVERROR(ENOMEM);
@@ -727,7 +590,7 @@ static void rtsp_parse_range(int *min_ptr, int *max_ptr, const char **pp)
     int v;
 
     p = *pp;
-    skip_spaces(&p);
+    p += strspn(p, SPACE_CHARS);
     v = strtol(p, (char **)&p, 10);
     if (*p == '-') {
         p++;
@@ -754,7 +617,7 @@ static void rtsp_parse_transport(RTSPMessageHeader *reply, const char *p)
     reply->nb_transports = 0;
 
     for (;;) {
-        skip_spaces(&p);
+        p += strspn(p, SPACE_CHARS);
         if (*p == '\0')
             break;
 
@@ -864,22 +727,22 @@ void ff_rtsp_parse_line(RTSPMessageHeader *reply, const char *buf,
     } else if (av_stristart(p, "Range:", &p)) {
         rtsp_parse_range_npt(p, &reply->range_start, &reply->range_end);
     } else if (av_stristart(p, "RealChallenge1:", &p)) {
-        skip_spaces(&p);
+        p += strspn(p, SPACE_CHARS);
         av_strlcpy(reply->real_challenge, p, sizeof(reply->real_challenge));
     } else if (av_stristart(p, "Server:", &p)) {
-        skip_spaces(&p);
+        p += strspn(p, SPACE_CHARS);
         av_strlcpy(reply->server, p, sizeof(reply->server));
     } else if (av_stristart(p, "Notice:", &p) ||
                av_stristart(p, "X-Notice:", &p)) {
         reply->notice = strtol(p, NULL, 10);
     } else if (av_stristart(p, "Location:", &p)) {
-        skip_spaces(&p);
+        p += strspn(p, SPACE_CHARS);
         av_strlcpy(reply->location, p , sizeof(reply->location));
     } else if (av_stristart(p, "WWW-Authenticate:", &p) && auth_state) {
-        skip_spaces(&p);
+        p += strspn(p, SPACE_CHARS);
         ff_http_auth_handle_header(auth_state, "WWW-Authenticate", p);
     } else if (av_stristart(p, "Authentication-Info:", &p) && auth_state) {
-        skip_spaces(&p);
+        p += strspn(p, SPACE_CHARS);
         ff_http_auth_handle_header(auth_state, "Authentication-Info", p);
     }
 }
@@ -1503,7 +1366,7 @@ int ff_rtsp_connect(AVFormatContext *s)
 redirect:
     rt->control_transport = RTSP_MODE_PLAIN;
     /* extract hostname and port */
-    ff_url_split(NULL, 0, auth, sizeof(auth),
+    av_url_split(NULL, 0, auth, sizeof(auth),
                  host, sizeof(host), &port, path, sizeof(path), s->filename);
     if (*auth) {
         av_strlcpy(rt->auth, auth, sizeof(rt->auth));

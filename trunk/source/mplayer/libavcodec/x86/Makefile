@@ -9,6 +9,8 @@ YASM-OBJS-$(CONFIG_FFT)                += x86/fft_mmx.o                 \
 YASM-OBJS-$(CONFIG_GPL)                += x86/h264_deblock_sse2.o       \
                                           x86/h264_idct_sse2.o          \
 
+YASM-OBJS-$(CONFIG_H264DSP)            += x86/h264_intrapred.o          \
+
 MMX-OBJS-$(CONFIG_CAVS_DECODER)        += x86/cavsdsp_mmx.o
 MMX-OBJS-$(CONFIG_MP1FLOAT_DECODER)    += x86/mpegaudiodec_mmx.o
 MMX-OBJS-$(CONFIG_MP2FLOAT_DECODER)    += x86/mpegaudiodec_mmx.o
@@ -28,6 +30,8 @@ MMX-OBJS-$(CONFIG_VP6_DECODER)         += x86/vp3dsp_mmx.o              \
                                           x86/vp3dsp_sse2.o             \
                                           x86/vp6dsp_mmx.o              \
                                           x86/vp6dsp_sse2.o
+YASM-OBJS-$(CONFIG_VP8_DECODER)        += x86/vp8dsp.o
+MMX-OBJS-$(CONFIG_VP8_DECODER)         += x86/vp8dsp-init.o
 MMX-OBJS-$(HAVE_YASM)                  += x86/dsputil_yasm.o            \
                                           $(YASM-OBJS-yes)
 

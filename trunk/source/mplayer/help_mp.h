@@ -4,7 +4,7 @@
 #ifndef MPLAYER_HELP_MP_H
 #define MPLAYER_HELP_MP_H
 
-// $Revision: 31512 $
+// $Revision: 31579 $
 // MASTER FILE. Use this file as base for translations.
 // Translated files should be sent to the mplayer-DOCS mailing list or
 // to the help messages maintainer, see DOCS/tech/MAINTAINERS.
@@ -18,7 +18,6 @@
 
 // ========================= MPlayer help ===========================
 
-#ifdef HELP_MP_DEFINE_STATIC
 static const char help_text[]=
 "Usage:   mplayer [options] [url|path/]filename\n"
 "\n"
@@ -58,7 +57,6 @@ static const char help_text[]=
 "\n"
 " * * * SEE THE MAN PAGE FOR DETAILS, FURTHER (ADVANCED) OPTIONS AND KEYS * * *\n"
 "\n";
-#endif
 
 // ========================= MPlayer messages ===========================
 

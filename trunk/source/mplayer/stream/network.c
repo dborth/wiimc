@@ -43,14 +43,12 @@
 #include "stream.h"
 #include "libmpdemux/demuxer.h"
 #include "m_config.h"
-
+#include "mpcommon.h"
 #include "network.h"
 #include "tcp.h"
 #include "http.h"
 #include "cookies.h"
 #include "url.h"
-
-#include "version.h"
 
 extern int stream_cache_size;
 
@@ -220,12 +218,10 @@ http_send_request( URL_t *url, off_t pos ) {
 	    snprintf(str, 256, "Host: %s", server_url->hostname );
 	http_set_field( http_hdr, str);
 	if (network_useragent)
-	{
 	    snprintf(str, 256, "User-Agent: %s", network_useragent);
-	    http_set_field(http_hdr, str);
-	}
 	else
-	    http_set_field( http_hdr, "User-Agent: MPlayer/"VERSION);
+	    snprintf(str, 256, "User-Agent: %s", mplayer_version);
+        http_set_field(http_hdr, str);
 
 	if (network_referrer) {
 	    char *referrer = NULL;
@@ -275,7 +271,7 @@ http_send_request( URL_t *url, off_t pos ) {
 	}
 	mp_msg(MSGT_NETWORK,MSGL_DBG2,"Request: [%s]\n", http_hdr->buffer );
 
-	ret = send( fd, http_hdr->buffer, http_hdr->buffer_size, 0 );
+	ret = send( fd, http_hdr->buffer, http_hdr->buffer_size, DEFAULT_SEND_FLAGS );
 	if( ret!=(int)http_hdr->buffer_size ) {
 		mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_NW_ErrSendingHTTPRequest);
 		goto err_out;

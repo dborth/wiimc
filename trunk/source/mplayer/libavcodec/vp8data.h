@@ -62,6 +62,14 @@ enum inter_submvmode {
     VP8_SUBMVMODE_NEW4X4
 };
 
+enum inter_splitmvmode {
+    VP8_SPLITMVMODE_16x8 = 0,    ///< 2 16x8 blocks (vertical)
+    VP8_SPLITMVMODE_8x16,        ///< 2 8x16 blocks (horizontal)
+    VP8_SPLITMVMODE_8x8,         ///< 2x2 blocks of 8x8px each
+    VP8_SPLITMVMODE_4x4,         ///< 4x4 blocks of 4x4px each
+    VP8_SPLITMVMODE_NONE,        ///< (only used in prediction) no split MVs
+};
+
 static const uint8_t vp8_pred4x4_mode[] =
 {
     [DC_PRED8x8]    = DC_PRED,
@@ -112,7 +120,7 @@ static const int8_t vp8_small_mvtree[7][2] = {
       { -6, -7 }                            // '110', '111'
 };
 
-static const uint8_t vp8_mbsplits[4][16] = {
+static const uint8_t vp8_mbsplits[5][16] = {
     {  0,  0,  0,  0,  0,  0,  0,  0,
        1,  1,  1,  1,  1,  1,  1,  1  },
     {  0,  0,  1,  1,  0,  0,  1,  1,
@@ -120,7 +128,9 @@ static const uint8_t vp8_mbsplits[4][16] = {
     {  0,  0,  1,  1,  0,  0,  1,  1,
        2,  2,  3,  3,  2,  2,  3,  3  },
     {  0,  1,  2,  3,  4,  5,  6,  7,
-       8,  9, 10, 11, 12, 13, 14, 15  }
+       8,  9, 10, 11, 12, 13, 14, 15  },
+    {  0,  0,  0,  0,  0,  0,  0,  0,
+       0,  0,  0,  0,  0,  0,  0,  0  }
 };
 
 static const uint8_t vp8_mbfirstidx[4][16] = {
@@ -130,10 +140,10 @@ static const uint8_t vp8_mbfirstidx[4][16] = {
 };
 
 static const int8_t vp8_mbsplit_tree[3][2] = {
-    { -3,  1 },                             // '0' - 16 individual MVs
-     { -2,  2 },                            // '10' - quarter-based MVs
-      { -0, -1 }                            // '110' - top/bottom MVs,
-                                            // '111' - left/right MVs
+    { -VP8_SPLITMVMODE_4x4,  1 },           // '0' - 16 individual MVs
+     { -VP8_SPLITMVMODE_8x8,  2 },          // '10' - quarter-based MVs
+      { -VP8_SPLITMVMODE_16x8,              // '110' - top/bottom MVs
+        -VP8_SPLITMVMODE_8x16 }             // '111' - left/right MVs
 };
 static const uint8_t vp8_mbsplit_count[4] = {   2,   2,   4,  16 };
 static const uint8_t vp8_mbsplit_prob[3]  = { 110, 111, 150 };

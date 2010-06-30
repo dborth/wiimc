@@ -2657,18 +2657,6 @@ static void avg_rv40_qpel8_mc33_c(uint8_t *dst, uint8_t *src, int stride){
 }
 #endif /* CONFIG_RV40_DECODER */
 
-#if CONFIG_VP8_DECODER
-void ff_put_vp8_pixels16_c(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y) {
-    put_pixels16_c(dst, src, stride, h);
-}
-void ff_put_vp8_pixels8_c(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y) {
-    put_pixels8_c(dst, src, stride, h);
-}
-void ff_put_vp8_pixels4_c(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y) {
-    put_pixels4_c(dst, src, stride, h);
-}
-#endif
-
 static void wmv2_mspel8_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int w){
     uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
     int i;
@@ -4000,7 +3988,7 @@ void ff_float_to_int16_interleave_c(int16_t *dst, const float **src, long len, i
     }
 }
 
-static int32_t scalarproduct_int16_c(int16_t * v1, int16_t * v2, int order, int shift)
+static int32_t scalarproduct_int16_c(const int16_t * v1, const int16_t * v2, int order, int shift)
 {
     int res = 0;
 
@@ -4010,7 +3998,7 @@ static int32_t scalarproduct_int16_c(int16_t * v1, int16_t * v2, int order, int 
     return res;
 }
 
-static int32_t scalarproduct_and_madd_int16_c(int16_t *v1, int16_t *v2, int16_t *v3, int order, int mul)
+static int32_t scalarproduct_and_madd_int16_c(int16_t *v1, const int16_t *v2, const int16_t *v3, int order, int mul)
 {
     int res = 0;
     while (order--) {
@@ -4546,6 +4534,16 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
         if(!c->avg_2tap_qpel_pixels_tab[0][i])
             c->avg_2tap_qpel_pixels_tab[0][i]= c->avg_h264_qpel_pixels_tab[0][i];
     }
+
+    c->put_rv30_tpel_pixels_tab[0][0] = c->put_h264_qpel_pixels_tab[0][0];
+    c->put_rv30_tpel_pixels_tab[1][0] = c->put_h264_qpel_pixels_tab[1][0];
+    c->avg_rv30_tpel_pixels_tab[0][0] = c->avg_h264_qpel_pixels_tab[0][0];
+    c->avg_rv30_tpel_pixels_tab[1][0] = c->avg_h264_qpel_pixels_tab[1][0];
+
+    c->put_rv40_qpel_pixels_tab[0][0] = c->put_h264_qpel_pixels_tab[0][0];
+    c->put_rv40_qpel_pixels_tab[1][0] = c->put_h264_qpel_pixels_tab[1][0];
+    c->avg_rv40_qpel_pixels_tab[0][0] = c->avg_h264_qpel_pixels_tab[0][0];
+    c->avg_rv40_qpel_pixels_tab[1][0] = c->avg_h264_qpel_pixels_tab[1][0];
 
     switch(c->idct_permutation_type){
     case FF_NO_IDCT_PERM:

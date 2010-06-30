@@ -1,5 +1,5 @@
 // FIXME: This needs to be redone properly.
-// Partially sync'ed with help_mp-en.h $Revision: 31032 $
+// Partially sync'ed with help_mp-en.h $Revision: 31579 $
 // This is a retranslation of the file by Bogdan Butnaru <bogdanb@fastmail.fm>,
 // based on the previous translation by Codre Adrian
 // <codreadrian@softhome.net> (address bounces).
@@ -8,7 +8,6 @@
 //
 // ========================= MPlayer help ===========================
 
-#ifdef HELP_MP_DEFINE_STATIC
 static const char help_text[]=
 "Folosire: mplayer [opþiuni] [url|cale/]numefiºier\n"
 "\n"
@@ -54,7 +53,6 @@ static const char help_text[]=
 "\n"
 " * * * VEZI PAGINA MAN PENTRU DETALII, ALTE OPÞIUNI (AVANSATE) ªI TASTE * * *\n"
 "\n";
-#endif
 
 // ========================= MPlayer messages ===========================
 

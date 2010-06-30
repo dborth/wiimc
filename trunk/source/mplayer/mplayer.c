@@ -180,7 +180,6 @@ static int max_framesize=0;
 #include "osdep/gx_supp.h"
 #include "../utils/di2.h"
 
-extern int stop_cache_thread;
 extern int prev_dxs , prev_dys;
 
 void wiiPause();
@@ -319,7 +318,7 @@ int file_filter=1;
 #endif
        
 #ifdef CONFIG_STREAM_CACHE
-extern float cache_fill_status;
+extern int cache_fill_status;
 
 float stream_cache_min_percent=30.0;
 float stream_cache_seek_min_percent=50.0;
@@ -2759,6 +2758,8 @@ static int seek(MPContext *mpctx, double amount, int style)
  * file for some tools to link against. */
 #ifndef DISABLE_MAIN
 #ifdef GEKKO
+int stream_sleep(int s) { usleep(s*1000); return 0; }
+
 int mplayer_main(){
 #else
 int main(int argc,char* argv[]){
@@ -2791,6 +2792,7 @@ int gui_no_filename=0;
 
   // Preparse the command line
 #ifdef GEKKO
+stream_set_interrupt_callback(stream_sleep);
 m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
@@ -4224,7 +4226,7 @@ if(auto_quality>0){
   current_module="pause";
 
     //low cache
-	if (mpctx->osd_function != OSD_PAUSE && stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0)
+	if (mpctx->osd_function != OSD_PAUSE && stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status < 4)
 	{
 		pause_low_cache=1;
 		mpctx->osd_function = OSD_PAUSE;
@@ -4711,7 +4713,7 @@ void PauseAndGotoGUI()
 	if(mpctx->sh_video)
 		save_restore_point(fileplaying);
 
-	stop_cache_thread = 1;
+	stream_control(mpctx->stream, -2, NULL);
 	while(!CacheThreadSuspended())
 		usleep(50);
 
@@ -4725,7 +4727,6 @@ void PauseAndGotoGUI()
 	if (controlledbygui == 2)
 		return;
 
-	stop_cache_thread = 0;
 	ResumeCacheThread();
 
 	printf("reinit mplayer video/audio\n");

@@ -19,13 +19,17 @@
 #include "config.h"
 
 // Initial draft of my new cache system...
-// Note it runs in 2 processes (using fork()), but doesn't requires locking!!
+// Note it runs in 2 processes (using fork()), but doesn't require locking!!
 // TODO: seeking, data consistency checking
 
-#define READ_USLEEP_TIME 10000
+#define READ_SLEEP_TIME 10
+// These defines are used to reduce the cost of many successive
+// seeks (e.g. when a file has no index) by spinning quickly at first.
+#define INITIAL_FILL_USLEEP_TIME 1000
+#define INITIAL_FILL_USLEEP_COUNT 10
 #define FILL_USLEEP_TIME 50000
 #define PREFILL_SLEEP_TIME 200
-#define CONTROL_SLEEP_TIME 200
+#define CONTROL_SLEEP_TIME 10
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +39,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "input/input.h"
 #include "osdep/shmem.h"
 #include "osdep/timer.h"
 #if defined(__MINGW32__)
@@ -45,48 +48,42 @@ static void ThreadProc( void *s );
 #define INCL_DOS
 #include <os2.h>
 static void ThreadProc( void *s );
-#elif defined(GEKKO)
-#include <ogcsys.h>
-#include <ogc/lwp_watchdog.h>
-static void *ThreadProc( void *s );
-static unsigned char *global_buffer=NULL;
-#include "osdep/mem2_manager.h"
-
 #elif defined(PTHREAD_CACHE)
 #include <pthread.h>
 static void *ThreadProc(void *s);
+#elif defined(GEKKO)
+#include <ogcsys.h>
+#include <ogc/lwp_watchdog.h>
+#include "osdep/mem2_manager.h"
+static void *ThreadProc(void *s);
+static unsigned char *global_buffer=NULL;
+static void *cachearg = NULL;
+extern void SuspendCacheThread();
+extern void ResumeCacheThread();
+extern bool CacheThreadSuspended();
+extern void ShowProgress (const char *msg, int done, int total);
 #else
 #include <sys/wait.h>
+#define FORKED_CACHE 1
 #endif
-#include "mp_osd.h"
+#ifndef FORKED_CACHE
+#define FORKED_CACHE 0
+#endif
+
 #include "mp_msg.h"
 #include "help_mp.h"
 
 #include "stream.h"
 #include "cache2.h"
-extern int use_gui;
-
-int stream_fill_buffer(stream_t *s);
-int stream_seek_long(stream_t *s,off_t pos);
-
-#ifdef GEKKO
-#include <ogc/mutex.h>
-static mutex_t cache_mutex = LWP_MUTEX_NULL;
-int stop_cache_thread = 1;
-static void *cachearg = NULL;
-extern void SuspendCacheThread();
-extern void ResumeCacheThread();
-extern bool CacheThreadSuspended();
-#endif
 
 typedef struct {
   // constats:
-  unsigned char *buffer;      // base pointer of the alllocated buffer memory
-  int buffer_size; // size of the alllocated buffer memory
+  unsigned char *buffer;      // base pointer of the allocated buffer memory
+  int buffer_size; // size of the allocated buffer memory
   int sector_size; // size of a single sector (2048/2324)
   int back_size;   // we should keep back_size amount of old bytes for backward seek
   int fill_limit;  // we should fill buffer only if space>=fill_limit
-  int seek_limit;  // keep filling cache if distanse is less that seek limit
+  int seek_limit;  // keep filling cache if distance is less that seek limit
   // filler's pointers:
   int eof;
   off_t min_filepos; // buffer contain only a part of the file, from min-max pos
@@ -109,36 +106,56 @@ typedef struct {
 
 static int min_fill=0;
 
-float cache_fill_status=0;
+int cache_fill_status=0;
 
-void cache_stats(cache_vars_t* s){
+static void cache_wakeup(stream_t *s)
+{
+#ifdef GEKKO
+  if(CacheThreadSuspended())
+    ResumeCacheThread();
+#endif
+#if FORKED_CACHE
+  // signal process to wake up immediately
+  kill(s->cache_pid, SIGUSR1);
+#endif
+}
+
+static void cache_stats(cache_vars_t *s)
+{
   int newb=s->max_filepos-s->read_filepos; // new bytes in the buffer
   //mp_msg(MSGT_CACHE,MSGL_INFO,"0x%06X  [0x%06X]  0x%06X   ",(int)s->min_filepos,(int)s->read_filepos,(int)s->max_filepos);
   //mp_msg(MSGT_CACHE,MSGL_INFO,"%3d %%  (%3d%%)\n",100*newb/s->buffer_size,100*min_fill/s->buffer_size);
 }
 
-int cache_read(cache_vars_t* s,unsigned char* buf,int size){
+static int cache_read(cache_vars_t *s, unsigned char *buf, int size)
+{
   int total=0;
-  
-  while(size>0 ){
+  int sleep_count = 0;
+  int last_max = s->max_filepos;
+  while(size>0){
     int pos,newb,len;
 
   //printf("CACHE2_READ: 0x%X <= 0x%X <= 0x%X  \n",s->min_filepos,s->read_filepos,s->max_filepos);
 
     if(s->read_filepos>=s->max_filepos || s->read_filepos<s->min_filepos){
 	// eof?
-	if(s->eof) 
-	{
-		//if(LWP_MutexTryLock(cache_mutex))LWP_MutexUnlock(cache_mutex);
-		return total;
-	} 
-
+	if(s->eof) break;
+	if (s->max_filepos == last_max) {
+	    //if (sleep_count++ == 10)
+	    //    mp_msg(MSGT_CACHE, MSGL_WARN, "Cache not filling!\n");
+	} else {
+	    last_max = s->max_filepos;
+	    sleep_count = 0;
+	}
 	// waiting for buffer fill...
-	//LWP_MutexUnlock(cache_mutex);
-	usec_sleep(READ_USLEEP_TIME); // 10ms
-	//LWP_MutexLock(cache_mutex);
+	if (stream_check_interrupt(READ_SLEEP_TIME)) {
+	    s->eof = 1;
+	    break;
+	}
 	continue; // try again...
-    }	
+    }
+    sleep_count = 0;
+
     newb=s->max_filepos-s->read_filepos; // new bytes in the buffer
     if(newb<min_fill) min_fill=newb; // statistics...
 
@@ -152,20 +169,10 @@ int cache_read(cache_vars_t* s,unsigned char* buf,int size){
     if(newb>size) newb=size;
 
     // check:
-    if(s->read_filepos<s->min_filepos) 
-	{
-		mp_msg(MSGT_CACHE,MSGL_ERR,"Ehh. s->read_filepos<s->min_filepos !!! Report bug...\n");
-		//debug_str="Ehh. s->read_filepos<s->min_filepos !!! Report bug...\n";
-	}
+    if(s->read_filepos<s->min_filepos) mp_msg(MSGT_CACHE,MSGL_ERR,"Ehh. s->read_filepos<s->min_filepos !!! Report bug...\n");
 
     // len=write(mem,newb)
     //printf("Buffer read: %d bytes\n",newb);
-    
-	if(newb<=0 || pos<0 || pos+newb > s->buffer_size) // very very odd error
-    {
-    	//debug_str="Ehh. very very odd error !!! Report bug...\n";
-    	continue;
-	}
     memcpy(buf,&s->buffer[pos],newb);
     buf+=newb;
     len=newb;
@@ -176,35 +183,30 @@ int cache_read(cache_vars_t* s,unsigned char* buf,int size){
     total+=len;
 
   }
-  //cache_fill_status=(s->max_filepos-s->read_filepos)/(s->buffer_size / 100);
+#ifndef GEKKO
+  cache_fill_status=(s->max_filepos-s->read_filepos)/(s->buffer_size / 100);
+#endif
   return total;
 }
 
-int cache_fill(cache_vars_t* s){
+static int cache_fill(cache_vars_t *s)
+{
   int back,back2,newb,space,len,pos;
-  off_t read;
+  off_t read=s->read_filepos;
 
-retry:
-  
-  if(!s || s->eof) 
-  {
-      cache_fill_status=-1;
-	  return 0;
-  }  
-  read=s->read_filepos;
   if(read<s->min_filepos || read>s->max_filepos){
       // seek...
-      //mp_msg(MSGT_CACHE,MSGL_DBG2,"Out of boundaries... seeking to 0x%"PRIX64"  \n",(int64_t)read);
-      // streaming: drop cache contents only if seeking backward or too much fwd:
-      if(s->stream->type!=STREAMTYPE_STREAM ||
-          read<s->min_filepos || read>=s->max_filepos+s->seek_limit)
+      mp_msg(MSGT_CACHE,MSGL_DBG2,"Out of boundaries... seeking to 0x%"PRIX64"  \n",(int64_t)read);
+      // drop cache contents only if seeking backward or too much fwd.
+      // This is also done for on-disk files, since it loses the backseek cache.
+      // That in turn can cause major bandwidth increase and performance
+      // issues with e.g. mov or badly interleaved files
+      if(read<s->min_filepos || read>=s->max_filepos+s->seek_limit)
       {
         s->offset= // FIXME!?
         s->min_filepos=s->max_filepos=read; // drop cache content :(
-        //debug_str="cache_fill:drop cache content";
         if(s->stream->eof) stream_reset(s->stream);
         stream_seek(s->stream,read);
-        //debug_str="cache_fill:stream_seek: ok";
         //mp_msg(MSGT_CACHE,MSGL_DBG2,"Seek done. new pos: 0x%"PRIX64"  \n",(int64_t)stream_tell(s->stream));
       }
   }
@@ -221,17 +223,18 @@ retry:
   // calc free buffer space:
   space=s->buffer_size - (newb+back);
 
-  if(space<s->fill_limit){
-//    printf("Buffer is full (%d bytes free, limit: %d)\n",space,s->fill_limit);
-	  if(s->eof) cache_fill_status=-1;
-  	else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
-
-    return 0; // no fill...
-  }
   // calc bufferpos:
   pos=s->max_filepos - s->offset;
   if(pos>=s->buffer_size) pos-=s->buffer_size; // wrap-around
 
+  if(space<s->fill_limit){
+//    printf("Buffer is full (%d bytes free, limit: %d)\n",space,s->fill_limit);
+#ifdef GEKKO
+if(s->eof) cache_fill_status=-1;
+else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
+#endif
+    return 0; // no fill...
+  }
 
 //  printf("### read=0x%X  back=%d  newb=%d  space=%d  pos=%d\n",read,back,newb,space,pos);
 
@@ -256,72 +259,24 @@ retry:
   //len=stream_fill_buffer(s->stream);
   //memcpy(&s->buffer[pos],s->stream->buffer,len); // avoid this extra copy!
   // ....
-  if(pos<0 || space<=0 || pos+space>s->buffer_size)
-  {
-  	//debug_str="cache_fill: strange error";
-  	//goto retry;
-  }
   len=stream_read(s->stream,&s->buffer[pos],space);
-  if(len==0) 
-  {
-  	if(s->stream->error>0)
-	{
-		s->stream->error++; //count read error
-		
-		if(s->stream->error>1000) //num retries
-		{
-			//s->stream->error=0;
-			s->eof=1;
-			//printf("eof\n");
-		}
-		else		
-		{
-		  //printf("Error reading stream\n");
-		  //retry if we have cache
-		  cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
-		  if(cache_fill_status<5)
-		  {	  
-	  		s->eof=1;
-	  		cache_fill_status=-1;  		
-	  		//printf("error: %i\n",s->stream->error);
-	  	  }
-	  	  else 
-			{
-			s->stream->eof=0;
-			//printf("retry read (%f)\n",cache_fill_status);
-			}
-  	    }
-	}
-  	else
-  	{
-  		cache_fill_status=-1;  	
-  		s->eof=1;
-  	}
-  }
+  s->eof= !len;
 
   s->max_filepos+=len;
   if(pos+len>=s->buffer_size){
       // wrap...
       s->offset+=s->buffer_size;
   }
-
-  if(s->eof) cache_fill_status=-1;
-  else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
-
+#ifdef GEKKO
+if(s->eof) cache_fill_status=-1;
+else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
+#endif
   return len;
 
 }
 
 static int cache_execute_control(cache_vars_t *s) {
-  int res = 1;
-  //static unsigned last;
-  //unsigned now;
-  static u64 last;
-  u64 now;
-
-  if(!s || !s->stream)
-	  return 0;
-
+  static unsigned last;
   int quit = s->control == -2;
   if (quit || !s->stream->control) {
     s->stream_time_length = 0;
@@ -330,17 +285,14 @@ static int cache_execute_control(cache_vars_t *s) {
     s->control = -1;
     return !quit;
   }
-
-  now = GetTimerMS();
-  if (now - last > 99) {
-	double len;
-	if (s->stream->control(s->stream, STREAM_CTRL_GET_TIME_LENGTH, &len) == STREAM_OK)
-	  s->stream_time_length = len;
-	else
-	  s->stream_time_length = 0;
-	last = now;
+  if (GetTimerMS() - last > 99) {
+    double len;
+    if (s->stream->control(s->stream, STREAM_CTRL_GET_TIME_LENGTH, &len) == STREAM_OK)
+      s->stream_time_length = len;
+    else
+      s->stream_time_length = 0;
+    last = GetTimerMS();
   }
-
   if (s->control == -1) return 1;
   switch (s->control) {
     case STREAM_CTRL_GET_CURRENT_TIME:
@@ -365,13 +317,25 @@ static int cache_execute_control(cache_vars_t *s) {
   return 1;
 }
 
+static void *shared_alloc(int size) {
+#if FORKED_CACHE
+    return shmem_alloc(size);
+#else
+    return malloc(size);
+#endif
+}
+
+static void shared_free(void *ptr, int size) {
+#if FORKED_CACHE
+    shmem_free(ptr, size);
+#else
+    free(ptr);
+#endif
+}
+
 static cache_vars_t* cache_init(int size,int sector){
   int num;
-#if !defined(__MINGW32__) && !defined(PTHREAD_CACHE) && !defined(__OS2__) && !defined(GEKKO)
-  cache_vars_t* s=shmem_alloc(sizeof(cache_vars_t));
-#else
-  cache_vars_t* s=malloc(sizeof(cache_vars_t));
-#endif
+  cache_vars_t* s=shared_alloc(sizeof(cache_vars_t));
   if(s==NULL) return NULL;
 
   memset(s,0,sizeof(cache_vars_t));
@@ -381,21 +345,18 @@ static cache_vars_t* cache_init(int size,int sector){
   }//32kb min_size
   s->buffer_size=num*sector;
   s->sector_size=sector;
-#if !defined(__MINGW32__) && !defined(PTHREAD_CACHE) && !defined(__OS2__) && !defined(GEKKO)
-  s->buffer=shmem_alloc(s->buffer_size);
-#else
-  if(global_buffer==NULL) global_buffer=mem2_malloc(size);
+#ifdef GEKKO
+  if(global_buffer==NULL)
+  	global_buffer=mem2_malloc(size);
   s->buffer=global_buffer;
-#endif
-
-  if(s->buffer == NULL){
-#if !defined(__MINGW32__) && !defined(PTHREAD_CACHE) && !defined(__OS2__) && !defined(GEKKO)
-    shmem_free(s,sizeof(cache_vars_t));
 #else
-    free(s);
+  s->buffer=shared_alloc(s->buffer_size);
 #endif
+  if(s->buffer == NULL){
+    shared_free(s, sizeof(cache_vars_t));
     return NULL;
   }
+
   s->fill_limit=8*sector;
 #if defined(GEKKO)
   s->back_size=s->buffer_size/4; // 1/4 back  3/4 forward
@@ -407,57 +368,71 @@ static cache_vars_t* cache_init(int size,int sector){
 
 void cache_uninit(stream_t *s) {
   cache_vars_t* c = s->cache_data;
-  
-#if defined(GEKKO)
-  if(!s->cache_pid) return; 
+  if(s->cache_pid) {
+#if !FORKED_CACHE
+    cache_do_control(s, -2, NULL);
+#ifdef GEKKO
   if(!CacheThreadSuspended())
   {
     cache_do_control(s, -2, NULL);
-    stop_cache_thread = 1;
     while(!CacheThreadSuspended())
   	  usleep(50);
   }
-  s->cache_pid = 0;
-  cachearg = NULL;
-#else  
-  if(s->cache_pid) {
-#if defined(__MINGW32__) || defined(PTHREAD_CACHE) || defined(__OS2__) || defined(GEKKO)
-    cache_do_control(s, -2, NULL);
+#endif
 #else
     kill(s->cache_pid,SIGKILL);
     waitpid(s->cache_pid,NULL,0);
 #endif
-	s->cache_pid = 0;
+    s->cache_pid = 0;
   }
-#endif //GEKKO
-
-if(!c) return;
-#if defined(GEKKO)
-  if(c->stream)
-    free(c->stream);
-  c->buffer=NULL;
-  free(s->cache_data);
-  s->cache_data=NULL;
-  s->cache_pid=0;
-#else
-#if defined(__MINGW32__) || defined(PTHREAD_CACHE) || defined(__OS2__)
-  free(c->stream);
-  free(c->buffer);
-  c->buffer = NULL;
-  free(s->cache_data);
-#else
-  shmem_free(c->buffer,c->buffer_size);
-  c->buffer = NULL;
-  shmem_free(s->cache_data,sizeof(cache_vars_t));
+  if(!c) return;
+#ifndef GEKKO
+  shared_free(c->buffer, c->buffer_size);
 #endif
+  c->buffer = NULL;
+  c->stream = NULL;
+  shared_free(s->cache_data, sizeof(cache_vars_t));
   s->cache_data = NULL;
-#endif //GEKKO
 }
-
 
 static void exit_sighandler(int x){
   // close stream
   exit(0);
+}
+
+static void dummy_sighandler(int x) {
+}
+
+/**
+ * Main loop of the cache process or thread.
+ */
+static void cache_mainloop(cache_vars_t *s) {
+    int sleep_count = 0;
+#if FORKED_CACHE
+    signal(SIGUSR1, SIG_IGN);
+#endif
+    do {
+        if (!cache_fill(s)) {
+#if FORKED_CACHE
+            // Let signal wake us up, we cannot leave this
+            // enabled since we do not handle EINTR in most places.
+            // This might need extra code to work on BSD.
+            signal(SIGUSR1, dummy_sighandler);
+#endif
+            if (sleep_count < INITIAL_FILL_USLEEP_COUNT) {
+                sleep_count++;
+                usec_sleep(INITIAL_FILL_USLEEP_TIME);
+            } else
+                usec_sleep(FILL_USLEEP_TIME); // idle
+#if FORKED_CACHE
+            signal(SIGUSR1, SIG_IGN);
+#endif
+        } else {
+            sleep_count = 0;
+            usec_sleep(50);
+        }
+//        cache_stats(s->cache_data);
+    } while (cache_execute_control(s));
 }
 
 /**
@@ -468,41 +443,32 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
   int res = -1;
   cache_vars_t* s;
 
-	cache_fill_status=-1;
-
   if (stream->flags & STREAM_NON_CACHEABLE) {
-    //mp_msg(MSGT_CACHE,MSGL_STATUS,"\rThis stream is non-cacheable\n");
+    mp_msg(MSGT_CACHE,MSGL_STATUS,"\rThis stream is non-cacheable\n");
     return 1;
   }
-  if(cache_mutex == LWP_MUTEX_NULL) LWP_MutexInit(&cache_mutex, false);	
-/*  
-if(size>CACHE_LIMIT)
-{ //limit cache 
-	float factor;
-	factor=(float)size/CACHE_LIMIT;
-	min=min/factor;
-	seek_limit=seek_limit/factor;
-	size=CACHE_LIMIT; 
-}
-*/
+
   s=cache_init(size,ss);
   if(s == NULL) return -1;
   stream->cache_data=s;
   s->stream=stream; // callback
   s->seek_limit=seek_limit;
-  s->stream->error=0;
-  s->read_filepos=0;
+
 
   //make sure that we won't wait from cache_fill
-  //more data than it is alowed to fill
+  //more data than it is allowed to fill
   if (s->seek_limit > s->buffer_size - s->fill_limit ){
      s->seek_limit = s->buffer_size - s->fill_limit;
   }
   if (min > s->buffer_size - s->fill_limit) {
      min = s->buffer_size - s->fill_limit;
   }
+  // to make sure we wait for the cache process/thread to be active
+  // before continuing
+  if (min <= 0)
+    min = 1;
 
-#if !defined(__MINGW32__) && !defined(PTHREAD_CACHE) && !defined(__OS2__) && !defined(GEKKO)
+#if FORKED_CACHE
   if((stream->cache_pid=fork())){
     if ((pid_t)stream->cache_pid == -1)
       stream->cache_pid = 0;
@@ -510,19 +476,15 @@ if(size>CACHE_LIMIT)
   {
     stream_t* stream2=malloc(sizeof(stream_t));
     memcpy(stream2,s->stream,sizeof(stream_t));
-    s->stream=stream2;    
+    s->stream=stream2;
 #if defined(__MINGW32__)
     stream->cache_pid = _beginthread( ThreadProc, 0, s );
-#elif defined(GEKKO)
-	stop_cache_thread = 1;
-	while(!CacheThreadSuspended())
-		usleep(50);
-	cachearg = s;
-	stop_cache_thread = 0;
-	ResumeCacheThread();
-	stream->cache_pid = 1;
 #elif defined(__OS2__)
     stream->cache_pid = _beginthread( ThreadProc, NULL, 256 * 1024, s );
+#elif defined(GEKKO)
+	cachearg = s;
+	ResumeCacheThread();
+    stream->cache_pid = 1;
 #else
     {
     pthread_t tid;
@@ -539,14 +501,16 @@ if(size>CACHE_LIMIT)
     // wait until cache is filled at least prefill_init %
     mp_msg(MSGT_CACHE,MSGL_V,"CACHE_PRE_INIT: %"PRId64" [%"PRId64"] %"PRId64"  pre:%d  eof:%d  \n",
 	(int64_t)s->min_filepos,(int64_t)s->read_filepos,(int64_t)s->max_filepos,min,s->eof);
-
     while(s->read_filepos<s->min_filepos || s->max_filepos-s->read_filepos<min){
 	mp_msg(MSGT_CACHE,MSGL_STATUS,MSGTR_CacheFill,
 	    100.0*(float)(s->max_filepos-s->read_filepos)/(float)(s->buffer_size),
-	    (int64_t)s->max_filepos-s->read_filepos );
-
+	    (int64_t)s->max_filepos-s->read_filepos
+	);
+	
+#ifdef GEKKO
 	if(s->stream->type == STREAMTYPE_STREAM)
 		ShowProgress("Buffering...", (int)(100.0*(float)(s->max_filepos)/(float)(min)), 100);
+#endif
 
 	if(s->eof) break; // file is smaller than prefill size
 	if(stream_check_interrupt(PREFILL_SLEEP_TIME)) {
@@ -554,7 +518,6 @@ if(size>CACHE_LIMIT)
 	  goto err_out;
         }
     }
-
     mp_msg(MSGT_CACHE,MSGL_STATUS,"\n");
     return 1; // parent exits
 
@@ -563,41 +526,27 @@ err_out:
     return res;
   }
 
-#if defined(__MINGW32__) || defined(PTHREAD_CACHE) || defined(__OS2__) || defined(GEKKO)
-}
-#if defined(PTHREAD_CACHE) || defined(GEKKO)
-static void *ThreadProc( void *s ){
-#else
-static void ThreadProc( void *s ){
-#endif
-#endif
-
-#ifdef CONFIG_GUI
-  use_gui = 0; // mp_msg may not use gui stuff in forked code
-#endif
-// cache thread mainloop:
-#ifndef GEKKO
+#if FORKED_CACHE
   signal(SIGTERM,exit_sighandler); // kill
-#endif  
-  do {
-    if(!cache_fill(s)){
-	 usec_sleep(FILL_USLEEP_TIME); // idle
-    }else usec_sleep(500);
-//	 cache_stats(s->cache_data);
-#ifndef GEKKO
-  } while (cache_execute_control(s));
-#else
-  } while (cache_execute_control(s) && !stop_cache_thread);
-#endif  
-#if defined(__MINGW32__) || defined(__OS2__)
-  _endthread();
-#endif
-#if defined(PTHREAD_CACHE) || defined(GEKKO) 
-  return NULL;
-#endif
+  cache_mainloop(s);
   // make sure forked code never leaves this function
   exit(0);
+#endif
 }
+
+#if !FORKED_CACHE
+#if defined(__MINGW32__) || defined(__OS2__)
+static void ThreadProc( void *s ){
+  cache_mainloop(s);
+  _endthread();
+}
+#else
+static void *ThreadProc( void *s ){
+  cache_mainloop(s);
+  return NULL;
+}
+#endif
+#endif
 
 #ifdef GEKKO
 void *mplayercachethread(void *arg)
@@ -615,24 +564,17 @@ void *mplayercachethread(void *arg)
 
 int cache_stream_fill_buffer(stream_t *s){
   int len;
-  if(s->eof){ s->buf_pos=s->buf_len=0; return 0; }
   if(!s->cache_pid) return stream_fill_buffer(s);
 
 //  cache_stats(s->cache_data);
 
-  if(s->pos!=((cache_vars_t*)s->cache_data)->read_filepos) 
-  {
-  	//mp_msg(MSGT_CACHE,MSGL_ERR,"!!! read_filepos differs!!! report this bug...\n");
-  	//reset cache
-    ((cache_vars_t*)s->cache_data)->offset = ((cache_vars_t*)s->cache_data)->min_filepos=((cache_vars_t*)s->cache_data)->max_filepos=((cache_vars_t*)s->cache_data)->read_filepos; // drop cache content :(
-    if(((cache_vars_t*)s->cache_data)->stream->eof) stream_reset(s);
-	s->pos!=((cache_vars_t*)s->cache_data)->read_filepos;
-  }
+  if(s->pos!=((cache_vars_t*)s->cache_data)->read_filepos) mp_msg(MSGT_CACHE,MSGL_ERR,"!!! read_filepos differs!!! report this bug...\n");
 
   len=cache_read(s->cache_data,s->buffer, ((cache_vars_t*)s->cache_data)->sector_size);
   //printf("cache_stream_fill_buffer->read -> %d\n",len);
 
   if(len<=0){ s->eof=1; s->buf_pos=s->buf_len=0; return 0; }
+  s->eof=0;
   s->buf_pos=0;
   s->buf_len=len;
   s->pos+=len;
@@ -644,192 +586,88 @@ int cache_stream_fill_buffer(stream_t *s){
 int cache_stream_seek_long(stream_t *stream,off_t pos){
   cache_vars_t* s;
   off_t newpos;
-  if(!stream->cache_pid) 
-  {
-  	return stream_seek_long(stream,pos);
-  }
-  LWP_MutexLock(cache_mutex);
+  if(!stream->cache_pid) return stream_seek_long(stream,pos);
 
   s=stream->cache_data;
 //  s->seek_lock=1;
 
-//  mp_msg(MSGT_CACHE,MSGL_DBG2,"CACHE2_SEEK: 0x%"PRIX64" <= 0x%"PRIX64" (0x%"PRIX64") <= 0x%"PRIX64"  \n",s->min_filepos,pos,s->read_filepos,s->max_filepos);
+  mp_msg(MSGT_CACHE,MSGL_DBG2,"CACHE2_SEEK: 0x%"PRIX64" <= 0x%"PRIX64" (0x%"PRIX64") <= 0x%"PRIX64"  \n",s->min_filepos,pos,s->read_filepos,s->max_filepos);
 
   newpos=pos/s->sector_size; newpos*=s->sector_size; // align
   stream->pos=s->read_filepos=newpos;
   s->eof=0; // !!!!!!!
+  cache_wakeup(stream);
 
-	LWP_MutexUnlock(cache_mutex);
   cache_stream_fill_buffer(stream);
-	LWP_MutexLock(cache_mutex);
 
   pos-=newpos;
-  //GetRelativeTime();
   if(pos>=0 && pos<=stream->buf_len){
     stream->buf_pos=pos; // byte position in sector
-    LWP_MutexUnlock(cache_mutex);
     return 1;
   }
-	LWP_MutexUnlock(cache_mutex);
+
 //  stream->buf_pos=stream->buf_len=0;
 //  return 1;
 
-//  mp_msg(MSGT_CACHE,MSGL_V,"cache_stream_seek: WARNING! Can't seek to 0x%"PRIX64" !\n",(int64_t)(pos+newpos));
+  mp_msg(MSGT_CACHE,MSGL_V,"cache_stream_seek: WARNING! Can't seek to 0x%"PRIX64" !\n",(int64_t)(pos+newpos));
   return 0;
 }
 
 int cache_do_control(stream_t *stream, int cmd, void *arg) {
+  int sleep_count = 0;
   cache_vars_t* s = stream->cache_data;
   switch (cmd) {
-	case STREAM_CTRL_SEEK_TO_TIME:
-	  s->control_double_arg = *(double *)arg;
-	  s->control = cmd;
-	  break;
-	case STREAM_CTRL_SEEK_TO_CHAPTER:
-	case STREAM_CTRL_SET_ANGLE:
-	  s->control_uint_arg = *(unsigned *)arg;
-	  s->control = cmd;
-	  break;
+    case STREAM_CTRL_SEEK_TO_TIME:
+      s->control_double_arg = *(double *)arg;
+      s->control = cmd;
+      break;
+    case STREAM_CTRL_SEEK_TO_CHAPTER:
+    case STREAM_CTRL_SET_ANGLE:
+      s->control_uint_arg = *(unsigned *)arg;
+      s->control = cmd;
+      break;
 // the core might call these every frame, they are too slow for this...
-	case STREAM_CTRL_GET_TIME_LENGTH:
+    case STREAM_CTRL_GET_TIME_LENGTH:
 //    case STREAM_CTRL_GET_CURRENT_TIME:
-	  *(double *)arg = s->stream_time_length;
-	  return s->stream_time_length ? STREAM_OK : STREAM_UNSUPPORTED;
-	case STREAM_CTRL_GET_NUM_CHAPTERS:
-	case STREAM_CTRL_GET_CURRENT_CHAPTER:
-	case STREAM_CTRL_GET_ASPECT_RATIO:
-	case STREAM_CTRL_GET_NUM_ANGLES:
-	case STREAM_CTRL_GET_ANGLE:
-	case -2:
-	  s->control = cmd;
-	  break;
-	default:
-	  return STREAM_UNSUPPORTED;
+      *(double *)arg = s->stream_time_length;
+      return s->stream_time_length ? STREAM_OK : STREAM_UNSUPPORTED;
+    case STREAM_CTRL_GET_NUM_CHAPTERS:
+    case STREAM_CTRL_GET_CURRENT_CHAPTER:
+    case STREAM_CTRL_GET_ASPECT_RATIO:
+    case STREAM_CTRL_GET_NUM_ANGLES:
+    case STREAM_CTRL_GET_ANGLE:
+    case -2:
+      s->control = cmd;
+      break;
+    default:
+      return STREAM_UNSUPPORTED;
   }
-  while (s->control != -1)
-	usec_sleep(CONTROL_SLEEP_TIME);
+  cache_wakeup(stream);
+  while (s->control != -1) {
+    //if (sleep_count++ == 1000)
+    //  mp_msg(MSGT_CACHE, MSGL_WARN, "Cache not responding!\n");
+    if (stream_check_interrupt(CONTROL_SLEEP_TIME)) {
+      s->eof = 1;
+      return STREAM_UNSUPPORTED;
+    }
+  }
   switch (cmd) {
-	case STREAM_CTRL_GET_TIME_LENGTH:
-	case STREAM_CTRL_GET_CURRENT_TIME:
-	case STREAM_CTRL_GET_ASPECT_RATIO:
-	  *(double *)arg = s->control_double_arg;
-	  break;
-	case STREAM_CTRL_GET_NUM_CHAPTERS:
-	case STREAM_CTRL_GET_CURRENT_CHAPTER:
-	case STREAM_CTRL_GET_NUM_ANGLES:
-	case STREAM_CTRL_GET_ANGLE:
-	  *(unsigned *)arg = s->control_uint_arg;
-	  break;
-	case STREAM_CTRL_SEEK_TO_CHAPTER:
-	case STREAM_CTRL_SEEK_TO_TIME:
-	case STREAM_CTRL_SET_ANGLE:
-	  stream->pos = s->read_filepos = s->control_new_pos;
-	  break;
+    case STREAM_CTRL_GET_TIME_LENGTH:
+    case STREAM_CTRL_GET_CURRENT_TIME:
+    case STREAM_CTRL_GET_ASPECT_RATIO:
+      *(double *)arg = s->control_double_arg;
+      break;
+    case STREAM_CTRL_GET_NUM_CHAPTERS:
+    case STREAM_CTRL_GET_CURRENT_CHAPTER:
+    case STREAM_CTRL_GET_NUM_ANGLES:
+    case STREAM_CTRL_GET_ANGLE:
+      *(unsigned *)arg = s->control_uint_arg;
+      break;
+    case STREAM_CTRL_SEEK_TO_CHAPTER:
+    case STREAM_CTRL_SEEK_TO_TIME:
+    case STREAM_CTRL_SET_ANGLE:
+      stream->pos = s->read_filepos = s->control_new_pos;
+      break;
   }
   return s->control_res;
-}
-
-int stream_read(stream_t *s,char* mem,int total){
-  int len=total;
-  if(!mem) return 0;
-  while(len>0){
-    int x;
-    //debug_str="stream_read";
-    
-    
-    if(s->buf_len-s->buf_pos==0){
-    	//debug_str="stream_read: cache_stream_fill_buffer";
-      if(!cache_stream_fill_buffer(s)) 
-	  {
-	  	//debug_str="stream_read: cache_stream_fill_buffer ok return";
-	  	return total-len; // EOF or error
-	  }
-      //debug_str="stream_read: cache_stream_fill_buffer ok";
-      x=s->buf_len-s->buf_pos;
-    } 
-    LWP_MutexLock(cache_mutex);
-    x=s->buf_len-s->buf_pos;
-    if(x>len) x=len;
-    /*
-    if(s->buf_pos+x>s->buf_len) 
-	{
-			//debug_str="stream_read: WARNING! s->buf_pos>s->buf_len\n";
-			usleep(10);
-//			LWP_MutexUnlock(cache_mutex);
-			usleep(10);
-			log_console_enable_video(true);
-			printf("cache er1!!\n");
-			LWP_MutexUnlock(cache_mutex);
-			sleep(3);
-			
-		return total-len;
-		
-	}
-	*/
-	//debug_str="stream_read: memcpy";
-    memcpy(mem,&s->buffer[s->buf_pos],x);
-	//debug_str="stream_read: ok memcpy";
-    s->buf_pos+=x; mem+=x; len-=x;
-    LWP_MutexUnlock(cache_mutex);
-  }
-  
-  //debug_str="stream_read: ok";
-  return total;
-}
-
-#if 0
-void refillcache(stream_t *stream,float min)
-{
-	cache_vars_t* s;
-	int out=0;
-	s=stream->cache_data;
-	u64 t1;
-	float old=0;
-	t1 = GetTimerMS();
-
-    while(cache_fill_status<min)
-    {
-		//printf("Cache fill: %5.2f%%  \n",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
-    	ShowProgress("Buffering...", (int)cache_fill_status, (int)min);
-		if(s->eof) break; // file is smaller than prefill size
-			
-		if(out==0)out=stream_check_interrupt(PREFILL_SLEEP_TIME);
-		else
-		{ //remove others pause commands if you press pause several times
-		  mp_cmd_t* cmd;
-		  if((cmd = mp_input_get_cmd(PREFILL_SLEEP_TIME,0,1)) != NULL)
-		  {
-			  if(cmd->id==MP_CMD_PAUSE)
-			  {
-				  cmd = mp_input_get_cmd(0,0,0);
-				  mp_cmd_free(cmd);
-			  }
-		  }
-
-		}
-		//printf("Cache fill: %5.2f%%  \n",cache_fill_status);
-		if(cache_fill_status > 5 && out)
-		{
-			//printf("break Cache fill: %5.2f%%  \n",cache_fill_status);
-			return ;
-		}	
-		
-		//not needed, for security	
-		if(old<cache_fill_status)t1 = GetTimerMS();
-	    if(GetTimerMS()-t1>1500) return;
-		old=cache_fill_status;
-		usleep(50);
-    }
-    //printf("end Cache fill: %5.2f%%  \n",cache_fill_status);   
-}
-#endif
-
-int stream_error(stream_t *stream)
-{
-	if(!stream || !stream->cache_data)
-		return 0;
-
-	cache_vars_t *vars = (cache_vars_t *)stream->cache_data;
-
-	return vars->stream->error;
 }

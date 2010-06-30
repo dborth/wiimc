@@ -697,7 +697,7 @@ static void FixInvalidSettings()
 		CleanupPath(WiiSettings.onlinemediaFolder);
 
 	// Network
-	for(int i=0; i<5; i++)
+	for(int i=0; i<MAX_SHARES; i++)
 	{
 		if(WiiSettings.ftpConf[i].port < 4 || WiiSettings.ftpConf[i].port > 49151)
 			WiiSettings.ftpConf[i].port = 21;
@@ -962,7 +962,7 @@ static bool LoadSettingsFile(char * filepath)
 				// Online Media
 				loadXMLSetting(WiiSettings.onlinemediaFolder, "onlinemediaFolder", sizeof(WiiSettings.onlinemediaFolder));
 				// Network
-				for(int i=0; i<5; i++)
+				for(int i=0; i<MAX_SHARES; i++)
 				{
 					loadXMLSMBShare(i);
 					loadXMLFTPSite(i);

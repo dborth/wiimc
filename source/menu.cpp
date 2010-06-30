@@ -2011,17 +2011,31 @@ static void MenuBrowse(int menu)
 		{
 			upOneLevelBtn.ResetState();
 
+			if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
+			{
+				mainWindow->Append(disabled);
+				mainWindow->SetState(STATE_DISABLED);
+				ShowAction("Loading...");
+			}
+
 			if(browser.dir[0] != 0)
 			{
 				browser.selIndex = 0;
 
 				if(!BrowserChangeFolder())
+				{
+					CancelAction();
+					mainWindow->Remove(disabled);
+					mainWindow->SetState(STATE_DEFAULT);
 					goto done;
-	
+				}
 				fileBrowser->ResetState();
 				fileBrowser->fileList[0]->SetState(STATE_SELECTED);
 				fileBrowser->TriggerUpdate();
 			}
+			CancelAction();
+			mainWindow->Remove(disabled);
+			mainWindow->SetState(STATE_DEFAULT);
 		}
 
 		// update file browser based on arrow buttons

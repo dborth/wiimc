@@ -153,9 +153,6 @@ typedef struct stream {
   unsigned int buf_pos,buf_len;
   off_t pos,start_pos,end_pos;
   int eof;
-#ifdef GEKKO
-  int error;
-#endif
   int mode; //STREAM_READ or STREAM_WRITE
   unsigned int cache_pid;
   void* cache_data;
@@ -256,9 +253,7 @@ inline static unsigned int stream_read_int24(stream_t *s){
   y=(y<<8)|stream_read_char(s);
   return y;
 }
-#ifdef GEKKO
-int stream_read(stream_t *s,char* mem,int total);
-#else
+
 inline static int stream_read(stream_t *s,char* mem,int total){
   int len=total;
   while(len>0){
@@ -275,7 +270,7 @@ inline static int stream_read(stream_t *s,char* mem,int total){
   }
   return total;
 }
-#endif
+
 unsigned char* stream_read_line(stream_t *s,unsigned char* mem, int max, int utf16);
 
 inline static int stream_eof(stream_t *s){

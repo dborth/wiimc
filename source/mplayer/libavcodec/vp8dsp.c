@@ -61,6 +61,7 @@ static void vp8_luma_dc_wht_c(DCTELEM block[4][4][16], DCTELEM dc[16])
 static void vp8_idct_add_c(uint8_t *dst, DCTELEM block[16], int stride)
 {
     int i, t0, t1, t2, t3;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
     DCTELEM tmp[16];
 
     for (i = 0; i < 4; i++) {
@@ -81,10 +82,10 @@ static void vp8_idct_add_c(uint8_t *dst, DCTELEM block[16], int stride)
         t2 = MUL_35468(tmp[1*4+i]) - MUL_20091(tmp[3*4+i]);
         t3 = MUL_20091(tmp[1*4+i]) + MUL_35468(tmp[3*4+i]);
 
-        dst[0] = av_clip_uint8(dst[0] + ((t0 + t3 + 4) >> 3));
-        dst[1] = av_clip_uint8(dst[1] + ((t1 + t2 + 4) >> 3));
-        dst[2] = av_clip_uint8(dst[2] + ((t1 - t2 + 4) >> 3));
-        dst[3] = av_clip_uint8(dst[3] + ((t0 - t3 + 4) >> 3));
+        dst[0] = cm[dst[0] + ((t0 + t3 + 4) >> 3)];
+        dst[1] = cm[dst[1] + ((t1 + t2 + 4) >> 3)];
+        dst[2] = cm[dst[2] + ((t1 - t2 + 4) >> 3)];
+        dst[3] = cm[dst[3] + ((t0 - t3 + 4) >> 3)];
         dst += stride;
     }
 }
@@ -92,12 +93,13 @@ static void vp8_idct_add_c(uint8_t *dst, DCTELEM block[16], int stride)
 static void vp8_idct_dc_add_c(uint8_t *dst, DCTELEM block[16], int stride)
 {
     int i, dc = (block[0] + 4) >> 3;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP + dc;
 
     for (i = 0; i < 4; i++) {
-        dst[0] = av_clip_uint8(dst[0] + dc);
-        dst[1] = av_clip_uint8(dst[1] + dc);
-        dst[2] = av_clip_uint8(dst[2] + dc);
-        dst[3] = av_clip_uint8(dst[3] + dc);
+        dst[0] = cm[dst[0]];
+        dst[1] = cm[dst[1]];
+        dst[2] = cm[dst[2]];
+        dst[3] = cm[dst[3]];
         dst += stride;
     }
 }
@@ -114,17 +116,20 @@ static void vp8_idct_dc_add_c(uint8_t *dst, DCTELEM block[16], int stride)
     int av_unused q2 = p[ 2*stride];\
     int av_unused q3 = p[ 3*stride];
 
+#define clip_int8(n) (cm[n+0x80]-0x80)
+
 static av_always_inline void filter_common(uint8_t *p, int stride, int is4tap)
 {
     LOAD_PIXELS
     int a, f1, f2;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     a = 3*(q0 - p0);
 
     if (is4tap)
-        a += av_clip_int8(p1 - q1);
+        a += clip_int8(p1 - q1);
 
-    a = av_clip_int8(a);
+    a = clip_int8(a);
 
     // We deviate from the spec here with c(a+3) >> 3
     // since that's what libvpx does.
@@ -133,14 +138,14 @@ static av_always_inline void filter_common(uint8_t *p, int stride, int is4tap)
 
     // Despite what the spec says, we do need to clamp here to
     // be bitexact with libvpx.
-    p[-1*stride] = av_clip_uint8(p0 + f2);
-    p[ 0*stride] = av_clip_uint8(q0 - f1);
+    p[-1*stride] = cm[p0 + f2];
+    p[ 0*stride] = cm[q0 - f1];
 
     // only used for _inner on blocks without high edge variance
     if (!is4tap) {
         a = (f1+1)>>1;
-        p[-2*stride] = av_clip_uint8(p1 + a);
-        p[ 1*stride] = av_clip_uint8(q1 - a);
+        p[-2*stride] = cm[p1 + a];
+        p[ 1*stride] = cm[q1 - a];
     }
 }
 
@@ -172,22 +177,23 @@ static av_always_inline int hev(uint8_t *p, int stride, int thresh)
 static av_always_inline void filter_mbedge(uint8_t *p, int stride)
 {
     int a0, a1, a2, w;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     LOAD_PIXELS
 
-    w = av_clip_int8(p1-q1);
-    w = av_clip_int8(w + 3*(q0-p0));
+    w = clip_int8(p1-q1);
+    w = clip_int8(w + 3*(q0-p0));
 
     a0 = (27*w + 63) >> 7;
     a1 = (18*w + 63) >> 7;
     a2 = ( 9*w + 63) >> 7;
 
-    p[-3*stride] = av_clip_uint8(p2 + a2);
-    p[-2*stride] = av_clip_uint8(p1 + a1);
-    p[-1*stride] = av_clip_uint8(p0 + a0);
-    p[ 0*stride] = av_clip_uint8(q0 - a0);
-    p[ 1*stride] = av_clip_uint8(q1 - a1);
-    p[ 2*stride] = av_clip_uint8(q2 - a2);
+    p[-3*stride] = cm[p2 + a2];
+    p[-2*stride] = cm[p1 + a1];
+    p[-1*stride] = cm[p0 + a0];
+    p[ 0*stride] = cm[q0 - a0];
+    p[ 1*stride] = cm[q1 - a1];
+    p[ 2*stride] = cm[q2 - a2];
 }
 
 #define LOOP_FILTER(dir, size, stridea, strideb) \
@@ -208,12 +214,15 @@ static void vp8_ ## dir ## _loop_filter ## size ## _c(uint8_t *dst, int stride,\
 static void vp8_ ## dir ## _loop_filter ## size ## _inner_c(uint8_t *dst, int stride,\
                                       int flim_E, int flim_I, int hev_thresh)\
 {\
-    int i, hv;\
+    int i;\
 \
     for (i = 0; i < size; i++)\
         if (normal_limit(dst+i*stridea, strideb, flim_E, flim_I)) {\
-            hv = hev(dst+i*stridea, strideb, hev_thresh);\
-            filter_common(dst+i*stridea, strideb, hv);\
+            int hv = hev(dst+i*stridea, strideb, hev_thresh);\
+            if (hv) \
+                filter_common(dst+i*stridea, strideb, 1);\
+            else \
+                filter_common(dst+i*stridea, strideb, 0);\
         }\
 }
 
@@ -250,55 +259,69 @@ static const uint8_t subpel_filters[7][6] = {
     { 0,   1,  12, 123,   6,   0 },
 };
 
+#define PUT_PIXELS(WIDTH) \
+static void put_vp8_pixels ## WIDTH ##_c(uint8_t *dst, int dststride, uint8_t *src, int srcstride, int h, int x, int y) { \
+    int i; \
+    for (i = 0; i < h; i++, dst+= dststride, src+= srcstride) { \
+        memcpy(dst, src, WIDTH); \
+    } \
+}
+
+PUT_PIXELS(16)
+PUT_PIXELS(8)
+PUT_PIXELS(4)
 
 #define FILTER_6TAP(src, F, stride) \
-    av_clip_uint8((F[2]*src[x+0*stride] - F[1]*src[x-1*stride] + F[0]*src[x-2*stride] + \
-                   F[3]*src[x+1*stride] - F[4]*src[x+2*stride] + F[5]*src[x+3*stride] + 64) >> 7)
+    cm[(F[2]*src[x+0*stride] - F[1]*src[x-1*stride] + F[0]*src[x-2*stride] + \
+        F[3]*src[x+1*stride] - F[4]*src[x+2*stride] + F[5]*src[x+3*stride] + 64) >> 7]
 
 #define FILTER_4TAP(src, F, stride) \
-    av_clip_uint8((F[2]*src[x+0*stride] - F[1]*src[x-1*stride] + \
-                   F[3]*src[x+1*stride] - F[4]*src[x+2*stride] + 64) >> 7)
+    cm[(F[2]*src[x+0*stride] - F[1]*src[x-1*stride] + \
+        F[3]*src[x+1*stride] - F[4]*src[x+2*stride] + 64) >> 7]
 
 #define VP8_EPEL_H(SIZE, FILTER, FILTERNAME) \
-static void put_vp8_epel ## SIZE ## _ ## FILTERNAME ## _c(uint8_t *dst, uint8_t *src, int stride, int h, int mx, int my) \
+static void put_vp8_epel ## SIZE ## _ ## FILTERNAME ## _c(uint8_t *dst, int dststride, uint8_t *src, int srcstride, int h, int mx, int my) \
 { \
     const uint8_t *filter = subpel_filters[mx-1]; \
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP; \
     int x, y; \
 \
     for (y = 0; y < h; y++) { \
         for (x = 0; x < SIZE; x++) \
             dst[x] = FILTER(src, filter, 1); \
-        dst += stride; \
-        src += stride; \
+        dst += dststride; \
+        src += srcstride; \
     } \
 }
 #define VP8_EPEL_V(SIZE, FILTER, FILTERNAME) \
-static void put_vp8_epel ## SIZE ## _ ## FILTERNAME ## _c(uint8_t *dst, uint8_t *src, int stride, int h, int mx, int my) \
+static void put_vp8_epel ## SIZE ## _ ## FILTERNAME ## _c(uint8_t *dst, int dststride, uint8_t *src, int srcstride, int h, int mx, int my) \
 { \
     const uint8_t *filter = subpel_filters[my-1]; \
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP; \
     int x, y; \
 \
     for (y = 0; y < h; y++) { \
         for (x = 0; x < SIZE; x++) \
-            dst[x] = FILTER(src, filter, stride); \
-        dst += stride; \
-        src += stride; \
+            dst[x] = FILTER(src, filter, srcstride); \
+        dst += dststride; \
+        src += srcstride; \
     } \
 }
 #define VP8_EPEL_HV(SIZE, FILTERX, FILTERY, FILTERNAME) \
-static void put_vp8_epel ## SIZE ## _ ## FILTERNAME ## _c(uint8_t *dst, uint8_t *src, int stride, int h, int mx, int my) \
+static void put_vp8_epel ## SIZE ## _ ## FILTERNAME ## _c(uint8_t *dst, int dststride, uint8_t *src, int srcstride, int h, int mx, int my) \
 { \
     const uint8_t *filter = subpel_filters[mx-1]; \
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP; \
     int x, y; \
     uint8_t tmp_array[(2*SIZE+5)*SIZE]; \
     uint8_t *tmp = tmp_array; \
-    src -= 2*stride; \
+    src -= 2*srcstride; \
 \
     for (y = 0; y < h+5; y++) { \
         for (x = 0; x < SIZE; x++) \
             tmp[x] = FILTERX(src, filter, 1); \
         tmp += SIZE; \
-        src += stride; \
+        src += srcstride; \
     } \
 \
     tmp = tmp_array + 2*SIZE; \
@@ -307,7 +330,7 @@ static void put_vp8_epel ## SIZE ## _ ## FILTERNAME ## _c(uint8_t *dst, uint8_t 
     for (y = 0; y < h; y++) { \
         for (x = 0; x < SIZE; x++) \
             dst[x] = FILTERY(tmp, filter, SIZE); \
-        dst += stride; \
+        dst += dststride; \
         tmp += SIZE; \
     } \
 }
@@ -337,8 +360,63 @@ VP8_EPEL_HV(16, FILTER_6TAP, FILTER_6TAP, h6v6)
 VP8_EPEL_HV(8,  FILTER_6TAP, FILTER_6TAP, h6v6)
 VP8_EPEL_HV(4,  FILTER_6TAP, FILTER_6TAP, h6v6)
 
+#define VP8_BILINEAR(SIZE) \
+static void put_vp8_bilinear ## SIZE ## _h_c(uint8_t *dst, int stride, uint8_t *src, int s2, int h, int mx, int my) \
+{ \
+    int a = 8-mx, b = mx; \
+    int x, y; \
+\
+    for (y = 0; y < h; y++) { \
+        for (x = 0; x < SIZE; x++) \
+            dst[x] = (a*src[x] + b*src[x+1] + 4) >> 3; \
+        dst += stride; \
+        src += stride; \
+    } \
+} \
+static void put_vp8_bilinear ## SIZE ## _v_c(uint8_t *dst, int stride, uint8_t *src, int s2, int h, int mx, int my) \
+{ \
+    int c = 8-my, d = my; \
+    int x, y; \
+\
+    for (y = 0; y < h; y++) { \
+        for (x = 0; x < SIZE; x++) \
+            dst[x] = (c*src[x] + d*src[x+stride] + 4) >> 3; \
+        dst += stride; \
+        src += stride; \
+    } \
+} \
+\
+static void put_vp8_bilinear ## SIZE ## _hv_c(uint8_t *dst, int stride, uint8_t *src, int s2, int h, int mx, int my) \
+{ \
+    int a = 8-mx, b = mx; \
+    int c = 8-my, d = my; \
+    int x, y; \
+    uint8_t tmp_array[(2*SIZE+1)*SIZE]; \
+    uint8_t *tmp = tmp_array; \
+\
+    for (y = 0; y < h+1; y++) { \
+        for (x = 0; x < SIZE; x++) \
+            tmp[x] = (a*src[x] + b*src[x+1] + 4) >> 3; \
+        tmp += SIZE; \
+        src += stride; \
+    } \
+\
+    tmp = tmp_array; \
+\
+    for (y = 0; y < h; y++) { \
+        for (x = 0; x < SIZE; x++) \
+            dst[x] = (c*tmp[x] + d*tmp[x+SIZE] + 4) >> 3; \
+        dst += stride; \
+        tmp += SIZE; \
+    } \
+}
+
+VP8_BILINEAR(16)
+VP8_BILINEAR(8)
+VP8_BILINEAR(4)
+
 #define VP8_MC_FUNC(IDX, SIZE) \
-    dsp->put_vp8_epel_pixels_tab[IDX][0][0] = ff_put_vp8_pixels ## SIZE ## _c; \
+    dsp->put_vp8_epel_pixels_tab[IDX][0][0] = put_vp8_pixels ## SIZE ## _c; \
     dsp->put_vp8_epel_pixels_tab[IDX][0][1] = put_vp8_epel ## SIZE ## _h4_c; \
     dsp->put_vp8_epel_pixels_tab[IDX][0][2] = put_vp8_epel ## SIZE ## _h6_c; \
     dsp->put_vp8_epel_pixels_tab[IDX][1][0] = put_vp8_epel ## SIZE ## _v4_c; \
@@ -347,6 +425,17 @@ VP8_EPEL_HV(4,  FILTER_6TAP, FILTER_6TAP, h6v6)
     dsp->put_vp8_epel_pixels_tab[IDX][2][0] = put_vp8_epel ## SIZE ## _v6_c; \
     dsp->put_vp8_epel_pixels_tab[IDX][2][1] = put_vp8_epel ## SIZE ## _h4v6_c; \
     dsp->put_vp8_epel_pixels_tab[IDX][2][2] = put_vp8_epel ## SIZE ## _h6v6_c
+
+#define VP8_BILINEAR_MC_FUNC(IDX, SIZE) \
+    dsp->put_vp8_bilinear_pixels_tab[IDX][0][0] = put_vp8_pixels ## SIZE ## _c; \
+    dsp->put_vp8_bilinear_pixels_tab[IDX][0][1] = put_vp8_bilinear ## SIZE ## _h_c; \
+    dsp->put_vp8_bilinear_pixels_tab[IDX][0][2] = put_vp8_bilinear ## SIZE ## _h_c; \
+    dsp->put_vp8_bilinear_pixels_tab[IDX][1][0] = put_vp8_bilinear ## SIZE ## _v_c; \
+    dsp->put_vp8_bilinear_pixels_tab[IDX][1][1] = put_vp8_bilinear ## SIZE ## _hv_c; \
+    dsp->put_vp8_bilinear_pixels_tab[IDX][1][2] = put_vp8_bilinear ## SIZE ## _hv_c; \
+    dsp->put_vp8_bilinear_pixels_tab[IDX][2][0] = put_vp8_bilinear ## SIZE ## _v_c; \
+    dsp->put_vp8_bilinear_pixels_tab[IDX][2][1] = put_vp8_bilinear ## SIZE ## _hv_c; \
+    dsp->put_vp8_bilinear_pixels_tab[IDX][2][2] = put_vp8_bilinear ## SIZE ## _hv_c
 
 av_cold void ff_vp8dsp_init(VP8DSPContext *dsp)
 {
@@ -370,4 +459,13 @@ av_cold void ff_vp8dsp_init(VP8DSPContext *dsp)
     VP8_MC_FUNC(0, 16);
     VP8_MC_FUNC(1, 8);
     VP8_MC_FUNC(2, 4);
+
+    VP8_BILINEAR_MC_FUNC(0, 16);
+    VP8_BILINEAR_MC_FUNC(1, 8);
+    VP8_BILINEAR_MC_FUNC(2, 4);
+
+    if (HAVE_MMX)
+        ff_vp8dsp_init_x86(dsp);
+    if (HAVE_ALTIVEC)
+        ff_vp8dsp_init_altivec(dsp);
 }

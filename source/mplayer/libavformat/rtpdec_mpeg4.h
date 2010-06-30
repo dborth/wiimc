@@ -1,7 +1,7 @@
-/*
- * Generate a header file for hardcoded mpegaudiodec tables
- *
- * Copyright (c) 2009 Reimar Döffinger <Reimar.Doeffinger@gmx.de>
+/**
+ * Common code for the RTP depacketization of MPEG-4 formats.
+ * Copyright (c) 2010 Fabrice Bellard
+ *                    Romain Degez
  *
  * This file is part of FFmpeg.
  *
@@ -20,23 +20,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <stdlib.h>
-#define CONFIG_HARDCODED_TABLES 0
-#include "mpegaudio_tablegen.h"
-#include "tableprint.h"
+#ifndef AVFORMAT_RTPDEC_MPEG4_H
+#define AVFORMAT_RTPDEC_MPEG4_H
 
-int main(void)
-{
-    mpegaudio_tableinit();
+#include "rtpdec.h"
 
-    write_fileheader();
+/**
+ * MPEG-4 Video RTP callbacks. (RFC 3016)
+ */
+extern RTPDynamicProtocolHandler ff_mp4v_es_dynamic_handler;
 
-    WRITE_ARRAY("static const", int8_t, table_4_3_exp);
-    WRITE_ARRAY("static const", uint32_t, table_4_3_value);
-    WRITE_ARRAY("static const", uint32_t, exp_table);
-    WRITE_ARRAY("static const", float, exp_table_float);
-    WRITE_2D_ARRAY("static const", uint32_t, expval_table);
-    WRITE_2D_ARRAY("static const", float, expval_table_float);
+/**
+ * AAC RTP callbacks. (RFC 3640)
+ */
+extern RTPDynamicProtocolHandler ff_mpeg4_generic_dynamic_handler;
 
-    return 0;
-}
+#endif /* AVFORMAT_RTPDEC_MPEG4_H */
+

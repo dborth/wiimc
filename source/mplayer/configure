@@ -330,7 +330,6 @@ Codecs:
   --disable-libvorbis       disable libvorbis support [autodetect]
   --disable-speex           disable Speex support [autodetect]
   --enable-theora           enable OggTheora libraries [autodetect]
-  --enable-faad             enable external FAAD2 (AAC) [autodetect]
   --disable-faad-internal   disable internal FAAD2 (AAC) [autodetect]
   --enable-faad-fixed       enable fixed-point mode in internal FAAD2 [disabled]
   --disable-faac            disable support for FAAC (AAC encoder) [autodetect]
@@ -645,7 +644,7 @@ _liba52=auto
 _libdca=auto
 _libmpeg2=auto
 _libmpeg2_internal=auto
-_faad=auto
+_faad=no
 _faad_internal=auto
 _faad_fixed=no
 _faac=auto
@@ -1046,8 +1045,6 @@ for ac_option do
   --disable-libmpeg2-internal)   _libmpeg2_internal=no    ;;
   --enable-musepack)    _musepack=yes   ;;
   --disable-musepack)   _musepack=no    ;;
-  --enable-faad)        _faad=yes       ;;
-  --disable-faad)       _faad=no        ;;
   --enable-faad-internal)       _faad_internal=yes      ;;
   --disable-faad-internal)      _faad_internal=no       ;;
   --enable-faad-fixed)  _faad_fixed=yes ;;
@@ -1578,22 +1575,31 @@ else
   for _cc in "$_cc" gcc cc ; do
     cc_name_tmp=$($_cc -v 2>&1 | tail -n 1 | cut -d ' ' -f 1)
     if test "$cc_name_tmp" = "gcc"; then
-    cc_name=$cc_name_tmp
-    echocheck "$_cc version"
-    cc_vendor=gnu
-    cc_version=$($_cc -dumpversion 2>&1)
-    case $cc_version in
-      2.96*)
-        cc_fail=yes
-        ;;
-      *)
-        _cc_major=$(echo $cc_version | cut -d '.' -f 1)
-        _cc_minor=$(echo $cc_version | cut -d '.' -f 2)
-        _cc_mini=$(echo $cc_version | cut -d '.' -f 3)
-        ;;
-    esac
-    echores "$cc_version"
-    break
+      cc_name=$cc_name_tmp
+      echocheck "$_cc version"
+      cc_vendor=gnu
+      cc_version=$($_cc -dumpversion 2>&1)
+      case $cc_version in
+        2.96*)
+          cc_fail=yes
+          ;;
+        *)
+          _cc_major=$(echo $cc_version | cut -d '.' -f 1)
+          _cc_minor=$(echo $cc_version | cut -d '.' -f 2)
+          _cc_mini=$(echo $cc_version | cut -d '.' -f 3)
+          ;;
+      esac
+      echores "$cc_version"
+      break
+    fi
+    cc_name_tmp=$($_cc -v 2>&1 | head -n 1 | cut -d ' ' -f 1)
+    if test "$cc_name_tmp" = "clang"; then
+      echocheck "$_cc version"
+      cc_vendor=clang
+      cc_version=$($_cc -dumpversion 2>&1)
+      res_comment="experimental support only"
+      echores "clang $cc_version"
+      break
     fi
     cc_name_tmp=$($_cc -V 2>&1 | head -n 1 | cut -d ' ' -f 2,3)
     if test "$cc_name_tmp" = "Sun C"; then
@@ -1928,7 +1934,7 @@ cat > $TMPC << EOF
 int main(void) { return 0; }
 EOF
   if test "$_runtime_cpudetection" = no ; then
-    if test $cc_vendor != "intel" ; then
+    if test $cc_vendor != "intel" && test $cc_vendor != "clang" ; then
       cc_check -march=native && proc=native
     fi
     if test "$proc" = "amdfam10"; then
@@ -2081,7 +2087,7 @@ int main(void) { return 0; }
 EOF
     # This is a stripped-down version of the i386 fallback.
     if test "$_runtime_cpudetection" = no ; then
-      if test $cc_vendor != "intel" ; then
+      if test $cc_vendor != "intel" && test $cc_vendor != "clang" ; then
         cc_check -march=native && proc=native
       fi
       # --- AMD processors ---
@@ -3262,7 +3268,7 @@ echores "$_struct_sockaddr_sa_len"
 echocheck "arpa/inet.h"
 arpa_inet_h=no
 def_arpa_inet_h='#define HAVE_ARPA_INET_H 0'
-header_check arpa_inet.h && arpa_inet_h=yes &&
+header_check arpa/inet.h && arpa_inet_h=yes &&
   def_arpa_inet_h='#define HAVE_ARPA_INET_H 1'
 echores "$arpa_inet_h"
 
@@ -7572,7 +7578,7 @@ echocheck "libvpx"
 if test "$_libvpx_lavc" = auto; then
   _libvpx_lavc=no
   if test "$_libavcodec_a" != yes; then
-    res_comment="libavcodec (static) is required by libvpx, sorry"
+    res_comment="dynamic linking to libvpx is irrelevant when using dynamic libavcodec"
   else
     cat > $TMPC << EOF
 #include <vpx/vpx_encoder.h>
@@ -7592,6 +7598,7 @@ fi
 if test "$_libvpx_lavc" = yes ; then
   def_libvpx_lavc='#define CONFIG_LIBVPX 1'
   _libavdecoders="$_libavdecoders LIBVPX_DECODER"
+  _libavencoders="$_libavencoders LIBVPX_ENCODER"
   codecmodules="libvpx $codecmodules"
 else
   def_libvpx_lavc='#define CONFIG_LIBVPX 0'

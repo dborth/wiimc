@@ -19,19 +19,27 @@
 /// \file
 /// \ingroup Properties Command2Property OSDMsgStack
 
+
+#include "config.h"
+
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "config.h"
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #define _UWIN 1  /*disable Non-underscored versions of non-ANSI functions as otherwise int eof would conflict with eof()*/
 #include <windows.h>
 #endif
-#include <string.h>
-#include <unistd.h>
 
-// #include <sys/mman.h>
-#include <sys/types.h>
 #if !defined(__MINGW32__) && !defined(GEKKO)
 #include <sys/ioctl.h>
 #include <sys/wait.h>
@@ -43,70 +51,6 @@
 #define	SIGPIPE	13	/* broken pipe */
 #endif
 
-#include <sys/time.h>
-#include <sys/stat.h>
-
-#include <signal.h>
-#include <time.h>
-#include <fcntl.h>
-#include <limits.h>
-
-#include <errno.h>
-
-#include "mp_msg.h"
-
-#define HELP_MP_DEFINE_STATIC
-#include "help_mp.h"
-
-#include "m_option.h"
-#include "m_config.h"
-#include "m_property.h"
-#include "mplayer.h"
-#include "access_mpcontext.h"
-
-#include "cfg-mplayer-def.h"
-
-#include "libavutil/intreadwrite.h"
-#include "libavutil/avstring.h"
-
-#include "subreader.h"
-
-#include "libvo/video_out.h"
-
-#include "libvo/font_load.h"
-#include "libvo/sub.h"
-
-#ifdef CONFIG_X11
-#include "libvo/x11_common.h"
-#endif
-
-#include "libao2/audio_out.h"
-
-#include "codec-cfg.h"
-
-#include "edl.h"
-#include "spudec.h"
-#include "vobsub.h"
-
-#include "osdep/getch2.h"
-#include "osdep/timer.h"
-
-#include "gui/interface.h"
-
-#include "input/input.h"
-
-int slave_mode=0;
-int player_idle_mode=0;
-int quiet=0;
-int enable_mouse_movements=0;
-float start_volume = -1;
-
-#include "osdep/priority.h"
-
-char *heartbeat_cmd;
-
-#define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
-
 #ifdef HAVE_RTC
 #ifdef __linux__
 #include <linux/rtc.h>
@@ -117,66 +61,82 @@ char *heartbeat_cmd;
 #endif /* __linux__ */
 #endif /* HAVE_RTC */
 
-#include "stream/tv.h"
-#include "stream/stream_radio.h"
-#ifdef CONFIG_DVBIN
-#include "stream/dvbin.h"
+/*
+ * In Mac OS X the SDL-lib is built upon Cocoa. The easiest way to
+ * make it all work is to use the builtin SDL-bootstrap code, which
+ * will be done automatically by replacing our main() if we include SDL.h.
+ */
+#if defined(__APPLE__) && defined(CONFIG_SDL)
+#ifdef CONFIG_SDL_SDL_H
+#include <SDL/SDL.h>
+#else
+#include <SDL.h>
 #endif
-#include "stream/cache2.h"
-
-//**************************************************************************//
-//             Playtree
-//**************************************************************************//
-#include "playtree.h"
-#include "playtreeparser.h"
-
-//**************************************************************************//
-//             Config
-//**************************************************************************//
-#include "parser-cfg.h"
-#include "parser-mpcmd.h"
-
-m_config_t* mconfig;
-
-//**************************************************************************//
-//             Config file
-//**************************************************************************//
-
-static int cfg_inc_verbose(m_option_t *conf){ ++verbose; return 0;}
-
-static int cfg_include(m_option_t *conf, char *filename){
-	return m_config_parse_config_file(mconfig, filename);
-}
-
-#include "path.h"
-
-//**************************************************************************//
-//**************************************************************************//
-//             Input media streaming & demultiplexer:
-//**************************************************************************//
-
-static int max_framesize=0;
-
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
-
-#ifdef CONFIG_DVDREAD
-#include "stream/stream_dvd.h"
 #endif
-#include "stream/stream_dvdnav.h"
 
+#include "gui/interface.h"
+#include "input/input.h"
+#include "libao2/audio_out.h"
+#include "libass/ass_mp.h"
+#include "libavutil/avstring.h"
+#include "libavutil/intreadwrite.h"
+#include "libmenu/menu.h"
 #include "libmpcodecs/dec_audio.h"
 #include "libmpcodecs/dec_video.h"
 #include "libmpcodecs/mp_image.h"
-#include "libmpcodecs/vf.h"
 #include "libmpcodecs/vd.h"
-
+#include "libmpcodecs/vf.h"
+#include "libmpdemux/demuxer.h"
+#include "libmpdemux/stheader.h"
+#include "libvo/font_load.h"
+#include "libvo/sub.h"
+#include "libvo/video_out.h"
+#include "stream/cache2.h"
+#include "stream/stream.h"
+#include "stream/stream_dvdnav.h"
+#include "stream/stream_radio.h"
+#include "stream/tv.h"
+#include "access_mpcontext.h"
+#include "cfg-mplayer-def.h"
+#include "codec-cfg.h"
+#include "command.h"
+#include "edl.h"
+#include "help_mp.h"
+#include "m_config.h"
+#include "m_option.h"
+#include "m_property.h"
+#include "m_struct.h"
+#include "metadata.h"
 #include "mixer.h"
-
 #include "mp_core.h"
+#include "mp_fifo.h"
+#include "mp_msg.h"
+#include "mpcommon.h"
+#include "mplayer.h"
+#include "osdep/getch2.h"
+#include "osdep/priority.h"
+#include "osdep/timer.h"
+#include "parser-cfg.h"
+#include "parser-mpcmd.h"
+#include "path.h"
+#include "playtree.h"
+#include "playtreeparser.h"
+#include "spudec.h"
+#include "subreader.h"
+#include "vobsub.h"
+
+#ifdef CONFIG_X11
+#include "libvo/x11_common.h"
+#endif
+#ifdef CONFIG_DVBIN
+#include "stream/dvbin.h"
+#endif
+#ifdef CONFIG_DVDREAD
+#include "stream/stream_dvd.h"
+#endif
 
 #ifdef GEKKO
+#include <malloc.h>
 #include "osdep/gx_supp.h"
 #include "../utils/di2.h"
 
@@ -184,11 +144,16 @@ extern int prev_dxs , prev_dys;
 
 void wiiPause();
 void SetBufferingStatus(int s);
-void reinit_video();
-void reinit_audio();
 void PauseAndGotoGUI();
 bool FindNextFile(bool load);
+void SetMPlayerSettings();
+void ResumeCacheThread();
+bool CacheThreadSuspended();
 
+void ReInitTTFLib();
+void reinit_video();
+void reinit_audio();
+void load_builtin_codecs();
 static void low_cache_loop(void);
 static float timing_sleep(float time_frame);
 static void delete_restore_point(char *_filename);
@@ -210,11 +175,30 @@ static int orig_stream_cache_size=-1;
 static bool playing_file=false;
 #endif
 
+int slave_mode=0;
+int player_idle_mode=0;
+int quiet=0;
+int enable_mouse_movements=0;
+float start_volume = -1;
+
+char *heartbeat_cmd;
+
+#define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
+
+m_config_t* mconfig;
+
 //**************************************************************************//
+//             Config file
 //**************************************************************************//
 
-// Common FIFO functions, and keyboard/event FIFO code
-#include "mp_fifo.h"
+static int cfg_inc_verbose(m_option_t *conf){ ++verbose; return 0;}
+
+static int cfg_include(m_option_t *conf, char *filename){
+	return m_config_parse_config_file(mconfig, filename);
+}
+
+static int max_framesize=0;
+
 int noconsolecontrols=0;
 //**************************************************************************//
 
@@ -364,16 +348,10 @@ char *vobsub_name=NULL;
 int   subcc_enabled=0;
 int suboverlap_enabled = 1;
 
-#include "libass/ass_mp.h"
-
 char* current_module=NULL; // for debugging
 
 
-// ---
-
 #ifdef CONFIG_MENU
-#include "m_struct.h"
-#include "libmenu/menu.h"
 extern vf_info_t vf_info_menu;
 static vf_info_t* libmenu_vfs[] = {
   &vf_info_menu,
@@ -407,10 +385,12 @@ int use_filedir_conf;
 int use_filename_title;
 
 static unsigned int initialized_flags=0;
-#include "mpcommon.h"
-#include "command.h"
 
-#include "metadata.h"
+/// step size of mixer changes
+int volstep = 3;
+
+/* This header requires all the global variable declarations. */
+#include "cfg-mplayer.h"
 
 #define mp_basename2(s) (strrchr(s,'/')==NULL?(char*)s:(strrchr(s,'/')+1))
 
@@ -664,9 +644,6 @@ static void print_file_properties(const MPContext *mpctx, const char *filename)
   }
 }
 
-/// step size of mixer changes
-int volstep = 3;
-
 #ifdef CONFIG_DVDNAV
 static void mp_dvdnav_context_free(MPContext *ctx){
     if (ctx->nav_smpi) free_mp_image(ctx->nav_smpi);
@@ -868,6 +845,8 @@ static char *prog_path;
 static int crash_debug = 0;
 #endif
 
+#ifndef GEKKO
+
 static void exit_sighandler(int x){
   static int sig_count=0;
 #ifdef CONFIG_CRASH_DEBUG
@@ -939,8 +918,7 @@ static void exit_sighandler(int x){
   getch2_disable();
   exit(1);
 }
-
-#include "cfg-mplayer.h"
+#endif
 
 static void parse_cfgfiles( m_config_t* conf )
 {
@@ -1274,19 +1252,6 @@ void init_vo_spudec(void) {
     mp_property_do("sub_forced_only", M_PROPERTY_SET, &forced_subs_only, mpctx);
   }
 }
-
-/*
- * In Mac OS X the SDL-lib is built upon Cocoa. The easiest way to
- * make it all work is to use the builtin SDL-bootstrap code, which
- * will be done automatically by replacing our main() if we include SDL.h.
- */
-#if defined(__APPLE__) && defined(CONFIG_SDL)
-#ifdef CONFIG_SDL_SDL_H
-#include <SDL/SDL.h>
-#else
-#include <SDL.h>
-#endif
-#endif
 
 /**
  * \brief append a formatted string
@@ -3145,6 +3110,8 @@ stream_set_interrupt_callback(mp_input_check_interrupt);
 initialized_flags|=INITIALIZED_INPUT;
 current_module = NULL;
 
+#ifndef GEKKO
+
   /// Catch signals
 #if !defined(__MINGW32__) && !defined(GEKKO)
   signal(SIGCHLD,child_sighandler);
@@ -3182,6 +3149,8 @@ current_module = NULL;
        initialized_flags|=INITIALIZED_GUI;
        guiGetEvent( guiCEvent,(char *)((gui_no_filename) ? 0 : 1) );
   }
+#endif
+  
 #endif
 
 // ******************* Now, let's see the per-file stuff ********************
@@ -4481,7 +4450,6 @@ return 1;
 /****************************************************************************
  * Wii support code
  ***************************************************************************/
-#include <stdlib.h>
 #include <ogc/system.h>
 
 #define MAX_RESTORE_POINTS 50

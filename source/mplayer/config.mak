@@ -63,7 +63,7 @@ ARCH = ppc
 ARCH_POWERPC = yes
 ARCH_PPC = yes
 HAVE_FAST_CMOV = no
-HAVE_CMOV = yes
+HAVE_CMOV = no
 HAVE_FAST_CLZ=no
 
 MENCODER = no

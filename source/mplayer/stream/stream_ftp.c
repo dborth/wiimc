@@ -32,7 +32,6 @@
 #else
 #include <winsock2.h>
 #endif
-
 #else
 #define MSG_OOB 0x01 //scip
 #endif
@@ -218,7 +217,7 @@ static int FtpSendCmd(const char *cmd, struct stream_priv_s *nControl,char* rsp)
   if(hascrlf && l == 2) mp_msg(MSGT_STREAM,MSGL_V, "\n");
   else mp_msg(MSGT_STREAM,MSGL_V, "[ftp] > %s",cmd);
   while(l > 0) {
-    int s = send(nControl->handle,cmd,l,0);
+    int s = send(nControl->handle,cmd,l,DEFAULT_SEND_FLAGS);
 
     if(s <= 0) {
       mp_msg(MSGT_OPEN,MSGL_ERR, "[ftp] write error: %s\n",strerror(errno));
@@ -348,8 +347,8 @@ static int seek(stream_t *s,off_t newpos) {
     //fcntl(p->handle,F_SETFL,fl&~O_NONBLOCK);
 
     // send only first byte as OOB due to OOB braindamage in many unices
-    send(p->handle,pre_cmd,1,MSG_OOB);
-    send(p->handle,pre_cmd+1,sizeof(pre_cmd)-1,0);
+    send(p->handle,pre_cmd,1,MSG_OOB|DEFAULT_SEND_FLAGS);
+    send(p->handle,pre_cmd+1,sizeof(pre_cmd)-1,DEFAULT_SEND_FLAGS);
 
     //fcntl(p->handle,F_SETFL,fl);
 

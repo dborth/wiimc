@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "config.h"
 #include "libaf/af.h"
@@ -36,11 +37,18 @@
 #include <ogcsys.h>
 #include "osdep/ave-rvl.h"
 
+#define BUFFER_SIZE 	(4 * 1024)
+#define BUFFER_COUNT 	64
+#define PREBUFFER 		32768
 
-#define BUFFER_SIZE (4 * 1024)
-#define BUFFER_COUNT 64
-#define PREBUFFER 32768
+#define HW_CHANNELS 	2
 
+#define PAN_CENTER 		0.7071067811865475f		// sqrt(1/2)
+#define PAN_SIDE 		0.816496580927726f		// sqrt(2/3)
+#define PAN_SIDE_INV 	0.5773502691896258f		// sqrt(1/3)
+
+#define PHASE_SHF 		0.25					// "90 degrees"
+#define PHASE_SHF_INV 	0.75
 
 static const ao_info_t info = {
 	"gekko audio output",
@@ -56,6 +64,9 @@ static u8 silence[BUFFER_SIZE] ATTRIBUTE_ALIGN(32);
 static u8 buffer_fill = 0;
 static u8 buffer_play = 0;
 static int buffered = 0;
+
+static float request_mult = 1.0;
+static int request_size = BUFFER_SIZE;
 
 static bool playing = false;
 
@@ -121,20 +132,15 @@ void reinit_audio()
 
 static int init(int rate, int channels, int format, int flags)
 {
-	quality = AI_SAMPLERATE_32KHZ;
-	ao_data.samplerate = 32000;
-
-	if(rate > 32000)
-	{
-		quality = AI_SAMPLERATE_48KHZ;
-		ao_data.samplerate = 48000;
-	}
-
-	ao_data.channels = 2;
+	request_mult = (float)ao_data.channels / HW_CHANNELS;
+	request_size = BUFFER_SIZE * request_mult;
+	
+	ao_data.samplerate = 48000;
+	ao_data.channels = channels;
 	ao_data.format = AF_FORMAT_S16_NE;
-	ao_data.bps = ao_data.channels * ao_data.samplerate * 2;
-	ao_data.buffersize = BUFFER_SIZE * BUFFER_COUNT;
-	ao_data.outburst = BUFFER_SIZE;
+	ao_data.bps = ao_data.channels * ao_data.samplerate * sizeof(s16);
+	ao_data.buffersize = request_size * BUFFER_COUNT;
+	ao_data.outburst = request_size;
 	
 	for (int counter = 0; counter < BUFFER_COUNT; counter++)
 	{
@@ -193,62 +199,109 @@ static void audio_resume(void)
 
 static int get_space(void)
 {
-	return (BUFFER_SIZE * (BUFFER_COUNT - 2)) - buffered;
+	return ((BUFFER_SIZE * (BUFFER_COUNT - 2)) - buffered) * request_mult;
 }
 
-#define SWAP(x) ((x >> 16) | (x << 16))
-#define SWAP_LEN (BUFFER_SIZE / 4)
-
-static void copy_swap_channels(u32 *destination, u32 *source, int len)
+static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int remaining)
 {
-	for (int counter = 0; counter < len; counter++)
-		destination[counter] = SWAP(source[counter]);
-}
-
-static int play(void *data, int len, int flags)
-{
-	int result = 0;
-
-	u8 *source = (u8 *)data;
-
-	while (len >= BUFFER_SIZE && get_space() >= BUFFER_SIZE)
+	for (int counter = 0; counter < len; ++counter)
 	{
-		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source, SWAP_LEN);
+		int prs = max((counter - 1), -(processed / (sizeof(s16) * ao_data.channels))) * ao_data.channels;
+		int crs = counter * ao_data.channels;	// "I'm surrounded!"
+		int nrs = min((counter + 1), (remaining / (sizeof(s16) * ao_data.channels))) * ao_data.channels;
+		
+		s32 left, right;
+		
+		if (ao_data.channels > 1)
+		{
+			left = src[crs];
+			right = src[crs + 1];
+		}
+		else
+		{
+			left = right = src[crs];
+		}
+		
+		switch (ao_data.channels)
+		{
+			case 6:
+			case 5:
+				// Left rear
+				left += ((src[crs + 2] * PHASE_SHF_INV) + (src[nrs + 2] * PHASE_SHF)) * PAN_SIDE;
+				right += ((src[crs + 2] * PHASE_SHF_INV) + (src[prs + 2] * PHASE_SHF)) * PAN_SIDE_INV;
+				
+				// Right rear
+				left += ((src[crs + 3] * PHASE_SHF_INV) + (src[nrs + 3] * PHASE_SHF)) * PAN_SIDE_INV;
+				right += ((src[crs + 3] * PHASE_SHF_INV) + (src[prs + 3] * PHASE_SHF)) * PAN_SIDE;
+				
+				// Center front
+				left += src[crs + 4] * PAN_CENTER;
+				right += src[crs + 4] * PAN_CENTER;
+				break;
+			case 4:
+				// Center rear
+				left += ((src[crs + 2] * PHASE_SHF_INV) + (src[nrs + 2] * PHASE_SHF)) * PAN_CENTER;
+				right += ((src[crs + 2] * PHASE_SHF_INV) + (src[prs + 2] * PHASE_SHF)) * PAN_CENTER;
+				
+				// Center front
+				left += src[crs + 3] * PAN_CENTER;
+				right += src[crs + 3] * PAN_CENTER;
+				break;
+		}
+		
+		int cws = counter * HW_CHANNELS;
+		
+		dst[cws] = clamp(right, SHRT_MIN, SHRT_MAX);
+		dst[cws + 1] = clamp(left, SHRT_MIN, SHRT_MAX);
+	}
+}
+
+static int play(void *data, int remaining, int flags)
+{
+	int processed = 0;
+	int samples;
+	s16 *source = (s16 *)data;
+
+	while (remaining >= request_size && get_space() >= request_size)
+	{
+		samples = BUFFER_SIZE / (sizeof(s16) * HW_CHANNELS);
+		copy_channels((s16 *)buffers[buffer_fill], source, samples, processed, remaining);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
 
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
-		
-		result += BUFFER_SIZE;
-		source += BUFFER_SIZE;
+
+		processed += request_size;
+		source += request_size / sizeof(s16);
 		buffered += BUFFER_SIZE;
-		
-		len -= BUFFER_SIZE;
+
+		remaining -= request_size;
 	}
 
-	if ((flags & AOPLAY_FINAL_CHUNK) && len > 0)
+	if ((flags & AOPLAY_FINAL_CHUNK) && remaining > 0)
 	{
+		samples = remaining / (sizeof(s16) * HW_CHANNELS);
 		memset(buffers[buffer_fill], 0, BUFFER_SIZE);
-		copy_swap_channels((u32 *)buffers[buffer_fill], (u32 *)source, len/4);
+		copy_channels((s16 *)buffers[buffer_fill], source, samples, processed, remaining);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
 
-		result += len;
+		processed += remaining;
 		buffered += BUFFER_SIZE;
 	}
 
-	if (!playing && buffered > BUFFER_SIZE)
+	if (!playing && buffered > request_size)
 	{
 		playing = true;
 		switch_buffers();
 		AUDIO_StartDMA();
 	}
-	return result;
+	return processed;
 }
 
 static float get_delay(void)
 {
 	if (playing)
-		return (float)(buffered + AUDIO_GetDMABytesLeft()) / ao_data.bps;
+		return (float)((buffered + AUDIO_GetDMABytesLeft()) * request_mult) / ao_data.bps;
 	else
-		return (float)buffered / ao_data.bps;
+		return (float)(buffered * request_mult) / ao_data.bps;
 }

@@ -328,6 +328,11 @@ static int render_frame(struct vf_instance *vf, mp_image_t *mpi, const ass_image
 
 static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 {
+#ifdef GEKKO
+	if(ass_track == 0 || !sub_visibility || !vf->priv->ass_priv)
+		return vf_next_put_image(vf, mpi, pts);
+#endif
+
 	ass_image_t* images = 0;
 	if (sub_visibility && vf->priv->ass_priv && ass_track && (pts != MP_NOPTS_VALUE))
 		images = ass_mp_render_frame(vf->priv->ass_priv, ass_track, (pts+sub_delay) * 1000 + .5, NULL);

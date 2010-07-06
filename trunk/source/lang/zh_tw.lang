@@ -607,11 +607,17 @@ msgstr "正在增加檔案至播放清單..."
 msgid "Browser Folders"
 msgstr "檔案夾瀏覽器"
 
-msgid "Lock to Current Setting"
-msgstr "鎖定現在的設定"
+msgid "Static"
+msgstr "靜態"
 
 msgid "Use Last Browsed"
-msgstr "設定為最後瀏覽"
+msgstr "使用最後所瀏覽"
 
 msgid "Audio Language"
 msgstr "音訊語言軌"
+
+msgid "DVD Support"
+msgstr ""
+
+msgid "Enabled"
+msgstr ""

@@ -432,10 +432,10 @@ static void *ScreensaverThread(void *arg)
 	GuiImageData logo(logo_large_png);
 	GuiImage logoImg(&logo);
 	logoImg.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	logoImg.SetPosition(screenwidth/2-logoImg.GetWidth()/2, screenheight/2-logoImg.GetHeight()/2);
 
-	GuiWindow screensaverWindow(screenwidth, screenheight);
-	screensaverWindow.Append(&logoImg);
+	GuiWindow w(logoImg.GetWidth(), logoImg.GetHeight()+100);
+	w.Append(&logoImg);
+	w.SetPosition(screenwidth/2-w.GetWidth()/2, screenheight/2-w.GetHeight()/2);
 
 	int threadsleep;
 
@@ -449,12 +449,14 @@ static void *ScreensaverThread(void *arg)
 		oldWindow = mainWindow;
 
 		SuspendGui();
-		mainWindow = &screensaverWindow;
+		w.Append(audiobarNowPlayingBtn);
+		audiobarNowPlayingBtn->SetPosition(-8, logoImg.GetHeight()+20);
+		mainWindow = &w;
 		ResumeGui();
 
 		while(1)
 		{
-			threadsleep = 1000*1000*4; // 4 sec
+			threadsleep = 1000*1000*6; // 6 sec
 
 			while(threadsleep > 0)
 			{
@@ -471,10 +473,12 @@ static void *ScreensaverThread(void *arg)
 			while(y < 30 || y > screenheight-logoImg.GetHeight()-30)
 				y = (int)(((double)rand() / double(RAND_MAX + 1.0)) * screenheight);
 
-			logoImg.SetPosition(x, y);
+			w.SetPosition(x, y);
 		}
 done:
 		SuspendGui();
+		audiobar->Append(audiobarNowPlayingBtn);
+		audiobarNowPlayingBtn->SetPosition(0, 0);
 		mainWindow = oldWindow;
 		ResumeGui();
 	}
@@ -1016,29 +1020,31 @@ ProgressWindow(char *title, char *msg)
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
 	dialogBoxImg.SetAlpha(220);
+	
+	int baroffset = 556/2 - progressEmpty.GetWidth()/2;
 
 	GuiImage progressEmptyImg(&progressEmpty);
 	progressEmptyImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	progressEmptyImg.SetPosition(128, 40);
+	progressEmptyImg.SetPosition(baroffset, 40);
 	
 	GuiImage progressLeftImg(&progressLeft);
 	progressLeftImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	progressLeftImg.SetPosition(128, 40);
+	progressLeftImg.SetPosition(baroffset, 40);
 	progressLeftImg.SetVisible(false);
 	
 	GuiImage progressMidImg(&progressMid);
 	progressMidImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	progressMidImg.SetPosition(136, 40);
+	progressMidImg.SetPosition(baroffset+8, 40);
 	progressMidImg.SetTile(0);
 
 	GuiImage progressLineImg(&progressLine);
 	progressLineImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	progressLineImg.SetPosition(136, 40);
+	progressLineImg.SetPosition(baroffset+8, 40);
 	progressLineImg.SetVisible(false);
 
 	GuiImage progressRightImg(&progressRight);
 	progressRightImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
-	progressRightImg.SetPosition(-128, 40);
+	progressRightImg.SetPosition(-baroffset, 40);
 	progressRightImg.SetVisible(false);
 
 	GuiImage throbberImg(&throbber);
@@ -1096,6 +1102,7 @@ ProgressWindow(char *title, char *msg)
 	u32 count = 0;
 	float done = 0;
 	int tile = 0;
+	int maxtile = (progressEmpty.GetWidth()-16)/4;
 
 	while(showProgress && progressThreadHalt == 0)
 	{
@@ -1116,14 +1123,14 @@ ProgressWindow(char *title, char *msg)
 			if(done > 0.02)
 			{
 				progressLeftImg.SetVisible(true);
-				tile = 73*(done-0.02);
-				if(tile > 71) tile = 71;
+				tile = (maxtile+2)*(done-0.02);
+				if(tile > maxtile) tile = maxtile;
 				progressMidImg.SetTile(tile);
-				progressLineImg.SetPosition(136 + tile*4, 40);
+				progressLineImg.SetPosition(baroffset+8 + tile*4, 40);
 				progressLineImg.SetVisible(true);
 			}
 			
-			if(tile == 71)
+			if(tile == maxtile)
 			{
 				progressLineImg.SetVisible(false);
 				progressRightImg.SetVisible(true);
@@ -4375,7 +4382,8 @@ static void MenuSettingsNetwork()
 	w.Append(&backBtn);
 	w.Append(&addsmbBtn);
 	w.Append(&addftpBtn);
-	mainWindow->Append(&optionBrowser);
+	if(options.length > 0)
+		mainWindow->Append(&optionBrowser);
 	mainWindow->Append(&w);
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
@@ -5191,9 +5199,13 @@ static void VideoProgressCallback(void * ptr)
 		videobarProgressLineImg->SetVisible(true);
 		videobarProgressRightImg->SetVisible(false);
 	}
-	char time[50];
+	char time[50] = { 0 };
 	wiiGetTimeDisplay(time);
-	videobarTime->SetText(time);
+
+	if(time[0] == 0)
+		videobarTime->SetText(NULL);
+	else
+		videobarTime->SetText(time);
 }
 
 static void VideoVolumeLevelCallback(void * ptr)
@@ -6323,11 +6335,7 @@ void WiiMenu()
 	onlineBtnHighlightImg.SetAlpha(128);
 	onlineBtn = new GuiButton(onlineBtnImg->GetWidth(), onlineBtnImg->GetHeight());
 	onlineBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	if(WiiSettings.dvdDisabled)
-		onlineBtn->SetPosition(195, 30);
-	else
-		onlineBtn->SetPosition(250, 30);
-
+	onlineBtn->SetPosition(250, 30);
 	onlineBtn->SetTooltip(&onlineBtnTip);
 	onlineBtn->SetImage(onlineBtnImg);
 	onlineBtn->SetImageOver(&onlineBtnOverImg);
@@ -6377,11 +6385,12 @@ void WiiMenu()
 			while(1) usleep(THREAD_SLEEP);
 		}
 	}
-	
+
 	if(WiiSettings.dvdDisabled)
 	{
 		dvdBtn->SetVisible(false);
 		dvdBtn->SetState(STATE_DISABLED);
+		onlineBtn->SetPosition(195, 30);
 	}
 
 	// Init MPlayer path and vars (only happens once)

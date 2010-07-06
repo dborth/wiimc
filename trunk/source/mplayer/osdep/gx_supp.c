@@ -330,7 +330,7 @@ void GX_UpdatePitch(u16 *pitch)
 	GX_ConfigTextureYUV(vo_dwidth, vo_dheight, pitch);
 }
 
-void DrawMPlayer()
+inline void DrawMPlayer()
 {
 	DCStoreRangeNoSync(Ytexture, Ytexsize);
 	DCStoreRangeNoSync(Utexture, UVtexsize);
@@ -339,7 +339,7 @@ void DrawMPlayer()
 	if(need_wait)
 	{
 		GX_WaitDrawDone();
-		if (vsync )
+		if (vsync)
 		{
 			VIDEO_WaitVSync();
 
@@ -360,7 +360,6 @@ void DrawMPlayer()
 	GX_LoadTexObj(&YtexObj, GX_TEXMAP0);	// MAP0 <- Y
 	GX_LoadTexObj(&UtexObj, GX_TEXMAP1);	// MAP1 <- U
 	GX_LoadTexObj(&VtexObj, GX_TEXMAP2);	// MAP2 <- V
-
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 		GX_Position1x8(0); GX_Color1x8(0); GX_TexCoord1x8(0); GX_TexCoord1x8(0);
@@ -473,11 +472,11 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 	u64 *Ysrc2 = (u64 *) (buffer[0] + p01);
 	u64 *Ysrc3 = (u64 *) (buffer[0] + p02);
 	u64 *Ysrc4 = (u64 *) (buffer[0] + p03);
-	u64 *Usrc1 = (u64 *) buffer[1] ;
+	u64 *Usrc1 = (u64 *) buffer[1];
 	u64 *Usrc2 = (u64 *) (buffer[1] + p11);
 	u64 *Usrc3 = (u64 *) (buffer[1] + p12);
 	u64 *Usrc4 = (u64 *) (buffer[1] + p13);
-	u64 *Vsrc1 = (u64 *) buffer[2] ;
+	u64 *Vsrc1 = (u64 *) buffer[2];
 	u64 *Vsrc2 = (u64 *) (buffer[2] + p11);
 	u64 *Vsrc3 = (u64 *) (buffer[2] + p12);
 	u64 *Vsrc4 = (u64 *) (buffer[2] + p13);

@@ -53,7 +53,7 @@ msgid "Loop"
 msgstr "W pętli"
 
 msgid "Continuous"
-msgstr "Ciągły"
+msgstr "Ciągłe"
 
 msgid "Playlist"
 msgstr "Lista odtwarzania"
@@ -214,7 +214,7 @@ msgstr "Dostosowanie FPSów"
 msgid "Aspect Ratio"
 msgstr "Współczynnik proporcji"
 
-msgid "Cache Fill"
+msgid "Cache Size"
 msgstr "Zapełenienie pamięci podręcznej"
 
 msgid "Audio Delay"
@@ -416,7 +416,7 @@ msgid "Update failed!"
 msgstr "Aktualizacja nie powiodła się!"
 
 msgid "Initializing network..."
-msgstr "Inicjacja sieci..."
+msgstr "Inicjalizacja sieci..."
 
 msgid "Check settings file."
 msgstr "Sprawdź plik ustawień."
@@ -476,7 +476,7 @@ msgid "Menu artwork"
 msgstr "Grafiki menu"
 
 msgid "Coding"
-msgstr "Programowanie"
+msgstr ""
 
 msgid "Coding & menu design"
 msgstr "Programowanie i projekt menu"
@@ -552,3 +552,72 @@ msgstr "Ściąganie..."
 
 msgid "Unzipping..."
 msgstr "Rozpakowywanie..."
+
+msgid "Color"
+msgstr "Kolor"
+
+msgid "Size"
+msgstr "Rozmiar"
+
+msgid "White"
+msgstr "Biały"
+
+msgid "Black"
+msgstr "Czarny"
+
+msgid "Yellow"
+msgstr "Żółty"
+
+msgid "Red"
+msgstr "Czerwony"
+
+msgid "Sleep Timer"
+msgstr "Wyłącznik czasowy"
+
+msgid "sec"
+msgstr "sek"
+
+msgid "min"
+msgstr "min"
+
+msgid "Blue"
+msgstr "Niebieski"
+
+msgid "Green"
+msgstr "Zielony"
+
+msgid "Grey"
+msgstr "Szary"
+
+msgid "Orange"
+msgstr "Pomarańczowy"
+
+msgid "Theme"
+msgstr "Styl"
+
+msgid "Purple (Default)"
+msgstr "Fioletowy (Domyślny)"
+
+msgid "Auto-Play Next Video"
+msgstr "Automatyczne odtwarzanie następnego filmu"
+
+msgid "Adding files to playlist..."
+msgstr "Dodawanie plików do listy odtwarzania..."
+
+msgid "Browser Folders"
+msgstr "Foldery przeglądarki"
+
+msgid "Static"
+msgstr "Stały"
+
+msgid "Use Last Browsed"
+msgstr "Użyj ostatnio przeglądanego"
+
+msgid "Audio Language"
+msgstr "Język ścieżki dźwiękowej"
+
+msgid "DVD Support"
+msgstr "Wsparcie dla DVD"
+
+msgid "Enabled"
+msgstr "Włączone"

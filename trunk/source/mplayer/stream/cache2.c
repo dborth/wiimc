@@ -27,9 +27,9 @@
 // seeks (e.g. when a file has no index) by spinning quickly at first.
 #define INITIAL_FILL_USLEEP_TIME 1000
 #define INITIAL_FILL_USLEEP_COUNT 10
-#define FILL_USLEEP_TIME 50000
+#define FILL_USLEEP_TIME 5000
 #define PREFILL_SLEEP_TIME 200
-#define CONTROL_SLEEP_TIME 10
+#define CONTROL_SLEEP_TIME 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,6 +58,7 @@ static void *ThreadProc(void *s);
 static void *ThreadProc(void *s);
 static unsigned char *global_buffer=NULL;
 static void *cachearg = NULL;
+int stop_cache_thread = 1;
 extern void SuspendCacheThread();
 extern void ResumeCacheThread();
 extern bool CacheThreadSuspended();
@@ -276,7 +277,8 @@ else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
 }
 
 static int cache_execute_control(cache_vars_t *s) {
-  static unsigned last;
+  static u64 last;
+  u64 now;
   int quit = s->control == -2;
   if (quit || !s->stream->control) {
     s->stream_time_length = 0;
@@ -285,13 +287,15 @@ static int cache_execute_control(cache_vars_t *s) {
     s->control = -1;
     return !quit;
   }
-  if (GetTimerMS() - last > 99) {
+  now = GetTimerMS();
+
+  if (now - last > 99) {
     double len;
     if (s->stream->control(s->stream, STREAM_CTRL_GET_TIME_LENGTH, &len) == STREAM_OK)
       s->stream_time_length = len;
     else
       s->stream_time_length = 0;
-    last = GetTimerMS();
+    last = now;
   }
   if (s->control == -1) return 1;
   switch (s->control) {
@@ -372,12 +376,10 @@ void cache_uninit(stream_t *s) {
 #if !FORKED_CACHE
     cache_do_control(s, -2, NULL);
 #ifdef GEKKO
-  if(!CacheThreadSuspended())
-  {
-    cache_do_control(s, -2, NULL);
-    while(!CacheThreadSuspended())
-  	  usleep(50);
-  }
+  stop_cache_thread = 1;
+  while(!CacheThreadSuspended())
+    usleep(100);
+  cachearg = NULL;
 #endif
 #else
     kill(s->cache_pid,SIGKILL);
@@ -432,7 +434,7 @@ static void cache_mainloop(cache_vars_t *s) {
             usec_sleep(50);
         }
 //        cache_stats(s->cache_data);
-    } while (cache_execute_control(s));
+    } while (!stop_cache_thread && cache_execute_control(s));
 }
 
 /**
@@ -483,8 +485,9 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
     stream->cache_pid = _beginthread( ThreadProc, NULL, 256 * 1024, s );
 #elif defined(GEKKO)
 	cachearg = s;
+	stop_cache_thread = 0;
+	stream->cache_pid = 1;
 	ResumeCacheThread();
-    stream->cache_pid = 1;
 #else
     {
     pthread_t tid;
@@ -506,7 +509,7 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
 	    100.0*(float)(s->max_filepos-s->read_filepos)/(float)(s->buffer_size),
 	    (int64_t)s->max_filepos-s->read_filepos
 	);
-	
+
 #ifdef GEKKO
 	if(s->stream->type == STREAMTYPE_STREAM)
 		ShowProgress("Buffering...", (int)(100.0*(float)(s->max_filepos)/(float)(min)), 100);

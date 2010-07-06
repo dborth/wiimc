@@ -190,7 +190,11 @@ LIBDVDCSS_EXPORT dvdcss_t dvdcss_open ( char *psz_target )
     dvdcss->p_titles = NULL;
     dvdcss->psz_device = (char *)strdup( psz_target );
     dvdcss->psz_error = "no error";
+#ifdef GEKKO
+	dvdcss->i_method = DVDCSS_METHOD_DISC;
+#else
     dvdcss->i_method = DVDCSS_METHOD_KEY;
+#endif
     dvdcss->psz_cachefile[0] = '\0';
     dvdcss->b_debug = 0;
     dvdcss->b_errors = 0;

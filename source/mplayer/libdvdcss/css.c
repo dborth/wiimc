@@ -372,7 +372,11 @@ int _dvdcss_disckey( dvdcss_t dvdcss )
 
             /* Fallback, but not to DISC as the disc key might be faulty */
             memset( p_disc_key, 0, KEY_SIZE );
+            #ifdef GEKKO
+            dvdcss->i_method = DVDCSS_METHOD_DISC;
+            #else
             dvdcss->i_method = DVDCSS_METHOD_TITLE;
+            #endif
             break;
 
         case DVDCSS_METHOD_DISC:
@@ -1137,12 +1141,45 @@ static int investigate( unsigned char *hash, unsigned char *ckey )
     return memcmp( key, ckey, KEY_SIZE );
 }
 
-static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
-{
 #ifdef GEKKO
-	return -1; // insufficient memory on the Wii
+static unsigned int tablestart;
+
+int BigTable(int testval)
+{
+	register int tmp, i, j, tmp2;
+	unsigned char out2[5];
+
+again:
+
+	for (i = tablestart; i < 16777216; i++)
+	{
+		tmp = ((i + i) & 0x1fffff0) | 0x8 | (i & 0x7);
+
+		for (j = 0; j < 5; j++)
+		{
+			tmp2 = (((((((tmp >> 3) ^ tmp) >> 1) ^ tmp) >> 8) ^ tmp) >> 5) & 0xff;
+			tmp = (tmp << 8) | tmp2;
+			out2[j] = p_css_tab4[tmp2];
+		}
+
+		j = (out2[0] << 16) | (out2[1] << 8) | out2[4];
+		if (j == testval)
+		{
+			return i;
+		}
+		if (i == 16777216 && tablestart == 0)
+		{
+			tablestart = 0;
+			goto again;
+		}
+		if (j & 0x0F != testval & 0x0f)
+			i += 7;
+	}
+}
 #endif
 
+static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
+{
     unsigned char B[5] = { 0,0,0,0,0 }; /* Second Stage of mangle cipher */
     unsigned char C[5] = { 0,0,0,0,0 }; /* Output Stage of mangle cipher
                                          * IntermediateKey */
@@ -1159,9 +1196,12 @@ static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
     unsigned int nTry;          /* iterator for K[1] possibilities */
     unsigned int nPossibleK1;   /* #of possible K[1] values */
     unsigned char* K1table;     /* Lookup table for possible K[1] */
+#ifndef GEKKO    
     unsigned int*  BigTable;    /* LFSR2 startstate indexed by
                                  * 1,2,5 output byte */
-
+#else
+	tablestart=0;
+#endif
     /*
      * Prepare tables for hash reversal
      */
@@ -1197,7 +1237,7 @@ static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
             K1table[ K1TABLEWIDTH * ( 256 * j + tmp3 ) ] = tmp4;
         }
     }
-
+#ifndef GEKKO
     /* Initing our Really big table */
     BigTable = malloc( 16777216 * sizeof(int) );
     memset( BigTable, 0 , 16777216 * sizeof(int) );
@@ -1225,7 +1265,7 @@ static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
         j = ( out2[0] << 16 ) | ( out2[1] << 8 ) | out2[4];
         BigTable[j] = i;
     }
-
+#endif
     /*
      * We are done initing, now reverse hash
      */
@@ -1278,7 +1318,11 @@ static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
 
                 /* test first possible out2[4] */
                 tmp4 = ( out2[0] << 16 ) | ( out2[1] << 8 ) | out2[4];
+                #ifdef GEKKO
+                tmp4 = BigTable(tmp4);
+                #else
                 tmp4 = BigTable[ tmp4 ];
+                #endif
                 C[2] = tmp4 & 0xff;
                 C[3] = ( tmp4 >> 8 ) & 0xff;
                 C[4] = ( tmp4 >> 16 ) & 0xff;
@@ -1298,7 +1342,11 @@ static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
                 /* Test second possible out2[4] */
                 out2[4] = ( out2[4] + 0xff ) & 0xff;
                 tmp4 = ( out2[0] << 16 ) | ( out2[1] << 8 ) | out2[4];
+                #ifdef GEKKO
+                tmp4 = BigTable(tmp4);
+                #else
                 tmp4 = BigTable[ tmp4 ];
+                #endif
                 C[2] = tmp4 & 0xff;
                 C[3] = ( tmp4 >> 8 ) & 0xff;
                 C[4] = ( tmp4 >> 16 ) & 0xff;
@@ -1323,8 +1371,9 @@ end:
     memcpy( p_disc_key, &C[0], KEY_SIZE );
 
     free( K1table );
+#ifndef GEKKO
     free( BigTable );
-
+#endif
     return 0;
 }
 

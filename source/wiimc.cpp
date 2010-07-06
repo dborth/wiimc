@@ -220,6 +220,31 @@ static bool FindIOS(u32 ios)
 	return false;
 }
 
+#define ROUNDDOWN32(v)				(((u32)(v)-0x1f)&~0x1f)
+
+static bool USBLANDetected()
+{
+	u8 dummy;
+	u8 i;
+	u16 vid, pid;
+
+	USB_Initialize();
+	u8 *buffer = (u8*)ROUNDDOWN32(((u32)SYS_GetArena2Hi() - (32*1024)));
+	memset(buffer, 0, 8 << 3);
+
+	if(USB_GetDeviceList("/dev/usb/oh0", buffer, 8, 0, &dummy) < 0)
+		return false;
+
+	for(i = 0; i < 8; i++)
+	{
+		memcpy(&vid, (buffer + (i << 3) + 4), 2);
+		memcpy(&pid, (buffer + (i << 3) + 6), 2);
+		if( (vid == 0x0b95) && (pid == 0x7720))
+			return true;
+	}
+	return false;
+}
+
 /****************************************************************************
  * MPlayer interface
  ***************************************************************************/
@@ -375,6 +400,7 @@ bool InitMPlayer()
 
 	setenv("HOME", MPLAYER_DATADIR, 1);
 	setenv("DVDCSS_CACHE", "off", 1);
+	setenv("DVDCSS_METHOD", "disc", 1);
 	setenv("DVDCSS_VERBOSE", "0", 1);
 	setenv("DVDREAD_VERBOSE", "0", 1);
 	setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
@@ -473,6 +499,8 @@ int main(int argc, char *argv[])
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
 
+	bool usblan = USBLANDetected();
+
 	// try to load IOS 202
 	if(FindIOS(202))
 		IOS_ReloadIOS(202);
@@ -481,15 +509,37 @@ int main(int argc, char *argv[])
 
 	if(IOS_GetVersion() == 202)
 	{
-		WIIDVD_Init(false);
-
-		// load usb2 driver
+		// enable DVD and USB2
 		if(mload_init() >= 0 && load_ehci_module())
+		{
+			int mode = 3;
+
+			if(usblan)
+			{
+				int usblanport = GetUSB2LanPort();
+
+				if(usblanport >= 0)
+				{
+					if(usblanport == 1)
+						mode = 1;
+					else
+						mode = 2;
+
+					USB2Storage_Close();
+					mload_close();
+					IOS_ReloadIOS(202);
+					mload_init();
+					load_ehci_module();
+				}
+			}
+			SetUSB2Mode(mode);
 			USB2Enable(true);
+			WIIDVD_Init(false);
+		}
 	}
 
 	VIDEO_Init();
-	InitVideo(); // Initialise video
+	InitVideo();
 	SetupPads();
 	AUDIO_Init(NULL);
 
@@ -509,9 +559,7 @@ int main(int argc, char *argv[])
 
 	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
-
-	// Initialize font system
-	InitFreeType((u8*)font_ttf, font_ttf_size);
+	InitFreeType((u8*)font_ttf, font_ttf_size); // Initialize font system
 
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);

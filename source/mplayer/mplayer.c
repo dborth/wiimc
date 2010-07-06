@@ -140,7 +140,8 @@
 #include "osdep/gx_supp.h"
 #include "../utils/di2.h"
 
-extern int prev_dxs , prev_dys;
+extern int prev_dxs, prev_dys;
+extern int stop_cache_thread;
 
 void wiiPause();
 void SetBufferingStatus(int s);
@@ -2762,7 +2763,6 @@ m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
 m_config_set_option(mconfig,"channels","6");
-m_config_set_option(mconfig,"af", "pan=2:0.5:0:0:0.5:0.33:0:0:0.33:0.5:0.5:0.5:0.5");
 m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
@@ -4195,7 +4195,7 @@ if(auto_quality>0){
   current_module="pause";
 
     //low cache
-	if (mpctx->osd_function != OSD_PAUSE && stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status < 4)
+	if (mpctx->osd_function != OSD_PAUSE && cache_fill_status >= 0 && cache_fill_status < 4 && stream_cache_size > 0.0 && stream_cache_min_percent> 1.0)
 	{
 		pause_low_cache=1;
 		mpctx->osd_function = OSD_PAUSE;
@@ -4681,7 +4681,7 @@ void PauseAndGotoGUI()
 	if(mpctx->sh_video)
 		save_restore_point(fileplaying);
 
-	stream_control(mpctx->stream, -2, NULL);
+	stop_cache_thread = 1;
 	while(!CacheThreadSuspended())
 		usleep(50);
 
@@ -4695,6 +4695,7 @@ void PauseAndGotoGUI()
 	if (controlledbygui == 2)
 		return;
 
+	stop_cache_thread = 0;
 	ResumeCacheThread();
 
 	printf("reinit mplayer video/audio\n");

@@ -4195,7 +4195,7 @@ if(auto_quality>0){
   current_module="pause";
 
     //low cache
-	if (mpctx->osd_function != OSD_PAUSE && cache_fill_status >= 0 && cache_fill_status < 4 && stream_cache_size > 0.0 && stream_cache_min_percent> 1.0)
+	if (mpctx->osd_function != OSD_PAUSE && stream_cache_size > 0.0 && stream_cache_min_percent> 1.0 && cache_fill_status<4.0 && cache_fill_status>=0.0)
 	{
 		pause_low_cache=1;
 		mpctx->osd_function = OSD_PAUSE;

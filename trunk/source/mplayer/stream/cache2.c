@@ -192,17 +192,27 @@ static int cache_read(cache_vars_t *s, unsigned char *buf, int size)
 
 static int cache_fill(cache_vars_t *s)
 {
+#ifdef GEKKO
+  if(!s || s->eof) 
+  {
+      cache_fill_status=-1;
+	  return 0;
+  }
+#endif
+
   int back,back2,newb,space,len,pos;
   off_t read=s->read_filepos;
 
   if(read<s->min_filepos || read>s->max_filepos){
       // seek...
-      mp_msg(MSGT_CACHE,MSGL_DBG2,"Out of boundaries... seeking to 0x%"PRIX64"  \n",(int64_t)read);
+      //mp_msg(MSGT_CACHE,MSGL_DBG2,"Out of boundaries... seeking to 0x%"PRIX64"  \n",(int64_t)read);
       // drop cache contents only if seeking backward or too much fwd.
       // This is also done for on-disk files, since it loses the backseek cache.
       // That in turn can cause major bandwidth increase and performance
       // issues with e.g. mov or badly interleaved files
+#ifndef GEKKO
       if(read<s->min_filepos || read>=s->max_filepos+s->seek_limit)
+#endif
       {
         s->offset= // FIXME!?
         s->min_filepos=s->max_filepos=read; // drop cache content :(
@@ -231,8 +241,8 @@ static int cache_fill(cache_vars_t *s)
   if(space<s->fill_limit){
 //    printf("Buffer is full (%d bytes free, limit: %d)\n",space,s->fill_limit);
 #ifdef GEKKO
-if(s->eof) cache_fill_status=-1;
-else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
+	  if(s->eof) cache_fill_status=-1;
+  	else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
 #endif
     return 0; // no fill...
   }
@@ -261,16 +271,23 @@ else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
   //memcpy(&s->buffer[pos],s->stream->buffer,len); // avoid this extra copy!
   // ....
   len=stream_read(s->stream,&s->buffer[pos],space);
+#ifdef GEKKO
+  if(len==0) 
+  {
+  	cache_fill_status=-1;
+  	s->eof=1;
+  }
+#else
   s->eof= !len;
-
+#endif
   s->max_filepos+=len;
   if(pos+len>=s->buffer_size){
       // wrap...
       s->offset+=s->buffer_size;
   }
 #ifdef GEKKO
-if(s->eof) cache_fill_status=-1;
-else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
+  if(s->eof) cache_fill_status=-1;
+  else cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
 #endif
   return len;
 
@@ -445,7 +462,9 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
   int ss = stream->sector_size ? stream->sector_size : STREAM_BUFFER_SIZE;
   int res = -1;
   cache_vars_t* s;
-
+#ifdef GEKKO
+  cache_fill_status=-1;
+#endif
   if (stream->flags & STREAM_NON_CACHEABLE) {
     mp_msg(MSGT_CACHE,MSGL_STATUS,"\rThis stream is non-cacheable\n");
     return 1;
@@ -485,10 +504,13 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
 #elif defined(__OS2__)
     stream->cache_pid = _beginthread( ThreadProc, NULL, 256 * 1024, s );
 #elif defined(GEKKO)
+	stop_cache_thread = 1;
+	while(!CacheThreadSuspended())
+		usleep(50);
 	cachearg = s;
 	stop_cache_thread = 0;
-	stream->cache_pid = 1;
 	ResumeCacheThread();
+	stream->cache_pid = 1;
 #else
     {
     pthread_t tid;
@@ -505,6 +527,7 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
     // wait until cache is filled at least prefill_init %
     mp_msg(MSGT_CACHE,MSGL_V,"CACHE_PRE_INIT: %"PRId64" [%"PRId64"] %"PRId64"  pre:%d  eof:%d  \n",
 	(int64_t)s->min_filepos,(int64_t)s->read_filepos,(int64_t)s->max_filepos,min,s->eof);
+
     while(s->read_filepos<s->min_filepos || s->max_filepos-s->read_filepos<min){
 	mp_msg(MSGT_CACHE,MSGL_STATUS,MSGTR_CacheFill,
 	    100.0*(float)(s->max_filepos-s->read_filepos)/(float)(s->buffer_size),
@@ -522,6 +545,7 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
 	  goto err_out;
         }
     }
+
     mp_msg(MSGT_CACHE,MSGL_STATUS,"\n");
     return 1; // parent exits
 

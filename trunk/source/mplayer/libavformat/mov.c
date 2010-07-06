@@ -222,14 +222,16 @@ static int mov_read_udta_string(MOVContext *c, ByteIOContext *pb, MOVAtom atom)
 static int mov_read_chpl(MOVContext *c, ByteIOContext *pb, MOVAtom atom)
 {
     int64_t start;
-    int i, nb_chapters, str_len;
+    int i, nb_chapters, str_len, version;
     char str[256+1];
 
     if ((atom.size -= 5) < 0)
         return 0;
 
-    get_be32(pb); // version + flags
-    get_be32(pb); // ???
+    version = get_byte(pb);
+    get_be24(pb);
+    if (version)
+        get_be32(pb); // ???
     nb_chapters = get_byte(pb);
 
     for (i = 0; i < nb_chapters; i++) {
@@ -535,8 +537,10 @@ int ff_mov_read_esds(AVFormatContext *fc, ByteIOContext *pb, MOVAtom atom)
                 st->codec->channels = cfg.channels;
                 if (cfg.object_type == 29 && cfg.sampling_index < 3) // old mp3on4
                     st->codec->sample_rate = ff_mpa_freq_tab[cfg.sampling_index];
+                else if (cfg.ext_sample_rate)
+                    st->codec->sample_rate = cfg.ext_sample_rate;
                 else
-                    st->codec->sample_rate = cfg.sample_rate; // ext sample rate ?
+                    st->codec->sample_rate = cfg.sample_rate;
                 dprintf(fc, "mp4a config channels %d obj %d ext obj %d "
                         "sample rate %d ext sample rate %d\n", st->codec->channels,
                         cfg.object_type, cfg.ext_object_type,
@@ -1800,13 +1804,10 @@ static int mov_read_trak(MOVContext *c, ByteIOContext *pb, MOVAtom atom)
         sc->pb = c->fc->pb;
 
     if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-        if (st->codec->width != sc->width || st->codec->height != sc->height) {
-            AVRational r = av_d2q(((double)st->codec->height * sc->width) /
-                                  ((double)st->codec->width * sc->height), INT_MAX);
-            if (st->sample_aspect_ratio.num)
-                st->sample_aspect_ratio = av_mul_q(st->sample_aspect_ratio, r);
-            else
-                st->sample_aspect_ratio = r;
+        if (!st->sample_aspect_ratio.num &&
+            (st->codec->width != sc->width || st->codec->height != sc->height)) {
+            st->sample_aspect_ratio = av_d2q(((double)st->codec->height * sc->width) /
+                                             ((double)st->codec->width * sc->height), INT_MAX);
         }
 
         av_reduce(&st->avg_frame_rate.num, &st->avg_frame_rate.den,
@@ -2497,6 +2498,8 @@ static int mov_seek_stream(AVFormatContext *s, AVStream *st, int64_t timestamp, 
 
     sample = av_index_search_timestamp(st, timestamp, flags);
     dprintf(s, "stream %d, timestamp %"PRId64", sample %d\n", st->index, timestamp, sample);
+    if (sample < 0 && st->nb_index_entries && timestamp < st->index_entries[0].timestamp)
+        sample = 0;
     if (sample < 0) /* not sure what to do */
         return -1;
     sc->current_sample = sample;

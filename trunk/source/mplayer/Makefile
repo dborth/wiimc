@@ -141,6 +141,7 @@ SRCS_COMMON-$(LIBAVCODEC_A)          += libaf/af_lavcac3enc.c \
 SRCS_COMMON-$(LIBAVFORMAT)           += libmpdemux/demux_lavf.c \
                                         stream/stream_ffmpeg.c \
 
+SRCS_COMMON-$(LIBBLURAY)             += stream/stream_bluray.c
 SRCS_COMMON-$(LIBBS2B)               += libaf/af_bs2b.c
 SRCS_COMMON-$(LIBDCA)                += libmpcodecs/ad_libdca.c
 SRCS_COMMON-$(LIBDV)                 += libmpcodecs/ad_libdv.c \
@@ -185,6 +186,7 @@ SRCS_COMMON-$(LIVE555)               += libmpdemux/demux_rtp.cpp \
                                         stream/stream_live555.c
 SRCS_COMMON-$(MACOSX_FINDER)         += osdep/macosx_finder_args.c
 SRCS_COMMON-$(MNG)                   += libmpdemux/demux_mng.c
+SRCS_COMMON-$(MPG123)                += libmpcodecs/ad_mpg123.c
 
 SRCS_MP3LIB-X86-$(HAVE_AMD3DNOW)     += mp3lib/dct36_3dnow.c \
                                         mp3lib/dct64_3dnow.c
@@ -896,6 +898,8 @@ version.h: version.sh
 codec-cfg.d codec-cfg.o: codecs.conf.h
 $(DEPS) $(MENCODER_DEPS) $(MPLAYER_DEPS): help_mp.h
 $(call ADDSUFFIXES,.d .o,mpcommon osdep/mplayer.rc): version.h
+
+#osdep/mplayer-rc.o: osdep/mplayer.exe.manifest
 
 gui/%: CFLAGS += -Wno-strict-prototypes
 

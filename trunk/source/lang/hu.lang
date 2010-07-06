@@ -596,7 +596,7 @@ msgid "Theme"
 msgstr "Téma"
 
 msgid "Purple (Default)"
-msgstr "Lila (Alap)"
+msgstr "Lila (Alapértelmezett)"
 
 msgid "Auto-Play Next Video"
 msgstr "Következő video auto-játszása"
@@ -608,10 +608,10 @@ msgid "Browser Folders"
 msgstr "Böngésző mappák"
 
 msgid "Static"
-msgstr "Statikus"
+msgstr "Nem változnak"
 
 msgid "Use Last Browsed"
-msgstr "Legutobbi használata"
+msgstr "Legutóbb használatra változnak"
 
 msgid "Audio Language"
 msgstr "Hangsáv nyelve"

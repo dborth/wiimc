@@ -1290,15 +1290,21 @@ static int dca_decode_frame(AVCodecContext * avctx,
     num_core_channels = s->prim_channels;
 
     /* extensions start at 32-bit boundaries into bitstream */
-    skip_bits(&s->gb, (-get_bits_count(&s->gb)) & 31);
+    skip_bits_long(&s->gb, (-get_bits_count(&s->gb)) & 31);
 
     while(get_bits_left(&s->gb) >= 32) {
-        uint32_t bits = get_bits(&s->gb, 32);
+        uint32_t bits = get_bits_long(&s->gb, 32);
 
         switch(bits) {
         case 0x5a5a5a5a: {
             int ext_base_ch = s->prim_channels;
-            int ext_amode;
+            int ext_amode, xch_fsize;
+
+            /* validate sync word using XCHFSIZE field */
+            xch_fsize = show_bits(&s->gb, 10);
+            if((s->frame_size != (get_bits_count(&s->gb) >> 3) - 4 + xch_fsize) &&
+               (s->frame_size != (get_bits_count(&s->gb) >> 3) - 4 + xch_fsize + 1))
+                continue;
 
             /* skip length-to-end-of-frame field for the moment */
             skip_bits(&s->gb, 10);
@@ -1328,7 +1334,7 @@ static int dca_decode_frame(AVCodecContext * avctx,
             break;
         }
 
-        skip_bits(&s->gb, (-get_bits_count(&s->gb)) & 31);
+        skip_bits_long(&s->gb, (-get_bits_count(&s->gb)) & 31);
     }
 
     channels = s->prim_channels + !!s->lfe;

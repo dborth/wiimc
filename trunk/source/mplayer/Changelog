@@ -26,8 +26,7 @@ MPlayer (1.0)
     * VP8 en-/decoding through libvpx wrapper and native decoder in FFmpeg
     * support for external libmpeg2 added
     * hardware MPEG decoder priority lowered
-    * support for external FAAD removed, since FFmpeg decoder is complete
-      and only internal FAAD supports LATM it is pointless.
+    * external libmpg123 support
 
     Demuxers:
     * Mostly fixed timing issues with some H.264 (PAFF) samples
@@ -42,6 +41,10 @@ MPlayer (1.0)
     * remove vf_yuy2, functionality is replaced by -vf format=yuv2
     * remove vf_rgb2bgr, functionality is replaced by sws and vf_format
 
+    Streaming:
+    * Support for unencrypted Blu-ray playback through libbluray.
+      Use it through: mplayer br:////path/to/disc
+
     Drivers:
     * -vo yuv4mpeg:interlaced no longer does its own interlaced RGB->YUV
       conversion. Use -vf scale=::1 to keep the same behavior and report
@@ -54,6 +57,7 @@ MPlayer (1.0)
     * Selectable YUV to RGB conversion standard for -vo gl
       (-vo gl:colorspace=...:levelconv=...)
     * -vo gl now tries to use yuv=2 by default if possible
+    * -vo gl:stereo=... for experimental stereo (3D) support
     * -vo matrixview finally added
     * add OS/2 KAI audio driver (-ao kai)
 

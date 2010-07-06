@@ -191,7 +191,7 @@ void vo_hidecursor(Display * disp, Window win)
     colormap = DefaultColormap(disp, DefaultScreen(disp));
     if ( !XAllocNamedColor(disp, colormap, "black", &black, &dummy) )
     {
-      return; // color alloc failed, give up
+        return; // color alloc failed, give up
     }
     bm_no = XCreateBitmapFromData(disp, win, bm_no_data, 8, 8);
     no_ptr = XCreatePixmapCursor(disp, bm_no, bm_no, &black, &black, 0, 0);
@@ -416,8 +416,8 @@ int vo_init(void)
     XWindowAttributes attribs;
     char *dispName;
 
-	if (vo_rootwin)
-		WinID = 0; // use root window
+    if (vo_rootwin)
+        WinID = 0; // use root window
 
     if (vo_depthonscreen)
     {
@@ -794,6 +794,16 @@ void vo_x11_uninit(void)
 static unsigned int mouse_timer;
 static int mouse_waiting_hide;
 
+static int check_resize(void)
+{
+    int old_w = vo_dwidth, old_h = vo_dheight;
+    int old_x = vo_dx,     old_y = vo_dy;
+    vo_x11_update_geometry();
+    if (vo_dwidth != old_w || vo_dheight != old_h || vo_dx != old_x || vo_dy != old_y)
+        return VO_EVENT_RESIZE;
+    return 0;
+}
+
 int vo_x11_check_events(Display * mydisplay)
 {
     int ret = 0;
@@ -802,14 +812,14 @@ int vo_x11_check_events(Display * mydisplay)
     KeySym keySym;
     static XComposeStatus stat;
 
-// unsigned long  vo_KeyTable[512];
-
-    if ((vo_mouse_autohide) && mouse_waiting_hide &&
+    if (vo_mouse_autohide && mouse_waiting_hide &&
                                  (GetTimerMS() - mouse_timer >= 1000)) {
         vo_hidecursor(mydisplay, vo_window);
         mouse_waiting_hide = 0;
     }
 
+    if (WinID > 0)
+        ret |= check_resize();
     while (XPending(mydisplay))
     {
         XNextEvent(mydisplay, &Event);
@@ -828,17 +838,9 @@ int vo_x11_check_events(Display * mydisplay)
                 ret |= VO_EVENT_EXPOSE;
                 break;
             case ConfigureNotify:
-//         if (!vo_fs && (Event.xconfigure.width == vo_screenwidth || Event.xconfigure.height == vo_screenheight)) break;
-//         if (vo_fs && Event.xconfigure.width != vo_screenwidth && Event.xconfigure.height != vo_screenheight) break;
                 if (vo_window == None)
                     break;
-                {
-                    int old_w = vo_dwidth, old_h = vo_dheight;
-		    int old_x = vo_dx, old_y = vo_dy;
-                    vo_x11_update_geometry();
-                    if (vo_dwidth != old_w || vo_dheight != old_h || vo_dx != old_x || vo_dy != old_y)
-                        ret |= VO_EVENT_RESIZE;
-                }
+                ret |= check_resize();
                 break;
             case KeyPress:
                 {
@@ -947,9 +949,9 @@ void vo_x11_nofs_sizepos(int x, int y, int width, int height)
   }
   else
   {
-   vo_dwidth = width;
-   vo_dheight = height;
-   XMoveResizeWindow(mDisplay, vo_window, x, y, width, height);
+    vo_dwidth = width;
+    vo_dheight = height;
+    XMoveResizeWindow(mDisplay, vo_window, x, y, width, height);
   }
 }
 
@@ -1082,10 +1084,22 @@ void vo_x11_create_vo_window(XVisualInfo *vis, int x, int y,
       XChangeWindowAttributes(mDisplay, vo_window, xswamask, &xswa);
       XInstallColormap(mDisplay, col_map);
     }
-    if (WinID) vo_x11_update_geometry();
-    vo_x11_selectinput_witherr(mDisplay, vo_window,
+    if (WinID) {
+      // Expose events can only really be handled by us, so request them.
+      // Do not remove existing masks so GUI keeps working.
+      XWindowAttributes attribs;
+      XGetWindowAttributes(mDisplay, vo_window, &attribs);
+      vo_x11_selectinput_witherr(mDisplay, vo_window,
+                                 attribs.your_event_mask | ExposureMask);
+    } else
+      // Do not capture events since it might break the parent application
+      // if it relies on events being forwarded to the parent of WinID.
+      // It also is consistent with the w32_common.c code.
+      vo_x11_selectinput_witherr(mDisplay, vo_window,
           StructureNotifyMask | KeyPressMask | PointerMotionMask |
           ButtonPressMask | ButtonReleaseMask | ExposureMask);
+
+    vo_x11_update_geometry();
     goto final;
   }
   if (vo_window == None) {

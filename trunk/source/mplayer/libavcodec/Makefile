@@ -372,11 +372,11 @@ OBJS-$(CONFIG_VORBIS_ENCODER)          += vorbis_enc.o vorbis.o \
                                           vorbis_data.o
 OBJS-$(CONFIG_VP3_DECODER)             += vp3.o vp3dsp.o
 OBJS-$(CONFIG_VP5_DECODER)             += vp5.o vp56.o vp56data.o vp56dsp.o \
-                                          vp3dsp.o
+                                          vp3dsp.o cabac.o
 OBJS-$(CONFIG_VP6_DECODER)             += vp6.o vp56.o vp56data.o vp56dsp.o \
-                                          vp3dsp.o vp6dsp.o huffman.o
+                                          vp3dsp.o vp6dsp.o huffman.o cabac.o
 OBJS-$(CONFIG_VP8_DECODER)             += vp8.o vp8dsp.o vp56.o vp56data.o \
-                                          h264pred.o
+                                          h264pred.o cabac.o
 OBJS-$(CONFIG_VQA_DECODER)             += vqavideo.o
 OBJS-$(CONFIG_WAVPACK_DECODER)         += wavpack.o
 OBJS-$(CONFIG_WMAPRO_DECODER)          += wmaprodec.o wma.o
@@ -652,10 +652,15 @@ else
 $(SUBDIR)%_tablegen$(HOSTEXESUF): HOSTCFLAGS += -DCONFIG_SMALL=0
 endif
 
-$(SUBDIR)%_tablegen$(HOSTEXESUF): $(SUBDIR)%_tablegen.c $(SUBDIR)tableprint.c
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^ $(HOSTLIBS)
+$(SUBDIR)%_tablegen$(HOSTEXESUF): $(SUBDIR)%_tablegen.c $(SUBDIR)%_tablegen.h $(SUBDIR)tableprint.c
+	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $(filter %.c,$^) $(HOSTLIBS)
 
-$(SUBDIR)%_tables.h: $(SUBDIR)%_tablegen$(HOSTEXESUF)
+GEN_HEADERS = cbrt_tables.h aacps_tables.h aac_tables.h dv_tables.h     \
+              mdct_tables.h mpegaudio_tables.h motionpixels_tables.h    \
+              pcm_tables.h qdm2_tables.h
+GEN_HEADERS := $(addprefix $(SUBDIR), $(GEN_HEADERS))
+
+$(GEN_HEADERS): $(SUBDIR)%_tables.h: $(SUBDIR)%_tablegen$(HOSTEXESUF)
 	$(M)./$< > $@
 
 ifdef CONFIG_HARDCODED_TABLES

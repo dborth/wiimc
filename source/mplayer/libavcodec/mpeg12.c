@@ -1440,7 +1440,7 @@ static void mpeg_decode_sequence_display_extension(Mpeg1Context *s1)
     w= get_bits(&s->gb, 14);
     skip_bits(&s->gb, 1); //marker
     h= get_bits(&s->gb, 14);
-    skip_bits(&s->gb, 1); //marker
+    // remaining 3 bits are zero padding
 
     s1->pan_scan.width= 16*w;
     s1->pan_scan.height=16*h;
@@ -1920,7 +1920,7 @@ static int slice_decode_thread(AVCodecContext *c, void *arg){
 }
 
 /**
- * Handles slice ends.
+ * Handle slice ends.
  * @return 1 if it seems to be the last slice
  */
 static int slice_end(AVCodecContext *avctx, AVFrame *pict)
@@ -2155,7 +2155,7 @@ static void mpeg_decode_gop(AVCodecContext *avctx,
             time_code_pictures, s->closed_gop, broken_link);
 }
 /**
- * Finds the end of the current frame in the bitstream.
+ * Find the end of the current frame in the bitstream.
  * @return the position of the first byte of the next frame, or -1
  */
 int ff_mpeg1_find_frame_end(ParseContext *pc, const uint8_t *buf, int buf_size, AVCodecParserContext *s)

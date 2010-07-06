@@ -90,6 +90,7 @@ void update_subtitles(sh_video_t *sh_video, double refpts, demux_stream_t *d_dvd
     unsigned char *packet=NULL;
     int len;
     char type = d_dvdsub->sh ? ((sh_sub_t *)d_dvdsub->sh)->type : 'v';
+    int text_sub = type == 't' || type == 'm' || type == 'a' || type == 'd';
     static subtitle subs;
     if (reset) {
         sub_clear_text(&subs, MP_NOPTS_VALUE);
@@ -136,7 +137,7 @@ void update_subtitles(sh_video_t *sh_video, double refpts, demux_stream_t *d_dvd
                 }
             } else {
                 // DVD sub
-                len = ds_get_packet_sub(d_dvdsub, (unsigned char**)&packet);
+                len = ds_get_packet_sub(d_dvdsub, (unsigned char**)&packet, NULL, NULL);
                 if (len > 0) {
                     // XXX This is wrong, sh_video->pts can be arbitrarily
                     // much behind demuxing position. Unfortunately using
@@ -160,7 +161,7 @@ void update_subtitles(sh_video_t *sh_video, double refpts, demux_stream_t *d_dvd
 
         if (spudec_changed(vo_spudec))
             vo_osd_changed(OSDTYPE_SPU);
-    } else if (dvdsub_id >= 0 && (type == 't' || type == 'm' || type == 'a' || type == 'd')) {
+    } else if (dvdsub_id >= 0 && text_sub) {
         double curpts = refpts + sub_delay;
         double endpts;
         if (type == 'd' && !d_dvdsub->demuxer->teletext) {
@@ -171,12 +172,11 @@ void update_subtitles(sh_video_t *sh_video, double refpts, demux_stream_t *d_dvd
         }
         if (d_dvdsub->non_interleaved)
             ds_get_next_pts(d_dvdsub);
-        while (d_dvdsub->first) {
-            double subpts = ds_get_next_pts(d_dvdsub);
-            if (subpts > curpts)
+        while (1) {
+            double subpts = curpts;
+            len = ds_get_packet_sub(d_dvdsub, &packet, &subpts, &endpts);
+            if (len < 0)
                 break;
-            endpts = d_dvdsub->first->endpts;
-            len = ds_get_packet_sub(d_dvdsub, &packet);
             if (type == 'm') {
                 if (len < 2) continue;
                 len = FFMIN(len - 2, AV_RB16(packet));
@@ -247,7 +247,7 @@ void update_subtitles(sh_video_t *sh_video, double refpts, demux_stream_t *d_dvd
             if (d_dvdsub->non_interleaved)
                 ds_get_next_pts(d_dvdsub);
         }
-        if (sub_clear_text(&subs, curpts))
+        if (text_sub && sub_clear_text(&subs, curpts))
             set_osd_subtitle(&subs);
     }
     current_module=NULL;

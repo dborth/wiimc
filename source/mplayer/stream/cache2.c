@@ -374,12 +374,13 @@ void cache_uninit(stream_t *s) {
   cache_vars_t* c = s->cache_data;
   if(s->cache_pid) {
 #if !FORKED_CACHE
-    cache_do_control(s, -2, NULL);
 #ifdef GEKKO
-  stop_cache_thread = 1;
-  while(!CacheThreadSuspended())
-    usleep(100);
-  cachearg = NULL;
+	stop_cache_thread = 1;
+	while(!CacheThreadSuspended())
+	  usleep(100);
+	cachearg = NULL;
+#else
+    cache_do_control(s, -2, NULL);
 #endif
 #else
     kill(s->cache_pid,SIGKILL);

@@ -1,4 +1,4 @@
-.\" $Revision: 31552 $
+.\" $Revision: 31634 $
 .\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -58,6 +58,11 @@ mencoder \- movie encoder
 [options]
 {group of files and options}
 [group-specific options]
+.
+.br
+.B mplayer
+[br]://[title][/device]
+[options]
 .
 .br
 .B mplayer
@@ -151,7 +156,7 @@ architectures, see the documentation).
 It plays most MPEG/\:VOB, AVI, ASF/\:WMA/\:WMV, RM, QT/\:MOV/\:MP4, Ogg/\:OGM,
 MKV, VIVO, FLI, NuppelVideo, yuv4mpeg, FILM and RoQ files, supported by many
 native and binary codecs.
-You can watch VCD, SVCD, DVD, 3ivx, DivX 3/4/5, WMV and even H.264 movies,
+You can watch VCD, SVCD, DVD, Blu\-ray, 3ivx, DivX 3/4/5, WMV and even H.264 movies,
 too.
 .PP
 MPlayer supports a wide range of video and audio output drivers.
@@ -249,7 +254,7 @@ Adjust audio balance in favor of left/\:right channel.
 Mute sound.
 .IPs "_ (MPEG-TS, AVI and libavformat only)"
 Cycle through the available video tracks.
-.IPs "# (DVD, MPEG, Matroska, AVI and libavformat only)"
+.IPs "# (DVD, Blu-ray, MPEG, Matroska, AVI and libavformat only)"
 Cycle through the available audio tracks.
 .IPs "TAB (MPEG-TS and libavformat only)"
 Cycle through the available programs.
@@ -940,8 +945,8 @@ Show file parameters in an easily parseable format.
 Also prints more detailed information about subtitle and audio
 track languages and IDs.
 In some cases you can get more information by using \-msglevel identify=6.
-For example, for a DVD it will list the chapters and time length of each title,
-as well as a disk ID.
+For example, for a DVD or Blu\-ray it will list the chapters and time length
+of each title, as well as a disk ID.
 Combine this with \-frames 0 to suppress all video output.
 The wrapper script TOOLS/\:midentify.sh suppresses the other MPlayer output and
 (hopefully) shellescapes the filenames.
@@ -1244,6 +1249,19 @@ able to send content in different bitrates).
 Useful if you want to watch live streamed media behind a slow connection.
 With Real RTSP streaming, it is also used to set the maximum delivery
 bandwidth allowing faster cache filling and stream dumping.
+.
+.TP
+.B \-bluray\-angle <angle ID> (Blu\-ray only)
+Some Blu\-ray discs contain scenes that can be viewed from multiple angles.
+Here you can tell MPlayer which angles to use (default: 1).
+.
+.TP
+.B \-bluray\-chapter <chapter ID> (Blu\-ray only)
+Tells MPlayer which Blu\-ray chapter to start the current title from (default: 1).
+.
+.TP
+.B \-bluray\-device <path to disc> (Blu\-ray only)
+Specify the Blu\-ray disc location. Must be a directory with Blu\-ray structure.
 .
 .TP
 .B \-cache <kBytes>
@@ -3827,9 +3845,9 @@ the maximum texture size of your OpenGL implementation.
 Intended to work even with the most basic OpenGL implementations,
 but also makes use of newer extensions, which allow support for more
 colorspaces and direct rendering.
-For optimal speed try something similar to
+For optimal speed try adding the options
 .br
-\-vo gl:yuv=2:rectangle=2:force\-pbo:ati\-hack \-dr \-noslices
+\-dr \-noslices
 .br
 The code performs very few checks, so if a feature does not work, this
 might be because it is not supported by your card/OpenGL implementation
@@ -3970,6 +3988,27 @@ Select the scaling function to use for chrominance scaling.
 For details see lscale.
 .IPs filter-strength=<value>
 Set the effect strength for the lscale/cscale filters that support it.
+.IPs stereo=<value>
+Select a method for stereo display.
+You may have to use -aspect to fix the aspect value.
+Experimental, do not expect too much from it.
+.RSss
+0: Normal 2D display
+.br
+1: left-right split input to full-color red-cyan stereo.
+.br
+2: left-right split input to full-color red-cyan stereo.
+.br
+3: left-right split input to quadbuffered stereo.
+Only supported by very few OpenGL cards, thus untested and not working.
+.RE
+.RE
+.sp 1
+.RS
+The following options are only useful if writing your own fragment programs.
+.RE
+.sp 1
+.RSs
 .IPs customprog=<filename>
 Load a custom fragment program from <filename>.
 See TOOLS/edgedect.fp for an example.
@@ -11490,6 +11529,13 @@ in this order:
 .\" --------------------------------------------------------------------------
 .
 .SH EXAMPLES OF MPLAYER USAGE
+.
+.PP
+.B Quickstart Blu\-ray playing:
+.nf
+mplayer br:////path/to/disc
+mplayer br:// \-bluray\-device /path/to/disc
+.fi
 .
 .PP
 .B Quickstart DVD playing:

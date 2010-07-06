@@ -78,10 +78,11 @@ static inline int mix_core(uint32_t multbl[][256], int a, int b, int c, int d){
 }
 
 static inline void mix(av_aes_block state[2], uint32_t multbl[][256], int s1, int s3){
-    state[0].u32[0] = mix_core(multbl, state[1].u8x4[0][0], state[1].u8x4[s1  ][1], state[1].u8x4[2][2], state[1].u8x4[s3  ][3]);
-    state[0].u32[1] = mix_core(multbl, state[1].u8x4[1][0], state[1].u8x4[s3-1][1], state[1].u8x4[3][2], state[1].u8x4[s1-1][3]);
-    state[0].u32[2] = mix_core(multbl, state[1].u8x4[2][0], state[1].u8x4[s3  ][1], state[1].u8x4[0][2], state[1].u8x4[s1  ][3]);
-    state[0].u32[3] = mix_core(multbl, state[1].u8x4[3][0], state[1].u8x4[s1-1][1], state[1].u8x4[1][2], state[1].u8x4[s3-1][3]);
+    uint8_t (*src)[4] = state[1].u8x4;
+    state[0].u32[0] = mix_core(multbl, src[0][0], src[s1  ][1], src[2][2], src[s3  ][3]);
+    state[0].u32[1] = mix_core(multbl, src[1][0], src[s3-1][1], src[3][2], src[s1-1][3]);
+    state[0].u32[2] = mix_core(multbl, src[2][0], src[s3  ][1], src[0][2], src[s1  ][3]);
+    state[0].u32[3] = mix_core(multbl, src[3][0], src[s1-1][1], src[1][2], src[s3-1][3]);
 }
 
 static inline void crypt(AVAES *a, int s, const uint8_t *sbox, uint32_t multbl[][256]){
@@ -140,7 +141,7 @@ int av_aes_init(AVAES *a, const uint8_t *key, int key_bits, int decrypt) {
     uint8_t  log8[256];
     uint8_t alog8[512];
 
-    if(!enc_multbl[0][sizeof(enc_multbl)/sizeof(enc_multbl[0][0])-1]){
+    if(!enc_multbl[FF_ARRAY_ELEMS(enc_multbl)-1][FF_ARRAY_ELEMS(enc_multbl[0])-1]){
         j=1;
         for(i=0; i<255; i++){
             alog8[i]=

@@ -618,7 +618,7 @@ static void *GuiThread (void *arg)
 
 		for(i = 0; i < 4; i++)
 		{
-			if(userInput[0].wpad->data_present > 0)
+			if(userInput[i].wpad->data_present > 0)
 			{
 				dataFound = true;
 				break;

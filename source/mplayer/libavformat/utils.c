@@ -910,7 +910,7 @@ static void compute_pkt_fields(AVFormatContext *s, AVStream *st,
     // we take the conservative approach and discard both
     // Note, if this is misbehaving for a H.264 file then possibly presentation_delayed is not set correctly.
     if(delay==1 && pkt->dts == pkt->pts && pkt->dts != AV_NOPTS_VALUE && presentation_delayed){
-        av_log(s, AV_LOG_WARNING, "invalid dts/pts combination\n");
+        av_log(s, AV_LOG_DEBUG, "invalid dts/pts combination\n");
         pkt->dts= pkt->pts= AV_NOPTS_VALUE;
     }
 
@@ -1747,7 +1747,7 @@ int avformat_seek_file(AVFormatContext *s, int stream_index, int64_t min_ts, int
 /*******************************************************/
 
 /**
- * Returns TRUE if the stream has accurate duration in any stream.
+ * Return TRUE if the stream has accurate duration in any stream.
  *
  * @return TRUE if the stream has accurate duration for at least one component.
  */
@@ -2021,6 +2021,12 @@ static int has_codec_parameters(AVCodecContext *enc)
     return enc->codec_id != CODEC_ID_NONE && val != 0;
 }
 
+static int has_decode_delay_been_guessed(AVStream *st)
+{
+    return st->codec->codec_id != CODEC_ID_H264 ||
+        st->codec_info_nb_frames >= 4 + st->codec->has_b_frames;
+}
+
 static int try_decode_frame(AVStream *st, AVPacket *avpkt)
 {
     int16_t *samples;
@@ -2037,7 +2043,7 @@ static int try_decode_frame(AVStream *st, AVPacket *avpkt)
             return ret;
     }
 
-    if(!has_codec_parameters(st->codec)){
+    if(!has_codec_parameters(st->codec) || !has_decode_delay_been_guessed(st)){
         switch(st->codec->codec_type) {
         case AVMEDIA_TYPE_VIDEO:
             avcodec_get_frame_defaults(&picture);
@@ -2277,8 +2283,6 @@ int av_find_stream_info(AVFormatContext *ic)
             }
             codec_info_duration[st->index] += pkt->duration;
         }
-            st->codec_info_nb_frames++;
-
         {
             int index= pkt->stream_index;
             int64_t last= last_dts[index];
@@ -2319,9 +2323,10 @@ int av_find_stream_info(AVFormatContext *ic)
            decompress the frame. We try to avoid that in most cases as
            it takes longer and uses more memory. For MPEG-4, we need to
            decompress for QuickTime. */
-        if (!has_codec_parameters(st->codec))
+        if (!has_codec_parameters(st->codec) || !has_decode_delay_been_guessed(st))
             try_decode_frame(st, pkt);
 
+        st->codec_info_nb_frames++;
         count++;
     }
 
@@ -2926,7 +2931,7 @@ int av_interleave_packet_per_dts(AVFormatContext *s, AVPacket *out, AVPacket *pk
 }
 
 /**
- * Interleaves an AVPacket correctly so it can be muxed.
+ * Interleave an AVPacket correctly so it can be muxed.
  * @param out the interleaved packet will be output here
  * @param in the input packet
  * @param flush 1 if no further packets are available as input and all

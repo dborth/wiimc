@@ -41,9 +41,8 @@ static AVCRC av_crc_table[AV_CRC_MAX][257];
 #endif
 
 /**
- * Initializes a CRC table.
+ * Initialize a CRC table.
  * @param ctx must be an array of size sizeof(AVCRC)*257 or sizeof(AVCRC)*1024
- * @param cts_size size of ctx in bytes
  * @param le If 1, the lowest bit represents the coefficient for the highest
  *           exponent of the corresponding polynomial (both for poly and
  *           actual CRC).
@@ -54,6 +53,7 @@ static AVCRC av_crc_table[AV_CRC_MAX][257];
  * @param bits number of bits for the CRC
  * @param poly generator polynomial without the x**bits coefficient, in the
  *             representation as specified by le
+ * @param ctx_size size of ctx in bytes
  * @return <0 on failure
  */
 int av_crc_init(AVCRC *ctx, int le, int bits, uint32_t poly, int ctx_size){
@@ -88,7 +88,7 @@ int av_crc_init(AVCRC *ctx, int le, int bits, uint32_t poly, int ctx_size){
 }
 
 /**
- * Gets an initialized standard CRC table.
+ * Get an initialized standard CRC table.
  * @param crc_id ID of a standard CRC
  * @return a pointer to the CRC table or NULL on failure
  */
@@ -106,7 +106,7 @@ const AVCRC *av_crc_get_table(AVCRCId crc_id){
 }
 
 /**
- * Calculates the CRC of a block.
+ * Calculate the CRC of a block.
  * @param crc CRC of previous blocks if any or initial value for CRC
  * @return CRC updated with the data from the given block
  *

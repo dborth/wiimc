@@ -72,14 +72,6 @@ const LIBVO_EXTERN(gl_nosw)
 #undef info
 #undef preinit
 
-#ifdef CONFIG_GL_X11
-static int                  wsGLXAttrib[] = { GLX_RGBA,
-                                       GLX_RED_SIZE,1,
-                                       GLX_GREEN_SIZE,1,
-                                       GLX_BLUE_SIZE,1,
-                                       GLX_DOUBLEBUFFER,
-                                       None };
-#endif
 static MPGLContext glctx;
 
 static int use_osd;
@@ -155,6 +147,7 @@ static char *custom_tex;
 static int custom_tlin;
 static int custom_trect;
 static int mipmap_gen;
+static int stereo_mode;
 
 static int int_pause;
 static int eq_bri = 0;
@@ -178,9 +171,10 @@ static void redraw(void);
 static void resize(int x,int y){
   mp_msg(MSGT_VO, MSGL_V, "[gl] Resize: %dx%d\n",x,y);
   if (WinID >= 0) {
-    int top = 0, left = 0, w = x, h = y;
-    geometry(&top, &left, &w, &h, vo_dwidth, vo_dheight);
-    mpglViewport(top, left, w, h);
+    int left = 0, top = 0, w = x, h = y;
+    geometry(&left, &top, &w, &h, vo_dwidth, vo_dheight);
+    top = y - h - top;
+    mpglViewport(left, top, w, h);
   } else
     mpglViewport( 0, 0, x, y );
 
@@ -207,10 +201,10 @@ static void resize(int x,int y){
 
   if (!scaled_osd) {
 #ifdef CONFIG_FREETYPE
-  // adjust font size to display size
-  force_load_font = 1;
+    // adjust font size to display size
+    force_load_font = 1;
 #endif
-  vo_osd_changed(OSDTYPE_OSD);
+    vo_osd_changed(OSDTYPE_OSD);
   }
   mpglClear(GL_COLOR_BUFFER_BIT);
   redraw();
@@ -251,10 +245,10 @@ static void update_yuvconv(void) {
   glSetupYUVConversion(&params);
   if (custom_prog) {
     FILE *f = fopen(custom_prog, "rb");
-    if (!f)
+    if (!f) {
       mp_msg(MSGT_VO, MSGL_WARN,
              "[gl] Could not read customprog %s\n", custom_prog);
-    else {
+    } else {
       char *prog = calloc(1, MAX_CUSTOM_PROG_SIZE + 1);
       fread(prog, 1, MAX_CUSTOM_PROG_SIZE, f);
       fclose(f);
@@ -267,18 +261,18 @@ static void update_yuvconv(void) {
   }
   if (custom_tex) {
     FILE *f = fopen(custom_tex, "rb");
-    if (!f)
+    if (!f) {
       mp_msg(MSGT_VO, MSGL_WARN,
              "[gl] Could not read customtex %s\n", custom_tex);
-    else {
+    } else {
       int width, height, maxval;
       mpglActiveTexture(GL_TEXTURE3);
       if (glCreatePPMTex(custom_trect?GL_TEXTURE_RECTANGLE:GL_TEXTURE_2D, 0,
-                     custom_tlin?GL_LINEAR:GL_NEAREST,
-                     f, &width, &height, &maxval))
+                         custom_tlin?GL_LINEAR:GL_NEAREST,
+                         f, &width, &height, &maxval)) {
         mpglProgramEnvParameter4f(GL_FRAGMENT_PROGRAM, 1,
                    1.0 / width, 1.0 / height, width, height);
-      else
+      } else
         mp_msg(MSGT_VO, MSGL_WARN,
                "[gl] Error parsing customtex %s\n", custom_tex);
       fclose(f);
@@ -595,9 +589,24 @@ static int create_window(uint32_t d_width, uint32_t d_height, uint32_t flags, co
 #endif
 #ifdef CONFIG_GL_X11
   if (glctx.type == GLTYPE_X11) {
-    XVisualInfo *vinfo=glXChooseVisual( mDisplay,mScreen,wsGLXAttrib );
-    if (vinfo == NULL)
-    {
+    static int default_glx_attribs[] = {
+      GLX_RGBA, GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
+      GLX_DOUBLEBUFFER, None
+    };
+    static int stereo_glx_attribs[]  = {
+      GLX_RGBA, GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
+      GLX_DOUBLEBUFFER, GLX_STEREO, None
+    };
+    XVisualInfo *vinfo = NULL;
+    if (stereo_mode == GL_3D_QUADBUFFER) {
+      vinfo = glXChooseVisual(mDisplay, mScreen, stereo_glx_attribs);
+      if (!vinfo)
+        mp_msg(MSGT_VO, MSGL_ERR, "[gl] Could not find a stereo visual, "
+                                  "3D will probably not work!\n");
+    }
+    if (!vinfo)
+      vinfo = glXChooseVisual(mDisplay, mScreen, default_glx_attribs);
+    if (!vinfo) {
       mp_msg(MSGT_VO, MSGL_ERR, "[gl] no GLX support present\n");
       return -1;
     }
@@ -787,11 +796,27 @@ static void do_render(void) {
   mpglColor3f(1,1,1);
   if (is_yuv || custom_prog)
     glEnableYUVConversion(gl_target, yuvconvtype);
-  glDrawTex(0, 0, image_width, image_height,
-            0, 0, image_width, image_height,
-            texture_width, texture_height,
-            use_rectangle == 1, is_yuv,
-            mpi_flipped ^ vo_flipped);
+  if (stereo_mode) {
+    glEnable3DLeft(stereo_mode);
+    glDrawTex(0, 0, image_width, image_height,
+              0, 0, image_width >> 1, image_height,
+              texture_width, texture_height,
+              use_rectangle == 1, is_yuv,
+              mpi_flipped ^ vo_flipped);
+    glEnable3DRight(stereo_mode);
+    glDrawTex(0, 0, image_width, image_height,
+              image_width >> 1, 0, image_width >> 1, image_height,
+              texture_width, texture_height,
+              use_rectangle == 1, is_yuv,
+              mpi_flipped ^ vo_flipped);
+    glDisable3D(stereo_mode);
+  } else {
+    glDrawTex(0, 0, image_width, image_height,
+              0, 0, image_width, image_height,
+              texture_width, texture_height,
+              use_rectangle == 1, is_yuv,
+              mpi_flipped ^ vo_flipped);
+  }
   if (is_yuv || custom_prog)
     glDisableYUVConversion(gl_target, yuvconvtype);
 }
@@ -1097,6 +1122,7 @@ static const opt_t subopts[] = {
   {"customtrect",  OPT_ARG_BOOL, &custom_trect, NULL},
   {"mipmapgen",    OPT_ARG_BOOL, &mipmap_gen,   NULL},
   {"osdcolor",     OPT_ARG_INT,  &osd_color,    NULL},
+  {"stereo",       OPT_ARG_INT,  &stereo_mode,  NULL},
   {NULL}
 };
 
@@ -1128,6 +1154,7 @@ static int preinit_internal(const char *arg, int allow_sw)
     custom_trect = 0;
     mipmap_gen = 0;
     osd_color = 0xffffff;
+    stereo_mode = 0;
     if (subopt_parse(arg, subopts) != 0) {
       mp_msg(MSGT_VO, MSGL_FATAL,
               "\n-vo gl command line help:\n"
@@ -1201,6 +1228,11 @@ static int preinit_internal(const char *arg, int allow_sw)
               "    generate mipmaps for the video image (use with TXB in customprog)\n"
               "  osdcolor=<0xAARRGGBB>\n"
               "    use the given color for the OSD\n"
+              "  stereo=<n>\n"
+              "    0: normal display\n"
+              "    1: side-by-side to red-cyan stereo\n"
+              "    2: side-by-side to green-magenta stereo\n"
+              "    3: side-by-side to quadbuffer stereo (broken?)\n"
               "\n" );
       return -1;
     }

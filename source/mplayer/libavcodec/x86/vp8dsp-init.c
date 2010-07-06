@@ -54,6 +54,18 @@ extern void ff_put_vp8_epel8_v6_sse2  (uint8_t *dst, int dststride,
                                        uint8_t *src, int srcstride,
                                        int height, int mx, int my);
 
+extern void ff_put_vp8_epel4_h4_ssse3 (uint8_t *dst, int dststride,
+                                       uint8_t *src, int srcstride,
+                                       int height, int mx, int my);
+extern void ff_put_vp8_epel4_h6_ssse3 (uint8_t *dst, int dststride,
+                                       uint8_t *src, int srcstride,
+                                       int height, int mx, int my);
+extern void ff_put_vp8_epel4_v4_ssse3 (uint8_t *dst, int dststride,
+                                       uint8_t *src, int srcstride,
+                                       int height, int mx, int my);
+extern void ff_put_vp8_epel4_v6_ssse3 (uint8_t *dst, int dststride,
+                                       uint8_t *src, int srcstride,
+                                       int height, int mx, int my);
 extern void ff_put_vp8_epel8_h4_ssse3 (uint8_t *dst, int dststride,
                                        uint8_t *src, int srcstride,
                                        int height, int mx, int my);
@@ -73,6 +85,12 @@ extern void ff_put_vp8_bilinear4_h_mmxext(uint8_t *dst, int dststride,
 extern void ff_put_vp8_bilinear8_h_sse2  (uint8_t *dst, int dststride,
                                           uint8_t *src, int srcstride,
                                           int height, int mx, int my);
+extern void ff_put_vp8_bilinear4_h_ssse3 (uint8_t *dst, int dststride,
+                                          uint8_t *src, int srcstride,
+                                          int height, int mx, int my);
+extern void ff_put_vp8_bilinear8_h_ssse3 (uint8_t *dst, int dststride,
+                                          uint8_t *src, int srcstride,
+                                          int height, int mx, int my);
 
 extern void ff_put_vp8_bilinear4_v_mmxext(uint8_t *dst, int dststride,
                                           uint8_t *src, int srcstride,
@@ -80,12 +98,13 @@ extern void ff_put_vp8_bilinear4_v_mmxext(uint8_t *dst, int dststride,
 extern void ff_put_vp8_bilinear8_v_sse2  (uint8_t *dst, int dststride,
                                           uint8_t *src, int srcstride,
                                           int height, int mx, int my);
+extern void ff_put_vp8_bilinear4_v_ssse3 (uint8_t *dst, int dststride,
+                                          uint8_t *src, int srcstride,
+                                          int height, int mx, int my);
 extern void ff_put_vp8_bilinear8_v_ssse3 (uint8_t *dst, int dststride,
                                           uint8_t *src, int srcstride,
                                           int height, int mx, int my);
-extern void ff_put_vp8_bilinear8_h_ssse3 (uint8_t *dst, int dststride,
-                                          uint8_t *src, int srcstride,
-                                          int height, int mx, int my);
+
 
 extern void ff_put_vp8_pixels8_mmx (uint8_t *dst, int dststride,
                                     uint8_t *src, int srcstride,
@@ -173,6 +192,11 @@ HVTAPSSE2(6, 4, 8)
 HVTAPSSE2(6, 6, 8)
 HVTAPSSE2(6, 6, 16)
 
+HVTAP(ssse3, 16, 4, 4, 4, 8)
+HVTAP(ssse3, 16, 4, 6, 4, 8)
+HVTAP(ssse3, 16, 6, 4, 4, 8)
+HVTAP(ssse3, 16, 6, 6, 4, 8)
+
 #define HVBILIN(OPT, ALIGN, SIZE, MAXHEIGHT) \
 static void ff_put_vp8_bilinear ## SIZE ## _hv_ ## OPT( \
     uint8_t *dst, int dststride, uint8_t *src, \
@@ -190,6 +214,7 @@ HVBILIN(mmxext, 8,  8, 16)
 HVBILIN(mmxext, 8, 16, 16)
 HVBILIN(sse2,   8,  8, 16)
 HVBILIN(sse2,   8, 16, 16)
+HVBILIN(ssse3,  8,  4,  8)
 HVBILIN(ssse3,  8,  8, 16)
 HVBILIN(ssse3,  8, 16, 16)
 
@@ -197,6 +222,13 @@ extern void ff_vp8_idct_dc_add_mmx(uint8_t *dst, DCTELEM block[16], int stride);
 extern void ff_vp8_idct_dc_add_sse4(uint8_t *dst, DCTELEM block[16], int stride);
 extern void ff_vp8_luma_dc_wht_mmxext(DCTELEM block[4][4][16], DCTELEM dc[16]);
 extern void ff_vp8_idct_add_mmx(uint8_t *dst, DCTELEM block[16], int stride);
+
+extern void ff_vp8_v_loop_filter_simple_mmx   (uint8_t *dst, int stride, int flim);
+extern void ff_vp8_v_loop_filter_simple_mmxext(uint8_t *dst, int stride, int flim);
+extern void ff_vp8_v_loop_filter_simple_sse2  (uint8_t *dst, int stride, int flim);
+extern void ff_vp8_h_loop_filter_simple_mmx   (uint8_t *dst, int stride, int flim);
+extern void ff_vp8_h_loop_filter_simple_mmxext(uint8_t *dst, int stride, int flim);
+extern void ff_vp8_h_loop_filter_simple_sse2  (uint8_t *dst, int stride, int flim);
 #endif
 
 #define VP8_LUMA_MC_FUNC(IDX, SIZE, OPT) \
@@ -235,6 +267,9 @@ av_cold void ff_vp8dsp_init_x86(VP8DSPContext* c)
         c->put_vp8_bilinear_pixels_tab[0][0][0] = ff_put_vp8_pixels16_mmx;
         c->put_vp8_epel_pixels_tab[1][0][0]     =
         c->put_vp8_bilinear_pixels_tab[1][0][0] = ff_put_vp8_pixels8_mmx;
+
+        c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_mmx;
+        c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_mmx;
     }
 
     /* note that 4-tap width=16 functions are missing because w=16
@@ -243,10 +278,13 @@ av_cold void ff_vp8dsp_init_x86(VP8DSPContext* c)
         c->vp8_luma_dc_wht = ff_vp8_luma_dc_wht_mmxext;
         VP8_LUMA_MC_FUNC(0, 16, mmxext);
         VP8_MC_FUNC(1, 8, mmxext);
-        VP8_MC_FUNC(1, 4, mmxext);
+        VP8_MC_FUNC(2, 4, mmxext);
         VP8_BILINEAR_MC_FUNC(0, 16, mmxext);
         VP8_BILINEAR_MC_FUNC(1, 8, mmxext);
-        VP8_BILINEAR_MC_FUNC(1, 4, mmxext);
+        VP8_BILINEAR_MC_FUNC(2, 4, mmxext);
+
+        c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_mmxext;
+        c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_mmxext;
     }
 
     if (mm_flags & FF_MM_SSE) {
@@ -259,13 +297,18 @@ av_cold void ff_vp8dsp_init_x86(VP8DSPContext* c)
         VP8_MC_FUNC(1, 8, sse2);
         VP8_BILINEAR_MC_FUNC(0, 16, sse2);
         VP8_BILINEAR_MC_FUNC(1, 8, sse2);
+
+        c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_sse2;
+        c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_sse2;
     }
 
     if (mm_flags & FF_MM_SSSE3) {
         VP8_LUMA_MC_FUNC(0, 16, ssse3);
         VP8_MC_FUNC(1, 8, ssse3);
+        VP8_MC_FUNC(2, 4, ssse3);
         VP8_BILINEAR_MC_FUNC(0, 16, ssse3);
         VP8_BILINEAR_MC_FUNC(1, 8, ssse3);
+        VP8_BILINEAR_MC_FUNC(2, 4, ssse3);
     }
 
     if (mm_flags & FF_MM_SSE4) {

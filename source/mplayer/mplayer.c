@@ -303,7 +303,7 @@ int file_filter=1;
 #endif
        
 #ifdef CONFIG_STREAM_CACHE
-extern int cache_fill_status;
+extern float cache_fill_status;
 
 float stream_cache_min_percent=30.0;
 float stream_cache_seek_min_percent=50.0;
@@ -2724,7 +2724,6 @@ static int seek(MPContext *mpctx, double amount, int style)
  * file for some tools to link against. */
 #ifndef DISABLE_MAIN
 #ifdef GEKKO
-int stream_sleep(int s) { usleep(s*1000); return 0; }
 
 int mplayer_main(){
 #else
@@ -2758,7 +2757,6 @@ int gui_no_filename=0;
 
   // Preparse the command line
 #ifdef GEKKO
-stream_set_interrupt_callback(stream_sleep);
 m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");

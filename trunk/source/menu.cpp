@@ -5442,6 +5442,9 @@ static void AudioVolumeCallback(void * ptr)
 
 static void AudioNowPlayingCallback(void * ptr)
 {
+	if(nowPlayingSet)
+		return;
+
 	if(!wiiAudioOnly())
 	{
 		if(audiobarNowPlayingBtn->IsVisible())
@@ -5457,7 +5460,7 @@ static void AudioNowPlayingCallback(void * ptr)
 	double total = wiiGetTimeLength();
 
 	// display ICY data
-	if(total <= 0.02)
+	if(total <= 0.01)
 	{
 		if(strncmp(loadedFile, "http:", 5) == 0)
 		{

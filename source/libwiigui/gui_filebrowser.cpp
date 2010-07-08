@@ -219,17 +219,19 @@ void GuiFileBrowser::SetFocus(int f)
 
 void GuiFileBrowser::ResetState()
 {
-	state = STATE_DEFAULT;
-	stateChan = -1;
-	selectedItem = 0;
-
 	for(int i=0; i<size; i++)
 		fileList[i]->ResetState();
+
+	fileList[0]->SetState(STATE_SELECTED);
+	selectedItem = 0;
+	stateChan = -1;
+	state = STATE_DEFAULT;
+	listChanged = true;
 }
 
 void GuiFileBrowser::TriggerUpdate()
 {
-	if(browser.selIndex > 0)
+	if(browser.selIndex >= 0 && (browser.selIndex - browser.pageIndex) >= 0)
 		selectedItem = browser.selIndex - browser.pageIndex;
 
 	listChanged = true;

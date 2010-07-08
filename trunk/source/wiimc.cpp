@@ -466,7 +466,13 @@ void SetMPlayerSettings()
 	wiiSetVolume(WiiSettings.volume);
 	wiiSetSeekTime(WiiSettings.seekTime);
 	wiiSetCacheFill(WiiSettings.cacheFill);
-	wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
+
+	if(strncmp(loadedFile, "dvd", 3) == 0) // always use framedropping for DVD
+		wiiSetProperty(MP_CMD_FRAMEDROPPING, FRAMEDROPPING_AUTO);
+	else
+		wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
+	
+	
 	wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
 	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);
 	wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);

@@ -1189,7 +1189,7 @@ void FindDirectory()
 
 		if(indexFound > pagesize)
 		{
-			browser.pageIndex = (ceil(indexFound/(float)pagesize)) * pagesize;
+			browser.pageIndex = (floor(indexFound/(float)pagesize)) * pagesize;
 
 			if(browser.pageIndex + pagesize > browser.numEntries)
 				browser.pageIndex = browser.numEntries - pagesize;

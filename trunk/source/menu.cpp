@@ -449,6 +449,7 @@ static void *ScreensaverThread(void *arg)
 		oldWindow = mainWindow;
 
 		SuspendGui();
+		audiobar->Remove(audiobarNowPlayingBtn);
 		w.Append(audiobarNowPlayingBtn);
 		audiobarNowPlayingBtn->SetPosition(-8, logoImg.GetHeight()+20);
 		mainWindow = &w;
@@ -468,15 +469,16 @@ static void *ScreensaverThread(void *arg)
 
 			int x=0,y=0;
 
-			while(x < 30 || x > screenwidth-logoImg.GetWidth()-30)
+			while(x < 30 || x > (screenwidth-w.GetWidth()-30))
 				x = (int)(((double)rand() / double(RAND_MAX + 1.0)) * screenwidth);
-			while(y < 30 || y > screenheight-logoImg.GetHeight()-30)
+			while(y < 30 || y > (screenheight-w.GetHeight()-30))
 				y = (int)(((double)rand() / double(RAND_MAX + 1.0)) * screenheight);
 
 			w.SetPosition(x, y);
 		}
 done:
 		SuspendGui();
+		w.Remove(audiobarNowPlayingBtn);
 		audiobar->Append(audiobarNowPlayingBtn);
 		audiobarNowPlayingBtn->SetPosition(0, 0);
 		mainWindow = oldWindow;
@@ -2000,17 +2002,12 @@ static void MenuBrowse(int menu)
 				mainWindow->Remove(&backBtn);
 				ResumeGui();
 			}
+			fileBrowser->SetState(STATE_DISABLED);
 
-			if(BrowserChangeFolder(false))
-			{
-				fileBrowser->ResetState();
-				fileBrowser->fileList[0]->SetState(STATE_SELECTED);
-				fileBrowser->TriggerUpdate();
-			}
-			else
-			{
+			if(!BrowserChangeFolder(false))
 				goto done;
-			}
+
+			fileBrowser->ResetState();
 		}
 
 		// up one level
@@ -2027,8 +2024,8 @@ static void MenuBrowse(int menu)
 
 			if(browser.dir[0] != 0)
 			{
+				fileBrowser->SetState(STATE_DISABLED);
 				browser.selIndex = 0;
-
 				if(!BrowserChangeFolder())
 				{
 					CancelAction();
@@ -2037,8 +2034,6 @@ static void MenuBrowse(int menu)
 					goto done;
 				}
 				fileBrowser->ResetState();
-				fileBrowser->fileList[0]->SetState(STATE_SELECTED);
-				fileBrowser->TriggerUpdate();
 			}
 			CancelAction();
 			mainWindow->Remove(disabled);
@@ -2056,17 +2051,13 @@ static void MenuBrowse(int menu)
 				// check corresponding browser entry
 				if(browserList[browser.selIndex].type == TYPE_FOLDER)
 				{
-					if(BrowserChangeFolder())
-					{
-						fileBrowser->ResetState();
-						fileBrowser->fileList[0]->SetState(STATE_SELECTED);
-						fileBrowser->TriggerUpdate();
-						continue;
-					}
-					else
-					{
+					fileBrowser->SetState(STATE_DISABLED);
+
+					if(!BrowserChangeFolder())
 						goto done;
-					}
+
+					fileBrowser->ResetState();
+					continue;
 				}
 
 				// this is a file
@@ -2084,7 +2075,7 @@ static void MenuBrowse(int menu)
 						mainWindow->SetState(STATE_DISABLED);
 						ShowAction("Loading...");
 					}
-
+					fileBrowser->SetState(STATE_DISABLED);
 					numItems = BrowserChangeFolder();
 
 					if(numItems > 1)
@@ -2097,16 +2088,14 @@ static void MenuBrowse(int menu)
 							// go up one level
 							browser.selIndex = 0;
 							BrowserChangeFolder();
+							fileBrowser->ResetState();
 						}
 						else
 						{
 							CancelAction();
 							mainWindow->Remove(disabled);
 							mainWindow->SetState(STATE_DEFAULT);
-
 							fileBrowser->ResetState();
-							fileBrowser->fileList[0]->SetState(STATE_SELECTED);
-							fileBrowser->TriggerUpdate();
 							continue;
 						}
 					}
@@ -2115,6 +2104,7 @@ static void MenuBrowse(int menu)
 						CancelAction();
 						mainWindow->Remove(disabled);
 						mainWindow->SetState(STATE_DEFAULT);
+						fileBrowser->ResetState();
 						continue;
 					}
 				}
@@ -2979,31 +2969,24 @@ static void MenuBrowsePictures()
 		if(devicesChanged)
 		{
 			devicesChanged = false;
+			fileBrowser.SetState(STATE_DISABLED);
 
-			if(BrowserChangeFolder(true, true))
-			{
-				fileBrowser.ResetState();
-				fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-				fileBrowser.TriggerUpdate();
-			}
-			else
-			{
+			if(!BrowserChangeFolder(true, true))
 				goto done;
-			}
+
+			fileBrowser.ResetState();
 		}
 
 		// up one level
 		if(upOneLevelBtn.GetState() == STATE_CLICKED)
 		{
 			upOneLevelBtn.ResetState();
-			browser.selIndex = 0;
+			fileBrowser.SetState(STATE_DISABLED);
 
 			if(!BrowserChangeFolder())
 				goto done;
 
 			fileBrowser.ResetState();
-			fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-			fileBrowser.TriggerUpdate();
 		}
 		
 		// update progress bar
@@ -3081,19 +3064,14 @@ static void MenuBrowsePictures()
 				if(browserList[browser.selIndex].type == TYPE_FOLDER)
 				{
 					SuspendPictureThread();
+					fileBrowser.SetState(STATE_DISABLED);
 
-					if(BrowserChangeFolder(true, true))
-					{
-						fileBrowser.ResetState();
-						fileBrowser.fileList[0]->SetState(STATE_SELECTED);
-						fileBrowser.TriggerUpdate();
-						loadPictures = 1; // trigger picture thread
-						ResumePictureThread();
-					}
-					else
-					{
+					if(!BrowserChangeFolder(true, true))
 						goto done;
-					}
+
+					fileBrowser.ResetState();
+					loadPictures = 1; // trigger picture thread
+					ResumePictureThread();
 				}
 				else
 				{
@@ -5495,6 +5473,10 @@ static void AudioNowPlayingCallback(void * ptr)
 				audiobarNowPlaying[3]->SetText(streamurl);
 			else
 				audiobarNowPlaying[3]->SetText(NULL);
+
+			streamtitle[0] = 0;
+			streamname[0] = 0;
+			streamurl[0] = 0;
 		}
 		else
 		{

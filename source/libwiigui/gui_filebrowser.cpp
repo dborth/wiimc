@@ -492,7 +492,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 
 		if(i != selectedItem && fileList[i]->GetState() == STATE_SELECTED)
 			fileList[i]->ResetState();
-		else if(focus && i == selectedItem && fileList[i]->GetState() == STATE_DEFAULT)
+		else if(i == selectedItem && fileList[i]->GetState() == STATE_DEFAULT)
 			fileList[selectedItem]->SetState(STATE_SELECTED, -1);
 		
 		if(!(t->wpad->btns_h & WPAD_BUTTON_DOWN) && !(t->wpad->btns_h & WPAD_BUTTON_UP))

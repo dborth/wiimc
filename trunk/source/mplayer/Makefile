@@ -667,7 +667,6 @@ SRCS_MPLAYER-$(ZR)            += libvo/jpeg_enc.c libvo/vo_zr.c libvo/vo_zr2.c
 SRCS_MPLAYER-$(GEKKO) += 	osdep/ave-rvl.c \
 							osdep/gx_supp.c \
 							osdep/glob_gekko.c \
-							osdep/mem2_manager.c \
 							libao2/ao_gekko.c \
 							libvo/vo_gekko.c \
 

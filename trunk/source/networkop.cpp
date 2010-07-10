@@ -44,24 +44,15 @@ void UpdateCheck()
 	// we can only check for the update if we have internet + SD or USB
 	if(!updateChecked && networkInit && (isInserted[DEVICE_SD] || isInserted[DEVICE_USB]))
 	{
-		static char url[128];
-		int retval;
-
 		updateChecked = true;
+		char tmpbuffer[256];
 
-		snprintf(url, 128, "http://wiimc.googlecode.com/svn/trunk/update.xml");
-
-		u8 * tmpbuffer = (u8 *)memalign(32,32768);
-		memset(tmpbuffer, 0, 32768);
-		retval = http_request(url, NULL, tmpbuffer, 32768, SILENT);
-		memset(url, 0, 128);
-
-		if (retval)
+		if (http_request("http://wiimc.googlecode.com/svn/trunk/update.xml", NULL, tmpbuffer, 256, SILENT) > 0)
 		{
 			mxml_node_t *xml;
 			mxml_node_t *item;
 
-			xml = mxmlLoadString(NULL, (char *)tmpbuffer, MXML_TEXT_CALLBACK);
+			xml = mxmlLoadString(NULL, tmpbuffer, MXML_TEXT_CALLBACK);
 
 			if(xml)
 			{
@@ -104,7 +95,6 @@ void UpdateCheck()
 				mxmlDelete(xml);
 			}
 		}
-		free(tmpbuffer);
 	}
 }
 
@@ -151,7 +141,7 @@ bool DownloadUpdate()
 	}
 	dev[i+1] = 0;
 
-	FILE * hfile;
+	FILE *hfile;
 	char updateFile[50];
 	sprintf(updateFile, "%s%s Update.zip", dev, APPNAME);
 	hfile = fopen (updateFile, "wb");

@@ -55,7 +55,6 @@ void UpdatePads()
  ***************************************************************************/
 void SetupPads()
 {
-	WPAD_Init();
 	WPAD_SetIdleTimeout(60);
 
 	// read wiimote accelerometer and IR data

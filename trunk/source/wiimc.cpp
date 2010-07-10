@@ -19,6 +19,7 @@
 #include "utils/di2.h"
 #include "utils/usb2storage.h"
 #include "utils/gettext.h"
+#include "utils/mem2_manager.h"
 #include "video.h"
 #include "menu.h"
 #include "libwiigui/gui.h"
@@ -32,7 +33,6 @@
 
 #include "mplayer/config.h"
 #include "mplayer/input/input.h"
-#include "mplayer/osdep/mem2_manager.h"
 #include "mplayer/osdep/gx_supp.h"
 
 extern "C" {
@@ -544,7 +544,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	VIDEO_Init();
+	WPAD_Init();
+	InitMem2Manager(); // cache memory and file browser
 	InitVideo();
 	SetupPads();
 	AUDIO_Init(NULL);
@@ -553,12 +554,9 @@ int main(int argc, char *argv[])
 	WPAD_SetPowerButtonCallback((WPADShutdownCallback)ShutdownCB);
 	SYS_SetPowerCallback(ShutdownCB);
 	SYS_SetResetCallback(ResetCB);
-	InitMem2Manager(); // only used for cache_mem
-	// we want browser to sit at high MEM1 and NOT low MEM2 (to optimize space)
-	browserList = (BROWSERENTRY *)malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE);
-	GX_AllocTextureMemory(); // low MEM2 - texture memory
+	GX_AllocTextureMemory();
+	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE);
 	MountAllDevices(); // Initialize SD and USB devices
-
 	// store path app was loaded from
 	if(argc > 0 && argv[0] != NULL)
 		CreateLoadPath(argv[0]);
@@ -566,7 +564,6 @@ int main(int argc, char *argv[])
 	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
 	InitFreeType((u8*)font_ttf, font_ttf_size); // Initialize font system
-
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
 

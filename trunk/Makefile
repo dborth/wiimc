@@ -20,7 +20,7 @@ TARGET		:=	wiimc
 BUILD		:=	build
 SOURCES		:=	source source/libwiigui source/utils source/utils/unzip \
 				source/images source/lang source/fonts
-INCLUDES	:=	source
+INCLUDES	:=	source source/mplayer
 
 #---------------------------------------------------------------------------------
 # options for code generation

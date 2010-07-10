@@ -154,6 +154,9 @@ typedef struct stream {
   unsigned int buf_pos,buf_len;
   off_t pos,start_pos,end_pos;
   int eof;
+#ifdef GEKKO
+  int error;
+#endif
   int mode; //STREAM_READ or STREAM_WRITE
   unsigned int cache_pid;
   void* cache_data;

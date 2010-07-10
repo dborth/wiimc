@@ -19,6 +19,6 @@ typedef enum {
 	HTTPR_ERR_RECEIVE
 } http_res;
 
-int http_request (const char *url, FILE * hfile, u8 * buffer, u32 maxsize, bool silent);
+int http_request (const char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent);
 
 #endif

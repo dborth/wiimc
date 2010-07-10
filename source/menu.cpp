@@ -1682,7 +1682,7 @@ static bool thumbLoad = false;
 static void *ThumbThread (void *arg)
 {
 	GuiImageData *thumb = NULL;
-	u8 *thumbBuffer = (u8*)malloc(200*1024);
+	char *thumbBuffer = (char *)malloc(200*1024);
 	thumbLoad = false;
 	thumbThreadHalt = 0;
 
@@ -1710,11 +1710,11 @@ static void *ThumbThread (void *arg)
 				if(strncmp(browserList[loadIndex].image, "http:", 5) == 0)
 					read = http_request(browserList[loadIndex].image, NULL, thumbBuffer, 200*1024, SILENT);
 				else
-					read = LoadFile(browserList[loadIndex].image, (char *)thumbBuffer, SILENT);
+					read = LoadFile(browserList[loadIndex].image, thumbBuffer, SILENT);
 	
 				if(read > 0 && loadIndex == thumbIndex) // file loaded and index has not changed
 				{
-					thumb = new GuiImageData(thumbBuffer, read, GX_TF_RGBA8);
+					thumb = new GuiImageData((u8 *)thumbBuffer, read, GX_TF_RGBA8);
 
 					if(thumb->GetImage())
 					{
@@ -6170,6 +6170,7 @@ static void StopGuiThreads()
 		updatethread = LWP_THREAD_NULL;
 	}
 }
+
 
 /****************************************************************************
  * Menu

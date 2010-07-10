@@ -1504,7 +1504,7 @@ static int ParsePLXPlaylist()
 	}
 
 	if(strncmp(browser.dir, "http:", 5) == 0)
-		size = http_request(browser.dir, NULL, (u8*)buffer, 128*1024, SILENT);
+		size = http_request(browser.dir, NULL, buffer, 128*1024, SILENT);
 	else
 		size = LoadFile(buffer, browser.dir, SILENT);
 

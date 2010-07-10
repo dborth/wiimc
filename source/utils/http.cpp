@@ -23,6 +23,12 @@
 #include "http.h"
 #include "wiimc.h"
 
+#define MAX_SIZE (1024*1024*15)
+
+extern "C" {
+#include "mplayer/stream/url.h"
+}
+
 #define TCP_CONNECT_TIMEOUT 	4000  // 4 secs to make a connection
 #define TCP_SEND_SIZE 			(32 * 1024)
 #define TCP_RECV_SIZE 			(32 * 1024)
@@ -256,38 +262,18 @@ static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
 
 	return left == 0;
 }
-static bool http_split_url(char **host, char **path, const char *url)
-{
-	const char *p;
-	char *c;
-
-	if (strncasecmp(url, "http://", 7))
-		return false;
-
-	p = url + 7;
-	c = strchr(p, '/');
-
-	if (c == NULL || c[0] == 0)
-		return false;
-
-	*host = strndup(p, c - p);
-	*path = strdup(c);
-
-	return true;
-}
-
-#define MAX_SIZE (1024*1024*15)
 
 /****************************************************************************
  * http_request
  * Retrieves the specified URL, and stores it in the specified file or buffer
  ***************************************************************************/
-int http_request(const char *url, FILE * hfile, u8 * buffer, u32 maxsize, bool silent)
+int http_request(const char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent)
 {
 	int res = 0;
-	char *http_host;
+	char http_host[1024];
+	char http_path[1024];
 	u16 http_port;
-	char *http_path;
+	URL_t *tmpurl;
 
 	http_res result;
 	u32 http_status;
@@ -301,10 +287,25 @@ int http_request(const char *url, FILE * hfile, u8 * buffer, u32 maxsize, bool s
 	if (url == NULL || (hfile == NULL && buffer == NULL))
 		return 0;
 
-	if (!http_split_url(&http_host, &http_path, url))
+	tmpurl = url_new(url);
+
+	if (tmpurl == NULL)
 		return 0;
 
-	http_port = 80;
+	if(strlen(tmpurl->hostname) >= 1024 || strlen(tmpurl->file) >= 1024)
+	{
+		url_free(tmpurl);
+		return 0;
+	}
+
+	strcpy(http_host, tmpurl->hostname);
+	strcpy(http_path, tmpurl->file);
+	http_port = tmpurl->port;
+
+	if(http_port == 0)
+		http_port = 80;
+
+	url_free(tmpurl);
 	http_status = 404;
 
 	int s = tcp_connect(http_host, http_port);
@@ -377,7 +378,7 @@ int http_request(const char *url, FILE * hfile, u8 * buffer, u32 maxsize, bool s
 		if(!silent)
 			ShowAction("Downloading...");
 
-		sizeread = tcp_read(s, buffer, content_length);
+		sizeread = tcp_read(s, (u8 *)buffer, content_length);
 
 		if(!silent)
 			CancelAction();

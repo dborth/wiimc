@@ -51,7 +51,7 @@ static void *ThreadProc(void *s);
 #include <ogcsys.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogc/mutex.h>
-#include "osdep/mem2_manager.h"
+#include "../../utils/mem2_manager.h"
 static void *ThreadProc(void *s);
 static unsigned char *global_buffer=NULL;
 static void *cachearg = NULL;
@@ -250,8 +250,37 @@ static int cache_fill(cache_vars_t *s)
 #ifdef GEKKO
   if(len==0) 
   {
-  	cache_fill_status=-1;
-  	s->eof=1;
+  	if(s->stream->error>0)
+	{
+		s->stream->error++; //count read error
+		
+		if(s->stream->error>1000) //num retries
+		{
+			s->eof=1;
+		}
+		else		
+		{
+		  //printf("Error reading stream\n");
+		  //retry if we have cache
+		  cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
+		  if(cache_fill_status<5)
+		  {	  
+	  		s->eof=1;
+	  		cache_fill_status=-1;  		
+	  		//printf("error: %i\n",s->stream->error);
+	  	  }
+	  	  else 
+			{
+			s->stream->eof=0;
+			//printf("retry read (%f)\n",cache_fill_status);
+			}
+  	    }
+	}
+  	else
+  	{
+  		cache_fill_status=-1;  	
+  		s->eof=1;
+  	}
   }
 #else
   s->eof= !len;
@@ -387,10 +416,15 @@ void cache_uninit(stream_t *s) {
 
 if(!c) return;
 #if defined(GEKKO)
+  if(c->stream)
+    free(c->stream);
+  c->buffer=NULL;
   free(s->cache_data);
   s->cache_data=NULL;
+  s->cache_pid=0;
 #else
 #if defined(__MINGW32__) || defined(PTHREAD_CACHE) || defined(__OS2__)
+  free(c->stream);
   free(c->buffer);
   c->buffer = NULL;
   free(s->cache_data);
@@ -432,6 +466,7 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
   stream->cache_data=s;
   s->stream=stream; // callback
   s->seek_limit=seek_limit;
+  s->stream->error=0;
   s->read_filepos=0;
 
   //make sure that we won't wait from cache_fill
@@ -442,10 +477,6 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
   if (min > s->buffer_size - s->fill_limit) {
      min = s->buffer_size - s->fill_limit;
   }
-  // to make sure we wait for the cache process/thread to be active
-  // before continuing
-  if (min <= 0)
-    min = 1;
 
 #if FORKED_CACHE
   if((stream->cache_pid=fork())){
@@ -495,7 +526,6 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
 	if(s->stream->type == STREAMTYPE_STREAM)
 		ShowProgress("Buffering...", (int)(100.0*(float)(s->max_filepos)/(float)(min)), 100);
 #endif
-
 	if(s->eof) break; // file is smaller than prefill size
 	if(stream_check_interrupt(PREFILL_SLEEP_TIME)) {
 	  res = 0;
@@ -594,6 +624,7 @@ int cache_stream_seek_long(stream_t *stream,off_t pos){
   off_t newpos;
   if(!stream->cache_pid) return stream_seek_long(stream,pos);
   LWP_MutexLock(cache_mutex);
+
   s=stream->cache_data;
 //  s->seek_lock=1;
 
@@ -602,9 +633,10 @@ int cache_stream_seek_long(stream_t *stream,off_t pos){
   newpos=pos/s->sector_size; newpos*=s->sector_size; // align
   stream->pos=s->read_filepos=newpos;
   s->eof=0; // !!!!!!!
-  LWP_MutexUnlock(cache_mutex);
+
+	LWP_MutexUnlock(cache_mutex);
   cache_stream_fill_buffer(stream);
-  LWP_MutexLock(cache_mutex);
+	LWP_MutexLock(cache_mutex);
 
   pos-=newpos;
   if(pos>=0 && pos<=stream->buf_len){
@@ -612,7 +644,7 @@ int cache_stream_seek_long(stream_t *stream,off_t pos){
     LWP_MutexUnlock(cache_mutex);
     return 1;
   }
-    LWP_MutexUnlock(cache_mutex);
+	LWP_MutexUnlock(cache_mutex);
 //  stream->buf_pos=stream->buf_len=0;
 //  return 1;
 
@@ -697,3 +729,59 @@ int stream_read(stream_t *s,char* mem,int total)
   }
   return total;
 }
+
+int stream_error(stream_t *stream)
+{
+	if(!stream || !stream->cache_data)
+		return 0;
+
+	cache_vars_t *vars = (cache_vars_t *)stream->cache_data;
+	return vars->stream->error;
+}
+
+#if 0
+void refillcache(stream_t *stream,float min)
+{
+	cache_vars_t* s;
+	int out=0;
+	s=stream->cache_data;
+	u64 t1;
+	float old=0;
+	t1 = GetTimerMS();
+
+    while(cache_fill_status<min)
+    {
+		//printf("Cache fill: %5.2f%%  \n",(float)(100.0*(float)(cache_fill_status)/(float)(min)));
+    	ShowProgress("Buffering...", (int)cache_fill_status, (int)min);
+		if(s->eof) break; // file is smaller than prefill size
+			
+		if(out==0)out=stream_check_interrupt(PREFILL_SLEEP_TIME);
+		else
+		{ //remove others pause commands if you press pause several times
+		  mp_cmd_t* cmd;
+		  if((cmd = mp_input_get_cmd(PREFILL_SLEEP_TIME,0,1)) != NULL)
+		  {
+			  if(cmd->id==MP_CMD_PAUSE)
+			  {
+				  cmd = mp_input_get_cmd(0,0,0);
+				  mp_cmd_free(cmd);
+			  }
+		  }
+
+		}
+		//printf("Cache fill: %5.2f%%  \n",cache_fill_status);
+		if(cache_fill_status > 5 && out)
+		{
+			//printf("break Cache fill: %5.2f%%  \n",cache_fill_status);
+			return ;
+		}	
+		
+		//not needed, for security	
+		if(old<cache_fill_status)t1 = GetTimerMS();
+	    if(GetTimerMS()-t1>1500) return;
+		old=cache_fill_status;
+		usleep(50);
+    }
+    //printf("end Cache fill: %5.2f%%  \n",cache_fill_status);   
+}
+#endif

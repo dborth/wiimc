@@ -15,6 +15,9 @@ int mload_init();
 int mload_close();
 bool load_ehci_module();
 void USB2Enable(bool e);
+void USB2Storage_Close();
+int GetUSB2LanPort();
+void SetUSB2Mode(int mode); 
 extern void __exception_closeall();
 typedef void (*entrypoint) (void);
 u32 load_dol_image (void *dolstart, struct __argv *argv);
@@ -67,6 +70,31 @@ static bool FindIOS(u32 ios)
 	return false;
 }
 
+#define ROUNDDOWN32(v)				(((u32)(v)-0x1f)&~0x1f)
+
+static bool USBLANDetected()
+{
+	u8 dummy;
+	u8 i;
+	u16 vid, pid;
+
+	USB_Initialize();
+	u8 *buffer = (u8*)ROUNDDOWN32(((u32)SYS_GetArena2Hi() - (32*1024)));
+	memset(buffer, 0, 8 << 3);
+
+	if(USB_GetDeviceList("/dev/usb/oh0", buffer, 8, 0, &dummy) < 0)
+		return false;
+
+	for(i = 0; i < 8; i++)
+	{
+		memcpy(&vid, (buffer + (i << 3) + 4), 2);
+		memcpy(&pid, (buffer + (i << 3) + 6), 2);
+		if( (vid == 0x0b95) && (pid == 0x7720))
+			return true;
+	}
+	return false;
+}
+
 static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
 {
 	return -1;
@@ -82,6 +110,8 @@ int main(int argc, char **argv)
 	devoptab_list[STD_OUT] = &phony_out; // to keep libntfs happy
 	devoptab_list[STD_ERR] = &phony_out; // to keep libntfs happy
 
+	bool usblan = USBLANDetected();
+
 	// try to load IOS 202
 	if(FindIOS(202))
 		IOS_ReloadIOS(202);
@@ -90,9 +120,32 @@ int main(int argc, char **argv)
 
 	if(IOS_GetVersion() == 202)
 	{
-		// load usb2 driver
+		// enable DVD and USB2
 		if(mload_init() >= 0 && load_ehci_module())
+		{
+			int mode = 3;
+
+			if(usblan)
+			{
+				int usblanport = GetUSB2LanPort();
+
+				if(usblanport >= 0)
+				{
+					if(usblanport == 1)
+						mode = 1;
+					else
+						mode = 2;
+
+					USB2Storage_Close();
+					mload_close();
+					IOS_ReloadIOS(202);
+					mload_init();
+					load_ehci_module();
+				}
+			}
+			SetUSB2Mode(mode);
 			USB2Enable(true);
+		}
 	}
 
 	InitVideo();

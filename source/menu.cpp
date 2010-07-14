@@ -2033,8 +2033,8 @@ static void MenuBrowse(int menu)
 					mainWindow->SetState(STATE_DEFAULT);
 					goto done;
 				}
-				fileBrowser->ResetState();
 			}
+			fileBrowser->ResetState();
 			CancelAction();
 			mainWindow->Remove(disabled);
 			mainWindow->SetState(STATE_DEFAULT);
@@ -2201,7 +2201,6 @@ static void MenuBrowse(int menu)
 					MusicPlaylistEnqueue(addIndex);
 					CancelAction();
 				}
-
 				fileBrowser->TriggerUpdate();
 			}
 		}
@@ -2309,6 +2308,8 @@ static void MenuBrowse(int menu)
 		{
 			audiobarPlaylistBtn->ResetState();
 			MusicPlaylistLoad();
+			FindFile();
+			fileBrowser->TriggerUpdate();
 		}
 
 		if(audiobarBackwardBtn->GetState() == STATE_CLICKED)

@@ -1209,18 +1209,12 @@ void FindFile()
 	}
 
 	int indexFound = -1;
-	int dirLen = strlen(browser.dir);
-	int fileLen = strlen(loadedFile);
 	char file[MAXPATHLEN];
-
-	if(fileLen > dirLen && strncmp(loadedFile, browser.dir, dirLen) == 0)
-		strcpy(file, &loadedFile[dirLen]);
-	else
-		strcpy(file, loadedFile);
 
 	for(int i=0; i < browser.numEntries; i++)
 	{
-		if(strcmp(browserList[i].filename, file) == 0)
+		GetFullPath(i, file);
+		if(strcmp(file, loadedFile) == 0)
 		{
 			indexFound = i;
 			break;
@@ -1360,7 +1354,8 @@ static bool ParseDirEntries()
 	{
 		if(browser.lastdir[0] != 0)
 			FindDirectory(); // try to find and select the last directory
-		else if(findLoadedFile == 1)
+
+		if(findLoadedFile == 1)
 			FindFile(); // try to find and select the last loaded file
 
 		dirclose(dirIter); // close directory

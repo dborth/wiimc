@@ -6,6 +6,33 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.0.5 - July 14, 2010]
+
+* Synced to MPlayer r31641
+* Added volume control in Music area
+* Added option to hide DVD functionality from the UI
+* UTF-8 SMB support
+* Ability to use both USB ports (requires updated IOS 202 - WARNING: older 
+  versions of IOS 202 are NO LONGER supported)
+* Increase max SMB shares to 9
+* Fixed sleep timer
+* Added "Now Playing" to screensaver
+* Disable screensaver while slideshow is active
+* Increased video auto-play limit from 20 to 50
+* MMS support (thanks denper!)
+* Improved online stream display (thanks gazstone!)
+* New SHOUTcast support (WARNING: updating will overwrite your onlinemedia.xml
+  to install new links - backup your old links if necessary)
+* Audio language setting
+* Jump to and highlight folder when going up one level
+* Highlight file when returning to menu
+* Save settings when power button is used
+* Added option to use static folder locations
+* Display parent directory beside Up One Level
+* Improved restore points behavior
+* Other miscellaneous improvements/corrections
+* Language updates
+
 [1.0.4 - June 3, 2010]
 
 * Subtitle color/size adjustment

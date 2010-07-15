@@ -38,6 +38,9 @@ static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
 extern char streamtitle[128]; // ICY data (http.c)
 extern char streamurl[128]; // ICY data (http.c)
 extern char streamname[128]; // ICY data (http.c)
+extern int streamtitle_changed;
+extern int streamurl_changed;
+extern int streamname_changed;
 
 // frequently used objects
 
@@ -1747,6 +1750,10 @@ static int LoadNewFile()
 	ClearVideoPlaylist();
 	RemoveVideoImg();
 	LoadMPlayerFile();
+
+	audiobarNowPlaying[1]->SetText(NULL);
+	audiobarNowPlaying[2]->SetText(NULL);
+	audiobarNowPlaying[3]->SetText(NULL);
 
 	// wait until MPlayer is ready to take control (or return control)
 	while(!guiShutdown && controlledbygui != 1)
@@ -5465,28 +5472,30 @@ static void AudioNowPlayingCallback(void * ptr)
 	{
 		if(strncmp(loadedFile, "http:", 5) == 0)
 		{
-			if(streamtitle[0] != 0)
-				audiobarNowPlaying[1]->SetText(streamtitle);
-			else
-				audiobarNowPlaying[1]->SetText("Internet Stream");
-			if(streamname[0] != 0)
-				audiobarNowPlaying[2]->SetText(streamname);
-			else
-				audiobarNowPlaying[2]->SetText(NULL);
-			if(streamurl[0] != 0)
-				audiobarNowPlaying[3]->SetText(streamurl);
-			else
-				audiobarNowPlaying[3]->SetText(NULL);
-
-			streamtitle[0] = 0;
-			streamname[0] = 0;
-			streamurl[0] = 0;
-		}
-		else
-		{
-			audiobarNowPlaying[1]->SetText(NULL);
-			audiobarNowPlaying[2]->SetText(NULL);
-			audiobarNowPlaying[3]->SetText(NULL);
+			if(streamtitle_changed)
+			{
+				if(streamtitle[0] != 0)
+					audiobarNowPlaying[1]->SetText(streamtitle);
+				else
+					audiobarNowPlaying[1]->SetText("Internet Stream");
+				streamtitle_changed = 0;
+			}
+			if(streamname_changed)
+			{
+				if(streamname[0] != 0)
+					audiobarNowPlaying[2]->SetText(streamname);
+				else
+					audiobarNowPlaying[2]->SetText(NULL);
+				streamname_changed = 0;
+			}
+			if(streamurl_changed)
+			{
+				if(streamurl[0] != 0)
+					audiobarNowPlaying[3]->SetText(streamurl);
+				else
+					audiobarNowPlaying[3]->SetText(NULL);
+				streamurl_changed = 0;
+			}
 		}
 		return;
 	}

@@ -49,6 +49,9 @@ extern int stream_cache_size;
 char streamtitle[128] = { 0 }; // ICY stream title
 char streamurl[128] = { 0 }; // ICY stream url
 char streamname[128] = { 0 }; // ICY stream name
+int streamtitle_changed = 0;
+int streamurl_changed = 0;
+int streamname_changed = 0;
 extern int controlledbygui;
 #endif
 
@@ -143,7 +146,6 @@ static void scast_meta_read(int fd, streaming_ctrl_t *sc) {
     info[nlen] = 0;
     mp_msg(MSGT_DEMUXER, MSGL_INFO, "\nICY Info: %s\n", info);
 #ifdef GEKKO
-	streamtitle[0] = 0;
     if(info[0] != 0)
     {
     	char *title = strstr(info, "StreamTitle");
@@ -152,13 +154,18 @@ static void scast_meta_read(int fd, streaming_ctrl_t *sc) {
     		title+=13;
     		char *title_end = strchr(title, ';');
     		if(title_end && title_end-title > 1)
-    		{
+			{
     			int len = title_end-title;
     			if(len > 128) len=128;
-    			strncpy(streamtitle, title, len);
-    			streamtitle[len-1] = 0;
-    		}
+    			snprintf(streamtitle, len, "%s", title);
+				streamtitle_changed = 1;
+			}
     	}
+    }
+    else
+    {
+    	streamtitle[0] = 0;
+    	streamtitle_changed = 1;
     }
 #endif
     free(info);
@@ -774,11 +781,8 @@ static void print_icy_metadata(HTTP_header_t *http_hdr) {
 	if( (field_data = http_get_field(http_hdr, "icy-name")) != NULL ) {
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Name   : %s\n", field_data);
 #ifdef GEKKO		
-		streamname[0] = 0;
-		int len = strlen(field_data);
-    	if(len > 128) len=128;
-    	strncpy(streamname, field_data, len);
-    	streamname[len] = 0;
+		snprintf(streamname, 128, "%s", field_data);
+		streamname_changed = 1;
 #endif
 		}
 	if( (field_data = http_get_field(http_hdr, "icy-genre")) != NULL )
@@ -786,12 +790,9 @@ static void print_icy_metadata(HTTP_header_t *http_hdr) {
 	if( (field_data = http_get_field(http_hdr, "icy-url")) != NULL ) {
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Website: %s\n", field_data);
 	// XXX: does this really mean public server? ::atmos
-#ifdef GEKKO		
-		streamurl[0] = 0;
-		int len = strlen(field_data);
-    	if(len > 128) len=128;
-    	strncpy(streamurl, field_data, len);
-    	streamurl[len] = 0;
+#ifdef GEKKO
+    	snprintf(streamurl, 128, "%s", field_data);
+    	streamurl_changed = 1;
 #endif
 		}
 	if( (field_data = http_get_field(http_hdr, "icy-pub")) != NULL )

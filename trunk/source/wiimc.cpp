@@ -75,7 +75,7 @@ void SetSleepTimer()
 
 void CheckSleepTimer()
 {
-	if(sleepStart == 0)
+	if(WiiSettings.sleepTimer == 0)
 		return;
 
 	if(diff_sec(sleepStart, gettime()) > (u32)(WiiSettings.sleepTimer*60))

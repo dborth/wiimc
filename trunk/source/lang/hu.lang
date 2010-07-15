@@ -41,16 +41,16 @@ msgid "Pause"
 msgstr "Szünet"
 
 msgid "Single Play"
-msgstr "Egyet játssz"
+msgstr "Egy dalt játssz"
 
 msgid "Continuous Play"
-msgstr "Folyamatosan játszd"
+msgstr "Folyamatos lejátszás"
 
 msgid "Shuffle"
-msgstr "Keverd"
+msgstr "Lejátszási sorrend keverése"
 
 msgid "Loop"
-msgstr "Ismételd"
+msgstr "Ismétlés"
 
 msgid "Continuous"
 msgstr "Folyamatos"
@@ -320,7 +320,7 @@ msgid "DVD Menu"
 msgstr "DVD menü"
 
 msgid "Skip to Main Title"
-msgstr "Rögtön a filmhez"
+msgstr "Rögtön a filmet játssza le"
 
 msgid "Unable to Initialize MPlayer"
 msgstr "Nem sikerült az MPlayert elindítani."
@@ -599,7 +599,7 @@ msgid "Purple (Default)"
 msgstr "Lila (Alapértelmezett)"
 
 msgid "Auto-Play Next Video"
-msgstr "Következő video auto-játszása"
+msgstr "Videó végén a következőt kezdje játszani"
 
 msgid "Adding files to playlist..."
 msgstr "Fájlok hozzáadása a lejátszási listához..."

@@ -1352,11 +1352,14 @@ static bool ParseDirEntries()
 
 	if(res != 0 || parseHalt)
 	{
-		if(browser.lastdir[0] != 0)
-			FindDirectory(); // try to find and select the last directory
-
-		if(findLoadedFile == 1)
-			FindFile(); // try to find and select the last loaded file
+		if(parseHalt == 0)
+		{
+			if(browser.lastdir[0] != 0)
+				FindDirectory(); // try to find and select the last directory
+	
+			if(findLoadedFile == 1)
+				FindFile(); // try to find and select the last loaded file
+		}
 
 		dirclose(dirIter); // close directory
 		dirIter = NULL;
@@ -1376,6 +1379,7 @@ ParseDirectory(bool waitParse)
 	wchar_t msg[512];
 	int retry = 1;
 
+	SuspendParseThread();
 	ResetBrowser(); // reset browser
 
 	// open the directory
@@ -1438,7 +1442,6 @@ ParseDirectory(bool waitParse)
 		browser.numEntries++;
 	}
 
-	SuspendParseThread();
 	parseHalt = 0;
 	findLoadedFile = 1;
 	ParseDirEntries(); // index first 20 entries

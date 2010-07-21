@@ -275,6 +275,9 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 type = AVMEDIA_TYPE_AUDIO;
             } else if (!guidcmp(&g, &ff_asf_video_stream)) {
                 type = AVMEDIA_TYPE_VIDEO;
+            } else if (!guidcmp(&g, &ff_asf_jfif_media)) {
+                type = AVMEDIA_TYPE_VIDEO;
+                st->codec->codec_id = CODEC_ID_MJPEG;
             } else if (!guidcmp(&g, &ff_asf_command_stream)) {
                 type = AVMEDIA_TYPE_DATA;
             } else if (!guidcmp(&g, &ff_asf_ext_stream_embed_stream_header)) {
@@ -358,7 +361,8 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                     st->codec->frame_size = 1;
                     break;
                 }
-            } else if (type == AVMEDIA_TYPE_VIDEO) {
+            } else if (type == AVMEDIA_TYPE_VIDEO &&
+                       gsize - (url_ftell(pb) - pos1 + 24) >= 51) {
                 get_le32(pb);
                 get_le32(pb);
                 get_byte(pb);
@@ -386,7 +390,7 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                     st->codec->palctrl = av_mallocz(sizeof(AVPaletteControl));
 #if HAVE_BIGENDIAN
                     for (i = 0; i < FFMIN(st->codec->extradata_size, AVPALETTE_SIZE)/4; i++)
-                        st->codec->palctrl->palette[i] = bswap_32(((uint32_t*)st->codec->extradata)[i]);
+                        st->codec->palctrl->palette[i] = av_bswap32(((uint32_t*)st->codec->extradata)[i]);
 #else
                     memcpy(st->codec->palctrl->palette, st->codec->extradata,
                            FFMIN(st->codec->extradata_size, AVPALETTE_SIZE));
@@ -396,8 +400,14 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
                 st->codec->codec_tag = tag1;
                 st->codec->codec_id = ff_codec_get_id(ff_codec_bmp_tags, tag1);
-                if(tag1 == MKTAG('D', 'V', 'R', ' '))
+                if(tag1 == MKTAG('D', 'V', 'R', ' ')){
                     st->need_parsing = AVSTREAM_PARSE_FULL;
+                    // issue658 containse wrong w/h and MS even puts a fake seq header with wrong w/h in extradata while a correct one is in te stream. maximum lameness
+                    st->codec->width  =
+                    st->codec->height = 0;
+                    av_freep(&st->codec->extradata);
+                    st->codec->extradata_size=0;
+                }
                 if(st->codec->codec_id == CODEC_ID_H264)
                     st->need_parsing = AVSTREAM_PARSE_FULL_ONCE;
             }

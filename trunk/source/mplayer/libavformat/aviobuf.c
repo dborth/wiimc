@@ -23,9 +23,17 @@
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
 #include "avio.h"
+#include "internal.h"
 #include <stdarg.h>
 
 #define IO_BUFFER_SIZE 32768
+
+/**
+ * Do seeks within this distance ahead of the current buffer by skipping
+ * data instead of calling the protocol seek function, for seekable
+ * protocols.
+ */
+#define SHORT_SEEK_THRESHOLD 4096
 
 static void fill_buffer(ByteIOContext *s);
 #if LIBAVFORMAT_VERSION_MAJOR >= 53
@@ -152,7 +160,9 @@ int64_t url_fseek(ByteIOContext *s, int64_t offset, int whence)
         offset1 >= 0 && offset1 <= (s->buf_end - s->buffer)) {
         /* can do the seek inside the buffer */
         s->buf_ptr = s->buffer + offset1;
-    } else if(s->is_streamed && !s->write_flag && offset1 >= 0 &&
+    } else if ((s->is_streamed ||
+               offset1 <= s->buf_end + SHORT_SEEK_THRESHOLD - s->buffer) &&
+               !s->write_flag && offset1 >= 0 &&
               (whence != SEEK_END || force)) {
         while(s->pos < offset && !s->eof_reached)
             fill_buffer(s);
@@ -181,9 +191,10 @@ int64_t url_fseek(ByteIOContext *s, int64_t offset, int whence)
     return offset;
 }
 
-void url_fskip(ByteIOContext *s, int64_t offset)
+int url_fskip(ByteIOContext *s, int64_t offset)
 {
-    url_fseek(s, offset, SEEK_CUR);
+    int64_t ret = url_fseek(s, offset, SEEK_CUR);
+    return ret < 0 ? ret : 0;
 }
 
 int64_t url_ftell(ByteIOContext *s)
@@ -248,6 +259,24 @@ void put_strz(ByteIOContext *s, const char *str)
         put_byte(s, 0);
 }
 
+int ff_get_v_length(uint64_t val){
+    int i=1;
+
+    while(val>>=7)
+        i++;
+
+    return i;
+}
+
+void ff_put_v(ByteIOContext *bc, uint64_t val){
+    int i= ff_get_v_length(val);
+
+    while(--i>0)
+        put_byte(bc, 128 | (val>>(7*i)));
+
+    put_byte(bc, val&127);
+}
+
 void put_le64(ByteIOContext *s, uint64_t val)
 {
     put_le32(s, (uint32_t)(val & 0xffffffff));
@@ -298,8 +327,6 @@ static void fill_buffer(ByteIOContext *s)
     uint8_t *dst= !s->max_packet_size && s->buf_end - s->buffer < s->buffer_size ? s->buf_ptr : s->buffer;
     int len= s->buffer_size - (dst - s->buffer);
     int max_buffer_size = s->max_packet_size ? s->max_packet_size : IO_BUFFER_SIZE;
-
-    assert(s->buf_ptr == s->buf_end);
 
     /* no need to do anything if EOF already reached */
     if (s->eof_reached)

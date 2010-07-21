@@ -1,4 +1,4 @@
-.\" $Revision: 31634 $
+.\" $Revision: 31715 $
 .\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -877,6 +877,18 @@ During playback, the user hits 'i' to mark the start or end of a skip block.
 This provides a starting point from which the user can fine-tune EDL entries
 later.
 See http://www.mplayerhq.hu/\:DOCS/\:HTML/\:en/\:edl.html for details.
+.
+.TP
+.B \-edl-backward-delay <number>
+When using EDL during playback and jumping backwards it is possible to
+end up in the middle of an EDL record.
+In that case MPlayer will seek further backwards to the start position
+of the EDL record and then immediately skip the scene specified in the
+EDL record.
+To avoid this kind of behavior, MPlayer jumps to a fixed time interval
+before the start of the EDL record.
+This parameter allows you to specify that time interval in seconds
+(default: 2 seconds).
 .
 .TP
 .B \-enqueue (GUI only)
@@ -2840,6 +2852,14 @@ audio output through NAS
 .TP
 .B coreaudio (Mac OS X only)
 native Mac OS X audio output driver
+.PD 0
+.RSs
+.IPs device_id=<id>
+ID of output device to use (0 = default device)
+.IPs help
+List all available output devices with their IDs.
+.RE
+.PD 1
 .
 .TP
 .B "openal\ "
@@ -4000,7 +4020,7 @@ Experimental, do not expect too much from it.
 2: left-right split input to full-color red-cyan stereo.
 .br
 3: left-right split input to quadbuffered stereo.
-Only supported by very few OpenGL cards, thus untested and not working.
+Only supported by very few OpenGL cards.
 .RE
 .RE
 .sp 1

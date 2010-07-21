@@ -182,8 +182,8 @@ static void reset(void)
 
 static void uninit(int immed)
 {
-	reset();
-	AUDIO_RegisterDMACallback(NULL);
+	//reset();
+	//AUDIO_RegisterDMACallback(NULL);
 }
 
 static void audio_pause(void)

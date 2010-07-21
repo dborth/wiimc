@@ -35,6 +35,7 @@
 #include "rtpdec_h263.h"
 #include "rtpdec_h264.h"
 #include "rtpdec_mpeg4.h"
+#include "rtpdec_qdm2.h"
 #include "rtpdec_svq3.h"
 #include "rtpdec_xiph.h"
 
@@ -69,6 +70,7 @@ void av_register_rtp_dynamic_payload_handlers(void)
     ff_register_dynamic_payload_handler(&ff_h264_dynamic_handler);
     ff_register_dynamic_payload_handler(&ff_vorbis_dynamic_handler);
     ff_register_dynamic_payload_handler(&ff_theora_dynamic_handler);
+    ff_register_dynamic_payload_handler(&ff_qdm2_dynamic_handler);
     ff_register_dynamic_payload_handler(&ff_svq3_dynamic_handler);
 
     ff_register_dynamic_payload_handler(&ff_ms_rtp_asf_pfv_handler);
@@ -375,7 +377,7 @@ rtp_parse_set_dynamic_protocol(RTPDemuxContext *s, PayloadContext *ctx,
  */
 static void finalize_packet(RTPDemuxContext *s, AVPacket *pkt, uint32_t timestamp)
 {
-    if (s->last_rtcp_ntp_time != AV_NOPTS_VALUE) {
+    if (s->last_rtcp_ntp_time != AV_NOPTS_VALUE && timestamp != RTP_NOTS_VALUE) {
         int64_t addend;
         int delta_timestamp;
 
@@ -408,7 +410,9 @@ int rtp_parse_packet(RTPDemuxContext *s, AVPacket *pkt,
     if (!buf) {
         /* return the next packets, if any */
         if(s->st && s->parse_packet) {
-            timestamp= 0; ///< Should not be used if buf is NULL, but should be set to the timestamp of the packet returned....
+            /* timestamp should be overwritten by parse_packet, if not,
+             * the packet is left with pts == AV_NOPTS_VALUE */
+            timestamp = RTP_NOTS_VALUE;
             rv= s->parse_packet(s->ic, s->dynamic_protocol_context,
                                 s->st, pkt, &timestamp, NULL, 0, flags);
             finalize_packet(s, pkt, timestamp);

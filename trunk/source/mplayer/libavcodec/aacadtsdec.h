@@ -1,5 +1,5 @@
 /*
- * AAC parser prototypes
+ * AAC ADTS header decoding prototypes and structures
  * Copyright (c) 2003 Fabrice Bellard
  * Copyright (c) 2003 Michael Niedermayer
  *
@@ -20,11 +20,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_AAC_PARSER_H
-#define AVCODEC_AAC_PARSER_H
+#ifndef AVCODEC_AACADTSDEC_H
+#define AVCODEC_AACADTSDEC_H
 
 #include <stdint.h>
-#include "aac_ac3_parser.h"
 #include "get_bits.h"
 
 #define AAC_ADTS_HEADER_SIZE 7
@@ -44,12 +43,12 @@ typedef struct {
  * Parse AAC frame header.
  * Parse the ADTS frame header to the end of the variable header, which is
  * the first 54 bits.
- * @param gbc BitContext containing the first 54 bits of the frame.
- * @param hdr Pointer to struct where header info is written.
+ * @param[in]  gbc BitContext containing the first 54 bits of the frame.
+ * @param[out] hdr Pointer to struct where header info is written.
  * @return Returns 0 on success, -1 if there is a sync word mismatch,
  * -2 if the version element is invalid, -3 if the sample rate
  * element is invalid, or -4 if the bit rate element is invalid.
  */
 int ff_aac_parse_header(GetBitContext *gbc, AACADTSHeaderInfo *hdr);
 
-#endif /* AVCODEC_AAC_PARSER_H */
+#endif /* AVCODEC_AACADTSDEC_H */

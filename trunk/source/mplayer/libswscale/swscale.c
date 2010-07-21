@@ -1659,13 +1659,15 @@ static int planarCopyWrapper(SwsContext *c, const uint8_t* src[], int srcStride[
 
                 for (i=0; i<height; i++) {
                     for (j=0; j<length; j++)
-                        ((uint16_t*)dstPtr)[j] = bswap_16(((const uint16_t*)srcPtr)[j]);
+                        ((uint16_t*)dstPtr)[j] = av_bswap16(((const uint16_t*)srcPtr)[j]);
                     srcPtr+= srcStride[plane];
                     dstPtr+= dstStride[plane];
                 }
-            } else if (dstStride[plane]==srcStride[plane] && srcStride[plane] > 0)
-                memcpy(dst[plane] + dstStride[plane]*y, src[plane], height*dstStride[plane]);
-            else {
+            } else if (dstStride[plane] == srcStride[plane] &&
+                       srcStride[plane] > 0 && srcStride[plane] == length) {
+                memcpy(dst[plane] + dstStride[plane]*y, src[plane],
+                       height*dstStride[plane]);
+            } else {
                 if(is16BPS(c->srcFormat) && is16BPS(c->dstFormat))
                     length*=2;
                 for (i=0; i<height; i++) {

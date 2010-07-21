@@ -22,7 +22,7 @@
 #define AVFORMAT_AVFORMAT_H
 
 #define LIBAVFORMAT_VERSION_MAJOR 52
-#define LIBAVFORMAT_VERSION_MINOR 73
+#define LIBAVFORMAT_VERSION_MINOR 76
 #define LIBAVFORMAT_VERSION_MICRO  0
 
 #define LIBAVFORMAT_VERSION_INT AV_VERSION_INT(LIBAVFORMAT_VERSION_MAJOR, \
@@ -498,7 +498,8 @@ typedef struct AVStream {
 
     AVMetadata *metadata;
 
-    /* av_read_frame() support */
+    /* Intended mostly for av_read_frame() support. Not supposed to be used by */
+    /* external applications; try to use something else if at all possible.    */
     const uint8_t *cur_ptr;
     int cur_len;
     AVPacket cur_pkt;
@@ -1152,7 +1153,7 @@ int av_add_index_entry(AVStream *st, int64_t pos, int64_t timestamp,
 
 /**
  * Perform a binary search using av_index_search_timestamp() and
- * AVCodec.read_timestamp().
+ * AVInputFormat.read_timestamp().
  * This is not supposed to be called directly by a user application,
  * but by demuxers.
  * @param target_ts target timestamp in the time base of the given stream

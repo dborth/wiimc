@@ -69,6 +69,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (AASC, aasc);
     REGISTER_DECODER (AMV, amv);
     REGISTER_DECODER (ANM, anm);
+    REGISTER_DECODER (ANSI, ansi);
     REGISTER_ENCDEC  (ASV1, asv1);
     REGISTER_ENCDEC  (ASV2, asv2);
     REGISTER_DECODER (AURA, aura);
@@ -230,6 +231,8 @@ void avcodec_register_all(void)
     REGISTER_DECODER (DSICINAUDIO, dsicinaudio);
     REGISTER_DECODER (EAC3, eac3);
     REGISTER_ENCDEC  (FLAC, flac);
+    REGISTER_DECODER (GSM, gsm);
+    REGISTER_DECODER (GSM_MS, gsm_ms);
     REGISTER_DECODER (IMC, imc);
     REGISTER_DECODER (MACE3, mace3);
     REGISTER_DECODER (MACE6, mace6);

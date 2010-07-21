@@ -288,6 +288,10 @@ typedef struct {
     int current_subframe;
     int current_subsubframe;
 
+    /* XCh extension information */
+    int xch_present;
+    int xch_base_channel;       ///< index of first (only) channel containing XCH data
+
     int debug_flag;             ///< used for suppressing repeated error messages output
     DSPContext dsp;
     FFTContext imdct;
@@ -1230,7 +1234,7 @@ static int dca_convert_bitstream(const uint8_t * src, int src_size, uint8_t * ds
         return src_size;
     case DCA_MARKER_RAW_LE:
         for (i = 0; i < (src_size + 1) >> 1; i++)
-            *sdst++ = bswap_16(*ssrc++);
+            *sdst++ = av_bswap16(*ssrc++);
         return src_size;
     case DCA_MARKER_14B_BE:
     case DCA_MARKER_14B_LE:
@@ -1260,12 +1264,12 @@ static int dca_decode_frame(AVCodecContext * avctx,
     int lfe_samples;
     int num_core_channels = 0;
     int i;
-    int xch_present = 0;
     int16_t *samples = data;
     DCAContext *s = avctx->priv_data;
     int channels;
 
 
+    s->xch_present = 0;
     s->dca_buffer_size = dca_convert_bitstream(buf, buf_size, s->dca_buffer, DCA_MAX_FRAME_SIZE);
     if (s->dca_buffer_size == -1) {
         av_log(avctx, AV_LOG_ERROR, "Not a valid DCA frame\n");
@@ -1297,8 +1301,9 @@ static int dca_decode_frame(AVCodecContext * avctx,
 
         switch(bits) {
         case 0x5a5a5a5a: {
-            int ext_base_ch = s->prim_channels;
             int ext_amode, xch_fsize;
+
+            s->xch_base_channel = s->prim_channels;
 
             /* validate sync word using XCHFSIZE field */
             xch_fsize = show_bits(&s->gb, 10);
@@ -1318,13 +1323,13 @@ static int dca_decode_frame(AVCodecContext * avctx,
             }
 
             /* much like core primary audio coding header */
-            dca_parse_audio_coding_header(s, ext_base_ch);
+            dca_parse_audio_coding_header(s, s->xch_base_channel);
 
             for (i = 0; i < (s->sample_blocks / 8); i++) {
-                dca_decode_block(s, ext_base_ch, i);
+                dca_decode_block(s, s->xch_base_channel, i);
             }
 
-            xch_present = 1;
+            s->xch_present = 1;
             break;
         }
         case 0x1d95f262:
@@ -1342,7 +1347,7 @@ static int dca_decode_frame(AVCodecContext * avctx,
     if (s->amode<16) {
         avctx->channel_layout = dca_core_channel_layout[s->amode];
 
-        if (xch_present && (!avctx->request_channels ||
+        if (s->xch_present && (!avctx->request_channels ||
                             avctx->request_channels > num_core_channels)) {
             avctx->channel_layout |= CH_BACK_CENTER;
             if (s->lfe) {
@@ -1389,6 +1394,20 @@ static int dca_decode_frame(AVCodecContext * avctx,
     /* filter to get final output */
     for (i = 0; i < (s->sample_blocks / 8); i++) {
         dca_filter_channels(s, i);
+
+        /* If this was marked as a DTS-ES stream we need to subtract back- */
+        /* channel from SL & SR to remove matrixed back-channel signal */
+        if((s->source_pcm_res & 1) && s->xch_present) {
+            float* back_chan = s->samples + s->channel_order_tab[s->xch_base_channel] * 256;
+            float* lt_chan   = s->samples + s->channel_order_tab[s->xch_base_channel - 2] * 256;
+            float* rt_chan   = s->samples + s->channel_order_tab[s->xch_base_channel - 1] * 256;
+            int j;
+            for(j = 0; j < 256; ++j) {
+                lt_chan[j] -= (back_chan[j] - s->add_bias) * M_SQRT1_2;
+                rt_chan[j] -= (back_chan[j] - s->add_bias) * M_SQRT1_2;
+            }
+        }
+
         s->dsp.float_to_int16_interleave(samples, s->samples_chanptr, 256, channels);
         samples += 256 * channels;
     }

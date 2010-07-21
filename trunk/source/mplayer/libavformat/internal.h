@@ -157,4 +157,16 @@ void ff_sdp_write_media(char *buff, int size, AVCodecContext *c,
 int ff_write_chained(AVFormatContext *dst, int dst_stream, AVPacket *pkt,
                      AVFormatContext *src);
 
+/**
+ * Get the length in bytes which is needed to store val as v.
+ */
+int ff_get_v_length(uint64_t val);
+
+/**
+ * Put val using a variable number of bytes.
+ */
+void ff_put_v(ByteIOContext *bc, uint64_t val);
+
+#define SPACE_CHARS " \t\r\n"
+
 #endif /* AVFORMAT_INTERNAL_H */

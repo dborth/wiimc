@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
 #include <dirent.h>
@@ -340,7 +341,7 @@ dvd_reader_t *DVDOpen( const char *ppath )
   char *dev_name = NULL;
   char *path = NULL, *new_path = NULL, *path_copy = NULL;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__OS2__)
       int len;
 #endif
 
@@ -354,7 +355,7 @@ dvd_reader_t *DVDOpen( const char *ppath )
   /* Try to open libdvdcss or fall back to standard functions */
   have_css = dvdinput_setup();
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__OS2__)
   /* Strip off the trailing \ if it is not a drive */
   len = strlen(path);
   if ((len > 1) &&
@@ -461,7 +462,7 @@ dvd_reader_t *DVDOpen( const char *ppath )
       }
     }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__OS2__)
     if(strlen(path_copy) > TITLES_MAX) {
       if(!strcasecmp(&(path_copy[strlen( path_copy ) - TITLES_MAX]),
                        "\\video_ts"))
@@ -530,6 +531,12 @@ dvd_reader_t *DVDOpen( const char *ppath )
       fclose( mntfile );
     }
 #elif defined(_WIN32) || defined(__OS2__)
+#ifdef __OS2__
+    /* Use DVDOpenImageFile() only if it is a drive */
+    if(isalpha(path[0]) && path[1] == ':' &&
+        ( !path[2] ||
+          ((path[2] == '\\' || path[2] == '/') && !path[3])))
+#endif
     auth_drive = DVDOpenImageFile( path, have_css );
 #endif
 
@@ -543,7 +550,7 @@ dvd_reader_t *DVDOpen( const char *ppath )
 #else
     if( !auth_drive ) {
         fprintf( stderr, "libdvdread: Device %s inaccessible, "
-                 "CSS authentication not available.\n", dev_name );
+                 "CSS authentication not available.\n", path );
     }
 #endif
 

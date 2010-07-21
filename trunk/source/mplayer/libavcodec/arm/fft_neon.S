@@ -4,6 +4,9 @@
  * Copyright (c) 2009 Mans Rullgard <mans@mansr.com>
  * Copyright (c) 2009 Naotoshi Nojiri
  *
+ * This algorithm (though not any of the implementation details) is
+ * based on libdjbfft by D. J. Bernstein.
+ *
  * This file is part of FFmpeg.
  *
  * FFmpeg is free software; you can redistribute it and/or
@@ -364,7 +367,7 @@ fft_tab_neon:
         .word fft16384_neon
         .word fft32768_neon
         .word fft65536_neon
-        .size fft_tab_neon, . - fft_tab_neon
+ELF     .size fft_tab_neon, . - fft_tab_neon
 
         .align 4
 pmmp:   .float  +1.0, -1.0, -1.0, +1.0

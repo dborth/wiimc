@@ -356,12 +356,16 @@ static void delete_state(DVBSubContext *ctx)
 static av_cold int dvbsub_init_decoder(AVCodecContext *avctx)
 {
     int i, r, g, b, a = 0;
-    DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
+    DVBSubContext *ctx = avctx->priv_data;
 
-    memset(avctx->priv_data, 0, sizeof(DVBSubContext));
-
-    ctx->composition_id = avctx->sub_id & 0xffff;
-    ctx->ancillary_id = avctx->sub_id >> 16;
+    if (!avctx->extradata || avctx->extradata_size != 4) {
+        av_log(avctx, AV_LOG_WARNING, "Invalid extradata, subtitle streams may be combined!\n");
+        ctx->composition_id = -1;
+        ctx->ancillary_id   = -1;
+    } else {
+        ctx->composition_id = AV_RB16(avctx->extradata);
+        ctx->ancillary_id   = AV_RB16(avctx->extradata + 2);
+    }
 
     default_clut.id = -1;
     default_clut.next = NULL;
@@ -428,7 +432,7 @@ static av_cold int dvbsub_init_decoder(AVCodecContext *avctx)
 
 static av_cold int dvbsub_close_decoder(AVCodecContext *avctx)
 {
-    DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
+    DVBSubContext *ctx = avctx->priv_data;
     DVBSubRegionDisplay *display;
 
     delete_state(ctx);
@@ -731,7 +735,7 @@ static int dvbsub_read_8bit_string(uint8_t *destbuf, int dbuf_len,
 static void dvbsub_parse_pixel_data_block(AVCodecContext *avctx, DVBSubObjectDisplay *display,
                                           const uint8_t *buf, int buf_size, int top_bottom, int non_mod)
 {
-    DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
+    DVBSubContext *ctx = avctx->priv_data;
 
     DVBSubRegion *region = get_region(ctx, display->region_id);
     const uint8_t *buf_end = buf + buf_size;
@@ -848,7 +852,7 @@ static void dvbsub_parse_pixel_data_block(AVCodecContext *avctx, DVBSubObjectDis
 static void dvbsub_parse_object_segment(AVCodecContext *avctx,
                                         const uint8_t *buf, int buf_size)
 {
-    DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
+    DVBSubContext *ctx = avctx->priv_data;
 
     const uint8_t *buf_end = buf + buf_size;
     const uint8_t *block;
@@ -907,7 +911,7 @@ static void dvbsub_parse_object_segment(AVCodecContext *avctx,
 static void dvbsub_parse_clut_segment(AVCodecContext *avctx,
                                         const uint8_t *buf, int buf_size)
 {
-    DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
+    DVBSubContext *ctx = avctx->priv_data;
 
     const uint8_t *buf_end = buf + buf_size;
     int clut_id;
@@ -995,7 +999,7 @@ static void dvbsub_parse_clut_segment(AVCodecContext *avctx,
 static void dvbsub_parse_region_segment(AVCodecContext *avctx,
                                         const uint8_t *buf, int buf_size)
 {
-    DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
+    DVBSubContext *ctx = avctx->priv_data;
 
     const uint8_t *buf_end = buf + buf_size;
     int region_id, object_id;
@@ -1107,7 +1111,7 @@ static void dvbsub_parse_region_segment(AVCodecContext *avctx,
 static void dvbsub_parse_page_segment(AVCodecContext *avctx,
                                         const uint8_t *buf, int buf_size)
 {
-    DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
+    DVBSubContext *ctx = avctx->priv_data;
     DVBSubRegionDisplay *display;
     DVBSubRegionDisplay *tmp_display_list, **tmp_ptr;
 
@@ -1311,7 +1315,7 @@ static void dvbsub_parse_display_definition_segment(AVCodecContext *avctx,
 static int dvbsub_display_end_segment(AVCodecContext *avctx, const uint8_t *buf,
                                         int buf_size, AVSubtitle *sub)
 {
-    DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
+    DVBSubContext *ctx = avctx->priv_data;
     DVBSubDisplayDefinition *display_def = ctx->display_definition;
 
     DVBSubRegion *region;
@@ -1399,8 +1403,8 @@ static int dvbsub_decode(AVCodecContext *avctx,
 {
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
-    DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
-    AVSubtitle *sub = (AVSubtitle*) data;
+    DVBSubContext *ctx = avctx->priv_data;
+    AVSubtitle *sub = data;
     const uint8_t *p, *p_end;
     int segment_type;
     int page_id;
@@ -1436,7 +1440,8 @@ static int dvbsub_decode(AVCodecContext *avctx,
         segment_length = AV_RB16(p);
         p += 2;
 
-        if (page_id == ctx->composition_id || page_id == ctx->ancillary_id) {
+        if (page_id == ctx->composition_id || page_id == ctx->ancillary_id ||
+            ctx->composition_id == -1 || ctx->ancillary_id == -1) {
             switch (segment_type) {
             case DVBSUB_PAGE_SEGMENT:
                 dvbsub_parse_page_segment(avctx, p, segment_length);

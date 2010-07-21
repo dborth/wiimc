@@ -14,7 +14,7 @@
 #include "utils/mload.h"
 
 #define APPNAME			"WiiMC"
-#define APPVERSION		"1.0.5"
+#define APPVERSION		"1.0.6"
 #define APPFOLDER		"wiimc"
 
 enum {

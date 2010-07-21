@@ -6,6 +6,13 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.0.6 - July 21, 2010]
+
+* Reverted USB2 changes
+* Synced to MPlayer r31761
+* Fixed display of radio stream information
+* Other minor changes
+
 [1.0.5 - July 14, 2010]
 
 * Synced to MPlayer r31641

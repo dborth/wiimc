@@ -347,7 +347,7 @@ static int ReadBlockFromCache(void *buf, uint32_t len, uint32_t block)
  Initialize the DI interface, should always be called first!
  */
 
-s32 __DI_LoadStub();
+s32 __DI_StubLaunch();
 
 int DI2_Init(bool dvdx)
 {
@@ -357,7 +357,7 @@ int DI2_Init(bool dvdx)
 
 	if (dvdx && !dvdxinit)
 	{
-		__DI_LoadStub(); // Marcan's 1337 magics happen here!
+		__DI_StubLaunch(); // Marcan's 1337 magics happen here!
 		dvdxinit = 1;
 	}
 

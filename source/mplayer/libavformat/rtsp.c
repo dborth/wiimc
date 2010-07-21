@@ -959,6 +959,13 @@ retry:
         rt->auth_state.auth_type != HTTP_AUTH_NONE)
         goto retry;
 
+    if (reply->status_code > 400){
+        av_log(s, AV_LOG_ERROR, "method %s failed, %d\n",
+               method,
+               reply->status_code);
+        av_log(s, AV_LOG_DEBUG, "%s\n", rt->last_reply);
+    }
+
     return 0;
 }
 
@@ -1355,7 +1362,7 @@ int ff_rtsp_connect(AVFormatContext *s)
     char host[1024], path[1024], tcpname[1024], cmd[2048], auth[128];
     char *option_list, *option, *filename;
     int port, err, tcp_fd;
-    RTSPMessageHeader reply1 = {}, *reply = &reply1;
+    RTSPMessageHeader reply1 = {0}, *reply = &reply1;
     int lower_transport_mask = 0;
     char real_challenge[64];
     struct sockaddr_storage peer;

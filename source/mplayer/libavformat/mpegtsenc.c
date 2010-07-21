@@ -74,7 +74,7 @@ static void mpegts_write_section(MpegTSSection *s, uint8_t *buf, int len)
     unsigned char *q;
     int first, b, len1, left;
 
-    crc = bswap_32(av_crc(av_crc_get_table(AV_CRC_32_IEEE), -1, buf, len - 4));
+    crc = av_bswap32(av_crc(av_crc_get_table(AV_CRC_32_IEEE), -1, buf, len - 4));
     buf[len - 4] = (crc >> 24) & 0xff;
     buf[len - 3] = (crc >> 16) & 0xff;
     buf[len - 2] = (crc >> 8) & 0xff;
@@ -510,12 +510,14 @@ static int mpegts_write_header(AVFormatContext *s)
     ts->pat_packet_count = ts->pat_packet_period-1;
     ts->sdt_packet_count = ts->sdt_packet_period-1;
 
-    av_log(s, AV_LOG_INFO,
-           "muxrate %d bps, pcr every %d pkts, "
+    if (ts->mux_rate == 1)
+        av_log(s, AV_LOG_INFO, "muxrate VBR, ");
+    else
+        av_log(s, AV_LOG_INFO, "muxrate %d, ", ts->mux_rate);
+    av_log(s, AV_LOG_INFO, "pcr every %d pkts, "
            "sdt every %d, pat/pmt every %d pkts\n",
-           ts->mux_rate, service->pcr_packet_period,
+           service->pcr_packet_period,
            ts->sdt_packet_period, ts->pat_packet_period);
-
 
     put_flush_packet(s->pb);
 

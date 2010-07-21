@@ -117,8 +117,8 @@ static const AVOption options[]={
 {"delay", NULL, OFFSET(delay), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX},
 {"qcomp", "video quantizer scale compression (VBR)", OFFSET(qcompress), FF_OPT_TYPE_FLOAT, 0.5, -FLT_MAX, FLT_MAX, V|E},
 {"qblur", "video quantizer scale blur (VBR)", OFFSET(qblur), FF_OPT_TYPE_FLOAT, 0.5, 0, FLT_MAX, V|E},
-{"qmin", "min video quantizer scale (VBR)", OFFSET(qmin), FF_OPT_TYPE_INT, 2, 1, 51, V|E},
-{"qmax", "max video quantizer scale (VBR)", OFFSET(qmax), FF_OPT_TYPE_INT, 31, 1, 51, V|E},
+{"qmin", "min video quantizer scale (VBR)", OFFSET(qmin), FF_OPT_TYPE_INT, 2, 0, 63, V|E},
+{"qmax", "max video quantizer scale (VBR)", OFFSET(qmax), FF_OPT_TYPE_INT, 31, 0, 63, V|E},
 {"qdiff", "max difference between the quantizer scale (VBR)", OFFSET(max_qdiff), FF_OPT_TYPE_INT, 3, INT_MIN, INT_MAX, V|E},
 {"bf", "use 'frames' B frames", OFFSET(max_b_frames), FF_OPT_TYPE_INT, DEFAULT, 0, FF_MAX_B_FRAMES, V|E},
 {"b_qfactor", "qp factor between p and b frames", OFFSET(b_quant_factor), FF_OPT_TYPE_FLOAT, 1.25, -FLT_MAX, FLT_MAX, V|E},
@@ -382,7 +382,9 @@ static const AVOption options[]={
 {"ivlc", "intra vlc table", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_INTRA_VLC, INT_MIN, INT_MAX, V|E, "flags2"},
 {"b_sensitivity", "adjusts sensitivity of b_frame_strategy 1", OFFSET(b_sensitivity), FF_OPT_TYPE_INT, 40, 1, INT_MAX, V|E},
 {"compression_level", NULL, OFFSET(compression_level), FF_OPT_TYPE_INT, FF_COMPRESSION_DEFAULT, INT_MIN, INT_MAX, V|A|E},
+#if LIBAVCODEC_VERSION_MAJOR < 53
 {"use_lpc", "sets whether to use LPC mode (FLAC)", OFFSET(use_lpc), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, A|E},
+#endif
 {"lpc_coeff_precision", "LPC coefficient precision (FLAC)", OFFSET(lpc_coeff_precision), FF_OPT_TYPE_INT, DEFAULT, 0, INT_MAX, A|E},
 {"min_prediction_order", NULL, OFFSET(min_prediction_order), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, A|E},
 {"max_prediction_order", NULL, OFFSET(max_prediction_order), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, A|E},
@@ -417,6 +419,12 @@ static const AVOption options[]={
 {"intra_refresh", "use periodic insertion of intra blocks instead of keyframes", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_INTRA_REFRESH, INT_MIN, INT_MAX, V|E, "flags2"},
 {"crf_max", "in crf mode, prevents vbv from lowering quality beyond this point", OFFSET(crf_max), FF_OPT_TYPE_FLOAT, DEFAULT, 0, 51, V|E},
 {"log_level_offset", "set the log level offset", OFFSET(log_level_offset), FF_OPT_TYPE_INT, 0, INT_MIN, INT_MAX },
+{"lpc_type", "specify LPC algorithm", OFFSET(lpc_type), FF_OPT_TYPE_INT, AV_LPC_TYPE_DEFAULT, AV_LPC_TYPE_DEFAULT, AV_LPC_TYPE_NB-1, A|E},
+{"none",     NULL, 0, FF_OPT_TYPE_CONST, AV_LPC_TYPE_NONE,     INT_MIN, INT_MAX, A|E, "lpc_type"},
+{"fixed",    NULL, 0, FF_OPT_TYPE_CONST, AV_LPC_TYPE_FIXED,    INT_MIN, INT_MAX, A|E, "lpc_type"},
+{"levinson", NULL, 0, FF_OPT_TYPE_CONST, AV_LPC_TYPE_LEVINSON, INT_MIN, INT_MAX, A|E, "lpc_type"},
+{"cholesky", NULL, 0, FF_OPT_TYPE_CONST, AV_LPC_TYPE_CHOLESKY, INT_MIN, INT_MAX, A|E, "lpc_type"},
+{"lpc_passes", "number of passes to use for Cholesky factorization during LPC analysis", OFFSET(lpc_passes), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, A|E},
 {NULL},
 };
 

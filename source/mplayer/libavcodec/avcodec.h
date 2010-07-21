@@ -30,8 +30,8 @@
 #include "libavutil/avutil.h"
 
 #define LIBAVCODEC_VERSION_MAJOR 52
-#define LIBAVCODEC_VERSION_MINOR 79
-#define LIBAVCODEC_VERSION_MICRO  1
+#define LIBAVCODEC_VERSION_MINOR 84
+#define LIBAVCODEC_VERSION_MICRO  0
 
 #define LIBAVCODEC_VERSION_INT  AV_VERSION_INT(LIBAVCODEC_VERSION_MAJOR, \
                                                LIBAVCODEC_VERSION_MINOR, \
@@ -212,6 +212,7 @@ enum CodecID {
     CODEC_ID_YOP,
     CODEC_ID_VP8,
     CODEC_ID_PICTOR,
+    CODEC_ID_ANSI,
 
     /* various PCM "codecs" */
     CODEC_ID_PCM_S16LE= 0x10000,
@@ -524,6 +525,18 @@ enum AVChromaLocation{
     AVCHROMA_LOC_BOTTOMLEFT =5,
     AVCHROMA_LOC_BOTTOM     =6,
     AVCHROMA_LOC_NB           , ///< Not part of ABI
+};
+
+/**
+ * LPC analysis type
+ */
+enum AVLPCType {
+    AV_LPC_TYPE_DEFAULT     = -1, ///< use the codec default LPC type
+    AV_LPC_TYPE_NONE        =  0, ///< do not use LPC prediction or use all zero coefficients
+    AV_LPC_TYPE_FIXED       =  1, ///< fixed LPC coefficients
+    AV_LPC_TYPE_LEVINSON    =  2, ///< Levinson-Durbin recursion
+    AV_LPC_TYPE_CHOLESKY    =  3, ///< Cholesky factorization
+    AV_LPC_TYPE_NB              , ///< Not part of ABI
 };
 
 typedef struct RcOverride{
@@ -1397,7 +1410,7 @@ typedef struct AVCodecContext {
      * avcodec_default_get_buffer() instead of providing buffers allocated by
      * some other means.
      * - encoding: unused
-     * - decoding: Set by libavcodec., user can override.
+     * - decoding: Set by libavcodec, user can override.
      */
     int (*get_buffer)(struct AVCodecContext *c, AVFrame *pic);
 
@@ -1406,7 +1419,7 @@ typedef struct AVCodecContext {
      * A released buffer can be reused in get_buffer().
      * pic.data[*] must be set to NULL.
      * - encoding: unused
-     * - decoding: Set by libavcodec., user can override.
+     * - decoding: Set by libavcodec, user can override.
      */
     void (*release_buffer)(struct AVCodecContext *c, AVFrame *pic);
 
@@ -1643,8 +1656,12 @@ typedef struct AVCodecContext {
 #define FF_MM_MMX2     0x0002 ///< SSE integer functions or AMD MMX ext
 #define FF_MM_SSE      0x0008 ///< SSE functions
 #define FF_MM_SSE2     0x0010 ///< PIV SSE2 functions
+#define FF_MM_SSE2SLOW 0x40000000 ///< SSE2 supported, but usually not faster
+                                  ///< than regular MMX/SSE (e.g. Core1)
 #define FF_MM_3DNOWEXT 0x0020 ///< AMD 3DNowExt
 #define FF_MM_SSE3     0x0040 ///< Prescott SSE3 functions
+#define FF_MM_SSE3SLOW 0x20000000 ///< SSE3 supported, but usually not faster
+                                  ///< than regular MMX/SSE (e.g. Core1)
 #define FF_MM_SSSE3    0x0080 ///< Conroe SSSE3 functions
 #define FF_MM_SSE4     0x0100 ///< Penryn SSE4.1 functions
 #define FF_MM_SSE42    0x0200 ///< Nehalem SSE4.2 functions
@@ -2029,7 +2046,7 @@ typedef struct AVCodecContext {
      * avcodec_default_reget_buffer() instead of providing buffers allocated by
      * some other means.
      * - encoding: unused
-     * - decoding: Set by libavcodec., user can override
+     * - decoding: Set by libavcodec, user can override.
      */
     int (*reget_buffer)(struct AVCodecContext *c, AVFrame *pic);
 
@@ -2413,12 +2430,15 @@ typedef struct AVCodecContext {
     int compression_level;
 #define FF_COMPRESSION_DEFAULT -1
 
+#if LIBAVCODEC_VERSION_MAJOR < 53
     /**
      * Sets whether to use LPC mode - used by FLAC encoder.
      * - encoding: Set by user.
      * - decoding: unused
+     * @deprecated Deprecated in favor of lpc_type and lpc_passes.
      */
     int use_lpc;
+#endif
 
     /**
      * LPC coefficient precision - used by FLAC encoder
@@ -2672,6 +2692,20 @@ typedef struct AVCodecContext {
     float crf_max;
 
     int log_level_offset;
+
+    /**
+     * Determines which LPC analysis algorithm to use.
+     * - encoding: Set by user
+     * - decoding: unused
+     */
+    enum AVLPCType lpc_type;
+
+    /**
+     * Number of passes to use for Cholesky factorization during LPC analysis
+     * - encoding: Set by user
+     * - decoding: unused
+     */
+    int lpc_passes;
 } AVCodecContext;
 
 /**
@@ -2713,6 +2747,7 @@ typedef struct AVCodec {
     const int *supported_samplerates;       ///< array of supported audio samplerates, or NULL if unknown, array is terminated by 0
     const enum SampleFormat *sample_fmts;   ///< array of supported sample formats, or NULL if unknown, array is terminated by -1
     const int64_t *channel_layouts;         ///< array of support channel layouts, or NULL if unknown. array is terminated by 0
+    uint8_t max_lowres;                     ///< maximum value for lowres supported by the decoder
 } AVCodec;
 
 /**
@@ -3541,15 +3576,28 @@ attribute_deprecated int avcodec_decode_subtitle(AVCodecContext *avctx, AVSubtit
  * Return a negative value on error, otherwise return the number of bytes used.
  * If no subtitle could be decompressed, got_sub_ptr is zero.
  * Otherwise, the subtitle is stored in *sub.
+ * Note that CODEC_CAP_DR1 is not available for subtitle codecs. This is for
+ * simplicity, because the performance difference is expect to be negligible
+ * and reusing a get_buffer written for video codecs would probably perform badly
+ * due to a potentially very different allocation pattern.
  *
  * @param avctx the codec context
- * @param[out] sub The AVSubtitle in which the decoded subtitle will be stored.
+ * @param[out] sub The AVSubtitle in which the decoded subtitle will be stored, must be
+                   freed with avsubtitle_free if *got_sub_ptr is set.
  * @param[in,out] got_sub_ptr Zero if no subtitle could be decompressed, otherwise, it is nonzero.
  * @param[in] avpkt The input AVPacket containing the input buffer.
  */
 int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
                             int *got_sub_ptr,
                             AVPacket *avpkt);
+
+/**
+ * Frees all allocated data in the given subtitle struct.
+ *
+ * @param sub AVSubtitle to free.
+ */
+void avsubtitle_free(AVSubtitle *sub);
+
 int avcodec_parse_frame(AVCodecContext *avctx, uint8_t **pdata,
                         int *data_size_ptr,
                         uint8_t *buf, int buf_size);

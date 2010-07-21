@@ -507,15 +507,24 @@ static void autodetectGlExtensions(void) {
          ati_hack, force_pbo, use_rectangle, use_yuv);
 }
 
+static GLint get_scale_type(int chroma) {
+  int nearest = (chroma ? cscale : lscale) & 64;
+  if (nearest)
+    return mipmap_gen ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
+  return mipmap_gen ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR;
+}
+
 /**
  * \brief Initialize a (new or reused) OpenGL context.
  * set global gl-related variables to their default values
  */
 static int initGl(uint32_t d_width, uint32_t d_height) {
-  int scale_type = mipmap_gen ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR;
+  GLint scale_type = get_scale_type(0);
   autodetectGlExtensions();
   gl_target = use_rectangle == 1 ? GL_TEXTURE_RECTANGLE : GL_TEXTURE_2D;
-  yuvconvtype = use_yuv | lscale << YUV_LUM_SCALER_SHIFT | cscale << YUV_CHROM_SCALER_SHIFT;
+  yuvconvtype = SET_YUV_CONVERSION(use_yuv) |
+                SET_YUV_LUM_SCALER(lscale) |
+                SET_YUV_CHROM_SCALER(cscale);
 
   texSize(image_width, image_height, &texture_width, &texture_height);
 
@@ -530,9 +539,15 @@ static int initGl(uint32_t d_width, uint32_t d_height) {
   mp_msg(MSGT_VO, MSGL_V, "[gl] Creating %dx%d texture...\n",
           texture_width, texture_height);
 
+  glCreateClearTex(gl_target, gl_texfmt, gl_format, gl_type, scale_type,
+                   texture_width, texture_height, 0);
+  if (mipmap_gen)
+    mpglTexParameteri(gl_target, GL_GENERATE_MIPMAP, GL_TRUE);
+
   if (is_yuv) {
     int i;
     int xs, ys;
+    scale_type = get_scale_type(1);
     mp_get_chroma_shift(image_format, &xs, &ys);
     mpglGenTextures(21, default_texs);
     default_texs[21] = 0;
@@ -567,10 +582,6 @@ static int initGl(uint32_t d_width, uint32_t d_height) {
     }
     update_yuvconv();
   }
-  glCreateClearTex(gl_target, gl_texfmt, gl_format, gl_type, scale_type,
-                   texture_width, texture_height, 0);
-  if (mipmap_gen)
-    mpglTexParameteri(gl_target, GL_GENERATE_MIPMAP, GL_TRUE);
 
   resize(d_width, d_height);
 
@@ -1232,7 +1243,7 @@ static int preinit_internal(const char *arg, int allow_sw)
               "    0: normal display\n"
               "    1: side-by-side to red-cyan stereo\n"
               "    2: side-by-side to green-magenta stereo\n"
-              "    3: side-by-side to quadbuffer stereo (broken?)\n"
+              "    3: side-by-side to quadbuffer stereo\n"
               "\n" );
       return -1;
     }

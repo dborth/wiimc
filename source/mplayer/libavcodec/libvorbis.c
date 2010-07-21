@@ -85,11 +85,14 @@ static av_cold int oggvorbis_init_encoder(vorbis_info *vi, AVCodecContext *avcco
     return vorbis_encode_setup_init(vi);
 }
 
+/* How many bytes are needed for a buffer of length 'l' */
+static int xiph_len(int l) { return (1 + l / 255 + l); }
+
 static av_cold int oggvorbis_encode_init(AVCodecContext *avccontext) {
     OggVorbisContext *context = avccontext->priv_data ;
     ogg_packet header, header_comm, header_code;
     uint8_t *p;
-    unsigned int offset, len;
+    unsigned int offset;
 
     vorbis_info_init(&context->vi) ;
     if(oggvorbis_init_encoder(&context->vi, avccontext) < 0) {
@@ -105,9 +108,11 @@ static av_cold int oggvorbis_encode_init(AVCodecContext *avccontext) {
     vorbis_analysis_headerout(&context->vd, &context->vc, &header,
                                 &header_comm, &header_code);
 
-    len = header.bytes + header_comm.bytes +  header_code.bytes;
-    avccontext->extradata_size= 64 + len + len/255;
-    p = avccontext->extradata= av_mallocz(avccontext->extradata_size);
+    avccontext->extradata_size=
+        1 + xiph_len(header.bytes) + xiph_len(header_comm.bytes) +
+        header_code.bytes;
+    p = avccontext->extradata =
+      av_malloc(avccontext->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE);
     p[0] = 2;
     offset = 1;
     offset += av_xiphlacing(&p[offset], header.bytes);
@@ -118,8 +123,7 @@ static av_cold int oggvorbis_encode_init(AVCodecContext *avccontext) {
     offset += header_comm.bytes;
     memcpy(&p[offset], header_code.packet, header_code.bytes);
     offset += header_code.bytes;
-    avccontext->extradata_size = offset;
-    avccontext->extradata= av_realloc(avccontext->extradata, avccontext->extradata_size);
+    assert(offset == avccontext->extradata_size);
 
 /*    vorbis_block_clear(&context->vb);
     vorbis_dsp_clear(&context->vd);
@@ -145,7 +149,7 @@ static int oggvorbis_encode_frame(AVCodecContext *avccontext,
     int l;
 
     if(data) {
-        int samples = OGGVORBIS_FRAME_SIZE;
+        const int samples = avccontext->frame_size;
         float **buffer ;
         int c, channels = context->vi.channels;
 
@@ -172,6 +176,10 @@ static int oggvorbis_encode_frame(AVCodecContext *avccontext,
              * not, apparently the end of stream decision is in libogg. */
             if(op.bytes==1 && op.e_o_s)
                 continue;
+            if (context->buffer_index + sizeof(ogg_packet) + op.bytes > BUFFER_SIZE) {
+                av_log(avccontext, AV_LOG_ERROR, "libvorbis: buffer overflow.");
+                return -1;
+            }
             memcpy(context->buffer + context->buffer_index, &op, sizeof(ogg_packet));
             context->buffer_index += sizeof(ogg_packet);
             memcpy(context->buffer + context->buffer_index, op.packet, op.bytes);
@@ -188,6 +196,11 @@ static int oggvorbis_encode_frame(AVCodecContext *avccontext,
         l=  op2->bytes;
         avccontext->coded_frame->pts= av_rescale_q(op2->granulepos, (AVRational){1, avccontext->sample_rate}, avccontext->time_base);
         //FIXME we should reorder the user supplied pts and not assume that they are spaced by 1/sample_rate
+
+        if (l > buf_size) {
+            av_log(avccontext, AV_LOG_ERROR, "libvorbis: buffer overflow.");
+            return -1;
+        }
 
         memcpy(packets, op2->packet, l);
         context->buffer_index -= l + sizeof(ogg_packet);

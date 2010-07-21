@@ -1,0 +1,1112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- synced with r25146 -->
+<chapter id="usage">
+<title>Использование</title>
+
+<sect1 id="commandline">
+<title>Командная строка</title>
+
+<para>
+<application>MPlayer</application> использует составное дерево воспроизведения.
+Опции, указанные в командной строке, могут применяться ко всем файлам/URL или
+только к некоторым, в зависимости от местоположения. Например
+<screen>mplayer -vfm ffmpeg movie1.avi movie2.avi</screen>,
+будет использовать FFmpeg декодеры для каждого из двух файлов, а
+<screen>
+mplayer -vfm ffmpeg <replaceable>movie1.avi</replaceable> <replaceable>movie2.avi</replaceable> -vfm dmo
+</screen>
+будет воспроизводить второй файл, используя DMO декодер.
+</para>
+
+<para>
+Вы можете группировать файлы/URL'ы вместе, используя <literal>{</literal> и
+<literal>}</literal>. Это полезно, например, с опцией <option>-loop</option>:
+<screen>mplayer { 1.avi -loop 2 2.avi } -loop 3</screen>
+Эта команда проиграет файлы в таком порядке: 1, 1, 2, 1, 1, 2, 1, 1, 2.
+</para>
+
+<para>
+Воспроизведение файла:
+<synopsis>
+<command>mplayer</command><!--
+--> [<replaceable>опции</replaceable>]<!--
+--> [<replaceable>путь</replaceable>/]<replaceable>имя_файла</replaceable>
+</synopsis>
+</para>
+
+<para>
+Другой способ:
+<synopsis>
+<command>mplayer</command><!--
+--> [<replaceable>опции</replaceable>]<!--
+--> <replaceable>file:///uri-escaped-path</replaceable>
+</synopsis>
+</para>
+
+<para>
+Воспроизведение множества файлов:
+<synopsis>
+<command>mplayer</command><!--
+--> [<replaceable>общие опции</replaceable>]<!--
+--> [<replaceable>путь</replaceable>/]<replaceable>имя_файла1</replaceable><!--
+--> [<replaceable>опции для имя_файла1</replaceable>]<!--
+--> <replaceable>имя_файла2</replaceable><!--
+--> [<replaceable>опции для имя_файла2</replaceable>] ...
+</synopsis>
+</para>
+
+<para>
+Воспроизведение VCD:
+<synopsis>
+<command>mplayer</command> [<replaceable>опции</replaceable>]<!--
+--> vcd://<replaceable>номер_дорожки</replaceable><!--
+--> [-cdrom-device <replaceable>/dev/cdrom</replaceable>]
+</synopsis>
+</para>
+
+<para>
+Воспроизведение DVD:
+<synopsis>
+<command>mplayer</command> [<replaceable>опции</replaceable>]<!--
+--> dvd://<replaceable>номер_ролика</replaceable><!--
+--> [-dvd-device <replaceable>/dev/dvd</replaceable>]
+</synopsis>
+</para>
+
+<para>
+Воспроизведение из WWW:
+<synopsis>
+<command>mplayer</command> [<replaceable>опции</replaceable>]<!--
+--> http://<replaceable>site.com/file.asf</replaceable>
+</synopsis>
+(так же можно использовать и списки проигрывания (плейлист[playlist]) )
+</para>
+
+<para>
+Воспроизведение по RTSP:
+<synopsis>
+<command>mplayer</command> [<replaceable>опции</replaceable>]<!--
+--> rtsp://<replaceable>server.example.com/streamName</replaceable>
+</synopsis>
+</para>
+
+<para>
+Примеры:
+<screen>
+mplayer -vo x11 <replaceable>/mnt/Films/Contact/contact2.mpg</replaceable>
+mplayer vcd://<replaceable>2</replaceable> -cdrom-device <replaceable>/dev/hdc</replaceable>
+mplayer -afm 3 <replaceable>/mnt/DVDtrailers/alien4.vob</replaceable>
+mplayer dvd://<replaceable>1</replaceable> -dvd-device <replaceable>/dev/hdc</replaceable>
+mplayer -abs 65536 -delay -0.4 -nobps <replaceable>~/movies/test.avi</replaceable><!--
+--></screen>
+</para>
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<sect1 id="subosd">
+<title>Субтитры и OSD</title>
+
+<para>
+Вместе с фильмом <application>MPlayer</application> может показывать и субтитры. В настоящий момент
+поддерживаются следующие форматы:
+<itemizedlist>
+  <listitem><para>VOBsub</para></listitem>
+  <listitem><para>OGM</para></listitem>
+  <listitem><para>CC (closed caption[скрытые титры])</para></listitem>
+  <listitem><para>MicroDVD</para></listitem>
+  <listitem><para>SubRip</para></listitem>
+  <listitem><para>SubViewer</para></listitem>
+  <listitem><para>Sami</para></listitem>
+  <listitem><para>VPlayer</para></listitem>
+  <listitem><para>RT</para></listitem>
+  <listitem><para>SSA</para></listitem>
+  <listitem><para>PJS (Phoenix Japanimation Society)</para></listitem>
+  <listitem><para>>MPsub</para></listitem>
+  <listitem><para>AQTitle</para></listitem>
+  <listitem><para><ulink url="http://unicorn.us.com/jacosub/">JACOsub</ulink></para></listitem>
+</itemizedlist>
+</para>
+
+<para>
+<application>MPlayer</application> может конвертировать вышеперечисленные форматы
+субтитров (<emphasis role="bold">кроме первых трёх</emphasis>) в следующие форматы
+с помощью соответствующих опций:
+<itemizedlist>
+ <listitem><para>MPsub: <option>-dumpmpsub</option></para></listitem>
+ <listitem><para>SubRip: <option>-dumpsrtsub</option></para></listitem>
+ <listitem><para>MicroDVD: <option>-dumpmicrodvdsub</option></para></listitem>
+ <listitem><para>JACOsub: <option>-dumpjacosub</option></para></listitem>
+ <listitem><para>Sami: <option>-dumpsami</option></para></listitem>
+</itemizedlist>
+</para>
+
+<para>
+<application>MEncoder</application> может выдавать DVD субтитры
+в <link linkend="menc-feat-extractsub">VOBsub</link> формате.
+</para>
+
+<para>
+Опции значительно различаются для различных форматов:
+</para>
+
+<formalpara>
+<title>VOBsub субтитры</title>
+<para>
+VOBsub субтитры состоят из большого (несколько мегабайт) <filename>.SUB</filename> файла,
+и необязательных
+<filename>.IDX</filename> и/или <filename>.IFO</filename> файлов.
+Использование: если у Вас, например, есть файлы
+<filename><replaceable>sample.sub</replaceable></filename>,
+<filename><replaceable>sample.ifo</replaceable></filename> (необязательно),
+<filename><replaceable>sample.idx</replaceable></filename> - Вы должны указать
+<application>MPlayer</application>'у опции <option>-vobsub sample [-vobsubid <replaceable>id</replaceable>]</option> (можно указать полный путь).
+Опция <option>-vobsubid</option> похожа на <option>-sid</option>
+для DVD, с её помощью, Вы можете выбирать между дорожками субтитров (языками).
+В случае, если <option>-vobsubid</option> пропущена, MPlayer попытается использовать
+языки, полученные через опцию <option>-slang</option> и перейти к пункту
+<systemitem>langidx</systemitem> в <filename>.IDX</filename> файле, чтобы выбрать язык субтитров. Если и это
+не удаётся, то субтитров не будет.
+</para>
+</formalpara>
+
+<formalpara>
+<title>Другие субтитры</title>
+<para>
+Прочие форматы субтитров состоят из единого текстового файла, содержащего информацию
+о синхронизации, местоположении и тексте субтитра.
+Использование: Если у Вас есть, например, файл
+<filename><replaceable>sample.txt</replaceable></filename>,
+Вы должны указать опцию <option>-sub <replaceable>sample.txt</replaceable></option>
+(можно указать полный путь).
+</para>
+</formalpara>
+
+<variablelist>
+<title>Регулировка синхронизации и местоположения субтитров:</title>
+<varlistentry>
+  <term><option>-subdelay <replaceable>sec</replaceable></option></term>
+  <listitem><para>
+    Задерживает субтитры на <option><replaceable>sec</replaceable></option>
+    секунд. Это значение может быть отрицательным.
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-subfps <replaceable>RATE</replaceable></option></term>
+  <listitem><para>
+    Указывает количество кадров/сек для файла субтитров (вещественное число)
+  </para></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-subpos <replaceable>0-100</replaceable></option></term>
+  <listitem><para>
+    Указывает позицию субтитров.
+  </para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>
+Если Вы наблюдаете увеличивающуюся задержку между фильмом и субтитрами, используя
+файл субтитров в формате MicroDVD, наиболее вероятно, что частота кадров у фильма и файла
+субтитров не совпадают. Пожалуйста, обратите внимание, что формат MicroDVD
+использует абсолютные номера кадров для синхронизации, но в нем нет информациио частоте кадров
+и поэтому опция
+<option>-subfps</option> не может использоваться с этим форматом.
+Вы должны, если хотите навсегда решить эту проблему, вручную конвертировать
+частоту кадров файла субтитров.
+<application>MPlayer</application> может сделать для вас это преобразование:
+<screen>
+mplayer -dumpmicrodvdsub -fps <replaceable>subtitles_fps</replaceable> -subfps <replaceable>avi_fps</replaceable> \
+    -sub <replaceable>subtitle_filename</replaceable> <replaceable>dummy.avi</replaceable>
+</screen>
+</para>
+
+<para>
+О DVD субтитрах, читайте в секции <link linkend="dvd">DVD</link>.
+</para>
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<sect1 id="control">
+<title>Управление</title>
+
+<para>
+<application>MPlayer</application> использует полностью конфигурируемый,
+основанный на понятии команды, уровень управления, позволяющий манипулировать
+<application>MPlayer</application>'ом с клавиатуры, мышью, джойстиком или
+с пульта дистанционного управления (используя LIRC). Полный список кнопок
+для управления с клавиатуры см. на man-странице.
+</para>
+
+<!-- ********** -->
+
+<sect2 id="ctrl-cfg">
+<title>Конфигурация управления</title>
+
+<para>
+<application>MPlayer</application> позволяет повесить любую MPlayer'овскую
+команду на любую кнопку, используя простой конфигурационный файл. Синтаксис
+файла состоит из имени кнопки, сопровождающегося командой. По умолчанию
+конфигурационный файл находится в <filename>$HOME/.mplayer/input.conf</filename>,
+но это можно изменить, указав опцию
+<option>-input <replaceable>conf</replaceable></option>
+(относительный путь указывается относительно <filename>$HOME/.mplayer</filename>).
+</para>
+
+<example id="input_control_file">
+<title>Простой файл конфигурации ввода</title>
+<programlisting>
+##
+## MPlayer input control file
+##
+
+RIGHT seek +10
+LEFT seek -10
+- audio_delay 0.100
++ audio_delay -0.100
+q quit
+&gt; pt_step 1
+&lt; pt_step -1
+ENTER pt_step 1 1<!--
+--></programlisting>
+</example>
+
+</sect2>
+
+<!-- ********** -->
+
+<sect2 id="lirc">
+<title>Управление через LIRC</title>
+
+<para>
+Linux Infrared Remote Control[Инфракрасное Удалённое Управление Linux'ом]
+&mdash; используйте легко собираемый в домашних условиях IR-приёмник, (почти)
+любой пульт управления и управляйте с их помощью Вашей Linux машиной.
+Подробности на <ulink url="http://www.lirc.org">www.lirc.org</ulink>.
+</para>
+
+<para>
+Если у Вас установлен ракет lirc, configure само его обнаружит. Если Всё прошло
+хорошо, <application>MPlayer</application> при старте напечатает сообщение,
+похожее на "<computeroutput>Setting up lirc support...</computeroutput>".
+Если произошла ошибка, он Вам сообщит. Если он не говорит ничего про LIRC,
+то поддержка LIRC не была скомпилирована. Вот так :-)
+</para>
+
+<para>
+Имя приложения для <application>MPlayer</application> &mdash; угадайте &mdash;
+<filename>mplayer</filename>.  Вы можете использовать все команды mplayer'а и
+даже можете использовать более одной команды, разделив их символами
+<literal>\n</literal>. Не забудьте включить флаг repeat[повтор] в
+<filename>.lircrc</filename>, когда это имеет смысл (перемещение, громкость
+и т.п.). Вот выдержка из моего <filename>.lircrc</filename>:
+</para>
+
+<programlisting>
+begin
+     button = VOLUME_PLUS
+     prog = mplayer
+     config = volume 1
+     repeat = 1
+end
+
+begin
+    button = VOLUME_MINUS
+    prog = mplayer
+    config = volume -1
+    repeat = 1
+end
+
+begin
+    button = CD_PLAY
+    prog = mplayer
+    config = pause
+end
+
+begin
+    button = CD_STOP
+    prog = mplayer
+    config = seek 0 1\npause
+end<!--
+--></programlisting>
+
+<para>
+Если Вам не нравится стандартное место Вашего конфигурационного файла lirc
+(<filename>~/.lircrc</filename>), используйте опцию <option>-lircconf
+<replaceable>filename</replaceable></option>, чтобы указать другой файл.
+</para>
+</sect2>
+
+<!-- ********** -->
+
+<sect2 id="slave-mode">
+<title>Подчинённый ("рабский") режим</title>
+<para>
+Наличие подчинённого режима позволяет Вам создавать простые приложения к
+<application>MPlayer</application>'у. Когда режим включён (опцией
+<option>-slave</option>), <application>MPlayer</application> читает со
+стандартного входа команды, разделяемые символом конца строки (\n).
+Команды документированы в файле
+<ulink url="../../tech/slave.txt">slave.txt</ulink>.
+</para>
+</sect2>
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<sect1 id="streaming">
+<title>Сетевые потоки и каналы</title>
+
+<para>
+<application>MPlayer</application> может проигрывать файлы по сети, используя
+HTTP, FTP, MMS или RTSP/RTP протокол.
+</para>
+
+<para>
+Проигрывание включается добавлением URL'а в командную строку.
+Также, <application>MPlayer</application> учитывает переменную среды
+<envar>http_proxy</envar> и использует прокси[proxy], если это возможно.
+Также можно заставить использовать прокси:
+<screen>
+mplayer <replaceable>http_proxy://proxy.micorsops.com:3128/http://micorsops.com:80/stream.asf</replaceable>
+</screen>
+</para>
+
+<para>
+<application>MPlayer</application> может считывать данные со стандартного входа
+(а <emphasis>не</emphasis> из поименованных каналов). Это может, например,
+использоваться при проигрывании файлов по FTP:
+<screen>
+wget <replaceable>ftp://micorsops.com/something.avi</replaceable> -O - | mplayer -
+</screen>
+</para>
+
+<note><para>
+Мы рекомендуем включать <option>-cache</option> при проигрывании из сети:
+<screen>
+wget <replaceable>ftp://micorsops.com/something.avi</replaceable> -O - | mplayer -cache 8192 -
+</screen>
+</para></note>
+
+<!-- ********** -->
+
+<sect2 id="streaming-save">
+<title>Сохранение потоковых данных</title>
+<para>
+Как только вам удалось воспроизвести любимый интернет-поток, вы
+можете воспользоваться опцией <option>-dumpstream</option>, чтобы
+сохранить его в файл.
+Например:
+<screen>
+mplayer <replaceable>http://217.71.208.37:8006</replaceable> -dumpstream -dumpfile <replaceable>stream.asf</replaceable>
+</screen>
+сохранит данные из потока
+<replaceable>http://217.71.208.37:8006</replaceable> в
+<replaceable>stream.asf</replaceable>.
+Это работает для всех протоколов, поддерживаемых
+<application>MPlayer</application>, таких как MMS, RSTP, и других.
+</para>
+</sect2>
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<sect1 id="edl" xreflabel="Редактируемые списки решений [Edit Decision Lists] (EDL)">
+<title>Редактируемые списки решений [Edit Decision Lists] (EDL)</title>
+
+<para>
+Система редактируемых списков решений [edit decision list] (EDL) позволяет Вам
+автоматически пропускать или заглушать части при воспроизведении, основываясь
+на специфичном для каждого фильма конфигурационном файле.
+</para>
+
+<para>
+Это полезно для тех, кто может захотеть посмотреть фильм в "семейном" режиме.
+Вы можете исключить любые проявления насилия, ненормативной лексики,
+Jar-Jar Binks, и т. п. из фильмов, сообразуясь с Вашими личными предпочтениями.
+Помимо этого, существуют другие применения, например автоматический пропуск рекламы
+при просмотре фильмов.
+</para>
+
+<para>
+Формат EDL файлов пока элементарен. в каждой строке находится одна команда, которая
+указывает, что делать (пропустить/выключить звук) и когда (используя pts в секундах).
+</para>
+
+<!-- ********** -->
+
+<sect2 id="edl_using">
+<title>Использование EDL файлов</title>
+
+<para>
+Включите опцию <option>-edl &lt;имя_файла&gt;</option>, когда Вы запускаете
+<application>MPlayer</application>, с именем EDL файла, который Вы хотите
+использовать с видео.
+</para>
+</sect2>
+
+<sect2 id="edl_making">
+<title>Создание EDL файлов</title>
+<para>
+Текущий формат файлов EDL:
+<programlisting>[начальная секунда] [конечная секунда] [действие]</programlisting>
+Где секунды - это числа с плавающей точкой (вещественные числа), а действие -
+это или <literal>0</literal> для пропуска или <literal>1</literal> для
+заглушения звука. Пример:
+<programlisting>
+5.3   7.1    0
+15    16.7   1
+420   422    0
+</programlisting>
+Это вызовет пропуск видео с 5.3 секунды до 7.1 секунды, затем заглушит звук
+на 15 секунде, включит обратно в 16.7 секунд и пропустит видео с 420 по 422
+секунды. Эти действия будут происходить, когда таймер проигрывания достигнет
+указанных в файле значений.
+</para>
+
+<para>
+Чтобы начать создать EDL файл, используйте опцию <option>-edlout
+&lt;filename&gt;</option>. При проигрывании, когда Вы хотите отметить
+предыдущие две секунды для пропуска, нажмите <keycap>i</keycap>.
+Соответствующая запись для этого времени будет добавлена в файл. Затем Вы
+можете вернуться и подстроить сгенерированный EDL файл также как и
+поправить действие по-умолчанию (пропуск блока, указанного в строке).
+</para>
+</sect2>
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<sect1 id="advaudio" xreflabel="Advanced Audio">
+<title>Расширенные возможности аудио</title>
+
+<sect2 id="advaudio-surround">
+<title>Окружающее/Многоканальное[Surround/Multichannel] воспроизведение</title>
+
+<sect3 id="advaudio-surround-DVD">
+<title>DVD'шники</title>
+
+<para>
+Большинство DVD и многие другие файлы содержат окружающий звук.
+<application>MPlayer</application> поддерживает воспроизведение такого звука, но
+не задействует его по-умолчанию, поскольку стерео оборудование более распространено.
+Для воспроизведения файла с более чем двумя каналами звука, используйте опцию
+ <option>-channels</option>. Например, для воспроизведения DVD со звуком 5.1:
+<screen>mplayer dvd://1 -channels 6</screen>
+Имейте ввиду, что несмотря на название "5.1" на самом деле присутствует
+шесть независимых каналов. Если у вас есть соответствующее оборудование, вы
+спокойно можете добавить опцию <option>channels</option> в конфигурационный
+файл <filename>~/.mplayer/config</filename> <application>MPlayer</application>'а.
+Например, для установки по умолчанию квадрофонического[quadraphonic] воспроизведения, добавьте
+такую строку:
+<programlisting>channels=4</programlisting>
+<application>MPlayer</application> будет выводить четырехканальный звук, если все четыре
+есть в проигрываемом файле.
+</para>
+</sect3>
+
+
+<sect3 id="advaudio-surround-stereoinfour">
+<title>Воспроизведение стерео звука на четырех колонках</title>
+
+<para>
+По-умолчанию, <application>MPlayer</application> не дублирует никакие каналы, как и
+большинство звуковых драйверов. Если вы хотите, сделайте это самостоятельно:
+<screen>mplayer <replaceable>filename</replaceable> -af channels=2:2:0:1:0:0</screen>
+Объяснения ищите в разделе
+<link linkend="advaudio-channels-copying">копирование каналов</link>.
+</para>
+</sect3>
+
+
+<sect3 id="advaudio-surround-passthrough">
+<title>Передача AC-3/DTS</title>
+
+<para>
+DVD, как правило, имеют окружающий звук, кодированный в AC-3 (Dolby Digital) или DTS
+(Digital Theater System[система цифрового кинотеатра]) формате.  Некоторое
+современное аудио оборудование способно самостоятельно декодировать эти форматы.
+<application>MPlayer</application> может быть сконфигурирован, чтобы передавать
+данные без их декодирования. Это работает только для наличие в вашей звуковой карте
+разъема S/PDIF (Sony/Philips Digital Interface[цифровой интерфейс Sony/Philips]).
+</para>
+
+<para>
+Если ваше оборудование может декодировать и AC-3, и DTS, выможете спокойно
+задействовать передачу для обоих форматов. В противном случае включайте
+передачу только того формата, который поддерживается оборудованием.
+</para>
+
+<itemizedlist>
+<title>Чтобы включить передачу из командной строки:</title>
+<listitem><para>
+  только для AC-3, используйте <option>-ac hwac3</option>
+</para></listitem>
+<listitem><para>
+  только для DTS, используйте <option>-ac hwdts</option>
+</para></listitem>
+<listitem><para>
+  для AC-3 и DTS, используйте <option>-afm hwac3</option>
+</para></listitem>
+</itemizedlist>
+
+<itemizedlist>
+<title>Чтобы включить передачу в файле настроек <application>MPlayer</application>:
+</title>
+<listitem><para>
+  только для AC-3: <option>ac=hwac3,</option>
+</para></listitem>
+<listitem><para>
+  только для DTS: <option>ac=hwdts,</option>
+</para></listitem>
+<listitem><para>
+  для AC-3 и DTS: <option>afm=hwac3</option>
+</para></listitem>
+</itemizedlist>
+
+<para>
+Заметьте, что в конце <option>ac=hwac3,</option> и <option>ac=hwdts,</option>
+присутствует запятая (","). В этом случае
+<application>MPlayer</application> вернется к кодеку, который он обычно использует,
+при воспроизведении файла, не содержащего звука AC-3 или DTS.
+<option>afm=hwac3</option> запятой не требует;
+Когда указано семейство аудио, <application>MPlayer</application> вернется к нужному кодеку так
+или иначе.
+</para>
+</sect3>
+
+
+<sect3 id="hwmpa-surround-passthrough">
+<title>Передача MPEG аудио</title>
+
+<para>
+Передатчики цифрового ТВ (такие как DVB и ATSC) и некоторые DVD, обычно имеют
+аудио потоки MPEG (в частности MP2). Некоторые аппаратные MPEG декодеры, такие как
+полнофункциональные DVB карты и DXR2 адаптеры имеют встроенную возможность
+декодирования этого формата.
+<application>MPlayer</application> может быть настроен для передачи аудио данных
+без из декодирования.
+</para>
+
+<para>
+Для использования этого кодека:
+<screen> mplayer -ac hwmpa </screen>
+</para>
+</sect3>
+
+
+<sect3 id="advaudio-surround-matrix">
+<title>Matrix-кодированное[matrix-encoded] аудио</title>
+
+<para>
+<emphasis>***TODO***</emphasis>
+</para>
+<para>
+Этот раздел пока не написан, и не может быть завершен, пока кто-нибудь не
+предоставить нам образцы файлов для тестирования. Если у вас есть
+matrix-кодированные файлы, знаете где их можно достать или имеете информацию,
+которая может быть полезна, отошлите сообщение в рассылку
+<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-DOCS</ulink>.
+Укажите в теме письма [matrix-encoded audio].
+</para>
+<para>
+Если не появятся файлы или какая-нибудь информация, этот раздел будет удален.
+</para>
+
+<para>
+Полезные ссылки:
+<itemizedlist>
+<listitem><para>
+  <ulink url="http://electronics.howstuffworks.com/surround-sound5.htm">http://electronics.howstuffworks.com/surround-sound5.htm</ulink>
+</para></listitem>
+<listitem><para>
+  <ulink url="http://www.extremetech.com/article2/0,1697,1016875,00.asp">http://www.extremetech.com/article2/0,1697,1016875,00.asp</ulink>
+</para></listitem>
+</itemizedlist>
+</para>
+</sect3>
+
+
+<sect3 id="advaudio-surround-hrtf">
+<title>Эмуляция окружающего звука в наушниках</title>
+
+<para>
+<application>MPlayer</application> содержит плагин HRTF (Head Related Transfer
+Function), основанный на
+<ulink url="http://sound.media.mit.edu/KEMAR.html">проекте MIT</ulink>
+откуда взяты измерения от микрофонов, вмонтированных в макет человеческой головы.
+</para>
+
+<para>
+Хотя точная имитация системы окружающего звука[surround system] невозможна,
+<application>MPlayer</application>'овский плагин HRTF
+<!-- FIXME need bette rtranslation
+ does provide more spatially immersive audio in 2-channel headphones
+ -->
+производит более пространственный окружающий звук
+на 2-х канальных наушниках. Обычное сведение, просто объединяет канали в два;
+кроме объединения каналов, <option>hrtf</option> создает хитрое эхо, слегка
+увеличивает разделение стерео, и меняет громкость некоторых частот.
+Лучше ли звучит HRTF, зависеть от исходного звука, и является делом
+личного вкуса, но его определенного стоит попробовать.
+</para>
+
+<para>
+Для воспроизведения DVD с HRTF:
+<screen>mplayer dvd://1 -channels 6 -af hrtf</screen>
+</para>
+
+<para>
+<option>hrtf</option> работает хорошо тоько с 5-ю или 6-ю каналами. Также,
+<option>hrtf</option> тербуется 48 kHz звук. DVD аудио уже kHz, но если у вас есть
+файл, который вы хотите воспроизвести при помощи <option>hrtf</option> , с другой
+частотой сэмплирования, необходимо его ресэмплировать[resample]:
+<screen>
+mplayer <replaceable>filename</replaceable> -channels 6 -af resample=48000,hrtf
+</screen>
+</para>
+</sect3>
+
+
+<sect3 id="advaudio-surround-troubleshooting">
+<title>Решение проблем</title>
+
+<para>
+Если вы ничего не слышите при использовании окружающего звука, проверьте
+настройки вашего микшера при помощи такой как  <application>alsamixer</application>
+программы; очень часто по-умолчанию выходной звук  выключен или его уровень
+установлен в ноль.
+</para>
+</sect3>
+</sect2>
+
+<!-- ********** -->
+
+<sect2 id="advaudio-channels">
+<title>Манипуляции с каналами</title>
+
+<sect3 id="advaudio-channels-general">
+<title>Общая информация</title>
+
+<para>
+К сожалению, нет стандарта, описывающего порядок следования каналов. Порядки, указанные ниже,
+таковые из AC-3 и довольно типичны; попробуйте их и увидите совпадают ли они с вашим источником.
+Каналы нумеруются с нуля.
+
+<orderedlist spacing="compact">
+<title>mono[моно]</title>
+  <listitem override="0"><para>center[центральный]</para></listitem>
+</orderedlist>
+
+<orderedlist spacing="compact">
+<title>stereo[стерео]</title>
+  <listitem override="0"><para>left[левый]</para></listitem>
+  <listitem><para>right[правый]</para></listitem>
+</orderedlist>
+
+<orderedlist spacing="compact">
+<title>quadraphonic[квадрофонический]</title>
+<listitem override="0"><para>left front[левый передний]</para></listitem>
+  <listitem><para>right front[правый передний]</para></listitem>
+  <listitem><para>left rear[левый задний]</para></listitem>
+  <listitem><para>right rear[правый задний]</para></listitem>
+</orderedlist>
+
+<orderedlist spacing="compact">
+<title>surround 4.0[окружение 4.0]</title>
+  <listitem override="0"><para>left front[левый передний]</para></listitem>
+  <listitem><para>right front[правый передний]</para></listitem>
+  <listitem><para>center rear[центральный задний]</para></listitem>
+  <listitem><para>center front[центральный передний]</para></listitem>
+</orderedlist>
+
+<orderedlist spacing="compact">
+<title>surround 5.0[]окружение 5.0</title>
+  <listitem override="0"><para>left front[левый передний]</para></listitem>
+  <listitem><para>right front[правый передний]</para></listitem>
+  <listitem><para>left rear[левый задний]</para></listitem>
+  <listitem><para>right rear[правый задний]</para></listitem>
+  <listitem><para>center front[центральный передний]</para></listitem>
+</orderedlist>
+
+<orderedlist spacing="compact">
+<title>surround 5.1[окружение 5.1]</title>
+  <listitem override="0"><para>left front[левый передний]</para></listitem>
+  <listitem><para>right front[правый передний]</para></listitem>
+  <listitem><para>left rear[левый задний]</para></listitem>
+  <listitem><para>right rear[правый задний]</para></listitem>
+  <listitem><para>center front[центральный передний]</para></listitem>
+  <listitem><para>subwoofer[сабвуфер]</para></listitem>
+</orderedlist>
+</para>
+
+<para>
+Опция <option>-channels</option> используется для запроса количества каналов у
+аудио декодера. Некоторые аудио кодеки используют указанное количество каналов
+для определения необходимо ли сведение каналов. Заметьте, что это не всегда
+отражается на количестве выходных каналов. Например, используя
+<option>-channels 4</option> для проигрывания стерео MP3 файла будет по-прежнему
+выводить звук на два канала, поскольку MP3 кодек не создает дополнительных каналов.
+</para>
+
+<para>
+Аудио плагин <option>channels</option> может использоваться для создания или
+удаления каналов, и полезен для управления количеством каналов, отсылаемых на
+звуковую карту. Смотрите следующие разделы для получения информации о манипуляции
+каналами.
+</para>
+</sect3>
+
+
+<sect3 id="advaudio-channels-mono">
+<title>Воспроизведение моно на двух колонках</title>
+
+<para>
+Моно звук намного лучше звучит, при воспроизведении на двух колонках - особенно
+при использовании наушников. Аудиофайлы, реально имеющие один канал, автоматически
+проигрываются через две колонки; к сожалению, множество файлов с моно звуком
+кодированы как стерео с тишиной в одном из каналов. Простейший и безопасный
+способ воспроизведения одинакового звука на обеих колонках состоит в использовании
+плагина <option>extrastereo</option>:
+<screen>
+mplayer <replaceable>filename</replaceable> -af extrastereo=0
+</screen>
+</para>
+
+<para>
+Он усредняет оба канала, делая каждый в два раза тише изначального.
+В следующих разделах приводятся другие способы сделать то же самое
+без уменьшения громкости, но они сложнее и требуют указания различных опций
+в зависимости от того, какой канал остается. Если вам действительно требуется
+управлять громкостью, бутет проще поэкспериментировать с плагином
+<option>volume</option> и определить верное значение. Например:
+
+<screen>mplayer <replaceable>filename</replaceable> -af extrastereo=0,volume=5</screen>
+
+</para>
+
+</sect3>
+
+
+<sect3 id="advaudio-channels-copying">
+<title>Копирование/перемещение каналов</title>
+
+<para>
+Плагин <option>channels</option> может переместить любой или все каналы.
+Установка всех подопций плагина <option>channels</option>
+не так проста и требует определенной аккуратности.
+
+<orderedlist spacing="compact">
+<listitem><para>
+  Определитесь, сколько выходных каналов  вам необходимо. Это первая подопция.
+</para></listitem>
+<listitem><para>
+  Посчитайте количество перемещаемых каналов. Это вторая подопция.Каждый канал может быть
+  перемещен в несколько отличных каналов одновременно, но учтите, что исходный канал
+  (даже при перемещении в одно место) будет пуст, пока в него не переместится
+  какой-либо другой. Для копирования канала, оставляя исходный неизменным, просто
+  переместите канал одновременно в требуемый и исходный. Например:
+  <programlisting>
+канал 2 --> канал 3
+канал 2 --> канал 2<!--
+  --></programlisting>
+</para></listitem>
+<listitem><para>
+  Запишите копии каналов в виде пары подопций. Заметьте, что первый канал - это 0,
+  второй - 1 и т.д. Порядок следования значений не имеет, пока они правильно сгруппированы
+  в пары <replaceable>исходный:результирующий</replaceable>.
+</para></listitem>
+</orderedlist>
+</para>
+
+<bridgehead>Пример: один канал на две колонки</bridgehead>
+<para>
+Это пример другого способа воспроизвести один канал на обе колонки.
+В нем предполагается, что левый канал должен воспроизводиться, а правый надо отбросить.
+Выполняем шаги, описанные выше:
+<orderedlist>
+<listitem><para>
+  Для создания по каналу на каждую из колонок, первая подопция должна быть 2.
+</para></listitem>
+<listitem><para>
+  Левый канал надо переместить на правый и на себя, чтобы он не оставался пуст.
+  Всего два перемещения, делаем вторую подопцию тоже равной "2".
+</para></listitem>
+<listitem><para>
+  Для перемещения левого канала (канал 0) в правый (канал 1) пара подопций имеет вид "0:1",
+  "0:0" перемещает левый канал на себя.
+</para></listitem>
+</orderedlist>
+Собираем все вместе:
+<screen>
+mplayer <replaceable>filename</replaceable> -af channels=2:2:0:1:0:0
+</screen>
+</para>
+
+<para>
+Преимущество этого примере перед  <option>extrastereo</option> состоит в том,
+что громкость каждого канала такая же как у исходного. Недостаток заключается в
+необходимости изменить подопции на "2:2:1:0:1:1", если желаемый
+канал - правый. К тому же его труднее запомнить и набрать.
+</para>
+
+<bridgehead>Пример: левый канал на две колонки (сокращение)</bridgehead>
+<para>
+На самом деле есть более простой способ использования плагина
+<option>channels</option> для воспроизведения левого канала на обеих колонках:
+<screen>mplayer <replaceable>filename</replaceable> -af channels=1</screen>
+Второй канал отбрасывается и, при отсутствии других подопций, остается
+единственным. Драйвер звуковой карты автоматически воспроизводит одноканальный
+звук на обеих колонках. Но это сработает только если желаемый канал - левый.
+</para>
+
+<bridgehead>Пример: дублирование передних каналов на задние</bridgehead>
+<para>
+Другая обычная операция - это дублирование передних каналов и воспроизведение
+их на задних колонках при квадрофонической настройке.
+<orderedlist>
+<listitem><para>
+  Выходных каналов должно быть четыре. Первая подопция равна "4".
+</para></listitem>
+<listitem><para>
+  Каждый из передних каналов надо переместить на соответствующий задний и на себя.
+  Это четыре перемещения, так что вторая подопция равна "4".
+</para></listitem>
+<listitem><para>
+  Левый передний (канал 0) надо переместить на левый задний (канал 2): "0:2".
+  Левый передний также надо переместить на себя: "0:0". правый передний (канал 1)
+  перемещается на правый задний (канал 3): "1:3", и на себя: "1:1".
+</para></listitem>
+</orderedlist>
+Собираем все и получаем:
+<screen>
+mplayer <replaceable>filename</replaceable> -af channels=4:4:0:2:0:0:1:3:1:1
+</screen>
+</para>
+</sect3>
+
+
+<sect3 id="advaudio-channels-mixing">
+<title>Микширование каналов</title>
+
+<para>
+Плагин <option>pan</option> пожет микшировать каналы в указанных пользователем
+пропорциях. Он может делать все, что <option>channels</option>, и даже больше.
+К сожалению, подопции намного сложнее.
+<orderedlist>
+<listitem><para>
+  Определите со скольки каналами будете работать. Вам необходимо указать это
+  при помощи <option>-channels</option> и/или <option>-af channels</option>.
+  Дальнейшие примеры покажут когда какую использовать.
+</para></listitem>
+<listitem><para>
+  Решите, сколько каналов скормить <option>pan</option> (дополнительные декодированные
+  каналы отбрасываются). Это первая подопция, она также определяет сколько каналов
+  готовится к выводу).
+</para></listitem>
+<listitem>
+  <para>
+  Оставшиеся подопции указывают какая часть каждого входного канала микшируется в
+  в каждый выходной. Это самая сложная часть. Для решения задачи, разделите
+  подопции на несколько наборов, по одному на каждый выходной канал. Каждая
+  подопция в наборе относится к входному каналу.
+  </para>
+  <para>
+  <option>pan</option> принимает значения от 0 до 512, давая от 0% до 51200%
+  громкости исходного канала. Будьте осторожны, используя значения больше 1,
+  если вы превысить диапазон сэмплинга вашей звуковой карты, вы услышите
+  противный треск и скрежет. Если хотите, можете вслед за
+  <option>pan</option> указать <option>,volume</option> для задействования обрезки,
+  но лучше держать значения <option>pan</option> достаточно низкими, чтобы не
+  требовалось обрезание.
+  </para>
+</listitem>
+</orderedlist>
+</para>
+
+<bridgehead>Пример: один канал на две колонки</bridgehead>
+<para>
+Это еще один пример воспроизведения левого канала на двух колонках.
+Следуя инструкциям выше:
+<orderedlist>
+<listitem><para>
+<option>pan</option> должен выдать два канала, т.о. первая подопция равна "2".
+</para></listitem>
+<listitem><para>
+  Поскольку входных каналов два, будет два набора подопций.
+  Так как выходных каналов тоже два, то  будет по две подопции в каждом наборе.
+  Левый канал из файла должен перейти с полной громкостью в новые левый и правый.
+  Таким образом, первый набор подопций будет "1:1".
+  правый канал должен быть отброшен, поэтому второй набор равен "0:0".
+  Любые значения 0 в конце могут быть опущены, но для более легкого понимания мы их оставим.
+</para></listitem>
+</orderedlist>
+Соединение опций дает:
+<screen>mplayer <replaceable>filename</replaceable> -af pan=2:1:1:0:0</screen>
+Если вместо правого канала нужен левый,  подопции для <option>pan</option>
+будут "2:0:0:1:1".
+</para>
+
+
+<bridgehead>Пример: левый канал на две колонки (сокращение)</bridgehead>
+<para>
+Как и с <option>channels</option>, существует сокращенный вариант, который работает только
+для левого канала:
+<screen>mplayer <replaceable>filename</replaceable> -af pan=1:1</screen>
+Поскольку <option>pan</option> имеет только один входной канал (остальные отбрасываются),
+будет только одна подопция, указывающая, что единственный канал получает 100% собственной
+громкости.
+</para>
+
+<bridgehead>Пример: сведение 6-канального PCM</bridgehead>
+<para>
+Декодер <application>MPlayer</application>'а для 6-канального PCM не способен сводить каналы.
+Здесь описан способ сведения PCM, используя <option>pan</option>:
+<orderedlist>
+<listitem><para>
+  Количество выходных каналов равно 2, значит первая подопция равна "2".
+</para></listitem>
+<listitem><para>
+  С шестью входными каналами будем иметь шесть наборов подопций. К счастью, поскольку
+  мы беспокоимся о выводе только первых двух, достаточно создать два набора;
+  оставшиеся можно опустить. Имейте ввиду, что не все многоканальные имеют одинаковый
+  порядок каналов. пример показывает как свести файл с порядком как у AC-3 5.1:
+<programlisting>
+0 - передний левый
+1 - передний правый
+2 - задний левый
+3 - задний правый
+4 - центральный передний
+5 - сабвуфер<!--
+  --></programlisting>
+  В первом наборе указаны проценты от исходной громкости, в соответствующем порядке,
+  которую каждый выходной канал получит от переднего левого канала: "1:0".
+  Правый передний должен перейти в правый: "0:1".
+  То же для задних: "1:0" и "0:1"
+  Центральный должен попасть в оба с половинной громкостью: "0.5:0.5", и
+  сабвуфер переходит в оба канала с полной громкостью: "1:1".
+</para></listitem>
+</orderedlist>
+Все вместе:
+<screen>
+mplayer <replaceable>6-channel.wav</replaceable> -af pan=2:1:0:0:1:1:0:0:1:0.5:0.5:1:1
+</screen>
+Проценты, указанные выше всего лишь пример. подстраивайте их как вам удобно.
+</para>
+
+<bridgehead>Пример: Воспроизведение звука 5.1 на больших колонках без сабвуфера</bridgehead>
+<para>
+Если у вас есть пара огромных передних колонок, нет надобности тратиться на
+сабвуфер для полноценной системы 5.1. Если использовать <option>-channels 5</option>
+для запроса к liba52 на декодирование 5.1 аудио в 5.0, канал сабвуфера просто
+отбрасывается. Если вы сотите самостоятельно распределить канал
+сабвуфера, то потребуется ручное сведение при помощи <option>pan</option>:
+
+<orderedlist>
+<listitem><para>
+  Поскольку <option>pan</option> надо анализировать все шесть каналов, укажите
+<option>-channels 6</option>, чтобы liba52 декодировал их все.
+</para></listitem>
+<listitem><para>
+  <option>pan</option> выводит только пять каналов, первая подопция равна 5.
+</para></listitem>
+<listitem><para>
+  Шесть входных каналов означает шесть наборов по пять подопций в каждом.
+  <itemizedlist spacing="compact">
+  <listitem><para>
+    Левый передний дублируется только на себя:
+    "1:0:0:0:0"
+  </para></listitem>
+  <listitem><para>
+    То же для правого переднего:
+    "0:1:0:0:0"
+  </para></listitem>
+  <listitem><para>
+    То же для левого заднего:
+    "0:0:1:0:0"
+  </para></listitem>
+  <listitem><para>
+    И то же для правого заднего:
+    "0:0:0:1:0"
+  </para></listitem>
+  <listitem><para>
+    Центральный передний, тоже:
+    "0:0:0:0:1"
+  </para></listitem>
+  <listitem><para>
+    И, наконец, мы должны решить что же делать с сабвуфером,
+    например, половина на передний правый и половина на передний левый:
+    "0.5:0.5:0:0:0"
+  </para></listitem>
+  </itemizedlist>
+</para></listitem>
+</orderedlist>
+Собирая все подопции месте, получаем:
+<screen>
+mplayer <replaceable>dvd://1</replaceable> -channels 6 -af pan=5:1:0:0:0:0:0:1:0:0:0:0:0:1:0:0:0:0:0:1:0:0:0:0:0:1:0.5:0.5:0:0:0
+</screen>
+</para>
+</sect3>
+</sect2>
+
+<!-- ********** -->
+
+<sect2 id="advaudio-volume">
+<title>Программная подстройка звука</title>
+
+<para>
+Некоторые звуковые дорожки без усиления слишком тихие для комфортного прослушивания.
+Это становится проблемой, если звуковое оборудование не способно усиливать сигнал.
+Опция <option>-softvol</option> указывает <application>MPlayer</application>'у
+использовать встроенный микшер. После этого вы можете использовать клавиши
+подстройки громкости (по-умолчанию <keycap>9</keycap> и <keycap>0</keycap>)
+чтобы достичь значительно более громкого звучания. Заметьте, что это
+не исключает использования микшера вашей карты; <application>MPlayer</application>
+всего лишь усиливает сигнал перед отправкой его на звуковую карту.
+Следующим пример может являться неплохим началом:
+<screen>
+mplayer <replaceable>quiet-file</replaceable> -softvol -softvol-max 300
+</screen>
+Опция <option>-softvol-max</option> указывает максимально допустимый уровень звука в
+процентах от исходного. Например, <option>-softvol-max 200</option> позволит
+увеличивать громкость вдвое по сравнению с оригинальным звуком.
+Использование больших значений с<option>-softvol-max</option>; высокий уровень
+громкости не будет достигнуть без использования клавиш регулирования громкости.
+Единственный минус больших значений заключается в том, что, поскольку
+<application>MPlayer</application>  регулирует громкость в процентах от
+максимума, вы не будете иметь той же точности при использовании клавиш
+регулирования громкости.
+Используйте меньшее значение <option>-softvol-max</option> и/или укажите
+<option>-volstep 1</option> если нужна повышенная точность.
+</para>
+
+<para>
+Опция <option>-softvol</option> работает, управляя аудио плагином
+<option>volume</option>. Если вам надо воспроизвести файл с определенной
+громкостью от начальной, можете указать <option>volume</option> вручную:
+<screen>mplayer <replaceable>quiet-file</replaceable> -af volume=10</screen>
+Будет воспроизведен файл в усилением в 10 децибел. Будьте осторожны,
+используя плагин <option>volume</option> - вы можете легко повредить
+ваши уши слишком громким звуком. Начните с маленьких значений и постепенно
+увеличивайте, пока не почувствуете, что достаточно. Также, если
+указать черезчур высокие значения, <option>volume</option> может потребоваться
+обрезать звук, чтобы избежать отправления на карту данных, превышающих
+допустимые значение; это приведет к искажению звука.
+</para>
+</sect2>
+</sect1>
+</chapter>

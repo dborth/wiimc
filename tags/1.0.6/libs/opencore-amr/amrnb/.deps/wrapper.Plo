@@ -1,0 +1,141 @@
+wrapper.lo: wrapper.cpp \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/sp_dec.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/typedef.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/gsm_amr_typedefs.h \
+ ../oscl/oscl_base.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdint.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/cnst.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/dec_amr.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/mode.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/dtx_dec.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/d_plsf.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/typedef.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/cnst.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/mode.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/get_const_tbls.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/gc_pred.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/c_g_aver.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/frame.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/dtx_common_def.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/ec_gains.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/ph_disp.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/get_const_tbls.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/bgnscd.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/lsp_avg.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/pstfilt.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/preemph.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/agc.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/post_pro.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/amrdecode.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/frame_type_3gpp.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/include/pvamrnbdecoder_api.h \
+ ../opencore/codecs_v2/audio/gsm_amr/common/dec/include/pvgsmamrdecoderinterface.h \
+ ../opencore/codecs_v2/audio/gsm_amr/amr_nb/enc/src/amrencode.h \
+ interf_dec.h interf_enc.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdlib.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/ieeefp.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/_ansi.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/newlib.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/config.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/include/stddef.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/reent.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/_ansi.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/_types.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/_types.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/_default_types.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/lock.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/stdlib.h
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/sp_dec.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/typedef.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/gsm_amr_typedefs.h:
+
+../oscl/oscl_base.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdint.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/cnst.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/dec_amr.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/mode.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/dtx_dec.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/d_plsf.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/typedef.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/cnst.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/mode.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/get_const_tbls.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/gc_pred.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/c_g_aver.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/frame.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/dtx_common_def.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/ec_gains.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/ph_disp.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/get_const_tbls.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/bgnscd.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/lsp_avg.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/pstfilt.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/preemph.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/agc.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/post_pro.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src/amrdecode.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include/frame_type_3gpp.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/include/pvamrnbdecoder_api.h:
+
+../opencore/codecs_v2/audio/gsm_amr/common/dec/include/pvgsmamrdecoderinterface.h:
+
+../opencore/codecs_v2/audio/gsm_amr/amr_nb/enc/src/amrencode.h:
+
+interf_dec.h:
+
+interf_enc.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdlib.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/ieeefp.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/_ansi.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/newlib.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/config.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/include/stddef.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/reent.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/_ansi.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/_types.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/_types.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/_default_types.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/lock.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/stdlib.h:

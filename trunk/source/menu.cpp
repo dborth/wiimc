@@ -1829,7 +1829,7 @@ static void MenuBrowse(int menu)
 	GuiButton upOneLevelBtn(0,0);
 	upOneLevelBtn.SetTrigger(trigB);
 	upOneLevelBtn.SetSelectable(false);
-	
+
 	GuiText backBtnTxt("Resume", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	backBtnTxt.SetPosition(-74, 10);
@@ -2973,6 +2973,12 @@ static void MenuBrowsePictures()
 	{
 		usleep(THREAD_SLEEP);
 
+		if(findLoadedFile == 2)
+		{
+			findLoadedFile = 0;
+			fileBrowser.TriggerUpdate();
+		}
+
 		// devices were inserted or removed - update the filebrowser!
 		if(devicesChanged)
 		{
@@ -2990,6 +2996,7 @@ static void MenuBrowsePictures()
 		{
 			upOneLevelBtn.ResetState();
 			fileBrowser.SetState(STATE_DISABLED);
+			browser.selIndex = 0;
 
 			if(!BrowserChangeFolder())
 				goto done;

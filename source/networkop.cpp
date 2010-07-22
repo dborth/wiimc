@@ -121,11 +121,12 @@ bool DownloadUpdate()
 {
 	bool result = false;
 
-	if(strlen(updateURL) == 0 || strlen(appPath) == 0)
-		goto done;
-
-	if(!ChangeInterface(appPath, NOTSILENT))
-		goto done;
+	if(updateURL[0] == 0 || appPath[0] == 0 || !ChangeInterface(appPath, NOTSILENT))
+	{
+		ErrorPrompt("Update failed!");
+		updateFound = false; // updating is finished (successful or not!)
+		return false;
+	}
 
 	// stop checking if devices were removed/inserted
 	// since we're saving a file
@@ -141,25 +142,28 @@ bool DownloadUpdate()
 	}
 	dev[i+1] = 0;
 
-	FILE *hfile;
 	char updateFile[50];
 	sprintf(updateFile, "%s%s Update.zip", dev, APPNAME);
-	hfile = fopen (updateFile, "wb");
 
-	if (hfile > 0)
+	FILE *hfile = fopen (updateFile, "wb");
+
+	if (hfile)
 	{
-		int retval;
-		retval = http_request(updateURL, hfile, NULL, 1024*1024*15, NOTSILENT);
-		fclose (hfile);
+		if(http_request(updateURL, hfile, NULL, (1024*1024*15), NOTSILENT) > 0)
+		{
+			fclose (hfile);
+			result = unzipArchive(updateFile, dev);
+		}
+		else
+		{
+			fclose (hfile);
+		}
+		remove(updateFile); // delete update file
 	}
-
-	result = unzipArchive(updateFile, dev);
-	remove(updateFile); // delete update file
 
 	// go back to checking if devices were inserted/removed
 	ResumeDeviceThread();
-	
-done:	
+
 	if(result)
 		InfoPrompt("Update successful!");
 	else

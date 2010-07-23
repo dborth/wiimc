@@ -133,7 +133,7 @@ void reinit_audio()
 static int init(int rate, int channels, int format, int flags)
 {
 	ao_data.samplerate = 48000;
-	ao_data.channels = clamp(channels, 1, 6);
+	ao_data.channels = clamp(channels, 2, 6);
 	ao_data.format = AF_FORMAT_S16_NE;
 	ao_data.bps = ao_data.channels * ao_data.samplerate * sizeof(s16);
 	request_mult = (float)ao_data.channels / HW_CHANNELS;

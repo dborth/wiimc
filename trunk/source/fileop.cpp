@@ -1187,7 +1187,7 @@ void FindDirectory()
 		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 			pagesize = 8;
 
-		if(indexFound > pagesize)
+		if(indexFound >= pagesize)
 		{
 			browser.pageIndex = (floor(indexFound/(float)pagesize)) * pagesize;
 

@@ -2792,6 +2792,10 @@ m_config_set_option(mconfig,"ass-font-scale","2");
 m_config_set_option(mconfig,"sws","4");
 m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
 SetMPlayerSettings();
+
+orig_stream_cache_min_percent=stream_cache_min_percent;
+orig_stream_cache_seek_min_percent=stream_cache_seek_min_percent;
+orig_stream_cache_size=stream_cache_size;
 #else
   m_config_preparse_command_line(mconfig,argc,argv);
 
@@ -3418,31 +3422,12 @@ int vob_sub_auto = 1;
   mpctx->sh_video=NULL;
 
   current_module="open_stream";
-  #ifdef GEKKO
-
-  if(orig_stream_cache_min_percent==-1 && orig_stream_cache_seek_min_percent==-1)
-  {
-    orig_stream_cache_min_percent=stream_cache_min_percent;
-    orig_stream_cache_seek_min_percent=stream_cache_seek_min_percent;
-    orig_stream_cache_size=stream_cache_size;
-  }
-  else
-  {
-    stream_cache_min_percent=orig_stream_cache_min_percent;
-    stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
-  }
+#ifdef GEKKO
   if(strncmp(filename,"dvdnav:",7) == 0)
   	stream_cache_size=-1;
   else
   	stream_cache_size=orig_stream_cache_size;
-
-
-    if(strncmp(filename,"http:",5) == 0)
-    {
-	   stream_cache_min_percent=1;
-	   stream_cache_seek_min_percent=5;
-    }
-  #endif
+#endif
   mpctx->stream=open_stream(filename,0,&mpctx->file_format);
   if(!mpctx->stream) { // error...
     mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY);
@@ -3935,6 +3920,12 @@ if (mpctx->sh_video)
 {
 	stream_cache_min_percent=orig_stream_cache_min_percent;
 	stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
+
+	if(strncmp(filename,"http:",5) == 0)
+	{
+		stream_cache_min_percent=1;
+		stream_cache_seek_min_percent=5;
+	}
 
 	seek_to_sec=load_restore_point(fileplaying)-8;
 	if(seek_to_sec < 0 || seek_to_sec+120 > demuxer_get_time_length(mpctx->demuxer))
@@ -4738,8 +4729,8 @@ static void low_cache_loop(void)
 	if (mpctx->video_out && mpctx->sh_video && vo_config_count)
 		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
 
-	if(stream_cache_min_percent < 10 || stream_cache_min_percent > 100)
-		stream_cache_min_percent = 30; // reset to a sane number
+	if(stream_cache_min_percent <= 0 || stream_cache_min_percent > 100)
+		stream_cache_min_percent = orig_stream_cache_min_percent; // reset to a sane number
 
 	if(!strncmp(fileplaying,"usb",3) || !strncmp(fileplaying,"sd",2))
 		percent=stream_cache_min_percent/6;

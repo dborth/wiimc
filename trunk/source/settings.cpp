@@ -482,9 +482,10 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 
 	while(next != NULL)
 	{
-		const char * name = mxmlElementGetAttr(next, "name");
-		const char * addr = mxmlElementGetAttr(next, "addr");
-		const char * image = mxmlElementGetAttr(next, "image");
+		const char *name = mxmlElementGetAttr(next, "name");
+		const char *addr = mxmlElementGetAttr(next, "addr");
+		const char *image = mxmlElementGetAttr(next, "image");
+		const char *type = mxmlElementGetAttr(next, "type");
 
 		if(name && addr) // this is a link
 		{
@@ -495,6 +496,25 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 			snprintf(onlinemediaList[onlinemediaSize-1].address, MAXPATHLEN, "%s", addr);
 			snprintf(onlinemediaList[onlinemediaSize-1].displayname, MAXJOLIET, "%s", name);
 			snprintf(onlinemediaList[onlinemediaSize-1].image, MAXPATHLEN, "%s", image);
+
+			if(type)
+			{
+				if(strncmp(type, "search", 6) == 0)
+					onlinemediaList[onlinemediaSize-1].type = TYPE_SEARCH;
+				else if(strncmp(type, "playlist", 8) == 0)
+					onlinemediaList[onlinemediaSize-1].type = TYPE_PLAYLIST;
+				else
+					onlinemediaList[onlinemediaSize-1].type = TYPE_FILE;
+			}
+			else
+			{
+				char *ext = GetExt(onlinemediaList[onlinemediaSize-1].address);
+
+				if(ext && IsPlaylistExt(ext))
+					onlinemediaList[onlinemediaSize-1].type = TYPE_PLAYLIST;
+				else
+					onlinemediaList[onlinemediaSize-1].type = TYPE_FILE;
+			}			
 		}
 		next = mxmlFindElement(next, top, "link", NULL, NULL, MXML_NO_DESCEND);
 	}

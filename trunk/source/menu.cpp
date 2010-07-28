@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <pcrecpp.h>
+#include <map>
 #include <wiiuse/wpad.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogc/machine/processor.h>
@@ -30,6 +32,10 @@
 #include "utils/http.h"
 #include "utils/mload.h"
 #include "filelist.h"
+
+extern "C" {
+#include "mplayer/stream/url.h"
+}
 
 #define THREAD_SLEEP 200
 #define GSTACK (256*1024)
@@ -898,6 +904,9 @@ void DisableMainWindow()
 int
 WindowPrompt(const char *title, wchar_t *msg, const char *btn1Label, const char *btn2Label)
 {
+	if(!mainWindow || ExitRequested || ShutdownRequested)
+		return 0;
+
 	int choice = -1;
 
 	GuiWindow promptWindow(556,244);
@@ -1803,6 +1812,54 @@ static int LoadNewFile()
 
 static void HideAudioVolumeLevelBar();
 
+bool LoadYouTubeFile()
+{
+	char *buffer = (char *)malloc(128*1024);
+
+	if(!buffer)
+		return false;
+
+	int size = http_request(browserList[browser.selIndex].filename, NULL, buffer, (128*1024), SILENT);
+
+	if(size <= 0)
+	{
+		free(buffer);
+		return false;
+	}
+
+	buffer[size-1] = 0;
+	char *str = strstr(buffer, "swfHTML");
+
+	if(str == NULL)
+	{
+		free(buffer);
+		return false;
+	}
+
+	if(size-(str-buffer) > 16384)
+		str[16384] = 0; // truncate string
+
+	pcrecpp::RE re("(\\d+)%7C(http.*?)(%2C|&|%7C%7C)");
+	std::map<std::string, std::string> links;
+	std::string format, link;
+	pcrecpp::StringPiece input(str);
+
+	while (re.FindAndConsume(&input, &format, &link))
+		links[format] = link;
+
+	for(std::map<std::string,std::string>::iterator link=links.begin(); link!=links.end(); ++link)
+	{
+		if(strcmp((*link).first.c_str(), "5") == 0)
+		{
+			url_unescape_string(browserList[browser.selIndex].filename, (*link).second.c_str());
+			free(buffer);
+			return true;
+		}
+	}
+	free(buffer);
+	return false;
+}
+
 static void MenuBrowse(int menu)
 {
 	ShutoffRumble();
@@ -1861,6 +1918,7 @@ static void MenuBrowse(int menu)
 	}
 
 	int pagesize = 11;
+	char origname[1024]; // store original filename when performing searches
 
 	if(videoImg && menu != MENU_BROWSE_MUSIC)
 		pagesize = 10;
@@ -2067,16 +2125,54 @@ static void MenuBrowse(int menu)
 					continue;
 				}
 
+				if(browserList[browser.selIndex].type == TYPE_SEARCH)
+				{
+					char query[100] = {0};
+					char escquery[100*3+1];
+					OnScreenKeyboard(query, 100);
+
+					if(query[0] == 0)
+						continue;
+
+					strcpy(origname, browserList[browser.selIndex].filename); // save original URL
+					url_escape_string(escquery, query); // escape the string for use in a URL
+					strcat(browserList[browser.selIndex].filename, escquery); // append query to search URL
+				}
+
 				// this is a file
 				char *ext = GetExt(browserList[browser.selIndex].filename);
 				int numItems = 0;
+
+				if(strncmp(browserList[browser.selIndex].filename, "http://www.youtube.com", 22) == 0)
+				{
+					if(!mainWindow->Find(disabled))
+						mainWindow->Append(disabled);
+					mainWindow->SetState(STATE_DISABLED);
+					ShowAction("Loading...");
+
+					if(LoadYouTubeFile())
+					{
+						strcpy(loadedFile, browserList[browser.selIndex].filename);
+						snprintf(loadedFileDisplay, 128, "%s", browserList[browser.selIndex].displayname);
+
+						int res = LoadNewFile();
+						CancelAction();
+
+						if(res == 1) // loaded a video file
+							goto done;
+					}
+					CancelAction();
+					mainWindow->Remove(disabled);
+					mainWindow->SetState(STATE_DEFAULT);
+					ErrorPrompt("Error loading YouTube file!");
+					continue;
+				}
 
 				// unrecognized audio or video extension or allowed protocol
 				if(!IsAllowedExt(ext) && (!IsAllowedProtocol(browserList[browser.selIndex].filename) || strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0))
 				{
 					// parse as a playlist
-					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0 &&
-						browserList[browser.selIndex].type != TYPE_SEARCH)
+					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
 					{
 						mainWindow->Append(disabled);
 						mainWindow->SetState(STATE_DISABLED);
@@ -2111,11 +2207,17 @@ static void MenuBrowse(int menu)
 						CancelAction();
 						mainWindow->Remove(disabled);
 						mainWindow->SetState(STATE_DEFAULT);
+
+						if(browserList[browser.selIndex].type == TYPE_SEARCH)
+						{
+							strcpy(browserList[browser.selIndex].filename, origname); // restore original URL
+							InfoPrompt("No Results Found", "Your search did not match any media files.");
+						}
 						fileBrowser->ResetState();
 						continue;
 					}
 				}
-				
+
 				if(numItems == 0)
 				{
 					GetFullPath(browser.selIndex, loadedFile);

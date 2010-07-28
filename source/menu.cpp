@@ -14,8 +14,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <pcrecpp.h>
 #include <map>
+#include <pcrecpp.h>
+#include <libexif/exif-data.h>
 #include <wiiuse/wpad.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogc/machine/processor.h>
@@ -33,7 +34,6 @@
 #include "utils/http.h"
 #include "utils/mload.h"
 #include "filelist.h"
-#include <libexif/exif-data.h>
 
 extern "C" {
 #include "mplayer/stream/url.h"

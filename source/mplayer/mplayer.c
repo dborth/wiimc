@@ -165,6 +165,7 @@ static void reload_subtitles();
 
 int controlledbygui=1;
 int pause_gui=0;
+int large_video = 0; // hack to keep track of if video width > 1024 
 static int pause_low_cache=0;
 
 static char fileplaying[MAXPATHLEN];
@@ -2394,14 +2395,15 @@ int reinit_video_chain(void) {
 
 #ifdef GEKKO
 //rodries patch for big resolution on wii
+large_video = 0;
 
 if(sh_video->disp_w>1024)
- {
+{
 		char *arg_scale[]={"w","xxxx","h","-2",NULL};
 		sprintf(arg_scale[1],"%i",(int)sh_video->disp_w/2);
 		sh_video->vfilter = vf_open_filter(sh_video->vfilter,"scale",arg_scale);
+		large_video = 1;
 }
-
 #endif
 
 

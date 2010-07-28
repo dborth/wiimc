@@ -39,7 +39,7 @@ typedef struct
 {
 	u64 length; // file length
 	time_t mtime; // file modified time
-	int type; // TYPE_FILE,	TYPE_FOLDER, TYPE_PLAYLIST,	TYPE_SEARCH
+	int type; // TYPE_FILE,	TYPE_FOLDER, TYPE_PLAYLIST, TYPE_SEARCH
 	char filename[MAXPATHLEN + 1]; // full filename
 	char displayname[MAXJOLIET + 1]; // name for browser display
 	char image[MAXJOLIET + 1];
@@ -50,6 +50,7 @@ typedef struct
 {
 	char filepath[MAXPATHLEN + 1]; // virtual filepath
 	char address[MAXPATHLEN + 1]; // address (URL)
+	int type; // TYPE_FILE,	TYPE_PLAYLIST, TYPE_SEARCH
 	char displayname[MAXJOLIET + 1]; // name for browser display
 	char image[MAXPATHLEN + 1]; // image to display
 } MEDIAENTRY;

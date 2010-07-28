@@ -1284,7 +1284,7 @@ static bool ParseDirEntries()
 		// skip this file if it's not an allowed extension 
 		if((filestat.st_mode & _IFDIR) == 0)
 		{
-			if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
+			if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent != MENU_BROWSE_ONLINEMEDIA))
 				continue;
 		}
 
@@ -1477,29 +1477,10 @@ typedef struct
 	char processor[MAXPATHLEN + 1];
 } PLXENTRY;
 
-extern "C" {
-void url_escape_string(char *out, const char *in);
-}
-
 static int ParsePLXPlaylist()
 {
 	char *buffer = (char*)malloc(128*1024);
 	int size = 0;
-
-	if(browser.numEntries > 0 && browserList[browser.selIndex].type == TYPE_SEARCH)
-	{
-		char query[100] = {0};
-		char escquery[100*3+1];
-		OnScreenKeyboard(query, 100);
-
-		if(query[0] == 0)
-			return -3;
-
-		url_escape_string(escquery, query); // escape the string for use in a URL
-		strcat(browser.dir, query); // append query to search URL
-		DisableMainWindow();
-		ShowAction("Loading...");
-	}
 
 	if(strncmp(browser.dir, "http:", 5) == 0)
 		size = http_request(browser.dir, NULL, buffer, 128*1024, SILENT);
@@ -1514,6 +1495,7 @@ static int ParsePLXPlaylist()
 	}
 
 	// attempt to parse buffer
+	bool plxFile = false;
 	int numEntries = 0;
 	int c, lineptr = 0;
 	char *line = NULL;
@@ -1546,7 +1528,11 @@ static int ParsePLXPlaylist()
 
 		if(sscanf(line, "%[^=]=%[^\n]", attribute, value) == 2)
 		{
-			if(strncmp(attribute, "type", 4) == 0)
+			if(strncmp(attribute, "version", 7) == 0)
+			{
+				plxFile = true;
+			}
+			else if(strncmp(attribute, "type", 4) == 0)
 			{
 				// we're on a new entry - add previous entry to list, if complete
 				if(newEntry.type > 0 && strlen(newEntry.name) > 0 &&
@@ -1609,7 +1595,7 @@ static int ParsePLXPlaylist()
 	{
 		free(list);
 
-		if(browserList[browser.selIndex].type == TYPE_SEARCH)
+		if(plxFile && browserList[browser.selIndex].type == TYPE_SEARCH)
 			return -5;
 		else
 			return -2;
@@ -1670,7 +1656,6 @@ int ParsePlaylistFile()
 {
 	int res;
 	char *ext = GetExt(browser.dir);
-	
 
 	// if this file has no extension, try parsing it as a plx anyway
 	if(ext == NULL || strcmp(ext, "plx") == 0)
@@ -1692,9 +1677,7 @@ int ParsePlaylistFile()
 					ErrorPrompt("Playlist does not contain any supported entries!");
 				break;
 			case -3: // blank search query
-				break;
 			case -5: // search query - no results
-				InfoPrompt("No Results Found", "Your search did not match any media files.");
 				break;
 		}
 
@@ -1852,7 +1835,6 @@ int ParseOnlineMedia()
 		browser.numEntries++;
 	}
 
-	char *ext;
 	char tmpaddress[MAXPATHLEN];
 	int dirLen = strlen(browser.dir);
 
@@ -1878,13 +1860,7 @@ int ParseOnlineMedia()
 			snprintf(browserList[browser.numEntries].image, MAXJOLIET, "%s", onlinemediaList[i].image);
 			browserList[browser.numEntries].length = 0;
 			browserList[browser.numEntries].mtime = 0;
-			browserList[browser.numEntries].type = TYPE_FILE;
-
-			ext = GetExt(onlinemediaList[i].address);
-
-			if(IsPlaylistExt(ext))
-				browserList[browser.numEntries].type = TYPE_PLAYLIST;
-
+			browserList[browser.numEntries].type = onlinemediaList[i].type;
 			browserList[browser.numEntries].icon = ICON_NONE;
 			browser.numEntries++;
 		}

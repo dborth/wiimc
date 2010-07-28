@@ -35,8 +35,8 @@ LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 MPLIBS	:=	-lmplayerwii -lavformat -lavcodec -lavutil -lpostproc -lswscale
 LIBS 	:= 	$(MPLIBS) -la52	-lfribidi -ljpeg -ldi -liconv -lpcrecpp -lpcre -lpng \
-			-lz	-lntfs -lfat -lwiiuse -lbte -logc -lfreetype -ljpeg -lmxml \
-			-ltinysmb
+			-lz -lntfs -lfat -lwiiuse -lbte -logc -lfreetype -ljpeg -lmxml \
+			-ltinysmb -lexif
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

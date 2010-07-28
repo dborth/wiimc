@@ -319,16 +319,13 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		else if(positionWiimote > scrollbarBoxBtn->GetMaxY())
 			positionWiimote = scrollbarBoxBtn->GetMaxY();
 
-		browser.pageIndex = (positionWiimote-8) / 120.0 * (browser.numEntries-1) - selectedItem;
+		browser.pageIndex = (positionWiimote-8) / (float)(height-136) * (browser.numEntries-1) - selectedItem;
 
 		if(browser.pageIndex <= 0)
-		{
 			browser.pageIndex = 0;
-		}
 		else if(browser.pageIndex+size >= browser.numEntries)
-		{
 			browser.pageIndex = browser.numEntries-size;
-		}
+
 		listChanged = true;
 		focus = false;
 	}

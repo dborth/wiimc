@@ -1,3 +1,4 @@
+
 /****************************************************************************
  * WiiMC
  * Tantric 2009-2010
@@ -32,6 +33,7 @@
 #include "utils/http.h"
 #include "utils/mload.h"
 #include "filelist.h"
+#include <libexif/exif-data.h>
 
 extern "C" {
 #include "mplayer/stream/url.h"
@@ -56,6 +58,8 @@ static GuiImageData * btnBottom = NULL;
 static GuiImageData * btnBottomOver = NULL;
 static GuiImageData * arrowRightSmall = NULL;
 static GuiImageData * pointer[4] = { NULL, NULL, NULL, NULL };
+static const u8 * pointerImg[4] = { NULL, NULL, NULL, NULL };
+static const u8 * pointerGrabImg[4] = { NULL, NULL, NULL, NULL };
 static GuiImageData throbber(throbber_png);
 static GuiImageData progressLeft(progressbar_left_png);
 static GuiImageData progressMid(progressbar_mid_png);
@@ -71,11 +75,14 @@ static GuiImageData volumeEmpty(volume_empty_png);
 static GuiImageData volumeLine(volume_line_png);
 static GuiImage * disabled = NULL;
 static GuiTrigger * trigA = NULL;
+static GuiTrigger * trigHeldA = NULL;
 static GuiTrigger * trigB = NULL;
 static GuiTrigger * trigLeft = NULL;
 static GuiTrigger * trigRight = NULL;
 static GuiTrigger * trigUp = NULL;
 static GuiTrigger * trigDown = NULL;
+static GuiTrigger * trigMinus = NULL;
+static GuiTrigger * trigPlus = NULL;
 
 static GuiImage * videoImg = NULL;
 static GuiButton * videosBtn = NULL;
@@ -120,6 +127,7 @@ static GuiImageData * actionbarBackward = NULL;
 static GuiImageData * actionbarPause = NULL;
 static GuiImageData * actionbarPlay = NULL;
 static GuiImageData * actionbarForward = NULL;
+static GuiImageData * actionbarRotate = NULL;
 static GuiImageData * actionbarSingle = NULL;
 static GuiImageData * actionbarContinuous = NULL;
 static GuiImageData * actionbarShuffle = NULL;
@@ -207,16 +215,22 @@ static GuiImage * picturebarPreviousImg = NULL;
 static GuiImage * picturebarNextImg = NULL;
 static GuiImage * picturebarSlideshowImg = NULL;
 static GuiImage * picturebarCloseImg = NULL;
+static GuiImage * picturebarRotateImg = NULL;
 
 static GuiTooltip * picturebarPreviousTip = NULL;
 static GuiTooltip * picturebarNextTip = NULL;
 static GuiTooltip * picturebarSlideshowTip = NULL;
 static GuiTooltip * picturebarCloseTip = NULL;
+static GuiTooltip * picturebarRotateTip = NULL;
 
 static GuiButton * picturebarPreviousBtn = NULL;
 static GuiButton * picturebarNextBtn = NULL;
 static GuiButton * picturebarSlideshowBtn = NULL;
 static GuiButton * picturebarCloseBtn = NULL;
+static GuiButton * picturebarRotateBtn = NULL;
+static GuiButton * picturebarZoomInBtn = NULL;
+static GuiButton * picturebarZoomOutBtn = NULL;
+static GuiButton * picturebarBtn = NULL;
 
 int menuCurrent = MENU_BROWSE_VIDEOS;
 static int menuPrevious = MENU_BROWSE_VIDEOS;
@@ -2562,9 +2576,16 @@ static int loadPictures = 0; // reload pictures
 
 typedef struct
 {
+	float rotation;
 	GuiImageData *image;
 	int index;
 } picData;
+
+typedef struct
+{
+	int x;
+	int y;
+} point;
 
 static GuiImage *pictureImg = NULL;
 static GuiButton *pictureBtn = NULL;
@@ -2572,9 +2593,23 @@ static picData pictures[NUM_PICTURES];
 static int pictureIndexLoaded = -1;
 static int pictureIndexLoading = -1;
 static int pictureLoaded = -1;
+static float pictureAngle = 0.0f;
+static float pictureAngleOld = 0.0f;
+static float pictureZoomScale = 1.0f;
+static float pictureZoomScaleOld = 1.0f;
+static const point DEFAULT_POS = {0, 0}; 
+static point pictureZoomPos = {0, 0};
+static point pictureZoomPosOld = {0, 0};
+static point startDrag = {0, 0};
+static point endDrag = {0, 0};
 
 static int closePictureViewer = 1; // 0 = picture viewer is open
 static bool setPicture = false;
+static bool doMove = false;
+static bool doRotate = false;
+static bool doZoom = false;
+static bool doDrag = false;
+
 static u64 slideprev, slidenow; // slideshow timer
 
 static void AllocPicBuffer()
@@ -2659,6 +2694,39 @@ static void CleanupPictures(int selIndex)
 	}
 }
 
+static float getExifOrientation(u8* imgdata, int size)
+{
+	float ret = 0.0f;
+	ExifEntry *entry;
+	ExifData *exif_data = exif_data_new_from_data(imgdata, size);
+	ExifByteOrder byte_order = exif_data_get_byte_order(exif_data);
+	if ((entry = exif_content_get_entry(exif_data->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION)))
+	{
+		u16 rotation = exif_get_short(entry->data, byte_order);
+		switch (rotation)
+		{
+			case 1:
+			case 2:
+				ret = 0.0f;
+				break;
+			case 3:
+			case 4:
+				ret = 180.0f;
+				break;
+			case 5:
+			case 6:
+				ret = 90.0f;
+				break;
+			case 7:
+			case 8:
+				ret = 270.0f;
+				break;
+		}
+	}
+	exif_data_free(exif_data);
+	return ret;
+}
+
 static void *PictureThread (void *arg)
 {
 	int selIndex;
@@ -2714,6 +2782,7 @@ restart:
 						goto restart;
 
 					pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
+					pictures[i].rotation = getExifOrientation(picBuffer, size);
 
 					if(pictures[i].image->GetImage() != NULL)
 					{
@@ -2724,6 +2793,7 @@ restart:
 					{
 						delete pictures[i].image;
 						pictures[i].image = NULL;
+						pictures[i].rotation = 0.0f;
 					}
 				}
 
@@ -2763,6 +2833,7 @@ restart:
 					goto restart;
 
 				pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
+				pictures[i].rotation = getExifOrientation(picBuffer, size);
 
 				if(pictures[i].image->GetImage() != NULL)
 				{
@@ -2775,10 +2846,9 @@ restart:
 				{
 					delete pictures[i].image;
 					pictures[i].image = NULL;
+					pictures[i].rotation = 0.0f;
 				}
-
 				pictureIndexLoading = -1;
-
 				next++;
 			}
 		}
@@ -2850,6 +2920,118 @@ static void ChangePicture(int dir)
 	}
 	browser.selIndex = newIndex;
 	loadPictures = 1;
+	pictureAngle = 0.0f;
+	pictureAngleOld = 0.0f;
+	pictureZoomScale = 1.0f;
+	pictureZoomScaleOld = 1.0f;
+	pictureZoomPos = DEFAULT_POS;
+	pictureZoomPosOld = DEFAULT_POS;
+}
+
+static void RotatePicture(float angle)
+{
+	doRotate = true;
+	setPicture = true;
+	pictureAngle += angle;
+
+	if (pictureAngle >= 360.0f)
+		pictureAngle -= 360.0f;
+
+	pictureAngleOld = pictureAngle - angle;
+}
+
+static void ZoomPicture(float zoom, int chan)
+{
+	// only allow to zoom out once/zoom in twice
+	if ((pictureZoomScale * zoom >= 0.5f) && (pictureZoomScale * zoom <= 4.0f))
+	{
+		pictureZoomPosOld = pictureZoomPos;
+		pictureZoomScaleOld = pictureZoomScale;
+		pictureZoomScale *= zoom;
+		setPicture = true;
+		doZoom = true;
+		if (pictureZoomScale > 1.0f)
+		{
+			picturebarBtn->SetHoldable(true);
+
+			if(userInput[chan].wpad->ir.valid)
+			{
+				pictureZoomPos.x +=  (screenwidth / 2 - userInput[chan].wpad->ir.x);
+				pictureZoomPos.y +=  (screenheight / 2 - userInput[chan].wpad->ir.y);
+			}
+			pictureZoomPos.x *= zoom;
+			pictureZoomPos.y *= zoom;
+		}
+		else
+		{
+			picturebarBtn->SetHoldable(false);
+			pointer[chan]->SetImage(pointerImg[chan]);
+			pictureZoomPos = DEFAULT_POS;
+		}
+	}
+}
+
+static bool MovePicture(int x, int y)
+{
+	if (doMove)
+		return false;
+
+	doMove = true;
+	pictureZoomPosOld = pictureZoomPos;
+	setPicture = true;
+	pictureZoomPos.x -= x;
+	pictureZoomPos.y -= y;
+	return true;
+}
+
+static void animatePicture(GuiImage *pic, picData *data)
+{
+	if (!doZoom && !doRotate && !doMove)
+	{
+		if ((int) (pictureAngle + data->rotation) % 180 == 0)
+			pic->SetScale(int(screenwidth * pictureZoomScale), int(screenheight * pictureZoomScale));
+		else
+			pic->SetScale(int(screenheight * pictureZoomScale), int(screenwidth * pictureZoomScale));
+		pic->SetAngle(pictureAngle + data->rotation);
+		pic->SetPosition(pictureZoomPos.x, pictureZoomPos.y);
+		return;
+	}
+
+	float scaleOld = pic->GetScale();
+	float scaleNew = scaleOld;
+
+	if (doRotate)
+	{
+		if ((int) (pictureAngle + data->rotation) % 180 == 0)
+			pic->SetScale(int(screenwidth * pictureZoomScale), int(screenheight * pictureZoomScale));
+		else
+			pic->SetScale(int(screenheight * pictureZoomScale), int(screenwidth * pictureZoomScale));
+		scaleNew = pic->GetScale();
+	}
+	else if (doZoom)
+	{
+		scaleNew = scaleOld * pictureZoomScale / pictureZoomScaleOld;
+	}
+
+	int steps = 45;
+	if (doRotate)
+		steps = 90;
+	if (doMove)
+		steps = 15;
+
+	for (int i = 1; i <= steps; i++)
+	{
+		if (doRotate)
+			pic->SetAngle(data->rotation + pictureAngleOld + (pictureAngle - pictureAngleOld) * i / steps);
+		if (doRotate || doZoom)
+			pic->SetScale(scaleOld + (scaleNew - scaleOld) * i / steps);
+		if (doMove || doZoom)
+			pic->SetPosition(pictureZoomPosOld.x + (pictureZoomPos.x - pictureZoomPosOld.x) * i / steps, pictureZoomPosOld.y + (pictureZoomPos.y - pictureZoomPosOld.y) * i / steps);
+		usleep(THREAD_SLEEP * 10);
+	}
+	doMove = false;
+	doRotate = false;
+	doZoom = false;
 }
 
 static void ToggleSlideshow()
@@ -2871,17 +3053,54 @@ static void ToggleSlideshow()
 	}
 }
 
+static void PictureZoomDragCallback(void * ptr)
+{
+	GuiButton * b = (GuiButton *) ptr;
+	int chan = b->GetStateChan();
+	if (chan < 0)
+		return;
+
+	if (b->GetState() == STATE_HELD)
+	{
+		pointer[chan]->SetImage(pointerGrabImg[chan]);
+		if (!userInput[chan].wpad->ir.valid)
+			return;
+		if (doDrag)
+		{
+			endDrag.x = userInput[chan].wpad->ir.x;
+			endDrag.y = userInput[chan].wpad->ir.y;
+			if (endDrag.x != startDrag.x || endDrag.y != startDrag.y)
+			{
+				if (MovePicture(startDrag.x - endDrag.x, startDrag.y - endDrag.y))
+					startDrag = endDrag;
+			}
+		}
+		else
+		{
+			startDrag.x = userInput[chan].wpad->ir.x;
+			startDrag.y = userInput[chan].wpad->ir.y;
+			doDrag = true;
+			pointer[chan]->SetImage(pointerGrabImg[chan]);
+		}
+	}
+	else
+	{
+		doDrag = false;
+		pointer[chan]->SetImage(pointerImg[chan]);
+	}
+}
+
 static void PictureViewer()
 {
 	int currentIndex = -1;
 	closePictureViewer = 0;
 
 	GuiWindow * oldWindow = mainWindow;
-	GuiImage * pictureFullImg = new GuiImage;
-	pictureFullImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-
+	GuiImage pictureImg;
+	pictureImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	picturebarBtn->SetImage(&pictureImg);
 	GuiWindow * w = new GuiWindow(screenwidth, screenheight);
-	w->Append(pictureFullImg);
+	w->Append(picturebarBtn);
 	w->Append(picturebar);
 
 	SuspendGui();
@@ -2890,6 +3109,13 @@ static void PictureViewer()
 
 	int irCount = 0;
 	bool irLast = false;
+
+	pictureAngle = 0.0f;
+	pictureAngleOld = 0.0f;
+	pictureZoomScale = 1.0f;
+	pictureZoomScaleOld = 1.0f;
+	pictureZoomPos = DEFAULT_POS;
+	pictureZoomPosOld = DEFAULT_POS;
 
 	while(closePictureViewer == 0 && !guiShutdown)
 	{
@@ -2924,10 +3150,15 @@ static void PictureViewer()
 			int found = FoundPicture(browser.selIndex);
 			if(found >= 0)
 			{
-				SuspendGui();
-				pictureFullImg->SetImage(pictures[found].image);
-				pictureFullImg->SetScale(screenwidth, screenheight);
-				ResumeGui();
+				if(pictureImg.GetImage() != pictures[found].image->GetImage())
+				{
+					SuspendGui();
+					pictureImg.SetImage(pictures[found].image);
+					picturebarBtn->SetHoldable(false);
+					picturebarBtn->ResetState();
+					ResumeGui();
+				}
+				animatePicture(&pictureImg, &pictures[found]);
 			}
 		}
 
@@ -2973,10 +3204,14 @@ static void PictureViewer()
 	}
 
 	SuspendGui();
+
+	// make sure pointer hands are reset
+	for(int i=0; i<4; i++)
+		pointer[i]->SetImage(pointerImg[i]);
+
 	mainWindow = oldWindow;
 	ResumeGui();
 	delete w;
-	delete pictureFullImg;
 
 	if(slideshow != 0)
 		ToggleSlideshow();
@@ -5725,25 +5960,70 @@ static void PictureCloseCallback(void * ptr)
 	}
 }
 
+static void PictureRotateCallback(void * ptr)
+{
+	GuiButton * b = (GuiButton *)ptr;
+	if(b->GetState() == STATE_CLICKED)
+	{
+		b->ResetState();
+		RotatePicture(90.0f);
+	}    
+}
+
+static void PictureZoomInCallback(void * ptr)
+{
+	GuiButton * b = (GuiButton *)ptr;
+	if(b->GetState() == STATE_CLICKED)
+	{
+		int chan = b->GetStateChan();
+		b->ResetState();
+		if (!slideshow)
+			ZoomPicture(2.0f, chan);
+	}    
+}
+
+static void PictureZoomOutCallback(void * ptr)
+{
+	GuiButton * b = (GuiButton *)ptr;
+	if(b->GetState() == STATE_CLICKED)
+	{
+		int chan = b->GetStateChan();
+		b->ResetState();
+		if (!slideshow)
+			ZoomPicture(0.5f, chan);
+	}
+}
+
 static void SetupGui()
 {	
 	static int guiSetup = 0;
 	
 	if(guiSetup)
 		return;
-	
+
 	// pointers
-	
-	pointer[0] = new GuiImageData(player1_point_png);
-	pointer[1] = new GuiImageData(player2_point_png);
-	pointer[2] = new GuiImageData(player3_point_png);
-	pointer[3] = new GuiImageData(player4_point_png);
+
+	pointerImg[0] = player1_point_png;
+	pointerImg[1] = player2_point_png;
+	pointerImg[2] = player3_point_png;
+	pointerImg[3] = player4_point_png;
+	pointerGrabImg[0] = player1_grab_png;
+	pointerGrabImg[1] = player2_grab_png;
+	pointerGrabImg[2] = player3_grab_png;
+	pointerGrabImg[3] = player4_grab_png;
+	pointer[0] = new GuiImageData(pointerImg[0]);
+	pointer[1] = new GuiImageData(pointerImg[1]);
+	pointer[2] = new GuiImageData(pointerImg[2]);
+	pointer[3] = new GuiImageData(pointerImg[3]);
 
 	// triggers
 
 	trigA = new GuiTrigger;
 	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	
+
+	trigHeldA = new GuiTrigger;
+	trigHeldA->SetHeldTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
 	trigB = new GuiTrigger;
 	trigB->SetButtonOnlyTrigger(-1, WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B, PAD_BUTTON_B);
 	
@@ -5758,6 +6038,12 @@ static void SetupGui()
 
 	trigDown = new GuiTrigger;
 	trigDown->SetButtonOnlyTrigger(-1, WPAD_BUTTON_DOWN | WPAD_CLASSIC_BUTTON_DOWN, PAD_BUTTON_DOWN);
+
+	trigPlus = new GuiTrigger;
+	trigPlus->SetButtonOnlyTrigger(-1, WPAD_BUTTON_PLUS | WPAD_CLASSIC_BUTTON_PLUS, PAD_BUTTON_X);
+
+	trigMinus = new GuiTrigger;
+	trigMinus->SetButtonOnlyTrigger(-1, WPAD_BUTTON_MINUS | WPAD_CLASSIC_BUTTON_MINUS, PAD_BUTTON_Y);
 
 	// images
 
@@ -5777,6 +6063,7 @@ static void SetupGui()
 	actionbarPause = new GuiImageData(actionbar_pause_png);
 	actionbarPlay = new GuiImageData(actionbar_play_png);
 	actionbarForward = new GuiImageData(actionbar_forward_png);
+	actionbarRotate = new  GuiImageData(actionbar_continuous_png);
 	actionbarSingle = new GuiImageData(actionbar_single_png);
 	actionbarContinuous = new GuiImageData(actionbar_continuous_png);
 	actionbarShuffle = new GuiImageData(actionbar_shuffle_png);
@@ -6111,9 +6398,9 @@ static void SetupGui()
 	picturebarLeftImg = new GuiImage(actionbarLeft);
 	picturebarMidImg = new GuiImage(actionbarMid);
 	picturebarMidImg->SetPosition(20, 0);
-	picturebarMidImg->SetTile(9); // 20x9 = 180
+	picturebarMidImg->SetTile(12); // 20x12 = 240
 	picturebarRightImg = new GuiImage(actionbarRight);
-	picturebarRightImg->SetPosition(200, 0);
+	picturebarRightImg->SetPosition(260, 0);
 
 	picturebarCloseImg = new GuiImage(actionbarClose);
 	picturebarCloseImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -6122,13 +6409,16 @@ static void SetupGui()
 	picturebarSlideshowImg = new GuiImage(actionbarPlay);
 	picturebarSlideshowImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	picturebarNextImg = new GuiImage(actionbarForward);
-	picturebarNextImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	picturebarNextImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);	
+	picturebarRotateImg = new GuiImage(actionbarRotate);
+	picturebarRotateImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);		
 
 	picturebarPreviousTip = new GuiTooltip("Previous");
 	picturebarNextTip = new GuiTooltip("Next");
+	picturebarRotateTip = new GuiTooltip("Rotate");
 	picturebarSlideshowTip = new GuiTooltip("Start Slideshow");
 	picturebarCloseTip = new GuiTooltip("Close");
-	
+
 	picturebarCloseBtn = new GuiButton(40, 40);
 	picturebarCloseBtn->SetPosition(10, 4);
 	picturebarCloseBtn->SetImage(picturebarCloseImg);
@@ -6148,7 +6438,7 @@ static void SetupGui()
 	picturebarPreviousBtn->SetSelectable(false);
 	picturebarPreviousBtn->SetUpdateCallback(PicturePreviousCallback);
 	picturebarPreviousBtn->SetEffectGrow();
-	
+
 	picturebarSlideshowBtn = new GuiButton(40, 40);
 	picturebarSlideshowBtn->SetPosition(130, 4);
 	picturebarSlideshowBtn->SetImage(picturebarSlideshowImg);
@@ -6157,7 +6447,7 @@ static void SetupGui()
 	picturebarSlideshowBtn->SetSelectable(false);
 	picturebarSlideshowBtn->SetUpdateCallback(PictureSlideshowCallback);
 	picturebarSlideshowBtn->SetEffectGrow();
-	
+
 	picturebarNextBtn = new GuiButton(40, 40);
 	picturebarNextBtn->SetPosition(190, 4);
 	picturebarNextBtn->SetImage(picturebarNextImg);
@@ -6167,8 +6457,34 @@ static void SetupGui()
 	picturebarNextBtn->SetSelectable(false);
 	picturebarNextBtn->SetUpdateCallback(PictureNextCallback);
 	picturebarNextBtn->SetEffectGrow();
-	
-	picturebar = new GuiWindow(240, 48);
+
+	picturebarRotateBtn = new GuiButton(40, 40);
+	picturebarRotateBtn->SetPosition(250,4);
+	picturebarRotateBtn->SetImage(picturebarRotateImg);
+	picturebarRotateBtn->SetTooltip(picturebarRotateTip);
+	picturebarRotateBtn->SetTrigger(trigA);
+	picturebarRotateBtn->SetSelectable(false);
+	picturebarRotateBtn->SetUpdateCallback(PictureRotateCallback);
+	picturebarRotateBtn->SetEffectGrow();
+
+	// zoom buttons	
+	picturebarZoomInBtn = new GuiButton(0, 0);
+	picturebarZoomInBtn->SetTrigger(trigPlus);
+	picturebarZoomInBtn->SetUpdateCallback(PictureZoomInCallback);
+	picturebarZoomInBtn->SetSelectable(false);
+	picturebarZoomOutBtn = new GuiButton(0, 0);
+	picturebarZoomOutBtn->SetTrigger(trigMinus);
+	picturebarZoomOutBtn->SetUpdateCallback(PictureZoomOutCallback);
+	picturebarZoomOutBtn->SetSelectable(false);
+
+	picturebarBtn = new GuiButton(screenwidth, screenheight);
+	picturebarBtn->SetPosition(0, 0);
+	picturebarBtn->SetTrigger(trigHeldA);
+	picturebarBtn->SetSelectable(false);
+	picturebarBtn->SetHoldable(false);
+	picturebarBtn->SetUpdateCallback(PictureZoomDragCallback);
+
+	picturebar = new GuiWindow(300, 48);
 	picturebar->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
 	picturebar->SetPosition(0, -30);
 
@@ -6179,6 +6495,9 @@ static void SetupGui()
 	picturebar->Append(picturebarPreviousBtn);
 	picturebar->Append(picturebarSlideshowBtn);
 	picturebar->Append(picturebarNextBtn);
+	picturebar->Append(picturebarRotateBtn);
+	picturebar->Append(picturebarZoomInBtn);
+	picturebar->Append(picturebarZoomOutBtn);
 
 	pictureImg = new GuiImage;
 	pictureImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -6195,6 +6514,7 @@ static void SetupGui()
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
 		pictures[i].image = NULL;
+		pictures[i].rotation = 0.0f;
 		pictures[i].index = -1;
 	}
 

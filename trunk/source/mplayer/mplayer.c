@@ -165,6 +165,7 @@ static void reload_subtitles();
 
 int controlledbygui=1;
 int pause_gui=0;
+int wii_error = 0;
 int large_video = 0; // hack to keep track of if video width > 1024 
 static int pause_low_cache=0;
 
@@ -3201,6 +3202,7 @@ while (!filename)
 		controlledbygui = 0; // none playing, so discard
 }
 
+wii_error = 0;
 controlledbygui = 0;
 mpctx->eof=0;
 pause_low_cache=1;
@@ -3779,6 +3781,16 @@ if(!reinit_video_chain()) {
     goto main; // exit_player(MSGTR_Exit_error);
   }
 }
+
+#ifdef GEKKO
+// check if video has a higher resolution than the Wii can handle
+if(mpctx->sh_video->disp_w > 1280)
+{
+	wii_error = 1; // resolution too large
+	goto goto_next_file;
+}
+#endif
+
    if(vo_flags & 0x08 && vo_spudec)
       spudec_set_hw_spu(vo_spudec,mpctx->video_out);
 
@@ -4373,8 +4385,6 @@ if(ass_library)
 remove_subtitles();
 
 #ifdef GEKKO
-if (mpctx->sh_audio) mpctx->audio_out->reset();
-
 printf("mplayer: exit\n");
 
 goto play_next_file;

@@ -28,6 +28,7 @@ enum
 typedef struct
 {
 	char dir[MAXPATHLEN]; // directory path of browserList
+	int menu; // current menu area of the browser
 	char lastdir[MAXPATHLEN]; // last browsed directory
 	int numEntries; // # of entries in browserList
 	int selIndex; // currently selected index of browserList

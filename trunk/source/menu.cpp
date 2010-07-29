@@ -49,6 +49,7 @@ extern char streamname[128]; // ICY data (http.c)
 extern int streamtitle_changed;
 extern int streamurl_changed;
 extern int streamname_changed;
+extern int wii_error; // to display a specific error when loading fails
 
 // frequently used objects
 
@@ -313,7 +314,7 @@ void SaveFolder()
 	if(WiiSettings.lockFolders)
 		return;
 
-	switch(menuCurrent)
+	switch(browser.menu)
 	{
 		case MENU_BROWSE_VIDEOS:
 			strcpy(WiiSettings.videosFolder, browser.dir);
@@ -609,25 +610,28 @@ static void *GuiThread (void *arg)
 		mainWindow->Update(&userInput[1]);
 		mainWindow->Update(&userInput[0]);
 
-		for(i=3; i >= 0; i--)
+		if(mainWindow->GetState() != STATE_DISABLED)
 		{
-			if(userInput[i].wpad->btns_d & (WPAD_BUTTON_1 | WPAD_CLASSIC_BUTTON_X))
+			for(i=3; i >= 0; i--)
 			{
-				int newMenu = menuCurrent + 1;
-				if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
-					newMenu++;
-				if(newMenu > MENU_SETTINGS)
-					newMenu = MENU_BROWSE_VIDEOS;
-				ChangeMenu(newMenu);
-			}
-			else if(userInput[i].wpad->btns_d & (WPAD_BUTTON_2 | WPAD_CLASSIC_BUTTON_Y))
-			{
-				int newMenu = menuCurrent - 1;
-				if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
-					newMenu--;
-				if(newMenu < MENU_BROWSE_VIDEOS)
-					newMenu = MENU_SETTINGS;
-				ChangeMenu(newMenu);
+				if(userInput[i].wpad->btns_d & (WPAD_BUTTON_1 | WPAD_CLASSIC_BUTTON_X))
+				{
+					int newMenu = menuCurrent + 1;
+					if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
+						newMenu++;
+					if(newMenu > MENU_SETTINGS)
+						newMenu = MENU_BROWSE_VIDEOS;
+					ChangeMenu(newMenu);
+				}
+				else if(userInput[i].wpad->btns_d & (WPAD_BUTTON_2 | WPAD_CLASSIC_BUTTON_Y))
+				{
+					int newMenu = menuCurrent - 1;
+					if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
+						newMenu--;
+					if(newMenu < MENU_BROWSE_VIDEOS)
+						newMenu = MENU_SETTINGS;
+					ChangeMenu(newMenu);
+				}
 			}
 		}
 
@@ -1795,7 +1799,12 @@ static int LoadNewFile()
 	if(!wiiAudioOnly())
 	{
 		playlistIndex = -1;
-		ErrorPrompt("Error loading file!");
+
+		if(wii_error == 1)
+			ErrorPrompt("Resolution exceeds maximum allowed (1280x720)!");
+		else
+			ErrorPrompt("Error loading file!");
+
 		return 0;
 	}
 
@@ -1896,6 +1905,8 @@ static void MenuBrowse(int menu)
 		default:
 			return;
 	}
+
+	browser.menu = menu;
 
 	GuiTrigger trigPlus;
 	trigPlus.SetButtonOnlyTrigger(-1, WPAD_BUTTON_PLUS | WPAD_CLASSIC_BUTTON_PLUS, PAD_BUTTON_X);
@@ -3245,6 +3256,7 @@ static void MenuBrowsePictures()
 	}
 
 	strcpy(browser.dir, WiiSettings.picturesFolder);
+	browser.menu = MENU_BROWSE_PICTURES;
 
 	int pagesize = 11;
 	float done;

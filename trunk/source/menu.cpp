@@ -1800,6 +1800,9 @@ static int LoadNewFile()
 	}
 
 	// we are playing audio
+	FindFile(); // try to find this file
+	findLoadedFile = 2; // trigger browser to update
+
 	wiiSetVolume(WiiSettings.volume);
 
 	if(wiiIsPaused())

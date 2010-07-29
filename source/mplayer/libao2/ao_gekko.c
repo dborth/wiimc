@@ -156,7 +156,6 @@ static int init(int rate, int channels, int format, int flags)
 
 	playing = false;
 
-	AUDIO_Init(NULL);
 	AUDIO_SetDSPSampleRate(quality);
 	AUDIO_RegisterDMACallback(switch_buffers);
 

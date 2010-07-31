@@ -621,3 +621,6 @@ msgstr "Suporte à DVD"
 
 msgid "Enabled"
 msgstr "Habilitado"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "A resolução excede o máximo permitido (1280x720)!"

@@ -617,7 +617,16 @@ msgid "Audio Language"
 msgstr "音訊語言軌"
 
 msgid "DVD Support"
-msgstr ""
+msgstr "DVD支援"
 
 msgid "Enabled"
-msgstr ""
+msgstr "啟用"
+
+msgid "Error loading YouTube file!"
+msgstr "YouTube檔案載入錯誤！"
+
+msgid "Rotate"
+msgstr "旋轉"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "解析度超過最大允許像素(1280x720)！"

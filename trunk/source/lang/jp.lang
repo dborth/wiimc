@@ -11,10 +11,10 @@ msgid "Pictures"
 msgstr "ピクチャー"
 
 msgid "Online Media"
-msgstr "オンライン・メディア"
+msgstr "オンラインメディア"
 
 msgid "Please Wait"
-msgstr "お待ちください.."
+msgstr "お待ちください…"
 
 msgid "Error"
 msgstr "エラー"
@@ -23,7 +23,7 @@ msgid "OK"
 msgstr "ＯＫ"
 
 msgid "Retry"
-msgstr "リトライ"
+msgstr "再試行"
 
 msgid "Cancel"
 msgstr "キャンセル"
@@ -41,7 +41,7 @@ msgid "Pause"
 msgstr "一時停止"
 
 msgid "Single Play"
-msgstr "シングル再生"
+msgstr "１曲だけ再生"
 
 msgid "Continuous Play"
 msgstr "連続再生"
@@ -62,7 +62,7 @@ msgid "Restart"
 msgstr "曲の最初へ"
 
 msgid "Loading..."
-msgstr "読込み中.."
+msgstr "読込み中…"
 
 msgid "Global"
 msgstr "共通設定"
@@ -101,7 +101,7 @@ msgid "Forward"
 msgstr "先送り"
 
 msgid "Single"
-msgstr "シングル再生"
+msgstr "一曲だけ再生"
 
 msgid "now playing"
 msgstr "再生ファイル"
@@ -122,19 +122,19 @@ msgid "Go back"
 msgstr "戻る"
 
 msgid "Update Available"
-msgstr "アップデートのお知らせ"
+msgstr "更新のお知らせ"
 
 msgid "An update is available!"
-msgstr "最新版にアップデートできます"
+msgstr "最新版に更新きます"
 
 msgid "Update now"
-msgstr "アップデートする"
+msgstr "更新する"
 
 msgid "Update later"
 msgstr "キャンセル"
 
 msgid "Online media file not found."
-msgstr "オンライン・メディアファイルが見つかりません"
+msgstr "オンラインメディアファイルが見つかりません"
 
 msgid "Unrecognized DVD format!"
 msgstr "認識できない種類のＤＶＤです"
@@ -158,10 +158,10 @@ msgid "Settings - Music"
 msgstr "設定 - ミュージック"
 
 msgid "Settings - Pictures"
-msgstr "設定 - ピクチャ"
+msgstr "設定 - ピクチャー"
 
 msgid "Settings - Online Media"
-msgstr "設定 - オンライン・メディア"
+msgstr "設定 - オンラインメディア"
 
 msgid "Settings - Network"
 msgstr "設定 - ネットワーク"
@@ -284,7 +284,7 @@ msgid "Delete Site"
 msgstr "サイトを削除する"
 
 msgid "Are you sure that you want to delete this site?"
-msgstr "本当に削除してよいですか？"
+msgstr "本当に削除しますか？"
 
 msgid "Port"
 msgstr "ポート"
@@ -356,7 +356,7 @@ msgid "Please install IOS 202 for DVD support."
 msgstr "ＤＶＤ再生にはIOS 202のインストールが必要です"
 
 msgid "Loading DVD..."
-msgstr "ＤＶＤをロード中.."
+msgstr "ＤＶＤをロード中…"
 
 msgid "No disc inserted!"
 msgstr "ディスクが挿入されていません！"
@@ -392,7 +392,7 @@ msgid "Error opening file!"
 msgstr "ファイルの表示に失敗しました"
 
 msgid "Saving..."
-msgstr "セーブ中.."
+msgstr "セーブ中…"
 
 msgid "Error creating file!"
 msgstr "ファイルの作成に失敗しました"
@@ -416,7 +416,7 @@ msgid "Update failed!"
 msgstr "アップデートに失敗しました"
 
 msgid "Initializing network..."
-msgstr "ネットワークを初期化中.."
+msgstr "ネットワークを初期化中…"
 
 msgid "Check settings file."
 msgstr "設定ファイルを確認してください"
@@ -431,7 +431,7 @@ msgid "Invalid network share settings"
 msgstr "ネットワーク共有設定が無効です"
 
 msgid "Connecting to network share..."
-msgstr "共有フォルダに接続中.."
+msgstr "共有フォルダに接続中…"
 
 msgid "Failed to connect to network share."
 msgstr "共有フォルダへの接続に失敗しました"
@@ -449,7 +449,7 @@ msgid "Invalid FTP site settings"
 msgstr "ＦＴＰの設定が無効です"
 
 msgid "Connecting to FTP site..."
-msgstr "ＦＴＰサイトに接続中.."
+msgstr "ＦＴＰサイトに接続中…"
 
 msgid "Failed to connect to FTP site."
 msgstr "ＦＴＰサイトへの接続に失敗しました"
@@ -461,7 +461,7 @@ msgid "Could not create folder"
 msgstr "フォルダを作成できませんでした"
 
 msgid "Saving settings..."
-msgstr "設定をセーブ中.."
+msgstr "設定をセーブ中…"
 
 msgid "Could not save settings to"
 msgstr "設定をセーブできませんでした"
@@ -488,7 +488,7 @@ msgid "Version"
 msgstr "バージョン"
 
 msgid "Buffering..."
-msgstr "バッファ中.."
+msgstr "バッファ中…"
 
 msgid "Buffering"
 msgstr "バッファ中"
@@ -533,7 +533,7 @@ msgid "Out of Memory"
 msgstr "メモリ不足エラー"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr "画像を読み込むための 空きメモリが不足しています"
+msgstr "画像を表示するための 空きメモリが不足しています"
 
 msgid "Close MPlayer"
 msgstr "閉じる"
@@ -551,10 +551,10 @@ msgid "This playlist contains more entries than the maximum allowed (2000). Not 
 msgstr "再生リストのエントリ数が多過ぎます 全てを表示できません (最大値:2,000)"
 
 msgid "Downloading..."
-msgstr "ダウンロード中.."
+msgstr "ダウンロード中…"
 
 msgid "Unzipping..."
-msgstr "ファイル展開中.."
+msgstr "ファイル展開中…"
 
 msgid "Color"
 msgstr "色"
@@ -605,7 +605,7 @@ msgid "Auto-Play Next Video"
 msgstr "自動連続再生"
 
 msgid "Adding files to playlist..."
-msgstr "再生リストに追加中.."
+msgstr "再生リストに追加中…"
 
 msgid "Browser Folders"
 msgstr "フォルダ表示設定"
@@ -624,3 +624,12 @@ msgstr "ＤＶＤのサポート"
 
 msgid "Enabled"
 msgstr "有効"
+
+msgid "Error loading YouTube file!"
+msgstr "YouTubeファイルのロードに失敗しました！"
+
+msgid "Rotate"
+msgstr "回転する"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "解像度が最大値(1280x720)を超えています！"

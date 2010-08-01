@@ -11,10 +11,10 @@ msgid "Pictures"
 msgstr "ピクチャー"
 
 msgid "Online Media"
-msgstr "オンラインメディア"
+msgstr "ネットメディア"
 
 msgid "Please Wait"
-msgstr "お待ちください…"
+msgstr "お待ちください"
 
 msgid "Error"
 msgstr "エラー"
@@ -62,7 +62,7 @@ msgid "Restart"
 msgstr "曲の最初へ"
 
 msgid "Loading..."
-msgstr "読込み中…"
+msgstr "読み込み中…"
 
 msgid "Global"
 msgstr "共通設定"
@@ -125,7 +125,7 @@ msgid "Update Available"
 msgstr "更新のお知らせ"
 
 msgid "An update is available!"
-msgstr "最新版に更新きます"
+msgstr "最新版に更新できます"
 
 msgid "Update now"
 msgstr "更新する"
@@ -134,7 +134,7 @@ msgid "Update later"
 msgstr "キャンセル"
 
 msgid "Online media file not found."
-msgstr "オンラインメディアファイルが見つかりません"
+msgstr "ネットメディアファイルが見つかりません"
 
 msgid "Unrecognized DVD format!"
 msgstr "認識できない種類のＤＶＤです"
@@ -161,7 +161,7 @@ msgid "Settings - Pictures"
 msgstr "設定 - ピクチャー"
 
 msgid "Settings - Online Media"
-msgstr "設定 - オンラインメディア"
+msgstr "設定 - ネットメディア"
 
 msgid "Settings - Network"
 msgstr "設定 - ネットワーク"
@@ -260,7 +260,7 @@ msgid "Delete Share"
 msgstr "共有を削除する"
 
 msgid "Are you sure that you want to delete this share?"
-msgstr "本当に削除してよいですか？"
+msgstr "本当に削除しますか？"
 
 msgid "IP"
 msgstr "ＩＰアドレス"
@@ -293,7 +293,7 @@ msgid "Rewind / Fast Forward"
 msgstr "後戻し／先送り時間"
 
 msgid "Error loading file!"
-msgstr "ファイルが読み込めません"
+msgstr "ファイルの読み込みでエラーが発生しました"
 
 msgid "Resume"
 msgstr "レジューム"
@@ -308,7 +308,7 @@ msgid "Slideshow Delay"
 msgstr "スライドショーの切替時間"
 
 msgid "Online Media Folder"
-msgstr "オンライン・メディアフォルダ"
+msgstr "ネットメディアフォルダ"
 
 msgid "Add SMB Share"
 msgstr "ＳＭＢ設定"
@@ -356,7 +356,7 @@ msgid "Please install IOS 202 for DVD support."
 msgstr "ＤＶＤ再生にはIOS 202のインストールが必要です"
 
 msgid "Loading DVD..."
-msgstr "ＤＶＤをロード中…"
+msgstr "ＤＶＤを読み込み中…"
 
 msgid "No disc inserted!"
 msgstr "ディスクが挿入されていません！"
@@ -368,7 +368,7 @@ msgid "Up One Level"
 msgstr "上の階層へ.."
 
 msgid "Error opening"
-msgstr "開けません"
+msgstr "表示処理中にエラーが発生しました"
 
 msgid "Warning"
 msgstr "警告"
@@ -377,7 +377,7 @@ msgid "One or more pictures within this folder exceeds the maximum size (6 MB) a
 msgstr "６ＭＢ以上の画像ファイルがフォルダ内に存在します 該当する画像ファイルは表示できません"
 
 msgid "Error loading playlist!"
-msgstr "再生リストをロードできません"
+msgstr "再生リストの読み込み中にエラーが発生しました"
 
 msgid "Playlist does not contain any supported entries!"
 msgstr "再生リストにサポートしているエントリが 含まれていません"
@@ -389,16 +389,16 @@ msgid "Your search did not match any media files."
 msgstr "検索条件に合うメディアファイルが 見つかりませんでした"
 
 msgid "Error opening file!"
-msgstr "ファイルの表示に失敗しました"
+msgstr "ファイルの表示処理中にエラーが発生しました"
 
 msgid "Saving..."
-msgstr "セーブ中…"
+msgstr "保存中…"
 
 msgid "Error creating file!"
-msgstr "ファイルの作成に失敗しました"
+msgstr "ファイルの作成中にエラーが発生しました"
 
 msgid "Error saving file!"
-msgstr "ファイルのセーブに失敗しました"
+msgstr "ファイルの保存中にエラーが発生しました"
 
 msgid "Playlist is Empty"
 msgstr "再生リストが空です"
@@ -410,10 +410,10 @@ msgid "Exit Playlist"
 msgstr "再生リストを終了"
 
 msgid "Update successful!"
-msgstr "アップデートが完了しました"
+msgstr "更新が完了しました"
 
 msgid "Update failed!"
-msgstr "アップデートに失敗しました"
+msgstr "更新に失敗しました"
 
 msgid "Initializing network..."
 msgstr "ネットワークを初期化中…"
@@ -461,10 +461,10 @@ msgid "Could not create folder"
 msgstr "フォルダを作成できませんでした"
 
 msgid "Saving settings..."
-msgstr "設定をセーブ中…"
+msgstr "設定を保存中…"
 
 msgid "Could not save settings to"
-msgstr "設定をセーブできませんでした"
+msgstr "設定を保存できませんでした"
 
 msgid "Thanks to"
 msgstr "このソフトの開発に当たって次の方々に感謝します"
@@ -545,7 +545,7 @@ msgid "Japanese"
 msgstr "日本語"
 
 msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "ディレクトリ内のエントリ数が多過ぎます 全てを表示できません (最大値:2,000)"
+msgstr "フォルダ内のエントリ数が多過ぎます 全てを表示できません (最大値:2,000)"
 
 msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
 msgstr "再生リストのエントリ数が多過ぎます 全てを表示できません (最大値:2,000)"
@@ -554,7 +554,7 @@ msgid "Downloading..."
 msgstr "ダウンロード中…"
 
 msgid "Unzipping..."
-msgstr "ファイル展開中…"
+msgstr "インストール中…"
 
 msgid "Color"
 msgstr "色"
@@ -626,7 +626,7 @@ msgid "Enabled"
 msgstr "有効"
 
 msgid "Error loading YouTube file!"
-msgstr "YouTubeファイルのロードに失敗しました！"
+msgstr "YouTubeファイルの読み込み中に エラーが発生しました"
 
 msgid "Rotate"
 msgstr "回転する"

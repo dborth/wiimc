@@ -615,3 +615,18 @@ msgstr "Viimati Sirvitud Asukoht"
 
 msgid "Audio Language"
 msgstr "Heli Keel"
+
+msgid "DVD Support"
+msgstr "DVD Tugi"
+
+msgid "Enabled"
+msgstr "Aktiveeritud"
+
+msgid "Error loading YouTube file!"
+msgstr "Viga YouTube faili avamisel!"
+
+msgid "Rotate"
+msgstr "Keera"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "Resolutsioon ületab lubatud maksimumi (1280x720)!"

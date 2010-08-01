@@ -622,5 +622,11 @@ msgstr "Suporte à DVD"
 msgid "Enabled"
 msgstr "Habilitado"
 
+msgid "Error loading YouTube file!"
+msgstr "Erro ao carregar vídeo do YouTube!"
+
+msgid "Rotate"
+msgstr "Girar"
+
 msgid "Resolution exceeds maximum allowed (1280x720)!"
 msgstr "A resolução excede o máximo permitido (1280x720)!"

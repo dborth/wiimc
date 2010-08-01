@@ -599,19 +599,19 @@ msgid "Purple (Default)"
 msgstr "Violett (Standard)"
 
 msgid "Auto-Play Next Video"
-msgstr "nächstes Video automatisch spielen"
+msgstr "Nächstes Video automatisch spielen"
 
 msgid "Adding files to playlist..."
 msgstr "Füge Dateien zu Wiedergabeliste hinzu..."
 
 msgid "Browser Folders"
-msgstr "Ordner durchsuchen"
+msgstr "Startverzeichnis"
 
 msgid "Static"
-msgstr "Aktuelle Einstellungen sperren"
+msgstr "Fixieren"
 
 msgid "Use Last Browsed"
-msgstr "Denn zuletzt angezeigten verwenden"
+msgstr "Zuletzt angezeigtes"
 
 msgid "Audio Language"
 msgstr "Audio-Sprache"
@@ -621,3 +621,12 @@ msgstr "DVD Unterstützung"
 
 msgid "Enabled"
 msgstr "Aktiviert"
+
+msgid "Error loading YouTube file!"
+msgstr "Fehler beim laden der YouTube Datei!"
+
+msgid "Rotate"
+msgstr "Drehen"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "Auflösung über der Maximal erlaubten (1280x720)!"

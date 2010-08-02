@@ -3909,26 +3909,8 @@ if(play_n_frames==0){
   mpctx->eof=PT_NEXT_ENTRY; goto goto_next_file;
 }
 
-#ifndef GEKKO
-if (seek_to_sec) {
-    seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
-    end_at.pos += seek_to_sec;
-}
-#endif
-
-if (end_at.type == END_AT_SIZE) {
-    mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_MPEndposNoSizeBased);
-    end_at.type = END_AT_NONE;
-}
-#ifdef CONFIG_DVDNAV
-mp_dvdnav_context_free(mpctx);
-if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
-    mp_dvdnav_read_wait(mpctx->stream, 0, 1);
-    mp_dvdnav_cell_has_changed(mpctx->stream,1);
-}
-#endif
-
 #ifdef GEKKO
+seek_to_sec = 0;
 
 if (mpctx->sh_video)
 {
@@ -3941,29 +3923,15 @@ if (mpctx->sh_video)
 		stream_cache_seek_min_percent=5;
 	}
 
-	seek_to_sec=load_restore_point(fileplaying)-8;
-	if(seek_to_sec < 0 || seek_to_sec+120 > demuxer_get_time_length(mpctx->demuxer))
-		seek_to_sec = 0;
-
-	if(seek_to_sec && strncmp(fileplaying,"dvd:",4) != 0 && strncmp(fileplaying,"dvdnav:",7) != 0)
+	if(strncmp(fileplaying,"dvd:",4) != 0 && strncmp(fileplaying,"dvdnav:",7) != 0)
 	{
-		seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
-		end_at.pos += seek_to_sec;
+		seek_to_sec=load_restore_point(fileplaying)-8;
+		if(seek_to_sec < 0 || seek_to_sec+120 > demuxer_get_time_length(mpctx->demuxer))
+			seek_to_sec = 0;
 	}
-
-	int aux=mpctx->set_of_sub_size;
-	mpctx->set_of_sub_size=0; // to not load subfonts
-	mpctx->osd_function=OSD_PAUSE;
-
-//	if(stream_cache_size>0)
-//		refillcache(mpctx->stream,stream_cache_min_percent);
-
-	mpctx->osd_function=OSD_PLAY;
-	mpctx->set_of_sub_size=aux;
 
 	int w = mpctx->sh_video->disp_w;
 	int h = mpctx->sh_video->disp_h;
-
 	int dominant_axis = w > h ? w : h;
 
 	if(dominant_axis > 4096)
@@ -3984,9 +3952,7 @@ if (mpctx->sh_video)
 	if (!vo_font || prev_dxs != w || prev_dys != h)
 	{
 	    force_load_font = 0;
-
 	    ReInitTTFLib();
-		
 		load_font_ft(w, h, &vo_font, font_name, osd_font_scale_factor);
 		prev_dxs = w; prev_dys = h;
 
@@ -4002,35 +3968,33 @@ if (mpctx->sh_video)
 			sub_font = vo_font;
 		}
 	}
-
-	vo_osd_changed(OSDTYPE_SUBTITLE);
-	vo_osd_changed(OSDTYPE_PROGBAR);
-	vo_osd_changed(OSDTYPE_OSD);
-}
-else
-{
-	seek_to_sec = 0;
 }
 
-mpctx->eof=0;
-
-{
-
-	mp_cmd_t* cmd;
-while ( (cmd = mp_input_get_cmd(0, 0, 0)) != NULL )
-  {
-    if (cmd)
-    {
-      run_command(mpctx, cmd);
-      mp_cmd_free(cmd);
-    }
-  }
+if (seek_to_sec) {
+    seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);
+    end_at.pos += seek_to_sec;
 }
-playing_file=true;
+
+if (end_at.type == END_AT_SIZE) {
+    mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_MPEndposNoSizeBased);
+    end_at.type = END_AT_NONE;
+}
+
+#ifdef CONFIG_DVDNAV
+mp_dvdnav_context_free(mpctx);
+if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
+    mp_dvdnav_read_wait(mpctx->stream, 0, 1);
+    mp_dvdnav_cell_has_changed(mpctx->stream,1);
+}
 #endif
+
+#ifdef GEKKO
+playing_file=true;
 pause_low_cache=0;
 GetRelativeTime();
 total_time_usage_start=GetTimer();
+#endif
+
 while(!mpctx->eof){
     float aq_sleep_time=0;
 

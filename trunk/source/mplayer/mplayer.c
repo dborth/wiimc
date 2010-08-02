@@ -3990,6 +3990,7 @@ if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
 #endif
 
 #ifdef GEKKO
+mpctx->osd_function=OSD_PLAY;
 playing_file=true;
 pause_low_cache=0;
 GetRelativeTime();

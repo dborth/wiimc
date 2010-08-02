@@ -3969,6 +3969,7 @@ if (mpctx->sh_video)
 		}
 	}
 }
+#endif
 
 if (seek_to_sec) {
     seek(mpctx, seek_to_sec, SEEK_ABSOLUTE);

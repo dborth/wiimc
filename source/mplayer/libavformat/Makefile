@@ -1,7 +1,7 @@
 include $(SUBDIR)../config.mak
 
 NAME = avformat
-FFLIBS = avcodec avutil
+FFLIBS = avcodec avcore avutil
 
 HEADERS = avformat.h avio.h
 
@@ -242,6 +242,8 @@ OBJS-$(CONFIG_SOL_DEMUXER)               += sol.o raw.o
 OBJS-$(CONFIG_SOX_DEMUXER)               += soxdec.o raw.o
 OBJS-$(CONFIG_SOX_MUXER)                 += soxenc.o
 OBJS-$(CONFIG_SPDIF_MUXER)               += spdif.o
+OBJS-$(CONFIG_SRT_DEMUXER)               += srtdec.o
+OBJS-$(CONFIG_SRT_MUXER)                 += raw.o
 OBJS-$(CONFIG_STR_DEMUXER)               += psxstr.o
 OBJS-$(CONFIG_SWF_DEMUXER)               += swfdec.o
 OBJS-$(CONFIG_SWF_MUXER)                 += swfenc.o

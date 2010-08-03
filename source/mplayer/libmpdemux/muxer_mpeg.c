@@ -40,9 +40,6 @@
 #include "mpeg_hdr.h"
 #include "mp3_hdr.h"
 
-#ifdef CONFIG_LIBA52
-#include <a52dec/a52.h>
-#endif
 
 #define PACK_HEADER_START_CODE 0x01ba
 #define SYSTEM_HEADER_START_CODE 0x01bb
@@ -1657,7 +1654,7 @@ static size_t parse_mpeg12_video(muxer_stream_t *s, muxer_priv_t *priv, muxer_he
 	mp_msg(MSGT_MUXER, MSGL_DBG2,"parse_mpeg12_video, len=%u\n", (uint32_t) len);
 	if(s->buffer[0] != 0 || s->buffer[1] != 0 || s->buffer[2] != 1 || len<6)
 	{
-		mp_msg(MSGT_MUXER, MSGL_ERR,"Unknown video format, possibly non-MPEG1/2 stream, len=%d!\n", len);
+		mp_msg(MSGT_MUXER, MSGL_ERR,"Unknown video format, possibly non-MPEG1/2 stream, len=%zd!\n", len);
 		return 0;
 	}
 
@@ -1781,7 +1778,7 @@ static size_t parse_mpeg12_video(muxer_stream_t *s, muxer_priv_t *priv, muxer_he
 	ret = add_frame(spriv, spriv->delta_pts, s->buffer, len, pt, spriv->last_dts, spriv->last_pts);
 	if(ret < 0)
 	{
-		mp_msg(MSGT_MUXER, MSGL_FATAL, "\r\nPARSE_MPEG12: add_frames(%d) failed, exit\r\n", len);
+		mp_msg(MSGT_MUXER, MSGL_FATAL, "\r\nPARSE_MPEG12: add_frames(%zd) failed, exit\r\n", len);
 		return 0;
 	}
 	mp_msg(MSGT_MUXER, MSGL_DBG2, "\r\nVIDEO FRAME, PT: %C, tr: %d, diff: %d, dts: %.3lf, pts: %.3lf, pdt: %u, gop_reset: %d\r\n",
@@ -1870,7 +1867,7 @@ static size_t parse_mpeg4_video(muxer_stream_t *s, muxer_priv_t *priv, muxer_hea
 	mp_msg(MSGT_MUXER, MSGL_DBG2,"parse_mpeg4_video, len=%u\n", (uint32_t) len);
 	if(len<6)
 	{
-		mp_msg(MSGT_MUXER, MSGL_ERR,"Frame too short: %d, exit!\n", len);
+		mp_msg(MSGT_MUXER, MSGL_ERR,"Frame too short: %zd, exit!\n", len);
 		return 0;
 	}
 
@@ -1927,7 +1924,7 @@ static size_t parse_mpeg4_video(muxer_stream_t *s, muxer_priv_t *priv, muxer_hea
 	ret = add_frame(vpriv, delta_pts, s->buffer, len, pt, vpriv->last_dts, vpriv->last_pts);
 	if(ret < 0)
 	{
-		mp_msg(MSGT_MUXER, MSGL_FATAL, "\r\nPARSE_MPEG4: add_frames(%d) failed, exit\r\n", len);
+		mp_msg(MSGT_MUXER, MSGL_FATAL, "\r\nPARSE_MPEG4: add_frames(%zd) failed, exit\r\n", len);
 		return 0;
 	}
 
@@ -2075,7 +2072,7 @@ static int analyze_mpa(muxer_stream_t *s)
 
 static int parse_audio(muxer_stream_t *s, int finalize, unsigned int *nf, double *timer, double delay, int drop)
 {
-	int i, j, len, chans, srate, spf, layer, dummy, tot, num, frm_idx;
+	int i, j, len, chans, srate, spf, layer, tot, num, frm_idx;
 	int finished;
 	unsigned int frames;
 	uint64_t idur;
@@ -2124,11 +2121,7 @@ static int parse_audio(muxer_stream_t *s, int finalize, unsigned int *nf, double
 				if(s->b_buffer[i] == 0x0B && s->b_buffer[i+1] == 0x77)
 				{
 					srate = 0;
-				#ifdef CONFIG_LIBA52
-					len = a52_syncinfo(&(s->b_buffer[i]), &dummy, &srate, &dummy);
-				#else
 					len = mp_a52_framesize(&(s->b_buffer[i]), &srate);
-				#endif
 					if((len > 0) && (srate == s->wf->nSamplesPerSec) && (i + len <= s->b_buffer_len))
 					{
 						dur = (double) 1536 / (double) srate;
@@ -2359,7 +2352,7 @@ static void mpegfile_write_chunk(muxer_stream_t *s,size_t len,unsigned int flags
 			tmp = realloc(s->b_buffer, len  + s->b_buffer_len);
 			if(!tmp)
 			{
-				mp_msg(MSGT_MUXER, MSGL_FATAL, "\nFATAL! couldn't realloc %d bytes\n", len  + s->b_buffer_len);
+				mp_msg(MSGT_MUXER, MSGL_FATAL, "\nFATAL! couldn't realloc %zd bytes\n", len  + s->b_buffer_len);
 				return;
 			}
 			s->b_buffer = tmp;

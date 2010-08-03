@@ -313,11 +313,11 @@ static void clearEOSD(void) {
   eosdtex = NULL;
 }
 
-static inline int is_tinytex(ass_image_t *i, int tinytexcur) {
+static inline int is_tinytex(ASS_Image *i, int tinytexcur) {
   return i->w < TINYTEX_SIZE && i->h < TINYTEX_SIZE && tinytexcur < TINYTEX_MAX;
 }
 
-static inline int is_smalltex(ass_image_t *i, int smalltexcur) {
+static inline int is_smalltex(ASS_Image *i, int smalltexcur) {
   return i->w < SMALLTEX_SIZE && i->h < SMALLTEX_SIZE && smalltexcur < SMALLTEX_MAX;
 }
 
@@ -336,14 +336,14 @@ static inline void smalltex_pos(int smalltexcur, int *x, int *y) {
  * \param img image list to create OSD from.
  *            A value of NULL has the same effect as clearEOSD()
  */
-static void genEOSD(mp_eosd_images_t *imgs) {
+static void genEOSD(EOSD_ImageList *imgs) {
   int sx, sy;
   int tinytexcur = 0;
   int smalltexcur = 0;
   GLuint *curtex;
   GLint scale_type = scaled_osd ? GL_LINEAR : GL_NEAREST;
-  ass_image_t *img = imgs->imgs;
-  ass_image_t *i;
+  ASS_Image *img = imgs->imgs;
+  ASS_Image *i;
 
   if (imgs->changed == 0) // there are elements, but they are unchanged
       return;
@@ -751,39 +751,44 @@ static void create_osd_texture(int x0, int y0, int w, int h,
   osdtexCnt++;
 }
 
+#define RENDER_OSD  1
+#define RENDER_EOSD 2
+
 /**
  * \param type bit 0: render OSD, bit 1: render EOSD
  */
 static void do_render_osd(int type) {
-  if (((type & 1) && osdtexCnt > 0) || ((type & 2) && eosdDispList)) {
-    // set special rendering parameters
-    if (!scaled_osd) {
-      mpglMatrixMode(GL_PROJECTION);
-      mpglPushMatrix();
-      mpglLoadIdentity();
-      mpglOrtho(0, vo_dwidth, vo_dheight, 0, -1, 1);
-    }
-    mpglEnable(GL_BLEND);
-    if ((type & 2) && eosdDispList) {
-      mpglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      mpglCallList(eosdDispList);
-    }
-    if ((type & 1) && osdtexCnt > 0) {
-      mpglColor4ub((osd_color >> 16) & 0xff, (osd_color >> 8) & 0xff, osd_color & 0xff, 0xff - (osd_color >> 24));
-      // draw OSD
-#ifndef FAST_OSD
-      mpglBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA);
-      mpglCallLists(osdtexCnt, GL_UNSIGNED_INT, osdaDispList);
-#endif
-      mpglBlendFunc(GL_SRC_ALPHA, GL_ONE);
-      mpglCallLists(osdtexCnt, GL_UNSIGNED_INT, osdDispList);
-    }
-    // set rendering parameters back to defaults
-    mpglDisable(GL_BLEND);
-    if (!scaled_osd)
-      mpglPopMatrix();
-    mpglBindTexture(gl_target, 0);
+  int draw_osd  = (type & RENDER_OSD)  && osdtexCnt > 0;
+  int draw_eosd = (type & RENDER_EOSD) && eosdDispList;
+  if (!draw_osd && !draw_eosd)
+    return;
+  // set special rendering parameters
+  if (!scaled_osd) {
+    mpglMatrixMode(GL_PROJECTION);
+    mpglPushMatrix();
+    mpglLoadIdentity();
+    mpglOrtho(0, vo_dwidth, vo_dheight, 0, -1, 1);
   }
+  mpglEnable(GL_BLEND);
+  if (draw_eosd) {
+    mpglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    mpglCallList(eosdDispList);
+  }
+  if (draw_osd) {
+    mpglColor4ub((osd_color >> 16) & 0xff, (osd_color >> 8) & 0xff, osd_color & 0xff, 0xff - (osd_color >> 24));
+    // draw OSD
+#ifndef FAST_OSD
+    mpglBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA);
+    mpglCallLists(osdtexCnt, GL_UNSIGNED_INT, osdaDispList);
+#endif
+    mpglBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    mpglCallLists(osdtexCnt, GL_UNSIGNED_INT, osdDispList);
+  }
+  // set rendering parameters back to defaults
+  mpglDisable(GL_BLEND);
+  if (!scaled_osd)
+    mpglPopMatrix();
+  mpglBindTexture(gl_target, 0);
 }
 
 static void draw_osd(void)
@@ -797,7 +802,7 @@ static void draw_osd(void)
     vo_draw_text_ext(osd_w, osd_h, ass_border_x, ass_border_y, ass_border_x, ass_border_y,
                      image_width, image_height, create_osd_texture);
   }
-  if (vo_doublebuffering) do_render_osd(1);
+  if (vo_doublebuffering) do_render_osd(RENDER_OSD);
 }
 
 static void do_render(void) {
@@ -840,14 +845,14 @@ static void flip_page(void) {
       mpglClear(GL_COLOR_BUFFER_BIT);
   } else {
     do_render();
-    do_render_osd(3);
+    do_render_osd(RENDER_OSD | RENDER_EOSD);
     if (use_glFinish) mpglFinish();
     else mpglFlush();
   }
 }
 
 static void redraw(void) {
-  if (vo_doublebuffering) { do_render(); do_render_osd(3); }
+  if (vo_doublebuffering) { do_render(); do_render_osd(RENDER_OSD | RENDER_EOSD); }
   flip_page();
 }
 
@@ -1314,7 +1319,7 @@ static int control(uint32_t request, void *data, ...)
     if (!data)
       return VO_FALSE;
     genEOSD(data);
-    if (vo_doublebuffering) do_render_osd(2);
+    if (vo_doublebuffering) do_render_osd(RENDER_EOSD);
     return VO_TRUE;
   case VOCTRL_GET_EOSD_RES:
     {

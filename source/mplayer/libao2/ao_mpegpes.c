@@ -108,8 +108,8 @@ static int freq_id=0;
 static int init_device(int card)
 {
 	char ao_file[30];
-	mp_msg(MSGT_VO,MSGL_INFO, "Opening /dev/dvb/adapter%d/audio0\n", card);
 	sprintf(ao_file, "/dev/dvb/adapter%d/audio0", card);
+	mp_msg(MSGT_VO,MSGL_INFO, "Opening %s\n", ao_file);
 	if((vo_mpegpes_fd2 = open(ao_file,O_RDWR|O_NONBLOCK)) < 0)
 	{
         	mp_msg(MSGT_VO, MSGL_ERR, "DVB AUDIO DEVICE: %s\n", strerror(errno));
@@ -118,25 +118,29 @@ static int init_device(int card)
 	if( (ioctl(vo_mpegpes_fd2,AUDIO_SELECT_SOURCE, AUDIO_SOURCE_MEMORY) < 0))
 	{
 		mp_msg(MSGT_VO, MSGL_ERR, "DVB AUDIO SELECT SOURCE: %s\n", strerror(errno));
-		return -1;
+		goto fail;
 	}
 	if((ioctl(vo_mpegpes_fd2,AUDIO_PLAY) < 0))
 	{
 		mp_msg(MSGT_VO, MSGL_ERR, "DVB AUDIO PLAY: %s\n", strerror(errno));
-		return -1;
+		goto fail;
 	}
 	if((ioctl(vo_mpegpes_fd2,AUDIO_SET_AV_SYNC, true) < 0))
 	{
 		mp_msg(MSGT_VO, MSGL_ERR, "DVB AUDIO SET AV SYNC: %s\n", strerror(errno));
-		return -1;
+		goto fail;
 	}
 	//FIXME: in vo_mpegpes audio was initialized as MUTEd
 	if((ioctl(vo_mpegpes_fd2,AUDIO_SET_MUTE, false) < 0))
 	{
 		mp_msg(MSGT_VO, MSGL_ERR, "DVB AUDIO SET MUTE: %s\n", strerror(errno));
-		return -1;
+		goto fail;
 	}
 	return vo_mpegpes_fd2;
+fail:
+	close(vo_mpegpes_fd2);
+	vo_mpegpes_fd2 = -1;
+	return -1;
 }
 #endif
 
@@ -276,7 +280,9 @@ static int init(int rate,int channels,int format,int flags){
 
 // close audio device
 static void uninit(int immed){
-
+	if (vo_mpegpes_fd2 >= 0)
+		close(vo_mpegpes_fd2);
+	vo_mpegpes_fd2 = -1;
 }
 
 // stop playing and empty buffers (for seeking/pause)
@@ -296,8 +302,6 @@ static void audio_resume(void)
 {
 }
 
-void send_pes_packet(unsigned char* data,int len,int id,int timestamp);
-void send_lpcm_packet(unsigned char* data,int len,int id,int timestamp,int freq_id);
 extern int vo_pts;
 
 // return: how many bytes can be played without blocking

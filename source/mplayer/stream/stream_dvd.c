@@ -93,7 +93,7 @@ int dvd_parse_chapter_range(const m_option_t *conf, const char *range) {
   dvd_chapter = 1;
   dvd_last_chapter = 0;
   if(*range && isdigit(*range)) {
-    dvd_chapter = strtol(range, &s, 10);
+    dvd_chapter = strtol(range, (char **) &s, 10);
     if(range == s) {
       mp_msg(MSGT_OPEN, MSGL_ERR, MSGTR_DVDinvalidChapterRange, range);
       return M_OPT_INVALID;
@@ -380,24 +380,17 @@ static void dvd_seek(dvd_priv_t *d, int pos)
      d->cur_pack<d->cur_pgc->cell_playback[ d->cur_cell ].first_sector) {
 
     // ok, cell change, find the right cell!
-    d->cur_cell=0;
-    if(d->cur_pgc->cell_playback[d->cur_cell].block_type == BLOCK_TYPE_ANGLE_BLOCK )
-      d->cur_cell+=dvd_angle;
-
-    while(1) {
-      int next;
-      d->cell_last_pack=d->cur_pgc->cell_playback[ d->cur_cell ].last_sector;
-      if(d->cur_pack<d->cur_pgc->cell_playback[ d->cur_cell ].first_sector) {
-        d->cur_pack=d->cur_pgc->cell_playback[ d->cur_cell ].first_sector;
+    cell_playback_t *cell;
+    for(d->cur_cell=0; d->cur_cell < d->cur_pgc->nr_of_cells; d->cur_cell++) {
+      cell = &(d->cur_pgc->cell_playback[d->cur_cell]);
+      if(cell->block_type == BLOCK_TYPE_ANGLE_BLOCK && cell->block_mode != BLOCK_MODE_FIRST_CELL)
+        continue;
+      d->cell_last_pack=cell->last_sector;
+      if(d->cur_pack<cell->first_sector) {
+        d->cur_pack=cell->first_sector;
         break;
       }
       if(d->cur_pack<=d->cell_last_pack) break; // ok, we find it! :)
-      next=dvd_next_cell(d);
-      if(next<0) {
-        //d->cur_pack=d->cell_last_pack+1;
-        break; // we're after the last cell
-      }
-      d->cur_cell=next;
     }
   }
 
@@ -488,9 +481,26 @@ static int mp_describe_titleset(dvd_reader_t *dvd, tt_srpt_t *tt_srpt, int vts_n
     return 1;
 }
 
+static int get_num_chapter(ifo_handle_t *vts_file, tt_srpt_t *tt_srpt, int title_no)
+{
+    if(!vts_file || !tt_srpt)
+       return 0;
+
+    if(title_no < 0 || title_no >= tt_srpt->nr_of_srpts)
+       return 0;
+
+    // map global title to vts title
+    title_no = tt_srpt->title[title_no].vts_ttn - 1;
+
+    if(title_no < 0 || title_no >= vts_file->vts_ptt_srpt->nr_of_srpts)
+       return 0;
+
+    return vts_file->vts_ptt_srpt->title[title_no].nr_of_ptts;
+}
+
 static int seek_to_chapter(stream_t *stream, ifo_handle_t *vts_file, tt_srpt_t *tt_srpt, int title_no, int chapter)
 {
-    int cell;
+    dvd_priv_t *d = stream->priv;
     ptt_info_t ptt;
     pgc_t *pgc;
     off_t pos;
@@ -513,36 +523,52 @@ static int seek_to_chapter(stream_t *stream, ifo_handle_t *vts_file, tt_srpt_t *
     ptt = vts_file->vts_ptt_srpt->title[title_no].ptt[chapter];
     pgc = vts_file->vts_pgcit->pgci_srp[ptt.pgcn-1].pgc;
 
-    cell = pgc->program_map[ptt.pgn - 1] - 1;
-    pos = (off_t) pgc->cell_playback[cell].first_sector * 2048;
+    d->cur_cell = pgc->program_map[ptt.pgn - 1] - 1;
+    if(pgc->cell_playback[d->cur_cell].block_type == BLOCK_TYPE_ANGLE_BLOCK)
+       d->cur_cell += dvd_angle;
+    d->cur_pack       = pgc->cell_playback[d->cur_cell].first_sector;
+    d->cell_last_pack = pgc->cell_playback[d->cur_cell].last_sector;
+
+    d->packs_left     = -1;
+    d->angle_seek     = 0;
+
+    pos = (off_t) d->cur_pack * 2048;
     mp_msg(MSGT_OPEN,MSGL_V,"\r\nSTREAM_DVD, seeked to chapter: %d, cell: %u, pos: %"PRIu64"\n",
-        chapter, pgc->cell_playback[cell].first_sector, pos);
-    stream_seek(stream, pos);
+        chapter, d->cur_pack, pos);
 
     return chapter;
 }
 
-static void list_chapters(pgc_t *pgc)
+static void list_chapters(ifo_handle_t *vts_file, tt_srpt_t *tt_srpt, int title_no)
 {
-    unsigned int i, cell;
+    unsigned int i, cell, last_cell;
     unsigned int t=0, t2=0;
+    ptt_info_t *ptt;
+    pgc_t *pgc;
 
-    if(pgc->nr_of_programs < 2)
+    title_no = tt_srpt->title[title_no].vts_ttn - 1;
+    if(vts_file->vts_ptt_srpt->title[title_no].nr_of_ptts < 2)
        return;
+    ptt = vts_file->vts_ptt_srpt->title[title_no].ptt;
 
     mp_msg(MSGT_IDENTIFY, MSGL_INFO, "CHAPTERS: ");
-    for(i=0; i<pgc->nr_of_programs; i++)
+    for(i=0; i<vts_file->vts_ptt_srpt->title[title_no].nr_of_ptts; i++)
     {
-        cell = pgc->program_map[i]; //here the cell is 1-based
+        pgc = vts_file->vts_pgcit->pgci_srp[ptt[i].pgcn-1].pgc;
+        cell = pgc->program_map[ptt[i].pgn-1]; //here the cell is 1-based
+        if(ptt[i].pgn<pgc->nr_of_programs)
+            last_cell = pgc->program_map[ptt[i].pgn];
+        else
+            last_cell = 0;
         t2 = t/1000;
         mp_msg(MSGT_IDENTIFY, MSGL_INFO, "%02d:%02d:%02d,", t2/3600, (t2/60)%60, t2%60);
-        while(i+1<pgc->nr_of_programs && cell < pgc->program_map[i+1]) {
+        do {
             if(!(pgc->cell_playback[cell-1].block_type == BLOCK_TYPE_ANGLE_BLOCK &&
                  pgc->cell_playback[cell-1].block_mode != BLOCK_MODE_FIRST_CELL)
             )
                 t += mp_dvdtimetomsec(&pgc->cell_playback[cell-1].playback_time);
             cell++;
-        }
+        } while(cell < last_cell);
     }
     mp_msg(MSGT_IDENTIFY, MSGL_INFO, "\n");
 }
@@ -642,8 +668,10 @@ static int control(stream_t *stream,int cmd,void* arg)
         }
         case STREAM_CTRL_GET_NUM_CHAPTERS:
         {
-            if(! d->cur_pgc->nr_of_programs) return STREAM_UNSUPPORTED;
-            *((unsigned int *)arg) = d->cur_pgc->nr_of_programs;
+            int r;
+            r = get_num_chapter(d->vts_file, d->tt_srpt, d->cur_title-1);
+            if(! r) return STREAM_UNSUPPORTED;
+            *((unsigned int *)arg) = r;
             return 1;
         }
         case STREAM_CTRL_SEEK_TO_CHAPTER:
@@ -1024,7 +1052,7 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
       return STREAM_UNSUPPORTED;
     for(k=0; k<d->cur_pgc->nr_of_cells; k++)
       d->cell_times_table[k] = mp_dvdtimetomsec(&d->cur_pgc->cell_playback[k].playback_time);
-    list_chapters(d->cur_pgc);
+    list_chapters(vts_file,tt_srpt,dvd_title);
 
     // ... (unimplemented)
     //    return NULL;
@@ -1083,7 +1111,7 @@ static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_fo
     return open_s(stream, mode, spriv, file_format);
 #else
     return STREAM_UNSUPPORTED;
-#endif    
+#endif 
 }
 
 const stream_info_t stream_info_dvd = {

@@ -108,6 +108,7 @@ SRCS_COMMON-$(LADSPA)                += libaf/af_ladspa.c
 SRCS_COMMON-$(LIBA52)                += libmpcodecs/ad_liba52.c
 SRCS_COMMON-$(LIBASS)                += libmpcodecs/vf_ass.c \
                                         libass/ass_mp.c \
+                                        subassconvert.c \
 
 SRCS_COMMON-$(LIBASS_INTERNAL)       += libass/ass.c \
                                         libass/ass_bitmap.c \
@@ -347,7 +348,6 @@ SRCS_COMMON = asxparser.c \
               playtreeparser.c \
               spudec.c \
               sub_cc.c \
-              subassconvert.c \
               subopt-helper.c \
               subreader.c \
               vobsub.c \
@@ -722,6 +722,7 @@ SRCS_MENCODER = mencoder.c \
 
 COMMON_LIBS-$(LIBAVFORMAT_A)      += libavformat/libavformat.a
 COMMON_LIBS-$(LIBAVCODEC_A)       += libavcodec/libavcodec.a
+COMMON_LIBS-$(LIBAVCORE_A)        += libavcore/libavcore.a
 COMMON_LIBS-$(LIBAVUTIL_A)        += libavutil/libavutil.a
 COMMON_LIBS-$(LIBPOSTPROC_A)      += libpostproc/libpostproc.a
 COMMON_LIBS-$(LIBSWSCALE_A)       += libswscale/libswscale.a
@@ -764,6 +765,7 @@ DIRS =  . \
         libavcodec/sh4 \
         libavcodec/sparc \
         libavcodec/x86 \
+        libavcore \
         libavformat \
         libavutil \
         libavutil/arm \
@@ -811,6 +813,7 @@ ADD_ALL_DIRS    = $(call ADDSUFFIXES,$(1),$(DIRS))
 ADD_ALL_EXESUFS = $(1) $(call ADDSUFFIXES,$(EXESUFS_ALL),$(1))
 
 FFMPEGPARTS = libavcodec \
+              libavcore \
               libavformat \
               libavutil \
               libpostproc \
@@ -1002,6 +1005,7 @@ distclean: clean testsclean toolsclean driversclean dhahelperclean dhahelperwinc
 	-rm -f config.log config.mak config.h codecs.conf.h help_mp.h \
            version.h $(VIDIX_PCI_FILES) TAGS tags
 	-rm -f $(call ADD_ALL_EXESUFS,codec-cfg cpuinfo)
+	-rm -f libavutil/avconfig.h
 
 doxygen:
 	doxygen DOCS/tech/Doxyfile

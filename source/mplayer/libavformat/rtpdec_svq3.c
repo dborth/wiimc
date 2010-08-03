@@ -27,10 +27,10 @@
  */
 
 #include <string.h>
-#include <libavcodec/get_bits.h>
+#include "libavutil/intreadwrite.h"
 #include "rtp.h"
 #include "rtpdec.h"
-#include "rtpdec_svq3.h"
+#include "rtpdec_formats.h"
 
 struct PayloadContext {
     ByteIOContext *pktbuf;

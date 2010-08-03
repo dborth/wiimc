@@ -32,7 +32,11 @@
 #include "vp56dsp.h"
 
 typedef struct vp56_context VP56Context;
-typedef struct vp56_mv VP56mv;
+
+typedef struct {
+    int16_t x;
+    int16_t y;
+} DECLARE_ALIGNED(4, , VP56mv);
 
 typedef void (*VP56ParseVectorAdjustment)(VP56Context *s,
                                           VP56mv *vect);
@@ -52,7 +56,7 @@ typedef struct {
                  bits left) in order to eliminate a negate in cache refilling */
     const uint8_t *buffer;
     const uint8_t *end;
-    unsigned long code_word;
+    unsigned int code_word;
 } VP56RangeCoder;
 
 typedef struct {
@@ -60,11 +64,6 @@ typedef struct {
     VP56Frame ref_frame;
     DCTELEM dc_coeff;
 } VP56RefDc;
-
-struct vp56_mv {
-    int x;
-    int y;
-};
 
 typedef struct {
     uint8_t type;
@@ -171,11 +170,11 @@ struct vp56_context {
 };
 
 
-void vp56_init(AVCodecContext *avctx, int flip, int has_alpha);
-int vp56_free(AVCodecContext *avctx);
-void vp56_init_dequant(VP56Context *s, int quantizer);
-int vp56_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
-                      AVPacket *avpkt);
+void ff_vp56_init(AVCodecContext *avctx, int flip, int has_alpha);
+int ff_vp56_free(AVCodecContext *avctx);
+void ff_vp56_init_dequant(VP56Context *s, int quantizer);
+int ff_vp56_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
+                         AVPacket *avpkt);
 
 
 /**
@@ -192,25 +191,12 @@ static inline void vp56_init_range_decoder(VP56RangeCoder *c,
     c->code_word = bytestream_get_be16(&c->buffer);
 }
 
-static inline int vp56_rac_get_prob(VP56RangeCoder *c, uint8_t prob)
+static av_always_inline unsigned int vp56_rac_renorm(VP56RangeCoder *c)
 {
-    /* Don't put c->high in a local variable; if we do that, gcc gets
-     * the stupids and turns the code below into a branch again. */
+    int shift = ff_h264_norm_shift[c->high] - 1;
     int bits = c->bits;
-    unsigned long code_word = c->code_word;
-    unsigned int low = 1 + (((c->high - 1) * prob) >> 8);
-    unsigned int low_shift = low << 8;
-    int bit = code_word >= low_shift;
-    int shift;
+    unsigned int code_word = c->code_word;
 
-    /* Incantation to convince GCC to turn these into conditional moves
-     * instead of branches -- faster, as this branch is basically
-     * unpredictable. */
-    c->high = bit ? c->high - low : low;
-    code_word = bit ? code_word - low_shift : code_word;
-
-    /* normalize */
-    shift = ff_h264_norm_shift[c->high] - 1;
     c->high   <<= shift;
     code_word <<= shift;
     bits       += shift;
@@ -219,29 +205,62 @@ static inline int vp56_rac_get_prob(VP56RangeCoder *c, uint8_t prob)
         bits -= 8;
     }
     c->bits = bits;
-    c->code_word = code_word;
+    return code_word;
+}
+
+#if ARCH_X86
+#include "x86/vp56_arith.h"
+#endif
+
+#ifndef vp56_rac_get_prob
+#define vp56_rac_get_prob vp56_rac_get_prob
+static inline int vp56_rac_get_prob(VP56RangeCoder *c, uint8_t prob)
+{
+    unsigned int code_word = vp56_rac_renorm(c);
+    unsigned int low = 1 + (((c->high - 1) * prob) >> 8);
+    unsigned int low_shift = low << 8;
+    int bit = code_word >= low_shift;
+
+    c->high = bit ? c->high - low : low;
+    c->code_word = bit ? code_word - low_shift : code_word;
+
     return bit;
+}
+#endif
+
+// branchy variant, to be used where there's a branch based on the bit decoded
+static av_always_inline int vp56_rac_get_prob_branchy(VP56RangeCoder *c, int prob)
+{
+    unsigned long code_word = vp56_rac_renorm(c);
+    unsigned low = 1 + (((c->high - 1) * prob) >> 8);
+    unsigned low_shift = low << 8;
+
+    if (code_word >= low_shift) {
+        c->high     -= low;
+        c->code_word = code_word - low_shift;
+        return 1;
+    }
+
+    c->high = low;
+    c->code_word = code_word;
+    return 0;
 }
 
 static inline int vp56_rac_get(VP56RangeCoder *c)
 {
+    unsigned int code_word = vp56_rac_renorm(c);
     /* equiprobable */
     int low = (c->high + 1) >> 1;
     unsigned int low_shift = low << 8;
-    int bit = c->code_word >= low_shift;
+    int bit = code_word >= low_shift;
     if (bit) {
-        c->high = (c->high - low) << 1;
-        c->code_word -= low_shift;
+        c->high   -= low;
+        code_word -= low_shift;
     } else {
-        c->high = low << 1;
+        c->high = low;
     }
 
-    /* normalize */
-    c->code_word <<= 1;
-    if (++c->bits == 0 && c->buffer < c->end) {
-        c->bits = -8;
-        c->code_word |= *c->buffer++;
-    }
+    c->code_word = code_word;
     return bit;
 }
 

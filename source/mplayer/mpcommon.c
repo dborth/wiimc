@@ -39,14 +39,14 @@ double sub_last_pts = -303;
 
 #ifdef CONFIG_ASS
 #include "libass/ass_mp.h"
-ass_track_t* ass_track = 0; // current track to render
+ASS_Track* ass_track = 0; // current track to render
 #endif
 
 sub_data* subdata = NULL;
 subtitle* vo_sub_last = NULL;
 
-const char *mencoder_version = "MEncoder VERSION";
-const char *mplayer_version  = "MPlayer VERSION";
+const char *mencoder_version = "MEncoder " VERSION;
+const char *mplayer_version  = "MPlayer "  VERSION;
 
 void print_version(const char* name)
 {

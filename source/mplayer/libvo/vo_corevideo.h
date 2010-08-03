@@ -40,7 +40,6 @@
 {
 	//Cocoa
 	NSWindow *window;
-	NSEvent *event;
 
 	//CoreVideo
 	CVPixelBufferRef frameBuffers[2];
@@ -48,15 +47,14 @@
 	CVOpenGLTextureRef texture;
 	NSRect textureFrame;
 
-    GLfloat	lowerLeft[2];
-    GLfloat lowerRight[2];
-    GLfloat upperRight[2];
-    GLfloat upperLeft[2];
+	GLfloat lowerLeft[2];
+	GLfloat lowerRight[2];
+	GLfloat upperRight[2];
+	GLfloat upperLeft[2];
 
 	BOOL mouseHide;
 
 	//menu command id
-	NSMenuItem *kQuitCmd;
 	NSMenuItem *kHalfScreenCmd;
 	NSMenuItem *kNormalScreenCmd;
 	NSMenuItem *kDoubleScreenCmd;

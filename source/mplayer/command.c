@@ -101,26 +101,6 @@ static void rescale_input_coordinates(int ix, int iy, double *dx, double *dy)
            vo_dheight, vo_fs);
 }
 
-static void update_global_sub_size(MPContext *mpctx)
-{
-    int i;
-    int cnt = 0;
-
-    // update number of demuxer sub streams
-    for (i = 0; i < MAX_S_STREAMS; i++)
-        if (mpctx->demuxer->s_streams[i])
-            cnt++;
-    if (cnt > mpctx->sub_counts[SUB_SOURCE_DEMUX])
-        mpctx->sub_counts[SUB_SOURCE_DEMUX] = cnt;
-
-    // TODO: possibly adjust global_sub_pos
-
-    // update global size
-    mpctx->global_sub_size = 0;
-    for (i = 0; i < SUB_SOURCES; i++)
-        mpctx->global_sub_size += mpctx->sub_counts[i];
-}
-
 static int sub_pos_by_source(MPContext *mpctx, int src)
 {
     int i, cnt = 0;
@@ -162,6 +142,36 @@ static int sub_source_pos(MPContext *mpctx)
 static int sub_source(MPContext *mpctx)
 {
     return sub_source_by_pos(mpctx, mpctx->global_sub_pos);
+}
+
+static void update_global_sub_size(MPContext *mpctx)
+{
+    int i;
+    int cnt = 0;
+
+    // update number of demuxer sub streams
+    for (i = 0; i < MAX_S_STREAMS; i++)
+        if (mpctx->demuxer->s_streams[i])
+            cnt++;
+    if (cnt > mpctx->sub_counts[SUB_SOURCE_DEMUX])
+        mpctx->sub_counts[SUB_SOURCE_DEMUX] = cnt;
+
+    // update global size
+    mpctx->global_sub_size = 0;
+    for (i = 0; i < SUB_SOURCES; i++)
+        mpctx->global_sub_size += mpctx->sub_counts[i];
+
+    // update global_sub_pos if we auto-detected a demuxer sub
+    if (mpctx->global_sub_pos == -1) {
+        int sub_id = -1;
+        if (mpctx->demuxer->sub)
+            sub_id = mpctx->demuxer->sub->id;
+        if (sub_id < 0)
+            sub_id = dvdsub_id;
+        if (sub_id >= 0 && sub_id < mpctx->sub_counts[SUB_SOURCE_DEMUX])
+            mpctx->global_sub_pos = sub_pos_by_source(mpctx, SUB_SOURCE_DEMUX) +
+                                    sub_id;
+    }
 }
 
 /**
@@ -354,6 +364,17 @@ static int mp_property_stream_length(m_option_t *prop, int action,
     }
     return M_PROPERTY_NOT_IMPLEMENTED;
 }
+
+/// Current stream position in seconds (RO)
+static int mp_property_stream_time_pos(m_option_t *prop, int action,
+                                       void *arg, MPContext *mpctx)
+{
+    if (!mpctx->demuxer || mpctx->demuxer->stream_pts == MP_NOPTS_VALUE)
+        return M_PROPERTY_UNAVAILABLE;
+
+    return m_property_time_ro(prop, action, arg, mpctx->demuxer->stream_pts);
+}
+
 
 /// Media length in seconds (RO)
 static int mp_property_length(m_option_t *prop, int action, void *arg,
@@ -597,7 +618,7 @@ static int mp_property_metadata(m_option_t *prop, int action, void *arg,
             return M_PROPERTY_OK;
         case M_PROPERTY_GET_TYPE:
             if(!ka->arg) return M_PROPERTY_ERROR;
-            *(m_option_t**)ka->arg = &key_type;
+            *(const m_option_t**)ka->arg = &key_type;
             return M_PROPERTY_OK;
         }
     }
@@ -1654,7 +1675,7 @@ static int mp_property_sub_source(m_option_t *prop, int action, void *arg,
 static int mp_property_sub_by_type(m_option_t *prop, int action, void *arg,
                                    MPContext *mpctx)
 {
-    int source, is_cur_source, offset;
+    int source, is_cur_source, offset, new_pos;
     update_global_sub_size(mpctx);
     if (!mpctx->sh_video || mpctx->global_sub_size <= 0)
         return M_PROPERTY_UNAVAILABLE;
@@ -1673,6 +1694,7 @@ static int mp_property_sub_by_type(m_option_t *prop, int action, void *arg,
         return M_PROPERTY_UNAVAILABLE;
 
     is_cur_source = sub_source(mpctx) == source;
+    new_pos = mpctx->global_sub_pos;
     switch (action) {
     case M_PROPERTY_GET:
         if (!arg)
@@ -1701,14 +1723,14 @@ static int mp_property_sub_by_type(m_option_t *prop, int action, void *arg,
             int index = *(int *)arg;
             if (source == SUB_SOURCE_VOBSUB)
                 index = vobsub_get_index_by_id(vo_vobsub, index);
-            mpctx->global_sub_pos = offset + index;
+            new_pos = offset + index;
             if (index < 0 || index > mpctx->sub_counts[source]) {
-                mpctx->global_sub_pos = -1;
+                new_pos = -1;
                 *(int *) arg = -1;
             }
         }
         else
-            mpctx->global_sub_pos = -1;
+            new_pos = -1;
         break;
     case M_PROPERTY_STEP_UP:
     case M_PROPERTY_STEP_DOWN: {
@@ -1717,27 +1739,27 @@ static int mp_property_sub_by_type(m_option_t *prop, int action, void *arg,
         int step = (step_all > 0) ? 1 : -1;
         int max_sub_pos_for_source = -1;
         if (!is_cur_source)
-            mpctx->global_sub_pos = -1;
+            new_pos = -1;
         while (step_all) {
-            if (mpctx->global_sub_pos == -1) {
+            if (new_pos == -1) {
                 if (step > 0)
-                    mpctx->global_sub_pos = offset;
+                    new_pos = offset;
                 else if (max_sub_pos_for_source == -1) {
                     // Find max pos for specific source
-                    mpctx->global_sub_pos = mpctx->global_sub_size - 1;
-                    while (mpctx->global_sub_pos >= 0
+                    new_pos = mpctx->global_sub_size - 1;
+                    while (new_pos >= 0
                             && sub_source(mpctx) != source)
-                        --mpctx->global_sub_pos;
+                        new_pos--;
                 }
                 else
-                    mpctx->global_sub_pos = max_sub_pos_for_source;
+                    new_pos = max_sub_pos_for_source;
             }
             else {
-                mpctx->global_sub_pos += step;
-                if (mpctx->global_sub_pos < offset ||
-                        mpctx->global_sub_pos >= mpctx->global_sub_size ||
+                new_pos += step;
+                if (new_pos < offset ||
+                        new_pos >= mpctx->global_sub_size ||
                         sub_source(mpctx) != source)
-                    mpctx->global_sub_pos = -1;
+                    new_pos = -1;
             }
             step_all -= step;
         }
@@ -1746,8 +1768,7 @@ static int mp_property_sub_by_type(m_option_t *prop, int action, void *arg,
     default:
         return M_PROPERTY_NOT_IMPLEMENTED;
     }
-    --mpctx->global_sub_pos;
-    return mp_property_sub(prop, M_PROPERTY_STEP_UP, NULL, mpctx);
+    return mp_property_sub(prop, M_PROPERTY_SET, &new_pos, mpctx);
 }
 
 /// Subtitle delay (RW)
@@ -2045,6 +2066,8 @@ static const m_option_t mp_properties[] = {
     { "stream_end", mp_property_stream_end, CONF_TYPE_POSITION,
      M_OPT_MIN, 0, 0, NULL },
     { "stream_length", mp_property_stream_length, CONF_TYPE_POSITION,
+     M_OPT_MIN, 0, 0, NULL },
+    { "stream_time_pos", mp_property_stream_time_pos, CONF_TYPE_TIME,
      M_OPT_MIN, 0, 0, NULL },
     { "length", mp_property_length, CONF_TYPE_TIME,
      M_OPT_MIN, 0, 0, NULL },
@@ -2411,7 +2434,7 @@ static void remove_subtitle_range(MPContext *mpctx, int start, int count)
     int after = mpctx->set_of_sub_size - end;
     sub_data **subs = mpctx->set_of_subtitles;
 #ifdef CONFIG_ASS
-    ass_track_t **ass_tracks = mpctx->set_of_ass_tracks;
+    ASS_Track **ass_tracks = mpctx->set_of_ass_tracks;
 #endif
     if (count < 0 || count > mpctx->set_of_sub_size ||
         start < 0 || start > mpctx->set_of_sub_size - count) {

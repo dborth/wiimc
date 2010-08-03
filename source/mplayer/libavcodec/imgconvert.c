@@ -36,9 +36,9 @@
 #include "imgconvert.h"
 #include "libavutil/colorspace.h"
 #include "libavutil/pixdesc.h"
+#include "libavcore/imgutils.h"
 
-#if HAVE_MMX
-#include "x86/mmx.h"
+#if HAVE_MMX && HAVE_YASM
 #include "x86/dsputil_mmx.h"
 #endif
 
@@ -53,6 +53,14 @@
 #define FF_PIXEL_PLANAR   0 /**< each channel has one component in AVPicture */
 #define FF_PIXEL_PACKED   1 /**< only one components containing all the channels */
 #define FF_PIXEL_PALETTE  2  /**< one components containing indexes for a palette */
+
+#if HAVE_MMX && HAVE_YASM
+#define deinterlace_line_inplace ff_deinterlace_line_inplace_mmx
+#define deinterlace_line         ff_deinterlace_line_mmx
+#else
+#define deinterlace_line_inplace deinterlace_line_inplace_c
+#define deinterlace_line         deinterlace_line_c
+#endif
 
 typedef struct PixFmtInfo {
     uint8_t nb_channels;     /**< number of channels (including alpha) */
@@ -490,144 +498,18 @@ int ff_set_systematic_pal(uint32_t pal[256], enum PixelFormat pix_fmt){
     return 0;
 }
 
+#if LIBAVCODEC_VERSION_MAJOR < 53
 int ff_fill_linesize(AVPicture *picture, enum PixelFormat pix_fmt, int width)
 {
-    int i;
-    const AVPixFmtDescriptor *desc = &av_pix_fmt_descriptors[pix_fmt];
-    int max_plane_step     [4];
-    int max_plane_step_comp[4];
-
-    memset(picture->linesize, 0, sizeof(picture->linesize));
-
-    if (desc->flags & PIX_FMT_HWACCEL)
-        return -1;
-
-    if (desc->flags & PIX_FMT_BITSTREAM) {
-        picture->linesize[0] = (width * (desc->comp[0].step_minus1+1) + 7) >> 3;
-        return 0;
-    }
-
-    memset(max_plane_step     , 0, sizeof(max_plane_step     ));
-    memset(max_plane_step_comp, 0, sizeof(max_plane_step_comp));
-    for (i = 0; i < 4; i++) {
-        const AVComponentDescriptor *comp = &(desc->comp[i]);
-        if ((comp->step_minus1+1) > max_plane_step[comp->plane]) {
-            max_plane_step     [comp->plane] = comp->step_minus1+1;
-            max_plane_step_comp[comp->plane] = i;
-        }
-    }
-
-    for (i = 0; i < 4; i++) {
-        int s = (max_plane_step_comp[i] == 1 || max_plane_step_comp[i] == 2) ? desc->log2_chroma_w : 0;
-        picture->linesize[i] = max_plane_step[i] * (((width + (1 << s) - 1)) >> s);
-    }
-
-    return 0;
+    return av_fill_image_linesizes(picture->linesize, pix_fmt, width);
 }
 
 int ff_fill_pointer(AVPicture *picture, uint8_t *ptr, enum PixelFormat pix_fmt,
                     int height)
 {
-    int size, h2, size2;
-    const AVPixFmtDescriptor *desc = &av_pix_fmt_descriptors[pix_fmt];
-
-    size = picture->linesize[0] * height;
-    switch(pix_fmt) {
-    case PIX_FMT_YUV420P:
-    case PIX_FMT_YUV422P:
-    case PIX_FMT_YUV444P:
-    case PIX_FMT_YUV410P:
-    case PIX_FMT_YUV411P:
-    case PIX_FMT_YUV440P:
-    case PIX_FMT_YUVJ420P:
-    case PIX_FMT_YUVJ422P:
-    case PIX_FMT_YUVJ444P:
-    case PIX_FMT_YUVJ440P:
-    case PIX_FMT_YUV420P16LE:
-    case PIX_FMT_YUV422P16LE:
-    case PIX_FMT_YUV444P16LE:
-    case PIX_FMT_YUV420P16BE:
-    case PIX_FMT_YUV422P16BE:
-    case PIX_FMT_YUV444P16BE:
-        h2 = (height + (1 << desc->log2_chroma_h) - 1) >> desc->log2_chroma_h;
-        size2 = picture->linesize[1] * h2;
-        picture->data[0] = ptr;
-        picture->data[1] = picture->data[0] + size;
-        picture->data[2] = picture->data[1] + size2;
-        picture->data[3] = NULL;
-        return size + 2 * size2;
-    case PIX_FMT_YUVA420P:
-        h2 = (height + (1 << desc->log2_chroma_h) - 1) >> desc->log2_chroma_h;
-        size2 = picture->linesize[1] * h2;
-        picture->data[0] = ptr;
-        picture->data[1] = picture->data[0] + size;
-        picture->data[2] = picture->data[1] + size2;
-        picture->data[3] = picture->data[1] + size2 + size2;
-        return 2 * size + 2 * size2;
-    case PIX_FMT_NV12:
-    case PIX_FMT_NV21:
-        h2 = (height + (1 << desc->log2_chroma_h) - 1) >> desc->log2_chroma_h;
-        size2 = picture->linesize[1] * h2;
-        picture->data[0] = ptr;
-        picture->data[1] = picture->data[0] + size;
-        picture->data[2] = NULL;
-        picture->data[3] = NULL;
-        return size + size2;
-    case PIX_FMT_RGB24:
-    case PIX_FMT_BGR24:
-    case PIX_FMT_ARGB:
-    case PIX_FMT_ABGR:
-    case PIX_FMT_RGBA:
-    case PIX_FMT_BGRA:
-    case PIX_FMT_RGB48BE:
-    case PIX_FMT_RGB48LE:
-    case PIX_FMT_GRAY16BE:
-    case PIX_FMT_GRAY16LE:
-    case PIX_FMT_BGR444BE:
-    case PIX_FMT_BGR444LE:
-    case PIX_FMT_BGR555BE:
-    case PIX_FMT_BGR555LE:
-    case PIX_FMT_BGR565BE:
-    case PIX_FMT_BGR565LE:
-    case PIX_FMT_RGB444BE:
-    case PIX_FMT_RGB444LE:
-    case PIX_FMT_RGB555BE:
-    case PIX_FMT_RGB555LE:
-    case PIX_FMT_RGB565BE:
-    case PIX_FMT_RGB565LE:
-    case PIX_FMT_YUYV422:
-    case PIX_FMT_UYVY422:
-    case PIX_FMT_UYYVYY411:
-    case PIX_FMT_RGB4:
-    case PIX_FMT_BGR4:
-    case PIX_FMT_MONOWHITE:
-    case PIX_FMT_MONOBLACK:
-    case PIX_FMT_Y400A:
-        picture->data[0] = ptr;
-        picture->data[1] = NULL;
-        picture->data[2] = NULL;
-        picture->data[3] = NULL;
-        return size;
-    case PIX_FMT_PAL8:
-    case PIX_FMT_RGB8:
-    case PIX_FMT_BGR8:
-    case PIX_FMT_RGB4_BYTE:
-    case PIX_FMT_BGR4_BYTE:
-    case PIX_FMT_GRAY8:
-        size2 = (size + 3) & ~3;
-        picture->data[0] = ptr;
-        picture->data[1] = ptr + size2; /* palette is stored here as 256 32 bit words */
-        picture->data[2] = NULL;
-        picture->data[3] = NULL;
-        return size2 + 256 * 4;
-    default:
-        picture->data[0] = NULL;
-        picture->data[1] = NULL;
-        picture->data[2] = NULL;
-        picture->data[3] = NULL;
-        return -1;
-    }
+    return av_fill_image_pointers(picture->data, pix_fmt, height, ptr, picture->linesize);
 }
+#endif
 
 int avpicture_fill(AVPicture *picture, uint8_t *ptr,
                    enum PixelFormat pix_fmt, int width, int height)
@@ -636,10 +518,10 @@ int avpicture_fill(AVPicture *picture, uint8_t *ptr,
     if(avcodec_check_dimensions(NULL, width, height))
         return -1;
 
-    if (ff_fill_linesize(picture, pix_fmt, width))
+    if (av_fill_image_linesizes(picture->linesize, pix_fmt, width))
         return -1;
 
-    return ff_fill_pointer(picture, ptr, pix_fmt, height);
+    return av_fill_image_pointers(picture->data, pix_fmt, height, ptr, picture->linesize);
 }
 
 int avpicture_layout(const AVPicture* src, enum PixelFormat pix_fmt, int width, int height,
@@ -1246,61 +1128,14 @@ int img_get_alpha_info(const AVPicture *src,
     return ret;
 }
 
-#if HAVE_MMX
-#define DEINT_INPLACE_LINE_LUM \
-                    movd_m2r(lum_m4[0],mm0);\
-                    movd_m2r(lum_m3[0],mm1);\
-                    movd_m2r(lum_m2[0],mm2);\
-                    movd_m2r(lum_m1[0],mm3);\
-                    movd_m2r(lum[0],mm4);\
-                    punpcklbw_r2r(mm7,mm0);\
-                    movd_r2m(mm2,lum_m4[0]);\
-                    punpcklbw_r2r(mm7,mm1);\
-                    punpcklbw_r2r(mm7,mm2);\
-                    punpcklbw_r2r(mm7,mm3);\
-                    punpcklbw_r2r(mm7,mm4);\
-                    paddw_r2r(mm3,mm1);\
-                    psllw_i2r(1,mm2);\
-                    paddw_r2r(mm4,mm0);\
-                    psllw_i2r(2,mm1);\
-                    paddw_r2r(mm6,mm2);\
-                    paddw_r2r(mm2,mm1);\
-                    psubusw_r2r(mm0,mm1);\
-                    psrlw_i2r(3,mm1);\
-                    packuswb_r2r(mm7,mm1);\
-                    movd_r2m(mm1,lum_m2[0]);
-
-#define DEINT_LINE_LUM \
-                    movd_m2r(lum_m4[0],mm0);\
-                    movd_m2r(lum_m3[0],mm1);\
-                    movd_m2r(lum_m2[0],mm2);\
-                    movd_m2r(lum_m1[0],mm3);\
-                    movd_m2r(lum[0],mm4);\
-                    punpcklbw_r2r(mm7,mm0);\
-                    punpcklbw_r2r(mm7,mm1);\
-                    punpcklbw_r2r(mm7,mm2);\
-                    punpcklbw_r2r(mm7,mm3);\
-                    punpcklbw_r2r(mm7,mm4);\
-                    paddw_r2r(mm3,mm1);\
-                    psllw_i2r(1,mm2);\
-                    paddw_r2r(mm4,mm0);\
-                    psllw_i2r(2,mm1);\
-                    paddw_r2r(mm6,mm2);\
-                    paddw_r2r(mm2,mm1);\
-                    psubusw_r2r(mm0,mm1);\
-                    psrlw_i2r(3,mm1);\
-                    packuswb_r2r(mm7,mm1);\
-                    movd_r2m(mm1,dst[0]);
-#endif
-
+#if !(HAVE_MMX && HAVE_YASM)
 /* filter parameters: [-1 4 2 4 -1] // 8 */
-static void deinterlace_line(uint8_t *dst,
+static void deinterlace_line_c(uint8_t *dst,
                              const uint8_t *lum_m4, const uint8_t *lum_m3,
                              const uint8_t *lum_m2, const uint8_t *lum_m1,
                              const uint8_t *lum,
                              int size)
 {
-#if !HAVE_MMX
     uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
     int sum;
 
@@ -1318,27 +1153,12 @@ static void deinterlace_line(uint8_t *dst,
         lum++;
         dst++;
     }
-#else
-
-    {
-        pxor_r2r(mm7,mm7);
-        movq_m2r(ff_pw_4,mm6);
-    }
-    for (;size > 3; size-=4) {
-        DEINT_LINE_LUM
-        lum_m4+=4;
-        lum_m3+=4;
-        lum_m2+=4;
-        lum_m1+=4;
-        lum+=4;
-        dst+=4;
-    }
-#endif
 }
-static void deinterlace_line_inplace(uint8_t *lum_m4, uint8_t *lum_m3, uint8_t *lum_m2, uint8_t *lum_m1, uint8_t *lum,
-                             int size)
+
+static void deinterlace_line_inplace_c(uint8_t *lum_m4, uint8_t *lum_m3,
+                                       uint8_t *lum_m2, uint8_t *lum_m1,
+                                       uint8_t *lum, int size)
 {
-#if !HAVE_MMX
     uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
     int sum;
 
@@ -1356,22 +1176,8 @@ static void deinterlace_line_inplace(uint8_t *lum_m4, uint8_t *lum_m3, uint8_t *
         lum_m1++;
         lum++;
     }
-#else
-
-    {
-        pxor_r2r(mm7,mm7);
-        movq_m2r(ff_pw_4,mm6);
-    }
-    for (;size > 3; size-=4) {
-        DEINT_INPLACE_LINE_LUM
-        lum_m4+=4;
-        lum_m3+=4;
-        lum_m2+=4;
-        lum_m1+=4;
-        lum+=4;
-    }
-#endif
 }
+#endif
 
 /* deinterlacing : 2 temporal taps, 3 spatial taps linear filter. The
    top field is copied as is, but the bottom field is deinterlaced

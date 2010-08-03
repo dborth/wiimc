@@ -23,10 +23,6 @@
 #include "libvo/fastmemcpy.h"
 
 #include "libavutil/common.h"
-#include "libavutil/internal.h"
-
-#undef fprintf
-#undef printf
 
 #if ARCH_X86_64
 // 3DNow! and 3DNow!Ext routines don't compile under AMD64
@@ -67,7 +63,7 @@ int mp3_read(char *buf,int size);
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: sr1.c 31140 2010-05-07 18:24:41Z diego $
+ * $Id: sr1.c 31892 2010-08-01 21:06:51Z diego $
  */
 
 

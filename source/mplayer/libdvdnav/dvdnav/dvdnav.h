@@ -279,6 +279,11 @@ dvdnav_status_t dvdnav_title_play(dvdnav_t *self, int32_t title);
 dvdnav_status_t dvdnav_part_play(dvdnav_t *self, int32_t title, int32_t part);
 
 /*
+ * Plays the specified title, starting from the specified program
+ */
+dvdnav_status_t dvdnav_program_play(dvdnav_t *this, int32_t title, int32_t pgcn, int32_t pgn);
+
+/*
  * Stores in *times an array (that the application *must* free) of
  * dvdtimes corresponding to the chapter times for the chosen title.
  * *duration will have the duration of the title
@@ -318,6 +323,13 @@ dvdnav_status_t dvdnav_menu_call(dvdnav_t *self, DVDMenuID_t menu);
  */
 dvdnav_status_t dvdnav_current_title_info(dvdnav_t *self, int32_t *title,
 					  int32_t *part);
+
+/*
+ * Return the title number, pgcn and pgn currently being played.
+ * A title of 0 indicates, we are in a menu.
+ */
+dvdnav_status_t dvdnav_current_title_program(dvdnav_t *self, int32_t *title,
+					  int32_t *pgcn, int32_t *pgn);
 
 /*
  * Return the current position (in blocks) within the current

@@ -34,7 +34,7 @@
 #include <assert.h>
 
 #include "rtpdec.h"
-#include "rtpdec_xiph.h"
+#include "rtpdec_formats.h"
 
 /**
  * RTP/Xiph specific private data.
@@ -172,6 +172,11 @@ static int xiph_handle_packet(AVFormatContext * ctx,
             av_log(ctx, AV_LOG_ERROR, "RTP timestamps don't match!\n");
             return AVERROR_INVALIDDATA;
         }
+        if (!data->fragment) {
+            av_log(ctx, AV_LOG_WARNING,
+                   "Received packet without a start fragment; dropping.\n");
+            return AVERROR(EAGAIN);
+        }
 
         // copy data to fragment buffer
         put_buffer(data->fragment, buf, pkt_len);
@@ -288,7 +293,17 @@ static int xiph_parse_fmtp_pair(AVStream* stream,
     int result = 0;
 
     if (!strcmp(attr, "sampling")) {
-        return AVERROR_PATCHWELCOME;
+        if (!strcmp(value, "YCbCr-4:2:0")) {
+            codec->pix_fmt = PIX_FMT_YUV420P;
+        } else if (!strcmp(value, "YCbCr-4:4:2")) {
+            codec->pix_fmt = PIX_FMT_YUV422P;
+        } else if (!strcmp(value, "YCbCr-4:4:4")) {
+            codec->pix_fmt = PIX_FMT_YUV444P;
+        } else {
+            av_log(codec, AV_LOG_ERROR,
+                   "Unsupported pixel format %s\n", attr);
+            return AVERROR_INVALIDDATA;
+        }
     } else if (!strcmp(attr, "width")) {
         /* This is an integer between 1 and 1048561
          * and MUST be in multiples of 16. */

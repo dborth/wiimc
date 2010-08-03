@@ -392,6 +392,11 @@ static unsigned int initialized_flags=0;
 /// step size of mixer changes
 int volstep = 3;
 
+#ifdef CONFIG_CRASH_DEBUG
+static char *prog_path;
+static int crash_debug = 0;
+#endif
+
 /* This header requires all the global variable declarations. */
 #include "cfg-mplayer.h"
 
@@ -842,11 +847,6 @@ static void child_sighandler(int x){
 }
 #endif
 
-#ifdef CONFIG_CRASH_DEBUG
-static char *prog_path;
-static int crash_debug = 0;
-#endif
-
 #ifndef GEKKO
 
 static void exit_sighandler(int x){
@@ -1146,7 +1146,7 @@ void add_subtitles(char *filename, float fps, int noerr)
 {
     sub_data *subd;
 #ifdef CONFIG_ASS
-    ass_track_t *asst = 0;
+    ASS_Track *asst = 0;
 #endif
 
     if (filename == NULL || mpctx->set_of_sub_size >= MAX_SUBTITLE_FILES) {
@@ -2726,7 +2726,7 @@ static int seek(MPContext *mpctx, double amount, int style)
 	vobsub_seek(vo_vobsub, mpctx->sh_video->pts);
     }
 
-#if defined(CONFIG_ASS) && defined(LIBASS_VERSION) && LIBASS_VERSION >= 0x00910000
+#ifdef CONFIG_ASS
     if (ass_enabled && mpctx->d_sub->sh && ((sh_sub_t *)mpctx->d_sub->sh)->ass_track)
         ass_flush_events(((sh_sub_t *)mpctx->d_sub->sh)->ass_track);
 #endif
@@ -4150,8 +4150,14 @@ if(auto_quality>0){
  if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
    nav_highlight_t hl;
    mp_dvdnav_get_highlight (mpctx->stream, &hl);
+   if (!vo_spudec || !spudec_apply_palette_crop(vo_spudec, hl.palette, hl.sx, hl.sy, hl.ex, hl.ey)) {
    osd_set_nav_box (hl.sx, hl.sy, hl.ex, hl.ey);
    vo_osd_changed (OSDTYPE_DVDNAV);
+   } else {
+     osd_set_nav_box(0, 0, 0, 0);
+     vo_osd_changed(OSDTYPE_DVDNAV);
+     vo_osd_changed(OSDTYPE_SPU);
+   }
 
    if (mp_dvdnav_stream_has_changed(mpctx->stream)) {
      double ar = -1.0;
@@ -4522,7 +4528,7 @@ static void remove_subtitles()
     int after = mpctx->set_of_sub_size - end;
     sub_data **subs = mpctx->set_of_subtitles;
 #ifdef CONFIG_ASS
-    ass_track_t **ass_tracks = mpctx->set_of_ass_tracks;
+    ASS_Track **ass_tracks = mpctx->set_of_ass_tracks;
 #endif
     if (count < 0 || count > mpctx->set_of_sub_size ||
         start < 0 || start > mpctx->set_of_sub_size - count) {

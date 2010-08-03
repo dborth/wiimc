@@ -7,7 +7,7 @@ The latest version can be found at http://www.linuxstb.org/dvbstream
 
 Modified for use with MPlayer, for details see the changelog at
 http://svn.mplayerhq.hu/mplayer/trunk/
-$Id: stream_dvb.c 30943 2010-03-20 23:38:27Z diego $
+$Id: stream_dvb.c 31877 2010-07-31 16:43:20Z diego $
 
 Copyright notice:
 
@@ -783,6 +783,7 @@ dvb_config_t *dvb_get_config(void)
 			continue;
 		}
 
+		conf_file = get_path("channels.conf");
 		switch(type)
 		{
 			case TUNER_TER:
@@ -808,9 +809,7 @@ dvb_config_t *dvb_get_config(void)
 			{
 				if(conf_file)
 					free(conf_file);
-				conf_file = (char*)malloc(sizeof(char)*200);
-				sprintf(conf_file,"%s%s",MPLAYER_CONFDIR,"/channels.conf");
-				//conf_file = strdup(MPLAYER_CONFDIR "/channels.conf");
+				conf_file = strdup(MPLAYER_CONFDIR "/channels.conf");
 			}
 		}
 

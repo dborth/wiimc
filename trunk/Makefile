@@ -33,7 +33,7 @@ LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-MPLIBS	:=	-lmplayerwii -lavformat -lavcodec -lavutil -lpostproc -lswscale
+MPLIBS	:=	-lmplayerwii -lavformat -lavcodec -lavcore -lavutil -lpostproc -lswscale
 LIBS 	:= 	$(MPLIBS) -la52	-lfribidi -ljpeg -ldi -liconv -lpcrecpp -lpcre -lpng \
 			-lz -lntfs -lfat -lwiiuse -lbte -logc -lfreetype -ljpeg -lmxml \
 			-ltinysmb -lexif
@@ -98,6 +98,7 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 					-L$(LIBOGC_LIB) \
 				-L$(MPLAYER)/ \
+				-L$(MPLAYER)/libavcore \
 				-L$(MPLAYER)/libavcodec \
 				-L$(MPLAYER)/libavformat \
 				-L$(MPLAYER)/libavutil \

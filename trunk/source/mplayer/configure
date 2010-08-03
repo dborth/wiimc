@@ -106,6 +106,20 @@ EOF
   compile_check $TMPC $@
 }
 
+# this is a special check only to be
+# used for broken headers that do not
+# include all dependencies
+header_check_broken() {
+  cat > $TMPC << EOF
+#include <$1>
+#include <$2>
+int main(void) { return 0; }
+EOF
+  shift
+  shift
+  compile_check $TMPC $@
+}
+
 yasm_check() {
   echo >> "$TMPLOG"
   cat "$TMPS" >> "$TMPLOG"
@@ -331,11 +345,13 @@ Codecs:
   --disable-libnut          disable libnut [autodetect]
   --disable-libavutil_a     disable static libavutil [autodetect]
   --disable-libavcodec_a    disable static libavcodec [autodetect]
+  --disable-libavcore_a     disable static libavcore [autodetect]
   --disable-libavformat_a   disable static libavformat [autodetect]
   --disable-libpostproc_a   disable static libpostproc [autodetect]
   --disable-libswscale_a    disable static libswscale [autodetect]
   --disable-libavutil_so    disable shared libavutil [autodetect]
   --disable-libavcodec_so   disable shared libavcodec [autodetect]
+  --disable-libavcore_so    disable shared libavcore [autodetect]
   --disable-libavformat_so  disable shared libavformat [autodetect]
   --disable-libpostproc_so  disable shared libpostproc [autodetect]
   --disable-libswscale_so   disable shared libswscale [autodetect]
@@ -570,6 +586,8 @@ _prefix="/usr/local"
 _libavutil_a=auto
 _libavutil_so=auto
 _libavcodec_a=auto
+_libavcore_a=auto
+_libavcore_so=auto
 _libopencore_amrnb=auto
 _libopencore_amrwb=auto
 libopenjpeg=auto
@@ -1196,6 +1214,10 @@ for ac_option do
   --disable-libavcodec_a)       _libavcodec_a=no        ;;
   --enable-libavcodec_so)       _libavcodec_so=yes      ;;
   --disable-libavcodec_so)      _libavcodec_so=no       ;;
+  --enable-libavcore_a)         _libavcore_a=yes        ;;
+  --disable-libavcore_a)        _libavcore_a=no         ;;
+  --enable-libavcore_so)        _libavcore_so=yes       ;;
+  --disable-libavcore_so)       _libavcore_so=no        ;;
   --enable-libopencore_amrnb)   _libopencore_amrnb=yes  ;;
   --disable-libopencore_amrnb)  _libopencore_amrnb=no   ;;
   --enable-libopencore_amrwb)   _libopencore_amrwb=yes  ;;
@@ -2538,6 +2560,8 @@ elif test -z "$CFLAGS" ; then
     CFLAGS="-O2 $_march $_mcpu $_pipe -fomit-frame-pointer -wd167 -wd556 -wd144"
   elif test "$cc_vendor" = "sun" ; then
     CFLAGS="-O2 $_march $_mcpu $_pipe -xc99 -xregs=frameptr"
+  elif test "$cc_vendor" = "clang"; then
+    CFLAGS="-O2 $_march $_pipe"
   elif test "$cc_vendor" != "gnu" ; then
     CFLAGS="-O2 $_march $_mcpu $_pipe"
   else
@@ -2561,7 +2585,7 @@ else
 fi
 
 cflag_check -mno-omit-leaf-frame-pointer && cflags_no_omit_leaf_frame_pointer="-mno-omit-leaf-frame-pointer"
-cflag_check -MD -MP && DEPFLAGS="-MD -MP $CFLAGS"
+cflag_check -MMD -MF "$mplayer_tmpdir/test.d" -MT test.o && DEPFLAGS='-MMD -MF $(@:.o=.d) -MT $@'
 
 
 if test -n "$LDFLAGS" ; then
@@ -2720,7 +2744,9 @@ else
 fi
 
 echo "pabsw xmm0, xmm0" > $TMPS
-yasm_check || _yasm=""
+if test "$_yasm" ; then
+  yasm_check || die "yasm not found, use --yasm='' if you really want to compile without"
+fi
 if test $_yasm ; then
   def_yasm='#define HAVE_YASM 1'
   have_yasm="yes"
@@ -3760,7 +3786,8 @@ echores "$_dvdio"
 
 echocheck "sys/cdio.h"
 _cdio=no
-header_check sys/cdio.h && _cdio=yes
+# at least OpenSolaris has a broken cdio.h
+header_check_broken sys/types.h sys/cdio.h && _cdio=yes
 if test "$_cdio" = yes ; then
   def_cdio='#define DVD_STRUCT_IN_SYS_CDIO_H 1'
 else
@@ -3821,7 +3848,8 @@ fi #if hpux
 if sunos; then
 echocheck "userspace SCSI headers (Solaris)"
 _sol_scsi_h=no
-header_check sys/scsi/scsi_types.h && header_check sys/scsi/impl/uscsi.h &&
+header_check sys/scsi/scsi_types.h &&
+  header_check_broken sys/types.h sys/scsi/impl/uscsi.h &&
    _sol_scsi_h=yes
 if test "$_sol_scsi_h" = yes ; then
   def_sol_scsi_h='#define SOLARIS_USCSI 1'
@@ -7280,6 +7308,43 @@ if test "$_libavutil" = no ; then
 fi
 echores "$_libavutil"
 
+echocheck "FFmpeg libavcore"
+if test "$_libavcore_a" = auto ; then
+  if test -d libavcore ; then
+    _libavcore_a=yes
+    res_comment="static"
+  fi
+elif test "$_libavcore_so" = auto ; then
+  _libavcore_so=no
+  cat > $TMPC << EOF
+#include <libavcore/avcore.h>
+int main(void) { return 0; }
+EOF
+  if $_pkg_config --exists libavcore ; then
+    _inc_libavcore=$($_pkg_config --cflags libavcore)
+    _ld_tmp=$($_pkg_config --libs libavcore)
+    cc_check $_inc_libavcore $_ld_tmp && extra_ldflags="$extra_ldflags $_ld_tmp" \
+      && _libavcore_so=yes
+  elif cc_check -lavcore $_ld_lm ; then
+    extra_ldflags="$extra_ldflags -lavcore"
+    _libavcore_so=yes
+    res_comment="using libavcore.so, but static libavcore is recommended"
+  fi
+fi
+_libavcore=no
+def_libavcore='#undef CONFIG_LIBAVCORE'
+def_libavcore_a='#undef CONFIG_LIBAVCORE_A'
+def_libavcore_so='#undef CONFIG_LIBAVCORE_SO'
+test "$_libavcore_a" = yes || test "$_libavcore_so" = yes && _libavcore=yes
+test "$_libavcore"    = yes && def_libavcore='#define CONFIG_LIBAVCORE 1'
+test "$_libavcore_a"  = yes && def_libavcore_a='#define CONFIG_LIBAVCORE_A 1'
+test "$_libavcore_so" = yes && def_libavcore_so='#define CONFIG_LIBAVCORE_SO 1'
+# neither static nor shared libavcore is available, but it is mandatory ...
+if test "$_libavcore" = no ; then
+  die "You need static or shared libavcore, MPlayer will not compile without!"
+fi
+echores "$_libavcore"
+
 echocheck "FFmpeg libavcodec"
 if test "$_libavcodec_a" = auto ; then
   _libavcodec_a=no
@@ -8538,7 +8603,8 @@ WINDRES = $_windres
 CFLAGS   = $CFLAGS $extra_cflags
 ASFLAGS  = \$(CFLAGS)
 CXXFLAGS = $CXXFLAGS $extra_cflags $extra_cxxflags
-DEPFLAGS = $DEPFLAGS
+CC_DEPFLAGS = $DEPFLAGS
+AS_DEPFLAGS = $DEPFLAGS
 
 CFLAGS_DHAHELPER         = $cflags_dhahelper
 CFLAGS_FAAD_FIXED        = $cflags_faad_fixed
@@ -8748,6 +8814,9 @@ LIBAVUTIL_SO   = $_libavutil_so
 LIBAVCODEC     = $_libavcodec
 LIBAVCODEC_A   = $_libavcodec_a
 LIBAVCODEC_SO  = $_libavcodec_so
+LIBAVCORE      = $_libavcore
+LIBAVCORE_A    = $_libavcore_a
+LIBAVCORE_SO   = $_libavcore_so
 LIBAVFORMAT    = $_libavformat
 LIBAVFORMAT_A  = $_libavformat_a
 LIBAVFORMAT_SO = $_libavformat_so
@@ -9217,6 +9286,9 @@ $def_zr
 $def_libavcodec
 $def_libavcodec_a
 $def_libavcodec_so
+$def_libavcore
+$def_libavcore_a
+$def_libavcore_so
 $def_libavformat
 $def_libavformat_a
 $def_libavformat_so

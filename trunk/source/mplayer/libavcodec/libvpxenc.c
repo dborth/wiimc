@@ -36,13 +36,13 @@
  * One encoded frame returned from the library.
  */
 struct FrameListData {
-    void *buf;                       /**≤ compressed data buffer */
-    size_t sz;                       /**≤ length of compressed data */
-    int64_t pts;                     /**≤ time stamp to show frame
+    void *buf;                       /**< compressed data buffer */
+    size_t sz;                       /**< length of compressed data */
+    int64_t pts;                     /**< time stamp to show frame
                                           (in timebase units) */
-    unsigned long duration;          /**≤ duration to show frame
+    unsigned long duration;          /**< duration to show frame
                                           (in timebase units) */
-    uint32_t flags;                  /**≤ flags for this frame */
+    uint32_t flags;                  /**< flags for this frame */
     struct FrameListData *next;
 };
 
@@ -240,6 +240,22 @@ static av_cold int vp8_init(AVCodecContext *avctx)
     enccfg.rc_min_quantizer = avctx->qmin;
     enccfg.rc_max_quantizer = avctx->qmax;
     enccfg.rc_dropframe_thresh = avctx->frame_skip_threshold;
+
+    //0-100 (0 => CBR, 100 => VBR)
+    enccfg.rc_2pass_vbr_bias_pct           = round(avctx->qcompress * 100);
+    enccfg.rc_2pass_vbr_minsection_pct     =
+        avctx->rc_min_rate * 100 / avctx->bit_rate;
+    if (avctx->rc_max_rate)
+        enccfg.rc_2pass_vbr_maxsection_pct =
+            avctx->rc_max_rate * 100 / avctx->bit_rate;
+
+    if (avctx->rc_buffer_size)
+        enccfg.rc_buf_sz         =
+            avctx->rc_buffer_size * 1000 / avctx->bit_rate;
+    if (avctx->rc_initial_buffer_occupancy)
+        enccfg.rc_buf_initial_sz =
+            avctx->rc_initial_buffer_occupancy * 1000 / avctx->bit_rate;
+    enccfg.rc_buf_optimal_sz     = enccfg.rc_buf_sz * 5 / 6;
 
     //_enc_init() will balk if kf_min_dist differs from max w/VPX_KF_AUTO
     if (avctx->keyint_min == avctx->gop_size)

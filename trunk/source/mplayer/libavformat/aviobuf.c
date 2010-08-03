@@ -390,28 +390,20 @@ void init_checksum(ByteIOContext *s,
 /* XXX: put an inline version */
 int get_byte(ByteIOContext *s)
 {
-    if (s->buf_ptr < s->buf_end) {
-        return *s->buf_ptr++;
-    } else {
+    if (s->buf_ptr >= s->buf_end)
         fill_buffer(s);
-        if (s->buf_ptr < s->buf_end)
-            return *s->buf_ptr++;
-        else
-            return 0;
-    }
+    if (s->buf_ptr < s->buf_end)
+        return *s->buf_ptr++;
+    return 0;
 }
 
 int url_fgetc(ByteIOContext *s)
 {
-    if (s->buf_ptr < s->buf_end) {
-        return *s->buf_ptr++;
-    } else {
+    if (s->buf_ptr >= s->buf_end)
         fill_buffer(s);
-        if (s->buf_ptr < s->buf_end)
-            return *s->buf_ptr++;
-        else
-            return URL_EOF;
-    }
+    if (s->buf_ptr < s->buf_end)
+        return *s->buf_ptr++;
+    return URL_EOF;
 }
 
 int get_buffer(ByteIOContext *s, unsigned char *buf, int size)
@@ -554,6 +546,21 @@ char *get_strz(ByteIOContext *s, char *buf, int maxlen)
     return buf;
 }
 
+int ff_get_line(ByteIOContext *s, char *buf, int maxlen)
+{
+    int i = 0;
+    char c;
+
+    do {
+        c = get_byte(s);
+        if (c && i < maxlen-1)
+            buf[i++] = c;
+    } while (c != '\n' && c);
+
+    buf[i] = 0;
+    return i;
+}
+
 uint64_t get_be64(ByteIOContext *s)
 {
     uint64_t val;
@@ -652,7 +659,7 @@ int ff_rewind_with_probe_data(ByteIOContext *s, unsigned char *buf, int buf_size
 {
     int64_t buffer_start;
     int buffer_size;
-    int overlap, new_size;
+    int overlap, new_size, alloc_size;
 
     if (s->write_flag)
         return AVERROR(EINVAL);
@@ -666,17 +673,20 @@ int ff_rewind_with_probe_data(ByteIOContext *s, unsigned char *buf, int buf_size
     overlap = buf_size - buffer_start;
     new_size = buf_size + buffer_size - overlap;
 
-    if (new_size > buf_size) {
-        if (!(buf = av_realloc(buf, new_size)))
+    alloc_size = FFMAX(s->buffer_size, new_size);
+    if (alloc_size > buf_size)
+        if (!(buf = av_realloc(buf, alloc_size)))
             return AVERROR(ENOMEM);
 
+    if (new_size > buf_size) {
         memcpy(buf + buf_size, s->buffer + overlap, buffer_size - overlap);
         buf_size = new_size;
     }
 
     av_free(s->buffer);
     s->buf_ptr = s->buffer = buf;
-    s->pos = s->buffer_size = buf_size;
+    s->buffer_size = alloc_size;
+    s->pos = buf_size;
     s->buf_end = s->buf_ptr + buf_size;
     s->eof_reached = 0;
     s->must_flush = 0;

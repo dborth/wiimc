@@ -2,7 +2,7 @@
  * css.h: Structures for DVD authentication and unscrambling
  *****************************************************************************
  * Copyright (C) 1999-2001 VideoLAN
- * $Id: css.h 31155 2010-05-11 10:51:46Z diego $
+ * $Id: css.h 31883 2010-08-01 13:52:17Z reimar $
  *
  * Author: Stéphane Borel <stef@via.ecp.fr>
  *
@@ -48,7 +48,7 @@ typedef struct css_s
 /*****************************************************************************
  * Prototypes in css.c
  *****************************************************************************/
-int   _dvdcss_test        ( dvdcss_t );
+void  _dvdcss_test        ( dvdcss_t );
 int   _dvdcss_title       ( dvdcss_t, int );
 int   _dvdcss_disckey     ( dvdcss_t );
 int   _dvdcss_titlekey    ( dvdcss_t, int , dvd_key_t );

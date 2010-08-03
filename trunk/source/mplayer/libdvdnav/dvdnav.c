@@ -52,12 +52,12 @@ static dvdnav_status_t dvdnav_clear(dvdnav_t * this) {
   if (this->file) DVDCloseFile(this->file);
   this->file = NULL;
 
+  memset(&this->position_current,0,sizeof(this->position_current));
   memset(&this->pci,0,sizeof(this->pci));
   memset(&this->dsi,0,sizeof(this->dsi));
   this->last_cmd_nav_lbn = SRI_END_OF_CELL;
 
   /* Set initial values of flags */
-  this->position_current.still = 0;
   this->skip_still = 0;
   this->sync_wait = 0;
   this->sync_wait_skip = 0;
@@ -178,9 +178,9 @@ dvdnav_status_t dvdnav_reset(dvdnav_t *this) {
 #ifdef LOG_DEBUG
   fprintf(MSG_OUT, "libdvdnav: clearing dvdnav\n");
 #endif
+  pthread_mutex_unlock(&this->vm_lock);
   result = dvdnav_clear(this);
 
-  pthread_mutex_unlock(&this->vm_lock);
   return result;
 }
 

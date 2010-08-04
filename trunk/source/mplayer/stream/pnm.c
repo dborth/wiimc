@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: pnm.c 31493 2010-06-20 16:01:17Z diego $
+ * $Id: pnm.c 31913 2010-08-03 15:55:17Z siretart $
  *
  * pnm protocol implementation
  * based upon code from joschka
@@ -380,7 +380,7 @@ static int pnm_get_chunk(pnm_t *p,
     case MDPR_TAG:
     case CONT_TAG:
       if (chunk_size > max || chunk_size < PREAMBLE_SIZE) {
-        mp_msg(MSGT_OPEN, MSGL_ERR, "error: max chunk size exceded (max was 0x%04x)\n", max);
+        mp_msg(MSGT_OPEN, MSGL_ERR, "error: max chunk size exceeded (max was 0x%04x)\n", max);
 #ifdef LOG
         n=rm_read (p->s, &data[PREAMBLE_SIZE], 0x100 - PREAMBLE_SIZE);
         hexdump(data,n+PREAMBLE_SIZE);

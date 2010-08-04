@@ -103,7 +103,7 @@ typedef struct {
     int_fast16_t  books[64][8];
     uint_fast8_t  maxpass;
     uint_fast16_t ptns_to_read;
-    uint_fast8_t *classifs;
+    uint8_t *classifs;
 } vorbis_residue;
 
 typedef struct {
@@ -667,6 +667,8 @@ static int vorbis_parse_setup_hdr_residues(vorbis_context *vc)
         res_setup->classifs = av_malloc(res_setup->ptns_to_read *
                                         vc->audio_channels *
                                         sizeof(*res_setup->classifs));
+        if (!res_setup->classifs)
+            return AVERROR(ENOMEM);
 
         AV_DEBUG("    begin %d end %d part.size %d classif.s %d classbook %d \n", res_setup->begin, res_setup->end, res_setup->partition_size,
           res_setup->classifications, res_setup->classbook);
@@ -1267,7 +1269,7 @@ static av_always_inline int vorbis_residue_decode_internal(vorbis_context *vc,
     GetBitContext *gb = &vc->gb;
     uint_fast8_t c_p_c = vc->codebooks[vr->classbook].dimensions;
     uint_fast16_t ptns_to_read = vr->ptns_to_read;
-    uint_fast8_t *classifs = vr->classifs;
+    uint8_t *classifs = vr->classifs;
     uint_fast8_t pass;
     uint_fast8_t ch_used;
     uint_fast8_t i,j,l;

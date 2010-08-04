@@ -1526,7 +1526,10 @@ if netbsd || dragonfly ; then
 fi
 
 if darwin; then
-  extra_cflags="-mdynamic-no-pic -falign-loops=16 -shared-libgcc $extra_cflags"
+  extra_cflags="-mdynamic-no-pic $extra_cflags"
+  if test "$(basename $_cc)" != "clang" ; then
+    extra_cflags="-falign-loops=16 -shared-libgcc $extra_cflags"
+  fi
   _timer=timer-darwin.c
 fi
 
@@ -2565,7 +2568,7 @@ elif test -z "$CFLAGS" ; then
   elif test "$cc_vendor" != "gnu" ; then
     CFLAGS="-O2 $_march $_mcpu $_pipe"
   else
-    CFLAGS="-Wall -Wno-switch -Wpointer-arith -Wredundant-decls -O4 $_march $_mcpu $_pipe -ffast-math -fomit-frame-pointer"
+    CFLAGS="-Wall -Wno-switch -Wno-parentheses -Wpointer-arith -Wredundant-decls -O4 $_march $_mcpu $_pipe -ffast-math -fomit-frame-pointer"
     extra_ldflags="$extra_ldflags -ffast-math"
   fi
 else
@@ -6059,7 +6062,7 @@ elif dragonfly ; then
 elif freebsd ; then
   default_cdrom_device="/dev/acd0"
 elif openbsd ; then
-  default_cdrom_device="/dev/rcd0a"
+  default_cdrom_device="/dev/rcd0c"
 elif sunos ; then
   default_cdrom_device="/vol/dev/aliases/cdrom0"
   # Modern Solaris versions use HAL instead of the vold daemon, the volfs

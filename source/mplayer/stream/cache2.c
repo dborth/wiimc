@@ -593,21 +593,20 @@ void *mplayercachethread(void *arg)
 
 int cache_stream_fill_buffer(stream_t *s){
   int len;
+  int sector_size;
   if(s->eof){ s->buf_pos=s->buf_len=0; return 0; }
   if(!s->cache_pid) return stream_fill_buffer(s);
 
 //  cache_stats(s->cache_data);
 
-  if(s->pos!=((cache_vars_t*)s->cache_data)->read_filepos) 
-  {
-  	//mp_msg(MSGT_CACHE,MSGL_ERR,"!!! read_filepos differs!!! report this bug...\n");
-  	//reset cache
-    ((cache_vars_t*)s->cache_data)->offset = ((cache_vars_t*)s->cache_data)->min_filepos=((cache_vars_t*)s->cache_data)->max_filepos=((cache_vars_t*)s->cache_data)->read_filepos; // drop cache content :(
-    if(((cache_vars_t*)s->cache_data)->stream->eof) stream_reset(s);
-	s->pos!=((cache_vars_t*)s->cache_data)->read_filepos;
+  if(s->pos!=((cache_vars_t*)s->cache_data)->read_filepos) mp_msg(MSGT_CACHE,MSGL_ERR,"!!! read_filepos differs!!! report this bug...\n");
+  sector_size = ((cache_vars_t*)s->cache_data)->sector_size;
+  if (sector_size > STREAM_MAX_SECTOR_SIZE) {
+    mp_msg(MSGT_CACHE, MSGL_ERR, "Sector size %i larger than maximum %i\n", sector_size, STREAM_MAX_SECTOR_SIZE);
+    sector_size = STREAM_MAX_SECTOR_SIZE;
   }
 
-  len=cache_read(s->cache_data,s->buffer, ((cache_vars_t*)s->cache_data)->sector_size);
+  len=cache_read(s->cache_data,s->buffer, sector_size);
   //printf("cache_stream_fill_buffer->read -> %d\n",len);
 
   if(len<=0){ s->eof=1; s->buf_pos=s->buf_len=0; return 0; }
@@ -697,7 +696,8 @@ int cache_do_control(stream_t *stream, int cmd, void *arg) {
 	case STREAM_CTRL_SEEK_TO_CHAPTER:
 	case STREAM_CTRL_SEEK_TO_TIME:
 	case STREAM_CTRL_SET_ANGLE:
-	  stream->pos = s->read_filepos = s->control_new_pos;
+	  if (s->control_res != STREAM_UNSUPPORTED)
+	      stream->pos = s->read_filepos = s->control_new_pos;
 	  break;
   }
   return s->control_res;

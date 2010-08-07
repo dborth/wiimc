@@ -621,3 +621,12 @@ msgstr "DVD支持"
 
 msgid "Enabled"
 msgstr "开启"
+
+msgid "Error loading YouTube file!"
+msgstr "读取YouTube文件错误"
+
+msgid "Rotate"
+msgstr "旋转"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "分辨率超出所允许的(1280x720)!"

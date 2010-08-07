@@ -311,13 +311,13 @@ msgid "Online Media Folder"
 msgstr "Dossier des médias en ligne"
 
 msgid "Add SMB Share"
-msgstr "Nouveau réseau de partage"
+msgstr "Ajouter partage"
 
 msgid "Add FTP Site"
-msgstr "Ajouter un site FTP"
+msgstr "Ajouter FTP"
 
 msgid "DVD Menu"
-msgstr "Menu DVD"
+msgstr "Menu du DVD"
 
 msgid "Skip to Main Title"
 msgstr "Passer au titre principal"
@@ -475,8 +475,8 @@ msgstr "Ce logiciel est libre et peut être copié, distribué, ou modifié sous
 msgid "Menu artwork"
 msgstr "Habillage des menus"
 
-msgid ""
-msgstr ""
+msgid "Coding"
+msgstr "Développemment"
 
 msgid "Coding & menu design"
 msgstr "Code et création des menus"
@@ -615,3 +615,18 @@ msgstr "Voir le dernier parcouru"
 
 msgid "Audio Language"
 msgstr "Langue Audio"
+
+msgid "DVD support"
+msgstr "Support des DVD"
+
+msgid "Enabled"
+msgstr "Autorisé"
+
+msgid "Error loading YouTube file!"
+msgstr "Erreur pendant le chargement de la vidéo YouTube !"
+
+msgid "Rotate"
+msgstr "Rotation"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "La résolution dépasse la limite autorisée (1280*720) !"

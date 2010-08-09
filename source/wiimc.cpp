@@ -13,9 +13,9 @@
 #include <unistd.h>
 #include <wiiuse/wpad.h>
 #include <sys/iosupport.h>
+#include <di/di.h>
 
 #include "utils/FreeTypeGX.h"
-#include "utils/di2.h"
 #include "utils/gettext.h"
 #include "utils/mem2_manager.h"
 #include "video.h"
@@ -92,7 +92,7 @@ void ExitApp()
 		SaveFolder();
 		SaveSettings(SILENT);
 	}
-	DI2_Close();
+	DI_Close();
 
 	// shut down some threads
 	SuspendDeviceThread();
@@ -224,7 +224,10 @@ bool SaneIOS()
 	u32 num_titles=0;
 	u32 tmd_size;
 	u32 ios = IOS_GetVersion();
-	u8 tmdbuffer[MAX_SIGNED_TMD_SIZE] ATTRIBUTE_ALIGN(32); 
+	u32 tmdbuffer[MAX_SIGNED_TMD_SIZE] ATTRIBUTE_ALIGN(32);
+
+	if(ios > 200)
+		return false;
 
 	if (ES_GetNumTitles(&num_titles) < 0)
 		return false;
@@ -248,10 +251,10 @@ bool SaneIOS()
 		if (ES_GetStoredTMDSize(titles[n], &tmd_size) < 0)
 			break;
 
-		if (tmd_size > 4096)
+		if (tmd_size < 0 || tmd_size > 4096)
 			break;
 
-		if (ES_GetStoredTMD(titles[n], (signed_blob *)tmdbuffer, tmd_size) < 0)
+		if(ES_GetStoredTMD(titles[n], (signed_blob *)tmdbuffer, tmd_size) < 0)
 			break;
 
 		if (tmdbuffer[1] || tmdbuffer[2])
@@ -526,7 +529,7 @@ int main(int argc, char *argv[])
 
 	// only reload IOS if AHBPROT is not enabled
 	u32 version = IOS_GetVersion();
-	
+
 	if(version != 58 && __di_check_ahbprot() != 1)
 	{
 		if(FindIOS(58))
@@ -535,8 +538,7 @@ int main(int argc, char *argv[])
 			IOS_ReloadIOS(61);
 	}
 
-	WIIDVD_Init(false);
-
+	DI_Init();
 	WPAD_Init();
 	InitMem2Manager(); // cache memory and file browser
 	InitVideo();

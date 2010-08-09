@@ -17,6 +17,7 @@
 #include <pcrecpp.h>
 #include <libexif/exif-data.h>
 #include <wiiuse/wpad.h>
+#include <di/di.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogc/machine/processor.h>
 
@@ -6992,6 +6993,13 @@ void MPlayerMenu()
 	{
 		CheckSleepTimer();
 		usleep(500000);
+
+		if(isInserted[DEVICE_DVD] && dvdLastUsed && wiiIsPaused() && 
+			diff_sec(dvdLastUsed, gettime()) > 60)
+		{
+			DI_StopMotor();
+			dvdLastUsed = 0;
+		}
 	}
 
 	DisableRumble();

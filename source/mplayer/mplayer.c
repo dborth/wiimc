@@ -138,7 +138,6 @@
 #ifdef GEKKO
 #include <malloc.h>
 #include "osdep/gx_supp.h"
-#include "../utils/di2.h"
 
 extern int prev_dxs, prev_dys;
 extern int stop_cache_thread;
@@ -148,6 +147,8 @@ void SetBufferingStatus(int s);
 void PauseAndGotoGUI();
 bool FindNextFile(bool load);
 void SetMPlayerSettings();
+bool StartDVDMotor();
+void SetLastDVDMotorTime();
 void ResumeCacheThread();
 bool CacheThreadSuspended();
 
@@ -2546,6 +2547,7 @@ static double update_video(int *blit_frame)
 
 static void pause_loop(void)
 {
+  SetLastDVDMotorTime();
   mp_cmd_t* cmd=NULL;
 
   if (mpctx->audio_out && mpctx->sh_audio)
@@ -2582,13 +2584,9 @@ static void pause_loop(void)
 
   mpctx->osd_function=OSD_PLAY;
 
-  if(controlledbygui != 2 && (strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0) )
-  {
-    void *ptr=memalign(32, 0x800*2);
-    DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
-    DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
-    free(ptr);
-  }
+  if(controlledbygui != 2 && cmd && cmd->id != MP_CMD_QUIT && 
+    (strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0) )
+    StartDVDMotor();
 
   if (cmd && cmd->id == MP_CMD_PAUSE)
   { //unpause
@@ -4649,6 +4647,8 @@ static float timing_sleep(float time_frame)
 
 void PauseAndGotoGUI()
 {
+	SetLastDVDMotorTime();
+
 	if (mpctx->audio_out && mpctx->sh_audio)
 		mpctx->audio_out->pause(); // pause audio, keep data if possible
 
@@ -4683,12 +4683,7 @@ void PauseAndGotoGUI()
 	mpctx->osd_function = OSD_PLAY;
 
 	if (strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0)
-	{
-		void *ptr = (void *)memalign(32, 0x800 * 2);
-		DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
-		DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
-		free(ptr);
-	}
+		StartDVDMotor();
 
 	if (mpctx->audio_out && mpctx->sh_audio)
 		mpctx->audio_out->resume(); // resume audio
@@ -4755,12 +4750,7 @@ static void low_cache_loop(void)
 	mpctx->osd_function=OSD_PLAY;
 	SetBufferingStatus(0);
 	if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
-	{
-		void *ptr=(void *)memalign(32, 0x800*2);
-		DI2_ReadDVD(ptr, 1, 1); // to be sure motor is spinning
-		DI2_ReadDVD(ptr, 1, 5000); // to be sure motor is spinning (to be sure not in cache)
-		free(ptr);
-	}
+		StartDVDMotor();
 
 	if (cmd && cmd->id == MP_CMD_PAUSE)
 	{ //manual unpause

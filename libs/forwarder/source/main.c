@@ -11,13 +11,6 @@
 #include "pngu.h"
 #include "fileop.h"
 
-int mload_init();
-int mload_close();
-bool load_ehci_module();
-void USB2Enable(bool e);
-void USB2Storage_Close();
-int GetUSB2LanPort();
-void SetUSB2Mode(int mode); 
 extern void __exception_closeall();
 typedef void (*entrypoint) (void);
 u32 load_dol_image (void *dolstart, struct __argv *argv);
@@ -70,31 +63,6 @@ static bool FindIOS(u32 ios)
 	return false;
 }
 
-#define ROUNDDOWN32(v)				(((u32)(v)-0x1f)&~0x1f)
-
-static bool USBLANDetected()
-{
-	u8 dummy;
-	u8 i;
-	u16 vid, pid;
-
-	USB_Initialize();
-	u8 *buffer = (u8*)ROUNDDOWN32(((u32)SYS_GetArena2Hi() - (32*1024)));
-	memset(buffer, 0, 8 << 3);
-
-	if(USB_GetDeviceList("/dev/usb/oh0", buffer, 8, 0, &dummy) < 0)
-		return false;
-
-	for(i = 0; i < 8; i++)
-	{
-		memcpy(&vid, (buffer + (i << 3) + 4), 2);
-		memcpy(&pid, (buffer + (i << 3) + 6), 2);
-		if( (vid == 0x0b95) && (pid == 0x7720))
-			return true;
-	}
-	return false;
-}
-
 static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
 {
 	return -1;
@@ -104,48 +72,32 @@ const devoptab_t phony_out =
 { "stdout",0,NULL,NULL,__out_write,
   NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL, NULL,0,NULL,NULL,NULL,NULL,NULL };
 
+#define HW_REG_BASE   0xcd800000
+#define HW_ARMIRQMASK (HW_REG_BASE + 0x03c)
+#define HW_ARMIRQFLAG (HW_REG_BASE + 0x038)
+
+int have_hw_access()
+{
+	if((*(volatile unsigned int*)HW_ARMIRQMASK)&&(*(volatile unsigned int*)HW_ARMIRQFLAG))
+		return 1;
+  return 0;
+}
+
 int main(int argc, char **argv)
 {
 	void *buffer = (void *)0x92000000;
 	devoptab_list[STD_OUT] = &phony_out; // to keep libntfs happy
 	devoptab_list[STD_ERR] = &phony_out; // to keep libntfs happy
 
-	bool usblan = USBLANDetected();
+	// only reload IOS if AHBPROT is not enabled
+	u32 version = IOS_GetVersion();
 
-	// try to load IOS 202
-	if(FindIOS(202))
-		IOS_ReloadIOS(202);
-	else if(IOS_GetVersion() < 61 && FindIOS(61))
-		IOS_ReloadIOS(61);
-
-	if(IOS_GetVersion() == 202)
+	if(version != 58 && have_hw_access() != 1)
 	{
-		// enable DVD and USB2
-		if(mload_init() >= 0 && load_ehci_module())
-		{
-			int mode = 3;
-
-			if(usblan)
-			{
-				int usblanport = GetUSB2LanPort();
-
-				if(usblanport >= 0)
-				{
-					if(usblanport == 1)
-						mode = 1;
-					else
-						mode = 2;
-
-					USB2Storage_Close();
-					mload_close();
-					IOS_ReloadIOS(202);
-					mload_init();
-					load_ehci_module();
-				}
-			}
-			SetUSB2Mode(mode);
-			USB2Enable(true);
-		}
+		if(FindIOS(58))
+			IOS_ReloadIOS(58);
+		else if((version < 61 || version >= 200) && FindIOS(61))
+			IOS_ReloadIOS(61);
 	}
 
 	InitVideo();
@@ -221,10 +173,6 @@ found:
 
 	StopGX();
 	VIDEO_WaitVSync();
-
-	// cleanup
-	if(IOS_GetVersion() == 202)
-		mload_close();
 
 	u32 level;
 	SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);

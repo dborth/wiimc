@@ -2,7 +2,7 @@ msgid "********"
 msgstr "••••••••"
 
 msgid "Videos"
-msgstr "Video"
+msgstr "Videos"
 
 msgid "Music"
 msgstr "Muziek"
@@ -47,16 +47,16 @@ msgid "Continuous Play"
 msgstr "Herhaald afspelen"
 
 msgid "Shuffle"
-msgstr "Husselen"
+msgstr "Shuffle"
 
 msgid "Loop"
 msgstr "Herhalen"
 
 msgid "Continuous"
-msgstr "Continue"
+msgstr "Continu"
 
 msgid "Playlist"
-msgstr "Afspeel lijst"
+msgstr "Afspeellijst"
 
 msgid "Restart"
 msgstr "Herstart"
@@ -89,7 +89,7 @@ msgid "Always"
 msgstr "Altijd"
 
 msgid "Disabled"
-msgstr "uitgeschakeld"
+msgstr "Uitgeschakeld"
 
 msgid "Backward"
 msgstr "Terug"
@@ -98,7 +98,7 @@ msgid "Pause"
 msgstr "Pauze"
 
 msgid "Forward"
-msgstr "vooruit"
+msgstr "Vooruit"
 
 msgid "Single"
 msgstr "Enkele"
@@ -119,7 +119,7 @@ msgid "DVD"
 msgstr "DVD"
 
 msgid "Go back"
-msgstr "Terug"
+msgstr "Ga terug"
 
 msgid "Update Available"
 msgstr "Update beschikbaar"
@@ -137,7 +137,7 @@ msgid "Online media file not found."
 msgstr "Online media bestand niet gevonden"
 
 msgid "Unrecognized DVD format!"
-msgstr "DVD niet herkend!"
+msgstr "DVD formaat niet herkend!"
 
 msgid "Port cannot be blank!"
 msgstr "Poort kan niet leeg gelaten worden!"
@@ -152,7 +152,7 @@ msgid "Settings - Global"
 msgstr "Instellingen - Algemeen"
 
 msgid "Settings - Videos"
-msgstr "Instellingen - Video"
+msgstr "Instellingen - Videos"
 
 msgid "Settings - Music"
 msgstr "Instellingen - Muziek"
@@ -170,7 +170,7 @@ msgid "Settings - DVD"
 msgstr "Instellingen - DVD"
 
 msgid "File Extensions"
-msgstr "Bestands attribuut"
+msgstr "Bestands Extensie"
 
 msgid "Language"
 msgstr "Taal"
@@ -191,7 +191,7 @@ msgid "Show"
 msgstr "Toon"
 
 msgid "Auto"
-msgstr "Automatisch"
+msgstr "Auto"
 
 msgid "Return to Wii Menu"
 msgstr "Terug naar het Wii menu"
@@ -239,7 +239,7 @@ msgid "Display Name"
 msgstr "Schermnaam"
 
 msgid "Share IP"
-msgstr "Netwerk IP adres"
+msgstr "Netwerk IP"
 
 msgid "Share Name"
 msgstr "Netwerk naam"
@@ -263,7 +263,7 @@ msgid "Are you sure that you want to delete this share?"
 msgstr "Weet u zeker dat u de gedeelde map wilt verwijderen?"
 
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 msgid "Folder"
 msgstr "Map"
@@ -275,16 +275,16 @@ msgid "New Site"
 msgstr "Nieuwe URL"
 
 msgid "Passive"
-msgstr "Pasief"
+msgstr "Passief"
 
 msgid "Active"
 msgstr "Actief"
 
 msgid "Delete Site"
-msgstr "Verwijder URL"
+msgstr "Verwijder site"
 
 msgid "Are you sure that you want to delete this site?"
-msgstr "Weet u zeker dat u de URL wilt verwijderen?"
+msgstr "Weet u zeker dat u deze site wilt verwijderen?"
 
 msgid "Port"
 msgstr "Poort"
@@ -296,7 +296,7 @@ msgid "Error loading file!"
 msgstr "Fout bij het laden van het bestand!"
 
 msgid "Resume"
-msgstr "Probeer opnieuw"
+msgstr "Ga verder"
 
 msgid "Stop Slideshow"
 msgstr "Stop diavoorstelling"
@@ -305,7 +305,7 @@ msgid "Start Slideshow"
 msgstr "Start diavoorstelling"
 
 msgid "Slideshow Delay"
-msgstr "Pauzeer diavoorstelling"
+msgstr "Diavoorstelling vertraging"
 
 msgid "Online Media Folder"
 msgstr "Online Media Folder"
@@ -317,25 +317,25 @@ msgid "Add FTP Site"
 msgstr "Voeg FTP map toe"
 
 msgid "DVD Menu"
-msgstr "DVD menu"
+msgstr "DVD Menu"
 
 msgid "Skip to Main Title"
-msgstr "Ga naar de hoofdfilm"
+msgstr "Skip naar hoofd film"
 
 msgid "Unable to Initialize MPlayer"
-msgstr "Niet mogelijk MPlayer te initialiseren"
+msgstr "Kan MPlayer niet initialiseren"
 
 msgid "Unable to find a valid working path"
-msgstr "Onmogelijk de juiste locatie te vinden"
+msgstr "Kan geen juiste werk locatie vinden"
 
 msgid "Unable to change path to"
-msgstr "Onmogelijk te veranderen naar de locatie"
+msgstr "Kan de locatie niet veranderen naar"
 
 msgid "Out of memory: too many files!"
 msgstr "Geheugenfout, te veel bestanden"
 
 msgid "Directory name is too long!"
-msgstr "De naam van de map is te lang"
+msgstr "Naam van de map is te lang!"
 
 msgid "SD Card"
 msgstr "SD kaart"
@@ -359,10 +359,10 @@ msgid "Loading DVD..."
 msgstr "DVD laden..."
 
 msgid "No disc inserted!"
-msgstr "Geen schijf ingevoerd"
+msgstr "Geen schijf ingevoerd!"
 
 msgid "Invalid DVD."
-msgstr "Foute DVD."
+msgstr "Ongeldige DVD."
 
 msgid "Up One Level"
 msgstr "Een omhoog"
@@ -374,10 +374,10 @@ msgid "Warning"
 msgstr "Waarschuwing"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "Een of meer afbeeldingen in deze folder is te groot (+6MB) en wordt niet getoond!"
+msgstr "Een of meerdere afbeeldingen in deze folder zijn te groot (+6MB) en worden niet getoond!"
 
 msgid "Error loading playlist!"
-msgstr "Fout bij laden afspeellijst"
+msgstr "Fout bij laden afspeellijst!"
 
 msgid "Playlist does not contain any supported entries!"
 msgstr "Afspeellijst bevat geen ondersteunde bestanden!"
@@ -386,10 +386,10 @@ msgid "No Results Found"
 msgstr "Geen resultaten gevonden"
 
 msgid "Your search did not match any media files."
-msgstr "Er zijn geen bestanden die aan uw zoekopdracht voldoen."
+msgstr "Geen bestanden gevonden die aan uw zoekopdracht voldoen."
 
 msgid "Error opening file!"
-msgstr "Fout bij het openen van bestand"
+msgstr "Fout bij het openen van bestand!"
 
 msgid "Saving..."
 msgstr "Opslaan..."
@@ -404,7 +404,7 @@ msgid "Playlist is Empty"
 msgstr "Afspeellijst is leeg"
 
 msgid "Hover over items and push the + button to add them to your playlist."
-msgstr "Ga op het bestand staan en druk op de + knop om bestanden toe te voegen aan de afspeellijst"
+msgstr "Ga op het bestand staan en druk op de + knop om hem toe te voegen aan de afspeellijst."
 
 msgid "Exit Playlist"
 msgstr "Sluit afspeellijst"
@@ -439,8 +439,8 @@ msgstr "Kan niet verbinden met map op het netwerk."
 msgid "IP is blank."
 msgstr "IP adres is niet ingevuld."
 
-msgid "Gebruikersnaam is niet ingevuld."
-msgstr "."
+msgid "Username is blank."
+msgstr "Gebruikersnaam is niet ingevuld."
 
 msgid "Password is blank."
 msgstr "Wachtwoord is niet ingevuld."
@@ -455,10 +455,10 @@ msgid "Failed to connect to FTP site."
 msgstr "Kan niet verbinden met FTP site..."
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "Kan geen USB of SD kaart vinden - deze is benodigd voor een goede werking"
+msgstr "Kan geen geldige USB of SD kaart vinden - deze is benodigd voor een goede werking."
 
 msgid "Could not create folder"
-msgstr "Kan geen map aanmaken"
+msgstr "Kan geen map aanmaken."
 
 msgid "Saving settings..."
 msgstr "Instellingen aan het opslaan..."
@@ -470,7 +470,7 @@ msgid "Thanks to"
 msgstr "Met dank aan"
 
 msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
-msgstr "Deze software is open source en mag gekopieerd, gedistribueerd, en veranderd worden op voorwaarden gesteld in de GNU General Public License (GPL) Versie 2."
+msgstr "Deze software is open source en mag gekopieerd, gedistribueerd, of veranderd worden op voorwaarden gesteld in de GNU General Public License (GPL) Versie 2."
 
 msgid "Menu artwork"
 msgstr "Menu vormgeving"
@@ -482,7 +482,7 @@ msgid "Coding & menu design"
 msgstr "Programmeur en vormgever"
 
 msgid "Logo"
-msgstr "Beeldmerk"
+msgstr "Logo"
 
 msgid "Version"
 msgstr "Versie"
@@ -494,7 +494,7 @@ msgid "Buffering"
 msgstr "Bufferen"
 
 msgid "Unable to initialize network (Error #:"
-msgstr "Niet mogelijk verbinding te maken met het netwerk (Error #:"
+msgstr "Kan geen netwerk verbinding maken (Error #:"
 
 msgid "Settings - Subtitles"
 msgstr "Instellingen - ONdertiteling"
@@ -506,7 +506,7 @@ msgid "Delay"
 msgstr "Vertraging"
 
 msgid "Codepage"
-msgstr ""
+msgstr "Codepagina"
 
 msgid "Subtitle Language"
 msgstr "Taal Ondertiteling"
@@ -515,7 +515,7 @@ msgid "Default"
 msgstr "Standaard"
 
 msgid "Could not change language. Not enough memory!"
-msgstr "Kon nieuwe taal niet instellen. Onvoldoende geheugen."
+msgstr "Kon nieuwe taal niet instellen. Onvoldoende geheugen!"
 
 msgid "Font Required"
 msgstr "Lettertype benodigd"
@@ -527,7 +527,7 @@ msgid "Download font"
 msgstr "Download lettertype"
 
 msgid "Unable to save font file!"
-msgstr "Kon Lettertype bestand niet opslaan"
+msgstr "Kon Lettertype bestand niet opslaan!"
 
 msgid "Out of Memory"
 msgstr "Onvoldoende geheugen"
@@ -539,16 +539,94 @@ msgid "Close MPlayer"
 msgstr "MPlayer afsluiten"
 
 msgid "Subtitle Codepage"
-msgstr ""
+msgstr "Ondertiteling codepagina"
 
 msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr ""
+msgstr "Deze map bevat meer bestanden dan het maximum aantal dat is toegestaan (2000). Niet alle bestanden zijn zichtbaar."
 
 msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr ""
+msgstr "Deze afspeellijst bevat meer bestanden dan het maximum aantal dat is toegestaan (2000). Niet alle bestanden zijn zichtbaar."
 
 msgid "Downloading..."
-msgstr ""
+msgstr "Downloaden..."
 
 msgid "Unzipping..."
-msgstr ""
+msgstr "Uitpakken..."
+
+msgid "Color"
+msgstr "Kleur"
+
+msgid "Size"
+msgstr "Grootte"
+
+msgid "White"
+msgstr "Wit"
+
+msgid "Black"
+msgstr "Zwart"
+
+msgid "Yellow"
+msgstr "Geel"
+
+msgid "Red"
+msgstr "Rood"
+
+msgid "Sleep Timer"
+msgstr "Slaap Timer"
+
+msgid "sec"
+msgstr "sec"
+
+msgid "min"
+msgstr "min"
+
+msgid "Blue"
+msgstr "Blauw"
+
+msgid "Green"
+msgstr "Groen"
+
+msgid "Grey"
+msgstr "Grijs"
+
+msgid "Orange"
+msgstr "Oranje"
+
+msgid "Theme"
+msgstr "Thema"
+
+msgid "Purple (Default)"
+msgstr "Paars (Standaard)"
+
+msgid "Auto-Play Next Video"
+msgstr "Automatisch volgende video afspelen"
+
+msgid "Adding files to playlist..."
+msgstr "Bestanden toevoegen aan afspeellijst..."
+
+msgid "Browse Folders"
+msgstr "Blader door mappen"
+
+msgid "Static"
+msgstr "Statisch"
+
+msgid "Use Last Browsed"
+msgstr "Gebruik laatst bezochte"
+
+msgid "Audio Language"
+msgstr "Audio Taal"
+
+msgid "DVD support"
+msgstr "DVD Ondersteuning"
+
+msgid "Enabled"
+msgstr "Ingeschakeld"
+
+msgid "Error loading YouTube file!"
+msgstr "Fout bij het laden van het Youtube bestand!"
+
+msgid "Rotate"
+msgstr "Draaien"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "Resolutie is hoger dan het maximum dat is toegestaan (1280x720)!"

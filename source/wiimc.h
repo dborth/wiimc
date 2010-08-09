@@ -11,7 +11,6 @@
 #include "utils/FreeTypeGX.h"
 #include "network.h"
 #include "utils/libdvdiso.h"
-#include "utils/mload.h"
 
 #define APPNAME			"WiiMC"
 #define APPVERSION		"1.0.6"
@@ -29,6 +28,7 @@ enum {
 #define NOTSILENT 0
 #define SILENT 1
 
+bool SaneIOS();
 void ExitApp();
 void SetSleepTimer();
 void CheckSleepTimer();

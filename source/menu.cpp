@@ -31,7 +31,6 @@
 #include "filebrowser.h"
 #include "utils/gettext.h"
 #include "utils/http.h"
-#include "utils/mload.h"
 #include "filelist.h"
 
 extern "C" {
@@ -1517,11 +1516,7 @@ static void CreditsWindow()
 	swprintf(appVersion, 20, L"%s %s", gettext("Version"), APPVERSION);
 
 	char iosVersion[30];
-
-	if(IOS_GetVersion() == 202)
-		sprintf(iosVersion, "IOS: 202 (%d / %d.%d)", iosBase, mloadVersion >> 4, mloadVersion & 0x0f);
-	else
-		sprintf(iosVersion, "IOS: %d", IOS_GetVersion());
+	sprintf(iosVersion, "IOS: %d", IOS_GetVersion());
 
 	txt[i] = new GuiText(NULL, 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetWText(appVersion);
@@ -6839,6 +6834,13 @@ void WiiMenu()
 	}
 
 	ResumeGui();
+
+	static bool checkIOS = true;
+
+	if(checkIOS && !SaneIOS())
+		ErrorPrompt("The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected.");
+
+	checkIOS = false;
 
 	while(!guiShutdown)
 	{

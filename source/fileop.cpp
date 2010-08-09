@@ -746,12 +746,6 @@ void MountAllDevices()
  ***************************************************************************/
 bool MountDVD(bool silent)
 {
-	if(IOS_GetVersion() != 202)
-	{
-		ErrorPrompt("Please install IOS 202 for DVD support.");
-		return false;
-	}
-
 	bool mounted = false;
 	int retry = 1;
 

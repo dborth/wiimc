@@ -10,7 +10,6 @@
 
 #include "utils/FreeTypeGX.h"
 #include "network.h"
-#include "utils/libdvdiso.h"
 
 #define APPNAME			"WiiMC"
 #define APPVERSION		"1.0.6"

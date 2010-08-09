@@ -62,6 +62,7 @@ extern DEVICE_STRUCT part[2][MAX_DEVICES];
 
 extern bool devicesChanged;
 extern bool isInserted[];
+extern u64 dvdLastUsed;
 extern int currentDevice;
 extern int currentDeviceNum;
 extern int findLoadedFile;

@@ -58,8 +58,9 @@
 #endif
 
 #ifdef GEKKO
-#    include "../../utils/di2.h"
+#    include <di/di.h>
 #    include <malloc.h>
+extern bool StartDVDMotor();
 #endif
 
 #ifdef DARWIN_DVD_IOCTL
@@ -1123,45 +1124,14 @@ static int aspi_read_internal( int i_fd, void *p_data, int i_blocks )
 
 #ifdef GEKKO
 static int di_open(dvdcss_t dvdcss, char const * psz_device) {
-	int retry = 20 * 5;
-	int status;
 
 	if (strcmp(psz_device, "/dev/di")) {
 		print_debug(dvdcss, "DI: unknown device '%s'", psz_device);
 		return -1;
 	}
 
-	print_debug(dvdcss, "DI: initializing dvd...");
-	//DI2_Mount();   //rodries: not needed I always mount dvd, don't uncomment or dvd hang
-
-	print_debug(dvdcss, "DI: waiting for device to become ready...");
-
-	while (retry > 0) {
-		status = DI2_GetStatus();
-
-		if (!(status & DVD_INIT))
-			break;
-		
-		retry--;
-		
-		usleep (200 * 1000);
-	}
-
-	if (status & DVD_NO_DISC) {
-		print_debug(dvdcss, "DI: no disc, dude");
+	if(!StartDVDMotor())
 		return -1;
-	}
-
-	if (!(status & DVD_READY)) {
-		print_debug(dvdcss, "DI: dvd not ready: 0x%x", status);
-		return -1;
-	}
-
-	if (status & DVD_D0)
-		print_debug(dvdcss, "DI: no modchip detected");
-
-	if (status & DVD_A8)
-		print_debug(dvdcss, "DI: modchip detected");
 
 	dvdcss->i_pos = 0;
 	return 0;
@@ -1187,7 +1157,7 @@ static int di_read(dvdcss_t dvdcss, void *buffer, int blocks) {
 		return -1;
 	}
 
-	ret = DI2_ReadDVD(bfr, blocks, dvdcss->i_pos);
+	ret = DI_ReadDVD(bfr, blocks, dvdcss->i_pos);
 
 	if (ret < 0) {
 		print_debug(dvdcss, "DI: read failed with %d", ret);
@@ -1219,7 +1189,7 @@ static int di_readv(dvdcss_t dvdcss, struct iovec *iov, int iovcnt) {
 		return -1;
 	}
 
-	ret = DI2_ReadDVD(bfr, len / DVDCSS_BLOCK_SIZE, dvdcss->i_pos);
+	ret = DI_ReadDVD(bfr, len / DVDCSS_BLOCK_SIZE, dvdcss->i_pos);
 	if (ret < 0) {
 		print_debug( dvdcss, "DI: readv failed with %d", ret);
 		free(bfr);

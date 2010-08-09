@@ -33,10 +33,10 @@ LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-MPLIBS	:=	-lmplayerwii -lavformat -lavcodec -lavcore -lavutil -lpostproc -lswscale
-LIBS 	:= 	$(MPLIBS) -la52	-lfribidi -ljpeg -ldi -liconv -lpcrecpp -lpcre -lpng \
-			-lz -lntfs -lfat -lwiiuse -lbte -logc -lfreetype -ljpeg -lmxml \
-			-ltinysmb -lexif
+LIBS	:=	-lmplayerwii -lavformat -lavcodec -lavcore -lavutil -lpostproc \
+			-lswscale -la52	-lfribidi -ljpeg -ldi -liso9660 -liconv -lpcrecpp \
+			-lpcre -lpng -lz -lntfs -lfat -lwiiuse -lbte -logc -lfreetype -ljpeg \
+			-lmxml -ltinysmb -lexif
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

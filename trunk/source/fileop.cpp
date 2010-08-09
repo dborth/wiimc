@@ -18,6 +18,8 @@
 #include <errno.h>
 #include <ntfs.h>
 #include <fat.h>
+#include <di/di.h>
+#include <iso9660.h>
 #include <sdcard/wiisd_io.h>
 #include <ogc/usbstorage.h>
 #include <ogc/machine/processor.h>
@@ -44,11 +46,13 @@ int currentDevice = -1;
 int currentDeviceNum = -1;
 bool isInserted[3] = { false, false, false };
 bool devicesChanged = false;
+u64 dvdLastUsed = 0;
 
 static char prefix[2][4] = { "sd", "usb" };
 
 static const DISC_INTERFACE* sd = &__io_wiisd;
 static const DISC_INTERFACE* usb = &__io_usbstorage;
+static const DISC_INTERFACE* dvd = &__io_wiidvd;
 
 // folder parsing thread
 static lwp_t parsethread = LWP_THREAD_NULL;
@@ -136,10 +140,11 @@ static void * devicecallback (void *arg)
 
 		if(isInserted[DEVICE_DVD])
 		{
-			if(!WIIDVD_DiscPresent())
+			if(!dvd->isInserted())
 			{
+				dvdLastUsed = 0;
 				isInserted[DEVICE_DVD] = false;
-				WIIDVD_Unmount();
+				ISO9660_Unmount();
 
 				if(strncmp(loadedFile, "dvd", 3) == 0)
 				{
@@ -150,6 +155,14 @@ static void * devicecallback (void *arg)
 						UndoChangeMenu();
 				}
 				devicesChanged = true;
+			}
+			else if(dvdLastUsed)
+			{
+				if(diff_sec(dvdLastUsed, gettime()) > 60)
+				{
+					DI_StopMotor();
+					dvdLastUsed = 0;
+				}
 			}
 		}
 
@@ -756,14 +769,14 @@ bool MountDVD(bool silent)
 	{
 		ShowAction("Loading DVD...");
 
-		if(!WIIDVD_DiscPresent())
+		if(!dvd->isInserted())
 		{
 			if(silent)
 				break;
 
 			retry = ErrorPromptRetry("No disc inserted!");
 		}
-		else if(WIIDVD_Mount() < 0)
+		else if(!ISO9660_Mount())
 		{
 			if(silent)
 				break;
@@ -773,12 +786,37 @@ bool MountDVD(bool silent)
 		else
 		{
 			mounted = true;
+			dvdLastUsed = gettime();
 			break;
 		}
 	}
 	CancelAction();
 	isInserted[DEVICE_DVD] = mounted;
 	return mounted;
+}
+
+extern "C" {
+void SetLastDVDMotorTime()
+{
+	if(dvdLastUsed)
+		dvdLastUsed = gettime();
+}
+
+bool StartDVDMotor()
+{
+	if(!dvd->isInserted())
+		return false;
+
+	if(dvdLastUsed)
+		return true;
+
+	if(dvd->startup())
+	{
+		dvdLastUsed = gettime();
+		return true;
+	}
+	return false;
+}
 }
 
 static bool FindDevice(char * filepath, int * device, int * devnum)

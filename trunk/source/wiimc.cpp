@@ -15,9 +15,7 @@
 #include <sys/iosupport.h>
 
 #include "utils/FreeTypeGX.h"
-#include "utils/mload.h"
 #include "utils/di2.h"
-#include "utils/usb2storage.h"
 #include "utils/gettext.h"
 #include "utils/mem2_manager.h"
 #include "video.h"
@@ -37,6 +35,7 @@
 
 extern "C" {
 extern void __exception_setreload(int t);
+extern u32 __di_check_ahbprot(void);
 extern char *network_useragent;
 }
 
@@ -179,9 +178,8 @@ static void USBGeckoOutput()
 }
 
 /****************************************************************************
- * IOS 202
+ * IOS Check
  ***************************************************************************/
-
 static bool FindIOS(u32 ios)
 {
 	s32 ret;
@@ -218,6 +216,52 @@ static bool FindIOS(u32 ios)
 	}
     free(titles); 
 	return false;
+}
+
+bool SaneIOS()
+{
+	bool res = false;
+	u32 num_titles=0;
+	u32 tmd_size;
+	u32 ios = IOS_GetVersion();
+	u8 tmdbuffer[MAX_SIGNED_TMD_SIZE] ATTRIBUTE_ALIGN(32); 
+
+	if (ES_GetNumTitles(&num_titles) < 0)
+		return false;
+
+	if(num_titles < 1) 
+		return false;
+
+	u64 *titles = (u64 *)memalign(32, num_titles * sizeof(u64) + 32);
+
+	if (ES_GetTitles(titles, num_titles) < 0)
+	{
+		free(titles);
+		return false;
+	}
+
+	for(u32 n=0; n < num_titles; n++)
+	{
+		if((titles[n] & 0xFFFFFFFF) != ios) 
+			continue;
+
+		if (ES_GetStoredTMDSize(titles[n], &tmd_size) < 0)
+			break;
+
+		if (tmd_size > 4096)
+			break;
+
+		if (ES_GetStoredTMD(titles[n], (signed_blob *)tmdbuffer, tmd_size) < 0)
+			break;
+
+		if (tmdbuffer[1] || tmdbuffer[2])
+		{
+			res = true;
+			break;
+		}
+	}
+    free(titles);
+	return res;
 }
 
 /****************************************************************************
@@ -480,20 +524,18 @@ int main(int argc, char *argv[])
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
 
-	// try to load IOS 202
-	if(FindIOS(202))
-		IOS_ReloadIOS(202);
-	else if(IOS_GetVersion() < 61 && FindIOS(61))
-		IOS_ReloadIOS(61);
-
-	if(IOS_GetVersion() == 202)
+	// only reload IOS if AHBPROT is not enabled
+	u32 version = IOS_GetVersion();
+	
+	if(version != 58 && __di_check_ahbprot() != 1)
 	{
-		// enable DVD and USB2
-		WIIDVD_Init(false);
-
-		if(mload_init() >= 0 && load_ehci_module())
-			USB2Enable(true);
+		if(FindIOS(58))
+			IOS_ReloadIOS(58);
+		else if((version < 61 || version >= 200) && FindIOS(61))
+			IOS_ReloadIOS(61);
 	}
+
+	WIIDVD_Init(false);
 
 	WPAD_Init();
 	InitMem2Manager(); // cache memory and file browser

@@ -633,3 +633,6 @@ msgstr "回転する"
 
 msgid "Resolution exceeds maximum allowed (1280x720)!"
 msgstr "解像度が最大値(1280x720)を超えています！"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "お使いのIOSは改造されています 機能性および安定性の面では不安定となる場合があります"

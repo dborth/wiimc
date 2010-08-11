@@ -621,3 +621,15 @@ msgstr "Supporto DVD"
 
 msgid "Enabled"
 msgstr "Abilitato"
+
+msgid "Error loading YouTube file!"
+msgstr "Errore caricando file YouTube!"
+
+msgid "Rotate"
+msgstr "Ruota"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "Risoluzione eccede il massimo consentito (1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "L'IOS corrente è stato alterato (fake-sign). Le funzionalità e/o la stabilità possono essere compromesse."

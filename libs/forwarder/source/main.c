@@ -25,44 +25,6 @@ void StopGX();
 void Menu_Render();
 void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[], f32 degrees, f32 scaleX, f32 scaleY, u8 alphaF );
 
-static bool FindIOS(u32 ios)
-{
-	s32 ret;
-	u32 n;
-
-	u64 *titles = NULL;
-	u32 num_titles=0;
-
-	ret = ES_GetNumTitles(&num_titles);
-	if (ret < 0)
-		return false;
-
-	if(num_titles < 1) 
-		return false;
-
-	titles = (u64 *)memalign(32, num_titles * sizeof(u64) + 32);
-	if (!titles)
-		return false;
-
-	ret = ES_GetTitles(titles, num_titles);
-	if (ret < 0)
-	{
-		free(titles);
-		return false;
-	}
-		
-	for(n=0; n < num_titles; n++)
-	{
-		if((titles[n] & 0xFFFFFFFF)==ios) 
-		{
-			free(titles); 
-			return true;
-		}
-	}
-    free(titles); 
-	return false;
-}
-
 static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
 {
 	return -1;
@@ -91,14 +53,10 @@ int main(int argc, char **argv)
 
 	// only reload IOS if AHBPROT is not enabled
 	u32 version = IOS_GetVersion();
+	s32 preferred = IOS_GetPreferredVersion();
 
-	if(version != 58 && have_hw_access() != 1)
-	{
-		if(FindIOS(58))
-			IOS_ReloadIOS(58);
-		else if((version < 61 || version >= 200) && FindIOS(61))
-			IOS_ReloadIOS(61);
-	}
+	if(version != 58 && preferred > 0 && version != (u32)preferred && have_hw_access() != 1)
+		IOS_ReloadIOS(preferred);
 
 	InitVideo();
 

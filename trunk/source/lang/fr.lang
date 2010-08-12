@@ -630,3 +630,12 @@ msgstr "Rotation"
 
 msgid "Resolution exceeds maximum allowed (1280x720)!"
 msgstr "La résolution dépasse la limite autorisée (1280*720) !"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "L'IOS actuel a été modifié (fausse signature). Les fonctionnalités et la stabilité pourraient être affectés."
+
+msgid "Online media file is invalid."
+msgstr "Le fichier en ligne est invalid."
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Police des sous-titres introuvables. Les sous-titres ne seront pas affichés."

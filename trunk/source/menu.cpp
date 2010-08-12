@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <ctype.h>
 #include <map>
 #include <pcrecpp.h>
@@ -1974,7 +1975,16 @@ static void MenuBrowse(int menu)
 	{
 		if(onlinemediaSize == 0)
 		{
-			ErrorPrompt("Online media file not found.");
+			// check if file exists
+			struct stat buf;
+			char filepath[1024];
+			sprintf(filepath, "%s/onlinemedia.xml", appPath);
+
+			if(stat(filepath, &buf) == 0)
+				ErrorPrompt("Online media file is invalid.");
+			else
+				ErrorPrompt("Online media file not found.");
+
 			UndoChangeMenu();
 			goto done;
 		}
@@ -5309,6 +5319,14 @@ static void MenuSettingsSubtitles()
 	mainWindow->Append(&w);
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
+
+	// check if subtitle font file exists
+	struct stat buf;
+	char filepath[1024];
+	sprintf(filepath, "%s/subfont.ttf", appPath);
+
+	if(stat(filepath, &buf) != 0)
+		ErrorPrompt("Subtitle font file not found. Subtitles will not be visible.");
 
 	while(menuCurrent == MENU_SETTINGS_SUBTITLES && !guiShutdown)
 	{

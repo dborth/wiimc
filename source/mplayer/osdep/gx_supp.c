@@ -2,7 +2,7 @@
 *	gx_supp.c - Generic GX Support for Emulators
 *	softdev 2007
 *	dhewg 2008
-*	sepp256 2008 - Coded YUV->RGB conversion in TEV
+*	sepp256 2008-2010 - Coded YUV->RGB conversion in TEV
 *	Contains some improvements by Extrems
 *	Tantric / rodries 2009-2010 - rewritten using threads, with GUI overlaid
 *
@@ -68,14 +68,15 @@ int mplayerheight = 480;
 /*** 3D GX ***/
 
 /*** Texture memory ***/
-static u8 *Ytexture = NULL;
+static u8 *Yltexture = NULL;
+static u8 *Yrtexture = NULL;
 static u8 *Utexture = NULL;
 static u8 *Vtexture = NULL;
 
-static u32 Ytexsize,UVtexsize;
+static u32 Yltexsize,Yrtexsize,UVtexsize;
 
-static GXTexObj YtexObj,UtexObj,VtexObj;
-static u16 Ywidth, Yheight, UVwidth, UVheight;
+static GXTexObj YltexObj,YrtexObj,UtexObj,VtexObj;
+static u16 Ylwidth, Yrwidth, Ywidth, Yheight, UVwidth, UVheight;
 
 static Mtx view;
 
@@ -104,7 +105,18 @@ static GXColor colors[] ATTRIBUTE_ALIGN(32) = {
 	{0,255,0,255}		//G
 };
 
-static u8 texcoords[] ATTRIBUTE_ALIGN(32) = {
+static f32 texcoordsY[] ATTRIBUTE_ALIGN(32) = {
+	0.0f, 0.0f,
+	1.0f, 0.0f,
+	1.0f, 1.0f,
+	0.0f, 1.0f,
+	0.0f, 0.0f,
+	1.0f, 0.0f,
+	1.0f, 1.0f,
+	0.0f, 1.0f,
+};
+
+static u8 texcoordsUV[] ATTRIBUTE_ALIGN(32) = {
 	0x00, 0x00,
 	0x01, 0x00,
 	0x01, 0x01,
@@ -124,6 +136,7 @@ void GX_SetScreenPos(int _hor_pos, int _vert_pos, float _hor_zoom, float _vert_z
  ****************************************************************************/
 static void draw_initYUV(void)
 {
+#if 0
 	//Setup TEV
 	GX_SetNumChans(1);
 	GX_SetNumTexGens(3);
@@ -225,25 +238,147 @@ static void draw_initYUV(void)
 	GX_SetTevAlphaIn(GX_TEVSTAGE11, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
 	GX_SetTevAlphaOp(GX_TEVSTAGE11, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
 
+#else
+
+	//Setup TEV
+	GX_SetNumChans(1);
+	GX_SetNumTexGens(4);
+	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+	GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX1, GX_IDENTITY);
+	GX_SetTexCoordGen(GX_TEXCOORD2, GX_TG_MTX2x4, GX_TG_TEX2, GX_IDENTITY);
+	
+	//Yl: GX_TEXMAP0, GX_TEXCOORD0 <- left half of Y buffer
+	//Yr: GX_TEXMAP1, GX_TEXCOORD1 <- right half of Y buffer
+	//U:  GX_TEXMAP2, GX_TEXCOORD2 (was MAP1 COORD1)
+	//V:  GX_TEXMAP3, GX_TEXCOORD2
+
+	//Y'UV->RGB formulation 3
+	GX_SetNumTevStages(13);
+	GX_SetTevKColor(GX_KCOLOR0, (GXColor){ 255,      0,        0,    18.624});	//R {1, 0, 0, 16*1.164}
+	GX_SetTevKColor(GX_KCOLOR1, (GXColor){  0,       0,       255,   41.82});	//B {0, 0, 1, 0.164}
+	GX_SetTevKColor(GX_KCOLOR2, (GXColor){203.745, 103.6575,   0,     255});	// {1.598/2, 0.813/2, 0}
+	GX_SetTevKColor(GX_KCOLOR3, (GXColor){  0,     24.92625, 128.52,  255});	// {0, 0.391/4, 2.016/4}
+	//Stage 0: TEVREG0 <- { 0, 2Um, 2Up }; TEVREG0A <- {16*1.164}
+	GX_SetTevKColorSel(GX_TEVSTAGE0, GX_TEV_KCSEL_K1);
+	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD2, GX_TEXMAP2, GX_COLOR0A0);
+	GX_SetTevColorIn(GX_TEVSTAGE0, GX_CC_RASC, GX_CC_KONST, GX_CC_TEXC, GX_CC_ZERO);
+	GX_SetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_SUBHALF, GX_CS_SCALE_2, GX_ENABLE, GX_TEVREG0);
+	GX_SetTevKAlphaSel(GX_TEVSTAGE0, GX_TEV_KASEL_K0_A);
+	GX_SetTevAlphaIn (GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_RASA, GX_CA_KONST, GX_CA_ZERO);
+	GX_SetTevAlphaOp (GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVREG0);
+	//Stage 1: TEVREG1 <- { 0, 2Up, 2Um };
+	GX_SetTevKColorSel(GX_TEVSTAGE1, GX_TEV_KCSEL_K1);
+	GX_SetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD2, GX_TEXMAP2, GX_COLOR0A0);
+	GX_SetTevColorIn(GX_TEVSTAGE1, GX_CC_KONST, GX_CC_RASC, GX_CC_TEXC, GX_CC_ZERO);
+	GX_SetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_SUBHALF, GX_CS_SCALE_2, GX_ENABLE, GX_TEVREG1);
+	GX_SetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
+	GX_SetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	//Stage 2: TEVREG2 <- { Vp, Vm, 0 }
+	GX_SetTevKColorSel(GX_TEVSTAGE2, GX_TEV_KCSEL_K0);
+	GX_SetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD2, GX_TEXMAP3, GX_COLOR0A0);
+	GX_SetTevColorIn(GX_TEVSTAGE2, GX_CC_RASC, GX_CC_KONST, GX_CC_TEXC, GX_CC_ZERO);
+	GX_SetTevColorOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_SUBHALF, GX_CS_SCALE_1, GX_ENABLE, GX_TEVREG2);
+	GX_SetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
+	GX_SetTevAlphaOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	//Stage 3: TEVPREV <- { (Vm), (Vp), 0 }
+	GX_SetTevKColorSel(GX_TEVSTAGE3, GX_TEV_KCSEL_K0);
+	GX_SetTevOrder(GX_TEVSTAGE3, GX_TEXCOORD2, GX_TEXMAP3, GX_COLOR0A0);
+	GX_SetTevColorIn(GX_TEVSTAGE3, GX_CC_KONST, GX_CC_RASC, GX_CC_TEXC, GX_CC_ZERO);
+	GX_SetTevColorOp(GX_TEVSTAGE3, GX_TEV_ADD, GX_TB_SUBHALF, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	GX_SetTevAlphaIn(GX_TEVSTAGE3, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
+	GX_SetTevAlphaOp(GX_TEVSTAGE3, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	//Stage 4: TEVPREV <- { (-1.598Vm), (-0.813Vp), 0 }; TEVPREVA <- {Yl'}
+	GX_SetTevKColorSel(GX_TEVSTAGE4, GX_TEV_KCSEL_K2);
+	GX_SetTevOrder(GX_TEVSTAGE4, GX_TEXCOORD0, GX_TEXMAP0, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE4, GX_CC_ZERO, GX_CC_KONST, GX_CC_CPREV, GX_CC_ZERO);
+	GX_SetTevColorOp(GX_TEVSTAGE4, GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_2, GX_DISABLE, GX_TEVPREV);
+	GX_SetTevAlphaIn(GX_TEVSTAGE4, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_TEXA);
+	GX_SetTevAlphaOp(GX_TEVSTAGE4, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	//Stage 5: TEVPREV <- { -1.598Vm (+1.139/2Vp), -0.813Vp +0.813/2Vm), 0 }; TEVREG1A <- {Yl' + Yr'} = {Y'}
+	GX_SetTevKColorSel(GX_TEVSTAGE5, GX_TEV_KCSEL_K2);
+	GX_SetTevOrder(GX_TEVSTAGE5, GX_TEXCOORD1, GX_TEXMAP1, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE5, GX_CC_ZERO, GX_CC_KONST, GX_CC_C2, GX_CC_CPREV);
+	GX_SetTevColorOp(GX_TEVSTAGE5, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	GX_SetTevAlphaIn(GX_TEVSTAGE5, GX_CA_TEXA, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV);
+	GX_SetTevAlphaOp(GX_TEVSTAGE5, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVREG1);
+	//Stage 6: TEVPREV <- {	-1.598Vm (+1.598Vp), -0.813Vp (+0.813Vm), 0 } = {	(+1.598V), (-0.813V), 0 }; TEVPREVA <- {Y' - 16*1.164}
+	GX_SetTevKColorSel(GX_TEVSTAGE6, GX_TEV_KCSEL_K2);
+	GX_SetTevOrder(GX_TEVSTAGE6, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE6, GX_CC_ZERO, GX_CC_KONST, GX_CC_C2, GX_CC_CPREV);
+	GX_SetTevColorOp(GX_TEVSTAGE6, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	GX_SetTevKAlphaSel(GX_TEVSTAGE6, GX_TEV_KASEL_1);
+	GX_SetTevAlphaIn(GX_TEVSTAGE6, GX_CA_ZERO, GX_CA_KONST, GX_CA_A0, GX_CA_A1);
+	GX_SetTevAlphaOp(GX_TEVSTAGE6, GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	//Stage 7: TEVPREV <- {	-1.598Vm (+1.598Vp), -0.813Vp (+0.813Vm), 0 } = {	(+1.598V), (-0.813V), 0 }; TEVREG2A <- {Y' -16*1.164 - Y'*0.164} = {(Y'-16)*1.164}
+	GX_SetTevOrder(GX_TEVSTAGE7, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE7, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV);
+	GX_SetTevColorOp(GX_TEVSTAGE7, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	GX_SetTevKAlphaSel(GX_TEVSTAGE7, GX_TEV_KASEL_K1_A);
+	GX_SetTevAlphaIn(GX_TEVSTAGE7, GX_CA_ZERO, GX_CA_KONST, GX_CA_A1, GX_CA_APREV);
+	GX_SetTevAlphaOp(GX_TEVSTAGE7, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVREG2);
+	//Stage 8: TEVPREV <- {	((Y'-16)*1.164) +1.598V, ((Y'-16)*1.164) -0.813V, ((Y'-16)*1.164) }
+	GX_SetTevKColorSel(GX_TEVSTAGE8, GX_TEV_KCSEL_1);
+	GX_SetTevOrder(GX_TEVSTAGE8, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE8, GX_CC_ZERO, GX_CC_ONE, GX_CC_A2, GX_CC_CPREV);
+	GX_SetTevColorOp(GX_TEVSTAGE8, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	GX_SetTevAlphaIn(GX_TEVSTAGE8, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
+	GX_SetTevAlphaOp(GX_TEVSTAGE8, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	//Stage 9: TEVPREV <- {	(Y'-16)*1.164 +1.598V, (Y'-16)*1.164 -0.813V (-.394/2Up), (Y'-16)*1.164 (-2.032/2Um)}
+	GX_SetTevKColorSel(GX_TEVSTAGE9, GX_TEV_KCSEL_K3);
+	GX_SetTevOrder(GX_TEVSTAGE9, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE9, GX_CC_ZERO, GX_CC_KONST, GX_CC_C1, GX_CC_CPREV);
+	GX_SetTevColorOp(GX_TEVSTAGE9, GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	GX_SetTevAlphaIn(GX_TEVSTAGE9, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
+	GX_SetTevAlphaOp(GX_TEVSTAGE9, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	//Stage 10: TEVPREV <- { (Y'-16)*1.164 +1.598V, (Y'-16)*1.164 -0.813V (-.394Up), (Y'-16)*1.164 (-2.032Um)}
+	GX_SetTevKColorSel(GX_TEVSTAGE10, GX_TEV_KCSEL_K3);
+	GX_SetTevOrder(GX_TEVSTAGE10, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE10, GX_CC_ZERO, GX_CC_KONST, GX_CC_C1, GX_CC_CPREV);
+	GX_SetTevColorOp(GX_TEVSTAGE10, GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	GX_SetTevAlphaIn(GX_TEVSTAGE10, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
+	GX_SetTevAlphaOp(GX_TEVSTAGE10, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	//Stage 11: TEVPREV <- { (Y'-16)*1.164 +1.598V, (Y'-16)*1.164 -0.813V -.394Up (+.394/2Um), (Y'-16)*1.164 -2.032Um (+2.032/2Up)}
+	GX_SetTevKColorSel(GX_TEVSTAGE11, GX_TEV_KCSEL_K3);
+	GX_SetTevOrder(GX_TEVSTAGE11, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE11, GX_CC_ZERO, GX_CC_KONST, GX_CC_C0, GX_CC_CPREV);
+	GX_SetTevColorOp(GX_TEVSTAGE11, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	GX_SetTevAlphaIn(GX_TEVSTAGE11, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
+	GX_SetTevAlphaOp(GX_TEVSTAGE11, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	//Stage 12: TEVPREV <- { (Y'-16)*1.164 +1.598V, (Y'-16)*1.164 -0.813V -.394Up (+.394Um), (Y'-16)*1.164 -2.032Um (+2.032Up)} = { (Y'-16)*1.164 +1.139V, (Y'-16)*1.164 -0.58V -.394U, (Y'-16)*1.164 +2.032U}
+	GX_SetTevKColorSel(GX_TEVSTAGE12, GX_TEV_KCSEL_K3);
+	GX_SetTevOrder(GX_TEVSTAGE12, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE12, GX_CC_ZERO, GX_CC_KONST, GX_CC_C0, GX_CC_CPREV);
+	GX_SetTevColorOp(GX_TEVSTAGE12, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	GX_SetTevKAlphaSel(GX_TEVSTAGE12, GX_TEV_KASEL_1);
+	GX_SetTevAlphaIn(GX_TEVSTAGE12, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+	GX_SetTevAlphaOp(GX_TEVSTAGE12, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+
+#endif
+
 	//Setup vertex description/format
 	GX_ClearVtxDesc();
 	GX_SetVtxDesc(GX_VA_POS, GX_INDEX8);
 	GX_SetVtxDesc(GX_VA_CLR0, GX_INDEX8);
 	GX_SetVtxDesc(GX_VA_TEX0, GX_INDEX8);
 	GX_SetVtxDesc(GX_VA_TEX1, GX_INDEX8);
+	GX_SetVtxDesc(GX_VA_TEX2, GX_INDEX8);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_U8, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX1, GX_TEX_ST, GX_U8, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX2, GX_TEX_ST, GX_U8, 0);
 
 	GX_SetArray(GX_VA_POS, square, 3 * sizeof(s16));
 	GX_SetArray(GX_VA_CLR0, colors, sizeof(GXColor));
-	GX_SetArray(GX_VA_TEX0, texcoords, 2 * sizeof(u8));
-	GX_SetArray(GX_VA_TEX1, texcoords, 2 * sizeof(u8));
+	GX_SetArray(GX_VA_TEX0, texcoordsY, 2 * sizeof(f32));
+	GX_SetArray(GX_VA_TEX1, texcoordsY, 2 * sizeof(f32));
+	GX_SetArray(GX_VA_TEX2, texcoordsUV, 2 * sizeof(u8));
 
 	//init YUV texture objects
-	GX_InitTexObj(&YtexObj, Ytexture, (u16) Ywidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&YtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&YltexObj, Yltexture, (u16) Ylwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&YltexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&YrtexObj, Yrtexture, (u16) Yrwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&YrtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
 	GX_InitTexObj(&UtexObj, Utexture, (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
 	GX_InitTexObjLOD(&UtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
 	GX_InitTexObj(&VtexObj, Vtexture, (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
@@ -256,7 +391,7 @@ static int w1,w2,h1,h2,df1,df2,old_h1_2=-1;
 static int p01,p02,p03,p11,p12,p13;
 static u16 Yrowpitch;
 static u16 UVrowpitch;
-static u64 *Ydst, *Udst, *Vdst;
+static u64 *Yldst, *Yrdst, *Udst, *Vdst;
 
 void getStrideInfo(int *_w1,int *_df1,int *_Yrowpitch)  // for subtitle info
 {
@@ -302,6 +437,20 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 
 	Ywidth = ww;
 	UVwidth = ww>>1;
+	Ylwidth = ww > 1016 ? 1024 : ww;
+	Yrwidth = ww > 1024 ? ww - 1016 + 8: 8;
+
+	if (ww <= 1024)
+	{
+		texcoordsY[2] = texcoordsY[4] = 1.0f;
+		texcoordsY[8] = texcoordsY[14] = 0.0f;
+	}
+	else
+	{
+		texcoordsY[2] = texcoordsY[4] = (float)Ywidth / 1024.0f;
+		texcoordsY[8] = texcoordsY[14] = (-1016.0f + 8.0f) / (float)Yrwidth;
+	}
+  	DCFlushRange (texcoordsY, 16*sizeof(f32)); // update memory BEFORE the GPU accesses it!
 
 	Yheight = height;
 	UVheight = height>>1;
@@ -324,7 +473,8 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 void GX_UpdatePitch(u16 *pitch)
 {
 	//black
-    memset(Ytexture, 0, Ytexsize);
+	memset(Yltexture, 0, Yltexsize);
+	memset(Yrtexture, 0, Yrtexsize);
 	memset(Utexture, 0x80, UVtexsize);
 	memset(Vtexture, 0x80, UVtexsize);
 	GX_ConfigTextureYUV(vo_dwidth, vo_dheight, pitch);
@@ -332,7 +482,8 @@ void GX_UpdatePitch(u16 *pitch)
 
 inline void DrawMPlayer()
 {
-	DCStoreRangeNoSync(Ytexture, Ytexsize);
+	DCStoreRangeNoSync(Yltexture, Yltexsize);
+	DCStoreRangeNoSync(Yrtexture, Yrtexsize);
 	DCStoreRangeNoSync(Utexture, UVtexsize);
 	DCStoreRangeNoSync(Vtexture, UVtexsize);
 
@@ -353,19 +504,21 @@ inline void DrawMPlayer()
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
 
-	GX_InitTexObjData(&YtexObj, Ytexture);
+	GX_InitTexObjData(&YltexObj, Yltexture);
+	GX_InitTexObjData(&YrtexObj, Yrtexture);
 	GX_InitTexObjData(&UtexObj, Utexture);
 	GX_InitTexObjData(&VtexObj, Vtexture);
 
-	GX_LoadTexObj(&YtexObj, GX_TEXMAP0);	// MAP0 <- Y
-	GX_LoadTexObj(&UtexObj, GX_TEXMAP1);	// MAP1 <- U
-	GX_LoadTexObj(&VtexObj, GX_TEXMAP2);	// MAP2 <- V
+	GX_LoadTexObj(&YltexObj, GX_TEXMAP0);	// MAP0 <- Yl
+	GX_LoadTexObj(&YrtexObj, GX_TEXMAP1);	// MAP1 <- Yr
+	GX_LoadTexObj(&UtexObj, GX_TEXMAP2);	// MAP2 <- U
+	GX_LoadTexObj(&VtexObj, GX_TEXMAP3);	// MAP3 <- V
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
-		GX_Position1x8(0); GX_Color1x8(0); GX_TexCoord1x8(0); GX_TexCoord1x8(0);
-		GX_Position1x8(1); GX_Color1x8(0); GX_TexCoord1x8(1); GX_TexCoord1x8(1);
-		GX_Position1x8(2); GX_Color1x8(0); GX_TexCoord1x8(2); GX_TexCoord1x8(2);
-		GX_Position1x8(3); GX_Color1x8(0); GX_TexCoord1x8(3); GX_TexCoord1x8(3);
+		GX_Position1x8(0); GX_Color1x8(0); GX_TexCoord1x8(0); GX_TexCoord1x8(4); GX_TexCoord1x8(0);
+		GX_Position1x8(1); GX_Color1x8(0); GX_TexCoord1x8(1); GX_TexCoord1x8(5); GX_TexCoord1x8(1);
+		GX_Position1x8(2); GX_Color1x8(0); GX_TexCoord1x8(2); GX_TexCoord1x8(6); GX_TexCoord1x8(2);
+		GX_Position1x8(3); GX_Color1x8(0); GX_TexCoord1x8(3); GX_TexCoord1x8(7); GX_TexCoord1x8(3);
 	GX_End();
 
 	if(copyScreen == 1)
@@ -402,9 +555,10 @@ inline void DrawMPlayer()
 void GX_AllocTextureMemory()
 {
 	//make memory fixed (max texture 1024*1024, gx can't manage more)
-	Ytexture = (u8 *) memalign(32,1024*1024);
-	Utexture = (u8 *) memalign(32,1024*1024/4);
-	Vtexture = (u8 *) memalign(32,1024*1024/4);
+	Yltexture = (u8 *) memalign(32,1024*1024);
+	Yrtexture = (u8 *) memalign(32,1024*1024);
+	Utexture = (u8 *) memalign(32,1024*512);
+	Vtexture = (u8 *) memalign(32,1024*512);
 }
 
 /****************************************************************************
@@ -412,7 +566,7 @@ void GX_AllocTextureMemory()
  ****************************************************************************/
 void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 {
-	int w,h,xscale,yscale,diffx,diffy;
+	int w,wYl,wYr,h,xscale,yscale,diffx,diffy;
 	Mtx44 p;
 
 	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
@@ -423,6 +577,12 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	yscale = vaspect * vert_zoom;
 
 	// Allocate 32byte aligned texture memory
+	wYl = width < 1024 ? width : 1016;
+	wYl += 8 - (wYl % 8);
+	wYr = width <= 1024 ? 0 : width - 1024;
+	wYr += 8 - (wYr % 8);
+	//wY = (width / 2) + 1;
+	//wY += 8 - (wY % 8);
 	w = (width / 16);
 	if(w % 2) w++;
 	w=w*16;
@@ -440,10 +600,12 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 
   	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
 
-	Ytexsize = (w*h);
+	Yltexsize = (wYl*h);
+	Yrtexsize = (wYr*h);
 	UVtexsize = (w*h)/4;
 
-	memset(Ytexture, 0, Ytexsize);
+	memset(Yltexture, 0, Yltexsize);
+	memset(Yrtexture, 0, Yrtexsize);
 	memset(Utexture, 0x80, UVtexsize);
 	memset(Vtexture, 0x80, UVtexsize);
 
@@ -466,7 +628,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 
 void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 {
-	int h,w;
+	int h,w,wl,wr;
 
 	u64 *Ysrc1 = (u64 *) buffer[0];
 	u64 *Ysrc2 = (u64 *) (buffer[0] + p01);
@@ -488,18 +650,35 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
     	h2 = ceil((float)h1/2);
 	}
 
+	wl = w1 > 1024/8 ? 1024/8 - 1 : w1;
+	wr = w1 > 1024/8 ? w1 - 1024/8 + 1 : 0;
+
 	//Convert YUV frame to GX textures
 	//Convert Y plane to texture
 	for (h = 0; h < h1; h++)
 	{
-		for (w = 0; w < w1; w++)
+
+		for (w = 0; w < wl; w++)
 		{
-			*Ydst++ = *Ysrc1++;
-			*Ydst++ = *Ysrc2++;
-			*Ydst++ = *Ysrc3++;
-			*Ydst++ = *Ysrc4++;
+			*Yldst++ = *Ysrc1++;
+			*Yldst++ = *Ysrc2++;
+			*Yldst++ = *Ysrc3++;
+			*Yldst++ = *Ysrc4++;
 		}
-		Ydst+=df1;
+		for (w = 0; w < wr; w++)
+		{
+			*Yrdst++ = *Ysrc1++;
+			*Yrdst++ = *Ysrc2++;
+			*Yrdst++ = *Ysrc3++;
+			*Yrdst++ = *Ysrc4++;
+		}
+		if (wr==0)	Yldst+=df1;
+		else	
+		{
+			Yldst += 4; //last tile should be blank
+			Yrdst+=df1;
+		}
+		Yrdst += 4; //first tile should be blank
 		Ysrc1 += Yrowpitch;
 		Ysrc2 += Yrowpitch;
 		Ysrc3 += Yrowpitch;
@@ -545,11 +724,12 @@ void GX_RenderTexture()
 
 void GX_ResetTextureYUVPointers()
 {
-	Ydst = (u64 *) Ytexture;
+	Yldst = (u64 *) Yltexture;
+	Yrdst = (u64 *) (Yrtexture + 32); //first tile should be blank
 	Udst = (u64 *) Utexture;
 	Vdst = (u64 *) Vtexture;
 }
 
-u8* GetYtexture() {return Ytexture;}
+u8* GetYtexture() {return Yltexture;}
 int GetYrowpitch() {return Yrowpitch;}
 int GetYrowpitchDf() {return Yrowpitch+df1;}

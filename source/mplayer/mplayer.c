@@ -2398,13 +2398,13 @@ int reinit_video_chain(void) {
 //rodries patch for big resolution on wii
 large_video = 0;
 
-if(sh_video->disp_w>1024)
+/*if(sh_video->disp_w>1024)
 {
 		char *arg_scale[]={"w","xxxx","h","-2",NULL};
 		sprintf(arg_scale[1],"%i",(int)sh_video->disp_w/2);
 		sh_video->vfilter = vf_open_filter(sh_video->vfilter,"scale",arg_scale);
 		large_video = 1;
-}
+}*/
 #endif
 
 
@@ -2789,8 +2789,8 @@ m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
 m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2");
-m_config_set_option(mconfig,"sws","4");
-m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
+//m_config_set_option(mconfig,"sws","4");
+//m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
 SetMPlayerSettings();
 
 orig_stream_cache_min_percent=stream_cache_min_percent;
@@ -3931,7 +3931,7 @@ if (mpctx->sh_video)
 	int h = mpctx->sh_video->disp_h;
 	int dominant_axis = w > h ? w : h;
 
-	if(dominant_axis > 4096)
+/*	if(dominant_axis > 4096)
 	{
 		w /= 8;
 		h /= 8;
@@ -3945,7 +3945,7 @@ if (mpctx->sh_video)
 	{
 		w /= 2;
 		h /= 2;
-	}
+	}*/
 	if (!vo_font || prev_dxs != w || prev_dys != h)
 	{
 	    force_load_font = 0;

@@ -633,3 +633,9 @@ msgstr "Risoluzione eccede il massimo consentito (1280x720)!"
 
 msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
 msgstr "L'IOS corrente è stato alterato (fake-sign). Le funzionalità e/o la stabilità possono essere compromesse."
+
+msgid "Online media file is invalid."
+msgstr "File multimediale online invalido"
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Font sottotitoli non trovato. I sottotitoli non saranno visibili."

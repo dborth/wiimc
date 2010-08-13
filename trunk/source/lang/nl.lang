@@ -170,7 +170,7 @@ msgid "Settings - DVD"
 msgstr "Instellingen - DVD"
 
 msgid "File Extensions"
-msgstr "Bestands Extensie"
+msgstr "Bestands Extensies"
 
 msgid "Language"
 msgstr "Taal"
@@ -497,7 +497,7 @@ msgid "Unable to initialize network (Error #:"
 msgstr "Kan geen netwerk verbinding maken (Error #:"
 
 msgid "Settings - Subtitles"
-msgstr "Instellingen - ONdertiteling"
+msgstr "Instellingen - Ondertiteling"
 
 msgid "Visibility"
 msgstr "Zichtbaarheid"
@@ -630,3 +630,12 @@ msgstr "Draaien"
 
 msgid "Resolution exceeds maximum allowed (1280x720)!"
 msgstr "Resolutie is hoger dan het maximum dat is toegestaan (1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "De huidige IOS is bewerkt (fake-signed). Functionaliteit en/of stabiliteit kan hier op achteruit gaan."
+
+msgid "Online media file is invalid."
+msgstr "Online media bestand is ongeldig."
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Ondertiteling lettertype bestand kon niet worden gevonden. De ondertiteling zal niet zichtbaar zijn."

@@ -3266,6 +3266,7 @@ if test "$_struct_sockaddr_storage" = auto; then
 #if HAVE_WINSOCK2_H
 #include <winsock2.h>
 #else
+#include <sys/types.h>
 #include <sys/socket.h>
 #endif
 int main(void) { struct sockaddr_storage sas; return 0; }
@@ -8855,6 +8856,8 @@ CONFIG_DWT     = yes
 CONFIG_FFT     = yes
 CONFIG_GOLOMB  = yes
 CONFIG_H264DSP = yes
+CONFIG_H264PRED= yes
+CONFIG_HUFFMAN = yes
 CONFIG_LPC     = yes
 CONFIG_LSP     = yes
 CONFIG_MDCT    = yes
@@ -9380,6 +9383,8 @@ $def_yasm
 #define CONFIG_FFT 1
 #define CONFIG_GOLOMB 1
 #define CONFIG_H264DSP 1
+#define CONFIG_H264PRED 1
+#define CONFIG_HUFFMAN 1
 #define CONFIG_LPC 1
 #define CONFIG_MDCT 1
 #define CONFIG_RDFT 1

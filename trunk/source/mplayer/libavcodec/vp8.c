@@ -22,6 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavcore/imgutils.h"
 #include "avcodec.h"
 #include "vp56.h"
 #include "vp8data.h"
@@ -86,12 +87,10 @@ typedef struct {
     VP8Macroblock *macroblocks;
     VP8Macroblock *macroblocks_base;
     VP8FilterStrength *filter_strength;
-    int mb_stride;
 
     uint8_t *intra4x4_pred_mode_top;
     uint8_t intra4x4_pred_mode_left[4];
     uint8_t *segmentation_map;
-    int b4_stride;
 
     /**
      * Cache of the top row needed for intra prediction
@@ -224,7 +223,7 @@ static void vp8_decode_flush(AVCodecContext *avctx)
 
 static int update_dimensions(VP8Context *s, int width, int height)
 {
-    if (avcodec_check_dimensions(s->avctx, width, height))
+    if (av_check_image_size(width, height, 0, s->avctx))
         return AVERROR_INVALIDDATA;
 
     vp8_decode_flush(s->avctx);
@@ -234,17 +233,12 @@ static int update_dimensions(VP8Context *s, int width, int height)
     s->mb_width  = (s->avctx->coded_width +15) / 16;
     s->mb_height = (s->avctx->coded_height+15) / 16;
 
-    // we allocate a border around the top/left of intra4x4 modes
-    // this is 4 blocks for intra4x4 to keep 4-byte alignment for fill_rectangle
-    s->mb_stride = s->mb_width+1;
-    s->b4_stride = 4*s->mb_stride;
-
-    s->macroblocks_base        = av_mallocz((s->mb_stride+s->mb_height*2+2)*sizeof(*s->macroblocks));
-    s->filter_strength         = av_mallocz(s->mb_stride*sizeof(*s->filter_strength));
-    s->intra4x4_pred_mode_top  = av_mallocz(s->b4_stride*4);
+    s->macroblocks_base        = av_mallocz((s->mb_width+s->mb_height*2+1)*sizeof(*s->macroblocks));
+    s->filter_strength         = av_mallocz(s->mb_width*sizeof(*s->filter_strength));
+    s->intra4x4_pred_mode_top  = av_mallocz(s->mb_width*4);
     s->top_nnz                 = av_mallocz(s->mb_width*sizeof(*s->top_nnz));
     s->top_border              = av_mallocz((s->mb_width+1)*sizeof(*s->top_border));
-    s->segmentation_map        = av_mallocz(s->mb_stride*s->mb_height);
+    s->segmentation_map        = av_mallocz(s->mb_width*s->mb_height);
 
     if (!s->macroblocks_base || !s->filter_strength || !s->intra4x4_pred_mode_top ||
         !s->top_nnz || !s->top_border || !s->segmentation_map)
@@ -305,11 +299,11 @@ static int setup_partitions(VP8Context *s, const uint8_t *buf, int buf_size)
         if (buf_size - size < 0)
             return -1;
 
-        vp56_init_range_decoder(&s->coeff_partition[i], buf, size);
+        ff_vp56_init_range_decoder(&s->coeff_partition[i], buf, size);
         buf      += size;
         buf_size -= size;
     }
-    vp56_init_range_decoder(&s->coeff_partition[i], buf, buf_size);
+    ff_vp56_init_range_decoder(&s->coeff_partition[i], buf, buf_size);
 
     return 0;
 }
@@ -445,7 +439,7 @@ static int decode_frame_header(VP8Context *s, const uint8_t *buf, int buf_size)
             return ret;
     }
 
-    vp56_init_range_decoder(c, buf, header_size);
+    ff_vp56_init_range_decoder(c, buf, header_size);
     buf      += header_size;
     buf_size -= header_size;
 
@@ -534,7 +528,7 @@ void clamp_mv(VP8Context *s, VP56mv *dst, const VP56mv *src, int mb_x, int mb_y)
 }
 
 static av_always_inline
-void find_near_mvs(VP8Context *s, VP8Macroblock *mb, int mb_x, int mb_y,
+void find_near_mvs(VP8Context *s, VP8Macroblock *mb,
                    VP56mv near[2], VP56mv *best, uint8_t cnt[4])
 {
     VP8Macroblock *mb_edge[3] = { mb + 2 /* top */,
@@ -766,7 +760,7 @@ void decode_mb_mode(VP8Context *s, VP8Macroblock *mb, int mb_x, int mb_y, uint8_
         s->ref_count[mb->ref_frame-1]++;
 
         // motion vectors, 16.3
-        find_near_mvs(s, mb, mb_x, mb_y, near, &best, cnt);
+        find_near_mvs(s, mb, near, &best, cnt);
         if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[0]][0])) {
             if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[1]][1])) {
                 if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[2]][2])) {
@@ -777,8 +771,8 @@ void decode_mb_mode(VP8Context *s, VP8Macroblock *mb, int mb_x, int mb_y, uint8_
                     } else {
                         mb->mode = VP8_MVMODE_NEW;
                         clamp_mv(s, &mb->mv, &mb->mv, mb_x, mb_y);
-                        mb->mv.y += + read_mv_component(c, s->prob->mvc[0]);
-                        mb->mv.x += + read_mv_component(c, s->prob->mvc[1]);
+                        mb->mv.y += read_mv_component(c, s->prob->mvc[0]);
+                        mb->mv.x += read_mv_component(c, s->prob->mvc[1]);
                     }
                 } else {
                     mb->mode = VP8_MVMODE_NEAR;
@@ -821,22 +815,20 @@ void decode_mb_mode(VP8Context *s, VP8Macroblock *mb, int mb_x, int mb_y, uint8_
  * @return 0 if no coeffs were decoded
  *         otherwise, the index of the last coeff decoded plus one
  */
-static int decode_block_coeffs(VP56RangeCoder *c, DCTELEM block[16],
-                               uint8_t probs[8][3][NUM_DCT_TOKENS-1],
-                               int i, int zero_nhood, int16_t qmul[2])
+static int decode_block_coeffs_internal(VP56RangeCoder *c, DCTELEM block[16],
+                                        uint8_t probs[8][3][NUM_DCT_TOKENS-1],
+                                        int i, uint8_t *token_prob, int16_t qmul[2])
 {
-    uint8_t *token_prob = probs[i][zero_nhood];
-    int nonzero = 0;
-    int coeff;
-
+    goto skip_eob;
     do {
+        int coeff;
         if (!vp56_rac_get_prob_branchy(c, token_prob[0]))   // DCT_EOB
-            return nonzero;
+            return i;
 
 skip_eob:
         if (!vp56_rac_get_prob_branchy(c, token_prob[1])) { // DCT_0
             if (++i == 16)
-                return nonzero; // invalid input; blocks should end with EOB
+                return i; // invalid input; blocks should end with EOB
             token_prob = probs[i][0];
             goto skip_eob;
         }
@@ -870,13 +862,21 @@ skip_eob:
             }
             token_prob = probs[i+1][2];
         }
-
-        // todo: full [16] qmat? load into register?
         block[zigzag_scan[i]] = (vp8_rac_get(c) ? -coeff : coeff) * qmul[!!i];
-        nonzero = ++i;
-    } while (i < 16);
+    } while (++i < 16);
 
-    return nonzero;
+    return i;
+}
+
+static av_always_inline
+int decode_block_coeffs(VP56RangeCoder *c, DCTELEM block[16],
+                        uint8_t probs[8][3][NUM_DCT_TOKENS-1],
+                        int i, int zero_nhood, int16_t qmul[2])
+{
+    uint8_t *token_prob = probs[i][zero_nhood];
+    if (!vp56_rac_get_prob_branchy(c, token_prob[0]))   // DCT_EOB
+        return 0;
+    return decode_block_coeffs_internal(c, block, probs, i, token_prob, qmul);
 }
 
 static av_always_inline
@@ -1149,8 +1149,8 @@ static av_always_inline void prefetch_motion(VP8Context *s, VP8Macroblock *mb, i
     /* Don't prefetch refs that haven't been used very often this frame. */
     if (s->ref_count[ref-1] > (mb_xy >> 5)) {
         int x_off = mb_x << 4, y_off = mb_y << 4;
-        int mx = mb->mv.x + x_off + 8;
-        int my = mb->mv.y + y_off;
+        int mx = (mb->mv.x>>2) + x_off + 8;
+        int my = (mb->mv.y>>2) + y_off;
         uint8_t **src= s->framep[ref]->data;
         int off= mx + (my + (mb_x&3)*4)*s->linesize + 64;
         s->dsp.prefetch(src[0]+off, s->linesize, 4);
@@ -1529,26 +1529,26 @@ static int vp8_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
 
     memset(s->top_nnz, 0, s->mb_width*sizeof(*s->top_nnz));
 
-    /* Zero macroblock structures for top/left prediction from outside the frame. */
-    memset(s->macroblocks, 0, (s->mb_width + s->mb_height*2)*sizeof(*s->macroblocks));
+    /* Zero macroblock structures for top/top-left prediction from outside the frame. */
+    memset(s->macroblocks + s->mb_height*2 - 1, 0, (s->mb_width+1)*sizeof(*s->macroblocks));
 
     // top edge of 127 for intra prediction
     memset(s->top_border, 127, (s->mb_width+1)*sizeof(*s->top_border));
     memset(s->ref_count, 0, sizeof(s->ref_count));
     if (s->keyframe)
-        memset(s->intra4x4_pred_mode_top, DC_PRED, s->b4_stride*4);
+        memset(s->intra4x4_pred_mode_top, DC_PRED, s->mb_width*4);
 
     for (mb_y = 0; mb_y < s->mb_height; mb_y++) {
         VP56RangeCoder *c = &s->coeff_partition[mb_y & (s->num_coeff_partitions-1)];
         VP8Macroblock *mb = s->macroblocks + (s->mb_height - mb_y - 1)*2;
-        uint8_t *segment_map = s->segmentation_map + mb_y*s->mb_stride;
-        int mb_xy = mb_y * s->mb_stride;
+        int mb_xy = mb_y*s->mb_width;
         uint8_t *dst[3] = {
             curframe->data[0] + 16*mb_y*s->linesize,
             curframe->data[1] +  8*mb_y*s->uvlinesize,
             curframe->data[2] +  8*mb_y*s->uvlinesize
         };
 
+        memset(mb - 1, 0, sizeof(*mb));   // zero left macroblock
         memset(s->left_nnz, 0, sizeof(s->left_nnz));
         AV_WN32A(s->intra4x4_pred_mode_left, DC_PRED*0x01010101);
 
@@ -1561,13 +1561,11 @@ static int vp8_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
             memset(s->top_border, 129, sizeof(*s->top_border));
 
         for (mb_x = 0; mb_x < s->mb_width; mb_x++, mb_xy++, mb++) {
-            uint8_t *segment_mb = segment_map+mb_x;
-
             /* Prefetch the current frame, 4 MBs ahead */
             s->dsp.prefetch(dst[0] + (mb_x&3)*4*s->linesize + 64, s->linesize, 4);
             s->dsp.prefetch(dst[1] + (mb_x&7)*s->uvlinesize + 64, dst[2] - dst[1], 2);
 
-            decode_mb_mode(s, mb, mb_x, mb_y, segment_mb);
+            decode_mb_mode(s, mb, mb_x, mb_y, s->segmentation_map + mb_xy);
 
             prefetch_motion(s, mb, mb_x, mb_y, mb_xy, VP56_FRAME_PREVIOUS);
 

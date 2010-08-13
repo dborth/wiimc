@@ -476,6 +476,7 @@ int av_open_input_stream(AVFormatContext **ic_ptr,
             if (st) {
                 av_free(st->priv_data);
                 av_free(st->codec->extradata);
+                av_free(st->codec);
             }
             av_free(st);
         }
@@ -2700,8 +2701,8 @@ int av_write_header(AVFormatContext *s)
                     char tagbuf[32];
                     av_get_codec_tag_string(tagbuf, sizeof(tagbuf), st->codec->codec_tag);
                     av_log(s, AV_LOG_ERROR,
-                           "Tag %s/0x%08x incompatible with output codec '%s'\n",
-                           tagbuf, st->codec->codec_tag, st->codec->codec->name);
+                           "Tag %s/0x%08x incompatible with output codec id '%d'\n",
+                           tagbuf, st->codec->codec_tag, st->codec->codec_id);
                     return AVERROR_INVALIDDATA;
                 }
             }else
@@ -3600,6 +3601,34 @@ char *ff_data_to_hex(char *buff, const uint8_t *src, int s, int lowercase)
     }
 
     return buff;
+}
+
+int ff_hex_to_data(uint8_t *data, const char *p)
+{
+    int c, len, v;
+
+    len = 0;
+    v = 1;
+    for (;;) {
+        p += strspn(p, SPACE_CHARS);
+        if (*p == '\0')
+            break;
+        c = toupper((unsigned char) *p++);
+        if (c >= '0' && c <= '9')
+            c = c - '0';
+        else if (c >= 'A' && c <= 'F')
+            c = c - 'A' + 10;
+        else
+            break;
+        v = (v << 4) | c;
+        if (v & 0x100) {
+            if (data)
+                data[len] = v;
+            len++;
+            v = 1;
+        }
+    }
+    return len;
 }
 
 void av_set_pts_info(AVStream *s, int pts_wrap_bits,

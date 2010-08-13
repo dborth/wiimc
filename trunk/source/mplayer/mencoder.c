@@ -79,6 +79,7 @@
 #include "osdep/priority.h"
 #include "osdep/timer.h"
 #include "stream/stream.h"
+#include "stream/stream_bd.h"
 #ifdef CONFIG_DVDREAD
 #include "stream/stream_dvd.h"
 #endif
@@ -643,7 +644,7 @@ if(!codecs_file || !parse_codec_cfg(codecs_file)){
 
 
 if (frameno_filename) {
-  stream2=open_stream(frameno_filename,0,&i);
+  stream2=open_stream(frameno_filename, NULL, NULL);
   if(stream2){
     demuxer2=demux_open(stream2,DEMUXER_TYPE_AVI,-1,-1,-2,NULL);
     if(demuxer2) mp_msg(MSGT_MENCODER, MSGL_INFO, MSGTR_UsingPass3ControlFile, frameno_filename);
@@ -707,6 +708,11 @@ play_next_file:
   }
 
   mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_OpenedStream, file_format, (int)(stream->start_pos), (int)(stream->end_pos));
+
+if(stream->type==STREAMTYPE_BD){
+  if(audio_id==-1) audio_id=bd_aid_from_lang(stream,audio_lang);
+  if(dvdsub_lang && dvdsub_id==-1) dvdsub_id=bd_sid_from_lang(stream,dvdsub_lang);
+}
 
 #ifdef CONFIG_DVDREAD
 if(stream->type==STREAMTYPE_DVD){

@@ -25,6 +25,9 @@
 #include <inttypes.h>
 #include <ft2build.h>
 #include FT_GLYPH_H
+#ifndef GEKKO
+#include <strings.h>
+#endif
 
 #include "ass_library.h"
 #include "ass.h"

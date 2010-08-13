@@ -2323,6 +2323,22 @@ H264_WEIGHT( 4, 8)
 H264_WEIGHT( 4, 4)
 H264_WEIGHT( 4, 2)
 
+void ff_h264_biweight_8x8_sse2(uint8_t *dst, uint8_t *src, int stride,
+                               int log2_denom, int weightd, int weights,
+                               int offset);
+
+void ff_h264_biweight_16x16_sse2(uint8_t *dst, uint8_t *src, int stride,
+                                 int log2_denom, int weightd, int weights,
+                                 int offset);
+
+void ff_h264_biweight_8x8_ssse3(uint8_t *dst, uint8_t *src, int stride,
+                                int log2_denom, int weightd, int weights,
+                                int offset);
+
+void ff_h264_biweight_16x16_ssse3(uint8_t *dst, uint8_t *src, int stride,
+                                  int log2_denom, int weightd, int weights,
+                                  int offset);
+
 void ff_pred16x16_vertical_mmx     (uint8_t *src, int stride);
 void ff_pred16x16_vertical_sse     (uint8_t *src, int stride);
 void ff_pred16x16_horizontal_mmx   (uint8_t *src, int stride);
@@ -2349,7 +2365,7 @@ void ff_pred4x4_tm_vp8_mmxext      (uint8_t *src, const uint8_t *topright, int s
 void ff_pred4x4_tm_vp8_ssse3       (uint8_t *src, const uint8_t *topright, int stride);
 void ff_pred4x4_vertical_vp8_mmxext(uint8_t *src, const uint8_t *topright, int stride);
 
-#if CONFIG_H264DSP
+#if CONFIG_H264PRED
 void ff_h264_pred_init_x86(H264PredContext *h, int codec_id)
 {
     mm_flags = mm_support();

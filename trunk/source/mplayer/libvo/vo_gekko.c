@@ -2,8 +2,7 @@
    vo_gekko.c - MPlayer video driver for Wii
 
    Copyright (C) 2008 dhewg
-
-   sepp256 - Added YUV frame rendering functions.
+   Copyright (C) 2008 sepp256 - YUV frame rendering functions
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public

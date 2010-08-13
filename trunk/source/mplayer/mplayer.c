@@ -167,7 +167,6 @@ static void reload_subtitles();
 int controlledbygui=1;
 int pause_gui=0;
 int wii_error = 0;
-int large_video = 0; // hack to keep track of if video width > 1024 
 static int pause_low_cache=0;
 
 static char fileplaying[MAXPATHLEN];
@@ -2394,20 +2393,6 @@ int reinit_video_chain(void) {
 
   sh_video->vfilter=(void*)append_filters(sh_video->vfilter);
 
-#ifdef GEKKO
-//rodries patch for big resolution on wii
-large_video = 0;
-
-/*if(sh_video->disp_w>1024)
-{
-		char *arg_scale[]={"w","xxxx","h","-2",NULL};
-		sprintf(arg_scale[1],"%i",(int)sh_video->disp_w/2);
-		sh_video->vfilter = vf_open_filter(sh_video->vfilter,"scale",arg_scale);
-		large_video = 1;
-}*/
-#endif
-
-
 #ifdef CONFIG_ASS
   if (ass_enabled)
     ((vf_instance_t *)sh_video->vfilter)->control(sh_video->vfilter, VFCTRL_INIT_EOSD, ass_library);
@@ -2789,8 +2774,6 @@ m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
 m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2");
-//m_config_set_option(mconfig,"sws","4");
-//m_config_set_option(mconfig,"lavdopts","lowres=1,1025");
 SetMPlayerSettings();
 
 orig_stream_cache_min_percent=stream_cache_min_percent;
@@ -3927,31 +3910,12 @@ if (mpctx->sh_video)
 			seek_to_sec = 0;
 	}
 
-	int w = mpctx->sh_video->disp_w;
-	int h = mpctx->sh_video->disp_h;
-	int dominant_axis = w > h ? w : h;
-
-/*	if(dominant_axis > 4096)
-	{
-		w /= 8;
-		h /= 8;
-	}
-	else if(dominant_axis > 2048)
-	{
-		w /= 4;
-		h /= 4;
-	}
-	else if(dominant_axis > 1024)
-	{
-		w /= 2;
-		h /= 2;
-	}*/
-	if (!vo_font || prev_dxs != w || prev_dys != h)
+	if (!vo_font || prev_dxs != mpctx->sh_video->disp_w || prev_dys != mpctx->sh_video->disp_h)
 	{
 	    force_load_font = 0;
 	    ReInitTTFLib();
-		load_font_ft(w, h, &vo_font, font_name, osd_font_scale_factor);
-		prev_dxs = w; prev_dys = h;
+		load_font_ft(mpctx->sh_video->disp_w, mpctx->sh_video->disp_h, &vo_font, font_name, osd_font_scale_factor);
+		prev_dxs = mpctx->sh_video->disp_w; prev_dys = mpctx->sh_video->disp_h;
 
 		if (mpctx->set_of_sub_size > 0)
 		{

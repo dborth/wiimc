@@ -622,47 +622,6 @@ typedef struct {
 	off_t probe;
 } tsdemux_init_t;
 
-//stripped down version of a52_syncinfo() from liba52
-//copyright belongs to Michel Lespinasse <walken@zoy.org> and Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
-int mp_a52_framesize(uint8_t * buf, int *srate)
-{
-	int rate[] = {	32,  40,  48,  56,  64,  80,  96, 112,
-			128, 160, 192, 224, 256, 320, 384, 448,
-			512, 576, 640
-	};
-	uint8_t halfrate[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3};
-	int frmsizecod, bitrate, half;
-
-	if((buf[0] != 0x0b) || (buf[1] != 0x77))	/* syncword */
-		return 0;
-
-	if(buf[5] >= 0x60)		/* bsid >= 12 */
-		return 0;
-
-	half = halfrate[buf[5] >> 3];
-
-	frmsizecod = buf[4] & 63;
-	if(frmsizecod >= 38)
-		return 0;
-
-	bitrate = rate[frmsizecod >> 1];
-
-	switch(buf[4] & 0xc0)
-	{
-		case 0:	/* 48 KHz */
-			*srate = 48000 >> half;
-			return 4 * bitrate;
-		case 0x40:	/* 44.1 KHz */
-			*srate = 44100 >> half;
-			return 2 * (320 * bitrate / 147 + (frmsizecod & 1));
-		case 0x80: /* 32 KHz */
-			*srate = 32000 >> half;
-			return 6 * bitrate;
-	}
-
-	return 0;
-}
-
 //second stage: returns the count of A52 syncwords found
 static int a52_check(char *buf, int len)
 {
@@ -1655,16 +1614,13 @@ static int pes_parse2(unsigned char *buf, uint16_t packet_len, ES_stream_t *es, 
 
 static int ts_sync(stream_t *stream)
 {
-	int c=0;
-
 	mp_msg(MSGT_DEMUX, MSGL_DBG3, "TS_SYNC \n");
 
-	while(((c=stream_read_char(stream)) != 0x47) && ! stream->eof);
+	while (!stream->eof)
+		if (stream_read_char(stream) == 0x47)
+			return 1;
 
-	if(c == 0x47)
-		return c;
-	else
-		return 0;
+	return 0;
 }
 
 
@@ -2781,7 +2737,6 @@ static int fill_extradata(mp4_decoder_config_t * mp4_dec, ES_stream_t *tss)
 static int ts_parse(demuxer_t *demuxer , ES_stream_t *es, unsigned char *packet, int probe)
 {
 	ES_stream_t *tss;
-	uint8_t done = 0;
 	int buf_size, is_start, pid, base;
 	int len, cc, cc_ok, afc, retv = 0, is_video, is_audio, is_sub;
 	ts_priv_t * priv = (ts_priv_t*) demuxer->priv;
@@ -2797,11 +2752,11 @@ static int ts_parse(demuxer_t *demuxer , ES_stream_t *es, unsigned char *packet,
 	TS_stream_info *si;
 
 
-	while(! done)
+	while(1)
 	{
 		bad = ts_error = 0;
-		ds = (demux_stream_t*) NULL;
-		dp = (demux_packet_t **) NULL;
+		ds = NULL;
+		dp = NULL;
 		dp_offset = buffer_size = NULL;
 		rap_flag = 0;
 		mp4_dec = NULL;

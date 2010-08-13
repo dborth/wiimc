@@ -52,7 +52,7 @@ int rtsp_default_protocols = (1 << RTSP_LOWER_TRANSPORT_UDP);
 #define SELECT_TIMEOUT_MS 100
 #define READ_PACKET_TIMEOUT_S 10
 #define MAX_TIMEOUTS READ_PACKET_TIMEOUT_S * 1000 / SELECT_TIMEOUT_MS
-#define SDP_MAX_SIZE 8192
+#define SDP_MAX_SIZE 16384
 
 static void get_word_until_chars(char *buf, int buf_size,
                                  const char *sep, const char **pp)
@@ -824,6 +824,7 @@ int ff_rtsp_read_reply(AVFormatContext *s, RTSPMessageHeader *reply,
             get_word(buf1, sizeof(buf1), &p);
             get_word(buf1, sizeof(buf1), &p);
             reply->status_code = atoi(buf1);
+            av_strlcpy(reply->reason, p, sizeof(reply->reason));
         } else {
             ff_rtsp_parse_line(reply, p, &rt->auth_state);
             av_strlcat(rt->last_reply, p,    sizeof(rt->last_reply));
@@ -961,9 +962,10 @@ retry:
         goto retry;
 
     if (reply->status_code > 400){
-        av_log(s, AV_LOG_ERROR, "method %s failed, %d\n",
+        av_log(s, AV_LOG_ERROR, "method %s failed: %d%s\n",
                method,
-               reply->status_code);
+               reply->status_code,
+               reply->reason);
         av_log(s, AV_LOG_DEBUG, "%s\n", rt->last_reply);
     }
 
@@ -1127,7 +1129,7 @@ static int make_setup_request(AVFormatContext *s, const char *host, int port,
             rt->transport = reply->transports[0].transport;
         }
 
-        /* close RTP connection if not choosen */
+        /* close RTP connection if not chosen */
         if (reply->transports[0].lower_transport != RTSP_LOWER_TRANSPORT_UDP &&
             (lower_transport == RTSP_LOWER_TRANSPORT_UDP)) {
             url_close(rtsp_st->rtp_handle);
@@ -1609,11 +1611,17 @@ redirect:
 static int rtsp_read_header(AVFormatContext *s,
                             AVFormatParameters *ap)
 {
+    RTSPState *rt = s->priv_data;
     int ret;
 
     ret = ff_rtsp_connect(s);
     if (ret)
         return ret;
+
+    rt->real_setup_cache = av_mallocz(2 * s->nb_streams * sizeof(*rt->real_setup_cache));
+    if (!rt->real_setup_cache)
+        return AVERROR(ENOMEM);
+    rt->real_setup = rt->real_setup_cache + s->nb_streams * sizeof(*rt->real_setup);
 
     if (ap->initial_pause) {
          /* do not start immediately */
@@ -1833,13 +1841,12 @@ static int rtsp_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     if (rt->server_type == RTSP_SERVER_REAL) {
         int i;
-        enum AVDiscard cache[MAX_STREAMS];
 
         for (i = 0; i < s->nb_streams; i++)
-            cache[i] = s->streams[i]->discard;
+            rt->real_setup[i] = s->streams[i]->discard;
 
         if (!rt->need_subscription) {
-            if (memcmp (cache, rt->real_setup_cache,
+            if (memcmp (rt->real_setup, rt->real_setup_cache,
                         sizeof(enum AVDiscard) * s->nb_streams)) {
                 snprintf(cmd, sizeof(cmd),
                          "Unsubscribe: %s\r\n",
@@ -1855,7 +1862,7 @@ static int rtsp_read_packet(AVFormatContext *s, AVPacket *pkt)
         if (rt->need_subscription) {
             int r, rule_nr, first = 1;
 
-            memcpy(rt->real_setup_cache, cache,
+            memcpy(rt->real_setup_cache, rt->real_setup,
                    sizeof(enum AVDiscard) * s->nb_streams);
             rt->last_subscription[0] = 0;
 
@@ -1895,9 +1902,7 @@ static int rtsp_read_packet(AVFormatContext *s, AVPacket *pkt)
         return ret;
 
     /* send dummy request to keep TCP connection alive */
-    if ((rt->server_type == RTSP_SERVER_WMS ||
-         rt->server_type == RTSP_SERVER_REAL) &&
-        (av_gettime() - rt->last_cmd_time) / 1000000 >= rt->timeout / 2) {
+    if ((av_gettime() - rt->last_cmd_time) / 1000000 >= rt->timeout / 2) {
         if (rt->server_type == RTSP_SERVER_WMS) {
             ff_rtsp_send_cmd_async(s, "GET_PARAMETER", rt->control_uri, NULL);
         } else {
@@ -1967,6 +1972,8 @@ static int rtsp_read_close(AVFormatContext *s)
     ff_rtsp_close_streams(s);
     ff_rtsp_close_connections(s);
     ff_network_close();
+    rt->real_setup = NULL;
+    av_freep(&rt->real_setup_cache);
     return 0;
 }
 

@@ -23,7 +23,7 @@
 
 #define LIBAVFORMAT_VERSION_MAJOR 52
 #define LIBAVFORMAT_VERSION_MINOR 78
-#define LIBAVFORMAT_VERSION_MICRO  0
+#define LIBAVFORMAT_VERSION_MICRO  2
 
 #define LIBAVFORMAT_VERSION_INT AV_VERSION_INT(LIBAVFORMAT_VERSION_MAJOR, \
                                                LIBAVFORMAT_VERSION_MINOR, \
@@ -131,6 +131,7 @@ typedef struct AVMetadataConv AVMetadataConv;
 
 /**
  * Get a metadata element with matching key.
+ *
  * @param prev Set to the previous matching element to find the next.
  *             If set to NULL the first matching element is returned.
  * @param flags Allows case as well as suffix-insensitive comparisons.
@@ -141,9 +142,12 @@ av_metadata_get(AVMetadata *m, const char *key, const AVMetadataTag *prev, int f
 
 #if LIBAVFORMAT_VERSION_MAJOR == 52
 /**
- * Set the given tag in m, overwriting an existing tag.
- * @param key tag key to add to m (will be av_strduped)
- * @param value tag value to add to m (will be av_strduped)
+ * Set the given tag in *pm, overwriting an existing tag.
+ *
+ * @param pm pointer to a pointer to a metadata struct. If *pm is NULL
+ * a metadata struct is allocated and put in *pm.
+ * @param key tag key to add to *pm (will be av_strduped)
+ * @param value tag value to add to *pm (will be av_strduped)
  * @return >= 0 on success otherwise an error code <0
  * @deprecated Use av_metadata_set2() instead.
  */
@@ -151,9 +155,12 @@ attribute_deprecated int av_metadata_set(AVMetadata **pm, const char *key, const
 #endif
 
 /**
- * Set the given tag in m, overwriting an existing tag.
- * @param key tag key to add to m (will be av_strduped depending on flags)
- * @param value tag value to add to m (will be av_strduped depending on flags).
+ * Set the given tag in *pm, overwriting an existing tag.
+ *
+ * @param pm pointer to a pointer to a metadata struct. If *pm is NULL
+ * a metadata struct is allocated and put in *pm.
+ * @param key tag key to add to *pm (will be av_strduped depending on flags)
+ * @param value tag value to add to *pm (will be av_strduped depending on flags).
  *        Passing a NULL value will cause an existing tag to be deleted.
  * @return >= 0 on success otherwise an error code <0
  */
@@ -163,11 +170,12 @@ int av_metadata_set2(AVMetadata **pm, const char *key, const char *value, int fl
  * Convert all the metadata sets from ctx according to the source and
  * destination conversion tables. If one of the tables is NULL, then
  * tags are converted to/from ffmpeg generic tag names.
+ *
  * @param d_conv destination tags format conversion table
  * @param s_conv source tags format conversion table
  */
-void av_metadata_conv(struct AVFormatContext *ctx,const AVMetadataConv *d_conv,
-                                                  const AVMetadataConv *s_conv);
+void av_metadata_conv(struct AVFormatContext *ctx, const AVMetadataConv *d_conv,
+                                                   const AVMetadataConv *s_conv);
 
 /**
  * Free all the memory allocated for an AVMetadata struct.

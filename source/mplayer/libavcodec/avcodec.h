@@ -30,8 +30,8 @@
 #include "libavutil/avutil.h"
 
 #define LIBAVCODEC_VERSION_MAJOR 52
-#define LIBAVCODEC_VERSION_MINOR 84
-#define LIBAVCODEC_VERSION_MICRO  2
+#define LIBAVCODEC_VERSION_MINOR 85
+#define LIBAVCODEC_VERSION_MICRO  1
 
 #define LIBAVCODEC_VERSION_INT  AV_VERSION_INT(LIBAVCODEC_VERSION_MAJOR, \
                                                LIBAVCODEC_VERSION_MINOR, \
@@ -3392,15 +3392,14 @@ void avcodec_align_dimensions(AVCodecContext *s, int *width, int *height);
 void avcodec_align_dimensions2(AVCodecContext *s, int *width, int *height,
                                int linesize_align[4]);
 
+#if LIBAVCODEC_VERSION_MAJOR < 53
 /**
- * Check if the given dimension of a picture is valid, meaning that all
- * bytes of the picture can be addressed with a signed int.
- *
- * @param[in] w Width of the picture.
- * @param[in] h Height of the picture.
- * @return Zero if valid, a negative value if invalid.
+ * @deprecated Deprecated in favor of av_check_image_size().
  */
+attribute_deprecated
 int avcodec_check_dimensions(void *av_log_ctx, unsigned int w, unsigned int h);
+#endif
+
 enum PixelFormat avcodec_default_get_format(struct AVCodecContext *s, const enum PixelFormat * fmt);
 
 int avcodec_thread_init(AVCodecContext *s, int thread_count);
@@ -3938,7 +3937,17 @@ void *av_fast_realloc(void *ptr, unsigned int *size, unsigned int min_size);
 void av_fast_malloc(void *ptr, unsigned int *size, unsigned int min_size);
 
 /**
- * Copy image 'src' to 'dst'.
+ * Copy image data in src_data to dst_data.
+ *
+ * @param dst_linesize linesizes for the image in dst_data
+ * @param src_linesize linesizes for the image in src_data
+ */
+void av_picture_data_copy(uint8_t *dst_data[4], int dst_linesize[4],
+                          uint8_t *src_data[4], int src_linesize[4],
+                          enum PixelFormat pix_fmt, int width, int height);
+
+/**
+ * Copy image src to dst. Wraps av_picture_data_copy() above.
  */
 void av_picture_copy(AVPicture *dst, const AVPicture *src,
                      enum PixelFormat pix_fmt, int width, int height);

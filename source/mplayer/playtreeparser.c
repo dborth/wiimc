@@ -44,7 +44,9 @@
 
 #define WHITES " \n\r\t"
 
+#ifdef GEKKO
 #define mp_pretty_title(s) (strrchr((s),',')==NULL?(char*)(s):(strrchr((s),',')+1))
+#endif
 
 static void
 strstrip(char* str) {
@@ -373,6 +375,9 @@ parse_pls(play_tree_parser_t* p) {
 
   free(entries);
 
+  if (!list)
+    return NULL;
+
   entry = play_tree_new();
   play_tree_set_child(entry,list);
   return entry;
@@ -426,9 +431,11 @@ parse_ref_ini(play_tree_parser_t* p) {
 
 static play_tree_t*
 parse_m3u(play_tree_parser_t* p) {
-  char *line, *title = NULL;
-  
+  char* line;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
+#ifdef GEKKO
+  char *title = NULL;
+#endif
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying extended m3u playlist...\n");
   if (!(line = play_tree_parser_get_line(p)))
@@ -456,7 +463,7 @@ parse_m3u(play_tree_parser_t* p) {
           strtol(line+8,&line,10), line+2);
       }
 #endif
- 	  /// start denper's changes
+#ifdef GEKKO
 	  // Get the title of .m3u entry
       char *colon = strchr(line, ':');
       char *comma = strchr(line, ',');
@@ -466,30 +473,26 @@ parse_m3u(play_tree_parser_t* p) {
       else if(colon != NULL && comma != NULL && (comma-colon) < 4) linestart = comma+1;
 	  title = realloc(title, strlen(mp_pretty_title(linestart))+1);
 	  strcpy(title, mp_pretty_title(linestart));
-	  /// end denper's changes
-	  
+#endif
       continue;
     }
     entry = play_tree_new();
     play_tree_add_file(entry,line);
-	
-	/// start denper's changes
+#ifdef GEKKO
 	// Add the title parameter if it exists
 	play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
-	/// end denper's changes
-		
+#endif
     if(!list)
       list = entry;
     else
       play_tree_append_entry(last_entry,entry);
     last_entry = entry;
   }
-  /// start denper's changes
+#ifdef GEKKO
   // Free the memory of title pointer
   free(title); 
   title = NULL;
-  /// end denper's changes
-
+#endif
   if(!list) return NULL;
   entry = play_tree_new();
   play_tree_set_child(entry,list);
@@ -499,11 +502,15 @@ parse_m3u(play_tree_parser_t* p) {
 static play_tree_t*
 parse_smil(play_tree_parser_t* p) {
   int entrymode=0;
-  char* line,source[512],title[128],*pos,*pos1,*s_start,*s_end,*src_line;
+  char* line,source[512],*pos,*s_start,*s_end,*src_line;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
   int is_rmsmil = 0;
-  int exists_title = 0;
   unsigned int npkt, ttlpkt;
+#ifdef GEKKO
+  char title[128];
+  char *pos1;
+  int exists_title = 0;
+#endif
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying smil playlist...\n");
 
@@ -597,8 +604,7 @@ parse_smil(play_tree_parser_t* p) {
      }
     }
     if (entrymode) { //Entry found but not yet filled
-    
-	  /// start denper's changes	  
+#ifdef GEKKO 
 	  // Get the title of .smi entry
 	  exists_title = 0;
 	  pos1 = strstr(pos,"title=");
@@ -625,8 +631,7 @@ parse_smil(play_tree_parser_t* p) {
 		}
 		
       }
-	  /// end denper's changes   
-	   
+#endif
       pos = strstr(pos,"src=");   // Is source present on this line
       if (pos != NULL) {
         entrymode=0;
@@ -648,13 +653,11 @@ parse_smil(play_tree_parser_t* p) {
         source[(s_end-s_start)]='\0'; // Null terminate
         entry = play_tree_new();
         play_tree_add_file(entry,source);
-
-		/// start denper's changes
+#ifdef GEKKO
 		// Add the title parameter if it exists
 		if(exists_title)
 			play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
-		/// end denper's changes
-
+#endif
         if(!list)  //Insert new entry
           list = entry;
         else
@@ -723,8 +726,7 @@ parse_textplain(play_tree_parser_t* p) {
 		if(list) play_tree_free(list, 1);
 		return NULL; // abort - this might be a stream
 	}
-#endif	
-
+#endif
     strstrip(line);
     if(line[0] == '\0' || line[0] == '#' || (line[0] == '/' && line[1] == '/'))
       continue;
@@ -857,7 +859,6 @@ parse_playlist_file(char* file) {
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Parsing playlist file %s...\n",file);
 
   ret = parse_playtree(stream,1);
-
   free_stream(stream);
 
   play_tree_add_bpf(ret, file);

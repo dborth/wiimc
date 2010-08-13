@@ -23,7 +23,7 @@
  ***********************************
  *
  * Initially modified for use with MPlayer by Diego Biurrun on 2004-08-22
- * $Id: genres.h 31913 2010-08-03 15:55:17Z siretart $
+ * $Id: genres.h 31920 2010-08-04 12:20:01Z siretart $
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
  */
 
@@ -99,7 +99,7 @@ const char * const genres[] = {
 "Native American",			/* 64 */
 "Cabaret",					/* 65 */
 "New Wave",					/* 66 */
-"Psychedelic",				/* 67 */
+"Psychadelic",			/* 67 */ /* typo taken from the id3v2spec*/
 "Rave",						/* 68 */
 "Show Tunes",				/* 69 */
 "Trailer",					/* 70 */

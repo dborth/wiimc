@@ -24,6 +24,30 @@
 #include "imgutils.h"
 #include "libavutil/pixdesc.h"
 
+int av_get_image_linesize(enum PixelFormat pix_fmt, int width, int plane)
+{
+    const AVPixFmtDescriptor *desc = &av_pix_fmt_descriptors[pix_fmt];
+    int max_step     [4];       /* max pixel step for each plane */
+    int max_step_comp[4];       /* the component for each plane which has the max pixel step */
+    int s, i;
+
+    if (desc->flags & PIX_FMT_BITSTREAM)
+        return (width * (desc->comp[0].step_minus1+1) + 7) >> 3;
+
+    memset(max_step     , 0, sizeof(max_step     ));
+    memset(max_step_comp, 0, sizeof(max_step_comp));
+    for (i = 0; i < 4; i++) {
+        const AVComponentDescriptor *comp = &(desc->comp[i]);
+        if ((comp->step_minus1+1) > max_step[comp->plane]) {
+            max_step     [comp->plane] = comp->step_minus1+1;
+            max_step_comp[comp->plane] = i;
+        }
+    }
+
+    s = (max_step_comp[plane] == 1 || max_step_comp[plane] == 2) ? desc->log2_chroma_w : 0;
+    return max_step[plane] * (((width + (1 << s) - 1)) >> s);
+}
+
 int av_fill_image_linesizes(int linesizes[4], enum PixelFormat pix_fmt, int width)
 {
     int i;
@@ -94,4 +118,23 @@ int av_fill_image_pointers(uint8_t *data[4], enum PixelFormat pix_fmt, int heigh
     }
 
     return total_size;
+}
+
+typedef struct ImgUtils {
+    const AVClass *class;
+    int   log_offset;
+    void *log_ctx;
+} ImgUtils;
+
+static const AVClass imgutils_class = { "IMGUTILS", av_default_item_name, NULL, LIBAVUTIL_VERSION_INT, offsetof(ImgUtils, log_offset), offsetof(ImgUtils, log_ctx) };
+
+int av_check_image_size(unsigned int w, unsigned int h, int log_offset, void *log_ctx)
+{
+    ImgUtils imgutils = { &imgutils_class, log_offset, log_ctx };
+
+    if((int)w>0 && (int)h>0 && (w+128)*(uint64_t)(h+128) < INT_MAX/8)
+        return 0;
+
+    av_log(&imgutils, AV_LOG_ERROR, "Picture size %ux%u is invalid\n", w, h);
+    return AVERROR(EINVAL);
 }

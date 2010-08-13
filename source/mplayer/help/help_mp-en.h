@@ -1,4 +1,4 @@
-// $Revision: 31752 $
+// $Revision: 31938 $
 // MASTER FILE. Use this file as base for translations.
 // Translated files should be sent to the mplayer-DOCS mailing list or
 // to the help messages maintainer, see DOCS/tech/MAINTAINERS.
@@ -1775,7 +1775,7 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_AIALSA_UnavailableAccessType "Access type not available.\n"
 #define MSGTR_MPDEMUX_AIALSA_UnavailableSampleFmt "Sample format not available.\n"
 #define MSGTR_MPDEMUX_AIALSA_UnavailableChanCount "Channel count not available - reverting to default: %d\n"
-#define MSGTR_MPDEMUX_AIALSA_CannotInstallHWParams "Unable to install hardware paramameters: %s"
+#define MSGTR_MPDEMUX_AIALSA_CannotInstallHWParams "Unable to install hardware parameters: %s"
 #define MSGTR_MPDEMUX_AIALSA_PeriodEqualsBufferSize "Can't use period equal to buffer size (%u == %lu)\n"
 #define MSGTR_MPDEMUX_AIALSA_CannotInstallSWParams "Unable to install software parameters:\n"
 #define MSGTR_MPDEMUX_AIALSA_ErrorOpeningAudio "Error opening audio: %s\n"
@@ -1841,7 +1841,7 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_ASF_UnknownASFStreamType "unknown ASF stream type\n"
 #define MSGTR_MPDEMUX_ASF_Failed2ParseHTTPResponse "Failed to parse HTTP response.\n"
 #define MSGTR_MPDEMUX_ASF_ServerReturn "Server returned %d:%s\n"
-#define MSGTR_MPDEMUX_ASF_ASFHTTPParseWarnCuttedPragma "ASF HTTP PARSE WARNING : Pragma %s cut from %d bytes to %d\n"
+#define MSGTR_MPDEMUX_ASF_ASFHTTPParseWarnCuttedPragma "ASF HTTP PARSE WARNING : Pragma %s cut from %zd bytes to %d\n"
 #define MSGTR_MPDEMUX_ASF_SocketWriteError "socket write error: %s\n"
 #define MSGTR_MPDEMUX_ASF_HeaderParseFailed "Failed to parse header.\n"
 #define MSGTR_MPDEMUX_ASF_NoStreamFound "No stream found.\n"

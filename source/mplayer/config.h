@@ -209,7 +209,7 @@ char MPLAYER_LIBDIR[100];
 
 /* codec libraries */
 #undef CONFIG_FAAC
-#undef CONFIG_FAAD
+#define CONFIG_FAAD 1
 #define CONFIG_FAAD_INTERNAL 1
 #define CONFIG_LIBA52 1
 #undef CONFIG_LIBDCA

@@ -827,7 +827,8 @@ SaveSettings (bool silent)
 
 			// ensure the necessary folders exists for saving
 			strcat(filepath, "/apps");
-			if (!diropen(filepath))
+			DIR_ITER *dir = diropen(filepath);
+			if (!dir)
 			{
 				if(mkdir(filepath, 0777) != 0)
 				{
@@ -839,10 +840,15 @@ SaveSettings (bool silent)
 					return false;
 				}
 			}
-	
+			else
+			{
+				dirclose(dir);
+			}
+
 			strcat(filepath, "/");
 			strcat(filepath, APPFOLDER);
-			if (!diropen(filepath))
+			dir = diropen(filepath);
+			if (!dir)
 			{
 				if(mkdir(filepath, 0777) != 0)
 				{
@@ -853,6 +859,10 @@ SaveSettings (bool silent)
 					}
 					return false;
 				}
+			}
+			else
+			{
+				dirclose(dir);
 			}
 		}
 		strcat(filepath, "/settings.xml");

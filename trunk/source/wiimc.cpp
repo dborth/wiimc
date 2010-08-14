@@ -392,9 +392,17 @@ bool InitMPlayer()
 	sprintf(MPLAYER_DATADIR,"%s",appPath);
 	sprintf(MPLAYER_CONFDIR,"%s",appPath);
 	sprintf(MPLAYER_LIBDIR,"%s",appPath);
+	sprintf(MPLAYER_CSSDIR,"%s/css",appPath);
+
+	DIR_ITER *dir = diropen(MPLAYER_CSSDIR);
+
+	if(!dir && mkdir(MPLAYER_CSSDIR, 0777) != 0)
+		sprintf(MPLAYER_CSSDIR, "off");
+	else
+		dirclose(dir);
 
 	setenv("HOME", MPLAYER_DATADIR, 1);
-	setenv("DVDCSS_CACHE", "off", 1);
+	setenv("DVDCSS_CACHE", MPLAYER_CSSDIR, 1);
 	setenv("DVDCSS_METHOD", "disc", 1);
 	setenv("DVDCSS_VERBOSE", "0", 1);
 	setenv("DVDREAD_VERBOSE", "0", 1);

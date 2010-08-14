@@ -630,3 +630,12 @@ msgstr "Drehen"
 
 msgid "Resolution exceeds maximum allowed (1280x720)!"
 msgstr "Auflösung über der Maximal erlaubten (1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "Das aktuelle IOS wurde modifiziert (fake-signed). Funktionalität und/oder Stabilität können beeinträchtigt sein."
+
+msgid "Online media file is invalid."
+msgstr "Online Mediendatei ist ungültig"
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Untertitel Schriftartdatei nicht vorhanden. Untertitel werden nicht angezeigt."

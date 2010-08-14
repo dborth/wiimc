@@ -33,9 +33,10 @@
 
 #define CONFIGURATION ""
 
-char MPLAYER_DATADIR[100]; 
-char MPLAYER_CONFDIR[100]; 
-char MPLAYER_LIBDIR[100]; 
+char MPLAYER_DATADIR[512]; 
+char MPLAYER_CONFDIR[512]; 
+char MPLAYER_LIBDIR[512]; 
+char MPLAYER_CSSDIR[512]; 
 
 /* definitions needed by included libraries */
 #define HAVE_INTTYPES_H 1

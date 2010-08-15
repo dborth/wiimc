@@ -1,0 +1,129 @@
+¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
+ 
+                                    - WiiMC -
+                              http://www.wiimc.org   
+                               (Under GPL License)
+ 
+¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
+
+[1.0.7 - August 15, 2010]
+
+* IOS 202 support removed
+* USB 2.0 support via IOS 58 added - requires that IOS58 be pre-installed
+* WiiMC channel updated - requires IOS58 and does NOT require a cIOS to install
+  Thanks to megazig and svpe for help with this
+* DVD support via AHBPROT - requires latest HBC or latest WiiMC channel
+* Synced to MPlayer r31961
+* YouTube support (thanks to lukegb and ataraxis for some help)
+* Picture zoom, rotate, pan, auto-rotate via exif data (thanks ataraxis!)
+* Fixed seeking for local FLV files
+* Fixed black-screen video issue with videos having widths over 1024
+* Fixed playback of MKV files
+* New YUV->RGB conversion in TEV for videos up to 720p (thanks sepp256!)
+* Restrict video loading to 720p (1280x720)
+* Enable caching of DVD CSS keys. They are written to the 'css' folder
+  (created automatically).
+* Fixed playback of files with mono sound
+* Fixed issue with HTTP over-buffering
+* Other minor improvements/corrections
+
+[1.0.6 - July 21, 2010]
+
+* Reverted USB2 changes
+* Synced to MPlayer r31761
+* Fixed display of radio stream information
+* Other minor changes
+
+[1.0.5 - July 14, 2010]
+
+* Synced to MPlayer r31641
+* Added volume control in Music area
+* Added option to hide DVD functionality from the UI
+* UTF-8 SMB support
+* Ability to use both USB ports (requires updated IOS 202 - WARNING: older 
+  versions of IOS 202 are NO LONGER supported)
+* Increase max SMB shares to 9
+* Fixed sleep timer
+* Added "Now Playing" to screensaver
+* Disable screensaver while slideshow is active
+* Increased video auto-play limit from 20 to 50
+* MMS support (thanks denper!)
+* Improved online stream display (thanks gazstone!)
+* New SHOUTcast support (WARNING: updating will overwrite your onlinemedia.xml
+  to install new links - backup your old links if necessary)
+* Audio language setting
+* Jump to and highlight folder when going up one level
+* Highlight file when returning to menu
+* Save settings when power button is used
+* Added option to use static folder locations
+* Display parent directory beside Up One Level
+* Improved restore points behavior
+* Other miscellaneous improvements/corrections
+* Language updates
+
+[1.0.4 - June 3, 2010]
+
+* Subtitle color/size adjustment
+* Added checkmark next to viewed files
+* Added sleep timer
+* Improved device mounting
+* Improved stability
+* Fixed artifacts issue with online media files (VP6 codec)
+* Synced to MPlayer r31303
+* Added option to auto-play next video
+* Add GIF image viewing
+* More codepages added
+* Thumbnail support for online media (Navi-X)
+* Hide folders beginning with '.' and '$'
+* Added screensaver
+* Add ability to view PNG's over 1024x1024
+* Added theme color options
+* Add more seek time options
+* Language updates
+
+[1.0.3 - May 12, 2010]
+
+* Fixed issue with browser reloading
+* Fixed freeze on seek issue
+* Fixed a back-to-menu freeze
+* Changed stereo downmixing
+* Added codepages
+* Translation updates (and added Hungarian and Polish translations)
+* Other minor changes
+
+[1.0.2 - May 8, 2010]
+
+* Significant changes to improve stability
+* Significant improvements to video performance
+* Frame dropping now disabled by default (change it to Disabled in the Video
+  settings to improve performance if you are updating from a previous version)
+* Corrections to device mounting code (fixes crashes on startup)
+* Translations to the following languages: Japanese, German, French, Spanish, 
+  Italian, Dutch, Chinese (Simplified), Chinese (Traditional), Korean,
+  Romanian, Estonian, and Brazilian Portuguese
+* Video scaling issues fixed
+* Audio static bug at EOF fixed
+* Fixed issues with radio streams
+* Fixed DVD issues
+* Improvements to settings loading code
+* FF/RW time is now configurable
+* Friendly names now shown for playlists
+* Radio stream information now shown in the now playing area
+* Allowed file extensions list expanded
+* ASS subtitle file support added
+* Added settings for subtitle language and codepage
+* Other various bugfixes and improvements
+
+[1.0.1 - April 18, 2010]
+
+* Fixed NTFS crashes
+* Fixed Navi-X search, audio files work in Navi-X now
+* Added Down button to switch audio stream, Up is now to switch subtitles
+* Added FTP port setting
+* Fixed potential picture viewer crashes
+* Fixed some pause/resume issues
+* Fixed some cache issues
+
+[1.0.0 - April 16, 2010]
+
+* Initial release

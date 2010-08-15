@@ -1,0 +1,121 @@
+fribidi-char-sets.lo: fribidi-char-sets.c ../lib/common.h ../config.h \
+ ../lib/fribidi-common.h ../lib/fribidi-config.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdlib.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/ieeefp.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/_ansi.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/newlib.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/config.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/include/stddef.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/reent.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/_ansi.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/_types.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/_types.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/_default_types.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/lock.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/stdlib.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/string.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/string.h \
+ ../lib/debug.h ../lib/common.h ../lib/fribidi-types.h \
+ ../lib/fribidi-common.h ../lib/fribidi-begindecls.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/inttypes.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdint.h \
+ ../lib/fribidi-enddecls.h ../lib/fribidi-begindecls.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdio.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/include/stdarg.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/types.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/types.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/features.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/stdio.h \
+ ../lib/fribidi-enddecls.h fribidi-char-sets.h fribidi-char-sets-list.h \
+ fribidi-char-sets-cap-rtl.h fribidi-char-sets-utf8.h \
+ fribidi-char-sets-iso8859-6.h fribidi-char-sets-cp1256.h \
+ fribidi-char-sets-iso8859-8.h fribidi-char-sets-cp1255.h \
+ fribidi-char-sets-list.h
+
+../lib/common.h:
+
+../config.h:
+
+../lib/fribidi-common.h:
+
+../lib/fribidi-config.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdlib.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/ieeefp.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/_ansi.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/newlib.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/config.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/include/stddef.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/reent.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/_ansi.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/_types.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/_types.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/_default_types.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/lock.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/stdlib.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/string.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/string.h:
+
+../lib/debug.h:
+
+../lib/common.h:
+
+../lib/fribidi-types.h:
+
+../lib/fribidi-common.h:
+
+../lib/fribidi-begindecls.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/inttypes.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdint.h:
+
+../lib/fribidi-enddecls.h:
+
+../lib/fribidi-begindecls.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/stdio.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/include/stdarg.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/types.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/machine/types.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/features.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.4.2/../../../../powerpc-eabi/include/sys/stdio.h:
+
+../lib/fribidi-enddecls.h:
+
+fribidi-char-sets.h:
+
+fribidi-char-sets-list.h:
+
+fribidi-char-sets-cap-rtl.h:
+
+fribidi-char-sets-utf8.h:
+
+fribidi-char-sets-iso8859-6.h:
+
+fribidi-char-sets-cp1256.h:
+
+fribidi-char-sets-iso8859-8.h:
+
+fribidi-char-sets-cp1255.h:
+
+fribidi-char-sets-list.h:

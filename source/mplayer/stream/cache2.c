@@ -594,7 +594,6 @@ void *mplayercachethread(void *arg)
 int cache_stream_fill_buffer(stream_t *s){
   int len;
   int sector_size;
-  if(s->eof){ s->buf_pos=s->buf_len=0; return 0; }
   if(!s->cache_pid) return stream_fill_buffer(s);
 
 //  cache_stats(s->cache_data);
@@ -610,6 +609,7 @@ int cache_stream_fill_buffer(stream_t *s){
   //printf("cache_stream_fill_buffer->read -> %d\n",len);
 
   if(len<=0){ s->eof=1; s->buf_pos=s->buf_len=0; return 0; }
+  s->eof=0;
   s->buf_pos=0;
   s->buf_len=len;
   s->pos+=len;
@@ -654,51 +654,51 @@ int cache_stream_seek_long(stream_t *stream,off_t pos){
 int cache_do_control(stream_t *stream, int cmd, void *arg) {
   cache_vars_t* s = stream->cache_data;
   switch (cmd) {
-	case STREAM_CTRL_SEEK_TO_TIME:
-	  s->control_double_arg = *(double *)arg;
-	  s->control = cmd;
-	  break;
-	case STREAM_CTRL_SEEK_TO_CHAPTER:
-	case STREAM_CTRL_SET_ANGLE:
-	  s->control_uint_arg = *(unsigned *)arg;
-	  s->control = cmd;
-	  break;
+    case STREAM_CTRL_SEEK_TO_TIME:
+      s->control_double_arg = *(double *)arg;
+      s->control = cmd;
+      break;
+    case STREAM_CTRL_SEEK_TO_CHAPTER:
+    case STREAM_CTRL_SET_ANGLE:
+      s->control_uint_arg = *(unsigned *)arg;
+      s->control = cmd;
+      break;
 // the core might call these every frame, they are too slow for this...
-	case STREAM_CTRL_GET_TIME_LENGTH:
+    case STREAM_CTRL_GET_TIME_LENGTH:
 //    case STREAM_CTRL_GET_CURRENT_TIME:
-	  *(double *)arg = s->stream_time_length;
-	  return s->stream_time_length ? STREAM_OK : STREAM_UNSUPPORTED;
-	case STREAM_CTRL_GET_NUM_CHAPTERS:
-	case STREAM_CTRL_GET_CURRENT_CHAPTER:
-	case STREAM_CTRL_GET_ASPECT_RATIO:
-	case STREAM_CTRL_GET_NUM_ANGLES:
-	case STREAM_CTRL_GET_ANGLE:
-	case -2:
-	  s->control = cmd;
-	  break;
-	default:
-	  return STREAM_UNSUPPORTED;
+      *(double *)arg = s->stream_time_length;
+      return s->stream_time_length ? STREAM_OK : STREAM_UNSUPPORTED;
+    case STREAM_CTRL_GET_NUM_CHAPTERS:
+    case STREAM_CTRL_GET_CURRENT_CHAPTER:
+    case STREAM_CTRL_GET_ASPECT_RATIO:
+    case STREAM_CTRL_GET_NUM_ANGLES:
+    case STREAM_CTRL_GET_ANGLE:
+    case -2:
+      s->control = cmd;
+      break;
+    default:
+      return STREAM_UNSUPPORTED;
   }
   while (s->control != -1)
 	usec_sleep(CONTROL_SLEEP_TIME);
   switch (cmd) {
-	case STREAM_CTRL_GET_TIME_LENGTH:
-	case STREAM_CTRL_GET_CURRENT_TIME:
-	case STREAM_CTRL_GET_ASPECT_RATIO:
-	  *(double *)arg = s->control_double_arg;
-	  break;
-	case STREAM_CTRL_GET_NUM_CHAPTERS:
-	case STREAM_CTRL_GET_CURRENT_CHAPTER:
-	case STREAM_CTRL_GET_NUM_ANGLES:
-	case STREAM_CTRL_GET_ANGLE:
-	  *(unsigned *)arg = s->control_uint_arg;
-	  break;
-	case STREAM_CTRL_SEEK_TO_CHAPTER:
-	case STREAM_CTRL_SEEK_TO_TIME:
-	case STREAM_CTRL_SET_ANGLE:
+    case STREAM_CTRL_GET_TIME_LENGTH:
+    case STREAM_CTRL_GET_CURRENT_TIME:
+    case STREAM_CTRL_GET_ASPECT_RATIO:
+      *(double *)arg = s->control_double_arg;
+      break;
+    case STREAM_CTRL_GET_NUM_CHAPTERS:
+    case STREAM_CTRL_GET_CURRENT_CHAPTER:
+    case STREAM_CTRL_GET_NUM_ANGLES:
+    case STREAM_CTRL_GET_ANGLE:
+      *(unsigned *)arg = s->control_uint_arg;
+      break;
+    case STREAM_CTRL_SEEK_TO_CHAPTER:
+    case STREAM_CTRL_SEEK_TO_TIME:
+    case STREAM_CTRL_SET_ANGLE:
 	  if (s->control_res != STREAM_UNSUPPORTED)
-	      stream->pos = s->read_filepos = s->control_new_pos;
-	  break;
+      stream->pos = s->read_filepos = s->control_new_pos;
+      break;
   }
   return s->control_res;
 }

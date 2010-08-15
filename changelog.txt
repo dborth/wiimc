@@ -6,6 +6,27 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.0.7 - August 15, 2010]
+
+* IOS 202 support removed
+* USB 2.0 support via IOS 58 added - requires that IOS58 be pre-installed
+* WiiMC channel updated - requires IOS58 and does NOT require a cIOS to install
+  Thanks to megazig and svpe for help with this
+* DVD support via AHBPROT - requires latest HBC or latest WiiMC channel
+* Synced to MPlayer r31961
+* YouTube support (thanks to lukegb and ataraxis for some help)
+* Picture zoom, rotate, pan, auto-rotate via exif data (thanks ataraxis!)
+* Fixed seeking for local FLV files
+* Fixed black-screen video issue with videos having widths over 1024
+* Fixed playback of MKV files
+* New YUV->RGB conversion in TEV for videos up to 720p (thanks sepp256!)
+* Restrict video loading to 720p (1280x720)
+* Enable caching of DVD CSS keys. They are written to the 'css' folder
+  (created automatically).
+* Fixed playback of files with mono sound
+* Fixed issue with HTTP over-buffering
+* Other minor improvements/corrections
+
 [1.0.6 - July 21, 2010]
 
 * Reverted USB2 changes

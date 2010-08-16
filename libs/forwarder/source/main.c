@@ -106,6 +106,7 @@ found:
 	fread(buffer, 1, len, fp);
 	fclose (fp);
 	UnmountAllDevices();
+	USB_Deinitialize();
 
 	// load entry point
 	struct __argv args;

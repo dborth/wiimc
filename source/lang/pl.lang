@@ -214,7 +214,7 @@ msgstr "Dostosowanie FPSów"
 msgid "Aspect Ratio"
 msgstr "Współczynnik proporcji"
 
-msgid "Cache Size"
+msgid "Cache Fill"
 msgstr "Zapełenienie pamięci podręcznej"
 
 msgid "Audio Delay"
@@ -476,7 +476,7 @@ msgid "Menu artwork"
 msgstr "Grafiki menu"
 
 msgid "Coding"
-msgstr ""
+msgstr "Programowanie"
 
 msgid "Coding & menu design"
 msgstr "Programowanie i projekt menu"
@@ -599,7 +599,7 @@ msgid "Purple (Default)"
 msgstr "Fioletowy (Domyślny)"
 
 msgid "Auto-Play Next Video"
-msgstr "Automatyczne odtwarzanie następnego filmu"
+msgstr "Auto. włącz następny film"
 
 msgid "Adding files to playlist..."
 msgstr "Dodawanie plików do listy odtwarzania..."
@@ -621,3 +621,21 @@ msgstr "Wsparcie dla DVD"
 
 msgid "Enabled"
 msgstr "Włączone"
+
+msgid "Error loading YouTube file!"
+msgstr "Błąd podczas wczytywania pliku YouTube"
+
+msgid "Rotate"
+msgstr "Obróć"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "Rozdzielczość przekracza maksymalną dozwoloną wartość (1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "Aktualny IOS został zmodyfikowany (fake-sign). Funkcjonalność i/lub stabilność może być pogorszona."
+
+msgid "Online media file is invalid."
+msgstr "Multimedialny plik online jest nieprawidłowy."
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Nie znaleziono czcionki do napisów. Napisy będą niewidoczne."

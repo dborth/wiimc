@@ -6,6 +6,12 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.0.8 - August 17, 2010]
+
+* Improved USB mounting and updated channel. Should hopefully help those who 
+  are receiving the "Could not find a valid SD or USB device" message
+* Improved network initialization
+
 [1.0.7 - August 15, 2010]
 
 * IOS 202 support removed

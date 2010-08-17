@@ -72,7 +72,7 @@ static int deviceHalt = 0;
  * This checks our devices for changes (SD/USB removed) and
  * initializes the network in the background
  ***************************************************************************/
-static int devsleep = 2*1000*1000;
+static int devsleep;
 static bool MountPartitions(int device, int silent);
 static void UnmountPartitions(int device);
 
@@ -156,7 +156,6 @@ static void * devicecallback (void *arg)
 			}
 		}
 
-		UpdateCheck();
 		devsleep = 1000*1000*2; // 2 sec
 
 		while(devsleep > 0)
@@ -168,6 +167,7 @@ static void * devicecallback (void *arg)
 			usleep(THREAD_SLEEP);
 			devsleep -= THREAD_SLEEP;
 		}
+		UpdateCheck();
 	}
 	return NULL;
 }

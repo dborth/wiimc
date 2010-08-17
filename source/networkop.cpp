@@ -250,10 +250,10 @@ void StartNetworkThread()
  ***************************************************************************/
 void StopNetworkThread()
 {
-	netHalt = 2;
-
 	if(networkthread == LWP_THREAD_NULL)
 		return;
+
+	netHalt = 2;
 
 	if(LWP_ThreadIsSuspended(networkthread))
 		LWP_ResumeThread(networkthread);
@@ -266,7 +266,10 @@ void StopNetworkThread()
 bool InitializeNetwork(bool silent)
 {
 	if(networkInit)
+	{
+		StopNetworkThread();
 		return true;
+	}
 
 	if(silent)
 		return false;
@@ -317,6 +320,9 @@ void CloseShare(int num)
 bool
 ConnectShare (int num, bool silent)
 {
+	if(!InitializeNetwork(silent))
+		return false;
+
 	char mountpoint[10];
 	sprintf(mountpoint, "smb%d", num);
 	int retry = 1;
@@ -345,9 +351,6 @@ ConnectShare (int num, bool silent)
 		}
 		return false;
 	}
-
-	if(!InitializeNetwork(silent))
-		return false;
 
 	while(retry)
 	{
@@ -387,6 +390,9 @@ void CloseFTP(int num)
 bool
 ConnectFTP (int num, bool silent)
 {
+	if(!InitializeNetwork(silent))
+		return false;
+
 	char mountpoint[10];
 	sprintf(mountpoint, "ftp%d", num);
 
@@ -415,9 +421,6 @@ ConnectFTP (int num, bool silent)
 		}
 		return false;
 	}
-
-	if(!InitializeNetwork(silent))
-		return false;
 
 	if(!ftpInit[num-1])
 	{

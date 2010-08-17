@@ -206,17 +206,6 @@ void GuiFileBrowser::MakeEntry(int i)
 	fileList[i]->SetState(STATE_DISABLED);
 }
 
-void GuiFileBrowser::SetFocus(int f)
-{
-	focus = f;
-
-	for(int i=0; i<size; i++)
-		fileList[i]->ResetState();
-
-	if(f == 1)
-		fileList[selectedItem]->SetState(STATE_SELECTED);
-}
-
 void GuiFileBrowser::ResetState()
 {
 	for(int i=0; i<size; i++)
@@ -299,6 +288,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 
 	int position = 0;
 	int positionWiimote = 0;
+	int newIndex;
 
 	arrowUpBtn->Update(t);
 	arrowDownBtn->Update(t);
@@ -319,13 +309,15 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		else if(positionWiimote > scrollbarBoxBtn->GetMaxY())
 			positionWiimote = scrollbarBoxBtn->GetMaxY();
 
-		browser.pageIndex = (positionWiimote-8) / (float)(height-136) * (browser.numEntries-1) - selectedItem;
+		newIndex = (positionWiimote-8) / (float)(height-136) * (browser.numEntries-1) - selectedItem;
 
-		if(browser.pageIndex <= 0)
-			browser.pageIndex = 0;
-		else if(browser.pageIndex+size >= browser.numEntries)
-			browser.pageIndex = browser.numEntries-size;
+		if(newIndex+size >= browser.numEntries)
+			newIndex = browser.numEntries-size;
 
+		if(newIndex < 0)
+			newIndex = 0;
+
+		browser.pageIndex = newIndex;
 		listChanged = true;
 		focus = false;
 	}
@@ -347,9 +339,14 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	{
 		if(browser.pageIndex < browser.numEntries && browser.numEntries > size)
 		{
-			browser.pageIndex += size;
-			if(browser.pageIndex+size >= browser.numEntries)
-				browser.pageIndex = browser.numEntries-size;
+			newIndex = browser.pageIndex + size;
+			if(newIndex+size >= browser.numEntries)
+				newIndex = browser.numEntries-size;
+
+			if(newIndex < 0)
+				newIndex = 0;
+
+			browser.pageIndex = newIndex;
 			listChanged = true;
 		}
 	}
@@ -357,9 +354,12 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	{
 		if(browser.pageIndex > 0)
 		{
-			browser.pageIndex -= size;
-			if(browser.pageIndex < 0)
-				browser.pageIndex = 0;
+			newIndex = browser.pageIndex - size;
+
+			if(newIndex < 0)
+				newIndex = 0;
+
+			browser.pageIndex = newIndex;
 			listChanged = true;
 		}
 	}

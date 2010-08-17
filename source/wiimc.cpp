@@ -19,6 +19,7 @@
 #include "utils/gettext.h"
 #include "utils/mem2_manager.h"
 #include "video.h"
+#include "networkop.h"
 #include "menu.h"
 #include "libwiigui/gui.h"
 #include "input.h"
@@ -109,7 +110,7 @@ void ExitApp()
 
 static void ShutdownCB()
 {
-	if((controlledbygui != 1 && menuMode == 0) || inNetworkInit)
+	if(controlledbygui != 1 && menuMode == 0)
 		return;
 
 	ConfigRequested = 1;
@@ -117,7 +118,7 @@ static void ShutdownCB()
 }
 static void ResetCB()
 {
-	if((controlledbygui != 1 && menuMode == 0) || inNetworkInit)
+	if(controlledbygui != 1 && menuMode == 0)
 		return;
 
 	ResetRequested = 1;
@@ -515,17 +516,20 @@ int main(int argc, char *argv[])
 	if(version != 58 && preferred > 0 && version != (u32)preferred && __di_check_ahbprot() != 1)
 		IOS_ReloadIOS(preferred);
 
+	StartNetworkThread();
 	DI_Init();
 	WPAD_Init();
-	InitMem2Manager(); // cache memory and file browser
 	InitVideo();
 	SetupPads();
-	AUDIO_Init(NULL);
 
 	// Wii Power/Reset buttons
 	WPAD_SetPowerButtonCallback((WPADShutdownCallback)ShutdownCB);
 	SYS_SetPowerCallback(ShutdownCB);
 	SYS_SetResetCallback(ResetCB);
+
+	AUDIO_Init(NULL);
+	InitMem2Manager(); // cache memory and file browser
+
 	GX_AllocTextureMemory();
 	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE);
 	MountAllDevices(); // Initialize SD and USB devices

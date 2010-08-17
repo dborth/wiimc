@@ -7,8 +7,9 @@
  ****************************************************************************/
 
 #include <network.h>
-#include <smb.h>
 #include <unistd.h>
+#include <ogc/lwp_watchdog.h>
+#include <smb.h>
 #include <mxml.h>
 
 #include "wiimc.h"
@@ -23,9 +24,8 @@
 #include "utils/unzip/miniunz.h"
 #include "utils/gettext.h"
 
-bool inNetworkInit = false;
+static int netHalt = 0;
 static bool networkInit = false;
-static bool autoNetworkInit = true;
 static bool networkShareInit[MAX_SHARES] = { false, false, false, false, false };
 static bool ftpInit[MAX_SHARES] = { false, false, false, false, false };
 char wiiIP[16] = { 0 };
@@ -181,54 +181,122 @@ bool DownloadUpdate()
  * Initializes the Wii/GameCube network interface
  ***************************************************************************/
 
+static lwp_t networkthread = LWP_THREAD_NULL;
+static u8 netstack[8192] ATTRIBUTE_ALIGN (32);
+
+static void * netcb (void *arg)
+{
+	s32 res = 0;
+	int retry;
+
+	while(netHalt != 2)
+	{
+		retry = 30;
+
+		while (retry)
+		{
+			if (net_init_async(NULL, NULL) != 0)
+				break; // failed
+
+			res = net_get_status();
+			while (res == -EBUSY)
+			{
+				usleep(20000);
+				res = net_get_status();
+			}
+
+			if (res != -EAGAIN && res != -ETIMEDOUT)
+				break;
+
+			retry--;
+			usleep(2000);
+			continue;
+		}
+
+		if (res >= 0)
+		{
+			networkInit = true;
+
+			struct in_addr hostip;
+			hostip.s_addr = net_gethostip();
+			if (hostip.s_addr)
+				strcpy(wiiIP, inet_ntoa(hostip));
+		}
+
+		LWP_SuspendThread(networkthread);
+	}
+	return NULL;
+}
+
+/****************************************************************************
+ * StartNetworkThread
+ *
+ * Signals the network thread to resume, or creates a new thread
+ ***************************************************************************/
+void StartNetworkThread()
+{
+	netHalt = 0;
+
+	if(networkthread == LWP_THREAD_NULL)
+		LWP_CreateThread(&networkthread, netcb, NULL, netstack, 8192, 40);
+	else
+		LWP_ResumeThread(networkthread);
+}
+
+/****************************************************************************
+ * StopNetworkThread
+ *
+ * Signals the network thread to stop
+ ***************************************************************************/
+void StopNetworkThread()
+{
+	netHalt = 2;
+
+	if(networkthread == LWP_THREAD_NULL)
+		return;
+
+	if(LWP_ThreadIsSuspended(networkthread))
+		LWP_ResumeThread(networkthread);
+
+	// wait for thread to finish
+	LWP_JoinThread(networkthread, NULL);
+	networkthread = LWP_THREAD_NULL;
+}
+
 bool InitializeNetwork(bool silent)
 {
-	// stop if we're already initialized, or if auto-init has failed before
-	// in which case, manual initialization is required
 	if(networkInit)
 		return true;
 
-	if(silent && !autoNetworkInit)
+	if(silent)
 		return false;
 
 	int retry = 1;
 	wchar_t msg[150];
-	s32 initResult;
 
-	if(!silent)
-		ShowAction ("Initializing network...");
-
-	while(inNetworkInit) // a network init is already in progress!
-		usleep(50);
-
-	if(!networkInit) // check again if the network was inited
+	while(retry)
 	{
-		inNetworkInit = true;
+		u64 start = gettime();
 
-		while(retry)
+		ShowAction("Initializing network...");
+		StartNetworkThread();
+
+		while (!LWP_ThreadIsSuspended(networkthread))
 		{
-			if(!silent)
-				ShowAction ("Initializing network...");
+			usleep(50 * 1000);
 
-			initResult = if_config(wiiIP, NULL, NULL, true);
-
-			if(initResult == 0)
-				networkInit = true;
-
-			if(networkInit || silent)
+			if(diff_sec(start, gettime()) > 10) // wait for 10 seconds max for net init
 				break;
-
-			swprintf(msg, 150, L"%s %i)", gettext("Unable to initialize network (Error #:"), initResult);
-			retry = ErrorPromptRetry(msg);
 		}
 
-		// do not automatically attempt a reconnection
-		autoNetworkInit = false;
-		inNetworkInit = false;
-	}
-	if(!silent)
 		CancelAction();
-	
+
+		if(networkInit)
+			break;
+
+		swprintf(msg, 150, L"%s %i)", gettext("Unable to initialize network (Error #:"), net_get_status());
+		retry = ErrorPromptRetry(msg);
+	}
 	return networkInit;
 }
 

@@ -29,6 +29,7 @@ struct FTPSettings {
 
 void UpdateCheck();
 bool DownloadUpdate();
+void StartNetworkThread();
 bool InitializeNetwork(bool silent);
 bool ConnectShare (int num, bool silent);
 void CloseShare(int num);
@@ -36,6 +37,5 @@ bool ConnectFTP(int num, bool silent);
 void CloseFTP(int num);
 
 extern bool updateFound;
-extern bool inNetworkInit;
 extern char wiiIP[16];
 #endif

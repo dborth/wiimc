@@ -969,7 +969,6 @@ class GuiFileBrowser : public GuiElement
 		GuiFileBrowser(int w, int s);
 		~GuiFileBrowser();
 		void ResetState();
-		void SetFocus(int f);
 		void SetRightCutoff();
 		void ChangeSize(int s);
 		void Draw();

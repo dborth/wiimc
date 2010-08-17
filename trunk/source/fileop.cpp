@@ -78,18 +78,6 @@ static void UnmountPartitions(int device);
 
 static void * devicecallback (void *arg)
 {
-	while(devsleep > 0)
-	{
-		if(deviceHalt == 1)
-			LWP_SuspendThread(devicethread);
-		if(deviceHalt == 2)
-			return NULL;
-		usleep(THREAD_SLEEP);
-		devsleep -= THREAD_SLEEP;
-	}
-
-	InitializeNetwork(SILENT);
-
 	while (1)
 	{
 		if(isInserted[DEVICE_SD])
@@ -97,6 +85,7 @@ static void * devicecallback (void *arg)
 			if(!sd->isInserted()) // device was removed
 			{
 				UnmountPartitions(DEVICE_SD);
+				sd->shutdown();
 
 				if(strncmp(loadedFile, "sd", 2) == 0)
 				{
@@ -120,6 +109,7 @@ static void * devicecallback (void *arg)
 			if(!usb->isInserted()) // device was removed
 			{
 				UnmountPartitions(DEVICE_USB);
+				usb->shutdown();
 
 				if(strncmp(loadedFile, "usb", 3) == 0)
 				{
@@ -220,9 +210,6 @@ void ResumeDeviceThread()
 void SuspendDeviceThread()
 {
 	deviceHalt = 1;
-
-	if(inNetworkInit) // don't wait for network to initialize
-		return;
 
 	if(devicethread == LWP_THREAD_NULL)
 		return;
@@ -696,18 +683,11 @@ static void UnmountPartitions(int device)
 		part[device][i].interface = NULL;
 		part[device][i].type = 0;
 	}
-
-	if(device == DEVICE_SD)
-		sd->shutdown();
-	else
-		usb->shutdown();
 }
 
 /****************************************************************************
  * MountPartitions
- * 
- * Shuts down the device
- * Attempts to startup the device specified and mounts all partitions
+ * Attempts to mount all partitions on the specified device
  ***************************************************************************/
 
 static bool MountPartitions(int device, int silent)
@@ -730,13 +710,11 @@ static bool MountPartitions(int device, int silent)
 
 	while(retry)
 	{
-		if(disc->startup() && disc->isInserted() && FindPartitions(device) > 0)
+		if(FindPartitions(device) > 0)
 			mounted = true;
 
 		if(mounted || silent)
 			break;
-
-		disc->shutdown();
 
 		if(device == DEVICE_SD)
 			retry = ErrorPromptRetry("SD card not found!");
@@ -746,10 +724,46 @@ static bool MountPartitions(int device, int silent)
 	return mounted;
 }
 
+static bool Remount(int device)
+{
+	DISC_INTERFACE *disc = NULL;
+
+	if(device == DEVICE_SD)
+		disc = (DISC_INTERFACE *)sd;
+	else if(device == DEVICE_USB)
+		disc = (DISC_INTERFACE *)usb;
+	else
+		return false;
+
+	// retry mounting
+	u64 start = gettime();
+
+	while (1)
+	{
+		disc->shutdown();
+		usleep(50 * 1000);
+
+		if(disc->startup() && disc->isInserted())
+			break;
+
+		if(diff_sec(start, gettime()) > 5) // wait for 5 seconds for device init
+			return false;
+	}
+	return true;
+}
+
 void MountAllDevices()
 {
-	isInserted[DEVICE_SD] = MountPartitions(DEVICE_SD, SILENT);
-	isInserted[DEVICE_USB] = MountPartitions(DEVICE_USB, SILENT);
+	if(sd->startup() && sd->isInserted())
+		isInserted[DEVICE_SD] = MountPartitions(DEVICE_SD, SILENT);
+
+	if(usb->startup() && usb->isInserted())
+		isInserted[DEVICE_USB] = MountPartitions(DEVICE_USB, SILENT);
+	else if(isInserted[DEVICE_SD])
+		return; // don't wait for a USB HDD to mount - may take awhile
+
+	if(Remount(DEVICE_USB)) // retry USB mounting
+		isInserted[DEVICE_USB] = MountPartitions(DEVICE_USB, SILENT);
 }
 
 /****************************************************************************
@@ -1221,10 +1235,15 @@ void FindDirectory()
 
 		if(indexFound >= pagesize)
 		{
-			browser.pageIndex = (floor(indexFound/(float)pagesize)) * pagesize;
+			int newIndex = (floor(indexFound/(float)pagesize)) * pagesize;
 
-			if(browser.pageIndex + pagesize > browser.numEntries)
-				browser.pageIndex = browser.numEntries - pagesize;
+			if(newIndex + pagesize > browser.numEntries)
+				newIndex = browser.numEntries - pagesize;
+
+			if(newIndex < 0)
+				newIndex = 0;
+			
+			browser.pageIndex = newIndex;
 		}
 		browser.selIndex = indexFound;
 		findLoadedFile = 2;
@@ -1271,10 +1290,15 @@ void FindFile()
 
 		if(indexFound > pagesize)
 		{
-			browser.pageIndex = (ceil(indexFound/(float)pagesize)) * pagesize;
-			
-			if(browser.pageIndex + pagesize > browser.numEntries)
-				browser.pageIndex = browser.numEntries - pagesize;
+			int newIndex = (ceil(indexFound/(float)pagesize)) * pagesize;
+
+			if(newIndex + pagesize > browser.numEntries)
+				newIndex = browser.numEntries - pagesize;
+
+			if(newIndex < 0)
+				newIndex = 0;
+
+			browser.pageIndex = newIndex;
 		}
 		browser.selIndex = indexFound;
 		findLoadedFile = 2;
@@ -1433,7 +1457,9 @@ ParseDirectory(bool waitParse)
 				if(device == DEVICE_SD || device == DEVICE_USB)
 				{
 					UnmountPartitions(device);
-					MountPartitions(device, NOTSILENT);
+
+					if(Remount(device))
+						isInserted[device] = MountPartitions(device, SILENT);
 				}
 			}
 		}

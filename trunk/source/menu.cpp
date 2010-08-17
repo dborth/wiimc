@@ -676,7 +676,7 @@ static void *GuiThread (void *arg)
 		for(i = 0; i < 4; i++)
 		{
 			if((userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
-				controlledbygui == 1 && !inNetworkInit)
+				controlledbygui == 1)
 			{
 				ExitRequested = 1; // exit program
 			}

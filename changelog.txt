@@ -6,6 +6,10 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.0.9 - August 18, 2010]
+
+* Fixed a bug that caused NTFS drives not to show up
+
 [1.0.8 - August 17, 2010]
 
 * Improved USB mounting and updated channel. Should hopefully help those who 

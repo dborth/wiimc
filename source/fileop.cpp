@@ -69,8 +69,7 @@ static int deviceHalt = 0;
 /****************************************************************************
  * devicecallback
  *
- * This checks our devices for changes (SD/USB removed) and
- * initializes the network in the background
+ * This checks our devices for changes (SD/USB/DVD)
  ***************************************************************************/
 static int devsleep;
 static bool MountPartitions(int device, int silent);
@@ -736,34 +735,40 @@ static bool Remount(int device)
 		return false;
 
 	// retry mounting
+	disc->shutdown();
+	isInserted[device] = false;
 	u64 start = gettime();
 
 	while (1)
 	{
-		disc->shutdown();
 		usleep(50 * 1000);
 
 		if(disc->startup() && disc->isInserted())
 			break;
 
-		if(diff_sec(start, gettime()) > 5) // wait for 5 seconds for device init
+		if(diff_sec(start, gettime()) > 10) // wait for 10 seconds for device init
 			return false;
 	}
+	isInserted[device] = true;
 	return true;
 }
 
 void MountAllDevices()
 {
 	if(sd->startup() && sd->isInserted())
-		isInserted[DEVICE_SD] = MountPartitions(DEVICE_SD, SILENT);
-
+	{
+		isInserted[DEVICE_SD] = true;
+		MountPartitions(DEVICE_SD, SILENT);
+	}
 	if(usb->startup() && usb->isInserted())
-		isInserted[DEVICE_USB] = MountPartitions(DEVICE_USB, SILENT);
-	else if(isInserted[DEVICE_SD])
-		return; // don't wait for a USB HDD to mount - may take awhile
-
-	if(Remount(DEVICE_USB)) // retry USB mounting
-		isInserted[DEVICE_USB] = MountPartitions(DEVICE_USB, SILENT);
+	{
+		isInserted[DEVICE_USB] = true;
+		MountPartitions(DEVICE_USB, SILENT);
+	}
+	else if(!isInserted[DEVICE_SD] && Remount(DEVICE_USB))
+	{
+		MountPartitions(DEVICE_USB, SILENT);
+	}
 }
 
 /****************************************************************************
@@ -989,7 +994,7 @@ void GetFullPath(int i, char *path)
 		sprintf(path, "%s%s", browser.dir, browserList[i].filename);
 }
 
-bool CheckMount(int device, int devnum, bool silent)
+bool CheckMount(int device, int devnum)
 {
 	if(devnum < 1 || devnum > 9 || (device != DEVICE_SD && device != DEVICE_USB))
 		return false;
@@ -1012,7 +1017,7 @@ bool ChangeInterface(int device, int devnum, bool silent)
 	{
 		case DEVICE_SD:
 		case DEVICE_USB:
-			mounted = CheckMount(device, devnum, silent);
+			mounted = CheckMount(device, devnum);
 			break;
 		case DEVICE_DVD:
 			mounted = MountDVD(silent);
@@ -1459,7 +1464,7 @@ ParseDirectory(bool waitParse)
 					UnmountPartitions(device);
 
 					if(Remount(device))
-						isInserted[device] = MountPartitions(device, SILENT);
+						MountPartitions(device, SILENT);
 				}
 			}
 		}
@@ -1999,7 +2004,7 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 	SuspendParseThread();
 
 	// open the file
-	while(!loadSize && retry)
+	while(retry)
 	{
 		if(!ChangeInterface(filepath, silent))
 			break;
@@ -2033,13 +2038,14 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 			if(cancelFileLoad)
 			{
 				cancelFileLoad = false;
-				retry = 0;
 				loadOffset = 0;
 				break;
 			}
 		}
 		fclose (file);
 		loadSize = loadOffset;
+		retry = 0;
+
 		if(!silent)
 			CancelAction();
 	}

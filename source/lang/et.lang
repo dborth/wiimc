@@ -352,9 +352,6 @@ msgstr "USB ketast ei leitud!"
 msgid "SD card not found!"
 msgstr "SD kaarti ei leitud!"
 
-msgid "Please install IOS 202 for DVD support."
-msgstr "Palun paigalda DVD lugemiseks IOS 202."
-
 msgid "Loading DVD..."
 msgstr "Laen DVD'd..."
 

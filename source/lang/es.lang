@@ -352,9 +352,6 @@ msgstr "¡Dispositivo USB no encontrado!"
 msgid "SD card not found!"
 msgstr "¡Tarjeta SD no encontrada!"
 
-msgid "Please install IOS 202 for DVD support."
-msgstr "Instale CIOS 202 para reproducir DVD."
-
 msgid "Loading DVD..."
 msgstr "Cargando DVD..."
 

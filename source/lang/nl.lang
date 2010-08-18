@@ -352,9 +352,6 @@ msgstr "USB schijf niet gevonden!"
 msgid "SD card not found!"
 msgstr "SD kaart niet gevonden"
 
-msgid "Please install IOS 202 for DVD support."
-msgstr "Installeer IOS 202 voor DVD ondersteuning."
-
 msgid "Loading DVD..."
 msgstr "DVD laden..."
 

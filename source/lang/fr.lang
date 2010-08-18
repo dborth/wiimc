@@ -352,9 +352,6 @@ msgstr "Périphérique USB non trouvé !"
 msgid "SD card not found!"
 msgstr "Carte SD non trouvée !"
 
-msgid "Please install IOS 202 for DVD support."
-msgstr "Veuillez installer l'IOS 202 pour le support des DVD."
-
 msgid "Loading DVD..."
 msgstr "Chargement du DVD..."
 

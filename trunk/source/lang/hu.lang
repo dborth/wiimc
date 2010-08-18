@@ -352,9 +352,6 @@ msgstr "Az USB tároló nem található!"
 msgid "SD card not found!"
 msgstr "Az SD kártya nem található!"
 
-msgid "Please install IOS 202 for DVD support."
-msgstr "Installáljon IOS 202-t a DVD támogatáshoz."
-
 msgid "Loading DVD..."
 msgstr "DVD töltése..."
 

@@ -352,9 +352,6 @@ msgstr "ＵＳＢドライブが見つかりません"
 msgid "SD card not found!"
 msgstr "ＳＤカードが見つかりません"
 
-msgid "Please install IOS 202 for DVD support."
-msgstr "ＤＶＤ再生にはIOS 202のインストールが必要です"
-
 msgid "Loading DVD..."
 msgstr "ＤＶＤを読み込み中…"
 

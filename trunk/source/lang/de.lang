@@ -352,9 +352,6 @@ msgstr "Kein USB Speicher gefunden!"
 msgid "SD card not found!"
 msgstr "Keine SD Kate gefunden!"
 
-msgid "Please install IOS 202 for DVD support."
-msgstr "Für DVD Unterstützung bitte IOS 202 installieren."
-
 msgid "Loading DVD..."
 msgstr "Lade DVD..."
 

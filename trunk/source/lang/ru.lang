@@ -353,9 +353,6 @@ msgstr "USB-диск не найден!"
 msgid "SD card not found!"
 msgstr "Карта SD не найдена!"
 
-msgid "Please install IOS 202 for DVD support."
-msgstr "Пожалуйста установите IOS 202 для поддрежки DVD."
-
 msgid "Loading DVD..."
 msgstr "Загружаю DVD..."
 

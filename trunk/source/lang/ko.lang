@@ -351,10 +351,7 @@ msgstr "USB 드라이브가 없음!"
  
 msgid "SD card not found!"
 msgstr "SD card가 없음!"
- 
-msgid "Please install IOS 202 for DVD support."
-msgstr "제발 IOS 202을 DVD 지원을 위해 설치해 주세요."
- 
+
 msgid "Loading DVD..."
 msgstr "DVD로딩중..."
  

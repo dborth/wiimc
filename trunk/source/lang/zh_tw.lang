@@ -352,9 +352,6 @@ msgstr "找不到USB裝置！"
 msgid "SD card not found!"
 msgstr "找不到SD記憶卡！"
 
-msgid "Please install IOS 202 for DVD support."
-msgstr "請安裝Herms IOS 202才可支援DVD播放。"
-
 msgid "Loading DVD..."
 msgstr "載入DVD中..."
 

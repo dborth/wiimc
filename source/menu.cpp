@@ -705,6 +705,9 @@ extern "C" void ShutdownGui()
 	guiShutdown = true;
 	CancelAction();
 	SuspendGui();
+
+	while(menuMode != 1)
+		usleep(100); // wait for GUI mode to switch
 }
 
 static void ResetText()

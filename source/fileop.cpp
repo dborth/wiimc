@@ -1293,7 +1293,7 @@ void FindFile()
 		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 			pagesize = 8;
 
-		if(indexFound > pagesize)
+		if(indexFound >= pagesize)
 		{
 			int newIndex = (ceil(indexFound/(float)pagesize)) * pagesize;
 

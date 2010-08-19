@@ -784,50 +784,63 @@ SaveSettings (bool silent)
 	wchar_t msg[512];
 	int datasize;
 	int offset = 0;
+	DIR_ITER *dir = NULL;
+	char path[6][MAXPATHLEN];
+	int d=0;
 
 	// We'll save using the first available method (probably SD) since this
 	// is the method settings will be loaded from by default
 
-	if(strlen(appPath) > 0)
+	if(appPath[0] != 0)
 	{
 		sprintf(filepath, "%s/settings.xml", appPath);
 	}
 	else
 	{
-		if(ChangeInterface(DEVICE_SD, 1, SILENT) && diropen("sd1:/apps/wiimc"))
-			sprintf(filepath, "sd1:/apps/wiimc");
-		else if(ChangeInterface(DEVICE_USB, 1, SILENT) && diropen("usb1:/apps/wiimc"))
-			sprintf(filepath, "usb1:/apps/wiimc");
-		else if(ChangeInterface(DEVICE_USB, 2, SILENT) && diropen("usb2:/apps/wiimc"))
-			sprintf(filepath, "usb2:/apps/wiimc");
-		else if(ChangeInterface(DEVICE_USB, 3, SILENT) && diropen("usb3:/apps/wiimc"))
-			sprintf(filepath, "usb3:/apps/wiimc");
-		else if(ChangeInterface(DEVICE_USB, 4, SILENT) && diropen("usb4:/apps/wiimc"))
-			sprintf(filepath, "usb4:/apps/wiimc");
-		else
-		{
-			if(ChangeInterface(DEVICE_SD, 1, SILENT))
-				sprintf(filepath, "sd1:");
-			else if(ChangeInterface(DEVICE_USB, 1, SILENT))
-				sprintf(filepath, "usb1:");
-			else if(ChangeInterface(DEVICE_USB, 2, SILENT))
-				sprintf(filepath, "usb2:");
-			else if(ChangeInterface(DEVICE_USB, 3, SILENT))
-				sprintf(filepath, "usb3:");
-			else if(ChangeInterface(DEVICE_USB, 4, SILENT))
-				sprintf(filepath, "usb4:");
+		// populate list of potential paths
+		if(CheckMount(DEVICE_SD, 1))
+			sprintf(path[d++], "sd1:/apps/%s", APPFOLDER);
 
-			// could not mount any devices
-			if(strlen(filepath) == 0)
-			{
-				if(!silent)
-					ErrorPrompt("Could not find a valid SD or USB device - one is required for normal operation.");
-				return false;
-			}
+		for(int m=1; m<6; m++)
+		{
+			if(!CheckMount(DEVICE_USB, m))
+				break;
+
+			sprintf(path[d++], "usb%d:/apps/%s", m, APPFOLDER);
+		}
+
+		// no devices found
+		if(d == 0)
+		{
+			if(!silent)
+				ErrorPrompt("Could not find a valid SD or USB device - one is required for normal operation.");
+			return false;
+		}
+
+		// try paths
+		for(int i=0; i<d; i++)
+		{
+			dir = diropen(path[i]);
+
+			if(!dir)
+				continue;
+
+			sprintf(filepath, path[i]);
+			dirclose(dir);
+			break;
+		}
+
+		// existing path not found - try to create path
+		if(filepath[0] == 0)
+		{
+			if(CheckMount(DEVICE_SD, 1))
+				strcpy(filepath, "sd1:");
+			else
+				strcpy(filepath, "usb1:");
 
 			// ensure the necessary folders exists for saving
 			strcat(filepath, "/apps");
-			DIR_ITER *dir = diropen(filepath);
+			dir = diropen(filepath);
 			if (!dir)
 			{
 				if(mkdir(filepath, 0777) != 0)

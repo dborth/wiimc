@@ -116,18 +116,20 @@ bool MusicPlaylistFind(int index)
 /****************************************************************************
  * EnqueueFile
  * 
- * Adds the specified file (with full path) to the playlist.
- * If a playlist is found, it is parsed and the music files inside are added.
+ * Adds the specified file (with full path) to the playlist
+ *  0 - not enqueued
+ *  1 - enqueued
+ * -1 - error
  ***************************************************************************/
-static bool EnqueueFile(char * path, char * name)
+static int EnqueueFile(char * path, char * name)
 {
 	if(path == NULL || name == NULL || strcmp(name,".") == 0 || MusicPlaylistFindIndex(path) >= 0)
-		return false;
+		return 0;
 
 	char *ext = GetExt(path);
 
 	if(ext == NULL)
-		return false; // file does not have an extension - skip it
+		return 0; // file does not have an extension - skip it
 
 	// check if this is a valid audio file
 	int i=0;
@@ -137,10 +139,10 @@ static bool EnqueueFile(char * path, char * name)
 			break;
 	} while (validAudioExtensions[++i][0] != 0);
 	if (validAudioExtensions[i][0] == 0) // extension not found
-		return false;
+		return 0;
 
 	if(!AddPlaylistEntry()) // add failed
-		return false;
+		return -1;
 
 	strncpy(playlist[playlistSize-1].filepath, path, MAXPATHLEN);
 	strncpy(playlist[playlistSize-1].displayname, name, MAXJOLIET);
@@ -151,7 +153,7 @@ static bool EnqueueFile(char * path, char * name)
 	if(WiiSettings.hideExtensions)
 		StripExt(playlist[playlistSize-1].displayname);
 
-	return true;
+	return 1;
 }
 
 /****************************************************************************
@@ -191,7 +193,7 @@ static bool EnqueueFolder(char * path, int silent)
 		}
 		else
 		{
-			if(!EnqueueFile(filepath, filename))
+			if(EnqueueFile(filepath, filename) < 0)
 				break;
 		}
 	}
@@ -210,8 +212,11 @@ bool MusicPlaylistEnqueue(int index)
 	
 	if(browserList[index].type == TYPE_FOLDER)
 		return EnqueueFolder(fullpath, NOTSILENT);
-	else
-		return EnqueueFile(fullpath, browserList[index].filename);
+
+	if(EnqueueFile(fullpath, browserList[index].filename) == 1)
+		return true;
+
+	return false;
 }
 
 static void Remove(int index)

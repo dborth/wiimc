@@ -185,9 +185,15 @@ static bool EnqueueFolder(char * path, int silent)
 		sprintf(filepath, "%s/%s", path, filename);
 
 		if(filestat.st_mode & _IFDIR)
-			EnqueueFolder(filepath, SILENT);
+		{
+			if(!EnqueueFolder(filepath, SILENT))
+				break;
+		}
 		else
-			EnqueueFile(filepath, filename);
+		{
+			if(!EnqueueFile(filepath, filename))
+				break;
+		}
 	}
 	return true;
 }

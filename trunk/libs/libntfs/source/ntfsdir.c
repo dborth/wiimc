@@ -429,7 +429,7 @@ int ntfs_readdir_filler (DIR_ITER *dirState, const ntfschar *name, const int nam
         }
 
         // Allocate a new directory entry
-        entry = ntfs_alloc(sizeof(ntfs_dir_entry));
+        entry = (ntfs_dir_entry *) ntfs_alloc(sizeof(ntfs_dir_entry));
         if (!entry)
             return -1;
 

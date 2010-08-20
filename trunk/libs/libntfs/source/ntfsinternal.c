@@ -76,7 +76,7 @@ int ntfsAddDevice (const char *name, void *deviceData)
     }
 
     // Allocate a devoptab for this device
-    dev = ntfs_alloc(sizeof(devoptab_t) + strlen(name) + 1);
+    dev = (devoptab_t *) ntfs_alloc(sizeof(devoptab_t) + strlen(name) + 1);
     if (!dev) {
         errno = ENOMEM;
         return false;
@@ -303,7 +303,7 @@ ntfs_inode *ntfsParseEntry (ntfs_vd *vd, const char *path, int reparseLevel)
             }
 
             // Get the target path of this entry
-            target = ntfs_make_symlink(path, ni, &attr_size);
+            target = ntfs_make_symlink(ni, path, &attr_size);
             if (!target) {
                 ntfsCloseEntry(vd, ni);
                 return NULL;
@@ -814,7 +814,7 @@ int ntfsUnicodeToLocal (const ntfschar *ins, const int ins_len, char **outs, int
         // do it manually by replacing non-ASCII characters with underscores
         if (!*outs || outs_len >= ins_len) {
             if (!*outs) {
-                *outs = ntfs_alloc(ins_len + 1);
+                *outs = (char *) ntfs_alloc(ins_len + 1);
                 if (!*outs) {
                     errno = ENOMEM;
                     return -1;

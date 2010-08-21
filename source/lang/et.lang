@@ -627,3 +627,12 @@ msgstr "Keera"
 
 msgid "Resolution exceeds maximum allowed (1280x720)!"
 msgstr "Resolutsioon ületab lubatud maksimumi (1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "Antud IOS'i on muudetud (võlts-allkirjastatud). Funktsionaalsus ja/või stabiilsus võib olla puudulik."
+
+msgid "Online media file is invalid."
+msgstr "Online meedia fail on vigane."
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Subtiitrite fondi faili ei leitud. Subtiitrid ei ole nähtavad."

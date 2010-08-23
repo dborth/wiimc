@@ -86,7 +86,7 @@ static void * devicecallback (void *arg)
 				UnmountPartitions(DEVICE_SD);
 				sd->shutdown();
 
-				if(strncmp(loadedFile, "sd", 2) == 0)
+				if(strlen(loadedFile) > 2 && strncmp(loadedFile, "sd", 2) == 0)
 				{
 					loadedFile[0] = 0;
 					StopMPlayerFile();
@@ -110,7 +110,7 @@ static void * devicecallback (void *arg)
 				UnmountPartitions(DEVICE_USB);
 				usb->shutdown();
 
-				if(strncmp(loadedFile, "usb", 3) == 0)
+				if(strlen(loadedFile) > 3 && strncmp(loadedFile, "usb", 3) == 0)
 				{
 					loadedFile[0] = 0;
 					StopMPlayerFile();
@@ -135,7 +135,7 @@ static void * devicecallback (void *arg)
 				isInserted[DEVICE_DVD] = false;
 				ISO9660_Unmount();
 
-				if(strncmp(loadedFile, "dvd", 3) == 0)
+				if(strlen(loadedFile) > 3 && strncmp(loadedFile, "dvd", 3) == 0)
 				{
 					loadedFile[0] = 0;
 					StopMPlayerFile();
@@ -675,7 +675,7 @@ static void UnmountPartitions(int device)
 			fatUnmount(part[device][i].mount);
 		else if(part[device][i].type == T_NTFS)
 			ntfsUnmount(part[device][i].mount, false);
-		
+
 		part[device][i].name[0] = 0;
 		part[device][i].mount[0] = 0;
 		part[device][i].sector = 0;
@@ -723,7 +723,7 @@ static bool MountPartitions(int device, int silent)
 	return mounted;
 }
 
-static bool Remount(int device)
+static bool Remount(int device, int silent)
 {
 	DISC_INTERFACE *disc = NULL;
 
@@ -734,23 +734,51 @@ static bool Remount(int device)
 	else
 		return false;
 
-	// retry mounting
-	disc->shutdown();
-	isInserted[device] = false;
+	SuspendDeviceThread();
+
+	// unmount
+	if(isInserted[device])
+	{
+		UnmountPartitions(device);
+		disc->shutdown();
+
+		if(strlen(loadedFile) > 3 && strncmp(loadedFile, prefix[device], strlen(prefix[device])) == 0)
+		{
+			loadedFile[0] = 0;
+			StopMPlayerFile();
+			RemoveVideoImg();
+		}
+	}
+
+	// try to remount
+	if(!silent)
+		ShowAction("Loading...");
+
 	u64 start = gettime();
+	bool mounted = false;
 
 	while (1)
 	{
-		usleep(50 * 1000);
+		usleep(250000); // 1/4 sec
 
 		if(disc->startup() && disc->isInserted())
+		{
+			mounted = true;
+			MountPartitions(device, SILENT);
 			break;
+		}
 
 		if(diff_sec(start, gettime()) > 10) // wait for 10 seconds for device init
-			return false;
+			break;
 	}
-	isInserted[device] = true;
-	return true;
+
+	if(!silent)
+		CancelAction();
+
+	isInserted[device] = mounted;
+	devicesChanged = true;
+	ResumeDeviceThread();
+	return mounted;
 }
 
 void MountAllDevices()
@@ -765,9 +793,9 @@ void MountAllDevices()
 		isInserted[DEVICE_USB] = true;
 		MountPartitions(DEVICE_USB, SILENT);
 	}
-	else if(!isInserted[DEVICE_SD] && Remount(DEVICE_USB))
+	else if(!isInserted[DEVICE_SD])
 	{
-		MountPartitions(DEVICE_USB, SILENT);
+		Remount(DEVICE_USB, SILENT);
 	}
 }
 
@@ -1460,12 +1488,7 @@ ParseDirectory(bool waitParse)
 				FindDevice(browser.dir, &device, &devnum);
 
 				if(device == DEVICE_SD || device == DEVICE_USB)
-				{
-					UnmountPartitions(device);
-
-					if(Remount(device))
-						MountPartitions(device, SILENT);
-				}
+					Remount(device, NOTSILENT);
 			}
 		}
 	}
@@ -2114,9 +2137,7 @@ size_t SaveFile (char * buffer, char *filepath, size_t datasize, bool silent)
 		if(written != datasize) written = 0;
 
 		if(!written)
-		{
 			retry = ErrorPromptRetry("Error saving file!");
-		}
 	}
 
 	// go back to checking if devices were inserted/removed

@@ -5039,6 +5039,8 @@ void wiiSetVolume(int vol)
 
 void wiiSetProperty(int command, float value)
 {
+	static float current_audio_delay = 0;
+
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
 	cmd->id=command;
 	cmd->nargs = 1;
@@ -5066,6 +5068,11 @@ void wiiSetProperty(int command, float value)
 		case MP_CMD_FRAMEDROPPING:
 		case MP_CMD_SUB_VISIBILITY:
 			cmd->args[0].v.i = (int)value;
+			break;
+		case MP_CMD_AUDIO_DELAY:
+			// MPlayer expects a relative value, so we need to convert
+			cmd->args[0].v.f = value - current_audio_delay;
+			current_audio_delay = value;
 			break;
 		default:
 			cmd->args[0].v.f = value;

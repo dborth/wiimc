@@ -627,3 +627,12 @@ msgstr "旋轉"
 
 msgid "Resolution exceeds maximum allowed (1280x720)!"
 msgstr "解析度超過最大允許像素(1280x720)！"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "現在的IOS已被修改(假的電子簽章)。功能和/或穩定可能受到不良影響。"
+
+msgid "Online media file is invalid."
+msgstr "線上媒體檔無效。"
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "字幕字型檔找不到。字幕將不被顯示。"

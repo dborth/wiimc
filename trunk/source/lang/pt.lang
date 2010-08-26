@@ -14,7 +14,7 @@ msgid "Online Media"
 msgstr "Média online"
 
 msgid "Please Wait"
-msgstr "Por favor aguarde"
+msgstr "Espere por favor"
 
 msgid "Error"
 msgstr "Erro"
@@ -134,7 +134,7 @@ msgid "Update later"
 msgstr "Actualizar depois"
 
 msgid "Online media file not found."
-msgstr "Arquivo de média online não encontrado."
+msgstr "Ficheiro de média online não encontrado."
 
 msgid "Unrecognized DVD format!"
 msgstr "Formato de DVD desconhecido!"
@@ -215,7 +215,7 @@ msgid "Aspect Ratio"
 msgstr "Proporção"
 
 msgid "Cache Fill"
-msgstr "Cache de vídeo"
+msgstr "Memoria disponível"
 
 msgid "Audio Delay"
 msgstr "Atraso no áudio"
@@ -260,7 +260,7 @@ msgid "Delete Share"
 msgstr "Apagar partilha"
 
 msgid "Are you sure that you want to delete this share?"
-msgstr "Tem a certeza que deseja excluir esta partilha?"
+msgstr "Tem a certeza que quer apagar a partilha?"
 
 msgid "IP"
 msgstr "IP"
@@ -284,7 +284,7 @@ msgid "Delete Site"
 msgstr "Apagar site"
 
 msgid "Are you sure that you want to delete this site?"
-msgstr "Tem a certeza que deseja excluir este site?"
+msgstr "Tem a certeza que quer apagar o site?"
 
 msgid "Port"
 msgstr "Porta"
@@ -314,13 +314,13 @@ msgid "Add SMB Share"
 msgstr "Ligação ao PC"
 
 msgid "Add FTP Site"
-msgstr "Ligação ao FTP"
+msgstr "Ligação FTP"
 
 msgid "DVD Menu"
 msgstr "Menu DVD"
 
 msgid "Skip to Main Title"
-msgstr "Saltar para o título principal"
+msgstr "Ir para o título principal"
 
 msgid "Unable to Initialize MPlayer"
 msgstr "Impossível inicializar o Mplayer"
@@ -335,7 +335,7 @@ msgid "Out of memory: too many files!"
 msgstr "Sem memória: muitos ficheiros!"
 
 msgid "Directory name is too long!"
-msgstr "O nome do directório é muito longo!"
+msgstr "Nome de directório muito longo!"
 
 msgid "SD Card"
 msgstr "Cartão SD"
@@ -362,7 +362,7 @@ msgid "Invalid DVD."
 msgstr "DVD inválido."
 
 msgid "Up One Level"
-msgstr "Subir nível "
+msgstr "Subir nível"
 
 msgid "Error opening"
 msgstr "Erro ao abrir"
@@ -371,22 +371,22 @@ msgid "Warning"
 msgstr "Aviso"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "Uma ou mais imagens dentro da pasta excede o tamanho máximo (6 MB) e não serão visualizadas."
+msgstr "Uma ou mais imagens dentro da pasta excedem o tamanho máximo (6 MB) e não serão visualizadas."
 
 msgid "Error loading playlist!"
 msgstr "Erro ao carregar a lista de reprodução!"
 
 msgid "Playlist does not contain any supported entries!"
-msgstr "A lista de reprodução não contém nenhuma entrada suportada!"
+msgstr "A lista de reprodução não tem nenhuma entrada suportada!"
 
 msgid "No Results Found"
 msgstr "Nenhum resultado encontrado"
 
 msgid "Your search did not match any media files."
-msgstr "A pesquisa não encontrou nenhum arquivo de média."
+msgstr "A pesquisa não encontrou nenhum ficheiro de média."
 
 msgid "Error opening file!"
-msgstr "Erro ao abrir o arquivo!"
+msgstr "Erro ao abrir ficheiro!"
 
 msgid "Saving..."
 msgstr "A guardar..."
@@ -398,7 +398,7 @@ msgid "Error saving file!"
 msgstr "Erro ao guardar ficheiro!"
 
 msgid "Playlist is Empty"
-msgstr "A lista de reprodução está vazia"
+msgstr "Lista de reprodução vazia"
 
 msgid "Hover over items and push the + button to add them to your playlist."
 msgstr "Passe o cursor sobre os itens e pressione o botão + para adicioná-los à sua lista de reprodução."
@@ -419,10 +419,10 @@ msgid "Check settings file."
 msgstr "Verifique o ficheiro de configurações."
 
 msgid "Share name is blank."
-msgstr "O nome de partilha está em branco."
+msgstr "O nome de partilha está vazio."
 
 msgid "Share IP is blank."
-msgstr "O endereço IP está em branco."
+msgstr "O endereço IP está vazio."
 
 msgid "Invalid network share settings"
 msgstr "Configurações de partilha inválidas"
@@ -434,31 +434,31 @@ msgid "Failed to connect to network share."
 msgstr "Falha ao ligar á partilha."
 
 msgid "IP is blank."
-msgstr "O campo IP está em branco."
+msgstr "O campo IP está vazio."
 
 msgid "Username is blank."
-msgstr "O campo utilizador está em branco."
+msgstr "O campo utilizador está vazio."
 
 msgid "Password is blank."
-msgstr "O campo senha está em branco."
+msgstr "O campo senha está vazio."
 
 msgid "Invalid FTP site settings"
-msgstr "Configurações de FTP inválidas"
+msgstr "Configurações FTP inválidas"
 
 msgid "Connecting to FTP site..."
-msgstr "A ligar ao FTP..."
+msgstr "A ligar FTP..."
 
 msgid "Failed to connect to FTP site."
-msgstr "Falha ao ligar ao FTP."
+msgstr "Falha ao ligar FTP."
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
 msgstr "Não foi possível encontrar um cartão SD válido ou dispositivo USB - é requerido um para operação normal."
 
 msgid "Could not create folder"
-msgstr "Não foi possível criar a pasta"
+msgstr "Não foi possível criar pasta"
 
 msgid "Saving settings..."
-msgstr "A guardar as configurações..."
+msgstr "A guardar configurações..."
 
 msgid "Could not save settings to"
 msgstr "Não foi possível guardar configurações para"
@@ -470,13 +470,13 @@ msgid "This software is open source and may be copied, distributed, or modified 
 msgstr "Este programa é livre e pode ser copiado, distribuído, ou modificado sob os termos da GNU General Public Licence (GPL) Version 2"
 
 msgid "Menu artwork"
-msgstr "Arte dos menus"
+msgstr "Arte de menus"
 
 msgid "Coding"
 msgstr "Programação"
 
 msgid "Coding & menu design"
-msgstr "Programação & design dos menus"
+msgstr "Programação & design de menus"
 
 msgid "Logo"
 msgstr "Logo"
@@ -503,7 +503,7 @@ msgid "Delay"
 msgstr "Atraso"
 
 msgid "Codepage"
-msgstr "Código de página"
+msgstr "Código da página"
 
 msgid "Subtitle Language"
 msgstr "Idioma da legenda"
@@ -512,7 +512,7 @@ msgid "Default"
 msgstr "Padrão"
 
 msgid "Could not change language. Not enough memory!"
-msgstr "Não foi possível alterar o idioma. Memória insuficiente!"
+msgstr "Não foi possível alterar idioma. Memória insuficiente!"
 
 msgid "Font Required"
 msgstr "Fonte requerida"
@@ -527,7 +527,7 @@ msgid "Unable to save font file!"
 msgstr "Impossível guardar ficheiro de fonte!"
 
 msgid "Out of Memory"
-msgstr "Memória esgotada"
+msgstr "Sem Memória"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
 msgstr "O WiiMC não possui memória livre suficiente para carregar o visualizador de imagens."
@@ -539,13 +539,13 @@ msgid "Subtitle Codepage"
 msgstr "Código de página da legenda"
 
 msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Este directório contém mais entradas do que o máximo permitido (2000). Nem todas entradas serão visualizadas"
+msgstr "Este directório contém mais entradas do que o máximo permitido (2000). Nem todas as entradas serão visualizadas"
 
 msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Esta lista de reprodução contém mais entradas do que o máximo permitido (2000). Nem todas entradas serão visualizadas"
+msgstr "Esta lista de reprodução contém mais entradas do que o máximo permitido (2000). Nem todas as entradas serão visualizadas"
 
 msgid "Downloading..."
-msgstr "A transferir…"
+msgstr "A transferir..."
 
 msgid "Unzipping..."
 msgstr "A extrair..."
@@ -596,7 +596,7 @@ msgid "Purple (Default)"
 msgstr "Roxo (Padrão)"
 
 msgid "Auto-Play Next Video"
-msgstr "Reproduzir o próximo vídeo"
+msgstr "Reproduzir próximo vídeo"
 
 msgid "Adding files to playlist..."
 msgstr "A adicionar ficheiros à lista..."
@@ -618,3 +618,9 @@ msgstr "Suporte a DVD"
 
 msgid "Enabled"
 msgstr "Habilitado"
+
+msgid "Portuguese"
+msgstr "Português"
+
+msgid "English"
+msgstr "Inglês"

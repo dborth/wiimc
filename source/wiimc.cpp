@@ -100,6 +100,8 @@ void ExitApp()
 	CancelAction();
 	StopGX();
 
+	UnmountAllDevices();
+
 	if(ShutdownRequested == 1 || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 	else if(WiiSettings.exitAction == EXIT_WIIMENU)

@@ -684,6 +684,12 @@ static void UnmountPartitions(int device)
 	}
 }
 
+void UnmountAllDevices()
+{
+	UnmountPartitions(DEVICE_SD);
+	UnmountPartitions(DEVICE_USB);
+}
+
 /****************************************************************************
  * MountPartitions
  * Attempts to mount all partitions on the specified device

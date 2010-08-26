@@ -99,7 +99,7 @@ void BrowserHistoryClear()
 
 void PopulateVideoPlaylist()
 {
-	if(!WiiSettings.autoPlayNextVideo)
+	if(!WiiSettings.autoPlayNextVideo || strncmp(loadedFile, "http:", 5) == 0)
 		return;
 
 	for(int i=0; i < VIDEO_PLAYLIST_SIZE; i++)

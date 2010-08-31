@@ -1837,14 +1837,14 @@ static int LoadNewFile()
 
 static void HideAudioVolumeLevelBar();
 
-bool LoadYouTubeFile()
+bool LoadYouTubeFile(char *url, char *newurl)
 {
 	char *buffer = (char *)malloc(128*1024);
 
 	if(!buffer)
 		return false;
 
-	int size = http_request(browserList[browser.selIndex].filename, NULL, buffer, (128*1024), SILENT);
+	int size = http_request(url, NULL, buffer, (128*1024), SILENT);
 
 	if(size <= 0)
 	{
@@ -1876,7 +1876,7 @@ bool LoadYouTubeFile()
 	{
 		if(strcmp((*link).first.c_str(), "5") == 0)
 		{
-			url_unescape_string(browserList[browser.selIndex].filename, (*link).second.c_str());
+			url_unescape_string(newurl, (*link).second.c_str());
 			free(buffer);
 			return true;
 		}
@@ -2186,12 +2186,14 @@ static void MenuBrowse(int menu)
 					mainWindow->SetState(STATE_DISABLED);
 					ShowAction("Loading...");
 
-					if(LoadYouTubeFile())
-					{
-						strcpy(loadedFile, browserList[browser.selIndex].filename);
-						snprintf(loadedFileDisplay, 128, "%s", browserList[browser.selIndex].displayname);
+					char url[MAXPATHLEN + 1];
 
+					if(LoadYouTubeFile(browserList[browser.selIndex].filename, url))
+					{
+						snprintf(loadedFileDisplay, 128, "%s", browserList[browser.selIndex].displayname);
+						strcpy(loadedFile, url);
 						int res = LoadNewFile();
+						strcpy(loadedFile, browserList[browser.selIndex].filename);
 						CancelAction();
 
 						if(res == 1) // loaded a video file

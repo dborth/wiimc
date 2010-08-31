@@ -11,7 +11,7 @@ msgid "Pictures"
 msgstr "Imagens"
 
 msgid "Online Media"
-msgstr "Média online"
+msgstr "Media online"
 
 msgid "Please Wait"
 msgstr "Espere por favor"
@@ -134,7 +134,7 @@ msgid "Update later"
 msgstr "Actualizar depois"
 
 msgid "Online media file not found."
-msgstr "Ficheiro de média online não encontrado."
+msgstr "Ficheiro de media online não encontrado."
 
 msgid "Unrecognized DVD format!"
 msgstr "Formato de DVD desconhecido!"
@@ -161,7 +161,7 @@ msgid "Settings - Pictures"
 msgstr "Configurações - Imagens"
 
 msgid "Settings - Online Media"
-msgstr "Configurações - Média online"
+msgstr "Configurações - Media online"
 
 msgid "Settings - Network"
 msgstr "Configurações - Rede"
@@ -209,19 +209,19 @@ msgid "Screen Position"
 msgstr "Posição do ecrã"
 
 msgid "Frame Dropping"
-msgstr "Queda de frame"
+msgstr "Frame Dropping"
 
 msgid "Aspect Ratio"
 msgstr "Proporção"
 
 msgid "Cache Fill"
-msgstr "Memoria disponível"
+msgstr "Memória disponível"
 
 msgid "Audio Delay"
 msgstr "Atraso no áudio"
 
 msgid "Auto-Resume"
-msgstr "Reinicio automático"
+msgstr "Auto-Resumir"
 
 msgid "Videos Files Folder"
 msgstr "Pasta de ficheiros de vídeo"
@@ -308,13 +308,13 @@ msgid "Slideshow Delay"
 msgstr "Atraso na apresentação"
 
 msgid "Online Media Folder"
-msgstr "Pasta de média online"
+msgstr "Pasta de media online"
 
 msgid "Add SMB Share"
-msgstr "Ligação ao PC"
+msgstr "Adicionar partilha SMB"
 
 msgid "Add FTP Site"
-msgstr "Ligação FTP"
+msgstr "Adicionar Ligação FTP"
 
 msgid "DVD Menu"
 msgstr "Menu DVD"
@@ -323,13 +323,13 @@ msgid "Skip to Main Title"
 msgstr "Ir para o título principal"
 
 msgid "Unable to Initialize MPlayer"
-msgstr "Impossível inicializar o Mplayer"
+msgstr "Incapaz de inicia o Mplayer"
 
 msgid "Unable to find a valid working path"
-msgstr "Impossível encontrar um caminho de rede válido"
+msgstr "Incapaz de encontrar um caminho de rede válido"
 
 msgid "Unable to change path to"
-msgstr "Impossível alterar o caminho para"
+msgstr "Incapaz de alterar o caminho para"
 
 msgid "Out of memory: too many files!"
 msgstr "Sem memória: muitos ficheiros!"
@@ -362,7 +362,7 @@ msgid "Invalid DVD."
 msgstr "DVD inválido."
 
 msgid "Up One Level"
-msgstr "Subir nível"
+msgstr ".."
 
 msgid "Error opening"
 msgstr "Erro ao abrir"
@@ -383,7 +383,7 @@ msgid "No Results Found"
 msgstr "Nenhum resultado encontrado"
 
 msgid "Your search did not match any media files."
-msgstr "A pesquisa não encontrou nenhum ficheiro de média."
+msgstr "A pesquisa não encontrou nenhum ficheiro de media."
 
 msgid "Error opening file!"
 msgstr "Erro ao abrir ficheiro!"
@@ -413,7 +413,7 @@ msgid "Update failed!"
 msgstr "Falha na actualização!"
 
 msgid "Initializing network..."
-msgstr "A iniciar rede…"
+msgstr "A iniciar ligação…"
 
 msgid "Check settings file."
 msgstr "Verifique o ficheiro de configurações."
@@ -431,7 +431,7 @@ msgid "Connecting to network share..."
 msgstr "A ligar á partilha..."
 
 msgid "Failed to connect to network share."
-msgstr "Falha ao ligar á partilha."
+msgstr "Falha ao ligar à partilha."
 
 msgid "IP is blank."
 msgstr "O campo IP está vazio."
@@ -491,7 +491,7 @@ msgid "Buffering"
 msgstr "Buffering"
 
 msgid "Unable to initialize network (Error #:"
-msgstr "Impossível iniciar rede (Erro #:"
+msgstr "Incapaz de iniciar ligação (Erro #:"
 
 msgid "Settings - Subtitles"
 msgstr "Configurações - Legendas"
@@ -515,16 +515,16 @@ msgid "Could not change language. Not enough memory!"
 msgstr "Não foi possível alterar idioma. Memória insuficiente!"
 
 msgid "Font Required"
-msgstr "Fonte requerida"
+msgstr "Tipo de letra requerido"
 
 msgid "A new font is required to display this language."
-msgstr "Uma nova fonte é requerida para exibir este idioma."
+msgstr "Um novo tipo de letra é requerido para exibir este idioma."
 
 msgid "Download font"
-msgstr "Download de fonte"
+msgstr "Download tipo de letra"
 
 msgid "Unable to save font file!"
-msgstr "Impossível guardar ficheiro de fonte!"
+msgstr "Incapaz de guardar ficheiro do tipo de letra!"
 
 msgid "Out of Memory"
 msgstr "Sem Memória"
@@ -619,8 +619,59 @@ msgstr "Suporte a DVD"
 msgid "Enabled"
 msgstr "Habilitado"
 
+msgid "Error loading YouTube file!"
+msgstr "Erro ao carregar ficheiro YouTube!"
+
+msgid "Rotate"
+msgstr "Rotação"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "A resolução excede o máximo permitido (1280*720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "O IOS actual foi alterado (fake-signed). A estabilidade e/ou funcionalidade podem ser adversamente afectadas."
+
+msgid "Online media file is invalid."
+msgstr "Ficheiro de media online invalido."
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Tipo de letra das legendas não encontrado. As legendas não serão visíveis."
+
 msgid "Portuguese"
 msgstr "Português"
 
 msgid "English"
 msgstr "Inglês"
+
+msgid "German"
+msgstr "Alemão"
+
+msgid "Japanese"
+msgstr "Japonês"
+
+msgid "French"
+msgstr "Francês"
+
+msgid "Brazilian Portuguese"
+msgstr "Português (Brasil)"
+
+msgid "Chinese (Simplified)"
+msgstr "Chinês (Simplificado)"
+
+msgid "Chinese (Traditional)"
+msgstr "Chinês (Tradicional)"
+
+msgid "Spanish"
+msgstr "Espanhol"
+
+msgid "Italian"
+msgstr "Italiano"
+
+msgid "Polish"
+msgstr "Polaco"
+
+msgid "Dutch"
+msgstr "Holandês"
+
+msgid "Korean"
+msgstr "Coreano"

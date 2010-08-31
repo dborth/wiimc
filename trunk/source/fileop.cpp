@@ -1329,7 +1329,7 @@ void FindFile()
 
 		if(indexFound >= pagesize)
 		{
-			int newIndex = (ceil(indexFound/(float)pagesize)) * pagesize;
+			int newIndex = (floor(indexFound/(float)pagesize)) * pagesize;
 
 			if(newIndex + pagesize > browser.numEntries)
 				newIndex = browser.numEntries - pagesize;

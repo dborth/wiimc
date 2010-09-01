@@ -412,7 +412,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		}
 	}
 
-	if(!WiiSettings.dvdDisabled)
+	if(!WiiSettings.dvdDisabled && isInserted[DEVICE_DVD])
 	{
 		AddBrowserEntry();
 		sprintf(browserList[browser.numEntries].filename, "dvd:");

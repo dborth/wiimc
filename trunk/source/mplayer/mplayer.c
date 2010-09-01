@@ -4868,17 +4868,19 @@ double wiiGetTimeLength()
 
 double wiiGetTimePos()
 {
-	double pos = 0;
-
 	if(!playing_file || controlledbygui == 2)
 		return 0;
 
-	if (mpctx->sh_video)
-		pos = mpctx->sh_video->pts;
-	else if (mpctx->sh_audio && mpctx->audio_out)
-		pos = playing_audio_pts(mpctx->sh_audio, mpctx->d_audio, mpctx->audio_out);
-	
-	return pos;
+	if(!mpctx->demuxer || !mpctx->stream)
+		return 0;
+
+	if(mpctx->eof || mpctx->d_audio->eof || mpctx->stream->eof)
+		return 0;
+
+	if (!mpctx->sh_video && mpctx->sh_audio && mpctx->audio_out)
+		return playing_audio_pts(mpctx->sh_audio, mpctx->d_audio, mpctx->audio_out);
+
+	return demuxer_get_current_time(mpctx->demuxer);
 }
 
 void wiiGetTimeDisplay(char * buf)

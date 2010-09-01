@@ -154,6 +154,11 @@ static void * devicecallback (void *arg)
 				}
 			}
 		}
+		else if(dvd->isInserted())
+		{
+			isInserted[DEVICE_DVD] = true;
+			devicesChanged = true;
+		}
 
 		devsleep = 1000*1000*2; // 2 sec
 
@@ -815,8 +820,10 @@ bool MountDVD(bool silent)
 	bool mounted = false;
 	int retry = 1;
 
-	if(isInserted[DEVICE_DVD])
+	if(dvdLastUsed > 0)
 		return true;
+
+	SuspendDeviceThread();
 
 	while(retry)
 	{
@@ -844,7 +851,7 @@ bool MountDVD(bool silent)
 		}
 	}
 	CancelAction();
-	isInserted[DEVICE_DVD] = mounted;
+	ResumeDeviceThread();
 	return mounted;
 }
 

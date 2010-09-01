@@ -40,6 +40,8 @@ extern "C" {
 #include "utils/http.h"
 #include "utils/gettext.h"
 
+extern "C" u32 __di_check_ahbprot(void);
+
 #define THREAD_SLEEP 100
 
 int currentDevice = -1;
@@ -823,11 +825,19 @@ bool MountDVD(bool silent)
 	if(dvdLastUsed > 0)
 		return true;
 
+	if(__di_check_ahbprot() != 1)
+	{
+		if(!silent)
+			ErrorPrompt("WiiMC does not have DVD access - AHBPROT is not enabled.");
+		return false;
+	}
+
 	SuspendDeviceThread();
 
 	while(retry)
 	{
-		ShowAction("Loading DVD...");
+		if(!silent)
+			ShowAction("Loading DVD...");
 
 		if(!dvd->isInserted())
 		{
@@ -850,7 +860,10 @@ bool MountDVD(bool silent)
 			break;
 		}
 	}
-	CancelAction();
+
+	if(!silent)
+		CancelAction();
+
 	ResumeDeviceThread();
 	return mounted;
 }

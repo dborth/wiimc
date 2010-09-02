@@ -210,8 +210,8 @@ char MPLAYER_CSSDIR[512];
 
 /* codec libraries */
 #undef CONFIG_FAAC
-#define CONFIG_FAAD 1
-#define CONFIG_FAAD_INTERNAL 1
+#undef CONFIG_FAAD
+#undef CONFIG_FAAD_INTERNAL
 #define CONFIG_LIBA52 1
 #undef CONFIG_LIBDCA
 #undef CONFIG_LIBDV095

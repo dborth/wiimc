@@ -3729,7 +3729,7 @@ if(mpctx->sh_video) {
   }
   //scip:
   sub_auto = 1;
-  if((strncmp(filename, "sd", 2) == 0 || strncmp(filename, "usb", 3) == 0)
+  if((strncmp(filename, "sd", 2) == 0 || strncmp(filename, "usb", 3) == 0 || strncmp(filename, "smb", 3) == 0)
 	  && vo_vobsub==NULL && sub_auto) { // auto load sub file ...
     //char *psub = get_path( "sub/" );
     //char **tmp = sub_filenames((psub ? psub : ""), filename);

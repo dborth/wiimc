@@ -169,7 +169,7 @@ void MPlayerInput()
 			int y = userInput[i].wpad->ir.y;
 
 			if(!drawGui || (y < 360 && 
-				(!VideoVolumeLevelBarVisible() || !(x > 20 && x < 100 && y > 180))))
+				(!VideoVolumeLevelBarVisible() || !(x > 80 && x < 180 && y > 180))))
 			{
 				wiiPause();
 			}

@@ -636,3 +636,6 @@ msgstr "Online Mediendatei ist ungültig"
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
 msgstr "Untertitel Schriftartdatei nicht vorhanden. Untertitel werden nicht angezeigt."
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC hat keinen DVD Zugriff - AHBPROT ist nicht aktiviert."

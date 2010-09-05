@@ -636,3 +636,6 @@ msgstr "Multimedialny plik online jest nieprawidłowy."
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
 msgstr "Nie znaleziono czcionki do napisów. Napisy będą niewidoczne."
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC nie ma dostępu do DVD - AHBPROT nie jest aktywne"

@@ -512,14 +512,18 @@ int main(int argc, char *argv[])
 	__exception_setreload(8);
 
 	// only reload IOS if AHBPROT is not enabled
+	u32 have_ahbprot = __di_check_ahbprot();
 	u32 version = IOS_GetVersion();
 	s32 preferred = IOS_GetPreferredVersion();
 
-	if(version != 58 && preferred > 0 && version != (u32)preferred && __di_check_ahbprot() != 1)
+	if(version != 58 && preferred > 0 && version != (u32)preferred && !have_ahbprot)
 		IOS_ReloadIOS(preferred);
 
 	StartNetworkThread();
-	DI_Init();
+
+	if(have_ahbprot)
+		DI_Init();
+
 	WPAD_Init();
 	InitVideo();
 	SetupPads();

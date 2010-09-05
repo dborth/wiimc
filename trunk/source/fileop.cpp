@@ -156,7 +156,7 @@ static void * devicecallback (void *arg)
 				}
 			}
 		}
-		else if(dvd->isInserted())
+		else if(!WiiSettings.dvdDisabled && dvd->isInserted())
 		{
 			isInserted[DEVICE_DVD] = true;
 			devicesChanged = true;

@@ -1874,7 +1874,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	for(std::map<std::string,std::string>::iterator link=links.begin(); link!=links.end(); ++link)
 	{
-		if(strcmp((*link).first.c_str(), "5") == 0)
+		if(strcmp((*link).first.c_str(), "34") == 0)
 		{
 			url_unescape_string(newurl, (*link).second.c_str());
 			free(buffer);

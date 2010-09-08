@@ -31,7 +31,7 @@
 #undef NDEBUG
 #include <assert.h>
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_MAX_STREAMS
 #define NUT_MAX_STREAMS MAX_STREAMS
 #else
 #define NUT_MAX_STREAMS 256    /* arbitrary sanity check value */

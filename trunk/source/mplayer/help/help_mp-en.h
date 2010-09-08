@@ -1,4 +1,4 @@
-// $Revision: 31938 $
+// $Revision: 32066 $
 // MASTER FILE. Use this file as base for translations.
 // Translated files should be sent to the mplayer-DOCS mailing list or
 // to the help messages maintainer, see DOCS/tech/MAINTAINERS.
@@ -180,9 +180,12 @@ static const char help_text[]=
 #define MSGTR_DvdnavNavSpuClutChange "DVDNAV Event: Nav SPU CLUT Change\n"
 #define MSGTR_DvdnavNavSeekDone "DVDNAV Event: Nav Seek Done\n"
 #define MSGTR_MenuCall "Menu call\n"
+#define MSGTR_MasterQuit "Option -udp_slave: exiting because master exited\n"
+#define MSGTR_InvalidIP "Option -udp-ip: invalid IP address\n"
 
 // --- edit decision lists
 #define MSGTR_EdlOutOfMem "Can't allocate enough memory to hold EDL data.\n"
+#define MSGTR_EdlOutOfMemFile "Can't allocate enough memory to hold EDL file name [%s].\n"
 #define MSGTR_EdlRecordsNo "Read %d EDL actions.\n"
 #define MSGTR_EdlQueueEmpty "There are no EDL actions to take care of.\n"
 #define MSGTR_EdlCantOpenForWrite "Can't open EDL file [%s] for writing.\n"

@@ -28,10 +28,11 @@
 
 #include <errno.h>
 #include "libavutil/avutil.h"
+#include "libavutil/cpu.h"
 
 #define LIBAVCODEC_VERSION_MAJOR 52
-#define LIBAVCODEC_VERSION_MINOR 85
-#define LIBAVCODEC_VERSION_MICRO  1
+#define LIBAVCODEC_VERSION_MINOR 87
+#define LIBAVCODEC_VERSION_MICRO  5
 
 #define LIBAVCODEC_VERSION_INT  AV_VERSION_INT(LIBAVCODEC_VERSION_MAJOR, \
                                                LIBAVCODEC_VERSION_MINOR, \
@@ -42,6 +43,17 @@
 #define LIBAVCODEC_BUILD        LIBAVCODEC_VERSION_INT
 
 #define LIBAVCODEC_IDENT        "Lavc" AV_STRINGIFY(LIBAVCODEC_VERSION)
+
+/**
+ * Those FF_API_* defines are not part of public API.
+ * They may change, break or disappear at any time.
+ */
+#ifndef FF_API_PALETTE_CONTROL
+#define FF_API_PALETTE_CONTROL  (LIBAVCODEC_VERSION_MAJOR < 54)
+#endif
+#ifndef FF_API_MM_FLAGS
+#define FF_API_MM_FLAGS         (LIBAVCODEC_VERSION_MAJOR < 53)
+#endif
 
 #define AV_NOPTS_VALUE          INT64_C(0x8000000000000000)
 #define AV_TIME_BASE            1000000
@@ -213,6 +225,8 @@ enum CodecID {
     CODEC_ID_VP8,
     CODEC_ID_PICTOR,
     CODEC_ID_ANSI,
+    CODEC_ID_A64_MULTI,
+    CODEC_ID_A64_MULTI5,
 
     /* various PCM "codecs" */
     CODEC_ID_PCM_S16LE= 0x10000,
@@ -1647,27 +1661,25 @@ typedef struct AVCodecContext {
      * result into program crash.)
      */
     unsigned dsp_mask;
-#define FF_MM_FORCE    0x80000000 /* Force usage of selected flags (OR) */
-    /* lower 16 bits - CPU features */
-#define FF_MM_MMX      0x0001 ///< standard MMX
-#define FF_MM_3DNOW    0x0004 ///< AMD 3DNOW
-#if LIBAVCODEC_VERSION_MAJOR < 53
-#define FF_MM_MMXEXT   0x0002 ///< SSE integer functions or AMD MMX ext
+
+#if FF_API_MM_FLAGS
+#define FF_MM_FORCE      AV_CPU_FLAG_FORCE
+#define FF_MM_MMX        AV_CPU_FLAG_MMX
+#define FF_MM_3DNOW      AV_CPU_FLAG_3DNOW
+#define FF_MM_MMXEXT     AV_CPU_FLAG_MMX2
+#define FF_MM_MMX2       AV_CPU_FLAG_MMX2
+#define FF_MM_SSE        AV_CPU_FLAG_SSE
+#define FF_MM_SSE2       AV_CPU_FLAG_SSE2
+#define FF_MM_SSE2SLOW   AV_CPU_FLAG_SSE2SLOW
+#define FF_MM_3DNOWEXT   AV_CPU_FLAG_3DNOWEXT
+#define FF_MM_SSE3       AV_CPU_FLAG_SSE3
+#define FF_MM_SSE3SLOW   AV_CPU_FLAG_SSE3SLOW
+#define FF_MM_SSSE3      AV_CPU_FLAG_SSSE3
+#define FF_MM_SSE4       AV_CPU_FLAG_SSE4
+#define FF_MM_SSE42      AV_CPU_FLAG_SSE42
+#define FF_MM_IWMMXT     AV_CPU_FLAG_IWMMXT
+#define FF_MM_ALTIVEC    AV_CPU_FLAG_ALTIVEC
 #endif
-#define FF_MM_MMX2     0x0002 ///< SSE integer functions or AMD MMX ext
-#define FF_MM_SSE      0x0008 ///< SSE functions
-#define FF_MM_SSE2     0x0010 ///< PIV SSE2 functions
-#define FF_MM_SSE2SLOW 0x40000000 ///< SSE2 supported, but usually not faster
-                                  ///< than regular MMX/SSE (e.g. Core1)
-#define FF_MM_3DNOWEXT 0x0020 ///< AMD 3DNowExt
-#define FF_MM_SSE3     0x0040 ///< Prescott SSE3 functions
-#define FF_MM_SSE3SLOW 0x20000000 ///< SSE3 supported, but usually not faster
-                                  ///< than regular MMX/SSE (e.g. Core1)
-#define FF_MM_SSSE3    0x0080 ///< Conroe SSSE3 functions
-#define FF_MM_SSE4     0x0100 ///< Penryn SSE4.1 functions
-#define FF_MM_SSE42    0x0200 ///< Nehalem SSE4.2 functions
-#define FF_MM_IWMMXT   0x0100 ///< XScale IWMMXT
-#define FF_MM_ALTIVEC  0x0001 ///< standard AltiVec
 
     /**
      * bits per sample/pixel from the demuxer (needed for huffyuv).
@@ -2023,12 +2035,14 @@ typedef struct AVCodecContext {
      */
     int lmax;
 
+#if FF_API_PALETTE_CONTROL
     /**
      * palette control structure
      * - encoding: ??? (no palette-enabled encoder yet)
      * - decoding: Set by user.
      */
     struct AVPaletteControl *palctrl;
+#endif
 
     /**
      * noise reduction strength
@@ -2850,7 +2864,7 @@ typedef struct AVPicture {
     int linesize[4];       ///< number of bytes per line
 } AVPicture;
 
-#if LIBAVCODEC_VERSION_MAJOR < 53
+#if FF_API_PALETTE_CONTROL
 /**
  * AVPaletteControl
  * This structure defines a method for communicating palette changes
@@ -3936,15 +3950,15 @@ void *av_fast_realloc(void *ptr, unsigned int *size, unsigned int min_size);
  */
 void av_fast_malloc(void *ptr, unsigned int *size, unsigned int min_size);
 
+#if LIBAVCODEC_VERSION_MAJOR < 53
 /**
- * Copy image data in src_data to dst_data.
- *
- * @param dst_linesize linesizes for the image in dst_data
- * @param src_linesize linesizes for the image in src_data
+ * @deprecated Deprecated in favor of av_image_copy().
  */
+attribute_deprecated
 void av_picture_data_copy(uint8_t *dst_data[4], int dst_linesize[4],
                           uint8_t *src_data[4], int src_linesize[4],
                           enum PixelFormat pix_fmt, int width, int height);
+#endif
 
 /**
  * Copy image src to dst. Wraps av_picture_data_copy() above.

@@ -178,10 +178,7 @@ It can encode with various codecs, like
 &install.xml;
 
 &usage.xml;
-&cd-dvd.xml;
 &video.xml;
-&tvinput.xml;
-&radio.xml;
 &ports.xml;
 &mencoder.xml;
 &encoding-guide.xml;

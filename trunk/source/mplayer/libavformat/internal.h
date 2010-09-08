@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include "avformat.h"
 
+#define MAX_URL_SIZE 4096
+
 typedef struct AVCodecTag {
     enum CodecID id;
     unsigned int tag;
@@ -147,11 +149,13 @@ int ff_url_join(char *str, int size, const char *proto,
  * @param size the size of the buff buffer
  * @param c the AVCodecContext of the media to describe
  * @param dest_addr the destination address of the media stream, may be NULL
+ * @param dest_type the destination address type, may be NULL
  * @param port the destination port of the media stream, 0 if unknown
  * @param ttl the time to live of the stream, 0 if not multicast
  */
 void ff_sdp_write_media(char *buff, int size, AVCodecContext *c,
-                        const char *dest_addr, int port, int ttl);
+                        const char *dest_addr, const char *dest_type,
+                        int port, int ttl);
 
 /**
  * Write a packet to another muxer than the one the user originally
@@ -191,5 +195,29 @@ void ff_put_v(ByteIOContext *bc, uint64_t val);
 int ff_get_line(ByteIOContext *s, char *buf, int maxlen);
 
 #define SPACE_CHARS " \t\r\n"
+
+/**
+ * Callback function type for ff_parse_key_value.
+ *
+ * @param key a pointer to the key
+ * @param key_len the number of bytes that belong to the key, including the '='
+ *                char
+ * @param dest return the destination pointer for the value in *dest, may
+ *             be null to ignore the value
+ * @param dest_len the length of the *dest buffer
+ */
+typedef void (*ff_parse_key_val_cb)(void *context, const char *key,
+                                    int key_len, char **dest, int *dest_len);
+/**
+ * Parse a string with comma-separated key=value pairs. The value strings
+ * may be quoted and may contain escaped characters within quoted strings.
+ *
+ * @param str the string to parse
+ * @param callback_get_buf function that returns where to store the
+ *                         unescaped value string.
+ * @param context the opaque context pointer to pass to callback_get_buf
+ */
+void ff_parse_key_value(const char *str, ff_parse_key_val_cb callback_get_buf,
+                        void *context);
 
 #endif /* AVFORMAT_INTERNAL_H */

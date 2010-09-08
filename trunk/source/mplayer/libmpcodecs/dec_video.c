@@ -39,6 +39,7 @@
 #include "libmpdemux/stheader.h"
 #include "vd.h"
 #include "vf.h"
+#include "eosd.h"
 
 #include "dec_video.h"
 
@@ -185,6 +186,7 @@ void uninit_video(sh_video_t *sh_video)
         dlclose(sh_video->dec_handle);
 #endif
     vf_uninit_filter_chain(sh_video->vfilter);
+    eosd_uninit();
     sh_video->initialized = 0;
 }
 
@@ -386,14 +388,30 @@ int init_best_video_codec(sh_video_t *sh_video, char **video_codec_list,
 }
 
 void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
-                   int drop_frame, double pts)
+                   int drop_frame, double pts, int *full_frame)
 {
     mp_image_t *mpi = NULL;
     unsigned int t = GetTimer();
     unsigned int t2;
     double tt;
+    int delay;
+    int got_picture = 1;
 
-    if (correct_pts && pts != MP_NOPTS_VALUE) {
+    mpi = mpvdec->decode(sh_video, start, in_size, drop_frame);
+
+    //------------------------ frame decoded. --------------------
+
+    if (mpi && mpi->type == MP_IMGTYPE_INCOMPLETE) {
+	got_picture = 0;
+	mpi = NULL;
+    }
+
+    if (full_frame)
+	*full_frame = got_picture;
+
+    delay = get_current_video_decoder_lag(sh_video);
+    if (correct_pts && pts != MP_NOPTS_VALUE
+        && (got_picture || sh_video->num_buffered_pts < delay)) {
         if (sh_video->num_buffered_pts ==
             sizeof(sh_video->buffered_pts) / sizeof(double))
             mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Too many buffered pts\n");
@@ -408,10 +426,6 @@ void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
             sh_video->num_buffered_pts++;
         }
     }
-
-    mpi = mpvdec->decode(sh_video, start, in_size, drop_frame);
-
-    //------------------------ frame decoded. --------------------
 
 #if HAVE_MMX
     // some codecs are broken, and doesn't restore MMX state :(
@@ -437,7 +451,6 @@ void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
         mpi->fields &= ~MP_IMGFIELD_TOP_FIRST;
 
     if (correct_pts) {
-        int delay = get_current_video_decoder_lag(sh_video);
         if (sh_video->num_buffered_pts) {
             sh_video->num_buffered_pts--;
             sh_video->pts = sh_video->buffered_pts[sh_video->num_buffered_pts];

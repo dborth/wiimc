@@ -66,6 +66,7 @@
 #include "mp_core.h"
 #include "mp_fifo.h"
 #include "libavutil/avstring.h"
+#include "edl.h"
 
 #define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
 
@@ -1546,7 +1547,7 @@ static int mp_property_sub(m_option_t *prop, int action, void *arg,
 #endif
 
     if (source == SUB_SOURCE_VOBSUB) {
-        vobsub_id = source_pos;
+        vobsub_id = vobsub_get_id_by_index(vo_vobsub, source_pos);
     } else if (source == SUB_SOURCE_SUBS) {
         mpctx->set_of_sub_pos = source_pos;
 #ifdef CONFIG_ASS
@@ -2617,7 +2618,8 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
                     if (mpctx->begin_skip > v)
                         mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_EdloutBadStop);
                     else {
-                        fprintf(edl_fd, "%f %f %d\n", mpctx->begin_skip, v, 0);
+                        double pts = edl_start_pts ? start_pts : 0;
+                        fprintf(edl_fd, "%f %f %d\n", mpctx->begin_skip - pts, v - pts, 0);
                         mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_EdloutEndSkip);
                     }
                     mpctx->begin_skip = MP_NOPTS_VALUE;
@@ -2677,8 +2679,8 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
 	    	copyScreen = 1;
 	    	break;
 #else
-	    	exit_player_with_rc(EXIT_QUIT,
-				(cmd->nargs > 0) ? cmd->args[0].v.i : 0);
+            exit_player_with_rc(EXIT_QUIT,
+                                (cmd->nargs > 0) ? cmd->args[0].v.i : 0);
 #endif
         case MP_CMD_PLAY_TREE_STEP:{
                 int n = cmd->args[0].v.i == 0 ? 1 : cmd->args[0].v.i;

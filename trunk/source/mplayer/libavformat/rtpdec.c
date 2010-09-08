@@ -66,6 +66,7 @@ void av_register_rtp_dynamic_payload_handlers(void)
     ff_register_dynamic_payload_handler(&ff_qdm2_dynamic_handler);
     ff_register_dynamic_payload_handler(&ff_svq3_dynamic_handler);
     ff_register_dynamic_payload_handler(&ff_mp4a_latm_dynamic_handler);
+    ff_register_dynamic_payload_handler(&ff_vp8_dynamic_handler);
 
     ff_register_dynamic_payload_handler(&ff_ms_rtp_asf_pfv_handler);
     ff_register_dynamic_payload_handler(&ff_ms_rtp_asf_pfa_handler);
@@ -73,13 +74,31 @@ void av_register_rtp_dynamic_payload_handlers(void)
 
 static int rtcp_parse_packet(RTPDemuxContext *s, const unsigned char *buf, int len)
 {
-    if (buf[1] != 200)
-        return -1;
-    s->last_rtcp_ntp_time = AV_RB64(buf + 8);
-    if (s->first_rtcp_ntp_time == AV_NOPTS_VALUE)
-        s->first_rtcp_ntp_time = s->last_rtcp_ntp_time;
-    s->last_rtcp_timestamp = AV_RB32(buf + 16);
-    return 0;
+    int payload_len;
+    while (len >= 2) {
+        switch (buf[1]) {
+        case RTCP_SR:
+            if (len < 16) {
+                av_log(NULL, AV_LOG_ERROR, "Invalid length for RTCP SR packet\n");
+                return AVERROR_INVALIDDATA;
+            }
+            payload_len = (AV_RB16(buf + 2) + 1) * 4;
+
+            s->last_rtcp_ntp_time = AV_RB64(buf + 8);
+            if (s->first_rtcp_ntp_time == AV_NOPTS_VALUE)
+                s->first_rtcp_ntp_time = s->last_rtcp_ntp_time;
+            s->last_rtcp_timestamp = AV_RB32(buf + 16);
+
+            buf += payload_len;
+            len -= payload_len;
+            break;
+        case RTCP_BYE:
+            return -RTCP_BYE;
+        default:
+            return -1;
+        }
+    }
+    return -1;
 }
 
 #define RTP_SEQ_MOD (1<<16)
@@ -208,10 +227,11 @@ int rtp_check_and_send_back_rr(RTPDemuxContext *s, int count)
 
     // Receiver Report
     put_byte(pb, (RTP_VERSION << 6) + 1); /* 1 report block */
-    put_byte(pb, 201);
+    put_byte(pb, RTCP_RR);
     put_be16(pb, 7); /* length in words - 1 */
-    put_be32(pb, s->ssrc); // our own SSRC
-    put_be32(pb, s->ssrc); // XXX: should be the server's here!
+    // our own SSRC: we use the server's SSRC + 1 to avoid conflicts
+    put_be32(pb, s->ssrc + 1);
+    put_be32(pb, s->ssrc); // server SSRC
     // some placeholders we should really fill...
     // RFC 1889/p64
     extended_max= stats->cycles + stats->max_seq;
@@ -246,7 +266,7 @@ int rtp_check_and_send_back_rr(RTPDemuxContext *s, int count)
 
     // CNAME
     put_byte(pb, (RTP_VERSION << 6) + 1); /* 1 report block */
-    put_byte(pb, 202);
+    put_byte(pb, RTCP_SDES);
     len = strlen(s->hostname);
     put_be16(pb, (6 + len + 3) / 4); /* length in words - 1 */
     put_be32(pb, s->ssrc);
@@ -297,7 +317,7 @@ void rtp_send_punch_packets(URLContext* rtp_handle)
         return;
 
     put_byte(pb, (RTP_VERSION << 6));
-    put_byte(pb, 201); /* receiver report */
+    put_byte(pb, RTCP_RR); /* receiver report */
     put_be16(pb, 1); /* length in words - 1 */
     put_be32(pb, 0); /* our own SSRC */
 
@@ -432,9 +452,8 @@ int rtp_parse_packet(RTPDemuxContext *s, AVPacket *pkt,
 
     if ((buf[0] & 0xc0) != (RTP_VERSION << 6))
         return -1;
-    if (buf[1] >= 200 && buf[1] <= 204) {
-        rtcp_parse_packet(s, buf, len);
-        return -1;
+    if (buf[1] >= RTCP_SR && buf[1] <= RTCP_APP) {
+        return rtcp_parse_packet(s, buf, len);
     }
     payload_type = buf[1] & 0x7f;
     if (buf[1] & 0x80)

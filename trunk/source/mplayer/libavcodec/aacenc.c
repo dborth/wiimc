@@ -302,7 +302,7 @@ static void encode_ms_info(PutBitContext *pb, ChannelElement *cpe)
 static void adjust_frame_information(AACEncContext *apc, ChannelElement *cpe, int chans)
 {
     int i, w, w2, g, ch;
-    int start, sum, maxsfb, cmaxsfb;
+    int start, maxsfb, cmaxsfb;
 
     for (ch = 0; ch < chans; ch++) {
         IndividualChannelStream *ics = &cpe->ch[ch].ics;
@@ -311,9 +311,8 @@ static void adjust_frame_information(AACEncContext *apc, ChannelElement *cpe, in
         cpe->ch[ch].pulse.num_pulse = 0;
         for (w = 0; w < ics->num_windows*16; w += 16) {
             for (g = 0; g < ics->num_swb; g++) {
-                sum = 0;
                 //apply M/S
-                if (!ch && cpe->ms_mask[w + g]) {
+                if (cpe->common_window && !ch && cpe->ms_mask[w + g]) {
                     for (i = 0; i < ics->swb_sizes[g]; i++) {
                         cpe->ch[0].coeffs[start+i] = (cpe->ch[0].coeffs[start+i] + cpe->ch[1].coeffs[start+i]) / 2.0;
                         cpe->ch[1].coeffs[start+i] =  cpe->ch[0].coeffs[start+i] - cpe->ch[1].coeffs[start+i];
@@ -544,7 +543,6 @@ static int aac_encode_frame(AVCodecContext *avctx,
             for (k = 0; k < ics->num_windows; k++)
                 ics->group_len[k] = wi[j].grouping[k];
 
-            s->cur_channel = cur_channel;
             apply_window_and_mdct(avctx, s, &cpe->ch[j], samples2);
         }
         start_ch += chans;
@@ -561,6 +559,8 @@ static int aac_encode_frame(AVCodecContext *avctx,
             tag      = chan_map[i+1];
             chans    = tag == TYPE_CPE ? 2 : 1;
             cpe      = &s->cpe[i];
+            put_bits(&s->pb, 3, tag);
+            put_bits(&s->pb, 4, chan_el_counter[tag]++);
             for (j = 0; j < chans; j++) {
                 s->cur_channel = start_ch + j;
                 ff_psy_set_band_info(&s->psy, s->cur_channel, cpe->ch[j].coeffs, &wi[j]);
@@ -583,8 +583,6 @@ static int aac_encode_frame(AVCodecContext *avctx,
             if (cpe->common_window && s->coder->search_for_ms)
                 s->coder->search_for_ms(s, cpe, s->lambda);
             adjust_frame_information(s, cpe, chans);
-            put_bits(&s->pb, 3, tag);
-            put_bits(&s->pb, 4, chan_el_counter[tag]++);
             if (chans == 2) {
                 put_bits(&s->pb, 1, cpe->common_window);
                 if (cpe->common_window) {

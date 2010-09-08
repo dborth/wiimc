@@ -125,7 +125,14 @@
 #include "spudec.h"
 #include "subreader.h"
 #include "vobsub.h"
-
+#include "eosd.h"
+#include "osdep/getch2.h"
+#include "osdep/timer.h"
+#ifndef GEKKO
+#ifdef CONFIG_NETWORKING
+#include "udp_sync.h"
+#endif /* CONFIG_NETWORKING */
+#endif
 #ifdef CONFIG_X11
 #include "libvo/x11_common.h"
 #endif
@@ -184,7 +191,7 @@ int player_idle_mode=0;
 int quiet=0;
 int enable_mouse_movements=0;
 float start_volume = -1;
-
+double start_pts = MP_NOPTS_VALUE;
 char *heartbeat_cmd;
 
 #define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
@@ -319,7 +326,7 @@ static char *stream_dump_name="stream.dump";
        int stream_dump_type=0;
 
 // A-V sync:
-static float default_max_pts_correction=1;
+static float default_max_pts_correction=-1;
 static float max_pts_correction=0;//default_max_pts_correction;
 static float c_total=0;
        float audio_delay=0;
@@ -385,6 +392,7 @@ FILE* edl_fd = NULL; ///< fd to write to when in -edlout mode.
 // (next seek, pause,...), otherwise after the seek it will
 // enter the same scene again and skip forward immediately
 float edl_backward_delay = 2;
+int edl_start_pts = 0; ///< Automatically add/sub this from EDL start/stop pos
 int use_filedir_conf;
 int use_filename_title;
 
@@ -605,7 +613,6 @@ char *get_metadata (metadata_t type) {
 
 static void print_file_properties(const MPContext *mpctx, const char *filename)
 {
-  double start_pts = MP_NOPTS_VALUE;
   double video_start_pts = MP_NOPTS_VALUE;
   mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_FILENAME=%s\n",
 	  filename_recode(filename));
@@ -770,6 +777,12 @@ void uninit_player(unsigned int mask){
 
 void exit_player_with_rc(enum exit_reason how, int rc)
 {
+#ifndef GEKKO
+#ifdef CONFIG_NETWORKING
+  if (udp_master)
+    send_udp(udp_ip, udp_port, "bye");
+#endif /* CONFIG_NETWORKING */
+#endif
   if (mpctx->user_muted && !mpctx->edl_muted) mixer_mute(&mpctx->mixer);
   uninit_player(INITIALIZED_ALL);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -1886,7 +1899,7 @@ static int generate_video_frame(sh_video_t *sh_video, demux_stream_t *d_video)
 	if (in_size > max_framesize)
 	    max_framesize = in_size;
 	current_module = "decode video";
-	decoded_frame = decode_video(sh_video, start, in_size, drop_frame, pts);
+	decoded_frame = decode_video(sh_video, start, in_size, drop_frame, pts, NULL);
 	if (decoded_frame) {
 	    update_subtitles(sh_video, sh_video->pts, mpctx->d_sub, 0);
 	    update_teletext(sh_video, mpctx->demuxer, 0);
@@ -2225,7 +2238,7 @@ static int fill_audio_out_buffers(void)
 	current_module="decode_audio";
 	t = GetTimer();
 	if (!format_change) {
-	    res = decode_audio(sh_audio, playsize);
+	    res = mp_decode_audio(sh_audio, playsize);
 	    format_change = res == -2;
 	}
 	if (!format_change && res < 0) // EOF or error
@@ -2277,7 +2290,18 @@ static int sleep_until_update(float *time_frame, float *aq_sleep_time)
 {
     int frame_time_remaining = 0;
     current_module="calc_sleep_time";
-
+#ifndef GEKKO
+#ifdef CONFIG_NETWORKING
+    if (udp_slave) {
+        int udp_master_exited = udp_slave_sync(mpctx);
+        if (udp_master_exited) {
+            mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_MasterQuit);
+            exit_player(EXIT_QUIT);
+        }
+        return 0;
+    }
+#endif /* CONFIG_NETWORKING */
+#endif
     *time_frame -= GetRelativeTime() * 0.000001F; // reset timer;
 
     if (mpctx->sh_audio && !mpctx->d_audio->eof) {
@@ -2329,6 +2353,15 @@ static int sleep_until_update(float *time_frame, float *aq_sleep_time)
 #ifdef GEKKO
     else usleep(1); // to help LWP threads
 #endif
+#ifndef GEKKO
+#ifdef CONFIG_NETWORKING
+    if (udp_master) {
+      char current_time[256];
+      sprintf(current_time, "%f", mpctx->sh_video->pts);
+      send_udp(udp_ip, udp_port, current_time);
+    }
+#endif /* CONFIG_NETWORKING */
+#endif
     return frame_time_remaining;
 }
 
@@ -2354,7 +2387,7 @@ int reinit_video_chain(void) {
   current_module="init_video_filters";
   {
     char* vf_arg[] = { "_oldargs_", (char*)mpctx->video_out , NULL };
-    sh_video->vfilter=(void*)vf_open_filter(NULL,"vo",vf_arg);
+    sh_video->vfilter=vf_open_filter(NULL,"vo",vf_arg);
   }
 #ifdef CONFIG_MENU
   if(use_menu) {
@@ -2366,7 +2399,7 @@ int reinit_video_chain(void) {
     }
   }
   if(vf_menu)
-    sh_video->vfilter=(void*)vf_menu;
+    sh_video->vfilter=vf_menu;
 #endif
 
 #ifdef CONFIG_ASS
@@ -2380,23 +2413,22 @@ int reinit_video_chain(void) {
           break;
         }
     if (insert) {
-      extern vf_info_t vf_info_ass;
-      const vf_info_t* libass_vfs[] = {&vf_info_ass, NULL};
       char* vf_arg[] = {"auto", "1", NULL};
-      vf_instance_t* vf_ass = vf_open_plugin(libass_vfs,sh_video->vfilter,"ass",vf_arg);
+      vf_instance_t* vf_ass = vf_open_filter(sh_video->vfilter,"ass",vf_arg);
       if (vf_ass)
-        sh_video->vfilter=(void*)vf_ass;
+        sh_video->vfilter=vf_ass;
       else
         mp_msg(MSGT_CPLAYER,MSGL_ERR, "ASS: cannot add video filter\n");
     }
   }
 #endif
 
-  sh_video->vfilter=(void*)append_filters(sh_video->vfilter);
+  sh_video->vfilter=append_filters(sh_video->vfilter);
+  eosd_init(sh_video->vfilter);
 
 #ifdef CONFIG_ASS
   if (ass_enabled)
-    ((vf_instance_t *)sh_video->vfilter)->control(sh_video->vfilter, VFCTRL_INIT_EOSD, ass_library);
+    eosd_ass_init(ass_library);
 #endif
 
   current_module="init_video_codec";
@@ -2450,7 +2482,9 @@ static double update_video(int *blit_frame)
 	void *decoded_frame = NULL;
 	int drop_frame=0;
 	int in_size;
+	int full_frame;
 
+	do {
 	current_module = "video_read_frame";
 	if(!sh_video) return -1;
 	frame_time = sh_video->next_frame_time;
@@ -2459,58 +2493,85 @@ static double update_video(int *blit_frame)
 #ifdef CONFIG_DVDNAV
 	/// wait, still frame or EOF
 	if (mpctx->stream->type == STREAMTYPE_DVDNAV && in_size < 0) {
-	    if (mp_dvdnav_is_eof(mpctx->stream))
-	    	return -1;
-	    if (mpctx->d_video)
-	    	mpctx->d_video->eof = 0;
-	    if (mpctx->d_audio)
-	    	mpctx->d_audio->eof = 0;
-	    mpctx->stream->eof = 0;
+		if (mp_dvdnav_is_eof(mpctx->stream))
+				return -1;
+		if (mpctx->d_video)
+				mpctx->d_video->eof = 0;
+		if (mpctx->d_audio)
+				mpctx->d_audio->eof = 0;
+		mpctx->stream->eof = 0;
 	} else
 #endif
 	if (in_size < 0)
-	    return -1;
+		return -1;
 	if (in_size > max_framesize)
-	    max_framesize = in_size; // stats
-	sh_video->timer += frame_time;
-	if (mpctx->sh_audio)
-	    mpctx->delay -= frame_time;
-	// video_read_frame can change fps (e.g. for ASF video)
-	vo_fps = sh_video->fps;
+		max_framesize = in_size; // stats
 	drop_frame = check_framedrop(frame_time);
-	update_subtitles(sh_video, sh_video->pts, mpctx->d_sub, 0);
-	update_teletext(sh_video, mpctx->demuxer, 0);
-	update_osd_msg();
 	current_module = "decode_video";
 #ifdef CONFIG_DVDNAV
+	full_frame = 1;
 	decoded_frame = mp_dvdnav_restore_smpi(&in_size,&start,decoded_frame);
 	/// still frame has been reached, no need to decode
 	if (in_size > 0 && !decoded_frame)
 #endif
 	decoded_frame = decode_video(sh_video, start, in_size, drop_frame,
-				     sh_video->pts);
+					 sh_video->pts, &full_frame);
+
+	if (full_frame) {
+	sh_video->timer += frame_time;
+
+	// Time-based PTS recalculation.
+	// The key to maintaining A-V sync is to not touch PTS until the proper frame is reached
+	if (sh_video->pts != MP_NOPTS_VALUE) {
+		if (sh_video->last_pts != MP_NOPTS_VALUE) {
+		double pts = sh_video->last_pts + frame_time;
+		double ptsdiff = fabs(pts - sh_video->pts);
+
+		// Allow starting PTS recalculation at the appropriate frame only
+		mpctx->framestep_found |= (ptsdiff <= frame_time * 1.5);
+
+		// replace PTS only if we're not too close and not too far
+		// and a correctly timed frame has been found, otherwise
+		// keep pts to eliminate rounding errors or catch up with stream
+		if (ptsdiff > frame_time * 20)
+			mpctx->framestep_found = 0;
+		if (ptsdiff * 10 > frame_time && mpctx->framestep_found)
+			sh_video->pts = pts;
+		else
+			mp_dbg(MSGT_AVSYNC,MSGL_DBG2,"Keeping PTS at %6.2f\n", sh_video->pts);
+		}
+		sh_video->last_pts = sh_video->pts;
+	}
+	if (mpctx->sh_audio)
+		mpctx->delay -= frame_time;
+	// video_read_frame can change fps (e.g. for ASF video)
+	vo_fps = sh_video->fps;
+	update_subtitles(sh_video, sh_video->pts, mpctx->d_sub, 0);
+	update_teletext(sh_video, mpctx->demuxer, 0);
+	update_osd_msg();
+	}
 #ifdef CONFIG_DVDNAV
 	/// save back last still frame for future display
 	mp_dvdnav_save_smpi(in_size,start,decoded_frame);
 #endif
+	} while (!full_frame);
+
 	current_module = "filter_video";
 	*blit_frame = (decoded_frame && filter_video(sh_video, decoded_frame,
-						    sh_video->pts));
-
-    }
-    else {
+							sh_video->pts));
+	}
+	else {
 	int res = generate_video_frame(sh_video, mpctx->d_video);
-
 	if (!res)
-	    return -1;
+		return -1;
 	((vf_instance_t *)sh_video->vfilter)->control(sh_video->vfilter,
-					    VFCTRL_GET_PTS, &sh_video->pts);
+						VFCTRL_GET_PTS, &sh_video->pts);
 	if (sh_video->pts == MP_NOPTS_VALUE) {
-	    mp_msg(MSGT_CPLAYER, MSGL_ERR, "pts after filters MISSING\n");
-	    sh_video->pts = sh_video->last_pts;
+		mp_msg(MSGT_CPLAYER, MSGL_ERR, "pts after filters MISSING\n");
+		sh_video->pts = sh_video->last_pts;
 	}
 	if (sh_video->last_pts == MP_NOPTS_VALUE)
-	    sh_video->last_pts= sh_video->pts;
+		sh_video->last_pts= sh_video->pts;
 	else if (sh_video->last_pts > sh_video->pts) {
 		// make a guess whether this is some kind of discontinuity
 		// we should jump along with or some wron timestamps we
@@ -2525,10 +2586,10 @@ static double update_video(int *blit_frame)
 	sh_video->last_pts = sh_video->pts;
 	sh_video->timer += frame_time;
 	if(mpctx->sh_audio)
-	    mpctx->delay -= frame_time;
+		mpctx->delay -= frame_time;
 	*blit_frame = res > 0;
-    }
-    return frame_time;
+	}
+	return frame_time;
 }
 
 static void pause_loop(void)
@@ -2591,6 +2652,17 @@ static void pause_loop(void)
     mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
 
   (void)GetRelativeTime(); // ignore time that passed during pause
+}
+
+static void edl_loadfile(void)
+{
+    if (edl_filename) {
+        if (edl_records) {
+            free_edl(edl_records);
+            edl_needs_reset = 1;
+        }
+        next_edl_record = edl_records = edl_parse_file();
+    }
 }
 
 // Execute EDL command for the current position if one exists
@@ -2689,6 +2761,7 @@ static int seek(MPContext *mpctx, double amount, int style)
 	mpctx->num_buffered_frames = 0;
 	mpctx->delay = 0;
 	mpctx->time_frame = 0;
+	mpctx->framestep_found = 0;
 	// Not all demuxers set d_video->pts during seek, so this value
 	// (which is used by at least vobsub and edl code below) may
 	// be completely wrong (probably 0).
@@ -2849,9 +2922,13 @@ orig_stream_cache_size=stream_cache_size;
 	{
 		HMODULE kernel32 = GetModuleHandle("Kernel32.dll");
 		BOOL WINAPI (*setDEP)(DWORD) = NULL;
-		if (kernel32)
+		BOOL WINAPI (*setDllDir)(LPCTSTR) = NULL;
+		if (kernel32) {
 			setDEP = GetProcAddress(kernel32, "SetProcessDEPPolicy");
+			setDllDir = GetProcAddress(kernel32, "SetDllDirectoryA");
+		}
 		if (setDEP) setDEP(3);
+		if (setDllDir) setDllDir("");
 	}
 	// stop Windows from showing all kinds of annoying error dialogs
 	SetErrorMode(0x8003);
@@ -3326,18 +3403,16 @@ while (player_idle_mode && !filename) {
             vo_wintitle = strdup ( mp_basename2 (filename));
     }
 
-if (edl_filename) {
-    if (edl_records) free_edl(edl_records);
-    next_edl_record = edl_records = edl_parse_file();
-}
-if (edl_output_filename) {
-    if (edl_fd) fclose(edl_fd);
-    if ((edl_fd = fopen(edl_output_filename, "w")) == NULL)
-    {
-        mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_EdlCantOpenForWrite,
-		filename_recode(edl_output_filename));
+    edl_loadfile();
+
+    if (edl_output_filename) {
+        if (edl_fd)
+            fclose(edl_fd);
+        if ((edl_fd = fopen(edl_output_filename, "w")) == NULL) {
+            mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_EdlCantOpenForWrite,
+                   filename_recode(edl_output_filename));
+        }
     }
-}
 
 //==================== Open VOB-Sub ============================
 #ifdef GEKKO
@@ -3479,14 +3554,14 @@ if(stream_dump_type==5){
 }
 
 if(mpctx->stream->type==STREAMTYPE_BD){
-  if(audio_id==-1) audio_id=bd_aid_from_lang(mpctx->stream,audio_lang);
+  if(audio_lang && audio_id==-1) audio_id=bd_aid_from_lang(mpctx->stream,audio_lang);
   if(dvdsub_lang && dvdsub_id==-1) dvdsub_id=bd_sid_from_lang(mpctx->stream,dvdsub_lang);
 }
 
 #ifdef CONFIG_DVDREAD
 if(mpctx->stream->type==STREAMTYPE_DVD){
   current_module="dvd lang->id";
-  if(audio_id==-1) audio_id=dvd_aid_from_lang(mpctx->stream,audio_lang);
+  if(audio_lang && audio_id==-1) audio_id=dvd_aid_from_lang(mpctx->stream,audio_lang);
   if(dvdsub_lang && dvdsub_id==-1) dvdsub_id=dvd_sid_from_lang(mpctx->stream,dvdsub_lang);
   // setup global sub numbering
   mpctx->sub_counts[SUB_SOURCE_DEMUX] = dvd_number_of_subs(mpctx->stream);
@@ -3497,7 +3572,7 @@ if(mpctx->stream->type==STREAMTYPE_DVD){
 #ifdef CONFIG_DVDNAV
 if(mpctx->stream->type==STREAMTYPE_DVDNAV){
   current_module="dvdnav lang->id";
-  if(audio_id==-1) audio_id=mp_dvdnav_aid_from_lang(mpctx->stream,audio_lang);
+  if(audio_lang && audio_id==-1) audio_id=mp_dvdnav_aid_from_lang(mpctx->stream,audio_lang);
   dvdsub_lang_id = -3;
   if(dvdsub_lang && dvdsub_id==-1)
     dvdsub_lang_id=dvdsub_id=mp_dvdnav_sid_from_lang(mpctx->stream,dvdsub_lang);
@@ -3759,6 +3834,16 @@ if (select_subtitle(mpctx)) {
 }
 
   print_file_properties(mpctx, filename);
+  
+  // Adjust EDL positions with start_pts
+  if (edl_start_pts && start_pts) {
+      edl_record_ptr edl = edl_records;
+      while (edl) {
+          edl->start_sec += start_pts;
+          edl->stop_sec  += start_pts;
+          edl = edl->next;
+      }
+  }
 
 if(!mpctx->sh_video) goto main; // audio-only
 
@@ -3807,6 +3892,7 @@ if(verbose) term_osd = 0;
 int frame_time_remaining=0; // flag
 int blit_frame=0;
 mpctx->num_buffered_frames=0;
+mpctx->framestep_found=0;
 
 // Make sure old OSD does not stay around,
 // e.g. with -fixed-vo and same-resolution files
@@ -4189,13 +4275,23 @@ if(step_sec>0) {
   mp_cmd_t* cmd;
   int brk_cmd = 0;
   while( !brk_cmd && (cmd = mp_input_get_cmd(0,0,0)) != NULL) {
-      brk_cmd = run_command(mpctx, cmd);
-      mp_cmd_free(cmd);
-      if (brk_cmd == 2)
-	  	goto goto_enable_cache;
+	  brk_cmd = run_command(mpctx, cmd);
+	  if (cmd->id == MP_CMD_EDL_LOADFILE) {
+		  if (edl_filename)
+			  free(edl_filename);
+		  edl_filename = strdup(cmd->args[0].v.s);
+		  if (edl_filename)
+			  edl_loadfile();
+		  else
+			  mp_msg(MSGT_CPLAYER, MSGL_ERR, MSGTR_EdlOutOfMemFile,
+					 cmd->args[0].v.s);
+	  }
+	  mp_cmd_free(cmd);
+	  if (brk_cmd == 2)
+	  goto goto_enable_cache;
   }
 }
-  
+
   /* Looping. */
   if(mpctx->eof==1 && mpctx->loop_times>=0) {
     mp_msg(MSGT_CPLAYER,MSGL_V,"loop_times = %d, eof = %d\n", mpctx->loop_times,mpctx->eof);

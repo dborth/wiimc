@@ -336,6 +336,7 @@ SRCS_COMMON = asxparser.c \
               codec-cfg.c \
               cpudetect.c \
               edl.c \
+              eosd.c \
               find_sub.c \
               fmt-conversion.c \
               m_config.c \
@@ -613,6 +614,7 @@ SRCS_MPLAYER-$(LIRC)          += input/lirc.c
 SRCS_MPLAYER-$(MD5SUM)        += libvo/vo_md5sum.c
 SRCS_MPLAYER-$(MGA)           += libvo/vo_mga.c
 SRCS_MPLAYER-$(NAS)           += libao2/ao_nas.c
+SRCS_MPLAYER-$(NETWORKING)    += udp_sync.c
 SRCS_MPLAYER-$(OPENAL)        += libao2/ao_openal.c
 SRCS_MPLAYER-$(OSS)           += libao2/ao_oss.c
 SRCS_MPLAYER-$(PNM)           += libvo/vo_pnm.c
@@ -906,6 +908,7 @@ $(call ADDSUFFIXES,.d .o,mpcommon osdep/mplayer.rc): version.h
 
 #osdep/mplayer-rc.o: osdep/mplayer.exe.manifest
 
+
 gui/%: CFLAGS += -Wno-strict-prototypes
 
 libdvdcss/%:   CFLAGS := -Ilibdvdcss -D__USE_UNIX98 -D_GNU_SOURCE -DVERSION=\"1.2.10\" $(CFLAGS_LIBDVDCSS) $(CFLAGS)
@@ -1169,13 +1172,10 @@ dhahelperwinclean:
 
 
 
-# Do not include dependencies when they are about to be removed anyway.
-ifneq ($(MAKECMDGOALS),distclean)
 -include $(DEPS)
-endif
 
 .PHONY: all doxygen *install* *tools drivers dhahelper*
-.PHONY: checkheaders *clean dep depend tests
+.PHONY: checkheaders *clean tests
 
 # Disable suffix rules.  Most of the builtin rules are suffix rules,
 # so this saves some time on slow systems.

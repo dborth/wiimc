@@ -1,6 +1,6 @@
 /*
- * vp3dsp MMX function declarations
- * Copyright (c) 2007 Aurelien Jacobs <aurel@gnuage.org>
+ * RAW muxers
+ * Copyright (C) 2007  Aurelien Jacobs <aurel@gnuage.org>
  *
  * This file is part of FFmpeg.
  *
@@ -19,18 +19,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_X86_VP3DSP_MMX_H
-#define AVCODEC_X86_VP3DSP_MMX_H
+#ifndef AVFORMAT_RAWENC_H
+#define AVFORMAT_RAWENC_H
 
-#include <stdint.h>
-#include "libavcodec/dsputil.h"
+#include "avformat.h"
 
-void ff_vp3_idct_mmx(int16_t *data);
-void ff_vp3_idct_put_mmx(uint8_t *dest, int line_size, DCTELEM *block);
-void ff_vp3_idct_add_mmx(uint8_t *dest, int line_size, DCTELEM *block);
-void ff_vp3_idct_dc_add_mmx2(uint8_t *dest, int line_size, const DCTELEM *block);
+int ff_raw_write_packet(AVFormatContext *s, AVPacket *pkt);
 
-void ff_vp3_v_loop_filter_mmx2(uint8_t *src, int stride, int *bounding_values);
-void ff_vp3_h_loop_filter_mmx2(uint8_t *src, int stride, int *bounding_values);
-
-#endif /* AVCODEC_X86_VP3DSP_MMX_H */
+#endif /* AVFORMAT_RAWENC_H */

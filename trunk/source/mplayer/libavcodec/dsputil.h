@@ -82,6 +82,11 @@ extern const uint8_t ff_zigzag248_direct[64];
 extern uint32_t ff_squareTbl[512];
 extern uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP];
 
+void ff_put_pixels8x8_c(uint8_t *dst, uint8_t *src, int stride);
+void ff_avg_pixels8x8_c(uint8_t *dst, uint8_t *src, int stride);
+void ff_put_pixels16x16_c(uint8_t *dst, uint8_t *src, int stride);
+void ff_avg_pixels16x16_c(uint8_t *dst, uint8_t *src, int stride);
+
 /* VP3 DSP functions */
 void ff_vp3_idct_c(DCTELEM *block/* align 16*/);
 void ff_vp3_idct_put_c(uint8_t *dest/*align 8*/, int line_size, DCTELEM *block/*align 16*/);
@@ -91,30 +96,23 @@ void ff_vp3_idct_dc_add_c(uint8_t *dest/*align 8*/, int line_size, const DCTELEM
 void ff_vp3_v_loop_filter_c(uint8_t *src, int stride, int *bounding_values);
 void ff_vp3_h_loop_filter_c(uint8_t *src, int stride, int *bounding_values);
 
-/* VP6 DSP functions */
-void ff_vp6_filter_diag4_c(uint8_t *dst, uint8_t *src, int stride,
-                           const int16_t *h_weights, const int16_t *v_weights);
-
 /* Bink functions */
 void ff_bink_idct_c    (DCTELEM *block);
 void ff_bink_idct_add_c(uint8_t *dest, int linesize, DCTELEM *block);
 void ff_bink_idct_put_c(uint8_t *dest, int linesize, DCTELEM *block);
 
-/* CAVS functions */
-void ff_put_cavs_qpel8_mc00_c(uint8_t *dst, uint8_t *src, int stride);
-void ff_avg_cavs_qpel8_mc00_c(uint8_t *dst, uint8_t *src, int stride);
-void ff_put_cavs_qpel16_mc00_c(uint8_t *dst, uint8_t *src, int stride);
-void ff_avg_cavs_qpel16_mc00_c(uint8_t *dst, uint8_t *src, int stride);
-
-/* VC1 functions */
-void ff_put_vc1_mspel_mc00_c(uint8_t *dst, const uint8_t *src, int stride, int rnd);
-void ff_avg_vc1_mspel_mc00_c(uint8_t *dst, const uint8_t *src, int stride, int rnd);
-
 /* EA functions */
 void ff_ea_idct_put_c(uint8_t *dest, int linesize, DCTELEM *block);
 
 /* 1/2^n downscaling functions from imgconvert.c */
+#if LIBAVCODEC_VERSION_MAJOR < 53
+/**
+ * @deprecated Use av_image_copy_plane() instead.
+ */
+attribute_deprecated
 void ff_img_copy_plane(uint8_t *dst, int dst_wrap, const uint8_t *src, int src_wrap, int width, int height);
+#endif
+
 void ff_shrink22(uint8_t *dst, int dst_wrap, const uint8_t *src, int src_wrap, int width, int height);
 void ff_shrink44(uint8_t *dst, int dst_wrap, const uint8_t *src, int src_wrap, int width, int height);
 void ff_shrink88(uint8_t *dst, int dst_wrap, const uint8_t *src, int src_wrap, int width, int height);
@@ -369,9 +367,6 @@ typedef struct DSPContext {
     void (*vp3_v_loop_filter)(uint8_t *src, int stride, int *bounding_values);
     void (*vp3_h_loop_filter)(uint8_t *src, int stride, int *bounding_values);
 
-    void (*vp6_filter_diag4)(uint8_t *dst, uint8_t *src, int stride,
-                             const int16_t *h_weights,const int16_t *v_weights);
-
     /* assume len is a multiple of 4, and arrays are 16-byte aligned */
     void (*vorbis_inverse_coupling)(float *mag, float *ang, int blocksize);
     void (*ac3_downmix)(float (*samples)[256], float (*matrix)[2], int out_ch, int in_ch, int len);
@@ -615,11 +610,6 @@ static inline int get_penalty_factor(int lambda, int lambda2, int type){
  */
 #define emms_c()
 
-/* should be defined by architectures supporting
-   one or more MultiMedia extension */
-int mm_support(void);
-extern int mm_flags;
-
 void dsputil_init_alpha(DSPContext* c, AVCodecContext *avctx);
 void dsputil_init_arm(DSPContext* c, AVCodecContext *avctx);
 void dsputil_init_bfin(DSPContext* c, AVCodecContext *avctx);
@@ -647,12 +637,7 @@ static inline void emms(void)
     __asm__ volatile ("emms;":::"memory");
 }
 
-
-#define emms_c() \
-{\
-    if (mm_flags & FF_MM_MMX)\
-        emms();\
-}
+#define emms_c() emms()
 
 #elif ARCH_ARM
 
@@ -667,11 +652,6 @@ static inline void emms(void)
 #elif HAVE_MMI
 
 #define STRIDE_ALIGN 16
-
-#else
-
-#define mm_flags 0
-#define mm_support() 0
 
 #endif
 

@@ -285,7 +285,7 @@ static int rtp_write(URLContext *h, const uint8_t *buf, int size)
     int ret;
     URLContext *hd;
 
-    if (buf[1] >= 200 && buf[1] <= 204) {
+    if (buf[1] >= RTCP_SR && buf[1] <= RTCP_APP) {
         /* RTCP payload type */
         hd = s->rtcp_hd;
     } else {
@@ -371,6 +371,11 @@ static int rtp_get_file_handle(URLContext *h)
 {
     RTPContext *s = h->priv_data;
     return s->rtp_fd;
+}
+
+int rtp_get_rtcp_file_handle(URLContext *h) {
+    RTPContext *s = h->priv_data;
+    return s->rtcp_fd;
 }
 
 URLProtocol rtp_protocol = {

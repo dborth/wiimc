@@ -43,7 +43,7 @@
  * sizeof(URLContext) must not be used outside libav*.
  */
 typedef struct URLContext {
-#if LIBAVFORMAT_VERSION_MAJOR >= 53
+#if FF_API_URL_CLASS
     const AVClass *av_class; ///< information for av_log(). Set by url_open().
 #endif
     struct URLProtocol *prot;
@@ -256,7 +256,7 @@ typedef struct URLProtocol {
     const AVClass *priv_data_class;
 } URLProtocol;
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_REGISTER_PROTOCOL
 extern URLProtocol *first_protocol;
 #endif
 
@@ -269,7 +269,7 @@ extern URLInterruptCB *url_interrupt_cb;
  */
 URLProtocol *av_protocol_next(URLProtocol *p);
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_REGISTER_PROTOCOL
 /**
  * @deprecated Use av_register_protocol() instead.
  */
@@ -454,7 +454,7 @@ int url_fdopen(ByteIOContext **s, URLContext *h);
 
 /** @warning must be called before any I/O */
 int url_setbufsize(ByteIOContext *s, int buf_size);
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_URL_RESETBUF
 /** Reset the buffer for reading or writing.
  * @note Will drop any data currently in the buffer without transmitting it.
  * @param flags URL_RDONLY to set up the buffer for reading, or URL_WRONLY

@@ -97,6 +97,7 @@
 #include "path.h"
 #include "spudec.h"
 #include "vobsub.h"
+#include "eosd.h"
 
 
 int vo_doublebuffering=0;
@@ -300,7 +301,8 @@ static int dec_audio(sh_audio_t *sh_audio,unsigned char* buffer,int total){
     while(size<total && !at_eof){
 	int len=total-size;
 		if(len>MAX_OUTBURST) len=MAX_OUTBURST;
-		if (decode_audio(sh_audio, len) < 0) at_eof=1;
+		if (mp_decode_audio(sh_audio, len) < 0)
+                    at_eof = 1;
 		if(len>sh_audio->a_out_buffer_len) len=sh_audio->a_out_buffer_len;
 		fast_memcpy(buffer+size,sh_audio->a_out_buffer,len);
 		sh_audio->a_out_buffer_len-=len; size+=len;
@@ -463,7 +465,7 @@ static int slowseek(float end_pts, demux_stream_t *d_video,
 
         if (vfilter) {
             int softskip = (vfilter->control(vfilter, VFCTRL_SKIP_NEXT_FRAME, 0) == CONTROL_TRUE);
-            void *decoded_frame = decode_video(sh_video, frame_data->start, frame_data->in_size, !softskip, MP_NOPTS_VALUE);
+            void *decoded_frame = decode_video(sh_video, frame_data->start, frame_data->in_size, !softskip, MP_NOPTS_VALUE, NULL);
 	    if (decoded_frame)
 		filter_video(sh_video, decoded_frame, MP_NOPTS_VALUE);
         }
@@ -710,7 +712,7 @@ play_next_file:
   mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_OpenedStream, file_format, (int)(stream->start_pos), (int)(stream->end_pos));
 
 if(stream->type==STREAMTYPE_BD){
-  if(audio_id==-1) audio_id=bd_aid_from_lang(stream,audio_lang);
+  if(audio_lang && audio_id==-1) audio_id=bd_aid_from_lang(stream,audio_lang);
   if(dvdsub_lang && dvdsub_id==-1) dvdsub_id=bd_sid_from_lang(stream,dvdsub_lang);
 }
 
@@ -1030,12 +1032,10 @@ default: {
           break;
         }
     if (insert) {
-      extern vf_info_t vf_info_ass;
-      vf_info_t* libass_vfs[] = {&vf_info_ass, NULL};
       char* vf_arg[] = {"auto", "1", NULL};
-      vf_instance_t* vf_ass = vf_open_plugin(libass_vfs,sh_video->vfilter,"ass",vf_arg);
+      vf_instance_t* vf_ass = vf_open_filter(sh_video->vfilter,"ass",vf_arg);
       if (vf_ass)
-        sh_video->vfilter=(void*)vf_ass;
+        sh_video->vfilter=vf_ass;
       else
         mp_msg(MSGT_CPLAYER,MSGL_ERR, "ASS: cannot add video filter\n");
     }
@@ -1053,11 +1053,12 @@ default: {
   }
 #endif
 
-    sh_video->vfilter=append_filters(sh_video->vfilter);
+  sh_video->vfilter=append_filters(sh_video->vfilter);
+  eosd_init(sh_video->vfilter);
 
 #ifdef CONFIG_ASS
   if (ass_enabled)
-    ((vf_instance_t *)sh_video->vfilter)->control(sh_video->vfilter, VFCTRL_INIT_EOSD, ass_library);
+    eosd_ass_init(ass_library);
 #endif
 
 // after reading video params we should load subtitles because
@@ -1530,8 +1531,12 @@ case VCODEC_FRAMENO:
     break;
 default:
     // decode_video will callback down to ve_*.c encoders, through the video filters
-    {void *decoded_frame = decode_video(sh_video,frame_data.start,frame_data.in_size,
-      skip_flag>0 && (!sh_video->vfilter || ((vf_instance_t *)sh_video->vfilter)->control(sh_video->vfilter, VFCTRL_SKIP_NEXT_FRAME, 0) != CONTROL_TRUE), MP_NOPTS_VALUE);
+    {
+    int drop_frame = skip_flag > 0 &&
+                     (!sh_video->vfilter ||
+                      ((vf_instance_t *)sh_video->vfilter)->control(sh_video->vfilter, VFCTRL_SKIP_NEXT_FRAME, 0) != CONTROL_TRUE);
+    void *decoded_frame = decode_video(sh_video,frame_data.start,frame_data.in_size,
+                                       drop_frame, MP_NOPTS_VALUE, NULL);
     blit_frame = decoded_frame && filter_video(sh_video, decoded_frame, MP_NOPTS_VALUE);}
 
     if (sh_video->vf_initialized < 0) mencoder_exit(1, NULL);

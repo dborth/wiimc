@@ -395,6 +395,345 @@ die von <application>MPlayer</application> unterstützt werden, wie MMS, RSTP un
 </sect1>
 
 
+<sect1 id="drives">
+<title>CD/DVD-Laufwerke</title>
+
+<para>
+Moderne CD-ROM-Laufwerke können sehr hohe Geschwindigkeiten
+erreichen. Jedoch sind einige CD-ROM-Laufwerke in der Lage, mit gedrosselter
+Geschwindigkeit zu laufen. Es gibt verschiedene Gründe, in Erwägung zu ziehen,
+die Geschwindig eines CD-ROM-Laufwerks zu ändern:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Es gibt Berichte über Lesefehler bei hohen Geschwindigkeiten, besonders
+bei schlecht gepressten CD-ROMs. Reduzierung der Geschwindigkeit kann
+unter diesen Umständen Datenverlust verhindern.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Viele CD-ROM-Laufwerke sind nervend laut. Eine geringere Geschwindigkeit kann
+die Geräusche reduzieren.
+</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="drives_linux">
+<title>Linux</title>
+
+<para>
+Du kannst die Geschwindigkeit von IDE CD-ROM-Laufwerken mit
+<command>hdparm</command>, <command>setcd</command> oder
+<command>cdctl</command> reduzieren. Dies funktioniert wie folgt:
+<screen>hdparm -E <replaceable>[Geschwindigkeit]</replaceable> <replaceable>[CD-ROM-Gerät]</replaceable></screen>
+<screen>setcd -x <replaceable>[Geschwindigkeit]</replaceable> <replaceable>[CD-ROM-Gerät]</replaceable></screen>
+<screen>cdctl -bS <replaceable>[Geschwindigkeit]</replaceable></screen>
+</para>
+
+<para>
+Wenn du SCSI-Emulation benuzt, musst du die Einstellungen unter Umständen am
+echten IDE-Gerät vornehmen und nicht am emuliertem SCSI-Gerät.
+</para>
+
+<para>
+Wenn du über root-Rechte verfügst, kann das folgende Kommando
+ebenso helfen:
+<screen>echo file_readahead:2000000 &gt; /proc/ide/<replaceable>[CD-ROM-Gerät]</replaceable>/settings</screen>
+</para>
+
+<para>
+<!-- TODO: 1) aehm Ich glaube nicht das das (oben) als 2 MB interpretiert wird.
+     Duerften Bytes sein -->
+Dies setzt die Menge der vorausgehend gelesenen Daten auf 2MB, was bei
+verkratzten CD-ROMs hilft.
+Wenn du dies zu hoch setzt, wird das Laufwerk dauernd anlaufen und wieder langsamer werden;
+dies wird die Leistung dramtisch verschlechtern.
+Es wird ebenso empfohlen, dass du dein CD-ROM-Laufwerk mit <command>hdparm</command>
+konfigurierst:
+<screen>hdparm -d1 -a8 -u1 <replaceable>[CD-ROM-Gerät]</replaceable></screen>
+</para>
+
+<para>
+Dies aktiviert DMA-Zugriff, Read-ahead (vorausgehendes Lesen) und IRQ-Unmasking
+(lies die <command>hdparm</command> Manpage für eine ausführliche Erklärung).
+</para>
+
+<para>
+Wir verweisen hier auf
+"<filename>/proc/ide/<replaceable>[CD-ROM-Gerät]</replaceable>/settings</filename>"
+für Feineinstellungen an deinem CD-ROM.
+</para>
+
+<para>
+SCSI-Laufwerke haben kein einheitliches Verfahren, diese Parameter zu
+setzen. (Kennst du einen? Berichte ihn uns!) Es gibt ein Tool, welches mit
+<ulink url="http://das.ist.org/~georg/">Plextor SCSI-Laufwerken</ulink>
+funktioniert.
+</para>
+
+</sect2>
+
+
+<sect2 id="drives_freebsd">
+<title>FreeBSD</title>
+
+<para>
+Geschwindigkeit:
+<screen>cdcontrol [-f <replaceable>Gerät</replaceable>] speed <replaceable>[Geschwindigkeit]</replaceable></screen>
+</para>
+
+<para>
+DMA:
+<screen>sysctl hw.ata.atapi_dma=1</screen>
+</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="dvd">
+<title>DVD-Wiedergabe</title>
+<para>
+Für eine komplette Liste der verfügbaren Optionen lies bitte die Manpage.
+Die Syntax für das Abspielen einer Standard-DVD lautet wie folgt:
+<screen>mplayer dvd://<replaceable>&lt;Track&gt;</replaceable> [-dvd-device <replaceable>&lt;Gerät&gt;</replaceable>]</screen>
+</para>
+
+<para>
+Beispiel:
+<screen>mplayer dvd://1 -dvd-device /dev/hdc</screen>
+</para>
+
+<para>
+Das Standard-DVD-Laufwerk ist <filename>/dev/dvd</filename>. Wenn deine
+Installation davon abweicht, erstelle einen Symlink oder gib das genaue Gerät auf
+der Kommandozeile an mit der Option <option>-dvd-device</option>.
+</para>
+
+<para>
+<application>MPlayer</application> verwendet <systemitem>libdvdread</systemitem> und
+<systemitem>libdvdcss</systemitem> zur DVD-Wiedergabe und -Entschlüsselung.
+Diese beiden Bibliotheken sind im Unterverzeichnis
+<application>MPlayer</application>-Quelltextbaum,
+du brauchst sie nicht separat zu installieren. Du kannst auch systemweite
+Versionen der beiden Bibliotheken verwenden, diese wird jedoch
+<emphasis role="bold">nicht</emphasis> empfohlen, da dies zu Bugs,
+Bibliotheksinkompatibilitäten und geringerer Geschwindigkeit führen kann.
+</para>
+
+<note>
+<para>
+In Fällen von DVD-Dekodierungs-Problemen versuche Supermount oder solche Hilfen
+zu deaktivieren. Einige RPC-2 Laufwerke können verlangen, dass ein Regionalcode gesetzt ist.
+</para>
+</note>
+
+<formalpara>
+<title>DVD-Struktur</title>
+<para>
+DVDs haben 2048 Bytes pro Sektor mit ECC/CRC. Sie haben üblicherweise
+ein UDF-Dateisystem auf einem einzigem Track, welcher verschiedene Dateien
+(kleine .IFO und .BUK Dateien und große .VOB Dateien) enthält.
+Sie sind echte Dateien und können von einem gemounteten Dateisystem einer
+unentschlüsselten DVD kopiert/abgespielt werden.
+</para>
+</formalpara>
+
+<para>
+Die .IFO-Dateien enthalten die Informationen zur Filmnavigation
+(Kapitel/Titel/Blickwinkel, Sprachtabellen etc.) und werden benötigt,
+um den .VOB Inhalt (den Film) zu lesen und zu interpretieren. Die .BUK-Dateien
+sind Backups davon. Sie nutzen überall <emphasis role="bold">Sektoren</emphasis>,
+so dass du Direktaddressierung von Sektoren auf dem
+Datenträger benötigst, um DVD-Navigation zu implementieren oder den
+Inhalt zu entschlüsseln.
+</para>
+
+<para>
+DVD-Unterstützung benötigt rohen Sektor-basierten Zugriff auf das
+Laufwerk. Leider musst du (unter Linux) root sein, um die Sektoraddresse einer
+Datei zu erhalten. Das ist der Grund, warum wir nicht den Dateisystemtreiber
+des Kernels nutzen sondern es im Userspace reimplementiert haben.
+<systemitem>libdvdread</systemitem> 0.9.x tut dies.
+Der UDF-Dateisystemtreiber des Kernels wird nicht benötigt, da sie bereits
+einen eigenen eingebauten UDF-Dateisystem-Treiber haben.
+Ebenso muss die DVD nicht gemountet werden, da der direkte Sektor-basierte Zugriff
+genutzt wird.
+</para>
+
+<para>
+Manchmal kann <filename>/dev/dvd</filename> nicht von Benutzern gelesen
+werden, deshalb implementierten die Autoren von <systemitem>libdvdread</systemitem>
+einen Emulations-Layer, welcher die Sektorenadressen in Dateinamen+Offsets
+überträgt und Raw-Zugriff auf dem gemounteten Dateisystem oder auch
+auf Festplatten emuliert.
+</para>
+
+<para>
+<systemitem>libdvdread</systemitem> akzeptiert sogar Mountpoints an Stelle von
+Gerätenamen für Raw-Zugriff und überprüft
+<filename>/proc/mounts</filename>, um den Gerätenamen herauszufinden.
+Es wurde für Solaris entwickelt, wo Gerätenamen dynamisch
+zugewiesen werden.
+</para>
+
+<para>
+Wenn du <application>MPlayer</application> mit dvdnav-Unterstützung compiliert hast,
+bleibt die Syntax derselbe, ausgenommen die Verwendung von dvdnav:// an Stelle von dvd://.
+</para>
+
+<formalpara>
+<title>DVD-Entschlüsselung</title>
+<para>
+DVD-Entschlüsselung geschieht durch <systemitem>libdvdcss</systemitem>. Die dafür
+verwendete Methode kann durch Umgebungsvariable <envar>DVDCSS_METHOD</envar> festgelegt werden,
+siehe Manpage für Details.
+</para>
+</formalpara>
+
+<para>
+<!-- Idee: (am Regioncode) hinzufuegen? -->
+<!-- Comment: Ich mag das Wort upgrade nicht. Oder besser
+     gesagt sollte der Text besser auf die Risiken und Fakten eingehen. -->
+RPC-1 DVD-Laufwerke schützen Regionseinstellunge nur durch Software.
+RPC-2-Laufwerke haben einen Hardwareschutz, welcher nur 5 Änderungen
+erlaubt. Es kann notwendig/empfehlenswert sein, die Firmware auf RPC-1
+zu aktualisieren, wenn du ein RPC-2 DVD-Laufwerk hast.
+Du kannst versuchen ein Firmwareupgrade für dein Laufwerk im Internet zu finden,
+<ulink url="http://forum.rpc-1.com/dl_all.php">dieses Firmware-Forum</ulink>
+kann ein guter Ausgangspunkt für deine Suche sein.
+Wenn es kein Firmwareupgrade für dein Laufwerk gibt, benutze das
+<ulink url="http://linvdr.org/projects/regionset/">regionset-Tool</ulink>,
+um den Regionscode deines DVD-Laufwerks (unter Linux) zu setzen.
+<emphasis role="bold">Warnung</emphasis>: Du kannst nur 5 mal den Regioncode ändern.
+</para>
+</sect1>
+
+
+<sect1 id="vcd">
+<title>VCD-Wiedergabe</title>
+<para>
+Für eine komplette Liste an verfügbaren Optionen lies bitte die
+Manpage. Die Syntax für eine Standard Video CD (VCS) lautet wie folgt:
+<screen>mplayer vcd://<replaceable>&lt;Track&gt;</replaceable> [-cdrom-device <replaceable>&lt;Gerät&gt;</replaceable>]</screen>
+Beispiel:
+<screen>mplayer vcd://2 -cdrom-device /dev/hdc</screen>
+Das Standard-VCD-Gerät ist <filename>/dev/cdrom</filename>. Wenn deine
+Installation davon abweicht, erstelle einen Symlink oder gib das genaue Gerät auf
+der Kommandozeile an mit der Option <option>-cdrom-device</option>.
+</para>
+
+<note>
+<para>
+<!-- TODO: have horrible performance reading VCD - zu ueberpruefen -->
+Mindenstens Plextor und einige SCSI-CD-ROM-Laufwerke von Toshiba haben eine
+schreckliche VCD-Leseleistung. Das liegt daran, daß der
+<systemitem>ioctl</systemitem> CDROMREADRAW für diese Laufwerke
+nicht vollstaendig implementiert ist. Wenn du ein bisschen Fachwissen über
+SCSI- Programmierung hast, <ulink url="../../tech/patches.txt">hilf uns</ulink>
+bitte, allgemeine SCSI-Unterstützggung für VCDs zu implementieren.
+</para>
+</note>
+
+<para>
+Inzwischen kannst du die Daten von VCDs mit
+<ulink url="http://ftp.ntut.edu.tw/ftp/OS/Linux/packages/X/viewers/readvcd/">readvcd</ulink>
+extrahieren und die ausgegebene Datei mit <application>MPlayer</application>
+abspielen.
+</para>
+
+<formalpara>
+<title>VCD-Struktur</title>
+<para>
+Eine Video CD (VCD) besteht aus CD-ROM XA Sektoren, z.B. CD-ROM Mode 2
+Form 1 und 2 Tracks:
+</para>
+</formalpara>
+
+<itemizedlist>
+<listitem>
+<para>
+Der erste Track ist im Format Mode 2 Form 2, was bedeutet, dass es
+L2-Fehlerkorrektur benutzt. Der Track enthält ein ISO-9660 Dateisystem
+mit 2048 Bytes/Sektor. Das Dateisystem enthält VCD Metadata-Informationen
+ebenso wie Standbilder, welche oft in Menüs benutzt werden.
+MPEG-Segmente für Menüs können auch im ersten Track gespeichert
+werden, die MPEGs müssen aber in eine Serie von 150-Sektoren-Einheiten
+gestückelt werden. Das ISO-9660 Dateisystem kann auch noch andere Dateien oder
+Programme enthalten, welche nicht für VCD-Betrieb erforderlich sind.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Der zweite und die restlichen Tracks sind generelle rohe 2324 Bytes/Sektor
+MPEG (Film) Tracks, welche ein MPEG-PS-Datenpaket pro Sektor enthalten.
+Diese sind im Format Mode 2 Form 1, so dass sie mehr Daten pro Sektor speichern
+können unter dem Verlust einiger Fehlerkorrektur. Es ist ebenso
+gültig, CD-DA Tracks in einer VCD nach dem ersten Track zu haben.
+Auf manchen Betriebssystemen gibt es ein paar Tricks, diese nicht-ISO-9660-Tracks
+im Dateisystem erscheinen zu lassen. Auf anderen Systemen wie GNU/Linux ist
+dies (noch) nicht der Fall. Hier können die MPEG-Daten
+<emphasis role="bold">nicht gemountet werden</emphasis>. Da sich die meisten Filme
+in einer solchen Art von Track befinden, solltest du zuerst <option>vcd://2</option> versuchen.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Es existieren ebenso VCDs ohne einen ersten Track (einzelner Track und
+überhaupt kein Dateisystem). Diese sind trotzudem abspielbar,
+können aber nicht gemountet werden.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Die Definition des Video-CD-Standards wird Philips "White Book" genannt und ist
+im Allgemeinen nicht online verfügbar, da es von Philips käuflich erworben werden
+muss. Detailliertere Informationen über Video-CDs befindet sich in der
+<ulink url="http://www.vcdimager.org/pub/vcdimager/manuals/0.7/vcdimager.html#SEC4">vcdimager- Documentation</ulink>.
+</para>
+</listitem>
+
+</itemizedlist>
+
+<formalpara>
+<title>.DAT Dateien</title>
+<para>
+Die ~600 MB Datei, die auf dem ersten Track einer gemounteten VCD sichtbar
+ist, ist keine richtige Datei! Es ist ein sogenanntes ISO-Gateway, geschaffen,
+um Windows den Zugriff auf solche Tracks zu geben (Windows erlaubt überhaupt
+keine direkten Zugriffe auf das Laufwerk). Unter Linux kannst du solche Dateien
+weder kopieren noch abspielen (sie enthalten Müll). Unter Windows ist dies
+möglich, da Windows ISO9660-Treiber das direkte Lesen der Tracks in diesen
+Dateien emuliert. Um eine .DAT Datei wiederzugeben, benötigst du einen
+Kernel-Treiber, welcher in der Linux-Version von PowerDVD zu finden ist.
+Es hat einen modifizierten ISO9660 Dateisystem-Treiber
+(<filename>vcdfs/isofs-2.4.X.o</filename>), welcher in der Lage ist,
+die rohen Tracks durch diese Schatten-.DAT-Dateien zu emulieren. Wenn du
+den Datenträger mit deren Treiber mountest, kannst du die .DAT Dateien
+kopieren und sogar mit <application>MPlayer</application> abspielen.
+Dies wird jedoch nicht mit dem Standard-ISO9660-Treiber des Linux-Kernels
+funktionieren! Benutze statt dessen <option>vcd://</option>. Alternativen
+für das Kopieren von VCDs sind der neue Kernel-Treiber
+<ulink url="http://www.elis.rug.ac.be/~ronsse/cdfs/">cdfs</ulink>
+(nicht Bestandteil des offiziellen Kernels), welcher CD-Sessions
+als Imagedateien darstellt, und
+<ulink url="http://cdrdao.sf.net/">cdrdao</ulink>,
+ein Bit-für-Bit CD-Grabbing/Kopier-Programm.
+</para>
+</formalpara>
+
+</sect1>
+
+
 <sect1 id="edl" xreflabel="Edit Decision Lists (EDL)">
 <title>Edit Decision Lists (EDL)</title>
 
@@ -1151,6 +1490,371 @@ kappen muss, um keine Daten an die Soundkarte zu schicken, die außerhalb des g�
 dies führt zu gestörtem Ton.
 </para>
 
+</sect2>
+
+</sect1>
+
+<sect1 id="tv-input" xreflabel="TV input">
+<title>TV-Input</title>
+
+<para>
+  Dieser Abschnitt behandelt das <emphasis role="bold">Anschauen/Grabben von einem V4L-kompatiblen TV-Empfänger</emphasis>.
+  Siehe Manpage für eine Beschreibung der TV-Optionen und Tastensteuerungen.
+</para>
+
+
+<sect2 id="tv-compilation">
+<title>Compilierung</title>
+
+<procedure>
+  <step>
+    <para>
+      Zuerst musst du neu compilieren. <filename>./configure</filename> wird die Kernelheader
+      vom v4l-Kram und die Existenz der <filename>/dev/video*</filename>-Einträge
+      automatisch erkennen und TV-Unterstützung wird eingebaut werden
+      (siehe Ausgaben von <filename>./configure</filename>).
+    </para>
+  </step>
+  <step>
+    <para>
+      Stelle sicher, dass dein Empfänger mit anderer TV-Software wie zum Beispiel
+      <application>XawTV</application> unter Linux läuft.
+    </para>
+  </step>
+</procedure>
+</sect2>
+
+<sect2 id="tv-tips">
+<title>Tipps zum Gebrauch</title>
+<para>
+  Die vollständige Liste der Optionen ist in der Manpage verfügbar.
+  Hier sind nur ein paar Tipps:
+<itemizedlist>
+  <listitem>
+    <para>
+      Benutze die Option <option>channels</option>. Ein Beispiel:
+      <screen>-tv channels=26-MTV1,23-TV2</screen>
+      Erklärung: Durch Verwendung dieser Option sind nur die Kanäle 26 und 23 in Gebrauch,
+      und es wird beim Kanalwechsel einen netten OSD-Text geben, der den Namen des Kanals
+      anzeigt. Leerzeichen im Kanalnamen müssen durch das Zeichen "_" ersetzt werden.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+      Wähle vernünftige Bildabmessungen. Die Abmessungen des resultierenden Bildes sollten durch
+      16 teilbar sein.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+      Wenn du das Video bei einer vertikalen Auflösung höher als halb der vollen
+      Auflösung einfängst (z.B. 288 für PAL oder 240 für NTSC), dann werden die
+      'Frames', die du erhältst, wirklich jeweils ausgelassene Paare von Feldern sein.
+      Je nach dem, was du mit dem Video anfängst, kannst du es in dieser Form belassen,
+      (zerstörend) deinterlacen oder die Paare zu einzelnen Feldern machen.
+    </para>
+    <para>
+      Ansonsten wirst du einen Film erhalten, der während schnellbewegten Szenen gestört ist,
+      und die Bitratenkontrolle wird vermutlich nicht in der Lage sein, die angegebene Bitrate
+      einzuhalten, da die Interlacing-Artefakte hohe Details produzieren und daher eine Menge
+      Bandbreite kosten. Du kannst Deinterlacing mit <option>-vf pp=DEINT_TYPE</option>
+      aktivieren. Normalerweise leistet <option>pp=lb</option> gute Arbeit, aber das ist
+      Geschmackssache. Schaue nach anderen Deinterlacing-Algorithmen im Handbuch und versuche
+      es mit denen.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+      Schneide tote Bereiche ab. Wenn du Video aufnimmst, sind die Bereiche an den Rändern
+      normalerweise schwarz oder enthalten Rauschen. Diese wiederum verbrauchen unnötige
+      Bandbreite. Genauer gesagt sind es nicht die schwarzen Bereiche selbst, sondern
+      die scharfen Übergänge zwischen dem schwarzen und dem helleren Videobild, die das tun.
+      Aber das ist für den Moment nicht so wichtig. Bevor du mit der Aufnahme beginnst,
+      passe alle Argumente der Option <option>crop</option> so an, dass der ganze Müll
+      an den Rändern abgeschnitten wird. Nochmal, vergiss nicht, die resultierenden
+      Abmessungen vernünftig zu halten.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+      Achte auf CPU-Load. Es sollte die 90%-Grenze die meiste Zeit über nicht überschreiten.
+      Wenn du einen großen Aufnahmepuffer hast, kann <application>MEncoder</application>
+      eine Überlastung für ein paar Sekunden überstehen, aber nicht mehr.
+      Es ist besser, 3D-OpenGL-Bildschirmschoner und ähnlichen Kram abzustellen.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+      Spiele nicht mit der Systemuhr herum. <application>MEncoder</application> benutzt
+      sie für A/V-Synchronisation. Wenn du die Systemuhr anpasst (vor allem rückwärtig),
+      verwirrt dies <application>MEncoder</application>, und du wirst Frames verlieren.
+      Das ist ein wichtiger Sachverhalt, wenn du mit einem Netzwerk verbunden bist und
+      Zeitsynchronisationssoftware wie NTP verwendest. Du musst NTP während des Aufnahmeprozesses
+      ausschalten, wenn du zuverlässig aufnehmen möchtest.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+      Ändere das <option>outfmt</option> nicht, es sei denn, du weißt, was du tust, oder
+      deine Karte/Treiber den Standard (YV12-Farbraum) wirklich nicht unterstützt.
+      In älteren Versionen von <application>MPlayer</application>/<application>MEncoder</application>
+      war es notwendig, das Ausgabeformat anzugeben. Diese Sache sollte in aktuellen Releases
+      behoben sein, und <option>outfmt</option> wird nicht weiter benötigt. Die Standardeinstellung
+      genügt den meisten Zwecken. Zum Beispiel, wenn du mit
+      <systemitem class="library">libavcodec</systemitem> nach DivX aufnimmst und
+      <option>outfmt=RGB24</option> angibst, um die Qualität der aufgenommenen Bilder zu erhöhen,
+      so wird das aufgenommene Bild später tatsächlich zurück zu YV12 konvertiert.
+      Die einzige Sache, die du erreichst, ist eine massive Verschwendung von CPU-Power.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+      Um den Farbraum I420 anzugeben (<option>outfmt=i420</option>), musst du die Option
+      <option>-vc rawi420</option> hinzufügen. Das liegt an einem Konflikt mit einem
+      Intel Indeo Videocodec.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+      Es gibt viele Möglichkeiten, Audio aufzunehmen. Du kannst den Ton grabben entweder
+      mit deiner Soundkarte über ein externes Kabel zwischen Videokarte und Line-In oder
+      durch Benutzung des eingebauten ADC im bt878-Chip. In letzterem Falle musst den den
+      Treiber <emphasis role="bold">btaudio</emphasis> laden. Lies die Datei
+      <filename>linux/Documentation/sound/btaudio</filename> (im Kernel-Tree, nicht
+      in dem von <application>MPlayer</application>) für ein paar Anweisungen,
+      wie dieser Treiber verwendet wird.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para>
+      Wenn <application>MEncoder</application> das Audiogerät nicht öffnen kann,
+      stelle sicher, dass es wirklich verfügbar ist. Es kann Ärger geben mit Soundservern
+      wie aRts (KDE) oder ESD (GNOME). Wenn du eine Vollduplex-Soundkarte hast
+      (fast jede vernünftige Karte unterstützt dies heutzutage) und du KDE laufen hast,
+      probiere die Option "Vollduplex" im Eigenschaftenmenü des Soundservers.
+    </para>
+  </listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+
+<sect2 id="tv-examples">
+<title>Beispiele</title>
+
+<informalexample>
+  <para>
+    Dummy-Ausgabe zu AAlib :)
+    <screen>mplayer -tv driver=dummy:width=640:height=480 -vo aa tv://</screen>
+  </para>
+</informalexample>
+
+<informalexample>
+  <para>
+    Input von Standard-V4L:
+    <screen>mplayer -tv driver=v4l:width=640:height=480:outfmt=i420 -vc rawi420 -vo xv tv://</screen>
+  </para>
+</informalexample>
+
+<informalexample>
+  <para>
+    Ein gehobenes Beispiel. Dies sorgt dafür, dass <application>MEncoder</application>
+    das volle PAL-Bild einfängt, die Ränder abschneidet und einen Deinterlacer mit einem linearen
+    Blendalgorithmus auf das Bild anwendet. Der Ton wird mit dem LAME-Codec bei konstanter Bitrate
+    von 64kbps komprimiert. Diese Einstellungen eigenen sich für das Einfangen von Filmen.
+    <screen>
+mencoder -tv driver=v4l:width=768:height=576 \
+-ovc lavc -lavcopts vcodec=mpeg4:vbitrate=900 \
+-oac mp3lame -lameopts cbr:br=64 \
+-vf crop=720:544:24:16,pp=lb -o <replaceable>output.avi</replaceable> tv://<!--
+    --></screen>
+  </para>
+</informalexample>
+
+<informalexample>
+  <para>
+    Dies wird zusätzlich die Bildabmessungen auf 384x288 ändern und das Video mit
+    einer Bitrate von 250kbps im hochqualitativen Modus encodieren.
+    Die Option vqmax lockert den Quantisierungsparameter und erlaubt dem Videokompressor, eine
+    sehr niedrige Bitrate zu erlangen, sogar auf Kosten der Qualität. Dies kann verwendet werden
+    für das Einfangen von langen TV-Serien, wo die Videoqualität nicht so wichtig ist.
+    <screen>
+mencoder -tv driver=v4l:width=768:height=576 \
+-ovc lavc -lavcopts vcodec=mpeg4:vbitrate=350:vhq:vqmax=31:keyint=300 \
+-oac mp3lame -lameopts cbr:br=48 \
+-vf crop=720:540:24:18,pp=lb,scale=384:288 -sws 1 -o <replaceable>output.avi</replaceable> tv://<!--
+    --></screen>
+    Es ist außerdem möglich, in der Option <option>-tv</option> kleinere Bildabmessungen
+    anzugeben und die Softwareskalierung auszulassen, aber dieser Ansatz nutzt die maximal
+    verfügbaren Informationen und ist ein wenig resistenter gegen Störungen. Die bt8x8-Chips
+    können das Mitteln der Pixel auf Grund einer Hardwarebeschränkung nur in horizontaler
+    Richtung durchführen.
+  </para>
+</informalexample>
+</sect2>
+</sect1>
+
+<sect1 id="tv-teletext">
+<title>Videotext</title>
+
+<para>Videotext ist momentan nur in MPlayer verfügbar, für die Treiber v4l und v4l2.</para>
+
+<sect2 id="tv-teletext-implementation-notes">
+<title>Anmerkungen zur Implementierung</title>
+
+<para>
+  <application>MPlayer</application> unterstützt regulären Text, Grafiken und Navigationslinks.
+  Leider werden farbige Seiten momentan nicht vollständig unterstützt - alle Seiten erscheinen
+  in Graustufen. Untertitelseiten (auch bekannt als "Closed Captions") werden auch unterstützt.
+</para>
+
+<para>
+  <application>MPlayer</application> beginnt beim Beginn vom TV-Empfang damit, alle Videoseiten
+  zwischenzuspeichern, damit du nicht warten musst, bis die gewünschte Seite geladen ist.
+</para>
+
+<para>
+  Anmerkung: Benutzung von Videotext mit <option>-vo xv</option> verursacht komische Farben.
+</para>
+
+</sect2>
+
+<sect2 id="tv-teletext-usage">
+<title>Videotext verwenden</title>
+
+<para>
+  Um Decodierung von Videotext zu aktivieren, musst du das VBI-Gerät angeben,
+  von dem die Videotextdaten empfangen werden (üblicherweise
+  <filename>/dev/vbi0</filename> unter Linux). Dies kann erreicht werden durch Angabe
+  der Option <option>tdevice</option> in deiner Konfigurationsdatei, siehe unten:
+  <screen>tv=tdevice=/dev/vbi0</screen>
+</para>
+
+<para>
+  Du musst möglicherweise den Videotextsprachcode für dein Land angeben.
+  Um dir alle Sprachcodes anzeigen zu lassen, verwende
+  <screen>tv=tdevice=/dev/vbi0:tlang=<replaceable>-1</replaceable></screen>
+  Hier ist ein Beispiel für russisch:
+  <screen>tv=tdevice=/dev/vbi0:tlang=<replaceable>33</replaceable></screen>
+</para>
+
+</sect2>
+</sect1>
+
+
+<sect1 id="radio">
+<title>Radio</title>
+
+<sect2 id="radio-input" xreflabel="Radio input">
+<title>Radio Input</title>
+
+<para>
+  Dieser Abschnitt behandelt das Hören von Radio mittels eines V4L-kompatiblen Radioempfängers. Siehe Manpage für eine Beschreibung der Radio-Optionen und Tastensteuerungen.
+</para>
+
+<sect3 id="radio-compilation">
+<title>Kompilierung</title>
+
+<procedure>
+<step>
+<para>
+  Zuerst muss <application>MPlayer</application> neu kompiliert werden mittels <filename>./configure</filename> mit
+  <option>--enable-radio</option> und (falls Aufzeichnen untersttzt werden soll)
+  <option>--enable-radio-capture</option>.
+</para>
+</step>
+<step>
+<para>
+  Stelle sicher, dass dein Empfänger mit anderer Radio Software für Linux läuft, wie z.B. <application>XawTV</application>.
+</para>
+</step>
+</procedure>
+</sect3>
+
+<sect3 id="radio-tips">
+<title>Tips zum Gebrauch</title>
+<para>
+  Eine vollständige Liste aller Optionen ist in der Manpage.
+  Hier sind nur ein paar Tips:
+</para>
+<itemizedlist>
+<listitem>
+<para>
+  Benutze die Option <option>channels</option>. Ein Beispiel:
+  <screen>-radio channels=104.4-Sibir,103.9-Maximum</screen>
+  Erklärung: Mit dieser Option sind nur die Frequenzen 104.4 und 103.9 in Gebrauch. Ein netter OSD-Text wird beim Kanalwechsel den Namen des Kanals angeben.
+  Leerzeichen im Kanalnamen müssen ersetzt werden durch das Zeichen "_".
+</para>
+</listitem>
+
+<listitem>
+<para>
+  Es gibt mehrere Möglichkeiten, Radio aufzuzeichnen. Das Sound-Signal kann entweder mit der Soundkarte und einer externen Kabelverbindung
+  zwischen dem Line-In der Soundkarte und der TV-Karte erfasst werden,
+  oder mittels des eingebauten ADC im saa7134-Chip. In letzterem Falle ist es nötig, den Treiber
+  <systemitem>saa7134-alsa</systemitem> oder <systemitem>saa7134-oss</systemitem> zu laden.
+</para>
+</listitem>
+
+<listitem>
+<para>
+  <application>MEncoder</application> ist zum Aufzeichnen von Radio ungeeignet, da es einen Video Stream benötigt. Daher kannst du entweder
+  <application>arecord</application> vom ALSA Projekt benutzen, oder die
+  Option <option>-ao pcm:file=file.wav</option>. In letzterem Falle wirst du keinen Sound hören können
+  (es sei denn, du hast ein Line-In Kabel und hast den Line-In Kanal nicht stumm geschaltet).
+</para>
+</listitem>
+</itemizedlist>
+</sect3>
+
+<sect3 id="radio-examples">
+<title>Beispiele</title>
+
+<informalexample>
+<para>
+  Input von Standard-V4L (mittels Line-In Kabel, keine Aufzeichnung):
+  <screen>mplayer radio://104.4</screen>
+</para>
+</informalexample>
+
+<informalexample>
+<para>
+  Input von Standard-V4L (mittels Line-In Kabel, keine Aufzeichnung,
+  V4Lv1 Interface):
+  <screen>mplayer -radio driver=v4l radio://104.4</screen>
+</para>
+</informalexample>
+
+<informalexample>
+<para>
+  Abspielen des zweiten Kanals aus der Kanalliste:
+  <screen>mplayer -radio channels=104.4=Sibir,103.9=Maximm  radio://2</screen>
+</para>
+</informalexample>
+
+<informalexample>
+<para>
+Leiten des Sounds über den PCI-Bus vom internen ADC des Radio-Empfängers.
+In diesem Beispiel wird der Empfänger als zweite Soundkarte genutzt (ALSA device hw:1,0).
+Für saa7134-basierte Karten muss entweder das Modul
+<systemitem>saa7134-alsa</systemitem> oder <systemitem>saa7134-oss</systemitem> geladen werden.
+<note>
+  <para>Werden ALSA-Gerätenamen benutzt, so müssen Doppelpunkte durch Gleichheitszeichen und Kommata durch Punkte ersetzt werden.
+    <screen>mplayer -rawaudio rate=32000 -radio adevice=hw=1.0:arate=32000:channels=104.4=Sibir,103.9=Maximm  radio://2/capture</screen>
+  </para>
+</note>
+</para>
+</informalexample>
+</sect3>
 </sect2>
 
 </sect1>

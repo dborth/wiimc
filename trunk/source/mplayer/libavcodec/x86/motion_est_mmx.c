@@ -427,7 +427,9 @@ PIX_SAD(mmx2)
 
 void dsputil_init_pix_mmx(DSPContext* c, AVCodecContext *avctx)
 {
-    if (mm_flags & FF_MM_MMX) {
+    int mm_flags = av_get_cpu_flags();
+
+    if (mm_flags & AV_CPU_FLAG_MMX) {
         c->pix_abs[0][0] = sad16_mmx;
         c->pix_abs[0][1] = sad16_x2_mmx;
         c->pix_abs[0][2] = sad16_y2_mmx;
@@ -440,7 +442,7 @@ void dsputil_init_pix_mmx(DSPContext* c, AVCodecContext *avctx)
         c->sad[0]= sad16_mmx;
         c->sad[1]= sad8_mmx;
     }
-    if (mm_flags & FF_MM_MMX2) {
+    if (mm_flags & AV_CPU_FLAG_MMX2) {
         c->pix_abs[0][0] = sad16_mmx2;
         c->pix_abs[1][0] = sad8_mmx2;
 
@@ -456,7 +458,7 @@ void dsputil_init_pix_mmx(DSPContext* c, AVCodecContext *avctx)
             c->pix_abs[1][3] = sad8_xy2_mmx2;
         }
     }
-    if ((mm_flags & FF_MM_SSE2) && !(mm_flags & FF_MM_3DNOW) && avctx->codec_id != CODEC_ID_SNOW) {
+    if ((mm_flags & AV_CPU_FLAG_SSE2) && !(mm_flags & AV_CPU_FLAG_3DNOW) && avctx->codec_id != CODEC_ID_SNOW) {
         c->sad[0]= sad16_sse2;
     }
 }

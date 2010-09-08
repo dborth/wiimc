@@ -42,6 +42,7 @@
 
 #include "libaf/af_format.h"
 #include "libmpcodecs/dec_teletext.h"
+#include "libmpcodecs/vd_ffmpeg.h"
 
 #ifdef CONFIG_ASS
 #include "libass/ass.h"
@@ -254,6 +255,21 @@ demuxer_t *new_demuxer(stream_t *stream, int type, int a_id, int v_id,
     return d;
 }
 
+const char *sh_sub_type2str(int type)
+{
+    switch (type) {
+    case 't': return "text";
+    case 'm': return "movtext";
+    case 'a': return "ass";
+    case 'v': return "vobsub";
+    case 'x': return "xsub";
+    case 'b': return "dvb";
+    case 'd': return "dvb-teletext";
+    case 'p': return "hdmv pgs";
+    }
+    return "unknown";
+}
+
 sh_sub_t *new_sh_sub_sid(demuxer_t *demuxer, int id, int sid, const char *lang)
 {
     if (id > MAX_S_STREAMS - 1 || id < 0) {
@@ -445,12 +461,9 @@ static void ds_add_packet_internal(demux_stream_t *ds, demux_packet_t *dp)
 static void allocate_parser(AVCodecContext **avctx, AVCodecParserContext **parser, unsigned format)
 {
     enum CodecID codec_id = CODEC_ID_NONE;
-    extern int avcodec_initialized;
-    if (!avcodec_initialized) {
-        avcodec_init();
-        avcodec_register_all();
-        avcodec_initialized = 1;
-    }
+
+    init_avcodec();
+
     switch (format) {
     case 0x2000:
     case 0x332D6361:
@@ -1291,6 +1304,7 @@ int demux_seek(demuxer_t *demuxer, float rel_seek_secs, float audio_delay,
     demuxer->stream->eof = 0;
     demuxer->video->eof = 0;
     demuxer->audio->eof = 0;
+    demuxer->sub->eof = 0;
 
     if (flags & SEEK_ABSOLUTE)
         pts = 0.0f;

@@ -23,7 +23,7 @@
 
 #define LIBAVFORMAT_VERSION_MAJOR 52
 #define LIBAVFORMAT_VERSION_MINOR 78
-#define LIBAVFORMAT_VERSION_MICRO  2
+#define LIBAVFORMAT_VERSION_MICRO  3
 
 #define LIBAVFORMAT_VERSION_INT AV_VERSION_INT(LIBAVFORMAT_VERSION_MAJOR, \
                                                LIBAVFORMAT_VERSION_MINOR, \
@@ -34,6 +34,26 @@
 #define LIBAVFORMAT_BUILD       LIBAVFORMAT_VERSION_INT
 
 #define LIBAVFORMAT_IDENT       "Lavf" AV_STRINGIFY(LIBAVFORMAT_VERSION)
+
+/**
+ * Those FF_API_* defines are not part of public API.
+ * They may change, break or disappear at any time.
+ */
+#ifndef FF_API_MAX_STREAMS
+#define FF_API_MAX_STREAMS   (LIBAVFORMAT_VERSION_MAJOR < 53)
+#endif
+#ifndef FF_API_OLD_METADATA
+#define FF_API_OLD_METADATA  (LIBAVFORMAT_VERSION_MAJOR < 53)
+#endif
+#ifndef FF_API_URL_CLASS
+#define FF_API_URL_CLASS     (LIBAVFORMAT_VERSION_MAJOR >= 53)
+#endif
+#ifndef FF_API_URL_RESETBUF
+#define FF_API_URL_RESETBUF       (LIBAVFORMAT_VERSION_MAJOR < 53)
+#endif
+#ifndef FF_API_REGISTER_PROTOCOL
+#define FF_API_REGISTER_PROTOCOL  (LIBAVFORMAT_VERSION_MAJOR < 53)
+#endif
 
 /**
  * I return the LIBAVFORMAT_VERSION_INT constant.  You got
@@ -140,7 +160,7 @@ typedef struct AVMetadataConv AVMetadataConv;
 AVMetadataTag *
 av_metadata_get(AVMetadata *m, const char *key, const AVMetadataTag *prev, int flags);
 
-#if LIBAVFORMAT_VERSION_MAJOR == 52
+#if FF_API_OLD_METADATA
 /**
  * Set the given tag in *pm, overwriting an existing tag.
  *
@@ -516,7 +536,7 @@ typedef struct AVStream {
      */
     int64_t duration;
 
-#if LIBAVFORMAT_VERSION_INT < (53<<16)
+#if FF_API_OLD_METADATA
     char language[4]; /**< ISO 639-2/B 3-letter language code (empty string if undefined) */
 #endif
 
@@ -537,7 +557,9 @@ typedef struct AVStream {
 
 #if LIBAVFORMAT_VERSION_INT < (53<<16)
     int64_t unused[4+1];
+#endif
 
+#if FF_API_OLD_METADATA
     char *filename; /**< source filename of the stream */
 #endif
 
@@ -606,7 +628,7 @@ typedef struct AVStream {
  */
 typedef struct AVProgram {
     int            id;
-#if LIBAVFORMAT_VERSION_INT < (53<<16)
+#if FF_API_OLD_METADATA
     char           *provider_name; ///< network name for DVB streams
     char           *name;          ///< service name for DVB streams
 #endif
@@ -624,13 +646,13 @@ typedef struct AVChapter {
     int id;                 ///< unique ID to identify the chapter
     AVRational time_base;   ///< time base in which the start/end timestamps are specified
     int64_t start, end;     ///< chapter start/end time in time_base units
-#if LIBAVFORMAT_VERSION_INT < (53<<16)
+#if FF_API_OLD_METADATA
     char *title;            ///< chapter title
 #endif
     AVMetadata *metadata;
 } AVChapter;
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_MAX_STREAMS
 #define MAX_STREAMS 20
 #endif
 
@@ -653,7 +675,7 @@ typedef struct AVFormatContext {
     char filename[1024]; /**< input or output filename */
     /* stream info */
     int64_t timestamp;
-#if LIBAVFORMAT_VERSION_INT < (53<<16)
+#if FF_API_OLD_METADATA
     char title[512];
     char author[512];
     char copyright[512];

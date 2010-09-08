@@ -94,6 +94,7 @@ function_check() {
 int main(void) { $2; return 0; }
 EOF
   shift
+  shift
   compile_check $TMPC $@
 }
 
@@ -355,6 +356,7 @@ Codecs:
   --disable-libavformat_so  disable shared libavformat [autodetect]
   --disable-libpostproc_so  disable shared libpostproc [autodetect]
   --disable-libswscale_so   disable shared libswscale [autodetect]
+  --enable-system-ffmpeg    use system ffmpeg libraries [no]
   --disable-libavcodec_mpegaudio_hp disable high precision audio decoding
                                     in libavcodec [enabled]
   --disable-tremor-internal disable internal Tremor [enabled]
@@ -588,6 +590,7 @@ _libavutil_so=auto
 _libavcodec_a=auto
 _libavcore_a=auto
 _libavcore_so=auto
+_system_ffmpeg=no
 _libopencore_amrnb=auto
 _libopencore_amrwb=auto
 libopenjpeg=auto
@@ -803,7 +806,7 @@ _vstream=auto
 _pthreads=auto
 _w32threads=auto
 _ass=auto
-ass_internal=no
+ass_internal=auto
 _rpath=no
 _asmalign_pot=auto
 _stream_cache=yes
@@ -1246,6 +1249,12 @@ for ac_option do
   --disable-libswscale_a)       _libswscale_a=no        ;;
   --enable-libswscale_so)       _libswscale_so=yes      ;;
   --disable-libswscale_so)      _libswscale_so=no       ;;
+  --enable-system-ffmpeg)       _libavcore_a=no   ; _libavcore_so=yes
+                                _libavutil_a=no   ; _libavutil_so=yes
+                                _libavcodec_a=no  ; _libavcodec_so=yes
+                                _libswscale_a=no  ; _libswscale_so=yes
+                                _libavformat_a=no ; _libavformat_so=yes
+                                _libpostproc_a=no ; _libpostproc_so=yes ;;
   --enable-libavcodec_mpegaudio_hp)     _libavcodec_mpegaudio_hp=yes    ;;
   --disable-libavcodec_mpegaudio_hp)    _libavcodec_mpegaudio_hp=no     ;;
 
@@ -3418,7 +3427,7 @@ else
   def_network='#undef CONFIG_NETWORK'
   def_networking='#undef CONFIG_NETWORKING'
   _ftp=no
-  libavprotocols=$(echo $libavprotocols | sed -e s/GOPHER_PROTOCOL// -e s/HTTP_PROTOCOL// -e s/RTMP_PROTOCOL// -e s/RTP_PROTOCOL// -e s/TCP_PROTOCOL// -e s/UDP_PROTOCOL//)
+  libavprotocols=$(echo $libavprotocols | sed -e s/GOPHER_PROTOCOL// -e s/HTTP_PROTOCOL// -e s/RTMP_PROTOCOL// -e s/RTP_PROTOCOL// -e s/TCP_PROTOCOL// -e s/UDP_PROTOCOL// -e s/MMSH_PROTOCOL// -e s/MMST_PROTOCOL//)
   libavdemuxers=$(echo $libavdemuxers | sed -e s/RTSP_DEMUXER// -e s/SDP_DEMUXER//)
 fi
 echores "$networking"
@@ -3779,7 +3788,8 @@ echores "$_soundcard_h"
 
 echocheck "sys/dvdio.h"
 _dvdio=no
-header_check sys/dvdio.h && _dvdio=yes
+# FreeBSD 8.1 has broken dvdio.h
+header_check_broken sys/types.h sys/dvdio.h && _dvdio=yes
 if test "$_dvdio" = yes ; then
   def_dvdio='#define DVD_STRUCT_IN_SYS_DVDIO_H 1'
 else
@@ -5323,6 +5333,10 @@ EOF
     fi
     if cc_check $_inc_tmp $_ld_tmp >>"$TMPLOG" 2>&1 ; then
           _sdl=yes
+    elif cc_check $_inc_tmp $_ld_tmp -lstdc++ >>"$TMPLOG" 2>&1 ; then
+          # HACK for BeOS/Haiku SDL
+          _ld_tmp="$_ld_tmp -lstdc++"
+          _sdl=yes
      fi
   fi
 fi
@@ -5687,7 +5701,7 @@ echocheck "aRts"
 if test "$_arts" = auto ; then
   _arts=no
   if ( artsc-config --version ) >> "$TMPLOG" 2>&1 ; then
-    header_check artsc.h $(artsc-config --libs) $(artsc-config --cflags) &&
+    function_check artsc.h "arts_init()" $(artsc-config --libs) $(artsc-config --cflags) &&
       _arts=yes
   fi
 fi
@@ -6403,9 +6417,8 @@ EOF
     _ass=no
     cc_check $($_freetypeconfig --cflags) $($_freetypeconfig --libs) && _ass=yes
     if test "$_ass" = no ; then
-        ass_internal=no
         res_comment="FreeType >= 2.2.1 needed"
-    elif test "$ass_internal" = no ; then
+    elif test "$ass_internal" != yes ; then
     cat > $TMPC << EOF
 #include <ass/ass.h>
 int main(void) {
@@ -6419,8 +6432,10 @@ EOF
         if cc_check -lass ; then
             res_comment="external"
             extra_ldflags="$extra_ldflags -lass"
-        else
+        elif test "$ass_internal" = auto ; then
             ass_internal=yes
+        else
+            _ass=no
         fi
     fi
 fi
@@ -6433,6 +6448,7 @@ if test "$ass_internal" = yes ; then
     def_ass_internal='#define CONFIG_ASS_INTERNAL 1'
 else
     def_ass_internal='#undef CONFIG_ASS_INTERNAL'
+    ass_internal=no
 fi
 echores "$_ass"
 
@@ -9483,7 +9499,7 @@ EOF
 
 
 if test "$_mtrr" = yes ; then
-  echo "Please check mtrr settings at /proc/mtrr (see DOCS/HTML/$doc_lang/video.html#mtrr)"
+  echo "Please check mtrr settings at /proc/mtrr (see DOCS/HTML/$language_doc/video.html#mtrr)"
   echo
 fi
 
@@ -9510,7 +9526,7 @@ If you used one of these options (except --enable-menu and similar ones that
 turn on internal features) and experience a compilation or linking failure,
 make sure you have passed the necessary compiler/linker flags to configure.
 
-If you suspect a bug, please read DOCS/HTML/$doc_lang/bugreports.html.
+If you suspect a bug, please read DOCS/HTML/$language_doc/bugreports.html.
 
 EOF
 

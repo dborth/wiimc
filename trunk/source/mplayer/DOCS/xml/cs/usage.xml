@@ -432,6 +432,295 @@ protokoly, jako MMS, RTSP, a tak dále.
 <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
 
+<sect1 id="drives">
+<title>CD/DVD mechaniky</title>
+
+<para>
+Moderní CD-ROM mechaniky dosahují velmi vysokých otáček a některé z nich
+mohou pracovat i se sníženými otáčkami. Existuje několik důvodů, pro
+které byste mohli chtít změnit rychlost CD-ROM mechaniky:
+</para>
+
+<itemizedlist>
+<listitem><para>
+  Byly zprávy o chybách čtení při vysokých rychlostech, zvláště u špatně
+  vylisovaných CD-ROMů. Z těchto důvodů může snížení rychlosti působit
+  jako prevence ztráty dat.
+</para></listitem>
+
+<listitem><para>
+  Mnoho CD-ROM mechanik je nechutně hlučných, nižší rychlost může omezit
+  tento hluk.
+</para></listitem>
+</itemizedlist>
+
+<!-- ********** -->
+
+<sect2 id="drives_linux">
+<title>Linux</title>
+
+<para>
+Můžete snížit rychlost IDE CD-ROM mechanik pomocí <command>hdparm</command>,
+<command>setcd</command> nebo <command>cdctl</command>. Pracuje to asi takto:
+<screen>hdparm -E <replaceable>[rychlost]</replaceable> <replaceable>[mechanika cdrom]</replaceable></screen>
+<screen>setcd -x <replaceable>[rychlost]</replaceable> <replaceable>[mechanika cdrom]</replaceable></screen>
+<screen>cdctl -bS <replaceable>[rychlost]</replaceable></screen>
+</para>
+
+<para>
+Pokud používáte SCSI emulaci, budete muset předat tato nastavení do skutečného
+IDE zařízení, nikoli emulovaného SCSI zařízení.
+</para>
+
+<para>
+Pokud máte práva root-a, následující příkaz vám rovněž může pomoci:
+<screen>echo file_readahead:2000000 &gt; /proc/ide/<replaceable>[mechanika cdrom]</replaceable>/settings</screen>
+</para>
+
+<para>
+To nastaví čtení napřed na 2MB, což pomůže při poškrábaných médiích.
+Pokud ji však nastavíte příliš vysoko, bude mechanika stále zrychlovat a
+zpomalovat, což výrazně sníží její výkon.
+Doporučujeme vám rovněž vyladit vaši CD-ROM mechaniku pomocí <command>hdparm</command>:
+<screen>hdparm -d1 -a8 -u1 <replaceable>[cdrom zařízení]</replaceable></screen>
+</para>
+
+<para>
+To zapne DMA přístup, čtení napřed a odmaskování IRQ (přečtěte si man stránku
+programu <command>hdparm</command> pro podrobné vysvětlení).
+</para>
+
+<para>
+Prostudujte si
+„<filename>/proc/ide/<replaceable>(cdrom zařízení)</replaceable>/settings</filename>“
+pro jemné doladění vaší CD-ROM.
+</para>
+
+<para>
+SCSI mechaniky nemají jednotný způsob pro nastavení těchto parametrů
+(Znáte nějaký? Řekněte nám jej!). Existuje nástroj, který pracuje se
+<ulink url="http://das.ist.org/~georg/">SCSI mechanikami Plextor</ulink>.
+</para>
+</sect2>
+
+<!-- ********** -->
+
+<sect2 id="drives_freebsd">
+<title>FreeBSD</title>
+
+<para>rychlost:
+<screen>
+cdcontrol [-f <replaceable>zařízení</replaceable>] speed <replaceable>[rychlost]</replaceable>
+</screen>
+</para>
+
+<para>DMA:
+<screen>
+sysctl hw.ata.atapi_dma=1
+</screen>
+</para>
+
+</sect2>
+
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<sect1 id="dvd">
+<title>Přehrávání DVD</title>
+
+<para>
+Úplný seznam dostupných voleb naleznete v man stránce.
+Syntaxe pro přehrání standardního DVD je následující:
+<screen>
+mplayer dvd://<replaceable>&lt;track&gt;</replaceable> [-dvd-device <replaceable>&lt;DVD_zařízení&gt;</replaceable>]
+</screen>
+</para>
+
+<para>
+Příklad:
+<screen>mplayer dvd://1 -dvd-device /dev/hdc</screen>
+</para>
+
+<para>
+Pokud jste kompilovali <application>MPlayer</application> s podporou dvdnav,
+je syntaxe stejná až na to, že musíte používat dvdnav:// místo dvd://.
+</para>
+
+<para>
+Výchozím DVD zařízením je <filename>/dev/dvd</filename>. Pokud se vaše nastavení
+liší, vytvořte symlink, nebo uveďte správné zařízení na příkazovém řádku
+pomocí volby <option>-dvd-device</option>.
+</para>
+
+<para>
+<application>MPlayer</application> používá <systemitem>libdvdread</systemitem> a
+<systemitem>libdvdcss</systemitem> pro přehrávání a dekódování DVD. Tyto dvě
+knihovny jsou obsaženy ve zdrojových kódech
+<application>MPlayer</application>u, nemusíte je tedy instalovat zvlášť.
+Můžete rovněž použít systémové verze těchto knihoven, ale toto řešení
+nedoporučujeme, protože může vést k chybám,
+nekompatibilitě knihovny a nižší rychlosti.
+</para>
+
+<note><para>
+V případě problémů s dekódováním DVD, zkuste vypnout supermount a podobná udělátka.
+Některé RPC-2 mechaniky mohou rovněž vyžadovat nastavení region kódu.
+</para></note>
+
+<formalpara>
+<title>Dekódování DVD</title>
+<para>
+Dekódování DVD provádí <systemitem>libdvdcss</systemitem>. Metodu
+můžete zvolit pomocí proměnné prostředí <envar>DVDCSS_METHOD</envar>,
+detaIly viz manuálová stránka.
+</para>
+</formalpara>
+
+<sect2 id="region_code">
+<title>Kód regionu</title>
+<para>
+DVD mechaniky v současnosti přicházejí s nesmyslným omezením nazvaným
+<ulink url="http://en.wikipedia.org/wiki/DVD_region_code">kód regionu</ulink>.
+To je způsob jak přinutit DVD mechaniku akceptovat pouze DVD vyrobené pro
+jeden ze šesti různých regionů na které byl rozdělen svět. Jak si může skupina lidí
+zasednout ke kulatému stolu, přijít s takovým nápadem a čekat, že se svět
+21. století skloní před jejich vůlí je naprosto nepochopitelné
+</para>
+
+<para>
+Mechaniky, které vynucují nastavení regionu poze softwarově jsou známy také jako
+RPC-1 a ty, které to dělají v hardware jako RPC-2. Mechaniky RPC-2 umožňují změnu
+kódu regionu pětkrát a pak zůstane pevný.
+V Linuxu můžete použít nástroj
+<ulink url="http://linvdr.org/projects/regionset/">regionset</ulink>
+pro nastavení kódu regionu vaší DVD mechaniky.
+</para>
+
+<para>
+Naštěstí je možné konvertovat RPC-2 mechaniky na RPC-1 pomocí
+upgrade firmware. Vyplňte modelové číslo vaší DVD mechaniky do svého oblíbeného
+vyhledávače, nebo se podívejte do fóra a sekce download
+<ulink url="http://www.rpc1.org/">„Firmware stránek“</ulink>.
+Ačkoli platí obvyklé „kazy“ upgradů fimware, zkušenosti se zbavením se
+vynucování region kódů jsou obecně kladné.
+</para>
+</sect2>
+
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<sect1 id="vcd">
+<title>Přehrávání VCD</title>
+<para>
+Úplný seznam dostupných voleb naleznete v man stránce. Syntaxe pro standardní
+Video CD (VCD) je následující:
+<screen>mplayer vcd://<replaceable>&lt;stopa&gt;</replaceable> [-cdrom-device <replaceable>&lt;zařízení&gt;</replaceable>]</screen>
+Příklad:
+<screen>mplayer vcd://2 -cdrom-device /dev/hdc</screen>
+Výchozím VCD zařízením je <filename>/dev/cdrom</filename>. Pokud se vaše nastavení
+liší, vytvořte symlink nebo uveďte správné zařízení na příkazovém řádku pomocí volby
+<option>-cdrom-device</option>.
+</para>
+
+<note><para>
+Minimálně SCSI CD-ROM mechaniky Plextor a Toshiba vykazují mizerný výkon
+při čtení VCD. To proto, že CDROMREADRAW <systemitem>ioctl</systemitem>
+není pro tyto mechaniky plně implementováno. Pokud máte zkušenosti se
+SCSI programováním, prosíme
+<ulink url="../../tech/patches.txt">pomozte nám</ulink>
+implementovat obecnou SCSI podporu pro VCD.
+</para></note>
+
+<para>
+Mezitím můžete extrahovat data z VCD pomocí
+<ulink url="http://ftp.ntut.edu.tw/ftp/OS/Linux/packages/X/viewers/readvcd/">readvcd</ulink>
+a výsledný soubor přehrát v <application>MPlayer</application>u.
+</para>
+
+<formalpara>
+<title>Struktura VCD</title>
+<para>
+Video CD (VCD) je tvořeno CD-ROM XA sektory, čili stopy CD-ROM mode 2
+třída 1 a 2:
+<itemizedlist>
+<listitem><para>
+  První stopa je ve formátu mode 2 třída 2 což znamená, že používá L2
+  korekci chyb. Stopa obsahuje souborový systém ISO-9660 s 2048
+  bajty/sektor. Tento souborový systém obsahuje VCD metadata informace,
+  spolu se statickými snímky často používanými v menu. MPEG segmenty menu
+  mohou být rovněž uloženy v této první stopě, ale tyto MPEGy musí být
+  rozsekány na série 150 sektorových chunků. Souborový systém ISO-9660
+  může obsahovat další soubory, které nejsou potřeba pro operace
+  s VCD.
+</para></listitem>
+
+<listitem><para>
+  Druhá a ostatní stopy jsou všeobecně surovými MPEG (film) stopami
+  s 2324 bajty/sektor, obsahující jeden MPEG PS datový paket na
+  sektor. Ty jsou v mode 2 třída 1 formátu, takže obsahují více dat
+  v každém sektoru za cenu omezení korekce chyb. Je rovněž možné mít
+  CD-DA stopy na VCD za první stopou.
+  V některých operačních systémech jsou triky, které umožňují zpřístupnit
+  tyto ne-ISO-9660 stopy v systému souborů. V dalších operačních
+  systémech jako GNU/Linux to není možné (zatím). Zde MPEG data
+  <emphasis role="bold">nemohou být připojena</emphasis>. Protože většina
+  filmů je uložena uvnitř tohoto druhu stopy, měli byste nejprve zkusit
+  <option>vcd://2</option>.
+</para></listitem>
+
+<listitem><para>
+  Existují také VCD disky bez první stopy (jediná stopa bez systému souborů).
+  Můžete je přehrát, ale nemohou být namountovány.
+</para></listitem>
+
+<listitem><para>
+  Definice standardu Video CD se nazývá
+  Philips „White Book“ a není obecně přístupná online, ale musí být zakoupena
+  od Philipsu. Podrobnější informace o Video CD můžete nalézt
+  <ulink url="http://www.vcdimager.org/pub/vcdimager/manuals/0.7/vcdimager.html#SEC4">v dokumentaci programu vcdimager</ulink>.
+</para></listitem>
+</itemizedlist>
+</para>
+</formalpara>
+
+<formalpara>
+<title>Pár slov o .DAT souborech</title>
+<para>
+Soubor veliký ~600 MB viditelný v první stopě připojeného VCD není
+skutečným souborem! Je to takzvaná ISO gateway, vytvořená proto,
+aby mohl Windows přistupovat k těmto stopám (Windows vůbec neumožňuje
+aplikacím surový přístup k zařízení).
+Pod Linuxem nemůžete kopírovat nebo přehrávat tyto soubory
+(obsahují jen nesmysly). Pod Windows je to možné, protože jeho iso9660
+ovladač emuluje surový přístup ke stopě v tomto souboru. Abyste mohli
+přehrát .DAT soubor, potřebujete ovladač kernelu který můžete nalézt
+v Linuxové verzi PowerDVD. Obsahuje upravený ovladač systému souborů
+iso9660 (<filename>vcdfs/isofs-2.4.X.o</filename>), který umí emulovat
+surové stopy přes tento stínový .DAT soubor. Pokud připojíte disk
+s pomocí jejich ovladače, můžete kopírovat či dokonce přehrávat .DAT
+soubory <application>MPlayer</application>em. Ale nebude to fungovat
+se standardním iso9660 ovladačem z Linuxového kernelu! Místo toho
+použijte <option>vcd://</option>. Alternativou kopírování VCD je
+nový jaderný ovladač jménem
+<ulink url="http://www.elis.rug.ac.be/~ronsse/cdfs/">cdfs</ulink>
+(není součástí oficiálního jádra), který zobrazuje CD sekce jako
+obrazové soubory a program
+<ulink url="http://cdrdao.sf.net/">cdrdao</ulink>, který bit-po-bitu
+grabuje/kopíruje CD.
+</para>
+</formalpara>
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
 <sect1 id="edl" xreflabel="Seznamy editačních zásahů (EDL)">
 <title>Seznamy editačních zásahů (EDL)</title>
 
@@ -1105,5 +1394,302 @@ předešel odeslání dat mimo dovolený rozsah do zvukové karty; to povede ke
 zkreslení signálu.
 </para>
 </sect2>
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<sect1 id="tv-input" xreflabel="TV vstup">
+<title>TV vstup</title>
+
+<para>
+Tato sekce je zaměřena na zpřístupnění
+<emphasis role="bold">sledování/grabování z V4L kompatibilního TV tuneru
+</emphasis>. Popis voleb k TV a ovládání z klávesnice naleznete v man
+stránce.
+</para>
+
+<!-- ********** -->
+
+<sect2 id="tv-compilation">
+<title>Kompilace</title>
+
+<procedure>
+<step><para>
+  Zaprvé musíte rekompilovat. <filename>./configure</filename> zdetekuje
+  v4l hlavičkové soubory kernelu a existenci zařízení
+  <filename>/dev/video*</filename>. Pokud existují, bude zabudována
+  podpora pro TV (viz výstup z <filename>./configure</filename>).
+</para></step>
+<step><para>
+  Ujistěte se, že váš tuner pracuje s jiným Linuxovým TV softwarem,
+  například <application>XawTV</application>.
+</para></step>
+</procedure>
+</sect2>
+
+<!-- ********** -->
+
+<sect2 id="tv-tips">
+<title>Tipy pro používání</title>
+
+<para>
+Úplný seznam voleb je dostupný v manuálové stránce.
+Zde je jen několik typů:
+
+<itemizedlist>
+<listitem><para>
+  Použijte volbu <option>channels</option>. Příklad:
+  <screen>-tv channels=26-MTV1,23-TV2</screen>
+  Vysvětlení: Při použití této volby budou použitelné pouze kanály 26 a 23 a
+  budete také mít krásný OSD text po přepnutí kanálů, zobrazující jméno
+  kanálu. Mezery ve jméně kanálu musí být nahrazeny znakem
+  "_".
+</para></listitem>
+<listitem><para>
+  Zvolte rozumné rozměry obrazu. Rozměry výsledného obrazu by měly být
+  bezezbytku dělitelné 16.
+</para></listitem>
+<listitem>
+  <para>
+  Pokud zachytáváte video se svislým rozlišením vyšším než polovina plného
+  rozlišení (čili 288 pro PAL nebo 240 pro NTSC), pak 'snímky', které dostanete,
+  budou ve skutečnosti prokládané páry půlsnímků.
+  V závislosti na tom, co chcete s videem dělat, je můžete nechat jak jsou,
+  destruktivně odstranit proklad, nebo rozdělit páry do individuálních políček.
+  </para>
+  <para>
+  Jinak bude získaný snímek roztřepený
+  během rychlých scén a regulátor datového toku nebude pravděpodobně schopen
+  ani udržet nastavený datový tok, vzhledem k tomu, že prokladové artefakty
+  produkují velké množství detailů, což spotřebovává velké přenosové pásmo.
+  Odstraňování prokladu můžete zapnout pomocí volby
+  <option>-vf pp=DEINT_TYPE</option>. Dobrou práci obvykle odvede
+  <option>pp=lb</option>, ale záleží na osobních preferencích. Prostudujte si
+  ostatní možnosti odstraňování prokladu v manuálu a vyzkoušejte je.
+  </para>
+</listitem>
+
+<listitem><para>
+  Odstřihněte mrtvý prostor. Když zachytáváte video, oblasti na okrajích jsou
+  obvykle černé, nebo obsahují nějaký šum. Což opět zbytečně spotřebovává
+  přenosové pásmo. Přesněji to nejsou samotné černé oblasti, ale ostrý přechod
+  mezi černou a světlejším videem, ale to teď není důležité.
+  Než začnete zachytávat, nastavte parametry volby <option>crop</option> tak,
+  aby byl veškerý binec na okrajích odstřižen. Opět se snažte zachovat rozumné
+  rozměry výsledného obrazu.
+</para></listitem>
+<listitem><para>
+  Sledujte zatížení CPU. Většinu času by nemělo překročit hranici 90%. Pokud
+  máte velkou vyrovnávací paměť pro zachytávání, dokáže
+  <application>MEncoder</application> přežít několikasekundové přetížení, ale
+  nic víc. Raději vypněte 3D OpenGL spořiče obrazovky a podobné věci.
+</para></listitem>
+<listitem><para>
+  Nehrajte si se systémovými hodinami. <application>MEncoder</application>
+  používá systémové hodiny pro A/V synchronizaci. Pokud přestavíte systémové
+  hodiny (zvlášť nazpět), <application>MEncoder</application> bude zmaten a
+  vy přijdete o snímky. To je velmi důležité pokud jste připojeni k síti a
+  používáte nějaký časový synchronizační software jako je NTP. Musíte vypnout
+  NTP během zachytávání, pokud chcete spolehlivě zachytávat.
+</para></listitem>
+<listitem><para>
+  Neměňte <option>outfmt</option> pokud nevíte co děláte, nebo vaše
+  karta/ovladač opravdu nepodporuje výchozí (YV12 barevný prostor).
+  Ve starší verzi <application>MPlayer</application>u/
+  <application>MEncoder</application>u bylo nutné nastavit výstupní formát.
+  Tento problém by měl být v současných verzích vyřešen,
+  <option>outfmt</option> již není nadále potřeba a výchozí hodnoty vyhovují
+  pro většinu případů. Například pokud zachytáváte do DivX pomocí
+  <systemitem class="library">libavcodec</systemitem>u a uvedete
+  <option>outfmt=RGB24</option> pro zvýšení kvality zachytávaných snímků,
+  stejně budou tyto snímky později konvertovány zpět na YV12, takže jediné co
+  tím získáte je spousta vyplýtvaného výkonu CPU.
+</para></listitem>
+<listitem><para>
+  Chcete-li nastavit barevný prostor I420 (<option>outfmt=i420</option>),
+  musíte přidat i volbu <option>-vc rawi420</option> kvůli konfliktu fourcc
+  Intel Indeo video kodekem.
+</para></listitem>
+<listitem><para>
+  Existuje několik cest, jak zachytávat zvuk. Můžete nahrát zvuk buď pomocí
+  zvukové karty pomocí externího propojení mezi video kartou a linkovým
+  vstupem, nebo použitím vestavěného ADC v čipu bt878. Ve druhém případě
+  musíte načíst ovladač <emphasis role="bold">btaudio</emphasis>. Přečtěte si
+  soubor <filename>linux/Documentation/sound/btaudio</filename> (ve zdrojácích
+  kernelu, nikoli <application>MPlayer</application>u) pro několik instrukcí
+  jak použít tento ovladač.
+</para></listitem>
+<listitem><para>
+  Pokud <application>MEncoder</application> nedokáže otevřít audio zařízení,
+  ujistěte se, že je opravdu k dispozici. Můžete mít potíže se zvukovými
+  servery jako aRts (KDE) nebo ESD (GNOME). Pokud máte plně duplexní zvukovou
+  kartu (téměř každá slušná karta to již podporuje) a používáte KDE, zkuste
+  zaškrtnout volbu "full duplex" v menu nastavení zvukového serveru.
+</para></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<!-- ********** -->
+
+<sect2 id="tv-examples">
+<title>Příklady</title>
+
+<informalexample><para>
+Modelový výstup do AAlib :)
+<screen>mplayer -tv driver=dummy:width=640:height=480 -vo aa tv://</screen>
+</para></informalexample>
+
+<informalexample><para>
+Vstup ze standardního V4L:
+<screen>
+mplayer -tv driver=v4l:width=640:height=480:outfmt=i420 -vc rawi420 -vo xv tv://
+</screen>
+</para></informalexample>
+
+<informalexample><para>
+Mnohem sofistikovanější příklad. Zde <application>MEncoder</application>
+zachytává obraz v plném PALu, ořízne okraje a odstraní proklad obrazu pomocí
+lineárního směšovacího algoritmu. Zvuk je komprimován konstantním datovým
+tokem 64kbps LAME kodekem. Toto nastavení je vhodné pro zachytávání filmů.
+<screen>
+mencoder -tv driver=v4l:width=768:height=576 -oac mp3lame -lameopts cbr:br=64\
+    -ovc lavc -lavcopts vcodec=mpeg4:vbitrate=900 \
+    -vf crop=720:544:24:16,pp=lb -o <replaceable>výstup.avi</replaceable> tv://
+</screen>
+</para></informalexample>
+
+<informalexample><para>
+Toto navíc přeškáluje video na 384x288 a zkomprimuje jej s datovým tokem
+350kbps v režimu vysoké kvality. Volba vqmax uvolňuje kvantizer a umožní
+video kompresoru podržet takto nízký datový tok i za cenu snížení kvality.
+To lze použít pro záznam dlouhých TV seriálů, kde kvalita obrazu není až
+tolik důležitá.
+<screen>
+mencoder -tv driver=v4l:width=768:height=576 \
+    -ovc lavc -lavcopts vcodec=mpeg4:vbitrate=350:vhq:vqmax=31:keyint=300 \
+    -oac mp3lame -lameopts cbr:br=48 -sws 1 -o <replaceable>výstup.avi</replaceable>\
+    -vf crop=720:540:24:18,pp=lb,scale=384:288 tv://
+</screen>
+Rovněž můžete nastavit menší rozměry obrazu ve volbě
+<option>-tv</option> a vyhnout se tak softwarovému škálování, ale tento přístup
+vyžaduje maximální množství informací a je trochu odolnější proti šumu.
+Čipy bt8x8 umí průměrování pixelů pouze ve svislém směru díky
+hardwarovým omezením.
+</para></informalexample>
+</sect2>
+</sect1>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+
+<sect1 id="radio">
+<title>Rádio</title>
+
+<sect2 id="radio-input" xreflabel="Radio input">
+<title>Rádio vstup</title>
+
+<para>
+Tato sekce se zabývá tím, jak zprovoznit poslech rozhlasu
+z&nbsp;V4L-kompatibilního rozhlasového tuneru.
+Popis voleb a ovládání z klávesnice naleznete v man stránce.
+</para>
+
+<!-- ********** -->
+
+<sect3 id="radio-compilation">
+<title>Kompilace</title>
+
+<procedure>
+<step><para>
+  Nejprve musíte znovupřeložit <application>MPlayer</application> pomocí
+  <filename>./configure</filename> s <option>--enable-radio</option> a
+  (pokud chcete i nahrávat) <option>--enable-radio-capture</option>.
+</para></step>
+<step><para>
+  Ujistěte se, že váš tuner pracuje s jiným softwarem v Linuxu, například
+  <application>XawTV</application>.
+</para></step>
+</procedure>
+</sect3>
+
+<!-- ********** -->
+
+<sect3 id="radio-tips">
+<title>Uživatelské tipy</title>
+
+<para>
+Plný výčet voleb je v manuálové stránce.
+Zde uvádíme jen několik tipů:
+<itemizedlist>
+<listitem><para>
+  Použití volby <option>channels</option>. Příklad:
+  <screen>-radio channels=104.4-Sibir,103.9-Maximum</screen>
+  Vysvětlení: Pomocí této volby budou k dispozici pouze stanice 104.4
+  a 103.9. Budete mít krásný OSD text během přepínání kanálů,
+  který zobrazí jméno kanálu. Mezery v názvech kanálů musí být
+  nahrazeny znakem "_".
+</para></listitem>
+<listitem><para>
+  Je mnoho způsobů, jak zachytávat (nahrávat) zvuk. Můžete buď zachytávat pomocí
+  vstupu line-in zvukové karty propojeného vnější linkou s videokartou,
+  nebo použitím vestavěného ADC v čipu saa7134. V druhém případě musíte
+  zavést ovladač <systemitem>saa7134-alsa</systemitem> nebo
+ <systemitem>saa7134-oss</systemitem>.
+</para></listitem>
+<listitem><para>
+  <application>MEncoder</application> nelze použít pro zachytávání zvuku, jelikož
+  vyžaduje videoproud, aby fungoval. Takže buď použijete
+  <application>arecord</application> z projektu ALSA, nebo
+  volbu <option>-ao pcm:file=file.wav</option>. V druhém případě neuslyšíte nic
+  (pokud ovšem nemáte propojku s line-in a vypnuté mute na kanále line-in).
+</para></listitem>
+</itemizedlist>
+</para>
+</sect3>
+
+<!-- ********** -->
+
+<sect3 id="radio-examples">
+<title>Příklady</title>
+
+<informalexample><para>
+Vstup ze standardního V4L (pomocí line-in kablu, zachytávání vypnuto):
+<screen>mplayer radio://104.4</screen>
+</para></informalexample>
+
+<informalexample><para>
+Vstup ze standardního V4L (pomocí line-in kablu, zachytávání vypnuto,
+rozhraní V4Lv1):
+<screen>mplayer -radio driver=v4l radio://104.4</screen>
+</para></informalexample>
+
+<informalexample><para>
+Přehrávání druhé stanice ze seznamu:
+<screen>mplayer -radio channels=104.4=Sibir,103.9=Maximm  radio://2</screen>
+</para></informalexample>
+
+<informalexample><para>
+Průchod zvuku přes PCI sběrnici z interního ADC rádio karty.
+V tomto příkladu se tuner používá jako druhá zvuková karta
+(ALSA zařízení hw:1,0). Pro zařízení založené na saa7134 musí
+být zaveden buď modul <systemitem>saa7134-alsa</systemitem> nebo
+modul <systemitem>saa7134-oss</systemitem>.
+<screen>
+mplayer -rawaudio rate=32000 radio://2/capture \
+    -radio adevice=hw=1.0:arate=32000:channels=104.4=Sibir,103.9=Maximm
+</screen>
+<note><para>
+Když používáte názvy zařízení ALSA, dvojtečky musí být
+nahrazeny znaky rovnáse, čárky tečkami.
+</para></note>
+</para>
+</informalexample>
+</sect3>
+</sect2>
+
 </sect1>
 </chapter>

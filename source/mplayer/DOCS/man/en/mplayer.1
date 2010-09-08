@@ -1,4 +1,4 @@
-.\" $Revision: 31814 $
+.\" $Revision: 32066 $
 .\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -890,6 +890,22 @@ This parameter allows you to specify that time interval in seconds
 (default: 2 seconds).
 .
 .TP
+.B \-edl-start-pts
+Adjust positions in EDL records according to playing file's start time.
+Some formats, especially MPEG TS usually start with non-zero PTS
+values and when producing EDL file with \-edlout option, EDL records
+contain absolute values that are correct only for this particular file.
+If re-encoded into a different format, this EDL file no longer applies.
+Specifying \-edl-start-pts will automatically adjust EDL positions according
+to start time: when producing EDL file, it will substract start time from every
+EDL record, when playing with EDL file, it will add file's start time to every
+EDL position.
+.
+.TP
+.B \-noedl-start-pts
+Disable adjusting EDL positions.
+.
+.TP
 .B \-enqueue (GUI only)
 Enqueue files given on the command line in the playlist instead of playing them
 immediately.
@@ -1179,6 +1195,34 @@ Skip <sec> seconds after every frame.
 The normal framerate of the movie is kept, so playback is accelerated.
 Since MPlayer can only seek to the next keyframe this may be inexact.
 .
+.TP
+.B \-udp\-ip <ip>
+Sets the destination address for datagrams sent by the \-udp\-master.
+Setting it to a broadcast address allows multiple slaves having the same
+broadcast address to sync to the master (default: 127.0.0.1).
+.
+.TP
+.B \-udp\-master
+Send a datagram to \-udp\-ip on \-udp\-port just before playing each frame.
+The datagram indicates the master's position in the file.
+.
+.TP
+.B \-udp\-port <port>
+Sets the destination port for datagrams sent by the \-udp\-master, and the
+port a \-udp\-slave listens on (default: 23867).
+.
+.TP
+.B \-udp\-seek\-threshold <sec>
+When the master seeks, the slave has to decide whether to seek as
+well, or to catch up by decoding frames without pausing between frames.
+If the master is more than <sec> seconds away from the
+slave, the slave seeks.
+Otherwise, it "runs" to catch up or waits for the master.
+This should almost always be left at its default setting of 1 second.
+.
+.TP
+.B \-udp\-slave
+Listen on \-udp\-port and match the master's position.
 .
 .
 .SH "DEMUXER/STREAM OPTIONS"
@@ -2395,8 +2439,9 @@ If you cannot select one of the subtitles on a DVD, also try \-vobsubid.
 .
 .TP
 .B \-nosub
-Disables any otherwise auto-selected subtitles (as e.g.\& the Matroska/mkv
+Disables any otherwise auto-selected internal subtitles (as e.g.\& the Matroska/mkv
 demuxer supports).
+Use \-noautosub to disable the loading of external subtitle files.
 .
 .TP
 .B \-slang <language code[,language code,...]> (also see \-sid)

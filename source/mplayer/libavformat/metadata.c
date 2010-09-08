@@ -88,7 +88,7 @@ int av_metadata_set2(AVMetadata **pm, const char *key, const char *value, int fl
     return 0;
 }
 
-#if LIBAVFORMAT_VERSION_MAJOR == 52
+#if FF_API_OLD_METADATA
 int av_metadata_set(AVMetadata **pm, const char *key, const char *value)
 {
     return av_metadata_set2(pm, key, value, 0);

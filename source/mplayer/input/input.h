@@ -19,7 +19,7 @@
 #ifndef MPLAYER_INPUT_H
 #define MPLAYER_INPUT_H
 
-#include "../m_config.h"
+#include "m_config.h"
 
 // All command IDs
 typedef enum {
@@ -61,6 +61,7 @@ typedef enum {
   MP_CMD_GET_PERCENT_POS,
   MP_CMD_SUB_STEP,
   MP_CMD_TV_SET_CHANNEL,
+  MP_CMD_EDL_LOADFILE,
   MP_CMD_EDL_MARK,
   MP_CMD_SUB_ALIGNMENT,
   MP_CMD_TV_LAST_CHANNEL,

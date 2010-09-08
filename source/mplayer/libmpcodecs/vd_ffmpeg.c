@@ -32,6 +32,7 @@
 #include "fmt-conversion.h"
 
 #include "vd_internal.h"
+#include "vd_ffmpeg.h"
 
 static const vd_info_t info = {
     "FFmpeg's libavcodec codec family",
@@ -102,6 +103,11 @@ static char *lavc_param_skip_frame_str = NULL;
 static int lavc_param_threads=1;
 static int lavc_param_bitexact=0;
 static char *lavc_avopt = NULL;
+
+static const mp_image_t mpi_no_picture =
+{
+	.type = MP_IMGTYPE_INCOMPLETE
+};
 
 const m_option_t lavc_decode_opts_conf[]={
     {"bug", &lavc_param_workaround_bugs, CONF_TYPE_INT, CONF_RANGE, -1, 999999, NULL},
@@ -244,6 +250,16 @@ static void set_format_params(struct AVCodecContext *avctx, enum PixelFormat fmt
     }
 }
 
+void init_avcodec(void)
+{
+    if (!avcodec_initialized) {
+        avcodec_init();
+        avcodec_register_all();
+        avcodec_initialized = 1;
+        av_log_set_callback(mp_msp_av_log_callback);
+    }
+}
+
 // init driver
 static int init(sh_video_t *sh){
     AVCodecContext *avctx;
@@ -252,19 +268,14 @@ static int init(sh_video_t *sh){
     int lowres_w=0;
     int do_vis_debug= lavc_param_vismv || (lavc_param_debug&(FF_DEBUG_VIS_MB_TYPE|FF_DEBUG_VIS_QP));
 
-    if(!avcodec_initialized){
-        avcodec_init();
-        avcodec_register_all();
-        avcodec_initialized=1;
-        av_log_set_callback(mp_msp_av_log_callback);
-    }
+    init_avcodec();
 
     ctx = sh->context = malloc(sizeof(vd_ffmpeg_ctx));
     if (!ctx)
         return 0;
     memset(ctx, 0, sizeof(vd_ffmpeg_ctx));
 
-    lavc_codec = (AVCodec *)avcodec_find_decoder_by_name(sh->codec->dll);
+    lavc_codec = avcodec_find_decoder_by_name(sh->codec->dll);
     if(!lavc_codec){
         mp_msg(MSGT_DECVIDEO, MSGL_ERR, MSGTR_MissingLAVCcodec, sh->codec->dll);
         uninit(sh);
@@ -308,8 +319,8 @@ static int init(sh_video_t *sh){
 
     avctx->flags|= lavc_param_bitexact;
 
-    avctx->width = sh->disp_w;
-    avctx->height= sh->disp_h;
+    avctx->coded_width = sh->disp_w;
+    avctx->coded_height= sh->disp_h;
     avctx->workaround_bugs= lavc_param_workaround_bugs;
     avctx->error_recognition= lavc_param_error_resilience;
     if(lavc_param_gray) avctx->flags|= CODEC_FLAG_GRAY;
@@ -901,7 +912,12 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
     }
 //--
 
-    if(!got_picture) return NULL;        // skipped image
+    if(!got_picture) {
+	if (avctx->codec->id == CODEC_ID_H264)
+	    return &mpi_no_picture; // H.264 first field only
+	else
+	    return NULL;    // skipped image
+    }
 
     if(init_vo(sh, avctx->pix_fmt) < 0) return NULL;
 

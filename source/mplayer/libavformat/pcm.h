@@ -1,6 +1,6 @@
 /*
- * vp3dsp SSE2 function declarations
- * Copyright (c) 2007 Aurelien Jacobs <aurel@gnuage.org>
+ * PCM common functions
+ * Copyright (C) 2007  Aurelien Jacobs <aurel@gnuage.org>
  *
  * This file is part of FFmpeg.
  *
@@ -19,13 +19,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_X86_VP3DSP_SSE2_H
-#define AVCODEC_X86_VP3DSP_SSE2_H
+#ifndef AVFORMAT_PCM_H
+#define AVFORMAT_PCM_H
 
-#include "libavcodec/dsputil.h"
+#include "avformat.h"
 
-void ff_vp3_idct_sse2(int16_t *input_data);
-void ff_vp3_idct_put_sse2(uint8_t *dest, int line_size, DCTELEM *block);
-void ff_vp3_idct_add_sse2(uint8_t *dest, int line_size, DCTELEM *block);
+int pcm_read_seek(AVFormatContext *s,
+                  int stream_index, int64_t timestamp, int flags);
 
-#endif /* AVCODEC_X86_VP3DSP_SSE2_H */
+#endif /* AVFORMAT_PCM_H */

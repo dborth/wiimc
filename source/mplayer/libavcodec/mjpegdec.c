@@ -219,7 +219,7 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
         height= s->height;
 
     av_log(s->avctx, AV_LOG_DEBUG, "sof0: picture: %dx%d\n", width, height);
-    if(av_check_image_size(width, height, 0, s->avctx))
+    if(av_image_check_size(width, height, 0, s->avctx))
         return -1;
 
     nb_components = get_bits(&s->gb, 8);
@@ -1027,7 +1027,7 @@ static int mjpeg_decode_app(MJpegDecodeContext *s)
     if(8*len + get_bits_count(&s->gb) > s->gb.size_in_bits)
         return -1;
 
-    id = (get_bits(&s->gb, 16) << 16) | get_bits(&s->gb, 16);
+    id = get_bits_long(&s->gb, 32);
     id = av_be2ne32(id);
     len -= 6;
 
@@ -1134,7 +1134,7 @@ static int mjpeg_decode_app(MJpegDecodeContext *s)
     /* Apple MJPEG-A */
     if ((s->start_code == APP1) && (len > (0x28 - 8)))
     {
-        id = (get_bits(&s->gb, 16) << 16) | get_bits(&s->gb, 16);
+        id = get_bits_long(&s->gb, 32);
         id = av_be2ne32(id);
         len -= 4;
         if (id == AV_RL32("mjpg")) /* Apple MJPEG-A */

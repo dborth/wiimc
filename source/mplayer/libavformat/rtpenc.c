@@ -55,6 +55,7 @@ static int is_supported(enum CodecID id)
     case CODEC_ID_AMR_WB:
     case CODEC_ID_VORBIS:
     case CODEC_ID_THEORA:
+    case CODEC_ID_VP8:
         return 1;
     default:
         return 0;
@@ -144,6 +145,9 @@ static int rtp_write_header(AVFormatContext *s1)
         s->max_payload_size -= 6; // ident+frag+tdt/vdt+pkt_num+pkt_length
         s->num_frames = 0;
         goto defaultcase;
+    case CODEC_ID_VP8:
+        av_log(s1, AV_LOG_WARNING, "RTP VP8 payload is still experimental\n");
+        break;
     case CODEC_ID_AMR_NB:
     case CODEC_ID_AMR_WB:
         if (!s->max_frames_per_packet)
@@ -187,7 +191,7 @@ static void rtcp_send_sr(AVFormatContext *s1, int64_t ntp_time)
     rtp_ts = av_rescale_q(ntp_time - s->first_rtcp_ntp_time, (AVRational){1, 1000000},
                           s1->streams[0]->time_base) + s->base_timestamp;
     put_byte(s1->pb, (RTP_VERSION << 6));
-    put_byte(s1->pb, 200);
+    put_byte(s1->pb, RTCP_SR);
     put_be16(s1->pb, 6); /* length in words - 1 */
     put_be32(s1->pb, s->ssrc);
     put_be32(s1->pb, ntp_time / 1000000);
@@ -406,6 +410,9 @@ static int rtp_write_packet(AVFormatContext *s1, AVPacket *pkt)
     case CODEC_ID_VORBIS:
     case CODEC_ID_THEORA:
         ff_rtp_send_xiph(s1, pkt->data, size);
+        break;
+    case CODEC_ID_VP8:
+        ff_rtp_send_vp8(s1, pkt->data, size);
         break;
     default:
         /* better than nothing : send the codec raw data */

@@ -461,7 +461,10 @@ static void handle_stream(demuxer_t *demuxer, AVFormatContext *avfc, int i) {
     }
     if (stream_type) {
         AVCodec *avc = avcodec_find_decoder(codec->codec_id);
-        mp_msg(MSGT_DEMUX, MSGL_INFO, "[lavf] stream %d: %s (%s), -%cid %d", i, stream_type, avc ? avc->name : "unknown", *stream_type, stream_id);
+        const char *codec_name = avc ? avc->name : "unknown";
+        if (!avc && *stream_type == 's' && demuxer->s_streams[stream_id])
+            codec_name = sh_sub_type2str(((sh_sub_t *)demuxer->s_streams[stream_id])->type);
+        mp_msg(MSGT_DEMUX, MSGL_INFO, "[lavf] stream %d: %s (%s), -%cid %d", i, stream_type, codec_name, *stream_type, stream_id);
         if (lang && lang->value && *stream_type != 'v')
             mp_msg(MSGT_DEMUX, MSGL_INFO, ", -%clang %s", *stream_type, lang->value);
         if (title && title->value)
@@ -625,7 +628,10 @@ static int demux_lavf_fill_buffer(demuxer_t *demux, demux_stream_t *dsds){
     if(pkt.pts != AV_NOPTS_VALUE){
         dp->pts=pkt.pts * av_q2d(priv->avfc->streams[id]->time_base);
         priv->last_pts= dp->pts * AV_TIME_BASE;
-        if(pkt.flags & PKT_FLAG_KEY && pkt.convergence_duration > 0)
+        // always set endpts for subtitles, even if PKT_FLAG_KEY is not set,
+        // otherwise they will stay on screen to long if e.g. ASS is demuxed from mkv
+        if((ds == demux->sub || (pkt.flags & PKT_FLAG_KEY)) &&
+           pkt.convergence_duration > 0)
             dp->endpts = dp->pts + pkt.convergence_duration * av_q2d(priv->avfc->streams[id]->time_base);
     }
     dp->pos=demux->filepos;

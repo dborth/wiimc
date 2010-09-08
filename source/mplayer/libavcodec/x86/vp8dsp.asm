@@ -211,7 +211,7 @@ cglobal put_vp8_epel%1_h6_ssse3, 6, 6, %2
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4            ; next row
+    dec      r4d            ; next row
     jg .nextrow
     REP_RET
 
@@ -242,7 +242,7 @@ cglobal put_vp8_epel%1_h4_ssse3, 6, 6, %3
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4            ; next row
+    dec      r4d            ; next row
     jg .nextrow
     REP_RET
 
@@ -281,7 +281,7 @@ cglobal put_vp8_epel%1_v4_ssse3, 7, 7, %2
     ; go to next line
     add        r0, r1
     add        r2, r3
-    dec        r4                          ; next row
+    dec       r4d                          ; next row
     jg .nextrow
     REP_RET
 
@@ -328,7 +328,7 @@ cglobal put_vp8_epel%1_v6_ssse3, 7, 7, %2
     ; go to next line
     add        r0, r1
     add        r2, r3
-    dec        r4                          ; next row
+    dec       r4d                          ; next row
     jg .nextrow
     REP_RET
 %endmacro
@@ -381,7 +381,7 @@ cglobal put_vp8_epel4_h4_mmxext, 6, 6
     ; go to next line
     add        r0, r1
     add        r2, r3
-    dec        r4                          ; next row
+    dec       r4d                          ; next row
     jg .nextrow
     REP_RET
 
@@ -438,7 +438,7 @@ cglobal put_vp8_epel4_h6_mmxext, 6, 6
     ; go to next line
     add        r0, r1
     add        r2, r3
-    dec        r4                          ; next row
+    dec       r4d                          ; next row
     jg .nextrow
     REP_RET
 
@@ -486,7 +486,7 @@ cglobal put_vp8_epel8_h4_sse2, 6, 6, 10
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4            ; next row
+    dec      r4d            ; next row
     jg .nextrow
     REP_RET
 
@@ -548,7 +548,7 @@ cglobal put_vp8_epel8_h6_sse2, 6, 6, 14
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4            ; next row
+    dec      r4d            ; next row
     jg .nextrow
     REP_RET
 
@@ -601,7 +601,7 @@ cglobal put_vp8_epel%2_v4_%1, 7, 7, %3
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4                           ; next row
+    dec      r4d                           ; next row
     jg .nextrow
     REP_RET
 
@@ -666,7 +666,7 @@ cglobal put_vp8_epel%2_v6_%1, 7, 7, %3
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4                           ; next row
+    dec      r4d                           ; next row
     jg .nextrow
     REP_RET
 %endmacro
@@ -718,7 +718,7 @@ cglobal put_vp8_bilinear%2_v_%1, 7,7,%3
 
     lea       r0, [r0+r1*2]
     lea       r2, [r2+r3*2]
-    sub       r4, 2
+    sub      r4d, 2
     jg .nextrow
     REP_RET
 
@@ -764,7 +764,7 @@ cglobal put_vp8_bilinear%2_h_%1, 7,7,%3
 
     lea       r0, [r0+r1*2]
     lea       r2, [r2+r3*2]
-    sub       r4, 2
+    sub      r4d, 2
     jg .nextrow
     REP_RET
 %endmacro
@@ -807,7 +807,7 @@ cglobal put_vp8_bilinear%1_v_ssse3, 7,7
 
     lea       r0, [r0+r1*2]
     lea       r2, [r2+r3*2]
-    sub       r4, 2
+    sub      r4d, 2
     jg .nextrow
     REP_RET
 
@@ -843,7 +843,7 @@ cglobal put_vp8_bilinear%1_h_ssse3, 7,7
 
     lea       r0, [r0+r1*2]
     lea       r2, [r2+r3*2]
-    sub       r4, 2
+    sub      r4d, 2
     jg .nextrow
     REP_RET
 %endmacro
@@ -1342,7 +1342,7 @@ VP8_DC_WHT sse
     psrldq        m%2, 4
 %if %10 == 8
     movd    [%5+%8*2], m%1
-    movd           %5, m%3
+    movd          %5d, m%3
 %endif
     psrldq        m%3, 4
     psrldq        m%4, 4
@@ -1379,26 +1379,26 @@ VP8_DC_WHT sse
 ; 4 is a pointer to the destination's 4th line
 ; 5/6 is -stride and +stride
 %macro WRITE_2x4W 6
-    movd             %3, %1
+    movd            %3d, %1
     punpckhdq        %1, %1
     mov       [%4+%5*4], %3w
     shr              %3, 16
     add              %4, %6
     mov       [%4+%5*4], %3w
 
-    movd             %3, %1
+    movd            %3d, %1
     add              %4, %5
     mov       [%4+%5*2], %3w
     shr              %3, 16
     mov       [%4+%5  ], %3w
 
-    movd             %3, %2
+    movd            %3d, %2
     punpckhdq        %2, %2
     mov       [%4     ], %3w
     shr              %3, 16
     mov       [%4+%6  ], %3w
 
-    movd             %3, %2
+    movd            %3d, %2
     add              %4, %6
     mov       [%4+%6  ], %3w
     shr              %3, 16
@@ -1407,27 +1407,27 @@ VP8_DC_WHT sse
 %endmacro
 
 %macro WRITE_8W_SSE2 5
-    movd             %2, %1
+    movd            %2d, %1
     psrldq           %1, 4
     mov       [%3+%4*4], %2w
     shr              %2, 16
     add              %3, %5
     mov       [%3+%4*4], %2w
 
-    movd             %2, %1
+    movd            %2d, %1
     psrldq           %1, 4
     add              %3, %4
     mov       [%3+%4*2], %2w
     shr              %2, 16
     mov       [%3+%4  ], %2w
 
-    movd             %2, %1
+    movd            %2d, %1
     psrldq           %1, 4
     mov       [%3     ], %2w
     shr              %2, 16
     mov       [%3+%5  ], %2w
 
-    movd             %2, %1
+    movd            %2d, %1
     add              %3, %5
     mov       [%3+%5  ], %2w
     shr              %2, 16
@@ -1446,32 +1446,32 @@ VP8_DC_WHT sse
 %endmacro
 
 %macro SPLATB_REG_MMX 2-3
-    movd           %1, %2
+    movd           %1, %2d
     punpcklbw      %1, %1
     punpcklwd      %1, %1
     punpckldq      %1, %1
 %endmacro
 
 %macro SPLATB_REG_MMXEXT 2-3
-    movd           %1, %2
+    movd           %1, %2d
     punpcklbw      %1, %1
     pshufw         %1, %1, 0x0
 %endmacro
 
 %macro SPLATB_REG_SSE2 2-3
-    movd           %1, %2
+    movd           %1, %2d
     punpcklbw      %1, %1
     pshuflw        %1, %1, 0x0
     punpcklqdq     %1, %1
 %endmacro
 
 %macro SPLATB_REG_SSSE3 3
-    movd           %1, %2
+    movd           %1, %2d
     pshufb         %1, %3
 %endmacro
 
-%macro SIMPLE_LOOPFILTER 3
-cglobal vp8_%2_loop_filter_simple_%1, 3, %3
+%macro SIMPLE_LOOPFILTER 4
+cglobal vp8_%2_loop_filter_simple_%1, 3, %3, %4
 %if mmsize == 8 ; mmx/mmxext
     mov            r3, 2
 %endif
@@ -1612,21 +1612,21 @@ cglobal vp8_%2_loop_filter_simple_%1, 3, %3
 
 INIT_MMX
 %define SPLATB_REG SPLATB_REG_MMX
-SIMPLE_LOOPFILTER mmx,    v, 4
-SIMPLE_LOOPFILTER mmx,    h, 5
+SIMPLE_LOOPFILTER mmx,    v, 4, 0
+SIMPLE_LOOPFILTER mmx,    h, 5, 0
 %define SPLATB_REG SPLATB_REG_MMXEXT
-SIMPLE_LOOPFILTER mmxext, v, 4
-SIMPLE_LOOPFILTER mmxext, h, 5
+SIMPLE_LOOPFILTER mmxext, v, 4, 0
+SIMPLE_LOOPFILTER mmxext, h, 5, 0
 INIT_XMM
 %define SPLATB_REG SPLATB_REG_SSE2
 %define WRITE_8W   WRITE_8W_SSE2
-SIMPLE_LOOPFILTER sse2,   v, 3
-SIMPLE_LOOPFILTER sse2,   h, 5
+SIMPLE_LOOPFILTER sse2,   v, 3, 8
+SIMPLE_LOOPFILTER sse2,   h, 5, 8
 %define SPLATB_REG SPLATB_REG_SSSE3
-SIMPLE_LOOPFILTER ssse3,  v, 3
-SIMPLE_LOOPFILTER ssse3,  h, 5
+SIMPLE_LOOPFILTER ssse3,  v, 3, 8
+SIMPLE_LOOPFILTER ssse3,  h, 5, 8
 %define WRITE_8W   WRITE_8W_SSE4
-SIMPLE_LOOPFILTER sse4,   h, 5
+SIMPLE_LOOPFILTER sse4,   h, 5, 8
 
 ;-----------------------------------------------------------------------------
 ; void vp8_h/v_loop_filter<size>_inner_<opt>(uint8_t *dst, [uint8_t *v,] int stride,

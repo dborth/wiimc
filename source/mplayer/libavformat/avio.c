@@ -30,7 +30,7 @@
 #include "network.h"
 #endif
 
-#if LIBAVFORMAT_VERSION_MAJOR >= 53
+#if FF_API_URL_CLASS
 /** @name Logging context. */
 /*@{*/
 static const char *urlcontext_to_name(void *ptr)
@@ -71,7 +71,7 @@ int av_register_protocol2(URLProtocol *protocol, int size)
     return 0;
 }
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_REGISTER_PROTOCOL
 /* The layout of URLProtocol as of when major was bumped to 52 */
 struct URLProtocol_compat {
     const char *name;
@@ -109,7 +109,7 @@ static int url_alloc_for_protocol (URLContext **puc, struct URLProtocol *up,
         err = AVERROR(ENOMEM);
         goto fail;
     }
-#if LIBAVFORMAT_VERSION_MAJOR >= 53
+#if FF_API_URL_CLASS
     uc->av_class = &urlcontext_class;
 #endif
     uc->filename = (char *) &uc[1];

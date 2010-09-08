@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <limits.h>
+#include <ctype.h>
 #include "libavutil/common.h"
 #include "libavutil/aes.h"
 #include "libavutil/sha.h"
@@ -131,19 +132,80 @@ static int bd_stream_seek(stream_t *s, off_t pos)
     return 1;
 }
 
+#define ID_STR_LEN 41
+static void id2str(const uint8_t *id, int idlen, char dst[ID_STR_LEN])
+{
+    int i;
+    idlen = FFMIN(idlen, 20);
+    for (i = 0; i < idlen; i++)
+        snprintf(dst + 2*i, 3, "%02"PRIX8, id[i]);
+}
+
+static int find_vuk(struct bd_priv *bd, const uint8_t discid[20])
+{
+    char line[1024];
+    char filename[PATH_MAX];
+    const char *home;
+    int vukfound = 0;
+    stream_t *file;
+    char idstr[ID_STR_LEN];
+
+    // look up discid in KEYDB.cfg to get VUK
+    home = getenv("HOME");
+    snprintf(filename, sizeof(filename), "%s/.dvdcss/KEYDB.cfg", home);
+    file = open_stream(filename, NULL, NULL);
+    if (!file) {
+        mp_msg(MSGT_OPEN,MSGL_ERR,
+               "Cannot open VUK database file %s\n", filename);
+        return 0;
+    }
+    id2str(discid, 20, idstr);
+    while (stream_read_line(file, line, sizeof(line), 0)) {
+        char *vst;
+
+        // file is built up this way:
+        // DISCID = title | V | VUK
+        // or
+        // DISCID = title | key-pair
+        // key-pair = V | VUK
+        // or         D | Date
+        // or         M | M-key???
+        // or         I | I-Key
+        // can be followed by ; and comment
+
+        if (strncasecmp(line, idstr, 40))
+            continue;
+        mp_msg(MSGT_OPEN, MSGL_V, "KeyDB found Entry for DiscID:\n%s\n", line);
+
+        vst = strstr(line, "| V |");
+        if (!vst)
+            break;
+        vst += 6;
+        while (isspace(*vst)) vst++;
+        if (sscanf(vst,      "%16"SCNx64, &bd->vuk.u64[0]) != 1)
+            continue;
+        if (sscanf(vst + 16, "%16"SCNx64, &bd->vuk.u64[1]) != 1)
+            continue;
+        bd->vuk.u64[0] = av_be2ne64(bd->vuk.u64[0]);
+        bd->vuk.u64[1] = av_be2ne64(bd->vuk.u64[1]);
+        vukfound = 1;
+    }
+    free_stream(file);
+    return vukfound;
+}
+
 static int bd_get_uks(struct bd_priv *bd)
 {
     unsigned char *buf;
     size_t file_size;
     int pos;
-    int i, j;
+    int i;
     struct AVAES *a;
     struct AVSHA *asha;
     stream_t *file;
     char filename[PATH_MAX];
     uint8_t discid[20];
-    char *home;
-    int vukfound = 0;
+    char idstr[ID_STR_LEN];
 
     snprintf(filename, sizeof(filename), BD_UKF_PATH, bd->device);
     file = open_stream(filename, NULL, NULL);
@@ -169,62 +231,11 @@ static int bd_get_uks(struct bd_priv *bd)
     av_sha_final(asha, discid);
     av_free(asha);
 
-    // look up discid in KEYDB.cfg to get VUK
-    home = getenv("HOME");
-    snprintf(filename, sizeof(filename), "%s/.dvdcss/KEYDB.cfg", home);
-    file = open_stream(filename, NULL, NULL);
-    if (!file) {
-        mp_msg(MSGT_OPEN,MSGL_ERR,
-               "Cannot open VUK database file %s\n", filename);
-        av_free(buf);
-        return 0;
-    }
-    while (!stream_eof(file)) {
-        char line[1024];
-        uint8_t id[20];
-        char d[200];
-        char *vst;
-        unsigned int byte;
-
-        stream_read_line(file, line, sizeof(line), 0);
-        // file is built up this way:
-        // DISCID = title | V | VUK
-        // or
-        // DISCID = title | key-pair
-        // key-pair = V | VUK
-        // or         D | Date
-        // or         M | M-key???
-        // or         I | I-Key
-        // can be followed by ; and comment
-
-        //This means: first string up to whitespace is discid
-        sscanf(line, "%40s", d);
-        for (i = 0; i < 20; ++i) {
-            if (sscanf(&d[i*2], "%2x", &byte) != 1)
-                break;
-            id[i] = byte;
-        }
-        if (memcmp(id, discid, 20) != 0)
-            continue;
-        mp_msg(MSGT_OPEN, MSGL_V, "KeyDB found Entry for DiscID:\n%s\n", line);
-
-        vst = strstr(line, "| V |");
-        if (vst == 0)
-            break;
-        sscanf(&vst[6], "%32s", d);
-        for (i = 0; i < 16; i++) {
-            if (sscanf(&d[i*2], "%2x", &byte) != 1)
-                break;
-            bd->vuk.u8[i] = byte;
-        }
-        vukfound = 1;
-    }
-    free_stream(file);
-    if (!vukfound) {
+    if (!find_vuk(bd, discid)) {
+        id2str(discid, 20, idstr);
         mp_msg(MSGT_OPEN, MSGL_ERR,
-               "No Volume Unique Key (VUK) found for this Disc: ");
-        for (j = 0; j < 20; j++) mp_msg(MSGT_OPEN, MSGL_ERR, "%02x", discid[j]);
-        mp_msg(MSGT_OPEN, MSGL_ERR, "\n");
+               "No Volume Unique Key (VUK) found for this Disc: %s\n", idstr);
+        av_free(buf);
         return 0;
     }
 
@@ -242,16 +253,12 @@ static int bd_get_uks(struct bd_priv *bd)
         bd->uks.keys  = calloc(bd->uks.count, sizeof(key));
 
         a = av_malloc(av_aes_size);
-        j = av_aes_init(a, bd->vuk.u8, 128, 1);
+        av_aes_init(a, bd->vuk.u8, 128, 1);
 
-        mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_BD_DISCID=");
-        for (j = 0; j < 20; j++)
-            mp_msg(MSGT_IDENTIFY, MSGL_INFO, "%02x", discid[j]);
-        mp_msg(MSGT_IDENTIFY, MSGL_INFO, "\n");
-        mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_BD_VUK=");
-        for (j = 0; j < 20; j++)
-            mp_msg(MSGT_IDENTIFY, MSGL_INFO, "%02x", discid[j]);
-        mp_msg(MSGT_IDENTIFY, MSGL_INFO, "\n");
+        id2str(discid, 20, idstr);
+        mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_BD_DISCID=%s\n", idstr);
+        id2str(bd->vuk.u8, 16, idstr);
+        mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_BD_VUK=%s\n", idstr);
 
         for (i = 0; i < bd->uks.count; i++) {
             av_aes_crypt(a, bd->uks.keys[i].u8, &buf[key_pos], 1, NULL, 1); // decrypt unit key

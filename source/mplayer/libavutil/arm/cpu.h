@@ -1,7 +1,4 @@
 /*
- * vp6dsp MMX function declarations
- * Copyright (c) 2009  Sebastien Lucas <sebastien.lucas@gmail.com>
- *
  * This file is part of FFmpeg.
  *
  * FFmpeg is free software; you can redistribute it and/or
@@ -19,12 +16,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_X86_VP6DSP_MMX_H
-#define AVCODEC_X86_VP6DSP_MMX_H
+#ifndef AVUTIL_ARM_CPU_H
+#define AVUTIL_ARM_CPU_H
 
-#include <stdint.h>
+#include "config.h"
 
-void ff_vp6_filter_diag4_mmx(uint8_t *dst, uint8_t *src, int stride,
-                             const int16_t *h_weights,const int16_t *v_weights);
+int av_get_cpu_flags(void)
+{
+    return HAVE_IWMMXT * AV_CPU_FLAG_IWMMXT;
+}
 
-#endif /* AVCODEC_X86_VP6DSP_MMX_H */
+#endif /* AVUTIL_ARM_CPU_H */

@@ -501,13 +501,13 @@ int ff_set_systematic_pal(uint32_t pal[256], enum PixelFormat pix_fmt){
 #if LIBAVCODEC_VERSION_MAJOR < 53
 int ff_fill_linesize(AVPicture *picture, enum PixelFormat pix_fmt, int width)
 {
-    return av_fill_image_linesizes(picture->linesize, pix_fmt, width);
+    return av_image_fill_linesizes(picture->linesize, pix_fmt, width);
 }
 
 int ff_fill_pointer(AVPicture *picture, uint8_t *ptr, enum PixelFormat pix_fmt,
                     int height)
 {
-    return av_fill_image_pointers(picture->data, pix_fmt, height, ptr, picture->linesize);
+    return av_image_fill_pointers(picture->data, pix_fmt, height, ptr, picture->linesize);
 }
 #endif
 
@@ -515,13 +515,13 @@ int avpicture_fill(AVPicture *picture, uint8_t *ptr,
                    enum PixelFormat pix_fmt, int width, int height)
 {
 
-    if(av_check_image_size(width, height, 0, NULL))
+    if(av_image_check_size(width, height, 0, NULL))
         return -1;
 
-    if (av_fill_image_linesizes(picture->linesize, pix_fmt, width))
+    if (av_image_fill_linesizes(picture->linesize, pix_fmt, width))
         return -1;
 
-    return av_fill_image_pointers(picture->data, pix_fmt, height, ptr, picture->linesize);
+    return av_image_fill_pointers(picture->data, pix_fmt, height, ptr, picture->linesize);
 }
 
 int avpicture_layout(const AVPicture* src, enum PixelFormat pix_fmt, int width, int height,
@@ -597,7 +597,7 @@ int avpicture_layout(const AVPicture* src, enum PixelFormat pix_fmt, int width, 
 int avpicture_get_size(enum PixelFormat pix_fmt, int width, int height)
 {
     AVPicture dummy_pict;
-    if(av_check_image_size(width, height, 0, NULL))
+    if(av_image_check_size(width, height, 0, NULL))
         return -1;
     switch (pix_fmt) {
     case PIX_FMT_RGB8:
@@ -781,64 +781,33 @@ enum PixelFormat avcodec_find_best_pix_fmt(int64_t pix_fmt_mask, enum PixelForma
     return dst_pix_fmt;
 }
 
+#if LIBAVCODEC_VERSION_MAJOR < 53
 void ff_img_copy_plane(uint8_t *dst, int dst_wrap,
                            const uint8_t *src, int src_wrap,
                            int width, int height)
 {
-    if((!dst) || (!src))
-        return;
-    for(;height > 0; height--) {
-        memcpy(dst, src, width);
-        dst += dst_wrap;
-        src += src_wrap;
-    }
+    av_image_copy_plane(dst, dst_wrap, src, src_wrap, width, height);
 }
 
-#if LIBAVCODEC_VERSION_MAJOR < 53
 int ff_get_plane_bytewidth(enum PixelFormat pix_fmt, int width, int plane)
 {
-    return av_get_image_linesize(pix_fmt, width, plane);
+    return av_image_get_linesize(pix_fmt, width, plane);
 }
-#endif
 
 void av_picture_data_copy(uint8_t *dst_data[4], int dst_linesize[4],
                           uint8_t *src_data[4], int src_linesize[4],
                           enum PixelFormat pix_fmt, int width, int height)
 {
-    int i;
-    const PixFmtInfo *pf = &pix_fmt_info[pix_fmt];
-    const AVPixFmtDescriptor *desc = &av_pix_fmt_descriptors[pix_fmt];
-
-    switch(pf->pixel_type) {
-    case FF_PIXEL_PACKED:
-    case FF_PIXEL_PLANAR:
-        for(i = 0; i < pf->nb_channels; i++) {
-            int h;
-            int bwidth = av_get_image_linesize(pix_fmt, width, i);
-            h = height;
-            if (i == 1 || i == 2) {
-                h= -((-height)>>desc->log2_chroma_h);
-            }
-            ff_img_copy_plane(dst_data[i], dst_linesize[i],
-                              src_data[i], src_linesize[i],
-                              bwidth, h);
-        }
-        break;
-    case FF_PIXEL_PALETTE:
-        ff_img_copy_plane(dst_data[0], dst_linesize[0],
-                          src_data[0], src_linesize[0],
-                          width, height);
-        /* copy the palette */
-        memcpy(dst_data[1], src_data[1], 4*256);
-        break;
-    }
+    av_image_copy(dst_data, dst_linesize, src_data, src_linesize,
+                  pix_fmt, width, height);
 }
+#endif
 
 void av_picture_copy(AVPicture *dst, const AVPicture *src,
                      enum PixelFormat pix_fmt, int width, int height)
 {
-    av_picture_data_copy(dst->data, dst->linesize, src->data,
-                         src->linesize, pix_fmt, width, height);
+    av_image_copy(dst->data, dst->linesize, src->data,
+                  src->linesize, pix_fmt, width, height);
 }
 
 /* 2x2 -> 1x1 */

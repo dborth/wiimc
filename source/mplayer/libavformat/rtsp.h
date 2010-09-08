@@ -96,7 +96,8 @@ typedef struct RTSPTransportField {
      * packets will be allowed to make before being discarded. */
     int ttl;
 
-    uint32_t destination; /**< destination IP address */
+    struct sockaddr_storage destination; /**< destination IP address */
+    char source[INET6_ADDRSTRLEN + 1]; /**< source IP address */
 
     /** data/packet transport protocol; e.g. RTP or RDT */
     enum RTSPTransport transport;
@@ -303,6 +304,11 @@ typedef struct RTSPState {
 
     /** RTSP transport mode, such as plain or tunneled. */
     enum RTSPControlTransport control_transport;
+
+    /* Number of RTCP BYE packets the RTSP session has received.
+     * An EOF is propagated back if nb_byes == nb_streams.
+     * This is reset after a seek. */
+    int nb_byes;
 } RTSPState;
 
 /**
@@ -327,7 +333,7 @@ typedef struct RTSPStream {
     /** The following are used only in SDP, not RTSP */
     //@{
     int sdp_port;             /**< port (from SDP content) */
-    struct in_addr sdp_ip;    /**< IP address (from SDP content) */
+    struct sockaddr_storage sdp_ip; /**< IP address (from SDP content) */
     int sdp_ttl;              /**< IP Time-To-Live (from SDP content) */
     int sdp_payload_type;     /**< payload type */
     //@}

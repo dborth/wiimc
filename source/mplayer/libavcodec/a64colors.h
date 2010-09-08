@@ -1,6 +1,6 @@
 /*
- * vp6dsp SSE2 function declarations
- * Copyright (c) 2009  Zuxy Meng <zuxy.meng@gmail.com>
+ * a64 video encoder - c64 colors in rgb (Pepto)
+ * Copyright (c) 2009 Tobias Bindhammer
  *
  * This file is part of FFmpeg.
  *
@@ -19,12 +19,34 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_X86_VP6DSP_SSE2_H
-#define AVCODEC_X86_VP6DSP_SSE2_H
+/**
+ * @file
+ * a64 video encoder - c64 colors in rgb
+ */
+
+#ifndef AVCODEC_A64COLORS_H
+#define AVCODEC_A64COLORS_H
 
 #include <stdint.h>
 
-void ff_vp6_filter_diag4_sse2(uint8_t *dst, uint8_t *src, int stride,
-                             const int16_t *h_weights,const int16_t *v_weights);
+/* c64 palette in RGB */
+static const uint8_t a64_palette[16][3] = {
+    {0x00, 0x00, 0x00},
+    {0xff, 0xff, 0xff},
+    {0x68, 0x37, 0x2b},
+    {0x70, 0xa4, 0xb2},
+    {0x6f, 0x3d, 0x86},
+    {0x58, 0x8d, 0x43},
+    {0x35, 0x28, 0x79},
+    {0xb8, 0xc7, 0x6f},
+    {0x6f, 0x4f, 0x25},
+    {0x43, 0x39, 0x00},
+    {0x9a, 0x67, 0x59},
+    {0x44, 0x44, 0x44},
+    {0x6c, 0x6c, 0x6c},
+    {0x9a, 0xd2, 0x84},
+    {0x6c, 0x5e, 0xb5},
+    {0x95, 0x95, 0x95},
+};
 
-#endif /* AVCODEC_X86_VP6DSP_SSE2_H */
+#endif /* AVCODEC_A64COLORS_H */

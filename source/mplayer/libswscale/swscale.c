@@ -1048,7 +1048,9 @@ static inline void name(uint8_t *dst, const uint8_t *src, long width, uint32_t *
 }
 
 BGR2Y(uint32_t, bgr32ToY,16, 0, 0, 0x00FF, 0xFF00, 0x00FF, RY<< 8, GY   , BY<< 8, RGB2YUV_SHIFT+8)
+BGR2Y(uint32_t,bgr321ToY,16,16, 0, 0xFF00, 0x00FF, 0xFF00, RY    , GY<<8, BY    , RGB2YUV_SHIFT+8)
 BGR2Y(uint32_t, rgb32ToY, 0, 0,16, 0x00FF, 0xFF00, 0x00FF, RY<< 8, GY   , BY<< 8, RGB2YUV_SHIFT+8)
+BGR2Y(uint32_t,rgb321ToY, 0,16,16, 0xFF00, 0x00FF, 0xFF00, RY    , GY<<8, BY    , RGB2YUV_SHIFT+8)
 BGR2Y(uint16_t, bgr16ToY, 0, 0, 0, 0x001F, 0x07E0, 0xF800, RY<<11, GY<<5, BY    , RGB2YUV_SHIFT+8)
 BGR2Y(uint16_t, bgr15ToY, 0, 0, 0, 0x001F, 0x03E0, 0x7C00, RY<<10, GY<<5, BY    , RGB2YUV_SHIFT+7)
 BGR2Y(uint16_t, rgb16ToY, 0, 0, 0, 0xF800, 0x07E0, 0x001F, RY    , GY<<5, BY<<11, RGB2YUV_SHIFT+8)
@@ -1062,14 +1064,14 @@ static inline void abgrToA(uint8_t *dst, const uint8_t *src, long width, uint32_
     }
 }
 
-#define BGR2UV(type, name, shr, shg, shb, maska, maskr, maskg, maskb, RU, GU, BU, RV, GV, BV, S)\
+#define BGR2UV(type, name, shr, shg, shb, shp, maskr, maskg, maskb, RU, GU, BU, RV, GV, BV, S) \
 static inline void name(uint8_t *dstU, uint8_t *dstV, const uint8_t *src, const uint8_t *dummy, long width, uint32_t *unused)\
 {\
     int i;\
     for (i=0; i<width; i++) {\
-        int b= (((const type*)src)[i]&maskb)>>shb;\
-        int g= (((const type*)src)[i]&maskg)>>shg;\
-        int r= (((const type*)src)[i]&maskr)>>shr;\
+        int b= ((((const type*)src)[i]>>shp)&maskb)>>shb;\
+        int g= ((((const type*)src)[i]>>shp)&maskg)>>shg;\
+        int r= ((((const type*)src)[i]>>shp)&maskr)>>shr;\
 \
         dstU[i]= ((RU)*r + (GU)*g + (BU)*b + (257<<((S)-1)))>>(S);\
         dstV[i]= ((RV)*r + (GV)*g + (BV)*b + (257<<((S)-1)))>>(S);\
@@ -1079,8 +1081,8 @@ static inline void name ## _half(uint8_t *dstU, uint8_t *dstV, const uint8_t *sr
 {\
     int i;\
     for (i=0; i<width; i++) {\
-        int pix0= ((const type*)src)[2*i+0];\
-        int pix1= ((const type*)src)[2*i+1];\
+        int pix0= ((const type*)src)[2*i+0]>>shp;\
+        int pix1= ((const type*)src)[2*i+1]>>shp;\
         int g= (pix0&~(maskr|maskb))+(pix1&~(maskr|maskb));\
         int b= ((pix0+pix1-g)&(maskb|(2*maskb)))>>shb;\
         int r= ((pix0+pix1-g)&(maskr|(2*maskr)))>>shr;\
@@ -1093,12 +1095,14 @@ static inline void name ## _half(uint8_t *dstU, uint8_t *dstV, const uint8_t *sr
     }\
 }
 
-BGR2UV(uint32_t, bgr32ToUV,16, 0, 0, 0xFF000000, 0xFF0000, 0xFF00,   0x00FF, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
-BGR2UV(uint32_t, rgb32ToUV, 0, 0,16, 0xFF000000,   0x00FF, 0xFF00, 0xFF0000, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
-BGR2UV(uint16_t, bgr16ToUV, 0, 0, 0,          0,   0x001F, 0x07E0,   0xF800, RU<<11, GU<<5, BU    , RV<<11, GV<<5, BV    , RGB2YUV_SHIFT+8)
-BGR2UV(uint16_t, bgr15ToUV, 0, 0, 0,          0,   0x001F, 0x03E0,   0x7C00, RU<<10, GU<<5, BU    , RV<<10, GV<<5, BV    , RGB2YUV_SHIFT+7)
-BGR2UV(uint16_t, rgb16ToUV, 0, 0, 0,          0,   0xF800, 0x07E0,   0x001F, RU    , GU<<5, BU<<11, RV    , GV<<5, BV<<11, RGB2YUV_SHIFT+8)
-BGR2UV(uint16_t, rgb15ToUV, 0, 0, 0,          0,   0x7C00, 0x03E0,   0x001F, RU    , GU<<5, BU<<10, RV    , GV<<5, BV<<10, RGB2YUV_SHIFT+7)
+BGR2UV(uint32_t, bgr32ToUV,16, 0, 0, 0, 0xFF0000, 0xFF00,   0x00FF, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
+BGR2UV(uint32_t,bgr321ToUV,16, 0, 0, 8, 0xFF0000, 0xFF00,   0x00FF, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
+BGR2UV(uint32_t, rgb32ToUV, 0, 0,16, 0,   0x00FF, 0xFF00, 0xFF0000, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
+BGR2UV(uint32_t,rgb321ToUV, 0, 0,16, 8,   0x00FF, 0xFF00, 0xFF0000, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
+BGR2UV(uint16_t, bgr16ToUV, 0, 0, 0, 0,   0x001F, 0x07E0,   0xF800, RU<<11, GU<<5, BU    , RV<<11, GV<<5, BV    , RGB2YUV_SHIFT+8)
+BGR2UV(uint16_t, bgr15ToUV, 0, 0, 0, 0,   0x001F, 0x03E0,   0x7C00, RU<<10, GU<<5, BU    , RV<<10, GV<<5, BV    , RGB2YUV_SHIFT+7)
+BGR2UV(uint16_t, rgb16ToUV, 0, 0, 0, 0,   0xF800, 0x07E0,   0x001F, RU    , GU<<5, BU<<11, RV    , GV<<5, BV<<11, RGB2YUV_SHIFT+8)
+BGR2UV(uint16_t, rgb15ToUV, 0, 0, 0, 0,   0x7C00, 0x03E0,   0x001F, RU    , GU<<5, BU<<10, RV    , GV<<5, BV<<10, RGB2YUV_SHIFT+7)
 
 static inline void palToY(uint8_t *dst, const uint8_t *src, long width, uint32_t *pal)
 {
@@ -1146,42 +1150,60 @@ static inline void monoblack2Y(uint8_t *dst, const uint8_t *src, long width, uin
 
 //Note: we have C, MMX, MMX2, 3DNOW versions, there is no 3DNOW+MMX2 one
 //Plain C versions
-#if (!HAVE_MMX && !HAVE_ALTIVEC) || CONFIG_RUNTIME_CPUDETECT
-#define COMPILE_C
+#if CONFIG_RUNTIME_CPUDETECT
+#  define COMPILE_C 1
+#  if   ARCH_X86
+#    define COMPILE_MMX     HAVE_MMX
+#    define COMPILE_MMX2    HAVE_MMX2
+#    define COMPILE_3DNOW   HAVE_AMD3DNOW
+#  elif ARCH_PPC
+#    define COMPILE_ALTIVEC HAVE_ALTIVEC
+#  endif
+#else /* CONFIG_RUNTIME_CPUDETECT */
+#  if   ARCH_X86
+#    if   HAVE_MMX2
+#      define COMPILE_MMX2  1
+#    elif HAVE_AMD3DNOW
+#      define COMPILE_3DNOW 1
+#    elif HAVE_MMX
+#      define COMPILE_MMX   1
+#    else
+#      define COMPILE_C     1
+#    endif
+#  elif ARCH_PPC && HAVE_ALTIVEC
+#    define COMPILE_ALTIVEC 1
+#  else
+#    define COMPILE_C       1
+#  endif
 #endif
 
-#if ARCH_PPC
-#if HAVE_ALTIVEC
-#define COMPILE_ALTIVEC
+#ifndef COMPILE_C
+#  define COMPILE_C 0
 #endif
-#endif //ARCH_PPC
-
-#if ARCH_X86
-
-#if (HAVE_MMX && !HAVE_AMD3DNOW && !HAVE_MMX2) || CONFIG_RUNTIME_CPUDETECT
-#define COMPILE_MMX
+#ifndef COMPILE_MMX
+#  define COMPILE_MMX 0
 #endif
-
-#if HAVE_MMX2 || CONFIG_RUNTIME_CPUDETECT
-#define COMPILE_MMX2
+#ifndef COMPILE_MMX2
+#  define COMPILE_MMX2 0
 #endif
-
-#if (HAVE_AMD3DNOW && !HAVE_MMX2) || CONFIG_RUNTIME_CPUDETECT
-#define COMPILE_3DNOW
+#ifndef COMPILE_3DNOW
+#  define COMPILE_3DNOW 0
 #endif
-#endif //ARCH_X86
+#ifndef COMPILE_ALTIVEC
+#  define COMPILE_ALTIVEC 0
+#endif
 
 #define COMPILE_TEMPLATE_MMX 0
 #define COMPILE_TEMPLATE_MMX2 0
 #define COMPILE_TEMPLATE_AMD3DNOW 0
 #define COMPILE_TEMPLATE_ALTIVEC 0
 
-#ifdef COMPILE_C
+#if COMPILE_C
 #define RENAME(a) a ## _C
 #include "swscale_template.c"
 #endif
 
-#ifdef COMPILE_ALTIVEC
+#if COMPILE_ALTIVEC
 #undef RENAME
 #undef COMPILE_TEMPLATE_ALTIVEC
 #define COMPILE_TEMPLATE_ALTIVEC 1
@@ -1192,7 +1214,7 @@ static inline void monoblack2Y(uint8_t *dst, const uint8_t *src, long width, uin
 #if ARCH_X86
 
 //MMX versions
-#ifdef COMPILE_MMX
+#if COMPILE_MMX
 #undef RENAME
 #undef COMPILE_TEMPLATE_MMX
 #undef COMPILE_TEMPLATE_MMX2
@@ -1205,7 +1227,7 @@ static inline void monoblack2Y(uint8_t *dst, const uint8_t *src, long width, uin
 #endif
 
 //MMX2 versions
-#ifdef COMPILE_MMX2
+#if COMPILE_MMX2
 #undef RENAME
 #undef COMPILE_TEMPLATE_MMX
 #undef COMPILE_TEMPLATE_MMX2
@@ -1218,7 +1240,7 @@ static inline void monoblack2Y(uint8_t *dst, const uint8_t *src, long width, uin
 #endif
 
 //3DNOW versions
-#ifdef COMPILE_3DNOW
+#if COMPILE_3DNOW
 #undef RENAME
 #undef COMPILE_TEMPLATE_MMX
 #undef COMPILE_TEMPLATE_MMX2
@@ -1254,7 +1276,7 @@ SwsFunc ff_getSwsFunc(SwsContext *c)
     }
 
 #else
-#ifdef COMPILE_ALTIVEC
+#if COMPILE_ALTIVEC
     if (flags & SWS_CPU_CAPS_ALTIVEC) {
         sws_init_swScale_altivec(c);
         return swScale_altivec;
@@ -1779,7 +1801,7 @@ void ff_get_unscaled_swscale(SwsContext *c)
     if(srcFormat == PIX_FMT_UYVY422 && dstFormat == PIX_FMT_YUV422P)
         c->swScale= uyvyToYuv422Wrapper;
 
-#ifdef COMPILE_ALTIVEC
+#if COMPILE_ALTIVEC
     if ((c->flags & SWS_CPU_CAPS_ALTIVEC) &&
         !(c->flags & SWS_BITEXACT) &&
         srcFormat == PIX_FMT_YUV420P) {
@@ -1827,6 +1849,21 @@ static void reset_ptr(const uint8_t* src[], int format)
     }
 }
 
+static int check_image_pointers(uint8_t *data[4], enum PixelFormat pix_fmt,
+                                const int linesizes[4])
+{
+    const AVPixFmtDescriptor *desc = &av_pix_fmt_descriptors[pix_fmt];
+    int i;
+
+    for (i = 0; i < 4; i++) {
+        int plane = desc->comp[i].plane;
+        if (!data[plane] || !linesizes[plane])
+            return 0;
+    }
+
+    return 1;
+}
+
 /**
  * swscale wrapper, so we don't need to export the SwsContext.
  * Assumes planar YUV to be in YUV order instead of YVU.
@@ -1841,6 +1878,15 @@ int sws_scale(SwsContext *c, const uint8_t* const src[], const int srcStride[], 
     // do not mess up sliceDir if we have a "trailing" 0-size slice
     if (srcSliceH == 0)
         return 0;
+
+    if (!check_image_pointers(src, c->srcFormat, srcStride)) {
+        av_log(c, AV_LOG_ERROR, "bad src image pointers\n");
+        return 0;
+    }
+    if (!check_image_pointers(dst, c->dstFormat, dstStride)) {
+        av_log(c, AV_LOG_ERROR, "bad dst image pointers\n");
+        return 0;
+    }
 
     if (c->sliceDir == 0 && srcSliceY != 0 && srcSliceY + srcSliceH != c->srcH) {
         av_log(c, AV_LOG_ERROR, "Slices start in the middle!\n");

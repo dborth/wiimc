@@ -1322,12 +1322,11 @@ static void vp3_draw_horiz_band(Vp3DecodeContext *s, int y)
         return;
 
     h= y - s->last_slice_end;
+    s->last_slice_end= y;
     y -= h;
 
     if (!s->flipped_image) {
-        if (y == 0)
-            h -= s->height - s->avctx->height;  // account for non-mod16
-        y = s->height - y - h;
+        y = s->avctx->height - y - h;
     }
 
     cy = y >> s->chroma_y_shift;
@@ -1338,7 +1337,6 @@ static void vp3_draw_horiz_band(Vp3DecodeContext *s, int y)
 
     emms_c();
     s->avctx->draw_horiz_band(s->avctx, &s->current_frame, offset, y, 3, h);
-    s->last_slice_end= y + h;
 }
 
 /*
@@ -1509,7 +1507,7 @@ static void render_slice(Vp3DecodeContext *s, int slice)
       *     dispatch (slice - 1);
       */
 
-    vp3_draw_horiz_band(s, FFMIN(64*slice + 64-16, s->height-16));
+    vp3_draw_horiz_band(s, FFMIN((32 << s->chroma_y_shift) * (slice + 1) -16, s->height-16));
 }
 
 /*
@@ -1850,7 +1848,7 @@ static int vp3_decode_frame(AVCodecContext *avctx,
         int row = (s->height >> (3+(i && s->chroma_y_shift))) - 1;
         apply_loop_filter(s, i, row, row+1);
     }
-    vp3_draw_horiz_band(s, s->height);
+    vp3_draw_horiz_band(s, s->avctx->height);
 
     *data_size=sizeof(AVFrame);
     *(AVFrame*)data= s->current_frame;
@@ -1965,7 +1963,7 @@ static int theora_decode_header(AVCodecContext *avctx, GetBitContext *gb)
     Vp3DecodeContext *s = avctx->priv_data;
     int visible_width, visible_height, colorspace;
     int offset_x = 0, offset_y = 0;
-    AVRational fps;
+    AVRational fps, aspect;
 
     s->theora = get_bits_long(gb, 24);
     av_log(avctx, AV_LOG_DEBUG, "Theora bitstream version %X\n", s->theora);
@@ -1981,7 +1979,7 @@ static int theora_decode_header(AVCodecContext *avctx, GetBitContext *gb)
     visible_width  = s->width  = get_bits(gb, 16) << 4;
     visible_height = s->height = get_bits(gb, 16) << 4;
 
-    if(av_check_image_size(s->width, s->height, 0, avctx)){
+    if(av_image_check_size(s->width, s->height, 0, avctx)){
         av_log(avctx, AV_LOG_ERROR, "Invalid dimensions (%dx%d)\n", s->width, s->height);
         s->width= s->height= 0;
         return -1;
@@ -2002,8 +2000,13 @@ static int theora_decode_header(AVCodecContext *avctx, GetBitContext *gb)
                   fps.den, fps.num, 1<<30);
     }
 
-    avctx->sample_aspect_ratio.num = get_bits_long(gb, 24);
-    avctx->sample_aspect_ratio.den = get_bits_long(gb, 24);
+    aspect.num = get_bits_long(gb, 24);
+    aspect.den = get_bits_long(gb, 24);
+    if (aspect.num && aspect.den) {
+        av_reduce(&avctx->sample_aspect_ratio.num,
+                  &avctx->sample_aspect_ratio.den,
+                  aspect.num, aspect.den, 1<<30);
+    }
 
     if (s->theora < 0x030200)
         skip_bits(gb, 5); /* keyframe frequency force */

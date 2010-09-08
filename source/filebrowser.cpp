@@ -344,8 +344,8 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			return browser.numEntries;
 
 		// parsing failed - setup last browser dir
-		BrowserHistoryDiscard();
 		strcpy(browser.dir, BrowserHistoryRetrieve());
+		BrowserHistoryDiscard();
 
 		if(browser.numEntries > 0) // parsing failed, but we held onto the last listing
 			return res; // so we can return without any more work required

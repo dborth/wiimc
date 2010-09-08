@@ -1999,9 +1999,6 @@ static void MenuBrowse(int menu)
 		mainWindow->Append(thumbImg);
 	}
 
-	mainWindow->Append(fileBrowser);
-	mainWindow->Append(&upOneLevelBtn);
-
 	if(videoScreenshot && menu != MENU_BROWSE_MUSIC) // a video is loaded
 	{
 		if(!nowPlaying)
@@ -2033,6 +2030,17 @@ static void MenuBrowse(int menu)
 		mainWindow->Remove(disabled);
 		mainWindow->SetState(STATE_DEFAULT);
 	}
+
+	if(findLoadedFile == 2)
+	{
+		findLoadedFile = 0;
+		fileBrowser->TriggerUpdate();
+	}
+
+	SuspendGui();
+	mainWindow->Append(fileBrowser);
+	mainWindow->Append(&upOneLevelBtn);
+	ResumeGui();
 
 	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
 	{

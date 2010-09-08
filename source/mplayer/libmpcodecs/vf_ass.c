@@ -325,7 +325,7 @@ static int render_frame(struct vf_instance *vf, mp_image_t *mpi, const ASS_Image
 static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 {
 #ifdef GEKKO
-	if(ass_track == 0 || !sub_visibility || !vf->priv->ass_priv))
+	if(ass_track == 0 || !sub_visibility || !vf->priv->ass_priv)
 		return vf_next_put_image(vf, mpi, pts);
 #endif
 

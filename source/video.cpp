@@ -245,32 +245,18 @@ InitVideo ()
 	bool pal = false;
 
 	if (vmode == &TVPal528IntDf)
+	{
 		pal = true;
+		vmode = &TVPal574IntDfScale;
+	}
 
 	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
 	{
 		screenwidth = 768;
-
-		vmode->fbWidth = 640;
-		vmode->efbHeight = 456;
-		vmode->viWidth = 686;
-
-		if (pal)
-		{
-			vmode->xfbHeight = 542;
-			vmode->viHeight = 542;
-		}
-		else
-		{
-			vmode->xfbHeight = 456;
-			vmode->viHeight = 456;
-		}
+		vmode->viWidth = 720;
 	}
 	else
 	{
-		if (pal)
-			vmode = &TVPal574IntDfScale;
-
 		vmode->viWidth = 672;
 	}
 
@@ -284,6 +270,11 @@ InitVideo ()
 		vmode->viXOrigin = (VI_MAX_WIDTH_NTSC - vmode->viWidth) / 2;
 		vmode->viYOrigin = (VI_MAX_HEIGHT_NTSC - vmode->viHeight) / 2;
 	}
+
+	s8 hoffset = 0;
+
+	if (CONF_GetDisplayOffsetH(&hoffset) == 0)
+		vmode->viXOrigin += hoffset;
 
 	VIDEO_Configure (vmode);
 

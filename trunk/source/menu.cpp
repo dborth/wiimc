@@ -2229,10 +2229,9 @@ static void MenuBrowse(int menu)
 
 					if(numItems > 1)
 					{
-						ext = GetExt(browserList[1].filename);
+						char *ext2 = GetExt(browserList[1].filename);
 						// let's load this one file
-						if(numItems == 2 && !IsPlaylistExt(ext) && 
-						strncmp(browserList[1].filename, "http://www.youtube.com", 22) != 0) 
+						if(IsPlaylistExt(ext) && numItems == 2 && !IsPlaylistExt(ext2)) 
 						{
 							sprintf(loadedFile, browserList[1].filename);
 							snprintf(loadedFileDisplay, 128, "%s", browserList[1].displayname);

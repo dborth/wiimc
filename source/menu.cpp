@@ -2231,7 +2231,7 @@ static void MenuBrowse(int menu)
 					{
 						char *ext2 = GetExt(browserList[1].filename);
 						// let's load this one file
-						if(IsPlaylistExt(ext) && numItems == 2 && !IsPlaylistExt(ext2)) 
+						if(numItems == 2 && IsPlaylistExt(ext) && !IsPlaylistExt(ext2)) 
 						{
 							sprintf(loadedFile, browserList[1].filename);
 							snprintf(loadedFileDisplay, 128, "%s", browserList[1].displayname);

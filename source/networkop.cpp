@@ -51,7 +51,7 @@ void UpdateCheck()
 	updateChecked = true;
 	char tmpbuffer[256];
 
-	if (http_request("http://wiimc.googlecode.com/svn/trunk/update.xml", NULL, tmpbuffer, 256, SILENT) <= 0)
+	if (http_request((char *)"http://wiimc.googlecode.com/svn/trunk/update.xml", NULL, tmpbuffer, 256, SILENT) <= 0)
 		return;
 
 	mxml_node_t *xml;

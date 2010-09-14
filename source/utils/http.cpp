@@ -249,7 +249,7 @@ static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
  * http_request
  * Retrieves the specified URL, and stores it in the specified file or buffer
  ***************************************************************************/
-int http_request(const char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent)
+static int http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent, int retry)
 {
 	int res = 0;
 	char http_host[1024];
@@ -257,8 +257,7 @@ int http_request(const char *url, FILE *hfile, char *buffer, u32 maxsize, bool s
 	u16 http_port;
 	URL_t *tmpurl;
 
-	http_res result;
-	u32 http_status;
+	u32 http_status = 404;
 	u32 sizeread = 0, content_length = 0;
 
 	int linecount;
@@ -288,15 +287,11 @@ int http_request(const char *url, FILE *hfile, char *buffer, u32 maxsize, bool s
 		http_port = 80;
 
 	url_free(tmpurl);
-	http_status = 404;
 
 	int s = tcp_connect(http_host, http_port);
 
 	if (s < 0)
-	{
-		result = HTTPR_ERR_CONNECT;
 		return 0;
-	}
 
 	char request[1024];
 	char *r = request;
@@ -309,13 +304,13 @@ int http_request(const char *url, FILE *hfile, char *buffer, u32 maxsize, bool s
 	res = tcp_write(s, (u8 *) request, strlen(request));
 
 	char line[256];
+	char redirect[1024] = { 0 };
 
 	for (linecount = 0; linecount < 32; linecount++)
 	{
 		if (tcp_readln(s, line, 255) != 0)
 		{
 			http_status = 404;
-			result = HTTPR_ERR_REQUEST;
 			break;
 		}
 
@@ -324,12 +319,18 @@ int http_request(const char *url, FILE *hfile, char *buffer, u32 maxsize, bool s
 
 		sscanf(line, "HTTP/1.%*u %u", &http_status);
 		sscanf(line, "Content-Length: %u", &content_length);
+		sscanf(line, "Location: %s", redirect);
 	}
 
 	if (http_status != 200)
 	{
-		result = HTTPR_ERR_STATUS;
 		net_close(s);
+
+		if((http_status == 301 || http_status == 302) && redirect[0] != 0 && retry < 5)
+		{
+			strcpy(url, redirect);
+			return http_request(url, hfile, buffer, maxsize, silent, ++retry);
+		}
 		return 0;
 	}
 
@@ -340,7 +341,6 @@ int http_request(const char *url, FILE *hfile, char *buffer, u32 maxsize, bool s
 	}
 	else if (content_length > maxsize)
 	{
-		result = HTTPR_ERR_TOOBIG;
 		net_close(s);
 		return 0;
 	}
@@ -398,10 +398,13 @@ int http_request(const char *url, FILE *hfile, char *buffer, u32 maxsize, bool s
 
 	if (content_length < maxsize && sizeread != content_length)
 	{
-		result = HTTPR_ERR_RECEIVE;
 		return 0;
 	}
 
-	result = HTTPR_OK;
 	return sizeread;
+}
+
+int http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent)
+{
+	return http_request(url, hfile, buffer, maxsize, silent, 0);
 }

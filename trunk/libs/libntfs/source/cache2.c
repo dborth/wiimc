@@ -35,18 +35,13 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <ogc/lwp_watchdog.h>
 #include <string.h>
 #include <limits.h>
 
-//#include "common.h"
 #include "cache2.h"
 #include "bit_ops.h"
-//#include "disc.h"
-
 #include "mem_allocate.h"
-#include <ogc/lwp_watchdog.h>
-//#include "bit_ops.h"
-//#include "file_allocation_table.h"
 
 #define CACHE_FREE UINT_MAX
 

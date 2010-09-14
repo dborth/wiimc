@@ -419,7 +419,7 @@ bool ntfsMount (const char *name, const DISC_INTERFACE *interface, sec_t startSe
     // Sanity check
     if (!name || !interface) {
         errno = EINVAL;
-        return -1;
+        return false;
     }
 
     // Initialise ntfs-3g

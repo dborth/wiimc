@@ -30,6 +30,7 @@
 #include "wiimc.h"
 #include "settings.h"
 
+
 #include "mplayer/config.h"
 #include "mplayer/input/input.h"
 #include "mplayer/osdep/gx_supp.h"
@@ -38,7 +39,13 @@ extern "C" {
 extern void __exception_setreload(int t);
 extern u32 __di_check_ahbprot(void);
 extern char *network_useragent;
+void TakeScreenshot();
 }
+
+
+extern GXRModeObj *vmode;
+
+
 
 int ScreenshotRequested = 0;
 int ConfigRequested = 0;
@@ -58,6 +65,8 @@ static lwp_t mthread = LWP_THREAD_NULL;
 static lwp_t cthread = LWP_THREAD_NULL;
 static u8 mplayerstack[STACKSIZE] ATTRIBUTE_ALIGN (32);
 static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
+
+
 
 /****************************************************************************
  * Shutdown / Reboot / Exit
@@ -88,6 +97,7 @@ void CheckSleepTimer()
 void ExitApp()
 {
 	DisableRumble();
+	printf("ExitApp\n");
 	if(ShutdownRequested == 1 || ExitRequested == 1)
 	{
 		SaveFolder();
@@ -102,7 +112,7 @@ void ExitApp()
 
 	UnmountAllDevices();
 
-	if(ShutdownRequested == 1 || WiiSettings.exitAction == EXIT_POWEROFF)
+	if(ResetRequested==0 && (ShutdownRequested == 1 || WiiSettings.exitAction == EXIT_POWEROFF))
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 	else if(WiiSettings.exitAction == EXIT_WIIMENU)
 		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
@@ -124,6 +134,7 @@ static void ResetCB()
 		return;
 
 	ResetRequested = 1;
+	ShutdownRequested = 1;
 }
 
 /****************************************************************************
@@ -170,8 +181,16 @@ const devoptab_t gecko_out = {
 	NULL		// device statvfs_r
 };
 
-static void USBGeckoOutput()
+
+extern "C" { 
+
+void USBGeckoOutput()
 {
+	static bool USBGeckoOutput_initied=false;
+
+	if(USBGeckoOutput_initied) return;
+	USBGeckoOutput_initied=true;
+
 	gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
 
 	LWP_MutexInit(&gecko_mutex, false);
@@ -179,7 +198,7 @@ static void USBGeckoOutput()
 	devoptab_list[STD_OUT] = &gecko_out;
 	devoptab_list[STD_ERR] = &gecko_out;
 }
-
+}
 /****************************************************************************
  * IOS Check
  ***************************************************************************/
@@ -361,10 +380,18 @@ bool CacheThreadSuspended()
 }
 }
 
+static void show_mem()
+{
+	printf("m1(%.4f) m2(%.4f)\n",
+								((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
+								 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+}
+
 bool InitMPlayer()
 {
 	static bool init = false;
 	if(init) return true;
+
 
 	if(appPath[0] == 0)
 	{
@@ -379,12 +406,12 @@ bool InitMPlayer()
 		InfoPrompt("Unable to Initialize MPlayer", msg);
 		return false;
 	}
+	
 
 	sprintf(MPLAYER_DATADIR,"%s",appPath);
 	sprintf(MPLAYER_CONFDIR,"%s",appPath);
 	sprintf(MPLAYER_LIBDIR,"%s",appPath);
 	sprintf(MPLAYER_CSSDIR,"%s/css",appPath);
-
 	DIR_ITER *dir = diropen(MPLAYER_CSSDIR);
 
 	if(!dir && mkdir(MPLAYER_CSSDIR, 0777) != 0)
@@ -492,29 +519,46 @@ void SetMPlayerSettings()
 
 /****************************************************************************
  * Main
- ***************************************************************************/
+ ***************************************************************************/	
 
 int main(int argc, char *argv[])
 {
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
 
+	show_mem();
+
 	// only reload IOS if AHBPROT is not enabled
 	u32 have_ahbprot = __di_check_ahbprot();
 	u32 version = IOS_GetVersion();
 	s32 preferred = IOS_GetPreferredVersion();
+	u32 size;
 
 	if(version != 58 && preferred > 0 && version != (u32)preferred && !have_ahbprot)
 		IOS_ReloadIOS(preferred);
 
-	StartNetworkThread();
 
 	if(have_ahbprot)
 		DI_Init();
 
 	WPAD_Init();
 	InitVideo();
+	
+	size = 	(8*1024*1024) + // cache
+			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
+			(1024*1024*2)+(1024*512*2) + //textures
+			(VIDEO_GetFrameBufferSize(vmode)*2) + //video buffers
+			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
+			(16*1024); // padding
+	AddMem2Area (size, "video");  
+	AddMem2Area (6*1024*1024, "gui"); 
+	AddMem2Area (3*1024*1024, "other"); // vars + ttf , we have to improve ext_ttf
+
+	InitVideo2();
+	
 	SetupPads();
+	
+	StartNetworkThread();
 
 	// Wii Power/Reset buttons
 	WPAD_SetPowerButtonCallback((WPADShutdownCallback)ShutdownCB);
@@ -522,11 +566,12 @@ int main(int argc, char *argv[])
 	SYS_SetResetCallback(ResetCB);
 
 	AUDIO_Init(NULL);
-	InitMem2Manager(); // cache memory and file browser
 
 	GX_AllocTextureMemory();
-	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE);
+	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, "video");
+
 	MountAllDevices(); // Initialize SD and USB devices
+
 	// store path app was loaded from
 	if(argc > 0 && argv[0] != NULL)
 		CreateLoadPath(argv[0]);
@@ -534,12 +579,15 @@ int main(int argc, char *argv[])
 	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
 	InitFreeType((u8*)font_ttf, font_ttf_size); // Initialize font system
+
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
 
+	TakeScreenshot();
+
 	// create GUI thread
 	GuiInit();
-
+	
 	while(1)
 	{
 		ResetVideo_Menu();

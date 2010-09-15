@@ -16,6 +16,7 @@ extern "C" {
 #endif
 
 void InitVideo();
+void InitVideo2();
 void StopGX();
 void ResetVideo_Menu();
 void Menu_Render();

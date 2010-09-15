@@ -55,9 +55,54 @@ GuiImageData::~GuiImageData()
 {
 	if(data)
 	{
-		free(data);
+		gui_free(data);
 		data = NULL;
 	}
+}
+
+// overloaded new operator
+void *GuiImageData::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiImageData::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiImageData::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiImageData::operator delete[](void *p)
+{  
+  gui_free(p);
 }
 
 void GuiImageData::SetImage(const u8 * i, int s)

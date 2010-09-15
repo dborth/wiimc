@@ -38,6 +38,8 @@ void ShowVideoVolumeLevelBar();
 void HideVideoVolumeLevelBar();
 void UndoChangeMenu();
 void RemoveVideoImg();
+bool WiiMenuSuspended();
+
 
 extern "C" {
 void DoMPlayerGuiDraw();

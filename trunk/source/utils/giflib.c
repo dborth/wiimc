@@ -44,6 +44,17 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+
+//only texture in mem2, internal memory managed by gcc
+#define gif_malloc malloc
+#define gif_free free
+#define gif_memalign memalign
+
+#include "mem2_manager.h"
+//#define gif_malloc gui_mem2_malloc
+//#define gif_free gui_mem2_free
+//#define gif_memalign gui_mem2_memalign
+
 #define GIF_TRANSPARENT 	0x01
 #define GIF_NOT_TRANSPARENT	-1
 
@@ -217,7 +228,7 @@ static ColorMapObject * MakeMapObject(int ColorCount, const GifColorType * Color
 		return ((ColorMapObject *) NULL);
 	}
 
-	Object = (ColorMapObject *) malloc(sizeof(ColorMapObject));
+	Object = (ColorMapObject *) gif_malloc(sizeof(ColorMapObject));
 	if (Object == (ColorMapObject *) NULL)
 	{
 		return ((ColorMapObject *) NULL);
@@ -244,8 +255,8 @@ static void FreeMapObject(ColorMapObject * Object)
 {
 	if (Object != NULL)
 	{
-		free(Object->Colors);
-		free(Object);
+		gif_free(Object->Colors);
+		gif_free(Object);
 	}
 }
 
@@ -258,8 +269,8 @@ static void FreeExtension(SavedImage * Image)
 		return;
 	}
 	for (ep = Image->ExtensionBlocks; ep < (Image->ExtensionBlocks + Image->ExtensionBlockCount); ep++)
-		(void) free((char *) ep->Bytes);
-	free((char *) Image->ExtensionBlocks);
+		(void) gif_free((char *) ep->Bytes);
+	gif_free((char *) Image->ExtensionBlocks);
 	Image->ExtensionBlocks = NULL;
 }
 
@@ -280,12 +291,12 @@ static void FreeSavedImages(GifFileType * GifFile)
 		}
 
 		if (sp->RasterBits)
-			free((char *) sp->RasterBits);
+			gif_free((char *) sp->RasterBits);
 
 		if (sp->ExtensionBlocks)
 			FreeExtension(sp);
 	}
-	free((char *) GifFile->SavedImages);
+	gif_free((char *) GifFile->SavedImages);
 	GifFile->SavedImages = NULL;
 }
 
@@ -365,7 +376,7 @@ DGifOpen(void *userData, InputFunc readFunc)
 	GifFileType *GifFile;
 	GifFilePrivateType *Private;
 
-	GifFile = (GifFileType *) malloc(sizeof(GifFileType));
+	GifFile = (GifFileType *) gif_malloc(sizeof(GifFileType));
 	if (GifFile == NULL)
 	{
 		_GifError = D_GIF_ERR_NOT_ENOUGH_MEM;
@@ -374,11 +385,11 @@ DGifOpen(void *userData, InputFunc readFunc)
 
 	memset(GifFile, '\0', sizeof(GifFileType));
 
-	Private = (GifFilePrivateType *) malloc(sizeof(GifFilePrivateType));
+	Private = (GifFilePrivateType *) gif_malloc(sizeof(GifFilePrivateType));
 	if (!Private)
 	{
 		_GifError = D_GIF_ERR_NOT_ENOUGH_MEM;
-		free((char *) GifFile);
+		gif_free((char *) GifFile);
 		return NULL;
 	}
 
@@ -393,8 +404,8 @@ DGifOpen(void *userData, InputFunc readFunc)
 	if (READ(GifFile, Buf, GIF_STAMP_LEN) != GIF_STAMP_LEN)
 	{
 		_GifError = D_GIF_ERR_READ_FAILED;
-		free((char *) Private);
-		free((char *) GifFile);
+		gif_free((char *) Private);
+		gif_free((char *) GifFile);
 		return NULL;
 	}
 
@@ -402,15 +413,15 @@ DGifOpen(void *userData, InputFunc readFunc)
 	if (strncmp(GIF_STAMP, (void *) Buf, GIF_VERSION_POS) != 0)
 	{
 		_GifError = D_GIF_ERR_NOT_GIF_FILE;
-		free((char *) Private);
-		free((char *) GifFile);
+		gif_free((char *) Private);
+		gif_free((char *) GifFile);
 		return NULL;
 	}
 
 	if (DGifGetScreenDesc(GifFile) == GIF_ERROR)
 	{
-		free((char *) Private);
-		free((char *) GifFile);
+		gif_free((char *) Private);
+		gif_free((char *) GifFile);
 		return NULL;
 	}
 
@@ -775,7 +786,7 @@ static int DGifGetImageDesc(GifFileType * GifFile)
 	}
 	else
 	{
-		if ((GifFile->SavedImages = (SavedImage *) malloc(sizeof(SavedImage))) == NULL)
+		if ((GifFile->SavedImages = (SavedImage *) gif_malloc(sizeof(SavedImage))) == NULL)
 		{
 			_GifError = D_GIF_ERR_NOT_ENOUGH_MEM;
 			return GIF_ERROR;
@@ -919,7 +930,7 @@ static int DGifCloseFile(GifFileType * GifFile)
 
 	if (Private)
 	{
-		free((char *) Private);
+		gif_free((char *) Private);
 		Private = NULL;
 	}
 
@@ -929,7 +940,7 @@ static int DGifCloseFile(GifFileType * GifFile)
 		GifFile->SavedImages = NULL;
 	}
 
-	free(GifFile);
+	gif_free(GifFile);
 
 	if (File && (fclose(File) != 0))
 	{
@@ -960,14 +971,14 @@ static int DGifCloseMem(GifFileType *gifFile)
 	if (gifFile->UserData != NULL)
 	{
 		GifMemoryType *gifMemoryType = (GifMemoryType *) gifFile->UserData;
-		free(gifMemoryType);
+		gif_free(gifMemoryType);
 	}
 	return DGifCloseFile(gifFile);
 }
 
 static GifFileType *DGifOpenMem(const unsigned char *img, int imgSize)
 {
-	GifMemoryType *gifMemoryType = (GifMemoryType *) malloc(sizeof(GifMemoryType));
+	GifMemoryType *gifMemoryType = (GifMemoryType *) gif_malloc(sizeof(GifMemoryType));
 	memset((void *) gifMemoryType, 0, sizeof(GifMemoryType));
 	gifMemoryType->imgData = (void *) img;
 	gifMemoryType->imgSize = imgSize;
@@ -1000,7 +1011,7 @@ static u8* DGifDecodeTo4x4RGB8(GifFileType *gifFile, GifRowType *rowType, short 
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = memalign (32, len);
+		dst = mem2_memalign (32, len, "gui");
 
 	if (!dst)
 		return NULL;
@@ -1054,14 +1065,14 @@ static GifRowType *DGifDecompress(GifFileType *gifFile, short *transparentColor)
 
 	int rowSize = gifFile->SWidth * sizeof(GifPixelType);
 
-	ScreenBuffer = (GifRowType *) malloc(gifFile->SHeight * sizeof(GifRowType *));
+	ScreenBuffer = (GifRowType *) gif_malloc(gifFile->SHeight * sizeof(GifRowType *));
 	if (ScreenBuffer == NULL)
 	{
 		return NULL;
 	}
 
 	int Size = gifFile->SWidth * sizeof(GifPixelType);
-	ScreenBuffer[0] = (GifRowType) malloc(Size);
+	ScreenBuffer[0] = (GifRowType) gif_malloc(Size);
 	if (ScreenBuffer[0] == NULL)
 	{
 		goto cleanup;
@@ -1073,7 +1084,7 @@ static GifRowType *DGifDecompress(GifFileType *gifFile, short *transparentColor)
 	}
 	for (i = 1; i < gifFile->SHeight; i++)
 	{
-		ScreenBuffer[i] = (GifRowType) malloc(Size);
+		ScreenBuffer[i] = (GifRowType) gif_malloc(Size);
 		if (ScreenBuffer[i] == NULL)
 		{
 			goto cleanup;
@@ -1170,7 +1181,7 @@ static GifRowType *DGifDecompress(GifFileType *gifFile, short *transparentColor)
 
 	cleanup: if (ScreenBuffer != NULL)
 	{
-		free(ScreenBuffer);
+		gif_free(ScreenBuffer);
 		ScreenBuffer = NULL;
 	}
 	finish: return ScreenBuffer;
@@ -1199,6 +1210,6 @@ u8 * DecodeGIF(const u8 *src, u32 srclen, int *width, int *height, u8 *dstPtr)
 	}
 
 	DGifCloseMem(gifFile);
-	free(rows);
+	gif_free(rows);
 	return dst;
 }

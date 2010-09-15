@@ -9,7 +9,7 @@
 #include <gccore.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include <sys/dir.h>
 
 #include "wiimc.h"

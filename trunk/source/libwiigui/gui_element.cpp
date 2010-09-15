@@ -61,6 +61,51 @@ GuiElement::~GuiElement()
 {
 }
 
+// overloaded new operator
+void *GuiElement::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiElement::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiElement::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiElement::operator delete[](void *p)
+{  
+  gui_free(p);
+}
+
 void GuiElement::SetParent(GuiElement * e)
 {
 	parentElement = e;

@@ -18,15 +18,18 @@
 #include "libwiigui/gui.h"
 #include "menu.h"
 #include "wiimc.h"
+#include "utils/mem2_manager.h"
+
 
 extern "C" {
 
 #define DEFAULT_FIFO_SIZE 384 * 1024
-static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32);
+static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32); //must be in mem1
+
 static Mtx GXmodelView2D;
 
 unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
-int whichfb = 0; // Switch
+u8 whichfb = 0; // Switch
 GXRModeObj *vmode; // Menu video mode
 u8 * videoScreenshot = NULL;
 int screenheight = 480;
@@ -42,9 +45,9 @@ bool drawGui = false;
 
 void TakeScreenshot()
 {
-	if(videoScreenshot != NULL) free(videoScreenshot);
+	//if(videoScreenshot != NULL) gui_mem2_free(videoScreenshot);
 	int texSize = vmode->fbWidth * vmode->efbHeight * 4;
-	videoScreenshot = (u8 *)memalign(32, texSize);
+	if(videoScreenshot == NULL) videoScreenshot = (u8 *) mem2_malloc(texSize, "video");
 	if(videoScreenshot == NULL) return;
 	GX_SetTexCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
 	GX_SetTexCopyDst(vmode->fbWidth, vmode->efbHeight, GX_TF_RGBA8, GX_FALSE);
@@ -86,6 +89,11 @@ void ResetVideo_Menu()
 
 	guOrtho(p,0,screenheight-1,0,screenwidth-1,0,300);
 	GX_LoadProjectionMtx(p, GX_ORTHOGRAPHIC);
+
+	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
+	GX_SetColorUpdate(GX_TRUE);
+
+	GX_Flush();
 }
 
 /****************************************************************************
@@ -110,8 +118,7 @@ void StopGX()
 void Menu_Render()
 {
 	whichfb ^= 1; // flip framebuffer
-	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
-	GX_SetColorUpdate(GX_TRUE);
+	
 	GX_CopyDisp(xfb[whichfb],GX_TRUE);
 	GX_DrawDone();
 	VIDEO_WaitVSync();
@@ -211,7 +218,8 @@ void Menu_DrawRectangle(f32 x, f32 y, f32 width, f32 height, GXColor color, u8 f
 
 int DrawMPlayerGui()
 {
-	UpdatePads();
+	//UpdatePads();
+	WPAD_ReadPending(0, NULL); //only wiimote 1
 	MPlayerInput();
 
 	if(!drawGui && wiiIsPaused())
@@ -277,10 +285,15 @@ InitVideo ()
 		vmode->viXOrigin += hoffset;
 
 	VIDEO_Configure (vmode);
+}
+
+void
+InitVideo2 ()
+{
 
 	// Allocate the video buffers
-	xfb[0] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));
-	xfb[1] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));
+	xfb[0] = (u32 *) MEM_K0_TO_K1 (mem2_malloc( VIDEO_GetFrameBufferSize(vmode), "video"));
+	xfb[1] = (u32 *) MEM_K0_TO_K1 (mem2_malloc( VIDEO_GetFrameBufferSize(vmode), "video"));
 
 	// Clear framebuffers etc.
 	VIDEO_ClearFrameBuffer (vmode, xfb[0], COLOR_BLACK);
@@ -298,8 +311,8 @@ InitVideo ()
 
 	// Initialize GX
 	GXColor background = { 0, 0, 0, 0xff };
-	memset (&gp_fifo, 0, DEFAULT_FIFO_SIZE);
-	GX_Init (&gp_fifo, DEFAULT_FIFO_SIZE);
+	memset (gp_fifo, 0, DEFAULT_FIFO_SIZE);
+	GX_Init (gp_fifo, DEFAULT_FIFO_SIZE);
 	GX_SetCopyClear (background, 0x00ffffff);
 	GX_SetDispCopyGamma (GX_GM_1_0);
 	GX_SetCullMode (GX_CULL_NONE);

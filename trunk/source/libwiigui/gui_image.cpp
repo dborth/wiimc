@@ -64,7 +64,7 @@ GuiImage::GuiImage(u8 * img, int w, int h)
 
 GuiImage::GuiImage(int w, int h, GXColor c)
 {
-	image = (u8 *)memalign (32, w * h << 2);
+	image = (u8 *)gui_memalign (32, w * h << 2);
 	width = w;
 	height = h;
 	imageangle = 0;
@@ -97,7 +97,52 @@ GuiImage::GuiImage(int w, int h, GXColor c)
 GuiImage::~GuiImage()
 {
 	if(imgType == IMAGE_COLOR && image)
-		free(image);
+		gui_free(image);
+}
+
+// overloaded new operator
+void *GuiImage::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiImage::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiImage::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiImage::operator delete[](void *p)
+{  
+  gui_free(p);
 }
 
 u8 * GuiImage::GetImage()

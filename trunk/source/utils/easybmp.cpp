@@ -25,6 +25,8 @@
 #include <string.h>
 
 #include "video.h"
+#include "mem2_manager.h"
+
 
 #define DefaultXPelsPerMeter 3780 // set to a default of 96 dpi 
 #define DefaultYPelsPerMeter 3780 // set to a default of 96 dpi
@@ -1223,7 +1225,7 @@ u8 * BMP::DecodeTo4x4RGB8(u8 *dstPtr)
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = (u8 *)memalign (32, len);
+		dst = (u8 *)mem2_memalign (32, len, "gui");
 
 	if(!dst)
 		return NULL;

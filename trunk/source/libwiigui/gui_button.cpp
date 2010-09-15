@@ -50,6 +50,51 @@ GuiButton::~GuiButton()
 {
 }
 
+// overloaded new operator
+void *GuiButton::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiButton::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiButton::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiButton::operator delete[](void *p)
+{  
+  gui_free(p);
+}
+
 void GuiButton::SetImage(GuiImage* img)
 {
 	image = img;

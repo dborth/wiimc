@@ -28,6 +28,51 @@ GuiWindow::~GuiWindow()
 {
 }
 
+// overloaded new operator
+void *GuiWindow::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiWindow::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiWindow::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiWindow::operator delete[](void *p)
+{  
+  gui_free(p);
+}
+
 void GuiWindow::Append(GuiElement* e)
 {
 	if (e == NULL)

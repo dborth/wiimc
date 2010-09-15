@@ -380,7 +380,12 @@ while(1){
       priv->idx_size=size2>>4;
       mp_msg(MSGT_HEADER,MSGL_V,MSGTR_MPDEMUX_AVIHDR_ReadingIndexBlockChunksForFrames,
         priv->idx_size,avih.dwTotalFrames, (int64_t)stream_tell(demuxer->stream));
-      priv->idx=malloc(priv->idx_size<<4);
+
+#ifdef GEKKO
+		priv->idx = alloc_index(priv->idx_size<<4);
+#else   
+		priv->idx=malloc(priv->idx_size<<4);
+#endif
 //      printf("\nindex to %p !!!!! (priv=%p)\n",priv->idx,priv);
       stream_read(demuxer->stream,(char*)priv->idx,priv->idx_size<<4);
       for (i = 0; i < priv->idx_size; i++) {	// swap index to machine endian
@@ -465,7 +470,11 @@ if (priv->isodml && (index_mode==-1 || index_mode==0 || index_mode==1)) {
     AVIINDEXENTRY *idx;
 
 
-    if (priv->idx_size) free(priv->idx);
+#ifdef GEKKO
+	if (priv->idx_size) free_index();
+#else
+	if (priv->idx_size) free(priv->idx);
+#endif
     priv->idx_size = 0;
     priv->idx_offset = 0;
     priv->idx = NULL;
@@ -509,7 +518,11 @@ if (priv->isodml && (index_mode==-1 || index_mode==0 || index_mode==1)) {
      * we would get with -forceidx.
      */
 
-    idx = priv->idx = malloc(priv->idx_size * sizeof (AVIINDEXENTRY));
+#ifdef GEKKO
+		idx = priv->idx = alloc_index(priv->idx_size * sizeof (AVIINDEXENTRY));
+#else
+		idx = priv->idx = malloc(priv->idx_size * sizeof (AVIINDEXENTRY));
+#endif
 
     for (cx = priv->suidx; cx != &priv->suidx[priv->suidx_size]; cx++) {
 	avistdindex_chunk *sic;

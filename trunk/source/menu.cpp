@@ -40,8 +40,19 @@ extern "C" {
 }
 
 #define THREAD_SLEEP 200
-#define GSTACK (256*1024)
+
+#define GSTACK (128*1024)
+
 static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
+
+#define GUITH_STACK (8192*2)
+
+static u8 progressstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+static u8 picturestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+static u8 screensaverstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+static u8 creditsstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+
 
 extern char streamtitle[128]; // ICY data (http.c)
 extern char streamurl[128]; // ICY data (http.c)
@@ -75,6 +86,53 @@ static GuiImageData volumeBottom(volume_bottom_png);
 static GuiImageData volumeEmpty(volume_empty_png);
 static GuiImageData volumeLine(volume_line_png);
 static GuiImage * disabled = NULL;
+
+//GUI VARS=================
+static GuiImage * _navDividerImg = NULL;
+static GuiImage * _bgImg = NULL;
+static GuiTooltip * _logoBtnTip = NULL;
+static GuiImageData * _logo = NULL;
+static GuiImage * _logoBtnImg = NULL;
+static GuiImageData * _navHighlight = NULL;
+static GuiImageData * _videos = NULL;
+static GuiImageData * _videosOver = NULL;
+static GuiImageData * _videosOn = NULL;
+static GuiImageData * _music = NULL;
+static GuiImageData * _musicOver = NULL;
+static GuiImageData * _musicOn = NULL;
+static GuiImageData * _pictures = NULL;
+static GuiImageData * _picturesOver = NULL;
+static GuiImageData * _picturesOn = NULL;
+static GuiImageData * _dvd = NULL;
+static GuiImageData * _dvdOver = NULL;
+static GuiImageData * _dvdOn = NULL;
+static GuiImageData * _online = NULL;
+static GuiImageData * _onlineOver = NULL;
+static GuiImageData * _onlineOn = NULL;
+static GuiImageData * _settings = NULL;
+static GuiImageData * _settingsOver = NULL;
+static GuiImageData * _settingsOn = NULL;
+static GuiTooltip * _videosBtnTip = NULL;
+static GuiImage * _videosBtnOverImg = NULL;
+static GuiImage * _videosBtnHighlightImg = NULL;
+static GuiTooltip * _musicBtnTip = NULL;
+static GuiImage * _musicBtnOverImg = NULL;
+static GuiImage * _musicBtnHighlightImg = NULL;
+static GuiTooltip * _picturesBtnTip = NULL;
+static GuiImage * _picturesBtnOverImg = NULL;
+static GuiImage * _picturesBtnHighlightImg = NULL;
+static GuiTooltip * _dvdBtnTip = NULL;
+static GuiImage * _dvdBtnOverImg = NULL;
+static GuiImage * _dvdBtnHighlightImg = NULL;
+static GuiTooltip * _onlineBtnTip = NULL;
+static GuiImage * _onlineBtnOverImg = NULL;
+static GuiImage * _onlineBtnHighlightImg = NULL;
+static GuiTooltip * _settingsBtnTip = NULL;
+static GuiImage * _settingsBtnOverImg = NULL;
+static GuiImage * _settingsBtnHighlightImg = NULL;
+
+
+
 static GuiTrigger * trigA = NULL;
 static GuiTrigger * trigHeldA = NULL;
 static GuiTrigger * trigB = NULL;
@@ -108,6 +166,7 @@ static GuiImage * settingsBtnOnImg = NULL;
 
 static GuiButton * logoBtn = NULL;
 static GuiWindow * mainWindow = NULL;
+static GuiWindow * WiiMenumainWindow = NULL;
 static GuiText * settingText = NULL;
 static GuiText * settingText2 = NULL;
 static GuiText * nowPlaying = NULL;
@@ -530,7 +589,7 @@ extern "C" void DoMPlayerGuiDraw()
 	mainWindow->Draw();
 	mainWindow->DrawTooltip();
 
-	int i = 3;
+	int i = 0;
 	do
 	{
 		if(userInput[i].wpad->ir.valid)
@@ -540,9 +599,9 @@ extern "C" void DoMPlayerGuiDraw()
 		--i;
 	} while(i>=0);
 
-	mainWindow->Update(&userInput[3]);
-	mainWindow->Update(&userInput[2]);
-	mainWindow->Update(&userInput[1]);
+//	mainWindow->Update(&userInput[3]);
+//	mainWindow->Update(&userInput[2]);
+//	mainWindow->Update(&userInput[1]);
 	mainWindow->Update(&userInput[0]);
 
 	if(mainWindow->IsVisible() && wiiInDVDMenu())
@@ -688,7 +747,6 @@ static void *GuiThread (void *arg)
 			{
 				mainWindow->Draw();
 				Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor){0, 0, 0, i},1);
-				Menu_Render();
 			}
 			ExitApp();
 		}
@@ -784,9 +842,9 @@ restart:
 			if(ext_font_ttf)
 			{
 				SuspendGui();
-				free(ext_font_ttf);
+				mem2_free(ext_font_ttf, "other");
 			}
-			ext_font_ttf = (u8 *)memalign(32, loadSize);
+			ext_font_ttf = (u8 *)mem2_memalign(32, loadSize, "other"); // can be a problem we have to see how to manage it
 			fread (ext_font_ttf, 1, loadSize, file);
 			fclose(file);
 
@@ -1688,7 +1746,7 @@ static void UpdateAudiobarModeBtn()
 
 void RemoveVideoImg()
 {
-	if(!videoImg)
+	//if(!videoImg)
 		return;
 
 	SuspendGui();
@@ -1696,8 +1754,8 @@ void RemoveVideoImg()
 	ResumeGui();
 	delete videoImg;
 	videoImg = NULL;
-	free(videoScreenshot);
-	videoScreenshot = NULL;
+	//gui_mem2_free(videoScreenshot);
+	//videoScreenshot = NULL;
 }
 
 /****************************************************************************
@@ -1711,7 +1769,7 @@ static bool thumbLoad = false;
 static void *ThumbThread (void *arg)
 {
 	GuiImageData *thumb = NULL;
-	char *thumbBuffer = (char *)malloc(200*1024);
+	char *thumbBuffer = (char *)mem2_malloc(200*1024, "other");
 	thumbLoad = false;
 	thumbThreadHalt = 0;
 
@@ -1764,7 +1822,7 @@ static void *ThumbThread (void *arg)
 		usleep(THREAD_SLEEP);
 	}
 	if(thumb) delete thumb;
-	free(thumbBuffer);
+	mem2_free(thumbBuffer, "other");
 	return NULL;
 }
 
@@ -1839,7 +1897,7 @@ static void HideAudioVolumeLevelBar();
 
 bool LoadYouTubeFile(char *url, char *newurl)
 {
-	char *buffer = (char *)malloc(128*1024);
+	char *buffer = (char *)mem2_malloc(128*1024, "other");
 
 	if(!buffer)
 		return false;
@@ -1848,7 +1906,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	if(size <= 0)
 	{
-		free(buffer);
+		mem2_free(buffer, "other");
 		return false;
 	}
 
@@ -1857,7 +1915,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	if(str == NULL)
 	{
-		free(buffer);
+		mem2_free(buffer, "other");
 		return false;
 	}
 
@@ -1877,11 +1935,11 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		if(strcmp((*link).first.c_str(), "34") == 0)
 		{
 			url_unescape_string(newurl, (*link).second.c_str());
-			free(buffer);
+			mem2_free(buffer, "other");
 			return true;
 		}
 	}
-	free(buffer);
+	mem2_free(buffer, "other");
 	return false;
 }
 
@@ -2645,16 +2703,24 @@ static bool doDrag = false;
 
 static u64 slideprev, slidenow; // slideshow timer
 
+static u32 _sizePicBuffer=0;
 static void AllocPicBuffer()
-{
-	if(picBuffer)
-		return;
 
+{
 	u32 level;
-	_CPU_ISR_Disable(level);
-	picBuffer = (u8*)((u32)SYS_GetArena2Hi()-MAX_PICTURE_SIZE);
-	SYS_SetArena2Hi(picBuffer);
-	_CPU_ISR_Restore(level);
+	u32 size;
+	
+
+	size=MAX_PICTURE_SIZE;
+
+	size &= ~0x1f;
+
+	_sizePicBuffer=size;
+	printf("==AllocPicBuffer=====\n");
+	_CPU_ISR_Disable(level);                
+    picBuffer = (unsigned char *)( (u32)SYS_GetArena2Hi() - size );
+    SYS_SetArena2Hi(picBuffer);
+    _CPU_ISR_Restore(level);
 }
 
 static void FreePicBuffer()
@@ -2663,8 +2729,9 @@ static void FreePicBuffer()
 		return;
 	
 	u32 level;
+	printf("=====FreePicBuffer====\n");
 	_CPU_ISR_Disable(level);
-	SYS_SetArena2Hi(picBuffer+MAX_PICTURE_SIZE);
+	SYS_SetArena2Hi(picBuffer+_sizePicBuffer);
 	_CPU_ISR_Restore(level);
 	picBuffer = NULL;
 }
@@ -2769,7 +2836,7 @@ static void *PictureThread (void *arg)
 	pictureLoaded = -1;
 	pictureIndexLoaded = -1;
 	pictureIndexLoading = -1;
-	AllocPicBuffer();
+	
 
 	while(1)
 	{
@@ -2779,6 +2846,7 @@ restart:
 			pictureLoaded = -1;
 			pictureIndexLoaded = -1;
 			pictureIndexLoading = -1;
+			FreePicBuffer();
 			LWP_SuspendThread(picturethread);
 		}
 		if(pictureThreadHalt == 2)
@@ -2786,6 +2854,7 @@ restart:
 
 		if(loadPictures)
 		{
+			AllocPicBuffer();
 			loadPictures = 0;
 			selIndex = browser.selIndex;
 			CleanupPictures(selIndex);
@@ -6038,7 +6107,7 @@ static void PictureZoomOutCallback(void * ptr)
 
 static void SetupGui()
 {	
-	static int guiSetup = 0;
+	static bool guiSetup = false;
 	
 	if(guiSetup)
 		return;
@@ -6088,19 +6157,15 @@ static void SetupGui()
 	trigMinus->SetButtonOnlyTrigger(-1, WPAD_BUTTON_MINUS | WPAD_CLASSIC_BUTTON_MINUS, PAD_BUTTON_Y);
 
 	// images
-
 	bg = new GuiImageData(bg_jpg, bg_blue_jpg_size, GX_TF_RGBA8);
 	navDivider = new GuiImageData(nav_divider_png);
 	btnBottom = new GuiImageData(button_bottom_png);
 	btnBottomOver = new GuiImageData(button_bottom_over_png);
 	arrowRightSmall = new GuiImageData(arrow_right_small_png);
-
 	disabled = new GuiImage(screenwidth,screenheight,(GXColor){0, 0, 0, 100});
-
 	actionbarLeft = new GuiImageData(actionbar_left_png);	
 	actionbarMid = new GuiImageData(actionbar_mid_png);
 	actionbarRight = new GuiImageData(actionbar_right_png);
-
 	actionbarBackward = new GuiImageData(actionbar_backward_png);
 	actionbarPause = new GuiImageData(actionbar_pause_png);
 	actionbarPlay = new GuiImageData(actionbar_play_png);
@@ -6113,6 +6178,7 @@ static void SetupGui()
 	actionbarClose = new GuiImageData(actionbar_close_png);
 	actionbarPlaylist = new GuiImageData(actionbar_playlist_png);
 	actionbarVolume = new GuiImageData(actionbar_volume_png);
+
 
 	// video bar
 
@@ -6563,7 +6629,7 @@ static void SetupGui()
 	statusText = new GuiText(NULL, 24, (GXColor){255, 255, 255, 255});
 	statusText->SetVisible(false);
 
-	guiSetup = 1;
+	guiSetup = true;
 }
 
 void GuiInit()
@@ -6580,14 +6646,37 @@ static void StartGuiThreads()
 	screensaverThreadHalt = 1;
 	creditsThreadHalt = 1;
 	updateThreadHalt = 1;
-	
-	LWP_CreateThread (&progressthread, ProgressThread, NULL, NULL, 0, 60);
-	LWP_CreateThread (&picturethread, PictureThread, NULL, NULL, 0, 60);
-	LWP_CreateThread (&screensaverthread, ScreensaverThread, NULL, NULL, 0, 60);
-	LWP_CreateThread (&creditsthread, CreditsThread, NULL, NULL, 0, 60);
-	LWP_CreateThread (&updatethread, UpdateThread, NULL, NULL, 0, 60);
+
+	if(progressthread==LWP_THREAD_NULL)
+		LWP_CreateThread (&progressthread, ProgressThread, NULL, progressstack, GUITH_STACK, 60);
+	if(picturethread==LWP_THREAD_NULL)
+		LWP_CreateThread (&picturethread, PictureThread, NULL, picturestack, GUITH_STACK, 60);
+	if(screensaverthread==LWP_THREAD_NULL)
+		LWP_CreateThread (&screensaverthread, ScreensaverThread, NULL, screensaverstack, GUITH_STACK, 60);
+	if(creditsthread==LWP_THREAD_NULL)
+		LWP_CreateThread (&creditsthread, CreditsThread, NULL, creditsstack, GUITH_STACK, 60);
+	if(updatethread==LWP_THREAD_NULL)
+		LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 60);
+
 }
 
+static void StopGuiThreads()
+{
+	showProgress = 0;
+	progressThreadHalt = 1;
+	pictureThreadHalt = 1;
+	screensaverThreadHalt = 1;
+	creditsThreadHalt = 1;
+	updateThreadHalt = 1;
+
+	while(!LWP_ThreadIsSuspended(progressthread))usleep(100);
+	while(!LWP_ThreadIsSuspended(picturethread))usleep(100);
+	while(!LWP_ThreadIsSuspended(screensaverthread))usleep(100);
+	while(!LWP_ThreadIsSuspended(screensaverthread))usleep(100);
+	while(!LWP_ThreadIsSuspended(updatethread))usleep(100);
+
+}
+/*
 static void StopGuiThreads()
 {
 	showProgress = 0;
@@ -6651,186 +6740,208 @@ static void StopGuiThreads()
 		updatethread = LWP_THREAD_NULL;
 	}
 }
+*/
 
 /****************************************************************************
  * Menu
  ***************************************************************************/
-void WiiMenu()
+static void SetupWiiMenu()
 {
-	menuMode = 0; // switch to normal GUI mode
-	guiShutdown = false;
+	static bool WiiMenu_init=false;
+	selectLoadedFile = 1; //review
+
 
 	SetupGui();
 
-	mainWindow = new GuiWindow(screenwidth, screenheight);
+	if(WiiMenumainWindow == NULL)	
+		WiiMenumainWindow = new GuiWindow(screenwidth, screenheight);
 
-	if(videoScreenshot)
+	mainWindow = WiiMenumainWindow;
+
+
+	if(videoImg==NULL) 
 	{
-		videoImg = new GuiImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
+		videoImg = new GuiImage();
+		videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
 		videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
 		videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
 		mainWindow->Append(videoImg);
+	}
+	videoImg->SetVisible(true);
+	
+	if(WiiMenu_init) return;
+	WiiMenu_init=true;
+	/*
+
+	if(videoScreenshot)
+	{
+		
+		videoImg->SetVisible(true);
+		
 		selectLoadedFile = 1; // video loaded - trigger browser to jump to it
 	}	
 
-	GuiImage bgImg(bg);
-	bgImg.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	bgImg.SetAlpha(200);
-	GuiImage navDividerImg(navDivider);
-	navDividerImg.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	navDividerImg.SetPosition(0, 85);
+*/
+	
 
-	mainWindow->Append(&bgImg);
-	mainWindow->Append(&navDividerImg);
 
-	GuiTooltip logoBtnTip("Credits");
-	GuiImageData logo(logo_png);
-	GuiImage logoBtnImg(&logo);
-	logoBtn = new GuiButton(logo.GetWidth(), logo.GetHeight());
+	_bgImg = new GuiImage(bg);
+	_bgImg->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	_bgImg->SetAlpha(200);
+	
+	_navDividerImg = new GuiImage (navDivider);
+	_navDividerImg->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	_navDividerImg->SetPosition(0, 85);
+
+	mainWindow->Append(_bgImg);
+	mainWindow->Append(_navDividerImg);
+
+	_logoBtnTip = new GuiTooltip ("Credits");
+	_logo = new GuiImageData (logo_png);
+	_logoBtnImg = new GuiImage (_logo);
+	logoBtn = new GuiButton(_logo->GetWidth(), _logo->GetHeight());
 	logoBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	logoBtn->SetPosition(-32, 40);
-	logoBtn->SetImage(&logoBtnImg);
+	logoBtn->SetImage(_logoBtnImg);
 	logoBtn->SetTrigger(trigA);
 	logoBtn->SetSelectable(false);
-	logoBtn->SetTooltip(&logoBtnTip);
+	logoBtn->SetTooltip(_logoBtnTip);
 	logoBtn->SetUpdateCallback(DisplayCredits);
 	mainWindow->Append(logoBtn);
 
-	GuiImageData navHighlight(nav_highlight_png);
-	GuiImageData videos(nav_videos_png);
-	GuiImageData videosOver(nav_videos_over_png);
-	GuiImageData videosOn(nav_videos_on_png);
-	GuiImageData music(nav_music_png);
-	GuiImageData musicOver(nav_music_over_png);
-	GuiImageData musicOn(nav_music_on_png);
-	GuiImageData pictures(nav_pictures_png);
-	GuiImageData picturesOver(nav_pictures_over_png);
-	GuiImageData picturesOn(nav_pictures_on_png);
-	GuiImageData dvd(nav_dvd_png);
-	GuiImageData dvdOver(nav_dvd_over_png);
-	GuiImageData dvdOn(nav_dvd_on_png);
-	GuiImageData online(nav_onlinemedia_png);
-	GuiImageData onlineOver(nav_onlinemedia_over_png);
-	GuiImageData onlineOn(nav_onlinemedia_on_png);
-	GuiImageData settings(nav_settings_png);
-	GuiImageData settingsOver(nav_settings_over_png);
-	GuiImageData settingsOn(nav_settings_on_png);
+	_navHighlight = new GuiImageData (nav_highlight_png);
+	_videos = new GuiImageData (nav_videos_png);
+	_videosOver = new GuiImageData (nav_videos_over_png);
+	_videosOn = new GuiImageData (nav_videos_on_png);
+	_music = new GuiImageData (nav_music_png);
+	_musicOver = new GuiImageData (nav_music_over_png);
+	_musicOn = new GuiImageData (nav_music_on_png);
+	_pictures = new GuiImageData (nav_pictures_png);
+	_picturesOver = new GuiImageData (nav_pictures_over_png);
+	_picturesOn = new GuiImageData (nav_pictures_on_png);
+	_dvd = new GuiImageData (nav_dvd_png);
+	_dvdOver = new GuiImageData (nav_dvd_over_png);
+	_dvdOn = new GuiImageData (nav_dvd_on_png);
+	_online = new GuiImageData (nav_onlinemedia_png);
+	_onlineOver = new GuiImageData (nav_onlinemedia_over_png);
+	_onlineOn = new GuiImageData (nav_onlinemedia_on_png);
+	_settings = new GuiImageData (nav_settings_png);
+	_settingsOver = new GuiImageData (nav_settings_over_png);
+	_settingsOn = new GuiImageData (nav_settings_on_png);
 
-	GuiTooltip videosBtnTip("Videos");
-	videosBtnImg = new GuiImage(&videos);
-	videosBtnOnImg = new GuiImage(&videosOn);
-	GuiImage videosBtnOverImg(&videosOver);
-	GuiImage videosBtnHighlightImg(&navHighlight);
-	videosBtnHighlightImg.SetPosition(-20, 30);
-	videosBtnHighlightImg.SetAlpha(128);
+	_videosBtnTip = new GuiTooltip ("Videos");
+	videosBtnImg = new GuiImage(_videos);
+	videosBtnOnImg = new GuiImage(_videosOn);
+	_videosBtnOverImg = new GuiImage (_videosOver);
+	_videosBtnHighlightImg = new GuiImage (_navHighlight);
+	_videosBtnHighlightImg->SetPosition(-20, 30);
+	_videosBtnHighlightImg->SetAlpha(128);
 	videosBtn = new GuiButton(videosBtnImg->GetWidth(), videosBtnImg->GetHeight());
 	videosBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	videosBtn->SetPosition(30, 30);
-	videosBtn->SetTooltip(&videosBtnTip);
+	videosBtn->SetTooltip(_videosBtnTip);
 	videosBtn->SetImage(videosBtnImg);
-	videosBtn->SetImageOver(&videosBtnOverImg);
-	videosBtn->SetIconOver(&videosBtnHighlightImg);
+	videosBtn->SetImageOver(_videosBtnOverImg);
+	videosBtn->SetIconOver(_videosBtnHighlightImg);
 	videosBtn->SetTrigger(trigA);
 	videosBtn->SetSelectable(false);
 	videosBtn->SetEffectGrow();
 	videosBtn->SetUpdateCallback(ChangeMenuVideos);
 
-	GuiTooltip musicBtnTip("Music");
-	musicBtnImg = new GuiImage(&music);
-	musicBtnOnImg = new GuiImage(&musicOn);
-	GuiImage musicBtnOverImg(&musicOver);
-	GuiImage musicBtnHighlightImg(&navHighlight);
-	musicBtnHighlightImg.SetPosition(-20, 30);
-	musicBtnHighlightImg.SetAlpha(128);
+	_musicBtnTip = new GuiTooltip ("Music");
+	musicBtnImg = new GuiImage(_music);
+	musicBtnOnImg = new GuiImage(_musicOn);
+	_musicBtnOverImg = new GuiImage (_musicOver);
+	_musicBtnHighlightImg = new GuiImage (_navHighlight);
+	_musicBtnHighlightImg->SetPosition(-20, 30);
+	_musicBtnHighlightImg->SetAlpha(128);
 	musicBtn = new GuiButton(musicBtnImg->GetWidth(), musicBtnImg->GetHeight());
 	musicBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	musicBtn->SetPosition(85, 30);
-	musicBtn->SetTooltip(&musicBtnTip);
+	musicBtn->SetTooltip(_musicBtnTip);
 	musicBtn->SetImage(musicBtnImg);
-	musicBtn->SetImageOver(&musicBtnOverImg);
-	musicBtn->SetIconOver(&musicBtnHighlightImg);
+	musicBtn->SetImageOver(_musicBtnOverImg);
+	musicBtn->SetIconOver(_musicBtnHighlightImg);
 	musicBtn->SetTrigger(trigA);
 	musicBtn->SetSelectable(false);
 	musicBtn->SetEffectGrow();
 	musicBtn->SetUpdateCallback(ChangeMenuMusic);
 
-	GuiTooltip picturesBtnTip("Pictures");
-	picturesBtnImg = new GuiImage(&pictures);
-	picturesBtnOnImg = new GuiImage(&picturesOn);
-	GuiImage picturesBtnOverImg(&picturesOver);
-	GuiImage picturesBtnHighlightImg(&navHighlight);
-	picturesBtnHighlightImg.SetPosition(-20, 30);
-	picturesBtnHighlightImg.SetAlpha(128);
+	_picturesBtnTip = new GuiTooltip ("Pictures");
+	picturesBtnImg = new GuiImage(_pictures);
+	picturesBtnOnImg = new GuiImage(_picturesOn);
+	_picturesBtnOverImg = new GuiImage (_picturesOver);
+	_picturesBtnHighlightImg= new GuiImage (_navHighlight);
+	_picturesBtnHighlightImg->SetPosition(-20, 30);
+	_picturesBtnHighlightImg->SetAlpha(128);
 	picturesBtn = new GuiButton(picturesBtnImg->GetWidth(), picturesBtnImg->GetHeight());
 	picturesBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	picturesBtn->SetPosition(140, 30);
-	picturesBtn->SetTooltip(&picturesBtnTip);
+	picturesBtn->SetTooltip(_picturesBtnTip);
 	picturesBtn->SetImage(picturesBtnImg);
-	picturesBtn->SetImageOver(&picturesBtnOverImg);
-	picturesBtn->SetIconOver(&picturesBtnHighlightImg);
+	picturesBtn->SetImageOver(_picturesBtnOverImg);
+	picturesBtn->SetIconOver(_picturesBtnHighlightImg);
 	picturesBtn->SetTrigger(trigA);
 	picturesBtn->SetSelectable(false);
 	picturesBtn->SetEffectGrow();
 	picturesBtn->SetUpdateCallback(ChangeMenuPictures);
 
-	GuiTooltip dvdBtnTip("DVD");
-	dvdBtnImg = new GuiImage(&dvd);
-	dvdBtnOnImg = new GuiImage(&dvdOn);
-	GuiImage dvdBtnOverImg(&dvdOver);
-	GuiImage dvdBtnHighlightImg(&navHighlight);
-	dvdBtnHighlightImg.SetPosition(-20, 30);
-	dvdBtnHighlightImg.SetAlpha(128);
+	_dvdBtnTip = new GuiTooltip ("DVD");
+	dvdBtnImg = new GuiImage(_dvd);
+	dvdBtnOnImg = new GuiImage(_dvdOn);
+	_dvdBtnOverImg = new GuiImage (_dvdOver);
+	_dvdBtnHighlightImg = new GuiImage (_navHighlight);
+	_dvdBtnHighlightImg->SetPosition(-20, 30);
+	_dvdBtnHighlightImg->SetAlpha(128);
 	dvdBtn = new GuiButton(dvdBtnImg->GetWidth(), dvdBtnImg->GetHeight());
 	dvdBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	dvdBtn->SetPosition(195, 30);
-	dvdBtn->SetTooltip(&dvdBtnTip);
+	dvdBtn->SetTooltip(_dvdBtnTip);
 	dvdBtn->SetImage(dvdBtnImg);
-	dvdBtn->SetImageOver(&dvdBtnOverImg);
-	dvdBtn->SetIconOver(&dvdBtnHighlightImg);
+	dvdBtn->SetImageOver(_dvdBtnOverImg);
+	dvdBtn->SetIconOver(_dvdBtnHighlightImg);
 	dvdBtn->SetTrigger(trigA);
 	dvdBtn->SetSelectable(false);
 	dvdBtn->SetEffectGrow();
 	dvdBtn->SetUpdateCallback(ChangeMenuDVD);
 
-	GuiTooltip onlineBtnTip("Online Media");
-	onlineBtnImg = new GuiImage(&online);
-	onlineBtnOnImg = new GuiImage(&onlineOn);
-	GuiImage onlineBtnOverImg(&onlineOver);
-	GuiImage onlineBtnHighlightImg(&navHighlight);
-	onlineBtnHighlightImg.SetPosition(-20, 30);
-	onlineBtnHighlightImg.SetAlpha(128);
+	_onlineBtnTip = new GuiTooltip ("Online Media");
+	onlineBtnImg = new GuiImage(_online);
+	onlineBtnOnImg = new GuiImage(_onlineOn);
+	_onlineBtnOverImg = new GuiImage (_onlineOver);
+	_onlineBtnHighlightImg = new GuiImage (_navHighlight);
+	_onlineBtnHighlightImg->SetPosition(-20, 30);
+	_onlineBtnHighlightImg->SetAlpha(128);
 	onlineBtn = new GuiButton(onlineBtnImg->GetWidth(), onlineBtnImg->GetHeight());
 	onlineBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	onlineBtn->SetPosition(250, 30);
-	onlineBtn->SetTooltip(&onlineBtnTip);
+	onlineBtn->SetTooltip(_onlineBtnTip);
 	onlineBtn->SetImage(onlineBtnImg);
-	onlineBtn->SetImageOver(&onlineBtnOverImg);
-	onlineBtn->SetIconOver(&onlineBtnHighlightImg);
+	onlineBtn->SetImageOver(_onlineBtnOverImg);
+	onlineBtn->SetIconOver(_onlineBtnHighlightImg);
 	onlineBtn->SetTrigger(trigA);
 	onlineBtn->SetSelectable(false);
 	onlineBtn->SetEffectGrow();
 	onlineBtn->SetUpdateCallback(ChangeMenuOnline);
 
-	GuiTooltip settingsBtnTip("Settings");
-	settingsBtnImg = new GuiImage(&settings);
-	settingsBtnOnImg = new GuiImage(&settingsOn);
-	GuiImage settingsBtnOverImg(&settingsOver);
-	GuiImage settingsBtnHighlightImg(&navHighlight);
-	settingsBtnHighlightImg.SetPosition(-20, 30);
-	settingsBtnHighlightImg.SetAlpha(128);
+	_settingsBtnTip = new GuiTooltip ("Settings");
+	settingsBtnImg = new GuiImage(_settings);
+	settingsBtnOnImg = new GuiImage(_settingsOn);
+	_settingsBtnOverImg = new GuiImage (_settingsOver);
+	_settingsBtnHighlightImg = new GuiImage (_navHighlight);
+	_settingsBtnHighlightImg->SetPosition(-20, 30);
+	_settingsBtnHighlightImg->SetAlpha(128);
 	settingsBtn = new GuiButton(settingsBtnImg->GetWidth(), settingsBtnImg->GetHeight());
 	settingsBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	settingsBtn->SetPosition(-200, 30);
 	settingsBtn->SetImage(settingsBtnImg);
-	settingsBtn->SetImageOver(&settingsBtnOverImg);
-	settingsBtn->SetIconOver(&settingsBtnHighlightImg);
-	settingsBtn->SetTooltip(&settingsBtnTip);
+	settingsBtn->SetImageOver(_settingsBtnOverImg);
+	settingsBtn->SetIconOver(_settingsBtnHighlightImg);
+	settingsBtn->SetTooltip(_settingsBtnTip);
 	settingsBtn->SetTrigger(trigA);
 	settingsBtn->SetSelectable(false);
 	settingsBtn->SetEffectGrow();
 	settingsBtn->SetUpdateCallback(ChangeMenuSettings);
-
-	UpdateMenuImages(-1, menuCurrent);
 
 	mainWindow->Append(videosBtn);
 	mainWindow->Append(musicBtn);
@@ -6839,8 +6950,27 @@ void WiiMenu()
 	mainWindow->Append(onlineBtn);
 	mainWindow->Append(settingsBtn);
 
+}
+
+void WiiMenu()
+{
+	
+	
+	menuMode = 0; // switch to normal GUI mode
+	guiShutdown = false;
+	FrameTimer = 1;
+	
+	SetupWiiMenu(); //only once
+
+	mainWindow = WiiMenumainWindow;
+
+	
+	UpdateMenuImages(-1, menuCurrent);
+
+
 	StartGuiThreads();
 	EnableRumble();
+
 
 	// Load settings (only happens once)
 	if(!LoadSettings())
@@ -6851,7 +6981,7 @@ void WiiMenu()
 			while(1) usleep(THREAD_SLEEP);
 		}
 	}
-
+	
 	if(WiiSettings.dvdDisabled)
 	{
 		dvdBtn->SetVisible(false);
@@ -6859,12 +6989,18 @@ void WiiMenu()
 		onlineBtn->SetPosition(195, 30);
 	}
 
+
 	// Init MPlayer path and vars (only happens once)
+	
+
 	if(!InitMPlayer())
 	{
+		printf("ExitRequested error InitMPlayer\n");
 		ExitRequested = 2;
 		while(1) usleep(THREAD_SLEEP);
 	}
+	
+	StartGuiThreads();
 
 	ResumeGui();
 
@@ -6874,6 +7010,9 @@ void WiiMenu()
 		ErrorPrompt("The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected.");
 
 	checkIOS = false;
+	
+
+
 
 	while(!guiShutdown)
 	{
@@ -6881,7 +7020,7 @@ void WiiMenu()
 		{
 			case MENU_BROWSE_VIDEOS:
 			case MENU_BROWSE_MUSIC:
-			case MENU_BROWSE_ONLINEMEDIA:
+			case MENU_BROWSE_ONLINEMEDIA:				
 				MenuBrowse(menuCurrent);
 				break;
 			case MENU_BROWSE_PICTURES:
@@ -6934,9 +7073,9 @@ void WiiMenu()
 	SuspendGui();
 	DisableRumble();
 
-	delete mainWindow;
+	//delete mainWindow;
 	mainWindow = NULL;
-
+/*
 	delete videosBtn;
 	videosBtn = NULL;
 	delete musicBtn;
@@ -6973,14 +7112,15 @@ void WiiMenu()
 	}
 	if(videoScreenshot)
 	{
-		free(videoScreenshot);
-		videoScreenshot = NULL;
+		//free(videoScreenshot);
+		//videoScreenshot = NULL;
 	}
 	if(nowPlaying)
 	{
 		delete nowPlaying;
 		nowPlaying = NULL;
 	}
+	*/
 }
 
 bool BufferingStatusSet()
@@ -7007,14 +7147,22 @@ void SetBufferingStatus(int s)
  ***************************************************************************/
 void MPlayerMenu()
 {
+	static GuiWindow * MPlayerMenumainWindow = NULL;
+
 	guiShutdown = false;
 
-	mainWindow = new GuiWindow(screenwidth, screenheight);
+	if(MPlayerMenumainWindow == NULL)	
+	{
+			MPlayerMenumainWindow = new GuiWindow(screenwidth, screenheight);
+			
+			MPlayerMenumainWindow->Append(videobar);
+			MPlayerMenumainWindow->Append(statusText);
+	}
+	mainWindow = MPlayerMenumainWindow;
 
-	mainWindow->Append(videobar);
-	mainWindow->Append(statusText);
 	mainWindow->SetVisible(false);
 	mainWindow->SetState(STATE_DISABLED);
+
 	HideVideoVolumeLevelBar();
 	menuMode = 1; // switch to MPlayer GUI mode
 	EnableRumble();
@@ -7036,6 +7184,6 @@ void MPlayerMenu()
 
 	DisableRumble();
 
-	delete mainWindow;
+	//delete mainWindow;
 	mainWindow = NULL;
 }

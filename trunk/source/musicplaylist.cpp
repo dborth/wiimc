@@ -23,6 +23,34 @@ extern "C" {
 #include "mplayer/playtree.h"
 }
 
+static int shuffleList[MAX_BROWSER_SIZE];
+static int shuffleIndex = -1;
+
+int MusicPlaylistGetNextShuffle()
+{
+	if(shuffleIndex == -1 || shuffleIndex >= playlistSize)
+	{
+		// populate new list
+		int i, n, t;
+
+		for(i=0; i < playlistSize; i++)
+			shuffleList[i] = i;
+
+		// shuffle the list
+		for(i = 0; i < playlistSize-1; i++)
+		{
+			n = rand() / (RAND_MAX/(playlistSize-i) + 1);
+
+			// swap
+			t = shuffleList[i];
+			shuffleList[i] = shuffleList[i+n];
+			shuffleList[i+n] = t;
+		}
+		shuffleIndex = 0;
+	}
+	return shuffleList[shuffleIndex++];
+}
+
 /****************************************************************************
  * ResetsPlaylist
  * 
@@ -36,6 +64,7 @@ void MusicPlaylistClear()
 		playlist = NULL;
 	}
 	playlistSize = 0;
+	shuffleIndex = -1; // reset shuffle
 }
 
 /****************************************************************************
@@ -153,6 +182,7 @@ static int EnqueueFile(char * path, char * name)
 	if(WiiSettings.hideExtensions)
 		StripExt(playlist[playlistSize-1].displayname);
 
+	shuffleIndex = -1; // reset shuffle
 	return 1;
 }
 
@@ -228,6 +258,8 @@ static void Remove(int index)
 
 	if(playlistIndex >= playlistSize)
 		playlistIndex = playlistSize-1;
+
+	shuffleIndex = -1; // reset shuffle
 }
 
 void MusicPlaylistDequeue(int index)

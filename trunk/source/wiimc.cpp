@@ -307,29 +307,17 @@ extern "C" bool FindNextFile(bool load)
 			playlistIndex = -1;
 			return false;
 		}
-	
+
 		if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 		{
 			playlistIndex++;
-	
+
 			if(playlistIndex >= playlistSize)
 				playlistIndex = 0;
 		}
 		else if(WiiSettings.playOrder == PLAY_SHUFFLE)
 		{
-			if(playlistSize == 1)
-			{
-				playlistIndex = 0;
-			}
-			else
-			{
-				int n = -1;
-	
-				// don't select the same song twice
-				while(n < 0 || n >= playlistSize || n == playlistIndex)
-					n = (int)(((double)rand() / double(RAND_MAX + 1.0)) * playlistSize);
-				playlistIndex = n;
-			}
+			playlistIndex = MusicPlaylistGetNextShuffle();
 		}
 		else if(playlistIndex == -1 || playlistIndex >= playlistSize)
 		{

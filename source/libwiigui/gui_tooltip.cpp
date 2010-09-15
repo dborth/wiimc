@@ -48,6 +48,51 @@ GuiTooltip::~GuiTooltip()
 		delete text;
 }
 
+// overloaded new operator
+void *GuiTooltip::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiTooltip::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiTooltip::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiTooltip::operator delete[](void *p)
+{  
+  gui_free(p);
+}
+
 float GuiTooltip::GetScale()
 {
 	return (xscale * scaleDyn);

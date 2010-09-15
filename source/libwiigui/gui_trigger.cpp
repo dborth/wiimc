@@ -34,6 +34,51 @@ GuiTrigger::~GuiTrigger()
 {
 }
 
+// overloaded new operator
+void *GuiTrigger::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiTrigger::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiTrigger::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiTrigger::operator delete[](void *p)
+{  
+  gui_free(p);
+}
+
 /**
  * Sets a simple trigger. Requires:
  * - Element is selected

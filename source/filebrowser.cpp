@@ -13,7 +13,7 @@
 #include <string.h>
 #include <wiiuse/wpad.h>
 #include <sys/dir.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include <string>
 #include <vector>
 using namespace std;

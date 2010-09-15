@@ -22,6 +22,17 @@
 
 #include "FreeTypeGX.h"
 
+//#define ft_malloc malloc
+//#define ft_free free
+//#define ft_memalign memalign
+
+#include "mem2_manager.h"
+#define ft_malloc(x) mem2_malloc(x,"other")
+#define ft_free(x) mem2_free(x,"other")
+#define ft_memalign(x,y) mem2_memalign(x,y,"other")
+
+
+
 static FT_Library ftLibrary;	/**< FreeType FT_Library instance. */
 static FT_Face ftFace;			/**< FreeType reusable FT_Face typographic object. */
 static FT_GlyphSlot ftSlot;		/**< FreeType reusable FT_GlyphSlot glyph container object. */
@@ -203,7 +214,7 @@ void FreeTypeGX::unloadFont()
 	if(this->fontData.size() == 0)
 		return;
 	for(std::map<wchar_t, ftgxCharData>::iterator i = this->fontData.begin(), iEnd = this->fontData.end(); i != iEnd; ++i)
-		free(i->second.glyphDataTexture);
+		ft_free(i->second.glyphDataTexture);
 	this->fontData.clear();
 }
 
@@ -297,7 +308,7 @@ void FreeTypeGX::loadGlyphData(FT_Bitmap *bmp, ftgxCharData *charData)
 {
     int length = charData->textureWidth * charData->textureHeight * 4;
 
-	uint8_t * glyphData = (uint8_t *) memalign(32, length);
+	uint8_t * glyphData = (uint8_t *) ft_memalign(32, length);
 	if(!glyphData)
         return;
 

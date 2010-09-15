@@ -22,6 +22,8 @@
 #include "button_mapping.h"
 #include "settings.h"
 #include "utils/gettext.h"
+#include "utils/mem2_manager.h"
+
 
 #define SAVEBUFFERSIZE (64*1024)
 
@@ -542,7 +544,7 @@ static void LoadOnlineMediaFile(char * filepath)
 {
 	int offset = 0;
 
-	savebuffer = (char *)malloc(SAVEBUFFERSIZE);
+	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, "other");
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
 	offset = LoadFile(savebuffer, filepath, SILENT);
 
@@ -557,7 +559,7 @@ static void LoadOnlineMediaFile(char * filepath)
 			mxmlDelete(xml);
 		}
 	}
-	free(savebuffer);
+	mem2_free(savebuffer, "other");
 }
 
 /****************************************************************************
@@ -885,13 +887,13 @@ SaveSettings (bool silent)
 		ShowAction ("Saving settings...");
 
 	FixInvalidSettings();
-	savebuffer = (char *)malloc(SAVEBUFFERSIZE);
+	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, "other");
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
 	datasize = prepareSettingsData ();
 
 	offset = SaveFile(savebuffer, filepath, datasize, silent);
 
-	free(savebuffer);
+	mem2_free(savebuffer, "other");
 
 	if(!silent)
 		CancelAction();
@@ -906,7 +908,7 @@ SaveSettings (bool silent)
 		sprintf(filepath,"%s/%s",appPath,"restore_points");
 		char * buff = wiiSaveRestorePoints(filepath);
 		SaveFile(buff, filepath, strlen(buff), SILENT);
-		free(buff);
+		mem2_free(buff,"other");
 
 		return true;
 	}
@@ -927,10 +929,11 @@ static bool LoadSettingsFile(char * filepath)
 	bool result = false;
 	int offset = 0;
 
-	savebuffer = (char *)malloc(SAVEBUFFERSIZE);
+	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, "other");
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
-	offset = LoadFile(savebuffer, filepath, SILENT);
 
+	offset = LoadFile(savebuffer, filepath, SILENT);
+	
 	if (offset > 0)
 	{
 		xml = mxmlLoadString(NULL, savebuffer, MXML_TEXT_CALLBACK);
@@ -968,6 +971,7 @@ static bool LoadSettingsFile(char * filepath)
 						result = true;
 				}
 			}
+						
 
 			if(result)
 			{
@@ -1005,11 +1009,13 @@ static bool LoadSettingsFile(char * filepath)
 				// Online Media
 				loadXMLSetting(WiiSettings.onlinemediaFolder, "onlinemediaFolder", sizeof(WiiSettings.onlinemediaFolder));
 				// Network
+				
 				for(int i=0; i<MAX_SHARES; i++)
 				{
 					loadXMLSMBShare(i);
 					loadXMLFTPSite(i);
 				}
+				
 				// Subtitles
 				loadXMLSetting(&WiiSettings.subtitleVisibility, "subtitleVisibility");
 				loadXMLSetting(&WiiSettings.subtitleDelay, "subtitleDelay");
@@ -1022,7 +1028,7 @@ static bool LoadSettingsFile(char * filepath)
 		}
 	}
 
-	free(savebuffer);
+	mem2_free(savebuffer, "other");
 	return result;
 }
 
@@ -1058,9 +1064,11 @@ bool LoadSettings()
 		d++;
 	}
 
+	usleep(100000);
+
 	for(int i=0; i<d; i++)
 	{
-		sprintf(filepath, "%s/settings.xml", path[i]);
+		sprintf(filepath, "%s/settings.xml", path[i]);		
 		settingsFound = LoadSettingsFile(filepath);
 		sprintf(filepath, "%s/onlinemedia.xml", path[i]);
 		LoadOnlineMediaFile(filepath);
@@ -1073,7 +1081,6 @@ bool LoadSettings()
 	}
 
 	settingsLoaded = true; // attempted to load settings
-
 	if(settingsFound)
 	{
 		FixInvalidSettings();
@@ -1083,11 +1090,13 @@ bool LoadSettings()
 			ChangeTheme();
 
 		sprintf(filepath,"%s/restore_points",appPath);
-		char *buffer = (char *)malloc(50*1024);
+		char *buffer = (char *)mem2_malloc(50*1024, "other");
 		int size = LoadFile(buffer, filepath, SILENT);
 		if(size > 0)
+			{
 			wiiLoadRestorePoints(buffer, size);
-		free(buffer);
+			}
+		mem2_free(buffer, "other");
 	}
 	return settingsFound;
 }

@@ -92,7 +92,7 @@ GuiText::GuiText(const char * t)
 GuiText::~GuiText()
 {
 	if(origText)
-		free(origText);
+		gui_free(origText);
 	if(text)
 		delete[] text;
 
@@ -104,10 +104,55 @@ GuiText::~GuiText()
 	}
 }
 
+// overloaded new operator
+void *GuiText::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiText::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiText::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiText::operator delete[](void *p)
+{  
+  gui_free(p);
+}
+
 void GuiText::SetText(const char * t)
 {
 	if(origText)
-		free(origText);
+		gui_free(origText);
 	if(text)
 		delete[] text;
 
@@ -134,7 +179,7 @@ void GuiText::SetText(const char * t)
 void GuiText::SetWText(wchar_t * t)
 {
 	if(origText)
-		free(origText);
+		gui_free(origText);
 	if(text)
 		delete[] text;
 

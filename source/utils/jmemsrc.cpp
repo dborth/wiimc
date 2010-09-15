@@ -26,6 +26,17 @@
 
 #include "video.h"
 
+//only texture in mem2, internal memory managed by gcc
+#define jpg_malloc malloc
+#define jpg_free free
+#define jpg_memalign memalign
+
+#include "mem2_manager.h"
+//#define jpg_malloc mem2_malloc
+//#define jpg_free mem2_free
+//#define jpg_memalign mem2_memalign
+
+
 //using namespace squish;
 
 /* Expanded data source object for memory input */
@@ -193,7 +204,7 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, u8 *dstPtr
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = (u8 *)memalign (32, len);
+		dst = (u8 *)mem2_memalign (32, len, "gui");
 
 	if(!dst)
 		return NULL;
@@ -279,9 +290,9 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 	jpeg_start_decompress(&cinfo);
 
 	int rowsize = cinfo.output_width * cinfo.output_components;
-	u8 *tmpData = (u8 *)malloc(rowsize * cinfo.output_height);
+	u8 *tmpData = (u8 *)jpg_malloc(rowsize * cinfo.output_height);
 	JSAMPROW row_pointer[1];
-	row_pointer[0] = (u8 *)malloc(rowsize);
+	row_pointer[0] = (u8 *)jpg_malloc(rowsize);
 
 	if(!tmpData || !row_pointer[0])
 	{
@@ -308,7 +319,7 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);
-	free(row_pointer[0]);
-	free(tmpData);
+	jpg_free(row_pointer[0]);
+	jpg_free(tmpData);
 	return dst;
 }

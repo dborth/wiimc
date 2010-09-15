@@ -142,7 +142,7 @@ void MPlayerInput()
 	bool inDVDMenu = wiiInDVDMenu();
 	static bool volumeUpdated = false;
 
-	for(int i=0; i<4; i++)
+	for(int i=0; i<1; i++)
 	{
 		if(userInput[i].wpad->ir.valid)
 			ir = true;

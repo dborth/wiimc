@@ -144,6 +144,7 @@
 #endif
 
 #ifdef GEKKO
+
 #include <malloc.h>
 #include "osdep/gx_supp.h"
 
@@ -307,7 +308,7 @@ int file_filter=1;
 
 // cache2:
 #ifdef GEKKO
-       int stream_cache_size=12288; // 12MB cache
+       int stream_cache_size=8*1024;//12288; // 12MB cache
 #else
        int stream_cache_size=-1;
 #endif
@@ -337,7 +338,7 @@ static int softsleep=0;
        double force_fps=0;
 static int force_srate=0;
 static int audio_output_format=-1; // AF_FORMAT_UNKNOWN
-       int frame_dropping=0; // option  0=no drop  1= drop vo  2= drop decode
+       int frame_dropping=1; // option  0=no drop  1= drop vo  2= drop decode
 static int play_n_frames=-1;
 static int play_n_frames_mf=-1;
 
@@ -2826,6 +2827,7 @@ int gui_no_filename=0;
 
   InitTimer();
   srand(GetTimerMS());
+  
 
   mp_msg_init();
 
@@ -2838,6 +2840,7 @@ int gui_no_filename=0;
 
   // Preparse the command line
 #ifdef GEKKO
+
 m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
@@ -2846,8 +2849,8 @@ m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
-m_config_set_option(mconfig,"ass","1");
-m_config_set_option(mconfig,"ass-font-scale","2");
+//m_config_set_option(mconfig,"ass","1");
+//m_config_set_option(mconfig,"ass-font-scale","2");
 SetMPlayerSettings();
 
 orig_stream_cache_min_percent=stream_cache_min_percent;
@@ -3238,30 +3241,41 @@ current_module = NULL;
   
 #endif
 
+
 // ******************* Now, let's see the per-file stuff ********************
+
 play_next_file:
+	printf("mplayer m1(%.4f) m2(%.4f)\n",
+									((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
+									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
 #ifdef GEKKO
-if(filename)
-{
-	free(filename);
-	filename = NULL;
-}
 
-if(!FindNextFile(true))
-	controlledbygui = 1; // send control back to GUI
+	if(filename)
+	{
+		free(filename);
+		filename = NULL;
+	}
 
-while (!filename)
-{
-	usleep(50000);
+	
+	if(!FindNextFile(true))
+		controlledbygui = 1; // send control back to GUI
+	
+	while (!filename)
+	{
+		usleep(50000);
 
-	// received the signal to stop playing
-	if(controlledbygui == 2)
-		controlledbygui = 0; // none playing, so discard
-}
+		// received the signal to stop playing
+		if(controlledbygui == 2)
+			controlledbygui = 0; // none playing, so discard
+	}
+
+
 
 wii_error = 0;
 controlledbygui = 0;
+usleep(50000);
+
 mpctx->eof=0;
 pause_low_cache=1;
 #endif
@@ -4421,7 +4435,6 @@ if(ass_library)
 remove_subtitles();
 
 #ifdef GEKKO
-printf("mplayer: exit\n");
 
 goto play_next_file;
 
@@ -5301,7 +5314,7 @@ char * wiiSaveRestorePoints(char * path)
 {
 	int i;
 	char tmppath[MAXPATHLEN];
-	char *buff = malloc(MAX_RESTORE_POINTS*1024 + 1024);
+	char *buff = mem2_malloc(MAX_RESTORE_POINTS*1024 + 1024,"other");
 	buff[0] = 0;
 
 	for(i=0; i<MAX_RESTORE_POINTS; i++)

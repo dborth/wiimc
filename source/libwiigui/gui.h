@@ -48,6 +48,18 @@
 #include "../input.h"
 #include "../menu.h"
 
+//#define gui_malloc malloc
+//#define gui_free free
+//#define gui_memalign memalign
+
+#include "../utils/mem2_manager.h"
+#define gui_malloc(x) mem2_malloc(x,"gui")
+#define gui_memalign(x,y) mem2_memalign(x,y,"gui")
+#define gui_free(x) mem2_free(x,"gui")
+
+
+using namespace std;
+
 extern FreeTypeGX *fontSystem[];
 
 #define SCROLL_DELAY_INITIAL	200000
@@ -141,6 +153,13 @@ class GuiSound
 		GuiSound(const u8 * s, s32 l, int t);
 		//!Destructor
 		~GuiSound();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		//!Start sound playback
 		void Play();
 		//!Stop sound playback
@@ -175,6 +194,13 @@ class GuiTrigger
 		GuiTrigger();
 		//!Destructor
 		~GuiTrigger();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		//!Sets a simple trigger. Requires: element is selected, and trigger button is pressed
 		//!\param ch Controller channel number
 		//!\param wiibtns Wii controller trigger button(s) - classic controller buttons are considered separately
@@ -238,6 +264,13 @@ class GuiElement
 		GuiElement();
 		//!Destructor
 		~GuiElement();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		//!Set the element's parent
 		//!\param e Pointer to parent element
 		void SetParent(GuiElement * e);
@@ -468,6 +501,13 @@ class GuiWindow : public GuiElement
 		GuiWindow(int w, int h);
 		//!Destructor
 		~GuiWindow();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		//!Appends a GuiElement to the GuiWindow
 		//!\param e The GuiElement to append. If it is already in the GuiWindow, it is removed first
 		void Append(GuiElement* e);
@@ -550,6 +590,13 @@ class GuiImageData
 		GuiImageData(const u8 * i, int s, u8 f = GX_TF_RGBA8);
 		//!Destructor
 		~GuiImageData();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		//!Sets the GuiImageData to a new image (assumes the same dimensions)
 		//!\param i Image data
 		//!\param s Image data size
@@ -601,6 +648,13 @@ class GuiImage : public GuiElement
 		GuiImage(int w, int h, GXColor c);
 		//!Destructor
 		~GuiImage();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		//!Sets the image rotation angle for drawing
 		//!\param a Angle (in degrees)
 		void SetAngle(float a);
@@ -665,6 +719,13 @@ class GuiText : public GuiElement
 		GuiText(const char * t);
 		//!Destructor
 		~GuiText();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		//!Sets the text of the GuiText element
 		//!\param t Text
 		void SetText(const char * t);
@@ -736,6 +797,13 @@ class GuiTooltip : public GuiElement
 		GuiTooltip(const char *t);
 		//!Destructor
 		~GuiTooltip();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		//!Gets the element's current scale
 		float GetScale();
 		//!Sets the text of the GuiTooltip element
@@ -764,6 +832,13 @@ class GuiButton : public GuiElement
 		GuiButton(int w = 0, int h = 0);
 		//!Destructor
 		~GuiButton();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+			
 		//!Sets the button's image
 		//!\param i Pointer to GuiImage object
 		void SetImage(GuiImage* i);
@@ -854,6 +929,13 @@ class GuiKeyboard : public GuiWindow
 	public:
 		GuiKeyboard(char * t, u32 m);
 		~GuiKeyboard();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		void Update(GuiTrigger * t);
 		char kbtextstr[256];
 	protected:
@@ -907,6 +989,13 @@ class GuiOptionBrowser : public GuiElement
 	public:
 		GuiOptionBrowser(int w, int s, OptionList * l);
 		~GuiOptionBrowser();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		void SetCol1Position(int x);
 		void SetCol2Position(int x);
 		int FindMenuItem(int c, int d);
@@ -968,6 +1057,13 @@ class GuiFileBrowser : public GuiElement
 	public:
 		GuiFileBrowser(int w, int s);
 		~GuiFileBrowser();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+		
 		void ResetState();
 		void SetRightCutoff();
 		void ChangeSize(int s);

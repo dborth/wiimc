@@ -23,6 +23,16 @@
 #include "http.h"
 #include "wiimc.h"
 
+
+//#define http_malloc malloc
+//#define http_free free
+//#define http_memalign memalign
+
+#include "mem2_manager.h"
+#define http_malloc(x) mem2_malloc(x, "other")
+#define http_free(x) mem2_free(x, "other")
+#define http_memalign(x,y) mem2_memalign(x,y, "other")
+
 #define MAX_SIZE (1024*1024*15)
 
 extern "C" {
@@ -364,7 +374,7 @@ static int http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 		if(!silent)
 			ShowProgress("Downloading...", 0, content_length);
-		u8 * fbuffer = (u8 *) malloc(bufSize);
+		u8 * fbuffer = (u8 *) http_malloc(bufSize);
 		if(fbuffer)
 		{
 			while (bytesLeft > 0)
@@ -388,7 +398,7 @@ static int http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 				if(!silent)
 					ShowProgress("Downloading...", (content_length - bytesLeft), content_length);
 			}
-			free(fbuffer);
+			http_free(fbuffer);
 		}
 		if(!silent)
 			CancelAction();

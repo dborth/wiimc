@@ -273,6 +273,10 @@ static int preinit(const char *arg)
 	vo_screenheight = mplayerheight;
 	vo_screenwidth = mplayerwidth;
 	vo_fs=1;
+
+	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
+	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
+	
 	return 0;
 }
 

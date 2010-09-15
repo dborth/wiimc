@@ -257,6 +257,51 @@ GuiKeyboard::~GuiKeyboard()
 	}
 }
 
+// overloaded new operator
+void *GuiKeyboard::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiKeyboard::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiKeyboard::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiKeyboard::operator delete[](void *p)
+{  
+  gui_free(p);
+}
+
 void GuiKeyboard::Update(GuiTrigger * t)
 {
 	if(_elements.size() == 0 || (state == STATE_DISABLED && parentElement))

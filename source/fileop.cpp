@@ -14,7 +14,7 @@
 #include <ogcsys.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include <errno.h>
 #include <ntfs.h>
 #include <fat.h>
@@ -39,6 +39,13 @@ extern "C" {
 #include "libwiigui/gui.h"
 #include "utils/http.h"
 #include "utils/gettext.h"
+
+#define PARSESTACK (8*1024)
+#define DEVICESTACK (8*1024)
+
+static u8 parsestack[PARSESTACK] ATTRIBUTE_ALIGN (32);
+static u8 devicestack[DEVICESTACK] ATTRIBUTE_ALIGN (32);
+
 
 extern "C" u32 __di_check_ahbprot(void);
 
@@ -168,8 +175,10 @@ static void * devicecallback (void *arg)
 		{
 			if(deviceHalt == 1)
 				LWP_SuspendThread(devicethread);
+
 			if(deviceHalt == 2)
 				return NULL;
+
 			usleep(THREAD_SLEEP);
 			devsleep -= THREAD_SLEEP;
 		}
@@ -201,9 +210,9 @@ static void * parsecallback (void *arg)
 void ResumeDeviceThread()
 {
 	deviceHalt = 0;
-
+	
 	if(devicethread == LWP_THREAD_NULL)
-		LWP_CreateThread (&devicethread, devicecallback, NULL, NULL, 0, 40);
+		LWP_CreateThread (&devicethread, devicecallback, NULL, devicestack, DEVICESTACK, 40);
 	else
 		LWP_ResumeThread(devicethread);
 }
@@ -255,7 +264,7 @@ void ResumeParseThread()
 	parseHalt = 0;
 
 	if(parsethread == LWP_THREAD_NULL)
-		LWP_CreateThread (&parsethread, parsecallback, NULL, NULL, 0, 40);
+		LWP_CreateThread (&parsethread, parsecallback, NULL, parsestack, PARSESTACK, 40);
 	else
 		LWP_ResumeThread(parsethread);
 }
@@ -1591,7 +1600,7 @@ typedef struct
 
 static int ParsePLXPlaylist()
 {
-	char *buffer = (char*)malloc(128*1024);
+	char *buffer = (char*)mem2_malloc(128*1024, "other");
 	int size = 0;
 
 	if(strncmp(browser.dir, "http:", 5) == 0)
@@ -1601,6 +1610,7 @@ static int ParsePLXPlaylist()
 
 	if(size == 0)
 	{
+		mem2_free(buffer, "other");
 		if(browser.numEntries > 0 && browserList[browser.selIndex].type == TYPE_SEARCH)
 			return -4;
 		return 0;
@@ -1612,7 +1622,7 @@ static int ParsePLXPlaylist()
 	int c, lineptr = 0;
 	char *line = NULL;
 
-	PLXENTRY *list = (PLXENTRY *)malloc(sizeof(PLXENTRY));
+	PLXENTRY *list = (PLXENTRY *)mem2_malloc(sizeof(PLXENTRY), "other");
 	char attribute[1024], value[1024];
 	PLXENTRY newEntry;
 	memset(&newEntry, 0, sizeof(PLXENTRY));
@@ -1620,13 +1630,15 @@ static int ParsePLXPlaylist()
 	while(lineptr < size)
 	{	
 		// setup next line
-		if(line) free(line);
+		if(line) mem2_free(line, "other");
 		c = 0;
 		while(lineptr+c < size)
 		{
 			if(buffer[lineptr+c] == '\n')
 			{
-				line = strndup(&buffer[lineptr], c);
+				line= (char*)mem2_malloc(sizeof(char)* (c+1), "other");
+				strncpy(line,&buffer[lineptr],c);
+				//line = strndup(&buffer[lineptr], c);
 				if(line[c-1] == '\r') line[c-1] = 0;
 				break;
 			}
@@ -1656,7 +1668,9 @@ static int ParsePLXPlaylist()
 					PLXENTRY * newList = (PLXENTRY *)realloc(list, (numEntries+1) * sizeof(PLXENTRY));
 					if(!newList) // failed to allocate required memory
 					{
-						free(list);
+						if(line) mem2_free(line, "other");
+						mem2_free(list, "other");
+						mem2_free(buffer, "other");
 						return -1; // too many files
 					}
 					else
@@ -1694,6 +1708,8 @@ static int ParsePLXPlaylist()
 		}
 	}
 
+	if(line) mem2_free(line, "other");
+
 	// add the final entry
 	if(newEntry.type > 0 && strlen(newEntry.name) > 0 && 
 		strlen(newEntry.url) > 0 && newEntry.processor[0] == 0 && 
@@ -1705,7 +1721,8 @@ static int ParsePLXPlaylist()
 
 	if(numEntries == 0)
 	{
-		free(list);
+		mem2_free(list, "other");
+		mem2_free(buffer, "other");
 
 		if(plxFile && browserList[browser.selIndex].type == TYPE_SEARCH)
 			return -5;
@@ -1736,7 +1753,8 @@ static int ParsePLXPlaylist()
 	{
 		if(!AddBrowserEntry()) // add failed
 		{
-			free(list);
+			mem2_free(list, "other");
+			mem2_free(buffer, "other");
 			return -1;
 		}
 
@@ -1751,7 +1769,8 @@ static int ParsePLXPlaylist()
 
 		browser.numEntries++;
 	}
-	free(list);
+	mem2_free(list, "other");
+	mem2_free(buffer, "other");
 
 	// try to find and select the last loaded file
 	FindFile();
@@ -2044,6 +2063,7 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 	int retry = 1;
 	FILE * file;
 	cancelFileLoad = false;
+
 
 	// stop checking if devices were removed/inserted
 	// since we're loading a file

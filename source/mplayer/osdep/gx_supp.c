@@ -57,8 +57,8 @@ extern int controlledbygui;
 
 /*** 2D ***/
 static bool need_wait=false;
-extern u32 whichfb;
-extern u32 *xfb[2];
+extern u8 whichfb;
+extern unsigned int *xfb[2];
 
 static int hor_pos=0, vert_pos=0;
 static float hor_zoom = 1.0f, vert_zoom = 1.0f;
@@ -81,6 +81,7 @@ static u16 Ylwidth, Yrwidth, Ywidth, Yheight, UVwidth, UVheight;
 static Mtx view;
 
 static int vsync=0;
+
 
 typedef struct tagcamera {
 	guVector pos;
@@ -490,6 +491,7 @@ inline void DrawMPlayer()
 	if(need_wait)
 	{
 		GX_WaitDrawDone();
+		/*
 		if (vsync)
 		{
 			VIDEO_WaitVSync();
@@ -497,18 +499,19 @@ inline void DrawMPlayer()
 			if (vmode->viTVMode & VI_NON_INTERLACE)
 				VIDEO_WaitVSync();
 		}
+		*/
 	}
 
 	whichfb ^=1;
 
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
-
+/*
 	GX_InitTexObjData(&YltexObj, Yltexture);
 	GX_InitTexObjData(&YrtexObj, Yrtexture);
 	GX_InitTexObjData(&UtexObj, Utexture);
 	GX_InitTexObjData(&VtexObj, Vtexture);
-
+*/
 	GX_LoadTexObj(&YltexObj, GX_TEXMAP0);	// MAP0 <- Yl
 	GX_LoadTexObj(&YrtexObj, GX_TEXMAP1);	// MAP1 <- Yr
 	GX_LoadTexObj(&UtexObj, GX_TEXMAP2);	// MAP2 <- U
@@ -521,6 +524,7 @@ inline void DrawMPlayer()
 		GX_Position1x8(3); GX_Color1x8(0); GX_TexCoord1x8(3); GX_TexCoord1x8(7); GX_TexCoord1x8(3);
 	GX_End();
 
+	
 	if(copyScreen == 1)
 	{
 		if(controlledbygui != 2)
@@ -546,19 +550,30 @@ inline void DrawMPlayer()
 		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
 	}
-	GX_CopyDisp(xfb[whichfb], GX_TRUE);
+	
+	GX_CopyDisp(xfb[whichfb], GX_FALSE);
 
 	GX_SetDrawDone();
 	need_wait=true;
 }
 
+#include "../../utils/mem2_manager.h"
+
+
 void GX_AllocTextureMemory()
 {
 	//make memory fixed (max texture 1024*1024, gx can't manage more)
+	if(Yltexture) return;
+	/*
 	Yltexture = (u8 *) memalign(32,1024*1024);
 	Yrtexture = (u8 *) memalign(32,1024*1024);
 	Utexture = (u8 *) memalign(32,1024*512);
 	Vtexture = (u8 *) memalign(32,1024*512);
+	*/
+	Yltexture = (u8 *) mem2_malloc(1024*1024, "video");
+	Yrtexture = (u8 *) mem2_malloc(1024*1024, "video");
+	Utexture = (u8 *) mem2_malloc(1024*512, "video");
+	Vtexture = (u8 *) mem2_malloc(1024*512, "video");
 }
 
 /****************************************************************************
@@ -569,8 +584,8 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	int w,wYl,wYr,h,xscale,yscale,diffx,diffy;
 	Mtx44 p;
 
-	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
-	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
+//	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
+//	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
 	need_wait=false;
 
 	xscale = haspect * hor_zoom;
@@ -603,12 +618,12 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	Yltexsize = (wYl*h);
 	Yrtexsize = (wYr*h);
 	UVtexsize = (w*h)/4;
-
+	
 	memset(Yltexture, 0, Yltexsize);
 	memset(Yrtexture, 0, Yrtexsize);
 	memset(Utexture, 0x80, UVtexsize);
 	memset(Vtexture, 0x80, UVtexsize);
-
+	
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	GX_SetCullMode(GX_CULL_NONE);
 	GX_SetClipMode(GX_DISABLE);

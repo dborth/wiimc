@@ -176,6 +176,51 @@ GuiFileBrowser::~GuiFileBrowser()
 	}
 }
 
+// overloaded new operator
+void *GuiFileBrowser::operator new(size_t size)
+{
+  void *p;
+  
+  p =  gui_malloc(size);
+  
+  if(!p) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  return p;
+}
+
+// delete operator overloaded
+void GuiFileBrowser::operator delete(void *p)
+{ 
+  gui_free(p);
+}
+
+// new operator overloaded for arrays.
+void *GuiFileBrowser::operator new[](size_t size)
+{
+  void *p;
+
+  p =  gui_malloc(size);
+  
+  if( !p ) {
+  
+    bad_alloc ba;
+  
+    throw ba;
+  }
+  
+  return p;
+}
+
+// delete operator overloaded for arrays.
+void GuiFileBrowser::operator delete[](void *p)
+{  
+  gui_free(p);
+}
+
 void GuiFileBrowser::MakeEntry(int i)
 {
 	fileListText[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});

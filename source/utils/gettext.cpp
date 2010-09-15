@@ -7,6 +7,8 @@
 #include "gettext.h"
 #include "filelist.h"
 #include "settings.h"
+#include "mem2_manager.h"
+
 
 typedef struct _MSG
 {
@@ -48,7 +50,7 @@ static char * expand_escape(const char *str)
 	char *retval, *rp;
 	const char *cp = str;
 
-	retval = (char *) malloc(strlen(str) + 1);
+	retval = (char *) mem2_malloc(strlen(str) + 1, "other");
 	if (retval == NULL)
 		return NULL;
 	rp = retval;
@@ -154,7 +156,7 @@ static MSG *setMSG(const char *msgid, const char *msgstr)
 	MSG *msg = findMSG(id);
 	if (!msg)
 	{
-		msg = (MSG *) malloc(sizeof(MSG));
+		msg = (MSG *) mem2_malloc(sizeof(MSG),"other");
 		msg->id = id;
 		msg->msgstr = NULL;
 		msg->next = baseMSG;
@@ -165,7 +167,7 @@ static MSG *setMSG(const char *msgid, const char *msgstr)
 		if (msgstr)
 		{
 			if (msg->msgstr)
-				free(msg->msgstr);
+				mem2_free(msg->msgstr, "other");
 			msg->msgstr = expand_escape(msgstr);
 		}
 		return msg;
@@ -178,8 +180,8 @@ static void gettextCleanUp(void)
 	while (baseMSG)
 	{
 		MSG *nextMsg = baseMSG->next;
-		free(baseMSG->msgstr);
-		free(baseMSG);
+		mem2_free(baseMSG->msgstr,"other");
+		mem2_free(baseMSG,"other");
 		baseMSG = nextMsg;
 	}
 }

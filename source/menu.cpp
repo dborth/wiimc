@@ -1746,7 +1746,12 @@ static void UpdateAudiobarModeBtn()
 
 void RemoveVideoImg()
 {
-	//if(!videoImg)
+	if(!videoImg)
+			return;
+
+	videoImg->SetVisible(false);
+/*
+	if(!videoImg)
 		return;
 
 	SuspendGui();
@@ -1756,7 +1761,22 @@ void RemoveVideoImg()
 	videoImg = NULL;
 	//gui_mem2_free(videoScreenshot);
 	//videoScreenshot = NULL;
+*/	
 }
+void ActiveVideoImg()
+{
+	if(!videoImg)
+			return;
+
+	videoImg->SetVisible(true);
+}
+
+bool HasVideoImg()
+{
+	if(!videoImg) return false;
+	return videoImg->IsVisible();
+}
+
 
 /****************************************************************************
  * MenuBrowse
@@ -2005,7 +2025,7 @@ static void MenuBrowse(int menu)
 	int pagesize = 11;
 	char origname[1024]; // store original filename when performing searches
 
-	if(videoImg && menu != MENU_BROWSE_MUSIC)
+	if(videoImg->IsVisible() && menu != MENU_BROWSE_MUSIC)
 		pagesize = 10;
 	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && wiiAudioOnly()))
 		pagesize = 8;
@@ -2057,7 +2077,7 @@ static void MenuBrowse(int menu)
 		mainWindow->Append(thumbImg);
 	}
 
-	if(videoScreenshot && menu != MENU_BROWSE_MUSIC) // a video is loaded
+	if(HasVideoImg() && menu != MENU_BROWSE_MUSIC) // a video is loaded
 	{
 		if(!nowPlaying)
 		{
@@ -2161,7 +2181,7 @@ static void MenuBrowse(int menu)
 			devicesChanged = false;
 
 			// video is no longer loaded - remove back button
-			if(pagesize == 10 && !videoImg)
+			if(pagesize == 10 && !videoImg->IsVisible())
 			{
 				pagesize = 11;
 				SuspendGui();
@@ -2361,7 +2381,7 @@ static void MenuBrowse(int menu)
 						break;
 					}
 				}
-				else if(pagesize == 10 && !videoImg) // video is no longer loaded
+				else if(pagesize == 10 && !videoImg->IsVisible()) // video is no longer loaded
 				{
 					// remove back button
 					pagesize = 11;
@@ -2646,7 +2666,7 @@ done:
 	mainWindow->Remove(&upOneLevelBtn);
 	delete fileBrowser;
 
-	if(videoScreenshot)
+	if(HasVideoImg())
 		mainWindow->Remove(&backBtn);
 
 	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
@@ -6748,8 +6768,10 @@ static void StopGuiThreads()
 static void SetupWiiMenu()
 {
 	static bool WiiMenu_init=false;
-	selectLoadedFile = 1; //review
 
+
+	if(WiiMenu_init) return;
+	WiiMenu_init=true;
 
 	SetupGui();
 
@@ -6758,33 +6780,16 @@ static void SetupWiiMenu()
 
 	mainWindow = WiiMenumainWindow;
 
-
-	if(videoImg==NULL) 
-	{
-		videoImg = new GuiImage();
-		videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
-		videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
-		videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
-		mainWindow->Append(videoImg);
-	}
-	videoImg->SetVisible(true);
 	
-	if(WiiMenu_init) return;
-	WiiMenu_init=true;
-	/*
-
-	if(videoScreenshot)
-	{
-		
-		videoImg->SetVisible(true);
-		
-		selectLoadedFile = 1; // video loaded - trigger browser to jump to it
-	}	
-
-*/
+	videoImg = new GuiImage();
+	videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
+	videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
+	videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
+	mainWindow->Append(videoImg);
 	
-
-
+	videoImg->SetVisible(false);
+	
+	
 	_bgImg = new GuiImage(bg);
 	_bgImg->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	_bgImg->SetAlpha(200);
@@ -6953,9 +6958,7 @@ static void SetupWiiMenu()
 }
 
 void WiiMenu()
-{
-	
-	
+{	
 	menuMode = 0; // switch to normal GUI mode
 	guiShutdown = false;
 	FrameTimer = 1;
@@ -6964,6 +6967,7 @@ void WiiMenu()
 
 	mainWindow = WiiMenumainWindow;
 
+	selectLoadedFile = videoImg->IsVisible();
 	
 	UpdateMenuImages(-1, menuCurrent);
 
@@ -6991,11 +6995,8 @@ void WiiMenu()
 
 
 	// Init MPlayer path and vars (only happens once)
-	
-
-	if(!InitMPlayer())
+		if(!InitMPlayer())
 	{
-		printf("ExitRequested error InitMPlayer\n");
 		ExitRequested = 2;
 		while(1) usleep(THREAD_SLEEP);
 	}
@@ -7010,9 +7011,11 @@ void WiiMenu()
 		ErrorPrompt("The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected.");
 
 	checkIOS = false;
-	
 
 
+	printf("init wiimenu m1(%.4f) m2(%.4f)\n",
+									((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
+									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
 	while(!guiShutdown)
 	{
@@ -7075,52 +7078,7 @@ void WiiMenu()
 
 	//delete mainWindow;
 	mainWindow = NULL;
-/*
-	delete videosBtn;
-	videosBtn = NULL;
-	delete musicBtn;
-	musicBtn = NULL;
-	delete picturesBtn;
-	picturesBtn = NULL;
-	delete dvdBtn;
-	dvdBtn = NULL;
-	delete onlineBtn;
-	onlineBtn = NULL;
-	delete settingsBtn;
-	settingsBtn = NULL;
-	
-	delete videosBtnImg;
-	delete videosBtnOnImg;
-	delete musicBtnImg;
-	delete musicBtnOnImg;
-	delete picturesBtnImg;
-	delete picturesBtnOnImg;
-	delete dvdBtnImg;
-	delete dvdBtnOnImg;
-	delete onlineBtnImg;
-	delete onlineBtnOnImg;
-	delete settingsBtnImg;
-	delete settingsBtnOnImg;
 
-	delete logoBtn;
-	logoBtn = NULL;
-
-	if(videoImg)
-	{
-		delete videoImg;
-		videoImg = NULL;
-	}
-	if(videoScreenshot)
-	{
-		//free(videoScreenshot);
-		//videoScreenshot = NULL;
-	}
-	if(nowPlaying)
-	{
-		delete nowPlaying;
-		nowPlaying = NULL;
-	}
-	*/
 }
 
 bool BufferingStatusSet()
@@ -7153,10 +7111,9 @@ void MPlayerMenu()
 
 	if(MPlayerMenumainWindow == NULL)	
 	{
-			MPlayerMenumainWindow = new GuiWindow(screenwidth, screenheight);
-			
-			MPlayerMenumainWindow->Append(videobar);
-			MPlayerMenumainWindow->Append(statusText);
+		MPlayerMenumainWindow = new GuiWindow(screenwidth, screenheight);
+		MPlayerMenumainWindow->Append(videobar);
+		MPlayerMenumainWindow->Append(statusText);
 	}
 	mainWindow = MPlayerMenumainWindow;
 

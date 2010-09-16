@@ -54,6 +54,7 @@ void TakeScreenshot()
 	DCInvalidateRange(videoScreenshot, texSize);
 	GX_CopyTex(videoScreenshot, GX_FALSE);
 	GX_PixModeSync();
+	ActiveVideoImg();
 }
 
 void ResetVideo_Menu()

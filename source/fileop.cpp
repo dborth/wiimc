@@ -69,7 +69,7 @@ static int parseHalt = 0;
 static DIR_ITER * dirIter = NULL;
 static bool ParseDirEntries();
 int findLoadedFile = 0;
-int selectLoadedFile = 0;
+bool selectLoadedFile = false;
 
 // device thread
 static lwp_t devicethread = LWP_THREAD_NULL;
@@ -1295,7 +1295,7 @@ void FindDirectory()
 	{
 		int pagesize = 11;
 
-		if(menuCurrent == MENU_BROWSE_VIDEOS && videoScreenshot)
+		if(menuCurrent == MENU_BROWSE_VIDEOS && HasVideoImg())
 			pagesize = 10;
 
 		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
@@ -1350,7 +1350,7 @@ void FindFile()
 
 		int pagesize = 11;
 
-		if(menuCurrent == MENU_BROWSE_VIDEOS && videoScreenshot)
+		if(menuCurrent == MENU_BROWSE_VIDEOS && HasVideoImg())
 			pagesize = 10;
 
 		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
@@ -1371,7 +1371,7 @@ void FindFile()
 		browser.selIndex = indexFound;
 		findLoadedFile = 2;
 	}
-	selectLoadedFile = 0; // only try to select loaded file once
+	selectLoadedFile = false; // only try to select loaded file once
 }
 
 static bool ParseDirEntries()

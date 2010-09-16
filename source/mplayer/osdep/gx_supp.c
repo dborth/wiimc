@@ -38,7 +38,6 @@
 #include "../libvo/video_out.h"
 #include "gx_supp.h"
 
-#define DEFAULT_FIFO_SIZE (256 * 1024)
 
 #define HASPECT 320
 #define VASPECT 240
@@ -506,12 +505,7 @@ inline void DrawMPlayer()
 
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
-/*
-	GX_InitTexObjData(&YltexObj, Yltexture);
-	GX_InitTexObjData(&YrtexObj, Yrtexture);
-	GX_InitTexObjData(&UtexObj, Utexture);
-	GX_InitTexObjData(&VtexObj, Vtexture);
-*/
+
 	GX_LoadTexObj(&YltexObj, GX_TEXMAP0);	// MAP0 <- Yl
 	GX_LoadTexObj(&YrtexObj, GX_TEXMAP1);	// MAP1 <- Yr
 	GX_LoadTexObj(&UtexObj, GX_TEXMAP2);	// MAP2 <- U
@@ -551,7 +545,7 @@ inline void DrawMPlayer()
 		drawMode = 0;
 	}
 	
-	GX_CopyDisp(xfb[whichfb], GX_FALSE);
+	GX_CopyDisp(xfb[whichfb], GX_TRUE);
 
 	GX_SetDrawDone();
 	need_wait=true;
@@ -564,12 +558,7 @@ void GX_AllocTextureMemory()
 {
 	//make memory fixed (max texture 1024*1024, gx can't manage more)
 	if(Yltexture) return;
-	/*
-	Yltexture = (u8 *) memalign(32,1024*1024);
-	Yrtexture = (u8 *) memalign(32,1024*1024);
-	Utexture = (u8 *) memalign(32,1024*512);
-	Vtexture = (u8 *) memalign(32,1024*512);
-	*/
+	
 	Yltexture = (u8 *) mem2_malloc(1024*1024, "video");
 	Yrtexture = (u8 *) mem2_malloc(1024*1024, "video");
 	Utexture = (u8 *) mem2_malloc(1024*512, "video");

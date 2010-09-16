@@ -593,6 +593,7 @@ int main(int argc, char *argv[])
 		ResetVideo_Menu();
 		ResumeDeviceThread();
 		ResumeParseThread();
+		printf("wiimenu: ");show_mem();
 		WiiMenu();
 		StopDeviceThread();
 		StopParseThread();

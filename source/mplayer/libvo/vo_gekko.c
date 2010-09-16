@@ -222,6 +222,9 @@ static int inline query_format(uint32_t format)
 
 void reinit_video()
 {
+	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
+	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
+
 	GX_StartYUV(image_width, image_height, gx_width / 2, gx_height / 2 ); 
 	GX_ConfigTextureYUV(image_width, image_height, pitch);	
 	Set_vsync(vo_vsync);

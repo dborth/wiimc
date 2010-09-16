@@ -136,17 +136,18 @@ void* mem2_memalign(u8 align, u32 size, const char *area)
 		return NULL; // area not found
 	}
 
-#ifdef DEBUG_MEM2_LEVEL
-	mem2_areas[i].allocated += size;
-	if(mem2_areas[i].allocated > mem2_areas[i].top_allocated) mem2_areas[i].top_allocated = mem2_areas[i].allocated;
-
-	if(DEBUG_MEM2_LEVEL == 2)
-		printf("mem2 malloc: %u  area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
-#endif	
 
 	ptr = __lwp_heap_allocate(&mem2_areas[i].heap, size);
 #ifdef DEBUG_MEM2_LEVEL
-	if(ptr == NULL) printf("Error not enough mem2 in malloc, size: %u  area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
+	if(ptr == NULL) printf("Error not enough mem2 in malloc, size: %u  area: %s  allocated: %u	top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
+	else
+	{
+		mem2_areas[i].allocated += __lwp_heap_block_size(&mem2_areas[i].heap,ptr);
+		if(mem2_areas[i].allocated > mem2_areas[i].top_allocated) mem2_areas[i].top_allocated = mem2_areas[i].allocated;
+	
+		if(DEBUG_MEM2_LEVEL == 2)
+			printf("mem2 malloc: %u  area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
+	}
 #endif
 	return ptr;
 }
@@ -187,9 +188,15 @@ void mem2_free(void *ptr, const char *area)
 #ifdef DEBUG_MEM2_LEVEL
 static void PrintAreaInfo(int index)
 {
+	heap_iblock info;
+
 	if(mem2_areas[index].size == 0) return;	
+	
 
 	printf("Area: %s. Allocated: %u. Top Allocated: %u\n",mem2_areas[index].name,mem2_areas[index].allocated,mem2_areas[index].top_allocated);
+	__lwp_heap_getinfo(&mem2_areas[index].heap,&info);
+	printf("Area: %s. free blocks: %u  free size: %u  used blocks: %u  used_size: %u\n",mem2_areas[index].name, 
+			info.free_blocks,info.free_size,info.used_blocks,info.used_size);
 }
 #endif
 

@@ -3162,6 +3162,7 @@ if(!codecs_file || !parse_codec_cfg(codecs_file)){
 #endif
 
 // ========== Init keyboard FIFO (connection to libvo) ============
+#ifndef GEKKO
 
 // Init input system
 current_module = "init_input";
@@ -3197,7 +3198,7 @@ stream_set_interrupt_callback(mp_input_check_interrupt);
 initialized_flags|=INITIALIZED_INPUT;
 current_module = NULL;
 
-#ifndef GEKKO
+
 
   /// Catch signals
 #if !defined(__MINGW32__) && !defined(GEKKO)
@@ -4409,9 +4410,9 @@ if(benchmark){
 save_restore_point(fileplaying);
 // time to uninit all, except global stuff:
 printf("mplayer: end film. UNINIT\n");
-//uninit_player(INITIALIZED_ALL);
+uninit_player(INITIALIZED_ALL);
 //uninit_player(INITIALIZED_ALL-(INITIALIZED_DEMUXER+INITIALIZED_INPUT+INITIALIZED_VCODEC+INITIALIZED_GETCH2+INITIALIZED_GUI+(fixed_vo?INITIALIZED_VO:0)));
-uninit_player(INITIALIZED_ALL-(INITIALIZED_INPUT+INITIALIZED_GETCH2));
+//uninit_player(INITIALIZED_ALL-(INITIALIZED_INPUT+INITIALIZED_GETCH2));
 
 if(mpctx->set_of_sub_size > 0) {
     current_module="sub_free";

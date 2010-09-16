@@ -2840,7 +2840,6 @@ int gui_no_filename=0;
 
   // Preparse the command line
 #ifdef GEKKO
-
 m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
@@ -2849,8 +2848,8 @@ m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
-//m_config_set_option(mconfig,"ass","1");
-//m_config_set_option(mconfig,"ass-font-scale","2");
+m_config_set_option(mconfig,"ass","1");
+m_config_set_option(mconfig,"ass-font-scale","2");
 SetMPlayerSettings();
 
 orig_stream_cache_min_percent=stream_cache_min_percent;

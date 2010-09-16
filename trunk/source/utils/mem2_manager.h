@@ -19,10 +19,9 @@ bool AddMem2Area (u32 size, const char *name);
 void ClearMem2Area (const char *area);
 void* mem2_memalign(u8 align, u32 size, const char *area);
 void* mem2_malloc(u32 size, const char *area);
-void mem2_free(void *ptr, const char *area);
-#ifdef DEBUG_MEM2	
+void mem2_free(void *ptr, const char *area);	
 void ShowAreaInfo(const char *area); //if area == NULL print all areas info
-#endif
+
 
 /*
 u32 InitMem2Manager ();

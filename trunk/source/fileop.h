@@ -68,7 +68,7 @@ extern u64 dvdLastUsed;
 extern int currentDevice;
 extern int currentDeviceNum;
 extern int findLoadedFile;
-extern int selectLoadedFile;
+extern bool selectLoadedFile;
 extern size_t loadOffset, loadSize;
 
 #endif

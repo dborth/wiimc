@@ -38,6 +38,8 @@ void ShowVideoVolumeLevelBar();
 void HideVideoVolumeLevelBar();
 void UndoChangeMenu();
 void RemoveVideoImg();
+void ActiveVideoImg();
+bool HasVideoImg();
 bool WiiMenuSuspended();
 
 

@@ -45,7 +45,7 @@ bool ChangeInterface(int device, int devnum, bool silent);
 bool ChangeInterface(char * filepath, bool silent);
 void CreateLoadPath(char * origpath);
 void StripExt(char* string);
-char *GetExt(char *file);
+void GetExt(char *file, char *ext);
 bool IsPlaylistExt(char *ext);
 bool IsVideoExt(char *ext);
 bool IsAudioExt(char *ext);

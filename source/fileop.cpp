@@ -14,7 +14,6 @@
 #include <ogcsys.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
-//#include <malloc.h>
 #include <errno.h>
 #include <ntfs.h>
 #include <fat.h>
@@ -45,7 +44,6 @@ extern "C" {
 
 static u8 parsestack[PARSESTACK] ATTRIBUTE_ALIGN (32);
 static u8 devicestack[DEVICESTACK] ATTRIBUTE_ALIGN (32);
-
 
 extern "C" u32 __di_check_ahbprot(void);
 
@@ -99,7 +97,7 @@ static void * devicecallback (void *arg)
 				{
 					loadedFile[0] = 0;
 					StopMPlayerFile();
-					RemoveVideoImg();
+					DisableVideoImg();
 				}
 				isInserted[DEVICE_SD] = false;
 				devicesChanged = true;
@@ -123,7 +121,7 @@ static void * devicecallback (void *arg)
 				{
 					loadedFile[0] = 0;
 					StopMPlayerFile();
-					RemoveVideoImg();
+					DisableVideoImg();
 				}
 				isInserted[DEVICE_USB] = false;
 				devicesChanged = true;
@@ -148,7 +146,7 @@ static void * devicecallback (void *arg)
 				{
 					loadedFile[0] = 0;
 					StopMPlayerFile();
-					RemoveVideoImg();
+					DisableVideoImg();
 					if(menuCurrent == MENU_DVD)
 						UndoChangeMenu();
 				}
@@ -768,7 +766,7 @@ static bool Remount(int device, int silent)
 		{
 			loadedFile[0] = 0;
 			StopMPlayerFile();
-			RemoveVideoImg();
+			DisableVideoImg();
 		}
 	}
 
@@ -1033,8 +1031,11 @@ void CleanupPath(char * path)
 		if(j == 0 || !(path[j-1] == '/' && path[i] == '/'))
 			path[j++] = path[i];
 	}
+	
+	char ext[6];
+	GetExt(path, ext);
 
-	if(!GetExt(path) && path[j-1] != '/')
+	if(ext[0] == 0 && path[j-1] != '/')
 		path[j++] = '/'; // add trailing slash
 
 	path[j] = 0;
@@ -1155,32 +1156,50 @@ void StripExt(char* string)
 		*loc_dot = 0; // strip file extension
 }
 
-char *GetExt(char *file)
+void GetExt(char *file, char *ext)
 {
-	if(!file)
-		return NULL;
+	ext[0] = 0;
 
-	if(file[strlen(file)-1] == '/')
-		return NULL;
+	if(!file || file[strlen(file)-1] == '/')
+		return;
 
-	char *ext = strrchr(file,'.');
-	if(ext != NULL)
+	char *file_ext = strrchr(file,'.');
+
+	if(file_ext == NULL)
+		return;
+
+	file_ext++;
+	int i = 0;
+
+	while(i < 5 && file_ext[i] != '?' && file_ext[i] != 0)
 	{
-		ext++;
-		int extlen = strlen(ext);
-		if(extlen > 5)
-			return NULL;
-		// check if this extension contains valid characters
-		for(int i=0; i < extlen; i++)
-			if(!isalnum(ext[i]))
-				return NULL;
+		ext[i] = file_ext[i];
+		i++;
 	}
-	return ext;
+
+	// extension is too long
+	if(i == 5 && file_ext[i] != '?' && file_ext[i] != 0)
+	{
+		ext[0] = 0;
+		return;
+	}
+
+	ext[i] = 0;
+
+	// check if this extension contains valid characters
+	for(int n=0; n < i; n++)
+	{
+		if(!isalnum(ext[n]))
+		{
+			ext[0] = 0;
+			break;
+		}
+	}
 }
 
 bool IsPlaylistExt(char *ext)
 {
-	if(!ext)
+	if(!ext || ext[0] == 0)
 		return false;
 
 	int j=0;
@@ -1195,7 +1214,7 @@ bool IsPlaylistExt(char *ext)
 
 bool IsVideoExt(char *ext)
 {
-	if(!ext)
+	if(!ext || ext[0] == 0)
 		return false;
 
 	int j=0;
@@ -1210,7 +1229,7 @@ bool IsVideoExt(char *ext)
 
 bool IsAudioExt(char *ext)
 {
-	if(!ext)
+	if(!ext || ext[0] == 0)
 		return false;
 
 	int j=0;
@@ -1225,7 +1244,7 @@ bool IsAudioExt(char *ext)
 
 bool IsImageExt(char *ext)
 {
-	if(!ext)
+	if(!ext || ext[0] == 0)
 		return false;
 
 	int j=0;
@@ -1241,7 +1260,7 @@ bool IsImageExt(char *ext)
 // check that this file's extension is on the list of visible file types
 bool IsAllowedExt(char *ext)
 {
-	if(!ext)
+	if(!ext || ext[0] == 0)
 		return false;
 
 	if(menuCurrent == MENU_BROWSE_VIDEOS || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
@@ -1295,7 +1314,7 @@ void FindDirectory()
 	{
 		int pagesize = 11;
 
-		if(menuCurrent == MENU_BROWSE_VIDEOS && HasVideoImg())
+		if(menuCurrent == MENU_BROWSE_VIDEOS && VideoImgVisible())
 			pagesize = 10;
 
 		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
@@ -1350,7 +1369,7 @@ void FindFile()
 
 		int pagesize = 11;
 
-		if(menuCurrent == MENU_BROWSE_VIDEOS && HasVideoImg())
+		if(menuCurrent == MENU_BROWSE_VIDEOS && VideoImgVisible())
 			pagesize = 10;
 
 		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
@@ -1380,7 +1399,7 @@ static bool ParseDirEntries()
 		return false;
 
 	char filename[MAXPATHLEN];
-	char *ext;
+	char ext[6];
 	struct stat filestat;
 
 	int i = 0;
@@ -1403,7 +1422,7 @@ static bool ParseDirEntries()
 			continue;
 		}
 
-		ext = GetExt(filename);
+		GetExt(filename, ext);
 
 		// skip this file if it's not an allowed extension 
 		if((filestat.st_mode & _IFDIR) == 0)
@@ -1600,11 +1619,15 @@ typedef struct
 
 static int ParsePLXPlaylist()
 {
-	char *buffer = (char*)mem2_malloc(128*1024, "other");
+	char *buffer = (char*)mem2_malloc(64*1024, "other");
+
+	if(!buffer)
+		return 0;
+
 	int size = 0;
 
 	if(strncmp(browser.dir, "http:", 5) == 0)
-		size = http_request(browser.dir, NULL, buffer, 128*1024, SILENT);
+		size = http_request(browser.dir, NULL, buffer, 64*1024, SILENT);
 	else
 		size = LoadFile(buffer, browser.dir, SILENT);
 
@@ -1620,9 +1643,9 @@ static int ParsePLXPlaylist()
 	bool plxFile = false;
 	int numEntries = 0;
 	int c, lineptr = 0;
-	char *line = NULL;
+	char line[4096];
 
-	PLXENTRY *list = (PLXENTRY *)mem2_malloc(sizeof(PLXENTRY), "other");
+	PLXENTRY *list = (PLXENTRY *)malloc(sizeof(PLXENTRY));
 	char attribute[1024], value[1024];
 	PLXENTRY newEntry;
 	memset(&newEntry, 0, sizeof(PLXENTRY));
@@ -1630,25 +1653,27 @@ static int ParsePLXPlaylist()
 	while(lineptr < size)
 	{	
 		// setup next line
-		if(line) mem2_free(line, "other");
+		line[0] = 0;
 		c = 0;
-		while(lineptr+c < size)
+		while(c < 4096 && lineptr+c < size)
 		{
 			if(buffer[lineptr+c] == '\n')
 			{
-				line= (char*)mem2_malloc(sizeof(char)* (c+1), "other");
-				strncpy(line,&buffer[lineptr],c);
-				//line = strndup(&buffer[lineptr], c);
+				snprintf(line, c+1, "%s", &buffer[lineptr]);
 				if(line[c-1] == '\r') line[c-1] = 0;
 				break;
 			}
 			c++;
 		}
 
-		if(lineptr+c > size) // we've run out of new lines
+		// line too long or we've run out of new lines
+		if(c == 4096 || lineptr+c > size) 
 			break; // discard anything remaining
 
 		lineptr += c+1;
+
+		if(c <= 2)
+			continue;
 
 		if(sscanf(line, "%[^=]=%[^\n]", attribute, value) == 2)
 		{
@@ -1668,8 +1693,7 @@ static int ParsePLXPlaylist()
 					PLXENTRY * newList = (PLXENTRY *)realloc(list, (numEntries+1) * sizeof(PLXENTRY));
 					if(!newList) // failed to allocate required memory
 					{
-						if(line) mem2_free(line, "other");
-						mem2_free(list, "other");
+						free(list);
 						mem2_free(buffer, "other");
 						return -1; // too many files
 					}
@@ -1708,8 +1732,6 @@ static int ParsePLXPlaylist()
 		}
 	}
 
-	if(line) mem2_free(line, "other");
-
 	// add the final entry
 	if(newEntry.type > 0 && strlen(newEntry.name) > 0 && 
 		strlen(newEntry.url) > 0 && newEntry.processor[0] == 0 && 
@@ -1721,7 +1743,7 @@ static int ParsePLXPlaylist()
 
 	if(numEntries == 0)
 	{
-		mem2_free(list, "other");
+		free(list);
 		mem2_free(buffer, "other");
 
 		if(plxFile && browserList[browser.selIndex].type == TYPE_SEARCH)
@@ -1731,7 +1753,8 @@ static int ParsePLXPlaylist()
 	}
 
 	char *root = (char*)BrowserHistoryRetrieve();
-	char *ext = GetExt(root);
+	char ext[6];
+	GetExt(root, ext);
 	
 	ResetBrowser();
 
@@ -1753,7 +1776,7 @@ static int ParsePLXPlaylist()
 	{
 		if(!AddBrowserEntry()) // add failed
 		{
-			mem2_free(list, "other");
+			free(list);
 			mem2_free(buffer, "other");
 			return -1;
 		}
@@ -1769,7 +1792,7 @@ static int ParsePLXPlaylist()
 
 		browser.numEntries++;
 	}
-	mem2_free(list, "other");
+	free(list);
 	mem2_free(buffer, "other");
 
 	// try to find and select the last loaded file
@@ -1786,10 +1809,11 @@ static int ParsePLXPlaylist()
 int ParsePlaylistFile()
 {
 	int res;
-	char *ext = GetExt(browser.dir);
+	char ext[6];
+	GetExt(browser.dir, ext);
 
 	// if this file has no extension, try parsing it as a plx anyway
-	if(ext == NULL || strcmp(ext, "plx") == 0)
+	if(ext[0] == 0 || strcmp(ext, "plx") == 0)
 	{
 		res = ParsePLXPlaylist();
 
@@ -1797,14 +1821,14 @@ int ParsePlaylistFile()
 		{
 			case 0:
 			case -4:
-				if(ext != NULL)
+				if(ext[0] != 0)
 					ErrorPrompt("Error loading playlist!");
 				break;
 			case -1:
 				ErrorPrompt("Out of memory: too many files!");
 				break;
 			case -2:
-				if(ext != NULL)
+				if(ext[0] != 0)
 					ErrorPrompt("Playlist does not contain any supported entries!");
 				break;
 			case -3: // blank search query
@@ -1813,7 +1837,7 @@ int ParsePlaylistFile()
 		}
 
 		// we parsed the list, or we failed and it was a .plx
-		if(res > 0 || res <= -3 || ext != NULL)
+		if(res > 0 || res <= -3 || ext[0] != 0)
 			return res;
 	}
 
@@ -1822,7 +1846,7 @@ int ParsePlaylistFile()
 
 	if(!list)
 	{
-		if(ext != NULL && IsPlaylistExt(ext))
+		if(ext[0] != 0 && IsPlaylistExt(ext))
 			ErrorPrompt("Error loading playlist!");
 		return 0;
 	}
@@ -1853,7 +1877,7 @@ int ParsePlaylistFile()
 	}
 
 	char *root = (char*)BrowserHistoryRetrieve();
-	ext = GetExt(root);
+	GetExt(root, ext);
 
 	ResetBrowser();
 
@@ -1880,11 +1904,6 @@ int ParsePlaylistFile()
 	{
 		if(!i->files || !IsAllowedProtocol(i->files[0]))
 			continue;
-
-		//ext = GetExt(playlistEntry);
-
-		//if(ext && !IsAllowedExt(ext) && !IsPlaylistExt(ext))
-		//	continue;
 
 		if(!AddBrowserEntry()) // add failed
 		{

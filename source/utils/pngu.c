@@ -12,7 +12,6 @@
 #include "pngu.h"
 #include <png.h>
 
-
 //only texture in mem2, internal memory managed by gcc
 #define png_malloc malloc
 #define png_free free
@@ -22,7 +21,6 @@
 //#define png_malloc mem2_malloc
 //#define png_free mem2_free
 //#define png_memalign mem2_memalign
-
 
 // Constants
 #define PNGU_SOURCE_BUFFER				1

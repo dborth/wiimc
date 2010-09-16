@@ -24,8 +24,7 @@
 extern "C" {
 
 #define DEFAULT_FIFO_SIZE 384 * 1024
-static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32); //must be in mem1
-
+static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32); // must be in MEM1
 static Mtx GXmodelView2D;
 
 unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
@@ -45,16 +44,12 @@ bool drawGui = false;
 
 void TakeScreenshot()
 {
-	//if(videoScreenshot != NULL) gui_mem2_free(videoScreenshot);
-	int texSize = vmode->fbWidth * vmode->efbHeight * 4;
-	if(videoScreenshot == NULL) videoScreenshot = (u8 *) mem2_malloc(texSize, "video");
-	if(videoScreenshot == NULL) return;
 	GX_SetTexCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
 	GX_SetTexCopyDst(vmode->fbWidth, vmode->efbHeight, GX_TF_RGBA8, GX_FALSE);
-	DCInvalidateRange(videoScreenshot, texSize);
+	DCInvalidateRange(videoScreenshot, vmode->fbWidth * vmode->efbHeight * 4);
 	GX_CopyTex(videoScreenshot, GX_FALSE);
 	GX_PixModeSync();
-	ActiveVideoImg();
+	EnableVideoImg();
 }
 
 void ResetVideo_Menu()
@@ -219,8 +214,7 @@ void Menu_DrawRectangle(f32 x, f32 y, f32 width, f32 height, GXColor color, u8 f
 
 int DrawMPlayerGui()
 {
-	//UpdatePads();
-	WPAD_ReadPending(0, NULL); //only wiimote 1
+	UpdatePads();
 	MPlayerInput();
 
 	if(!drawGui && wiiIsPaused())
@@ -245,6 +239,7 @@ void Draw_VIDEO()
 	VIDEO_SetNextFramebuffer(xfb[whichfb]);
 	VIDEO_Flush();
 }
+
 void
 InitVideo ()
 {
@@ -291,7 +286,6 @@ InitVideo ()
 void
 InitVideo2 ()
 {
-
 	// Allocate the video buffers
 	xfb[0] = (u32 *) MEM_K0_TO_K1 (mem2_malloc( VIDEO_GetFrameBufferSize(vmode), "video"));
 	xfb[1] = (u32 *) MEM_K0_TO_K1 (mem2_malloc( VIDEO_GetFrameBufferSize(vmode), "video"));
@@ -330,6 +324,8 @@ InitVideo2 ()
 
 	GX_SetDrawDoneCallback(Draw_VIDEO);
 	GX_Flush();
+
+	videoScreenshot = (u8 *) mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, "video");
 }
 
 }

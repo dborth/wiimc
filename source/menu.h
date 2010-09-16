@@ -37,11 +37,10 @@ bool VideoVolumeLevelBarVisible();
 void ShowVideoVolumeLevelBar();
 void HideVideoVolumeLevelBar();
 void UndoChangeMenu();
-void RemoveVideoImg();
-void ActiveVideoImg();
-bool HasVideoImg();
+void DisableVideoImg();
+void EnableVideoImg();
+bool VideoImgVisible();
 bool WiiMenuSuspended();
-
 
 extern "C" {
 void DoMPlayerGuiDraw();

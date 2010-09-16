@@ -23,7 +23,6 @@
 #include "http.h"
 #include "wiimc.h"
 
-
 //#define http_malloc malloc
 //#define http_free free
 //#define http_memalign memalign

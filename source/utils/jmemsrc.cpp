@@ -22,7 +22,6 @@
 #include <jpeglib.h>
 #include <jerror.h>
 #include <gctypes.h>
-//#include <squish.h>
 
 #include "video.h"
 
@@ -35,9 +34,6 @@
 //#define jpg_malloc mem2_malloc
 //#define jpg_free mem2_free
 //#define jpg_memalign mem2_memalign
-
-
-//using namespace squish;
 
 /* Expanded data source object for memory input */
 

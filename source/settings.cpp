@@ -510,9 +510,10 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 			}
 			else
 			{
-				char *ext = GetExt(onlinemediaList[onlinemediaSize-1].address);
+				char ext[6];
+				GetExt(onlinemediaList[onlinemediaSize-1].address, ext);
 
-				if(ext && IsPlaylistExt(ext))
+				if(IsPlaylistExt(ext))
 					onlinemediaList[onlinemediaSize-1].type = TYPE_PLAYLIST;
 				else
 					onlinemediaList[onlinemediaSize-1].type = TYPE_FILE;
@@ -1064,8 +1065,6 @@ bool LoadSettings()
 		d++;
 	}
 
-	usleep(100000);
-
 	for(int i=0; i<d; i++)
 	{
 		sprintf(filepath, "%s/settings.xml", path[i]);		
@@ -1093,9 +1092,7 @@ bool LoadSettings()
 		char *buffer = (char *)mem2_malloc(50*1024, "other");
 		int size = LoadFile(buffer, filepath, SILENT);
 		if(size > 0)
-			{
 			wiiLoadRestorePoints(buffer, size);
-			}
 		mem2_free(buffer, "other");
 	}
 	return settingsFound;

@@ -2730,13 +2730,14 @@ static void AllocPicBuffer()
 	u32 level;
 	u32 size;
 	
+	if(picBuffer)
+			return;
 
 	size=MAX_PICTURE_SIZE;
 
 	size &= ~0x1f;
 
 	_sizePicBuffer=size;
-	printf("==AllocPicBuffer=====\n");
 	_CPU_ISR_Disable(level);                
     picBuffer = (unsigned char *)( (u32)SYS_GetArena2Hi() - size );
     SYS_SetArena2Hi(picBuffer);
@@ -2749,7 +2750,6 @@ static void FreePicBuffer()
 		return;
 	
 	u32 level;
-	printf("=====FreePicBuffer====\n");
 	_CPU_ISR_Disable(level);
 	SYS_SetArena2Hi(picBuffer+_sizePicBuffer);
 	_CPU_ISR_Restore(level);
@@ -7012,10 +7012,6 @@ void WiiMenu()
 
 	checkIOS = false;
 
-
-	printf("init wiimenu m1(%.4f) m2(%.4f)\n",
-									((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
-									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
 	while(!guiShutdown)
 	{

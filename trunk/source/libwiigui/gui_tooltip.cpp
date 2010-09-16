@@ -10,19 +10,25 @@
 
 #include "gui.h"
 
-static GuiImageData tooltipLeft(tooltip_left_png);
-static GuiImageData tooltipTile(tooltip_tile_png);
-static GuiImageData tooltipRight(tooltip_right_png);
-
+static GuiImageData *tooltipLeft = NULL;
+static GuiImageData *tooltipTile = NULL;
+static GuiImageData *tooltipRight = NULL;
 
 /**
  * Constructor for the GuiTooltip class.
  */
 GuiTooltip::GuiTooltip(const char *t)
 {
-	leftImage.SetImage(&tooltipLeft);
-	tileImage.SetImage(&tooltipTile);
-	rightImage.SetImage(&tooltipRight);
+	if(tooltipLeft == NULL)
+	{
+		tooltipLeft = new GuiImageData(tooltip_left_png);
+		tooltipTile = new GuiImageData(tooltip_tile_png);
+		tooltipRight = new GuiImageData(tooltip_right_png);
+	}
+
+	leftImage.SetImage(tooltipLeft);
+	tileImage.SetImage(tooltipTile);
+	rightImage.SetImage(tooltipRight);
 	
 	height = leftImage.GetHeight();
 
@@ -51,46 +57,39 @@ GuiTooltip::~GuiTooltip()
 // overloaded new operator
 void *GuiTooltip::operator new(size_t size)
 {
-  void *p;
-  
-  p =  gui_malloc(size);
-  
-  if(!p) {
-  
-    bad_alloc ba;
-  
-    throw ba;
-  }
-  return p;
+	void *p = gui_malloc(size);
+
+	if (!p)
+	{
+		bad_alloc ba;
+		throw ba;
+	}
+	return p;
 }
 
-// delete operator overloaded
+// overloaded delete operator
 void GuiTooltip::operator delete(void *p)
-{ 
-  gui_free(p);
+{
+	gui_free(p);
 }
 
-// new operator overloaded for arrays.
+// overloaded new operator for arrays
 void *GuiTooltip::operator new[](size_t size)
 {
-  void *p;
+	void *p = gui_malloc(size);
 
-  p =  gui_malloc(size);
-  
-  if( !p ) {
-  
-    bad_alloc ba;
-  
-    throw ba;
-  }
-  
-  return p;
+	if (!p)
+	{
+		bad_alloc ba;
+		throw ba;
+	}
+	return p;
 }
 
-// delete operator overloaded for arrays.
+// overloaded delete operator for arrays
 void GuiTooltip::operator delete[](void *p)
-{  
-  gui_free(p);
+{
+	gui_free(p);
 }
 
 float GuiTooltip::GetScale()

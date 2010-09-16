@@ -101,10 +101,7 @@ void ClearVideoPlaylist();
 bool AddBrowserEntry();
 bool AddMediaEntry();
 bool AddPlaylistEntry();
-#ifdef __cplusplus
-
 int BrowserChangeFolder(bool updateDir = true, bool waitParse = false);
-#endif
 int BrowseDevice();
 
 #endif

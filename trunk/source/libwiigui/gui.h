@@ -57,7 +57,6 @@
 #define gui_memalign(x,y) mem2_memalign(x,y,"gui")
 #define gui_free(x) mem2_free(x,"gui")
 
-
 using namespace std;
 
 extern FreeTypeGX *fontSystem[];
@@ -159,7 +158,7 @@ class GuiSound
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		//!Start sound playback
 		void Play();
 		//!Stop sound playback
@@ -200,7 +199,7 @@ class GuiTrigger
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		//!Sets a simple trigger. Requires: element is selected, and trigger button is pressed
 		//!\param ch Controller channel number
 		//!\param wiibtns Wii controller trigger button(s) - classic controller buttons are considered separately
@@ -270,7 +269,7 @@ class GuiElement
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		//!Set the element's parent
 		//!\param e Pointer to parent element
 		void SetParent(GuiElement * e);
@@ -507,7 +506,7 @@ class GuiWindow : public GuiElement
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		//!Appends a GuiElement to the GuiWindow
 		//!\param e The GuiElement to append. If it is already in the GuiWindow, it is removed first
 		void Append(GuiElement* e);
@@ -596,7 +595,7 @@ class GuiImageData
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		//!Sets the GuiImageData to a new image (assumes the same dimensions)
 		//!\param i Image data
 		//!\param s Image data size
@@ -654,7 +653,7 @@ class GuiImage : public GuiElement
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		//!Sets the image rotation angle for drawing
 		//!\param a Angle (in degrees)
 		void SetAngle(float a);
@@ -725,7 +724,7 @@ class GuiText : public GuiElement
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		//!Sets the text of the GuiText element
 		//!\param t Text
 		void SetText(const char * t);
@@ -803,7 +802,7 @@ class GuiTooltip : public GuiElement
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		//!Gets the element's current scale
 		float GetScale();
 		//!Sets the text of the GuiTooltip element
@@ -838,7 +837,7 @@ class GuiButton : public GuiElement
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-			
+
 		//!Sets the button's image
 		//!\param i Pointer to GuiImage object
 		void SetImage(GuiImage* i);
@@ -935,7 +934,7 @@ class GuiKeyboard : public GuiWindow
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		void Update(GuiTrigger * t);
 		char kbtextstr[256];
 	protected:
@@ -995,7 +994,7 @@ class GuiOptionBrowser : public GuiElement
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		void SetCol1Position(int x);
 		void SetCol2Position(int x);
 		int FindMenuItem(int c, int d);
@@ -1063,7 +1062,7 @@ class GuiFileBrowser : public GuiElement
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-		
+
 		void ResetState();
 		void SetRightCutoff();
 		void ChangeSize(int s);

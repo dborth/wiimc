@@ -13,7 +13,6 @@
 #include <string.h>
 #include <wiiuse/wpad.h>
 #include <sys/dir.h>
-//#include <malloc.h>
 #include <string>
 #include <vector>
 using namespace std;
@@ -328,7 +327,9 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		bool mounted = ChangeInterface(browser.dir, NOTSILENT);
 		if(mounted)
 		{
-			isPlaylist = IsPlaylistExt(GetExt(browser.dir));
+			char ext[6];
+			GetExt(browser.dir, ext);
+			isPlaylist = IsPlaylistExt(ext);
 		}
 		else if(menuCurrent != MENU_BROWSE_ONLINEMEDIA)
 		{

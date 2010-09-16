@@ -31,8 +31,6 @@
 #define ft_free(x) mem2_free(x,"other")
 #define ft_memalign(x,y) mem2_memalign(x,y,"other")
 
-
-
 static FT_Library ftLibrary;	/**< FreeType FT_Library instance. */
 static FT_Face ftFace;			/**< FreeType reusable FT_Face typographic object. */
 static FT_GlyphSlot ftSlot;		/**< FreeType reusable FT_GlyphSlot glyph container object. */

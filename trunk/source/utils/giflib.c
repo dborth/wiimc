@@ -44,7 +44,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
 //only texture in mem2, internal memory managed by gcc
 #define gif_malloc malloc
 #define gif_free free

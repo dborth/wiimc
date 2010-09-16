@@ -193,7 +193,6 @@ static void * netcb (void *arg)
 	while(netHalt != 2)
 	{
 		retry = 30;
-		networkInit = false;
 
 		while (retry)
 		{

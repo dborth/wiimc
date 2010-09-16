@@ -142,11 +142,11 @@ void* mem2_memalign(u8 align, u32 size, const char *area)
 	if(ptr == NULL) printf("Error not enough mem2 in malloc, size: %u  area: %s  allocated: %u	top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
 	else
 	{
-		mem2_areas[i].allocated += __lwp_heap_block_size(&mem2_areas[i].heap,ptr);
-		if(mem2_areas[i].allocated > mem2_areas[i].top_allocated) mem2_areas[i].top_allocated = mem2_areas[i].allocated;
+		//mem2_areas[i].allocated += __lwp_heap_block_size(&mem2_areas[i].heap,ptr);
+		//if(mem2_areas[i].allocated > mem2_areas[i].top_allocated) mem2_areas[i].top_allocated = mem2_areas[i].allocated;
 	
-		if(DEBUG_MEM2_LEVEL == 2)
-			printf("mem2 malloc: %u  area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
+		//if(DEBUG_MEM2_LEVEL == 2)
+		//	printf("mem2 malloc: %u  area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
 	}
 #endif
 	return ptr;
@@ -173,12 +173,12 @@ void mem2_free(void *ptr, const char *area)
 	
 
 #ifdef DEBUG_MEM2_LEVEL
-	u32 size=__lwp_heap_block_size(&mem2_areas[i].heap,ptr); // this function is added in libogc
+	//u32 size=__lwp_heap_block_size(&mem2_areas[i].heap,ptr); // this function is added in libogc
 
-	mem2_areas[i].allocated -= size;
+	//mem2_areas[i].allocated -= size;
 
-	if(DEBUG_MEM2_LEVEL == 2)
-		printf("mem2 free: %u	area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
+	//if(DEBUG_MEM2_LEVEL == 2)
+	//	printf("mem2 free: %u	area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
 	
 #endif		
 
@@ -224,155 +224,3 @@ void ShowAreaInfo(const char *area) //if area == NULL print all areas info
 		for( i = 0; i < MAX_AREAS ; i++) PrintAreaInfo(i);
 #endif
 }
-
-
-/*
-static heap_cntrl mem2_heap;
-static heap_cntrl gui_mem2_heap;
-
-static bool mem2_inited=false;
-static u32 mem2_size=0;
-
-static bool gui_mem2_inited=false;
-static u32 gui_mem2_size=0;
-static u32 gui_mem2_allocatted=0;
-static u32 gui_mem2_allocatted_top=0;
-
-static bool debug_gui_mem2=true;
-
-
-static unsigned char *gui_mem2_heap_ptr;
-
-
-extern GXRModeObj *vmode;
-
-void USBGeckoOutput();
-
-
-u32 InitMem2Manager () 
-{
-	u32 size = 	(8*1024*1024) + // cache
-				(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
-				(1024*1024*2)+(1024*512*2) + //textures
-				(VIDEO_GetFrameBufferSize(vmode)*2) + //video buffers
-				(16*1024); // padding
-	u32 level;
-	unsigned char *mem2_heap_ptr;
-	if(mem2_inited) return mem2_size;
-
-	USBGeckoOutput();
-	printf("InitMem2Manager\n");
-	 
-	_CPU_ISR_Disable(level);
-	size &= ~0x1f; // round down, because otherwise we may exceed the area
-	mem2_heap_ptr = (unsigned char *)((u32)SYS_GetArena2Hi()-size);
-	SYS_SetArena2Hi(mem2_heap_ptr);
-	_CPU_ISR_Restore(level);
-	size = __lwp_heap_init(&mem2_heap, mem2_heap_ptr, size, 32);
-	mem2_inited=true;
-	mem2_size=size;
-	return size;
-}
-
-void* mem2_memalign(u8 align, u32 size)
-{
-	return __lwp_heap_allocate(&mem2_heap, size);
-}
-
-void* mem2_malloc(u32 size)
-{
-	return mem2_memalign(32, size);
-}
-
-void mem2_free(void *ptr)
-{
-	__lwp_heap_free(&mem2_heap, ptr);
-}
-
-// GUI //////////////////////////////////////////////////
-u32 InitMem2GUIManager () 
-{
-	u32 size = 	(9*1024*1024);
-	u32 level;
-	
-	if(gui_mem2_inited) return gui_mem2_size;
-
-	USBGeckoOutput();
-
-	printf("InitMem2GUIManager\n");
-	
-	_CPU_ISR_Disable(level);
-	size &= ~0x1f; // round down, because otherwise we may exceed the area
-	gui_mem2_heap_ptr = (unsigned char *)((u32)SYS_GetArena2Hi()-size);
-	SYS_SetArena2Hi(gui_mem2_heap_ptr);
-	_CPU_ISR_Restore(level);
-	size = __lwp_heap_init(&gui_mem2_heap, gui_mem2_heap_ptr, size, 32);
-	gui_mem2_inited=true;
-	gui_mem2_size=size;
-
-	gui_mem2_allocatted=gui_mem2_allocatted_top=0;
-	
-	return size;
-}
-
-void ClearMem2GUIManager () 
-{
-	memset (gui_mem2_heap_ptr, 0, gui_mem2_size);
-
-	__lwp_heap_init(&gui_mem2_heap, gui_mem2_heap_ptr, gui_mem2_size, 32);
-}
-
-
-void* gui_mem2_memalign(u8 align, u32 size)
-{
-	void *ptr = NULL;
-	//long diff;
-
-	if(!gui_mem2_inited)InitMem2GUIManager () ;
-
-	gui_mem2_allocatted+=size+align;
-	if(gui_mem2_allocatted>gui_mem2_allocatted_top)gui_mem2_allocatted_top=gui_mem2_allocatted;
-	if(debug_gui_mem2) printf("size: %u  gui_mem2_allocatted: %u  top: %u\n",size+align,gui_mem2_allocatted,gui_mem2_allocatted_top);
-
-	ptr=__lwp_heap_allocate(&gui_mem2_heap, size+align);
-
-	if (!ptr)
-	{
-		if(debug_gui_mem2)printf("no enough gui mem2 (%u), last size: %u\n",gui_mem2_size,size); //for debugging
-		return NULL;
-	}
-
-	//diff = ((-(long)ptr - 1) & (align - 1)) + 1;
-	//ptr = (char *)ptr + diff;
-	//((char *)ptr)[-1] = diff;
-	return ptr;
-}
-
-void* gui_mem2_malloc(u32 size)
-{
-	return gui_mem2_memalign(32, size);
-}
-
-void gui_mem2_free(void *ptr)
-{
-	u32 size=__lwp_heap_block_size(&gui_mem2_heap,ptr);
-	gui_mem2_allocatted-=size;
-	if(debug_gui_mem2) printf("gui_mem2_free: %u   gui_mem2_allocatted: %u\n",size,gui_mem2_allocatted);
-	__lwp_heap_free(&mem2_heap, ptr);
-
-	//__lwp_heap_free(&gui_mem2_heap, (char*)ptr - ((char*)ptr)[-1]);
-}
-
-void print_gui_mem2_info()
-{
-	printf("info gui_mem2_allocatted: %.2f  top: %.2f\n",(float)(gui_mem2_allocatted)/0x100000,(float)(gui_mem2_allocatted_top)/0x100000);
-
-}
-
-void init_debug_gui_mem2(bool enable)
-{
-	debug_gui_mem2=enable;
-}
-
-*/
-

@@ -9,7 +9,6 @@
 #include <gccore.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <malloc.h>
 #include <sys/dir.h>
 
 #include "wiimc.h"
@@ -91,7 +90,8 @@ int MusicPlaylistLoad()
 	browserList[0].mtime = 0;
 	browserList[0].icon = ICON_FOLDER;
 
-	char *ext = GetExt(browser.dir);
+	char ext[6];
+	GetExt(browser.dir, ext);
 
 	if(IsPlaylistExt(ext) || strncmp(browser.dir, "http:", 5) == 0)
 		browserList[0].type = TYPE_PLAYLIST;
@@ -155,19 +155,11 @@ static int EnqueueFile(char * path, char * name)
 	if(path == NULL || name == NULL || strcmp(name,".") == 0 || MusicPlaylistFindIndex(path) >= 0)
 		return 0;
 
-	char *ext = GetExt(path);
-
-	if(ext == NULL)
-		return 0; // file does not have an extension - skip it
+	char ext[6];
+	GetExt(path, ext);
 
 	// check if this is a valid audio file
-	int i=0;
-	do
-	{
-		if (strcasecmp(ext, validAudioExtensions[i]) == 0)
-			break;
-	} while (validAudioExtensions[++i][0] != 0);
-	if (validAudioExtensions[i][0] == 0) // extension not found
+	if(!IsAudioExt(ext))
 		return 0;
 
 	if(!AddPlaylistEntry()) // add failed

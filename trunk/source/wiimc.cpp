@@ -39,13 +39,7 @@ extern "C" {
 extern void __exception_setreload(int t);
 extern u32 __di_check_ahbprot(void);
 extern char *network_useragent;
-void TakeScreenshot();
 }
-
-
-extern GXRModeObj *vmode;
-
-
 
 int ScreenshotRequested = 0;
 int ConfigRequested = 0;
@@ -97,7 +91,6 @@ void CheckSleepTimer()
 void ExitApp()
 {
 	DisableRumble();
-	printf("ExitApp\n");
 	if(ShutdownRequested == 1 || ExitRequested == 1)
 	{
 		SaveFolder();
@@ -181,16 +174,8 @@ const devoptab_t gecko_out = {
 	NULL		// device statvfs_r
 };
 
-
-extern "C" { 
-
-void USBGeckoOutput()
+static void USBGeckoOutput()
 {
-	static bool USBGeckoOutput_initied=false;
-
-	if(USBGeckoOutput_initied) return;
-	USBGeckoOutput_initied=true;
-
 	gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
 
 	LWP_MutexInit(&gecko_mutex, false);
@@ -198,7 +183,7 @@ void USBGeckoOutput()
 	devoptab_list[STD_OUT] = &gecko_out;
 	devoptab_list[STD_ERR] = &gecko_out;
 }
-}
+
 /****************************************************************************
  * IOS Check
  ***************************************************************************/
@@ -532,11 +517,9 @@ int main(int argc, char *argv[])
 	u32 have_ahbprot = __di_check_ahbprot();
 	u32 version = IOS_GetVersion();
 	s32 preferred = IOS_GetPreferredVersion();
-	u32 size;
 
 	if(version != 58 && preferred > 0 && version != (u32)preferred && !have_ahbprot)
 		IOS_ReloadIOS(preferred);
-
 
 	if(have_ahbprot)
 		DI_Init();
@@ -544,7 +527,7 @@ int main(int argc, char *argv[])
 	WPAD_Init();
 	InitVideo();
 	
-	size = 	(8*1024*1024) + // cache
+	u32 size = 	(8*1024*1024) + // cache
 			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
 			(1024*1024*2)+(1024*512*2) + //textures
 			(VIDEO_GetFrameBufferSize(vmode)*2) + //video buffers
@@ -555,9 +538,7 @@ int main(int argc, char *argv[])
 	AddMem2Area (3*1024*1024, "other"); // vars + ttf , we have to improve ext_ttf
 
 	InitVideo2();
-	
 	SetupPads();
-	
 	StartNetworkThread();
 
 	// Wii Power/Reset buttons
@@ -566,10 +547,8 @@ int main(int argc, char *argv[])
 	SYS_SetResetCallback(ResetCB);
 
 	AUDIO_Init(NULL);
-
 	GX_AllocTextureMemory();
 	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, "video");
-
 	MountAllDevices(); // Initialize SD and USB devices
 
 	// store path app was loaded from
@@ -582,8 +561,6 @@ int main(int argc, char *argv[])
 
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
-
-	TakeScreenshot();
 
 	// create GUI thread
 	GuiInit();

@@ -45,7 +45,7 @@ GuiTrigger userInput[4];
  ***************************************************************************/
 void UpdatePads()
 {
-	WPAD_ScanPads();
+	WPAD_ReadPending(0, NULL); // only wiimote 1
 }
 
 /****************************************************************************
@@ -58,14 +58,11 @@ void SetupPads()
 	WPAD_SetIdleTimeout(60);
 
 	// read wiimote accelerometer and IR data
-	WPAD_SetDataFormat(WPAD_CHAN_ALL,WPAD_FMT_BTNS_ACC_IR);
-	WPAD_SetVRes(WPAD_CHAN_ALL, screenwidth, screenheight);
+	WPAD_SetDataFormat(WPAD_CHAN_0, WPAD_FMT_BTNS_ACC_IR);
+	WPAD_SetVRes(WPAD_CHAN_0, screenwidth, screenheight);
 
-	for(int i=0; i < 4; i++)
-	{
-		userInput[i].chan = i;
-		userInput[i].wpad = WPAD_Data(i);
-	}
+	userInput[0].chan = 0;
+	userInput[0].wpad = WPAD_Data(0);
 }
 
 /****************************************************************************
@@ -84,8 +81,7 @@ static void ShutoffRumble(int i, int cooloff)
 
 void ShutoffRumble()
 {
-	for(int i=0;i<4;i++)
-		ShutoffRumble(i, RUMBLE_COOLOFF*3);
+	ShutoffRumble(0, RUMBLE_COOLOFF*3);
 }
 
 void DisableRumble()
@@ -142,50 +138,47 @@ void MPlayerInput()
 	bool inDVDMenu = wiiInDVDMenu();
 	static bool volumeUpdated = false;
 
-	for(int i=0; i<1; i++)
+	if(userInput[0].wpad->ir.valid)
+		ir = true;
+
+	if(userInput[0].wpad->btns_d & WPAD_BUTTON_1)
 	{
-		if(userInput[i].wpad->ir.valid)
-			ir = true;
+		osdLevel ^= 1;
+	}
+	else if(ConfigRequested || userInput[0].wpad->btns_d & WPAD_BUTTON_HOME)
+	{
+		ConfigRequested = 0;
+		wiiGotoGui();
+	}
 
-		if(userInput[i].wpad->btns_d & WPAD_BUTTON_1)
-		{
-			osdLevel ^= 1;
-		}
-		else if(ConfigRequested || userInput[i].wpad->btns_d & WPAD_BUTTON_HOME)
-		{
-			ConfigRequested = 0;
-			wiiGotoGui();
-		}
-
-		if(inDVDMenu)
-			continue;
-
-		if(userInput[i].wpad->btns_d & WPAD_BUTTON_A)
+	if(!inDVDMenu)
+	{
+		if(userInput[0].wpad->btns_d & WPAD_BUTTON_A)
 		{
 			// Hack to allow people to unpause while the OSD GUI is visible by
 			// pointing above the button bar and pressing A. We also need to be outside
 			// the boundaries of the volume bar area, when it is visible
-			int x = userInput[i].wpad->ir.x;
-			int y = userInput[i].wpad->ir.y;
-
+			int x = userInput[0].wpad->ir.x;
+			int y = userInput[0].wpad->ir.y;
+	
 			if(!drawGui || (y < 360 && 
 				(!VideoVolumeLevelBarVisible() || !(x > 80 && x < 180 && y > 180))))
 			{
 				wiiPause();
 			}
 		}
-		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_RIGHT)
+		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_RIGHT)
 		{
 			wiiFastForward();
 		}
-		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_LEFT)
+		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_LEFT)
 		{
 			wiiRewind();
 		}
-		else if(userInput[i].wpad->btns_h & WPAD_BUTTON_PLUS)
+		else if(userInput[0].wpad->btns_h & WPAD_BUTTON_PLUS)
 		{
 			volnow = gettime();
-
+	
 			if(diff_usec(volprev, volnow) > VOL_DELAY)
 			{
 				volprev = volnow;
@@ -196,10 +189,10 @@ void MPlayerInput()
 				ShowVideoVolumeLevelBar();
 			}
 		}
-		else if(userInput[i].wpad->btns_h & WPAD_BUTTON_MINUS)
+		else if(userInput[0].wpad->btns_h & WPAD_BUTTON_MINUS)
 		{
 			volnow = gettime();
-
+	
 			if(diff_usec(volprev, volnow) > VOL_DELAY)
 			{
 				volprev = volnow;
@@ -210,19 +203,21 @@ void MPlayerInput()
 				ShowVideoVolumeLevelBar();
 			}
 		}
-		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_UP)
+		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_UP)
 		{
 			if(!wiiIsPaused())
 				wiiSetProperty(MP_CMD_SUB_SELECT, -2);
 		}
-		else if(userInput[i].wpad->btns_d & WPAD_BUTTON_DOWN)
+		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_DOWN)
 		{
 			if(!wiiIsPaused())
 				wiiSetProperty(MP_CMD_SWITCH_AUDIO, -1);
 		}
-	}
 
-	if(inDVDMenu)
+		if(userInput[0].wpad->btns_d & WPAD_BUTTON_2)
+			wiiDVDNav(MP_CMD_DVDNAV_MENU);
+	}
+	else
 	{
 		if(userInput[0].wpad->ir.valid)
 			wiiUpdatePointer((int)userInput[0].wpad->ir.x, (int)userInput[0].wpad->ir.y);
@@ -243,11 +238,6 @@ void MPlayerInput()
 			wiiDVDNav(MP_CMD_DVDNAV_RIGHT);
 		if(userInput[0].wpad->btns_d & WPAD_BUTTON_LEFT)
 			wiiDVDNav(MP_CMD_DVDNAV_LEFT);
-	}
-	else
-	{
-		if(userInput[0].wpad->btns_d & WPAD_BUTTON_2)
-			wiiDVDNav(MP_CMD_DVDNAV_MENU);
 	}
 
 	if(volumeUpdated)

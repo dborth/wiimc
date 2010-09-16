@@ -103,46 +103,39 @@ GuiImage::~GuiImage()
 // overloaded new operator
 void *GuiImage::operator new(size_t size)
 {
-  void *p;
-  
-  p =  gui_malloc(size);
-  
-  if(!p) {
-  
-    bad_alloc ba;
-  
-    throw ba;
-  }
-  return p;
+	void *p = gui_malloc(size);
+
+	if (!p)
+	{
+		bad_alloc ba;
+		throw ba;
+	}
+	return p;
 }
 
-// delete operator overloaded
+// overloaded delete operator
 void GuiImage::operator delete(void *p)
-{ 
-  gui_free(p);
+{
+	gui_free(p);
 }
 
-// new operator overloaded for arrays.
+// overloaded new operator for arrays
 void *GuiImage::operator new[](size_t size)
 {
-  void *p;
+	void *p = gui_malloc(size);
 
-  p =  gui_malloc(size);
-  
-  if( !p ) {
-  
-    bad_alloc ba;
-  
-    throw ba;
-  }
-  
-  return p;
+	if (!p)
+	{
+		bad_alloc ba;
+		throw ba;
+	}
+	return p;
 }
 
-// delete operator overloaded for arrays.
+// overloaded delete operator for arrays
 void GuiImage::operator delete[](void *p)
-{  
-  gui_free(p);
+{
+	gui_free(p);
 }
 
 u8 * GuiImage::GetImage()

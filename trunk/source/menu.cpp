@@ -39,20 +39,16 @@ extern "C" {
 #include "mplayer/stream/url.h"
 }
 
-#define THREAD_SLEEP 200
-
-#define GSTACK (128*1024)
+#define THREAD_SLEEP 	200
+#define GSTACK 			(128*1024)
+#define GUITH_STACK 	(8192*2)
 
 static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
-
-#define GUITH_STACK (8192*2)
-
 static u8 progressstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 picturestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 screensaverstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 creditsstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
-
 
 extern char streamtitle[128]; // ICY data (http.c)
 extern char streamurl[128]; // ICY data (http.c)
@@ -64,233 +60,230 @@ extern int wii_error; // to display a specific error when loading fails
 
 // frequently used objects
 
-static GuiImageData * bg = NULL;
-static GuiImageData * navDivider = NULL;
-static GuiImageData * btnBottom = NULL;
-static GuiImageData * btnBottomOver = NULL;
-static GuiImageData * arrowRightSmall = NULL;
-static GuiImageData * pointer[4] = { NULL, NULL, NULL, NULL };
-static const u8 * pointerImg[4] = { NULL, NULL, NULL, NULL };
-static const u8 * pointerGrabImg[4] = { NULL, NULL, NULL, NULL };
-static GuiImageData throbber(throbber_png);
-static GuiImageData progressLeft(progressbar_left_png);
-static GuiImageData progressMid(progressbar_mid_png);
-static GuiImageData progressRight(progressbar_right_png);
-static GuiImageData progressEmpty(progressbar_empty_png);
-static GuiImageData progressShortEmpty(progressbar_short_empty_png);
-static GuiImageData progressLongEmpty(progressbar_long_empty_png);
-static GuiImageData progressLine(progressbar_line_png);
-static GuiImageData volumeTop(volume_top_png);
-static GuiImageData volumeMid(volume_mid_png);
-static GuiImageData volumeBottom(volume_bottom_png);
-static GuiImageData volumeEmpty(volume_empty_png);
-static GuiImageData volumeLine(volume_line_png);
-static GuiImage * disabled = NULL;
+static GuiImageData *bg = NULL;
+static GuiImageData *navDivider = NULL;
+static GuiImageData *btnBottom = NULL;
+static GuiImageData *btnBottomOver = NULL;
+static GuiImageData *arrowRightSmall = NULL;
+static GuiImageData *pointer[4] = { NULL, NULL, NULL, NULL };
+static const u8 *pointerImg[4] = { NULL, NULL, NULL, NULL };
+static const u8 *pointerGrabImg[4] = { NULL, NULL, NULL, NULL };
+static GuiImageData *throbber = NULL;
+static GuiImageData *progressLeft = NULL;
+static GuiImageData *progressMid = NULL;
+static GuiImageData *progressRight = NULL;
+static GuiImageData *progressEmpty = NULL;
+static GuiImageData *progressShortEmpty = NULL;
+static GuiImageData *progressLongEmpty = NULL;
+static GuiImageData *progressLine = NULL;
+static GuiImageData *volumeTop = NULL;
+static GuiImageData *volumeMid = NULL;
+static GuiImageData *volumeBottom = NULL;
+static GuiImageData *volumeEmpty = NULL;
+static GuiImageData *volumeLine = NULL;
+static GuiImage *disabled = NULL;
+static GuiTrigger *trigA = NULL;
+static GuiTrigger *trigHeldA = NULL;
+static GuiTrigger *trigB = NULL;
+static GuiTrigger *trigLeft = NULL;
+static GuiTrigger *trigRight = NULL;
+static GuiTrigger *trigUp = NULL;
+static GuiTrigger *trigDown = NULL;
+static GuiTrigger *trigMinus = NULL;
+static GuiTrigger *trigPlus = NULL;
 
-//GUI VARS=================
-static GuiImage * _navDividerImg = NULL;
-static GuiImage * _bgImg = NULL;
-static GuiTooltip * _logoBtnTip = NULL;
-static GuiImageData * _logo = NULL;
-static GuiImage * _logoBtnImg = NULL;
-static GuiImageData * _navHighlight = NULL;
-static GuiImageData * _videos = NULL;
-static GuiImageData * _videosOver = NULL;
-static GuiImageData * _videosOn = NULL;
-static GuiImageData * _music = NULL;
-static GuiImageData * _musicOver = NULL;
-static GuiImageData * _musicOn = NULL;
-static GuiImageData * _pictures = NULL;
-static GuiImageData * _picturesOver = NULL;
-static GuiImageData * _picturesOn = NULL;
-static GuiImageData * _dvd = NULL;
-static GuiImageData * _dvdOver = NULL;
-static GuiImageData * _dvdOn = NULL;
-static GuiImageData * _online = NULL;
-static GuiImageData * _onlineOver = NULL;
-static GuiImageData * _onlineOn = NULL;
-static GuiImageData * _settings = NULL;
-static GuiImageData * _settingsOver = NULL;
-static GuiImageData * _settingsOn = NULL;
-static GuiTooltip * _videosBtnTip = NULL;
-static GuiImage * _videosBtnOverImg = NULL;
-static GuiImage * _videosBtnHighlightImg = NULL;
-static GuiTooltip * _musicBtnTip = NULL;
-static GuiImage * _musicBtnOverImg = NULL;
-static GuiImage * _musicBtnHighlightImg = NULL;
-static GuiTooltip * _picturesBtnTip = NULL;
-static GuiImage * _picturesBtnOverImg = NULL;
-static GuiImage * _picturesBtnHighlightImg = NULL;
-static GuiTooltip * _dvdBtnTip = NULL;
-static GuiImage * _dvdBtnOverImg = NULL;
-static GuiImage * _dvdBtnHighlightImg = NULL;
-static GuiTooltip * _onlineBtnTip = NULL;
-static GuiImage * _onlineBtnOverImg = NULL;
-static GuiImage * _onlineBtnHighlightImg = NULL;
-static GuiTooltip * _settingsBtnTip = NULL;
-static GuiImage * _settingsBtnOverImg = NULL;
-static GuiImage * _settingsBtnHighlightImg = NULL;
+static GuiImage *videoImg = NULL;
+static GuiButton *videosBtn = NULL;
+static GuiButton *musicBtn = NULL;
+static GuiButton *picturesBtn = NULL;
+static GuiButton *dvdBtn = NULL;
+static GuiButton *onlineBtn = NULL;
+static GuiButton *settingsBtn = NULL;
 
+static GuiImage *videosBtnImg = NULL;
+static GuiImage *videosBtnOnImg = NULL;
+static GuiImage *musicBtnImg = NULL;
+static GuiImage *musicBtnOnImg = NULL;
+static GuiImage *picturesBtnImg = NULL;
+static GuiImage *picturesBtnOnImg = NULL;
+static GuiImage *dvdBtnImg = NULL;
+static GuiImage *dvdBtnOnImg = NULL;
+static GuiImage *onlineBtnImg = NULL;
+static GuiImage *onlineBtnOnImg = NULL;
+static GuiImage *settingsBtnImg = NULL;
+static GuiImage *settingsBtnOnImg = NULL;
 
-
-static GuiTrigger * trigA = NULL;
-static GuiTrigger * trigHeldA = NULL;
-static GuiTrigger * trigB = NULL;
-static GuiTrigger * trigLeft = NULL;
-static GuiTrigger * trigRight = NULL;
-static GuiTrigger * trigUp = NULL;
-static GuiTrigger * trigDown = NULL;
-static GuiTrigger * trigMinus = NULL;
-static GuiTrigger * trigPlus = NULL;
-
-static GuiImage * videoImg = NULL;
-static GuiButton * videosBtn = NULL;
-static GuiButton * musicBtn = NULL;
-static GuiButton * picturesBtn = NULL;
-static GuiButton * dvdBtn = NULL;
-static GuiButton * onlineBtn = NULL;
-static GuiButton * settingsBtn = NULL;
-
-static GuiImage * videosBtnImg = NULL;
-static GuiImage * videosBtnOnImg = NULL;
-static GuiImage * musicBtnImg = NULL;
-static GuiImage * musicBtnOnImg = NULL;
-static GuiImage * picturesBtnImg = NULL;
-static GuiImage * picturesBtnOnImg = NULL;
-static GuiImage * dvdBtnImg = NULL;
-static GuiImage * dvdBtnOnImg = NULL;
-static GuiImage * onlineBtnImg = NULL;
-static GuiImage * onlineBtnOnImg = NULL;
-static GuiImage * settingsBtnImg = NULL;
-static GuiImage * settingsBtnOnImg = NULL;
-
-static GuiButton * logoBtn = NULL;
-static GuiWindow * mainWindow = NULL;
-static GuiWindow * WiiMenumainWindow = NULL;
-static GuiText * settingText = NULL;
-static GuiText * settingText2 = NULL;
-static GuiText * nowPlaying = NULL;
+static GuiButton *logoBtn = NULL;
+static GuiWindow *mainWindow = NULL;
+static GuiWindow *menuWindow = NULL;
+static GuiWindow *mplayerWindow = NULL;
+static GuiText *settingText = NULL;
+static GuiText *settingText2 = NULL;
+static GuiText *nowPlaying = NULL;
 
 // actionbar
 
-static GuiText * statusText = NULL;
+static GuiText *statusText = NULL;
 
-static GuiWindow * videobar = NULL;
-static GuiWindow * audiobar = NULL;
-static GuiWindow * audiobar2 = NULL;
-static GuiWindow * picturebar = NULL;
+static GuiWindow *videobar = NULL;
+static GuiWindow *audiobar = NULL;
+static GuiWindow *audiobar2 = NULL;
+static GuiWindow *picturebar = NULL;
 
-static GuiImageData * actionbarLeft = NULL;
-static GuiImageData * actionbarMid = NULL;
-static GuiImageData * actionbarRight = NULL;
-static GuiImageData * actionbarBackward = NULL;
-static GuiImageData * actionbarPause = NULL;
-static GuiImageData * actionbarPlay = NULL;
-static GuiImageData * actionbarForward = NULL;
-static GuiImageData * actionbarRotate = NULL;
-static GuiImageData * actionbarSingle = NULL;
-static GuiImageData * actionbarContinuous = NULL;
-static GuiImageData * actionbarShuffle = NULL;
-static GuiImageData * actionbarLoop = NULL;
-static GuiImageData * actionbarPlaylist = NULL;
-static GuiImageData * actionbarClose = NULL;
-static GuiImageData * actionbarVolume = NULL;
+static GuiImageData *actionbarLeft = NULL;
+static GuiImageData *actionbarMid = NULL;
+static GuiImageData *actionbarRight = NULL;
+static GuiImageData *actionbarBackward = NULL;
+static GuiImageData *actionbarPause = NULL;
+static GuiImageData *actionbarPlay = NULL;
+static GuiImageData *actionbarForward = NULL;
+static GuiImageData *actionbarRotate = NULL;
+static GuiImageData *actionbarSingle = NULL;
+static GuiImageData *actionbarContinuous = NULL;
+static GuiImageData *actionbarShuffle = NULL;
+static GuiImageData *actionbarLoop = NULL;
+static GuiImageData *actionbarPlaylist = NULL;
+static GuiImageData *actionbarClose = NULL;
+static GuiImageData *actionbarVolume = NULL;
 
-static GuiImage * videobarLeftImg = NULL;
-static GuiImage * videobarMidImg = NULL;
-static GuiImage * videobarRightImg = NULL;
-static GuiImage * videobarProgressImg = NULL;
-static GuiImage * videobarProgressLeftImg = NULL;
-static GuiImage * videobarProgressMidImg = NULL;
-static GuiImage * videobarProgressLineImg = NULL;
-static GuiImage * videobarProgressRightImg = NULL;
-static GuiImage * videobarVolumeImg = NULL;
-static GuiImage * videobarVolumeLevelImg = NULL;
-static GuiImage * videobarVolumeLevelTopImg = NULL;
-static GuiImage * videobarVolumeLevelMidImg = NULL;
-static GuiImage * videobarVolumeLevelLineImg = NULL;
-static GuiImage * videobarVolumeLevelBottomImg = NULL;
-static GuiImage * videobarBackwardImg = NULL;
-static GuiImage * videobarPauseImg = NULL;
-static GuiImage * videobarForwardImg = NULL;
+static GuiImage *videobarLeftImg = NULL;
+static GuiImage *videobarMidImg = NULL;
+static GuiImage *videobarRightImg = NULL;
+static GuiImage *videobarProgressImg = NULL;
+static GuiImage *videobarProgressLeftImg = NULL;
+static GuiImage *videobarProgressMidImg = NULL;
+static GuiImage *videobarProgressLineImg = NULL;
+static GuiImage *videobarProgressRightImg = NULL;
+static GuiImage *videobarVolumeImg = NULL;
+static GuiImage *videobarVolumeLevelImg = NULL;
+static GuiImage *videobarVolumeLevelTopImg = NULL;
+static GuiImage *videobarVolumeLevelMidImg = NULL;
+static GuiImage *videobarVolumeLevelLineImg = NULL;
+static GuiImage *videobarVolumeLevelBottomImg = NULL;
+static GuiImage *videobarBackwardImg = NULL;
+static GuiImage *videobarPauseImg = NULL;
+static GuiImage *videobarForwardImg = NULL;
 
-static GuiTooltip * videobarVolumeTip = NULL;
-static GuiTooltip * videobarBackwardTip = NULL;
-static GuiTooltip * videobarPauseTip = NULL;
-static GuiTooltip * videobarForwardTip = NULL;
+static GuiTooltip *videobarVolumeTip = NULL;
+static GuiTooltip *videobarBackwardTip = NULL;
+static GuiTooltip *videobarPauseTip = NULL;
+static GuiTooltip *videobarForwardTip = NULL;
 
-static GuiButton * videobarProgressBtn = NULL;
-static GuiButton * videobarVolumeBtn = NULL;
-static GuiButton * videobarVolumeLevelBtn = NULL;
-static GuiButton * videobarBackwardBtn = NULL;
-static GuiButton * videobarPauseBtn = NULL;
-static GuiButton * videobarForwardBtn = NULL;
+static GuiButton *videobarProgressBtn = NULL;
+static GuiButton *videobarVolumeBtn = NULL;
+static GuiButton *videobarVolumeLevelBtn = NULL;
+static GuiButton *videobarBackwardBtn = NULL;
+static GuiButton *videobarPauseBtn = NULL;
+static GuiButton *videobarForwardBtn = NULL;
 
-static GuiText * videobarTime = NULL;
+static GuiText *videobarTime = NULL;
 
-static GuiImage * audiobarLeftImg = NULL;
-static GuiImage * audiobarMidImg = NULL;
-static GuiImage * audiobarRightImg = NULL;
-static GuiImage * audiobarProgressImg = NULL;
-static GuiImage * audiobarProgressLeftImg = NULL;
-static GuiImage * audiobarProgressMidImg = NULL;
-static GuiImage * audiobarProgressLineImg = NULL;
-static GuiImage * audiobarProgressRightImg = NULL;
-static GuiImage * audiobarPlaylistImg = NULL;
-static GuiImage * audiobarBackwardImg = NULL;
-static GuiImage * audiobarPauseImg = NULL;
-static GuiImage * audiobarForwardImg = NULL;
-static GuiImage * audiobarModeImg = NULL;
-static GuiImage * audiobarVolumeImg = NULL;
-static GuiImage * audiobarVolumeLevelImg = NULL;
-static GuiImage * audiobarVolumeLevelTopImg = NULL;
-static GuiImage * audiobarVolumeLevelMidImg = NULL;
-static GuiImage * audiobarVolumeLevelLineImg = NULL;
-static GuiImage * audiobarVolumeLevelBottomImg = NULL;
+static GuiImage *audiobarLeftImg = NULL;
+static GuiImage *audiobarMidImg = NULL;
+static GuiImage *audiobarRightImg = NULL;
+static GuiImage *audiobarProgressImg = NULL;
+static GuiImage *audiobarProgressLeftImg = NULL;
+static GuiImage *audiobarProgressMidImg = NULL;
+static GuiImage *audiobarProgressLineImg = NULL;
+static GuiImage *audiobarProgressRightImg = NULL;
+static GuiImage *audiobarPlaylistImg = NULL;
+static GuiImage *audiobarBackwardImg = NULL;
+static GuiImage *audiobarPauseImg = NULL;
+static GuiImage *audiobarForwardImg = NULL;
+static GuiImage *audiobarModeImg = NULL;
+static GuiImage *audiobarVolumeImg = NULL;
+static GuiImage *audiobarVolumeLevelImg = NULL;
+static GuiImage *audiobarVolumeLevelTopImg = NULL;
+static GuiImage *audiobarVolumeLevelMidImg = NULL;
+static GuiImage *audiobarVolumeLevelLineImg = NULL;
+static GuiImage *audiobarVolumeLevelBottomImg = NULL;
 
-static GuiTooltip * audiobarPlaylistTip = NULL;
-static GuiTooltip * audiobarBackwardTip = NULL;
-static GuiTooltip * audiobarPauseTip = NULL;
-static GuiTooltip * audiobarForwardTip = NULL;
-static GuiTooltip * audiobarModeTip = NULL;
-static GuiTooltip * audiobarVolumeTip = NULL;
+static GuiTooltip *audiobarPlaylistTip = NULL;
+static GuiTooltip *audiobarBackwardTip = NULL;
+static GuiTooltip *audiobarPauseTip = NULL;
+static GuiTooltip *audiobarForwardTip = NULL;
+static GuiTooltip *audiobarModeTip = NULL;
+static GuiTooltip *audiobarVolumeTip = NULL;
 
-static GuiButton * audiobarProgressBtn = NULL;
-static GuiButton * audiobarPlaylistBtn = NULL;
-static GuiButton * audiobarBackwardBtn = NULL;
-static GuiButton * audiobarPauseBtn = NULL;
-static GuiButton * audiobarForwardBtn = NULL;
-static GuiButton * audiobarModeBtn = NULL;
-static GuiButton * audiobarVolumeBtn = NULL;
-static GuiButton * audiobarVolumeLevelBtn = NULL;
+static GuiButton *audiobarProgressBtn = NULL;
+static GuiButton *audiobarPlaylistBtn = NULL;
+static GuiButton *audiobarBackwardBtn = NULL;
+static GuiButton *audiobarPauseBtn = NULL;
+static GuiButton *audiobarForwardBtn = NULL;
+static GuiButton *audiobarModeBtn = NULL;
+static GuiButton *audiobarVolumeBtn = NULL;
+static GuiButton *audiobarVolumeLevelBtn = NULL;
 
-static GuiText * audiobarNowPlaying[4] = { NULL, NULL, NULL, NULL };
-static GuiButton * audiobarNowPlayingBtn = NULL;
+static GuiText *audiobarNowPlaying[4] = { NULL, NULL, NULL, NULL };
+static GuiButton *audiobarNowPlayingBtn = NULL;
 bool nowPlayingSet = false;
 
-static GuiImage * picturebarLeftImg = NULL;
-static GuiImage * picturebarMidImg = NULL;
-static GuiImage * picturebarRightImg = NULL;
-static GuiImage * picturebarPreviousImg = NULL;
-static GuiImage * picturebarNextImg = NULL;
-static GuiImage * picturebarSlideshowImg = NULL;
-static GuiImage * picturebarCloseImg = NULL;
-static GuiImage * picturebarRotateImg = NULL;
+static GuiImage *picturebarLeftImg = NULL;
+static GuiImage *picturebarMidImg = NULL;
+static GuiImage *picturebarRightImg = NULL;
+static GuiImage *picturebarPreviousImg = NULL;
+static GuiImage *picturebarNextImg = NULL;
+static GuiImage *picturebarSlideshowImg = NULL;
+static GuiImage *picturebarCloseImg = NULL;
+static GuiImage *picturebarRotateImg = NULL;
 
-static GuiTooltip * picturebarPreviousTip = NULL;
-static GuiTooltip * picturebarNextTip = NULL;
-static GuiTooltip * picturebarSlideshowTip = NULL;
-static GuiTooltip * picturebarCloseTip = NULL;
-static GuiTooltip * picturebarRotateTip = NULL;
+static GuiTooltip *picturebarPreviousTip = NULL;
+static GuiTooltip *picturebarNextTip = NULL;
+static GuiTooltip *picturebarSlideshowTip = NULL;
+static GuiTooltip *picturebarCloseTip = NULL;
+static GuiTooltip *picturebarRotateTip = NULL;
 
-static GuiButton * picturebarPreviousBtn = NULL;
-static GuiButton * picturebarNextBtn = NULL;
-static GuiButton * picturebarSlideshowBtn = NULL;
-static GuiButton * picturebarCloseBtn = NULL;
-static GuiButton * picturebarRotateBtn = NULL;
-static GuiButton * picturebarZoomInBtn = NULL;
-static GuiButton * picturebarZoomOutBtn = NULL;
-static GuiButton * picturebarBtn = NULL;
+static GuiButton *picturebarPreviousBtn = NULL;
+static GuiButton *picturebarNextBtn = NULL;
+static GuiButton *picturebarSlideshowBtn = NULL;
+static GuiButton *picturebarCloseBtn = NULL;
+static GuiButton *picturebarRotateBtn = NULL;
+static GuiButton *picturebarZoomInBtn = NULL;
+static GuiButton *picturebarZoomOutBtn = NULL;
+static GuiButton *picturebarBtn = NULL;
+
+static GuiImage *navDividerImg = NULL;
+static GuiImage *bgImg = NULL;
+static GuiTooltip *logoBtnTip = NULL;
+static GuiImageData *logo = NULL;
+static GuiImage *logoBtnImg = NULL;
+static GuiImageData *navHighlight = NULL;
+static GuiImageData *videos = NULL;
+static GuiImageData *videosOver = NULL;
+static GuiImageData *videosOn = NULL;
+static GuiImageData *music = NULL;
+static GuiImageData *musicOver = NULL;
+static GuiImageData *musicOn = NULL;
+static GuiImageData *pictures = NULL;
+static GuiImageData *picturesOver = NULL;
+static GuiImageData *picturesOn = NULL;
+static GuiImageData *dvd = NULL;
+static GuiImageData *dvdOver = NULL;
+static GuiImageData *dvdOn = NULL;
+static GuiImageData *online = NULL;
+static GuiImageData *onlineOver = NULL;
+static GuiImageData *onlineOn = NULL;
+static GuiImageData *settings = NULL;
+static GuiImageData *settingsOver = NULL;
+static GuiImageData *settingsOn = NULL;
+static GuiTooltip *videosBtnTip = NULL;
+static GuiImage *videosBtnOverImg = NULL;
+static GuiImage *videosBtnHighlightImg = NULL;
+static GuiTooltip *musicBtnTip = NULL;
+static GuiImage *musicBtnOverImg = NULL;
+static GuiImage *musicBtnHighlightImg = NULL;
+static GuiTooltip *picturesBtnTip = NULL;
+static GuiImage *picturesBtnOverImg = NULL;
+static GuiImage *picturesBtnHighlightImg = NULL;
+static GuiTooltip *dvdBtnTip = NULL;
+static GuiImage *dvdBtnOverImg = NULL;
+static GuiImage *dvdBtnHighlightImg = NULL;
+static GuiTooltip *onlineBtnTip = NULL;
+static GuiImage *onlineBtnOverImg = NULL;
+static GuiImage *onlineBtnHighlightImg = NULL;
+static GuiTooltip *settingsBtnTip = NULL;
+static GuiImage *settingsBtnOverImg = NULL;
+static GuiImage *settingsBtnHighlightImg = NULL;
 
 int menuCurrent = MENU_BROWSE_VIDEOS;
 static int menuPrevious = MENU_BROWSE_VIDEOS;
@@ -420,9 +413,9 @@ void UndoChangeMenu()
 	menuPrevious = menuUndo;
 }
 
-static void ChangeMenu(void * ptr, int menu)
+static void ChangeMenu(void *ptr, int menu)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		ChangeMenu(menu);
@@ -430,12 +423,12 @@ static void ChangeMenu(void * ptr, int menu)
 	}
 }
 
-static void ChangeMenuVideos(void * ptr) { ChangeMenu(ptr, MENU_BROWSE_VIDEOS); }
-static void ChangeMenuMusic(void * ptr) { ChangeMenu(ptr, MENU_BROWSE_MUSIC); }
-static void ChangeMenuPictures(void * ptr) { ChangeMenu(ptr, MENU_BROWSE_PICTURES); }
-static void ChangeMenuDVD(void * ptr) { ChangeMenu(ptr, MENU_DVD); }
-static void ChangeMenuOnline(void * ptr) { ChangeMenu(ptr, MENU_BROWSE_ONLINEMEDIA); }
-static void ChangeMenuSettings(void * ptr) { ChangeMenu(ptr, MENU_SETTINGS); }
+static void ChangeMenuVideos(void *ptr) { ChangeMenu(ptr, MENU_BROWSE_VIDEOS); }
+static void ChangeMenuMusic(void *ptr) { ChangeMenu(ptr, MENU_BROWSE_MUSIC); }
+static void ChangeMenuPictures(void *ptr) { ChangeMenu(ptr, MENU_BROWSE_PICTURES); }
+static void ChangeMenuDVD(void *ptr) { ChangeMenu(ptr, MENU_DVD); }
+static void ChangeMenuOnline(void *ptr) { ChangeMenu(ptr, MENU_BROWSE_ONLINEMEDIA); }
+static void ChangeMenuSettings(void *ptr) { ChangeMenu(ptr, MENU_SETTINGS); }
 
 /****************************************************************************
  * ResumeGui
@@ -478,7 +471,7 @@ static void SuspendGui()
  *
  * Prompts for confirmation, and downloads/installs updates
  ***************************************************************************/
-static void * UpdateThread (void *arg)
+static void *UpdateThread (void *arg)
 {
 	while(1)
 	{
@@ -510,14 +503,14 @@ static void ResumeUpdateThread()
 
 static void *ScreensaverThread(void *arg)
 {
-	GuiWindow * oldWindow;
+	GuiWindow *oldWindow;
 
-	GuiImageData logo(logo_large_png);
-	GuiImage logoImg(&logo);
-	logoImg.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	GuiImageData logoLarge(logo_large_png);
+	GuiImage logoLargeImg(&logoLarge);
+	logoLargeImg.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 
-	GuiWindow w(logoImg.GetWidth(), logoImg.GetHeight()+100);
-	w.Append(&logoImg);
+	GuiWindow w(logoLargeImg.GetWidth(), logoLargeImg.GetHeight()+100);
+	w.Append(&logoLargeImg);
 	w.SetPosition(screenwidth/2-w.GetWidth()/2, screenheight/2-w.GetHeight()/2);
 
 	int threadsleep;
@@ -534,7 +527,7 @@ static void *ScreensaverThread(void *arg)
 		SuspendGui();
 		audiobar->Remove(audiobarNowPlayingBtn);
 		w.Append(audiobarNowPlayingBtn);
-		audiobarNowPlayingBtn->SetPosition(-8, logoImg.GetHeight()+20);
+		audiobarNowPlayingBtn->SetPosition(-8, logoLargeImg.GetHeight()+20);
 		mainWindow = &w;
 		ResumeGui();
 
@@ -589,19 +582,11 @@ extern "C" void DoMPlayerGuiDraw()
 	mainWindow->Draw();
 	mainWindow->DrawTooltip();
 
-	int i = 0;
-	do
-	{
-		if(userInput[i].wpad->ir.valid)
-			Menu_DrawImg(userInput[i].wpad->ir.x-48, userInput[i].wpad->ir.y-48,
-				96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
-		DoRumble(i);
-		--i;
-	} while(i>=0);
+	if(userInput[0].wpad->ir.valid)
+		Menu_DrawImg(userInput[0].wpad->ir.x-48, userInput[0].wpad->ir.y-48,
+			96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
 
-//	mainWindow->Update(&userInput[3]);
-//	mainWindow->Update(&userInput[2]);
-//	mainWindow->Update(&userInput[1]);
+	DoRumble(0);
 	mainWindow->Update(&userInput[0]);
 
 	if(mainWindow->IsVisible() && wiiInDVDMenu())
@@ -654,43 +639,32 @@ static void *GuiThread (void *arg)
 		if (mainWindow->GetState() != STATE_DISABLED)
 			mainWindow->DrawTooltip();
 
-		i = 3;
-		do
-		{
-			if(userInput[i].wpad->ir.valid)
-				Menu_DrawImg(userInput[i].wpad->ir.x-48, userInput[i].wpad->ir.y-48,
-					96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
-			DoRumble(i);
-			--i;
-		} while(i>=0);
-
-		mainWindow->Update(&userInput[3]);
-		mainWindow->Update(&userInput[2]);
-		mainWindow->Update(&userInput[1]);
+		if(userInput[0].wpad->ir.valid)
+			Menu_DrawImg(userInput[0].wpad->ir.x-48, userInput[0].wpad->ir.y-48,
+				96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+		
+		DoRumble(0);
 		mainWindow->Update(&userInput[0]);
 
 		if(mainWindow->GetState() != STATE_DISABLED)
 		{
-			for(i=3; i >= 0; i--)
+			if(userInput[0].wpad->btns_d & (WPAD_BUTTON_1 | WPAD_CLASSIC_BUTTON_X))
 			{
-				if(userInput[i].wpad->btns_d & (WPAD_BUTTON_1 | WPAD_CLASSIC_BUTTON_X))
-				{
-					int newMenu = menuCurrent + 1;
-					if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
-						newMenu++;
-					if(newMenu > MENU_SETTINGS)
-						newMenu = MENU_BROWSE_VIDEOS;
-					ChangeMenu(newMenu);
-				}
-				else if(userInput[i].wpad->btns_d & (WPAD_BUTTON_2 | WPAD_CLASSIC_BUTTON_Y))
-				{
-					int newMenu = menuCurrent - 1;
-					if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
-						newMenu--;
-					if(newMenu < MENU_BROWSE_VIDEOS)
-						newMenu = MENU_SETTINGS;
-					ChangeMenu(newMenu);
-				}
+				int newMenu = menuCurrent + 1;
+				if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
+					newMenu++;
+				if(newMenu > MENU_SETTINGS)
+					newMenu = MENU_BROWSE_VIDEOS;
+				ChangeMenu(newMenu);
+			}
+			else if(userInput[0].wpad->btns_d & (WPAD_BUTTON_2 | WPAD_CLASSIC_BUTTON_Y))
+			{
+				int newMenu = menuCurrent - 1;
+				if(newMenu == MENU_DVD && WiiSettings.dvdDisabled)
+					newMenu--;
+				if(newMenu < MENU_BROWSE_VIDEOS)
+					newMenu = MENU_SETTINGS;
+				ChangeMenu(newMenu);
 			}
 		}
 
@@ -702,18 +676,7 @@ static void *GuiThread (void *arg)
 			ResumeUpdateThread();
 		}
 
-		bool dataFound = false;
-
-		for(i = 0; i < 4; i++)
-		{
-			if(userInput[i].wpad->data_present > 0)
-			{
-				dataFound = true;
-				break;
-			}
-		}
-
-		if(dataFound)
+		if(userInput[0].wpad->data_present > 0)
 		{
 			if(ssTimer != 0)
 			{
@@ -732,14 +695,9 @@ static void *GuiThread (void *arg)
 
 		CheckSleepTimer();
 
-		for(i = 0; i < 4; i++)
-		{
-			if((userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
+		if((userInput[0].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
 				controlledbygui == 1)
-			{
-				ExitRequested = 1; // exit program
-			}
-		}
+			ExitRequested = 1; // exit program
 
 		if(ExitRequested || ShutdownRequested)
 		{
@@ -747,6 +705,7 @@ static void *GuiThread (void *arg)
 			{
 				mainWindow->Draw();
 				Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor){0, 0, 0, i},1);
+				Menu_Render();
 			}
 			ExitApp();
 		}
@@ -832,7 +791,7 @@ void ChangeLanguage()
 
 		// try to load font
 restart:
-		FILE * file = fopen (filepath, "rb");
+		FILE *file = fopen (filepath, "rb");
 
 		if(file)
 		{
@@ -873,7 +832,7 @@ restart:
 
 			if(installFont)
 			{
-				FILE * hfile = fopen (filepath, "wb");
+				FILE *hfile = fopen (filepath, "wb");
 
 				if (hfile > 0)
 				{
@@ -1114,33 +1073,33 @@ ProgressWindow(char *title, char *msg)
 	GuiImage dialogBoxImg(&dialogBox);
 	dialogBoxImg.SetAlpha(220);
 	
-	int baroffset = 556/2 - progressEmpty.GetWidth()/2;
+	int baroffset = 556/2 - progressEmpty->GetWidth()/2;
 
-	GuiImage progressEmptyImg(&progressEmpty);
+	GuiImage progressEmptyImg(progressEmpty);
 	progressEmptyImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	progressEmptyImg.SetPosition(baroffset, 40);
 	
-	GuiImage progressLeftImg(&progressLeft);
+	GuiImage progressLeftImg(progressLeft);
 	progressLeftImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	progressLeftImg.SetPosition(baroffset, 40);
 	progressLeftImg.SetVisible(false);
 	
-	GuiImage progressMidImg(&progressMid);
+	GuiImage progressMidImg(progressMid);
 	progressMidImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	progressMidImg.SetPosition(baroffset+8, 40);
 	progressMidImg.SetTile(0);
 
-	GuiImage progressLineImg(&progressLine);
+	GuiImage progressLineImg(progressLine);
 	progressLineImg.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	progressLineImg.SetPosition(baroffset+8, 40);
 	progressLineImg.SetVisible(false);
 
-	GuiImage progressRightImg(&progressRight);
+	GuiImage progressRightImg(progressRight);
 	progressRightImg.SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
 	progressRightImg.SetPosition(-baroffset, 40);
 	progressRightImg.SetVisible(false);
 
-	GuiImage throbberImg(&throbber);
+	GuiImage throbberImg(throbber);
 	throbberImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	throbberImg.SetPosition(0, 40);
 
@@ -1195,7 +1154,7 @@ ProgressWindow(char *title, char *msg)
 	u32 count = 0;
 	float done = 0;
 	int tile = 0;
-	int maxtile = (progressEmpty.GetWidth()-16)/4;
+	int maxtile = (progressEmpty->GetWidth()-16)/4;
 
 	while(showProgress && progressThreadHalt == 0)
 	{
@@ -1250,7 +1209,7 @@ ProgressWindow(char *title, char *msg)
 	ResumeGui();
 }
 
-static void * ProgressThread (void *arg)
+static void *ProgressThread (void *arg)
 {
 	while(1)
 	{
@@ -1395,7 +1354,7 @@ void InfoPrompt(const char *title, wchar_t *msg)
  * Opens an on-screen keyboard window, with the data entered being stored
  * into the specified variable.
  ***************************************************************************/
-bool OnScreenKeyboard(char * var, u32 maxlen)
+bool OnScreenKeyboard(char *var, u32 maxlen)
 {
 	int save = -1;
 
@@ -1468,7 +1427,7 @@ bool OnScreenKeyboard(char * var, u32 maxlen)
  * for a customizable prompted setting.
  ***************************************************************************/
 static int
-SettingWindow(const char * title, GuiWindow * w)
+SettingWindow(const char *title, GuiWindow *w)
 {
 	int save = -1;
 
@@ -1555,14 +1514,12 @@ static void CreditsWindow()
 	int i = 0;
 	int y = 76;
 
-	GuiWindow * oldWindow = mainWindow;
+	GuiWindow *oldWindow = mainWindow;
 	GuiWindow creditsWindow(screenwidth, screenheight);
 
-	GuiImage bgImg(bg);
-	creditsWindow.Append(&bgImg);
-	
-	GuiImageData logo(logo_png);
-	GuiImage logoImg(&logo);
+	creditsWindow.Append(bgImg);
+
+	GuiImage logoImg(logo);
 	logoImg.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	logoImg.SetPosition(0, 30);
 	
@@ -1573,7 +1530,7 @@ static void CreditsWindow()
 	creditsWindow.Append(&alignWindow);
 
 	int numEntries = 15;
-	GuiText * txt[numEntries];
+	GuiText *txt[numEntries];
 
 	wchar_t appVersion[20];
 	swprintf(appVersion, 20, L"%s %s", gettext("Version"), APPVERSION);
@@ -1712,7 +1669,7 @@ static void ResumeCreditsThread()
 	LWP_ResumeThread(creditsthread);
 }
 
-static void DisplayCredits(void * ptr)
+static void DisplayCredits(void *ptr)
 {
 	if(logoBtn->GetState() != STATE_CLICKED)
 		return;
@@ -1744,39 +1701,29 @@ static void UpdateAudiobarModeBtn()
 	}
 }
 
-void RemoveVideoImg()
+void DisableVideoImg()
 {
-	if(!videoImg)
-			return;
-
-	videoImg->SetVisible(false);
-/*
 	if(!videoImg)
 		return;
 
-	SuspendGui();
-	mainWindow->Remove(videoImg);
-	ResumeGui();
-	delete videoImg;
-	videoImg = NULL;
-	//gui_mem2_free(videoScreenshot);
-	//videoScreenshot = NULL;
-*/	
+	videoImg->SetVisible(false);
 }
-void ActiveVideoImg()
+
+void EnableVideoImg()
 {
 	if(!videoImg)
-			return;
+		return;
 
 	videoImg->SetVisible(true);
 }
 
-bool HasVideoImg()
+bool VideoImgVisible()
 {
-	if(!videoImg) return false;
+	if(!videoImg)
+		return false;
+
 	return videoImg->IsVisible();
 }
-
 
 /****************************************************************************
  * MenuBrowse
@@ -1852,7 +1799,7 @@ static int LoadNewFile()
 		return 0;
 
 	ClearVideoPlaylist();
-	RemoveVideoImg();
+	DisableVideoImg();
 	LoadMPlayerFile();
 
 	audiobarNowPlaying[1]->SetText(NULL);
@@ -1886,6 +1833,21 @@ static int LoadNewFile()
 	}
 
 	// we are playing audio
+
+	// clear any play icons
+	for(int i=0; i < browser.numEntries; i++)
+	{
+		if(browserList[i].icon == ICON_PLAY)
+		{
+			if(menuCurrent == MENU_BROWSE_ONLINEMEDIA)
+				browserList[i].icon = ICON_NONE;
+			else if(MusicPlaylistFind(i))
+				browserList[i].icon = ICON_FILE_CHECKED;
+			else
+				browserList[i].icon = ICON_FILE;
+		}
+	}
+
 	FindFile(); // try to find this file
 	findLoadedFile = 2; // trigger browser to update
 
@@ -2077,14 +2039,12 @@ static void MenuBrowse(int menu)
 		mainWindow->Append(thumbImg);
 	}
 
-	if(HasVideoImg() && menu != MENU_BROWSE_MUSIC) // a video is loaded
+	if(VideoImgVisible() && menu != MENU_BROWSE_MUSIC) // a video is loaded
 	{
-		if(!nowPlaying)
+		if(!nowPlaying->IsVisible())
 		{
-			nowPlaying = new GuiText(loadedFileDisplay, 18, (GXColor){255, 255, 255, 255});
-			nowPlaying->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-			nowPlaying->SetPosition(30, 10);
-			nowPlaying->SetMaxWidth(screenwidth-180);
+			nowPlaying->SetText(loadedFileDisplay);
+			nowPlaying->SetVisible(true);
 		}
 
 		backBtn.SetLabel(nowPlaying, 1);
@@ -2262,7 +2222,8 @@ static void MenuBrowse(int menu)
 				}
 
 				// this is a file
-				char *ext = GetExt(browserList[browser.selIndex].filename);
+				char ext[6];
+				GetExt(browserList[browser.selIndex].filename, ext);
 				int numItems = 0;
 
 				if(strncmp(browserList[browser.selIndex].filename, "http://www.youtube.com", 22) == 0)
@@ -2307,7 +2268,8 @@ static void MenuBrowse(int menu)
 
 					if(numItems > 1)
 					{
-						char *ext2 = GetExt(browserList[1].filename);
+						char ext2[6];
+						GetExt(browserList[1].filename, ext2);
 						// let's load this one file
 						if(numItems == 2 && IsPlaylistExt(ext) && !IsPlaylistExt(ext2)) 
 						{
@@ -2400,7 +2362,8 @@ static void MenuBrowse(int menu)
 
 				if(browserList[currentIndex].image[0] != 0)
 				{
-					char *ext = GetExt(browserList[currentIndex].image);
+					char ext[6];
+					GetExt(browserList[currentIndex].image, ext);
 					if(IsImageExt(ext))	thumbIndex = browser.selIndex;
 				}
 				thumbLoad = true;
@@ -2666,7 +2629,7 @@ done:
 	mainWindow->Remove(&upOneLevelBtn);
 	delete fileBrowser;
 
-	if(HasVideoImg())
+	if(VideoImgVisible())
 		mainWindow->Remove(&backBtn);
 
 	if(menu == MENU_BROWSE_MUSIC || menu == MENU_BROWSE_ONLINEMEDIA)
@@ -2680,7 +2643,7 @@ done:
 }
 
 // Picture Viewer
-u8* picBuffer = NULL;
+u8 *picBuffer = NULL;
 static int loadPictures = 0; // reload pictures
 
 #define NUM_PICTURES 		5 // 1 image with a buffer of +/- 2 on each side
@@ -2700,7 +2663,7 @@ typedef struct
 
 static GuiImage *pictureImg = NULL;
 static GuiButton *pictureBtn = NULL;
-static picData pictures[NUM_PICTURES];
+static picData pictureData[NUM_PICTURES];
 static int pictureIndexLoaded = -1;
 static int pictureIndexLoading = -1;
 static int pictureLoaded = -1;
@@ -2762,7 +2725,7 @@ static int FoundPicture(int p)
 		return -1;
 
 	for(int i=0; i < NUM_PICTURES; i++)
-		if(pictures[i].index == p)
+		if(pictureData[i].index == p)
 			return i;
 	return -1;
 }
@@ -2776,9 +2739,9 @@ static void SetPicture(int picIndex, int browserIndex)
 		pictureIndexLoaded = browserIndex;
 
 		SuspendGui();
-		pictureImg->SetImage(pictures[picIndex].image);
+		pictureImg->SetImage(pictureData[picIndex].image);
 		pictureImg->SetScale(screenwidth-410, screenheight-100);
-		pictureBtn->SetSize(pictures[picIndex].image->GetWidth()*pictureImg->GetScale(), pictures[picIndex].image->GetHeight()*pictureImg->GetScale());
+		pictureBtn->SetSize(pictureData[picIndex].image->GetWidth()*pictureImg->GetScale(), pictureData[picIndex].image->GetHeight()*pictureImg->GetScale());
 		pictureBtn->SetState(STATE_DEFAULT);
 		pictureImg->SetVisible(true);
 		pictureBtn->SetVisible(true);
@@ -2802,19 +2765,19 @@ static void CleanupPictures(int selIndex)
 	// free any unused picture data
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		if(pictures[i].image == NULL || i == pictureLoaded)
+		if(pictureData[i].image == NULL || i == pictureLoaded)
 			continue;
 
-		if(selIndex == -1 || pictures[i].index < (selIndex-(NUM_PICTURES-1)/2) || pictures[i].index > (selIndex+(NUM_PICTURES-1)/2))
+		if(selIndex == -1 || pictureData[i].index < (selIndex-(NUM_PICTURES-1)/2) || pictureData[i].index > (selIndex+(NUM_PICTURES-1)/2))
 		{
-			delete pictures[i].image;
-			pictures[i].image = NULL;
-			pictures[i].index = -1;
+			delete pictureData[i].image;
+			pictureData[i].image = NULL;
+			pictureData[i].index = -1;
 		}
 	}
 }
 
-static float getExifOrientation(u8* imgdata, int size)
+static float getExifOrientation(u8 *imgdata, int size)
 {
 	float ret = 0.0f;
 	ExifEntry *entry;
@@ -2856,7 +2819,7 @@ static void *PictureThread (void *arg)
 	pictureLoaded = -1;
 	pictureIndexLoaded = -1;
 	pictureIndexLoading = -1;
-	
+	AllocPicBuffer();
 
 	while(1)
 	{
@@ -2866,7 +2829,6 @@ restart:
 			pictureLoaded = -1;
 			pictureIndexLoaded = -1;
 			pictureIndexLoading = -1;
-			FreePicBuffer();
 			LWP_SuspendThread(picturethread);
 		}
 		if(pictureThreadHalt == 2)
@@ -2874,7 +2836,6 @@ restart:
 
 		if(loadPictures)
 		{
-			AllocPicBuffer();
 			loadPictures = 0;
 			selIndex = browser.selIndex;
 			CleanupPictures(selIndex);
@@ -2897,25 +2858,25 @@ restart:
 
 					// find first empty slot
 					for(i=0; i < NUM_PICTURES; i++)
-						if(pictures[i].index == -1)
+						if(pictureData[i].index == -1)
 							break;
 
 					if(i >= NUM_PICTURES) // no empty slot found!
 						goto restart;
 
-					pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
-					pictures[i].rotation = getExifOrientation(picBuffer, size);
+					pictureData[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
+					pictureData[i].rotation = getExifOrientation(picBuffer, size);
 
-					if(pictures[i].image->GetImage() != NULL)
+					if(pictureData[i].image->GetImage() != NULL)
 					{
-						pictures[i].index = selIndex;
+						pictureData[i].index = selIndex;
 						found = i;
 					}
 					else
 					{
-						delete pictures[i].image;
-						pictures[i].image = NULL;
-						pictures[i].rotation = 0.0f;
+						delete pictureData[i].image;
+						pictureData[i].image = NULL;
+						pictureData[i].rotation = 0.0f;
 					}
 				}
 
@@ -2934,7 +2895,7 @@ restart:
 
 			for(i=0; i < NUM_PICTURES; i++)
 			{
-				if(pictures[i].index > 0)
+				if(pictureData[i].index > 0)
 					continue;
 
 				while(next < browser.numEntries && 
@@ -2954,21 +2915,21 @@ restart:
 				if(size == 0)
 					goto restart;
 
-				pictures[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
-				pictures[i].rotation = getExifOrientation(picBuffer, size);
+				pictureData[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
+				pictureData[i].rotation = getExifOrientation(picBuffer, size);
 
-				if(pictures[i].image->GetImage() != NULL)
+				if(pictureData[i].image->GetImage() != NULL)
 				{
-					pictures[i].index = next;
+					pictureData[i].index = next;
 
 					if(browser.selIndex == next)
 						setPicture = true; // trigger picture to be reloaded
 				}
 				else
 				{
-					delete pictures[i].image;
-					pictures[i].image = NULL;
-					pictures[i].rotation = 0.0f;
+					delete pictureData[i].image;
+					pictureData[i].image = NULL;
+					pictureData[i].rotation = 0.0f;
 				}
 				pictureIndexLoading = -1;
 				next++;
@@ -3175,9 +3136,9 @@ static void ToggleSlideshow()
 	}
 }
 
-static void PictureZoomDragCallback(void * ptr)
+static void PictureZoomDragCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *) ptr;
+	GuiButton *b = (GuiButton *) ptr;
 	int chan = b->GetStateChan();
 	if (chan < 0)
 		return;
@@ -3217,11 +3178,11 @@ static void PictureViewer()
 	int currentIndex = -1;
 	closePictureViewer = 0;
 
-	GuiWindow * oldWindow = mainWindow;
+	GuiWindow *oldWindow = mainWindow;
 	GuiImage pictureImg;
 	pictureImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	picturebarBtn->SetImage(&pictureImg);
-	GuiWindow * w = new GuiWindow(screenwidth, screenheight);
+	GuiWindow *w = new GuiWindow(screenwidth, screenheight);
 	w->Append(picturebarBtn);
 	w->Append(picturebar);
 
@@ -3272,15 +3233,15 @@ static void PictureViewer()
 			int found = FoundPicture(browser.selIndex);
 			if(found >= 0)
 			{
-				if(pictureImg.GetImage() != pictures[found].image->GetImage())
+				if(pictureImg.GetImage() != pictureData[found].image->GetImage())
 				{
 					SuspendGui();
-					pictureImg.SetImage(pictures[found].image);
+					pictureImg.SetImage(pictureData[found].image);
 					picturebarBtn->SetHoldable(false);
 					picturebarBtn->ResetState();
 					ResumeGui();
 				}
-				animatePicture(&pictureImg, &pictures[found]);
+				animatePicture(&pictureImg, &pictureData[found]);
 			}
 		}
 
@@ -3297,14 +3258,8 @@ static void PictureViewer()
 
 		bool ir = false;
 
-		for(int i=0; i<4; i++)
-		{
-			if(userInput[i].wpad->ir.valid)
-			{
-				ir = true;
-				break;
-			}
-		}
+		if(userInput[0].wpad->ir.valid)
+			ir = true;
 
 		if(ir != irLast)
 			irCount++;
@@ -3327,9 +3282,8 @@ static void PictureViewer()
 
 	SuspendGui();
 
-	// make sure pointer hands are reset
-	for(int i=0; i<4; i++)
-		pointer[i]->SetImage(pointerImg[i]);
+	// make sure pointer hand is reset
+	pointer[0]->SetImage(pointerImg[0]);
 
 	mainWindow = oldWindow;
 	ResumeGui();
@@ -3360,7 +3314,7 @@ static void MenuBrowsePictures()
 			return;
 		}
 		StopMPlayerFile();
-		RemoveVideoImg();
+		DisableVideoImg();
 	}
 
 	strcpy(browser.dir, WiiSettings.picturesFolder);
@@ -3379,22 +3333,22 @@ static void MenuBrowsePictures()
 	upOneLevelBtn.SetTrigger(trigB);
 	upOneLevelBtn.SetSelectable(false);
 
-	GuiImage progressEmptyImg(&progressShortEmpty);
+	GuiImage progressEmptyImg(progressShortEmpty);
 	progressEmptyImg.SetPosition(0, 0);
 	progressEmptyImg.SetVisible(false);
 	
-	GuiImage progressLeftImg(&progressLeft);
+	GuiImage progressLeftImg(progressLeft);
 	progressLeftImg.SetPosition(0, 0);
 	progressLeftImg.SetVisible(false);
 	
-	GuiImage progressMidImg(&progressMid);
+	GuiImage progressMidImg(progressMid);
 	progressMidImg.SetPosition(8, 0);
 	progressMidImg.SetTile(0);
 
-	GuiImage progressLineImg(&progressLine);
+	GuiImage progressLineImg(progressLine);
 	progressLineImg.SetVisible(false);
 
-	GuiImage progressRightImg(&progressRight);
+	GuiImage progressRightImg(progressRight);
 	progressRightImg.SetPosition(0, 0);
 	progressRightImg.SetVisible(false);
 
@@ -3590,7 +3544,7 @@ static void MenuDVD()
 		mainWindow->Append(disabled);
 		ShowAction("Loading...");
 		ClearVideoPlaylist();
-		RemoveVideoImg();
+		DisableVideoImg();
 		LoadMPlayerFile();
 
 		// wait until MPlayer is ready to take or return control
@@ -3837,9 +3791,9 @@ static void MenuSettingsGlobal()
 	mainWindow->Remove(&titleTxt);
 }
 
-static void ScreenZoomWindowUpdate(void * ptr, float h, float v)
+static void ScreenZoomWindowUpdate(void *ptr, float h, float v)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		WiiSettings.videoZoomHor += h;
@@ -3854,14 +3808,14 @@ static void ScreenZoomWindowUpdate(void * ptr, float h, float v)
 	}
 }
 
-static void ScreenZoomWindowLeftClick(void * ptr) { ScreenZoomWindowUpdate(ptr, -0.01, 0); }
-static void ScreenZoomWindowRightClick(void * ptr) { ScreenZoomWindowUpdate(ptr, +0.01, 0); }
-static void ScreenZoomWindowUpClick(void * ptr) { ScreenZoomWindowUpdate(ptr, 0, +0.01); }
-static void ScreenZoomWindowDownClick(void * ptr) { ScreenZoomWindowUpdate(ptr, 0, -0.01); }
+static void ScreenZoomWindowLeftClick(void *ptr) { ScreenZoomWindowUpdate(ptr, -0.01, 0); }
+static void ScreenZoomWindowRightClick(void *ptr) { ScreenZoomWindowUpdate(ptr, +0.01, 0); }
+static void ScreenZoomWindowUpClick(void *ptr) { ScreenZoomWindowUpdate(ptr, 0, +0.01); }
+static void ScreenZoomWindowDownClick(void *ptr) { ScreenZoomWindowUpdate(ptr, 0, -0.01); }
 
 static void ScreenZoomWindow()
 {
-	GuiWindow * w = new GuiWindow(200,200);
+	GuiWindow *w = new GuiWindow(200,200);
 	w->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	
 	GuiImageData arrowLeft(arrow_left_png);
@@ -3958,9 +3912,9 @@ static void ScreenZoomWindow()
 	delete(settingText2);
 }
 
-static void ScreenPositionWindowUpdate(void * ptr, int x, int y)
+static void ScreenPositionWindowUpdate(void *ptr, int x, int y)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		WiiSettings.videoXshift += x;
@@ -3973,14 +3927,14 @@ static void ScreenPositionWindowUpdate(void * ptr, int x, int y)
 	}
 }
 
-static void ScreenPositionWindowLeftClick(void * ptr) { ScreenPositionWindowUpdate(ptr, -1, 0); }
-static void ScreenPositionWindowRightClick(void * ptr) { ScreenPositionWindowUpdate(ptr, +1, 0); }
-static void ScreenPositionWindowUpClick(void * ptr) { ScreenPositionWindowUpdate(ptr, 0, -1); }
-static void ScreenPositionWindowDownClick(void * ptr) { ScreenPositionWindowUpdate(ptr, 0, +1); }
+static void ScreenPositionWindowLeftClick(void *ptr) { ScreenPositionWindowUpdate(ptr, -1, 0); }
+static void ScreenPositionWindowRightClick(void *ptr) { ScreenPositionWindowUpdate(ptr, +1, 0); }
+static void ScreenPositionWindowUpClick(void *ptr) { ScreenPositionWindowUpdate(ptr, 0, -1); }
+static void ScreenPositionWindowDownClick(void *ptr) { ScreenPositionWindowUpdate(ptr, 0, +1); }
 
 static void ScreenPositionWindow()
 {
-	GuiWindow * w = new GuiWindow(120,120);
+	GuiWindow *w = new GuiWindow(120,120);
 	w->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	w->SetPosition(0, 0);
 
@@ -4990,7 +4944,7 @@ static void MenuSettingsNetworkSMB()
 					if(wiiIP[0] != 0)
 					{
 						strcpy(WiiSettings.smbConf[netEditIndex].ip, wiiIP);
-						char* dot = strrchr(WiiSettings.smbConf[netEditIndex].ip,'.');
+						char *dot = strrchr(WiiSettings.smbConf[netEditIndex].ip,'.');
 						if (dot != NULL) *++dot = 0; // strip last octet
 					}
 				}
@@ -5612,9 +5566,9 @@ static void MenuSettings()
 	mainWindow->Remove(&titleTxt);
 }
 
-static void VideoProgressCallback(void * ptr)
+static void VideoProgressCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 
 	float total = wiiGetTimeLength();
 	int done = wiiGetTimePos();
@@ -5669,9 +5623,9 @@ static void VideoProgressCallback(void * ptr)
 		videobarTime->SetText(time);
 }
 
-static void VideoVolumeLevelCallback(void * ptr)
+static void VideoVolumeLevelCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 
 	if(b->GetState() == STATE_CLICKED)
 	{
@@ -5737,9 +5691,9 @@ void HideVideoVolumeLevelBar()
 	videobarVolumeLevelBottomImg->SetVisible(false);
 }
 
-static void VideoVolumeCallback(void * ptr)
+static void VideoVolumeCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -5752,9 +5706,9 @@ static void VideoVolumeCallback(void * ptr)
 	}
 }
 
-static void VideoBackwardCallback(void * ptr)
+static void VideoBackwardCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -5763,9 +5717,9 @@ static void VideoBackwardCallback(void * ptr)
 	}
 }
 
-static void VideoPauseCallback(void * ptr)
+static void VideoPauseCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -5774,9 +5728,9 @@ static void VideoPauseCallback(void * ptr)
 	}
 }
 
-static void VideoForwardCallback(void * ptr)
+static void VideoForwardCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -5785,9 +5739,9 @@ static void VideoForwardCallback(void * ptr)
 	}
 }
 
-static void AudioProgressCallback(void * ptr)
+static void AudioProgressCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 
 	double total = wiiGetTimeLength();
 	int done = wiiGetTimePos();
@@ -5845,9 +5799,9 @@ static void AudioProgressCallback(void * ptr)
 	}
 }
 
-static void AudioVolumeLevelCallback(void * ptr)
+static void AudioVolumeLevelCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 
 	if(b->GetState() == STATE_CLICKED)
 	{
@@ -5908,9 +5862,9 @@ static void HideAudioVolumeLevelBar()
 	audiobarVolumeLevelBottomImg->SetVisible(false);
 }
 
-static void AudioVolumeCallback(void * ptr)
+static void AudioVolumeCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -5923,7 +5877,7 @@ static void AudioVolumeCallback(void * ptr)
 	}
 }
 
-static void AudioNowPlayingCallback(void * ptr)
+static void AudioNowPlayingCallback(void *ptr)
 {
 	if(nowPlayingSet)
 		return;
@@ -6051,9 +6005,9 @@ static void AudioNowPlayingCallback(void * ptr)
 	}
 }
 
-static void PicturePreviousCallback(void * ptr)
+static void PicturePreviousCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -6061,9 +6015,9 @@ static void PicturePreviousCallback(void * ptr)
 	}
 }
 
-static void PictureNextCallback(void * ptr)
+static void PictureNextCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -6071,9 +6025,9 @@ static void PictureNextCallback(void * ptr)
 	}
 }
 
-static void PictureSlideshowCallback(void * ptr)
+static void PictureSlideshowCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -6081,9 +6035,9 @@ static void PictureSlideshowCallback(void * ptr)
 	}
 }
 
-static void PictureCloseCallback(void * ptr)
+static void PictureCloseCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -6091,9 +6045,9 @@ static void PictureCloseCallback(void * ptr)
 	}
 }
 
-static void PictureRotateCallback(void * ptr)
+static void PictureRotateCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		b->ResetState();
@@ -6101,9 +6055,9 @@ static void PictureRotateCallback(void * ptr)
 	}    
 }
 
-static void PictureZoomInCallback(void * ptr)
+static void PictureZoomInCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		int chan = b->GetStateChan();
@@ -6113,9 +6067,9 @@ static void PictureZoomInCallback(void * ptr)
 	}    
 }
 
-static void PictureZoomOutCallback(void * ptr)
+static void PictureZoomOutCallback(void *ptr)
 {
-	GuiButton * b = (GuiButton *)ptr;
+	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
 		int chan = b->GetStateChan();
@@ -6177,6 +6131,20 @@ static void SetupGui()
 	trigMinus->SetButtonOnlyTrigger(-1, WPAD_BUTTON_MINUS | WPAD_CLASSIC_BUTTON_MINUS, PAD_BUTTON_Y);
 
 	// images
+	throbber = new GuiImageData(throbber_png);
+	progressLeft = new GuiImageData(progressbar_left_png);
+	progressMid = new GuiImageData(progressbar_mid_png);
+	progressRight = new GuiImageData(progressbar_right_png);
+	progressEmpty = new GuiImageData(progressbar_empty_png);
+	progressShortEmpty = new GuiImageData(progressbar_short_empty_png);
+	progressLongEmpty = new GuiImageData(progressbar_long_empty_png);
+	progressLine = new GuiImageData(progressbar_line_png);
+	volumeTop = new GuiImageData(volume_top_png);
+	volumeMid = new GuiImageData(volume_mid_png);
+	volumeBottom = new GuiImageData(volume_bottom_png);
+	volumeEmpty = new GuiImageData(volume_empty_png);
+	volumeLine = new GuiImageData(volume_line_png);
+	
 	bg = new GuiImageData(bg_jpg, bg_blue_jpg_size, GX_TF_RGBA8);
 	navDivider = new GuiImageData(nav_divider_png);
 	btnBottom = new GuiImageData(button_bottom_png);
@@ -6199,7 +6167,6 @@ static void SetupGui()
 	actionbarPlaylist = new GuiImageData(actionbar_playlist_png);
 	actionbarVolume = new GuiImageData(actionbar_volume_png);
 
-
 	// video bar
 
 	videobarLeftImg = new GuiImage(actionbarLeft);
@@ -6209,16 +6176,16 @@ static void SetupGui()
 	videobarRightImg = new GuiImage(actionbarRight);
 	videobarRightImg->SetPosition(520, 0);
 
-	videobarProgressImg = new GuiImage(&progressLongEmpty);
-	videobarProgressLeftImg = new GuiImage(&progressLeft);
+	videobarProgressImg = new GuiImage(progressLongEmpty);
+	videobarProgressLeftImg = new GuiImage(progressLeft);
 	videobarProgressLeftImg->SetPosition(0, 60);
 	videobarProgressLeftImg->SetVisible(false);
-	videobarProgressMidImg = new GuiImage(&progressMid);
+	videobarProgressMidImg = new GuiImage(progressMid);
 	videobarProgressMidImg->SetPosition(8, 60);
 	videobarProgressMidImg->SetTile(0);
-	videobarProgressLineImg = new GuiImage(&progressLine);
+	videobarProgressLineImg = new GuiImage(progressLine);
 	videobarProgressLineImg->SetPosition(8, 60);
-	videobarProgressRightImg = new GuiImage(&progressRight);
+	videobarProgressRightImg = new GuiImage(progressRight);
 	videobarProgressRightImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	videobarProgressRightImg->SetPosition(0, 60);
 	videobarProgressRightImg->SetVisible(false);
@@ -6231,20 +6198,20 @@ static void SetupGui()
 	videobarForwardImg = new GuiImage(actionbarForward);
 	videobarForwardImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	
-	videobarVolumeLevelImg = new GuiImage(&volumeEmpty);
+	videobarVolumeLevelImg = new GuiImage(volumeEmpty);
 	videobarVolumeLevelImg->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	videobarVolumeLevelTopImg = new GuiImage(&volumeTop);
+	videobarVolumeLevelTopImg = new GuiImage(volumeTop);
 	videobarVolumeLevelTopImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	videobarVolumeLevelTopImg->SetPosition(20, -220);
 	videobarVolumeLevelTopImg->SetVisible(false);
-	videobarVolumeLevelMidImg = new GuiImage(&volumeMid);
+	videobarVolumeLevelMidImg = new GuiImage(volumeMid);
 	videobarVolumeLevelMidImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	videobarVolumeLevelMidImg->SetTileVertical(0);
-	videobarVolumeLevelLineImg = new GuiImage(&volumeLine);
+	videobarVolumeLevelLineImg = new GuiImage(volumeLine);
 	videobarVolumeLevelLineImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	videobarVolumeLevelLineImg->SetPosition(20, 0);
 	videobarVolumeLevelLineImg->SetVisible(false);
-	videobarVolumeLevelBottomImg = new GuiImage(&volumeBottom);
+	videobarVolumeLevelBottomImg = new GuiImage(volumeBottom);
 	videobarVolumeLevelBottomImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	videobarVolumeLevelBottomImg->SetPosition(20, -90);
 	videobarVolumeLevelBottomImg->SetVisible(false);
@@ -6348,17 +6315,17 @@ static void SetupGui()
 	audiobarRightImg = new GuiImage(actionbarRight);
 	audiobarRightImg->SetPosition(320, 0);
 
-	audiobarProgressImg = new GuiImage(&progressEmpty);
-	audiobarProgressLeftImg = new GuiImage(&progressLeft);
+	audiobarProgressImg = new GuiImage(progressEmpty);
+	audiobarProgressLeftImg = new GuiImage(progressLeft);
 	audiobarProgressLeftImg->SetPosition(0, 60);
 	audiobarProgressLeftImg->SetVisible(false);
-	audiobarProgressMidImg = new GuiImage(&progressMid);
+	audiobarProgressMidImg = new GuiImage(progressMid);
 	audiobarProgressMidImg->SetPosition(8, 60);
 	audiobarProgressMidImg->SetTile(0);
-	audiobarProgressLineImg = new GuiImage(&progressLine);
+	audiobarProgressLineImg = new GuiImage(progressLine);
 	audiobarProgressLineImg->SetPosition(12, 60);
 	audiobarProgressLineImg->SetVisible(false);
-	audiobarProgressRightImg = new GuiImage(&progressRight);
+	audiobarProgressRightImg = new GuiImage(progressRight);
 	audiobarProgressRightImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	audiobarProgressRightImg->SetPosition(0, 60);
 	audiobarProgressRightImg->SetVisible(false);
@@ -6374,20 +6341,20 @@ static void SetupGui()
 	audiobarModeImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	audiobarVolumeImg = new GuiImage(actionbarVolume);
 	audiobarVolumeImg->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	audiobarVolumeLevelImg = new GuiImage(&volumeEmpty);
+	audiobarVolumeLevelImg = new GuiImage(volumeEmpty);
 	audiobarVolumeLevelImg->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	audiobarVolumeLevelTopImg = new GuiImage(&volumeTop);
+	audiobarVolumeLevelTopImg = new GuiImage(volumeTop);
 	audiobarVolumeLevelTopImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	audiobarVolumeLevelTopImg->SetPosition(320, -220);
 	audiobarVolumeLevelTopImg->SetVisible(false);
-	audiobarVolumeLevelMidImg = new GuiImage(&volumeMid);
+	audiobarVolumeLevelMidImg = new GuiImage(volumeMid);
 	audiobarVolumeLevelMidImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	audiobarVolumeLevelMidImg->SetTileVertical(0);
-	audiobarVolumeLevelLineImg = new GuiImage(&volumeLine);
+	audiobarVolumeLevelLineImg = new GuiImage(volumeLine);
 	audiobarVolumeLevelLineImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	audiobarVolumeLevelLineImg->SetPosition(320, 0);
 	audiobarVolumeLevelLineImg->SetVisible(false);
-	audiobarVolumeLevelBottomImg = new GuiImage(&volumeBottom);
+	audiobarVolumeLevelBottomImg = new GuiImage(volumeBottom);
 	audiobarVolumeLevelBottomImg->SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
 	audiobarVolumeLevelBottomImg->SetPosition(320, -90);
 	audiobarVolumeLevelBottomImg->SetVisible(false);
@@ -6641,13 +6608,199 @@ static void SetupGui()
 	// initialize pictures struct
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		pictures[i].image = NULL;
-		pictures[i].rotation = 0.0f;
-		pictures[i].index = -1;
+		pictureData[i].image = NULL;
+		pictureData[i].rotation = 0.0f;
+		pictureData[i].index = -1;
 	}
 
 	statusText = new GuiText(NULL, 24, (GXColor){255, 255, 255, 255});
 	statusText->SetVisible(false);
+
+	// setup menu window
+	menuWindow = new GuiWindow(screenwidth, screenheight);
+
+	videoImg = new GuiImage();
+	videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
+	videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
+	videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
+	videoImg->SetVisible(false);
+	menuWindow->Append(videoImg);
+
+	bgImg = new GuiImage(bg);
+	bgImg->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	bgImg->SetAlpha(200);
+	
+	navDividerImg = new GuiImage (navDivider);
+	navDividerImg->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	navDividerImg->SetPosition(0, 85);
+
+	menuWindow->Append(bgImg);
+	menuWindow->Append(navDividerImg);
+
+	logoBtnTip = new GuiTooltip ("Credits");
+	logo = new GuiImageData (logo_png);
+	logoBtnImg = new GuiImage (logo);
+	logoBtn = new GuiButton(logo->GetWidth(), logo->GetHeight());
+	logoBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	logoBtn->SetPosition(-32, 40);
+	logoBtn->SetImage(logoBtnImg);
+	logoBtn->SetTrigger(trigA);
+	logoBtn->SetSelectable(false);
+	logoBtn->SetTooltip(logoBtnTip);
+	logoBtn->SetUpdateCallback(DisplayCredits);
+	menuWindow->Append(logoBtn);
+
+	navHighlight = new GuiImageData (nav_highlight_png);
+	videos = new GuiImageData (nav_videos_png);
+	videosOver = new GuiImageData (nav_videos_over_png);
+	videosOn = new GuiImageData (nav_videos_on_png);
+	music = new GuiImageData (nav_music_png);
+	musicOver = new GuiImageData (nav_music_over_png);
+	musicOn = new GuiImageData (nav_music_on_png);
+	pictures = new GuiImageData (nav_pictures_png);
+	picturesOver = new GuiImageData (nav_pictures_over_png);
+	picturesOn = new GuiImageData (nav_pictures_on_png);
+	dvd = new GuiImageData (nav_dvd_png);
+	dvdOver = new GuiImageData (nav_dvd_over_png);
+	dvdOn = new GuiImageData (nav_dvd_on_png);
+	online = new GuiImageData (nav_onlinemedia_png);
+	onlineOver = new GuiImageData (nav_onlinemedia_over_png);
+	onlineOn = new GuiImageData (nav_onlinemedia_on_png);
+	settings = new GuiImageData (nav_settings_png);
+	settingsOver = new GuiImageData (nav_settings_over_png);
+	settingsOn = new GuiImageData (nav_settings_on_png);
+
+	videosBtnTip = new GuiTooltip ("Videos");
+	videosBtnImg = new GuiImage(videos);
+	videosBtnOnImg = new GuiImage(videosOn);
+	videosBtnOverImg = new GuiImage (videosOver);
+	videosBtnHighlightImg = new GuiImage (navHighlight);
+	videosBtnHighlightImg->SetPosition(-20, 30);
+	videosBtnHighlightImg->SetAlpha(128);
+	videosBtn = new GuiButton(videosBtnImg->GetWidth(), videosBtnImg->GetHeight());
+	videosBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	videosBtn->SetPosition(30, 30);
+	videosBtn->SetTooltip(videosBtnTip);
+	videosBtn->SetImage(videosBtnImg);
+	videosBtn->SetImageOver(videosBtnOverImg);
+	videosBtn->SetIconOver(videosBtnHighlightImg);
+	videosBtn->SetTrigger(trigA);
+	videosBtn->SetSelectable(false);
+	videosBtn->SetEffectGrow();
+	videosBtn->SetUpdateCallback(ChangeMenuVideos);
+
+	musicBtnTip = new GuiTooltip ("Music");
+	musicBtnImg = new GuiImage(music);
+	musicBtnOnImg = new GuiImage(musicOn);
+	musicBtnOverImg = new GuiImage (musicOver);
+	musicBtnHighlightImg = new GuiImage (navHighlight);
+	musicBtnHighlightImg->SetPosition(-20, 30);
+	musicBtnHighlightImg->SetAlpha(128);
+	musicBtn = new GuiButton(musicBtnImg->GetWidth(), musicBtnImg->GetHeight());
+	musicBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	musicBtn->SetPosition(85, 30);
+	musicBtn->SetTooltip(musicBtnTip);
+	musicBtn->SetImage(musicBtnImg);
+	musicBtn->SetImageOver(musicBtnOverImg);
+	musicBtn->SetIconOver(musicBtnHighlightImg);
+	musicBtn->SetTrigger(trigA);
+	musicBtn->SetSelectable(false);
+	musicBtn->SetEffectGrow();
+	musicBtn->SetUpdateCallback(ChangeMenuMusic);
+
+	picturesBtnTip = new GuiTooltip ("Pictures");
+	picturesBtnImg = new GuiImage(pictures);
+	picturesBtnOnImg = new GuiImage(picturesOn);
+	picturesBtnOverImg = new GuiImage (picturesOver);
+	picturesBtnHighlightImg= new GuiImage (navHighlight);
+	picturesBtnHighlightImg->SetPosition(-20, 30);
+	picturesBtnHighlightImg->SetAlpha(128);
+	picturesBtn = new GuiButton(picturesBtnImg->GetWidth(), picturesBtnImg->GetHeight());
+	picturesBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	picturesBtn->SetPosition(140, 30);
+	picturesBtn->SetTooltip(picturesBtnTip);
+	picturesBtn->SetImage(picturesBtnImg);
+	picturesBtn->SetImageOver(picturesBtnOverImg);
+	picturesBtn->SetIconOver(picturesBtnHighlightImg);
+	picturesBtn->SetTrigger(trigA);
+	picturesBtn->SetSelectable(false);
+	picturesBtn->SetEffectGrow();
+	picturesBtn->SetUpdateCallback(ChangeMenuPictures);
+
+	dvdBtnTip = new GuiTooltip ("DVD");
+	dvdBtnImg = new GuiImage(dvd);
+	dvdBtnOnImg = new GuiImage(dvdOn);
+	dvdBtnOverImg = new GuiImage (dvdOver);
+	dvdBtnHighlightImg = new GuiImage (navHighlight);
+	dvdBtnHighlightImg->SetPosition(-20, 30);
+	dvdBtnHighlightImg->SetAlpha(128);
+	dvdBtn = new GuiButton(dvdBtnImg->GetWidth(), dvdBtnImg->GetHeight());
+	dvdBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	dvdBtn->SetPosition(195, 30);
+	dvdBtn->SetTooltip(dvdBtnTip);
+	dvdBtn->SetImage(dvdBtnImg);
+	dvdBtn->SetImageOver(dvdBtnOverImg);
+	dvdBtn->SetIconOver(dvdBtnHighlightImg);
+	dvdBtn->SetTrigger(trigA);
+	dvdBtn->SetSelectable(false);
+	dvdBtn->SetEffectGrow();
+	dvdBtn->SetUpdateCallback(ChangeMenuDVD);
+
+	onlineBtnTip = new GuiTooltip ("Online Media");
+	onlineBtnImg = new GuiImage(online);
+	onlineBtnOnImg = new GuiImage(onlineOn);
+	onlineBtnOverImg = new GuiImage (onlineOver);
+	onlineBtnHighlightImg = new GuiImage (navHighlight);
+	onlineBtnHighlightImg->SetPosition(-20, 30);
+	onlineBtnHighlightImg->SetAlpha(128);
+	onlineBtn = new GuiButton(onlineBtnImg->GetWidth(), onlineBtnImg->GetHeight());
+	onlineBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	onlineBtn->SetPosition(250, 30);
+	onlineBtn->SetTooltip(onlineBtnTip);
+	onlineBtn->SetImage(onlineBtnImg);
+	onlineBtn->SetImageOver(onlineBtnOverImg);
+	onlineBtn->SetIconOver(onlineBtnHighlightImg);
+	onlineBtn->SetTrigger(trigA);
+	onlineBtn->SetSelectable(false);
+	onlineBtn->SetEffectGrow();
+	onlineBtn->SetUpdateCallback(ChangeMenuOnline);
+
+	settingsBtnTip = new GuiTooltip ("Settings");
+	settingsBtnImg = new GuiImage(settings);
+	settingsBtnOnImg = new GuiImage(settingsOn);
+	settingsBtnOverImg = new GuiImage (settingsOver);
+	settingsBtnHighlightImg = new GuiImage (navHighlight);
+	settingsBtnHighlightImg->SetPosition(-20, 30);
+	settingsBtnHighlightImg->SetAlpha(128);
+	settingsBtn = new GuiButton(settingsBtnImg->GetWidth(), settingsBtnImg->GetHeight());
+	settingsBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+	settingsBtn->SetPosition(-200, 30);
+	settingsBtn->SetImage(settingsBtnImg);
+	settingsBtn->SetImageOver(settingsBtnOverImg);
+	settingsBtn->SetIconOver(settingsBtnHighlightImg);
+	settingsBtn->SetTooltip(settingsBtnTip);
+	settingsBtn->SetTrigger(trigA);
+	settingsBtn->SetSelectable(false);
+	settingsBtn->SetEffectGrow();
+	settingsBtn->SetUpdateCallback(ChangeMenuSettings);
+
+	menuWindow->Append(videosBtn);
+	menuWindow->Append(musicBtn);
+	menuWindow->Append(picturesBtn);
+	menuWindow->Append(dvdBtn);
+	menuWindow->Append(onlineBtn);
+	menuWindow->Append(settingsBtn);
+
+	nowPlaying = new GuiText(NULL, 18, (GXColor){255, 255, 255, 255});
+	nowPlaying->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	nowPlaying->SetPosition(30, 10);
+	nowPlaying->SetMaxWidth(screenwidth-180);
+	nowPlaying->SetVisible(false);
+
+	// setup MPlayer window
+	mplayerWindow = new GuiWindow(screenwidth, screenheight);
+	mplayerWindow->Append(videobar);
+	mplayerWindow->Append(statusText);
 
 	guiSetup = true;
 }
@@ -6667,36 +6820,13 @@ static void StartGuiThreads()
 	creditsThreadHalt = 1;
 	updateThreadHalt = 1;
 
-	if(progressthread==LWP_THREAD_NULL)
-		LWP_CreateThread (&progressthread, ProgressThread, NULL, progressstack, GUITH_STACK, 60);
-	if(picturethread==LWP_THREAD_NULL)
-		LWP_CreateThread (&picturethread, PictureThread, NULL, picturestack, GUITH_STACK, 60);
-	if(screensaverthread==LWP_THREAD_NULL)
-		LWP_CreateThread (&screensaverthread, ScreensaverThread, NULL, screensaverstack, GUITH_STACK, 60);
-	if(creditsthread==LWP_THREAD_NULL)
-		LWP_CreateThread (&creditsthread, CreditsThread, NULL, creditsstack, GUITH_STACK, 60);
-	if(updatethread==LWP_THREAD_NULL)
-		LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 60);
-
+	LWP_CreateThread (&progressthread, ProgressThread, NULL, progressstack, GUITH_STACK, 60);
+	LWP_CreateThread (&picturethread, PictureThread, NULL, picturestack, GUITH_STACK, 60);
+	LWP_CreateThread (&screensaverthread, ScreensaverThread, NULL, screensaverstack, GUITH_STACK, 60);
+	LWP_CreateThread (&creditsthread, CreditsThread, NULL, creditsstack, GUITH_STACK, 60);
+	LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 60);
 }
 
-static void StopGuiThreads()
-{
-	showProgress = 0;
-	progressThreadHalt = 1;
-	pictureThreadHalt = 1;
-	screensaverThreadHalt = 1;
-	creditsThreadHalt = 1;
-	updateThreadHalt = 1;
-
-	while(!LWP_ThreadIsSuspended(progressthread))usleep(100);
-	while(!LWP_ThreadIsSuspended(picturethread))usleep(100);
-	while(!LWP_ThreadIsSuspended(screensaverthread))usleep(100);
-	while(!LWP_ThreadIsSuspended(screensaverthread))usleep(100);
-	while(!LWP_ThreadIsSuspended(updatethread))usleep(100);
-
-}
-/*
 static void StopGuiThreads()
 {
 	showProgress = 0;
@@ -6760,221 +6890,25 @@ static void StopGuiThreads()
 		updatethread = LWP_THREAD_NULL;
 	}
 }
-*/
 
 /****************************************************************************
  * Menu
  ***************************************************************************/
-static void SetupWiiMenu()
-{
-	static bool WiiMenu_init=false;
-
-
-	if(WiiMenu_init) return;
-	WiiMenu_init=true;
-
-	SetupGui();
-
-	if(WiiMenumainWindow == NULL)	
-		WiiMenumainWindow = new GuiWindow(screenwidth, screenheight);
-
-	mainWindow = WiiMenumainWindow;
-
-	
-	videoImg = new GuiImage();
-	videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
-	videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
-	videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
-	mainWindow->Append(videoImg);
-	
-	videoImg->SetVisible(false);
-	
-	
-	_bgImg = new GuiImage(bg);
-	_bgImg->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	_bgImg->SetAlpha(200);
-	
-	_navDividerImg = new GuiImage (navDivider);
-	_navDividerImg->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	_navDividerImg->SetPosition(0, 85);
-
-	mainWindow->Append(_bgImg);
-	mainWindow->Append(_navDividerImg);
-
-	_logoBtnTip = new GuiTooltip ("Credits");
-	_logo = new GuiImageData (logo_png);
-	_logoBtnImg = new GuiImage (_logo);
-	logoBtn = new GuiButton(_logo->GetWidth(), _logo->GetHeight());
-	logoBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	logoBtn->SetPosition(-32, 40);
-	logoBtn->SetImage(_logoBtnImg);
-	logoBtn->SetTrigger(trigA);
-	logoBtn->SetSelectable(false);
-	logoBtn->SetTooltip(_logoBtnTip);
-	logoBtn->SetUpdateCallback(DisplayCredits);
-	mainWindow->Append(logoBtn);
-
-	_navHighlight = new GuiImageData (nav_highlight_png);
-	_videos = new GuiImageData (nav_videos_png);
-	_videosOver = new GuiImageData (nav_videos_over_png);
-	_videosOn = new GuiImageData (nav_videos_on_png);
-	_music = new GuiImageData (nav_music_png);
-	_musicOver = new GuiImageData (nav_music_over_png);
-	_musicOn = new GuiImageData (nav_music_on_png);
-	_pictures = new GuiImageData (nav_pictures_png);
-	_picturesOver = new GuiImageData (nav_pictures_over_png);
-	_picturesOn = new GuiImageData (nav_pictures_on_png);
-	_dvd = new GuiImageData (nav_dvd_png);
-	_dvdOver = new GuiImageData (nav_dvd_over_png);
-	_dvdOn = new GuiImageData (nav_dvd_on_png);
-	_online = new GuiImageData (nav_onlinemedia_png);
-	_onlineOver = new GuiImageData (nav_onlinemedia_over_png);
-	_onlineOn = new GuiImageData (nav_onlinemedia_on_png);
-	_settings = new GuiImageData (nav_settings_png);
-	_settingsOver = new GuiImageData (nav_settings_over_png);
-	_settingsOn = new GuiImageData (nav_settings_on_png);
-
-	_videosBtnTip = new GuiTooltip ("Videos");
-	videosBtnImg = new GuiImage(_videos);
-	videosBtnOnImg = new GuiImage(_videosOn);
-	_videosBtnOverImg = new GuiImage (_videosOver);
-	_videosBtnHighlightImg = new GuiImage (_navHighlight);
-	_videosBtnHighlightImg->SetPosition(-20, 30);
-	_videosBtnHighlightImg->SetAlpha(128);
-	videosBtn = new GuiButton(videosBtnImg->GetWidth(), videosBtnImg->GetHeight());
-	videosBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	videosBtn->SetPosition(30, 30);
-	videosBtn->SetTooltip(_videosBtnTip);
-	videosBtn->SetImage(videosBtnImg);
-	videosBtn->SetImageOver(_videosBtnOverImg);
-	videosBtn->SetIconOver(_videosBtnHighlightImg);
-	videosBtn->SetTrigger(trigA);
-	videosBtn->SetSelectable(false);
-	videosBtn->SetEffectGrow();
-	videosBtn->SetUpdateCallback(ChangeMenuVideos);
-
-	_musicBtnTip = new GuiTooltip ("Music");
-	musicBtnImg = new GuiImage(_music);
-	musicBtnOnImg = new GuiImage(_musicOn);
-	_musicBtnOverImg = new GuiImage (_musicOver);
-	_musicBtnHighlightImg = new GuiImage (_navHighlight);
-	_musicBtnHighlightImg->SetPosition(-20, 30);
-	_musicBtnHighlightImg->SetAlpha(128);
-	musicBtn = new GuiButton(musicBtnImg->GetWidth(), musicBtnImg->GetHeight());
-	musicBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	musicBtn->SetPosition(85, 30);
-	musicBtn->SetTooltip(_musicBtnTip);
-	musicBtn->SetImage(musicBtnImg);
-	musicBtn->SetImageOver(_musicBtnOverImg);
-	musicBtn->SetIconOver(_musicBtnHighlightImg);
-	musicBtn->SetTrigger(trigA);
-	musicBtn->SetSelectable(false);
-	musicBtn->SetEffectGrow();
-	musicBtn->SetUpdateCallback(ChangeMenuMusic);
-
-	_picturesBtnTip = new GuiTooltip ("Pictures");
-	picturesBtnImg = new GuiImage(_pictures);
-	picturesBtnOnImg = new GuiImage(_picturesOn);
-	_picturesBtnOverImg = new GuiImage (_picturesOver);
-	_picturesBtnHighlightImg= new GuiImage (_navHighlight);
-	_picturesBtnHighlightImg->SetPosition(-20, 30);
-	_picturesBtnHighlightImg->SetAlpha(128);
-	picturesBtn = new GuiButton(picturesBtnImg->GetWidth(), picturesBtnImg->GetHeight());
-	picturesBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	picturesBtn->SetPosition(140, 30);
-	picturesBtn->SetTooltip(_picturesBtnTip);
-	picturesBtn->SetImage(picturesBtnImg);
-	picturesBtn->SetImageOver(_picturesBtnOverImg);
-	picturesBtn->SetIconOver(_picturesBtnHighlightImg);
-	picturesBtn->SetTrigger(trigA);
-	picturesBtn->SetSelectable(false);
-	picturesBtn->SetEffectGrow();
-	picturesBtn->SetUpdateCallback(ChangeMenuPictures);
-
-	_dvdBtnTip = new GuiTooltip ("DVD");
-	dvdBtnImg = new GuiImage(_dvd);
-	dvdBtnOnImg = new GuiImage(_dvdOn);
-	_dvdBtnOverImg = new GuiImage (_dvdOver);
-	_dvdBtnHighlightImg = new GuiImage (_navHighlight);
-	_dvdBtnHighlightImg->SetPosition(-20, 30);
-	_dvdBtnHighlightImg->SetAlpha(128);
-	dvdBtn = new GuiButton(dvdBtnImg->GetWidth(), dvdBtnImg->GetHeight());
-	dvdBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	dvdBtn->SetPosition(195, 30);
-	dvdBtn->SetTooltip(_dvdBtnTip);
-	dvdBtn->SetImage(dvdBtnImg);
-	dvdBtn->SetImageOver(_dvdBtnOverImg);
-	dvdBtn->SetIconOver(_dvdBtnHighlightImg);
-	dvdBtn->SetTrigger(trigA);
-	dvdBtn->SetSelectable(false);
-	dvdBtn->SetEffectGrow();
-	dvdBtn->SetUpdateCallback(ChangeMenuDVD);
-
-	_onlineBtnTip = new GuiTooltip ("Online Media");
-	onlineBtnImg = new GuiImage(_online);
-	onlineBtnOnImg = new GuiImage(_onlineOn);
-	_onlineBtnOverImg = new GuiImage (_onlineOver);
-	_onlineBtnHighlightImg = new GuiImage (_navHighlight);
-	_onlineBtnHighlightImg->SetPosition(-20, 30);
-	_onlineBtnHighlightImg->SetAlpha(128);
-	onlineBtn = new GuiButton(onlineBtnImg->GetWidth(), onlineBtnImg->GetHeight());
-	onlineBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	onlineBtn->SetPosition(250, 30);
-	onlineBtn->SetTooltip(_onlineBtnTip);
-	onlineBtn->SetImage(onlineBtnImg);
-	onlineBtn->SetImageOver(_onlineBtnOverImg);
-	onlineBtn->SetIconOver(_onlineBtnHighlightImg);
-	onlineBtn->SetTrigger(trigA);
-	onlineBtn->SetSelectable(false);
-	onlineBtn->SetEffectGrow();
-	onlineBtn->SetUpdateCallback(ChangeMenuOnline);
-
-	_settingsBtnTip = new GuiTooltip ("Settings");
-	settingsBtnImg = new GuiImage(_settings);
-	settingsBtnOnImg = new GuiImage(_settingsOn);
-	_settingsBtnOverImg = new GuiImage (_settingsOver);
-	_settingsBtnHighlightImg = new GuiImage (_navHighlight);
-	_settingsBtnHighlightImg->SetPosition(-20, 30);
-	_settingsBtnHighlightImg->SetAlpha(128);
-	settingsBtn = new GuiButton(settingsBtnImg->GetWidth(), settingsBtnImg->GetHeight());
-	settingsBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	settingsBtn->SetPosition(-200, 30);
-	settingsBtn->SetImage(settingsBtnImg);
-	settingsBtn->SetImageOver(_settingsBtnOverImg);
-	settingsBtn->SetIconOver(_settingsBtnHighlightImg);
-	settingsBtn->SetTooltip(_settingsBtnTip);
-	settingsBtn->SetTrigger(trigA);
-	settingsBtn->SetSelectable(false);
-	settingsBtn->SetEffectGrow();
-	settingsBtn->SetUpdateCallback(ChangeMenuSettings);
-
-	mainWindow->Append(videosBtn);
-	mainWindow->Append(musicBtn);
-	mainWindow->Append(picturesBtn);
-	mainWindow->Append(dvdBtn);
-	mainWindow->Append(onlineBtn);
-	mainWindow->Append(settingsBtn);
-
-}
 
 void WiiMenu()
 {	
 	menuMode = 0; // switch to normal GUI mode
 	guiShutdown = false;
 	FrameTimer = 1;
-	
-	SetupWiiMenu(); //only once
 
-	mainWindow = WiiMenumainWindow;
+	SetupGui(); // only once
 
+	mainWindow = menuWindow;
 	selectLoadedFile = videoImg->IsVisible();
-	
 	UpdateMenuImages(-1, menuCurrent);
-
 
 	StartGuiThreads();
 	EnableRumble();
-
 
 	// Load settings (only happens once)
 	if(!LoadSettings())
@@ -6993,15 +6927,12 @@ void WiiMenu()
 		onlineBtn->SetPosition(195, 30);
 	}
 
-
 	// Init MPlayer path and vars (only happens once)
-		if(!InitMPlayer())
+	if(!InitMPlayer())
 	{
 		ExitRequested = 2;
 		while(1) usleep(THREAD_SLEEP);
 	}
-	
-	StartGuiThreads();
 
 	ResumeGui();
 
@@ -7011,7 +6942,6 @@ void WiiMenu()
 		ErrorPrompt("The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected.");
 
 	checkIOS = false;
-
 
 	while(!guiShutdown)
 	{
@@ -7071,10 +7001,8 @@ void WiiMenu()
 	StopGuiThreads();
 	SuspendGui();
 	DisableRumble();
-
-	//delete mainWindow;
 	mainWindow = NULL;
-
+	nowPlaying->SetVisible(false);
 }
 
 bool BufferingStatusSet()
@@ -7101,17 +7029,8 @@ void SetBufferingStatus(int s)
  ***************************************************************************/
 void MPlayerMenu()
 {
-	static GuiWindow * MPlayerMenumainWindow = NULL;
-
 	guiShutdown = false;
-
-	if(MPlayerMenumainWindow == NULL)	
-	{
-		MPlayerMenumainWindow = new GuiWindow(screenwidth, screenheight);
-		MPlayerMenumainWindow->Append(videobar);
-		MPlayerMenumainWindow->Append(statusText);
-	}
-	mainWindow = MPlayerMenumainWindow;
+	mainWindow = mplayerWindow;
 
 	mainWindow->SetVisible(false);
 	mainWindow->SetState(STATE_DISABLED);
@@ -7136,7 +7055,5 @@ void MPlayerMenu()
 	}
 
 	DisableRumble();
-
-	//delete mainWindow;
 	mainWindow = NULL;
 }

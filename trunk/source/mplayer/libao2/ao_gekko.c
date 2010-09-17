@@ -47,8 +47,8 @@
 #define PAN_SIDE 		0.816496580927726f		// sqrt(2/3)
 #define PAN_SIDE_INV 	0.5773502691896258f		// sqrt(1/3)
 
-#define PHASE_SHF 		0.25					// "90 degrees"
-#define PHASE_SHF_INV 	0.75
+#define PHASE_SHF 		0.25f					// "90 degrees"
+#define PHASE_SHF_INV 	0.75f
 
 static const ao_info_t info = {
 	"gekko audio output",
@@ -200,15 +200,17 @@ static int get_space(void)
 	return ((BUFFER_SIZE * (BUFFER_COUNT - 2)) - buffered) * request_mult;
 }
 
+
 static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int remaining)
 {
+	s32 left=0, right=0;
+
+	int cws=0, crs=0;
+
 	for (int counter = 0; counter < len; ++counter)
 	{
 		int prs = max((counter - 1), -(processed / (sizeof(s16) * ao_data.channels))) * ao_data.channels;
-		int crs = counter * ao_data.channels;	// "I'm surrounded!"
 		int nrs = min((counter + 1), (remaining / (sizeof(s16) * ao_data.channels))) * ao_data.channels;
-		
-		s32 left, right;
 		
 		if (ao_data.channels > 1)
 		{
@@ -247,10 +249,10 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 				break;
 		}
 		
-		int cws = counter * HW_CHANNELS;
-		
-		dst[cws] = clamp(right, SHRT_MIN, SHRT_MAX);
-		dst[cws + 1] = clamp(left, SHRT_MIN, SHRT_MAX);
+		dst[cws++] = clamp(right, SHRT_MIN, SHRT_MAX);
+		dst[cws++] = clamp(left, SHRT_MIN, SHRT_MAX);
+
+		crs += ao_data.channels;
 	}
 }
 

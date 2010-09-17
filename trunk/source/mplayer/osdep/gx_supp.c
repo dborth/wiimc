@@ -482,6 +482,7 @@ void GX_UpdatePitch(u16 *pitch)
 
 inline void DrawMPlayer()
 {
+	u8 clear=GX_TRUE;
 	DCStoreRangeNoSync(Yltexture, Yltexsize);
 	DCStoreRangeNoSync(Yrtexture, Yrtexsize);
 	DCStoreRangeNoSync(Utexture, UVtexsize);
@@ -543,9 +544,10 @@ inline void DrawMPlayer()
 		guOrtho(p, mplayerheight/2, -(mplayerheight/2), -(mplayerwidth/2), mplayerwidth/2, 10, 1000);
 		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
+		clear=GX_TRUE;
 	}
 	
-	GX_CopyDisp(xfb[whichfb], GX_TRUE);
+	GX_CopyDisp(xfb[whichfb], clear);
 
 	GX_SetDrawDone();
 	need_wait=true;
@@ -608,10 +610,10 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	Yrtexsize = (wYr*h);
 	UVtexsize = (w*h)/4;
 	
-	memset(Yltexture, 0, Yltexsize);
-	memset(Yrtexture, 0, Yrtexsize);
-	memset(Utexture, 0x80, UVtexsize);
-	memset(Vtexture, 0x80, UVtexsize);
+	memset(Yltexture, 0, 1024*1024);
+	memset(Yrtexture, 0, 1024*1024);
+	memset(Utexture, 0x80, 1024*512);
+	memset(Vtexture, 0x80, 1024*512);
 	
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	GX_SetCullMode(GX_CULL_NONE);
@@ -649,9 +651,11 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 
 	if(old_h1_2 != height)
 	{
+		printf("old_h1_2: %i ",old_h1_2);
 		old_h1_2 = height;
-    	h1 = ceil((float)height / 4);
+    	h1 = ceil((float)height / 4.0f);
     	h2 = ceil((float)h1/2);
+    	printf("height: %i  h1: %i   h2: %i\n",height,h1,h2);
 	}
 
 	wl = w1 > 1024/8 ? 1024/8 - 1 : w1;

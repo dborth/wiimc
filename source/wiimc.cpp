@@ -105,7 +105,7 @@ void ExitApp()
 
 	UnmountAllDevices();
 
-	if(ResetRequested==0 && (ShutdownRequested == 1 || WiiSettings.exitAction == EXIT_POWEROFF))
+	if(ShutdownRequested == 1 || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 	else if(WiiSettings.exitAction == EXIT_WIIMENU)
 		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
@@ -115,19 +115,20 @@ void ExitApp()
 
 static void ShutdownCB()
 {
-//	if(controlledbygui != 1 && menuMode == 0)
-//		return;
+	if(controlledbygui != 1 && menuMode == 0)
+		return;
 
 	ConfigRequested = 1;
 	ShutdownRequested = 1;
 }
+
 static void ResetCB()
 {
-	//if(controlledbygui != 1 && menuMode == 0)
-	//		return;
+	if(controlledbygui != 1 && menuMode == 0)
+		return;
 
+	ConfigRequested = 1;
 	ResetRequested = 1;
-	ShutdownRequested = 1;
 }
 
 /****************************************************************************

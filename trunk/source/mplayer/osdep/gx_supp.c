@@ -387,7 +387,7 @@ static void draw_initYUV(void)
 }
 
 //------- rodries change: to avoid image_buffer intermediate ------
-static int w1,w2,h1,h2,df1,df2,old_h1_2=-1;
+static int w1,w2,h1,h2,df1,df2,old_h1_2=-1,wl,wr;
 static int p01,p02,p03,p11,p12,p13;
 static u16 Yrowpitch;
 static u16 UVrowpitch;
@@ -428,6 +428,10 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 	if(wp>ww) wp=ww;
 	w1 = wp >> 3;
 	w2 = wp >> 4;
+
+	
+	wl = w1 > 1024/8 ? 1024/8 - 1 : w1;
+	wr = w1 > 1024/8 ? w1 - 1024/8 + 1 : 0;
 
 	df1 = ((ww >> 3) - w1)*4;
 	df2 = ((ww >> 4) - w2)*4;
@@ -634,7 +638,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 
 void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 {
-	int h,w,wl,wr;
+	int h,w;
 
 	u64 *Ysrc1 = (u64 *) buffer[0];
 	u64 *Ysrc2 = (u64 *) (buffer[0] + p01);
@@ -651,15 +655,10 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 
 	if(old_h1_2 != height)
 	{
-		printf("old_h1_2: %i ",old_h1_2);
 		old_h1_2 = height;
     	h1 = ceil((float)height / 4.0f);
     	h2 = ceil((float)h1/2);
-    	printf("height: %i  h1: %i   h2: %i\n",height,h1,h2);
 	}
-
-	wl = w1 > 1024/8 ? 1024/8 - 1 : w1;
-	wr = w1 > 1024/8 ? w1 - 1024/8 + 1 : 0;
 
 	//Convert YUV frame to GX textures
 	//Convert Y plane to texture

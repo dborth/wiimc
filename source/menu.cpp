@@ -7052,6 +7052,8 @@ void MPlayerMenu()
 			DI_StopMotor();
 			dvdLastUsed = 0;
 		}
+		if(ShutdownRequested) 
+			wiiGotoGui();
 	}
 
 	DisableRumble();

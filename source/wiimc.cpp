@@ -115,16 +115,19 @@ void ExitApp()
 
 static void ShutdownCB()
 {
-	if(controlledbygui != 1 && menuMode == 0)
-		return;
+//	if(controlledbygui != 1 && menuMode == 0)
+//		return;
+	if(controlledbygui==0)wiiGotoGui();
 
 	ConfigRequested = 1;
 	ShutdownRequested = 1;
 }
 static void ResetCB()
 {
-	if(controlledbygui != 1 && menuMode == 0)
-		return;
+	//if(controlledbygui != 1 && menuMode == 0)
+	//		return;
+	if(controlledbygui==0)wiiGotoGui();
+	
 
 	ResetRequested = 1;
 	ShutdownRequested = 1;

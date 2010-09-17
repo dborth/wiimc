@@ -627,3 +627,15 @@ msgstr "旋转"
 
 msgid "Resolution exceeds maximum allowed (1280x720)!"
 msgstr "分辨率超出所允许的(1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "当前IOS已更改（虚假签名漏洞）。功能或者稳定性上可能造成不良的影响。"
+
+msgid "Online media file is invalid."
+msgstr "网络媒体无效。"
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "字幕字体文件没有找到。字幕文件不可用。"
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC不能读取DVD-AHBPROT没有开启"

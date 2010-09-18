@@ -407,14 +407,20 @@ static int FindPartitions(int device)
 
 static void UnmountPartitions(int device)
 {
+	char mount[11];
 	int i;
 
 	for(i=0; i < MAX_DEVICES; i++)
 	{
 		if(part[device][i].type == T_FAT)
-			fatUnmount(part[device][i].mount);
+		{
+			sprintf(mount, "%s:", part[device][i].mount);
+			fatUnmount(mount);
+		}
 		else if(part[device][i].type == T_NTFS)
+		{
 			ntfsUnmount(part[device][i].mount, false);
+		}
 		
 		part[device][i].name[0] = 0;
 		part[device][i].mount[0] = 0;

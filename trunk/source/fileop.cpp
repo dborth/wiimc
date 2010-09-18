@@ -686,7 +686,11 @@ static void UnmountPartitions(int device)
 	for(int i=0; i < MAX_DEVICES; i++)
 	{
 		if(part[device][i].type == T_FAT)
-			fatUnmount(part[device][i].mount);
+		{
+			char cad[12];
+			sprintf(cad,"%s:",part[device][i].mount);
+			fatUnmount(cad);
+		}
 		else if(part[device][i].type == T_NTFS)
 			ntfsUnmount(part[device][i].mount, false);
 

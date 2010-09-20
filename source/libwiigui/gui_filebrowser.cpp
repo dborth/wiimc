@@ -563,7 +563,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	}
 	else if(listChanged || numEntries != browser.numEntries)
 	{
-		if(float((browser.pageIndex<<1))/(float(size)) < 1.0)
+		if(browser.pageIndex == 0)
 			position = scrollbarBoxBtn->GetMinY();
 		else if(browser.pageIndex+size >= browser.numEntries)
 			position = scrollbarBoxBtn->GetMaxY();

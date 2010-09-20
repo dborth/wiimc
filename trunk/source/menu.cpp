@@ -5556,10 +5556,6 @@ static void MenuSettings()
 		if(backBtn.GetState() == STATE_CLICKED)
 			ChangeMenu(menuPrevious);
 	}
-
-	if(menuCurrent <= 4) // leaving settings area
-		SaveSettings(NOTSILENT);
-
 	SuspendGui();
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&backBtn);
@@ -6995,6 +6991,15 @@ void WiiMenu()
 				MenuBrowse(MENU_BROWSE_VIDEOS);
 				break;
 		}
+
+		// leaving settings area
+		if(menuPrevious >= MENU_SETTINGS && menuCurrent < MENU_SETTINGS)
+		{
+			ResumeGui();
+			SaveSettings(NOTSILENT);
+			SuspendGui();
+		}
+
 		usleep(THREAD_SLEEP);
 	}
 

@@ -5,8 +5,36 @@
  * mem2_manager.c
  *
  * MEM2 allocator
+
+
  ****************************************************************************/
 
+
+/*****************************
+You need to add the next function in lwp_heap.c (libogc) to get debug info
+
+
+u32 __lwp_heap_block_size(heap_cntrl *theheap,void *ptr)
+{
+	heap_block *block;
+	u32 dsize,level;
+
+	_CPU_ISR_Disable(level);
+
+	block = __lwp_heap_usrblockat(ptr);
+	if(!__lwp_heap_blockin(theheap,block) || __lwp_heap_blockfree(block)) {
+		_CPU_ISR_Restore(level);
+		return 0;
+	}
+
+	dsize = __lwp_heap_blocksize(block);
+	_CPU_ISR_Restore(level);
+	return dsize;
+}
+
+
+
+******************************/
 #include <ogc/machine/asm.h>
 #include <ogc/lwp_heap.h>
 #include <ogc/system.h>
@@ -139,14 +167,14 @@ void* mem2_memalign(u8 align, u32 size, const char *area)
 
 	ptr = __lwp_heap_allocate(&mem2_areas[i].heap, size);
 #ifdef DEBUG_MEM2_LEVEL
-	if(ptr == NULL) printf("Error not enough mem2 in malloc, size: %u  area: %s  allocated: %u	top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
+	if(ptr == NULL || mem2_areas[i].allocated>mem2_areas[i].size) printf("Error not enough mem2 in malloc, size: %u  area: %s  allocated: %u	top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
 	else
 	{
-		//mem2_areas[i].allocated += __lwp_heap_block_size(&mem2_areas[i].heap,ptr);
-		//if(mem2_areas[i].allocated > mem2_areas[i].top_allocated) mem2_areas[i].top_allocated = mem2_areas[i].allocated;
+		mem2_areas[i].allocated += __lwp_heap_block_size(&mem2_areas[i].heap,ptr);
+		if(mem2_areas[i].allocated > mem2_areas[i].top_allocated) mem2_areas[i].top_allocated = mem2_areas[i].allocated;
 	
-		//if(DEBUG_MEM2_LEVEL == 2)
-		//	printf("mem2 malloc: %u  area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
+		if(DEBUG_MEM2_LEVEL == 2)
+			printf("mem2 malloc: %u  area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
 	}
 #endif
 	return ptr;
@@ -173,12 +201,12 @@ void mem2_free(void *ptr, const char *area)
 	
 
 #ifdef DEBUG_MEM2_LEVEL
-	//u32 size=__lwp_heap_block_size(&mem2_areas[i].heap,ptr); // this function is added in libogc
+	u32 size=__lwp_heap_block_size(&mem2_areas[i].heap,ptr); // this function is added in libogc
 
-	//mem2_areas[i].allocated -= size;
+	mem2_areas[i].allocated -= size;
 
-	//if(DEBUG_MEM2_LEVEL == 2)
-	//	printf("mem2 free: %u	area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
+	if(DEBUG_MEM2_LEVEL == 2)
+		printf("mem2 free: %u	area: %s  allocated: %u  top allocated: %u\n",size,area,mem2_areas[i].allocated,mem2_areas[i].top_allocated);
 	
 #endif		
 

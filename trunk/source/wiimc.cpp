@@ -91,21 +91,23 @@ void CheckSleepTimer()
 void ExitApp()
 {
 	DisableRumble();
+//	SuspendDeviceThread();
+//	SuspendParseThread();
 	if(ShutdownRequested == 1 || ExitRequested == 1)
 	{
 		SaveFolder();
 		SaveSettings(SILENT);
 	}
-	DI_Close();
+//	DI_Close();
 
 	// shut down some threads
-	SuspendDeviceThread();
-	CancelAction();
-	StopGX();
+	//SuspendDeviceThread();
+	//CancelAction();
+	//StopGX();
 
-	UnmountAllDevices();
+	//UnmountAllDevices();
 
-	if(ShutdownRequested == 1 || WiiSettings.exitAction == EXIT_POWEROFF)
+	if(ResetRequested == 0 && (ShutdownRequested == 1 || WiiSettings.exitAction == EXIT_POWEROFF))
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 	else if(WiiSettings.exitAction == EXIT_WIIMENU)
 		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
@@ -129,6 +131,7 @@ static void ResetCB()
 
 	ConfigRequested = 1;
 	ResetRequested = 1;
+	ShutdownRequested = 1;
 }
 
 /****************************************************************************
@@ -512,8 +515,6 @@ int main(int argc, char *argv[])
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
 
-	show_mem();
-
 	// only reload IOS if AHBPROT is not enabled
 	u32 have_ahbprot = __di_check_ahbprot();
 	u32 version = IOS_GetVersion();
@@ -535,7 +536,7 @@ int main(int argc, char *argv[])
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
 			(16*1024); // padding
 	AddMem2Area (size, "video");  
-	AddMem2Area (6*1024*1024, "gui"); 
+	AddMem2Area (8*1024*1024, "gui"); 
 	AddMem2Area (3*1024*1024, "other"); // vars + ttf , we have to improve ext_ttf
 
 	InitVideo2();
@@ -572,8 +573,8 @@ int main(int argc, char *argv[])
 		ResumeDeviceThread();
 		ResumeParseThread();
 		WiiMenu();
-		StopDeviceThread();
-		StopParseThread();
+		SuspendDeviceThread();
+		SuspendParseThread();
 		MPlayerMenu();
 	}
 }

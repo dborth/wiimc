@@ -39,7 +39,7 @@
 
 #define BUFFER_SIZE 	(4 * 1024)
 #define BUFFER_COUNT 	64
-#define PREBUFFER 		32768
+#define PREBUFFER 		(8*BUFFER_SIZE)
 
 #define HW_CHANNELS 	2
 
@@ -132,12 +132,15 @@ void reinit_audio()
 
 static int init(int rate, int channels, int format, int flags)
 {
+	AUDIO_StopDMA();
+
 	ao_data.samplerate = 48000;
 	ao_data.channels = clamp(channels, 2, 6);
 	ao_data.format = AF_FORMAT_S16_NE;
 	ao_data.bps = ao_data.channels * ao_data.samplerate * sizeof(s16);
-	request_mult = (float)ao_data.channels / HW_CHANNELS;
+	request_mult = ((float)ao_data.channels / HW_CHANNELS);
 	request_size = BUFFER_SIZE * request_mult;
+	printf("channels: %i  request_size: %i\n",ao_data.channels,request_size);
 	ao_data.buffersize = request_size * BUFFER_COUNT;
 	ao_data.outburst = request_size;
 	
@@ -158,6 +161,8 @@ static int init(int rate, int channels, int format, int flags)
 
 	AUDIO_SetDSPSampleRate(quality);
 	AUDIO_RegisterDMACallback(switch_buffers);
+
+	while(AUDIO_GetDMABytesLeft()>0) usleep(100);
 
 	return CONTROL_TRUE;
 }
@@ -197,7 +202,7 @@ static void audio_resume(void)
 
 static int get_space(void)
 {
-	return ((BUFFER_SIZE * (BUFFER_COUNT - 2)) - buffered) * request_mult;
+	return ((BUFFER_SIZE * (BUFFER_COUNT - 2)) - buffered);
 }
 
 

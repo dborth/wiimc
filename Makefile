@@ -113,6 +113,10 @@ $(BUILD):
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
+test:
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+
+
 clean:
 	@echo clean ...
 	@rm -fr $(BUILD) $(OUTPUT).elf $(OUTPUT).dol

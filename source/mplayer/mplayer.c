@@ -2848,8 +2848,6 @@ m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
-m_config_set_option(mconfig,"ass","1");
-m_config_set_option(mconfig,"ass-font-scale","2");
 SetMPlayerSettings();
 
 orig_stream_cache_min_percent=stream_cache_min_percent;
@@ -4703,7 +4701,9 @@ static void reload_subtitles()
 	{
 		select_subtitle(mpctx);
 		force_load_font = 1;
+#ifdef CONFIG_ASS		
 		ass_force_reload = 1;
+#endif		
 	}
 }
 
@@ -5241,6 +5241,7 @@ void wiiSetSubtitleLanguage(char *lang)
 
 void wiiSetSubtitleColor(char *color)
 {
+#ifdef CONFIG_ASS
 	if(ass_color && strcmp(color, ass_color) == 0)
 		return;
 
@@ -5252,14 +5253,22 @@ void wiiSetSubtitleColor(char *color)
 	else
 		ass_border_color = strdup("00000000");
 	reload_subtitles();
+#endif	
 }
 
 void wiiSetSubtitleSize(float size)
 {
+#ifdef CONFIG_ASS
+
 	if(size == ass_font_scale)
 		return;
 
 	ass_font_scale = size;
+#else
+	text_font_scale_factor = size;
+	osd_font_scale_factor = size;
+	force_load_font = 1;
+#endif	
 }
 
 bool wiiFindRestorePoint(char *filename)

@@ -142,14 +142,9 @@ void MPlayerInput()
 		ir = true;
 
 	if(userInput[0].wpad->btns_d & WPAD_BUTTON_1)
-	{
 		osdLevel ^= 1;
-	}
-	else if(ConfigRequested || userInput[0].wpad->btns_d & WPAD_BUTTON_HOME)
-	{
-		ConfigRequested = 0;
+	else if(ExitRequested || userInput[0].wpad->btns_d & WPAD_BUTTON_HOME)
 		wiiGotoGui();
-	}
 
 	if(!inDVDMenu)
 	{

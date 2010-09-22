@@ -41,10 +41,10 @@ extern u32 __di_check_ahbprot(void);
 extern char *network_useragent;
 }
 
+static int ShutdownRequested = 0;
+static int ResetRequested = 0;
+
 int ScreenshotRequested = 0;
-int ConfigRequested = 0;
-int ShutdownRequested = 0;
-int ResetRequested = 0;
 int ExitRequested = 0;
 char appPath[1024] = { 0 };
 char loadPath[1024] = { 0 };
@@ -59,8 +59,6 @@ static lwp_t mthread = LWP_THREAD_NULL;
 static lwp_t cthread = LWP_THREAD_NULL;
 static u8 mplayerstack[STACKSIZE] ATTRIBUTE_ALIGN (32);
 static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
-
-
 
 /****************************************************************************
  * Shutdown / Reboot / Exit
@@ -83,6 +81,7 @@ void CheckSleepTimer()
 
 	if(diff_sec(sleepStart, gettime()) > (u32)(WiiSettings.sleepTimer*60))
 	{
+		ExitRequested = 1;
 		ShutdownRequested = 1;
 		controlledbygui = 2;
 	}
@@ -91,23 +90,19 @@ void CheckSleepTimer()
 void ExitApp()
 {
 	DisableRumble();
-//	SuspendDeviceThread();
-//	SuspendParseThread();
-	if(ShutdownRequested == 1 || ExitRequested == 1)
+	if(ExitRequested == 1)
 	{
 		SaveFolder();
 		SaveSettings(SILENT);
 	}
-//	DI_Close();
 
 	// shut down some threads
-	//SuspendDeviceThread();
-	//CancelAction();
-	//StopGX();
+	SuspendDeviceThread();
+	StopGX();
 
-	//UnmountAllDevices();
+	UnmountAllDevices();
 
-	if(ResetRequested == 0 && (ShutdownRequested == 1 || WiiSettings.exitAction == EXIT_POWEROFF))
+	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 	else if(WiiSettings.exitAction == EXIT_WIIMENU)
 		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
@@ -120,7 +115,7 @@ static void ShutdownCB()
 	if(controlledbygui != 1 && menuMode == 0)
 		return;
 
-	ConfigRequested = 1;
+	ExitRequested = 1;
 	ShutdownRequested = 1;
 }
 
@@ -129,9 +124,8 @@ static void ResetCB()
 	if(controlledbygui != 1 && menuMode == 0)
 		return;
 
-	ConfigRequested = 1;
+	ExitRequested = 1;
 	ResetRequested = 1;
-	ShutdownRequested = 1;
 }
 
 /****************************************************************************
@@ -369,7 +363,7 @@ bool CacheThreadSuspended()
 }
 }
 
-static void show_mem()
+void show_mem()
 {
 	printf("m1(%.4f) m2(%.4f)\n",
 								((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
@@ -573,8 +567,8 @@ int main(int argc, char *argv[])
 		ResumeDeviceThread();
 		ResumeParseThread();
 		WiiMenu();
-		SuspendDeviceThread();
-		SuspendParseThread();
+		StopDeviceThread();
+		StopParseThread();
 		MPlayerMenu();
 	}
 }

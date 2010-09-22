@@ -2646,7 +2646,7 @@ done:
 u8 *picBuffer = NULL;
 static int loadPictures = 0; // reload pictures
 
-#define NUM_PICTURES 		3 // 1 image with a buffer of +/- 1 on each side
+#define NUM_PICTURES 		5 // 1 image with a buffer of +/- 2 on each side
 
 typedef struct
 {
@@ -2819,7 +2819,6 @@ static void *PictureThread (void *arg)
 	pictureLoaded = -1;
 	pictureIndexLoaded = -1;
 	pictureIndexLoading = -1;
-	
 
 	while(1)
 	{
@@ -2835,7 +2834,6 @@ restart:
 		if(pictureThreadHalt == 2)
 			break;
 
-		
 		if(loadPictures)
 		{
 			AllocPicBuffer();
@@ -3302,7 +3300,7 @@ static void MenuBrowsePictures()
 	ShutoffRumble();
 	ResetBrowser();
 
-	if(SYS_GetArena2Size() < MAX_PICTURE_SIZE) // 14 MB
+	if(SYS_GetArena2Size() < MAX_PICTURE_SIZE)
 	{
 		ResumeGui();
 		bool closeMPlayer = WindowPrompt(
@@ -5413,10 +5411,6 @@ static void MenuSettingsSubtitles()
 			case 4:
 				if(strcmp(WiiSettings.subtitleColor, "FFFFFF00") == 0) // white
 					sprintf(WiiSettings.subtitleColor, "00000000"); // black
-				else if(strcmp(WiiSettings.subtitleColor, "00000000") == 0) // black
-					sprintf(WiiSettings.subtitleColor, "FFFF0000"); // yellow
-				else if(strcmp(WiiSettings.subtitleColor, "FFFF0000") == 0) // yellow
-					sprintf(WiiSettings.subtitleColor, "FF000000"); // red
 				else
 					sprintf(WiiSettings.subtitleColor, "FFFFFF00"); // white
 				break;

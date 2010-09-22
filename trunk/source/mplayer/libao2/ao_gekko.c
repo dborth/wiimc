@@ -59,19 +59,16 @@ static const ao_info_t info = {
 
 LIBAO_EXTERN(gekko)
 
+static bool playing = false;
 static u8 buffers[BUFFER_COUNT][BUFFER_SIZE] ATTRIBUTE_ALIGN(32);
 static u8 silence[BUFFER_SIZE] ATTRIBUTE_ALIGN(32);
 static u8 buffer_fill = 0;
 static u8 buffer_play = 0;
+static u8 quality = AI_SAMPLERATE_48KHZ;
 static int buffered = 0;
-
-static float request_mult = 1.0;
 static int request_size = BUFFER_SIZE;
-
-static bool playing = false;
-
+static float request_mult = 1.0;
 static ao_control_vol_t volume = { 0x8E, 0x8E };
-
 
 static void switch_buffers()
 {
@@ -117,12 +114,8 @@ static int control(int cmd, void *arg)
 	}
 }
 
-static u8 quality = AI_SAMPLERATE_48KHZ;
-
 void reinit_audio()
 {
-	//AUDIO_SetDSPSampleRate(quality);
-	//AUDIO_RegisterDMACallback(switch_buffers);
 	if(!playing)
 	{
 		switch_buffers();
@@ -138,9 +131,8 @@ static int init(int rate, int channels, int format, int flags)
 	ao_data.channels = clamp(channels, 2, 6);
 	ao_data.format = AF_FORMAT_S16_NE;
 	ao_data.bps = ao_data.channels * ao_data.samplerate * sizeof(s16);
-	request_mult = ((float)ao_data.channels / HW_CHANNELS);
+	request_mult = (float)ao_data.channels / HW_CHANNELS;
 	request_size = BUFFER_SIZE * request_mult;
-	printf("channels: %i  request_size: %i\n",ao_data.channels,request_size);
 	ao_data.buffersize = request_size * BUFFER_COUNT;
 	ao_data.outburst = request_size;
 	
@@ -162,17 +154,17 @@ static int init(int rate, int channels, int format, int flags)
 	AUDIO_SetDSPSampleRate(quality);
 	AUDIO_RegisterDMACallback(switch_buffers);
 
-	while(AUDIO_GetDMABytesLeft()>0) usleep(100);
-
 	return CONTROL_TRUE;
 }
 
-static void reset(void)
+static void uninit(int immed)
 {
-	//while(playing && (buffered > 0)) usleep(100);
-	playing = false;
+	AUDIO_RegisterDMACallback(NULL);
 
-	AUDIO_StopDMA();
+	while(AUDIO_GetDMABytesLeft() > 0)
+		usleep(100);
+
+	playing = false;
 
 	buffer_fill = 0;
 	buffer_play = 0;
@@ -182,12 +174,6 @@ static void reset(void)
 		memset(buffers[counter], 0, BUFFER_SIZE);
 		DCFlushRange(buffers[counter], BUFFER_SIZE);
 	}
-}
-
-static void uninit(int immed)
-{
-	reset();
-	AUDIO_RegisterDMACallback(NULL);
 }
 
 static void audio_pause(void)
@@ -204,7 +190,6 @@ static int get_space(void)
 {
 	return ((BUFFER_SIZE * (BUFFER_COUNT - 2)) - buffered);
 }
-
 
 static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int remaining)
 {

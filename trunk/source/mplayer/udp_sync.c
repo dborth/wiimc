@@ -40,18 +40,18 @@
 
 #include "mplayer.h"
 #include "mp_core.h"
-#include "udp_sync.h"
 #include "mp_msg.h"
 #include "help_mp.h"
+#include "udp_sync.h"
 
 
 // config options for UDP sync
 int udp_master = 0;
-int udp_slave = 0;
-int udp_port = 23867;
+int udp_slave  = 0;
+int udp_port   = 23867;
 const char *udp_ip = "127.0.0.1"; // where the master sends datagrams
                                   // (can be a broadcast address)
-float udp_seek_threshold = 1.0; // how far off before we seek
+float udp_seek_threshold = 1.0;   // how far off before we seek
 
 // remember where the master is in the file
 static float udp_master_position = -1.0;
@@ -59,84 +59,61 @@ static float udp_master_position = -1.0;
 // how far off is still considered equal
 #define UDP_TIMING_TOLERANCE 0.02
 
-// gets a datagram from the master with or without blocking.  updates
-// master_position if successful.  if the master has exited, returns 1.
-// otherwise, returns 0.
-int get_udp(int blocking, float *master_position)
+static void set_blocking(int fd, int blocking)
 {
     long sock_flags;
-    struct sockaddr_in cliaddr;
-    char mesg[100];
-    socklen_t len;
+#if HAVE_WINSOCK2_H
+    sock_flags = blocking;
+    ioctlsocket(fd, FIONBIO, &sock_flags);
+#else
+    sock_flags = fcntl(fd, F_GETFL, 0);
+    sock_flags = blocking ? sock_flags & ~O_NONBLOCK : sock_flags | O_NONBLOCK;
+    fcntl(fd, F_SETFL, sock_flags);
+#endif /* HAVE_WINSOCK2_H */
+}
 
-    int chars_received;
+// gets a datagram from the master with or without blocking.  updates
+// master_position if successful.  if the master has exited, returns 1.
+// returns -1 on error.
+// otherwise, returns 0.
+static int get_udp(int blocking, float *master_position)
+{
+    char mesg[100];
+
+    int chars_received = -1;
     int n;
 
-    static int done_init_yet = 0;
-    static int sockfd;
-    if (!done_init_yet) {
-        struct timeval tv;
-        struct sockaddr_in servaddr;
-
-        done_init_yet = 1;
+    static int sockfd = -1;
+    if (sockfd == -1) {
+        struct timeval tv = { .tv_sec = 30 };
+        struct sockaddr_in servaddr = { 0 };
 
         sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+        if (sockfd == -1)
+            return -1;
 
-        memset(&servaddr, sizeof(servaddr), 0);
-        servaddr.sin_family =      AF_INET;
+        servaddr.sin_family      = AF_INET;
         servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        servaddr.sin_port =        htons(udp_port);
+        servaddr.sin_port        = htons(udp_port);
         bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
-        tv.tv_sec = 30;
         setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     }
 
-#if HAVE_WINSOCK2_H
-    sock_flags = blocking;
-    ioctlsocket(sockfd, FIONBIO, &sock_flags);
-#else
-    sock_flags = fcntl(sockfd, F_GETFL, 0);
-    sock_flags = blocking ? sock_flags & ~O_NONBLOCK : sock_flags | O_NONBLOCK;
-    fcntl(sockfd, F_SETFL, sock_flags);
-#endif /* HAVE_WINSOCK2_H */
+    set_blocking(sockfd, blocking);
 
-    len = sizeof(cliaddr);
+    while (-1 != (n = recvfrom(sockfd, mesg, sizeof(mesg)-1, 0,
+                               NULL, NULL))) {
+        // flush out any further messages so we don't get behind
+        if (chars_received == -1)
+            set_blocking(sockfd, 0);
 
-    chars_received = recvfrom(sockfd, mesg, sizeof(mesg)-1, 0, (struct sockaddr *)&cliaddr, &len);
-
-    if (chars_received == -1) {
-      return 0;
-    }
-
-#if HAVE_WINSOCK2_H
-    sock_flags = 0;
-    ioctlsocket(sockfd, FIONBIO, &sock_flags);
-#else
-    fcntl(sockfd, F_SETFL, sock_flags | O_NONBLOCK);
-#endif
-
-    // flush out any further messages so we don't get behind
-    while (-1 != (n = recvfrom(sockfd, mesg, sizeof(mesg)-1, 0, (struct sockaddr *)&cliaddr, &len))) {
         chars_received = n;
         mesg[chars_received] = 0;
-        if (strcmp(mesg, "bye") == 0) {
-          return 1;
-        }
-    }
-
-    if (chars_received > -1) {
-        mesg[chars_received] = 0;
-
-        if (strcmp(mesg, "bye") == 0) {
+        if (strcmp(mesg, "bye") == 0)
             return 1;
-        } else {
-            sscanf(mesg, "%f", master_position);
-            return 0;
-        }
-    } else {
-        // UDP wait error, probably a timeout.  Safe to ignore.
+        sscanf(mesg, "%f", master_position);
     }
 
     return 0;
@@ -144,24 +121,23 @@ int get_udp(int blocking, float *master_position)
 
 void send_udp(const char *send_to_ip, int port, char *mesg)
 {
-    static int done_init_yet = 0;
-    static int sockfd;
+    static int sockfd = -1;
     static struct sockaddr_in socketinfo;
 
-    int one = 1;
-
-    if (!done_init_yet) {
+    if (sockfd == -1) {
+        static const int one = 1;
         int ip_valid = 0;
 
-        done_init_yet = 1;
-
-        sockfd=socket(AF_INET, SOCK_DGRAM, 0);
+        sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+        if (sockfd == -1)
+            exit_player(EXIT_ERROR);
 
         // Enable broadcast
         setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one));
 
 #if HAVE_WINSOCK2_H
-        ip_valid = (inet_addr(send_to_ip) != INADDR_NONE);
+        socketinfo.sin_addr.s_addr = inet_addr(send_to_ip);
+        ip_valid = socketinfo.sin_addr.s_addr != INADDR_NONE;
 #else
         ip_valid = inet_aton(send_to_ip, &socketinfo.sin_addr);
 #endif
@@ -172,10 +148,11 @@ void send_udp(const char *send_to_ip, int port, char *mesg)
         }
 
         socketinfo.sin_family = AF_INET;
-        socketinfo.sin_port = htons(port);
+        socketinfo.sin_port   = htons(port);
     }
 
-    sendto(sockfd, mesg, strlen(mesg), 0, (struct sockaddr *) &socketinfo, sizeof(socketinfo));
+    sendto(sockfd, mesg, strlen(mesg), 0, (struct sockaddr *) &socketinfo,
+           sizeof(socketinfo));
 }
 
 // this function makes sure we stay as close as possible to the master's
@@ -190,7 +167,7 @@ int udp_slave_sync(MPContext *mpctx)
 
         // if we're way off, seek to catch up
         if (FFABS(my_position - udp_master_position) > udp_seek_threshold) {
-            abs_seek_pos = SEEK_ABSOLUTE;
+            abs_seek_pos  = SEEK_ABSOLUTE;
             rel_seek_secs = udp_master_position;
             break;
         }
@@ -203,9 +180,8 @@ int udp_slave_sync(MPContext *mpctx)
         // without waiting.
         // UDP_TIMING_TOLERANCE is a small value that lets us consider
         // the master equal to us even if it's very slightly ahead.
-        if (udp_master_position + UDP_TIMING_TOLERANCE > my_position) {
-          break;
-        }
+        if (udp_master_position + UDP_TIMING_TOLERANCE > my_position)
+            break;
 
         // the remaining case is that we're slightly ahead of the master.
         // usually, it just means we called get_udp() before the datagram

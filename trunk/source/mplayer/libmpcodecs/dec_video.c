@@ -24,6 +24,7 @@
 
 #include "mp_msg.h"
 #include "help_mp.h"
+#include "mpcommon.h"
 
 #include "osdep/timer.h"
 #include "osdep/shmem.h"
@@ -46,11 +47,6 @@
 #ifdef CONFIG_DYNAMIC_PLUGINS
 #include <dlfcn.h>
 #endif
-
-// ===================================================================
-
-extern double video_time_usage;
-extern double vout_time_usage;
 
 #include "cpudetect.h"
 
@@ -98,7 +94,7 @@ int set_video_colors(sh_video_t *sh_video, const char *item, int value)
     vf_instance_t *vf = sh_video->vfilter;
     vf_equalizer_t data;
 
-    data.item = item;
+    data.item  = item;
     data.value = value;
 
     mp_dbg(MSGT_DECVIDEO, MSGL_V, "set video colors %s=%d \n", item, value);
@@ -109,9 +105,8 @@ int set_video_colors(sh_video_t *sh_video, const char *item, int value)
     }
     /* try software control */
     if (mpvdec)
-        if (mpvdec->control
-            (sh_video, VDCTRL_SET_EQUALIZER, item, (int *) value)
-            == CONTROL_OK)
+        if (mpvdec->control(sh_video, VDCTRL_SET_EQUALIZER, item,
+                            (int *) value) == CONTROL_OK)
             return 1;
     mp_msg(MSGT_DECVIDEO, MSGL_V, MSGTR_VideoAttributeNotSupportedByVO_VD,
            item);
@@ -155,10 +150,10 @@ int set_rectangle(sh_video_t *sh_video, int param, int value)
 
 void resync_video_stream(sh_video_t *sh_video)
 {
-    sh_video->timer = 0;
-    sh_video->next_frame_time = 0;
+    sh_video->timer            = 0;
+    sh_video->next_frame_time  = 0;
     sh_video->num_buffered_pts = 0;
-    sh_video->last_pts = MP_NOPTS_VALUE;
+    sh_video->last_pts         = MP_NOPTS_VALUE;
     if (mpvdec)
         mpvdec->control(sh_video, VDCTRL_RESYNC_STREAM, NULL);
 }
@@ -207,8 +202,7 @@ static int init_video(sh_video_t *sh_video, char *codecname, char *vfm,
                       int status, stringset_t *selected)
 {
     int force = 0;
-    unsigned int orig_fourcc =
-        sh_video->bih ? sh_video->bih->biCompression : 0;
+    unsigned int orig_fourcc = sh_video->bih ? sh_video->bih->biCompression : 0;
     sh_video->codec = NULL;
     sh_video->vf_initialized = 0;
     if (codecname && codecname[0] == '+') {
@@ -222,13 +216,10 @@ static int init_video(sh_video_t *sh_video, char *codecname, char *vfm,
         // restore original fourcc:
         if (sh_video->bih)
             sh_video->bih->biCompression = orig_fourcc;
-        if (!
-            (sh_video->codec =
-             find_video_codec(sh_video->format,
-                              sh_video->
-                              bih ? ((unsigned int *) &sh_video->bih->
-                                     biCompression) : NULL, sh_video->codec,
-                              force)))
+        if (!(sh_video->codec =
+              find_video_codec(sh_video->format,
+                               sh_video->bih ? ((unsigned int *) &sh_video->bih->biCompression) : NULL,
+                               sh_video->codec, force)))
             break;
         // ok we found one codec
         if (stringset_test(selected, sh_video->codec->name))
@@ -256,8 +247,8 @@ static int init_video(sh_video_t *sh_video, char *codecname, char *vfm,
             vd_functions_t *funcs_sym;
             vd_info_t *info_sym;
 
-            buf_len =
-                strlen(MPLAYER_LIBDIR) + strlen(sh_video->codec->drv) + 16;
+            buf_len = strlen(MPLAYER_LIBDIR) +
+                      strlen(sh_video->codec->drv) + 16;
             buf = malloc(buf_len);
             if (!buf)
                 break;
@@ -290,7 +281,7 @@ static int init_video(sh_video_t *sh_video, char *codecname, char *vfm,
                    sh_video->codec->name, sh_video->codec->drv);
             continue;
         }
-        orig_w = sh_video->bih ? sh_video->bih->biWidth : sh_video->disp_w;
+        orig_w = sh_video->bih ? sh_video->bih->biWidth  : sh_video->disp_w;
         orig_h = sh_video->bih ? sh_video->bih->biHeight : sh_video->disp_h;
         sh_video->disp_w = orig_w;
         sh_video->disp_h = orig_h;
@@ -301,7 +292,7 @@ static int init_video(sh_video_t *sh_video, char *codecname, char *vfm,
             sh_video->disp_h = (sh_video->disp_h + 15) & (~15);
         }
         if (sh_video->bih) {
-            sh_video->bih->biWidth = sh_video->disp_w;
+            sh_video->bih->biWidth  = sh_video->disp_w;
             sh_video->bih->biHeight = sh_video->disp_h;
         }
         // init()
@@ -315,7 +306,7 @@ static int init_video(sh_video_t *sh_video, char *codecname, char *vfm,
             sh_video->disp_w = orig_w;
             sh_video->disp_h = orig_h;
             if (sh_video->bih) {
-                sh_video->bih->biWidth = sh_video->disp_w;
+                sh_video->bih->biWidth  = sh_video->disp_w;
                 sh_video->bih->biHeight = sh_video->disp_h;
             }
             continue;           // try next...

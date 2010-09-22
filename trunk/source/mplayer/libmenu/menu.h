@@ -29,7 +29,10 @@ extern int menu_flip_hebrew;
 extern int menu_fribidi_flip_commas;
 extern int menu_keepdir;
 extern int menu_startup;
-
+extern double menu_mouse_x;
+extern double menu_mouse_y;
+extern int menu_mouse_pos_updated;
+extern const vf_info_t vf_info_menu;
 
 struct menu_priv_s;
 typedef struct  menu_s menu_t;

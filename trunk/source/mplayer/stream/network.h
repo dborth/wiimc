@@ -77,6 +77,8 @@ typedef struct {
 	int demuxer_type;
 } mime_struct_t;
 
+extern const mime_struct_t mime_type_table[];
+
 extern char *cookies_file;
 extern char *network_password;
 extern char *network_referrer;

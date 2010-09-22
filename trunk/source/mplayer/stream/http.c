@@ -42,9 +42,6 @@
 #include "network.h"
 #include "help_mp.h"
 
-
-extern const mime_struct_t mime_type_table[];
-extern int stream_cache_size;
 #ifdef GEKKO
 char streamtitle[128] = { 0 }; // ICY stream title
 char streamurl[128] = { 0 }; // ICY stream url

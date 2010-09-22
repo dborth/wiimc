@@ -26,7 +26,7 @@
 
 #include "stream/stream.h"
 #ifdef CONFIG_ASS
-#include "libass/ass_mp.h"
+#include "ass_mp.h"
 #endif
 #include "m_option.h"
 
@@ -182,6 +182,10 @@ extern int sub_demuxer_type;
 extern int audio_stream_cache;
 extern int correct_pts;
 extern int user_correct_pts;
+
+extern char *demuxer_name;
+extern char *audio_demuxer_name;
+extern char *sub_demuxer_name;
 extern char *sub_stream;
 
 extern int rtsp_port;

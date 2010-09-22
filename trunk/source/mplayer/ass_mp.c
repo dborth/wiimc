@@ -1,22 +1,20 @@
-// -*- c-basic-offset: 8; indent-tabs-mode: t -*-
-// vim:ts=8:sw=8:noet:ai:
 /*
  * Copyright (C) 2006 Evgeniy Stepanov <eugeni.stepanov@gmail.com>
  *
- * This file is part of libass.
+ * This file is part of MPlayer.
  *
- * libass is free software; you can redistribute it and/or modify
+ * MPlayer is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * libass is distributed in the hope that it will be useful,
+ * MPlayer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
- * with libass; if not, write to the Free Software Foundation, Inc.,
+ * with MPlayer; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
@@ -25,10 +23,13 @@
 #include <stdlib.h>
 
 #include "mp_msg.h"
+#include "mpcommon.h"
 #include "path.h"
+#include "subreader.h"
 
 #include "ass_mp.h"
 #include "help_mp.h"
+#include "libvo/font_load.h"
 #include "stream/stream.h"
 
 #ifdef CONFIG_FONTCONFIG
@@ -42,33 +43,13 @@ float ass_font_scale = 1.;
 float ass_line_spacing = 0.;
 int ass_top_margin = 0;
 int ass_bottom_margin = 0;
-#if defined(FC_VERSION) && (FC_VERSION >= 20402)
 int extract_embedded_fonts = 1;
-#else
-int extract_embedded_fonts = 0;
-#endif
 char **ass_force_style_list = NULL;
 int ass_use_margins = 0;
 char* ass_color = NULL;
 char* ass_border_color = NULL;
 char* ass_styles_file = NULL;
 int ass_hinting = ASS_HINTING_NATIVE + 4; // native hinting for unscaled osd
-
-#ifdef CONFIG_FONTCONFIG
-extern int font_fontconfig;
-#else
-static int font_fontconfig = -1;
-#endif
-extern char* font_name;
-extern char* sub_font_name;
-extern float text_font_scale_factor;
-extern int subtitle_autoscale;
-
-#ifdef CONFIG_ICONV
-extern char* sub_cp;
-#else
-static char* sub_cp = 0;
-#endif
 
 ASS_Track* ass_default_track(ASS_Library* library) {
 	ASS_Track* track = ass_new_track(library);
@@ -112,11 +93,7 @@ ASS_Track* ass_default_track(ASS_Library* library) {
 		style->BackColour = 0x00000000;
 		style->BorderStyle = 1;
 		style->Alignment = 2;
-#ifdef GEKKO
-		style->Outline = 1;
-#else
 		style->Outline = 2;
-#endif
 		style->MarginL = 10;
 		style->MarginR = 10;
 		style->MarginV = 5;

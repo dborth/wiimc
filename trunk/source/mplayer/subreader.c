@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+#include "ass_mp.h"
 #include "config.h"
 #include "mp_msg.h"
 #include "mpcommon.h"
@@ -38,7 +39,6 @@
 #include "stream/stream.h"
 #include "libavutil/common.h"
 #include "libavutil/avstring.h"
-#include "libass/ass_mp.h"
 
 #ifdef CONFIG_ENCA
 #include <enca.h>
@@ -56,8 +56,6 @@ char *fribidi_charset = NULL;   ///character set that will be passed to FriBiDi
 int flip_hebrew = 1;            ///flip subtitles using fribidi
 int fribidi_flip_commas = 0;    ///flip comma when fribidi is used
 #endif
-
-extern char* dvdsub_lang;
 
 /* Maximal length of line of a subtitle */
 #define LINE_LEN 1000

@@ -19,40 +19,27 @@
 #ifndef MPLAYER_MPLAYER_H
 #define MPLAYER_MPLAYER_H
 
-extern char* current_module;
-
-extern char ** audio_fm_list;
-extern char ** video_fm_list;
-extern char ** video_driver_list;
-extern char ** audio_driver_list;
-extern char * video_driver;
-extern char * audio_driver;
-extern float  audio_delay;
+extern char  *filename;
+extern char  *current_module;
+extern char **audio_fm_list;
+extern char **video_fm_list;
+extern char **video_driver_list;
+extern char **audio_driver_list;
 
 extern int osd_level;
 extern unsigned int osd_visible;
-
-extern char * font_name;
-extern char * sub_font_name;
-extern float  font_factor;
-extern double force_fps;
-
-//extern char **sub_name;
-extern int    sub_auto;
-
-extern char * filename;
-
-extern int stream_cache_size;
 extern int autosync;
-extern double start_pts;
 extern int frame_dropping;
+extern int slave_mode;
+extern int use_menu;
 
+extern float  audio_delay;
+extern double start_pts;
+
+/* for the GUI */
 extern int auto_quality;
-
-extern int audio_id;
-extern int video_id;
-extern int dvdsub_id;
-extern int vobsub_id;
+extern int disable_gui_conf;
+extern int stream_dump_type;
 
 void update_set_of_subtitles(void);
 

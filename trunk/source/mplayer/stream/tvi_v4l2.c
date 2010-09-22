@@ -1068,8 +1068,7 @@ static tvi_handle_t *tvi_init_v4l2(tv_param_t* tv_param)
 {
     tvi_handle_t *tvi_handle;
 
-    /* new_handle initializes priv with memset 0 */
-    tvi_handle = new_handle();
+    tvi_handle = tv_new_handle(sizeof(priv_t), &functions);
     if (!tvi_handle) {
         return NULL;
     }
@@ -1077,7 +1076,7 @@ static tvi_handle_t *tvi_init_v4l2(tv_param_t* tv_param)
 
     PRIV->video_dev = strdup(tv_param->device? tv_param->device: "/dev/video0");
     if (!PRIV->video_dev) {
-        free_handle(tvi_handle);
+        tv_free_handle(tvi_handle);
         return NULL;
     }
 
@@ -1085,7 +1084,7 @@ static tvi_handle_t *tvi_init_v4l2(tv_param_t* tv_param)
         PRIV->audio_dev = strdup(tv_param->adevice);
         if (!PRIV->audio_dev) {
             free(PRIV->video_dev);
-            free_handle(tvi_handle);
+            tv_free_handle(tvi_handle);
             return NULL;
         }
     }

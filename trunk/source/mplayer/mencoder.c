@@ -58,7 +58,6 @@
 #include "input/input.h"
 #include "libaf/af_format.h"
 #include "libao2/audio_out.h"
-#include "libass/ass_mp.h"
 #include "libavcodec/avcodec.h"
 #include "libmpcodecs/ae.h"
 #include "libmpcodecs/dec_audio.h"
@@ -84,6 +83,7 @@
 #include "stream/stream_dvd.h"
 #endif
 #include "stream/stream_dvdnav.h"
+#include "ass_mp.h"
 #include "codec-cfg.h"
 #include "edl.h"
 #include "help_mp.h"
@@ -98,6 +98,7 @@
 #include "spudec.h"
 #include "vobsub.h"
 #include "eosd.h"
+#include "mencoder.h"
 
 
 int vo_doublebuffering=0;
@@ -110,12 +111,8 @@ int forced_subs_only=0;
 // cache2:
 int stream_cache_size=-1;
 #ifdef CONFIG_STREAM_CACHE
-extern int cache_fill_status;
-
 float stream_cache_min_percent=20.0;
 float stream_cache_seek_min_percent=50.0;
-#else
-#define cache_fill_status 0
 #endif
 
 int audio_id=-1;
@@ -130,9 +127,6 @@ static char** audio_codec_list=NULL;  // override audio codec
 static char** video_codec_list=NULL;  // override video codec
 static char** audio_fm_list=NULL;     // override audio codec family
 static char** video_fm_list=NULL;     // override video codec family
-extern char *demuxer_name; // override demuxer
-extern char *audio_demuxer_name; // override audio demuxer
-extern char *sub_demuxer_name; // override sub demuxer
 
 static int out_audio_codec=-1;
 static int out_video_codec=-1;
@@ -184,7 +178,6 @@ static int play_n_frames_mf=-1;
 // sub:
 char *font_name=NULL;
 char *sub_font_name=NULL;
-extern int font_fontconfig;
 float font_factor=0.75;
 char **sub_name=NULL;
 float sub_delay=0;
@@ -906,7 +899,7 @@ mux_v->buffer=malloc(mux_v->buffer_size);
 mux_v->source=sh_video;
 
 mux_v->h.dwSampleSize=0; // VBR
-#ifdef CONFIG_LIBAVCODEC
+#ifdef CONFIG_FFMPEG
 {
     double fps = force_ofps?force_ofps:sh_video->fps*playback_speed;
     AVRational q= av_d2q(fps, fps*1001+2);
@@ -934,8 +927,8 @@ case VCODEC_COPY:
 		}
     else
     {
-	mux_v->bih=calloc(1,sizeof(BITMAPINFOHEADER));
-	mux_v->bih->biSize=sizeof(BITMAPINFOHEADER);
+	mux_v->bih=calloc(1,sizeof(*mux_v->bih));
+	mux_v->bih->biSize=sizeof(*mux_v->bih);
 	mux_v->bih->biWidth=sh_video->disp_w;
 	mux_v->bih->biHeight=sh_video->disp_h;
 	mux_v->bih->biCompression=sh_video->format;
@@ -974,8 +967,8 @@ case VCODEC_COPY:
     break;
 case VCODEC_FRAMENO:
 	if (!curfile) {
-    mux_v->bih=calloc(1,sizeof(BITMAPINFOHEADER));
-    mux_v->bih->biSize=sizeof(BITMAPINFOHEADER);
+    mux_v->bih=calloc(1,sizeof(*mux_v->bih));
+    mux_v->bih->biSize=sizeof(*mux_v->bih);
     mux_v->bih->biWidth=sh_video->disp_w;
     mux_v->bih->biHeight=sh_video->disp_h;
     mux_v->bih->biPlanes=1;
@@ -1161,11 +1154,11 @@ case ACODEC_COPY:
 	mencoder_exit(1,NULL);
     }
     if (sh_audio->wf){
-	mux_a->wf=malloc(sizeof(WAVEFORMATEX) + sh_audio->wf->cbSize);
-	memcpy(mux_a->wf, sh_audio->wf, sizeof(WAVEFORMATEX) + sh_audio->wf->cbSize);
+	mux_a->wf=malloc(sizeof(*mux_a->wf) + sh_audio->wf->cbSize);
+	memcpy(mux_a->wf, sh_audio->wf, sizeof(*mux_a->wf) + sh_audio->wf->cbSize);
 	if(!sh_audio->i_bps) sh_audio->i_bps=mux_a->wf->nAvgBytesPerSec;
     } else {
-	mux_a->wf = malloc(sizeof(WAVEFORMATEX));
+	mux_a->wf = malloc(sizeof(*mux_a->wf));
 	mux_a->wf->nBlockAlign = 1; //mux_a->h.dwSampleSize;
 	mux_a->wf->wFormatTag = sh_audio->format;
 	mux_a->wf->nChannels = sh_audio->channels;

@@ -32,7 +32,7 @@
 #include "libmpcodecs/dec_teletext.h"
 #include "osdep/timer.h"
 
-#include "mplayer.h"
+#include "mpcommon.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 #include "video_out.h"
@@ -197,7 +197,7 @@ inline static void vo_update_text_osd(mp_osd_obj_t* obj,int dxs,int dys){
 	int font;
 
         obj->bbox.x1=obj->x=x;
-        obj->bbox.y1=obj->y=20;
+        obj->bbox.y1=obj->y=10;
 
         while (*cp){
           uint16_t c=utf8_get_char(&cp);
@@ -1099,7 +1099,9 @@ static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
     int chg=0;
 #ifdef CONFIG_FREETYPE
     static int defer_counter = 0;
+#endif
 
+#ifdef CONFIG_FREETYPE
     // here is the right place to get screen dimensions
     if (((dxs != vo_image_width)
 	   && (subtitle_autoscale == 2 || subtitle_autoscale == 3))
@@ -1294,7 +1296,6 @@ void vo_draw_text_ext(int dxs, int dys, int left_border, int top_border,
 }
 
 void vo_draw_text(int dxs, int dys, void (*draw_alpha)(int x0, int y0, int w,int h, unsigned char* src, unsigned char *srca, int stride)) {
-  if(!vo_osd_list)return;
   vo_draw_text_ext(dxs, dys, 0, 0, 0, 0, dxs, dys, draw_alpha);
 }
 

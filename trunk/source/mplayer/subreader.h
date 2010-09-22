@@ -26,6 +26,8 @@
 extern int suboverlap_enabled;
 extern int sub_no_text_pp;  // disable text post-processing
 extern int sub_match_fuzziness;
+extern int sub_format;
+extern char *sub_cp;
 
 // subtitle formats
 #define SUB_INVALID   -1
@@ -43,9 +45,6 @@ extern int sub_match_fuzziness;
 #define SUB_SUBRIP09 11
 #define SUB_JACOSUB  12
 #define SUB_MPL2     13
-
-// One of the SUB_* constant above
-extern int sub_format;
 
 #define MAX_SUBTITLE_FILES 128
 

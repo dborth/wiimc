@@ -23,7 +23,7 @@
 ** For more info contact Ahead Software through Mpeg4AAClicense@nero.com.
 **
 ** Initially modified for use with MPlayer by Arpad Gereöffy on 2003/08/30
-** $Id: common.h 29443 2009-07-26 19:53:00Z diego $
+** $Id: common.h 32335 2010-09-21 13:04:05Z diego $
 ** detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
 ** local_changes.diff contains the exact changes to this file.
 **/
@@ -305,7 +305,7 @@ char *strchr(), *strrchr();
   }
 
 
-  #if defined(_WIN32) && !defined(__MINGW32__) && !HAVE_LRINTF
+  #if defined(_WIN32) && !defined(__MINGW32__)
     #define HAS_LRINTF
     static INLINE int lrintf(float f)
     {
@@ -317,7 +317,7 @@ char *strchr(), *strrchr();
         }
         return i;
     }
-  #elif (defined(__i386__) && defined(__GNUC__)) && !HAVE_LRINTF
+  #elif (defined(__i386__) && defined(__GNUC__))
     #define HAS_LRINTF
     // from http://www.stereopsis.com/FPU.html
     static INLINE int lrintf(float f)
@@ -348,7 +348,7 @@ char *strchr(), *strrchr();
 
 #include <math.h>
 
-#if HAVE_LRINTF
+#ifdef HAVE_LRINTF
 #  define HAS_LRINTF
 #  define _ISOC9X_SOURCE 1
 #  define _ISOC99_SOURCE 1

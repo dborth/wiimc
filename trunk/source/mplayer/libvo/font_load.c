@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "font_load.h"
+#include "sub.h"
 #include "mp_msg.h"
 
 raw_file* load_raw(char *name,int verbose){
@@ -62,8 +63,6 @@ err_out:
     free(raw);
     return NULL;
 }
-
-extern int sub_unicode;
 
 font_desc_t* read_font_desc(const char* fname,float factor,int verbose){
 unsigned char sor[1024];
@@ -184,10 +183,12 @@ while(fgets(sor,1020,f)){
 #endif
 
   if(strcmp(section,"[files]")==0){
-      //char *default_dir=MPLAYER_DATADIR FONT_PATH_SEP "font";
+#ifdef GEKKO
       char default_dir[100];
       sprintf(default_dir,"%s%s",MPLAYER_DATADIR,"/font");
-
+#else
+      char *default_dir=MPLAYER_DATADIR FONT_PATH_SEP "font";
+#endif
       if(pdb==2 && strcmp(p[0],"alpha")==0){
     	  char *cp;
 	  if (!(cp=malloc(strlen(desc->fpath)+strlen(p[1])+2))) goto fail_out;

@@ -485,10 +485,15 @@ int attribute_align_arg avcodec_open(AVCodecContext *avctx, AVCodec *codec)
     else if(avctx->width && avctx->height)
         avcodec_set_dimensions(avctx, avctx->width, avctx->height);
 
+    if ((avctx->coded_width || avctx->coded_height || avctx->width || avctx->height)
+        && (  av_image_check_size(avctx->coded_width, avctx->coded_height, 0, avctx) < 0
+           || av_image_check_size(avctx->width,       avctx->height,       0, avctx) < 0)) {
+        av_log(avctx, AV_LOG_WARNING, "ignoring invalid width/height values\n");
+        avcodec_set_dimensions(avctx, 0, 0);
+    }
+
 #define SANE_NB_CHANNELS 128U
-    if (((avctx->coded_width || avctx->coded_height)
-        && av_image_check_size(avctx->coded_width, avctx->coded_height, 0, avctx))
-        || avctx->channels > SANE_NB_CHANNELS) {
+    if (avctx->channels > SANE_NB_CHANNELS) {
         ret = AVERROR(EINVAL);
         goto free_and_end;
     }
@@ -504,14 +509,13 @@ int attribute_align_arg avcodec_open(AVCodecContext *avctx, AVCodec *codec)
         goto free_and_end;
     }
     avctx->frame_number = 0;
-    if(avctx->codec->init){
-        if(avctx->codec_type == AVMEDIA_TYPE_VIDEO &&
-           avctx->codec->max_lowres < avctx->lowres){
-            av_log(avctx, AV_LOG_ERROR, "The maximum value for lowres supported by the decoder is %d\n",
-                   avctx->codec->max_lowres);
-            goto free_and_end;
-        }
+    if (avctx->codec->max_lowres < avctx->lowres) {
+        av_log(avctx, AV_LOG_ERROR, "The maximum value for lowres supported by the decoder is %d\n",
+               avctx->codec->max_lowres);
+        goto free_and_end;
+    }
 
+    if(avctx->codec->init){
         ret = avctx->codec->init(avctx);
         if (ret < 0) {
             goto free_and_end;

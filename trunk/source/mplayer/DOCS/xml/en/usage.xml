@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 32066 $ -->
+<!-- $Revision: 32132 $ -->
 <chapter id="usage">
 <title>Usage</title>
 
@@ -746,7 +746,6 @@ the slaves to exit as well.
 </para>
 
 </sect1>
-</chapter>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 

@@ -33,10 +33,10 @@
 
 extern float sub_aspect;
 extern play_tree_t* playtree;
-extern m_config_t* mconfig;
 extern int sub_window;
 extern int console;
 extern NOTIFYICONDATA nid;
+extern char *codecname;
 
 typedef struct window_priv_t window_priv_t;
 struct window_priv_t

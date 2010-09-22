@@ -93,7 +93,6 @@ char *vo_wintitle;
 extern const vo_functions_t video_out_mga;
 extern const vo_functions_t video_out_xmga;
 extern const vo_functions_t video_out_x11;
-extern vo_functions_t video_out_xover;
 extern const vo_functions_t video_out_xvmc;
 extern const vo_functions_t video_out_vdpau;
 extern const vo_functions_t video_out_xv;
@@ -111,9 +110,7 @@ extern const vo_functions_t video_out_null;
 extern const vo_functions_t video_out_zr;
 extern const vo_functions_t video_out_zr2;
 extern const vo_functions_t video_out_bl;
-extern vo_functions_t video_out_fbdev;
 extern const vo_functions_t video_out_fbdev2;
-extern vo_functions_t video_out_svga;
 extern const vo_functions_t video_out_png;
 extern const vo_functions_t video_out_ggi;
 extern const vo_functions_t video_out_aa;
@@ -129,12 +126,8 @@ extern const vo_functions_t video_out_ivtv;
 extern const vo_functions_t video_out_v4l2;
 extern const vo_functions_t video_out_jpeg;
 extern const vo_functions_t video_out_gif89a;
-extern vo_functions_t video_out_vesa;
 extern const vo_functions_t video_out_directfb;
 extern const vo_functions_t video_out_dfbmga;
-extern vo_functions_t video_out_xvidix;
-extern vo_functions_t video_out_winvidix;
-extern vo_functions_t video_out_cvidix;
 extern const vo_functions_t video_out_tdfx_vid;
 extern const vo_functions_t video_out_xvr100;
 extern const vo_functions_t video_out_tga;
@@ -143,6 +136,16 @@ extern const vo_functions_t video_out_quartz;
 extern const vo_functions_t video_out_pnm;
 extern const vo_functions_t video_out_md5sum;
 extern const vo_functions_t video_out_gekko;
+
+/* The following declarations are _not_ const because functions pointers
+ * get overloaded during (re)initialization. */
+extern vo_functions_t video_out_cvidix;
+extern vo_functions_t video_out_fbdev;
+extern vo_functions_t video_out_svga;
+extern vo_functions_t video_out_vesa;
+extern vo_functions_t video_out_winvidix;
+extern vo_functions_t video_out_xover;
+extern vo_functions_t video_out_xvidix;
 
 const vo_functions_t* const video_out_drivers[] =
 {
@@ -251,8 +254,6 @@ const vo_functions_t* const video_out_drivers[] =
 #endif
 #ifdef CONFIG_DIRECTFB
         &video_out_directfb,
-#endif
-#ifdef CONFIG_DFBMGA
         &video_out_dfbmga,
 #endif
 #ifdef CONFIG_VIDIX
@@ -276,7 +277,7 @@ const vo_functions_t* const video_out_drivers[] =
 #ifdef CONFIG_YUV4MPEG
         &video_out_yuv4mpeg,
 #endif
-#ifdef CONFIG_LIBAVCODEC
+#ifdef CONFIG_FFMPEG
         &video_out_png,
 #endif
 #ifdef CONFIG_JPEG

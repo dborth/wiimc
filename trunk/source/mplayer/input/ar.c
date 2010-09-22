@@ -29,10 +29,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "mplayer.h"
 #include "input.h"
 #include "ar.h"
-
-extern int slave_mode;
 
 extern const double NSAppKitVersionNumber;
 
@@ -303,7 +302,7 @@ mp_input_ar_init_error:
     return -1;
 }
 
-int is_mplayer_front(void)
+static int is_mplayer_front(void)
 {
     ProcessSerialNumber myProc, frProc;
     Boolean sameProc;

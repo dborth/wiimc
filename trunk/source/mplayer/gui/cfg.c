@@ -21,12 +21,15 @@
 #include <string.h>
 
 #include "config.h"
+#include "ass_mp.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 #include "mixer.h"
+#include "mpcommon.h"
 #include "mplayer.h"
 #include "m_config.h"
 #include "m_option.h"
+#include "parser-cfg.h"
 #include "path.h"
 #include "libmpcodecs/vd.h"
 #include "libvo/sub.h"
@@ -34,7 +37,6 @@
 #include "libvo/x11_common.h"
 #include "stream/stream.h"
 #include "libmpdemux/demuxer.h"
-#include "libass/ass_mp.h"
 
 #include "cfg.h"
 #include "app.h"
@@ -47,9 +49,7 @@
 int    gtkEnableAudioEqualizer = 0;
 
 int    gtkVfPP = 0;
-#ifdef CONFIG_LIBAVCODEC
- int    gtkVfLAVC = 0;
-#endif
+int    gtkVfLAVC = 0;
 
 int    gtkAONorm = 0;
 int    gtkAOSurround = 0;
@@ -100,9 +100,6 @@ gtkASS_t gtkASS;
 #endif
 // ---
 
-extern int    disable_gui_conf;
-int m_config_parse_config_file(m_config_t* config, char *conffile);
-
 static m_config_t * gui_conf;
 static const m_option_t gui_opts[] =
 {
@@ -125,9 +122,7 @@ static const m_option_t gui_opts[] =
 
  { "vf_pp",&gtkVfPP,CONF_TYPE_FLAG,0,0,1,NULL },
  { "vf_autoq",&auto_quality,CONF_TYPE_INT,CONF_RANGE,0,100,NULL },
-#ifdef CONFIG_LIBAVCODEC
  { "vf_lavc",&gtkVfLAVC,CONF_TYPE_FLAG,0,0,1,NULL },
-#endif
 
  { "ao_driver",&audio_driver_list,CONF_TYPE_STRING_LIST,0,0,0,NULL },
  { "ao_volnorm",&gtkAONorm,CONF_TYPE_FLAG,0,0,1,NULL },

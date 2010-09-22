@@ -45,40 +45,6 @@ static const tvi_functions_t functions =
     get_audio_framesize
 };
 
-static tvi_handle_t *new_handle(void)
-{
-    tvi_handle_t *h = malloc(sizeof(tvi_handle_t));
-
-    if (!h)
-	return NULL;
-    h->priv = malloc(sizeof(priv_t));
-    if (!h->priv)
-    {
-	free(h);
-	return NULL;
-    }
-    memset(h->priv, 0, sizeof(priv_t));
-    h->functions = &functions;
-    h->seq = 0;
-    h->chanlist = -1;
-    h->chanlist_s = NULL;
-    h->norm = -1;
-    h->channel = -1;
-    h->scan = NULL;
-    return h;
-}
-
-static void free_handle(tvi_handle_t *h)
-{
-    if (h) {
-	if (h->priv)
-	    free(h->priv);
-	if (h->scan)
-	    free(h->scan);
-	free(h);
-    }
-}
-
 /**
  Fills video frame in given buffer with blue color for yv12,i420,uyvy,yuy2.
  Other formats will be filled with 0xC0

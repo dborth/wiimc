@@ -25,7 +25,7 @@
 #include "config.h"
 #include "mp_msg.h"
 #include "help_mp.h"
-
+#include "mencoder.h"
 #include "aviheader.h"
 #include "ms_hdr.h"
 #include "av_opts.h"
@@ -41,14 +41,6 @@
 #include "mp_taglists.h"
 
 enum PixelFormat imgfmt2pixfmt(int fmt);
-
-extern char *info_name;
-extern char *info_artist;
-extern char *info_genre;
-extern char *info_subject;
-extern char *info_copyright;
-extern char *info_sourceform;
-extern char *info_comment;
 
 #define BIO_BUFFER_SIZE 32768
 
@@ -237,9 +229,9 @@ static void fix_parameters(muxer_stream_t *stream)
 		ctx->bit_rate = 800000;
 		ctx->time_base.den = stream->h.dwRate;
 		ctx->time_base.num = stream->h.dwScale;
-		if(stream->bih+1 && (stream->bih->biSize > sizeof(BITMAPINFOHEADER)))
+		if(stream->bih && (stream->bih->biSize > sizeof(*stream->bih)))
 		{
-			ctx->extradata_size = stream->bih->biSize - sizeof(BITMAPINFOHEADER);
+			ctx->extradata_size = stream->bih->biSize - sizeof(*stream->bih);
 			ctx->extradata = av_malloc(ctx->extradata_size);
 			if(ctx->extradata != NULL)
 				memcpy(ctx->extradata, stream->bih+1, ctx->extradata_size);
@@ -320,7 +312,6 @@ static void list_formats(void) {
 		mp_msg(MSGT_DEMUX, MSGL_INFO, "%15s : %s\n", fmt->name, fmt->long_name);
 }
 
-extern char *out_filename;
 int muxer_init_muxer_lavf(muxer_t *muxer)
 {
 	muxer_priv_t *priv;

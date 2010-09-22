@@ -629,7 +629,7 @@ void DefaultSettings ()
 	WiiSettings.subtitleLanguage[0] = 0;
 	WiiSettings.subtitleCodepage[0] = 0;
 	sprintf(WiiSettings.subtitleColor, "FFFFFF00");
-	WiiSettings.subtitleSize = 2.0;
+	WiiSettings.subtitleSize = 2.5;
 }
 
 /****************************************************************************

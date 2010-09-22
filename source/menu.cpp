@@ -699,7 +699,7 @@ static void *GuiThread (void *arg)
 				controlledbygui == 1)
 			ExitRequested = 1; // exit program
 
-		if(ExitRequested || ShutdownRequested)
+		if(ExitRequested)
 		{
 			for(i = 0; i <= 255; i += 15)
 			{
@@ -942,7 +942,7 @@ void DisableMainWindow()
 int
 WindowPrompt(const char *title, wchar_t *msg, const char *btn1Label, const char *btn2Label)
 {
-	if(!mainWindow || ExitRequested || ShutdownRequested)
+	if(!mainWindow || ExitRequested)
 		return 0;
 
 	int choice = -1;
@@ -1258,7 +1258,7 @@ ShowProgress (const char *msg, int done, int total)
 	if(progressthread == LWP_THREAD_NULL || guiShutdown)
 		return;
 
-	if(!mainWindow || ExitRequested || ShutdownRequested)
+	if(!mainWindow || ExitRequested)
 		return;
 
 	if(total <= 0 || done < 0) // invalid values
@@ -1289,7 +1289,7 @@ ShowProgress (const char *msg, int done, int total)
 void
 ShowAction (const char *msg)
 {
-	if(!mainWindow || ExitRequested || ShutdownRequested)
+	if(!mainWindow || ExitRequested)
 		return;
 
 	if(progressthread == LWP_THREAD_NULL || guiShutdown)

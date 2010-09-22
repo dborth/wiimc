@@ -77,7 +77,6 @@
 #include "gui/interface.h"
 #include "input/input.h"
 #include "libao2/audio_out.h"
-#include "libass/ass_mp.h"
 #include "libavutil/avstring.h"
 #include "libavutil/intreadwrite.h"
 #include "libmenu/menu.h"
@@ -98,6 +97,7 @@
 #include "stream/stream_radio.h"
 #include "stream/tv.h"
 #include "access_mpcontext.h"
+#include "ass_mp.h"
 #include "cfg-mplayer-def.h"
 #include "codec-cfg.h"
 #include "command.h"
@@ -129,9 +129,7 @@
 #include "osdep/getch2.h"
 #include "osdep/timer.h"
 #ifndef GEKKO
-#ifdef CONFIG_NETWORKING
 #include "udp_sync.h"
-#endif /* CONFIG_NETWORKING */
 #endif
 #ifdef CONFIG_X11
 #include "libvo/x11_common.h"
@@ -285,11 +283,6 @@ char **video_codec_list=NULL; // override video codec
 char **audio_fm_list=NULL;    // override audio codec family
 char **video_fm_list=NULL;    // override video codec family
 
-// demuxer:
-extern char *demuxer_name; // override demuxer
-extern char *audio_demuxer_name; // override audio demuxer
-extern char *sub_demuxer_name; // override sub demuxer
-
 // streaming:
 int audio_id=-1;
 int video_id=-1;
@@ -314,12 +307,8 @@ int file_filter=1;
 #endif
        
 #ifdef CONFIG_STREAM_CACHE
-extern float cache_fill_status;
-
 float stream_cache_min_percent=30.0;
 float stream_cache_seek_min_percent=50.0;
-#else
-#define cache_fill_status 0
 #endif
 
 // dump:
@@ -349,7 +338,6 @@ char** audio_driver_list=NULL;
 // sub:
 char *font_name=NULL;
 char *sub_font_name=NULL;
-extern int font_fontconfig;
 float font_factor=0.75;
 char **sub_name=NULL;
 float sub_delay=0;
@@ -364,8 +352,7 @@ char* current_module=NULL; // for debugging
 
 
 #ifdef CONFIG_MENU
-extern vf_info_t vf_info_menu;
-static vf_info_t* libmenu_vfs[] = {
+static const vf_info_t* const libmenu_vfs[] = {
   &vf_info_menu,
   NULL
 };

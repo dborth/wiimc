@@ -34,6 +34,8 @@
 #include "audio_out_internal.h"
 #include "libaf/af_format.h"
 #include "libmpdemux/mpeg_packetizer.h"
+#include "libvo/vo_dxr2.h"
+#include "libvo/video_out.h" /* only for vo_pts */
 
 
 static const ao_info_t info =
@@ -48,7 +50,6 @@ LIBAO_EXTERN(dxr2)
 
 static int volume=19;
 static int last_freq_id = -1;
-extern int dxr2_fd;
 
 // to set/get/query special features/parameters
 static int control(int cmd,void *arg){
@@ -164,7 +165,6 @@ static void audio_resume(void)
 {
 }
 
-extern int vo_pts;
 // return: how many bytes can be played without blocking
 static int get_space(void){
     float x=(float)(vo_pts-ao_data.pts)/90000.0;

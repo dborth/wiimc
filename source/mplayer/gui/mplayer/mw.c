@@ -49,6 +49,7 @@
 #include "m_option.h"
 #include "m_property.h"
 #include "mp_core.h"
+#include "mpcommon.h"
 
 #define GUI_REDRAW_WAIT 375
 
@@ -369,7 +370,6 @@ set_volume:
    case evRedraw:
         {
           unsigned now = GetTimerMS();
-          extern int mplPBFade;
           if ((now > last_redraw_time) &&
               (now < last_redraw_time + GUI_REDRAW_WAIT) &&
               !mplPBFade)

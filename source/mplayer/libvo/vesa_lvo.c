@@ -60,29 +60,6 @@ uint32_t vlvo_control(uint32_t request, void *data, ...);
 #define SCREEN_LINE_SIZE(pixel_size) (video_mode_info.XResolution*(pixel_size) )
 #define IMAGE_LINE_SIZE(pixel_size) (image_width*(pixel_size))
 
-extern vo_functions_t video_out_vesa;
-
-int vlvo_preinit(const char *drvname)
-{
-  mp_msg(MSGT_VO,MSGL_WARN, MSGTR_LIBVO_VESA_ThisBranchIsNoLongerSupported);
-  return -1;
-  if( mp_msg_test(MSGT_VO,MSGL_DBG2) ) {
-    mp_msg(MSGT_VO,MSGL_DBG2, "vesa_lvo: vlvo_preinit(%s) was called\n",drvname);}
-	lvo_handler = open(drvname,O_RDWR);
-	if(lvo_handler == -1)
-	{
- 		mp_msg(MSGT_VO,MSGL_WARN, MSGTR_LIBVO_VESA_CouldntOpen,drvname);
-		return -1;
-	}
-	/* we are able to tune up this stuff depend on fourcc format */
-	video_out_vesa.draw_slice=vlvo_draw_slice;
-	video_out_vesa.draw_frame=vlvo_draw_frame;
-	video_out_vesa.flip_page=vlvo_flip_page;
-	video_out_vesa.draw_osd=vlvo_draw_osd;
-  video_out_vesa.control=vlvo_control;
-	return 0;
-}
-
 int      vlvo_init(unsigned src_width,unsigned src_height,
 		   unsigned x_org,unsigned y_org,unsigned dst_width,
 		   unsigned dst_height,unsigned format,unsigned dest_bpp)
@@ -166,7 +143,8 @@ void vlvo_term( void )
 	if(lvo_handler != -1) close(lvo_handler);
 }
 
-uint32_t vlvo_draw_slice_420(uint8_t *image[], int stride[], int w,int h,int x,int y)
+static uint32_t vlvo_draw_slice_420(uint8_t *image[], int stride[],
+                                    int w, int h, int x, int y)
 {
     uint8_t *src;
     uint8_t *dest;
@@ -206,7 +184,8 @@ uint32_t vlvo_draw_slice_420(uint8_t *image[], int stride[], int w,int h,int x,i
     return 0;
 }
 
-uint32_t vlvo_draw_slice(uint8_t *image[], int stride[], int w,int h,int x,int y)
+static uint32_t vlvo_draw_slice(uint8_t *image[], int stride[],
+                                int w, int h, int x, int y)
 {
  if( mp_msg_test(MSGT_VO,MSGL_DBG2) ) {
    mp_msg(MSGT_VO,MSGL_DBG2, "vesa_lvo: vlvo_draw_slice() was called\n");}
@@ -224,7 +203,7 @@ uint32_t vlvo_draw_slice(uint8_t *image[], int stride[], int w,int h,int x,int y
  return 0;
 }
 
-uint32_t vlvo_draw_frame(uint8_t *image[])
+static uint32_t vlvo_draw_frame(uint8_t *image[])
 {
 /* Note it's very strange but sometime for YUY2 draw_frame is called */
   fast_memcpy(lvo_mem,image[0],mga_vid_config.frame_size);
@@ -233,7 +212,7 @@ uint32_t vlvo_draw_frame(uint8_t *image[])
   return 0;
 }
 
-void     vlvo_flip_page(void)
+static void vlvo_flip_page(void)
 {
   if( mp_msg_test(MSGT_VO,MSGL_DBG2) ) {
     mp_msg(MSGT_VO,MSGL_DBG2, "vesa_lvo: vlvo_draw_osd() was called\n");}
@@ -294,7 +273,7 @@ static void draw_alpha(int x0,int y0, int w,int h, unsigned char* src, unsigned 
 }
 #endif
 
-void     vlvo_draw_osd(void)
+static void vlvo_draw_osd(void)
 {
   if( mp_msg_test(MSGT_VO,MSGL_DBG2) ) {
     mp_msg(MSGT_VO,MSGL_DBG2,"vesa_lvo: vlvo_draw_osd() was called\n"); }
@@ -307,7 +286,31 @@ void     vlvo_draw_osd(void)
 #endif
 }
 
-uint32_t vlvo_query_info(uint32_t format)
+extern vo_functions_t video_out_vesa;
+
+int vlvo_preinit(const char *drvname)
+{
+  mp_msg(MSGT_VO, MSGL_WARN, MSGTR_LIBVO_VESA_ThisBranchIsNoLongerSupported);
+  return -1;
+  if (mp_msg_test(MSGT_VO, MSGL_DBG2)) {
+      mp_msg(MSGT_VO, MSGL_DBG2,
+             "vesa_lvo: vlvo_preinit(%s) was called\n", drvname);
+  }
+  lvo_handler = open(drvname,O_RDWR);
+  if (lvo_handler == -1) {
+      mp_msg(MSGT_VO, MSGL_WARN, MSGTR_LIBVO_VESA_CouldntOpen, drvname);
+      return -1;
+  }
+  /* we are able to tune up this stuff depend on fourcc format */
+  video_out_vesa.draw_slice = vlvo_draw_slice;
+  video_out_vesa.draw_frame = vlvo_draw_frame;
+  video_out_vesa.flip_page  = vlvo_flip_page;
+  video_out_vesa.draw_osd   = vlvo_draw_osd;
+  video_out_vesa.control    = vlvo_control;
+  return 0;
+}
+
+static uint32_t vlvo_query_info(uint32_t format)
 {
   if( mp_msg_test(MSGT_VO,MSGL_DBG2) ) {
     mp_msg(MSGT_VO,MSGL_DBG2, "vesa_lvo: query_format was called: %x (%s)\n",format,vo_format_name(format)); }

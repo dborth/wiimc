@@ -81,6 +81,42 @@ static const tvi_info_t* tvi_driver_list[]={
     NULL
 };
 
+tvi_handle_t *tv_new_handle(int size, const tvi_functions_t *functions)
+{
+    tvi_handle_t *h = malloc(sizeof(*h));
+
+    if (!h)
+        return NULL;
+
+    h->priv = calloc(1, size);
+
+    if (!h->priv) {
+        free(h);
+        return NULL;
+    }
+
+    h->functions  = functions;
+    h->seq        = 0;
+    h->chanlist   = -1;
+    h->chanlist_s = NULL;
+    h->norm       = -1;
+    h->channel    = -1;
+    h->scan       = NULL;
+
+    return h;
+}
+
+void tv_free_handle(tvi_handle_t *h)
+{
+    if (h) {
+        if (h->priv)
+            free(h->priv);
+        if (h->scan)
+            free(h->scan);
+        free(h);
+    }
+}
+
 void tv_start_scan(tvi_handle_t *tvh, int start)
 {
     mp_msg(MSGT_TV,MSGL_INFO,"start scan\n");
@@ -798,7 +834,7 @@ static demuxer_t* demux_open_tv(demuxer_t *demuxer)
 	    sh_audio->channels;
 
 	// emulate WF for win32 codecs:
-	sh_audio->wf = malloc(sizeof(WAVEFORMATEX));
+	sh_audio->wf = malloc(sizeof(*sh_audio->wf));
 	sh_audio->wf->wFormatTag = sh_audio->format;
 	sh_audio->wf->nChannels = sh_audio->channels;
 	sh_audio->wf->wBitsPerSample = sh_audio->samplesize * 8;

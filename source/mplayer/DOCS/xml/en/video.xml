@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 31821 $ -->
+<!-- $Revision: 32283 $ -->
 <chapter id="video">
 <title>Video output devices</title>
 
@@ -1024,11 +1024,6 @@ at least.)
   Currently it's available only for <emphasis role="bold">Linux</emphasis>.
 </para></listitem>
 </itemizedlist>
-
-<important><para>
-Don't use this driver with <emphasis role="bold">GCC 2.96</emphasis>!
-It won't work!
-</para></important>
 
 <variablelist>
 <title>COMMAND LINE OPTIONS AVAILABLE FOR VESA</title>

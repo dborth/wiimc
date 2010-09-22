@@ -157,7 +157,7 @@ static int init(int rate, int channels, int format, int flags)
 	return CONTROL_TRUE;
 }
 
-static void uninit(int immed)
+static void reset(void)
 {
 	AUDIO_RegisterDMACallback(NULL);
 
@@ -174,6 +174,13 @@ static void uninit(int immed)
 		memset(buffers[counter], 0, BUFFER_SIZE);
 		DCFlushRange(buffers[counter], BUFFER_SIZE);
 	}
+	AUDIO_RegisterDMACallback(switch_buffers);
+}
+
+static void uninit(int immed)
+{
+	reset();
+	AUDIO_RegisterDMACallback(NULL);
 }
 
 static void audio_pause(void)

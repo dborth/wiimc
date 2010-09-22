@@ -107,13 +107,6 @@ static int min_fill=0;
 
 float cache_fill_status=0;
 
-static void cache_stats(cache_vars_t *s)
-{
-  int newb=s->max_filepos-s->read_filepos; // new bytes in the buffer
-  //mp_msg(MSGT_CACHE,MSGL_INFO,"0x%06X  [0x%06X]  0x%06X   ",(int)s->min_filepos,(int)s->read_filepos,(int)s->max_filepos);
-  //mp_msg(MSGT_CACHE,MSGL_INFO,"%3d %%  (%3d%%)\n",100*newb/s->buffer_size,100*min_fill/s->buffer_size);
-}
-
 static int cache_read(cache_vars_t *s, unsigned char *buf, int size)
 {
   int total=0;
@@ -561,7 +554,6 @@ static void ThreadProc( void *s ){
     if(!cache_fill(s)){
 	 usec_sleep(FILL_USLEEP_TIME); // idle
     }else usec_sleep(500);
-//	 cache_stats(s->cache_data);
 #ifndef GEKKO
   } while (cache_execute_control(s));
 #else
@@ -595,8 +587,6 @@ int cache_stream_fill_buffer(stream_t *s){
   int len;
   int sector_size;
   if(!s->cache_pid) return stream_fill_buffer(s);
-
-//  cache_stats(s->cache_data);
 
   if(s->pos!=((cache_vars_t*)s->cache_data)->read_filepos) mp_msg(MSGT_CACHE,MSGL_ERR,"!!! read_filepos differs!!! report this bug...\n");
   sector_size = ((cache_vars_t*)s->cache_data)->sector_size;

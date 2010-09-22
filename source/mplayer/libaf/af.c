@@ -25,34 +25,34 @@
 #include "af.h"
 
 // Static list of filters
-extern af_info_t af_info_dummy;
-extern af_info_t af_info_delay;
-extern af_info_t af_info_channels;
-extern af_info_t af_info_format;
-extern af_info_t af_info_resample;
-extern af_info_t af_info_volume;
-extern af_info_t af_info_equalizer;
-extern af_info_t af_info_gate;
-extern af_info_t af_info_comp;
-extern af_info_t af_info_pan;
-extern af_info_t af_info_surround;
-extern af_info_t af_info_sub;
-extern af_info_t af_info_export;
-extern af_info_t af_info_volnorm;
-extern af_info_t af_info_extrastereo;
-extern af_info_t af_info_lavcac3enc;
-extern af_info_t af_info_lavcresample;
-extern af_info_t af_info_sweep;
-extern af_info_t af_info_hrtf;
-extern af_info_t af_info_ladspa;
-extern af_info_t af_info_center;
-extern af_info_t af_info_sinesuppress;
-extern af_info_t af_info_karaoke;
-extern af_info_t af_info_scaletempo;
-extern af_info_t af_info_stats;
-extern af_info_t af_info_bs2b;
+extern const af_info_t af_info_dummy;
+extern const af_info_t af_info_delay;
+extern const af_info_t af_info_channels;
+extern const af_info_t af_info_format;
+extern const af_info_t af_info_resample;
+extern const af_info_t af_info_volume;
+extern const af_info_t af_info_equalizer;
+extern const af_info_t af_info_gate;
+extern const af_info_t af_info_comp;
+extern const af_info_t af_info_pan;
+extern const af_info_t af_info_surround;
+extern const af_info_t af_info_sub;
+extern const af_info_t af_info_export;
+extern const af_info_t af_info_volnorm;
+extern const af_info_t af_info_extrastereo;
+extern const af_info_t af_info_lavcac3enc;
+extern const af_info_t af_info_lavcresample;
+extern const af_info_t af_info_sweep;
+extern const af_info_t af_info_hrtf;
+extern const af_info_t af_info_ladspa;
+extern const af_info_t af_info_center;
+extern const af_info_t af_info_sinesuppress;
+extern const af_info_t af_info_karaoke;
+extern const af_info_t af_info_scaletempo;
+extern const af_info_t af_info_stats;
+extern const af_info_t af_info_bs2b;
 
-static af_info_t* filter_list[]={
+static const af_info_t * const filter_list[] = {
    &af_info_dummy,
    &af_info_delay,
    &af_info_channels,
@@ -70,10 +70,10 @@ static af_info_t* filter_list[]={
 #endif
    &af_info_volnorm,
    &af_info_extrastereo,
-#ifdef CONFIG_LIBAVCODEC_A
+#ifdef CONFIG_FFMPEG_A
    &af_info_lavcac3enc,
 #endif
-#ifdef CONFIG_LIBAVCODEC
+#ifdef CONFIG_FFMPEG
    &af_info_lavcresample,
 #endif
    &af_info_sweep,
@@ -97,7 +97,7 @@ int* af_cpu_speed = NULL;
 
 /* Find a filter in the static list of filters using it's name. This
    function is used internally */
-static af_info_t* af_find(char*name)
+static const af_info_t* af_find(char*name)
 {
   int i=0;
   while(filter_list[i]){
@@ -470,7 +470,7 @@ int af_init(af_stream_t* s)
                &(s->output.rate));
       if (!af) {
         char *resampler = "resample";
-#ifdef CONFIG_LIBAVCODEC
+#ifdef CONFIG_FFMPEG
         if ((AF_INIT_TYPE_MASK & s->cfg.force) == AF_INIT_SLOW)
           resampler = "lavcresample";
 #endif
@@ -494,7 +494,7 @@ int af_init(af_stream_t* s)
       if ((AF_INIT_TYPE_MASK & s->cfg.force) == AF_INIT_FAST) {
         char args[32];
 	sprintf(args, "%d", s->output.rate);
-#ifdef CONFIG_LIBAVCODEC
+#ifdef CONFIG_FFMPEG
 	if (strcmp(resampler, "lavcresample") == 0)
 	  strcat(args, ":1");
 	else

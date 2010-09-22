@@ -32,7 +32,7 @@
 
 #include "config.h"
 #include "mp_msg.h"
-
+#include "mencoder.h"
 #include "m_option.h"
 #include "codec-cfg.h"
 #include "stream/stream.h"
@@ -55,7 +55,6 @@ typedef struct h264_module_t {
     x264_picture_t  pic;
 } h264_module_t;
 
-extern char* passtmpfile;
 static x264_param_t param;
 static int parse_error = 0;
 
@@ -186,9 +185,9 @@ static int config(struct vf_instance *vf, int width, int height, int d_width, in
 
         extradata_size = x264_encoder_headers(mod->x264, &nal, &nnal);
 
-        mod->mux->bih= realloc(mod->mux->bih, sizeof(BITMAPINFOHEADER) + extradata_size);
+        mod->mux->bih= realloc(mod->mux->bih, sizeof(*mod->mux->bih) + extradata_size);
         memcpy(mod->mux->bih + 1, nal->p_payload, extradata_size);
-        mod->mux->bih->biSize= sizeof(BITMAPINFOHEADER) + extradata_size;
+        mod->mux->bih->biSize= sizeof(*mod->mux->bih) + extradata_size;
     }
 
     if (param.i_bframe > 1 && param.i_bframe_pyramid)
@@ -294,9 +293,8 @@ static int vf_open(vf_instance_t *vf, char *args) {
 
     mod=(h264_module_t*)vf->priv;
     mod->mux = (muxer_stream_t*)args;
-    mod->mux->bih = malloc(sizeof(BITMAPINFOHEADER));
-    memset(mod->mux->bih, 0, sizeof(BITMAPINFOHEADER));
-    mod->mux->bih->biSize = sizeof(BITMAPINFOHEADER);
+    mod->mux->bih = calloc(1, sizeof(*mod->mux->bih));
+    mod->mux->bih->biSize = sizeof(*mod->mux->bih);
     mod->mux->bih->biPlanes = 1;
     mod->mux->bih->biBitCount = 24;
     mod->mux->bih->biCompression = mmioFOURCC('h', '2', '6', '4');
@@ -304,7 +302,7 @@ static int vf_open(vf_instance_t *vf, char *args) {
     return 1;
 }
 
-vf_info_t ve_info_x264 = {
+const vf_info_t ve_info_x264 = {
     "H.264 encoder",
     "x264",
     "Bernhard Rosenkraenzer <bero@arklinux.org>",

@@ -33,11 +33,13 @@
 #include "mplayer/play.h"
 
 #include "access_mpcontext.h"
+#include "ass_mp.h"
 #include "app.h"
 #include "cfg.h"
 #include "help_mp.h"
 #include "path.h"
 #include "mp_core.h"
+#include "mpcommon.h"
 #include "mplayer.h"
 #include "libmpcodecs/vd.h"
 #include "libmpcodecs/vf.h"
@@ -50,7 +52,6 @@
 #include "mixer.h"
 #include "libaf/af.h"
 #include "libaf/equalizer.h"
-#include "libass/ass_mp.h"
 
 #ifdef CONFIG_ICONV
 #include <iconv.h>
@@ -354,8 +355,6 @@ void guiDone( void )
  wsXDone();
 }
 
-extern int              stream_dump_type;
-
 void guiLoadFont( void )
 {
 #ifdef CONFIG_FREETYPE
@@ -397,8 +396,6 @@ void guiLoadFont( void )
    }
 #endif
 }
-
-extern char **sub_name;
 
 void guiLoadSubtitle( char * name )
 {
@@ -662,11 +659,7 @@ int guiGetEvent( int type,void * arg )
 	 }
 // -- subtitle
 #ifdef CONFIG_DXR3
-	if ( video_driver_list && !gstrcmp( video_driver_list[0],"dxr3" ) && guiIntfStruct.FileFormat != DEMUXER_TYPE_MPEG_PS
-#ifdef CONFIG_LIBAVCODEC
-	 && !gtkVfLAVC
-#endif
-	 )
+	if ( video_driver_list && !gstrcmp( video_driver_list[0],"dxr3" ) && guiIntfStruct.FileFormat != DEMUXER_TYPE_MPEG_PS && !gtkVfLAVC )
 	 {
 	  gtkMessageBox( GTK_MB_FATAL,MSGTR_NEEDLAVC );
 	  guiIntfStruct.Playing=0;
@@ -751,16 +744,12 @@ int guiGetEvent( int type,void * arg )
 	}
 
 #ifdef CONFIG_DXR3
-#ifdef CONFIG_LIBAVCODEC
 	remove_vf( "lavc" );
-#endif
 	if ( video_driver_list && !gstrcmp( video_driver_list[0],"dxr3" ) )
 	 {
 	  if ( ( guiIntfStruct.StreamType != STREAMTYPE_DVD)&&( guiIntfStruct.StreamType != STREAMTYPE_VCD ) )
 	   {
-#ifdef CONFIG_LIBAVCODEC
 	    if ( gtkVfLAVC ) add_vf( "lavc" );
-#endif
 	   }
 	 }
 #endif

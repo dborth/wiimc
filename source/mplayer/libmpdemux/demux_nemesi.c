@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "stream/stream.h"
+#include "mpcommon.h"
 #include "demuxer.h"
 #include "stheader.h"
 #define HAVE_STRUCT_SOCKADDR_STORAGE
@@ -111,7 +112,6 @@ static void link_session_and_fetch_conf(Nemesi_DemuxerStreamData * ndsd,
                                         rtp_session * sess,
                                         rtp_buff * buff, unsigned int * fps)
 {
-    extern double force_fps;
     rtp_ssrc *ssrc = NULL;
     rtp_frame * fr = &ndsd->first_pkt[stype];
     rtp_buff trash_buff;
@@ -232,13 +232,9 @@ static demuxer_t* demux_open_rtp(demuxer_t* demuxer)
                 link_session_and_fetch_conf(ndsd, NEMESI_SESSION_AUDIO,
                                             sess, &buff, NULL);
 
-                if (buff.len) {
-                    wf = calloc(1,sizeof(WAVEFORMATEX)+buff.len);
-                    wf->cbSize = buff.len;
-                    memcpy(wf+1, buff.data, buff.len);
-                } else {
-                    wf = calloc(1,sizeof(WAVEFORMATEX));
-                }
+                wf = calloc(1,sizeof(*wf)+buff.len);
+                wf->cbSize = buff.len;
+                memcpy(wf+1, buff.data, buff.len);
 
                 sh_audio->wf = wf;
                 d_audio->sh = sh_audio;
@@ -268,14 +264,9 @@ static demuxer_t* demux_open_rtp(demuxer_t* demuxer)
                 link_session_and_fetch_conf(ndsd, NEMESI_SESSION_VIDEO,
                                             sess, &buff, &fps);
 
-                if (buff.len) {
-                    bih = calloc(1,sizeof(BITMAPINFOHEADER)+buff.len);
-                    bih->biSize = sizeof(BITMAPINFOHEADER)+buff.len;
-                    memcpy(bih+1, buff.data, buff.len);
-                } else {
-                    bih = calloc(1,sizeof(BITMAPINFOHEADER));
-                    bih->biSize = sizeof(BITMAPINFOHEADER);
-                }
+                bih = calloc(1,sizeof(*bih)+buff.len);
+                bih->biSize = sizeof(*bih)+buff.len;
+                memcpy(bih+1, buff.data, buff.len);
 
                 sh_video = new_sh_video(demuxer,0);
                 sh_video->bih = bih;

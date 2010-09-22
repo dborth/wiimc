@@ -58,7 +58,7 @@
 #include "stream/stream_dvd.h"
 #endif
 #include "stream/stream_dvdnav.h"
-#include "libass/ass_mp.h"
+#include "ass_mp.h"
 #include "m_struct.h"
 #include "libmenu/menu.h"
 #include "gui/interface.h"
@@ -70,7 +70,6 @@
 
 #define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
 
-extern int use_menu;
 #ifdef GEKKO
 extern int copyScreen;
 #endif

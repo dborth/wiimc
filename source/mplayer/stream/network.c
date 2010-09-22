@@ -50,8 +50,6 @@
 #include "cookies.h"
 #include "url.h"
 
-extern int stream_cache_size;
-
 /* Variables for the command line option -user, -passwd, -bandwidth,
    -user-agent and -nocookies */
 
@@ -67,7 +65,7 @@ int   network_ipv4_only_proxy = 0;
 
 
 const mime_struct_t mime_type_table[] = {
-#ifdef CONFIG_LIBAVFORMAT
+#ifdef CONFIG_FFMPEG
 	// Flash Video
 	{ "video/x-flv", DEMUXER_TYPE_LAVF_PREFERRED},
 	// do not force any demuxer in this case!
@@ -248,9 +246,9 @@ http_send_request( URL_t *url, off_t pos ) {
 	    snprintf(str, 256, "Range: bytes=%"PRId64"-", (int64_t)pos);
 	    http_set_field(http_hdr, str);
 	}
-#if !defined(GEKKO)	    
+#ifndef GEKKO
 	if (network_cookies_enabled) cookies_set( http_hdr, server_url->hostname, server_url->url );
-#endif	
+#endif
 	http_set_field( http_hdr, "Connection: close");
 	http_add_basic_authentication( http_hdr, url->username, url->password );
 	if( http_build_request( http_hdr )==NULL ) {

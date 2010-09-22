@@ -345,6 +345,9 @@ static int mov_read_dref(MOVContext *c, ByteIOContext *pb, MOVAtom atom)
         uint32_t size = get_be32(pb);
         int64_t next = url_ftell(pb) + size - 4;
 
+        if (size < 12)
+            return -1;
+
         dref->type = get_le32(pb);
         get_be32(pb); // version + flags
         dprintf(c->fc, "type %.4s size %d\n", (char*)&dref->type, size);
@@ -584,12 +587,13 @@ static int mov_read_pasp(MOVContext *c, ByteIOContext *pb, MOVAtom atom)
         return 0;
     st = c->fc->streams[c->fc->nb_streams-1];
 
-    if (den != 0) {
-        if ((st->sample_aspect_ratio.den != 1 || st->sample_aspect_ratio.num) && // default
-            (den != st->sample_aspect_ratio.den || num != st->sample_aspect_ratio.num))
-            av_log(c->fc, AV_LOG_WARNING,
-                   "sample aspect ratio already set to %d:%d, overriding by 'pasp' atom\n",
-                   st->sample_aspect_ratio.num, st->sample_aspect_ratio.den);
+    if ((st->sample_aspect_ratio.den != 1 || st->sample_aspect_ratio.num) && // default
+        (den != st->sample_aspect_ratio.den || num != st->sample_aspect_ratio.num)) {
+        av_log(c->fc, AV_LOG_WARNING,
+               "sample aspect ratio already set to %d:%d, ignoring 'pasp' atom (%d:%d)\n",
+               st->sample_aspect_ratio.num, st->sample_aspect_ratio.den,
+               num, den);
+    } else if (den != 0) {
         st->sample_aspect_ratio.num = num;
         st->sample_aspect_ratio.den = den;
     }

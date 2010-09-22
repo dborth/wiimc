@@ -38,7 +38,7 @@ msgid "Play"
 msgstr "Start"
 
 msgid "Pause"
-msgstr "Pause"
+msgstr "Pauze"
 
 msgid "Single Play"
 msgstr "Een nummer afspelen"
@@ -65,7 +65,7 @@ msgid "Loading..."
 msgstr "Laden..."
 
 msgid "Global"
-msgstr "Algehele"
+msgstr "Algemeen"
 
 msgid "Network"
 msgstr "Netwerk"
@@ -74,7 +74,7 @@ msgid "Subtitles"
 msgstr "Ondertiteling"
 
 msgid "Subtitle Delay"
-msgstr "Ondertitel vertraging"
+msgstr "Vertraging ondertiteling"
 
 msgid "Settings"
 msgstr "Instellingen"
@@ -152,7 +152,7 @@ msgid "Settings - Global"
 msgstr "Instellingen - Algemeen"
 
 msgid "Settings - Videos"
-msgstr "Instellingen - Videos"
+msgstr "Instellingen - Video's"
 
 msgid "Settings - Music"
 msgstr "Instellingen - Muziek"
@@ -170,7 +170,7 @@ msgid "Settings - DVD"
 msgstr "Instellingen - DVD"
 
 msgid "File Extensions"
-msgstr "Bestands Extensies"
+msgstr "Bestandsextensies"
 
 msgid "Language"
 msgstr "Taal"
@@ -179,7 +179,7 @@ msgid "Volume"
 msgstr "Volume"
 
 msgid "Exit Action"
-msgstr "Afsluit actie"
+msgstr "Afsluitactie"
 
 msgid "Wiimote Rumble"
 msgstr "Trilfunctie Wiimote"
@@ -194,7 +194,7 @@ msgid "Auto"
 msgstr "Auto"
 
 msgid "Return to Wii Menu"
-msgstr "Terug naar het Wii menu"
+msgstr "Terug naar het Wii-menu"
 
 msgid "Power Off Wii"
 msgstr "Wii uitschakelen"
@@ -203,22 +203,22 @@ msgid "Return to Loader"
 msgstr "Terug naar loader"
 
 msgid "Screen Zoom"
-msgstr "Scherm zoom"
+msgstr "Schermzoom"
 
 msgid "Screen Position"
-msgstr "Scherm positie"
+msgstr "Schermpositie"
 
 msgid "Frame Dropping"
-msgstr "Frame Dropping"
+msgstr "Frame dropping"
 
 msgid "Aspect Ratio"
-msgstr "Scherm formaat"
+msgstr "Schermformaat"
 
 msgid "Cache Fill"
 msgstr "Cache vullen"
 
 msgid "Audio Delay"
-msgstr "Audio vertraging"
+msgstr "Audiovertraging"
 
 msgid "Auto-Resume"
 msgstr "Start vanaf laatste punt"
@@ -227,7 +227,7 @@ msgid "Videos Files Folder"
 msgstr "Video map"
 
 msgid "Play Order"
-msgstr "Afspeel volgorde"
+msgstr "Afspeelvolgorde"
 
 msgid "Music Files Folder"
 msgstr "Muziek map"
@@ -239,10 +239,10 @@ msgid "Display Name"
 msgstr "Schermnaam"
 
 msgid "Share IP"
-msgstr "Netwerk IP"
+msgstr "Gedeelde IP"
 
 msgid "Share Name"
-msgstr "Netwerk naam"
+msgstr "Gedeelde map"
 
 msgid "Username"
 msgstr "Gebruikersnaam"
@@ -305,7 +305,7 @@ msgid "Start Slideshow"
 msgstr "Start diavoorstelling"
 
 msgid "Slideshow Delay"
-msgstr "Diavoorstelling vertraging"
+msgstr "Vertraging diavoorstelling"
 
 msgid "Online Media Folder"
 msgstr "Online Media Folder"
@@ -326,7 +326,7 @@ msgid "Unable to Initialize MPlayer"
 msgstr "Kan MPlayer niet initialiseren"
 
 msgid "Unable to find a valid working path"
-msgstr "Kan geen juiste werk locatie vinden"
+msgstr "Kan geen juiste werklocatie vinden"
 
 msgid "Unable to change path to"
 msgstr "Kan de locatie niet veranderen naar"
@@ -338,25 +338,25 @@ msgid "Directory name is too long!"
 msgstr "Naam van de map is te lang!"
 
 msgid "SD Card"
-msgstr "SD kaart"
+msgstr "SD-kaart"
 
 msgid "USB Mass Storage"
 msgstr "USB opslag / schijf"
 
 msgid "Data DVD"
-msgstr "Data DVD"
+msgstr "Data-DVD"
 
 msgid "USB drive not found!"
-msgstr "USB schijf niet gevonden!"
+msgstr "USB-schijf niet gevonden!"
 
 msgid "SD card not found!"
-msgstr "SD kaart niet gevonden"
+msgstr "SD-kaart niet gevonden"
 
 msgid "Loading DVD..."
 msgstr "DVD laden..."
 
 msgid "No disc inserted!"
-msgstr "Geen schijf ingevoerd!"
+msgstr "Geen schijf gevonden!"
 
 msgid "Invalid DVD."
 msgstr "Ongeldige DVD."
@@ -419,10 +419,10 @@ msgid "Check settings file."
 msgstr "Controleer instellingen bestand."
 
 msgid "Share name is blank."
-msgstr "Netwerknaam niet ingevuld."
+msgstr "Gedeelde map is niet ingevuld."
 
 msgid "Share IP is blank."
-msgstr "Netwerk IP adres is niet ingevuld."
+msgstr "Gedeelde IP is niet ingevuld."
 
 msgid "Invalid network share settings"
 msgstr "Fout in de netwerkinstellingen"
@@ -443,7 +443,7 @@ msgid "Password is blank."
 msgstr "Wachtwoord is niet ingevuld."
 
 msgid "Invalid FTP site settings"
-msgstr "Foute FTP instellingen"
+msgstr "Foute FTP-instellingen"
 
 msgid "Connecting to FTP site..."
 msgstr "Verbinden met FTP site..."
@@ -452,7 +452,7 @@ msgid "Failed to connect to FTP site."
 msgstr "Kan niet verbinden met FTP site..."
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "Kan geen geldige USB of SD kaart vinden - deze is benodigd voor een goede werking."
+msgstr "Kan geen geldige USB of SD-kaart vinden - deze is benodigd voor een goede werking."
 
 msgid "Could not create folder"
 msgstr "Kan geen map aanmaken."
@@ -506,7 +506,7 @@ msgid "Codepage"
 msgstr "Codepagina"
 
 msgid "Subtitle Language"
-msgstr "Taal Ondertiteling"
+msgstr "Taal ondertiteling"
 
 msgid "Default"
 msgstr "Standaard"
@@ -524,7 +524,7 @@ msgid "Download font"
 msgstr "Download lettertype"
 
 msgid "Unable to save font file!"
-msgstr "Kon Lettertype bestand niet opslaan!"
+msgstr "Kon lettertype-bestand niet opslaan!"
 
 msgid "Out of Memory"
 msgstr "Onvoldoende geheugen"
@@ -569,7 +569,7 @@ msgid "Red"
 msgstr "Rood"
 
 msgid "Sleep Timer"
-msgstr "Slaap Timer"
+msgstr "Slaaptimer"
 
 msgid "sec"
 msgstr "sec"
@@ -611,10 +611,10 @@ msgid "Use Last Browsed"
 msgstr "Gebruik laatst bezochte"
 
 msgid "Audio Language"
-msgstr "Audio Taal"
+msgstr "Audio taal"
 
 msgid "DVD support"
-msgstr "DVD Ondersteuning"
+msgstr "DVD ondersteuning"
 
 msgid "Enabled"
 msgstr "Ingeschakeld"
@@ -635,4 +635,7 @@ msgid "Online media file is invalid."
 msgstr "Online media bestand is ongeldig."
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
-msgstr "Ondertiteling lettertype bestand kon niet worden gevonden. De ondertiteling zal niet zichtbaar zijn."
+msgstr "Lettertypebestand van ondertiteling niet gevonden. De ondertiteling zal niet zichtbaar zijn."
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC heeft geen DVD toegang - AHBPROT is niet ingeschakeld"

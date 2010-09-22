@@ -5240,11 +5240,6 @@ void wiiSetSubtitleColor(char *color)
 	else
 		ass_border_color = strdup("00000000");
 	reload_subtitles();
-#else
-	if(strcmp(color, "00000000") == 0)
-		sub_bg_color = 0; // black
-	else
-		sub_bg_color = 255; // white
 #endif
 }
 

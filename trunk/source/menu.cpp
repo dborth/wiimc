@@ -6894,6 +6894,9 @@ void WiiMenu()
 	SetupGui(); // only once
 
 	mainWindow = menuWindow;
+	mainWindow->Remove(disabled);
+	mainWindow->SetState(STATE_DEFAULT);
+
 	selectLoadedFile = videoImg->IsVisible();
 	UpdateMenuImages(-1, menuCurrent);
 

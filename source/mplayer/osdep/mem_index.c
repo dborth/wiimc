@@ -11,7 +11,7 @@ void* alloc_index(u32 size)
 	
 	if(size==0) return (unsigned char *)SYS_GetArena2Hi();
 
-	size+=128;
+	size+=2*1024*1024; // we reserve 2Mb extra because sometimes the index need to realloc
 
 	size &= ~0x1f;
 
@@ -39,6 +39,11 @@ void free_index()
     printf("mplayer free_index: %u\n",_size);
 	_size=0;
 
+}
+
+u32 mem2_index_size()
+{
+	return _size;
 }
 
 

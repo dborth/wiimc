@@ -32,6 +32,10 @@
 #include "aviheader.h"
 #include "libavutil/common.h"
 
+#ifdef GEKKO
+#include "osdep/mem_index.h"
+#endif
+
 static MainAVIHeader avih;
 
 static int odml_get_vstream_id(int id, unsigned char res[])
@@ -65,6 +69,7 @@ off_t list_end=0;
 //---- AVI header:
 priv->idx_size=0;
 priv->audio_streams=0;
+
 while(1){
   int id=stream_read_dword_le(demuxer->stream);
   unsigned chunksize,size2;
@@ -380,7 +385,11 @@ while(1){
       priv->idx_size=size2>>4;
       mp_msg(MSGT_HEADER,MSGL_V,MSGTR_MPDEMUX_AVIHDR_ReadingIndexBlockChunksForFrames,
         priv->idx_size,avih.dwTotalFrames, (int64_t)stream_tell(demuxer->stream));
-      priv->idx=malloc(priv->idx_size<<4);
+#ifndef GEKKO
+        priv->idx=malloc(priv->idx_size<<4);
+#else   
+		priv->idx = alloc_index(priv->idx_size<<4);
+#endif      
 //      printf("\nindex to %p !!!!! (priv=%p)\n",priv->idx,priv);
       stream_read(demuxer->stream,(char*)priv->idx,priv->idx_size<<4);
       for (i = 0; i < priv->idx_size; i++) {	// swap index to machine endian
@@ -465,7 +474,11 @@ if (priv->isodml && (index_mode==-1 || index_mode==0 || index_mode==1)) {
     AVIINDEXENTRY *idx;
 
 
-    if (priv->idx_size) free(priv->idx);
+#ifdef GEKKO
+	if (priv->idx_size) free_index();
+#else
+	if (priv->idx_size) free(priv->idx);
+#endif
     priv->idx_size = 0;
     priv->idx_offset = 0;
     priv->idx = NULL;
@@ -508,8 +521,11 @@ if (priv->isodml && (index_mode==-1 || index_mode==0 || index_mode==1)) {
      * and sorting them by offset.  The result should be the same index
      * we would get with -forceidx.
      */
-
-    idx = priv->idx = malloc(priv->idx_size * sizeof (AVIINDEXENTRY));
+#ifndef GEKKO
+	idx = priv->idx = malloc(priv->idx_size * sizeof (AVIINDEXENTRY));
+#else
+	idx = priv->idx = alloc_index(priv->idx_size * sizeof (AVIINDEXENTRY));
+#endif
 
     for (cx = priv->suidx; cx != &priv->suidx[priv->suidx_size]; cx++) {
 	avistdindex_chunk *sic;
@@ -598,7 +614,11 @@ if (index_file_load) {
     goto gen_index;
   }
   fread(&priv->idx_size, sizeof(priv->idx_size), 1, fp);
+#ifndef GEKKO
   priv->idx=malloc(priv->idx_size*sizeof(AVIINDEXENTRY));
+#else
+  priv->idx=alloc_index(priv->idx_size*sizeof(AVIINDEXENTRY));
+#endif  
   if (!priv->idx) {
     mp_msg(MSGT_HEADER,MSGL_ERR, MSGTR_MPDEMUX_AVIHDR_FailedMallocForIdxFile, index_file_load);
     priv->idx_size = 0;
@@ -649,7 +669,18 @@ if(index_mode>=2 || (priv->idx_size==0 && index_mode==1)){
     if(idx_pos>=priv->idx_size){
 //      priv->idx_size+=32;
       priv->idx_size+=1024; // +16kB
+#ifndef GEKKO //in gecko we reverse more memory for safety
       priv->idx=realloc(priv->idx,priv->idx_size*sizeof(AVIINDEXENTRY));
+#else
+	if(priv->idx==NULL) priv->idx=alloc_index(5*1024*1025); //is 7Mb in total for index
+	if(priv->idx_size>mem2_index_size())
+	{
+		free_index();
+		priv->idx=NULL;
+		idx_pos=0; 
+		break;
+	}
+#endif      
       if(!priv->idx){idx_pos=0; break;} // error!
     }
     idx=&((AVIINDEXENTRY *)priv->idx)[idx_pos++];

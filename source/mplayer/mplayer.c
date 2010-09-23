@@ -1428,6 +1428,7 @@ int build_afilter_chain(sh_audio_t *sh_audio, ao_data_t *ao_data)
       playback_speed = (float)new_srate / (float)sh_audio->samplerate;
     }
   }
+  
   result =  init_audio_filters(sh_audio, new_srate,
            &ao_data->samplerate, &ao_data->channels, &ao_data->format);
   mpctx->mixer.afilter = sh_audio->afilter;
@@ -1715,6 +1716,7 @@ void reinit_audio_chain(void) {
     if (!(initialized_flags & INITIALIZED_ACODEC)) {
         current_module="init_audio_codec";
         mp_msg(MSGT_CPLAYER,MSGL_INFO,"==========================================================================\n");
+        mpctx->sh_audio->channels=2;
         if(!init_best_audio_codec(mpctx->sh_audio,audio_codec_list,audio_fm_list)){
             goto init_error;
         }
@@ -1761,6 +1763,7 @@ void reinit_audio_chain(void) {
 
     // init audio filters:
     current_module="af_init";
+
     if(!build_afilter_chain(mpctx->sh_audio, &ao_data)) {
         mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_NoMatchingFilter);
         goto init_error;
@@ -2830,11 +2833,15 @@ int gui_no_filename=0;
 m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
-m_config_set_option(mconfig,"channels","6");
+m_config_set_option(mconfig,"channels","2");
 m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
+#ifdef CONFIG_ASS
+m_config_set_option(mconfig,"ass","1");
+m_config_set_option(mconfig,"ass-font-scale","2");
+#endif
 SetMPlayerSettings();
 
 orig_stream_cache_min_percent=stream_cache_min_percent;
@@ -3230,9 +3237,6 @@ current_module = NULL;
 // ******************* Now, let's see the per-file stuff ********************
 
 play_next_file:
-	printf("mplayer m1(%.4f) m2(%.4f)\n",
-									((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
-									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
 #ifdef GEKKO
 
@@ -3255,6 +3259,9 @@ play_next_file:
 			controlledbygui = 0; // none playing, so discard
 	}
 
+printf("mplayer m1(%.4f) m2(%.4f)\n",
+							((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
+							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
 
 wii_error = 0;
@@ -3479,7 +3486,7 @@ int vob_sub_auto = 1;
   }
   mpctx->sh_audio=NULL;
   mpctx->sh_video=NULL;
-
+  
   current_module="open_stream";
 #ifdef GEKKO
   if(strncmp(filename,"dvdnav:",7) == 0)
@@ -3580,6 +3587,7 @@ if(mpctx->stream->type==STREAMTYPE_DVDNAV){
   current_module=NULL;
 }
 #endif
+
 
 // CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
 goto_enable_cache:
@@ -3784,6 +3792,7 @@ if(!mpctx->sh_video && !mpctx->sh_audio){
 #endif
     goto goto_next_file; // exit_player(MSGTR_Exit_error);
 }
+
 /* display clip info */
 demux_info_print(mpctx->demuxer);
 //================== Read SUBTITLES (DVD & TEXT) ==========================
@@ -4043,6 +4052,7 @@ if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
 #endif
 
 #ifdef GEKKO
+
 mpctx->osd_function=OSD_PLAY;
 playing_file=true;
 pause_low_cache=0;
@@ -4581,9 +4591,36 @@ static int load_restore_point(char *_filename)
 	return 0;
 }
 
+
 static void remove_subtitles()
 {
-    int idx;
+	if(!mpctx->sh_video || mpctx->set_of_sub_size <= 0)
+			return; // no subs
+
+	int i;
+
+	for(i = 0; i < mpctx->set_of_sub_size; ++i)
+	{
+		sub_free(mpctx->set_of_subtitles[i]);
+	#ifdef CONFIG_ASS
+		if(mpctx->set_of_ass_tracks[i])
+		ass_free_track( mpctx->set_of_ass_tracks[i] );
+	#endif
+	}
+
+
+	mpctx->set_of_sub_size = 0;
+	vo_sub_last = vo_sub=NULL;
+	subdata=NULL;
+
+#ifdef CONFIG_ASS
+	ass_track = NULL;
+//	if(ass_library)
+//		ass_clear_fonts(ass_library);
+#endif
+
+/*
+int idx;
     int start = 0;
     int count = mpctx->set_of_sub_size;
     int end = start + count;
@@ -4635,6 +4672,7 @@ static void remove_subtitles()
         mpctx->set_of_sub_pos -= count;
         mpctx->global_sub_pos -= count;
     }
+    */
 }
 
 static void reload_subtitles()
@@ -4644,24 +4682,6 @@ static void reload_subtitles()
 
 	int i;
 
-	for(i = 0; i < mpctx->set_of_sub_size; ++i)
-	{
-		sub_free(mpctx->set_of_subtitles[i]);
-		#ifdef CONFIG_ASS
-		if(mpctx->set_of_ass_tracks[i])
-		ass_free_track( mpctx->set_of_ass_tracks[i] );
-		#endif
-	}
-
-	mpctx->set_of_sub_size = 0;
-	vo_sub_last = vo_sub=NULL;
-	subdata=NULL;
-
-	#ifdef CONFIG_ASS
-	ass_track = NULL;
-	if(ass_library)
-		ass_clear_fonts(ass_library);
-	#endif
 
 	remove_subtitles(); //clear subs loaded
 

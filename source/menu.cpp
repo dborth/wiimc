@@ -5409,7 +5409,14 @@ static void MenuSettingsSubtitles()
 				CodepageWindow();
 				break;
 			case 4:
-				sprintf(WiiSettings.subtitleColor, "FFFFFF00"); // white
+				if(strcmp(WiiSettings.subtitleColor, "FFFFFF00") == 0) // white
+					sprintf(WiiSettings.subtitleColor, "00000000"); // black
+				else if(strcmp(WiiSettings.subtitleColor, "00000000") == 0) // black
+					sprintf(WiiSettings.subtitleColor, "FFFF0000"); // yellow
+				else if(strcmp(WiiSettings.subtitleColor, "FFFF0000") == 0) // yellow
+					sprintf(WiiSettings.subtitleColor, "FF000000"); // red
+				else
+					sprintf(WiiSettings.subtitleColor, "FFFFFF00"); // white
 				break;
 			case 5:
 				WiiSettings.subtitleSize += 0.5;

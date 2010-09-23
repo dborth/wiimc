@@ -5266,7 +5266,6 @@ void wiiSetSubtitleColor(char *color)
 void wiiSetSubtitleSize(float size)
 {
 #ifdef CONFIG_ASS
-
 	if(size == ass_font_scale)
 		return;
 

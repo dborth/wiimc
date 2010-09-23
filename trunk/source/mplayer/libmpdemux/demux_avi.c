@@ -33,6 +33,10 @@
 #include "demux_ogg.h"
 #include "aviheader.h"
 
+#ifdef GEKKO
+#include "osdep/mem_index.h"
+#endif
+
 extern const demuxer_desc_t demuxer_desc_avi_ni;
 extern const demuxer_desc_t demuxer_desc_avi_nini;
 
@@ -514,6 +518,7 @@ static demuxer_t* demux_open_avi(demuxer_t* demuxer){
       }
       demuxer->seekable=0;
   }
+  
   if(!ds_fill_buffer(d_video)){
     mp_msg(MSGT_DEMUX,MSGL_ERR,"AVI: " MSGTR_MissingVideoStreamBug);
     return NULL;
@@ -770,10 +775,10 @@ static void demux_close_avi(demuxer_t *demuxer)
     return;
 
   if(priv->idx_size > 0)
-#ifdef GEKKO
-		  free_index();
+#ifndef GEKKO
+	free(priv->idx);
 #else  
-		  free(priv->idx);
+	free_index();
 #endif    
   free(priv);
 }
@@ -862,6 +867,7 @@ static demuxer_t* demux_open_hack_avi(demuxer_t *demuxer)
    sh_audio_t* sh_a;
 
    demuxer = demux_open_avi(demuxer);
+
    if(!demuxer) return NULL; // failed to open
    sh_a = demuxer->audio->sh;
    if(demuxer->audio->id != -2 && sh_a) {

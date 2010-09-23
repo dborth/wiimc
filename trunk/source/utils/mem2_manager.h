@@ -9,6 +9,7 @@
 
 #ifndef _MEM2MANAGER_H_
 #define _MEM2MANAGER_H_
+#include <ogc/system.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,10 @@ void ClearMem2Area (const char *area);
 void* mem2_memalign(u8 align, u32 size, const char *area);
 void* mem2_malloc(u32 size, const char *area);
 void mem2_free(void *ptr, const char *area);	
+void* mem2_calloc(u32 num, u32 size, const char *area);
+void* mem2_realloc(void *ptr, u32 newsize, const char *area);
+
+
 void ShowAreaInfo(const char *area); //if area == NULL print all areas info
 
 

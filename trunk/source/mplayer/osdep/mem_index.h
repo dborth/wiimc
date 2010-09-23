@@ -7,10 +7,10 @@
 #include <processor.h>
 
 
-
 void* alloc_index(u32 size);
-
 void free_index();
+u32 mem2_index_size();
+
 
 #endif
 

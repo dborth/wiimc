@@ -1011,6 +1011,7 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
             return NULL;
         }
     }
+    
     // Test demuxers with safe file checks
     for (i = 0; (demuxer_desc = demuxer_list[i]); i++) {
         if (demuxer_desc->safe_check) {
@@ -1019,15 +1020,19 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
             if ((fformat = demuxer_desc->check_file(demuxer)) != 0) {
                 if (fformat == demuxer_desc->type) {
                     demuxer_t *demux2 = demuxer;
+                    
+
                     mp_msg(MSGT_DEMUXER, MSGL_INFO,
                            MSGTR_Detected_XXX_FileFormat,
                            demuxer_desc->shortdesc);
+                    
                     file_format = fformat;
                     if (!demuxer->desc->open
                         || (demux2 = demuxer->desc->open(demuxer))) {
-                        demuxer = demux2;
+                        
+                        demuxer = demux2; 
                         goto dmx_open;
-                    }
+                    }  
                 } else {
                     if (fformat == DEMUXER_TYPE_PLAYLIST)
                         return demuxer; // handled in mplayer.c
@@ -1041,10 +1046,17 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
                     file_format = DEMUXER_TYPE_UNKNOWN;
                 }
             }
+            
+			printf("mplayer 2_4.%i m1(%.4f) m2(%.4f)\n",i,
+											((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+											 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
             free_demuxer(demuxer);
             demuxer = NULL;
         }
     }
+	printf("mplayer 3 m1(%.4f) m2(%.4f)\n",
+									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
     // If no forced demuxer perform file extension based detection
     // Ok. We're over the stable detectable fileformats, the next ones are
@@ -1064,6 +1076,9 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
                    "demuxer: continue fuzzy content-based format guessing...\n");
         }
     }
+	printf("mplayer 4 m1(%.4f) m2(%.4f)\n",
+									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
     // Try detection for all other demuxers
     for (i = 0; (demuxer_desc = demuxer_list[i]); i++) {
         if (!demuxer_desc->safe_check && demuxer_desc->check_file) {
@@ -1104,6 +1119,9 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
  dmx_open:
 
     demuxer->file_format = file_format;
+	printf("mplayer 5 m1(%.4f) m2(%.4f)\n",
+									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
     if ((sh_video = demuxer->video->sh) && sh_video->bih) {
         int biComp = le2me_32(sh_video->bih->biCompression);
@@ -1128,6 +1146,10 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
         }
     }
 #endif
+	printf("mplayer 6 m1(%.4f) m2(%.4f)\n",
+									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+
     return demuxer;
 }
 
@@ -1208,6 +1230,7 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
             free_stream(ss);
         return NULL;
     }
+    
     if (as) {
         ad = demux_open_stream(as,
                                audio_demuxer_type ? audio_demuxer_type : afmt,
@@ -1221,6 +1244,7 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
                    && ((sh_audio_t *) ad->audio->sh)->format == 0x55) // MP3
             hr_mp3_seek = 1;    // Enable high res seeking
     }
+    
     if (ss) {
         sd = demux_open_stream(ss, sub_demuxer_type ? sub_demuxer_type : sfmt,
                                sub_demuxer_force, -2, -2, dvdsub_id,
@@ -1240,6 +1264,7 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
         res = new_demuxers_demuxer(vd, vd, sd);
     else
         res = vd;
+        
 
     correct_pts = user_correct_pts;
     if (correct_pts < 0)

@@ -8,10 +8,47 @@
 
 
  ****************************************************************************/
+#include <ogc/machine/asm.h>
+#include <ogc/lwp_heap.h>
+#include <ogc/system.h>
+#include <ogc/machine/processor.h>
+#include <string.h>
+#include <unistd.h>
 
 
-/*****************************
-You need to add the next function in lwp_heap.c (libogc) to get debug info
+//1: critical errors     2: detailed info
+#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragementation
+
+#ifdef DEBUG_MEM2_LEVEL
+#include <stdio.h>
+
+/*** from libogc (lwp_heap.inl) ****/
+
+static __inline__ heap_block* __lwp_heap_blockat(heap_block *block,u32 offset)
+{
+	return (heap_block*)((char*)block + offset);
+}
+
+static __inline__ heap_block* __lwp_heap_usrblockat(void *ptr)
+{
+	u32 offset = *(((u32*)ptr)-1);
+	return __lwp_heap_blockat(ptr,-offset+-HEAP_BLOCK_USED_OVERHEAD);
+}
+static __inline__ bool __lwp_heap_blockin(heap_cntrl *heap,heap_block *block)
+{
+	return ((u32)block>=(u32)heap->start && (u32)block<=(u32)heap->final);
+}
+static __inline__ bool __lwp_heap_blockfree(heap_block *block)
+{
+	return !(block->front_flag&HEAP_BLOCK_USED);
+}
+static __inline__ u32 __lwp_heap_blocksize(heap_block *block)
+{
+	return (block->front_flag&~HEAP_BLOCK_USED);
+}
+
+/*** end from libogc (lwp_heap.inl)  ****/
+
 
 
 u32 __lwp_heap_block_size(heap_cntrl *theheap,void *ptr)
@@ -32,21 +69,6 @@ u32 __lwp_heap_block_size(heap_cntrl *theheap,void *ptr)
 	return dsize;
 }
 
-
-
-******************************/
-#include <ogc/machine/asm.h>
-#include <ogc/lwp_heap.h>
-#include <ogc/system.h>
-#include <ogc/machine/processor.h>
-#include <string.h>
-#include <unistd.h>
-
-//1: critical errors     2: detailed info
-#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragementation
-
-#ifdef DEBUG_MEM2_LEVEL
-#include <stdio.h>
 #endif
 
 
@@ -201,7 +223,7 @@ void mem2_free(void *ptr, const char *area)
 	
 
 #ifdef DEBUG_MEM2_LEVEL
-	u32 size=__lwp_heap_block_size(&mem2_areas[i].heap,ptr); // this function is added in libogc
+	u32 size=__lwp_heap_block_size(&mem2_areas[i].heap,ptr); 
 
 	mem2_areas[i].allocated -= size;
 
@@ -212,6 +234,54 @@ void mem2_free(void *ptr, const char *area)
 
 	__lwp_heap_free(&mem2_areas[i].heap, ptr);
 }
+
+void* mem2_realloc(void *ptr, u32 newsize, const char *area)
+{
+	int i;
+	void *newptr=NULL;
+
+	if(ptr==NULL) return mem2_malloc(newsize, area);
+	if(newsize==0)
+	{
+		mem2_free(ptr,area);
+		return NULL;
+	}
+	
+	for( i = 0; i < MAX_AREAS ; i++)
+		if( (mem2_areas[i].size > 0) && (strcmp(area,mem2_areas[i].name) == 0) ) break;
+
+	if(i == MAX_AREAS)
+	{
+#ifdef DEBUG_MEM2_LEVEL
+		printf("mem2 free error: area %s not found\n",area);
+#endif		
+		return NULL; // area not found
+	}
+
+	u32 size=__lwp_heap_block_size(&mem2_areas[i].heap,ptr);
+
+	if(size>newsize) size=newsize;
+	
+	newptr = mem2_malloc(newsize, area);
+	
+	if(newptr == NULL) return NULL;
+	memcpy(newptr,ptr,size);
+	mem2_free(ptr,area);
+	return newptr;
+
+}
+
+void* mem2_calloc(u32 num, u32 size, const char *area)
+{
+	void *ptr;
+
+	ptr = mem2_malloc(num*size,area);
+	if( ptr == NULL ) return NULL;
+	memset(ptr, 0, num*size);
+
+	return ptr;
+}
+
 
 #ifdef DEBUG_MEM2_LEVEL
 static void PrintAreaInfo(int index)

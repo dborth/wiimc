@@ -5931,9 +5931,9 @@ static void AudioNowPlayingCallback(void *ptr)
 		audiobarNowPlaying[2]->SetText(NULL);
 		audiobarNowPlaying[3]->SetText(NULL);
 
-		if(wiiGetMetaTitle() != NULL)
+		title=wiiGetMetaTitle();
+		if(title != NULL)
 		{
-			title = strdup(wiiGetMetaTitle());
 			for(i=strlen(title)-1; i >= 0; i--)	if(title[i] == ' ') title[i] = '\0'; else break;
 
 			if(strlen(title) > 0)
@@ -5951,33 +5951,35 @@ static void AudioNowPlayingCallback(void *ptr)
 			audiobarNowPlaying[1]->SetText(tmp);
 		}
 
-		if(wiiGetMetaArtist() != NULL)
+		artist = wiiGetMetaArtist();
+		if(artist != NULL)
 		{
-			artist = strdup(wiiGetMetaArtist());
 			for(i=strlen(artist)-1; i >= 0; i--) if(artist[i] == ' ') artist[i] = '\0'; else break;
 			
 			if(strlen(artist) > 0)
 				audiobarNowPlaying[2]->SetText(artist);
+
+			free(artist);
 		}
 
-		if(wiiGetMetaAlbum() != NULL)
+		album = wiiGetMetaAlbum();
+		if(album != NULL)
 		{
-			album = strdup(wiiGetMetaAlbum());
 			for(i=strlen(album)-1; i >= 0; i--) if(album[i] == ' ') album[i] = '\0'; else break;
 		}
 
-		if(wiiGetMetaYear() != NULL)
+		year = wiiGetMetaYear();
+		if(year != NULL)
 		{
-			year = strdup(wiiGetMetaYear());
 			for(i=strlen(year)-1; i >= 0; i--) if(year[i] == ' ') year[i] = '\0'; else break;
 		}
 
-		char txt[1024];
-
 		if(album && strlen(album) > 0 && year && strlen(year) > 0)
 		{
+			char *txt=(char*)mem2_malloc(sizeof(char)*1024,"gui");
 			sprintf(txt, "%s (%s)", album, year);
 			audiobarNowPlaying[3]->SetText(txt);
+			mem2_free(txt,"gui");
 		}
 		else if(album && strlen(album) > 0)
 		{
@@ -5988,10 +5990,10 @@ static void AudioNowPlayingCallback(void *ptr)
 			audiobarNowPlaying[3]->SetText(year);
 		}
 
-		if(title) free(title);
-		if(artist) free(artist);
-		if(album) free(album);
 		if(year) free(year);
+		if(album) free(album);
+		if(artist) free(artist);
+		if(title) free(title);
 	}
 }
 

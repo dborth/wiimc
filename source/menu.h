@@ -37,17 +37,23 @@ bool VideoVolumeLevelBarVisible();
 void ShowVideoVolumeLevelBar();
 void HideVideoVolumeLevelBar();
 void UndoChangeMenu();
-void DisableVideoImg();
+
 void EnableVideoImg();
 bool VideoImgVisible();
 bool WiiMenuSuspended();
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+void	DisableVideoImg();
 void DoMPlayerGuiDraw();
 void ShowProgress (const char *msg, int done, int total);
 void SetBufferingStatus(int s);
 bool BufferingStatusSet();
+#ifdef __cplusplus
 }
+#endif
+
 
 extern int menuCurrent;
 extern bool menuMode;

@@ -7,7 +7,7 @@ extern "C" {
 
 #define MAX_FTP_MOUNTED 5
 
-#ifdef DEBUG
+#ifdef LIBFTF_DEBUG
 #define NET_PRINTF(fmt, args...)  net_printf(fmt, ##args)
 #define NET_ASSERT(x) assert(x)
 #else

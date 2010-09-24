@@ -50,7 +50,7 @@ static char * expand_escape(const char *str)
 	char *retval, *rp;
 	const char *cp = str;
 
-	retval = (char *) mem2_malloc(strlen(str) + 1, "other");
+	retval = (char *) mem2_malloc(strlen(str) + 1, OTHER_AREA);
 	if (retval == NULL)
 		return NULL;
 	rp = retval;
@@ -156,7 +156,7 @@ static MSG *setMSG(const char *msgid, const char *msgstr)
 	MSG *msg = findMSG(id);
 	if (!msg)
 	{
-		msg = (MSG *) mem2_malloc(sizeof(MSG),"other");
+		msg = (MSG *) mem2_malloc(sizeof(MSG),OTHER_AREA);
 		msg->id = id;
 		msg->msgstr = NULL;
 		msg->next = baseMSG;
@@ -167,7 +167,7 @@ static MSG *setMSG(const char *msgid, const char *msgstr)
 		if (msgstr)
 		{
 			if (msg->msgstr)
-				mem2_free(msg->msgstr, "other");
+				mem2_free(msg->msgstr, OTHER_AREA);
 			msg->msgstr = expand_escape(msgstr);
 		}
 		return msg;
@@ -180,8 +180,8 @@ static void gettextCleanUp(void)
 	while (baseMSG)
 	{
 		MSG *nextMsg = baseMSG->next;
-		mem2_free(baseMSG->msgstr,"other");
-		mem2_free(baseMSG,"other");
+		mem2_free(baseMSG->msgstr,OTHER_AREA);
+		mem2_free(baseMSG,OTHER_AREA);
 		baseMSG = nextMsg;
 	}
 }

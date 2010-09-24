@@ -2308,6 +2308,7 @@ int av_find_stream_info(AVFormatContext *ic)
             if(last == AV_NOPTS_VALUE || info[index].duration_count <= 1)
                 info[pkt->stream_index].last_dts = pkt->dts;
         }
+        
         if(st->parser && st->parser->parser->split && !st->codec->extradata){
             int i= st->parser->parser->split(st->codec, pkt->data, pkt->size);
             if(i){
@@ -2317,7 +2318,7 @@ int av_find_stream_info(AVFormatContext *ic)
                 memset(st->codec->extradata + i, 0, FF_INPUT_BUFFER_PADDING_SIZE);
             }
         }
-
+		
         /* if still no information, we try to open the codec and to
            decompress the frame. We try to avoid that in most cases as
            it takes longer and uses more memory. For MPEG-4, we need to
@@ -2335,6 +2336,7 @@ int av_find_stream_info(AVFormatContext *ic)
         if(st->codec->codec)
             avcodec_close(st->codec);
     }
+    
     for(i=0;i<ic->nb_streams;i++) {
         st = ic->streams[i];
         if(st->codec_info_nb_frames>2 && !st->avg_frame_rate.num && info[i].codec_info_duration)

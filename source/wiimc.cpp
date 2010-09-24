@@ -89,18 +89,24 @@ void CheckSleepTimer()
 
 void ExitApp()
 {
+	printf("ExitApp 1\n");
 	DisableRumble();
+	printf("ExitApp 2\n");
 	if(ExitRequested == 1)
 	{
 		SaveFolder();
 		SaveSettings(SILENT);
 	}
+	printf("ExitApp 3\n");
 
 	// shut down some threads
 	SuspendDeviceThread();
+	printf("ExitApp 4\n");
 	StopGX();
+	printf("ExitApp 5\n");
 
 	UnmountAllDevices();
+	printf("ExitApp 6\n");
 
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
@@ -366,7 +372,7 @@ bool CacheThreadSuspended()
 void show_mem()
 {
 	printf("m1(%.4f) m2(%.4f)\n",
-								((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
+								((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
 								 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 }
 
@@ -459,6 +465,7 @@ void StopMPlayerFile()
 extern "C" {
 void SetMPlayerSettings()
 {
+	static float aspectRatio=-2;
 	if(settingsSet)
 		return;
 
@@ -476,11 +483,16 @@ void SetMPlayerSettings()
 	else
 		wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
 	
-	
-	wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
+		
+	if(aspectRatio!=WiiSettings.aspectRatio)
+	{
+		aspectRatio=WiiSettings.aspectRatio;
+		wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
+	}
 	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);
 	wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
 	wiiSetProperty(MP_CMD_SUB_DELAY, WiiSettings.subtitleDelay);
+	
 	wiiSetCodepage(WiiSettings.subtitleCodepage);
 
 	char audioLang[14] = { 0 };
@@ -509,6 +521,8 @@ int main(int argc, char *argv[])
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
 
+	show_mem();
+
 	// only reload IOS if AHBPROT is not enabled
 	u32 have_ahbprot = __di_check_ahbprot();
 	u32 version = IOS_GetVersion();
@@ -529,9 +543,9 @@ int main(int argc, char *argv[])
 			(VIDEO_GetFrameBufferSize(vmode)*2) + //video buffers
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
 			(16*1024); // padding
-	AddMem2Area (size, "video");  
-	AddMem2Area (8*1024*1024, "gui"); 
-	AddMem2Area (3*1024*1024, "other"); // vars + ttf , we have to improve ext_ttf
+	AddMem2Area (size, VIDEO_AREA);  
+	AddMem2Area (8*1024*1024, GUI_AREA); 
+	AddMem2Area (3*1024*1024, OTHER_AREA); // vars + ttf , we have to improve ext_ttf
 
 	InitVideo2();
 	SetupPads();
@@ -544,28 +558,34 @@ int main(int argc, char *argv[])
 
 	AUDIO_Init(NULL);
 	GX_AllocTextureMemory();
-	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, "video");
+	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, VIDEO_AREA);
+	show_mem();
 	MountAllDevices(); // Initialize SD and USB devices
+	show_mem();
 
 	// store path app was loaded from
 	if(argc > 0 && argv[0] != NULL)
 		CreateLoadPath(argv[0]);
+	show_mem();
 
 	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
+	show_mem();
 	InitFreeType((u8*)font_ttf, font_ttf_size); // Initialize font system
 
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
+	show_mem();
 
 	// create GUI thread
 	GuiInit();
-	
+	show_mem();
 	while(1)
 	{
 		ResetVideo_Menu();
 		ResumeDeviceThread();
 		ResumeParseThread();
+		show_mem();
 		WiiMenu();
 		StopDeviceThread();
 		StopParseThread();

@@ -137,8 +137,8 @@ static ftp_env FTPEnv[MAX_FTP_MOUNTED];
 
 //global readahead cache
 //we maintain single cache for all connections
-ftp_cache_page *FTPReadAheadCache = NULL;
-u32 numFTP_RA_pages = 0;
+static ftp_cache_page *FTPReadAheadCache = NULL;
+static u32 numFTP_RA_pages = 0;
 
 //used to reuse data connections with RETR
 static char last_cmd[FTP_MAX_LINE] = "";
@@ -242,7 +242,7 @@ static void ReplaceForwardSlash(char* str)
 //==============================================================================
 //==============================================================================
 //fix ill-formed path with double '\' or '/'
-void FTP_FixPath( const char** path, char* fixed_path )
+static void FTP_FixPath( const char** path, char* fixed_path )
 {
 	char* p = fixed_path;
 
@@ -504,7 +504,7 @@ static int ftp_close_data(ftp_env* env)
 
 //========================================================================
 //========================================================================
-u32 ResolveHostAddress( const char* hostname )
+static u32 ResolveHostAddress( const char* hostname )
 {
 	struct hostent* hostEntry = net_gethostbyname(hostname);
 
@@ -2868,8 +2868,9 @@ bool CheckFTPConnection(const char* name)
 //==============================================================================
 //==============================================================================
 //simple network logging interface
-bool net_printf( const char *fmt, ... )
+static bool net_printf( const char *fmt, ... )
 {
+#if 0
     char buf[4096];
     char buf2[4096];
 	struct sockaddr_in server_addr;
@@ -2946,7 +2947,7 @@ bool net_printf( const char *fmt, ... )
 			t1=ticks_to_millisecs(gettime());
 		}
 	}
-
+#endif
 	return true;
 }
 

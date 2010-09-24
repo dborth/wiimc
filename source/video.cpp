@@ -287,8 +287,8 @@ void
 InitVideo2 ()
 {
 	// Allocate the video buffers
-	xfb[0] = (u32 *) MEM_K0_TO_K1 (mem2_malloc( VIDEO_GetFrameBufferSize(vmode), "video"));
-	xfb[1] = (u32 *) MEM_K0_TO_K1 (mem2_malloc( VIDEO_GetFrameBufferSize(vmode), "video"));
+	xfb[0] = (u32 *) MEM_K0_TO_K1 (mem2_malloc( VIDEO_GetFrameBufferSize(vmode), VIDEO_AREA));
+	xfb[1] = (u32 *) MEM_K0_TO_K1 (mem2_malloc( VIDEO_GetFrameBufferSize(vmode), VIDEO_AREA));
 
 	// Clear framebuffers etc.
 	VIDEO_ClearFrameBuffer (vmode, xfb[0], COLOR_BLACK);
@@ -325,7 +325,7 @@ InitVideo2 ()
 	GX_SetDrawDoneCallback(Draw_VIDEO);
 	GX_Flush();
 
-	videoScreenshot = (u8 *) mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, "video");
+	videoScreenshot = (u8 *) mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, VIDEO_AREA);
 }
 
 }

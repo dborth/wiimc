@@ -1046,17 +1046,10 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
                     file_format = DEMUXER_TYPE_UNKNOWN;
                 }
             }
-            
-			printf("mplayer 2_4.%i m1(%.4f) m2(%.4f)\n",i,
-											((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-											 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
             free_demuxer(demuxer);
             demuxer = NULL;
         }
     }
-	printf("mplayer 3 m1(%.4f) m2(%.4f)\n",
-									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
     // If no forced demuxer perform file extension based detection
     // Ok. We're over the stable detectable fileformats, the next ones are
@@ -1076,9 +1069,6 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
                    "demuxer: continue fuzzy content-based format guessing...\n");
         }
     }
-	printf("mplayer 4 m1(%.4f) m2(%.4f)\n",
-									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
     // Try detection for all other demuxers
     for (i = 0; (demuxer_desc = demuxer_list[i]); i++) {
         if (!demuxer_desc->safe_check && demuxer_desc->check_file) {
@@ -1119,10 +1109,6 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
  dmx_open:
 
     demuxer->file_format = file_format;
-	printf("mplayer 5 m1(%.4f) m2(%.4f)\n",
-									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-
     if ((sh_video = demuxer->video->sh) && sh_video->bih) {
         int biComp = le2me_32(sh_video->bih->biCompression);
         mp_msg(MSGT_DEMUX, MSGL_INFO,
@@ -1146,9 +1132,6 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
         }
     }
 #endif
-	printf("mplayer 6 m1(%.4f) m2(%.4f)\n",
-									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
     return demuxer;
 }

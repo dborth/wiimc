@@ -545,7 +545,7 @@ static void LoadOnlineMediaFile(char * filepath)
 {
 	int offset = 0;
 
-	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, "other");
+	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, OTHER_AREA);
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
 	offset = LoadFile(savebuffer, filepath, SILENT);
 
@@ -560,7 +560,7 @@ static void LoadOnlineMediaFile(char * filepath)
 			mxmlDelete(xml);
 		}
 	}
-	mem2_free(savebuffer, "other");
+	mem2_free(savebuffer, OTHER_AREA);
 }
 
 /****************************************************************************
@@ -888,13 +888,13 @@ SaveSettings (bool silent)
 		ShowAction ("Saving settings...");
 
 	FixInvalidSettings();
-	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, "other");
+	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, OTHER_AREA);
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
 	datasize = prepareSettingsData ();
 
 	offset = SaveFile(savebuffer, filepath, datasize, silent);
 
-	mem2_free(savebuffer, "other");
+	mem2_free(savebuffer, OTHER_AREA);
 
 	if(!silent)
 		CancelAction();
@@ -909,7 +909,7 @@ SaveSettings (bool silent)
 		sprintf(filepath,"%s/%s",appPath,"restore_points");
 		char * buff = wiiSaveRestorePoints(filepath);
 		SaveFile(buff, filepath, strlen(buff), SILENT);
-		mem2_free(buff,"other");
+		mem2_free(buff,OTHER_AREA);
 
 		return true;
 	}
@@ -930,7 +930,7 @@ static bool LoadSettingsFile(char * filepath)
 	bool result = false;
 	int offset = 0;
 
-	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, "other");
+	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, OTHER_AREA);
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
 
 	offset = LoadFile(savebuffer, filepath, SILENT);
@@ -1029,7 +1029,7 @@ static bool LoadSettingsFile(char * filepath)
 		}
 	}
 
-	mem2_free(savebuffer, "other");
+	mem2_free(savebuffer, OTHER_AREA);
 	return result;
 }
 
@@ -1089,11 +1089,11 @@ bool LoadSettings()
 			ChangeTheme();
 
 		sprintf(filepath,"%s/restore_points",appPath);
-		char *buffer = (char *)mem2_malloc(50*1024, "other");
+		char *buffer = (char *)mem2_malloc(50*1024, OTHER_AREA);
 		int size = LoadFile(buffer, filepath, SILENT);
 		if(size > 0)
 			wiiLoadRestorePoints(buffer, size);
-		mem2_free(buffer, "other");
+		mem2_free(buffer, OTHER_AREA);
 	}
 	return settingsFound;
 }

@@ -37,6 +37,7 @@
 
 #include "../libvo/video_out.h"
 #include "gx_supp.h"
+#include "../../utils/mem2_manager.h"
 
 
 #define HASPECT 320
@@ -557,18 +558,15 @@ inline void DrawMPlayer()
 	need_wait=true;
 }
 
-#include "../../utils/mem2_manager.h"
-
-
 void GX_AllocTextureMemory()
 {
 	//make memory fixed (max texture 1024*1024, gx can't manage more)
 	if(Yltexture) return;
 	
-	Yltexture = (u8 *) mem2_malloc(1024*1024, "video");
-	Yrtexture = (u8 *) mem2_malloc(1024*1024, "video");
-	Utexture = (u8 *) mem2_malloc(1024*512, "video");
-	Vtexture = (u8 *) mem2_malloc(1024*512, "video");
+	Yltexture = (u8 *) mem2_malloc(1024*1024, VIDEO_AREA);
+	Yrtexture = (u8 *) mem2_malloc(1024*1024, VIDEO_AREA);
+	Utexture = (u8 *) mem2_malloc(1024*512, VIDEO_AREA);
+	Vtexture = (u8 *) mem2_malloc(1024*512, VIDEO_AREA);
 }
 
 /****************************************************************************

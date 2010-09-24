@@ -151,6 +151,12 @@ class FreeTypeGX {
 		FreeTypeGX(FT_UInt pixelSize, uint8_t vertexIndex = GX_VTXFMT1);
 		~FreeTypeGX();
 
+//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);	
+
 		void setVertexFormat(uint8_t vertexIndex);
 		void setCompatibilityMode(uint32_t compatibilityMode);
 

@@ -27,15 +27,17 @@
 //#define ft_memalign memalign
 
 #include "mem2_manager.h"
-#define ft_malloc(x) mem2_malloc(x,"other")
-#define ft_free(x) mem2_free(x,"other")
-#define ft_memalign(x,y) mem2_memalign(x,y,"other")
+#define ft_malloc(x) mem2_malloc(x,OTHER_AREA)
+#define ft_free(x) mem2_free(x,OTHER_AREA)
+#define ft_memalign(x,y) mem2_memalign(x,y,OTHER_AREA)
 
 static FT_Library ftLibrary;	/**< FreeType FT_Library instance. */
 static FT_Face ftFace;			/**< FreeType reusable FT_Face typographic object. */
 static FT_GlyphSlot ftSlot;		/**< FreeType reusable FT_GlyphSlot glyph container object. */
 
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
+
+using namespace std;
 
 void InitFreeType(uint8_t* fontBuffer, FT_Long bufferSize)
 {
@@ -110,7 +112,6 @@ FreeTypeGX::FreeTypeGX(FT_UInt pixelSize, uint8_t vertexIndex)
 	this->ftPointSize = pixelSize;
 	this->ftKerningEnabled = FT_HAS_KERNING(ftFace);
 }
-
 /**
  * Default destructor for the FreeTypeGX class.
  */
@@ -118,6 +119,46 @@ FreeTypeGX::~FreeTypeGX()
 {
 	this->unloadFont();
 }
+
+// overloaded new operator
+void *FreeTypeGX::operator new(size_t size)
+{
+	void *p = ft_malloc(size);
+
+	if (!p)
+	{
+		bad_alloc ba;
+		throw ba;
+	}
+	return p;
+}
+
+// overloaded delete operator
+void FreeTypeGX::operator delete(void *p)
+{
+	ft_free(p);
+}
+
+// overloaded new operator for arrays
+void *FreeTypeGX::operator new[](size_t size)
+{
+	void *p = ft_malloc(size);
+
+	if (!p)
+	{
+		bad_alloc ba;
+		throw ba;
+	}
+	return p;
+}
+
+// overloaded delete operator for arrays
+void FreeTypeGX::operator delete[](void *p)
+{
+	ft_free(p);
+}
+
+
 
 /**
  * Setup the vertex attribute formats for the glyph textures.

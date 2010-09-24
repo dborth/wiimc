@@ -433,13 +433,13 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 
 	if(type == T_FAT)
 	{
-		if(!fatMount(mount, disc, sector, 3, 256))
+		if(!fatMount(mount, disc, sector, 2, 128))
 			return;
 		fatGetVolumeLabel(mount, part[device][*devnum].name);
 	}
 	else
 	{
-		if(!ntfsMount(mount, disc, sector, 256, 3, NTFS_DEFAULT | NTFS_RECOVER))
+		if(!ntfsMount(mount, disc, sector, 2, 128, NTFS_DEFAULT | NTFS_RECOVER))
 			return;
 
 		const char *name = ntfsGetVolumeName(mount);
@@ -810,10 +810,20 @@ static bool Remount(int device, int silent)
 
 void MountAllDevices()
 {
+	printf("MountAllDevices 1 m1(%.4f) m2(%.4f)\n",
+								((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+								 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+
 	if(sd->startup() && sd->isInserted())
 	{
+		printf("MountAllDevices 2 m1(%.4f) m2(%.4f)\n",
+									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 		isInserted[DEVICE_SD] = true;
 		MountPartitions(DEVICE_SD, SILENT);
+		printf("MountAllDevices 3 m1(%.4f) m2(%.4f)\n",
+									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 	}
 	if(usb->startup() && usb->isInserted())
 	{
@@ -824,6 +834,10 @@ void MountAllDevices()
 	{
 		Remount(DEVICE_USB, SILENT);
 	}
+	printf("MountAllDevices 4 m1(%.4f) m2(%.4f)\n",
+								((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+								 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+	
 }
 
 /****************************************************************************
@@ -1626,7 +1640,7 @@ typedef struct
 
 static int ParsePLXPlaylist()
 {
-	char *buffer = (char*)mem2_malloc(64*1024, "other");
+	char *buffer = (char*)mem2_malloc(64*1024, OTHER_AREA);
 
 	if(!buffer)
 		return 0;
@@ -1640,7 +1654,7 @@ static int ParsePLXPlaylist()
 
 	if(size == 0)
 	{
-		mem2_free(buffer, "other");
+		mem2_free(buffer, OTHER_AREA);
 		if(browser.numEntries > 0 && browserList[browser.selIndex].type == TYPE_SEARCH)
 			return -4;
 		return 0;
@@ -1701,7 +1715,7 @@ static int ParsePLXPlaylist()
 					if(!newList) // failed to allocate required memory
 					{
 						free(list);
-						mem2_free(buffer, "other");
+						mem2_free(buffer, OTHER_AREA);
 						return -1; // too many files
 					}
 					else
@@ -1751,7 +1765,7 @@ static int ParsePLXPlaylist()
 	if(numEntries == 0)
 	{
 		free(list);
-		mem2_free(buffer, "other");
+		mem2_free(buffer, OTHER_AREA);
 
 		if(plxFile && browserList[browser.selIndex].type == TYPE_SEARCH)
 			return -5;
@@ -1784,7 +1798,7 @@ static int ParsePLXPlaylist()
 		if(!AddBrowserEntry()) // add failed
 		{
 			free(list);
-			mem2_free(buffer, "other");
+			mem2_free(buffer, OTHER_AREA);
 			return -1;
 		}
 
@@ -1800,7 +1814,7 @@ static int ParsePLXPlaylist()
 		browser.numEntries++;
 	}
 	free(list);
-	mem2_free(buffer, "other");
+	mem2_free(buffer, OTHER_AREA);
 
 	// try to find and select the last loaded file
 	FindFile();

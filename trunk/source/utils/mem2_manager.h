@@ -11,38 +11,25 @@
 #define _MEM2MANAGER_H_
 #include <ogc/system.h>
 
+#define MAX_MEM2_AREAS 5
+
+enum mem2_areas_enum {GUI_AREA,VIDEO_AREA,OTHER_AREA};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-bool AddMem2Area (u32 size, const char *name);
-void ClearMem2Area (const char *area);
-void* mem2_memalign(u8 align, u32 size, const char *area);
-void* mem2_malloc(u32 size, const char *area);
-void mem2_free(void *ptr, const char *area);	
-void* mem2_calloc(u32 num, u32 size, const char *area);
-void* mem2_realloc(void *ptr, u32 newsize, const char *area);
+bool AddMem2Area (u32 size, const int index);
+void ClearMem2Area (const int area);
+void* mem2_memalign(u8 align, u32 size, const int area);
+void* mem2_malloc(u32 size, const int area);
+void mem2_free(void *ptr, const int area);	
+void* mem2_calloc(u32 num, u32 size, const int area);
+void* mem2_realloc(void *ptr, u32 newsize, const int area);
 
 
-void ShowAreaInfo(const char *area); //if area == NULL print all areas info
-
-
-/*
-u32 InitMem2Manager ();
-void* mem2_memalign(u8 align, u32 size);
-void* mem2_malloc(u32 size);
-void mem2_free(void *ptr);
-
-u32 InitMem2GUIManager ();
-void ClearMem2GUIManager ();
-void* gui_mem2_memalign(u8 align, u32 size);
-void* gui_mem2_malloc(u32 size);
-void gui_mem2_free(void *ptr);
-void print_gui_mem2_info();
-void init_debug_gui_mem2(bool enable);
-*/
-
+void ShowAreaInfo(const int area); //if area == -1 print all areas info
 
 #ifdef __cplusplus
 }

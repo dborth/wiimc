@@ -426,7 +426,7 @@ static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, u32 width, u32 height, int * dstW
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = mem2_memalign (32, len, "gui"); 
+		dst = mem2_memalign (32, len, GUI_AREA); 
 
 	if(!dst)
 		return NULL;

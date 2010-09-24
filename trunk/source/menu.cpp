@@ -40,8 +40,8 @@ extern "C" {
 }
 
 #define THREAD_SLEEP 	200
-#define GSTACK 			(128*1024)
-#define GUITH_STACK 	(8192*2)
+#define GSTACK 			(8192)
+#define GUITH_STACK 	(8192)
 
 static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
 static u8 progressstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
@@ -801,9 +801,9 @@ restart:
 			if(ext_font_ttf)
 			{
 				SuspendGui();
-				mem2_free(ext_font_ttf, "other");
+				mem2_free(ext_font_ttf, OTHER_AREA);
 			}
-			ext_font_ttf = (u8 *)mem2_memalign(32, loadSize, "other"); // can be a problem we have to see how to manage it
+			ext_font_ttf = (u8 *)mem2_memalign(32, loadSize, OTHER_AREA); // can be a problem we have to see how to manage it
 			fread (ext_font_ttf, 1, loadSize, file);
 			fclose(file);
 
@@ -1736,7 +1736,7 @@ static bool thumbLoad = false;
 static void *ThumbThread (void *arg)
 {
 	GuiImageData *thumb = NULL;
-	char *thumbBuffer = (char *)mem2_malloc(200*1024, "other");
+	char *thumbBuffer = (char *)mem2_malloc(200*1024, OTHER_AREA);
 	thumbLoad = false;
 	thumbThreadHalt = 0;
 
@@ -1789,7 +1789,7 @@ static void *ThumbThread (void *arg)
 		usleep(THREAD_SLEEP);
 	}
 	if(thumb) delete thumb;
-	mem2_free(thumbBuffer, "other");
+	mem2_free(thumbBuffer, OTHER_AREA);
 	return NULL;
 }
 
@@ -1879,7 +1879,7 @@ static void HideAudioVolumeLevelBar();
 
 bool LoadYouTubeFile(char *url, char *newurl)
 {
-	char *buffer = (char *)mem2_malloc(128*1024, "other");
+	char *buffer = (char *)mem2_malloc(128*1024, OTHER_AREA);
 
 	if(!buffer)
 		return false;
@@ -1888,7 +1888,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	if(size <= 0)
 	{
-		mem2_free(buffer, "other");
+		mem2_free(buffer, OTHER_AREA);
 		return false;
 	}
 
@@ -1897,7 +1897,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	if(str == NULL)
 	{
-		mem2_free(buffer, "other");
+		mem2_free(buffer, OTHER_AREA);
 		return false;
 	}
 
@@ -1917,11 +1917,11 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		if(strcmp((*link).first.c_str(), "34") == 0)
 		{
 			url_unescape_string(newurl, (*link).second.c_str());
-			mem2_free(buffer, "other");
+			mem2_free(buffer, OTHER_AREA);
 			return true;
 		}
 	}
-	mem2_free(buffer, "other");
+	mem2_free(buffer, OTHER_AREA);
 	return false;
 }
 
@@ -5983,10 +5983,10 @@ static void AudioNowPlayingCallback(void *ptr)
 
 		if(album && strlen(album) > 0 && year && strlen(year) > 0)
 		{
-			char *txt=(char*)mem2_malloc(sizeof(char)*1024,"gui");
+			char *txt=(char*)mem2_malloc(sizeof(char)*1024,GUI_AREA);
 			sprintf(txt, "%s (%s)", album, year);
 			audiobarNowPlaying[3]->SetText(txt);
-			mem2_free(txt,"gui");
+			mem2_free(txt,GUI_AREA);
 		}
 		else if(album && strlen(album) > 0)
 		{

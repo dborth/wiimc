@@ -1010,7 +1010,7 @@ static u8* DGifDecodeTo4x4RGB8(GifFileType *gifFile, GifRowType *rowType, short 
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = mem2_memalign (32, len, "gui");
+		dst = mem2_memalign (32, len, GUI_AREA);
 
 	if (!dst)
 		return NULL;

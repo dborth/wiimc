@@ -44,6 +44,12 @@
 #include "ass_mp.h"
 #include "eosd.h"
 
+#ifdef GEKKO
+#include "../../utils/mem2_manager.h"
+#define malloc(x) mem2_malloc(x,OTHER_AREA)
+#define free(x) mem2_free(x,OTHER_AREA)
+#endif
+
 #define _r(c)  ((c)>>24)
 #define _g(c)  (((c)>>16)&0xFF)
 #define _b(c)  (((c)>>8)&0xFF)
@@ -72,8 +78,9 @@ static int config(struct vf_instance *vf,
                   unsigned int flags, unsigned int outfmt)
 {
     mp_eosd_res_t res = { 0 };
-
-    if (outfmt == IMGFMT_IF09)
+	
+	printf("\n*** config vf_ass ***\n\n");
+	if (outfmt == IMGFMT_IF09)
         return 0;
 
     vf->priv->outh = height + ass_top_margin + ass_bottom_margin;
@@ -102,6 +109,11 @@ static int config(struct vf_instance *vf,
 
 static void get_image(struct vf_instance *vf, mp_image_t *mpi)
 {
+#ifdef GEKKO
+		if(ass_track == 0 || !sub_visibility)
+			return ;
+#endif
+
     if (mpi->type == MP_IMGTYPE_IPB)
         return;
     if (mpi->flags & MP_IMGFLAG_PRESERVE)
@@ -387,6 +399,7 @@ static int control(vf_instance_t *vf, int request, void *data)
 
 static void uninit(struct vf_instance *vf)
 {
+	printf("\n*** uninit vf_ass ***\n\n");
     if (vf->priv->planes[1])
         free(vf->priv->planes[1]);
     if (vf->priv->planes[2])

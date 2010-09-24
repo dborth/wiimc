@@ -53,9 +53,9 @@
 //#define gui_memalign memalign
 
 #include "../utils/mem2_manager.h"
-#define gui_malloc(x) mem2_malloc(x,"gui")
-#define gui_memalign(x,y) mem2_memalign(x,y,"gui")
-#define gui_free(x) mem2_free(x,"gui")
+#define gui_malloc(x) mem2_malloc(x,GUI_AREA)
+#define gui_memalign(x,y) mem2_memalign(x,y,GUI_AREA)
+#define gui_free(x) mem2_free(x,GUI_AREA)
 
 using namespace std;
 

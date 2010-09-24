@@ -145,6 +145,8 @@
 
 #include <malloc.h>
 #include "osdep/gx_supp.h"
+#include "../utils/mem2_manager.h"
+
 
 extern int prev_dxs, prev_dys;
 extern int stop_cache_thread;
@@ -2366,6 +2368,7 @@ int reinit_video_chain(void) {
     //shouldn't we set dvideo->id=-2 when we fail?
     vo_config_count=0;
     //if((mpctx->video_out->preinit(vo_subdevice))!=0){
+    
     if(!(mpctx->video_out=init_best_video_out(video_driver_list))){
       mp_msg(MSGT_CPLAYER,MSGL_FATAL,MSGTR_ErrorInitializingVODevice);
       goto err_out;
@@ -2394,6 +2397,9 @@ int reinit_video_chain(void) {
 #endif
 
 #ifdef CONFIG_ASS
+#ifdef GEKKO
+	  if(mpctx->set_of_sub_size>0) {
+#endif
   if(ass_enabled) {
     int i;
     int insert = 1;
@@ -2412,9 +2418,11 @@ int reinit_video_chain(void) {
         mp_msg(MSGT_CPLAYER,MSGL_ERR, "ASS: cannot add video filter\n");
     }
   }
+#ifdef GEKKO
+	  }
+#endif  
 #endif
 
-  sh_video->vfilter=append_filters(sh_video->vfilter);
   eosd_init(sh_video->vfilter);
 
 #ifdef CONFIG_ASS
@@ -2464,6 +2472,7 @@ err_out:
 
 static double update_video(int *blit_frame)
 {
+	static int cnt=5;
     sh_video_t * const sh_video = mpctx->sh_video;
     //--------------------  Decode a frame: -----------------------
     double frame_time;
@@ -2475,6 +2484,7 @@ static double update_video(int *blit_frame)
 	int in_size;
 	int full_frame;
 
+	cnt--;
 	do {
 	current_module = "video_read_frame";
 	if(!sh_video) return -1;
@@ -2541,6 +2551,7 @@ static double update_video(int *blit_frame)
 	update_teletext(sh_video, mpctx->demuxer, 0);
 	update_osd_msg();
 	}
+	
 #ifdef CONFIG_DVDNAV
 	/// save back last still frame for future display
 	mp_dvdnav_save_smpi(in_size,start,decoded_frame);
@@ -2550,8 +2561,10 @@ static double update_video(int *blit_frame)
 	current_module = "filter_video";
 	*blit_frame = (decoded_frame && filter_video(sh_video, decoded_frame,
 							sh_video->pts));
+							
 	}
 	else {
+	
 	int res = generate_video_frame(sh_video, mpctx->d_video);
 	if (!res)
 		return -1;
@@ -2580,6 +2593,7 @@ static double update_video(int *blit_frame)
 		mpctx->delay -= frame_time;
 	*blit_frame = res > 0;
 	}
+	
 	return frame_time;
 }
 
@@ -3235,6 +3249,9 @@ current_module = NULL;
 
 
 // ******************* Now, let's see the per-file stuff ********************
+printf("maplayer init m1(%.4f) m2(%.4f)\n",
+							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
 play_next_file:
 
@@ -3258,11 +3275,6 @@ play_next_file:
 		if(controlledbygui == 2)
 			controlledbygui = 0; // none playing, so discard
 	}
-
-printf("mplayer m1(%.4f) m2(%.4f)\n",
-							((float)((char*)SYS_GetArenaHi()-(char*)SYS_GetArenaLo()))/0x100000,
-							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-
 
 wii_error = 0;
 controlledbygui = 0;
@@ -3500,6 +3512,7 @@ int vob_sub_auto = 1;
     goto goto_next_file;
   }
   initialized_flags|=INITIALIZED_STREAM;
+  
 #ifdef GEKKO
   strcpy(fileplaying,filename);
 #endif
@@ -3607,8 +3620,14 @@ stream_cache_min_percent=0.2;
 
 //============ Open DEMUXERS --- DETECT file type =======================
 current_module="demux_open";
+printf("mp 5 m1(%.4f) m2(%.4f)\n",
+							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 mpctx->demuxer=demux_open(mpctx->stream,mpctx->file_format,audio_id,video_id,dvdsub_id,filename);
 
+printf("mp 6 m1(%.4f) m2(%.4f)\n",
+							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 // HACK to get MOV Reference Files working
 if (mpctx->demuxer && mpctx->demuxer->type==DEMUXER_TYPE_PLAYLIST)
 {
@@ -4056,6 +4075,10 @@ if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
 mpctx->osd_function=OSD_PLAY;
 playing_file=true;
 pause_low_cache=0;
+printf("main while m1(%.4f) m2(%.4f)\n",
+							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+
 GetRelativeTime();
 total_time_usage_start=GetTimer();
 #endif
@@ -4107,7 +4130,20 @@ if(!mpctx->sh_video) {
   vo_fps=mpctx->sh_video->fps;
 
   if (!mpctx->num_buffered_frames) {
-	  double frame_time = update_video(&blit_frame);
+  double frame_time;
+  static int cnt=5;
+  if(cnt>0)
+	   	{
+	   	cnt--;
+	   	 printf("update_video 1 m1(%.4f) m2(%.4f)\n",
+									  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+		frame_time = update_video(&blit_frame);
+		printf("update_video 2 m1(%.4f) m2(%.4f)\n",
+									 ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									  ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+	}
+	  else frame_time = update_video(&blit_frame);
       while (!blit_frame && mpctx->startup_decode_retry > 0) {
           double delay = mpctx->delay;
           // these initial decode failures are probably due to codec delay,
@@ -4115,6 +4151,10 @@ if(!mpctx->sh_video) {
           update_video(&blit_frame);
           mpctx->delay = delay;
           mpctx->startup_decode_retry--;
+          
+		  printf("startup_decode_retry m1(%.4f) m2(%.4f)\n",
+									  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
       }
       mpctx->startup_decode_retry = 0;
       mp_dbg(MSGT_AVSYNC,MSGL_DBG2,"*** ftime=%5.3f ***\n",frame_time);
@@ -4165,13 +4205,25 @@ if(!mpctx->sh_video) {
 //====================== FLIP PAGE (VIDEO BLT): =========================
 if (!edl_needs_reset) {
         current_module="flip_page";
+        static int cnt=5;
         if (!frame_time_remaining && blit_frame) {
        u64 t2=GetTimer();
 
-	   if(vo_config_count) mpctx->video_out->flip_page();
+	   if(vo_config_count) 
+	   {
+	   	
+	   	if(cnt>0)
+	   	{
+	   	cnt--;
+	   	 printf("flip_page m1(%.4f) m2(%.4f)\n",
+									  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+	}
+	   	mpctx->video_out->flip_page();
+	   }
 	   mpctx->num_buffered_frames--;
 
-	   vout_time_usage += (GetTimer() - t2) * 0.000001;
+	   vout_time_usage += (GetTimer() - t2) * 0.000001f;
         }
 }
 //====================== A-V TIMESTAMP CORRECTION: =========================
@@ -4402,7 +4454,11 @@ if(benchmark){
                total_frame_cnt,
                (total_time_usage>0.5)?(total_frame_cnt/total_time_usage):0);
 }
+#ifdef GEKKO
 save_restore_point(fileplaying);
+DisableVideoImg();
+#endif
+
 // time to uninit all, except global stuff:
 printf("mplayer: end film. UNINIT\n");
 uninit_player(INITIALIZED_ALL);
@@ -5271,6 +5327,8 @@ void wiiSetSubtitleSize(float size)
 
 	ass_font_scale = size;
 #else
+	if(size == text_font_scale_factor)
+		return;
 	text_font_scale_factor = size;
 	osd_font_scale_factor = size;
 	force_load_font = 1;
@@ -5329,7 +5387,7 @@ char * wiiSaveRestorePoints(char * path)
 {
 	int i;
 	char tmppath[MAXPATHLEN];
-	char *buff = mem2_malloc(MAX_RESTORE_POINTS*1024 + 1024,"other");
+	char *buff = mem2_malloc(MAX_RESTORE_POINTS*1024 + 1024,OTHER_AREA);
 	buff[0] = 0;
 
 	for(i=0; i<MAX_RESTORE_POINTS; i++)

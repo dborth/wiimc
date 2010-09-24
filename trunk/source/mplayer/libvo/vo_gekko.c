@@ -222,13 +222,22 @@ static int inline query_format(uint32_t format)
 
 void reinit_video()
 {
+		printf("reinit_video 1 m1(%.4f) m2(%.4f)\n",
+									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+	
+
 	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
 	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
 
 	GX_StartYUV(image_width, image_height, gx_width / 2, gx_height / 2 ); 
 	GX_ConfigTextureYUV(image_width, image_height, pitch);	
 	Set_vsync(vo_vsync);
-}
+	printf("reinit_video 2 m1(%.4f) m2(%.4f)\n",
+								((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+								 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+}	
+
 
 static int config(uint32_t width, uint32_t height, uint32_t d_width,
           uint32_t d_height, uint32_t flags, char *title,
@@ -254,6 +263,10 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 		gx_width = (f32)d_width * ((f32)mplayerheight / (f32)d_height);
 		gx_height = mplayerheight;
 	}
+	printf("config video m1(%.4f) m2(%.4f)\n",
+								((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+								 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+	
 	reinit_video();
 	return 0;
 }

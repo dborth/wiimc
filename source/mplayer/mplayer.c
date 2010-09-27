@@ -147,7 +147,6 @@
 #include "osdep/gx_supp.h"
 #include "../utils/mem2_manager.h"
 
-
 extern int prev_dxs, prev_dys;
 extern int stop_cache_thread;
 
@@ -160,6 +159,7 @@ bool StartDVDMotor();
 void SetLastDVDMotorTime();
 void ResumeCacheThread();
 bool CacheThreadSuspended();
+bool DisableVideoImg();
 
 void ReInitTTFLib();
 void reinit_video();
@@ -3874,13 +3874,6 @@ if (select_subtitle(mpctx)) {
 
 if(!mpctx->sh_video) goto main; // audio-only
 
-if(!reinit_video_chain()) {
-  if(!mpctx->sh_video){
-    if(!mpctx->sh_audio) goto goto_next_file;
-    goto main; // exit_player(MSGTR_Exit_error);
-  }
-}
-
 #ifdef GEKKO
 // check if video has a higher resolution than the Wii can handle
 if(mpctx->sh_video->disp_w > 1280)
@@ -3889,6 +3882,13 @@ if(mpctx->sh_video->disp_w > 1280)
 	goto goto_next_file;
 }
 #endif
+
+if(!reinit_video_chain()) {
+  if(!mpctx->sh_video){
+    if(!mpctx->sh_audio) goto goto_next_file;
+    goto main; // exit_player(MSGTR_Exit_error);
+  }
+}
 
    if(vo_flags & 0x08 && vo_spudec)
       spudec_set_hw_spu(vo_spudec,mpctx->video_out);

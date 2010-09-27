@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+#include <math.h>
 #include <unistd.h>
 #include <ogc/mutex.h>
 #include <ogc/lwp.h>
@@ -47,8 +48,6 @@ static int drawMode = 0;
 
 void StartDrawThread();
 void PauseAndGotoGUI();
-void ShutdownGui();
-void SetMPlayerSettings();
 void TakeScreenshot();
 int DrawMPlayerGui();
 int copyScreen = 0;
@@ -79,9 +78,6 @@ static GXTexObj YltexObj,YrtexObj,UtexObj,VtexObj;
 static u16 Ylwidth, Yrwidth, Ywidth, Yheight, UVwidth, UVheight;
 
 static Mtx view;
-
-static int vsync=0;
-
 
 typedef struct tagcamera {
 	guVector pos;
@@ -494,18 +490,7 @@ inline void DrawMPlayer()
 	DCStoreRangeNoSync(Vtexture, UVtexsize);
 
 	if(need_wait)
-	{
 		GX_WaitDrawDone();
-		/*
-		if (vsync)
-		{
-			VIDEO_WaitVSync();
-
-			if (vmode->viTVMode & VI_NON_INTERLACE)
-				VIDEO_WaitVSync();
-		}
-		*/
-	}
 
 	whichfb ^=1;
 
@@ -577,8 +562,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	int w,wYl,wYr,h,xscale,yscale,diffx,diffy;
 	Mtx44 p;
 
-//	ShutdownGui(); // tell GUI to shut down, MPlayer is ready to take over
-//	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
 	need_wait=false;
 
 	xscale = haspect * hor_zoom;
@@ -715,11 +698,6 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 		Vsrc3 += UVrowpitch;
 		Vsrc4 += UVrowpitch;
 	}
-}
-
-void Set_vsync(int _vsync)
-{
-	vsync=_vsync;
 }
 
 void GX_RenderTexture()

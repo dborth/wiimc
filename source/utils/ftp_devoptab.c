@@ -25,24 +25,21 @@
 #include <stdlib.h>
 
 //cache pages count
-#define FTP_CACHE_PAGES              3
+#define FTP_CACHE_PAGES				3
 //cache page size
 #define NET_READ_BUFFERSIZE			7300
-#define NET_WRITE_BUFFERSIZE			4096
+#define NET_WRITE_BUFFERSIZE		4096
 
 #define FTP_READ_BUFFERSIZE			(128*1024)
 
 #define FTP_MAXPATH					1024
 #define FTP_MAX_LINE				255
 
-
 #define IOS_O_NONBLOCK				0x04
 #define NET_TIMEOUT					10000  // network connection timeout, in ms
 
 #define SOCKET s32
 
-//======================
-//======================
 //file structure
 typedef struct
 {
@@ -52,9 +49,6 @@ typedef struct
 	int envIndex;					//connection this file belongs too
 } FTPFILESTRUCT;
 
-
-//======================
-//======================
 //cache page
 typedef struct
 {
@@ -64,9 +58,6 @@ typedef struct
 	void *ptr;				//poiter to data, FTP_READ_BUFFERSIZE bytes
 } ftp_cache_page;
 
-
-//======================
-//======================
 //directory list entry
  typedef struct
 {
@@ -75,8 +66,6 @@ typedef struct
   char name[FTP_MAX_LINE];	//'file.dat', 'doc'
 } FTPDIRENTRY;
 
-//======================
-//======================
 //directory linked list item
 typedef struct
 {
@@ -84,9 +73,6 @@ typedef struct
 	void* next;				//FTPDIRENTRYLISTITEM* next
 } FTPDIRENTRYLISTITEM;
 
-
-//======================
-//======================
 // FTP connection
 typedef struct
 {
@@ -113,9 +99,6 @@ typedef struct
 
 } ftp_env;
 
-
-//======================
-//======================
 //structure for enumerating directory
 typedef struct
 {
@@ -150,34 +133,24 @@ static bool dir_changed = false;
 //use random_port++ every time.
 static u16 random_port = 1025;
 
-
+#ifdef FTP_DEBUG
 static u16 debug_msgid = 0;
 static s32 debug_sock = INVALID_SOCKET;
+#endif
 
-//======================
-//Forward declarations
-//======================
 static bool ReadFTPFromCache( void *buf, off_t len, FTPFILESTRUCT *file );
 static int ftp_execute(ftp_env* env, char *cmd, int res, int reconnect);
 
-//==============================================================================
-//==============================================================================
 static inline void _FTP_lock()
 {
 	if(_FTP_mutex!=LWP_MUTEX_NULL) LWP_MutexLock(_FTP_mutex);
 }
 
-
-//==============================================================================
-//==============================================================================
 static inline void _FTP_unlock()
 {
 	if(_FTP_mutex!=LWP_MUTEX_NULL) LWP_MutexUnlock(_FTP_mutex);
 }
 
-
-//==============================================================================
-//==============================================================================
 //find index of item in FTPEnv erray by name
 //name = 'ftp1'
 static ftp_env* FindFTPEnv(const char *name)
@@ -194,9 +167,6 @@ static ftp_env* FindFTPEnv(const char *name)
 	return NULL;
 }
 
-
-//==============================================================================
-//==============================================================================
 static s32 set_blocking(s32 s, bool blocking)
 {
 	u32 nodelay;
@@ -214,9 +184,6 @@ static s32 set_blocking(s32 s, bool blocking)
     return flags;
 }
 
-
-//==============================================================================
-//==============================================================================
 //set to blocking before closing socket;
 //allows to send all data before closing
 static s32 net_close_blocking(s32 s)
@@ -225,9 +192,6 @@ static s32 net_close_blocking(s32 s)
     return net_close(s);
 }
 
-//========================================================================
-//========================================================================
-// '\' -> '/'
 static void ReplaceForwardSlash(char* str)
 {
 	char* p = str;
@@ -238,9 +202,6 @@ static void ReplaceForwardSlash(char* str)
 	}
 }
 
-
-//==============================================================================
-//==============================================================================
 //fix ill-formed path with double '\' or '/'
 static void FTP_FixPath( const char** path, char* fixed_path )
 {
@@ -282,8 +243,6 @@ static void FTP_FixPath( const char** path, char* fixed_path )
 	*path = fixed_path;
 }
 
-//==============================================================================
-//==============================================================================
 //send count bytes
 static bool SocketSend(SOCKET theSocket, const char* buf, size_t count)
 {
@@ -323,8 +282,6 @@ static bool SocketSend(SOCKET theSocket, const char* buf, size_t count)
 	return true;
 }
 
-//==============================================================================
-//==============================================================================
 //exitonempty = true: receive count bytes, fail if timeout
 //exitonempty = false: return up to count bytes or return when socket is empty
 //return number of bytes received or -1 (timeout)
@@ -369,9 +326,6 @@ static int SocketRecv(SOCKET theSocket, char* buf, size_t count, bool exitonempt
 	return received;
 }
 
-
-//========================================================================
-//========================================================================
 static int ftp_getIP(char *buf, unsigned *ip, unsigned short *port)
 {
 	char *b;
@@ -399,8 +353,6 @@ static int ftp_getIP(char *buf, unsigned *ip, unsigned short *port)
 	return 0;
 }
 
-//========================================================================
-//========================================================================
 static int ftp_readline(SOCKET socket, char *buf, int len)
 {
 	int i = 0, out = 0;
@@ -427,8 +379,6 @@ static int ftp_readline(SOCKET socket, char *buf, int len)
 	return i;
 }
 
-//========================================================================
-//========================================================================
 static int ftp_get_response(ftp_env* env)
 {
 	char buf[FTP_MAX_LINE], *b;
@@ -438,11 +388,11 @@ static int ftp_get_response(ftp_env* env)
 	i = ftp_readline(env->ctrl_socket, buf, FTP_MAX_LINE);
 	if(i < 0)
 	{
-		NET_PRINTF("FTP RESPONCE: NULL", 0 );
+		NET_PRINTF("FTP response: NULL", 0 );
 		return i;
 	}
 
-	NET_PRINTF("FTP RESPONCE: %s\n", buf );
+	NET_PRINTF("FTP response: %s\n", buf );
 
 	if(buf[3] == '-')
 	{
@@ -450,7 +400,7 @@ static int ftp_get_response(ftp_env* env)
 		multiline = strtoul(buf, &b, 0);
 		if(b != buf + 3)
 		{
-			NET_PRINTF("FTP RESPONCE: bad responce\n", 0 );
+			NET_PRINTF("FTP response: bad response\n", 0 );
 			return -1;
 		}
 	}
@@ -477,7 +427,7 @@ static int ftp_get_response(ftp_env* env)
 		res = strtoul(buf, &b, 0);
 		if(b != buf + 3)
 		{
-			NET_PRINTF("FTP RESPONCE: bad responce\n", 0 );
+			NET_PRINTF("FTP response: bad response\n", 0 );
 			return -1;
 		}
 	}
@@ -485,9 +435,6 @@ static int ftp_get_response(ftp_env* env)
 	return res;
 }
 
-
-//========================================================================
-//========================================================================
 static int ftp_close_data(ftp_env* env)
 {
 	if( env->data_socket != INVALID_SOCKET )
@@ -502,8 +449,6 @@ static int ftp_close_data(ftp_env* env)
 	return 0;
 }
 
-//========================================================================
-//========================================================================
 static u32 ResolveHostAddress( const char* hostname )
 {
 	struct hostent* hostEntry = net_gethostbyname(hostname);
@@ -523,9 +468,6 @@ static u32 ResolveHostAddress( const char* hostname )
 
 }
 
-
-//========================================================================
-//========================================================================
 static bool ftp_doconnect( ftp_env* env )
 {
 	NET_PRINTF( "ftp_doconnect()\n", 0 );
@@ -593,7 +535,7 @@ static bool ftp_doconnect( ftp_env* env )
 
 	if( ftp_get_response(env) != 220 )
 	{
-		NET_PRINTF( "ftp_doconnect() - no responce from ftp server\n", 0 );
+		NET_PRINTF( "ftp_doconnect() - no response from ftp server\n", 0 );
 		return false;
 	}
 
@@ -625,8 +567,6 @@ static bool ftp_doconnect( ftp_env* env )
 	return true;
 }
 
-//========================================================================
-//========================================================================
 static int ftp_reconnect(ftp_env* env)
 {
 	int res;
@@ -656,9 +596,7 @@ static int ftp_reconnect(ftp_env* env)
 	}
 }
 
-//========================================================================
-//========================================================================
-// if res!=0, server responce is checked.
+// if res!=0, server response is checked.
 static int ftp_execute(ftp_env* env, char *cmd, int res, int reconnect)
 {
 	char buf[FTP_MAX_LINE];
@@ -724,9 +662,6 @@ static int ftp_execute(ftp_env* env, char *cmd, int res, int reconnect)
 	return 0;
 }
 
-
-//========================================================================
-//========================================================================
 static int ftp_get_fname(char* s, char* d)
 {
 	int i, cnt;
@@ -760,8 +695,6 @@ static int ftp_get_fname(char* s, char* d)
 	return 0;
 }
 
-//========================================================================
-//========================================================================
 static int ftp_get_substring(char *s, char *d, int n)
 {
 	int in_space = 1;
@@ -803,8 +736,6 @@ static int ftp_get_substring(char *s, char *d, int n)
 	return -1;
 }
 
-//========================================================================
-//========================================================================
 static int ftp_execute_open_actv(ftp_env* env, char *cmd, char *type, off_t offset, SOCKET *data_sock)
 {
 
@@ -980,7 +911,6 @@ execute_open_actv_retry:
 			return -1;
 		}
 
-
 /*
 		*data_sock =  accept(ssock, NULL, NULL);
 		if (*data_sock == INVALID_SOCKET)
@@ -988,7 +918,6 @@ execute_open_actv_retry:
 			return -1;
 		}
 */
-
 
 		NET_PRINTF("net_accept()\n",0);
 
@@ -1020,8 +949,6 @@ execute_open_actv_retry:
 	return 0;
 }
 
-//========================================================================
-//========================================================================
 static int ftp_execute_open_pasv(ftp_env* env, char *cmd, char *type, off_t offset, SOCKET *data_sock)
 {
 	int l;
@@ -1034,12 +961,9 @@ static int ftp_execute_open_pasv(ftp_env* env, char *cmd, char *type, off_t offs
 	u64 t1,t2;
 	s32 ret;
 
-
 	if( (env->data_socket == INVALID_SOCKET) || (offset != last_off) || (strcmp(last_cmd, cmd)) )
 	{
-
 		ftp_close_data(env);
-
 		t1=ticks_to_millisecs(gettime());
 
 execute_open_retry:
@@ -1217,19 +1141,14 @@ execute_open_retry:
 		env->data_socket = *data_sock;
 		strcpy(last_cmd, cmd);
 		last_off = offset;
-
 	}
-else
+	else
 	{
 		*data_sock = env->data_socket;
 	}
-
-
 	return 0;
 }
 
-//========================================================================
-//========================================================================
 static int ftp_execute_open(ftp_env* env, char *cmd, char *type, off_t offset, SOCKET *data_sock)
 {
 //	if( env->ftp_passive == false )
@@ -1239,9 +1158,6 @@ if (true)
 		return ftp_execute_open_pasv(env, cmd, type, offset, data_sock);
 }
 
-
-//==============================================================================
-//==============================================================================
 static void freeDirList(FTPDIRENTRYLISTITEM* pItem)
 {
 	while (pItem != NULL )
@@ -1252,9 +1168,6 @@ static void freeDirList(FTPDIRENTRYLISTITEM* pItem)
 	}
 }
 
-
-//==============================================================================
-//==============================================================================
 //close FTP connection
 static void FTP_Close( ftp_env* env )
 {
@@ -1290,8 +1203,6 @@ static void FTP_Close( ftp_env* env )
 	env->name = NULL;  //tag free item
 }
 
-//==============================================================================
-//==============================================================================
 //name = 'ftp1'
 //open ftp connection
 static bool FTP_Connect(ftp_env* env, const char* name, const char* user, const char* password, const char* share, const char* hostname, unsigned short port, bool ftp_passive)
@@ -1350,9 +1261,6 @@ static bool FTP_Connect(ftp_env* env, const char* name, const char* user, const 
 	return true;
 }
 
-
-//==============================================================================
-//==============================================================================
 static void AddDirEntry(FTPDIRSTATESTRUCT* state, FTPDIRENTRYLISTITEM*** ppLastItem, const char* name, off_t size, bool isDirectory)
 {
 	FTPDIRENTRYLISTITEM* pItem = ( FTPDIRENTRYLISTITEM* )malloc( sizeof( FTPDIRENTRYLISTITEM ) );
@@ -1366,9 +1274,6 @@ static void AddDirEntry(FTPDIRSTATESTRUCT* state, FTPDIRENTRYLISTITEM*** ppLastI
 	*ppLastItem = (FTPDIRENTRYLISTITEM**)&pItem->next;
 }
 
-
-//==============================================================================
-//==============================================================================
 static void FTP_FindClose(FTPDIRSTATESTRUCT* state)
 {
 	NET_ASSERT( state != NULL );
@@ -1381,8 +1286,6 @@ static void FTP_FindClose(FTPDIRSTATESTRUCT* state)
 
 }
 
-//==============================================================================
-//==============================================================================
 static void copyDirList(FTPDIRENTRYLISTITEM** ppDest, FTPDIRENTRYLISTITEM* pSrc)
 {
 	*ppDest = NULL;
@@ -1396,8 +1299,6 @@ static void copyDirList(FTPDIRENTRYLISTITEM** ppDest, FTPDIRENTRYLISTITEM* pSrc)
 	}
 }
 
-//==============================================================================
-//==============================================================================
 static u64 mystrtoul64( const char* p )
 {
 	u64 res = 0;
@@ -1420,8 +1321,6 @@ static u64 mystrtoul64( const char* p )
 	return res;
 }
 
-//==============================================================================
-//==============================================================================
 static bool FTP_FindFirst(const char *path_abs, FTPDIRSTATESTRUCT* state, ftp_env* env)
 {
 	SOCKET data_sock;
@@ -1574,9 +1473,6 @@ loaddir_retry:
 	return true;
 }
 
-
-//==============================================================================
-//==============================================================================
 //filename - full path, "\doc\file.dat" or "\doc\"
 static bool FTP_PathInfo(const char* path_absolute, FTPDIRENTRY* dentry, ftp_env* env)
 {
@@ -1659,8 +1555,6 @@ static bool FTP_PathInfo(const char* path_absolute, FTPDIRENTRY* dentry, ftp_env
 	return false;
 }
 
-//==============================================================================
-//==============================================================================
 //filename - full path, no share name, "/doc/file.dat"
 static bool FTP_OpenFile( const char* filename, FTPFILESTRUCT* file, ftp_env* env, int flags)
 {
@@ -1700,8 +1594,6 @@ static bool FTP_OpenFile( const char* filename, FTPFILESTRUCT* file, ftp_env* en
 	return true;
 }
 
-//==============================================================================
-//==============================================================================
 //assumption: offset+length range is inside file
 //this method does not advance file->offset member
 //assumption: offset + length segment is inside file
@@ -1740,8 +1632,6 @@ read_retry:
 	return true;
 }
 
-//==============================================================================
-//==============================================================================
 static bool FTP_WriteFile(void* buf, off_t len, off_t offset, FTPFILESTRUCT* file)
 {
 	NET_ASSERT( file != NULL );
@@ -1779,8 +1669,6 @@ read_retry:
 	return true;
 }
 
-//==============================================================================
-//==============================================================================
 static bool FTP_MkDir(const char * name, ftp_env * env)
 {
 	char buf2[FTP_MAXPATH + 6];
@@ -1797,8 +1685,6 @@ static bool FTP_MkDir(const char * name, ftp_env * env)
 	return true;
 }
 
-//==============================================================================
-//==============================================================================
 static bool FTP_DeleteFile(const char * name, ftp_env * env)
 {
 	char buf2[FTP_MAXPATH + 6];
@@ -1814,8 +1700,7 @@ static bool FTP_DeleteFile(const char * name, ftp_env * env)
 
 	return true;
 }
-//==============================================================================
-//==============================================================================
+
 static bool FTP_DeleteDir(const char * name, ftp_env * env)
 {
 	char buf2[FTP_MAXPATH + 6];
@@ -1873,9 +1758,6 @@ static bool FTP_Rename(const char * oldpath_absolute, const char * path_absolute
 	return true;
 }
 
-
-//==============================================================================
-//==============================================================================
 static void FTP_CloseFile( FTPFILESTRUCT* file )
 {
 	NET_ASSERT( file != NULL );
@@ -1887,9 +1769,6 @@ static void FTP_CloseFile( FTPFILESTRUCT* file )
 	//nothing to do
 }
 
-
-//==============================================================================
-//==============================================================================
 //destroy readaheadcache
 static void DestroyFTPReadAheadCache()
 {
@@ -1911,8 +1790,6 @@ static void DestroyFTPReadAheadCache()
 
 }
 
-//==============================================================================
-//==============================================================================
 //create readahead cache
 //pages - number of cache pages
 static void CreateFTPReadAheadCache(u32 pages)
@@ -1939,10 +1816,6 @@ static void CreateFTPReadAheadCache(u32 pages)
 
 }
 
-
-
-//==============================================================================
-//==============================================================================
 //invalidate readahead cache for file
 //called when file is closed
 static void ClearFTPFileCache(FTPFILESTRUCT *file)
@@ -1960,10 +1833,6 @@ static void ClearFTPFileCache(FTPFILESTRUCT *file)
 	}
 }
 
-
-
-//==============================================================================
-//==============================================================================
 //read from file, from current position, use readaheadcache
 //calls FTP_ReadFile() if necessary
 //this method does not advance 'offset' member in file structure
@@ -2065,8 +1934,6 @@ static bool ReadFTPFromCache(void *buf, off_t len, FTPFILESTRUCT *file)
 		}
 	}
 
-
-
 	off_t cache_to_read = file->size - cache_offset;
 	if ( cache_to_read > FTP_READ_BUFFERSIZE )
 	{
@@ -2088,9 +1955,6 @@ static bool ReadFTPFromCache(void *buf, off_t len, FTPFILESTRUCT *file)
 	goto continue_read;
 }
 
-
-//==============================================================================
-//==============================================================================
 //return absolute path with no device name
 //if relative path, 'exchange/file.dat'   ->   currentpath+'exchange/file.dat'
 //if absolute path, '/exchange/file.dat'   ->   '/exchange/file.dat'
@@ -2134,8 +1998,8 @@ static void ftp_absolute_path_no_device(const char *srcpath, char *destpath, int
 	ReplaceForwardSlash( destpath );
 }
 
-//==============================================================================
-//==============================================================================
+
+
 // 'ftp1://exchange/list.dat'   ->   'ftp1'
 static char *ExtractDevice(const char *path, char *device)
 {
@@ -2149,14 +2013,10 @@ static char *ExtractDevice(const char *path, char *device)
 	return device;
 }
 
-//==============================================================================
-//==============================================================================
 //FILE IO
 static int __ftp_open(struct _reent *r, void *fileStruct, const char *path, int flags, int mode)
 {
 	NET_PRINTF("__ftp_open( path='%s' )\n", path );
-
-
 	FTPFILESTRUCT *file = (FTPFILESTRUCT*) fileStruct;
 
 	char fixedpath[FTP_MAXPATH];
@@ -2193,18 +2053,13 @@ static int __ftp_open(struct _reent *r, void *fileStruct, const char *path, int 
 		r->_errno = ENOENT;
 		return -1;
 	}
-
-
 	return 0;
 }
 
-//==============================================================================
-//==============================================================================
 static off_t __ftp_seek(struct _reent *r, int fd, off_t pos, int dir)
 {
 	off_t position;
 	FTPFILESTRUCT *file = (FTPFILESTRUCT*) fd;
-
 
 	if (file == NULL)
 	{
@@ -2214,7 +2069,6 @@ static off_t __ftp_seek(struct _reent *r, int fd, off_t pos, int dir)
 	}
 
 	NET_PRINTF("__ftp_seek( file='%s', pos=%u:%u, dir=%d )\n", file->filename, (u32)(pos>>32), (u32)(pos & 0xffffFFFF),  dir );
-
 
 	switch (dir)
 	{
@@ -2248,8 +2102,6 @@ static off_t __ftp_seek(struct _reent *r, int fd, off_t pos, int dir)
 	return position;
 }
 
-//==============================================================================
-//==============================================================================
 static ssize_t __ftp_read(struct _reent *r, int fd, char *ptr, size_t len)
 {
 	FTPFILESTRUCT *file = (FTPFILESTRUCT*) fd;
@@ -2261,8 +2113,7 @@ static ssize_t __ftp_read(struct _reent *r, int fd, char *ptr, size_t len)
 		return -1;
 	}
 
-//	NET_PRINTF("__ftp_read( filename='%s',offset=%u:%u, len=%u:%u )\n", file->filename, (u32)(file->offset >> 32), (u32)(file->offset & 0xffffFFFF), (u32)(0), (u32)(len  & 0xffffFFFF) );
-
+	//	NET_PRINTF("__ftp_read( filename='%s',offset=%u:%u, len=%u:%u )\n", file->filename, (u32)(file->offset >> 32), (u32)(file->offset & 0xffffFFFF), (u32)(0), (u32)(len  & 0xffffFFFF) );
 
 	// Don't try to read if the read pointer is past the end of file
 	if (file->offset >= file->size)
@@ -2294,8 +2145,6 @@ static ssize_t __ftp_read(struct _reent *r, int fd, char *ptr, size_t len)
 	return len;
 }
 
-//==============================================================================
-//==============================================================================
 static ssize_t __ftp_write(struct _reent *r, int fd, const char *ptr, size_t len)
 {
 	FTPFILESTRUCT *file = (FTPFILESTRUCT*) fd;
@@ -2325,9 +2174,6 @@ static ssize_t __ftp_write(struct _reent *r, int fd, const char *ptr, size_t len
 	return len;
 }
 
-
-//==============================================================================
-//==============================================================================
 static int __ftp_close(struct _reent *r, int fd)
 {
 	NET_PRINTF("__ftp_close()\n", 0 );
@@ -2341,8 +2187,6 @@ static int __ftp_close(struct _reent *r, int fd)
 	return 0;
 }
 
-//==============================================================================
-//==============================================================================
 static int __ftp_mkdir(struct _reent *r, const char *name, int mode)
 {
     NET_PRINTF("__ftp_mkdir()\n",0);
@@ -2380,8 +2224,6 @@ static int __ftp_mkdir(struct _reent *r, const char *name, int mode)
 	return 0;
 }
 
-//==============================================================================
-//==============================================================================
 static int __ftp_unlink(struct _reent *r, const char *name)
 {
 	FTPDIRENTRY dentry;
@@ -2484,8 +2326,6 @@ static int __ftp_rename(struct _reent *r, const char *oldName, const char *newNa
 	return 0;
 }
 
-//==============================================================================
-//==============================================================================
 static int __ftp_chdir(struct _reent *r, const char *path)
 {
 	NET_PRINTF("__ftp_chdir( path='%s' )\n", path );
@@ -2519,9 +2359,6 @@ static int __ftp_chdir(struct _reent *r, const char *path)
 	return 0;
 }
 
-
-//==============================================================================
-//==============================================================================
 static int __ftp_dirreset(struct _reent *r, DIR_ITER *dirState)
 {
 	char path_abs[FTP_MAXPATH];
@@ -2543,9 +2380,6 @@ static int __ftp_dirreset(struct _reent *r, DIR_ITER *dirState)
 	return 0;
 }
 
-
-//==============================================================================
-//==============================================================================
 static DIR_ITER* __ftp_diropen(struct _reent *r, DIR_ITER *dirState, const char *path)
 {
 	NET_PRINTF("__ftp_diropen()\n",0);
@@ -2590,9 +2424,6 @@ static DIR_ITER* __ftp_diropen(struct _reent *r, DIR_ITER *dirState, const char 
 	return dirState;
 }
 
-
-//==============================================================================
-//==============================================================================
 static int dentry_to_stat(FTPDIRENTRY *dentry, struct stat *st)
 {
 	if (!st)
@@ -2623,9 +2454,6 @@ static int dentry_to_stat(FTPDIRENTRY *dentry, struct stat *st)
 	return 0;
 }
 
-
-//==============================================================================
-//==============================================================================
 static int __ftp_dirnext(struct _reent *r, DIR_ITER *dirState, char *filename, struct stat *filestat)
 {
 	NET_PRINTF("__ftp_dirnext( )\n",0 );
@@ -2650,9 +2478,6 @@ static int __ftp_dirnext(struct _reent *r, DIR_ITER *dirState, char *filename, s
 	return 0;
 }
 
-
-//==============================================================================
-//==============================================================================
 static int __ftp_dirclose(struct _reent *r, DIR_ITER *dirState)
 {
 	NET_PRINTF("__ftp_dirclose(  )\n",0 );
@@ -2666,9 +2491,6 @@ static int __ftp_dirclose(struct _reent *r, DIR_ITER *dirState)
 	return 0;
 }
 
-
-//==============================================================================
-//==============================================================================
 static int __ftp_stat(struct _reent *r, const char *path, struct stat *st)
 {
 	NET_PRINTF("__ftp_stat( path='%s' )\n", path );
@@ -2713,9 +2535,6 @@ static int __ftp_stat(struct _reent *r, const char *path, struct stat *st)
 	return 0;
 }
 
-
-//==============================================================================
-//==============================================================================
 static int __ftp_fstat(struct _reent *r, int fd, struct stat *st)
 {
 	FTPFILESTRUCT *filestate = (FTPFILESTRUCT *) fd;
@@ -2733,10 +2552,6 @@ static int __ftp_fstat(struct _reent *r, int fd, struct stat *st)
 	return 0;
 }
 
-
-//==============================================================================
-//==============================================================================
-//name = 'ftp1'
 static void MountDevice(const char *name, int envIndex)
 {
 	NET_PRINTF("MountDevice( path='%s' )\n", name );
@@ -2775,9 +2590,6 @@ static void MountDevice(const char *name, int envIndex)
 	FTPEnv[envIndex].devoptab = dotab_ftp;
 }
 
-
-//==============================================================================
-//==============================================================================
 bool ftpInitDevice(const char* name, const char *user, const char *password, const char *share, const char *hostname, unsigned short port, bool ftp_passive)
 {
 	NET_ASSERT( name != NULL );
@@ -2831,9 +2643,6 @@ bool ftpInitDevice(const char* name, const char *user, const char *password, con
 	return true;
 }
 
-
-//==============================================================================
-//==============================================================================
 void ftpClose(const char* name)
 {
 	NET_PRINTF("ftpClose( name='%s' )\n", name );
@@ -2849,9 +2658,6 @@ void ftpClose(const char* name)
 	_FTP_unlock();
 }
 
-
-//==============================================================================
-//==============================================================================
 bool CheckFTPConnection(const char* name)
 {
 	NET_PRINTF("CheckFTPConnection( name='%s' )\n", name );
@@ -2863,14 +2669,9 @@ bool CheckFTPConnection(const char* name)
 	return ( FindFTPEnv( name ) != NULL );
 }
 
-
-
-//==============================================================================
-//==============================================================================
-//simple network logging interface
+#ifdef FTP_DEBUG
 static bool net_printf( const char *fmt, ... )
 {
-#if 0
     char buf[4096];
     char buf2[4096];
 	struct sockaddr_in server_addr;
@@ -2947,8 +2748,6 @@ static bool net_printf( const char *fmt, ... )
 			t1=ticks_to_millisecs(gettime());
 		}
 	}
-#endif
 	return true;
 }
-
-
+#endif

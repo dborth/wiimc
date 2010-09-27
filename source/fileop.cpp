@@ -810,20 +810,10 @@ static bool Remount(int device, int silent)
 
 void MountAllDevices()
 {
-	printf("MountAllDevices 1 m1(%.4f) m2(%.4f)\n",
-								((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-								 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-
 	if(sd->startup() && sd->isInserted())
 	{
-		printf("MountAllDevices 2 m1(%.4f) m2(%.4f)\n",
-									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 		isInserted[DEVICE_SD] = true;
 		MountPartitions(DEVICE_SD, SILENT);
-		printf("MountAllDevices 3 m1(%.4f) m2(%.4f)\n",
-									((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 	}
 	if(usb->startup() && usb->isInserted())
 	{
@@ -834,10 +824,6 @@ void MountAllDevices()
 	{
 		Remount(DEVICE_USB, SILENT);
 	}
-	printf("MountAllDevices 4 m1(%.4f) m2(%.4f)\n",
-								((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-								 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-	
 }
 
 /****************************************************************************

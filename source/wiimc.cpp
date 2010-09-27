@@ -89,24 +89,18 @@ void CheckSleepTimer()
 
 void ExitApp()
 {
-	printf("ExitApp 1\n");
 	DisableRumble();
-	printf("ExitApp 2\n");
+
 	if(ExitRequested == 1)
 	{
 		SaveFolder();
 		SaveSettings(SILENT);
 	}
-	printf("ExitApp 3\n");
 
 	// shut down some threads
 	SuspendDeviceThread();
-	printf("ExitApp 4\n");
 	StopGX();
-	printf("ExitApp 5\n");
-
 	UnmountAllDevices();
-	printf("ExitApp 6\n");
 
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);

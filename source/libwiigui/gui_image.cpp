@@ -288,7 +288,7 @@ void GuiImage::ColorStripe(int shift)
  */
 void GuiImage::Draw()
 {
-	if(!image || !this->IsVisible() || tile == 0)
+	if(!image || width == 0 || height == 0 || !this->IsVisible() || tile == 0)
 		return;
 
 	float currScaleX = this->GetScaleX();

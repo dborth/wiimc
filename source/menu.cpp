@@ -2686,37 +2686,57 @@ static bool doDrag = false;
 
 static u64 slideprev, slidenow; // slideshow timer
 
-static u32 _sizePicBuffer=0;
-static void AllocPicBuffer()
-
-{
-	u32 level;
-	u32 size;
-	
-	if(picBuffer)
-			return;
-
-	size=MAX_PICTURE_SIZE;
-
-	size &= ~0x1f;
-
-	_sizePicBuffer=size;
-	_CPU_ISR_Disable(level);                
-    picBuffer = (unsigned char *)( (u32)SYS_GetArena2Hi() - size );
-    SYS_SetArena2Hi(picBuffer);
-    _CPU_ISR_Restore(level);
-}
-
 static void FreePicBuffer()
 {
-	if(!picBuffer)
-		return;
-	
-	u32 level;
-	_CPU_ISR_Disable(level);
-	SYS_SetArena2Hi(picBuffer+_sizePicBuffer);
-	_CPU_ISR_Restore(level);
+	// free picture data
+	for(int i=0; i < NUM_PICTURES; i++)
+	{
+		if(!pictureData[i].image)
+			continue;
+
+		pictureData[i].image->SetData(NULL); // to ensure memory deallocation is not attempted
+		delete pictureData[i].image;
+		pictureData[i].image = NULL;
+		pictureData[i].index = -1;
+		pictureData[i].rotation = 0.0f;
+	}
+
 	picBuffer = NULL;
+	RemoveMem2Area(PICTURE_AREA);
+}
+
+static bool AllocPicBuffer()
+{
+	if(picBuffer)
+		return true;
+
+	int maxpic = screenwidth * screenheight * 4; // max size of 1 RGBA8 picture
+
+	if(!AddMem2Area(MAX_PICTURE_SIZE + maxpic*5 + 16*1024, PICTURE_AREA))
+		return false;
+
+	picBuffer = (u8 *)mem2_memalign(32, MAX_PICTURE_SIZE, PICTURE_AREA);
+
+	if(!picBuffer)
+	{
+		FreePicBuffer();
+		return false;
+	}
+
+	for(int i=0; i < NUM_PICTURES; i++)
+	{
+		u8 *ptr = (u8 *)mem2_memalign(32, maxpic, PICTURE_AREA);
+
+		if(!ptr)
+		{
+			FreePicBuffer();
+			return false;
+		}
+
+		pictureData[i].image = new GuiImageData(NULL);
+		pictureData[i].image->SetData(ptr);
+	}
+	return true;
 }
 
 static int FoundPicture(int p)
@@ -2729,7 +2749,6 @@ static int FoundPicture(int p)
 			return i;
 	return -1;
 }
-
 
 static void SetPicture(int picIndex, int browserIndex)
 {
@@ -2765,15 +2784,11 @@ static void CleanupPictures(int selIndex)
 	// free any unused picture data
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		if(pictureData[i].image == NULL || i == pictureLoaded)
+		if(i == pictureLoaded)
 			continue;
 
 		if(selIndex == -1 || pictureData[i].index < (selIndex-(NUM_PICTURES-1)/2) || pictureData[i].index > (selIndex+(NUM_PICTURES-1)/2))
-		{
-			delete pictureData[i].image;
-			pictureData[i].image = NULL;
 			pictureData[i].index = -1;
-		}
 	}
 }
 
@@ -2828,7 +2843,6 @@ restart:
 			pictureLoaded = -1;
 			pictureIndexLoaded = -1;
 			pictureIndexLoading = -1;
-			FreePicBuffer();
 			LWP_SuspendThread(picturethread);
 		}
 		if(pictureThreadHalt == 2)
@@ -2836,7 +2850,6 @@ restart:
 
 		if(loadPictures)
 		{
-			AllocPicBuffer();
 			loadPictures = 0;
 			selIndex = browser.selIndex;
 			CleanupPictures(selIndex);
@@ -2865,19 +2878,13 @@ restart:
 					if(i >= NUM_PICTURES) // no empty slot found!
 						goto restart;
 
-					pictureData[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
-					pictureData[i].rotation = getExifOrientation(picBuffer, size);
+					pictureData[i].image->SetImage(picBuffer, size);
 
-					if(pictureData[i].image->GetImage() != NULL)
+					if(pictureData[i].image->GetWidth() > 0)
 					{
 						pictureData[i].index = selIndex;
+						pictureData[i].rotation = getExifOrientation(picBuffer, size);
 						found = i;
-					}
-					else
-					{
-						delete pictureData[i].image;
-						pictureData[i].image = NULL;
-						pictureData[i].rotation = 0.0f;
 					}
 				}
 
@@ -2916,21 +2923,15 @@ restart:
 				if(size == 0)
 					goto restart;
 
-				pictureData[i].image = new GuiImageData(picBuffer, size, GX_TF_RGBA8);
-				pictureData[i].rotation = getExifOrientation(picBuffer, size);
+				pictureData[i].image->SetImage(picBuffer, size);
 
-				if(pictureData[i].image->GetImage() != NULL)
+				if(pictureData[i].image->GetWidth() > 0)
 				{
+					pictureData[i].rotation = getExifOrientation(picBuffer, size);
 					pictureData[i].index = next;
 
 					if(browser.selIndex == next)
 						setPicture = true; // trigger picture to be reloaded
-				}
-				else
-				{
-					delete pictureData[i].image;
-					pictureData[i].image = NULL;
-					pictureData[i].rotation = 0.0f;
 				}
 				pictureIndexLoading = -1;
 				next++;
@@ -2940,7 +2941,6 @@ restart:
 	}
 	SetPicture(-1, -1); // set picture to blank
 	CleanupPictures(-1);
-	FreePicBuffer();
 	return NULL;
 }
 
@@ -3300,7 +3300,7 @@ static void MenuBrowsePictures()
 	ShutoffRumble();
 	ResetBrowser();
 
-	if(SYS_GetArena2Size() < MAX_PICTURE_SIZE)
+	if(!AllocPicBuffer())
 	{
 		ResumeGui();
 		bool closeMPlayer = WindowPrompt(
@@ -3312,10 +3312,19 @@ static void MenuBrowsePictures()
 		if(!closeMPlayer)
 		{
 			UndoChangeMenu(); // go back to last menu
+			SuspendGui();
 			return;
 		}
+
 		StopMPlayerFile();
 		DisableVideoImg();
+
+		if(!AllocPicBuffer())
+		{
+			ErrorPrompt("WiiMC does not have enough free memory to load the picture viewer. Please restart the application and try again.");
+			SuspendGui();
+			return;
+		}
 	}
 
 	strcpy(browser.dir, WiiSettings.picturesFolder);
@@ -3522,6 +3531,7 @@ done:
 	mainWindow->Remove(&pictureWindow);
 	mainWindow->Remove(&fileBrowser);
 	mainWindow->Remove(&upOneLevelBtn);
+	FreePicBuffer();
 }
 
 static void MenuDVD()

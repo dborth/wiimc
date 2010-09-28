@@ -27,7 +27,6 @@
 #include "video.h"
 #include "mem2_manager.h"
 
-
 #define DefaultXPelsPerMeter 3780 // set to a default of 96 dpi 
 #define DefaultYPelsPerMeter 3780 // set to a default of 96 dpi
 
@@ -1395,7 +1394,7 @@ u8 * DecodeBMP(const u8 *src, u32 srclen, int *width, int *height, u8 *dstPtr)
 
 	if(bmp.TellWidth() > screenwidth || bmp.TellHeight() > screenheight)
 	{
-		if((float)bmp.TellHeight()/(float)bmp.TellWidth() > screenheight/screenwidth)
+		if((float)bmp.TellHeight()/(float)bmp.TellWidth() > (float)screenheight/(float)screenwidth)
 			Rescale(bmp, 'H', screenheight);
 		else
 			Rescale(bmp, 'W', screenwidth);

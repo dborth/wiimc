@@ -101,16 +101,29 @@ static void initMem2Areas()
 	_inited=true;
 }
 
+void ClearMem2Area (const int area) 
+{
+	if(area >= MAX_AREA)
+		return;
+
+	if(mem2_areas[area].size==0) return; // area not found
+	memset (mem2_areas[area].heap_ptr, 0, mem2_areas[area].size);
+	__lwp_heap_init(&mem2_areas[area].heap, mem2_areas[area].heap_ptr, mem2_areas[area].size, 32);
+}
+
 bool AddMem2Area (u32 size, const int index)  
 {
-	if(!_inited) initMem2Areas();
+	if(!_inited)
+		initMem2Areas();
 
-	if(index >= MAX_AREA || mem2_areas[index].size > 0)
+	if(index >= MAX_AREA)
 		return false;
 
-	// a higher area is already inited - we cannot init this one
-	if((index+1) < MAX_AREA && mem2_areas[index+1].size > 0)
-		return false;
+	if(mem2_areas[index].size > 0)
+	{
+		ClearMem2Area(index);
+		return true;
+	}
 
 #ifdef DEBUG_MEM2_LEVEL
 	if(DEBUG_MEM2_LEVEL == 2)
@@ -138,8 +151,14 @@ bool RemoveMem2Area(const int area)
 {
 	if(area >= MAX_AREA || mem2_areas[area].size == 0)
 		return false;
-	
-	// a higher area is already inited - we cannot deinit this one yet
+
+	// a lower area is already inited - we cannot deinit this one yet
+	int i;
+
+	for(i=0; i < MAX_AREA; i++)
+		if(mem2_areas[i].old_arena2hi < mem2_areas[area].old_arena2hi)
+			return false;
+
 	if((area+1) < MAX_AREA && mem2_areas[area+1].size > 0)
 		return false;
 
@@ -163,16 +182,6 @@ bool RemoveMem2Area(const int area)
 	return true;
 }
 
-void ClearMem2Area (const int area) 
-{
-	if(area >= MAX_AREA)
-		return;
-
-	if(mem2_areas[area].size==0) return; // area not found
-	memset (mem2_areas[area].heap_ptr, 0, mem2_areas[area].size);
-	__lwp_heap_init(&mem2_areas[area].heap, mem2_areas[area].heap_ptr, mem2_areas[area].size, 32);
-}
-
 void* mem2_memalign(u8 align, u32 size, const int area)
 {
 	void *ptr;
@@ -184,7 +193,6 @@ void* mem2_memalign(u8 align, u32 size, const int area)
 #endif		
 		return NULL; // area not found
 	}
-
 
 	ptr = __lwp_heap_allocate(&mem2_areas[area].heap, size);
 #ifdef DEBUG_MEM2_LEVEL
@@ -224,7 +232,6 @@ void mem2_free(void *ptr, const int area)
 
 	if(DEBUG_MEM2_LEVEL == 2)
 		printf("mem2 free: %u	area: %i  allocated: %u  top allocated: %u\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated);
-	
 #endif		
 
 	__lwp_heap_free(&mem2_areas[area].heap, ptr);
@@ -259,7 +266,6 @@ void* mem2_realloc(void *ptr, u32 newsize, const int area)
 	memcpy(newptr,ptr,size);
 	mem2_free(ptr,area);
 	return newptr;
-
 }
 
 void* mem2_calloc(u32 num, u32 size, const int area)

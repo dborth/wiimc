@@ -116,14 +116,17 @@ bool AddMem2Area (u32 size, const int index)
 	if(!_inited)
 		initMem2Areas();
 
-	if(index >= MAX_AREA)
+	if(index >= MAX_AREA || size == 0)
 		return false;
 
-	if(mem2_areas[index].size > 0)
+	if(mem2_areas[index].size == size)
 	{
 		ClearMem2Area(index);
 		return true;
 	}
+
+	if(mem2_areas[index].size > 0 && !RemoveMem2Area(index))
+		return false;
 
 #ifdef DEBUG_MEM2_LEVEL
 	if(DEBUG_MEM2_LEVEL == 2)
@@ -270,12 +273,9 @@ void* mem2_realloc(void *ptr, u32 newsize, const int area)
 
 void* mem2_calloc(u32 num, u32 size, const int area)
 {
-	void *ptr;
-
-	ptr = mem2_malloc(num*size,area);
+	void *ptr = mem2_malloc(num*size,area);
 	if( ptr == NULL ) return NULL;
 	memset(ptr, 0, num*size);
-
 	return ptr;
 }
 

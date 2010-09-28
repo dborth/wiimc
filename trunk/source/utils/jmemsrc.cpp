@@ -24,13 +24,13 @@
 #include <gctypes.h>
 
 #include "video.h"
+#include "mem2_manager.h"
 
 //only texture in mem2, internal memory managed by gcc
 #define jpg_malloc malloc
 #define jpg_free free
 #define jpg_memalign memalign
 
-#include "mem2_manager.h"
 //#define jpg_malloc mem2_malloc
 //#define jpg_free mem2_free
 //#define jpg_memalign mem2_memalign
@@ -185,17 +185,40 @@ static inline u32 coordsRGBA8(u32 x, u32 y, u32 w)
 	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
 }
 
-static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, u8 *dstPtr)
+static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstWidth, int * dstHeight, u8 *dstPtr)
 {
-	u32 newWidth = width;
-	if(newWidth%4) newWidth += (4-newWidth%4);
-	u32 newHeight = height;
-	if(newHeight%4) newHeight += (4-newHeight%4);
-
-	int len = (newWidth * newHeight) << 2;
-	if(len%32) len += (32-len%32);
-
 	u8 *dst;
+	int xRatio = 0, yRatio = 0;
+	int x, y, x2, y2, offset;
+	u8 *pixel;
+	u32 newWidth = width;
+	u32 newHeight = height;
+	
+	if(width > (u32)screenwidth || height > (u32)screenheight)
+	{
+		float ratio = (float)width/(float)height;
+
+		if(ratio > (float)screenwidth/(float)screenheight)
+		{
+			newWidth = screenwidth;
+			newHeight = screenwidth/ratio;
+		}
+		else
+		{
+			newWidth = screenheight*ratio;
+			newHeight = screenheight;
+		}
+		xRatio = (int)((width<<16)/newWidth)+1;
+		yRatio = (int)((height<<16)/newHeight)+1;
+	}
+
+	int padWidth = newWidth;
+	int padHeight = newHeight;
+	if(padWidth%4) padWidth += (4-padWidth%4);
+	if(padHeight%4) padHeight += (4-padHeight%4);
+
+	int len = (padWidth * padHeight) << 2;
+	if(len%32) len += (32-len%32);
 
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
@@ -205,16 +228,13 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, u8 *dstPtr
 	if(!dst)
 		return NULL;
 
-	u32 x, y, offset;
-	u8 *pixel;
-
-	for (y = 0; y < newHeight; y++)
+	for (y = 0; y < padHeight; y++)
 	{
-		for (x = 0; x < newWidth; x++)
+		for (x = 0; x < padWidth; x++)
 		{
-			offset = coordsRGBA8(x, y, newWidth);
+			offset = coordsRGBA8(x, y, padWidth);
 
-			if(x >= width || y >= height)
+			if(x >= (int)newWidth || y >= (int)newHeight)
 			{
 				dst[offset] = 0;
 				dst[offset+1] = 255;
@@ -223,6 +243,17 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, u8 *dstPtr
 			}
 			else
 			{
+				if(xRatio > 0)
+				{
+					x2 = ((x*xRatio)>>16);
+					y2 = ((y*yRatio)>>16);
+					pixel = &src[rowsize*y2+x2*3];
+				}
+				else
+				{
+					pixel = &src[rowsize*y+x*3];
+				}
+
 				pixel = &src[rowsize*y+x*3];
 				dst[offset] = 255; // Alpha
 				dst[offset+1] = pixel[0]; // Red
@@ -231,6 +262,9 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, u8 *dstPtr
 			}
 		}
 	}
+
+	*dstWidth = padWidth;
+	*dstHeight = padHeight;
 	DCFlushRange(dst, len);
 	return dst;
 }
@@ -249,7 +283,7 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 		cinfo.out_color_space = JCS_RGB; 
 
 	jpeg_calc_output_dimensions(&cinfo);
-
+	
 	if (cinfo.output_width > (u32)screenwidth || cinfo.output_height > (u32)screenheight)
 	{
 		float factor = (1.0 * cinfo.output_width) / screenwidth;
@@ -282,7 +316,7 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 		cinfo.do_block_smoothing = false;
 		cinfo.dct_method = JDCT_IFAST;
 	}
-
+	
 	jpeg_start_decompress(&cinfo);
 
 	int rowsize = cinfo.output_width * cinfo.output_components;
@@ -305,13 +339,7 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 		location += rowsize;
 	}
 
-	u8 *dst = RawTo4x4RGBA(tmpData, cinfo.output_width, cinfo.output_height, rowsize, dstPtr);
-
-	if(dst)
-	{
-		*width = cinfo.output_width;
-		*height = cinfo.output_height;
-	}
+	u8 *dst = RawTo4x4RGBA(tmpData, cinfo.output_width, cinfo.output_height, rowsize, width, height, dstPtr);
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);

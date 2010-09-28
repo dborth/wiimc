@@ -6,7 +6,6 @@
  *
  * MEM2 allocator
 
-
  ****************************************************************************/
 #include <ogc/machine/asm.h>
 #include <ogc/lwp_heap.h>
@@ -16,10 +15,8 @@
 #include <unistd.h>
 #include "mem2_manager.h"
 
-
-
 //1: critical errors     2: detailed info
-#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragementation
+#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragmentation
 
 #ifdef DEBUG_MEM2_LEVEL
 #include <stdio.h>
@@ -51,8 +48,6 @@ static __inline__ u32 __lwp_heap_blocksize(heap_block *block)
 
 /*** end from libogc (lwp_heap.inl)  ****/
 
-
-
 u32 __lwp_heap_block_size(heap_cntrl *theheap,void *ptr)
 {
 	heap_block *block;
@@ -73,20 +68,20 @@ u32 __lwp_heap_block_size(heap_cntrl *theheap,void *ptr)
 
 #endif
 
-
 typedef struct {
 	heap_cntrl heap;
 	unsigned char *heap_ptr;
 	u32 size;
+	void *old_arena2hi;
 #ifdef DEBUG_MEM2_LEVEL
 	u32 allocated;
 	u32 top_allocated;
 #endif
 } st_mem2_area;
 
-static bool _initied=false;
+static bool _inited=false;
 
-static st_mem2_area mem2_areas[MAX_MEM2_AREAS];
+static st_mem2_area mem2_areas[MAX_AREA];
 
 #define ROUNDDOWN32(v)				(((u32)(v)-0x1f)&~0x1f)
 
@@ -94,7 +89,7 @@ static void initMem2Areas()
 {
 	int i;
 
-	for( i = 0; i < MAX_MEM2_AREAS ; i++)
+	for(i = 0; i < MAX_AREA; i++)
 	{
 		mem2_areas[i].heap_ptr = NULL;
 		mem2_areas[i].size = 0;
@@ -103,38 +98,30 @@ static void initMem2Areas()
 		mem2_areas[i].top_allocated = 0;
 #endif
 	}
-	_initied=true;
+	_inited=true;
 }
 
 bool AddMem2Area (u32 size, const int index)  
 {
-	u32 level;
+	if(!_inited) initMem2Areas();
 
-	if(!_initied) initMem2Areas();
+	if(index >= MAX_AREA || mem2_areas[index].size > 0)
+		return false;
 
+	// a higher area is already inited - we cannot init this one
+	if((index+1) < MAX_AREA && mem2_areas[index+1].size > 0)
+		return false;
 
 #ifdef DEBUG_MEM2_LEVEL
 	if(DEBUG_MEM2_LEVEL == 2)
-		printf("AddMem2Area: %i\n",index);
+		printf("AddMem2Area: %i (%d)\n", index, size);
 #endif
 
-	 
-	_CPU_ISR_Disable(level);
-
-	if(mem2_areas[index].size>0) 
-	{
-		_CPU_ISR_Restore(level);
-#ifdef DEBUG_MEM2_LEVEL
-		printf("no free area: %i\n",index);
-#endif		
-		return false; //no free area
-	}
-
+	mem2_areas[index].old_arena2hi = SYS_GetArena2Hi();
 	mem2_areas[index].heap_ptr = (void *)ROUNDDOWN32(((u32)SYS_GetArena2Hi() - size));
 	
 	if((u32)mem2_areas[index].heap_ptr < (u32)SYS_GetArena2Lo())
 	{
-		_CPU_ISR_Restore(level);
 #ifdef DEBUG_MEM2_LEVEL
 		printf("not enough mem2: %i\n",index);
 #endif		
@@ -143,23 +130,48 @@ bool AddMem2Area (u32 size, const int index)
 
 	SYS_SetArena2Hi(mem2_areas[index].heap_ptr);
 	__lwp_heap_init(&mem2_areas[index].heap, mem2_areas[index].heap_ptr, size, 32);
-	
 	mem2_areas[index].size = size;
+	return true;
+}
 
-	_CPU_ISR_Restore(level);
+bool RemoveMem2Area(const int area)
+{
+	if(area >= MAX_AREA || mem2_areas[area].size == 0)
+		return false;
+	
+	// a higher area is already inited - we cannot deinit this one yet
+	if((area+1) < MAX_AREA && mem2_areas[area+1].size > 0)
+		return false;
+
+	#ifdef DEBUG_MEM2_LEVEL
+	if(DEBUG_MEM2_LEVEL == 2)
+		printf("RemoveMem2Area: %i\n", area);
+	#endif
+
+	SYS_SetArena2Hi(mem2_areas[area].old_arena2hi);
+
+	memset(&(mem2_areas[area].heap), 0, sizeof(heap_cntrl));
+	mem2_areas[area].heap_ptr = NULL;
+	mem2_areas[area].size = 0;
+	mem2_areas[area].old_arena2hi = NULL;
+
+	#ifdef DEBUG_MEM2_LEVEL		
+	mem2_areas[area].allocated = 0;
+	mem2_areas[area].top_allocated = 0;
+	#endif
+
 	return true;
 }
 
 void ClearMem2Area (const int area) 
 {
+	if(area >= MAX_AREA)
+		return;
 
 	if(mem2_areas[area].size==0) return; // area not found
-	
 	memset (mem2_areas[area].heap_ptr, 0, mem2_areas[area].size);
-
 	__lwp_heap_init(&mem2_areas[area].heap, mem2_areas[area].heap_ptr, mem2_areas[area].size, 32);
 }
-
 
 void* mem2_memalign(u8 align, u32 size, const int area)
 {
@@ -204,7 +216,6 @@ void mem2_free(void *ptr, const int area)
 #endif		
 		return; // area not found
 	}
-	
 
 #ifdef DEBUG_MEM2_LEVEL
 	u32 size=__lwp_heap_block_size(&mem2_areas[area].heap,ptr); 
@@ -262,14 +273,12 @@ void* mem2_calloc(u32 num, u32 size, const int area)
 	return ptr;
 }
 
-
 #ifdef DEBUG_MEM2_LEVEL
 static void PrintAreaInfo(int index)
 {
 	heap_iblock info;
 
 	if(mem2_areas[index].size == 0) return;	
-	
 
 	printf("Area: %i. Allocated: %u. Top Allocated: %u\n",index,mem2_areas[index].allocated,mem2_areas[index].top_allocated);
 	__lwp_heap_getinfo(&mem2_areas[index].heap,&info);
@@ -287,6 +296,6 @@ void ShowAreaInfo(const int area) //if area == -1 print all areas info
 	if(i>=0)
 		PrintAreaInfo(i);
 	else
-		for( i = 0; i < MAX_MEM2_AREAS ; i++) PrintAreaInfo(i);
+		for(i = 0; i < MAX_AREA; i++) PrintAreaInfo(i);
 #endif
 }

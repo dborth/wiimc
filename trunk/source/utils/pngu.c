@@ -9,15 +9,17 @@
 
 #include <stdio.h>
 #include <malloc.h>
-#include "pngu.h"
 #include <png.h>
+#include "pngu.h"
+
+#include "video.h"
+#include "mem2_manager.h"
 
 //only texture in mem2, internal memory managed by gcc
 #define png_malloc malloc
 #define png_free free
 #define png_memalign memalign
 
-#include "mem2_manager.h"
 //#define png_malloc mem2_malloc
 //#define png_free mem2_free
 //#define png_memalign mem2_memalign
@@ -397,19 +399,19 @@ static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, u32 width, u32 height, int * dstW
 	int newWidth = width;
 	int newHeight = height;
 
-	if(width > 1024 || height > 1024)
+	if(width > screenwidth || height > screenheight)
 	{
 		float ratio = (float)width/(float)height;
-
-		if(ratio > 1)
+		
+		if(ratio > (float)screenwidth/(float)screenheight)
 		{
-			newWidth = 1024;
-			newHeight = 1024/ratio;
+			newWidth = screenwidth;
+			newHeight = screenwidth/ratio;
 		}
 		else
 		{
-			newWidth = 1024*ratio;
-			newHeight = 1024;
+			newWidth = screenheight*ratio;
+			newHeight = screenheight;
 		}
 		xRatio = (int)((width<<16)/newWidth)+1;
 		yRatio = (int)((height<<16)/newHeight)+1;

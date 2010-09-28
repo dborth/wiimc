@@ -595,7 +595,9 @@ class GuiImageData
 		void operator delete(void *p);
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
-
+		//!Sets the data pointer for the GuiImageData object
+		//!\param i Image data pointer
+		void SetData(u8 * d);
 		//!Sets the GuiImageData to a new image (assumes the same dimensions)
 		//!\param i Image data
 		//!\param s Image data size

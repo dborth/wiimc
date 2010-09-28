@@ -98,10 +98,18 @@ void GuiImageData::operator delete[](void *p)
 	gui_free(p);
 }
 
+void GuiImageData::SetData(u8 * i)
+{
+	data = i;
+}
+
 void GuiImageData::SetImage(const u8 * i, int s)
 {
 	if(!i)
 		return;
+
+	width = 0;
+	height = 0;
 
 	if (i[0] == 0xFF && i[1] == 0xD8)
 		LoadJPEG(i, s);

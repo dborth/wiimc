@@ -254,7 +254,6 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstW
 					pixel = &src[rowsize*y+x*3];
 				}
 
-				pixel = &src[rowsize*y+x*3];
 				dst[offset] = 255; // Alpha
 				dst[offset+1] = pixel[0]; // Red
 				dst[offset+32] = pixel[1]; // Green

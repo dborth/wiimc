@@ -1597,7 +1597,7 @@ ParseDirectory(bool waitParse)
 	if(waitParse) // wait for complete parsing
 	{
 		ShowAction("Loading...");
-		while(dirIter != NULL) usleep(THREAD_SLEEP);
+		while(!LWP_ThreadIsSuspended(parsethread)) usleep(THREAD_SLEEP);
 		CancelAction();
 
 		if(menuCurrent == MENU_BROWSE_PICTURES)

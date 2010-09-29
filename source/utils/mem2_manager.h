@@ -11,7 +11,14 @@
 #define _MEM2MANAGER_H_
 #include <ogc/system.h>
 
-enum mem2_areas_enum { VIDEO_AREA, GUI_AREA, OTHER_AREA, PICTURE_AREA, MAX_AREA };
+enum mem2_areas_enum {
+	VIDEO_AREA,
+	GUI_AREA,
+	OTHER_AREA,
+	PICTURE_AREA,
+	INDEX_AREA,
+	MAX_AREA
+};
 
 #ifdef __cplusplus
 extern "C" {

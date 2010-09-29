@@ -83,8 +83,8 @@ void *av_malloc(unsigned int size)
     if (posix_memalign(&ptr,16,size))
         ptr = NULL;
 #elif HAVE_MEMALIGN
-#ifdef GEKKO
-	ptr = memalign(32,(size+31)&(~31));
+#ifdef GEKKO	
+	ptr = memalign(32,size);
 #else
     ptr = memalign(16,size);
 #endif

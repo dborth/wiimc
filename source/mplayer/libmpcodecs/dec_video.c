@@ -388,16 +388,8 @@ void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
     int delay;
     int got_picture = 1;
 
-	static int cnt=10;
-	cnt--;
-	if(cnt>0) printf("mp decode_video 1 m1(%.4f) m2(%.4f)\n",
-									  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
     mpi = mpvdec->decode(sh_video, start, in_size, drop_frame);
 
-	if(cnt>0) printf("mp decode_video 2 m1(%.4f) m2(%.4f)\n",
-									  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
     //------------------------ frame decoded. --------------------
 
     if (mpi && mpi->type == MP_IMGTYPE_INCOMPLETE) {
@@ -409,9 +401,6 @@ void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
 	*full_frame = got_picture;
 
     delay = get_current_video_decoder_lag(sh_video);
-	if(cnt>0) printf("mp decode_video 4 m1(%.4f) m2(%.4f)\n",
-									  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
     if (correct_pts && pts != MP_NOPTS_VALUE
         && (got_picture || sh_video->num_buffered_pts < delay)) {
         if (sh_video->num_buffered_pts ==

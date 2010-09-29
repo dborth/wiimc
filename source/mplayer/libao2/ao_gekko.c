@@ -37,15 +37,14 @@
 #include <ogcsys.h>
 #include "osdep/ave-rvl.h"
 
-#define BUFFER_SIZE 	(4 * 1024)
-#define BUFFER_COUNT 	64
-#define PREBUFFER 		(8*BUFFER_SIZE)
+#define BUFFER_SIZE 	4096
+#define BUFFER_COUNT 	32
 
 #define HW_CHANNELS 	2
 
 #define PAN_CENTER 		0.7071067811865475f		// sqrt(1/2)
-#define PAN_SIDE 		0.816496580927726f		// sqrt(2/3)
-#define PAN_SIDE_INV 	0.5773502691896258f		// sqrt(1/3)
+#define PAN_SIDE 		0.871779788708134f      // sqrt(19/25)						
+#define PAN_SIDE_INV 	0.4898979485566356f		// sqrt(6/25)
 
 #define PHASE_SHF 		0.25f					// "90 degrees"
 #define PHASE_SHF_INV 	0.75f
@@ -181,6 +180,9 @@ static void uninit(int immed)
 {
 	reset();
 	AUDIO_RegisterDMACallback(NULL);
+	while(AUDIO_GetDMABytesLeft() > 0)
+		usleep(100);
+	AUDIO_StopDMA();
 }
 
 static void audio_pause(void)
@@ -195,7 +197,7 @@ static void audio_resume(void)
 
 static int get_space(void)
 {
-	return ((BUFFER_SIZE * (BUFFER_COUNT - 2)) - buffered);
+	return ((BUFFER_SIZE * (BUFFER_COUNT - 2)) - buffered) * request_mult;
 }
 
 static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int remaining)
@@ -256,12 +258,11 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 static int play(void *data, int remaining, int flags)
 {
 	int processed = 0;
-	int samples;
+	int samples = BUFFER_SIZE / (sizeof(s16) * HW_CHANNELS);
 	s16 *source = (s16 *)data;
 
 	while (remaining >= request_size && get_space() >= request_size)
 	{
-		samples = BUFFER_SIZE / (sizeof(s16) * HW_CHANNELS);
 		copy_channels((s16 *)buffers[buffer_fill], source, samples, processed, remaining);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
 

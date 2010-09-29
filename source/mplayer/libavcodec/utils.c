@@ -364,6 +364,7 @@ void avcodec_default_release_buffer(AVCodecContext *s, AVFrame *pic){
 
     FFSWAP(InternalBuffer, *buf, *last);
 
+
     for(i=0; i<4; i++){
         pic->data[i]=NULL;
 //        pic->base[i]=NULL;
@@ -715,6 +716,7 @@ void avsubtitle_free(AVSubtitle *sub)
 av_cold int avcodec_close(AVCodecContext *avctx)
 {
     /* If there is a user-supplied mutex locking routine, call it. */
+ 
     if (ff_lockmgr_cb) {
         if ((*ff_lockmgr_cb)(&codec_mutex, AV_LOCK_OBTAIN))
             return -1;

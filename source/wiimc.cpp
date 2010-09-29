@@ -31,7 +31,12 @@
 #include "settings.h"
 
 
-#include "mplayer/config.h"
+//#include "mplayer/config.h"
+extern char MPLAYER_DATADIR[512]; 
+extern char MPLAYER_CONFDIR[512]; 
+extern char MPLAYER_LIBDIR[512]; 
+extern char MPLAYER_CSSDIR[512];
+
 #include "mplayer/input/input.h"
 #include "mplayer/osdep/gx_supp.h"
 
@@ -411,7 +416,7 @@ bool InitMPlayer()
 
 	char agent[15];
 	sprintf(agent, "%s/%s", APPNAME, APPVERSION);
-	network_useragent = strdup(agent);
+	network_useragent = mem2_strdup(agent, OTHER_AREA);
 
 	// create mplayer thread
 	LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, STACKSIZE, 68);
@@ -514,9 +519,7 @@ int main(int argc, char *argv[])
 {
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
-
-	show_mem();
-
+ 
 	// only reload IOS if AHBPROT is not enabled
 	u32 have_ahbprot = __di_check_ahbprot();
 	u32 version = IOS_GetVersion();
@@ -524,7 +527,7 @@ int main(int argc, char *argv[])
 
 	if(version != 58 && preferred > 0 && version != (u32)preferred && !have_ahbprot)
 		IOS_ReloadIOS(preferred);
-
+	
 	if(have_ahbprot)
 		DI_Init();
 
@@ -553,34 +556,27 @@ int main(int argc, char *argv[])
 	AUDIO_Init(NULL);
 	GX_AllocTextureMemory();
 	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, VIDEO_AREA);
-	show_mem();
-	MountAllDevices(); // Initialize SD and USB devices
-	show_mem();
-
+ 	MountAllDevices(); // Initialize SD and USB devices
+ 
 	// store path app was loaded from
 	if(argc > 0 && argv[0] != NULL)
 		CreateLoadPath(argv[0]);
-	show_mem();
-
+ 
 	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
-	show_mem();
-	InitFreeType((u8*)font_ttf, font_ttf_size); // Initialize font system
+ 	InitFreeType((u8*)font_ttf, font_ttf_size); // Initialize font system
 
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
-	show_mem();
-
+ 
 	// create GUI thread
 	GuiInit();
-	show_mem();
-	while(1)
+ 	while(1)
 	{
 		ResetVideo_Menu();
 		ResumeDeviceThread();
 		ResumeParseThread();
-		show_mem();
-		WiiMenu();
+ 		WiiMenu();
 		StopDeviceThread();
 		StopParseThread();
 		MPlayerMenu();

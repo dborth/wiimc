@@ -79,7 +79,6 @@ static int config(struct vf_instance *vf,
 {
     mp_eosd_res_t res = { 0 };
 	
-	printf("\n*** config vf_ass ***\n\n");
 	if (outfmt == IMGFMT_IF09)
         return 0;
 

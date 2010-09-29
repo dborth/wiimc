@@ -2727,7 +2727,6 @@ static bool AllocPicBuffer()
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
 		u8 *ptr = (u8 *)mem2_memalign(32, maxpic, PICTURE_AREA);
-
 		if(!ptr)
 		{
 			FreePicBuffer();
@@ -3327,7 +3326,7 @@ static void MenuBrowsePictures()
 			return;
 		}
 	}
-
+	printf("ph1\n");
 	strcpy(browser.dir, WiiSettings.picturesFolder);
 	browser.menu = MENU_BROWSE_PICTURES;
 

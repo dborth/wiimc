@@ -46,7 +46,7 @@ GuiText::GuiText(const char * t, int s, GXColor c)
 
 	if(t)
 	{
-		origText = strdup(t);
+		origText = gui_strdup(t);
 		text = charToWideChar(gettext(t));
 	}
 
@@ -78,7 +78,7 @@ GuiText::GuiText(const char * t)
 
 	if(t)
 	{
-		origText = strdup(t);
+		origText = gui_strdup(t);
 		text = charToWideChar(gettext(t));
 	}
 
@@ -164,7 +164,7 @@ void GuiText::SetText(const char * t)
 
 	if(t)
 	{
-		origText = strdup(t);
+		origText = gui_strdup(t);
 		text = charToWideChar(gettext(t));
 	}
 }

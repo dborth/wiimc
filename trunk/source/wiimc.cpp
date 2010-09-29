@@ -533,6 +533,7 @@ int main(int argc, char *argv[])
 
 	WPAD_Init();
 	InitVideo();
+	USBStorage_Initialize(); // to set aside MEM2 area
 	
 	u32 size = 	(8*1024*1024) + // cache
 			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
@@ -541,7 +542,7 @@ int main(int argc, char *argv[])
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
 			(16*1024); // padding
 	AddMem2Area (size, VIDEO_AREA);
-	AddMem2Area (5*1024*1024, GUI_AREA);
+	AddMem2Area (6*1024*1024, GUI_AREA);
 	AddMem2Area (3*1024*1024, OTHER_AREA); // vars + ttf , we have to improve ext_ttf
 
 	InitVideo2();

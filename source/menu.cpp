@@ -6900,7 +6900,7 @@ static void StopGuiThreads()
 		updatethread = LWP_THREAD_NULL;
 	}
 }
-
+extern void show_mem();
 /****************************************************************************
  * Menu
  ***************************************************************************/
@@ -7018,6 +7018,7 @@ void WiiMenu()
 		}
 
 		usleep(THREAD_SLEEP);
+		show_mem();
 	}
 
 	StopGuiThreads();

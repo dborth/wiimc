@@ -2047,6 +2047,7 @@ static int try_decode_frame(AVStream *st, AVPacket *avpkt)
     if(!has_codec_parameters(st->codec) || !has_decode_delay_been_guessed(st)){
         switch(st->codec->codec_type) {
         case AVMEDIA_TYPE_VIDEO:
+        
             avcodec_get_frame_defaults(&picture);
             ret = avcodec_decode_video2(st->codec, &picture,
                                         &got_picture, avpkt);
@@ -2213,6 +2214,7 @@ int av_find_stream_info(AVFormatContext *ic)
             av_log(ic, AV_LOG_DEBUG, "interrupted\n");
             break;
         }
+        
 
         /* check if one codec still needs to be handled */
         for(i=0;i<ic->nb_streams;i++) {
@@ -2323,6 +2325,7 @@ int av_find_stream_info(AVFormatContext *ic)
            decompress the frame. We try to avoid that in most cases as
            it takes longer and uses more memory. For MPEG-4, we need to
            decompress for QuickTime. */
+           
         if (!has_codec_parameters(st->codec) || !has_decode_delay_been_guessed(st))
             try_decode_frame(st, pkt);
 

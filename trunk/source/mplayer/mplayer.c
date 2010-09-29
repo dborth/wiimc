@@ -1718,7 +1718,7 @@ void reinit_audio_chain(void) {
     if (!(initialized_flags & INITIALIZED_ACODEC)) {
         current_module="init_audio_codec";
         mp_msg(MSGT_CPLAYER,MSGL_INFO,"==========================================================================\n");
-        mpctx->sh_audio->channels=2;
+
         if(!init_best_audio_codec(mpctx->sh_audio,audio_codec_list,audio_fm_list)){
             goto init_error;
         }
@@ -1840,7 +1840,7 @@ static double written_audio_pts(sh_audio_t *sh_audio, demux_stream_t *d_audio)
 double playing_audio_pts(sh_audio_t *sh_audio, demux_stream_t *d_audio,
 				const ao_functions_t *audio_out)
 {
-	if(!audio_out) return written_audio_pts(sh_audio, d_audio);
+
     return written_audio_pts(sh_audio, d_audio) - playback_speed *
 	audio_out->get_delay();
 }
@@ -1849,7 +1849,7 @@ static int check_framedrop(double frame_time) {
 	// check for frame-drop:
 	current_module = "check_framedrop";
 	if (mpctx->sh_audio && !mpctx->d_audio->eof) {
-	    static int dropped_frames=0;
+	    static int dropped_frames;
 	    float delay = playback_speed*mpctx->audio_out->get_delay();
 	    float d = delay-mpctx->delay;
 	    ++total_frame_cnt;
@@ -2331,7 +2331,7 @@ static int sleep_until_update(float *time_frame, float *aq_sleep_time)
 	// don't try to "catch up".
 	// If benchmark is set always output frames as fast as possible
 	// without sleeping.
-	if (*time_frame < -0.02 || benchmark)
+	if (*time_frame < -0.2 || benchmark)
 	    *time_frame = 0;
     }
 
@@ -2423,6 +2423,7 @@ int reinit_video_chain(void) {
 #endif  
 #endif
 
+  sh_video->vfilter=append_filters(sh_video->vfilter);
   eosd_init(sh_video->vfilter);
 
 #ifdef CONFIG_ASS
@@ -2797,9 +2798,9 @@ int i;
 
 int gui_no_filename=0;
 
+
   InitTimer();
-  srand(GetTimerMS());
-  
+  srand(GetTimerMS()); 
 
   mp_msg_init();
 
@@ -2812,6 +2813,11 @@ int gui_no_filename=0;
 
   // Preparse the command line
 #ifdef GEKKO
+//m_config_set_option(mconfig,"msglevel","all=10");
+//config_set_option(mconfig,"demuxer","lavf");
+
+
+
 m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
@@ -3217,40 +3223,47 @@ current_module = NULL;
 
 
 // ******************* Now, let's see the per-file stuff ********************
-printf("maplayer init m1(%.4f) m2(%.4f)\n",
-							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
-play_next_file:
-
+play_next_file:	
+	
 #ifdef GEKKO
-
-	if(filename)
-	{
-		free(filename);
-		filename = NULL;
-	}
-
 	
-	if(!FindNextFile(true))
-		controlledbygui = 1; // send control back to GUI
 	
-	while (!filename)
-	{
-		usleep(50000);
+printf("maplayer init1 m1(%.4f) m2(%.4f)\n",
+							  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+							   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
-		// received the signal to stop playing
-		if(controlledbygui == 2)
-			controlledbygui = 0; // none playing, so discard
-	}
+if(filename)
+{
+  free(filename);
+  filename = NULL;
+}
+
+  if(!FindNextFile(true))
+  controlledbygui = 1; // send control back to GUI
+
+  while (!filename)
+{
+  usleep(50000);
+
+  // received the signal to stop playing
+  if(controlledbygui == 2)
+	  controlledbygui = 0; // none playing, so discard
+}
 
 wii_error = 0;
 controlledbygui = 0;
-usleep(50000);
 
-mpctx->eof=0;
 pause_low_cache=1;
+
+printf("maplayer init2 m1(%.4f) m2(%.4f)\n",
+							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
+							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+	  
 #endif
+	
+	
+
 
   // init global sub numbers
   mpctx->global_sub_size = 0;
@@ -3588,14 +3601,8 @@ stream_cache_min_percent=0.2;
 
 //============ Open DEMUXERS --- DETECT file type =======================
 current_module="demux_open";
-printf("mp 5 m1(%.4f) m2(%.4f)\n",
-							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 mpctx->demuxer=demux_open(mpctx->stream,mpctx->file_format,audio_id,video_id,dvdsub_id,filename);
 
-printf("mp 6 m1(%.4f) m2(%.4f)\n",
-							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 // HACK to get MOV Reference Files working
 if (mpctx->demuxer && mpctx->demuxer->type==DEMUXER_TYPE_PLAYLIST)
 {
@@ -4007,10 +4014,10 @@ if (mpctx->sh_video)
 
 		if (mpctx->set_of_sub_size > 0)
 		{
-			if (sub_font_name)
+			if (sub_font_name && strcmp(sub_font_name,font_name))
 				load_font_ft(prev_dxs, prev_dys, &sub_font, sub_font_name, text_font_scale_factor);
 			else
-				load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
+				sub_font = vo_font;
 		}
 		else
 		{
@@ -4043,9 +4050,8 @@ if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
 mpctx->osd_function=OSD_PLAY;
 playing_file=true;
 pause_low_cache=0;
-printf("main while m1(%.4f) m2(%.4f)\n",
-							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
+mpctx->eof=0;
+
 
 GetRelativeTime();
 total_time_usage_start=GetTimer();
@@ -4099,19 +4105,7 @@ if(!mpctx->sh_video) {
 
   if (!mpctx->num_buffered_frames) {
   double frame_time;
-  static int cnt=5;
-  if(cnt>0)
-	   	{
-	   	cnt--;
-	   	 printf("update_video 1 m1(%.4f) m2(%.4f)\n",
-									  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-		frame_time = update_video(&blit_frame);
-		printf("update_video 2 m1(%.4f) m2(%.4f)\n",
-									 ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									  ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-	}
-	  else frame_time = update_video(&blit_frame);
+  	frame_time = update_video(&blit_frame);
       while (!blit_frame && mpctx->startup_decode_retry > 0) {
           double delay = mpctx->delay;
           // these initial decode failures are probably due to codec delay,
@@ -4119,10 +4113,6 @@ if(!mpctx->sh_video) {
           update_video(&blit_frame);
           mpctx->delay = delay;
           mpctx->startup_decode_retry--;
-          
-		  printf("startup_decode_retry m1(%.4f) m2(%.4f)\n",
-									  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
       }
       mpctx->startup_decode_retry = 0;
       mp_dbg(MSGT_AVSYNC,MSGL_DBG2,"*** ftime=%5.3f ***\n",frame_time);
@@ -4173,22 +4163,13 @@ if(!mpctx->sh_video) {
 //====================== FLIP PAGE (VIDEO BLT): =========================
 if (!edl_needs_reset) {
         current_module="flip_page";
-        static int cnt=5;
+    
         if (!frame_time_remaining && blit_frame) {
        u64 t2=GetTimer();
 
 	   if(vo_config_count) 
-	   {
-	   	
-	   	if(cnt>0)
-	   	{
-	   	cnt--;
-	   	 printf("flip_page m1(%.4f) m2(%.4f)\n",
-									  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-									   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-	}
 	   	mpctx->video_out->flip_page();
-	   }
+	   
 	   mpctx->num_buffered_frames--;
 
 	   vout_time_usage += (GetTimer() - t2) * 0.000001f;
@@ -4391,9 +4372,6 @@ if(mpctx->dvbin_reopen)
 #endif
 }
 
-#ifdef GEKKO
-playing_file=false;
-#endif
 
 goto_next_file:  // don't jump here after ao/vo/getch initialization!
 mp_msg(MSGT_CPLAYER,MSGL_INFO,"\n");
@@ -4423,6 +4401,7 @@ if(benchmark){
                (total_time_usage>0.5)?(total_frame_cnt/total_time_usage):0);
 }
 #ifdef GEKKO
+playing_file=false;
 save_restore_point(fileplaying);
 DisableVideoImg();
 #endif
@@ -4454,7 +4433,7 @@ if(ass_library)
 remove_subtitles();
 
 #ifdef GEKKO
-
+ 
 goto play_next_file;
 
 #else
@@ -5329,7 +5308,11 @@ void wiiLoadRestorePoints(char *buffer, int size)
 	while(lineptr < size && i < MAX_RESTORE_POINTS)
 	{
 		// setup next line
-		if(line) free(line);
+		if(line) 
+		{
+			free(line);
+			line=NULL;
+		}
 		c = 0;
 		while(lineptr+c < size)
 		{
@@ -5349,6 +5332,7 @@ void wiiLoadRestorePoints(char *buffer, int size)
 		sscanf(line,"%[^\t]%i",restore_points[i].filename,&(restore_points[i].position));
 		i++;
 	}
+	if(line) free(line);
 }
 
 char * wiiSaveRestorePoints(char * path)

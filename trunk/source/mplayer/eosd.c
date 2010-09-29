@@ -73,7 +73,6 @@ ASS_Image *eosd_render_frame(double ts, int *changed)
 void eosd_uninit(void)
 {
 #ifdef CONFIG_ASS
-	printf("\n*****eosd_uninit****\n\n");
     if (ass_renderer)
         ass_renderer_done(ass_renderer);
 #endif

@@ -811,7 +811,7 @@ static void demux_close_lavf(demuxer_t *demuxer)
         if(priv->avfc)
        {
          av_freep(&priv->avfc->key);
-         av_close_input_stream(priv->avfc);
+         av_close_input_stream(priv->avfc);         		 
         }
         av_freep(&priv->pb);
         free(priv); demuxer->priv= NULL;

@@ -470,6 +470,7 @@ struct m_option {
 
 ///@}
 
+
 /// Find the option matching the given name in the list.
 /** \ingroup Options
  *  This function takes the possible wildcards into account (see

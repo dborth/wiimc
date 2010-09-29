@@ -78,8 +78,8 @@ static int config(struct vf_instance *vf,
                   unsigned int flags, unsigned int outfmt)
 {
     mp_eosd_res_t res = { 0 };
-	
-	if (outfmt == IMGFMT_IF09)
+
+    if (outfmt == IMGFMT_IF09)
         return 0;
 
     vf->priv->outh = height + ass_top_margin + ass_bottom_margin;
@@ -110,7 +110,7 @@ static void get_image(struct vf_instance *vf, mp_image_t *mpi)
 {
 #ifdef GEKKO
 		if(ass_track == 0 || !sub_visibility)
-			return ;
+			return;
 #endif
 
     if (mpi->type == MP_IMGTYPE_IPB)
@@ -317,11 +317,13 @@ static void my_draw_bitmap(struct vf_instance *vf, unsigned char *bitmap,
     unsigned char y = rgba2y(color);
     unsigned char u = rgba2u(color);
     unsigned char v = rgba2v(color);
-    unsigned char opacity = 255 - _a(color);
+    unsigned opacity = 255 - _a(color);
     unsigned char *src, *dsty, *dstu, *dstv;
     int i, j;
     mp_image_t *dmpi = vf->dmpi;
 
+    opacity = (0x10203 * opacity + 0x80) >> 8; /* 0x10203 = (1<<32)/(255*255) */
+    /* 0 <= opacity <= 0x10101 */
     src = bitmap;
     dsty = dmpi->planes[0]     + dst_x + dst_y * dmpi->stride[0];
     dstu = vf->priv->planes[1] + dst_x + dst_y * vf->priv->outw;
@@ -331,10 +333,10 @@ static void my_draw_bitmap(struct vf_instance *vf, unsigned char *bitmap,
             unsigned k = src[j];
             if (!k)
                 continue;
-            k = k * opacity / 255;
-            dsty[j] = (k * y + (255 - k) * dsty[j]) / 255;
-            dstu[j] = (k * u + (255 - k) * dstu[j]) / 255;
-            dstv[j] = (k * v + (255 - k) * dstv[j]) / 255;
+            k *= opacity; /* 0 <= k <= 0xFFFFFF */
+            dsty[j] = (k * y + (0xFFFFFF - k) * dsty[j] + 0x800000) >> 24;
+            dstu[j] = (k * u + (0xFFFFFF - k) * dstu[j] + 0x800000) >> 24;
+            dstv[j] = (k * v + (0xFFFFFF - k) * dstv[j] + 0x800000) >> 24;
         }
         src  += stride;
         dsty += dmpi->stride[0];
@@ -398,7 +400,6 @@ static int control(vf_instance_t *vf, int request, void *data)
 
 static void uninit(struct vf_instance *vf)
 {
-	printf("\n*** uninit vf_ass ***\n\n");
     if (vf->priv->planes[1])
         free(vf->priv->planes[1]);
     if (vf->priv->planes[2])

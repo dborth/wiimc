@@ -93,6 +93,7 @@ static void initMem2Areas()
 	{
 		mem2_areas[i].heap_ptr = NULL;
 		mem2_areas[i].size = 0;
+		mem2_areas[i].old_arena2hi = NULL;
 #ifdef DEBUG_MEM2_LEVEL		
 		mem2_areas[i].allocated = 0;
 		mem2_areas[i].top_allocated = 0;
@@ -159,8 +160,17 @@ bool RemoveMem2Area(const int area)
 	int i;
 
 	for(i=0; i < MAX_AREA; i++)
+	{
+		if(i == area || mem2_areas[i].old_arena2hi == NULL)
+			continue;
+
 		if(mem2_areas[i].old_arena2hi < mem2_areas[area].old_arena2hi)
+		{
+			if(DEBUG_MEM2_LEVEL == 2)
+				printf("RemoveMem2Area FAILED: %i\n", area);
 			return false;
+		}
+	}
 
 	if((area+1) < MAX_AREA && mem2_areas[area+1].size > 0)
 		return false;
@@ -177,10 +187,10 @@ bool RemoveMem2Area(const int area)
 	mem2_areas[area].size = 0;
 	mem2_areas[area].old_arena2hi = NULL;
 
-	#ifdef DEBUG_MEM2_LEVEL		
+#ifdef DEBUG_MEM2_LEVEL		
 	mem2_areas[area].allocated = 0;
 	mem2_areas[area].top_allocated = 0;
-	#endif
+#endif
 
 	return true;
 }

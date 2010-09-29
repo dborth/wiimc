@@ -5975,8 +5975,6 @@ static void AudioNowPlayingCallback(void *ptr)
 			
 			if(strlen(artist) > 0)
 				audiobarNowPlaying[2]->SetText(artist);
-
-			free(artist);
 		}
 
 		album = wiiGetMetaAlbum();

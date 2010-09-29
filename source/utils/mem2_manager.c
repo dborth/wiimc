@@ -166,14 +166,11 @@ bool RemoveMem2Area(const int area)
 
 		if(mem2_areas[i].old_arena2hi < mem2_areas[area].old_arena2hi)
 		{
-			if(DEBUG_MEM2_LEVEL == 2)
+			if(DEBUG_MEM2_LEVEL)
 				printf("RemoveMem2Area FAILED: %i\n", area);
 			return false;
 		}
 	}
-
-	if((area+1) < MAX_AREA && mem2_areas[area+1].size > 0)
-		return false;
 
 	#ifdef DEBUG_MEM2_LEVEL
 	if(DEBUG_MEM2_LEVEL == 2)

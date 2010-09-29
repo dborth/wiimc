@@ -42,10 +42,11 @@ extern "C" {
 #define THREAD_SLEEP 	200
 #define GSTACK 			(8192)
 #define GUITH_STACK 	(8192)
+#define PICTH_STACK 	(16384)
 
 static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
 static u8 progressstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
-static u8 picturestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+static u8 picturestack[PICTH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 screensaverstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 creditsstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
@@ -6830,7 +6831,7 @@ static void StartGuiThreads()
 	updateThreadHalt = 1;
 
 	LWP_CreateThread (&progressthread, ProgressThread, NULL, progressstack, GUITH_STACK, 60);
-	LWP_CreateThread (&picturethread, PictureThread, NULL, picturestack, GUITH_STACK, 60);
+	LWP_CreateThread (&picturethread, PictureThread, NULL, picturestack, PICTH_STACK, 60);
 	LWP_CreateThread (&screensaverthread, ScreensaverThread, NULL, screensaverstack, GUITH_STACK, 60);
 	LWP_CreateThread (&creditsthread, CreditsThread, NULL, creditsstack, GUITH_STACK, 60);
 	LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 60);

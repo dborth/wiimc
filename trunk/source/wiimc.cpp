@@ -538,7 +538,7 @@ int main(int argc, char *argv[])
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
 			(16*1024); // padding
 	AddMem2Area (size, VIDEO_AREA);
-	AddMem2Area (8*1024*1024, GUI_AREA);
+	AddMem2Area (5*1024*1024, GUI_AREA);
 	AddMem2Area (3*1024*1024, OTHER_AREA); // vars + ttf , we have to improve ext_ttf
 
 	InitVideo2();

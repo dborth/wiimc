@@ -229,8 +229,8 @@ static int UpdateDirName()
 			}
 			else
 			{
-				*test = 0; // remove last subdirectory name
 				strcpy(browser.lastdir, ++test); // record last folder
+				*test = 0; // remove last subdirectory name
 			}
 		}
 		return 1;

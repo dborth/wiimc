@@ -17,11 +17,11 @@
 #include "mem2_manager.h"
 
 //1: critical errors     2: detailed info
-#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragmentation
+//#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragmentation
 
 #ifdef DEBUG_MEM2_LEVEL
 #include <stdio.h>
-
+#endif
 /*** from libogc (lwp_heap.inl) ****/
 
 static __inline__ heap_block* __lwp_heap_blockat(heap_block *block,u32 offset)
@@ -67,7 +67,6 @@ u32 __lwp_heap_block_size(heap_cntrl *theheap,void *ptr)
 	return dsize;
 }
 
-#endif
 
 typedef struct {
 	heap_cntrl heap; 
@@ -168,8 +167,10 @@ bool RemoveMem2Area(const int area)
 
 		if(mem2_areas[i].old_arena2hi < mem2_areas[area].old_arena2hi)
 		{
+#ifdef DEBUG_MEM2_LEVEL		
 			if(DEBUG_MEM2_LEVEL)
 				printf("RemoveMem2Area FAILED: %i\n", area);
+#endif				
 			return false;
 		}
 	}
@@ -209,13 +210,16 @@ void* mem2_memalign(u8 align, u32 size, const int area)
  
 	ptr = __lwp_heap_allocate(&mem2_areas[area].heap, size); 
 
+#ifdef DEBUG_MEM2_LEVEL		
 	if(ptr == NULL || (mem2_areas[area].allocated + size > mem2_areas[area].size) ) 
 	{
-#ifdef DEBUG_MEM2_LEVEL		
 		printf("Error not enough mem in malloc, size: %u  area: %i  allocated: %u	top allocated: %u\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated);
-#endif
 		return NULL;
 	}
+#else
+	if(ptr == NULL) return NULL;
+#endif
+
 #ifdef DEBUG_MEM2_LEVEL		
  		mem2_areas[area].allocated += __lwp_heap_block_size(&mem2_areas[area].heap,ptr);
  	
@@ -241,23 +245,26 @@ void mem2_free(void *ptr, const int area)
 #endif		
 		return; // area not found
 	}
+
+#ifndef DEBUG_MEM2_LEVEL
+	__lwp_heap_free(&mem2_areas[area].heap, ptr);
+#else
 	u32 size=__lwp_heap_block_size(&mem2_areas[area].heap,ptr); 
 	 
 	if(size == 0)
 	{
-#ifdef DEBUG_MEM2_LEVEL
 		printf("mem2 free error: block not found in area %i\n",area);
-#endif
 		return;
 	}
+	
 	mem2_areas[area].allocated -= size;
 
-#ifdef DEBUG_MEM2_LEVEL
 	if(DEBUG_MEM2_LEVEL == 2)
  		printf("mem2 free: %u	area: %i  allocated: %u  top allocated: %u\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated);
-#endif		
  
 	__lwp_heap_free(&mem2_areas[area].heap, ptr);
+#endif
+	
  }
 
 void* mem2_realloc(void *ptr, u32 newsize, const int area)

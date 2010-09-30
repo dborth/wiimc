@@ -512,6 +512,9 @@ bool ntfsMount (const char *name, const DISC_INTERFACE *interface, sec_t startSe
         return false;
     }
 
+	if (flags & NTFS_IGNORE_CASE)
+		ntfs_set_ignore_case(vd->vol);
+
     // Initialise the volume descriptor
     if (ntfsInitVolume(vd)) {
         ntfs_umount(vd->vol, true);

@@ -135,15 +135,7 @@ int ntfs_open_r (struct _reent *r, void *fileStruct, const char *path, int flags
     }
 
     // Are we creating this file?
-    if (flags & O_CREAT) {
-
-        // The file SHOULD NOT already exist
-        if (file->ni) {
-            ntfsCloseEntry(file->vd, file->ni);
-            ntfsUnlock(file->vd);
-            r->_errno = EEXIST;
-            return -1;
-        }
+    if ((flags & O_CREAT) && !file->ni) {
 
         // Create the file
         file->ni = ntfsCreate(file->vd, path, S_IFREG, NULL);

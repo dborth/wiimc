@@ -304,7 +304,7 @@ void* mem2_calloc(u32 num, u32 size, const int area)
     char *ptr= NULL;
     if(s){
         int len = strlen(s) + 1;
-        ptr = mem2_malloc(len, area);
+        ptr = mem2_calloc(1, len, area);
         if (ptr)
             memcpy(ptr, s, len);
     }

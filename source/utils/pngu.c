@@ -399,19 +399,19 @@ static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, u32 width, u32 height, int * dstW
 	int newWidth = width;
 	int newHeight = height;
 
-	if(width > screenwidth || height > screenheight)
+	if(width > MAX_TEX_WIDTH || height > MAX_TEX_HEIGHT)
 	{
 		float ratio = (float)width/(float)height;
 		
-		if(ratio > (float)screenwidth/(float)screenheight)
+		if(ratio > (float)MAX_TEX_WIDTH/(float)MAX_TEX_HEIGHT)
 		{
-			newWidth = screenwidth;
-			newHeight = screenwidth/ratio;
+			newWidth = MAX_TEX_WIDTH;
+			newHeight = MAX_TEX_WIDTH/ratio;
 		}
 		else
 		{
-			newWidth = screenheight*ratio;
-			newHeight = screenheight;
+			newWidth = MAX_TEX_HEIGHT*ratio;
+			newHeight = MAX_TEX_HEIGHT;
 		}
 		xRatio = (int)((width<<16)/newWidth)+1;
 		yRatio = (int)((height<<16)/newHeight)+1;

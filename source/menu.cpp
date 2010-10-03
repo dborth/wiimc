@@ -2711,7 +2711,7 @@ static bool AllocPicBuffer()
 	if(picBuffer)
 		return true;
 
-	int maxpic = screenwidth * screenheight * 4; // max size of 1 RGBA8 picture
+	int maxpic = MAX_TEX_WIDTH * MAX_TEX_HEIGHT * 4; // max size of 1 RGBA8 picture
 
 	if(!AddMem2Area(MAX_PICTURE_SIZE + maxpic*5 + 16*1024, PICTURE_AREA))
 		return false;

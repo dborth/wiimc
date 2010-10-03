@@ -194,19 +194,19 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstW
 	u32 newWidth = width;
 	u32 newHeight = height;
 	
-	if(width > (u32)screenwidth || height > (u32)screenheight)
+	if(width > (u32)MAX_TEX_WIDTH || height > (u32)MAX_TEX_HEIGHT)
 	{
 		float ratio = (float)width/(float)height;
 
-		if(ratio > (float)screenwidth/(float)screenheight)
+		if(ratio > (float)MAX_TEX_WIDTH/(float)MAX_TEX_HEIGHT)
 		{
-			newWidth = screenwidth;
-			newHeight = screenwidth/ratio;
+			newWidth = MAX_TEX_WIDTH;
+			newHeight = MAX_TEX_WIDTH/ratio;
 		}
 		else
 		{
-			newWidth = screenheight*ratio;
-			newHeight = screenheight;
+			newWidth = MAX_TEX_HEIGHT*ratio;
+			newHeight = MAX_TEX_HEIGHT;
 		}
 		xRatio = (int)((width<<16)/newWidth)+1;
 		yRatio = (int)((height<<16)/newHeight)+1;
@@ -283,12 +283,12 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 
 	jpeg_calc_output_dimensions(&cinfo);
 	
-	if (cinfo.output_width > (u32)screenwidth || cinfo.output_height > (u32)screenheight)
+	if (cinfo.output_width > (u32)MAX_TEX_WIDTH || cinfo.output_height > (u32)MAX_TEX_HEIGHT)
 	{
-		float factor = (1.0 * cinfo.output_width) / screenwidth;
+		float factor = (1.0 * cinfo.output_width) / MAX_TEX_WIDTH;
 
-		if(cinfo.output_height/factor > screenheight)
-			factor = (1.0 * cinfo.output_height) / screenheight;
+		if(cinfo.output_height/factor > MAX_TEX_HEIGHT)
+			factor = (1.0 * cinfo.output_height) / MAX_TEX_HEIGHT;
 
 		// libjpeg only has a simple scaler (1/2, 1/4, 1/8 etc)
 		if(factor > 8)
@@ -302,7 +302,7 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 		else
 			factor = 1;
 
-		if(factor > 1 && cinfo.output_width/factor < screenwidth && cinfo.output_height/factor < screenheight)
+		if(factor > 1 && cinfo.output_width/factor < MAX_TEX_WIDTH && cinfo.output_height/factor < MAX_TEX_HEIGHT)
 		{
 			// try decreasing factor, while still staying below 1024x1024
 			if(cinfo.output_width/(factor/2) <= 1024 && cinfo.output_height/(factor/2) <= 1024)

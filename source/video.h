@@ -15,6 +15,9 @@
 extern "C" {
 #endif
 
+#define MAX_TEX_WIDTH 768
+#define MAX_TEX_HEIGHT 480
+
 void InitVideo();
 void InitVideo2();
 void StopGX();

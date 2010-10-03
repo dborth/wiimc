@@ -1321,10 +1321,9 @@ void FindDirectory()
 	{
 		int pagesize = 11;
 
-		if(menuCurrent == MENU_BROWSE_VIDEOS && VideoImgVisible())
+		if(VideoImgVisible() && menuCurrent != MENU_BROWSE_MUSIC)
 			pagesize = 10;
-
-		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
+		else if(menuCurrent == MENU_BROWSE_MUSIC || (menuCurrent == MENU_BROWSE_ONLINEMEDIA && wiiAudioOnly()))
 			pagesize = 8;
 
 		if(indexFound >= pagesize)
@@ -1376,10 +1375,9 @@ void FindFile()
 
 		int pagesize = 11;
 
-		if(menuCurrent == MENU_BROWSE_VIDEOS && VideoImgVisible())
+		if(VideoImgVisible() && menuCurrent != MENU_BROWSE_MUSIC)
 			pagesize = 10;
-
-		if(menuCurrent == MENU_BROWSE_MUSIC || menuCurrent == MENU_BROWSE_ONLINEMEDIA)
+		else if(menuCurrent == MENU_BROWSE_MUSIC || (menuCurrent == MENU_BROWSE_ONLINEMEDIA && wiiAudioOnly()))
 			pagesize = 8;
 
 		if(indexFound >= pagesize)

@@ -1988,7 +1988,7 @@ static void MenuBrowse(int menu)
 	int pagesize = 11;
 	char origname[1024]; // store original filename when performing searches
 
-	if(videoImg->IsVisible() && menu != MENU_BROWSE_MUSIC)
+	if(VideoImgVisible() && menu != MENU_BROWSE_MUSIC)
 		pagesize = 10;
 	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && wiiAudioOnly()))
 		pagesize = 8;
@@ -2142,7 +2142,7 @@ static void MenuBrowse(int menu)
 			devicesChanged = false;
 
 			// video is no longer loaded - remove back button
-			if(pagesize == 10 && !videoImg->IsVisible())
+			if(pagesize == 10 && !VideoImgVisible())
 			{
 				pagesize = 11;
 				SuspendGui();
@@ -2344,7 +2344,7 @@ static void MenuBrowse(int menu)
 						break;
 					}
 				}
-				else if(pagesize == 10 && !videoImg->IsVisible()) // video is no longer loaded
+				else if(pagesize == 10 && !VideoImgVisible()) // video is no longer loaded
 				{
 					// remove back button
 					pagesize = 11;
@@ -3326,7 +3326,7 @@ static void MenuBrowsePictures()
 			return;
 		}
 	}
-	printf("ph1\n");
+
 	strcpy(browser.dir, WiiSettings.picturesFolder);
 	browser.menu = MENU_BROWSE_PICTURES;
 
@@ -3764,6 +3764,7 @@ static void MenuSettingsGlobal()
 				case LANG_HUNGARIAN:			sprintf(options.value[1], "Hungarian"); break;
 				case LANG_POLISH:				sprintf(options.value[1], "Polish"); break;
 				case LANG_RUSSIAN:				sprintf(options.value[1], "Russian"); break;
+				case LANG_SLOVAK:				sprintf(options.value[1], "Slovak"); break;
 			}
 			
 			sprintf (options.value[2], "%d%%", WiiSettings.volume);

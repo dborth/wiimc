@@ -1392,12 +1392,12 @@ u8 * DecodeBMP(const u8 *src, u32 srclen, int *width, int *height, u8 *dstPtr)
 	if (!bmp.Read(&bmpFile))
 		return NULL;
 
-	if(bmp.TellWidth() > screenwidth || bmp.TellHeight() > screenheight)
+	if(bmp.TellWidth() > MAX_TEX_WIDTH || bmp.TellHeight() > MAX_TEX_HEIGHT)
 	{
-		if((float)bmp.TellHeight()/(float)bmp.TellWidth() > (float)screenheight/(float)screenwidth)
-			Rescale(bmp, 'H', screenheight);
+		if((float)bmp.TellHeight()/(float)bmp.TellWidth() > (float)MAX_TEX_HEIGHT/(float)MAX_TEX_WIDTH)
+			Rescale(bmp, 'H', MAX_TEX_HEIGHT);
 		else
-			Rescale(bmp, 'W', screenwidth);
+			Rescale(bmp, 'W', MAX_TEX_WIDTH);
 	}
 
 	u8 *dst = bmp.DecodeTo4x4RGB8(dstPtr);

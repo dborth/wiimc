@@ -17,7 +17,7 @@
 #include "mem2_manager.h"
 
 //1: critical errors     2: detailed info
-#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragmentation
+//#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragmentation
 
 #ifdef DEBUG_MEM2_LEVEL
 #include <stdio.h>
@@ -116,8 +116,6 @@ bool AddMem2Area (u32 size, const int index)
 {
 	if(!_inited)
 		initMem2Areas();
-
-	printf("AddMem2Area 0: %i (%d)\n", index, size);
 
 	if(index >= MAX_AREA || size == 0)
 		return false;

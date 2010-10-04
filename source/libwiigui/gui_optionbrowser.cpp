@@ -22,15 +22,12 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 	options = l;
 	selectable = true;
 	listOffset = this->FindMenuItem(-1, 1);
-	listChanged = true; // trigger an initial list update
+	listChanged = false;
 	selectedItem = 0;
 	focus = 0; // allow focus
 
 	trigA = new GuiTrigger;
 	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-
-	//btnSoundOver = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
-	//btnSoundClick = new GuiSound(button_click_pcm, button_click_pcm_size, SOUND_PCM);
 
 	bgOptionsEntry = new GuiImageData(bg_entry_png);
 	bgOptionsEntryOver = new GuiImageData(bg_entry_over_png);
@@ -72,8 +69,6 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 	arrowUpBtn->SetPosition(-30, 4);
 	arrowUpBtn->SetSelectable(false);
 	arrowUpBtn->SetTrigger(trigA);
-	//arrowUpBtn->SetSoundOver(btnSoundOver);
-	//arrowUpBtn->SetSoundClick(btnSoundClick);
 
 	arrowDownBtn = new GuiButton(arrowDownImg->GetWidth(), arrowDownImg->GetHeight());
 	arrowDownBtn->SetParent(this);
@@ -83,9 +78,7 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 	arrowDownBtn->SetPosition(-30, -8);
 	arrowDownBtn->SetSelectable(false);
 	arrowDownBtn->SetTrigger(trigA);
-	//arrowDownBtn->SetSoundOver(btnSoundOver);
-	//arrowDownBtn->SetSoundClick(btnSoundClick);
-	
+
 	if(options->length <= size) // we don't need a scrollbar
 	{
 		scrollbarTopImg->SetVisible(false);
@@ -128,8 +121,7 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 		optionBtn[i]->SetIcon(optionIcon[i]);
 		optionBtn[i]->SetPosition(30,32*i);
 		optionBtn[i]->SetTrigger(trigA);
-		//optionBtn[i]->SetSoundClick(btnSoundClick);
-		
+
 		optionBtn[i]->SetVisible(false);
 		optionBtn[i]->SetState(STATE_DISABLED);
 	}
@@ -162,8 +154,6 @@ GuiOptionBrowser::~GuiOptionBrowser()
 	delete arrowUpOver;
 
 	delete trigA;
-	//delete btnSoundOver;
-	//delete btnSoundClick;
 
 	for(int i=0; i<size; i++)
 	{
@@ -227,17 +217,6 @@ void GuiOptionBrowser::SetCol2Position(int x)
 		optionVal[i]->SetPosition(x,-2);
 		optionVal[i]->SetMaxWidth(screenwidth-x-60);
 	}
-}
-
-void GuiOptionBrowser::SetFocus(int f)
-{
-	focus = f;
-
-	for(int i=0; i<size; i++)
-		optionBtn[i]->ResetState();
-
-	if(f == 1)
-		optionBtn[selectedItem]->SetState(STATE_SELECTED);
 }
 
 void GuiOptionBrowser::ResetState()
@@ -372,7 +351,7 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 		{
 			if(next >= 0)
 			{
-				if(optionBtn[i]->GetState() == STATE_DISABLED)
+				if(optionBtn[i]->GetState() == STATE_DISABLED || !optionBtn[i]->IsVisible())
 				{
 					optionBtn[i]->SetVisible(true);
 					optionBtn[i]->SetState(STATE_DEFAULT);

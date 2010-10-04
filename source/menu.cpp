@@ -4098,6 +4098,7 @@ static void LanguageWindow(char *lang)
 	GuiOptionBrowser optionBrowser(544, 6, &options);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	optionBrowser.SetPosition(6, 70);
+	optionBrowser.TriggerUpdate();
 
 	promptWindow.Append(&dialogBoxImg);
 	promptWindow.Append(&titleTxt);
@@ -4395,7 +4396,6 @@ static void MenuSettingsMusic()
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			
 
 			switch(WiiSettings.playOrder)
 			{
@@ -4795,6 +4795,7 @@ static void MenuSettingsNetwork()
 	optionBrowser.SetPosition(0, 150);
 	optionBrowser.SetCol1Position(30);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	optionBrowser.TriggerUpdate();
 
 	SuspendGui();
 	GuiWindow w(screenwidth, screenheight);
@@ -5296,6 +5297,7 @@ static void CodepageWindow()
 	GuiOptionBrowser optionBrowser(544, 6, &options);
 	optionBrowser.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	optionBrowser.SetPosition(6, 70);
+	optionBrowser.TriggerUpdate();
 
 	promptWindow.Append(&dialogBoxImg);
 	promptWindow.Append(&titleTxt);
@@ -5524,6 +5526,7 @@ static void MenuSettings()
 
 	GuiOptionBrowser optionBrowser(screenwidth, 8, &options);
 	optionBrowser.SetPosition(0, 150);
+	optionBrowser.TriggerUpdate();
 
 	SuspendGui();
 	mainWindow->Append(&optionBrowser);

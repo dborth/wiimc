@@ -448,6 +448,9 @@ uint16_t FreeTypeGX::drawText(int16_t x, int16_t y, wchar_t *text, GXColor color
 	GXTexObj glyphTexture;
 	FT_Vector pairDelta;
 	ftgxDataOffset offset;
+	
+	if(!text)
+		return 0;
 
 	if(textStyle & FTGX_JUSTIFY_MASK)
 	{
@@ -535,23 +538,19 @@ uint16_t FreeTypeGX::getWidth(wchar_t *text)
 	while (text[i])
 	{
 		ftgxCharData* glyphData = NULL;
+
 		if (this->fontData.find(text[i]) != this->fontData.end())
-		{
 			glyphData = &this->fontData[text[i]];
-		}
 		else
-		{
 			glyphData = this->cacheGlyphData(text[i]);
-		}
 
 		if (glyphData != NULL)
 		{
-			if (this->ftKerningEnabled && (i > 0))
+			if (this->ftKerningEnabled && i > 0 && this->fontData.find(text[i-1]) != this->fontData.end())
 			{
 				FT_Get_Kerning(ftFace, this->fontData[text[i - 1]].glyphIndex, glyphData->glyphIndex, FT_KERNING_DEFAULT, &pairDelta);
 				strWidth += pairDelta.x >> 6;
 			}
-
 			strWidth += glyphData->glyphAdvanceX;
 		}
 		++i;

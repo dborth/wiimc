@@ -1007,7 +1007,6 @@ class GuiOptionBrowser : public GuiElement
 		int GetClickedOption();
 		int GetSelectedOption();
 		void ResetState();
-		void SetFocus(int f);
 		void Draw();
 		void TriggerUpdate();
 		void ResetText();

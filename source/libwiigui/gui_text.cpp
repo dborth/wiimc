@@ -96,12 +96,9 @@ GuiText::~GuiText()
 	if(text)
 		delete[] text;
 
-	if(textDynNum > 0)
-	{
-		for(int i=0; i < textDynNum; i++)
-			if(textDyn[i])
-				delete[] textDyn[i];
-	}
+	for(int i=0; i < textDynNum; i++)
+		if(textDyn[i])
+			delete[] textDyn[i];
 }
 
 // overloaded new operator
@@ -149,12 +146,9 @@ void GuiText::SetText(const char * t)
 	if(text)
 		delete[] text;
 
-	if(textDynNum > 0)
-	{
-		for(int i=0; i < textDynNum; i++)
-			if(textDyn[i])
-				delete[] textDyn[i];
-	}
+	for(int i=0; i < textDynNum; i++)
+		if(textDyn[i])
+			delete[] textDyn[i];
 
 	origText = NULL;
 	text = NULL;
@@ -176,12 +170,9 @@ void GuiText::SetWText(wchar_t * t)
 	if(text)
 		delete[] text;
 
-	if(textDynNum > 0)
-	{
-		for(int i=0; i < textDynNum; i++)
-			if(textDyn[i])
-				delete[] textDyn[i];
-	}
+	for(int i=0; i < textDynNum; i++)
+		if(textDyn[i])
+			delete[] textDyn[i];
 
 	origText = NULL;
 	text = NULL;
@@ -390,6 +381,9 @@ void GuiText::Draw()
 
 	u32 textlen = wcslen(text);
 
+	if(textlen == 0)
+		return;
+
 	if(wrap)
 	{
 		if(textDynNum == 0)
@@ -403,6 +397,9 @@ void GuiText::Draw()
 			{
 				if(n == 0)
 					textDyn[linenum] = new wchar_t[textlen + 1];
+
+				if(!textDyn[linenum])
+					return;
 
 				textDyn[linenum][n] = text[ch];
 				textDyn[linenum][n+1] = 0;
@@ -453,11 +450,16 @@ void GuiText::Draw()
 	{
 		if(textDynNum == 0)
 		{
-			textDynNum = 1;
 			textDyn[0] = wcsdup(text);
+
+			if(!textDyn[0])
+				return;
+
+			textDynNum = 1;
+
 			int len = wcslen(textDyn[0]);
 
-			while(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+			while(len > 0 && fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
 				textDyn[0][--len] = 0;
 		}
 
@@ -491,7 +493,7 @@ void GuiText::Draw()
 
 					if(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
 					{
-						while(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+						while(dynlen > 0 && fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
 							textDyn[0][--dynlen] = 0;
 					}
 					else

@@ -17,7 +17,7 @@
 #include "mem2_manager.h"
 
 //1: critical errors     2: detailed info
-//#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragmentation
+#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragmentation
 
 #ifdef DEBUG_MEM2_LEVEL
 #include <stdio.h>
@@ -93,8 +93,7 @@ static void initMem2Areas()
 	{
 		mem2_areas[i].heap_ptr = NULL;
  		mem2_areas[i].size = 0; 
- 		mem2_areas[i].old_arena2hi = NULL;
-		mem2_areas[i].old_arena2hi = NULL;
+ 		mem2_areas[i].old_arena2hi = NULL;		
 #ifdef DEBUG_MEM2_LEVEL		
 		mem2_areas[i].allocated = 0;
 		mem2_areas[i].top_allocated = 0;
@@ -117,6 +116,8 @@ bool AddMem2Area (u32 size, const int index)
 {
 	if(!_inited)
 		initMem2Areas();
+
+	printf("AddMem2Area 0: %i (%d)\n", index, size);
 
 	if(index >= MAX_AREA || size == 0)
 		return false;
@@ -143,6 +144,8 @@ bool AddMem2Area (u32 size, const int index)
 #ifdef DEBUG_MEM2_LEVEL
 		printf("not enough mem2: %i\n",index);
 #endif		
+		mem2_areas[index].old_arena2hi = NULL;
+		mem2_areas[index].heap_ptr = NULL;
 		return false; // not enough mem2
 	}
 

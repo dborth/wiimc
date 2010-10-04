@@ -28,7 +28,7 @@ INCLUDES	:=	source source/mplayer
 
 CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)
 CXXFLAGS	=	-save-temps -Xassembler -aln=$@.lst $(CFLAGS)
-LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map			
+LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map -specs=wiimc.spec
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project

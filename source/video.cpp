@@ -24,7 +24,9 @@
 extern "C" {
 
 #define DEFAULT_FIFO_SIZE 384 * 1024
-static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32); // must be in MEM1
+//static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32); // must be in MEM1
+static unsigned char *gp_fifo; // must be in MEM1
+
 static Mtx GXmodelView2D;
 
 unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
@@ -306,6 +308,8 @@ InitVideo2 ()
 
 	// Initialize GX
 	GXColor background = { 0, 0, 0, 0xff };
+	gp_fifo=(unsigned char *)(((u32)SYS_GetArena1Hi() - DEFAULT_FIFO_SIZE - 0x1f) &~0x1f);
+	SYS_SetArena1Hi((void *)gp_fifo);
 	memset (gp_fifo, 0, DEFAULT_FIFO_SIZE);
 	GX_Init (gp_fifo, DEFAULT_FIFO_SIZE);
 	GX_SetCopyClear (background, 0x00ffffff);

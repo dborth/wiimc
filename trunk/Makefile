@@ -119,7 +119,9 @@ test:
 
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(OUTPUT).elf $(OUTPUT).dol
+	rm -f $(BUILD)/*.d $(BUILD)/*.h $(BUILD)/*.ii $(BUILD)/*.lst $(BUILD)/*.map \
+	$(BUILD)/*.o $(BUILD)/*.s
+	@rm -fr $(OUTPUT).elf $(OUTPUT).dol
 	cd source/mplayer; $(MAKE) -f Makefile clean
 
 #---------------------------------------------------------------------------------

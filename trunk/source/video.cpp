@@ -24,9 +24,7 @@
 extern "C" {
 
 #define DEFAULT_FIFO_SIZE 384 * 1024
-//static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32); // must be in MEM1
 static unsigned char *gp_fifo; // must be in MEM1
-
 static Mtx GXmodelView2D;
 
 unsigned int *xfb[2] = { NULL, NULL }; // Double buffered

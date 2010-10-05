@@ -633,20 +633,18 @@ static void *GuiThread (void *arg)
 	{
 		if(guiHalt == 1)
 			LWP_SuspendThread(guithread);
-		
+
 		UpdatePads();
 		mainWindow->Draw();
 
 		if (mainWindow->GetState() != STATE_DISABLED)
 			mainWindow->DrawTooltip();
-		
 
 		if(userInput[0].wpad->ir.valid)
 			Menu_DrawImg(userInput[0].wpad->ir.x-48, userInput[0].wpad->ir.y-48,
 				96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
 		
 		DoRumble(0);
-		
 		mainWindow->Update(&userInput[0]);
 
 		if(mainWindow->GetState() != STATE_DISABLED)
@@ -1836,6 +1834,7 @@ static int LoadNewFile()
 	}
 
 	// we are playing audio
+
 	// clear any play icons
 	for(int i=0; i < browser.numEntries; i++)
 	{
@@ -2189,7 +2188,6 @@ static void MenuBrowse(int menu)
 			mainWindow->SetState(STATE_DEFAULT);
 		}
 
-
 		// update file browser based on arrow buttons
 		// request guiShutdown if A button pressed on a file
 		for(int i=0; i<pagesize; i++)
@@ -2333,6 +2331,7 @@ static void MenuBrowse(int menu)
 				if(res == 2) // loaded an audio-only file
 				{
 					FindFile();
+
 					// re-adjust for audio bar, if necessary
 					if(pagesize != 8)
 					{
@@ -2342,9 +2341,8 @@ static void MenuBrowse(int menu)
 						mainWindow->Remove(&backBtn);
 						mainWindow->Append(audiobar);
 						ResumeGui();
-						
+						break;
 					}
-					break;
 				}
 				else if(pagesize == 10 && !VideoImgVisible()) // video is no longer loaded
 				{
@@ -2407,6 +2405,7 @@ static void MenuBrowse(int menu)
 
 		if(!mainWindow->Find(audiobar))
 			continue; // updating audio bar elements is not required
+
 		if(audiobarPauseBtn->GetState() == STATE_CLICKED)
 		{
 			audiobarPauseBtn->ResetState();
@@ -2431,6 +2430,7 @@ static void MenuBrowse(int menu)
 				mainWindow->SetState(STATE_DEFAULT);
 			}
 		}
+
 		if(paused != wiiIsPaused())
 		{
 			paused = !paused;
@@ -2462,6 +2462,7 @@ static void MenuBrowse(int menu)
 				audiobarPauseBtn->SetAlpha(128);
 			}
 		}
+		
 		if(wiiAudioOnly())
 		{
 			if(wiiGetTimeLength() > 0)
@@ -3317,7 +3318,7 @@ static void MenuBrowsePictures()
 
 		StopMPlayerFile();
 		DisableVideoImg();
-		
+
 		while(!guiShutdown && controlledbygui == 2)
 				usleep(THREAD_SLEEP);
 

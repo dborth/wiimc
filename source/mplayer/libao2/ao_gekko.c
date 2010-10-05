@@ -203,23 +203,21 @@ static int get_space(void)
 static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int remaining)
 {
 	s32 left=0, right=0;
-
 	int cws=0, crs=0;
 	int prs, nrs;
-
 	int top = len - 1;
 
 	for (int counter = 0; counter < len; ++counter)
 	{
-		if(counter == 0 && processed == 0) prs=0;
-		else prs = counter - 1;
+		if(counter == 0 && processed == 0)
+			prs=0;
+		else
+			prs = counter - 1;
 
 		if(counter == top && remaining <= request_size)
 			nrs = counter;
 		else
 			nrs = counter + 1;
-		
-		
 		
 		if (ao_data.channels > 1)
 		{
@@ -230,7 +228,7 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 		{
 			left = right = src[crs];
 		}
-
+		
 		switch (ao_data.channels)
 		{
 			case 6:
@@ -255,9 +253,9 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 				// Center front
 				left += src[crs + 3] * PAN_CENTER;
 				right += src[crs + 3] * PAN_CENTER;
-				break;		
-		
+				break;
 		}
+		
 		dst[cws++] = clamp(right, SHRT_MIN, SHRT_MAX);
 		dst[cws++] = clamp(left, SHRT_MIN, SHRT_MAX);
 

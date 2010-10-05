@@ -3227,11 +3227,6 @@ current_module = NULL;
 play_next_file:	
 	
 #ifdef GEKKO
-	
-	
-printf("maplayer init1 m1(%.4f) m2(%.4f)\n",
-							  ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-							   ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
 
 if(filename)
 {
@@ -3256,10 +3251,6 @@ controlledbygui = 0;
 
 pause_low_cache=1;
 
-printf("maplayer init2 m1(%.4f) m2(%.4f)\n",
-							((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-							 ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-	  
 #endif
 	
 	

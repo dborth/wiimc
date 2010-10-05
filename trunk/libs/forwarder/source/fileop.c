@@ -9,6 +9,7 @@
 #include <gccore.h>
 #include <errno.h>
 #include <ogcsys.h>
+#include <ogc/lwp_watchdog.h>
 #include <ogc/machine/processor.h>
 #include <ntfs.h>
 #include <fat.h>
@@ -458,7 +459,7 @@ static bool MountPartitions(int device)
 			return false; // unknown device
 	}
 
-	if(disc->startup() && disc->isInserted() && FindPartitions(device) > 0)
+	if(FindPartitions(device) > 0)
 		return true;
 
 	return false;
@@ -466,8 +467,27 @@ static bool MountPartitions(int device)
 
 void MountAllDevices()
 {
-	MountPartitions(DEVICE_SD);
-	MountPartitions(DEVICE_USB);
+	if(sd->startup() && sd->isInserted())
+	{
+		MountPartitions(DEVICE_SD);
+		return;
+	}
+	
+	u64 start = gettime();
+
+	while (1)
+	{
+		usleep(250000); // 1/4 sec
+
+		if(usb->startup() && usb->isInserted())
+		{
+			MountPartitions(DEVICE_USB);
+			return;
+		}
+
+		if(diff_sec(start, gettime()) > 10) // wait for 10 seconds for device init
+			break;
+	}
 }
 
 void UnmountAllDevices()

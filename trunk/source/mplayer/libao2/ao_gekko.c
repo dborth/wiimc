@@ -209,15 +209,9 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 
 	for (int counter = 0; counter < len; ++counter)
 	{
-		if(counter == 0 && processed == 0)
-			prs=0;
-		else
-			prs = counter - 1;
 
-		if(counter == top && remaining <= request_size)
-			nrs = counter;
-		else
-			nrs = counter + 1;
+		 prs = max((counter - 1), -(processed / (sizeof(s16) * ao_data.channels))) * ao_data.channels;
+		 nrs = min((counter + 1), (remaining / (sizeof(s16) * ao_data.channels))) * ao_data.channels;		
 		
 		if (ao_data.channels > 1)
 		{
@@ -228,7 +222,8 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 		{
 			left = right = src[crs];
 		}
-		
+
+
 		switch (ao_data.channels)
 		{
 			case 6:
@@ -255,7 +250,7 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 				right += src[crs + 3] * PAN_CENTER;
 				break;
 		}
-		
+	
 		dst[cws++] = clamp(right, SHRT_MIN, SHRT_MAX);
 		dst[cws++] = clamp(left, SHRT_MIN, SHRT_MAX);
 
@@ -269,7 +264,7 @@ static int play(void *data, int remaining, int flags)
 	int samples = BUFFER_SIZE / (sizeof(s16) * HW_CHANNELS);
 	s16 *source = (s16 *)data;
 
-	while (remaining >= request_size && get_space() >= request_size)
+	while (remaining >= (request_size+BUFFER_SIZE) && get_space() >= request_size)
 	{
 		copy_channels((s16 *)buffers[buffer_fill], source, samples, processed, remaining);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
@@ -279,15 +274,14 @@ static int play(void *data, int remaining, int flags)
 		processed += request_size;
 		source += request_size / sizeof(s16);
 		buffered += BUFFER_SIZE;
-
-		remaining -= request_size;
+		remaining -= request_size;		
 	}
 
 	if ((flags & AOPLAY_FINAL_CHUNK) && remaining > 0)
 	{
 		samples = remaining / (sizeof(s16) * HW_CHANNELS);
 		memset(buffers[buffer_fill], 0, BUFFER_SIZE);
-		copy_channels((s16 *)buffers[buffer_fill], source, samples, processed, remaining);
+		copy_channels((s16 *)buffers[buffer_fill], source, samples, processed, 0);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);
 		buffer_fill = (buffer_fill + 1) % BUFFER_COUNT;
 

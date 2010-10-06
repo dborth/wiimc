@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <unistd.h>
+#include <ogcsys.h>
 
 #include "config.h"
 #include "libaf/af.h"
@@ -33,8 +35,6 @@
 #include "audio_out_internal.h"
 #include "mp_msg.h"
 #include "help_mp.h"
-
-#include <ogcsys.h>
 #include "osdep/ave-rvl.h"
 
 #define BUFFER_SIZE 	4096
@@ -209,9 +209,8 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 
 	for (int counter = 0; counter < len; ++counter)
 	{
-
-		 prs = max((counter - 1), -(processed / (sizeof(s16) * ao_data.channels))) * ao_data.channels;
-		 nrs = min((counter + 1), (remaining / (sizeof(s16) * ao_data.channels))) * ao_data.channels;		
+		prs = max((counter - 1), -(processed / (sizeof(s16) * ao_data.channels))) * ao_data.channels;
+		nrs = min((counter + 1), (remaining / (sizeof(s16) * ao_data.channels))) * ao_data.channels;		
 		
 		if (ao_data.channels > 1)
 		{

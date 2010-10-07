@@ -62,8 +62,12 @@ static bool settingsSet = false;
 #define CACHE_STACKSIZE (8*1024)
 static lwp_t mthread = LWP_THREAD_NULL;
 static lwp_t cthread = LWP_THREAD_NULL;
-static u8 mplayerstack[STACKSIZE] ATTRIBUTE_ALIGN (32);
-static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
+//static u8 mplayerstack[STACKSIZE] ATTRIBUTE_ALIGN (32);
+static u8 *mplayerstack;
+
+
+static u8 *cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
+
 
 /****************************************************************************
  * Shutdown / Reboot / Exit
@@ -419,6 +423,8 @@ bool InitMPlayer()
 	network_useragent = mem2_strdup(agent, OTHER_AREA);
 
 	// create mplayer thread
+	mplayerstack=(u8*)memalign(32,STACKSIZE*sizeof(u8));
+	memset(mplayerstack,0,STACKSIZE*sizeof(u8));
 	LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, STACKSIZE, 68);
 
 	init = true;
@@ -519,7 +525,7 @@ int main(int argc, char *argv[])
 {
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
- 
+ /*
 	// only reload IOS if AHBPROT is not enabled
 	u32 have_ahbprot = __di_check_ahbprot();
 	u32 version = IOS_GetVersion();
@@ -527,8 +533,8 @@ int main(int argc, char *argv[])
 
 	if(version != 58 && preferred > 0 && version != (u32)preferred && !have_ahbprot)
 		IOS_ReloadIOS(preferred);
-	
-	if(have_ahbprot)
+*/	
+	if(__di_check_ahbprot())
 		DI_Init();
 
 	WPAD_Init();
@@ -537,7 +543,7 @@ int main(int argc, char *argv[])
 	
 	u32 size = 	(8*1024*1024) + // cache
 			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
-			(1024*1024*2)+(1024*512*2) + //textures
+			//(1024*1024*2)+(1024*512*2) + //textures
 			(VIDEO_GetFrameBufferSize(vmode)*2) + //video buffers
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
 			(16*1024); // padding
@@ -558,7 +564,6 @@ int main(int argc, char *argv[])
 	GX_AllocTextureMemory();
 	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, VIDEO_AREA);
  	MountAllDevices(); // Initialize SD and USB devices
- 
 	// store path app was loaded from
 	if(argc > 0 && argv[0] != NULL)
 		CreateLoadPath(argv[0]);
@@ -569,7 +574,6 @@ int main(int argc, char *argv[])
 
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
- 
 	// create GUI thread
 	GuiInit();
  	while(1)

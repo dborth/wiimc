@@ -62,12 +62,8 @@ static bool settingsSet = false;
 #define CACHE_STACKSIZE (8*1024)
 static lwp_t mthread = LWP_THREAD_NULL;
 static lwp_t cthread = LWP_THREAD_NULL;
-//static u8 mplayerstack[STACKSIZE] ATTRIBUTE_ALIGN (32);
 static u8 *mplayerstack;
-
-
-static u8 *cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
-
+static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
 
 /****************************************************************************
  * Shutdown / Reboot / Exit
@@ -554,6 +550,7 @@ int main(int argc, char *argv[])
 	GX_AllocTextureMemory();
 	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, VIDEO_AREA);
  	MountAllDevices(); // Initialize SD and USB devices
+ 
 	// store path app was loaded from
 	if(argc > 0 && argv[0] != NULL)
 		CreateLoadPath(argv[0]);
@@ -564,6 +561,7 @@ int main(int argc, char *argv[])
 
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
+ 
 	// create GUI thread
 	GuiInit();
  	while(1)

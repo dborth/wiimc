@@ -209,14 +209,6 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 
 	for (int counter = 0; counter < len; ++counter)
 	{
-
-		//prs = max((counter - 1), -(processed / (sizeof(s16) * ao_data.channels))) * ao_data.channels;
-		//nrs = min((counter + 1), (remaining / (sizeof(s16) * ao_data.channels))) * ao_data.channels;	
-//		if(counter == 0 && processed == 0 )
-//			prs = 0;
-//		else
-
-		
 		if (ao_data.channels > 1)
 		{
 			left = src[crs];
@@ -259,7 +251,7 @@ static inline void copy_channels(s16 *dst, s16 *src, int len, int processed, int
 		dst[cws++] = clamp(left, SHRT_MIN, SHRT_MAX);
 
 		crs += ao_data.channels;
-		prs++;						
+		prs++;
 		nrs++;
 	}
 }
@@ -270,7 +262,7 @@ static int play(void *data, int remaining, int flags)
 	int samples = BUFFER_SIZE / (sizeof(s16) * HW_CHANNELS);
 	s16 *source = (s16 *)data;
 
-	while (remaining >= (request_size/*+BUFFER_SIZE*/) && get_space() >= request_size)
+	while (remaining >= request_size && get_space() >= request_size)
 	{
 		copy_channels((s16 *)buffers[buffer_fill], source, samples, processed, remaining);
 		DCStoreRangeNoSync(buffers[buffer_fill], BUFFER_SIZE);

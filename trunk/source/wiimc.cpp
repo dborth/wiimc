@@ -525,15 +525,7 @@ int main(int argc, char *argv[])
 {
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
- /*
-	// only reload IOS if AHBPROT is not enabled
-	u32 have_ahbprot = __di_check_ahbprot();
-	u32 version = IOS_GetVersion();
-	s32 preferred = IOS_GetPreferredVersion();
 
-	if(version != 58 && preferred > 0 && version != (u32)preferred && !have_ahbprot)
-		IOS_ReloadIOS(preferred);
-*/	
 	if(__di_check_ahbprot())
 		DI_Init();
 
@@ -543,10 +535,8 @@ int main(int argc, char *argv[])
 	
 	u32 size = 	(8*1024*1024) + // cache
 			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
-			//(1024*1024*2)+(1024*512*2) + //textures
-			(VIDEO_GetFrameBufferSize(vmode)*2) + //video buffers
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
-			(16*1024); // padding
+			(1024); // padding
 	AddMem2Area (size, VIDEO_AREA);
 	AddMem2Area (6*1024*1024, GUI_AREA);
 	AddMem2Area (3*1024*1024, OTHER_AREA); // vars + ttf , we have to improve ext_ttf

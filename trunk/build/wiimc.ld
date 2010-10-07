@@ -211,7 +211,8 @@ SECTIONS
 	_end = .;
 	PROVIDE(end = .);
 
-	. = 0x90050000;
+ /* max video buffers 640x574x2 x 2 = 0x166C00  */
+	. = (0x90002000 + 0x166C00);
 
 	.bss       :
 	{

@@ -32,7 +32,7 @@ EXTRA_INC = -I$(DEVKITPRO)/portlibs/ppc/include -I$(DEVKITPRO)/libogc/include -I
 EXTRAXX_INC = $(EXTRA_INC)
 
 COMMONFLAGS = -MD -MP -std=gnu99 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -mpaired -I. -O3 -pipe -DGEKKO -mrvl -mcpu=750 -mtune=750 -meabi -mhard-float -mdouble-float
-CFLAGS = $(EXTRA_INC) $(COMMONFLAGS) 
+CFLAGS = $(EXTRA_INC) $(COMMONFLAGS) -Wa,-mgekko
 OPTFLAGS =  $(EXTRA_INC) $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -D__STDC_LIMIT_MACROS $(EXTRAXX_INC)
 

@@ -211,7 +211,7 @@ SECTIONS
 	_end = .;
 	PROVIDE(end = .);
 
-	. = 0x90002000;
+	. = 0x90050000;
 
 	.bss       :
 	{
@@ -269,13 +269,13 @@ SECTIONS
 }
 
 __isIPL = 0;
-__stack_addr = (__bss_start + SIZEOF(.bss) + 0x20000 + 7) & (-8);
-__stack_end = (__bss_start + SIZEOF(.bss));
+__stack_addr = (__sbss_start + SIZEOF(.sbss) + 0x20000 + 7) & (-8);
+__stack_end = (__sbss_start + SIZEOF(.sbss));
 __intrstack_addr = (__stack_addr + 0x4000);
 __intrstack_end = (__stack_addr);
-__Arena1Lo =( _end + 31) & (-32);
+__Arena1Lo =( __intrstack_addr + 31) & (-32);
 __Arena1Hi = (0x817FEFF0);
-__Arena2Lo = (__intrstack_addr + 31) & (-32);
+__Arena2Lo = (__bss_end + 31) & (-32);
 __Arena2Hi = (0x933E0000);
 
 __gxregs = (__Arena1Hi + 31) & (-32);

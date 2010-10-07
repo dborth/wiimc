@@ -547,11 +547,17 @@ void GX_AllocTextureMemory()
 {
 	//make memory fixed (max texture 1024*1024, gx can't manage more)
 	if(Yltexture) return;
-	
+/*	
 	Yltexture = (u8 *) mem2_malloc(1024*1024, VIDEO_AREA);
 	Yrtexture = (u8 *) mem2_malloc(1024*1024, VIDEO_AREA);
 	Utexture = (u8 *) mem2_malloc(1024*512, VIDEO_AREA);
 	Vtexture = (u8 *) mem2_malloc(1024*512, VIDEO_AREA);
+*/
+	Yltexture = (u8 *) memalign(32,1024*1024);
+	Yrtexture = (u8 *) memalign(32,1024*1024);
+	Utexture = (u8 *) memalign(32,1024*512);
+	Vtexture = (u8 *) memalign(32,1024*512);
+	
 }
 
 /****************************************************************************

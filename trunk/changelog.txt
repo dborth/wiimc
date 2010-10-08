@@ -6,6 +6,22 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.1.0 - October 6, 2010]
+
+* Synced to MPlayer r32341
+* Fixed a crash that happened if your router was turned off
+* Fixed "blank listing" issue for SMB
+* Improved memory management, resulting in improved performance
+* Improved USB compatibility and speed
+* USB bug fixes
+* NTFS bug fixes
+* Fixed audio sync regression from 1.0.9
+* Change YouTube default to 480p
+* Fixed "vanishing pointer" issue when watching CPU-intensive videos
+* Improved shuffle for music
+* Channel updated (improved USB compatibility)
+* Other miscellaneous bug fixes/improvements
+
 [1.0.9 - August 18, 2010]
 
 * Fixed a bug that caused NTFS drives not to show up

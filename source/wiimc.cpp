@@ -91,29 +91,6 @@ void CheckSleepTimer()
 	}
 }
 
-void ExitApp()
-{
-	DisableRumble();
-
-	if(ExitRequested == 1)
-	{
-		SaveFolder();
-		SaveSettings(SILENT);
-	}
-
-	// shut down some threads
-	SuspendDeviceThread();
-	StopGX();
-	UnmountAllDevices();
-
-	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
-		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
-	else if(WiiSettings.exitAction == EXIT_WIIMENU)
-		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
-	else
-		exit(0); // Exit to HBC
-}
-
 static void ShutdownCB()
 {
 	if(controlledbygui != 1 && menuMode == 0)
@@ -563,6 +540,25 @@ int main(int argc, char *argv[])
 	{
 		ResetVideo_Menu();
  		WiiMenu();
+
+ 		if(ExitRequested)
+ 			break;
+
 		MPlayerMenu();
 	}
+
+ 	// application exiting
+	if(ExitRequested == 1)
+	{
+		SaveFolder();
+		SaveSettings(SILENT);
+	}
+
+	StopGX();
+	UnmountAllDevices();
+
+	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
+		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
+	else if(WiiSettings.exitAction == EXIT_WIIMENU)
+		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
 }

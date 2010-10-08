@@ -2216,12 +2216,16 @@ size_t SaveFile (char * buffer, char *filepath, size_t datasize, bool silent)
 
 		if(written != datasize) written = 0;
 
+		if(silent)
+			break;
+
 		if(!written)
 			retry = ErrorPromptRetry("Error saving file!");
 	}
 
 	// go back to checking if devices were inserted/removed
-	ResumeDeviceThread();
+	if(!ExitRequested)
+		ResumeDeviceThread();
 
 	CancelAction();
     return written;

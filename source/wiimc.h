@@ -28,7 +28,6 @@ enum {
 #define SILENT 1
 
 bool SaneIOS();
-void ExitApp();
 void SetSleepTimer();
 void CheckSleepTimer();
 bool InitMPlayer();

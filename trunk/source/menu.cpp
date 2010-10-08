@@ -362,7 +362,7 @@ static void UpdateMenuImages(int oldBtn, int newBtn)
 	}
 }
 
-void SaveFolder()
+static void SaveFolder()
 {
 	if(WiiSettings.lockFolders)
 		return;
@@ -488,7 +488,7 @@ static void *UpdateThread (void *arg)
 			"Update later");
 		if(installUpdate)
 			if(DownloadUpdate())
-				ExitRequested = 1;
+				ExitRequested = true;
 	}
 	return NULL;
 }
@@ -698,7 +698,7 @@ static void *GuiThread (void *arg)
 
 		if((userInput[0].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
 				controlledbygui == 1)
-			ExitRequested = 1; // exit program
+			ExitRequested = true; // exit program
 
 		if(ExitRequested)
 		{
@@ -710,6 +710,7 @@ static void *GuiThread (void *arg)
 			}
 			guiShutdown = true;
 			guiHalt = 1;
+			SaveFolder();
 		}
 		usleep(THREAD_SLEEP);
 	}
@@ -6933,7 +6934,7 @@ void WiiMenu()
 	{
 		if(!SaveSettings(NOTSILENT))
 		{
-			ExitRequested = 2;
+			ExitRequested = true;
 			return;
 		}
 	}
@@ -6948,7 +6949,7 @@ void WiiMenu()
 	// Init MPlayer path and vars (only happens once)
 	if(!InitMPlayer())
 	{
-		ExitRequested = 2;
+		ExitRequested = true;
 		return;
 	}
 
@@ -7034,9 +7035,12 @@ void WiiMenu()
 	DisableRumble();
 	mainWindow = NULL;
 	nowPlaying->SetVisible(false);
-	
+
 	StopDeviceThread();
 	StopParseThread();
+
+	if(ExitRequested)
+		SaveSettings(SILENT);	
 }
 
 bool BufferingStatusSet()

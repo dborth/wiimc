@@ -708,7 +708,8 @@ static void *GuiThread (void *arg)
 				Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor){0, 0, 0, i},1);
 				Menu_Render();
 			}
-			ExitApp();
+			guiShutdown = true;
+			guiHalt = 1;
 		}
 		usleep(THREAD_SLEEP);
 	}
@@ -6933,10 +6934,10 @@ void WiiMenu()
 		if(!SaveSettings(NOTSILENT))
 		{
 			ExitRequested = 2;
-			while(1) usleep(THREAD_SLEEP);
+			return;
 		}
 	}
-	
+
 	if(WiiSettings.dvdDisabled)
 	{
 		dvdBtn->SetVisible(false);
@@ -6948,7 +6949,7 @@ void WiiMenu()
 	if(!InitMPlayer())
 	{
 		ExitRequested = 2;
-		while(1) usleep(THREAD_SLEEP);
+		return;
 	}
 
 	ResumeGui();
@@ -6962,7 +6963,6 @@ void WiiMenu()
 		ErrorPrompt("The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected.");
 
 	checkIOS = false;
-
 
 	while(!guiShutdown)
 	{
@@ -7029,6 +7029,7 @@ void WiiMenu()
 	}
 
 	StopGuiThreads();
+
 	SuspendGui();
 	DisableRumble();
 	mainWindow = NULL;

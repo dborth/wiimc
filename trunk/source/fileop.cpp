@@ -826,6 +826,53 @@ void MountAllDevices()
 	}
 }
 
+void FindAppPath()
+{
+	char filepath[MAXPATHLEN];
+	FILE *f;
+
+	if(sd->startup() && sd->isInserted())
+	{
+		isInserted[DEVICE_SD] = true;
+		MountPartitions(DEVICE_SD, SILENT);
+		if(CheckMount(DEVICE_SD, 1))
+		{
+			sprintf(filepath, "sd1:/apps/%s/settings.xml", APPFOLDER);
+			f = fopen (filepath, "rb");
+			if(f)
+			{
+				fclose(f);
+				sprintf(appPath, "sd1:/apps/%s",APPFOLDER	);
+				return;
+			}
+		}		
+	}
+
+	if(usb->startup() && usb->isInserted())
+	{
+		isInserted[DEVICE_USB] = true;
+		MountPartitions(DEVICE_USB, SILENT);
+			
+		for(int m=1; m<6; m++)
+		{
+			if(CheckMount(DEVICE_USB, m))
+			{
+				sprintf(filepath, "usb%d:/apps/%s/settings.xml", m,APPFOLDER);
+				f = fopen (filepath, "rb");
+				if(f)
+				{
+					fclose(f);
+					sprintf(appPath, "usb%d:/apps/%s", m,APPFOLDER);
+					return;
+				}
+			}
+		}
+
+	}
+
+}
+
+
 /****************************************************************************
  * MountDVD()
  *

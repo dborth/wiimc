@@ -39,6 +39,7 @@ bool IsOnlineMediaPath(char *path);
 void CleanupPath(char * path);
 void GetFullPath(int index, char *path);
 void MountAllDevices();
+void FindAppPath();
 void UnmountAllDevices();
 bool CheckMount(int device, int devnum);
 bool ChangeInterface(int device, int devnum, bool silent);

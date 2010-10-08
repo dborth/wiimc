@@ -1044,40 +1044,15 @@ bool LoadSettings()
 	if(settingsLoaded) // already attempted loading
 		return true;
 
+	if(appPath[0]=='\0') return false;
+
 	bool settingsFound = false;
-	char path[7][MAXPATHLEN];
 	char filepath[MAXPATHLEN];
 
-	int d=0;
-
-	if(loadPath[0] != 0)
-		sprintf(path[d++], "%s", loadPath);
-
-	if(CheckMount(DEVICE_SD, 1))
-		sprintf(path[d++], "sd1:/apps/%s", APPFOLDER);
-
-	for(int m=1; m<6; m++)
-	{
-		if(!CheckMount(DEVICE_USB, m))
-			break;
-
-		sprintf(path[d], "usb%d:/apps/%s", m, APPFOLDER);
-		d++;
-	}
-
-	for(int i=0; i<d; i++)
-	{
-		sprintf(filepath, "%s/settings.xml", path[i]);		
-		settingsFound = LoadSettingsFile(filepath);
-		sprintf(filepath, "%s/onlinemedia.xml", path[i]);
-		LoadOnlineMediaFile(filepath);
-
-		if(settingsFound)
-		{
-			strcpy(appPath, path[i]);
-			break;
-		}
-	}
+	sprintf(filepath, "%s/settings.xml", appPath);		
+	settingsFound = LoadSettingsFile(filepath);
+	sprintf(filepath, "%s/onlinemedia.xml", appPath);
+	LoadOnlineMediaFile(filepath);
 
 	settingsLoaded = true; // attempted to load settings
 	if(settingsFound)

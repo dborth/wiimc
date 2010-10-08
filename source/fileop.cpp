@@ -84,7 +84,7 @@ static void UnmountPartitions(int device);
 
 static void * devicecallback (void *arg)
 {
-	devsleep = 1000*1000;
+	devsleep = 200*1000;
 
 	while(devsleep > 0)
 	{

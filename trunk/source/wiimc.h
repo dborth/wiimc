@@ -12,7 +12,7 @@
 #include "network.h"
 
 #define APPNAME			"WiiMC"
-#define APPVERSION		"1.0.9"
+#define APPVERSION		"1.1.0"
 #define APPFOLDER		"wiimc"
 
 enum {
@@ -41,7 +41,6 @@ extern FreeTypeGX *fontSystem[];
 extern char loadedFile[];
 extern char loadedFileDisplay[];
 extern char appPath[];
-extern char loadPath[];
 
 extern "C" {
 	

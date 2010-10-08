@@ -52,7 +52,6 @@ static int ResetRequested = 0;
 int ScreenshotRequested = 0;
 int ExitRequested = 0;
 char appPath[1024] = { 0 };
-char loadPath[1024] = { 0 };
 char loadedFile[1024] = { 0 };
 char loadedFileDisplay[128] = { 0 };
 static bool settingsSet = false;
@@ -105,7 +104,7 @@ void ExitApp()
 	// shut down some threads
 	SuspendDeviceThread();
 	StopGX();
-	//UnmountAllDevices();
+	UnmountAllDevices();
 
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
@@ -549,12 +548,8 @@ int main(int argc, char *argv[])
 	AUDIO_Init(NULL);
 	GX_AllocTextureMemory();
 	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, VIDEO_AREA);
- 	FindAppPath(); //initialize SD and USB only if it's needed (speed up wiimc init with a usb device inserted if app is in sd)
- 
-	// store path app was loaded from
-	if(argc > 0 && argv[0] != NULL)
-		CreateLoadPath(argv[0]);
- 
+ 	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
+
 	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
  	InitFreeType((u8*)font_ttf, font_ttf_size); // Initialize font system

@@ -83,8 +83,8 @@ static bool MountPartitions(int device, int silent);
 static void UnmountPartitions(int device);
 
 static void * devicecallback (void *arg)
-{ //wait 800 msecs to get wimmc menu working, then load devices
-	devsleep = 800*1000;
+{
+	devsleep = 1000*1000;
 
 	while(devsleep > 0)
 	{
@@ -94,6 +94,7 @@ static void * devicecallback (void *arg)
 		usleep(THREAD_SLEEP);
 		devsleep -= THREAD_SLEEP;
 	}
+
 	while (1)
 	{
 		if(isInserted[DEVICE_SD])
@@ -791,22 +792,14 @@ static bool Remount(int device, int silent)
 	if(!silent)
 		ShowAction("Loading...");
 
-	u64 start = gettime();
 	bool mounted = false;
 
-	while (1)
+	usleep(250000); // 1/4 sec
+
+	if(disc->startup() && disc->isInserted())
 	{
-		usleep(250000); // 1/4 sec
-
-		if(disc->startup() && disc->isInserted())
-		{
-			mounted = true;
-			MountPartitions(device, SILENT);
-			break;
-		}
-
-		if(diff_sec(start, gettime()) > 10) // wait for 10 seconds for device init
-			break;
+		mounted = true;
+		MountPartitions(device, SILENT);
 	}
 
 	if(!silent)
@@ -818,28 +811,10 @@ static bool Remount(int device, int silent)
 	return mounted;
 }
 
-void MountAllDevices()
-{
-	if(sd->startup() && sd->isInserted())
-	{
-		isInserted[DEVICE_SD] = true;
-		MountPartitions(DEVICE_SD, SILENT);
-	}
-	if(usb->startup() && usb->isInserted())
-	{
-		isInserted[DEVICE_USB] = true;
-		MountPartitions(DEVICE_USB, SILENT);
-	}
-	else if(!isInserted[DEVICE_SD])
-	{
-		Remount(DEVICE_USB, SILENT);
-	}
-}
-
 void FindAppPath()
 {
 	char filepath[MAXPATHLEN];
-	FILE *f;
+	DIR_ITER *dir;
 
 	if(sd->startup() && sd->isInserted())
 	{
@@ -847,12 +822,12 @@ void FindAppPath()
 		MountPartitions(DEVICE_SD, SILENT);
 		if(CheckMount(DEVICE_SD, 1))
 		{
-			sprintf(filepath, "sd1:/apps/%s/settings.xml", APPFOLDER);
-			f = fopen (filepath, "rb");
-			if(f)
+			sprintf(filepath, "sd1:/apps/%s", APPFOLDER);
+			dir = diropen(filepath);
+			if(dir)
 			{
-				fclose(f);
-				sprintf(appPath, "sd1:/apps/%s",APPFOLDER	);
+				dirclose(dir);
+				strcpy(appPath, filepath);
 				return;
 			}
 		}		
@@ -867,21 +842,18 @@ void FindAppPath()
 		{
 			if(CheckMount(DEVICE_USB, m))
 			{
-				sprintf(filepath, "usb%d:/apps/%s/settings.xml", m,APPFOLDER);
-				f = fopen (filepath, "rb");
-				if(f)
+				sprintf(filepath, "usb%d:/apps/%s", m, APPFOLDER);
+				dir = diropen(filepath);
+				if(dir)
 				{
-					fclose(f);
-					sprintf(appPath, "usb%d:/apps/%s", m,APPFOLDER);
+					dirclose(dir);
+					strcpy(appPath, filepath);
 					return;
 				}
 			}
 		}
-
 	}
-
 }
-
 
 /****************************************************************************
  * MountDVD()
@@ -1182,25 +1154,6 @@ bool ChangeInterface(char * filepath, bool silent)
 		return false;
 
 	return ChangeInterface(device, devnum, silent);
-}
-
-void CreateLoadPath(char * origpath)
-{
-	if(!origpath || origpath[0] == 0)
-		return;
-
-	if(strncmp(origpath, "fat", 3) == 0)
-		sprintf(loadPath, "sd1:/%s", &origpath[5]);
-	else if(strncmp(origpath, "sd", 2) == 0)
-		sprintf(loadPath, "sd1:/%s", &origpath[4]);
-	else if(strncmp(origpath, "usb", 3) == 0)
-		sprintf(loadPath, "usb1:/%s", &origpath[5]);
-	else
-		return;
-
-	char * loc = strrchr(loadPath,'/');
-	if (loc != NULL)
-		*loc = 0; // strip file name
 }
 
 /****************************************************************************

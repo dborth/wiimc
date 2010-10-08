@@ -450,7 +450,7 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 	}
 	else
 	{
-		if(!ntfsMount(mount, disc, sector, 2, 128, NTFS_DEFAULT | NTFS_RECOVER | NTFS_IGNORE_CASE))
+		if(!ntfsMount(mount, disc, sector, 2, 128, NTFS_DEFAULT | NTFS_RECOVER))
 			return;
 
 		const char *name = ntfsGetVolumeName(mount);

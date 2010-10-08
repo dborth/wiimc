@@ -46,11 +46,9 @@ extern u32 __di_check_ahbprot(void);
 extern char *network_useragent;
 }
 
-static int ShutdownRequested = 0;
-static int ResetRequested = 0;
+static bool ShutdownRequested = false;
 
-int ScreenshotRequested = 0;
-int ExitRequested = 0;
+bool ExitRequested = false;
 char appPath[1024] = { 0 };
 char loadedFile[1024] = { 0 };
 char loadedFileDisplay[128] = { 0 };
@@ -85,8 +83,8 @@ void CheckSleepTimer()
 
 	if(diff_sec(sleepStart, gettime()) > (u32)(WiiSettings.sleepTimer*60))
 	{
-		ExitRequested = 1;
-		ShutdownRequested = 1;
+		ExitRequested = true;
+		ShutdownRequested = true;
 		controlledbygui = 2;
 	}
 }
@@ -96,8 +94,8 @@ static void ShutdownCB()
 	if(controlledbygui != 1 && menuMode == 0)
 		return;
 
-	ExitRequested = 1;
-	ShutdownRequested = 1;
+	ExitRequested = true;
+	ShutdownRequested = true;
 }
 
 static void ResetCB()
@@ -105,8 +103,7 @@ static void ResetCB()
 	if(controlledbygui != 1 && menuMode == 0)
 		return;
 
-	ExitRequested = 1;
-	ResetRequested = 1;
+	ExitRequested = true;
 }
 
 /****************************************************************************
@@ -548,12 +545,6 @@ int main(int argc, char *argv[])
 	}
 
  	// application exiting
-	if(ExitRequested == 1)
-	{
-		SaveFolder();
-		SaveSettings(SILENT);
-	}
-
 	StopGX();
 	UnmountAllDevices();
 

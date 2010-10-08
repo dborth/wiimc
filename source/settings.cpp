@@ -966,7 +966,8 @@ static bool LoadSettingsFile(char * filepath)
 						result = false;
 					else if(verMajor < 1) // less than version 1.0.0
 						result = false; // reset settings
-					else if(verMajor > curMajor || verMinor > curMinor || verPoint > curPoint) // some future version
+					else if((verMajor*100 + verMinor*10 + verPoint) > 
+							(curMajor*100 + curMinor*10 + curPoint)) // some future version
 						result = false; // reset settings
 					else
 						result = true;
@@ -1044,12 +1045,13 @@ bool LoadSettings()
 	if(settingsLoaded) // already attempted loading
 		return true;
 
-	if(appPath[0]=='\0') return false;
+	if(appPath[0] == 0)
+		return false;
 
 	bool settingsFound = false;
 	char filepath[MAXPATHLEN];
 
-	sprintf(filepath, "%s/settings.xml", appPath);		
+	sprintf(filepath, "%s/settings.xml", appPath);
 	settingsFound = LoadSettingsFile(filepath);
 	sprintf(filepath, "%s/onlinemedia.xml", appPath);
 	LoadOnlineMediaFile(filepath);

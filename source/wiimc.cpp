@@ -549,7 +549,7 @@ int main(int argc, char *argv[])
 	AUDIO_Init(NULL);
 	GX_AllocTextureMemory();
 	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, VIDEO_AREA);
- 	MountAllDevices(); // Initialize SD and USB devices
+ 	FindAppPath(); //initialize SD and USB only if it's needed (speed up wiimc init with a usb device inserted if app is in sd)
  
 	// store path app was loaded from
 	if(argc > 0 && argv[0] != NULL)

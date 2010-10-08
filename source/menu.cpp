@@ -6953,12 +6953,16 @@ void WiiMenu()
 
 	ResumeGui();
 
+	ResumeDeviceThread();
+	ResumeParseThread();
+
 	static bool checkIOS = true;
 
 	if(checkIOS && !SaneIOS())
 		ErrorPrompt("The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected.");
 
 	checkIOS = false;
+
 
 	while(!guiShutdown)
 	{
@@ -7029,6 +7033,9 @@ void WiiMenu()
 	DisableRumble();
 	mainWindow = NULL;
 	nowPlaying->SetVisible(false);
+	
+	StopDeviceThread();
+	StopParseThread();
 }
 
 bool BufferingStatusSet()

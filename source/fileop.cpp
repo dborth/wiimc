@@ -83,7 +83,17 @@ static bool MountPartitions(int device, int silent);
 static void UnmountPartitions(int device);
 
 static void * devicecallback (void *arg)
-{
+{ //wait 800 msecs to get wimmc menu working, then load devices
+	devsleep = 800*1000;
+
+	while(devsleep > 0)
+	{
+		if(deviceHalt == 1)
+			LWP_SuspendThread(devicethread);
+
+		usleep(THREAD_SLEEP);
+		devsleep -= THREAD_SLEEP;
+	}
 	while (1)
 	{
 		if(isInserted[DEVICE_SD])

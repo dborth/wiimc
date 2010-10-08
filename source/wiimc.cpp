@@ -105,7 +105,7 @@ void ExitApp()
 	// shut down some threads
 	SuspendDeviceThread();
 	StopGX();
-	UnmountAllDevices();
+	//UnmountAllDevices();
 
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
@@ -567,11 +567,7 @@ int main(int argc, char *argv[])
  	while(1)
 	{
 		ResetVideo_Menu();
-		ResumeDeviceThread();
-		ResumeParseThread();
  		WiiMenu();
-		StopDeviceThread();
-		StopParseThread();
 		MPlayerMenu();
 	}
 }

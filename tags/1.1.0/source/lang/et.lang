@@ -1,0 +1,638 @@
+msgid "********"
+msgstr "••••••••"
+
+msgid "Videos"
+msgstr "Videod"
+
+msgid "Music"
+msgstr "Muusika"
+
+msgid "Pictures"
+msgstr "Pildid"
+
+msgid "Online Media"
+msgstr "Online Meedia"
+
+msgid "Please Wait"
+msgstr "Palun Oota"
+
+msgid "Error"
+msgstr "Viga"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Retry"
+msgstr "Proovi Uuesti"
+
+msgid "Cancel"
+msgstr "Tühista"
+
+msgid "Information"
+msgstr "Informatsioon"
+
+msgid "Credits"
+msgstr "Tegijad"
+
+msgid "Play"
+msgstr "Mängi"
+
+msgid "Pause"
+msgstr "Paus"
+
+msgid "Single Play"
+msgstr "Üksikesitus"
+
+msgid "Continuous Play"
+msgstr "Pidev Esitus"
+
+msgid "Shuffle"
+msgstr "Juhuesitus"
+
+msgid "Loop"
+msgstr "Kordus"
+
+msgid "Continuous"
+msgstr "Järjestikune"
+
+msgid "Playlist"
+msgstr "Esitusloend"
+
+msgid "Restart"
+msgstr "Lae Uuesti"
+
+msgid "Loading..."
+msgstr "Laen..."
+
+msgid "Global"
+msgstr "Üldine"
+
+msgid "Network"
+msgstr "Võrk"
+
+msgid "Subtitles"
+msgstr "Subtiitrid"
+
+msgid "Subtitle Delay"
+msgstr "Subtiitrite Ajastus"
+
+msgid "Settings"
+msgstr "Seaded"
+
+msgid "On"
+msgstr "Sees"
+
+msgid "Off"
+msgstr "Väljas"
+
+msgid "Always"
+msgstr "Alati"
+
+msgid "Disabled"
+msgstr "Väljas"
+
+msgid "Backward"
+msgstr "Eelmine"
+
+msgid "Pause"
+msgstr "Paus"
+
+msgid "Forward"
+msgstr "Järgmine"
+
+msgid "Single"
+msgstr "Üksikesitus"
+
+msgid "now playing"
+msgstr "Hetkel mängib"
+
+msgid "Previous"
+msgstr "Eelmine"
+
+msgid "Next"
+msgstr "Järgmine"
+
+msgid "Close"
+msgstr "Sulge"
+
+msgid "DVD"
+msgstr "DVD"
+
+msgid "Go back"
+msgstr "Tagasi"
+
+msgid "Update Available"
+msgstr "Uuendus Saadaval"
+
+msgid "An update is available!"
+msgstr "Uuendus on saadaval!"
+
+msgid "Update now"
+msgstr "Uuenda nüüd"
+
+msgid "Update later"
+msgstr "Uuenda hiljem"
+
+msgid "Online media file not found."
+msgstr Online meedia faili ei leitud."
+
+msgid "Unrecognized DVD format!"
+msgstr "Tundmatu DVD formaat!"
+
+msgid "Port cannot be blank!"
+msgstr "Port ei saa olla tühi!"
+
+msgid "Port is not a number!"
+msgstr "Port ei ole number!"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "Port on väljaspool lubatud vahemikku (4-49151)!"
+
+msgid "Settings - Global"
+msgstr "Seaded - Üldised"
+
+msgid "Settings - Videos"
+msgstr "Seaded - Videod"
+
+msgid "Settings - Music"
+msgstr "Seaded - Muusika"
+
+msgid "Settings - Pictures"
+msgstr "Seaded - Pildid"
+
+msgid "Settings - Online Media"
+msgstr "Seaded - Online Meedia"
+
+msgid "Settings - Network"
+msgstr "Seaded - Võrk"
+
+msgid "Settings - DVD"
+msgstr "Seaded - DVD"
+
+msgid "File Extensions"
+msgstr "Faililaiendid"
+
+msgid "Language"
+msgstr "Keel"
+
+msgid "Volume"
+msgstr "Heli"
+
+msgid "Exit Action"
+msgstr "Väljumise Toiming"
+
+msgid "Wiimote Rumble"
+msgstr "Wiimote'i Värin"
+
+msgid "Hide"
+msgstr "Peida"
+
+msgid "Show"
+msgstr "Näita"
+
+msgid "Auto"
+msgstr "Automaatne"
+
+msgid "Return to Wii Menu"
+msgstr "Tagasi Wii Menüüsse"
+
+msgid "Power Off Wii"
+msgstr "Lülita Wii Välja"
+
+msgid "Return to Loader"
+msgstr "Tagasi Alglaadijasse"
+
+msgid "Screen Zoom"
+msgstr "Ekraani Zoom"
+
+msgid "Screen Position"
+msgstr "Ekraani Positsioon"
+
+msgid "Frame Dropping"
+msgstr "Kaadri Hülgamine"
+
+msgid "Aspect Ratio"
+msgstr "Pildi Suhe"
+
+msgid "Cache Fill"
+msgstr "Vahemälu"
+
+msgid "Audio Delay"
+msgstr "Heli Ajastus"
+
+msgid "Auto-Resume"
+msgstr "Automaatne Jätkamine"
+
+msgid "Videos Files Folder"
+msgstr "Videod - Failide Kaust"
+
+msgid "Play Order"
+msgstr "Esituse Järjestus"
+
+msgid "Music Files Folder"
+msgstr "Muusika - Failide Kaust"
+
+msgid "Pictures Files Folder"
+msgstr "Pildid - Failide Kaust"
+
+msgid "Display Name"
+msgstr "Nähtav Nimi"
+
+msgid "Share IP"
+msgstr "Jagatud Kausta IP"
+
+msgid "Share Name"
+msgstr "Jagatud Kausta Nimi"
+
+msgid "Username"
+msgstr "Kasutajanimi"
+
+msgid "Password"
+msgstr "Parool"
+
+msgid "New Share"
+msgstr "Uus Kaust"
+
+msgid "Delete"
+msgstr "Kustuta"
+
+msgid "Delete Share"
+msgstr "Kustuta Kaust"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "Oled kindel et tahad kustutada selle jagatud kausta?"
+
+msgid "IP"
+msgstr "IP"
+
+msgid "Folder"
+msgstr "Kaust"
+
+msgid "Mode"
+msgstr "Tüüp"
+
+msgid "New Site"
+msgstr "Uus Aadress"
+
+msgid "Passive"
+msgstr "Passiivne"
+
+msgid "Active"
+msgstr "Aktiivne"
+
+msgid "Delete Site"
+msgstr "Kustuta Aadress"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "Oled kindel et tahad kustutada selle aadressi?"
+
+msgid "Port"
+msgstr "Port"
+
+msgid "Rewind / Fast Forward"
+msgstr "Keri Tagasi / Edasi"
+
+msgid "Error loading file!"
+msgstr "Viga faili avamisel!"
+
+msgid "Resume"
+msgstr "Jätka"
+
+msgid "Stop Slideshow"
+msgstr "Peata Slideshow"
+
+msgid "Start Slideshow"
+msgstr "Alusta Slideshow"
+
+msgid "Slideshow Delay"
+msgstr "Slideshow Ajastus"
+
+msgid "Online Media Folder"
+msgstr "Online Meedia - Kaust"
+
+msgid "Add SMB Share"
+msgstr "Lisa Kaust"
+
+msgid "Add FTP Site"
+msgstr "Lisa Kaust"
+
+msgid "DVD Menu"
+msgstr "DVD Menüü"
+
+msgid "Skip to Main Title"
+msgstr "Suundu Otse Põhimenüüsse"
+
+msgid "Unable to Initialize MPlayer"
+msgstr "Viga MPlayer'i Käivitamisel"
+
+msgid "Unable to find a valid working path"
+msgstr "Ei leia toimivat töökausta"
+
+msgid "Unable to change path to"
+msgstr "Ei saa navigeerida"
+
+msgid "Out of memory: too many files!"
+msgstr "Mälu on täis: liiga palju faile!"
+
+msgid "Directory name is too long!"
+msgstr "Kausta nimi on liiga pikk!"
+
+msgid "SD Card"
+msgstr "SD Kaart"
+
+msgid "USB Mass Storage"
+msgstr "USB Mäluseade"
+
+msgid "Data DVD"
+msgstr "Andmete DVD"
+
+msgid "USB drive not found!"
+msgstr "USB ketast ei leitud!"
+
+msgid "SD card not found!"
+msgstr "SD kaarti ei leitud!"
+
+msgid "Loading DVD..."
+msgstr "Laen DVD'd..."
+
+msgid "No disc inserted!"
+msgstr "Ei Leia Plaati!"
+
+msgid "Invalid DVD."
+msgstr "Vigane DVD."
+
+msgid "Up One Level"
+msgstr "Aste Üles"
+
+msgid "Error opening"
+msgstr "Viga avades"
+
+msgid "Warning"
+msgstr "Hoiatus"
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "Üks või enam pilte siin kaustas ületab maksimumsuuruse (6 MB) ning ei ole vaadatavad."
+
+msgid "Error loading playlist!"
+msgstr "Viga esitusloendi avamisel!"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr "Esitusloend ei sisalda ühtki toetatud objekti!"
+
+msgid "No Results Found"
+msgstr "Vastet Ei Leitud"
+
+msgid "Your search did not match any media files."
+msgstr "Sinu otsing ei leidnud ühtki meedia faili."
+
+msgid "Error opening file!"
+msgstr "Viga faili avamisel!"
+
+msgid "Saving..."
+msgstr "Salvestan..."
+
+msgid "Error creating file!"
+msgstr "Viga faili tegemisel!"
+
+msgid "Error saving file!"
+msgstr "Viga faili salvestamisel!"
+
+msgid "Playlist is Empty"
+msgstr "Esitusloend On Tühi"
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "Liigu objektide kohale ning vajuta + nuppu nende esitusloendisse lisamiseks."
+
+msgid "Exit Playlist"
+msgstr "Välju Esitusloendist"
+
+msgid "Update successful!"
+msgstr "Uuendus õnnestus!"
+
+msgid "Update failed!"
+msgstr "Uuendus ei õnnestunud!"
+
+msgid "Initializing network..."
+msgstr "Ühendan võrku..."
+
+msgid "Check settings file."
+msgstr "Kontrolli seadete faili."
+
+msgid "Share name is blank."
+msgstr "Kausta nimi on tühi."
+
+msgid "Share IP is blank."
+msgstr "Kausta IP on tühi."
+
+msgid "Invalid network share settings"
+msgstr "Kausta seaded on vigased"
+
+msgid "Connecting to network share..."
+msgstr "Ühendan võrgu kausta..."
+
+msgid "Failed to connect to network share."
+msgstr "Viga võrgu kausta ühendamisel."
+
+msgid "IP is blank."
+msgstr "IP on tühi."
+
+msgid "Username is blank."
+msgstr "Kasutajanimi on tühi."
+
+msgid "Password is blank."
+msgstr "Parool on tühi."
+
+msgid "Invalid FTP site settings"
+msgstr "FTP aadressi seaded on vigased"
+
+msgid "Connecting to FTP site..."
+msgstr "Ühendan FTP aadressi..."
+
+msgid "Failed to connect to FTP site."
+msgstr "Viga FTP aadressi ühendamisel."
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "Ei leidnud ühtki SD või USB seadet - vähemalt üks on tööks vajalik."
+
+msgid "Could not create folder"
+msgstr "Viga kausta tegemisel"
+
+msgid "Saving settings..."
+msgstr "Salvestan seadeid..."
+
+msgid "Could not save settings to"
+msgstr "Ei saanud seadeid salvestada"
+
+msgid "Thanks to"
+msgstr "Tänud"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "See tarkvara on avatud lähtekoodiga ja seda võib kopeerida, paljundada või modifitseerida GNU General Public License (GPL) Versioon 2 alusel."
+
+msgid "Menu artwork"
+msgstr "Menüü Disain"
+
+msgid "Coding"
+msgstr "Kood"
+
+msgid "Coding & menu design"
+msgstr "Kood & Menüü Disain"
+
+msgid "Logo"
+msgstr "Logo"
+
+msgid "Version"
+msgstr "Versioon"
+
+msgid "Buffering..."
+msgstr "Puhverdan..."
+
+msgid "Buffering"
+msgstr "Puhverdan"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Võrku pole võimalik ühendada (Viga #:"
+
+msgid "Settings - Subtitles"
+msgstr "Seaded - Subtiitrid"
+
+msgid "Visibility"
+msgstr "Nähtavus"
+
+msgid "Delay"
+msgstr "Ajastus"
+
+msgid "Codepage"
+msgstr "Codepage"
+
+msgid "Subtitle Language"
+msgstr "Subtiitrite Keel"
+
+msgid "Default"
+msgstr "Algne"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "Keelt ei õnnestunud muuta. Ei ole piisavalt mälu!"
+
+msgid "Font Required"
+msgstr "Vajalik Font"
+
+msgid "A new font is required to display this language."
+msgstr "Selle keele näitamiseks on vaja uut fonti."
+
+msgid "Download font"
+msgstr "Lae font alla"
+
+msgid "Unable to save font file!"
+msgstr "Ei õnnestu fondi faili salvestada!"
+
+msgid "Out of Memory"
+msgstr "Mälu on otsas"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr "WiiMC'l ei ole piisavalt mälu et pildi sirvijat käivitada."
+
+msgid "Close MPlayer"
+msgstr "Sulge MPlayer"
+
+msgid "Subtitle Codepage"
+msgstr "Subtiitrite codepage"
+
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "See kaust sisaldab rohkem objekte kui maksimaalselt lubatud (2000). Kõik objektid ei ole nähtavad."
+
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "See esitusloend sisaldab rohkem objekte kui maksimaalselt lubatud (2000). Kõik objektid ei ole nähtavad."
+
+msgid "Downloading..."
+msgstr "Laen alla..."
+
+msgid "Unzipping..."
+msgstr "Pakin lahti..."
+
+msgid "Color"
+msgstr "Värv"
+
+msgid "Size"
+msgstr "Suurus"
+
+msgid "White"
+msgstr "Valge"
+
+msgid "Black"
+msgstr "Must"
+
+msgid "Yellow"
+msgstr "Kollane"
+
+msgid "Red"
+msgstr "Punane"
+
+msgid "Sleep Timer"
+msgstr "Unetaimer"
+
+msgid "sec"
+msgstr "sek"
+
+msgid "min"
+msgstr "min"
+
+msgid "Blue"
+msgstr "Sinine"
+
+msgid "Green"
+msgstr "Roheline"
+
+msgid "Grey"
+msgstr "Hall"
+
+msgid "Orange"
+msgstr "Oranž"
+
+msgid "Theme"
+msgstr "Välimus"
+
+msgid "Purple (Default)"
+msgstr "Lilla (Algne)"
+
+msgid "Auto-Play Next Video"
+msgstr "Esita Automaatselt Järgmine Video"
+
+msgid "Adding files to playlist..."
+msgstr "Lisan faile esitusloendisse..."
+
+msgid "Browser Folders"
+msgstr "Sirviku Kaustad"
+
+msgid "Static"
+msgstr "Fikseeritud Seaded"
+
+msgid "Use Last Browsed"
+msgstr "Viimati Sirvitud Asukoht"
+
+msgid "Audio Language"
+msgstr "Heli Keel"
+
+msgid "DVD Support"
+msgstr "DVD Tugi"
+
+msgid "Enabled"
+msgstr "Aktiveeritud"
+
+msgid "Error loading YouTube file!"
+msgstr "Viga YouTube faili avamisel!"
+
+msgid "Rotate"
+msgstr "Keera"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "Resolutsioon ületab lubatud maksimumi (1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "Antud IOS'i on muudetud (võlts-allkirjastatud). Funktsionaalsus ja/või stabiilsus võib olla puudulik."
+
+msgid "Online media file is invalid."
+msgstr "Online meedia fail on vigane."
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Subtiitrite fondi faili ei leitud. Subtiitrid ei ole nähtavad."

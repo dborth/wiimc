@@ -104,6 +104,8 @@ void StopGX()
 
 	VIDEO_SetBlack(TRUE);
 	VIDEO_Flush();
+	VIDEO_WaitVSync();
+	VIDEO_WaitVSync();
 }
 
 /****************************************************************************

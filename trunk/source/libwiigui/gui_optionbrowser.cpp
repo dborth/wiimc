@@ -41,16 +41,16 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 	scrollbarTopImg = new GuiImage(scrollbarTop);
 	scrollbarTopImg->SetParent(this);
 	scrollbarTopImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	scrollbarTopImg->SetPosition(-30, 35);
+	scrollbarTopImg->SetPosition(-45, 35);
 	scrollbarMidImg = new GuiImage(scrollbarMid);
 	scrollbarMidImg->SetParent(this);
 	scrollbarMidImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	scrollbarMidImg->SetPosition(-30, 55);
+	scrollbarMidImg->SetPosition(-45, 55);
 	scrollbarMidImg->SetTileVertical((s*32-112)/16);
 	scrollbarBottomImg = new GuiImage(scrollbarBottom);
 	scrollbarBottomImg->SetParent(this);
 	scrollbarBottomImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	scrollbarBottomImg->SetPosition(-30, height-57);
+	scrollbarBottomImg->SetPosition(-45, height-57);
 
 	arrowDown = new GuiImageData(arrow_down_png);
 	arrowDownImg = new GuiImage(arrowDown);
@@ -66,7 +66,7 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 	arrowUpBtn->SetImage(arrowUpImg);
 	arrowUpBtn->SetImageOver(arrowUpOverImg);
 	arrowUpBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	arrowUpBtn->SetPosition(-30, 4);
+	arrowUpBtn->SetPosition(-45, 4);
 	arrowUpBtn->SetSelectable(false);
 	arrowUpBtn->SetTrigger(trigA);
 
@@ -75,7 +75,7 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 	arrowDownBtn->SetImage(arrowDownImg);
 	arrowDownBtn->SetImageOver(arrowDownOverImg);
 	arrowDownBtn->SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
-	arrowDownBtn->SetPosition(-30, -8);
+	arrowDownBtn->SetPosition(-45, -8);
 	arrowDownBtn->SetSelectable(false);
 	arrowDownBtn->SetTrigger(trigA);
 
@@ -94,32 +94,32 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int s, OptionList * l)
 	{
 		optionTxt[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
 		optionTxt[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		optionTxt[i]->SetPosition(0,-2);
+		optionTxt[i]->SetPosition(4,-2);
 
 		optionVal[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
 		optionVal[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		optionVal[i]->SetPosition(325,-2);
-		optionVal[i]->SetMaxWidth(screenwidth-325-60);
+		optionVal[i]->SetPosition(340,-2);
+		optionVal[i]->SetMaxWidth(screenwidth-340-90);
 
 		optionBg[i] = new GuiImage(bgOptionsEntry);
 		optionBg[i]->SetTile(w/16);
-		optionBg[i]->SetPosition(-30, 0);
+		optionBg[i]->SetPosition(-45, 0);
 
 		optionBgOver[i] = new GuiImage(bgOptionsEntryOver);
 		optionBgOver[i]->SetTile(w/16);
-		optionBgOver[i]->SetPosition(-30, -2);
+		optionBgOver[i]->SetPosition(-45, -2);
 
 		optionIcon[i] = new GuiImage;
 		optionIcon[i]->SetPosition(0, -2);
 
-		optionBtn[i] = new GuiButton(w-92, 32);
+		optionBtn[i] = new GuiButton(w-122, 32);
 		optionBtn[i]->SetParent(this);
 		optionBtn[i]->SetLabel(optionTxt[i], 0);
 		optionBtn[i]->SetLabel(optionVal[i], 1);
 		optionBtn[i]->SetImage(optionBg[i]);
 		optionBtn[i]->SetImageOver(optionBgOver[i]);
 		optionBtn[i]->SetIcon(optionIcon[i]);
-		optionBtn[i]->SetPosition(30,32*i);
+		optionBtn[i]->SetPosition(45,32*i);
 		optionBtn[i]->SetTrigger(trigA);
 
 		optionBtn[i]->SetVisible(false);
@@ -215,7 +215,7 @@ void GuiOptionBrowser::SetCol2Position(int x)
 	for(int i=0; i<size; i++)
 	{
 		optionVal[i]->SetPosition(x,-2);
-		optionVal[i]->SetMaxWidth(screenwidth-x-60);
+		optionVal[i]->SetMaxWidth(screenwidth-x-90);
 	}
 }
 

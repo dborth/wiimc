@@ -1544,11 +1544,11 @@ static void CreditsWindow()
 	txt[i] = new GuiText(NULL, 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetWText(appVersion);
 	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	txt[i]->SetPosition((screenwidth/2)-30,30); i++;
+	txt[i]->SetPosition((screenwidth/2)-45,30); i++;
 
 	txt[i] = new GuiText(iosVersion, 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	txt[i]->SetPosition((screenwidth/2)-30,56); i++;
+	txt[i]->SetPosition((screenwidth/2)-45,56); i++;
 
 	txt[i] = new GuiText("www.wiimc.org", 16, (GXColor){255, 255, 255, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -3383,8 +3383,8 @@ static void MenuBrowsePictures()
 	progressWindow.Append(&progressLineImg);
 	progressWindow.Append(&progressRightImg);
 	
-	GuiWindow pictureWindow(screenwidth-370, 390);
-	pictureWindow.SetPosition(0, 90);
+	GuiWindow pictureWindow(screenwidth-410, 390);
+	pictureWindow.SetPosition(-45, 90);
 	pictureWindow.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	pictureWindow.Append(&progressWindow);
 	pictureWindow.Append(pictureBtn);
@@ -3648,7 +3648,7 @@ static void MenuSettingsGlobal()
 
 	GuiText titleTxt("Settings - Global", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -4170,7 +4170,7 @@ static void MenuSettingsVideos()
 
 	GuiText titleTxt("Settings - Videos", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -4347,7 +4347,7 @@ static void MenuSettingsMusic()
 
 	GuiText titleTxt("Settings - Music", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -4445,7 +4445,7 @@ static void MenuSettingsPictures()
 
 	GuiText titleTxt("Settings - Pictures", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -4536,7 +4536,7 @@ static void MenuSettingsDVD()
 
 	GuiText titleTxt("Settings - DVD", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -4606,13 +4606,13 @@ static void MenuSettingsDVD()
 	{
 		dvdBtn->SetVisible(false);
 		dvdBtn->SetState(STATE_DISABLED);
-		onlineBtn->SetPosition(195, 30);
+		onlineBtn->SetPosition(210, 30);
 	}
 	else
 	{
 		dvdBtn->SetVisible(true);
 		dvdBtn->SetState(STATE_DEFAULT);
-		onlineBtn->SetPosition(250, 30);
+		onlineBtn->SetPosition(265, 30);
 	}
 }
 
@@ -4635,7 +4635,7 @@ static void MenuSettingsOnlineMedia()
 
 	GuiText titleTxt("Settings - Online Media", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -4745,7 +4745,7 @@ static void MenuSettingsNetwork()
 
 	GuiText titleTxt("Settings - Network", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
@@ -4878,7 +4878,7 @@ static void MenuSettingsNetworkSMB()
 	GuiText titleTxt(NULL, 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetWText(titleStr);
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
@@ -5072,7 +5072,7 @@ static void MenuSettingsNetworkFTP()
 	GuiText titleTxt(NULL, 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetWText(titleStr);
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
@@ -5364,7 +5364,7 @@ static void MenuSettingsSubtitles()
 
 	GuiText titleTxt("Settings - Subtitles", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -5509,7 +5509,7 @@ static void MenuSettings()
 
 	GuiText titleTxt("Settings", 28, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(30, 100);
+	titleTxt.SetPosition(49, 100);
 
 	GuiText backBtnTxt("Go back", 18, (GXColor){255, 255, 255, 255});
 	backBtnTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -6461,10 +6461,10 @@ static void SetupGui()
 		audiobarNowPlaying[i] = new GuiText(NULL, 16, (GXColor){255, 255, 255, 255});
 		audiobarNowPlaying[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 		audiobarNowPlaying[i]->SetPosition(10, 20*i);
-		audiobarNowPlaying[i]->SetMaxWidth(screenwidth-430);
+		audiobarNowPlaying[i]->SetMaxWidth(screenwidth-460);
 	}
 
-	audiobarNowPlayingBtn = new GuiButton(screenwidth-430, 80);
+	audiobarNowPlayingBtn = new GuiButton(screenwidth-460, 80);
 	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[0], 0);
 	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[1], 1);
 	audiobarNowPlayingBtn->SetLabel(audiobarNowPlaying[2], 2);
@@ -6497,7 +6497,7 @@ static void SetupGui()
 	audiobar2->Append(audiobarVolumeLevelLineImg);
 	audiobar2->Append(audiobarVolumeLevelBottomImg);
 
-	audiobar = new GuiWindow(screenwidth-60, 80);
+	audiobar = new GuiWindow(screenwidth-90, 80);
 	audiobar->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
 	audiobar->SetPosition(0, -30);
 	audiobar->Append(audiobar2);
@@ -6658,7 +6658,7 @@ static void SetupGui()
 	logoBtnImg = new GuiImage (logo);
 	logoBtn = new GuiButton(logo->GetWidth(), logo->GetHeight());
 	logoBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	logoBtn->SetPosition(-32, 40);
+	logoBtn->SetPosition(-47, 40);
 	logoBtn->SetImage(logoBtnImg);
 	logoBtn->SetTrigger(trigA);
 	logoBtn->SetSelectable(false);
@@ -6695,7 +6695,7 @@ static void SetupGui()
 	videosBtnHighlightImg->SetAlpha(128);
 	videosBtn = new GuiButton(videosBtnImg->GetWidth(), videosBtnImg->GetHeight());
 	videosBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	videosBtn->SetPosition(30, 30);
+	videosBtn->SetPosition(45, 30);
 	videosBtn->SetTooltip(videosBtnTip);
 	videosBtn->SetImage(videosBtnImg);
 	videosBtn->SetImageOver(videosBtnOverImg);
@@ -6714,7 +6714,7 @@ static void SetupGui()
 	musicBtnHighlightImg->SetAlpha(128);
 	musicBtn = new GuiButton(musicBtnImg->GetWidth(), musicBtnImg->GetHeight());
 	musicBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	musicBtn->SetPosition(85, 30);
+	musicBtn->SetPosition(100, 30);
 	musicBtn->SetTooltip(musicBtnTip);
 	musicBtn->SetImage(musicBtnImg);
 	musicBtn->SetImageOver(musicBtnOverImg);
@@ -6733,7 +6733,7 @@ static void SetupGui()
 	picturesBtnHighlightImg->SetAlpha(128);
 	picturesBtn = new GuiButton(picturesBtnImg->GetWidth(), picturesBtnImg->GetHeight());
 	picturesBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	picturesBtn->SetPosition(140, 30);
+	picturesBtn->SetPosition(155, 30);
 	picturesBtn->SetTooltip(picturesBtnTip);
 	picturesBtn->SetImage(picturesBtnImg);
 	picturesBtn->SetImageOver(picturesBtnOverImg);
@@ -6752,7 +6752,7 @@ static void SetupGui()
 	dvdBtnHighlightImg->SetAlpha(128);
 	dvdBtn = new GuiButton(dvdBtnImg->GetWidth(), dvdBtnImg->GetHeight());
 	dvdBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	dvdBtn->SetPosition(195, 30);
+	dvdBtn->SetPosition(210, 30);
 	dvdBtn->SetTooltip(dvdBtnTip);
 	dvdBtn->SetImage(dvdBtnImg);
 	dvdBtn->SetImageOver(dvdBtnOverImg);
@@ -6771,7 +6771,7 @@ static void SetupGui()
 	onlineBtnHighlightImg->SetAlpha(128);
 	onlineBtn = new GuiButton(onlineBtnImg->GetWidth(), onlineBtnImg->GetHeight());
 	onlineBtn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	onlineBtn->SetPosition(250, 30);
+	onlineBtn->SetPosition(265, 30);
 	onlineBtn->SetTooltip(onlineBtnTip);
 	onlineBtn->SetImage(onlineBtnImg);
 	onlineBtn->SetImageOver(onlineBtnOverImg);
@@ -6790,7 +6790,7 @@ static void SetupGui()
 	settingsBtnHighlightImg->SetAlpha(128);
 	settingsBtn = new GuiButton(settingsBtnImg->GetWidth(), settingsBtnImg->GetHeight());
 	settingsBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	settingsBtn->SetPosition(-200, 30);
+	settingsBtn->SetPosition(-215, 30);
 	settingsBtn->SetImage(settingsBtnImg);
 	settingsBtn->SetImageOver(settingsBtnOverImg);
 	settingsBtn->SetIconOver(settingsBtnHighlightImg);
@@ -6809,7 +6809,7 @@ static void SetupGui()
 
 	nowPlaying = new GuiText(NULL, 18, (GXColor){255, 255, 255, 255});
 	nowPlaying->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	nowPlaying->SetPosition(30, 10);
+	nowPlaying->SetPosition(45, 10);
 	nowPlaying->SetMaxWidth(screenwidth-180);
 	nowPlaying->SetVisible(false);
 
@@ -6943,7 +6943,7 @@ void WiiMenu()
 	{
 		dvdBtn->SetVisible(false);
 		dvdBtn->SetState(STATE_DISABLED);
-		onlineBtn->SetPosition(195, 30);
+		onlineBtn->SetPosition(210, 30);
 	}
 
 	// Init MPlayer path and vars (only happens once)

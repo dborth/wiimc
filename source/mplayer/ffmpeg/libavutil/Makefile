@@ -4,6 +4,7 @@ NAME = avutil
 
 HEADERS = adler32.h                                                     \
           attributes.h                                                  \
+          avassert.h                                                    \
           avstring.h                                                    \
           avutil.h                                                      \
           base64.h                                                      \
@@ -22,6 +23,7 @@ HEADERS = adler32.h                                                     \
           mathematics.h                                                 \
           md5.h                                                         \
           mem.h                                                         \
+          opt.h                                                         \
           pixdesc.h                                                     \
           pixfmt.h                                                      \
           random_seed.h                                                 \
@@ -49,6 +51,7 @@ OBJS = adler32.o                                                        \
        mathematics.o                                                    \
        md5.o                                                            \
        mem.o                                                            \
+       opt.o                                                            \
        pixdesc.o                                                        \
        random_seed.o                                                    \
        rational.o                                                       \

@@ -23,7 +23,6 @@
 
 #include "config.h"
 
-#if !defined(GEKKO)
 #if HAVE_WINSOCK2_H
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -32,19 +31,19 @@
 #define FF_NETERROR(err) (-WSA##err)
 #define WSAEAGAIN WSAEWOULDBLOCK
 #else
+#ifndef GEKKO
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-
-#define ff_neterrno() AVERROR(errno)
-#define FF_NETERROR(err) AVERROR(err)
-#endif
-
 #else
 #include <network.h>
 #define INADDR_LOOPBACK    ((unsigned long) 0x7f000001)  /* 127.0.0.1 */
 #define gethostbyname net_gethostbyname
+#endif
+
+#define ff_neterrno() AVERROR(errno)
+#define FF_NETERROR(err) AVERROR(err)
 #endif
 
 #if HAVE_ARPA_INET_H
@@ -161,5 +160,26 @@ const char *ff_gai_strerror(int ecode);
 #ifndef INET6_ADDRSTRLEN
 #define INET6_ADDRSTRLEN INET_ADDRSTRLEN
 #endif
+
+#ifndef IN_MULTICAST
+#define IN_MULTICAST(a) ((((uint32_t)(a)) & 0xf0000000) == 0xe0000000)
+#endif
+#ifndef IN6_IS_ADDR_MULTICAST
+#define IN6_IS_ADDR_MULTICAST(a) (((uint8_t *) (a))[0] == 0xff)
+#endif
+
+static inline int ff_is_multicast_address(struct sockaddr *addr)
+{
+    if (addr->sa_family == AF_INET) {
+        return IN_MULTICAST(ntohl(((struct sockaddr_in *)addr)->sin_addr.s_addr));
+    }
+#if HAVE_STRUCT_SOCKADDR_IN6
+    if (addr->sa_family == AF_INET6) {
+        return IN6_IS_ADDR_MULTICAST(&((struct sockaddr_in6 *)addr)->sin6_addr);
+    }
+#endif
+
+    return 0;
+}
 
 #endif /* AVFORMAT_NETWORK_H */

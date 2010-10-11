@@ -96,12 +96,12 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 					-L$(LIBOGC_LIB) \
 				-L$(MPLAYER)/ \
-				-L$(MPLAYER)/libavcore \
-				-L$(MPLAYER)/libavcodec \
-				-L$(MPLAYER)/libavformat \
-				-L$(MPLAYER)/libavutil \
-				-L$(MPLAYER)/libpostproc \
-				-L$(MPLAYER)/libswscale 
+				-L$(MPLAYER)/ffmpeg/libavcore \
+				-L$(MPLAYER)/ffmpeg/libavcodec \
+				-L$(MPLAYER)/ffmpeg/libavformat \
+				-L$(MPLAYER)/ffmpeg/libavutil \
+				-L$(MPLAYER)/ffmpeg/libpostproc \
+				-L$(MPLAYER)/ffmpeg/libswscale 
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 .PHONY: $(BUILD) clean

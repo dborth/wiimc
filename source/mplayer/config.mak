@@ -19,22 +19,21 @@ LIBDIR  = $(DESTDIR)/tmp/mplayerhaxx/lib
 MANDIR  = $(DESTDIR)/tmp/mplayerhaxx/share/man
 CONFDIR = $(DESTDIR)/tmp/mplayerhaxx/etc/mplayer
 
-AR = $(DEVKITPPC)/bin/powerpc-eabi-ar
-CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc
-AS = $(DEVKITPPC)/bin/powerpc-eabi-as
-CXX = $(DEVKITPPC)/bin/powerpc-eabi-g++
+AR      = $(DEVKITPPC)/bin/powerpc-eabi-ar
+AS      = $(DEVKITPPC)/bin/powerpc-eabi-as
+CC      = $(DEVKITPPC)/bin/powerpc-eabi-gcc
+CXX     = $(DEVKITPPC)/bin/powerpc-eabi-g++
 HOST_CC = gcc
 INSTALL = install
 INSTALLSTRIP = -s
 WINDRES = windres
 
 EXTRA_INC = -I$(DEVKITPRO)/portlibs/ppc/include -I$(DEVKITPRO)/libogc/include -Ilibdvdread4 -Ilibdvdnav -I$(DEVKITPRO)/portlibs/ppc/include/freetype2 -I$(DEVKITPRO)/libogc/include/ogc/machine -I$(DEVKITPPC)/../buildscripts/powerpc-eabi/gcc/gcc/include
-EXTRAXX_INC = $(EXTRA_INC)
+WIIFLAGS = -mpaired -DGEKKO -mrvl -mcpu=750 -mtune=750 -meabi -mhard-float -mdouble-float
 
-COMMONFLAGS = -MD -MP -std=gnu99 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -mpaired -I. -O3 -pipe -DGEKKO -mrvl -mcpu=750 -mtune=750 -meabi -mhard-float -mdouble-float
-CFLAGS = $(EXTRA_INC) $(COMMONFLAGS) -Wa,-mgekko
-OPTFLAGS =  $(EXTRA_INC) $(COMMONFLAGS)
-CXXFLAGS = $(COMMONFLAGS) -D__STDC_LIMIT_MACROS $(EXTRAXX_INC)
+CFLAGS   = -std=gnu99  -O4   -pipe -ffast-math -fomit-frame-pointer -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 $(EXTRA_INC) -I. -Iffmpeg -Wa,-mgekko $(WIIFLAGS)
+CXXFLAGS = -O4   -pipe -ffast-math -fomit-frame-pointer -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS $(EXTRA_INC) -I. -Iffmpeg $(WIIFLAGS)
+CC_DEPFLAGS = -MD -MP -O4   -pipe -ffast-math -fomit-frame-pointer
 
 CFLAGS_DHAHELPER         = 
 CFLAGS_FAAD_FIXED        = 
@@ -55,16 +54,13 @@ GETCH = getch2-gekko.c
 HELP_FILE = help/help_mp-en.h
 TIMER = timer-gekko.c
 
-
-EXESUF = .elf
+EXESUF      = .elf
 EXESUFS_ALL = .elf
 
 ARCH = ppc
-ARCH_POWERPC = yes
 ARCH_PPC = yes
-HAVE_FAST_CMOV = no
-HAVE_CMOV = no
-HAVE_FAST_CLZ=no
+
+HAVE_FAST_CLZ = no
 
 MENCODER = no
 MPLAYER  = yes
@@ -96,7 +92,6 @@ CDDB = no
 COREAUDIO = auto
 COREVIDEO = auto
 DART = auto
-DFBMGA = 
 DGA = no
 DIRECT3D = no
 DIRECTFB = no
@@ -120,13 +115,13 @@ GEKKO = yes
 GIF = no
 GGI = no
 GL = no
-GL_WIN32 = no
+GL_WIN32 = 
 GL_X11 = 
 GL_SDL = 
 MATRIXVIEW = no
 GUI = no
-GUI_GTK = no
-GUI_WIN32 = no
+GUI_GTK = 
+GUI_WIN32 = 
 HAVE_POSIX_SELECT = no
 HAVE_SYS_MMAN_H = no
 IVTV = no
@@ -169,14 +164,14 @@ NATIVE_RTSP = no
 NETWORKING = yes
 OPENAL = no
 OSS = no
-PE_EXECUTABLE = no
+PE_EXECUTABLE = 
 PNG = no
 PNM = yes
 PRIORITY = no
 PULSE = no
 PVR = no
 QTX_CODECS = auto
-QTX_CODECS_WIN32 = no
+QTX_CODECS_WIN32 = 
 QTX_EMULATION = no
 QUARTZ = auto
 RADIO=no
@@ -227,8 +222,8 @@ VSTREAM = no
 WII = no
 WIN32DLL = no
 WIN32WAVEOUT = no
-WIN32_EMULATION = no
-WINVIDIX = no
+WIN32_EMULATION = 
+WINVIDIX = 
 X11 = no
 X264 = no
 XANIM_CODECS = no
@@ -247,9 +242,9 @@ FFMPEG     = yes
 FFMPEG_A   = yes
 
 ASFLAGS    = $(CFLAGS)
-AS_DEPFLAGS= -MMD -MF $(@:.o=.d) -MT $@
+AS_DEPFLAGS= -MD -MP -O4   -pipe -ffast-math -fomit-frame-pointer
 HOSTCC     = $(HOST_CC)
-HOSTCFLAGS = -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 -Os
+HOSTCFLAGS = -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 -O3
 HOSTLIBS   = -lm
 CC_O       = -o $@
 LD         = $(DEVKITPPC)/bin/powerpc-eabi-ld
@@ -259,7 +254,7 @@ YASMDEP    =
 #YASMFLAGS  = -f win32 -DPREFIX
 
 CONFIG_STATIC = yes
-SRC_PATH      = ..
+SRC_PATH      = ../../
 BUILD_ROOT    = ..
 LIBPREF       = lib
 LIBSUF        = .a
@@ -300,7 +295,7 @@ HAVE_PTHREADS   = no
 HAVE_SHM        = no
 HAVE_W32THREADS = no
 HAVE_GEKKOTHREADS = no
-HAVE_YASM       = no
+HAVE_YASM       = 
 
 CONFIG_AASC_DECODER=yes
 CONFIG_AMV_DECODER=yes
@@ -497,6 +492,7 @@ CONFIG_PCM_F32BE_DECODER=yes
 CONFIG_PCM_F32LE_DECODER=yes
 CONFIG_PCM_F64BE_DECODER=yes
 CONFIG_PCM_F64LE_DECODER=yes
+CONFIG_PCM_LXF_DECODER=yes
 CONFIG_PCM_MULAW_DECODER=yes
 CONFIG_PCM_S8_DECODER=yes
 CONFIG_PCM_S16BE_DECODER=yes
@@ -595,6 +591,7 @@ CONFIG_TIFF_ENCODER=no
 CONFIG_V210_ENCODER=no
 CONFIG_WMV1_ENCODER=no
 CONFIG_WMV2_ENCODER=no
+CONFIG_AAC_ENCODER=no
 CONFIG_AC3_ENCODER=no
 CONFIG_ALAC_ENCODER=no
 CONFIG_FLAC_ENCODER=no
@@ -630,6 +627,7 @@ CONFIG_PCM_U32LE_ENCODER=no
 CONFIG_PCM_ZORK_ENCODER=no
 CONFIG_ROQ_DPCM_ENCODER=no
 CONFIG_ADPCM_ADX_ENCODER=no
+CONFIG_ADPCM_G722_ENCODER=no
 CONFIG_ADPCM_G726_ENCODER=no
 CONFIG_ADPCM_IMA_QT_ENCODER=no
 CONFIG_ADPCM_IMA_WAV_ENCODER=no
@@ -712,6 +710,7 @@ CONFIG_ISS_DEMUXER=yes
 CONFIG_IV8_DEMUXER=yes
 CONFIG_IVF_DEMUXER=yes
 CONFIG_LMLM4_DEMUXER=yes
+CONFIG_LXF_DEMUXER=yes
 CONFIG_M4V_DEMUXER=yes
 CONFIG_MATROSKA_DEMUXER=yes
 CONFIG_MJPEG_DEMUXER=yes
@@ -879,6 +878,7 @@ CONFIG_RAWVIDEO_MUXER=no
 CONFIG_RM_MUXER=no
 CONFIG_ROQ_MUXER=no
 CONFIG_RSO_MUXER=no
+CONFIG_SAP_MUXER=no
 CONFIG_SOX_MUXER=no
 CONFIG_SPDIF_MUXER=no
 CONFIG_SRT_MUXER=no

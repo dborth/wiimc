@@ -2,7 +2,7 @@
  * ioctl.h: DVD ioctl replacement function
  *****************************************************************************
  * Copyright (C) 1999-2001 VideoLAN
- * $Id: ioctl.h 31155 2010-05-11 10:51:46Z diego $
+ * $Id: ioctl.h 32349 2010-09-25 15:53:03Z diego $
  *
  * Authors: Sam Hocevar <sam@zoy.org>
  *
@@ -20,6 +20,9 @@
  * with libdvdcss; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *****************************************************************************/
+
+#ifndef DVDCSS_IOCTL_H
+#define DVDCSS_IOCTL_H
 
 int ioctl_ReadCopyright     ( int, int, int * );
 int ioctl_ReadDiscKey       ( int, int *, uint8_t * );
@@ -427,3 +430,5 @@ struct OS2_ExecSCSICmd
 #pragma pack()
 
 #endif
+
+#endif /* DVDCSS_IOCTL_H */

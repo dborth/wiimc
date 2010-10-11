@@ -41,6 +41,8 @@
 #include "demux_audio.h"
 
 #include "libaf/af_format.h"
+#include "libmpcodecs/dec_audio.h"
+#include "libmpcodecs/dec_video.h"
 #include "libmpcodecs/dec_teletext.h"
 #include "libmpcodecs/vd_ffmpeg.h"
 
@@ -64,8 +66,6 @@
 #define PARSE_ON_ADD 0
 
 static void clear_parser(sh_common_t *sh);
-void resync_video_stream(sh_video_t *sh_video);
-void resync_audio_stream(sh_audio_t *sh_audio);
 
 // Demuxer list
 extern const demuxer_desc_t demuxer_desc_rawaudio;
@@ -826,11 +826,14 @@ int ds_get_packet_pts(demux_stream_t *ds, unsigned char **start, double *pts)
 int ds_get_packet_sub(demux_stream_t *ds, unsigned char **start,
                       double *pts, double *endpts)
 {
+    double max_pts = MP_NOPTS_VALUE;
     int len;
     *start = NULL;
     // initialize pts
-    if (pts)
+    if (pts) {
+        max_pts = *pts;
         *pts    = MP_NOPTS_VALUE;
+    }
     if (endpts)
         *endpts = MP_NOPTS_VALUE;
     if (ds->buffer_pos >= ds->buffer_size) {
@@ -846,8 +849,8 @@ int ds_get_packet_sub(demux_stream_t *ds, unsigned char **start,
         if (pts) {
             *pts    = ds->current->pts;
             // check if we are too early
-            if (*pts != MP_NOPTS_VALUE && ds->current->pts != MP_NOPTS_VALUE &&
-                ds->current->pts > *pts)
+            if (*pts != MP_NOPTS_VALUE && max_pts != MP_NOPTS_VALUE &&
+                *pts > max_pts)
                 return -1;
         }
     }
@@ -1011,7 +1014,6 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
             return NULL;
         }
     }
-    
     // Test demuxers with safe file checks
     for (i = 0; (demuxer_desc = demuxer_list[i]); i++) {
         if (demuxer_desc->safe_check) {
@@ -1020,19 +1022,15 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
             if ((fformat = demuxer_desc->check_file(demuxer)) != 0) {
                 if (fformat == demuxer_desc->type) {
                     demuxer_t *demux2 = demuxer;
-                    
-
                     mp_msg(MSGT_DEMUXER, MSGL_INFO,
                            MSGTR_Detected_XXX_FileFormat,
                            demuxer_desc->shortdesc);
-                    
                     file_format = fformat;
                     if (!demuxer->desc->open
                         || (demux2 = demuxer->desc->open(demuxer))) {
-                        
-                        demuxer = demux2; 
+                        demuxer = demux2;
                         goto dmx_open;
-                    }  
+                    }
                 } else {
                     if (fformat == DEMUXER_TYPE_PLAYLIST)
                         return demuxer; // handled in mplayer.c
@@ -1109,6 +1107,7 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
  dmx_open:
 
     demuxer->file_format = file_format;
+
     if ((sh_video = demuxer->video->sh) && sh_video->bih) {
         int biComp = le2me_32(sh_video->bih->biCompression);
         mp_msg(MSGT_DEMUX, MSGL_INFO,
@@ -1132,7 +1131,6 @@ static demuxer_t *demux_open_stream(stream_t *stream, int file_format,
         }
     }
 #endif
-
     return demuxer;
 }
 
@@ -1213,7 +1211,6 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
             free_stream(ss);
         return NULL;
     }
-    
     if (as) {
         ad = demux_open_stream(as,
                                audio_demuxer_type ? audio_demuxer_type : afmt,
@@ -1227,7 +1224,6 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
                    && ((sh_audio_t *) ad->audio->sh)->format == 0x55) // MP3
             hr_mp3_seek = 1;    // Enable high res seeking
     }
-    
     if (ss) {
         sd = demux_open_stream(ss, sub_demuxer_type ? sub_demuxer_type : sfmt,
                                sub_demuxer_force, -2, -2, dvdsub_id,
@@ -1247,7 +1243,6 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
         res = new_demuxers_demuxer(vd, vd, sd);
     else
         res = vd;
-        
 
     correct_pts = user_correct_pts;
     if (correct_pts < 0)

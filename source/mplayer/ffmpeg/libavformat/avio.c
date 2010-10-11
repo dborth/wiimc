@@ -23,7 +23,7 @@
 #define _XOPEN_SOURCE 600
 #include <unistd.h>
 #include "libavutil/avstring.h"
-#include "libavcodec/opt.h"
+#include "libavutil/opt.h"
 #include "os_support.h"
 #include "avformat.h"
 #if CONFIG_NETWORK
@@ -90,7 +90,7 @@ int av_register_protocol(URLProtocol *protocol)
 
 int register_protocol(URLProtocol *protocol)
 {
-    return av_register_protocol(protocol);
+    return av_register_protocol2(protocol, sizeof(struct URLProtocol_compat));
 }
 #endif
 
@@ -215,14 +215,15 @@ int url_read(URLContext *h, unsigned char *buf, int size)
     return ret;
 }
 
-int url_read_complete(URLContext *h, unsigned char *buf, int size)
+static inline int retry_transfer_wrapper(URLContext *h, unsigned char *buf, int size,
+                                         int (*transfer_func)(URLContext *h, unsigned char *buf, int size))
 {
     int ret, len;
     int fast_retries = 5;
 
     len = 0;
     while (len < size) {
-        ret = url_read(h, buf+len, size-len);
+        ret = transfer_func(h, buf+len, size-len);
         if (ret == AVERROR(EAGAIN)) {
             ret = 0;
             if (fast_retries)
@@ -238,16 +239,20 @@ int url_read_complete(URLContext *h, unsigned char *buf, int size)
     return len;
 }
 
+int url_read_complete(URLContext *h, unsigned char *buf, int size)
+{
+    return retry_transfer_wrapper(h, buf, size, url_read);
+}
+
 int url_write(URLContext *h, const unsigned char *buf, int size)
 {
-    int ret;
     if (!(h->flags & (URL_WRONLY | URL_RDWR)))
         return AVERROR(EIO);
     /* avoid sending too big packets */
     if (h->max_packet_size && size > h->max_packet_size)
         return AVERROR(EIO);
-    ret = h->prot->url_write(h, buf, size);
-    return ret;
+
+    return retry_transfer_wrapper(h, buf, size, h->prot->url_write);
 }
 
 int64_t url_seek(URLContext *h, int64_t pos, int whence)

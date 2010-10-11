@@ -295,9 +295,6 @@ typedef struct RTSPState {
      * other cases, this is a copy of AVFormatContext->filename. */
     char control_uri[1024];
 
-    /** The synchronized start time of the output streams. */
-    int64_t start_time;
-
     /** Additional output handle, used when input and output are done
      * separately, eg for HTTP tunneling. */
     URLContext *rtsp_hd_out;
@@ -309,6 +306,9 @@ typedef struct RTSPState {
      * An EOF is propagated back if nb_byes == nb_streams.
      * This is reset after a seek. */
     int nb_byes;
+
+    /** Reusable buffer for receiving packets */
+    uint8_t* recvbuf;
 } RTSPState;
 
 /**

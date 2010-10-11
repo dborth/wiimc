@@ -190,7 +190,7 @@ static int gxf_write_mpeg_auxiliary(ByteIOContext *pb, AVStream *st)
                     "Pix 0\nCf %d\nCg %d\nSl %d\nnl16 %d\nVi 1\nf1 1\n",
                     (float)st->codec->bit_rate, sc->p_per_gop, sc->b_per_i_or_p,
                     st->codec->pix_fmt == PIX_FMT_YUV422P ? 2 : 1, sc->first_gop_closed == 1,
-                    starting_line, st->codec->height / 16);
+                    starting_line, (st->codec->height + 15) / 16);
     put_byte(pb, TRACK_MPG_AUX);
     put_byte(pb, size + 1);
     put_buffer(pb, (uint8_t *)buffer, size + 1);
@@ -365,7 +365,7 @@ static int gxf_write_flt_packet(AVFormatContext *s)
     ByteIOContext *pb = s->pb;
     int64_t pos = url_ftell(pb);
     int fields_per_flt = (gxf->nb_fields+1) / 1000 + 1;
-    int flt_entries = gxf->nb_fields / fields_per_flt - 1;
+    int flt_entries = gxf->nb_fields / fields_per_flt;
     int i = 0;
 
     gxf_write_packet_header(pb, PKT_FLT);
@@ -564,6 +564,7 @@ static int gxf_write_umf_media_description(AVFormatContext *s)
         else {
             AVStream *st = s->streams[i];
             switch (st->codec->codec_id) {
+            case CODEC_ID_MPEG1VIDEO:
             case CODEC_ID_MPEG2VIDEO:
                 gxf_write_umf_media_mpeg(pb, st);
                 break;
@@ -859,6 +860,7 @@ static int gxf_write_packet(AVFormatContext *s, AVPacket *pkt)
     AVStream *st = s->streams[pkt->stream_index];
     int64_t pos = url_ftell(pb);
     int padding = 0;
+    int packet_start_offset = url_ftell(pb) / 1024;
 
     gxf_write_packet_header(pb, PKT_MEDIA);
     if (st->codec->codec_id == CODEC_ID_MPEG2VIDEO && pkt->size % 4) /* MPEG-2 frames must be padded */
@@ -878,7 +880,7 @@ static int gxf_write_packet(AVFormatContext *s, AVPacket *pkt)
                 return -1;
             }
         }
-        gxf->flt_entries[gxf->flt_entries_nb++] = url_ftell(pb) / 1024;
+        gxf->flt_entries[gxf->flt_entries_nb++] = packet_start_offset;
         gxf->nb_fields += 2; // count fields
     }
 

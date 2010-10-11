@@ -23,6 +23,7 @@
 
 #include "parseutils.h"
 #include "libavutil/avutil.h"
+#include "libavutil/eval.h"
 
 typedef struct {
     const char *abbr;
@@ -115,33 +116,74 @@ int av_parse_video_size(int *width_ptr, int *height_ptr, const char *str)
 
 int av_parse_video_rate(AVRational *rate, const char *arg)
 {
-    int i;
+    int i, ret;
     int n = FF_ARRAY_ELEMS(video_rate_abbrs);
-    char *cp;
+    double res;
 
     /* First, we check our abbreviation table */
     for (i = 0; i < n; ++i)
-         if (!strcmp(video_rate_abbrs[i].abbr, arg)) {
-             *rate = video_rate_abbrs[i].rate;
-             return 0;
-         }
+        if (!strcmp(video_rate_abbrs[i].abbr, arg)) {
+            *rate = video_rate_abbrs[i].rate;
+            return 0;
+        }
 
     /* Then, we try to parse it as fraction */
-    cp = strchr(arg, '/');
-    if (!cp)
-        cp = strchr(arg, ':');
-    if (cp) {
-        char *cpp;
-        rate->num = strtol(arg, &cpp, 10);
-        if (cpp != arg || cpp == cp)
-            rate->den = strtol(cp+1, &cpp, 10);
-        else
-            rate->num = 0;
-    } else {
-        /* Finally we give up and parse it as double */
-        *rate = av_d2q(strtod(arg, 0), 1001000);
-    }
+    if ((ret = av_parse_and_eval_expr(&res, arg, NULL, NULL, NULL, NULL, NULL, NULL,
+                                      NULL, 0, NULL)) < 0)
+        return ret;
+    *rate = av_d2q(res, 1001000);
     if (rate->num <= 0 || rate->den <= 0)
         return AVERROR(EINVAL);
     return 0;
 }
+
+#ifdef TEST
+
+#undef printf
+
+int main(void)
+{
+    printf("Testing av_parse_video_rate()\n");
+    {
+        int i;
+        const char *rates[] = {
+            "-inf",
+            "inf",
+            "nan",
+            "123/0",
+            "-123 / 0",
+            "",
+            "/",
+            " 123  /  321",
+            "foo/foo",
+            "foo/1",
+            "1/foo",
+            "0/0",
+            "/0",
+            "1/",
+            "1",
+            "0",
+            "-123/123",
+            "-foo",
+            "123.23",
+            ".23",
+            "-.23",
+            "-0.234",
+            "-0.0000001",
+            "  21332.2324   ",
+            " -21332.2324   ",
+        };
+
+        for (i = 0; i < FF_ARRAY_ELEMS(rates); i++) {
+            int ret;
+            AVRational q = (AVRational){0, 0};
+            ret = av_parse_video_rate(&q, rates[i]),
+            printf("'%s' -> %d/%d ret:%d\n",
+                   rates[i], q.num, q.den, ret);
+        }
+    }
+
+    return 0;
+}
+
+#endif /* TEST */

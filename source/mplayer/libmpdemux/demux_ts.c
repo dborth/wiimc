@@ -31,6 +31,7 @@
 #include "mpcommon.h"
 #include "help_mp.h"
 
+#include "libmpcodecs/dec_audio.h"
 #include "stream/stream.h"
 #include "demuxer.h"
 #include "parse_es.h"
@@ -56,6 +57,7 @@
 
 #define TYPE_AUDIO 1
 #define TYPE_VIDEO 2
+#define TYPE_SUB   3
 
 int ts_prog;
 int ts_keep_broken=0;
@@ -409,9 +411,9 @@ static void ts_add_stream(demuxer_t * demuxer, ES_stream_t *es)
 			case SPU_PGS:
 				sh->type = 'p'; break;
         		}
-			priv->ts.streams[es->pid].id = priv->last_aid;
+			priv->ts.streams[es->pid].id = priv->last_sid;
 			priv->ts.streams[es->pid].sh = sh;
-			priv->ts.streams[es->pid].type = TYPE_AUDIO;
+			priv->ts.streams[es->pid].type = TYPE_SUB;
 			priv->last_sid++;
 		}
 	}
@@ -3166,8 +3168,6 @@ static int ts_parse(demuxer_t *demuxer , ES_stream_t *es, unsigned char *packet,
 	return 0;
 }
 
-
-void skip_audio_frame(sh_audio_t *sh_audio);
 
 static void reset_fifos(demuxer_t *demuxer, int a, int v, int s)
 {

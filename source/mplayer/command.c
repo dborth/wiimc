@@ -62,6 +62,7 @@
 #include "m_struct.h"
 #include "libmenu/menu.h"
 #include "gui/interface.h"
+#include "eosd.h"
 
 #include "mp_core.h"
 #include "mp_fifo.h"
@@ -97,7 +98,7 @@ static void rescale_input_coordinates(int ix, int iy, double *dx, double *dy)
     *dy = (double) iy / (double) vo_dheight;
 
     mp_msg(MSGT_CPLAYER, MSGL_V,
-           "\r\nrescaled coordinates: %.3lf, %.3lf, screen (%d x %d), vodisplay: (%d, %d), fullscreen: %d\r\n",
+           "\r\nrescaled coordinates: %.3f, %.3f, screen (%d x %d), vodisplay: (%d, %d), fullscreen: %d\r\n",
            *dx, *dy, vo_screenwidth, vo_screenheight, vo_dwidth,
            vo_dheight, vo_fs);
 }
@@ -2496,6 +2497,70 @@ static void remove_subtitle_range(MPContext *mpctx, int start, int count)
     }
 }
 
+static int overlay_source_registered = 0;
+static struct mp_eosd_source overlay_source = {
+    .z_index = 5,
+};
+
+static void overlay_add(char *file, int id, int x, int y, unsigned col)
+{
+    FILE *f;
+    unsigned w, h, nc;
+    unsigned char *data;
+    struct mp_eosd_image *img;
+
+    if (!(f = fopen(file, "r"))) {
+        mp_msg(MSGT_CPLAYER, MSGL_ERR, "overlay_add: unable to open file.\n");
+        return;
+    }
+    if (fscanf(f, "P5\n%d %d\n%d\n", &w, &h, &nc) != 3 || nc != 255) {
+        mp_msg(MSGT_CPLAYER, MSGL_ERR, "overlay_add: unable to parse file.\n");
+        fclose(f);
+        return;
+    }
+    data = malloc(w * h);
+    if (fread(data, 1, w * h, f) != w * h) {
+        mp_msg(MSGT_CPLAYER, MSGL_ERR, "overlay_add: unable to read file.\n");
+        fclose(f);
+        return;
+    }
+    if (!overlay_source_registered) {
+        eosd_register(&overlay_source);
+        eosd_image_remove_all(&overlay_source);
+        overlay_source_registered = 1;
+    }
+    fclose(f);
+    img = eosd_image_alloc();
+    img->w      = w;
+    img->h      = h;
+    img->stride = w;
+    img->bitmap = data;
+    img->color  = col ^ 0xFF; /* col is RGBA, img->color is RGBT */
+    img->dst_x  = x;
+    img->dst_y  = y;
+    img->opaque = (void *)id;
+    eosd_image_append(&overlay_source, img);
+    overlay_source.changed = EOSD_CHANGED_BITMAP;
+}
+
+static void overlay_remove(int id)
+{
+    struct mp_eosd_image *img, **prev, *next;
+    prev = &overlay_source.images;
+    img  = overlay_source.images;
+    while (img) {
+        next = img->next;
+        if ((int)img->opaque == id) {
+            free(img->bitmap);
+            eosd_image_remove(&overlay_source, img, prev);
+            overlay_source.changed = EOSD_CHANGED_BITMAP;
+        } else {
+            prev = &img->next;
+        }
+        img  = next;
+    }
+}
+
 int run_command(MPContext *mpctx, mp_cmd_t *cmd)
 {
     sh_audio_t * const sh_audio = mpctx->sh_audio;
@@ -3071,6 +3136,17 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
                                  &(cmd->args[0].v.i));
             break;
         }
+        case MP_CMD_OVERLAY_ADD:
+        {
+            overlay_add(cmd->args[0].v.s, cmd->args[1].v.i,
+                        cmd->args[2].v.i, cmd->args[3].v.i, cmd->args[4].v.i);
+            break;
+        }
+        case MP_CMD_OVERLAY_REMOVE:
+        {
+            overlay_remove(cmd->args[0].v.i);
+            break;
+        }
 
         case MP_CMD_SUB_LOAD:
             if (sh_video) {
@@ -3119,7 +3195,7 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
             break;
 
         case MP_CMD_GET_TIME_LENGTH:{
-                mp_msg(MSGT_GLOBAL, MSGL_INFO, "ANS_LENGTH=%.2lf\n",
+                mp_msg(MSGT_GLOBAL, MSGL_INFO, "ANS_LENGTH=%.2f\n",
                        demuxer_get_time_length(mpctx->demuxer));
             }
             break;

@@ -22,8 +22,8 @@
 #define AVFORMAT_AVFORMAT_H
 
 #define LIBAVFORMAT_VERSION_MAJOR 52
-#define LIBAVFORMAT_VERSION_MINOR 78
-#define LIBAVFORMAT_VERSION_MICRO  5
+#define LIBAVFORMAT_VERSION_MINOR 80
+#define LIBAVFORMAT_VERSION_MICRO  0
 
 #define LIBAVFORMAT_VERSION_INT AV_VERSION_INT(LIBAVFORMAT_VERSION_MAJOR, \
                                                LIBAVFORMAT_VERSION_MINOR, \
@@ -363,7 +363,8 @@ typedef struct AVInputFormat {
     /**
      * Read one packet and put it in 'pkt'. pts and flags are also
      * set. 'av_new_stream' can be called only if the flag
-     * AVFMTCTX_NOHEADER is used.
+     * AVFMTCTX_NOHEADER is used and only in the calling thread (not in a
+     * background thread).
      * @return 0 on success, < 0 on error.
      *         When returning an error, pkt must not have been allocated
      *         or must be freed before returning
@@ -616,6 +617,18 @@ typedef struct AVStream {
      * Number of frames that have been demuxed during av_find_stream_info()
      */
     int codec_info_nb_frames;
+
+    /**
+     * Stream informations used internally by av_find_stream_info()
+     */
+#define MAX_STD_TIMEBASES (60*12+5)
+    struct {
+        int64_t last_dts;
+        int64_t duration_gcd;
+        int duration_count;
+        double duration_error[MAX_STD_TIMEBASES];
+        int64_t codec_info_duration;
+    } *info;
 } AVStream;
 
 #define AV_PROGRAM_RUNNING 1
@@ -671,7 +684,11 @@ typedef struct AVFormatContext {
     void *priv_data;
     ByteIOContext *pb;
     unsigned int nb_streams;
+#if FF_API_MAX_STREAMS
     AVStream *streams[MAX_STREAMS];
+#else
+    AVStream **streams;
+#endif
     char filename[1024]; /**< input or output filename */
     /* stream info */
     int64_t timestamp;

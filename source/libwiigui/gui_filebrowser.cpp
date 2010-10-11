@@ -48,16 +48,16 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 	scrollbarTopImg = new GuiImage(scrollbarTop);
 	scrollbarTopImg->SetParent(this);
 	scrollbarTopImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	scrollbarTopImg->SetPosition(-30, 35);
+	scrollbarTopImg->SetPosition(-45, 35);
 	scrollbarMidImg = new GuiImage(scrollbarMid);
 	scrollbarMidImg->SetParent(this);
 	scrollbarMidImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	scrollbarMidImg->SetPosition(-30, 55);
+	scrollbarMidImg->SetPosition(-45, 55);
 	scrollbarMidImg->SetTileVertical((s*32-112)/16);
 	scrollbarBottomImg = new GuiImage(scrollbarBottom);
 	scrollbarBottomImg->SetParent(this);
 	scrollbarBottomImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	scrollbarBottomImg->SetPosition(-30, height-57);
+	scrollbarBottomImg->SetPosition(-45, height-57);
 
 	arrowDown = new GuiImageData(arrow_down_png);
 	arrowDownImg = new GuiImage(arrowDown);
@@ -77,7 +77,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 	arrowUpBtn->SetImage(arrowUpImg);
 	arrowUpBtn->SetImageOver(arrowUpOverImg);
 	arrowUpBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	arrowUpBtn->SetPosition(-30, 4);
+	arrowUpBtn->SetPosition(-45, 4);
 	arrowUpBtn->SetSelectable(false);
 	arrowUpBtn->SetClickable(false);
 	arrowUpBtn->SetHoldable(true);
@@ -88,7 +88,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 	arrowDownBtn->SetImage(arrowDownImg);
 	arrowDownBtn->SetImageOver(arrowDownOverImg);
 	arrowDownBtn->SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
-	arrowDownBtn->SetPosition(-30, -8);
+	arrowDownBtn->SetPosition(-45, -8);
 	arrowDownBtn->SetSelectable(false);
 	arrowDownBtn->SetClickable(false);
 	arrowDownBtn->SetHoldable(true);
@@ -99,7 +99,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 	scrollbarBoxBtn->SetImage(scrollbarBoxImg);
 	scrollbarBoxBtn->SetImageOver(scrollbarBoxOverImg);
 	scrollbarBoxBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	scrollbarBoxBtn->SetPosition(-30, 8);
+	scrollbarBoxBtn->SetPosition(-45, 8);
 	scrollbarBoxBtn->SetMinY(8);
 	scrollbarBoxBtn->SetMaxY(height-128);
 	scrollbarBoxBtn->SetSelectable(false);
@@ -119,9 +119,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 	scrollbarBoxBtn->SetState(STATE_DISABLED);
 
 	for(int i=0; i<size; i++)
-	{
 		MakeEntry(i);
-	}
 }
 
 GuiFileBrowser::~GuiFileBrowser()
@@ -219,26 +217,26 @@ void GuiFileBrowser::MakeEntry(int i)
 	fileListText[i] = new GuiText(NULL, 18, (GXColor){255, 255, 255, 0xff});
 	fileListText[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	fileListText[i]->SetPosition(32,-2);
-	fileListText[i]->SetMaxWidth(width-120);
+	fileListText[i]->SetMaxWidth(width-150);
 
 	fileListBg[i] = new GuiImage(bgBrowseEntry);
 	fileListBg[i]->SetTile(width/16);
-	fileListBg[i]->SetPosition(-30, 0);
+	fileListBg[i]->SetPosition(-45, 0);
 
 	fileListBgOver[i] = new GuiImage(bgBrowseEntryOver);
 	fileListBgOver[i]->SetTile(width/16);
-	fileListBgOver[i]->SetPosition(-30, -2);
+	fileListBgOver[i]->SetPosition(-45, -2);
 
 	fileListIcon[i] = new GuiImage;
 	fileListIcon[i]->SetPosition(0, -2);
 
-	fileList[i] = new GuiButton(width-110, 32);
+	fileList[i] = new GuiButton(width-140, 32);
 	fileList[i]->SetParent(this);
 	fileList[i]->SetLabel(fileListText[i]);
 	fileList[i]->SetImage(fileListBg[i]);
 	fileList[i]->SetImageOver(fileListBgOver[i]);
 	fileList[i]->SetIcon(fileListIcon[i]);
-	fileList[i]->SetPosition(30,32*i);
+	fileList[i]->SetPosition(45,32*i);
 	fileList[i]->SetTrigger(trigA);
 	fileList[i]->SetVisible(false);
 	fileList[i]->SetState(STATE_DISABLED);
@@ -268,8 +266,8 @@ void GuiFileBrowser::SetRightCutoff()
 {
 	for(int i=0; i<size; i++)
 	{
-		fileListBg[i]->SetTile(width/16-1); 
-		fileListBgOver[i]->SetTile(width/16-1); 
+		fileListBg[i]->SetTile(width/16-2); 
+		fileListBgOver[i]->SetTile(width/16-2); 
 	}
 }
 
@@ -559,7 +557,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	if(positionWiimote > 0)
 	{
 		position = positionWiimote; // follow wiimote cursor
-		scrollbarBoxBtn->SetPosition(-30,position+30);
+		scrollbarBoxBtn->SetPosition(-45,position+30);
 	}
 	else if(listChanged || numEntries != browser.numEntries)
 	{
@@ -575,7 +573,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		else if(position > scrollbarBoxBtn->GetMaxY())
 			position = scrollbarBoxBtn->GetMaxY();
 
-		scrollbarBoxBtn->SetPosition(-30, position+30);
+		scrollbarBoxBtn->SetPosition(-45, position+30);
 	}
 
 	listChanged = false;

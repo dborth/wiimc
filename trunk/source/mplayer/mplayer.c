@@ -115,7 +115,6 @@
 #include "mpcommon.h"
 #include "mplayer.h"
 #include "osdep/getch2.h"
-#include "osdep/priority.h"
 #include "osdep/timer.h"
 #include "parser-cfg.h"
 #include "parser-mpcmd.h"
@@ -346,7 +345,6 @@ float sub_delay=0;
 float sub_fps=0;
 int   sub_auto = 1;
 char *vobsub_name=NULL;
-/*DSP!!char *dsp=NULL;*/
 int   subcc_enabled=0;
 int suboverlap_enabled = 1;
 
@@ -637,10 +635,10 @@ static void print_file_properties(const MPContext *mpctx, const char *filename)
       start_pts = video_start_pts;
   }
   if (start_pts != MP_NOPTS_VALUE)
-    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_START_TIME=%.2lf\n", start_pts);
+    mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_START_TIME=%.2f\n", start_pts);
   else
     mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_START_TIME=unknown\n");
-  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_LENGTH=%.2lf\n", demuxer_get_time_length(mpctx->demuxer));
+  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_LENGTH=%.2f\n", demuxer_get_time_length(mpctx->demuxer));
   mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_SEEKABLE=%d\n",
          mpctx->stream->seek && (!mpctx->demuxer || mpctx->demuxer->seekable));
   if (mpctx->demuxer) {
@@ -2785,24 +2783,16 @@ int mplayer_main(){
 int main(int argc,char* argv[]){
 #endif
 
-char * mem_ptr;
 
 // movie info:
 
 /* Flag indicating whether MPlayer should exit without playing anything. */
 int opt_exit = 0;
-
-//float a_frame=0;    // Audio
-
 int i;
 
 int gui_no_filename=0;
 
-
-  InitTimer();
-  srand(GetTimerMS()); 
-
-  mp_msg_init();
+  common_preinit();
 
   // Create the config context and register the options
   mconfig = m_config_new();
@@ -2830,12 +2820,14 @@ SetMPlayerSettings();
 orig_stream_cache_min_percent=stream_cache_min_percent;
 orig_stream_cache_seek_min_percent=stream_cache_seek_min_percent;
 orig_stream_cache_size=stream_cache_size;
+
+load_builtin_codecs();
+
+if (!common_init())
+	exit(0);
+
 #else
   m_config_preparse_command_line(mconfig,argc,argv);
-
-#if (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(CONFIG_WIN32DLL)
-  set_path_env();
-#endif
 
 #ifdef CONFIG_TV
   stream_tv_defaults.immediate = 1;
@@ -2878,47 +2870,10 @@ orig_stream_cache_size=stream_cache_size;
       }
     }
     }
+
   print_version("MPlayer");
-
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-#ifdef CONFIG_GUI
-    void *runningmplayer = FindWindow("MPlayer GUI for Windows", "MPlayer for Windows");
-    if(runningmplayer && filename && use_gui){
-        COPYDATASTRUCT csData;
-        char file[MAX_PATH];
-        char *filepart = filename;
-        if(GetFullPathName(filename, MAX_PATH, file, &filepart)){
-            csData.dwData = 0;
-            csData.cbData = strlen(file)*2;
-            csData.lpData = file;
-            SendMessage(runningmplayer, WM_COPYDATA, (WPARAM)runningmplayer, (LPARAM)&csData);
-        }
-    }
-#endif
-
-	{
-		HMODULE kernel32 = GetModuleHandle("Kernel32.dll");
-		BOOL WINAPI (*setDEP)(DWORD) = NULL;
-		BOOL WINAPI (*setDllDir)(LPCTSTR) = NULL;
-		if (kernel32) {
-			setDEP = GetProcAddress(kernel32, "SetProcessDEPPolicy");
-			setDllDir = GetProcAddress(kernel32, "SetDllDirectoryA");
-		}
-		if (setDEP) setDEP(3);
-		if (setDllDir) setDllDir("");
-	}
-	// stop Windows from showing all kinds of annoying error dialogs
-	SetErrorMode(0x8003);
-	// request 1ms timer resolution
-	timeBeginPeriod(1);
-#endif
-
-#ifdef CONFIG_PRIORITY
-    set_priority();
-#endif
-
-  if (codec_path)
-    set_codec_path(codec_path);
+    if (!common_init())
+        exit_player_with_rc(EXIT_NONE, 0);
 
 #ifndef CONFIG_GUI
     if(use_gui){
@@ -2958,30 +2913,7 @@ orig_stream_cache_size=stream_cache_size;
       list_audio_out();
       opt_exit = 1;
     }
-#ifdef GEKKO
-load_builtin_codecs();
-#else
-/* Check codecs.conf. */
-if(!codecs_file || !parse_codec_cfg(codecs_file)){
-  if(!parse_codec_cfg(mem_ptr=get_path("codecs.conf"))){
-    if(!parse_codec_cfg(MPLAYER_CONFDIR "/codecs.conf")){
-      if(!parse_codec_cfg(NULL)){
-        exit_player_with_rc(EXIT_NONE, 0);
-      }
-      mp_msg(MSGT_CPLAYER,MSGL_V,MSGTR_BuiltinCodecsConf);
-    }
-  }
-  free( mem_ptr ); // release the buffer created by get_path()
-}
-#endif
-#if 0
-    if(video_codec_list){
-	int i;
-	video_codec=video_codec_list[0];
-	for(i=0;video_codec_list[i];i++)
-	    mp_msg(MSGT_FIXME,MSGL_FIXME,"vc#%d: '%s'\n",i,video_codec_list[i]);
-    }
-#endif
+
     if(audio_codec_list && strcmp(audio_codec_list[0],"help")==0){
       mp_msg(MSGT_CPLAYER, MSGL_INFO, MSGTR_AvailableAudioCodecs);
       mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_AUDIO_CODECS\n");
@@ -3058,45 +2990,6 @@ if(!codecs_file || !parse_codec_cfg(codecs_file)){
 #endif
     
 //------ load global data first ------
-// check font
-#ifdef CONFIG_FREETYPE
-  init_freetype();
-#endif
-#ifdef CONFIG_FONTCONFIG
-  if(font_fontconfig <= 0)
-  {
-#endif
-#ifdef CONFIG_BITMAP_FONT
-  if(font_name){
-       vo_font=read_font_desc(font_name,font_factor,verbose>1);
-       if(!vo_font) mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_CantLoadFont,
-		filename_recode(font_name));
-  } else {
-      // try default:
-       vo_font=read_font_desc( mem_ptr=get_path("font/font.desc"),font_factor,verbose>1);
-       free(mem_ptr); // release the buffer created by get_path()
-       if(!vo_font)
-       {
-       char cad[200];
-       sprintf(cad,"%s%s",MPLAYER_DATADIR,"/font/font.desc");
-       //printf("read_font_desc (%s)\n",cad);
-       vo_font=read_font_desc(cad,font_factor,verbose>1);
-       }
-  }
-  if (sub_font_name)
-    sub_font = read_font_desc(sub_font_name, font_factor, verbose>1);
-  else
-    sub_font = vo_font;
-#endif
-#ifdef CONFIG_FONTCONFIG
-  }
-#endif
-
-  vo_init_osd();
-
-#ifdef CONFIG_ASS
-  ass_library = ass_init();
-#endif
 
 #ifdef HAVE_RTC
   if(!nortc)
@@ -3673,8 +3566,6 @@ if (ass_enabled && ass_library) {
 #endif
 current_module="demux_open2";
 
-//file_format=demuxer->file_format;
-
 mpctx->d_audio=mpctx->demuxer->audio;
 mpctx->d_video=mpctx->demuxer->video;
 mpctx->d_sub=mpctx->demuxer->sub;
@@ -3873,10 +3764,6 @@ current_module="main";
 if(verbose) term_osd = 0;
 
 {
-//int frame_corr_num=0;   //
-//float v_frame=0;    // Video
-//float num_frames=0;      // number of frames played
-
 int frame_time_remaining=0; // flag
 int blit_frame=0;
 mpctx->num_buffered_frames=0;

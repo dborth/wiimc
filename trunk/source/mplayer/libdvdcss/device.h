@@ -2,7 +2,7 @@
  * device.h: DVD device access
  *****************************************************************************
  * Copyright (C) 1998-2002 VideoLAN
- * $Id: device.h 31156 2010-05-11 10:58:50Z diego $
+ * $Id: device.h 32349 2010-09-25 15:53:03Z diego $
  *
  * Authors: Stéphane Borel <stef@via.ecp.fr>
  *          Sam Hocevar <sam@zoy.org>
@@ -23,6 +23,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *****************************************************************************/
 
+#ifndef DVDCSS_DEVICE_H
+#define DVDCSS_DEVICE_H
+
 /*****************************************************************************
  * iovec structure: vectored data entry
  *****************************************************************************/
@@ -34,6 +37,8 @@
 #   include <sys/uio.h>                                      /* struct iovec */
 #endif
 #endif
+
+#include "dvdcss/dvdcss.h"
 
 #if ( defined( WIN32 ) && !defined( SYS_CYGWIN ) ) || defined ( GEKKO )
 struct iovec
@@ -58,3 +63,4 @@ int  _dvdcss_close      ( dvdcss_t );
 int _dvdcss_raw_open     ( dvdcss_t, char const * );
 #endif
 
+#endif /* DVDCSS_DEVICE_H */

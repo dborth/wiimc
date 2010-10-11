@@ -724,12 +724,12 @@ SRCS_MENCODER = mencoder.c \
                 $(SRCS_MENCODER-yes)
 
 
-COMMON_LIBS-$(FFMPEG_A)           += libavformat/libavformat.a \
-                                     libavcodec/libavcodec.a   \
-                                     libavcore/libavcore.a     \
-                                     libavutil/libavutil.a     \
-                                     libpostproc/libpostproc.a \
-                                     libswscale/libswscale.a
+COMMON_LIBS-$(FFMPEG_A) += ffmpeg/libavformat/libavformat.a \
+                           ffmpeg/libavcodec/libavcodec.a   \
+                           ffmpeg/libavcore/libavcore.a     \
+                           ffmpeg/libavutil/libavutil.a     \
+                           ffmpeg/libpostproc/libpostproc.a \
+                           ffmpeg/libswscale/libswscale.a
 COMMON_LIBS += $(COMMON_LIBS-yes)
 
 OBJS_COMMON    += $(addsuffix .o, $(basename $(SRCS_COMMON)))
@@ -751,6 +751,31 @@ INSTALL_TARGETS-$(MENCODER) += install-mencoder install-mencoder-man
 INSTALL_TARGETS-$(MPLAYER)  += install-mplayer  install-mplayer-man
 
 DIRS =  . \
+        ffmpeg/libavcodec \
+        ffmpeg/libavcodec/alpha \
+        ffmpeg/libavcodec/arm \
+        ffmpeg/libavcodec/bfin \
+        ffmpeg/libavcodec/mlib \
+        ffmpeg/libavcodec/ppc \
+        ffmpeg/libavcodec/sh4 \
+        ffmpeg/libavcodec/sparc \
+        ffmpeg/libavcodec/x86 \
+        ffmpeg/libavcore \
+        ffmpeg/libavformat \
+        ffmpeg/libavutil \
+        ffmpeg/libavutil/arm \
+        ffmpeg/libavutil/bfin \
+        ffmpeg/libavutil/ppc \
+        ffmpeg/libavutil/sh4 \
+        ffmpeg/libavutil/tomi \
+        ffmpeg/libavutil/x86 \
+        ffmpeg/libpostproc \
+        ffmpeg/libswscale \
+        ffmpeg/libswscale/bfin \
+        ffmpeg/libswscale/mlib \
+        ffmpeg/libswscale/ppc \
+        ffmpeg/libswscale/sparc \
+        ffmpeg/libswscale/x86 \
         gui \
         gui/mplayer \
         gui/mplayer/gtk \
@@ -761,24 +786,6 @@ DIRS =  . \
         libaf \
         libao2 \
         libass \
-        libavcodec \
-        libavcodec/alpha \
-        libavcodec/arm \
-        libavcodec/bfin \
-        libavcodec/mlib \
-        libavcodec/ppc \
-        libavcodec/sh4 \
-        libavcodec/sparc \
-        libavcodec/x86 \
-        libavcore \
-        libavformat \
-        libavutil \
-        libavutil/arm \
-        libavutil/bfin \
-        libavutil/ppc \
-        libavutil/sh4 \
-        libavutil/tomi \
-        libavutil/x86 \
         libdvdcss \
         libdvdnav \
         libdvdnav/vm \
@@ -789,13 +796,6 @@ DIRS =  . \
         libmpcodecs/native \
         libmpdemux \
         libmpeg2 \
-        libpostproc \
-        libswscale \
-        libswscale/bfin \
-        libswscale/mlib \
-        libswscale/ppc \
-        libswscale/sparc \
-        libswscale/x86 \
         libvo \
         loader \
         loader/dshow \
@@ -824,8 +824,8 @@ FFMPEGPARTS = libavcodec \
               libpostproc \
               libswscale \
 
-FFMPEGLIBS  = $(foreach part, $(FFMPEGPARTS), $(part)/$(part).a)
-FFMPEGFILES = $(foreach part, $(FFMPEGPARTS), $(wildcard $(part)/*.[chS] $(part)/*/*.[chS]))
+FFMPEGLIBS  = $(foreach part, $(FFMPEGPARTS), ffmpeg/$(part)/$(part).a)
+FFMPEGFILES = $(foreach part, $(FFMPEGPARTS), $(wildcard ffmpeg/$(part)/*.[chS] ffmpeg/$(part)/*/*.[chS]))
 
 
 
@@ -839,20 +839,17 @@ all: $(MPLAYERWIILIB) $(COMMON_LIBS)
 	$(AR) rc libmplayerwii.a $(MPLAYERWIILIB)
 	$(RANLIB) libmplayerwii.a
 
-%.ho: %.h
-	$(CC) $(CFLAGS) -Wno-unused -c -o $@ -x c $<
-
 %.o: %.S
-	$(CC) $(ASFLAGS) -c -o $@ $<
+	$(CC) $(CC_DEPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CC_DEPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %.o: %.cpp
-	$(CC) $(CXXFLAGS) -c -o $@ $<
+	$(CC) $(CC_DEPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 %.o: %.m
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CC_DEPFLAGS) $(CFLAGS) -c -o $@ $<
 
 #%-rc.o: %.rc
 #	$(WINDRES) -I. $< $@
@@ -869,7 +866,7 @@ mencoder$(EXESUF) mplayer$(EXESUF):
 	$(CC) -o $@ $^ $(EXTRALIBS)
 
 #codec-cfg$(EXESUF): codec-cfg.c codec-cfg.h help_mp.h
-#	$(HOST_CC) -O -DCODECS2HTML -I. -o $@ $<
+#	$(HOST_CC) -O -DCODECS2HTML -I. -Iffmpeg -o $@ $<
 
 #codecs.conf.h: codec-cfg$(EXESUF) etc/codecs.conf
 #	./$^ > $@
@@ -903,7 +900,7 @@ checkheaders: $(ALLHEADERS:.h=.ho)
 ###### dependency declarations / specific CFLAGS ######
 
 # Make sure all generated header files are created.
-codec-cfg.d codec-cfg.o: codecs.conf.h
+codec-cfg.o: codecs.conf.h
 $(DEP_FILES) $(MENCODER_DEPS) $(MPLAYER_DEPS): help_mp.h
 mpcommon.o osdep/mplayer-rc.o: version.h
 
@@ -911,10 +908,10 @@ mpcommon.o osdep/mplayer-rc.o: version.h
 
 gui/%: CFLAGS += -Wno-strict-prototypes
 
-libdvdcss/%:   CFLAGS := -Ilibdvdcss -D__USE_UNIX98 -D_GNU_SOURCE -DVERSION=\"1.2.10\" $(CFLAGS_LIBDVDCSS) $(CFLAGS)
-libdvdnav/%:   CFLAGS := -Ilibdvdnav -D__USE_UNIX98 -D_GNU_SOURCE -DHAVE_CONFIG_H -DVERSION=\"MPlayer-custom\" $(CFLAGS)
-libdvdread4/%: CFLAGS := -Ilibdvdread4 -D__USE_UNIX98 -D_GNU_SOURCE $(CFLAGS_LIBDVDCSS_DVDREAD) $(CFLAGS)
-libfaad2/%:    CFLAGS := -Ilibfaad2 -D_GNU_SOURCE -DHAVE_CONFIG_H $(CFLAGS_FAAD_FIXED) $(CFLAGS)
+libdvdcss/%:   CFLAGS := -Ilibdvdcss -D_GNU_SOURCE -DVERSION=\"1.2.10\" $(CFLAGS_LIBDVDCSS) $(CFLAGS)
+libdvdnav/%:   CFLAGS := -Ilibdvdnav -D_GNU_SOURCE -DHAVE_CONFIG_H -DVERSION=\"MPlayer-custom\" $(CFLAGS)
+libdvdread4/%: CFLAGS := -Ilibdvdread4 -D_GNU_SOURCE $(CFLAGS_LIBDVDCSS_DVDREAD) $(CFLAGS)
+libfaad2/%:    CFLAGS := -Ilibfaad2 -DHAVE_CONFIG_H $(CFLAGS_FAAD_FIXED) $(CFLAGS)
 
 loader/%: CFLAGS += -fno-omit-frame-pointer $(CFLAGS_NO_OMIT_LEAF_FRAME_POINTER)
 #loader/%: CFLAGS += -Ddbg_printf=__vprintf -DTRACE=__vprintf -DDETAILED_OUT
@@ -1000,16 +997,16 @@ uninstall:
 	rm -f $(foreach lang,$(MAN_LANGS),$(foreach man,mplayer.1 mencoder.1,$(MANDIR)/$(lang)/man1/$(man)))
 
 clean:
-	-rm -f $(call ADD_ALL_DIRS,/*.o /*.a /*.d /*.ho /*~)
+	-rm -f $(call ADD_ALL_DIRS,/*.o /*.a /*.ho /*~)
 	-rm -f $(call ADD_ALL_EXESUFS,mplayer mencoder)
 
 distclean: clean testsclean toolsclean driversclean dhahelperclean
 	-rm -rf DOCS/tech/doxygen
 	-rm -f $(call ADD_ALL_DIRS,/*.d)
-	-rm -f config.log config.mak config.h codecs.conf.h help_mp.h \
-           version.h $(VIDIX_PCI_FILES) TAGS tags
+	-rm -f config.* codecs.conf.h help_mp.h version.h TAGS tags
+	-rm -f $(VIDIX_PCI_FILES)
 	-rm -f $(call ADD_ALL_EXESUFS,codec-cfg cpuinfo)
-	-rm -f libavutil/avconfig.h
+	-rm -f ffmpeg/libavutil/avconfig.h ffmpeg/config.*
 
 doxygen:
 	doxygen DOCS/tech/Doxyfile
@@ -1027,14 +1024,14 @@ tags:
 TEST_OBJS = mp_msg.o mp_fifo.o osdep/$(GETCH) osdep/$(TIMER) -ltermcap -lm
 
 codec-cfg-test$(EXESUF): codec-cfg.c codecs.conf.h help_mp.h $(TEST_OBJS)
-	$(CC) -I. -DTESTING -o $@ $^
+	$(CC) -I. -Iffmpeg -DTESTING -o $@ $^
 
 codecs2html$(EXESUF): codec-cfg.c help_mp.h $(TEST_OBJS)
-	$(CC) -I. -DCODECS2HTML -o $@ $^
+	$(CC) -I. -Iffmpeg -DCODECS2HTML -o $@ $^
 
 libvo/aspecttest$(EXESUF): libvo/aspect.o libvo/geometry.o $(TEST_OBJS)
 
-LOADER_TEST_OBJS = $(SRCS_WIN32_EMULATION:.c=.o) $(SRCS_QTX_EMULATION:.S=.o) libavutil/libavutil.a osdep/mmap_anon.o cpudetect.o path.o $(TEST_OBJS)
+LOADER_TEST_OBJS = $(SRCS_WIN32_EMULATION:.c=.o) $(SRCS_QTX_EMULATION:.S=.o) ffmpeg/libavutil/libavutil.a osdep/mmap_anon.o cpudetect.o path.o $(TEST_OBJS)
 
 loader/qtx/list$(EXESUF) loader/qtx/qtxload$(EXESUF): CFLAGS += -g
 loader/qtx/list$(EXESUF) loader/qtx/qtxload$(EXESUF): $(LOADER_TEST_OBJS)
@@ -1074,7 +1071,7 @@ toolsclean:
 TOOLS/bmovl-test$(EXESUF): -lSDL_image
 
 TOOLS/subrip$(EXESUF): vobsub.o spudec.o unrar_exec.o libvo/aclib.o \
-    libswscale/libswscale.a libavutil/libavutil.a $(TEST_OBJS)
+    ffmpeg/libswscale/libswscale.a ffmpeg/libavutil/libavutil.a $(TEST_OBJS)
 
 TOOLS/vfw2menc$(EXESUF): -lwinmm -lole32
 

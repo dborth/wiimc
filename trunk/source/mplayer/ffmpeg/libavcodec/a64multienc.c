@@ -33,6 +33,7 @@
 #define DITHERSTEPS   8
 #define CHARSET_CHARS 256
 #define INTERLACED    1
+#define CROP_SCREENS  1
 
 /* gray gradient */
 static const int mc_colors[5]={0x0,0xb,0xc,0xf,0x1};
@@ -45,15 +46,15 @@ static void to_meta_with_crop(AVCodecContext *avctx, AVFrame *p, int *dest)
 {
     int blockx, blocky, x, y;
     int luma = 0;
-    int height = FFMIN(avctx->height,C64YRES);
-    int width  = FFMIN(avctx->width ,C64XRES);
+    int height = FFMIN(avctx->height, C64YRES);
+    int width  = FFMIN(avctx->width , C64XRES);
     uint8_t *src = p->data[0];
 
-    for (blocky = 0; blocky < height; blocky += 8) {
+    for (blocky = 0; blocky < C64YRES; blocky += 8) {
         for (blockx = 0; blockx < C64XRES; blockx += 8) {
-            for (y = blocky; y < blocky+8 && y < height; y++) {
-                for (x = blockx; x < blockx+8 && x < C64XRES; x += 2) {
-                    if(x < width) {
+            for (y = blocky; y < blocky + 8 && y < C64YRES; y++) {
+                for (x = blockx; x < blockx + 8 && x < C64XRES; x += 2) {
+                    if(x < width && y < height) {
                         /* build average over 2 pixels */
                         luma = (src[(x + 0 + y * p->linesize[0])] +
                                 src[(x + 1 + y * p->linesize[0])]) / 2;
@@ -86,17 +87,18 @@ static void render_charset(AVCodecContext *avctx, uint8_t *charset,
     /* generate lookup-tables for dither and index before looping */
     i = 0;
     for (a=0; a < 256; a++) {
-        if(i < 4 && a == c->mc_luma_vals[i+1]) {
-            distance = c->mc_luma_vals[i+1] - c->mc_luma_vals[i];
+        if(i < c->mc_pal_size -1 && a == c->mc_luma_vals[i + 1]) {
+            distance = c->mc_luma_vals[i + 1] - c->mc_luma_vals[i];
             for(b = 0; b <= distance; b++) {
-                  dither[c->mc_luma_vals[i]+b] = b * (DITHERSTEPS - 1) / distance;
+                  dither[c->mc_luma_vals[i] + b] = b * (DITHERSTEPS - 1) / distance;
             }
             i++;
         }
-        if(i >=4 ) dither[a] = 0;
+        if(i >= c->mc_pal_size - 1) dither[a] = 0;
         index1[a] = i;
-        index2[a] = FFMIN(i+1, 4);
+        index2[a] = FFMIN(i + 1, c->mc_pal_size - 1);
     }
+
     /* and render charset */
     for (charpos = 0; charpos < CHARSET_CHARS; charpos++) {
         lowdiff  = 0;
@@ -114,7 +116,7 @@ static void render_charset(AVCodecContext *avctx, uint8_t *charset,
 
                 row1 <<= 2;
 
-                if(INTERLACED) {
+                if (INTERLACED) {
                     row2 <<= 2;
                     if (interlaced_dither_patterns[dither[pix]][(y & 3) * 2 + 0][x & 3])
                         row1 |= 3-(index2[pix] & 3);
@@ -134,10 +136,10 @@ static void render_charset(AVCodecContext *avctx, uint8_t *charset,
                 }
             }
             charset[y+0x000] = row1;
-            if(INTERLACED) charset[y+0x800] = row2;
+            if (INTERLACED) charset[y+0x800] = row2;
         }
         /* do we need to adjust pixels? */
-        if (highdiff > 0 && lowdiff > 0) {
+        if (highdiff > 0 && lowdiff > 0 && c->mc_use_5col) {
             if (lowdiff > highdiff) {
                 for (x = 0; x < 32; x++)
                     best_cb[x] = FFMIN(c->mc_luma_vals[3], best_cb[x]);
@@ -183,33 +185,34 @@ static av_cold int a64multi_init_encoder(AVCodecContext *avctx)
 
     av_log(avctx, AV_LOG_INFO, "charset lifetime set to %d frame(s)\n", c->mc_lifetime);
 
+    c->mc_frame_counter = 0;
+    c->mc_use_5col      = avctx->codec->id == CODEC_ID_A64_MULTI5;
+    c->mc_pal_size      = 4 + c->mc_use_5col;
+
     /* precalc luma values for later use */
-    for (a = 0; a < 5; a++) {
+    for (a = 0; a < c->mc_pal_size; a++) {
         c->mc_luma_vals[a]=a64_palette[mc_colors[a]][0] * 0.30 +
                            a64_palette[mc_colors[a]][1] * 0.59 +
                            a64_palette[mc_colors[a]][2] * 0.11;
     }
 
-    c->mc_frame_counter = 0;
-    c->mc_use_5col      = avctx->codec->id == CODEC_ID_A64_MULTI5;
-
-    if(!(c->mc_meta_charset  = av_malloc (32000 * c->mc_lifetime * sizeof(int))) ||
-       !(c->mc_best_cb       = av_malloc (CHARSET_CHARS * 32 * sizeof(int)))     ||
-       !(c->mc_charmap       = av_mallocz(1000 * c->mc_lifetime * sizeof(int)))  ||
-       !(c->mc_colram        = av_mallocz(CHARSET_CHARS * sizeof(uint8_t)))      ||
-       !(c->mc_charset       = av_malloc (0x800 * (INTERLACED+1) * sizeof(uint8_t)))) {
+    if (!(c->mc_meta_charset = av_malloc(32000 * c->mc_lifetime * sizeof(int))) ||
+       !(c->mc_best_cb       = av_malloc(CHARSET_CHARS * 32 * sizeof(int)))     ||
+       !(c->mc_charmap       = av_mallocz(1000 * c->mc_lifetime * sizeof(int))) ||
+       !(c->mc_colram        = av_mallocz(CHARSET_CHARS * sizeof(uint8_t)))     ||
+       !(c->mc_charset       = av_malloc(0x800 * (INTERLACED+1) * sizeof(uint8_t)))) {
         av_log(avctx, AV_LOG_ERROR, "Failed to allocate buffer memory.\n");
         return AVERROR(ENOMEM);
     }
 
     /* set up extradata */
-    if(!(avctx->extradata = av_mallocz(8 * 4 + FF_INPUT_BUFFER_PADDING_SIZE))) {
+    if (!(avctx->extradata = av_mallocz(8 * 4 + FF_INPUT_BUFFER_PADDING_SIZE))) {
         av_log(avctx, AV_LOG_ERROR, "Failed to allocate memory for extradata.\n");
         return AVERROR(ENOMEM);
     }
     avctx->extradata_size = 8 * 4;
     AV_WB32(avctx->extradata, c->mc_lifetime);
-    AV_WB32(avctx->extradata+16, INTERLACED);
+    AV_WB32(avctx->extradata + 16, INTERLACED);
 
     avcodec_get_frame_defaults(&c->picture);
     avctx->coded_frame            = &c->picture;
@@ -231,7 +234,7 @@ static void a64_compress_colram(unsigned char *buf, int *charmap, uint8_t *colra
         temp  = colram[charmap[a + 0x000]] << 0;
         temp |= colram[charmap[a + 0x100]] << 1;
         temp |= colram[charmap[a + 0x200]] << 2;
-        if(a < 0xe8) temp |= colram[charmap[a + 0x300]] << 3;
+        if (a < 0xe8) temp |= colram[charmap[a + 0x300]] << 3;
         buf[a] = temp << 2;
     }
 }
@@ -244,35 +247,46 @@ static int a64multi_encode_frame(AVCodecContext *avctx, unsigned char *buf,
     AVFrame *const p = (AVFrame *) & c->picture;
 
     int frame;
-    int a;
+    int x, y;
+    int b_height;
+    int b_width;
 
     int req_size;
-    int num_frames = c->mc_lifetime;
+    int num_frames   = c->mc_lifetime;
 
-    int *charmap         = c->mc_charmap;
-    uint8_t *colram      = c->mc_colram;
-    uint8_t *charset     = c->mc_charset;
-    int *meta            = c->mc_meta_charset;
-    int *best_cb         = c->mc_best_cb;
+    int *charmap     = c->mc_charmap;
+    uint8_t *colram  = c->mc_colram;
+    uint8_t *charset = c->mc_charset;
+    int *meta        = c->mc_meta_charset;
+    int *best_cb     = c->mc_best_cb;
 
     int charset_size = 0x800 * (INTERLACED + 1);
-    int screen_size  = 0x400;
     int colram_size  = 0x100 * c->mc_use_5col;
+    int screen_size;
+
+    if(CROP_SCREENS) {
+        b_height = FFMIN(avctx->height,C64YRES) >> 3;
+        b_width  = FFMIN(avctx->width ,C64XRES) >> 3;
+        screen_size = b_width * b_height;
+    } else {
+        b_height = C64YRES >> 3;
+        b_width  = C64XRES >> 3;
+        screen_size = 0x400;
+    }
 
     /* no data, means end encoding asap */
     if (!data) {
         /* all done, end encoding */
-        if(!c->mc_lifetime) return 0;
+        if (!c->mc_lifetime) return 0;
         /* no more frames in queue, prepare to flush remaining frames */
-        if(!c->mc_frame_counter) {
-            num_frames=c->mc_lifetime;
-            c->mc_lifetime=0;
+        if (!c->mc_frame_counter) {
+            num_frames = c->mc_lifetime;
+            c->mc_lifetime = 0;
         }
         /* still frames in queue so limit lifetime to remaining frames */
-        else c->mc_lifetime=c->mc_frame_counter;
-    }
+        else c->mc_lifetime = c->mc_frame_counter;
     /* still new data available */
-    else {
+    } else {
         /* fill up mc_meta_charset with data until lifetime exceeds */
         if (c->mc_frame_counter < c->mc_lifetime) {
             *p = *pict;
@@ -289,7 +303,7 @@ static int a64multi_encode_frame(AVCodecContext *avctx, unsigned char *buf,
     if (c->mc_frame_counter == c->mc_lifetime) {
         req_size = 0;
         /* any frames to encode? */
-        if(c->mc_lifetime) {
+        if (c->mc_lifetime) {
             /* calc optimal new charset + charmaps */
             ff_init_elbg(meta, 32, 1000 * c->mc_lifetime, best_cb, CHARSET_CHARS, 50, charmap, &c->randctx);
             ff_do_elbg  (meta, 32, 1000 * c->mc_lifetime, best_cb, CHARSET_CHARS, 50, charmap, &c->randctx);
@@ -311,16 +325,18 @@ static int a64multi_encode_frame(AVCodecContext *avctx, unsigned char *buf,
         /* write x frames to buf */
         for (frame = 0; frame < c->mc_lifetime; frame++) {
             /* copy charmap to buf. buf is uchar*, charmap is int*, so no memcpy here, sorry */
-            for (a = 0; a < 1000; a++) {
-                buf[a] = charmap[a];
+            for (y = 0; y < b_height; y++) {
+                for (x = 0; x < b_width; x++) {
+                    buf[y * b_width + x] = charmap[y * b_width + x];
+                }
             }
             /* advance pointers */
             buf += screen_size;
             req_size += screen_size;
 
             /* compress and copy colram to buf */
-            if(c->mc_use_5col) {
-                a64_compress_colram(buf,charmap,colram);
+            if (c->mc_use_5col) {
+                a64_compress_colram(buf, charmap, colram);
                 /* advance pointers */
                 buf += colram_size;
                 req_size += colram_size;
@@ -330,9 +346,9 @@ static int a64multi_encode_frame(AVCodecContext *avctx, unsigned char *buf,
             charmap += 1000;
         }
 
-        AV_WB32(avctx->extradata+4,  c->mc_frame_counter);
-        AV_WB32(avctx->extradata+8,  charset_size);
-        AV_WB32(avctx->extradata+12, screen_size + colram_size);
+        AV_WB32(avctx->extradata + 4,  c->mc_frame_counter);
+        AV_WB32(avctx->extradata + 8,  charset_size);
+        AV_WB32(avctx->extradata + 12, screen_size + colram_size);
 
         /* reset counter */
         c->mc_frame_counter = 0;

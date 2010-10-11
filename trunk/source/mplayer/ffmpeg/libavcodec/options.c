@@ -25,7 +25,7 @@
  */
 
 #include "avcodec.h"
-#include "opt.h"
+#include "libavutil/opt.h"
 #include <float.h>              /* FLT_MIN, FLT_MAX */
 
 static const char* context_to_name(void* ptr) {
@@ -160,7 +160,7 @@ static const AVOption options[]={
 {"very", "strictly conform to a older more strict version of the spec or reference software", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_VERY_STRICT, INT_MIN, INT_MAX, V|D|E, "strict"},
 {"strict", "strictly conform to all the things in the spec no matter what consequences", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_STRICT, INT_MIN, INT_MAX, V|D|E, "strict"},
 {"normal", NULL, 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_NORMAL, INT_MIN, INT_MAX, V|D|E, "strict"},
-#if LIBAVCODEC_VERSION_MAJOR < 53
+#if FF_API_INOFFICIAL
 {"inofficial", "allow unofficial extensions (deprecated - use unofficial)", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_UNOFFICIAL, INT_MIN, INT_MAX, V|D|E, "strict"},
 #endif
 {"unofficial", "allow unofficial extensions", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_UNOFFICIAL, INT_MIN, INT_MAX, V|D|E, "strict"},
@@ -382,7 +382,7 @@ static const AVOption options[]={
 {"ivlc", "intra vlc table", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_INTRA_VLC, INT_MIN, INT_MAX, V|E, "flags2"},
 {"b_sensitivity", "adjusts sensitivity of b_frame_strategy 1", OFFSET(b_sensitivity), FF_OPT_TYPE_INT, 40, 1, INT_MAX, V|E},
 {"compression_level", NULL, OFFSET(compression_level), FF_OPT_TYPE_INT, FF_COMPRESSION_DEFAULT, INT_MIN, INT_MAX, V|A|E},
-#if LIBAVCODEC_VERSION_MAJOR < 53
+#if FF_API_USE_LPC
 {"use_lpc", "sets whether to use LPC mode (FLAC)", OFFSET(use_lpc), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, A|E},
 #endif
 {"lpc_coeff_precision", "LPC coefficient precision (FLAC)", OFFSET(lpc_coeff_precision), FF_OPT_TYPE_INT, DEFAULT, 0, INT_MAX, A|E},
@@ -465,6 +465,36 @@ void avcodec_get_context_defaults2(AVCodecContext *s, enum AVMediaType codec_typ
     s->palctrl = NULL;
     s->reget_buffer= avcodec_default_reget_buffer;
     s->reordered_opaque= AV_NOPTS_VALUE;
+}
+
+int avcodec_get_context_defaults3(AVCodecContext *s, AVCodec *codec){
+    avcodec_get_context_defaults2(s, codec ? codec->type : AVMEDIA_TYPE_UNKNOWN);
+    if(codec && codec->priv_data_size){
+        if(!s->priv_data){
+            s->priv_data= av_mallocz(codec->priv_data_size);
+            if (!s->priv_data) {
+                return AVERROR(ENOMEM);
+            }
+        }
+        if(codec->priv_class){
+            *(AVClass**)s->priv_data= codec->priv_class;
+            av_opt_set_defaults(s->priv_data);
+        }
+    }
+    return 0;
+}
+
+AVCodecContext *avcodec_alloc_context3(AVCodec *codec){
+    AVCodecContext *avctx= av_malloc(sizeof(AVCodecContext));
+
+    if(avctx==NULL) return NULL;
+
+    if(avcodec_get_context_defaults3(avctx, codec) < 0){
+        av_free(avctx);
+        return NULL;
+    }
+
+    return avctx;
 }
 
 AVCodecContext *avcodec_alloc_context2(enum AVMediaType codec_type){

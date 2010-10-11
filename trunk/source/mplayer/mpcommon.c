@@ -20,7 +20,11 @@
 #include "stream/stream.h"
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/stheader.h"
+#include "codec-cfg.h"
+#include "osdep/timer.h"
+#include "path.h"
 #include "mplayer.h"
+#include "libvo/font_load.h"
 #include "libvo/sub.h"
 #include "libvo/video_out.h"
 #include "cpudetect.h"
@@ -349,3 +353,123 @@ const m_option_t noconfig_opts[] = {
     {NULL, NULL, 0, 0, 0, 0, NULL}
 };
 
+/**
+ * Initialization code to be run at the very start, most not depend
+ * on option values.
+ */
+void common_preinit(void)
+{
+    InitTimer();
+    srand(GetTimerMS());
+
+    mp_msg_init();
+}
+
+/**
+ * Code to fix any kind of insane defaults some OS might have.
+ * Currently mostly fixes for insecure-by-default Windows.
+ */
+static void sanitize_os(void)
+{
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    HMODULE kernel32 = GetModuleHandle("Kernel32.dll");
+    BOOL WINAPI (*setDEP)(DWORD) = NULL;
+    BOOL WINAPI (*setDllDir)(LPCTSTR) = NULL;
+    if (kernel32) {
+        setDEP = GetProcAddress(kernel32, "SetProcessDEPPolicy");
+        setDllDir = GetProcAddress(kernel32, "SetDllDirectoryA");
+    }
+    if (setDEP) setDEP(3);
+    if (setDllDir) setDllDir("");
+    // stop Windows from showing all kinds of annoying error dialogs
+    SetErrorMode(0x8003);
+    // request 1ms timer resolution
+    timeBeginPeriod(1);
+#endif
+}
+
+/**
+ * Initialization code to be run after command-line parsing.
+ */
+int common_init(void)
+{
+#ifndef GEKKO
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#ifdef CONFIG_WIN32DLL
+    set_path_env();
+#endif
+#ifdef CONFIG_GUI
+    void *runningmplayer = FindWindow("MPlayer GUI for Windows", "MPlayer for Windows");
+    if (runningmplayer && filename && use_gui) {
+        COPYDATASTRUCT csData;
+        char file[MAX_PATH];
+        char *filepart = filename;
+        if (GetFullPathName(filename, MAX_PATH, file, &filepart)) {
+            csData.dwData = 0;
+            csData.cbData = strlen(file)*2;
+            csData.lpData = file;
+            SendMessage(runningmplayer, WM_COPYDATA, (WPARAM)runningmplayer, (LPARAM)&csData);
+        }
+    }
+#endif
+#endif
+    sanitize_os();
+
+#ifdef CONFIG_PRIORITY
+    set_priority();
+#endif
+
+    if (codec_path)
+        set_codec_path(codec_path);
+
+    /* Check codecs.conf. */
+    if (!codecs_file || !parse_codec_cfg(codecs_file)) {
+        char *conf_path = get_path("codecs.conf");
+        if (!parse_codec_cfg(conf_path)) {
+            if (!parse_codec_cfg(MPLAYER_CONFDIR "/codecs.conf")) {
+                if (!parse_codec_cfg(NULL)) {
+                    free(conf_path);
+                    return 0;
+                }
+                mp_msg(MSGT_CPLAYER,MSGL_V,MSGTR_BuiltinCodecsConf);
+            }
+        }
+        free(conf_path);
+    }
+#endif
+    // check font
+#ifdef CONFIG_FREETYPE
+    init_freetype();
+#endif
+#ifdef CONFIG_FONTCONFIG
+    if (font_fontconfig <= 0)
+#endif
+    {
+#ifdef CONFIG_BITMAP_FONT
+        if (font_name) {
+            vo_font = read_font_desc(font_name, font_factor, verbose>1);
+            if (!vo_font)
+                mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_CantLoadFont,
+                       filename_recode(font_name));
+        } else {
+            // try default:
+            char *desc_path = get_path("font/font.desc");
+            vo_font = read_font_desc(desc_path, font_factor, verbose>1);
+            free(desc_path);
+            if (!vo_font)
+                vo_font = read_font_desc(MPLAYER_DATADIR "/font/font.desc", font_factor, verbose>1);
+        }
+        if (sub_font_name)
+            sub_font = read_font_desc(sub_font_name, font_factor, verbose>1);
+        else
+            sub_font = vo_font;
+#endif
+    }
+
+    vo_init_osd();
+
+#ifdef CONFIG_ASS
+    ass_library = ass_init();
+#endif
+    return 1;
+}

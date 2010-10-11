@@ -135,6 +135,13 @@ int url_read_complete(URLContext *h, unsigned char *buf, int size);
 int url_write(URLContext *h, const unsigned char *buf, int size);
 
 /**
+ * Passing this as the "whence" parameter to a seek function causes it to
+ * return the filesize without seeking anywhere. Supporting this is optional.
+ * If it is not supported then the seek function will return <0.
+ */
+#define AVSEEK_SIZE 0x10000
+
+/**
  * Change the position that will be used by the next read/write
  * operation on the resource accessed by h.
  *
@@ -165,6 +172,11 @@ int url_close(URLContext *h);
  */
 int url_exist(const char *url);
 
+/**
+ * Return the filesize of the resource accessed by h, AVERROR(ENOSYS)
+ * if the operation is not supported by h, or another negative value
+ * corresponding to an AVERROR error code in case of failure.
+ */
 int64_t url_filesize(URLContext *h);
 
 /**
@@ -185,6 +197,12 @@ int url_get_file_handle(URLContext *h);
  * @return maximum packet size in bytes
  */
 int url_get_max_packet_size(URLContext *h);
+
+/**
+ * Copy the filename of the resource accessed by h to buf.
+ *
+ * @param buf_size size in bytes of buf
+ */
 void url_get_filename(URLContext *h, char *buf, int buf_size);
 
 /**
@@ -224,13 +242,6 @@ int av_url_read_pause(URLContext *h, int pause);
  */
 int64_t av_url_read_seek(URLContext *h, int stream_index,
                          int64_t timestamp, int flags);
-
-/**
- * Passing this as the "whence" parameter to a seek function causes it to
- * return the filesize without seeking anywhere. Supporting this is optional.
- * If it is not supported then the seek function will return <0.
- */
-#define AVSEEK_SIZE 0x10000
 
 /**
  * Oring this flag as into the "whence" parameter to a seek function causes it to

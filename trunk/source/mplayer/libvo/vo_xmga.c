@@ -55,10 +55,6 @@ static unsigned int timer = 0;
 static unsigned int timerd = 0;
 #endif
 
-#ifdef CONFIG_GUI
-#include "gui/interface.h"
-#endif
-
 static const vo_info_t info = {
     "Matrox G200/G4x0/G550 overlay in X11 window (using /dev/mga_vid)",
     "xmga",
@@ -74,8 +70,6 @@ static int colorkey;
 
 static uint32_t mvHeight;
 static uint32_t mvWidth;
-
-static Window mRoot;
 
 static XSetWindowAttributes xWAttribs;
 
@@ -99,13 +93,10 @@ static void check_events(void)
 {
     int e = vo_x11_check_events(mDisplay);
 
-    if (!(e & VO_EVENT_RESIZE) && !(e & VO_EVENT_EXPOSE))
-        return;
-    set_window();
-    mDrawColorKey();
-    if (ioctl(f, MGA_VID_CONFIG, &mga_vid_config))
-        mp_msg(MSGT_VO, MSGL_WARN,
-               "Error in mga_vid_config ioctl (wrong mga_vid.o version?)");
+    if (e & (VO_EVENT_RESIZE | VO_EVENT_MOVE))
+        set_window();
+    if (e & (VO_EVENT_RESIZE | VO_EVENT_EXPOSE))
+        mDrawColorKey();
 }
 
 static void flip_page(void)
@@ -135,24 +126,8 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
     if (mga_init(width, height, format))
         return -1;              // ioctl errors?
 
-    aspect_save_orig(width, height);
-    aspect_save_prescale(d_width, d_height);
-    update_xinerama_info();
-
     mvWidth = width;
     mvHeight = height;
-
-    vo_panscan_x = vo_panscan_y = vo_panscan_amount = 0;
-
-    aspect(&d_width, &d_height, A_NOZOOM);
-    vo_dx = (vo_screenwidth - d_width) / 2;
-    vo_dy = (vo_screenheight - d_height) / 2;
-    geometry(&vo_dx, &vo_dy, &d_width, &d_height, vo_screenwidth,
-             vo_screenheight);
-    vo_dx += xinerama_x;
-    vo_dy += xinerama_y;
-    vo_dwidth = d_width;
-    vo_dheight = d_height;
 
     r = (vo_colorkey & 0x00ff0000) >> 16;
     g = (vo_colorkey & 0x0000ff00) >> 8;
@@ -181,15 +156,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 
     initialized = 1;
 
-#ifdef CONFIG_GUI
-    if (use_gui)
-        guiGetEvent(guiSetShVideo, 0);  // the GUI will set up / resize the window
-    else
-#endif
-    {
-        if (flags & VOFLAG_FULLSCREEN)
-            aspect(&dwidth, &dheight, A_ZOOM);
-
         XGetWindowAttributes(mDisplay, mRootWin, &attribs);
         mDepth = attribs.depth;
         if (mDepth != 15 && mDepth != 16 && mDepth != 24 && mDepth != 32)
@@ -204,19 +170,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
             vo_x11_create_vo_window(&vinfo, vo_dx, vo_dy, d_width, d_height,
                     flags, xWAttribs.colormap, "xmga", title);
             XChangeWindowAttributes(mDisplay, vo_window, xswamask, &xWAttribs);
-
-    }                           // !GUI
-
-    if ((flags & VOFLAG_FULLSCREEN) && (!WinID))
-    {
-        vo_dx = 0;
-        vo_dy = 0;
-        vo_dwidth = vo_screenwidth;
-        vo_dheight = vo_screenheight;
-        vo_fs = 1;
-    }
-
-    panscan_calc();
 
     mga_vid_config.colkey_on = 1;
     mga_vid_config.colkey_red = r;

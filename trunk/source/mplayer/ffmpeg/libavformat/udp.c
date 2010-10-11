@@ -25,6 +25,7 @@
  */
 
 #define _BSD_SOURCE     /* Needed for using struct ip_mreq with recent glibc */
+#define _DARWIN_C_SOURCE /* Needed for using IP_MULTICAST_TTL on OS X */
 #include "avformat.h"
 #include <unistd.h>
 #include "internal.h"
@@ -39,12 +40,6 @@
 #define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
 #define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
 #endif
-#ifndef IN_MULTICAST
-#define IN_MULTICAST(a) ((((uint32_t)(a)) & 0xf0000000) == 0xe0000000)
-#endif
-#ifndef IN6_IS_ADDR_MULTICAST
-#define IN6_IS_ADDR_MULTICAST(a) (((uint8_t *) (a))[0] == 0xff)
-#endif
 
 typedef struct {
     int udp_fd;
@@ -55,6 +50,7 @@ typedef struct {
     int reuse_socket;
     struct sockaddr_storage dest_addr;
     int dest_addr_len;
+    int is_connected;
 } UDPContext;
 
 #define UDP_TX_BUF_SIZE 32768
@@ -182,20 +178,6 @@ static int udp_set_url(struct sockaddr_storage *addr,
     return addr_len;
 }
 
-static int is_multicast_address(struct sockaddr_storage *addr)
-{
-    if (addr->ss_family == AF_INET) {
-        return IN_MULTICAST(ntohl(((struct sockaddr_in *)addr)->sin_addr.s_addr));
-    }
-#if HAVE_STRUCT_SOCKADDR_IN6
-    if (addr->ss_family == AF_INET6) {
-        return IN6_IS_ADDR_MULTICAST(&((struct sockaddr_in6 *)addr)->sin6_addr);
-    }
-#endif
-
-    return 0;
-}
-
 static int udp_socket_create(UDPContext *s,
                              struct sockaddr_storage *addr, int *addr_len)
 {
@@ -273,7 +255,7 @@ int udp_set_remote_url(URLContext *h, const char *uri)
     if (s->dest_addr_len < 0) {
         return AVERROR(EIO);
     }
-    s->is_multicast = is_multicast_address(&s->dest_addr);
+    s->is_multicast = ff_is_multicast_address((struct sockaddr*) &s->dest_addr);
 
     return 0;
 }
@@ -344,6 +326,9 @@ static int udp_open(URLContext *h, const char *uri, int flags)
         if (find_info_tag(buf, sizeof(buf), "buffer_size", p)) {
             s->buffer_size = strtol(buf, NULL, 10);
         }
+        if (find_info_tag(buf, sizeof(buf), "connect", p)) {
+            s->is_connected = strtol(buf, NULL, 10);
+        }
     }
 
     /* fill the dest addr */
@@ -412,6 +397,12 @@ static int udp_open(URLContext *h, const char *uri, int flags)
         /* make the socket non-blocking */
         ff_socket_nonblock(udp_fd, 1);
     }
+    if (s->is_connected) {
+        if (connect(udp_fd, (struct sockaddr *) &s->dest_addr, s->dest_addr_len)) {
+            av_log(NULL, AV_LOG_ERROR, "connect: %s\n", strerror(errno));
+            goto fail;
+        }
+    }
 
     s->udp_fd = udp_fd;
     return 0;
@@ -463,13 +454,16 @@ static int udp_write(URLContext *h, const uint8_t *buf, int size)
     int ret;
 
     for(;;) {
-        ret = sendto (s->udp_fd, buf, size, 0,
-                      (struct sockaddr *) &s->dest_addr,
-                      s->dest_addr_len);
+        if (!s->is_connected) {
+            ret = sendto (s->udp_fd, buf, size, 0,
+                          (struct sockaddr *) &s->dest_addr,
+                          s->dest_addr_len);
+        } else
+            ret = send(s->udp_fd, buf, size, 0);
         if (ret < 0) {
             if (ff_neterrno() != FF_NETERROR(EINTR) &&
                 ff_neterrno() != FF_NETERROR(EAGAIN))
-                return AVERROR(EIO);
+                return ff_neterrno();
         } else {
             break;
         }

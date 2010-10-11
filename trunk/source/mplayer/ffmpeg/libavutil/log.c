@@ -33,6 +33,7 @@
 static
 #endif
 int av_log_level = AV_LOG_INFO;
+static int flags;
 
 #if defined(_WIN32) && !defined(__MINGW32CE__)
 #include <windows.h>
@@ -85,7 +86,7 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
     static int print_prefix=1;
     static int count;
     static char line[1024], prev[1024];
-    static int detect_repeats;
+    static int is_atty;
     AVClass* avc= ptr ? *(AVClass**)ptr : NULL;
     if(level>av_log_level)
         return;
@@ -106,12 +107,13 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
     print_prefix= line[strlen(line)-1] == '\n';
 
 #if HAVE_ISATTY
-    if(!detect_repeats) detect_repeats= isatty(2) ? 1 : -1;
+    if(!is_atty) is_atty= isatty(2) ? 1 : -1;
 #endif
 
-    if(print_prefix && detect_repeats==1 && !strcmp(line, prev)){
+    if(print_prefix && (flags & AV_LOG_SKIP_REPEATED) && !strcmp(line, prev)){
         count++;
-        fprintf(stderr, "    Last message repeated %d times\r", count);
+        if(is_atty==1)
+            fprintf(stderr, "    Last message repeated %d times\r", count);
         return;
     }
     if(count>0){
@@ -148,6 +150,11 @@ int av_log_get_level(void)
 void av_log_set_level(int level)
 {
     av_log_level = level;
+}
+
+void av_log_set_flags(int arg)
+{
+    flags= arg;
 }
 
 void av_log_set_callback(void (*callback)(void*, int, const char*, va_list))

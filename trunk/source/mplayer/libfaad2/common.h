@@ -23,7 +23,7 @@
 ** For more info contact Ahead Software through Mpeg4AAClicense@nero.com.
 **
 ** Initially modified for use with MPlayer by Arpad Gereöffy on 2003/08/30
-** $Id: common.h 32335 2010-09-21 13:04:05Z diego $
+** $Id: common.h 32391 2010-09-27 18:37:43Z reimar $
 ** detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
 ** local_changes.diff contains the exact changes to this file.
 **/
@@ -317,7 +317,7 @@ char *strchr(), *strrchr();
         }
         return i;
     }
-  #elif (defined(__i386__) && defined(__GNUC__))
+  #elif (defined(__i386__) && defined(__GNUC__)) && __STDC_VERSION__ < 199901L
     #define HAS_LRINTF
     // from http://www.stereopsis.com/FPU.html
     static INLINE int lrintf(float f)

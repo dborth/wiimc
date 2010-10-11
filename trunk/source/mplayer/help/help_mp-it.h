@@ -2,7 +2,7 @@
 // Updated by: Roberto Togni <see AUTHORS for email address>
 // Updated by: PaulTT <see AUTHORS for email address>
 
-// Updated to help_mp-en.h r31938
+// Updated to help_mp-en.h r32397
 
 
 // ========================= MPlayer help ===========================
@@ -178,9 +178,12 @@ static const char help_text[]=
 #define MSGTR_DvdnavNavSpuClutChange "DVDNAV Evento: Nav Cambio CLUT SPU\n"
 #define MSGTR_DvdnavNavSeekDone "DVDNAV Evento: Nev Ricerca eseguita\n"
 #define MSGTR_MenuCall "Chiamata a Menu\n"
+#define MSGTR_MasterQuit "Opzione -udp-slave: in chiusura causata dalla chiusura del master\n"
+#define MSGTR_InvalidIP "Opzione -udp-ip: indirizzo IP non valido\n"
 
 // --- edit decision lists
 #define MSGTR_EdlOutOfMem "Non posso allocare abbastanza memoria per i dati EDL.\n"
+#define MSGTR_EdlOutOfMemFile "Non posso allocare abbastanza memoria per il nome file EDL [%s].\n"
 #define MSGTR_EdlRecordsNo "Lette azioni EDL %d.\n"
 #define MSGTR_EdlQueueEmpty "Non ci sono azioni EDL di cui curarsi.\n"
 #define MSGTR_EdlCantOpenForWrite "Non posso aprire il file EDL [%s] per la scrittura.\n"
@@ -1197,7 +1200,7 @@ static const char help_text[]=
 #define MSGTR_AO_SGI_CantSetParms_Samplerate "[AO SGI] init: setparams fallito: %s\nNon posso impostare il samplerate voluto.\n"
 #define MSGTR_AO_SGI_CantSetAlRate "[AO SGI] init: AL_RATE non è stato accettato dalla risorsa.\n"
 #define MSGTR_AO_SGI_CantGetParms "[AO SGI] init: getparams fallito: %s\n"
-#define MSGTR_AO_SGI_SampleRateInfo "[AO SGI] init: il samplerate ora è %lf (la frequenza voluta è %lf)\n"
+#define MSGTR_AO_SGI_SampleRateInfo "[AO SGI] init: il samplerate ora è %f (la frequenza voluta è %f)\n"
 #define MSGTR_AO_SGI_InitConfigError "[AO SGI] init: %s\n"
 #define MSGTR_AO_SGI_InitOpenAudioFailed "[AO SGI] init: Non posso apire il canale audio: %s\n"
 #define MSGTR_AO_SGI_Uninit "[AO SGI] uninit: ...\n"

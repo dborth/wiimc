@@ -80,10 +80,10 @@ msgid "Settings"
 msgstr "Nastavenia"
 
 msgid "On"
-msgstr "On"
+msgstr "Zap."
 
 msgid "Off"
-msgstr "Off"
+msgstr "Vyp."
 
 msgid "Always"
 msgstr "Stále"
@@ -152,7 +152,7 @@ msgid "Settings - Global"
 msgstr "Nastavenia - Globálne"
 
 msgid "Settings - Videos"
-msgstr "Nastavenia - Video"
+msgstr "Nastavenia - Videá"
 
 msgid "Settings - Music"
 msgstr "Nastavenia - Hudba"
@@ -215,7 +215,7 @@ msgid "Aspect Ratio"
 msgstr "Pomer strán"
 
 msgid "Cache Fill"
-msgstr "Naplnenie cache"
+msgstr "Naplnenie vyrovnávacej pamäte"
 
 msgid "Audio Delay"
 msgstr "Oneskorenie zvuku"
@@ -227,7 +227,7 @@ msgid "Videos Files Folder"
 msgstr "Adresár s videami"
 
 msgid "Play Order"
-msgstr "Hrací poriadok"
+msgstr "Režim prehrávania"
 
 msgid "Music Files Folder"
 msgstr "Adresár s hudbou"
@@ -305,7 +305,7 @@ msgid "Start Slideshow"
 msgstr "Spustiť prezentáciu"
 
 msgid "Slideshow Delay"
-msgstr "Omeškanie prezentácie"
+msgstr "Ďalší obrázok za"
 
 msgid "Online Media Folder"
 msgstr "Adresár online multimédií"
@@ -473,10 +473,10 @@ msgid "This software is open source and may be copied, distributed, or modified 
 msgstr "Tento softvér je open source a môže byť kopírovaný, rozširovaný, alebo zmenený za podmienok licencie GNU General Public License (GPL) verzia 2."
 
 msgid "Menu artwork"
-msgstr "Vizualizáia Menu"
+msgstr "Vizualizácia Menu"
 
 msgid "Coding"
-msgstr "Kódovanie"
+msgstr "Programovanie"
 
 msgid "Coding & menu design"
 msgstr "Kódovanie & design menu"
@@ -587,7 +587,7 @@ msgid "Green"
 msgstr "Zelená"
 
 msgid "Grey"
-msgstr "Hnedá"
+msgstr "Sivá"
 
 msgid "Orange"
 msgstr "Oranžová"

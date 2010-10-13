@@ -2812,7 +2812,7 @@ m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
 #ifdef CONFIG_ASS
-//m_config_set_option(mconfig,"ass","1");
+m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2");
 #endif
 SetMPlayerSettings();
@@ -2870,7 +2870,6 @@ if (!common_init())
       }
     }
     }
-
   print_version("MPlayer");
     if (!common_init())
         exit_player_with_rc(EXIT_NONE, 0);

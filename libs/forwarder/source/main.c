@@ -52,17 +52,17 @@ int main(int argc, char **argv)
 	devoptab_list[STD_ERR] = &phony_out; // to keep libntfs happy
 
 	// only reload IOS if AHBPROT is not enabled
-	u32 version = IOS_GetVersion();
-	s32 preferred = IOS_GetPreferredVersion();
+//	u32 version = IOS_GetVersion();
+//	s32 preferred = IOS_GetPreferredVersion();
 
-	if(version != 58 && preferred > 0 && version != (u32)preferred && have_hw_access() != 1)
-		IOS_ReloadIOS(preferred);
+//	if(version != 58 && preferred > 0 && version != (u32)preferred && have_hw_access() != 1)
+//		IOS_ReloadIOS(preferred);
 
 	InitVideo();
 
 	u8 *bg;
 	int bgWidth, bgHeight;
-	int a,i,j;
+	int a;//i,j;
 
 	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
 		bg = DecodePNG(background_wide_png, &bgWidth, &bgHeight);
@@ -75,31 +75,27 @@ int main(int argc, char **argv)
 		Menu_Render();
 	}
 
-	// mount devices and look for file
-	MountAllDevices();
 	char filepath[1024] = { 0 };
 	FILE *fp = NULL;
 
-	for(i=0; i < 2; i++)
+	// mount devices and look for app path
+	FindAppPath(filepath);
+	if(filepath[0]=='\0')
 	{
-		for(j=0; j < MAX_DEVICES; j++)
-		{
-			if(part[i][j].type == 0)
-				continue;
-
-			sprintf(filepath, "%s:/apps/wiimc/boot.dol", part[i][j].mount);
-			fp = fopen(filepath, "rb");
-			if(fp)
-				goto found;
-		}
+		StopGX();
+		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
+		exit(0);
 	}
+	strcat(filepath,"/boot.dol");
 
+	fp = fopen(filepath, "rb");
 	if(!fp)
 	{
 		StopGX();
 		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
+		exit(0);
 	}
-found:
+	
 	fseek (fp, 0, SEEK_END);
 	int len = ftell(fp);
 	fseek (fp, 0, SEEK_SET);
@@ -131,6 +127,7 @@ found:
 	}
 
 	StopGX();
+	VIDEO_WaitVSync();
 	VIDEO_WaitVSync();
 
 	u32 level;

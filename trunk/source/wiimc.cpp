@@ -42,7 +42,6 @@ extern char MPLAYER_CSSDIR[512];
 
 extern "C" {
 extern void __exception_setreload(int t);
-extern u32 __di_check_ahbprot(void);
 extern char *network_useragent;
 }
 
@@ -494,10 +493,7 @@ int main(int argc, char *argv[])
 {
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
-
-	if(__di_check_ahbprot())
-		DI_Init();
-
+	DI_Init();
 	WPAD_Init();
 	InitVideo();
 	USBStorage_Initialize(); // to set aside MEM2 area

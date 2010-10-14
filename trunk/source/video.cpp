@@ -85,11 +85,6 @@ void ResetVideo_Menu()
 
 	guOrtho(p,0,screenheight-1,0,screenwidth-1,0,300);
 	GX_LoadProjectionMtx(p, GX_ORTHOGRAPHIC);
-
-	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
-	GX_SetColorUpdate(GX_TRUE);
-
-	GX_Flush();
 }
 
 /****************************************************************************
@@ -116,7 +111,8 @@ void StopGX()
 void Menu_Render()
 {
 	whichfb ^= 1; // flip framebuffer
-	
+	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
+	GX_SetColorUpdate(GX_TRUE);
 	GX_CopyDisp(xfb[whichfb],GX_TRUE);
 	GX_DrawDone();
 	VIDEO_WaitVSync();

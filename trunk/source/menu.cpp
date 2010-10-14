@@ -2056,6 +2056,42 @@ static void MenuBrowse(int menu)
 	ResumeGui();
 
 	// populate initial directory listing
+
+	// check if USB drive is not yet mounted - delay if not
+	static bool firstLoad = true;
+	if(firstLoad && strncmp(browser.dir, "usb", 3) == 0 && !ChangeInterface(browser.dir, false))
+	{
+		firstLoad = false; // only do this on initial application load
+		
+		// wait to see if USB mounts soon
+		int progsleep = 400000;
+
+		while(progsleep > 0 && !guiShutdown)
+		{
+			if(ChangeInterface(browser.dir, false))
+				break;
+			usleep(THREAD_SLEEP);
+			progsleep -= THREAD_SLEEP;
+		}
+
+		// still not mounted - wait an additional 8 seconds
+		if(!ChangeInterface(browser.dir, false))
+		{
+			mainWindow->Append(disabled);
+			mainWindow->SetState(STATE_DISABLED);
+			ShowAction("Loading...");
+			u64 start = gettime();
+			usleep(THREAD_SLEEP);
+
+			while(diff_sec(start, gettime()) < 8 && !guiShutdown)
+			{
+				if(ChangeInterface(browser.dir, false))
+					break;
+				usleep(THREAD_SLEEP);
+			}
+		}
+	}
+
 	if(strncmp(browser.dir, "http:", 5) == 0)
 	{
 		mainWindow->Append(disabled);

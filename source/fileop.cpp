@@ -462,9 +462,9 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 	}
 
 	strcpy(part[device][*devnum].mount, mount);
-	part[device][*devnum].type = type;
 	part[device][*devnum].interface = disc;
 	part[device][*devnum].sector = sector;
+	part[device][*devnum].type = type;
 	++*devnum;
 }
 
@@ -700,19 +700,19 @@ static void UnmountPartitions(int device)
 	{
 		if(part[device][i].type == T_FAT)
 		{
+			part[device][i].type = 0;
 			sprintf(mount, "%s:", part[device][i].mount);
 			fatUnmount(mount);
 		}
 		else if(part[device][i].type == T_NTFS)
 		{
+			part[device][i].type = 0;
 			ntfsUnmount(part[device][i].mount, false);
 		}
-
 		part[device][i].name[0] = 0;
 		part[device][i].mount[0] = 0;
 		part[device][i].sector = 0;
 		part[device][i].interface = NULL;
-		part[device][i].type = 0;
 	}
 }
 

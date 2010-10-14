@@ -34,35 +34,17 @@ const devoptab_t phony_out =
 { "stdout",0,NULL,NULL,__out_write,
   NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL, NULL,0,NULL,NULL,NULL,NULL,NULL };
 
-#define HW_REG_BASE   0xcd800000
-#define HW_ARMIRQMASK (HW_REG_BASE + 0x03c)
-#define HW_ARMIRQFLAG (HW_REG_BASE + 0x038)
-
-int have_hw_access()
-{
-	if((*(volatile unsigned int*)HW_ARMIRQMASK)&&(*(volatile unsigned int*)HW_ARMIRQFLAG))
-		return 1;
-  return 0;
-}
-
 int main(int argc, char **argv)
 {
 	void *buffer = (void *)0x92000000;
 	devoptab_list[STD_OUT] = &phony_out; // to keep libntfs happy
 	devoptab_list[STD_ERR] = &phony_out; // to keep libntfs happy
 
-	// only reload IOS if AHBPROT is not enabled
-//	u32 version = IOS_GetVersion();
-//	s32 preferred = IOS_GetPreferredVersion();
-
-//	if(version != 58 && preferred > 0 && version != (u32)preferred && have_hw_access() != 1)
-//		IOS_ReloadIOS(preferred);
-
 	InitVideo();
 
 	u8 *bg;
 	int bgWidth, bgHeight;
-	int a;//i,j;
+	int a,i,j;
 
 	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
 		bg = DecodePNG(background_wide_png, &bgWidth, &bgHeight);
@@ -75,27 +57,31 @@ int main(int argc, char **argv)
 		Menu_Render();
 	}
 
+	// mount devices and look for file
+	MountAllDevices();
 	char filepath[1024] = { 0 };
 	FILE *fp = NULL;
 
-	// mount devices and look for app path
-	FindAppPath(filepath);
-	if(filepath[0]=='\0')
+	for(i=0; i < 2; i++)
 	{
-		StopGX();
-		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
-		exit(0);
-	}
-	strcat(filepath,"/boot.dol");
+		for(j=0; j < MAX_DEVICES; j++)
+		{
+			if(part[i][j].type == 0)
+				continue;
 
-	fp = fopen(filepath, "rb");
+			sprintf(filepath, "%s:/apps/wiimc/boot.dol", part[i][j].mount);
+			fp = fopen(filepath, "rb");
+			if(fp)
+				goto found;
+		}
+	}
+
 	if(!fp)
 	{
 		StopGX();
 		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
-		exit(0);
 	}
-	
+found:
 	fseek (fp, 0, SEEK_END);
 	int len = ftell(fp);
 	fseek (fp, 0, SEEK_SET);
@@ -116,9 +102,13 @@ int main(int argc, char **argv)
 	args.argv = &args.commandLine;
 	args.endARGV = args.argv + 1;
 
-	u32 exeEntryPointAddress = load_dol_image(buffer, &args);
-
-	entrypoint exeEntryPoint = (entrypoint) exeEntryPointAddress;
+	entrypoint exeEntryPoint = (entrypoint)load_dol_image(buffer, &args);
+	
+	if(!exeEntryPoint)
+	{
+		StopGX();
+		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
+	}
 
 	for(a = 255; a >= 0; a-=15)
 	{

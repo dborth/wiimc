@@ -15,8 +15,6 @@
 #include <fat.h>
 #include <sdcard/wiisd_io.h>
 #include <ogc/usbstorage.h>
-#include <sys/dir.h>
-
 
 #include "fileop.h"
 
@@ -465,46 +463,6 @@ static bool MountPartitions(int device)
 		return true;
 
 	return false;
-}
-
-
-void FindAppPath(char *appPath)
-{
-	char filepath[MAXPATHLEN];
-	DIR_ITER *dir;
-	int m;
-
-	if(sd->startup() && sd->isInserted())
-	{
-		MountPartitions(DEVICE_SD);
-		
-		sprintf(filepath, "sd1:/apps/wiimc");
-		dir = diropen(filepath);
-		if(dir)
-		{
-			dirclose(dir);
-			strcpy(appPath, filepath);
-			return;
-		}
-				
-	}
-
-	if(usb->startup() && usb->isInserted())
-	{
-		MountPartitions(DEVICE_USB);
-			
-		for(m=1; m<6; m++)
-		{
-			sprintf(filepath, "usb%d:/apps/wiimc", m);
-			dir = diropen(filepath);
-			if(dir)
-			{
-				dirclose(dir);
-				strcpy(appPath, filepath);
-				return;
-			}			
-		}
-	}
 }
 
 void MountAllDevices()

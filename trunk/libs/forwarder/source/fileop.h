@@ -30,5 +30,7 @@ extern DEVICE_STRUCT part[2][MAX_DEVICES];
 
 void MountAllDevices();
 void UnmountAllDevices();
+void FindAppPath(char *appPath);
+
 
 #endif

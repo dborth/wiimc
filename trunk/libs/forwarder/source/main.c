@@ -58,12 +58,14 @@ int main(int argc, char **argv)
 	}
 
 	// mount devices and look for file
-	MountAllDevices();
 	char filepath[1024] = { 0 };
 	FILE *fp = NULL;
 
 	for(i=0; i < 2; i++)
 	{
+		if(!MountDevice(i))
+			continue;
+
 		for(j=0; j < MAX_DEVICES; j++)
 		{
 			if(part[i][j].type == 0)

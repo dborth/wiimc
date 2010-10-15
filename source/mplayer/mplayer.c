@@ -3727,7 +3727,7 @@ if(!mpctx->sh_video) goto main; // audio-only
 
 #ifdef GEKKO
 // check if video has a higher resolution than the Wii can handle
-if(mpctx->sh_video->disp_w > 1280)
+if(mpctx->sh_video->disp_w > 1280 || mpctx->sh_video->disp_h > 720)
 {
 	wii_error = 1; // resolution too large
 	goto goto_next_file;

@@ -30,8 +30,6 @@
 #include "wiimc.h"
 #include "settings.h"
 
-
-//#include "mplayer/config.h"
 extern char MPLAYER_DATADIR[512]; 
 extern char MPLAYER_CONFDIR[512]; 
 extern char MPLAYER_LIBDIR[512]; 

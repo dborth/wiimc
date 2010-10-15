@@ -67,14 +67,15 @@ int mplayerheight = 480;
 /*** 3D GX ***/
 
 /*** Texture memory ***/
-static u8 *Yltexture = NULL;
-static u8 *Yrtexture = NULL;
-static u8 *Utexture = NULL;
-static u8 *Vtexture = NULL;
+static u8 *Yltexture[2] = {NULL, NULL};
+static u8 *Yrtexture[2] = {NULL, NULL};
+static u8 *Utexture[2] = {NULL, NULL};
+static u8 *Vtexture[2] = {NULL, NULL};
+static int whichtext=0;
 
 static u32 Yltexsize,Yrtexsize,UVtexsize;
 
-static GXTexObj YltexObj,YrtexObj,UtexObj,VtexObj;
+static GXTexObj YltexObj[2],YrtexObj[2],UtexObj[2],VtexObj[2];
 static u16 Ylwidth, Yrwidth, Ywidth, Yheight, UVwidth, UVheight;
 
 static Mtx view;
@@ -372,15 +373,23 @@ static void draw_initYUV(void)
 	GX_SetArray(GX_VA_TEX2, texcoordsUV, 2 * sizeof(u8));
 
 	//init YUV texture objects
-	GX_InitTexObj(&YltexObj, Yltexture, (u16) Ylwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&YltexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&YrtexObj, Yrtexture, (u16) Yrwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&YrtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&UtexObj, Utexture, (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&UtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&VtexObj, Vtexture, (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&VtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&YltexObj[0], Yltexture[0], (u16) Ylwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&YltexObj[0], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&YrtexObj[0], Yrtexture[0], (u16) Yrwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&YrtexObj[0], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&UtexObj[0], Utexture[0], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&UtexObj[0], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&VtexObj[0], Vtexture[0], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&VtexObj[0], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
 
+	GX_InitTexObj(&YltexObj[1], Yltexture[1], (u16) Ylwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&YltexObj[1], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&YrtexObj[1], Yrtexture[1], (u16) Yrwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&YrtexObj[1], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&UtexObj[1], Utexture[1], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&UtexObj[1], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&VtexObj[1], Vtexture[1], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&VtexObj[1], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
 }
 
 //------- rodries change: to avoid image_buffer intermediate ------
@@ -474,33 +483,34 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 void GX_UpdatePitch(u16 *pitch)
 {
 	//black
-	memset(Yltexture, 0, Yltexsize);
-	memset(Yrtexture, 0, Yrtexsize);
-	memset(Utexture, 0x80, UVtexsize);
-	memset(Vtexture, 0x80, UVtexsize);
+	memset(Yltexture[0], 0, 1024*1024);
+	memset(Yrtexture[0], 0, 1024*1024);
+	memset(Utexture[0], 0x80, 1024*512);
+	memset(Vtexture[0], 0x80, 1024*512);
+	memset(Yltexture[1], 0, 1024*1024);
+	memset(Yrtexture[1], 0, 1024*1024);
+	memset(Utexture[1], 0x80, 1024*512);
+	memset(Vtexture[1], 0x80, 1024*512);
 	GX_ConfigTextureYUV(vo_dwidth, vo_dheight, pitch);
 }
 
 inline void DrawMPlayer()
 {
-	u8 clear=GX_TRUE;
-	DCStoreRangeNoSync(Yltexture, Yltexsize);
-	DCStoreRangeNoSync(Yrtexture, Yrtexsize);
-	DCStoreRangeNoSync(Utexture, UVtexsize);
-	DCStoreRangeNoSync(Vtexture, UVtexsize);
-
 	if(need_wait)
 		GX_WaitDrawDone();
-
-	whichfb ^=1;
-
+	
+	DCFlushRange(Yltexture[whichtext], Yltexsize);
+	DCFlushRange(Yrtexture[whichtext], Yrtexsize);
+	DCFlushRange(Utexture[whichtext], UVtexsize);
+	DCFlushRange(Vtexture[whichtext], UVtexsize);
+	
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
 
-	GX_LoadTexObj(&YltexObj, GX_TEXMAP0);	// MAP0 <- Yl
-	GX_LoadTexObj(&YrtexObj, GX_TEXMAP1);	// MAP1 <- Yr
-	GX_LoadTexObj(&UtexObj, GX_TEXMAP2);	// MAP2 <- U
-	GX_LoadTexObj(&VtexObj, GX_TEXMAP3);	// MAP3 <- V
+	GX_LoadTexObj(&YltexObj[whichtext], GX_TEXMAP0);	// MAP0 <- Yl
+	GX_LoadTexObj(&YrtexObj[whichtext], GX_TEXMAP1);	// MAP1 <- Yr
+	GX_LoadTexObj(&UtexObj[whichtext], GX_TEXMAP2);	// MAP2 <- U
+	GX_LoadTexObj(&VtexObj[whichtext], GX_TEXMAP3);	// MAP3 <- V
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 		GX_Position1x8(0); GX_Color1x8(0); GX_TexCoord1x8(0); GX_TexCoord1x8(4); GX_TexCoord1x8(0);
@@ -534,11 +544,11 @@ inline void DrawMPlayer()
 		guOrtho(p, mplayerheight/2, -(mplayerheight/2), -(mplayerwidth/2), mplayerwidth/2, 10, 1000);
 		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
-		clear=GX_TRUE;
 	}
-	
-	GX_CopyDisp(xfb[whichfb], clear);
-
+	whichfb ^= 1; // flip framebuffer
+	whichtext ^= 1;
+	GX_CopyDisp(xfb[whichfb], GX_TRUE);
+	VIDEO_SetNextFramebuffer(xfb[whichfb]);
 	GX_SetDrawDone();
 	need_wait=true;
 }
@@ -546,12 +556,17 @@ inline void DrawMPlayer()
 void GX_AllocTextureMemory()
 {
 	//make memory fixed (max texture 1024*1024, gx can't manage more)
-	if(Yltexture) return;
+	if(Yltexture[0]) return;
 
-	Yltexture = (u8 *) memalign(32, 1024*1024);
-	Yrtexture = (u8 *) memalign(32, 1024*1024);
-	Utexture = (u8 *) memalign(32, 1024*512);
-	Vtexture = (u8 *) memalign(32, 1024*512);
+	Yltexture[0] = (u8 *) (mem2_memalign(32, 1024*1024, VIDEO_AREA));
+	Yrtexture[0] = (u8 *) (mem2_memalign(32, 1024*1024, VIDEO_AREA));
+	Utexture[0] = (u8 *) (mem2_memalign(32, 1024*512, VIDEO_AREA));
+	Vtexture[0] = (u8 *) (mem2_memalign(32, 1024*512, VIDEO_AREA));
+	
+	Yltexture[1] = (u8 *) (mem2_memalign(32, 1024*1024, VIDEO_AREA));
+	Yrtexture[1] = (u8 *) (mem2_memalign(32, 1024*1024, VIDEO_AREA));
+	Utexture[1] = (u8 *) (mem2_memalign(32, 1024*512, VIDEO_AREA));
+	Vtexture[1] = (u8 *) (mem2_memalign(32, 1024*512, VIDEO_AREA));
 }
 
 /****************************************************************************
@@ -595,11 +610,16 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	Yrtexsize = (wYr*h);
 	UVtexsize = (w*h)/4;
 	
-	memset(Yltexture, 0, 1024*1024);
-	memset(Yrtexture, 0, 1024*1024);
-	memset(Utexture, 0x80, 1024*512);
-	memset(Vtexture, 0x80, 1024*512);
+	memset(Yltexture[0], 0, 1024*1024);
+	memset(Yrtexture[0], 0, 1024*1024);
+	memset(Utexture[0], 0x80, 1024*512);
+	memset(Vtexture[0], 0x80, 1024*512);
 	
+	memset(Yltexture[1], 0, 1024*1024);
+	memset(Yrtexture[1], 0, 1024*1024);
+	memset(Utexture[1], 0x80, 1024*512);
+	memset(Vtexture[1], 0x80, 1024*512);
+
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	GX_SetCullMode(GX_CULL_NONE);
 	GX_SetClipMode(GX_DISABLE);
@@ -707,12 +727,12 @@ void GX_RenderTexture()
 
 void GX_ResetTextureYUVPointers()
 {
-	Yldst = (u64 *) Yltexture;
-	Yrdst = (u64 *) (Yrtexture + 32); //first tile should be blank
-	Udst = (u64 *) Utexture;
-	Vdst = (u64 *) Vtexture;
+	Yldst = (u64 *) Yltexture[whichtext];
+	Yrdst = (u64 *) (Yrtexture[whichtext] + 32); //first tile should be blank
+	Udst = (u64 *) Utexture[whichtext];
+	Vdst = (u64 *) Vtexture[whichtext];
 }
 
-u8* GetYtexture() {return Yltexture;}
+u8* GetYtexture() {return Yltexture[whichtext];}
 int GetYrowpitch() {return Yrowpitch;}
 int GetYrowpitchDf() {return Yrowpitch+df1;}

@@ -499,8 +499,10 @@ int main(int argc, char *argv[])
 	USBStorage_Initialize(); // to set aside MEM2 area
 	
 	u32 size = 	(8*1024*1024) + // cache
+			( ((1024*1024*2) + (1024*512*2)) * 2) + // textures
 			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
+			(VIDEO_GetFrameBufferSize(vmode)*2) + //video buffers
 			(1024); // padding
 	AddMem2Area (size, VIDEO_AREA);
 	AddMem2Area (6*1024*1024, GUI_AREA);

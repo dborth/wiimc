@@ -109,11 +109,12 @@ void StopGX()
  * Renders everything current sent to GX, and flushes video
  ***************************************************************************/
 void Menu_Render()
-{
+{	
 	whichfb ^= 1; // flip framebuffer
 	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	GX_SetColorUpdate(GX_TRUE);
 	GX_CopyDisp(xfb[whichfb],GX_TRUE);
+	VIDEO_SetNextFramebuffer(xfb[whichfb]);
 	GX_DrawDone();
 	VIDEO_WaitVSync();
 
@@ -234,8 +235,7 @@ int DrawMPlayerGui()
  ***************************************************************************/
 void Draw_VIDEO()
 {
-	VIDEO_SetNextFramebuffer(xfb[whichfb]);
-	VIDEO_Flush();
+	VIDEO_Flush();	
 }
 
 void
@@ -289,6 +289,10 @@ InitVideo2 ()
 	xfb[0] = (u32 *)MEM_K0_TO_K1(0x90002000); 
 	xfb[1] = (u32 *)MEM_K0_TO_K1(0x90002000 + (640*574*2)); 
 
+	//xfb[0] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));
+	//xfb[1] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));
+
+	
 	// Clear framebuffers etc.
 	VIDEO_ClearFrameBuffer (vmode, xfb[0], COLOR_BLACK);
 	VIDEO_ClearFrameBuffer (vmode, xfb[1], COLOR_BLACK);
@@ -305,8 +309,7 @@ InitVideo2 ()
 
 	// Initialize GX
 	GXColor background = { 0, 0, 0, 0xff };
-	gp_fifo=(unsigned char *)(((u32)SYS_GetArena1Hi() - DEFAULT_FIFO_SIZE - 0x1f) &~0x1f);
-	SYS_SetArena1Hi((void *)gp_fifo);
+	gp_fifo=(unsigned char *)memalign(32,DEFAULT_FIFO_SIZE);
 	memset (gp_fifo, 0, DEFAULT_FIFO_SIZE);
 	GX_Init (gp_fifo, DEFAULT_FIFO_SIZE);
 	GX_SetCopyClear (background, 0x00ffffff);

@@ -109,7 +109,7 @@ void StopGX()
  * Renders everything current sent to GX, and flushes video
  ***************************************************************************/
 void Menu_Render()
-{	
+{
 	whichfb ^= 1; // flip framebuffer
 	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	GX_SetColorUpdate(GX_TRUE);
@@ -235,7 +235,7 @@ int DrawMPlayerGui()
  ***************************************************************************/
 void Draw_VIDEO()
 {
-	VIDEO_Flush();	
+	VIDEO_Flush();
 }
 
 void
@@ -289,10 +289,6 @@ InitVideo2 ()
 	xfb[0] = (u32 *)MEM_K0_TO_K1(0x90002000); 
 	xfb[1] = (u32 *)MEM_K0_TO_K1(0x90002000 + (640*574*2)); 
 
-	//xfb[0] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));
-	//xfb[1] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));
-
-	
 	// Clear framebuffers etc.
 	VIDEO_ClearFrameBuffer (vmode, xfb[0], COLOR_BLACK);
 	VIDEO_ClearFrameBuffer (vmode, xfb[1], COLOR_BLACK);

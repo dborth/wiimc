@@ -465,29 +465,35 @@ static bool MountPartitions(int device)
 	return false;
 }
 
-void MountAllDevices()
+bool MountDevice(int device)
 {
-	if(sd->startup() && sd->isInserted())
+	if(device == DEVICE_SD)
 	{
-		MountPartitions(DEVICE_SD);
-		return;
-	}
-	
-	u64 start = gettime();
-
-	while (1)
-	{
-		usleep(250000); // 1/4 sec
-
-		if(usb->startup() && usb->isInserted())
+		if(sd->startup() && sd->isInserted())
 		{
-			MountPartitions(DEVICE_USB);
-			return;
+			MountPartitions(DEVICE_SD);
+			return true;
 		}
-
-		if(diff_sec(start, gettime()) > 10) // wait for 10 seconds for device init
-			break;
 	}
+	else
+	{
+		u64 start = gettime();
+
+		while (1)
+		{
+			usleep(250000); // 1/4 sec
+
+			if(usb->startup() && usb->isInserted())
+			{
+				MountPartitions(DEVICE_USB);
+				return true;
+			}
+
+			if(diff_sec(start, gettime()) > 10) // wait for 10 seconds for device init
+				break;
+		}
+	}
+	return false;
 }
 
 void UnmountAllDevices()

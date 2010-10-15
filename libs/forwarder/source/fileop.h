@@ -28,7 +28,7 @@ typedef struct
 
 extern DEVICE_STRUCT part[2][MAX_DEVICES];
 
-void MountAllDevices();
+bool MountDevice(int device);
 void UnmountAllDevices();
 
 #endif

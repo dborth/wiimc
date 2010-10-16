@@ -211,8 +211,8 @@ SECTIONS
 	_end = .;
 	PROVIDE(end = .);
 
- /* max video buffers 640x574x2 x 2 = 0x166C00  */
-	. = (0x90002000 + 0x166C00);
+ /* max textures = 0x32A000 (see gx_supp.c)  */
+	. = (0x90002000 + 0x32A000);
 
 	.bss       :
 	{

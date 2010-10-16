@@ -285,9 +285,8 @@ void
 InitVideo2 ()
 {
 	// Allocate the video buffers
-	//allocated at the beginning in mem2 (see wiimc.ld)
-	xfb[0] = (u32 *)MEM_K0_TO_K1(0x90002000); 
-	xfb[1] = (u32 *)MEM_K0_TO_K1(0x90002000 + (640*574*2)); 
+	xfb[0] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));		
+	xfb[1] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));
 
 	// Clear framebuffers etc.
 	VIDEO_ClearFrameBuffer (vmode, xfb[0], COLOR_BLACK);

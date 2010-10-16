@@ -3924,7 +3924,6 @@ playing_file=true;
 pause_low_cache=0;
 mpctx->eof=0;
 
-
 GetRelativeTime();
 total_time_usage_start=GetTimer();
 #endif

@@ -44,6 +44,10 @@
 #define HASPECT 320
 #define VASPECT 240
 
+#define MAX_WIDTH 1280
+#define MAX_HEIGHT 720
+
+
 static int drawMode = 0;
 
 void StartDrawThread();
@@ -377,14 +381,15 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 void GX_UpdatePitch(u16 *pitch)
 {
 	//black
-	memset(Yltexture[0], 0, 1024*1024);
-	memset(Yrtexture[0], 0, 1024*1024);
-	memset(Utexture[0], 0x80, 1024*512);
-	memset(Vtexture[0], 0x80, 1024*512);
-	memset(Yltexture[1], 0, 1024*1024);
-	memset(Yrtexture[1], 0, 1024*1024);
-	memset(Utexture[1], 0x80, 1024*512);
-	memset(Vtexture[1], 0x80, 1024*512);
+	memset(Yltexture[0], 0, 1024*MAX_HEIGHT);
+	memset(Yrtexture[0], 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
+	memset(Utexture[0], 0x80, 1024*(MAX_HEIGHT/2));
+	memset(Vtexture[0], 0x80, 1024*(MAX_HEIGHT/2));
+	
+	memset(Yltexture[1], 0, 1024*MAX_HEIGHT);
+	memset(Yrtexture[1], 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
+	memset(Utexture[1], 0x80, 1024*(MAX_HEIGHT/2));
+	memset(Vtexture[1], 0x80, 1024*(MAX_HEIGHT/2));
 	GX_ConfigTextureYUV(vo_dwidth, vo_dheight, pitch);
 }
 
@@ -440,7 +445,7 @@ inline void DrawMPlayer()
 		drawMode = 0;
 	}
 	whichfb ^= 1; // flip framebuffer
-	whichtext ^= 1;
+	
 	GX_CopyDisp(xfb[whichfb], GX_TRUE);
 	VIDEO_SetNextFramebuffer(xfb[whichfb]);
 	GX_SetDrawDone();
@@ -451,16 +456,27 @@ void GX_AllocTextureMemory()
 {
 	//make memory fixed (max texture 1024*1024, gx can't manage more)
 	if(Yltexture[0]) return;
-
-	Yltexture[0] = (u8 *) (mem2_memalign(32, 1024*1024, VIDEO_AREA));
-	Yrtexture[0] = (u8 *) (mem2_memalign(32, 1024*1024, VIDEO_AREA));
-	Utexture[0] = (u8 *) (mem2_memalign(32, 1024*512, VIDEO_AREA));
-	Vtexture[0] = (u8 *) (mem2_memalign(32, 1024*512, VIDEO_AREA));
+/*
+	Yltexture[0] = (u8 *) (mem2_memalign(32, 1024*MAX_HEIGHT, VIDEO_AREA));
+	Yrtexture[0] = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, VIDEO_AREA));
+	Utexture[0] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));
+	Vtexture[0] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));
 	
-	Yltexture[1] = (u8 *) (mem2_memalign(32, 1024*1024, VIDEO_AREA));
-	Yrtexture[1] = (u8 *) (mem2_memalign(32, 1024*1024, VIDEO_AREA));
-	Utexture[1] = (u8 *) (mem2_memalign(32, 1024*512, VIDEO_AREA));
-	Vtexture[1] = (u8 *) (mem2_memalign(32, 1024*512, VIDEO_AREA));
+	Yltexture[1] = (u8 *) (mem2_memalign(32, 1024*MAX_HEIGHT, VIDEO_AREA));
+	Yrtexture[1] = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, VIDEO_AREA));
+	Utexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));
+	Vtexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));
+*/
+	Yltexture[0] = (u8 *) (0x90002000);
+	Yrtexture[0] = (u8 *) (Yltexture[0] + (1024*MAX_HEIGHT));
+	Utexture[0] = (u8 *) (Yrtexture[0] + ((MAX_WIDTH-1024)*MAX_HEIGHT));
+	Vtexture[0] = (u8 *) (Utexture[0] + (1024*(MAX_HEIGHT/2)));
+
+	Yltexture[1] = (u8 *) (Vtexture[0] + (1024*(MAX_HEIGHT/2)));
+	Yrtexture[1] = (u8 *) (Yltexture[1] + (1024*MAX_HEIGHT));
+	Utexture[1] = (u8 *) (Yrtexture[1] + ((MAX_WIDTH-1024)*MAX_HEIGHT));
+	Vtexture[1] = (u8 *) (Utexture[1] + (1024*(MAX_HEIGHT/2)));
+	
 }
 
 /****************************************************************************
@@ -504,15 +520,15 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	Yrtexsize = (wYr*h);
 	UVtexsize = (w*h)/4;
 	
-	memset(Yltexture[0], 0, 1024*1024);
-	memset(Yrtexture[0], 0, 1024*1024);
-	memset(Utexture[0], 0x80, 1024*512);
-	memset(Vtexture[0], 0x80, 1024*512);
+	memset(Yltexture[0], 0, 1024*MAX_HEIGHT);
+	memset(Yrtexture[0], 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
+	memset(Utexture[0], 0x80, 1024*(MAX_HEIGHT/2));
+	memset(Vtexture[0], 0x80, 1024*(MAX_HEIGHT/2));
 	
-	memset(Yltexture[1], 0, 1024*1024);
-	memset(Yrtexture[1], 0, 1024*1024);
-	memset(Utexture[1], 0x80, 1024*512);
-	memset(Vtexture[1], 0x80, 1024*512);
+	memset(Yltexture[1], 0, 1024*MAX_HEIGHT);
+	memset(Yrtexture[1], 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
+	memset(Utexture[1], 0x80, 1024*(MAX_HEIGHT/2));
+	memset(Vtexture[1], 0x80, 1024*(MAX_HEIGHT/2));
 
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	GX_SetCullMode(GX_CULL_NONE);
@@ -621,6 +637,8 @@ void GX_RenderTexture()
 
 void GX_ResetTextureYUVPointers()
 {
+	whichtext ^= 1;
+
 	Yldst = (u64 *) Yltexture[whichtext];
 	Yrdst = (u64 *) (Yrtexture[whichtext] + 32); //first tile should be blank
 	Udst = (u64 *) Utexture[whichtext];

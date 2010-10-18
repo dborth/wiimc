@@ -3140,6 +3140,7 @@ pause_low_cache=1;
 
 #endif
 	
+	
 
 
   // init global sub numbers
@@ -3880,14 +3881,11 @@ if (mpctx->sh_video)
 	{
 	    force_load_font = 0;
 	    ReInitTTFLib();
-	    
 		load_font_ft(mpctx->sh_video->disp_w, mpctx->sh_video->disp_h, &vo_font, font_name, osd_font_scale_factor);
-		
 		prev_dxs = mpctx->sh_video->disp_w; prev_dys = mpctx->sh_video->disp_h;
 
 		if (mpctx->set_of_sub_size > 0)
 		{
-			printf("sub_font_name: %s\n",sub_font_name);
 			if (sub_font_name && strcmp(sub_font_name,font_name))
 				load_font_ft(prev_dxs, prev_dys, &sub_font, sub_font_name, text_font_scale_factor);
 			else
@@ -3898,8 +3896,7 @@ if (mpctx->sh_video)
 			sub_font = vo_font;
 		}
 	}
-	
-	}
+}
 #endif
 
 if (seek_to_sec) {
@@ -5137,7 +5134,7 @@ void wiiSetSubtitleColor(char *color)
 #ifdef CONFIG_ASS
 	if(!ass_enabled) return;
 
-	if(ass_color && strcmp(color, ass_color) == 0)	
+	if(ass_color && strcmp(color, ass_color) == 0)
 		return;
 
 	if(ass_color) free(ass_color);

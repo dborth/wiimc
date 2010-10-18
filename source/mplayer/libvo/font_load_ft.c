@@ -1178,9 +1178,7 @@ void load_font_ft(int width, int height, font_desc_t** fontp, const char *font_n
 
     // protection against vo_aa font hacks
     if (vo_font && !vo_font->dynamic) return;
-printf("f1: %f\n",font_scale_factor);
     if (vo_font) free_font_desc(vo_font);
-	printf("f2\n");
 
 #ifdef CONFIG_FONTCONFIG
     if (font_fontconfig > 0)
@@ -1214,7 +1212,6 @@ printf("f1: %f\n",font_scale_factor);
         mp_msg(MSGT_OSD, MSGL_ERR, MSGTR_LIBVO_FONT_LOAD_FT_FontconfigNoMatch);
     }
 #endif
-	printf("f3\n");
 
     *fontp=read_font_desc_ft(font_name, 0, width, height, font_scale_factor);
 }

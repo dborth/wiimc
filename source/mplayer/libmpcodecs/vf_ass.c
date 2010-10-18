@@ -43,12 +43,6 @@
 #include "ass_mp.h"
 #include "eosd.h"
 
-#ifdef GEKKO
-#include "../../utils/mem2_manager.h"
-#define malloc(x) mem2_malloc(x,OTHER_AREA)
-#define free(x) mem2_free(x,OTHER_AREA)
-#endif
-
 #define _r(c)  ((c)>>24)
 #define _g(c)  (((c)>>16)&0xFF)
 #define _b(c)  (((c)>>8)&0xFF)
@@ -57,6 +51,12 @@
 #define rgba2u(c)  ( ((-152*_r(c) - 298*_g(c) + 450*_b(c)) >> 10) + 128 )
 #define rgba2v(c)  ( (( 450*_r(c) - 376*_g(c) -  73*_b(c)) >> 10) + 128 )
 
+#ifdef GEKKO
+#include "../../utils/mem2_manager.h"
+#define malloc(x) mem2_malloc(x,OTHER_AREA)
+#define free(x) mem2_free(x,OTHER_AREA)
+#define strdup(x) mem2_strdup(x,OTHER_AREA)
+#endif
 
 static const struct vf_priv_s {
     int outh, outw;

@@ -28,12 +28,17 @@
 #include "font_load.h"
 #include "sub.h"
 #include "mp_msg.h"
-#include "../../utils/mem2_manager.h"
 
+#ifdef GEKKO
+#include "../../utils/mem2_manager.h"
+#define malloc(x) mem2_malloc(x,OTHER_AREA)
+#define free(x) mem2_free(x,OTHER_AREA)
+#define strdup(x) mem2_strdup(x,OTHER_AREA)
+#endif
 
 raw_file* load_raw(char *name,int verbose){
     int bpp;
-    raw_file* raw=mem2_malloc(sizeof(raw_file), OTHER_AREA);
+    raw_file* raw=malloc(sizeof(raw_file));
     unsigned char head[32];
     FILE *f=fopen(name,"rb");
     if(!f) goto err_out;                        // can't open
@@ -47,14 +52,14 @@ raw_file* load_raw(char *name,int verbose){
     if(raw->c>256) goto err_out;                 // too many colors!?
     mp_msg(MSGT_OSD, MSGL_DBG2, "RAW: %s  %d x %d, %d colors\n",name,raw->w,raw->h,raw->c);
     if(raw->c){
-        raw->pal=mem2_malloc(raw->c*3, OTHER_AREA);
+        raw->pal=malloc(raw->c*3);
         fread(raw->pal,3,raw->c,f);
         bpp=1;
     } else {
         raw->pal=NULL;
         bpp=3;
     }
-    raw->bmp=mem2_malloc(raw->h*raw->w*bpp, OTHER_AREA);
+    raw->bmp=malloc(raw->h*raw->w*bpp);
     fread(raw->bmp,raw->h*raw->w*bpp,1,f);
     fclose(f);
     return raw;
@@ -62,7 +67,7 @@ raw_file* load_raw(char *name,int verbose){
 err_out:
     if (f)
       fclose(f);
-    mem2_free(raw, OTHER_AREA);
+    free(raw);
     return NULL;
 }
 
@@ -80,13 +85,13 @@ int fontdb=-1;
 int version=0;
 int first=1;
 
-desc=mem2_malloc(sizeof(font_desc_t), OTHER_AREA);if(!desc) goto fail_out;
+desc=malloc(sizeof(font_desc_t));if(!desc) goto fail_out;
 memset(desc,0,sizeof(font_desc_t));
 
 f=fopen(fname,"rt");if(!f){ mp_msg(MSGT_OSD, MSGL_V, "font: can't open file: %s\n",fname); goto fail_out;}
 
 i = strlen (fname) - 9;
-if ((dn = mem2_malloc(i+1, OTHER_AREA))){
+if ((dn = malloc(i+1))){
    strncpy (dn, fname, i);
    dn[i]='\0';
 }
@@ -193,44 +198,44 @@ while(fgets(sor,1020,f)){
 #endif
       if(pdb==2 && strcmp(p[0],"alpha")==0){
     	  char *cp;
-	  if (!(cp=mem2_malloc(strlen(desc->fpath)+strlen(p[1])+2, OTHER_AREA))) goto fail_out;
+	  if (!(cp=malloc(strlen(desc->fpath)+strlen(p[1])+2))) goto fail_out;
 
 	  snprintf(cp,strlen(desc->fpath)+strlen(p[1])+2,"%s" FONT_PATH_SEP "%s",
 		desc->fpath,p[1]);
           if(!((desc->pic_a[fontdb]=load_raw(cp,verbose)))){
-		mem2_free(cp, OTHER_AREA);
-		if (!(cp=mem2_malloc(strlen(default_dir)+strlen(p[1])+2, OTHER_AREA)))
+		free(cp);
+		if (!(cp=malloc(strlen(default_dir)+strlen(p[1])+2)))
 		   goto fail_out;
 		snprintf(cp,strlen(default_dir)+strlen(p[1])+2,"%s" FONT_PATH_SEP "%s",
 			 default_dir,p[1]);
 		if (!((desc->pic_a[fontdb]=load_raw(cp,verbose)))){
 		   mp_msg(MSGT_OSD, MSGL_ERR, "Can't load font bitmap: %s\n",p[1]);
-		   mem2_free(cp, OTHER_AREA);
+		   free(cp);
 		   goto fail_out;
 		}
           }
-	  mem2_free(cp, OTHER_AREA);
+	  free(cp);
           continue;
       }
       if(pdb==2 && strcmp(p[0],"bitmap")==0){
     	  char *cp;
-	  if (!(cp=mem2_malloc(strlen(desc->fpath)+strlen(p[1])+2, OTHER_AREA))) goto fail_out;
+	  if (!(cp=malloc(strlen(desc->fpath)+strlen(p[1])+2))) goto fail_out;
 
 	  snprintf(cp,strlen(desc->fpath)+strlen(p[1])+2,"%s" FONT_PATH_SEP "%s",
 		desc->fpath,p[1]);
           if(!((desc->pic_b[fontdb]=load_raw(cp,verbose)))){
-		mem2_free(cp, OTHER_AREA);
-		if (!(cp=mem2_malloc(strlen(default_dir)+strlen(p[1])+2, OTHER_AREA)))
+		free(cp);
+		if (!(cp=malloc(strlen(default_dir)+strlen(p[1])+2)))
 		   goto fail_out;
 		snprintf(cp,strlen(default_dir)+strlen(p[1])+2,"%s" FONT_PATH_SEP "%s",
 			 default_dir,p[1]);
 		if (!((desc->pic_b[fontdb]=load_raw(cp,verbose)))){
 		   mp_msg(MSGT_OSD, MSGL_ERR, "Can't load font bitmap: %s\n",p[1]);
-		   mem2_free(cp, OTHER_AREA);
+		   free(cp);
 		   goto fail_out;
 		}
           }
-	  mem2_free(cp, OTHER_AREA);
+	  free(cp);
           continue;
       }
   } else
@@ -352,11 +357,11 @@ fail_out:
   if (f)
     fclose(f);
   if (desc->fpath)
-    mem2_free(desc->fpath, OTHER_AREA);
+    free(desc->fpath);
   if (desc->name)
-    mem2_free(desc->name, OTHER_AREA);
+    free(desc->name);
   if (desc)
-    mem2_free(desc, OTHER_AREA);
+    free(desc);
   return NULL;
 }
 

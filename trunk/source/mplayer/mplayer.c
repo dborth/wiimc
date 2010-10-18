@@ -2813,7 +2813,7 @@ m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
 #ifdef CONFIG_ASS
 m_config_set_option(mconfig,"ass","1");
-m_config_set_option(mconfig,"ass-font-scale","2");
+m_config_set_option(mconfig,"ass-font-scale","2.5");
 #endif
 SetMPlayerSettings();
 
@@ -3139,7 +3139,6 @@ controlledbygui = 0;
 pause_low_cache=1;
 
 #endif
-	
 	
 
 
@@ -3881,22 +3880,31 @@ if (mpctx->sh_video)
 	{
 	    force_load_font = 0;
 	    ReInitTTFLib();
+	    
 		load_font_ft(mpctx->sh_video->disp_w, mpctx->sh_video->disp_h, &vo_font, font_name, osd_font_scale_factor);
+		
 		prev_dxs = mpctx->sh_video->disp_w; prev_dys = mpctx->sh_video->disp_h;
 
 		if (mpctx->set_of_sub_size > 0)
 		{
+			printf("sub_font_name: %s\n",sub_font_name);
 			if (sub_font_name && strcmp(sub_font_name,font_name))
 				load_font_ft(prev_dxs, prev_dys, &sub_font, sub_font_name, text_font_scale_factor);
 			else
-				sub_font = vo_font;
+			{
+				if(osd_font_scale_factor==text_font_scale_factor)
+					sub_font = vo_font;
+				else
+					load_font_ft(mpctx->sh_video->disp_w, mpctx->sh_video->disp_h, &sub_font, font_name, text_font_scale_factor);
+			}
 		}
 		else
 		{
 			sub_font = vo_font;
 		}
 	}
-}
+	
+	}
 #endif
 
 if (seek_to_sec) {
@@ -5123,7 +5131,9 @@ void wiiSetSubtitleLanguage(char *lang)
 void wiiSetSubtitleColor(char *color)
 {
 #ifdef CONFIG_ASS
-	if(ass_color && strcmp(color, ass_color) == 0)
+	if(!ass_enabled) return;
+
+	if(ass_color && strcmp(color, ass_color) == 0)	
 		return;
 
 	if(ass_color) free(ass_color);
@@ -5144,6 +5154,12 @@ void wiiSetSubtitleSize(float size)
 		return;
 
 	ass_font_scale = size;
+	ass_force_reload = 1;
+
+	text_font_scale_factor = size;
+	osd_font_scale_factor = size;
+	force_load_font = 1;
+	
 #else
 	if(size == text_font_scale_factor)
 		return;

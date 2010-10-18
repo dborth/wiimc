@@ -50,7 +50,13 @@
 #include "mpcommon.h"
 #include "path.h"
 #include "osd_font.h"
+#ifdef GEKKO
 #include "../../utils/mem2_manager.h"
+#define malloc(x) mem2_malloc(x,OTHER_AREA)
+#define free(x) mem2_free(x,OTHER_AREA)
+#define realloc(x,y) mem2_realloc(x,y,OTHER_AREA)
+#define calloc(x,y) mem2_calloc(x,y,OTHER_AREA)
+#endif
 
 #if (FREETYPE_MAJOR > 2) || (FREETYPE_MAJOR == 2 && FREETYPE_MINOR >= 1)
 #define HAVE_FREETYPE21
@@ -553,8 +559,8 @@ void render_one_glyph(font_desc_t *desc, int c)
 
 //	fprintf(stderr, "\nns = %d inc = %d\n", newsize, increment);
 
-	desc->pic_b[font]->bmp = mem2_realloc(desc->pic_b[font]->bmp, newsize, OTHER_AREA);
-	desc->pic_a[font]->bmp = mem2_realloc(desc->pic_a[font]->bmp, newsize, OTHER_AREA);
+	desc->pic_b[font]->bmp = realloc(desc->pic_b[font]->bmp, newsize);
+	desc->pic_a[font]->bmp = realloc(desc->pic_a[font]->bmp, newsize);
 
 	off = desc->pic_b[font]->current_count*desc->pic_b[font]->charwidth*desc->pic_b[font]->charheight;
 	memset(desc->pic_b[font]->bmp+off, 0, increment);
@@ -618,9 +624,9 @@ static int prepare_font(font_desc_t *desc, FT_Face face, float ppem, int pic_idx
 
     desc->faces[pic_idx] = face;
 
-    desc->pic_a[pic_idx] = mem2_malloc(sizeof(raw_file), OTHER_AREA);
+    desc->pic_a[pic_idx] = malloc(sizeof(raw_file));
     if (!desc->pic_a[pic_idx]) return -1;
-    desc->pic_b[pic_idx] = mem2_malloc(sizeof(raw_file), OTHER_AREA);
+    desc->pic_b[pic_idx] = malloc(sizeof(raw_file));
     if (!desc->pic_b[pic_idx]) return -1;
 
     desc->pic_a[pic_idx]->bmp = NULL;
@@ -628,11 +634,11 @@ static int prepare_font(font_desc_t *desc, FT_Face face, float ppem, int pic_idx
     desc->pic_b[pic_idx]->bmp = NULL;
     desc->pic_b[pic_idx]->pal = NULL;
 
-    desc->pic_a[pic_idx]->pal = mem2_malloc(sizeof(unsigned char)*256*3, OTHER_AREA);
+    desc->pic_a[pic_idx]->pal = malloc(sizeof(unsigned char)*256*3);
     if (!desc->pic_a[pic_idx]->pal) return -1;
     for (i = 0; i<768; ++i) desc->pic_a[pic_idx]->pal[i] = i/3;
 
-    desc->pic_b[pic_idx]->pal = mem2_malloc(sizeof(unsigned char)*256*3, OTHER_AREA);
+    desc->pic_b[pic_idx]->pal = malloc(sizeof(unsigned char)*256*3);
     if (!desc->pic_b[pic_idx]->pal) return -1;
     for (i = 0; i<768; ++i) desc->pic_b[pic_idx]->pal[i] = i/3;
 
@@ -673,17 +679,17 @@ static int generate_tables(font_desc_t *desc, double thickness, double radius)
 //    fprintf(stderr, "o_r = %d\n", desc->tables.o_r);
 
     if (desc->tables.g_r) {
-	desc->tables.g = mem2_malloc(desc->tables.g_w * sizeof(unsigned), OTHER_AREA);
-	desc->tables.gt2 = mem2_malloc(256 * desc->tables.g_w * sizeof(unsigned), OTHER_AREA);
+	desc->tables.g = malloc(desc->tables.g_w * sizeof(unsigned));
+	desc->tables.gt2 = malloc(256 * desc->tables.g_w * sizeof(unsigned));
 	if (desc->tables.g==NULL || desc->tables.gt2==NULL) {
 	    return -1;
 	}
     }
-    desc->tables.om = mem2_malloc(desc->tables.o_w*desc->tables.o_w * sizeof(unsigned), OTHER_AREA);
-    desc->tables.omt = mem2_malloc(desc->tables.o_size*256, OTHER_AREA);
+    desc->tables.om = malloc(desc->tables.o_w*desc->tables.o_w * sizeof(unsigned));
+    desc->tables.omt = malloc(desc->tables.o_size*256);
 
     omtp = desc->tables.omt;
-    desc->tables.tmp = mem2_malloc((width+1)*height*sizeof(short), OTHER_AREA);
+    desc->tables.tmp = malloc((width+1)*height*sizeof(short));
 
     if (desc->tables.om==NULL || desc->tables.omt==NULL || desc->tables.tmp==NULL) {
 	return -1;
@@ -838,7 +844,7 @@ static font_desc_t* init_font_desc(void)
 {
     font_desc_t *desc;
 
-    desc = mem2_calloc(1, sizeof(*desc), OTHER_AREA);
+    desc = calloc(1, sizeof(*desc));
     if(!desc) return NULL;
 
     desc->dynamic = 1;
@@ -861,27 +867,27 @@ void free_font_desc(font_desc_t *desc)
 
 //    if (!desc->dynamic) return; // some vo_aa crap, better leaking than crashing
 
-    if (desc->name) mem2_free(desc->name, OTHER_AREA);
-    if (desc->fpath) mem2_free(desc->fpath, OTHER_AREA);
+    if (desc->name) free(desc->name);
+    if (desc->fpath) free(desc->fpath);
 
     for(i = 0; i < 16; i++) {
 	if (desc->pic_a[i]) {
-	    if (desc->pic_a[i]->bmp) mem2_free(desc->pic_a[i]->bmp, OTHER_AREA);
-	    if (desc->pic_a[i]->pal) mem2_free(desc->pic_a[i]->pal, OTHER_AREA);
-	    mem2_free (desc->pic_a[i], OTHER_AREA);
+	    if (desc->pic_a[i]->bmp) free(desc->pic_a[i]->bmp);
+	    if (desc->pic_a[i]->pal) free(desc->pic_a[i]->pal);
+	    free (desc->pic_a[i]);
 	}
 	if (desc->pic_b[i]) {
-	    if (desc->pic_b[i]->bmp) mem2_free(desc->pic_b[i]->bmp, OTHER_AREA);
-	    if (desc->pic_b[i]->pal) mem2_free(desc->pic_b[i]->pal, OTHER_AREA);
-	    mem2_free (desc->pic_b[i], OTHER_AREA);
+	    if (desc->pic_b[i]->bmp) free(desc->pic_b[i]->bmp);
+	    if (desc->pic_b[i]->pal) free(desc->pic_b[i]->pal);
+	    free (desc->pic_b[i]);
 	}
     }
 
-    if (desc->tables.g) mem2_free(desc->tables.g, OTHER_AREA);
-    if (desc->tables.gt2) mem2_free(desc->tables.gt2, OTHER_AREA);
-    if (desc->tables.om) mem2_free(desc->tables.om, OTHER_AREA);
-    if (desc->tables.omt) mem2_free(desc->tables.omt, OTHER_AREA);
-    if (desc->tables.tmp) mem2_free(desc->tables.tmp, OTHER_AREA);
+    if (desc->tables.g) free(desc->tables.g);
+    if (desc->tables.gt2) free(desc->tables.gt2);
+    if (desc->tables.om) free(desc->tables.om);
+    if (desc->tables.omt) free(desc->tables.omt);
+    if (desc->tables.tmp) free(desc->tables.tmp);
 
 #ifndef GEKKO
     for(i = 0; i < desc->face_cnt; i++) {
@@ -889,7 +895,7 @@ void free_font_desc(font_desc_t *desc)
     }
 #endif
 
-    mem2_free(desc, OTHER_AREA);
+    free(desc);
 }
 
 static int load_sub_face(const char *name, int face_index, FT_Face *face)
@@ -951,8 +957,8 @@ font_desc_t* read_font_desc_ft(const char *fname, int face_index, int movie_widt
 
     FT_Face face;
 
-    FT_ULong *my_charset = mem2_malloc(MAX_CHARSET_SIZE * sizeof(FT_ULong), OTHER_AREA); /* characters we want to render; Unicode */
-    FT_ULong *my_charcodes = mem2_malloc(MAX_CHARSET_SIZE * sizeof(FT_ULong), OTHER_AREA); /* character codes in 'encoding' */
+    FT_ULong *my_charset = malloc(MAX_CHARSET_SIZE * sizeof(FT_ULong)); /* characters we want to render; Unicode */
+    FT_ULong *my_charcodes = malloc(MAX_CHARSET_SIZE * sizeof(FT_ULong)); /* character codes in 'encoding' */
 
     char *charmap = "ucs-4";
     int err;
@@ -1099,15 +1105,15 @@ gen_osd:
 	    desc->font[i] = desc->font[j];
 	}
     }
-    mem2_free(my_charset, OTHER_AREA);
-    mem2_free(my_charcodes, OTHER_AREA);
+    free(my_charset);
+    free(my_charcodes);
     return desc;
 
 err_out:
     if (desc)
       free_font_desc(desc);
-    mem2_free(my_charset, OTHER_AREA);
-    mem2_free(my_charcodes, OTHER_AREA);
+    free(my_charset);
+    free(my_charcodes);
     return NULL;
 }
 
@@ -1172,8 +1178,9 @@ void load_font_ft(int width, int height, font_desc_t** fontp, const char *font_n
 
     // protection against vo_aa font hacks
     if (vo_font && !vo_font->dynamic) return;
-
+printf("f1: %f\n",font_scale_factor);
     if (vo_font) free_font_desc(vo_font);
+	printf("f2\n");
 
 #ifdef CONFIG_FONTCONFIG
     if (font_fontconfig > 0)
@@ -1207,5 +1214,7 @@ void load_font_ft(int width, int height, font_desc_t** fontp, const char *font_n
         mp_msg(MSGT_OSD, MSGL_ERR, MSGTR_LIBVO_FONT_LOAD_FT_FontconfigNoMatch);
     }
 #endif
+	printf("f3\n");
+
     *fontp=read_font_desc_ft(font_name, 0, width, height, font_scale_factor);
 }

@@ -274,6 +274,8 @@ static void check_events(void)
 
 static int preinit(const char *arg)
 {
+	mplayerwidth = 480;
+
 	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
 		mplayerwidth = 854; // 480 * (16/9)
 

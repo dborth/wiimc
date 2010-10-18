@@ -1128,12 +1128,7 @@ static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
 		if (sub_font_name)
 			load_font_ft(dxs, dys, &sub_font, sub_font_name, text_font_scale_factor);
 		else
-		{
-			if(text_font_scale_factor==osd_font_scale_factor)
-				sub_font = vo_font;
-			else
-				load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
-		}
+			load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
 	}
 	else
 		sub_font = vo_font;

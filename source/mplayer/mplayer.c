@@ -3891,12 +3891,7 @@ if (mpctx->sh_video)
 			if (sub_font_name && strcmp(sub_font_name,font_name))
 				load_font_ft(prev_dxs, prev_dys, &sub_font, sub_font_name, text_font_scale_factor);
 			else
-			{
-				if(osd_font_scale_factor==text_font_scale_factor)
-					sub_font = vo_font;
-				else
-					load_font_ft(mpctx->sh_video->disp_w, mpctx->sh_video->disp_h, &sub_font, font_name, text_font_scale_factor);
-			}
+				load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
 		}
 		else
 		{
@@ -4928,8 +4923,17 @@ char * wiiGetMetaYear()
 	return get_metadata(META_INFO_YEAR);
 }
 
+extern int screenheight;
+extern int screenwidth;
+
 void wiiUpdatePointer(int x, int y)
 {
+
+	if(!mpctx->sh_video) return;
+
+	x=x*mpctx->sh_video->disp_w/screenwidth;
+	y=y*mpctx->sh_video->disp_h/screenheight;
+
 	mp_cmd_t *cmd = calloc( 1,sizeof( *cmd ) );
 	cmd->id=MP_CMD_SET_MOUSE_POS;
 	cmd->name=strdup("set_mouse_pos");

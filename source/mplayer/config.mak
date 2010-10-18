@@ -31,7 +31,7 @@ WINDRES = windres
 EXTRA_INC = -I$(DEVKITPRO)/portlibs/ppc/include -I$(DEVKITPRO)/libogc/include -Ilibdvdread4 -Ilibdvdnav -I$(DEVKITPRO)/portlibs/ppc/include/freetype2 -I$(DEVKITPRO)/libogc/include/ogc/machine -I$(DEVKITPPC)/../buildscripts/powerpc-eabi/gcc/gcc/include
 WIIFLAGS = -mpaired -DGEKKO -mrvl -mcpu=750 -mtune=750 -meabi -mhard-float -mdouble-float
 
-CFLAGS   = -std=gnu99  -O4   -pipe -ffast-math -fomit-frame-pointer -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 $(EXTRA_INC) -I. -Iffmpeg -Wa,-mgekko $(WIIFLAGS)
+CFLAGS   = -std=gnu99  -O4   -pipe -ffast-math -fomit-frame-pointer -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 $(EXTRA_INC) -I. -Iffmpeg $(WIIFLAGS)
 CXXFLAGS = -O4   -pipe -ffast-math -fomit-frame-pointer -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS $(EXTRA_INC) -I. -Iffmpeg $(WIIFLAGS)
 CC_DEPFLAGS = -MD -MP -O4   -pipe -ffast-math -fomit-frame-pointer
 

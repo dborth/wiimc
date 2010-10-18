@@ -230,8 +230,7 @@ void reinit_video()
 
 	GX_StartYUV(image_width, image_height, gx_width / 2, gx_height / 2 ); 
 	GX_ConfigTextureYUV(image_width, image_height, pitch);	
-
-}	
+}
 
 static int config(uint32_t width, uint32_t height, uint32_t d_width,
           uint32_t d_height, uint32_t flags, char *title,
@@ -274,8 +273,6 @@ static void check_events(void)
 
 static int preinit(const char *arg)
 {
-	mplayerwidth = 480;
-
 	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
 		mplayerwidth = 854; // 480 * (16/9)
 

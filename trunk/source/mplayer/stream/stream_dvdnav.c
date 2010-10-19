@@ -166,6 +166,10 @@ static void dvdnav_get_highlight (dvdnav_priv_t *priv, int display_mode) {
         hlev->ex = FFMAX (btni->x_start, btni->x_end);
         hlev->sy = FFMIN (btni->y_start, btni->y_end);
         hlev->ey = FFMAX (btni->y_start, btni->y_end);
+#ifdef GEKKO
+		hlev->sy += 16;
+        hlev->ey += 16;
+#endif
 
         hlev->palette = (btni->btn_coln == 0) ? 0 :
           pnavpci->hli.btn_colit.btn_coli[btni->btn_coln - 1][0];

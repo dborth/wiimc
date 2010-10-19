@@ -229,7 +229,7 @@ static MPContext mpctx_s = {
 
 static MPContext *mpctx = &mpctx_s;
 
-int fixed_vo=1;
+int fixed_vo=0;
 
 // benchmark:
 double video_time_usage=0;
@@ -2396,6 +2396,7 @@ int reinit_video_chain(void) {
 
 #ifdef CONFIG_ASS
 #ifdef GEKKO
+
 	  if(mpctx->set_of_sub_size>0) {
 #endif
   if(ass_enabled) {
@@ -3733,7 +3734,6 @@ if(mpctx->sh_video->disp_w > 1280 || mpctx->sh_video->disp_h > 720)
 	goto goto_next_file;
 }
 #endif
-
 if(!reinit_video_chain()) {
   if(!mpctx->sh_video){
     if(!mpctx->sh_audio) goto goto_next_file;
@@ -3877,7 +3877,7 @@ if (mpctx->sh_video)
 			seek_to_sec = 0;
 	}
 
-	if (!vo_font || prev_dxs != mpctx->sh_video->disp_w || prev_dys != mpctx->sh_video->disp_h)
+	if (!vo_font || !sub_font || prev_dxs != mpctx->sh_video->disp_w || prev_dys != mpctx->sh_video->disp_h)
 	{
 	    force_load_font = 0;
 	    ReInitTTFLib();
@@ -3889,12 +3889,15 @@ if (mpctx->sh_video)
 			if (sub_font_name && strcmp(sub_font_name,font_name))
 				load_font_ft(prev_dxs, prev_dys, &sub_font, sub_font_name, text_font_scale_factor);
 			else
-				load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
+			{
+				if(text_font_scale_factor==osd_font_scale_factor)
+					sub_font = vo_font;
+				else
+					load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
+			}
 		}
 		else
-		{
 			sub_font = vo_font;
-		}
 	}
 }
 #endif
@@ -4301,7 +4304,7 @@ ass_track = NULL;
 if(ass_library)
     ass_clear_fonts(ass_library);
 #endif
-remove_subtitles();
+//remove_subtitles();
 
 #ifdef GEKKO
  
@@ -4493,60 +4496,6 @@ static void remove_subtitles()
 //		ass_clear_fonts(ass_library);
 #endif
 
-/*
-int idx;
-    int start = 0;
-    int count = mpctx->set_of_sub_size;
-    int end = start + count;
-    int after = mpctx->set_of_sub_size - end;
-    sub_data **subs = mpctx->set_of_subtitles;
-#ifdef CONFIG_ASS
-    ASS_Track **ass_tracks = mpctx->set_of_ass_tracks;
-#endif
-    if (count < 0 || count > mpctx->set_of_sub_size ||
-        start < 0 || start > mpctx->set_of_sub_size - count) {
-        mp_msg(MSGT_CPLAYER, MSGL_ERR,
-               "Cannot remove invalid subtitle range %i +%i\n", start, count);
-        return;
-    }
-    for (idx = start; idx < end; idx++) {
-        sub_data *subd = subs[idx];
-        mp_msg(MSGT_CPLAYER, MSGL_STATUS,
-               MSGTR_RemovedSubtitleFile, idx + 1,
-               filename_recode(subd->filename));
-        sub_free(subd);
-        subs[idx] = NULL;
-#ifdef CONFIG_ASS
-        if (ass_tracks[idx])
-            ass_free_track(ass_tracks[idx]);
-        ass_tracks[idx] = NULL;
-#endif
-    }
-
-    mpctx->global_sub_size -= count;
-    mpctx->set_of_sub_size -= count;
-    if (mpctx->set_of_sub_size <= 0)
-        mpctx->sub_counts[SUB_SOURCE_SUBS] = 0;
-
-    memmove(subs + start, subs + end, after * sizeof(*subs));
-    memset(subs + start + after, 0, count * sizeof(*subs));
-#ifdef CONFIG_ASS
-    memmove(ass_tracks + start, ass_tracks + end, after * sizeof(*ass_tracks));
-    memset(ass_tracks + start + after, 0, count * sizeof(*ass_tracks));
-#endif
-
-    if (mpctx->set_of_sub_pos >= start && mpctx->set_of_sub_pos < end) {
-        mpctx->global_sub_pos = -2;
-        subdata = NULL;
-#ifdef CONFIG_ASS
-        ass_track = NULL;
-#endif
-        mp_input_queue_cmd(mp_input_parse_cmd("sub_select"));
-    } else if (mpctx->set_of_sub_pos >= end) {
-        mpctx->set_of_sub_pos -= count;
-        mpctx->global_sub_pos -= count;
-    }
-    */
 }
 
 static void reload_subtitles()
@@ -4639,7 +4588,6 @@ void PauseAndGotoGUI()
 	printf("reinit mplayer video/audio\n");
 	reinit_audio();
 	reinit_video();
-	printf("mplayer video/audio reinit ok\n");
 
 	mpctx->osd_function = OSD_PLAY;
 
@@ -4922,14 +4870,10 @@ char * wiiGetMetaYear()
 
 extern int screenheight;
 extern int screenwidth;
-
 void wiiUpdatePointer(int x, int y)
 {
-
-	if(!mpctx->sh_video) return;
-
-	x=x*mpctx->sh_video->disp_w/screenwidth;
-	y=y*mpctx->sh_video->disp_h/screenheight;
+	x=(int)x*(double)vo_screenwidth/screenwidth;
+	y=(int)y*(double)vo_screenheight/screenheight;
 
 	mp_cmd_t *cmd = calloc( 1,sizeof( *cmd ) );
 	cmd->id=MP_CMD_SET_MOUSE_POS;

@@ -243,8 +243,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	pitch[0] = 0;
 	pitch[1] = 0;
 	pitch[2] = 0;
-
-printf("width: %i height: %i d_width: %i d_height: %i",width,height,d_width,d_height);
 	
 	float screen_aspect = (float)mplayerwidth / (float)mplayerheight;
 	float image_aspect = (float)d_width / (float)d_height;

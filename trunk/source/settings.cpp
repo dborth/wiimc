@@ -335,6 +335,7 @@ prepareSettingsData ()
 	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
 	createXMLSetting("lockFolders", "Static folders", toStr(WiiSettings.lockFolders));
+	createXMLSetting("startArea", "Starting area", toStr(WiiSettings.startArea));
 	// Videos
 	createXMLSection("Videos", "Videos Settings");
 	createXMLSetting("videoZoomHor", "Horizontal video zoom", FtoStr(WiiSettings.videoZoomHor));
@@ -581,6 +582,7 @@ void DefaultSettings ()
 	WiiSettings.rumble = 1;
 	WiiSettings.sleepTimer = 0;
 	WiiSettings.lockFolders = 0;
+	WiiSettings.startArea = MENU_BROWSE_VIDEOS;
 	// Videos
 	WiiSettings.videoZoomHor = 1;
 	WiiSettings.videoZoomVert = 1;
@@ -656,6 +658,10 @@ static void FixInvalidSettings()
 		WiiSettings.rumble = 1;
 	if(WiiSettings.lockFolders != 1 && WiiSettings.lockFolders != 0)
 		WiiSettings.lockFolders = 0;
+	if(WiiSettings.startArea < MENU_BROWSE_VIDEOS || WiiSettings.startArea > MENU_BROWSE_ONLINEMEDIA)
+		WiiSettings.startArea = MENU_BROWSE_VIDEOS;
+	if(WiiSettings.dvdDisabled && WiiSettings.startArea == MENU_DVD)
+		WiiSettings.startArea = MENU_BROWSE_VIDEOS;
 
 	// Videos
 	if(WiiSettings.videoZoomHor < 0.5 || WiiSettings.videoZoomHor > 1.5)
@@ -985,6 +991,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.exitAction, "exitAction");
 				loadXMLSetting(&WiiSettings.rumble, "rumble");
 				loadXMLSetting(&WiiSettings.lockFolders, "lockFolders");
+				loadXMLSetting(&WiiSettings.startArea, "startArea");
 				// Videos
 				loadXMLSetting(&WiiSettings.videoZoomHor, "videoZoomHor");
 				loadXMLSetting(&WiiSettings.videoZoomVert, "videoZoomVert");

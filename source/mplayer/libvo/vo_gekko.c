@@ -63,6 +63,7 @@ static u32 image_width = 0, image_height = 0;
 
 static u32 gx_width, gx_height;
 
+
 void vo_draw_alpha_gekko(int w, int h, unsigned char* src, unsigned char *srca,
 		int srcstride, unsigned char* dstbase, int dststride, int x0)
 		{
@@ -242,6 +243,8 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	pitch[0] = 0;
 	pitch[1] = 0;
 	pitch[2] = 0;
+
+printf("width: %i height: %i d_width: %i d_height: %i",width,height,d_width,d_height);
 	
 	float screen_aspect = (float)mplayerwidth / (float)mplayerheight;
 	float image_aspect = (float)d_width / (float)d_height;
@@ -257,6 +260,8 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 		gx_height = mplayerheight;
 	}
 	
+	vo_screenheight = image_height;
+	vo_screenwidth = image_width;
 	reinit_video();
 	return 0;
 }
@@ -290,8 +295,8 @@ static int control(uint32_t request, void *data, ...)
 		case VOCTRL_QUERY_FORMAT:
 			return query_format(*((uint32_t *)data));
 		case VOCTRL_UPDATE_SCREENINFO:
-            vo_screenwidth = mplayerwidth;
-            vo_screenheight = mplayerheight;
+            vo_screenwidth = image_width;
+            vo_screenheight = image_height;
             aspect_save_screenres(vo_screenwidth, vo_screenheight);
             return VO_TRUE;
 		default:

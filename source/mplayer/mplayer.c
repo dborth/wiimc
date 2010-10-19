@@ -2396,7 +2396,6 @@ int reinit_video_chain(void) {
 
 #ifdef CONFIG_ASS
 #ifdef GEKKO
-
 	  if(mpctx->set_of_sub_size>0) {
 #endif
   if(ass_enabled) {
@@ -3734,6 +3733,7 @@ if(mpctx->sh_video->disp_w > 1280 || mpctx->sh_video->disp_h > 720)
 	goto goto_next_file;
 }
 #endif
+
 if(!reinit_video_chain()) {
   if(!mpctx->sh_video){
     if(!mpctx->sh_audio) goto goto_next_file;
@@ -3893,13 +3893,13 @@ if (mpctx->sh_video)
 				if(text_font_scale_factor==osd_font_scale_factor)
 					sub_font = vo_font;
 				else
-					load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
-			}
+				load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
+		}
 		}
 		else
 			sub_font = vo_font;
+		}
 	}
-}
 #endif
 
 if (seek_to_sec) {
@@ -4496,7 +4496,7 @@ static void remove_subtitles()
 //		ass_clear_fonts(ass_library);
 #endif
 
-}
+    }
 
 static void reload_subtitles()
 {
@@ -4758,6 +4758,9 @@ static void wiiSeek(int sec, int mode)
 
 	if(!mpctx->demuxer || !mpctx->demuxer->seekable)
 		return;
+	
+	if(strncmp(filename, "http:", 5) == 0)
+		return;
 
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
 	cmd->id=MP_CMD_SEEK;
@@ -4870,6 +4873,7 @@ char * wiiGetMetaYear()
 
 extern int screenheight;
 extern int screenwidth;
+
 void wiiUpdatePointer(int x, int y)
 {
 	x=(int)x*(double)vo_screenwidth/screenwidth;

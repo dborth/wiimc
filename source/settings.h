@@ -93,6 +93,7 @@ struct SWiiSettings {
 	int		rumble;
 	int		sleepTimer;
 	int		lockFolders;
+	int		startArea;
 	// Videos
 	float	videoZoomHor; // horizontal zoom amount
 	float	videoZoomVert; // vertical zoom amount

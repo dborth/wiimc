@@ -286,7 +286,7 @@ static GuiTooltip *settingsBtnTip = NULL;
 static GuiImage *settingsBtnOverImg = NULL;
 static GuiImage *settingsBtnHighlightImg = NULL;
 
-int menuCurrent = MENU_BROWSE_VIDEOS;
+int menuCurrent = -1;
 static int menuPrevious = MENU_BROWSE_VIDEOS;
 static int menuUndo = MENU_BROWSE_VIDEOS;
 static int netEditIndex = 0; // current index of FTP/SMB share being edited
@@ -3673,6 +3673,7 @@ static void MenuSettingsGlobal()
 	sprintf(options.name[i++], "Wiimote Rumble");
 	sprintf(options.name[i++], "Sleep Timer");
 	sprintf(options.name[i++], "Browser Folders");
+	sprintf(options.name[i++], "Starting Area");
 
 	options.length = i;
 
@@ -3770,6 +3771,13 @@ static void MenuSettingsGlobal()
 			case 7:
 				WiiSettings.lockFolders ^= 1;
 				break;
+			case 8:
+				WiiSettings.startArea++;
+				if(WiiSettings.startArea > MENU_BROWSE_ONLINEMEDIA)
+					WiiSettings.startArea = MENU_BROWSE_VIDEOS;
+				if(WiiSettings.startArea == MENU_DVD && WiiSettings.dvdDisabled)
+					WiiSettings.startArea++;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -3827,6 +3835,15 @@ static void MenuSettingsGlobal()
 				sprintf(options.value[6], "Off");
 
 			sprintf(options.value[7], "%s", WiiSettings.lockFolders ? "Static" : "Use Last Browsed");
+			
+			switch(WiiSettings.startArea)
+			{
+				case MENU_BROWSE_VIDEOS: 		sprintf(options.value[8], "Videos"); break;
+				case MENU_BROWSE_MUSIC: 		sprintf(options.value[8], "Music"); break;
+				case MENU_BROWSE_PICTURES: 		sprintf(options.value[8], "Pictures"); break;
+				case MENU_DVD: 					sprintf(options.value[8], "DVD"); break;
+				case MENU_BROWSE_ONLINEMEDIA: 	sprintf(options.value[8], "Online Media"); break;
+			}
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -6960,7 +6977,6 @@ void WiiMenu()
 	mainWindow->SetState(STATE_DEFAULT);
 
 	selectLoadedFile = videoImg->IsVisible();
-	UpdateMenuImages(-1, menuCurrent);
 
 	StartGuiThreads();
 	EnableRumble();
@@ -6974,6 +6990,15 @@ void WiiMenu()
 			return;
 		}
 	}
+
+	if(menuCurrent == -1)
+	{
+		menuCurrent = WiiSettings.startArea;
+		menuPrevious = WiiSettings.startArea;
+		menuUndo = WiiSettings.startArea;
+	}
+	
+	UpdateMenuImages(-1, menuCurrent);
 
 	if(WiiSettings.dvdDisabled)
 	{
@@ -7110,6 +7135,18 @@ void MPlayerMenu()
 	mainWindow->SetState(STATE_DISABLED);
 
 	HideVideoVolumeLevelBar();
+	
+	if(strncmp(loadedFile, "http:", 5) == 0)
+	{
+		videobar->Remove(videobarBackwardBtn);
+		videobar->Remove(videobarForwardBtn);
+	}
+	else
+	{
+		videobar->Append(videobarBackwardBtn);
+		videobar->Append(videobarForwardBtn);
+	}
+	
 	menuMode = 1; // switch to MPlayer GUI mode
 	EnableRumble();
 

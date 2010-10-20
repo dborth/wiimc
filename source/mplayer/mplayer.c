@@ -156,6 +156,7 @@ bool FindNextFile(bool load);
 void SetMPlayerSettings();
 bool StartDVDMotor();
 void SetLastDVDMotorTime();
+bool WakeupUSB();
 void ResumeCacheThread();
 bool CacheThreadSuspended();
 bool DisableVideoImg();
@@ -2603,9 +2604,13 @@ static void pause_loop(void)
 
   mpctx->osd_function=OSD_PLAY;
 
-  if(controlledbygui != 2 && cmd && cmd->id != MP_CMD_QUIT && 
-    (strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0) )
-    StartDVDMotor();
+  if(controlledbygui != 2 && cmd && cmd->id != MP_CMD_QUIT)
+  {
+	  if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
+	    StartDVDMotor();
+	  else if(strncmp(filename,"usb:",4) == 0)
+		WakeupUSB();
+  }
 
   if (cmd && cmd->id == MP_CMD_PAUSE)
   { //unpause
@@ -3898,7 +3903,7 @@ if (mpctx->sh_video)
 					sub_font = vo_font;
 				else
 				load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
-			}
+		}
 		}
 		else
 			sub_font = vo_font;
@@ -4597,6 +4602,8 @@ void PauseAndGotoGUI()
 
 	if (strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0)
 		StartDVDMotor();
+	else if (strncmp(filename, "usb:", 4) == 0)
+		WakeupUSB();
 
 	if (mpctx->audio_out && mpctx->sh_audio)
 		mpctx->audio_out->resume(); // resume audio
@@ -4664,6 +4671,8 @@ static void low_cache_loop(void)
 	SetBufferingStatus(0);
 	if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
 		StartDVDMotor();
+	else if(strncmp(filename,"usb:",4) == 0)
+		WakeupUSB();
 
 	if (cmd && cmd->id == MP_CMD_PAUSE)
 	{ //manual unpause

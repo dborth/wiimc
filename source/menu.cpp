@@ -1033,10 +1033,13 @@ WindowPrompt(const char *title, wchar_t *msg, const char *btn1Label, const char 
 			choice = 1;
 		else if(btn2.GetState() == STATE_CLICKED)
 			choice = 0;
+
+		if(guiShutdown)
+			choice = 0;
 	}
 
 	promptWindow.SetEffect(EFFECT_FADE, -50);
-	while(promptWindow.GetEffect() > 0) usleep(THREAD_SLEEP);
+	while(promptWindow.GetEffect() > 0 && !guiShutdown) usleep(THREAD_SLEEP);
 	SuspendGui();
 	mainWindow->Remove(&promptWindow);
 	if(!isDisabled)

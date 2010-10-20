@@ -639,3 +639,6 @@ msgstr "Untertitel Schriftartdatei nicht vorhanden. Untertitel werden nicht ange
 
 msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
 msgstr "WiiMC hat keinen DVD Zugriff - AHBPROT ist nicht aktiviert."
+
+msgid "Starting Area"
+msgstr "Startansicht"

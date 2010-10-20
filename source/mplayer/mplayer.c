@@ -2812,7 +2812,7 @@ m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
 #ifdef CONFIG_ASS
-m_config_set_option(mconfig,"ass","1");
+//m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2.5");
 #endif
 SetMPlayerSettings();
@@ -3137,6 +3137,10 @@ wii_error = 0;
 controlledbygui = 0;
 
 pause_low_cache=1;
+if(ass_color && strcmp(ass_color, "FFFFFF00") != 0)
+	ass_enabled=1;
+else
+	ass_enabled=0;
 
 #endif
 	
@@ -3894,7 +3898,7 @@ if (mpctx->sh_video)
 					sub_font = vo_font;
 				else
 				load_font_ft(prev_dxs, prev_dys, &sub_font, font_name, text_font_scale_factor);
-		}
+			}
 		}
 		else
 			sub_font = vo_font;
@@ -5080,8 +5084,6 @@ void wiiSetSubtitleLanguage(char *lang)
 void wiiSetSubtitleColor(char *color)
 {
 #ifdef CONFIG_ASS
-	if(!ass_enabled) return;
-
 	if(ass_color && strcmp(color, ass_color) == 0)
 		return;
 
@@ -5092,6 +5094,23 @@ void wiiSetSubtitleColor(char *color)
 		ass_border_color = strdup("FFFFFF00");
 	else
 		ass_border_color = strdup("00000000");
+
+	if(mpctx && mpctx->sh_video && !ass_enabled) 
+	{
+		char* vf_arg[] = {"auto", "1", NULL};
+		vf_instance_t* vf_ass = vf_open_filter(mpctx->sh_video->vfilter,"ass",vf_arg);
+		if (vf_ass)
+		{
+			ass_enabled = 1;
+			eosd_ass_init(ass_library);
+			vf_ass->config(vf_ass,
+					    mpctx->sh_video->disp_w,mpctx->sh_video->disp_h,
+					    mpctx->sh_video->disp_w,mpctx->sh_video->disp_h,0,mpctx->sh_video->outfmtidx);
+
+			mpctx->sh_video->vfilter=vf_ass;
+			mpctx->sh_video->vfilter=append_filters(mpctx->sh_video->vfilter);
+		}
+	}
 	reload_subtitles();
 #endif
 }
@@ -5099,10 +5118,10 @@ void wiiSetSubtitleColor(char *color)
 void wiiSetSubtitleSize(float size)
 {
 #ifdef CONFIG_ASS
-	if(size == ass_font_scale)
+	if(size == text_font_scale_factor)
 		return;
 
-	ass_font_scale = size;
+	ass_font_scale = size * 0.6;
 	ass_force_reload = 1;
 
 	text_font_scale_factor = size;

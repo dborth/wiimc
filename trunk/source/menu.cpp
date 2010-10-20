@@ -6927,9 +6927,11 @@ static void StopGuiThreads()
 
 	if(screensaverthread != LWP_THREAD_NULL)
 	{
-		if(LWP_ThreadIsSuspended(screensaverthread))
-			LWP_ResumeThread (screensaverthread);
-		
+		while(!LWP_ThreadIsSuspended(screensaverthread))
+			usleep(THREAD_SLEEP);
+
+		LWP_ResumeThread (screensaverthread);
+
 		// wait for thread to finish
 		LWP_JoinThread(screensaverthread, NULL);
 		screensaverthread = LWP_THREAD_NULL;
@@ -6939,9 +6941,11 @@ static void StopGuiThreads()
 
 	if(creditsthread != LWP_THREAD_NULL)
 	{
-		if(LWP_ThreadIsSuspended(creditsthread))
-			LWP_ResumeThread (creditsthread);
-		
+		while(!LWP_ThreadIsSuspended(creditsthread))
+			usleep(THREAD_SLEEP);
+
+		LWP_ResumeThread (creditsthread);
+
 		// wait for thread to finish
 		LWP_JoinThread(creditsthread, NULL);
 		creditsthread = LWP_THREAD_NULL;
@@ -6951,9 +6955,11 @@ static void StopGuiThreads()
 
 	if(updatethread != LWP_THREAD_NULL)
 	{
-		if(LWP_ThreadIsSuspended(updatethread))
-			LWP_ResumeThread (updatethread);
-		
+		while(!LWP_ThreadIsSuspended(updatethread))
+			usleep(THREAD_SLEEP);
+
+		LWP_ResumeThread (updatethread);
+
 		// wait for thread to finish
 		LWP_JoinThread(updatethread, NULL);
 		updatethread = LWP_THREAD_NULL;
@@ -7091,17 +7097,15 @@ void WiiMenu()
 	}
 
 	StopGuiThreads();
-
 	SuspendGui();
 	DisableRumble();
 	mainWindow = NULL;
 	nowPlaying->SetVisible(false);
-
 	StopDeviceThread();
 	StopParseThread();
 
 	if(ExitRequested)
-		SaveSettings(SILENT);	
+		SaveSettings(SILENT);
 }
 
 bool BufferingStatusSet()

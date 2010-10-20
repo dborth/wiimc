@@ -933,6 +933,12 @@ bool StartDVDMotor()
 	}
 	return false;
 }
+
+bool WakeupUSB()
+{
+	char buf[512];
+	return usb->readSectors(0, 1, buf);
+}
 }
 
 static bool FindDevice(char * filepath, int * device, int * devnum)

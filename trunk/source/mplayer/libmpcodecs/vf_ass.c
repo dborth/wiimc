@@ -51,6 +51,7 @@
 #define rgba2u(c)  ( ((-152*_r(c) - 298*_g(c) + 450*_b(c)) >> 10) + 128 )
 #define rgba2v(c)  ( (( 450*_r(c) - 376*_g(c) -  73*_b(c)) >> 10) + 128 )
 
+
 #ifdef GEKKO
 #include "../../utils/mem2_manager.h"
 #define malloc(x) mem2_malloc(x,OTHER_AREA)
@@ -107,11 +108,6 @@ static int config(struct vf_instance *vf,
 
 static void get_image(struct vf_instance *vf, mp_image_t *mpi)
 {
-#ifdef GEKKO
-		if(ass_track == 0 || !sub_visibility)
-			return;
-#endif
-
     if (mpi->type == MP_IMGTYPE_IPB)
         return;
     if (mpi->flags & MP_IMGFLAG_PRESERVE)
@@ -363,11 +359,6 @@ static void render_frame(struct vf_instance *vf, mp_image_t *mpi,
 
 static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 {
-#ifdef GEKKO
-	if(ass_track == 0 || !sub_visibility)
-		return vf_next_put_image(vf, mpi, pts);
-#endif
-
     struct mp_eosd_image_list images;
     eosd_render_frame(pts, &images);
     prepare_image(vf, mpi);

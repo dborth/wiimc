@@ -40,6 +40,8 @@
 #   include "avr32/bswap.h"
 #elif ARCH_BFIN
 #   include "bfin/bswap.h"
+#elif ARCH_PPC
+#	include "ppc/bswap.h"
 #elif ARCH_SH4
 #   include "sh4/bswap.h"
 #elif ARCH_X86

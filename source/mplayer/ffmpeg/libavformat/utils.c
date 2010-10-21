@@ -3227,12 +3227,21 @@ int parse_frame_rate(int *frame_rate_num, int *frame_rate_den, const char *arg)
 }
 #endif
 
+#ifdef GEKKO
+#include <ogc/lwp_watchdog.h>
+int64_t av_gettime(void)
+{
+	return tick_microsecs(gettick());
+}
+#else
 int64_t av_gettime(void)
 {
     struct timeval tv;
     gettimeofday(&tv,NULL);
     return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
 }
+#endif
+
 
 uint64_t ff_ntp_time(void)
 {

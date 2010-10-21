@@ -2608,7 +2608,7 @@ static void pause_loop(void)
   {
 	  if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
 	    StartDVDMotor();
-	  else if(strncmp(filename,"usb:",4) == 0)
+	  else if(strncmp(filename,"usb",3) == 0)
 		WakeupUSB();
   }
 
@@ -4602,7 +4602,7 @@ void PauseAndGotoGUI()
 
 	if (strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0)
 		StartDVDMotor();
-	else if (strncmp(filename, "usb:", 4) == 0)
+	else if (strncmp(filename, "usb", 3) == 0)
 		WakeupUSB();
 
 	if (mpctx->audio_out && mpctx->sh_audio)

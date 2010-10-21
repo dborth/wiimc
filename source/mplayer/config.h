@@ -27,7 +27,7 @@
 
 /* Define this to enable MPEG-1/2 image postprocessing in libmpeg2 */
 #define MPEG12_POSTPROC 1
-#define ATTRIBUTE_ALIGNED_MAX 16
+#define ATTRIBUTE_ALIGNED_MAX 64
 
 
 
@@ -128,7 +128,7 @@ char MPLAYER_CSSDIR[512];
 #undef CONFIG_CRASH_DEBUG
 #undef MP_DEBUG
 #undef CONFIG_DYNAMIC_PLUGINS
-#define CONFIG_FASTMEMCPY 1
+#define CONFIG_FASTMEMCPY 0
 #undef CONFIG_MENU
 #define CONFIG_RUNTIME_CPUDETECT 0
 #undef CONFIG_SIGHANDLER
@@ -228,9 +228,9 @@ char MPLAYER_CSSDIR[512];
 #undef CONFIG_SPEEX
 #undef CONFIG_OGGTHEORA
 #undef CONFIG_TOOLAME
-#undef CONFIG_TREMOR
+#define CONFIG_TREMOR 1
 #undef CONFIG_TWOLAME
-#undef CONFIG_OGGVORBIS
+#define CONFIG_OGGVORBIS 1
 #undef CONFIG_X264
 #undef CONFIG_XVID4
 #define CONFIG_ZLIB 1
@@ -405,7 +405,7 @@ char MPLAYER_CSSDIR[512];
 #undef CONFIG_XMGA
 #undef CONFIG_XSS
 #undef CONFIG_XV
-#undef CONFIG_XVMC
+#define CONFIG_XVMC 0
 
 #undef CONFIG_YUV4MPEG
 #undef CONFIG_ZR
@@ -422,7 +422,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_MUXERS 0
 
 #define HAVE_ARPA_INET_H 0
-#define HAVE_BSWAP 0
+#define HAVE_BSWAP 1
 #define CONFIG_BZLIB 0
 #define HAVE_DCBZL 0
 #define HAVE_EXP2 1
@@ -431,7 +431,7 @@ char MPLAYER_CSSDIR[512];
 #define HAVE_FAST_UNALIGNED 1
 #define HAVE_GNU_AS 0
 #define CONFIG_HARDCODED_TABLES 1
-#define HAVE_IBM_ASM 1
+#define HAVE_IBM_ASM 0
 #define CONFIG_MPEGAUDIO_HP 0
 #define HAVE_LLRINT 1
 #define HAVE_LLRINTF 1
@@ -452,7 +452,7 @@ char MPLAYER_CSSDIR[512];
 #define HAVE_TEN_OPERANDS 0
 #define HAVE_THREADS 0
 #define HAVE_TRUNCF 1
-#define HAVE_XFORM_ASM 1
+#define HAVE_XFORM_ASM 0
 #define HAVE_XMM_CLOBBERS 0
 
 
@@ -466,19 +466,19 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_SMALL 0
 #define CONFIG_SWSCALE_ALPHA 1
 
-#define HAVE_ALIGNED_STACK 1
+#define HAVE_ALIGNED_STACK 0
 #define HAVE_ATTRIBUTE_PACKED 1
 #define HAVE_GETHRTIME 0
-#define HAVE_INLINE_ASM 1
+#define HAVE_INLINE_ASM 0
 #define HAVE_ISATTY 0
 #define HAVE_LDBRX 0
-#define HAVE_POLL_H 1
+#define HAVE_POLL_H 0
 #define HAVE_PPC4XX 0
 #define HAVE_STRERROR_R 0
 #define HAVE_SYMVER_ASM_LABEL 0
 #define HAVE_SYMVER_GNU_ASM 0
 #define HAVE_SYS_SELECT_H 0
-#define HAVE_VFP_ARGS 1
+#define HAVE_VFP_ARGS 0
 #define HAVE_VIRTUALALLOC 0
 
 /* Some FFmpeg codecs depend on these. Enable them unconditionally for now. */

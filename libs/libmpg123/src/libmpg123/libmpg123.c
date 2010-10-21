@@ -464,7 +464,7 @@ int attribute_align_arg mpg123_open(mpg123_handle *mh, const char *path)
 	if(mh == NULL) return MPG123_ERR;
 
 	mpg123_close(mh);
-	return open_stream(mh, path, -1);
+	return mpg123_open_stream(mh, path, -1);
 }
 
 int attribute_align_arg mpg123_open_fd(mpg123_handle *mh, int fd)
@@ -473,7 +473,7 @@ int attribute_align_arg mpg123_open_fd(mpg123_handle *mh, int fd)
 	if(mh == NULL) return MPG123_ERR;
 
 	mpg123_close(mh);
-	return open_stream(mh, NULL, fd);
+	return mpg123_open_stream(mh, NULL, fd);
 }
 
 int attribute_align_arg mpg123_open_handle(mpg123_handle *mh, void *iohandle)

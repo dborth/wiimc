@@ -1040,7 +1040,7 @@ static int open_finish(mpg123_handle *fr)
 	return MPG123_OK;
 }
 
-int open_stream(mpg123_handle *fr, const char *bs_filenam, int fd)
+int mpg123_open_stream(mpg123_handle *fr, const char *bs_filenam, int fd)
 {
 	int filept_opened = 1;
 	int filept; /* descriptor of opened file/stream */

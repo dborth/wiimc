@@ -77,7 +77,7 @@ struct reader
 };
 
 /* Open a file by path or use an opened file descriptor. */
-int open_stream(mpg123_handle *, const char *path, int fd);
+int mpg123_open_stream(mpg123_handle *, const char *path, int fd);
 /* Open an external handle. */
 int open_stream_handle(mpg123_handle *, void *iohandle);
 

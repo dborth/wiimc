@@ -5493,7 +5493,7 @@ static void MenuSettingsSubtitles()
 					sprintf(WiiSettings.subtitleColor, "FFFFFF00"); // white
 				break;
 			case 5:
-				WiiSettings.subtitleSize += 0.2;
+				WiiSettings.subtitleSize += 0.5;
 				if(WiiSettings.subtitleSize > 5)
 					WiiSettings.subtitleSize = 1;
 				break;

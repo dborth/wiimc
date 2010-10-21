@@ -60,7 +60,7 @@ EXESUFS_ALL = .elf
 ARCH = ppc
 ARCH_PPC = yes
 
-HAVE_FAST_CLZ = yes
+HAVE_FAST_CLZ = no
 
 MENCODER = no
 MPLAYER  = yes
@@ -107,7 +107,7 @@ ESD = no
 FAAC=no
 FAAD = no
 FAAD_INTERNAL = no
-FASTMEMCPY = yes
+FASTMEMCPY = no
 FBDEV = no
 FREETYPE = yes
 FTP = yes
@@ -186,9 +186,9 @@ SUNAUDIO = no
 SVGA = no
 TDFXFB = no
 TDFXVID = no
-TGA = no
+TGA = yes
 TOOLAME=no
-TREMOR_INTERNAL = no
+TREMOR_INTERNAL = yes
 TV = no
 TV_BSDBT848 = auto
 TV_DSHOW = no
@@ -217,7 +217,7 @@ VIDIX_S3=no
 VIDIX_SH_VEU=no
 VIDIX_SIS=no
 VIDIX_UNICHROME=no
-VORBIS = no
+VORBIS = yes
 VSTREAM = no
 WII = no
 WIN32DLL = no
@@ -242,7 +242,7 @@ FFMPEG     = yes
 FFMPEG_A   = yes
 
 ASFLAGS    = $(CFLAGS)
-AS_DEPFLAGS= -MD -MP -O4 -meabi -mrvl -mcpu=750 -mtune=750 -mhard-float -mdouble-float -mpaired -pipe -ffast-math -fomit-frame-pointer
+AS_DEPFLAGS= -MD -MP -O4   -pipe -ffast-math -fomit-frame-pointer
 HOSTCC     = $(HOST_CC)
 HOSTCFLAGS = -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 -O3
 HOSTLIBS   = -lm
@@ -905,7 +905,7 @@ CONFIG_RTMPE_PROTOCOL=no
 CONFIG_RTMPTE_PROTOCOL=no
 CONFIG_RTMPS_PROTOCOL=no
 CONFIG_AAC_ADTSTOASC_BSF=yes
-CONFIG_CHOMP_BSF=yes
+CONFIG_CHOMP_BSF=no
 CONFIG_DUMP_EXTRADATA_BSF=yes
 CONFIG_H264_MP4TOANNEXB_BSF=yes
 CONFIG_IMX_DUMP_HEADER_BSF=yes

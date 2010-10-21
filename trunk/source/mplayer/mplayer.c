@@ -4671,7 +4671,7 @@ static void low_cache_loop(void)
 	SetBufferingStatus(0);
 	if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
 		StartDVDMotor();
-	else if(strncmp(filename,"usb:",4) == 0)
+	else if(strncmp(filename,"usb",3) == 0)
 		WakeupUSB();
 
 	if (cmd && cmd->id == MP_CMD_PAUSE)

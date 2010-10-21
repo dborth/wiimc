@@ -2811,13 +2811,14 @@ int gui_no_filename=0;
 m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
+m_config_set_option(mconfig,"nocorrect-pts","1");
 m_config_set_option(mconfig,"channels","2");
 m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
 #ifdef CONFIG_ASS
-//m_config_set_option(mconfig,"ass","1");
+m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2.5");
 #endif
 SetMPlayerSettings();
@@ -3142,10 +3143,6 @@ wii_error = 0;
 controlledbygui = 0;
 
 pause_low_cache=1;
-if(ass_color && strcmp(ass_color, "FFFFFF00") != 0)
-	ass_enabled=1;
-else
-	ass_enabled=0;
 
 #endif
 	
@@ -4481,7 +4478,7 @@ static int load_restore_point(char *_filename)
 static void remove_subtitles()
 {
 	if(!mpctx->sh_video || mpctx->set_of_sub_size <= 0)
-			return; // no subs
+		return; // no subs
 
 	int i;
 
@@ -5092,7 +5089,6 @@ void wiiSetSubtitleLanguage(char *lang)
 
 void wiiSetSubtitleColor(char *color)
 {
-#ifdef CONFIG_ASS
 	if(ass_color && strcmp(color, ass_color) == 0)
 		return;
 
@@ -5104,46 +5100,15 @@ void wiiSetSubtitleColor(char *color)
 	else
 		ass_border_color = strdup("00000000");
 
-	if(mpctx && mpctx->sh_video && !ass_enabled) 
-	{
-		char* vf_arg[] = {"auto", "1", NULL};
-		vf_instance_t* vf_ass = vf_open_filter(mpctx->sh_video->vfilter,"ass",vf_arg);
-		if (vf_ass)
-		{
-			ass_enabled = 1;
-			eosd_ass_init(ass_library);
-			vf_ass->config(vf_ass,
-					    mpctx->sh_video->disp_w,mpctx->sh_video->disp_h,
-					    mpctx->sh_video->disp_w,mpctx->sh_video->disp_h,0,mpctx->sh_video->outfmtidx);
-
-			mpctx->sh_video->vfilter=vf_ass;
-			mpctx->sh_video->vfilter=append_filters(mpctx->sh_video->vfilter);
-		}
-	}
 	reload_subtitles();
-#endif
 }
 
 void wiiSetSubtitleSize(float size)
 {
-#ifdef CONFIG_ASS
-	if(size == text_font_scale_factor)
+	if(size == ass_font_scale)
 		return;
 
-	ass_font_scale = size * 0.6;
-	ass_force_reload = 1;
-
-	text_font_scale_factor = size;
-	osd_font_scale_factor = size;
-	force_load_font = 1;
-	
-#else
-	if(size == text_font_scale_factor)
-		return;
-	text_font_scale_factor = size;
-	osd_font_scale_factor = size;
-	force_load_font = 1;
-#endif	
+	ass_font_scale = size;
 }
 
 bool wiiFindRestorePoint(char *filename)
@@ -5172,7 +5137,7 @@ void wiiLoadRestorePoints(char *buffer, int size)
 	while(lineptr < size && i < MAX_RESTORE_POINTS)
 	{
 		// setup next line
-		if(line) 
+		if(line)
 		{
 			free(line);
 			line=NULL;

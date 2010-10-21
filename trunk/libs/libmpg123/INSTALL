@@ -1,6 +1,14 @@
 mpg123 install hints
 --------------------
 
+Building on Wii:
+
+./configure --host=powerpc-eabi --prefix="${DEVKITPRO}/portlibs/ppc" --libdir="${DEVKITPRO}/portlibs/ppc/lib" --enable-shared=no --enable-static=yes --with-cpu=ppc_nofpu --with-optimization=3
+cd src/libmpg123
+make install
+
+--------------------
+
 (This file has very long lines - die-hard terminal nostalgists can be satisfied by `fmt -s -w 75 < INSTALL | less`. I think it's better to let the reader's preference rule than to preformat the stuff to some arbitrary width.)
 
 There are now two basic ways to get your mpg123 installation consisting of

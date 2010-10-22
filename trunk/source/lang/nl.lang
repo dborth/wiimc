@@ -2,7 +2,7 @@ msgid "********"
 msgstr "••••••••"
 
 msgid "Videos"
-msgstr "Videos"
+msgstr "Video's"
 
 msgid "Music"
 msgstr "Muziek"
@@ -11,7 +11,7 @@ msgid "Pictures"
 msgstr "Afbeeldingen"
 
 msgid "Online Media"
-msgstr "Online Media"
+msgstr "Online media"
 
 msgid "Please Wait"
 msgstr "Even geduld aub"
@@ -20,7 +20,7 @@ msgid "Error"
 msgstr "Fout"
 
 msgid "OK"
-msgstr "OK"
+msgstr "Ok"
 
 msgid "Retry"
 msgstr "Opnieuw proberen"
@@ -137,7 +137,7 @@ msgid "Online media file not found."
 msgstr "Online media bestand niet gevonden"
 
 msgid "Unrecognized DVD format!"
-msgstr "DVD formaat niet herkend!"
+msgstr "DVD-formaat niet herkend!"
 
 msgid "Port cannot be blank!"
 msgstr "Poort kan niet leeg gelaten worden!"
@@ -161,7 +161,7 @@ msgid "Settings - Pictures"
 msgstr "Instellingen - Afbeeldingen"
 
 msgid "Settings - Online Media"
-msgstr "Instellingen - Online Media"
+msgstr "Instellingen - Online media"
 
 msgid "Settings - Network"
 msgstr "Instellingen - Netwerk"
@@ -209,7 +209,7 @@ msgid "Screen Position"
 msgstr "Schermpositie"
 
 msgid "Frame Dropping"
-msgstr "Frame dropping"
+msgstr "Framedropping"
 
 msgid "Aspect Ratio"
 msgstr "Schermformaat"
@@ -224,19 +224,19 @@ msgid "Auto-Resume"
 msgstr "Start vanaf laatste punt"
 
 msgid "Videos Files Folder"
-msgstr "Video map"
+msgstr "Videomap"
 
 msgid "Play Order"
 msgstr "Afspeelvolgorde"
 
 msgid "Music Files Folder"
-msgstr "Muziek map"
+msgstr "Muziekmap"
 
 msgid "Pictures Files Folder"
-msgstr "Afbeeldingen map"
+msgstr "Afbeeldingenmap"
 
 msgid "Display Name"
-msgstr "Schermnaam"
+msgstr "Weergavenaam"
 
 msgid "Share IP"
 msgstr "Gedeelde IP"
@@ -296,7 +296,7 @@ msgid "Error loading file!"
 msgstr "Fout bij het laden van het bestand!"
 
 msgid "Resume"
-msgstr "Ga verder"
+msgstr "Hervat"
 
 msgid "Stop Slideshow"
 msgstr "Stop diavoorstelling"
@@ -308,19 +308,19 @@ msgid "Slideshow Delay"
 msgstr "Vertraging diavoorstelling"
 
 msgid "Online Media Folder"
-msgstr "Online Media Folder"
+msgstr "Online media map"
 
 msgid "Add SMB Share"
-msgstr "Voeg netwerk map toe"
+msgstr "Voeg netwerkmap toe"
 
 msgid "Add FTP Site"
-msgstr "Voeg FTP map toe"
+msgstr "Voeg FTP-map toe"
 
 msgid "DVD Menu"
-msgstr "DVD Menu"
+msgstr "DVD-menu"
 
 msgid "Skip to Main Title"
-msgstr "Skip naar hoofd film"
+msgstr "Direct naar hoofdfilm"
 
 msgid "Unable to Initialize MPlayer"
 msgstr "Kan MPlayer niet initialiseren"
@@ -332,7 +332,7 @@ msgid "Unable to change path to"
 msgstr "Kan de locatie niet veranderen naar"
 
 msgid "Out of memory: too many files!"
-msgstr "Geheugenfout, te veel bestanden"
+msgstr "Geheugenfout: te veel bestanden!"
 
 msgid "Directory name is too long!"
 msgstr "Naam van de map is te lang!"
@@ -341,7 +341,7 @@ msgid "SD Card"
 msgstr "SD-kaart"
 
 msgid "USB Mass Storage"
-msgstr "USB opslag / schijf"
+msgstr "USB-opslag"
 
 msgid "Data DVD"
 msgstr "Data-DVD"
@@ -362,7 +362,7 @@ msgid "Invalid DVD."
 msgstr "Ongeldige DVD."
 
 msgid "Up One Level"
-msgstr "Een omhoog"
+msgstr "Een niveau omhoog"
 
 msgid "Error opening"
 msgstr "Fout bij openen"
@@ -371,7 +371,7 @@ msgid "Warning"
 msgstr "Waarschuwing"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "Een of meerdere afbeeldingen in deze folder zijn te groot (+6MB) en worden niet getoond!"
+msgstr "Een of meerdere afbeeldingen in deze map zijn te groot (+6MB) en worden niet getoond!"
 
 msgid "Error loading playlist!"
 msgstr "Fout bij laden afspeellijst!"
@@ -401,7 +401,7 @@ msgid "Playlist is Empty"
 msgstr "Afspeellijst is leeg"
 
 msgid "Hover over items and push the + button to add them to your playlist."
-msgstr "Ga op het bestand staan en druk op de + knop om hem toe te voegen aan de afspeellijst."
+msgstr "Ga op het bestand staan en druk op de + knop om toe te voegen aan de afspeellijst."
 
 msgid "Exit Playlist"
 msgstr "Sluit afspeellijst"
@@ -434,7 +434,7 @@ msgid "Failed to connect to network share."
 msgstr "Kan niet verbinden met map op het netwerk."
 
 msgid "IP is blank."
-msgstr "IP adres is niet ingevuld."
+msgstr "IP-adres is niet ingevuld."
 
 msgid "Username is blank."
 msgstr "Gebruikersnaam is niet ingevuld."
@@ -446,10 +446,10 @@ msgid "Invalid FTP site settings"
 msgstr "Foute FTP-instellingen"
 
 msgid "Connecting to FTP site..."
-msgstr "Verbinden met FTP site..."
+msgstr "Verbinden met FTP-site..."
 
 msgid "Failed to connect to FTP site."
-msgstr "Kan niet verbinden met FTP site..."
+msgstr "Kan niet verbinden met FTP-site..."
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
 msgstr "Kan geen geldige USB of SD-kaart vinden - deze is benodigd voor een goede werking."
@@ -470,7 +470,7 @@ msgid "This software is open source and may be copied, distributed, or modified 
 msgstr "Deze software is open source en mag gekopieerd, gedistribueerd, of veranderd worden op voorwaarden gesteld in de GNU General Public License (GPL) Versie 2."
 
 msgid "Menu artwork"
-msgstr "Menu vormgeving"
+msgstr "Vormgeving menu"
 
 msgid "Coding"
 msgstr "Programmeur"
@@ -491,7 +491,7 @@ msgid "Buffering"
 msgstr "Bufferen"
 
 msgid "Unable to initialize network (Error #:"
-msgstr "Kan geen netwerk verbinding maken (Error #:"
+msgstr "Kan geen netwerkverbinding maken (Error #:"
 
 msgid "Settings - Subtitles"
 msgstr "Instellingen - Ondertiteling"
@@ -524,13 +524,13 @@ msgid "Download font"
 msgstr "Download lettertype"
 
 msgid "Unable to save font file!"
-msgstr "Kon lettertype-bestand niet opslaan!"
+msgstr "Kan lettertype-bestand niet opslaan!"
 
 msgid "Out of Memory"
 msgstr "Onvoldoende geheugen"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr "WIIMC heeft niet genoeg geheugen om de foto viewer te laden."
+msgstr "WiiMC heeft niet genoeg geheugen om de foto-viewer te laden."
 
 msgid "Close MPlayer"
 msgstr "MPlayer afsluiten"
@@ -611,10 +611,10 @@ msgid "Use Last Browsed"
 msgstr "Gebruik laatst bezochte"
 
 msgid "Audio Language"
-msgstr "Audio taal"
+msgstr "Audiotaal"
 
 msgid "DVD support"
-msgstr "DVD ondersteuning"
+msgstr "DVD-ondersteuning"
 
 msgid "Enabled"
 msgstr "Ingeschakeld"
@@ -632,10 +632,13 @@ msgid "The current IOS has been altered (fake-signed). Functionality and/or stab
 msgstr "De huidige IOS is bewerkt (fake-signed). Functionaliteit en/of stabiliteit kan hier op achteruit gaan."
 
 msgid "Online media file is invalid."
-msgstr "Online media bestand is ongeldig."
+msgstr "Online media-bestand is ongeldig."
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
 msgstr "Lettertypebestand van ondertiteling niet gevonden. De ondertiteling zal niet zichtbaar zijn."
 
 msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
-msgstr "WiiMC heeft geen DVD toegang - AHBPROT is niet ingeschakeld"
+msgstr "WiiMC heeft geen toegang tot DVD - AHBPROT is niet ingeschakeld"
+
+msgid "Starting Area"
+msgstr "Startgedeelte"

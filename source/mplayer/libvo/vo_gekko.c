@@ -64,118 +64,6 @@ static u32 image_width = 0, image_height = 0;
 static u32 gx_width, gx_height;
 
 
-void vo_draw_alpha_gekko(int w, int h, unsigned char* src, unsigned char *srca,
-		int srcstride, unsigned char* dstbase, int dststride, int x0)
-		{
-	// can be optimized
-	int x,y;
-	unsigned char* buf, *bufa, *tmp, *tmpa;
-	int buf_st;
-	int h1, w1, Yrowpitch, df1;
-
-	u8 *dst, *srca1, *src1, *srca2, *src2, *srca3, *src3, *srca4, *src4;
-
-	getStrideInfo(&w1, &df1, &Yrowpitch);
-	Yrowpitch = Yrowpitch * 8;
-	df1 = df1 * 8;
-
-	h1 = ((h / 8.0) + 0.5) * 8;
-	buf = malloc(dststride * h1);
-	bufa = malloc(dststride * h1);
-
-	memset(buf, 0, dststride * h1);
-	memset(bufa, 0, dststride * h1);
-
-	//	buf_st=(dststride-srcstride)/2; //center
-	//	buf_st=0; //align to left
-	buf_st = x0; // original pos
-	tmp = buf + buf_st;
-	tmpa = bufa + buf_st;
-
-	for (y = 0; y < h; y++)
-	{
-		memcpy(tmp, src, w);
-		memcpy(tmpa, srca, w);
-		src += srcstride;
-		srca += srcstride;
-		tmp += dststride;
-		tmpa += dststride;
-	}
-
-	src = buf;
-	srca = bufa;
-	h1 = h / 4;
-
-	dst = dstbase;
-	srca1 = srca;
-	src1 = src;
-	srca2 = srca + dststride;
-	src2 = src + dststride;
-	srca3 = srca + dststride * 2;
-	src3 = src + dststride * 2;
-	srca4 = srca + dststride * 3;
-	src4 = src + dststride * 3;
-	for (y = 0; y < h1; y++)
-	{
-		for (w = 0; w < w1; w++)
-		{
-			for (x = 0; x < 8; x++)
-			{
-				if (*srca1)
-					*dst = (((*dst) * (*srca1)) >> 8) + (*src1);
-				dst++;
-				srca1++;
-				src1++;
-			}
-			for (x = 0; x < 8; x++)
-			{
-				if (*srca2)
-					*dst = (((*dst) * (*srca2)) >> 8) + (*src2);
-				dst++;
-				srca2++;
-				src2++;
-			}
-			for (x = 0; x < 8; x++)
-			{
-				if (*srca3)
-					*dst = (((*dst) * (*srca3)) >> 8) + (*src3);
-				dst++;
-				srca3++;
-				src3++;
-			}
-			for (x = 0; x < 8; x++)
-			{
-				if (*srca4)
-					*dst = (((*dst) * (*srca4)) >> 8) + (*src4);
-				dst++;
-				srca4++;
-				src4++;
-			}
-		}
-		dst += df1;
-		srca1 += Yrowpitch;
-		src1 += Yrowpitch;
-		srca2 += Yrowpitch;
-		src2 += Yrowpitch;
-		srca3 += Yrowpitch;
-		src3 += Yrowpitch;
-		srca4 += Yrowpitch;
-		src4 += Yrowpitch;
-	}
-	free(buf);
-	free(bufa);
-}
-
-static void draw_alpha(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
-{
-	int p = image_width / 16;
-	if (p % 2) p++;
-	p = p * 16;
-	y0 = ((int) (y0 / 8.0)) * 8;
-	y0-=8;
-	vo_draw_alpha_gekko(w, h, src, srca, stride, GetYtexture() + (y0 * p), pitch[0], x0);
-}
-
 static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y)
 {
 	if (y == 0)
@@ -198,7 +86,7 @@ static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y
 
 static void draw_osd(void)
 {
-	vo_draw_text(image_width, image_height, draw_alpha);
+	vo_draw_text(image_width, image_height, vo_draw_alpha_gekko);
 }
 
 static void flip_page(void)

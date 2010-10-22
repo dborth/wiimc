@@ -2396,6 +2396,9 @@ int reinit_video_chain(void) {
 #endif
 
 #ifdef CONFIG_ASS
+#ifdef GEKKO
+	if(mpctx->global_sub_size>0) {
+#endif
   if(ass_enabled) {
     int i;
     int insert = 1;
@@ -2414,6 +2417,9 @@ int reinit_video_chain(void) {
         mp_msg(MSGT_CPLAYER,MSGL_ERR, "ASS: cannot add video filter\n");
     }
   }
+#ifdef GEKKO
+	}
+#endif  
 #endif
 
   sh_video->vfilter=append_filters(sh_video->vfilter);
@@ -5015,6 +5021,8 @@ void wiiSetProperty(int command, float value)
 			cmd->name = strdup("sub_delay"); break;
 		case MP_CMD_SUB_SELECT:
 			cmd->name = strdup("sub"); break;
+		case MP_CMD_SUB_STEP:
+			cmd->name = strdup("sub_step"); break;
 	}
 
 	switch(command)
@@ -5050,7 +5058,10 @@ void wiiSetCodepage(char *cp)
 	else
 		sub_cp = strdup(cp);
 
-	reload_subtitles();
+	//reload_subtitles();
+	ass_force_reload = 1;
+	force_load_font = 1;
+	vo_osd_changed(OSDTYPE_SUBTITLE);
 }
 
 void wiiSetAudioLanguage(char *lang)
@@ -5079,6 +5090,10 @@ void wiiSetSubtitleLanguage(char *lang)
 		dvdsub_lang = NULL;
 	else
 		dvdsub_lang = strdup(lang);
+	ass_force_reload = 1;
+	force_load_font = 1;
+
+	vo_osd_changed(OSDTYPE_SUBTITLE);
 }
 
 void wiiSetSubtitleColor(char *color)
@@ -5094,7 +5109,10 @@ void wiiSetSubtitleColor(char *color)
 	else
 		ass_border_color = strdup("00000000");
 
+	ass_force_reload = 1;
+	force_load_font = 1;
 	reload_subtitles();
+	vo_osd_changed(OSDTYPE_SUBTITLE);
 }
 
 void wiiSetSubtitleSize(float size)
@@ -5107,12 +5125,13 @@ void wiiSetSubtitleSize(float size)
 	text_font_scale_factor = size;
 	osd_font_scale_factor = size;
 	force_load_font = 1;
-	reload_subtitles();
+	//reload_subtitles();
 #else
 	text_font_scale_factor = size;
 	osd_font_scale_factor = size;
 	force_load_font = 1;
 #endif	
+	vo_osd_changed(OSDTYPE_SUBTITLE);
 }
 
 bool wiiFindRestorePoint(char *filename)

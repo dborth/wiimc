@@ -2412,7 +2412,10 @@ int reinit_video_chain(void) {
       char* vf_arg[] = {"auto", "1", NULL};
       vf_instance_t* vf_ass = vf_open_filter(sh_video->vfilter,"ass",vf_arg);
       if (vf_ass)
+      {
+      	printf("ass added\n");
         sh_video->vfilter=vf_ass;
+       }
       else
         mp_msg(MSGT_CPLAYER,MSGL_ERR, "ASS: cannot add video filter\n");
     }
@@ -2817,6 +2820,7 @@ m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
+m_config_set_option(mconfig,"nocorrect-pts","1");
 #ifdef CONFIG_ASS
 m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2.5");
@@ -5105,10 +5109,21 @@ void wiiSetSubtitleColor(char *color)
 
 void wiiSetSubtitleSize(float size)
 {
-	if(size == ass_font_scale)
+	if(size == text_font_scale_factor)
 		return;
-
+#ifdef CONFIG_ASS
+	ass_force_reload = 1;
 	ass_font_scale = size;
+	text_font_scale_factor = size;
+	osd_font_scale_factor = size;
+	force_load_font = 1;
+	reload_subtitles();
+#else
+	text_font_scale_factor = size;
+	osd_font_scale_factor = size;
+	force_load_font = 1;
+#endif	
+
 }
 
 bool wiiFindRestorePoint(char *filename)

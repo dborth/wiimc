@@ -645,6 +645,30 @@ void GX_ResetTextureYUVPointers()
 	Vdst = (u64 *) Vtexture[whichtext];
 }
 
-u8* GetYtexture() {return Yltexture[whichtext];}
-int GetYrowpitch() {return Yrowpitch;}
-int GetYrowpitchDf() {return Yrowpitch+df1;}
+
+void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
+{
+	s16 pitch = stride - w;
+	u8 * Ytexture=Yltexture[whichtext];
+
+	int dxs;
+	int dys = y0;
+	for (int y = 0; y < h; y++) 
+	{
+		dxs = x0;
+		for (int x = 0; x < w; x++) 
+		{
+			if (*srca) 
+			{     
+				u8 *Ydst = Ytexture + ((dys & (~3)) * Ywidth) + ((dxs & (~7)) << 2) + ((dys & 3) << 3) + (dxs & 7);
+				*Ydst = (((*Ydst) * (*srca)) >> 8) + (*src);
+			}
+			dxs++;
+			src++; srca++;
+		}
+		dys++;
+		src += pitch;
+		srca += pitch;
+	}
+}
+

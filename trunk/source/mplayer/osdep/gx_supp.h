@@ -44,7 +44,8 @@ void GX_AllocTextureMemory();
 void GX_FillTextureYUV(u16 height,u8 *buffer[3]);
 void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch);
 void getStrideInfo(int *_w1,int *_df1,int *_Yrowpitch);
-u8* GetYtexture();
+void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride);
+
 
 #ifdef __cplusplus
 }

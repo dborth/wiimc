@@ -54,7 +54,9 @@ LIBAD_EXTERN(mpg123)
 /* You might need to #undef _FILE_OFFSET_BITS here on a 64 bit system
    with released mpg123 1.12 when using callback API. SVN snapshots
    should work fine. */
+#ifdef GEKKO
 #define MPG123_NO_LARGENAME 1
+#endif
 #include <mpg123.h>
 
 /* Selection of mpg123 usage patterns:
@@ -67,9 +69,13 @@ LIBAD_EXTERN(mpg123)
  * Any of those might affect I/O performance, might be significant compared
  * to the excessively optimized decoding.
  */
-#define AD_MPG123_CALLBACK
+/* #define AD_MPG123_CALLBACK */
 #define AD_MPG123_PACKET
+/* #define AD_MPG123_SEEKBUFFER */
+#ifdef GEKKO
+#define AD_MPG123_CALLBACK
 #define AD_MPG123_SEEKBUFFER
+#endif
 
 /* Switch for updating bitrate info of VBR files. Not essential. */
 #define AD_MPG123_MEAN_BITRATE

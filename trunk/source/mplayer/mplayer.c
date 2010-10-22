@@ -2396,9 +2396,6 @@ int reinit_video_chain(void) {
 #endif
 
 #ifdef CONFIG_ASS
-#ifdef GEKKO
-	  if(mpctx->set_of_sub_size>0) {
-#endif
   if(ass_enabled) {
     int i;
     int insert = 1;
@@ -2412,17 +2409,11 @@ int reinit_video_chain(void) {
       char* vf_arg[] = {"auto", "1", NULL};
       vf_instance_t* vf_ass = vf_open_filter(sh_video->vfilter,"ass",vf_arg);
       if (vf_ass)
-      {
-      	printf("ass added\n");
         sh_video->vfilter=vf_ass;
-       }
       else
         mp_msg(MSGT_CPLAYER,MSGL_ERR, "ASS: cannot add video filter\n");
     }
   }
-#ifdef GEKKO
-	  }
-#endif  
 #endif
 
   sh_video->vfilter=append_filters(sh_video->vfilter);
@@ -2820,7 +2811,6 @@ m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
 m_config_set_option(mconfig,"subfont-osd-scale","2.5");
 m_config_set_option(mconfig,"subfont-text-scale","2.5");
-m_config_set_option(mconfig,"nocorrect-pts","1");
 #ifdef CONFIG_ASS
 m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2.5");
@@ -5109,7 +5099,7 @@ void wiiSetSubtitleColor(char *color)
 
 void wiiSetSubtitleSize(float size)
 {
-	if(size == text_font_scale_factor)
+	if(ass_font_scale == size)
 		return;
 #ifdef CONFIG_ASS
 	ass_force_reload = 1;
@@ -5123,7 +5113,6 @@ void wiiSetSubtitleSize(float size)
 	osd_font_scale_factor = size;
 	force_load_font = 1;
 #endif	
-
 }
 
 bool wiiFindRestorePoint(char *filename)

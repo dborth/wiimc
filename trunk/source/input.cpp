@@ -155,9 +155,14 @@ void MPlayerInput()
 			// the boundaries of the volume bar area, when it is visible
 			int x = userInput[0].wpad->ir.x;
 			int y = userInput[0].wpad->ir.y;
-	
+
+			int xoffset = 20;
+
+			if(screenwidth == 768)
+				xoffset = 80;
+
 			if(!drawGui || (y < 360 && 
-				(!VideoVolumeLevelBarVisible() || !(x > 80 && x < 180 && y > 180))))
+				(!VideoVolumeLevelBarVisible() || !(x > xoffset && x < xoffset+100 && y > 180))))
 			{
 				wiiPause();
 			}

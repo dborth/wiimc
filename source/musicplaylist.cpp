@@ -178,6 +178,11 @@ static int EnqueueFile(char * path, char * name)
 	return 1;
 }
 
+static int MusicSortCallback(const void *f1, const void *f2)
+{
+	return stricmp(((MEDIAENTRY *)f1)->displayname, ((MEDIAENTRY *)f2)->displayname);
+}
+
 /****************************************************************************
  * EnqueueFolder
  * 
@@ -200,6 +205,8 @@ static bool EnqueueFolder(char * path, int silent)
 		}
 		return false;
 	}
+	
+	int start = playlistSize;
 
 	while(dirnext(dir,filename,&filestat) == 0)
 	{
@@ -219,6 +226,10 @@ static bool EnqueueFolder(char * path, int silent)
 				break;
 		}
 	}
+
+	if(playlistSize-start > 1)
+		qsort(&playlist[start], playlistSize-start, sizeof(MEDIAENTRY), MusicSortCallback);
+
 	return true;
 }
 

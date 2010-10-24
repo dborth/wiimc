@@ -28,7 +28,7 @@
 static av_always_inline av_const uint16_t av_bswap16(uint16_t x)
 {
 	uint16_t t;
-	asm("sthbrx	%0,0,%1" : : "r"(x), "r"(&t) : "memory");
+	asm("sthbrx	%1,%y0" : "=Z"(*&t) : "r"(x));
 	return t;
 }
 
@@ -36,9 +36,10 @@ static av_always_inline av_const uint16_t av_bswap16(uint16_t x)
 static av_always_inline av_const uint32_t av_bswap32(uint32_t x)
 {
 	uint32_t t;
-	asm("stwbrx	%0,0,%1" : : "r"(x), "r"(&t) : "memory");
+	asm("stwbrx	%1,%y0" : "=Z"(*&t) : "r"(x));
 	return t;
 }
 #endif
 
 #endif /* AVUTIL_PPC_BSWAP_H */
+

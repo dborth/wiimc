@@ -279,33 +279,6 @@ char *GetParentDir()
 }
 
 /****************************************************************************
- * FileSortCallback
- *
- * Quick sort callback to sort file entries with the following order:
- *   .
- *   ..
- *   <dirs>
- *   <files>
- ***************************************************************************/
-int FileSortCallback(const void *f1, const void *f2)
-{
-	/* Special case for implicit directories */
-	if(((BROWSERENTRY *)f1)->filename[0] == '.' || ((BROWSERENTRY *)f2)->filename[0] == '.')
-	{
-		if(strcmp(((BROWSERENTRY *)f1)->filename, ".") == 0) { return -1; }
-		if(strcmp(((BROWSERENTRY *)f2)->filename, ".") == 0) { return 1; }
-		if(strcmp(((BROWSERENTRY *)f1)->filename, "..") == 0) { return -1; }
-		if(strcmp(((BROWSERENTRY *)f2)->filename, "..") == 0) { return 1; }
-	}
-
-	/* If one is a file and one is a directory the directory is first. */
-	if(((BROWSERENTRY *)f1)->type == TYPE_FOLDER && !(((BROWSERENTRY *)f2)->type == TYPE_FOLDER)) return -1;
-	if(!(((BROWSERENTRY *)f1)->type == TYPE_FOLDER) && ((BROWSERENTRY *)f2)->type == TYPE_FOLDER) return 1;
-
-	return stricmp(((BROWSERENTRY *)f1)->filename, ((BROWSERENTRY *)f2)->filename);
-}
-
-/****************************************************************************
  * BrowserChangeFolder
  *
  * Update current directory and set new entry list if directory has changed

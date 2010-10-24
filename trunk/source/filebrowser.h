@@ -91,7 +91,6 @@ extern MEDIAENTRY * onlinemediaList;
 extern int onlinemediaSize;
 
 char *GetParentDir();
-int FileSortCallback(const void *f1, const void *f2);
 void ResetBrowser();
 void BrowserHistoryStore(char *path);
 const char * BrowserHistoryRetrieve();

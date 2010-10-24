@@ -2546,6 +2546,7 @@ static void MenuBrowse(int menu)
 		if(audiobarPlaylistBtn->GetState() == STATE_CLICKED)
 		{
 			audiobarPlaylistBtn->ResetState();
+			SuspendParseThread();
 			MusicPlaylistLoad();
 			FindFile();
 			fileBrowser->TriggerUpdate();

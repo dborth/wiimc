@@ -341,7 +341,7 @@ static void eosd_ass_update(struct mp_eosd_source *src, const struct mp_eosd_set
 		extern int mplayerheight;
 		extern float mplayer_ass_font_scale;
 
-		if(ass_track->PlayResY == 288  && !ass_track->PlayResX) //detectted no embebeded font
+		if(ass_track && ass_track->PlayResY == 288  && !ass_track->PlayResX) //detectted no embebeded font
 			ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.5f;	
 		else ass_font_scale = mplayer_ass_font_scale;
 #endif		

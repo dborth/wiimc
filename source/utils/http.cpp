@@ -38,7 +38,7 @@ extern "C" {
 #include "mplayer/stream/url.h"
 }
 
-#define TCP_CONNECT_TIMEOUT 	4000  // 4 secs to make a connection
+#define TCP_CONNECT_TIMEOUT 	4  // 4 secs to make a connection
 #define TCP_SEND_SIZE 			(32 * 1024)
 #define TCP_RECV_SIZE 			(32 * 1024)
 #define TCP_BLOCK_RECV_TIMEOUT 	4000 // 4 secs to receive

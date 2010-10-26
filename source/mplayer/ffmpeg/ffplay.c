@@ -1755,6 +1755,7 @@ static int input_config_props(AVFilterLink *link)
 
     link->w = c->width;
     link->h = c->height;
+    link->time_base = priv->is->video_st->time_base;
 
     return 0;
 }
@@ -1778,52 +1779,6 @@ static AVFilter input_filter =
                                   { .name = NULL }},
 };
 
-static void output_end_frame(AVFilterLink *link)
-{
-}
-
-static int output_query_formats(AVFilterContext *ctx)
-{
-    enum PixelFormat pix_fmts[] = { PIX_FMT_YUV420P, PIX_FMT_NONE };
-
-    avfilter_set_common_formats(ctx, avfilter_make_format_list(pix_fmts));
-    return 0;
-}
-
-static int get_filtered_video_frame(AVFilterContext *ctx, AVFrame *frame,
-                                    int64_t *pts, int64_t *pos)
-{
-    AVFilterBufferRef *pic;
-
-    if(avfilter_request_frame(ctx->inputs[0]))
-        return -1;
-    if(!(pic = ctx->inputs[0]->cur_buf))
-        return -1;
-    ctx->inputs[0]->cur_buf = NULL;
-
-    frame->opaque = pic;
-    *pts          = pic->pts;
-    *pos          = pic->pos;
-
-    memcpy(frame->data,     pic->data,     sizeof(frame->data));
-    memcpy(frame->linesize, pic->linesize, sizeof(frame->linesize));
-
-    return 1;
-}
-
-static AVFilter output_filter =
-{
-    .name      = "ffplay_output",
-
-    .query_formats = output_query_formats,
-
-    .inputs    = (AVFilterPad[]) {{ .name          = "default",
-                                    .type          = AVMEDIA_TYPE_VIDEO,
-                                    .end_frame     = output_end_frame,
-                                    .min_perms     = AV_PERM_READ, },
-                                  { .name = NULL }},
-    .outputs   = (AVFilterPad[]) {{ .name = NULL }},
-};
 #endif  /* CONFIG_AVFILTER */
 
 static int video_thread(void *arg)
@@ -1837,16 +1792,17 @@ static int video_thread(void *arg)
 #if CONFIG_AVFILTER
     int64_t pos;
     char sws_flags_str[128];
+    FFSinkContext ffsink_ctx = { .pix_fmt = PIX_FMT_YUV420P };
     AVFilterContext *filt_src = NULL, *filt_out = NULL;
     AVFilterGraph *graph = av_mallocz(sizeof(AVFilterGraph));
     snprintf(sws_flags_str, sizeof(sws_flags_str), "flags=%d", sws_flags);
     graph->scale_sws_opts = av_strdup(sws_flags_str);
 
     if (avfilter_open(&filt_src, &input_filter,  "src") < 0) goto the_end;
-    if (avfilter_open(&filt_out, &output_filter, "out") < 0) goto the_end;
+    if (avfilter_open(&filt_out, &ffsink      ,  "out") < 0) goto the_end;
 
     if(avfilter_init_filter(filt_src, NULL, is))             goto the_end;
-    if(avfilter_init_filter(filt_out, NULL, frame))          goto the_end;
+    if(avfilter_init_filter(filt_out, NULL, &ffsink_ctx))    goto the_end;
 
 
     if(vfilters) {
@@ -1872,9 +1828,8 @@ static int video_thread(void *arg)
     avfilter_graph_add_filter(graph, filt_src);
     avfilter_graph_add_filter(graph, filt_out);
 
-    if(avfilter_graph_check_validity(graph, NULL))           goto the_end;
-    if(avfilter_graph_config_formats(graph, NULL))           goto the_end;
-    if(avfilter_graph_config_links(graph, NULL))             goto the_end;
+    if (avfilter_graph_config(graph, NULL) < 0)
+        goto the_end;
 
     is->out_video_filter = filt_out;
 #endif
@@ -1882,11 +1837,28 @@ static int video_thread(void *arg)
     for(;;) {
 #if !CONFIG_AVFILTER
         AVPacket pkt;
+#else
+        AVFilterBufferRef *picref;
+        AVRational tb;
 #endif
         while (is->paused && !is->videoq.abort_request)
             SDL_Delay(10);
 #if CONFIG_AVFILTER
-        ret = get_filtered_video_frame(filt_out, frame, &pts_int, &pos);
+        ret = get_filtered_video_frame(filt_out, frame, &picref, &tb);
+        if (picref) {
+            pts_int = picref->pts;
+            pos     = picref->pos;
+            frame->opaque = picref;
+        }
+
+        if (av_cmp_q(tb, is->video_st->time_base)) {
+            int64_t pts1 = pts_int;
+            pts_int = av_rescale_q(pts_int, tb, is->video_st->time_base);
+            av_log(NULL, AV_LOG_DEBUG, "video_thread(): "
+                   "tb:%d/%d pts:%"PRId64" -> tb:%d/%d pts:%"PRId64"\n",
+                   tb.num, tb.den, pts1,
+                   is->video_st->time_base.num, is->video_st->time_base.den, pts_int);
+        }
 #else
         ret = get_video_frame(is, frame, &pts_int, &pkt);
 #endif

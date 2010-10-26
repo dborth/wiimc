@@ -328,7 +328,7 @@ ASS_Image* ass_mp_render_frame(ASS_Renderer *priv, ASS_Track* track, long long n
 	if (ass_force_reload) {
 #ifdef GEKKO
 		adjust_font_scale(track);
-#endif	
+#endif
 		ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
 		ass_set_use_margins(priv, ass_use_margins);
 		ass_set_font_scale(priv, ass_font_scale);
@@ -339,29 +339,26 @@ ASS_Image* ass_mp_render_frame(ASS_Renderer *priv, ASS_Track* track, long long n
 
 /* EOSD source for ASS subtitles. */
 
-static ASS_Renderer *_ass_renderer;
+static ASS_Renderer *ass_renderer;
 static int prev_visibility;
-static bool first_update;
 
 static void eosd_ass_update(struct mp_eosd_source *src, const struct mp_eosd_settings *res, double ts)
 {
 	long long ts_ms = (ts + sub_delay) * 1000 + .5;
-
-	
 	ASS_Image *aimg;
 	struct mp_eosd_image *img;
-	if (res->changed || first_update) {
-		first_update = false;	
+	if (res->changed || !src->initialized) {
 		double dar = (double) (res->w - res->ml - res->mr) / (res->h - res->mt - res->mb);
 #ifdef GEKKO
 		adjust_font_scale(ass_track);
 #endif
-		ass_configure(_ass_renderer, res->w, res->h, res->unscaled);
-		ass_set_margins(_ass_renderer, res->mt, res->mb, res->ml, res->mr);
-		ass_set_aspect_ratio(_ass_renderer, dar, (double)res->srcw / res->srch);
+		ass_configure(ass_renderer, res->w, res->h, res->unscaled);
+		ass_set_margins(ass_renderer, res->mt, res->mb, res->ml, res->mr);
+		ass_set_aspect_ratio(ass_renderer, dar, (double)res->srcw / res->srch);
+		src->initialized = 1;
 	}
 	aimg = sub_visibility && ass_track && ts != MP_NOPTS_VALUE ?
-		ass_mp_render_frame(_ass_renderer, ass_track, ts_ms, &src->changed) :
+		ass_mp_render_frame(ass_renderer, ass_track, ts_ms, &src->changed) :
 		NULL;
 	if (!aimg != !src->images)
 		src->changed = 2;
@@ -386,7 +383,7 @@ static void eosd_ass_update(struct mp_eosd_source *src, const struct mp_eosd_set
 static void eosd_ass_uninit(struct mp_eosd_source *src)
 {
 	eosd_image_remove_all(src);
-	ass_renderer_done(_ass_renderer);
+	ass_renderer_done(ass_renderer);
 }
 
 static struct mp_eosd_source eosd_ass = {
@@ -397,13 +394,10 @@ static struct mp_eosd_source eosd_ass = {
 
 void eosd_ass_init(ASS_Library *ass_library)
 {
-	first_update = true;
-
-	_ass_renderer = ass_renderer_init(ass_library);
-	if (!_ass_renderer)
+	ass_renderer = ass_renderer_init(ass_library);
+	if (!ass_renderer)
 		return;
-
-	ass_configure_fonts(_ass_renderer);
+	ass_configure_fonts(ass_renderer);
 	if (!eosd_registered(&eosd_ass))
-		eosd_register(&eosd_ass);	
+		eosd_register(&eosd_ass);
 }

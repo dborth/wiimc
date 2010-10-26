@@ -2357,7 +2357,7 @@ EOF
     _optimizing="$proc"
     ;;
 
-  mips)
+  mips*)
     arch='mips'
     iproc='mips'
 
@@ -5892,7 +5892,7 @@ echores "$_dvdread"
 echocheck "internal libdvdcss"
 if test "$_libdvdcss_internal" = auto ; then
   _libdvdcss_internal=no
-  test "$_dvdread_internal" = yes && _libdvdcss_internal=yes
+  test "$_dvdread_internal" = yes && test -d libdvdcss && _libdvdcss_internal=yes
   hpux && test "$_hpux_scsi_h" = no && _libdvdcss_internal=no
 fi
 if test "$_libdvdcss_internal" = yes ; then
@@ -8249,6 +8249,7 @@ CONFIG_LPC     = yes
 CONFIG_LSP     = yes
 CONFIG_MDCT    = yes
 CONFIG_RDFT    = yes
+CONFIG_RTPDEC  = yes
 
 $mak_hardcoded_tables
 $mak_libavcodec_mpegaudio_hp
@@ -8755,6 +8756,7 @@ $def_yasm
 #define CONFIG_LPC 1
 #define CONFIG_MDCT 1
 #define CONFIG_RDFT 1
+#define CONFIG_RTPDEC 1
 
 /* Use these registers in FFmpeg x86 inline asm. No proper detection yet. */
 #ifndef MP_DEBUG

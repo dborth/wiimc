@@ -45,16 +45,10 @@ int rtp_parse_packet(RTPDemuxContext *s, AVPacket *pkt,
 void rtp_parse_close(RTPDemuxContext *s);
 int64_t ff_rtp_queued_packet_time(RTPDemuxContext *s);
 void ff_rtp_reset_packet_queue(RTPDemuxContext *s);
-#if (LIBAVFORMAT_VERSION_MAJOR <= 53)
-int rtp_get_local_port(URLContext *h);
-#endif
 int rtp_get_local_rtp_port(URLContext *h);
 int rtp_get_local_rtcp_port(URLContext *h);
 
 int rtp_set_remote_url(URLContext *h, const char *uri);
-#if (LIBAVFORMAT_VERSION_MAJOR <= 52)
-void rtp_get_file_handles(URLContext *h, int *prtp_fd, int *prtcp_fd);
-#endif
 
 /**
  * Send a dummy packet on both port pairs to set up the connection

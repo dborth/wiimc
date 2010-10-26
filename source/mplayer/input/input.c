@@ -173,6 +173,7 @@ static const mp_cmd_t mp_cmds[] = {
   { MP_CMD_LOADFILE, "loadfile", 1, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_LOADLIST, "loadlist", 1, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_RUN, "run", 1, { {MP_CMD_ARG_STRING,{0}}, {-1,{0}} } },
+  { MP_CMD_CAPTURING, "capturing", 0, { {-1,{0}} } },
   { MP_CMD_VF_CHANGE_RECTANGLE, "change_rectangle", 2, { {MP_CMD_ARG_INT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}}}},
   { MP_CMD_TV_TELETEXT_ADD_DEC, "teletext_add_dec", 1, { {MP_CMD_ARG_STRING,{0}}, {-1,{0}} } },
   { MP_CMD_TV_TELETEXT_GO_LINK, "teletext_go_link", 1, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
@@ -205,6 +206,7 @@ static const mp_cmd_t mp_cmds[] = {
   { MP_CMD_AF_ADD, "af_add", 1,  { {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
   { MP_CMD_AF_DEL, "af_del", 1,  { {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
   { MP_CMD_AF_CLR, "af_clr", 0, { {-1,{0}} } },
+  { MP_CMD_AF_CMDLINE, "af_cmdline", 2, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
 
   { 0, NULL, 0, {} }
 };
@@ -463,6 +465,7 @@ static const mp_cmd_bind_t def_cmd_binds[] = {
 #endif
   { { 'T', 0 }, "vo_ontop" },
   { { 'f', 0 }, "vo_fullscreen" },
+  { { 'c', 0 }, "capturing" },
   { { 's', 0 }, "screenshot 0" },
   { { 'S', 0 }, "screenshot 1" },
   { { 'w', 0 }, "panscan -0.1" },
@@ -1791,15 +1794,17 @@ mp_input_init(void) {
 
   if(in_file) {
     struct stat st;
-    if(stat(in_file,&st))
-      mp_msg(MSGT_INPUT,MSGL_ERR,MSGTR_INPUT_INPUT_ErrCantStatFile,in_file,strerror(errno));
-    else {
-      in_file_fd = open(in_file,S_ISFIFO(st.st_mode) ? O_RDWR : O_RDONLY);
-      if(in_file_fd >= 0)
-	mp_input_add_cmd_fd(in_file_fd,1,NULL,(mp_close_func_t)close);
-      else
-	mp_msg(MSGT_INPUT,MSGL_ERR,MSGTR_INPUT_INPUT_ErrCantOpenFile,in_file,strerror(errno));
-    }
+    int mode = O_RDONLY;
+    // Use RDWR for FIFOs to ensure they stay open over multiple accesses.
+    // Note that on Windows stat may fail for named pipes, but due to how the
+    // API works, using RDONLY should be ok.
+    if (stat(in_file,&st) == 0 && S_ISFIFO(st.st_mode))
+      mode = O_RDWR;
+    in_file_fd = open(in_file, mode);
+    if(in_file_fd >= 0)
+      mp_input_add_cmd_fd(in_file_fd,1,NULL,(mp_close_func_t)close);
+    else
+      mp_msg(MSGT_INPUT,MSGL_ERR,MSGTR_INPUT_INPUT_ErrCantOpenFile,in_file,strerror(errno));
   }
 
 }

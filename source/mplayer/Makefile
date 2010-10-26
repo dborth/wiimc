@@ -454,6 +454,7 @@ SRCS_COMMON = asxparser.c \
               libmpcodecs/vf_scale.c \
               libmpcodecs/vf_smartblur.c \
               libmpcodecs/vf_softpulldown.c \
+              libmpcodecs/vf_stereo3d.c \
               libmpcodecs/vf_softskip.c \
               libmpcodecs/vf_swapuv.c \
               libmpcodecs/vf_telecine.c \
@@ -680,6 +681,7 @@ SRCS_MPLAYER = command.c \
                mp_fifo.c \
                mplayer.c \
                parser-mpcmd.c \
+               pnm_loader.c \
                input/input.c \
                libao2/ao_mpegpes.c \
                libao2/ao_null.c \

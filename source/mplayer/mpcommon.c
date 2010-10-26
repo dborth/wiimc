@@ -16,12 +16,16 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#include <windows.h>
+#endif
 #include <stdlib.h>
 #include "stream/stream.h"
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/stheader.h"
 #include "codec-cfg.h"
 #include "osdep/timer.h"
+#include "osdep/priority.h"
 #include "path.h"
 #include "mplayer.h"
 #include "libvo/font_load.h"
@@ -394,24 +398,8 @@ static void sanitize_os(void)
 int common_init(void)
 {
 #ifndef GEKKO
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-#ifdef CONFIG_WIN32DLL
+#if (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(CONFIG_WIN32DLL)
     set_path_env();
-#endif
-#ifdef CONFIG_GUI
-    void *runningmplayer = FindWindow("MPlayer GUI for Windows", "MPlayer for Windows");
-    if (runningmplayer && filename && use_gui) {
-        COPYDATASTRUCT csData;
-        char file[MAX_PATH];
-        char *filepart = filename;
-        if (GetFullPathName(filename, MAX_PATH, file, &filepart)) {
-            csData.dwData = 0;
-            csData.cbData = strlen(file)*2;
-            csData.lpData = file;
-            SendMessage(runningmplayer, WM_COPYDATA, (WPARAM)runningmplayer, (LPARAM)&csData);
-        }
-    }
-#endif
 #endif
     sanitize_os();
 

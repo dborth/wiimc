@@ -34,6 +34,7 @@
 #include "stream/stream.h"
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/stheader.h"
+#include "libavutil/avstring.h"
 
 #include "gui/mplayer/pixmaps/ab.xpm"
 #include "gui/mplayer/pixmaps/half.xpm"
@@ -533,7 +534,7 @@ GtkWidget * create_PopUpMenu( void )
        AddMenuItem( window1, (const char*)empty1px_xpm, DVDSubtitleLanguageMenu,MSGTR_MENU_None,( (unsigned short)-1 << 16 ) + evSetDVDSubtitle );
        for ( i=0;i < guiIntfStruct.DVD.nr_of_subtitles;i++ )
         {
-	 snprintf( tmp,64,"%s",GetLanguage( guiIntfStruct.DVD.subtitles[i].language ) );
+         av_strlcpy( tmp,GetLanguage( guiIntfStruct.DVD.subtitles[i].language ),sizeof(tmp) );
          AddMenuCheckItem( window1, (const char*)empty1px_xpm, DVDSubtitleLanguageMenu,tmp,
 			   dvdsub_id == guiIntfStruct.DVD.subtitles[i].id,
 			   ( guiIntfStruct.DVD.subtitles[i].id << 16 ) + evSetDVDSubtitle );

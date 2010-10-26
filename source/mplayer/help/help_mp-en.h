@@ -1,4 +1,4 @@
-// $Revision: 32438 $
+// $Revision: 32526 $
 // MASTER FILE. Use this file as base for translations.
 // Translated files should be sent to the mplayer-DOCS mailing list or
 // to the help messages maintainer, see DOCS/tech/MAINTAINERS.
@@ -213,6 +213,8 @@ static const char help_text[]=
 #define MSGTR_OSDChapter "Chapter: (%d) %s"
 #define MSGTR_OSDAngle "Angle: %d/%d"
 #define MSGTR_OSDDeinterlace "Deinterlace: %s"
+#define MSGTR_OSDCapturing "Capturing: %s"
+#define MSGTR_OSDCapturingFailure "Capturing failed"
 
 // property values
 #define MSGTR_Enabled "enabled"
@@ -1367,7 +1369,6 @@ static const char help_text[]=
 #define MSGTR_INPUT_INPUT_ErrBuffer2SmallForCmd "Buffer is too small for command %s\n"
 #define MSGTR_INPUT_INPUT_ErrWhyHere "What are we doing here?\n"
 #define MSGTR_INPUT_INPUT_ErrCantInitJoystick "Can't init input joystick\n"
-#define MSGTR_INPUT_INPUT_ErrCantStatFile "Can't stat %s: %s\n"
 #define MSGTR_INPUT_INPUT_ErrCantOpenFile "Can't open %s: %s\n"
 #define MSGTR_INPUT_INPUT_ErrCantInitAppleRemote "Can't init Apple Remote.\n"
 

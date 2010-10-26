@@ -493,6 +493,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_LPC 1
 #define CONFIG_MDCT 1
 #define CONFIG_RDFT 1
+#define CONFIG_RTPDEC 0
 
 /* Use these registers in FFmpeg x86 inline asm. No proper detection yet. */
 #ifndef MP_DEBUG
@@ -1024,7 +1025,9 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_ROQ_DEMUXER 1
 #define CONFIG_RPL_DEMUXER 1
 #define CONFIG_RSO_DEMUXER 1
+#define CONFIG_RTP_DEMUXER 0
 #define CONFIG_RTSP_DEMUXER 0
+#define CONFIG_SAP_DEMUXER 0
 #define CONFIG_SDP_DEMUXER 0
 #define CONFIG_SEGAFILM_DEMUXER 1
 #define CONFIG_SHORTEN_DEMUXER 1

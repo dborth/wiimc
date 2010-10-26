@@ -335,16 +335,16 @@ static void eosd_ass_update(struct mp_eosd_source *src, const struct mp_eosd_set
 	if (res->changed || first_update) {
 		first_update = false;	
 		double dar = (double) (res->w - res->ml - res->mr) / (res->h - res->mt - res->mb);
-
 #ifdef GEKKO
 		extern uint32_t gx_height;
 		extern int mplayerheight;
 		extern float mplayer_ass_font_scale;
 
-		if(ass_track && ass_track->PlayResY == 288  && !ass_track->PlayResX) //detectted no embebeded font
-			ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.5f;	
-		else ass_font_scale = mplayer_ass_font_scale;
-#endif		
+		if(ass_track && ass_track->PlayResY == 288  && !ass_track->PlayResX) // embedded font not detected
+			ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.5f;
+		else
+			ass_font_scale = mplayer_ass_font_scale;
+#endif
 		ass_configure(_ass_renderer, res->w, res->h, res->unscaled);
 		ass_set_margins(_ass_renderer, res->mt, res->mb, res->ml, res->mr);
 		ass_set_aspect_ratio(_ass_renderer, dar, (double)res->srcw / res->srch);

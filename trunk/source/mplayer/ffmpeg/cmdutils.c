@@ -747,3 +747,66 @@ int64_t guess_correct_pts(PtsCorrectionContext *ctx, int64_t reordered_pts, int6
 
     return pts;
 }
+
+#if CONFIG_AVFILTER
+
+static int ffsink_init(AVFilterContext *ctx, const char *args, void *opaque)
+{
+    FFSinkContext *priv = ctx->priv;
+
+    if (!opaque)
+        return AVERROR(EINVAL);
+    *priv = *(FFSinkContext *)opaque;
+
+    return 0;
+}
+
+static void null_end_frame(AVFilterLink *inlink) { }
+
+static int ffsink_query_formats(AVFilterContext *ctx)
+{
+    FFSinkContext *priv = ctx->priv;
+    enum PixelFormat pix_fmts[] = { priv->pix_fmt, PIX_FMT_NONE };
+
+    avfilter_set_common_formats(ctx, avfilter_make_format_list(pix_fmts));
+    return 0;
+}
+
+AVFilter ffsink = {
+    .name      = "ffsink",
+    .priv_size = sizeof(FFSinkContext),
+    .init      = ffsink_init,
+
+    .query_formats = ffsink_query_formats,
+
+    .inputs    = (AVFilterPad[]) {{ .name          = "default",
+                                    .type          = AVMEDIA_TYPE_VIDEO,
+                                    .end_frame     = null_end_frame,
+                                    .min_perms     = AV_PERM_READ, },
+                                  { .name = NULL }},
+    .outputs   = (AVFilterPad[]) {{ .name = NULL }},
+};
+
+int get_filtered_video_frame(AVFilterContext *ctx, AVFrame *frame,
+                             AVFilterBufferRef **picref_ptr, AVRational *tb)
+{
+    int ret;
+    AVFilterBufferRef *picref;
+
+    if ((ret = avfilter_request_frame(ctx->inputs[0])) < 0)
+        return ret;
+    if (!(picref = ctx->inputs[0]->cur_buf))
+        return AVERROR(ENOENT);
+    *picref_ptr = picref;
+    ctx->inputs[0]->cur_buf = NULL;
+    *tb = ctx->inputs[0]->time_base;
+
+    memcpy(frame->data,     picref->data,     sizeof(frame->data));
+    memcpy(frame->linesize, picref->linesize, sizeof(frame->linesize));
+    frame->interlaced_frame = picref->video->interlaced;
+    frame->top_field_first  = picref->video->top_field_first;
+
+    return 1;
+}
+
+#endif /* CONFIG_AVFILTER */

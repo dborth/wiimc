@@ -43,6 +43,7 @@ typedef enum {
   MP_CMD_TV_STEP_CHANNEL,
   MP_CMD_TV_STEP_NORM,
   MP_CMD_TV_STEP_CHANNEL_LIST,
+  MP_CMD_CAPTURING,
   MP_CMD_VO_FULLSCREEN,
   MP_CMD_SUB_POS,
   MP_CMD_DVDNAV,
@@ -159,6 +160,7 @@ typedef enum {
   MP_CMD_AF_ADD,
   MP_CMD_AF_DEL,
   MP_CMD_AF_CLR,
+  MP_CMD_AF_CMDLINE,
 
 } mp_command_type;
 

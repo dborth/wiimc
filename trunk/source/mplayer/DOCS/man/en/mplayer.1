@@ -1,4 +1,4 @@
-.\" $Revision: 32447 $
+.\" $Revision: 32533 $
 .\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -281,6 +281,8 @@ Toggle displaying "forced subtitles".
 Toggle subtitle alignment: top / middle / bottom.
 .IPs "x and z"
 Adjust subtitle delay by +/\- 0.1 seconds.
+.IPs "c (\-capture only)"
+Start/stop capturing the primary stream.
 .IPs "r and t"
 Move subtitles up/down.
 .IPs "i (\-edlout mode only)"
@@ -1340,6 +1342,18 @@ from the current position, MPlayer will wait for the cache to be filled to
 this position rather than performing a stream seek (default: 50).
 .
 .TP
+.B \-capture (MPlayer only)
+Allows capturing the primary stream (not additional audio tracks or other
+kind of streams) into the file specified by \-dumpfile or \"stream.dump\"
+by default.
+If this option is given, capturing can be started and stopped by pressing
+the key bound to this function (see section INTERACTIVE CONTROL).
+Same as for \-dumpstream, this will likely not produce usable results for
+anything else than MPEG streams.
+Note that, due to cache latencies, captured data may begin and end
+somewhat delayed compared to what you see displayed.
+.
+.TP
 .B \-cdda <option1:option2> (CDDA only)
 This option can be used to tune the CD Audio reading feature of MPlayer.
 .sp 1
@@ -1465,7 +1479,8 @@ on the command line only the last one will work.
 .TP
 .B \-dumpfile <filename> (MPlayer only)
 Specify which file MPlayer should dump to.
-Should be used together with \-dumpaudio / \-dumpvideo / \-dumpstream.
+Should be used together with \-dumpaudio / \-dumpvideo / \-dumpstream /
+\-capture.
 .
 .TP
 .B \-dumpstream (MPlayer only)
@@ -7599,6 +7614,102 @@ Percentage of the pixels that have to be below the threshold (default: 98).
 .IPs <threshold>
 Threshold below which a pixel value is considered black (default: 32).
 .RE
+.PD 1
+.
+.TP
+.B stereo3d[=in:out]
+Stereo3d converts between different stereoscopic image formats.
+.RSs
+.IPs <in>
+Stereoscopic image format of input. Possible values:
+.RS
+.B sbsl or side_by_side_left_first
+.RS
+side by side parallel (left eye left, right eye right)
+.RE
+.B sbsr or side_by_side_right_first
+.RS
+side by side crosseye (right eye left, left eye right)
+.RE
+.B abl or above_below_left_first
+.RS
+above-below (left eye above, right eye below)
+.RE
+.B abl or above_below_right_first
+.RS
+above-below (right eye above, left eye below)
+.RE
+.B ab2l or above_below_half_height_left_first
+.RS
+above-below with half height resolution (left eye above, right eye below)
+.RE
+.B ab2r or above_below_half_height_right_first
+.RS
+above-below with half height resolution (right eye above, left eye below)
+.RE
+.RE
+.IPs <out>
+Stereoscopic image format of output. Possible values are all the input formats
+as well as:
+.RS
+.B arcg or anaglyph_red_cyan_gray
+.RS
+anaglyph red/cyan gray (red filter on left eye, cyan filter on right eye)
+.RE
+.B arch or anaglyph_red_cyan_half_color
+.RS
+anaglyph red/cyan half colored (red filter on left eye, cyan filter on right
+eye)
+.RE
+.B arcc or anaglyph_red_cyan_color
+.RS
+anaglyph red/cyan color (red filter on left eye, cyan filter on right eye)
+.RE
+.B arcd or anaglyph_red_cyan_dubois
+.RS
+anaglyph red/cyan color optimized with the least squares projection of dubois
+(red filter on left eye, cyan filter on right eye)
+.RE
+.B agmg or anaglyph_green_magenta_gray
+.RS
+anaglyph green/magenta gray (green filter on left eye, magenta filter on right
+eye)
+.RE
+.B agmh or anaglyph_green_magenta_half_color
+.RS
+anaglyph green/magenta half colored (green filter on left eye, magenta filter on
+right eye)
+.RE
+.B agmc or anaglyph_green_magenta_color
+.RS
+anaglyph green/magenta colored (green filter on left eye, magenta filter on
+right eye)
+.RE
+.B aybg or anaglyph_yellow_blue_gray
+.RS
+anaglyph yellow/blue gray (yellow filter on left eye, blue filter on right eye)
+.RE
+.B aybh or anaglyph_yellow_blue_half_color
+.RS
+anaglyph yellow/blue half colored (yellow filter on left eye, blue filter on
+right eye)
+.RE
+.B aybc or anaglyph_yellow_blue_color
+.RS
+anaglyph yellow/blue colored (yellow filter on left eye, blue filter on right
+eye)
+.RE
+.B ml or mono_left
+.RS
+mono output (left eye only)
+.RE
+.B mr or mono_right
+.RS
+mono output (right eye only)
+.RE
+.RE
+.RE
+.PD 1
 .
 .TP
 .B gradfun[=strength[:radius]]
@@ -10037,6 +10148,12 @@ simple profile at level 1
 simple profile at level 2
 .IPs "sp3\ \ "
 simple profile at level 3
+.IPs "sp4a\ \ "
+simple profile at level 4a
+.IPs "sp5\ \ "
+simple profile at level 5
+.IPs "sp6\ \ "
+simple profile at level 6
 .IPs "asp0\ "
 advanced simple profile at level 0
 .IPs "asp1\ "
@@ -11724,7 +11841,7 @@ increase volume or avoid clipping.
 .PP
 .B checkerboard invert with geq filter:
 .nf
-mplayer \-vf geq='128+(p(X\,Y)\-128)*(0.5\-gt(mod(X/SW\,128)\,64))*(0.5\-gt(mod(Y/SH\,128)\,64))*4'
+mplayer \-vf geq='128+(p(X\\,Y)\-128)*(0.5\-gt(mod(X/SW\\,128)\\,64))*(0.5\-gt(mod(Y/SH\\,128)\\,64))*4'
 .fi
 .
 .

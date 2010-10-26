@@ -226,14 +226,13 @@ The following abbreviations are recognized:
 
 @item -aspect @var{aspect}
 Set aspect ratio (4:3, 16:9 or 1.3333, 1.7777).
-@item -croptop @var{size} (deprecated - use the crop filter instead)
-Set top crop band size (in pixels).
-@item -cropbottom @var{size} (deprecated - use the crop filter instead)
-Set bottom crop band size (in pixels).
-@item -cropleft @var{size} (deprecated - use the crop filter instead)
-Set left crop band size (in pixels).
-@item -cropright @var{size} (deprecated - use the crop filter instead)
-Set right crop band size (in pixels).
+@item -croptop @var{size}
+@item -cropbottom @var{size}
+@item -cropleft @var{size}
+@item -cropright @var{size}
+All the crop options have been removed. Use -vf
+crop=width:height:x:y instead.
+
 @item -padtop @var{size}
 @item -padbottom @var{size}
 @item -padleft @var{size}
@@ -496,6 +495,12 @@ Bitstream filters available are "dump_extra", "remove_extra", "noise", "h264_mp4
 @example
 ffmpeg -i h264.mp4 -vcodec copy -vbsf h264_mp4toannexb -an out.h264
 @end example
+@item -force_key_frames @var{time}[,@var{time}...]
+Force key frames at the specified timestamps, more precisely at the first
+frames after each specified time.
+This option can be useful to ensure that a seek point is present at a
+chapter mark or any other designated place in the output file.
+The timestamps must be specified in ascending order.
 @end table
 
 @section Audio Options

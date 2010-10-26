@@ -213,6 +213,8 @@ static const char help_text[]=
 #define MSGTR_OSDChapter "Fejezet: (%d) %s"
 #define MSGTR_OSDAngle "Szög: %d/%d"
 #define MSGTR_OSDDeinterlace "Deinterlace: %s"
+#define MSGTR_OSDCapturing "Mentés: %s"
+#define MSGTR_OSDCapturingFailure "Mentés sikertelen"
 
 // property values
 #define MSGTR_Enabled "bekapcsolva"
@@ -1367,7 +1369,6 @@ static const char help_text[]=
 #define MSGTR_INPUT_INPUT_ErrBuffer2SmallForCmd "A buffer túl kicsi a(z) %s parancshoz\n"
 #define MSGTR_INPUT_INPUT_ErrWhyHere "Mit keresünk mi itt?\n"
 #define MSGTR_INPUT_INPUT_ErrCantInitJoystick "A bemeneti borkormány inicializálása nem sikerült\n"
-#define MSGTR_INPUT_INPUT_ErrCantStatFile "Nem stat-olható %s: %s\n"
 #define MSGTR_INPUT_INPUT_ErrCantOpenFile "Nem nyitható meg %s: %s\n"
 #define MSGTR_INPUT_INPUT_ErrCantInitAppleRemote "Apple Remote inicializálása nem sikerült.\n"
 

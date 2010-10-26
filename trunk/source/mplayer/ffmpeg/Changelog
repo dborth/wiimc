@@ -44,6 +44,12 @@ version <next>:
 - blackframe filter
 - Demuxer for Leitch/Harris' VR native stream format (LXF)
 - RTP depacketization of the X-QT QuickTime format
+- SAP (Session Announcement Protocol, RFC 2974) muxer and demuxer
+- cropdetect filter
+- ffmpeg -crop* options removed
+- transpose filter added
+- ffmpeg -force_key_frames option added
+- demuxer for receiving raw rtp:// URLs without an SDP description
 
 
 version 0.6:

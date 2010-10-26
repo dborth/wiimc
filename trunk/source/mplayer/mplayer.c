@@ -314,8 +314,9 @@ float stream_cache_seek_min_percent=50.0;
 #endif
 
 // dump:
-static char *stream_dump_name="stream.dump";
-       int stream_dump_type=0;
+char *stream_dump_name = "stream.dump";
+int stream_dump_type = 0;
+int capture_dump = 0;
 
 // A-V sync:
 static float default_max_pts_correction=-1;
@@ -2877,6 +2878,20 @@ if (!common_init())
     }
     }
   print_version("MPlayer");
+#if (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(CONFIG_GUI)
+    void *runningmplayer = FindWindow("MPlayer GUI for Windows", "MPlayer for Windows");
+    if (runningmplayer && filename && use_gui) {
+        COPYDATASTRUCT csData;
+        char file[MAX_PATH];
+        char *filepart = filename;
+        if (GetFullPathName(filename, MAX_PATH, file, &filepart)) {
+            csData.dwData = 0;
+            csData.cbData = strlen(file)*2;
+            csData.lpData = file;
+            SendMessage(runningmplayer, WM_COPYDATA, (WPARAM)runningmplayer, (LPARAM)&csData);
+        }
+    }
+#endif
     if (!common_init())
         exit_player_with_rc(EXIT_NONE, 0);
 

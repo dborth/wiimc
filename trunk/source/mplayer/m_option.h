@@ -470,7 +470,6 @@ struct m_option {
 
 ///@}
 
-
 /// Find the option matching the given name in the list.
 /** \ingroup Options
  *  This function takes the possible wildcards into account (see
@@ -528,5 +527,16 @@ m_option_free(const m_option_t* opt,void* dst) {
 }
 
 /*@}*/
+
+/**
+ * Parse a string as a timestamp.
+ *
+ * @param[in]  str      the string to parse.
+ * @param[out] time     parsed time.
+ * @param[in]  endchar  return an error of the next character after the
+ *                      timestamp is neither nul nor endchar.
+ * @return              Number of chars in the timestamp.
+ */
+int parse_timestring(const char *str, double *time, char endchar);
 
 #endif /* MPLAYER_M_OPTION_H */

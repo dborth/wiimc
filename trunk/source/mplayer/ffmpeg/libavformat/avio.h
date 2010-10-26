@@ -182,7 +182,6 @@ int64_t url_filesize(URLContext *h);
 /**
  * Return the file descriptor associated with this URL. For RTP, this
  * will return only the RTP file descriptor, not the RTCP file descriptor.
- * To get both, use rtp_get_file_handles().
  *
  * @return the file descriptor associated with this URL, or <0 on error.
  */
@@ -562,7 +561,7 @@ void init_checksum(ByteIOContext *s,
 /* udp.c */
 int udp_set_remote_url(URLContext *h, const char *uri);
 int udp_get_local_port(URLContext *h);
-#if (LIBAVFORMAT_VERSION_MAJOR <= 52)
+#if FF_API_UDP_GET_FILE
 int udp_get_file_handle(URLContext *h);
 #endif
 

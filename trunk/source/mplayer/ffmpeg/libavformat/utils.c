@@ -112,8 +112,14 @@ static void av_frac_add(AVFrac *f, int64_t incr)
 }
 
 /** head of registered input format linked list */
+#if !FF_API_FIRST_FORMAT
+static
+#endif
 AVInputFormat *first_iformat = NULL;
 /** head of registered output format linked list */
+#if !FF_API_FIRST_FORMAT
+static
+#endif
 AVOutputFormat *first_oformat = NULL;
 
 AVInputFormat  *av_iformat_next(AVInputFormat  *f)
@@ -191,7 +197,7 @@ static int match_format(const char *name, const char *names)
     return !strcasecmp(name, names);
 }
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_GUESS_FORMAT
 AVOutputFormat *guess_format(const char *short_name, const char *filename,
                              const char *mime_type)
 {
@@ -236,7 +242,7 @@ AVOutputFormat *av_guess_format(const char *short_name, const char *filename,
     return fmt_found;
 }
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_GUESS_FORMAT
 AVOutputFormat *guess_stream_format(const char *short_name, const char *filename,
                              const char *mime_type)
 {
@@ -286,7 +292,7 @@ AVInputFormat *av_find_input_format(const char *short_name)
     return NULL;
 }
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53 && CONFIG_SHARED && HAVE_SYMVER
+#if FF_API_SYMVER && CONFIG_SHARED && HAVE_SYMVER
 FF_SYMVER(void, av_destruct_packet_nofree, (AVPacket *pkt), "LIBAVFORMAT_52")
 {
     av_destruct_packet_nofree(pkt);
@@ -2751,16 +2757,7 @@ int av_write_header(AVFormatContext *s)
 
     /* set muxer identification string */
     if (!(s->streams[0]->codec->flags & CODEC_FLAG_BITEXACT)) {
-        AVMetadata *m;
-        AVMetadataTag *t;
-
-        if (!(m = av_mallocz(sizeof(AVMetadata))))
-            return AVERROR(ENOMEM);
-        av_metadata_set2(&m, "encoder", LIBAVFORMAT_IDENT, 0);
-        metadata_conv(&m, s->oformat->metadata_conv, NULL);
-        if ((t = av_metadata_get(m, "", NULL, AV_METADATA_IGNORE_SUFFIX)))
-            av_metadata_set2(&s->metadata, t->key, t->value, 0);
-        av_metadata_free(&m);
+        av_metadata_set2(&s->metadata, "encoder", LIBAVFORMAT_IDENT, 0);
     }
 
     if(s->oformat->write_header){
@@ -3209,7 +3206,7 @@ void dump_format(AVFormatContext *ic,
     av_free(printed);
 }
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_PARSE_FRAME_PARAM
 #include "libavcore/parseutils.h"
 
 int parse_image_size(int *width_ptr, int *height_ptr, const char *str)
@@ -3227,21 +3224,12 @@ int parse_frame_rate(int *frame_rate_num, int *frame_rate_den, const char *arg)
 }
 #endif
 
-#ifdef GEKKO
-#include <ogc/lwp_watchdog.h>
-int64_t av_gettime(void)
-{
-	return tick_microsecs(gettick());
-}
-#else
 int64_t av_gettime(void)
 {
     struct timeval tv;
     gettimeofday(&tv,NULL);
     return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
 }
-#endif
-
 
 uint64_t ff_ntp_time(void)
 {
@@ -3537,7 +3525,7 @@ void av_pkt_dump_log(void *avcl, int level, AVPacket *pkt, int dump_payload)
     pkt_dump_internal(avcl, NULL, level, pkt, dump_payload);
 }
 
-#if LIBAVFORMAT_VERSION_MAJOR < 53
+#if FF_API_URL_SPLIT
 attribute_deprecated
 void ff_url_split(char *proto, int proto_size,
                   char *authorization, int authorization_size,

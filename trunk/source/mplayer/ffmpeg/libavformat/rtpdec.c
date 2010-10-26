@@ -471,18 +471,17 @@ static int rtp_parse_packet_internal(RTPDemuxContext *s, AVPacket *pkt,
     if (!st) {
         /* specific MPEG2TS demux support */
         ret = ff_mpegts_parse_packet(s->ts, pkt, buf, len);
-        if (ret < 0) {
-            s->prev_ret = -1;
-            return -1;
-        }
+        /* The only error that can be returned from ff_mpegts_parse_packet
+         * is "no more data to return from the provided buffer", so return
+         * AVERROR(EAGAIN) for all errors */
+        if (ret < 0)
+            return AVERROR(EAGAIN);
         if (ret < len) {
             s->read_buf_size = len - ret;
             memcpy(s->buf, buf + ret, s->read_buf_size);
             s->read_buf_index = 0;
-            s->prev_ret = 1;
             return 1;
         }
-        s->prev_ret = 0;
         return 0;
     } else if (s->parse_packet) {
         rv = s->parse_packet(s->ic, s->dynamic_protocol_context,
@@ -531,7 +530,6 @@ static int rtp_parse_packet_internal(RTPDemuxContext *s, AVPacket *pkt,
     // now perform timestamp things....
     finalize_packet(s, pkt, timestamp);
 
-    s->prev_ret = rv;
     return rv;
 }
 
@@ -579,7 +577,7 @@ static void enqueue_packet(RTPDemuxContext *s, uint8_t *buf, int len)
 
 static int has_next_packet(RTPDemuxContext *s)
 {
-    return s->queue && s->queue->seq == s->seq + 1;
+    return s->queue && s->queue->seq == (uint16_t) (s->seq + 1);
 }
 
 int64_t ff_rtp_queued_packet_time(RTPDemuxContext *s)
@@ -606,7 +604,83 @@ static int rtp_parse_queued_packet(RTPDemuxContext *s, AVPacket *pkt)
     av_free(s->queue);
     s->queue = next;
     s->queue_len--;
-    return rv ? rv : has_next_packet(s);
+    return rv;
+}
+
+static int rtp_parse_one_packet(RTPDemuxContext *s, AVPacket *pkt,
+                     uint8_t **bufptr, int len)
+{
+    uint8_t* buf = bufptr ? *bufptr : NULL;
+    int ret, flags = 0;
+    uint32_t timestamp;
+    int rv= 0;
+
+    if (!buf) {
+        /* If parsing of the previous packet actually returned 0 or an error,
+         * there's nothing more to be parsed from that packet, but we may have
+         * indicated that we can return the next enqueued packet. */
+        if (s->prev_ret <= 0)
+            return rtp_parse_queued_packet(s, pkt);
+        /* return the next packets, if any */
+        if(s->st && s->parse_packet) {
+            /* timestamp should be overwritten by parse_packet, if not,
+             * the packet is left with pts == AV_NOPTS_VALUE */
+            timestamp = RTP_NOTS_VALUE;
+            rv= s->parse_packet(s->ic, s->dynamic_protocol_context,
+                                s->st, pkt, &timestamp, NULL, 0, flags);
+            finalize_packet(s, pkt, timestamp);
+            return rv;
+        } else {
+            // TODO: Move to a dynamic packet handler (like above)
+            if (s->read_buf_index >= s->read_buf_size)
+                return AVERROR(EAGAIN);
+            ret = ff_mpegts_parse_packet(s->ts, pkt, s->buf + s->read_buf_index,
+                                      s->read_buf_size - s->read_buf_index);
+            if (ret < 0)
+                return AVERROR(EAGAIN);
+            s->read_buf_index += ret;
+            if (s->read_buf_index < s->read_buf_size)
+                return 1;
+            else
+                return 0;
+        }
+    }
+
+    if (len < 12)
+        return -1;
+
+    if ((buf[0] & 0xc0) != (RTP_VERSION << 6))
+        return -1;
+    if (buf[1] >= RTCP_SR && buf[1] <= RTCP_APP) {
+        return rtcp_parse_packet(s, buf, len);
+    }
+
+    if ((s->seq == 0 && !s->queue) || s->queue_size <= 1) {
+        /* First packet, or no reordering */
+        return rtp_parse_packet_internal(s, pkt, buf, len);
+    } else {
+        uint16_t seq = AV_RB16(buf + 2);
+        int16_t diff = seq - s->seq;
+        if (diff < 0) {
+            /* Packet older than the previously emitted one, drop */
+            av_log(s->st ? s->st->codec : NULL, AV_LOG_WARNING,
+                   "RTP: dropping old packet received too late\n");
+            return -1;
+        } else if (diff <= 1) {
+            /* Correct packet */
+            rv = rtp_parse_packet_internal(s, pkt, buf, len);
+            return rv;
+        } else {
+            /* Still missing some packet, enqueue this one. */
+            enqueue_packet(s, buf, len);
+            *bufptr = NULL;
+            /* Return the first enqueued packet if the queue is full,
+             * even if we're missing something */
+            if (s->queue_len >= s->queue_size)
+                return rtp_parse_queued_packet(s, pkt);
+            return -1;
+        }
+    }
 }
 
 /**
@@ -621,84 +695,11 @@ static int rtp_parse_queued_packet(RTPDemuxContext *s, AVPacket *pkt)
 int rtp_parse_packet(RTPDemuxContext *s, AVPacket *pkt,
                      uint8_t **bufptr, int len)
 {
-    uint8_t* buf = bufptr ? *bufptr : NULL;
-    int ret, flags = 0;
-    uint32_t timestamp;
-    int rv= 0;
-
-    if (!buf) {
-        /* If parsing of the previous packet actually returned 0, there's
-         * nothing more to be parsed from that packet, but we may have
-         * indicated that we can return the next enqueued packet. */
-        if (!s->prev_ret)
-            return rtp_parse_queued_packet(s, pkt);
-        /* return the next packets, if any */
-        if(s->st && s->parse_packet) {
-            /* timestamp should be overwritten by parse_packet, if not,
-             * the packet is left with pts == AV_NOPTS_VALUE */
-            timestamp = RTP_NOTS_VALUE;
-            rv= s->parse_packet(s->ic, s->dynamic_protocol_context,
-                                s->st, pkt, &timestamp, NULL, 0, flags);
-            finalize_packet(s, pkt, timestamp);
-            s->prev_ret = rv;
-            return rv ? rv : has_next_packet(s);
-        } else {
-            // TODO: Move to a dynamic packet handler (like above)
-            if (s->read_buf_index >= s->read_buf_size) {
-                s->prev_ret = -1;
-                return -1;
-            }
-            ret = ff_mpegts_parse_packet(s->ts, pkt, s->buf + s->read_buf_index,
-                                      s->read_buf_size - s->read_buf_index);
-            if (ret < 0) {
-                s->prev_ret = -1;
-                return -1;
-            }
-            s->read_buf_index += ret;
-            if (s->read_buf_index < s->read_buf_size)
-                return 1;
-            else {
-                s->prev_ret = 0;
-                return has_next_packet(s);
-            }
-        }
-    }
-
-    if (len < 12)
-        return -1;
-
-    if ((buf[0] & 0xc0) != (RTP_VERSION << 6))
-        return -1;
-    if (buf[1] >= RTCP_SR && buf[1] <= RTCP_APP) {
-        return rtcp_parse_packet(s, buf, len);
-    }
-
-    if (s->seq == 0 || s->queue_size <= 1) {
-        /* First packet, or no reordering */
-        return rtp_parse_packet_internal(s, pkt, buf, len);
-    } else {
-        uint16_t seq = AV_RB16(buf + 2);
-        int16_t diff = seq - s->seq;
-        if (diff < 0) {
-            /* Packet older than the previously emitted one, drop */
-            av_log(s->st ? s->st->codec : NULL, AV_LOG_WARNING,
-                   "RTP: dropping old packet received too late\n");
-            return -1;
-        } else if (diff <= 1) {
-            /* Correct packet */
-            rv = rtp_parse_packet_internal(s, pkt, buf, len);
-            return rv ? rv : has_next_packet(s);
-        } else {
-            /* Still missing some packet, enqueue this one. */
-            enqueue_packet(s, buf, len);
-            *bufptr = NULL;
-            /* Return the first enqueued packet if the queue is full,
-             * even if we're missing something */
-            if (s->queue_len >= s->queue_size)
-                return rtp_parse_queued_packet(s, pkt);
-            return -1;
-        }
-    }
+    int rv = rtp_parse_one_packet(s, pkt, bufptr, len);
+    s->prev_ret = rv;
+    while (rv == AVERROR(EAGAIN) && has_next_packet(s))
+        rv = rtp_parse_queued_packet(s, pkt);
+    return rv ? rv : has_next_packet(s);
 }
 
 void rtp_parse_close(RTPDemuxContext *s)

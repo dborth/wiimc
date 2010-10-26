@@ -27,7 +27,7 @@
 #include <inttypes.h>
 
 #include "config.h"
-#if !defined(GEKKO)
+
 #if !HAVE_WINSOCK2_H
 #include <netdb.h>
 #include <netinet/in.h>
@@ -37,11 +37,6 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #endif
-#endif
-
-#ifdef GEKKO
-#include <network.h>
-#endif
 
 #include "mp_msg.h"
 #include "rtsp.h"
@@ -50,6 +45,7 @@
 #include "stream/network.h"
 #include "stream/freesdp/common.h"
 #include "stream/freesdp/parser.h"
+#include "libavutil/avstring.h"
 
 #define RTSP_DEFAULT_PORT 31336
 #define MAX_LENGTH 256
@@ -223,7 +219,7 @@ parse_destination (const char *line)
   len = strlen (parse1) - strlen (parse2)
     - strlen (RTSP_SETUP_DESTINATION) + 1;
   dest = (char *) malloc (len + 1);
-  snprintf (dest, len, parse1 + strlen (RTSP_SETUP_DESTINATION));
+  av_strlcpy (dest, parse1 + strlen (RTSP_SETUP_DESTINATION), len);
   free (line_copy);
 
   return dest;
@@ -269,11 +265,7 @@ rtcp_connect (int client_port, int server_port, const char* server_hostname)
   }
 
   sin.sin_family = AF_INET;
-#ifdef GEKKO
-  memcpy (&(sin.sin_addr.s_addr), hp->h_addr_list[0], sizeof (hp->h_addr_list[0]));
-#else
   memcpy (&(sin.sin_addr.s_addr), hp->h_addr, sizeof (hp->h_addr));
-#endif
   sin.sin_port = htons (server_port);
 
   /* datagram socket */

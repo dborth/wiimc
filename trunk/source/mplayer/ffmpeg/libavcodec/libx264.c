@@ -100,7 +100,11 @@ static int X264_frame(AVCodecContext *ctx, uint8_t *buf,
         }
 
         x4->pic.i_pts  = frame->pts;
-        x4->pic.i_type = X264_TYPE_AUTO;
+        x4->pic.i_type =
+            frame->pict_type == FF_I_TYPE ? X264_TYPE_KEYFRAME :
+            frame->pict_type == FF_P_TYPE ? X264_TYPE_P :
+            frame->pict_type == FF_B_TYPE ? X264_TYPE_B :
+                                            X264_TYPE_AUTO;
     }
 
     do {
@@ -293,6 +297,8 @@ static av_cold int X264_init(AVCodecContext *avctx)
     x4->params.i_threads      = avctx->thread_count;
 
     x4->params.b_interlaced   = avctx->flags & CODEC_FLAG_INTERLACED_DCT;
+
+    x4->params.i_slice_count  = avctx->slices;
 
     if (avctx->flags & CODEC_FLAG_GLOBAL_HEADER)
         x4->params.b_repeat_headers = 0;

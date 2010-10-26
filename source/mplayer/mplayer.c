@@ -3143,6 +3143,7 @@ wii_error = 0;
 controlledbygui = 0;
 
 pause_low_cache=1;
+audio_id=video_id=-1;
 
 #endif
 	

@@ -310,9 +310,25 @@ ASS_Library* ass_init(void) {
 }
 
 int ass_force_reload = 0; // flag set if global ass-related settings were changed
+#ifdef GEKKO
+static void adjust_font_scale(ASS_Track* track)
+{
+	extern uint32_t gx_height;
+	extern int mplayerheight;
+	extern float mplayer_ass_font_scale;
+	
+	if(track && track->PlayResY == 288	&& (!track->PlayResX || track->PlayResX==384)) // embedded font not detected
+		ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.5f;
+	else
+		ass_font_scale = mplayer_ass_font_scale;
+}
+#endif
 
 ASS_Image* ass_mp_render_frame(ASS_Renderer *priv, ASS_Track* track, long long now, int* detect_change) {
 	if (ass_force_reload) {
+#ifdef GEKKO
+		adjust_font_scale(track);
+#endif	
 		ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
 		ass_set_use_margins(priv, ass_use_margins);
 		ass_set_font_scale(priv, ass_font_scale);
@@ -330,20 +346,15 @@ static bool first_update;
 static void eosd_ass_update(struct mp_eosd_source *src, const struct mp_eosd_settings *res, double ts)
 {
 	long long ts_ms = (ts + sub_delay) * 1000 + .5;
+
+	
 	ASS_Image *aimg;
 	struct mp_eosd_image *img;
 	if (res->changed || first_update) {
 		first_update = false;	
 		double dar = (double) (res->w - res->ml - res->mr) / (res->h - res->mt - res->mb);
 #ifdef GEKKO
-		extern uint32_t gx_height;
-		extern int mplayerheight;
-		extern float mplayer_ass_font_scale;
-
-		if(ass_track && ass_track->PlayResY == 288  && !ass_track->PlayResX) // embedded font not detected
-			ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.5f;
-		else
-			ass_font_scale = mplayer_ass_font_scale;
+		adjust_font_scale(ass_track);
 #endif
 		ass_configure(_ass_renderer, res->w, res->h, res->unscaled);
 		ass_set_margins(_ass_renderer, res->mt, res->mb, res->ml, res->mr);

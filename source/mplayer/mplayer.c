@@ -5121,13 +5121,12 @@ void wiiSetSubtitleSize(float size)
 {
 	if(mplayer_ass_font_scale == size)
 		return;
+	mplayer_ass_font_scale = size;
 #ifdef CONFIG_ASS
 	ass_force_reload = 1;
-	mplayer_ass_font_scale = size;
 	text_font_scale_factor = size;
 	osd_font_scale_factor = size;
 	force_load_font = 1;
-	//reload_subtitles();
 #else
 	text_font_scale_factor = size;
 	osd_font_scale_factor = size;

@@ -5114,15 +5114,15 @@ void wiiSetSubtitleColor(char *color)
 	reload_subtitles();
 	vo_osd_changed(OSDTYPE_SUBTITLE);
 }
-float mplayer_ass_font_scale=1.;
+
+float mplayer_ass_font_scale=1;
+
 void wiiSetSubtitleSize(float size)
 {
-	ass_font_scale = size;
 	if(mplayer_ass_font_scale == size)
 		return;
 #ifdef CONFIG_ASS
 	ass_force_reload = 1;
-	ass_font_scale = size;
 	mplayer_ass_font_scale = size;
 	text_font_scale_factor = size;
 	osd_font_scale_factor = size;

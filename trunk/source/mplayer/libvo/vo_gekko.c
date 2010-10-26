@@ -63,7 +63,6 @@ static u32 image_width = 0, image_height = 0;
 
 u32 gx_width, gx_height;
 
-
 static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y)
 {
 	if (y == 0)

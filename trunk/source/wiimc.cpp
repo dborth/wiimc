@@ -479,7 +479,7 @@ void SetMPlayerSettings()
 	wiiSetAudioLanguage(audioLang);
 	wiiSetSubtitleLanguage(subtitleLang);
 	wiiSetSubtitleColor(WiiSettings.subtitleColor);
-	wiiSetSubtitleSize(WiiSettings.subtitleSize);
+	wiiSetSubtitleSize(0.6+(WiiSettings.subtitleSize-1)*0.6); // 1.0-5.0 --> 0.6-3.0
 }
 }
 

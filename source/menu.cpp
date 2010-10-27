@@ -1426,6 +1426,72 @@ bool OnScreenKeyboard(char *var, u32 maxlen)
 	return save;
 }
 
+bool OnScreenKeypad(char *var, u32 maxlen)
+{
+	int save = -1;
+
+	GuiKeypad keypad(var, maxlen);
+
+	GuiImageData btnOutline(button_png);
+	GuiImageData btnOutlineOver(button_over_png);
+
+	GuiText okBtnTxt("OK", 20, (GXColor){255, 255, 255, 255});
+	GuiImage okBtnImg(&btnOutline);
+	GuiImage okBtnImgOver(&btnOutlineOver);
+	GuiButton okBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+
+	okBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	okBtn.SetPosition(25, -25);
+
+	okBtn.SetLabel(&okBtnTxt);
+	okBtn.SetImage(&okBtnImg);
+	okBtn.SetImageOver(&okBtnImgOver);
+	okBtn.SetTrigger(trigA);
+	okBtn.SetEffectGrow();
+
+	GuiText cancelBtnTxt("Cancel", 20, (GXColor){255, 255, 255, 255});
+	GuiImage cancelBtnImg(&btnOutline);
+	GuiImage cancelBtnImgOver(&btnOutlineOver);
+	GuiButton cancelBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+	cancelBtn.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
+	cancelBtn.SetPosition(-25, -25);
+	cancelBtn.SetLabel(&cancelBtnTxt);
+	cancelBtn.SetImage(&cancelBtnImg);
+	cancelBtn.SetImageOver(&cancelBtnImgOver);
+	cancelBtn.SetTrigger(trigA);
+	cancelBtn.SetEffectGrow();
+
+	keypad.Append(&okBtn);
+	keypad.Append(&cancelBtn);
+
+	SuspendGui();
+	mainWindow->SetState(STATE_DISABLED);
+	mainWindow->Append(disabled);
+	mainWindow->Append(&keypad);
+	ResumeGui();
+
+	while(save == -1)
+	{
+		usleep(THREAD_SLEEP);
+
+		if(okBtn.GetState() == STATE_CLICKED)
+			save = 1;
+		else if(cancelBtn.GetState() == STATE_CLICKED)
+			save = 0;
+	}
+
+	if(save)
+		snprintf(var, maxlen+1, "%s", keypad.kptextstr);
+
+	SuspendGui();
+	mainWindow->Remove(&keypad);
+	mainWindow->Remove(disabled);
+	mainWindow->SetState(STATE_DEFAULT);
+	ResumeGui();
+
+	return save;
+}
+
 /****************************************************************************
  * SettingWindow
  *
@@ -5024,7 +5090,7 @@ static void MenuSettingsNetworkSMB()
 					}
 				}
 
-				OnScreenKeyboard(WiiSettings.smbConf[netEditIndex].ip, 80);
+				OnScreenKeypad(WiiSettings.smbConf[netEditIndex].ip, 80);
 				break;
 
 			case 2:
@@ -5220,13 +5286,14 @@ static void MenuSettingsNetworkFTP()
 				break;
 			case 4:
 				char tmp[20];
+				tmp[0] = 0;
 				if(OnScreenKeyboard(tmp, 20))
 					strcpy(WiiSettings.ftpConf[netEditIndex].pwd, tmp);
 				break;
 			case 5:
 				char tmpPort[6];
 				sprintf(tmpPort, "%d", WiiSettings.ftpConf[netEditIndex].port);
-				if(OnScreenKeyboard(tmpPort, 5))
+				if(OnScreenKeypad(tmpPort, 5))
 				{
 					if(tmpPort[0] == 0)
 						ErrorPrompt("Port cannot be blank!");
@@ -5473,9 +5540,15 @@ static void MenuSettingsSubtitles()
 				WiiSettings.subtitleVisibility ^= 1;
 				break;
 			case 1:
-				WiiSettings.subtitleDelay += 0.1;
-				if (WiiSettings.subtitleDelay > 2)
-					WiiSettings.subtitleDelay = -2;
+				char delay[8];
+				sprintf(delay, "%.2f", WiiSettings.subtitleDelay);
+				if(OnScreenKeypad(delay, 7))
+				{
+					if(delay[0] == 0)
+						WiiSettings.subtitleDelay = 0;
+					else
+						WiiSettings.subtitleDelay = atof(delay);
+				}
 				break;
 			case 2:
 				LanguageWindow(WiiSettings.subtitleLanguage);
@@ -5505,7 +5578,7 @@ static void MenuSettingsSubtitles()
 			firstRun = false;
 
 			sprintf(options.value[0], "%s", WiiSettings.subtitleVisibility ? "On" : "Off");
-			sprintf(options.value[1], "%.1f %s", WiiSettings.subtitleDelay, gettext("sec"));
+			sprintf(options.value[1], "%.2f %s", WiiSettings.subtitleDelay, gettext("sec"));
 			strcpy(options.value[2], languages[GetLangIndex(WiiSettings.subtitleLanguage)].language);
 			if(GetCodepageIndex() == 0)
 				sprintf(options.value[3], "Default");

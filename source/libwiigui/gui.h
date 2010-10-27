@@ -975,10 +975,44 @@ class GuiKeyboard : public GuiWindow
 		GuiImageData * keyMediumOver;
 		GuiImageData * keyLarge;
 		GuiImageData * keyLargeOver;
-		GuiSound * keySoundOver;
-		GuiSound * keySoundClick;
 		GuiTrigger * trigA;
 		Key keys[4][11]; // two chars = less space than one pointer
+};
+
+//!On-screen keypad
+class GuiKeypad : public GuiWindow
+{
+	public:
+		GuiKeypad(char * t, u32 m);
+		~GuiKeypad();
+
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);		
+
+		void Update(GuiTrigger * t);
+		char kptextstr[256];
+	protected:
+		u32 kptextmaxlen;
+		GuiText * kpText;
+		GuiImage * keyTextboxImg;
+		GuiText * keyBackText;
+		GuiImage * keyBackImg;
+		GuiImage * keyBackOverImg;
+		GuiButton * keyBack;
+		GuiButton * keyBtn[4][3];
+		GuiImage * keyImg[4][3];
+		GuiImage * keyImgOver[4][3];
+		GuiText * keyTxt[4][3];
+		GuiImageData * keyTextbox;
+		GuiImageData * key;
+		GuiImageData * keyOver;
+		GuiImageData * keyMedium;
+		GuiImageData * keyMediumOver;
+		GuiTrigger * trigA;
+		char keys[4][3];
 };
 
 typedef struct _optionlist {

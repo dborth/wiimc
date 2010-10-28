@@ -54,8 +54,6 @@ int currentDeviceNum = -1;
 bool isInserted[3] = { false, false, false };
 bool devicesChanged = false;
 u64 dvdLastUsed = 0;
-int mounting=-1;
-
 
 static char prefix[2][4] = { "sd", "usb" };
 
@@ -744,11 +742,9 @@ static bool MountPartitions(int device, int silent)
 	{
 		case DEVICE_SD:
 			disc = sd;
-			mounting=DEVICE_SD;
 			break;
 		case DEVICE_USB:
 			disc = usb;
-			mounting=DEVICE_USB;
 			break;
 		default:
 			return false; // unknown device
@@ -767,7 +763,6 @@ static bool MountPartitions(int device, int silent)
 		else
 			retry = ErrorPromptRetry("USB drive not found!");
 	}
-	mounting=-1;
 	return mounted;
 }
 

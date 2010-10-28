@@ -51,7 +51,6 @@ static void *ThreadProc(void *s);
 #include <ogcsys.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogc/mutex.h>
-#include "../../utils/mem2_manager.h"
 static void *ThreadProc(void *s);
 static unsigned char *global_buffer=NULL;
 static void *cachearg = NULL;
@@ -352,7 +351,7 @@ static cache_vars_t* cache_init(int size,int sector){
 #if !defined(__MINGW32__) && !defined(PTHREAD_CACHE) && !defined(__OS2__) && !defined(GEKKO)
   s->buffer=shmem_alloc(s->buffer_size);
 #else
-  if(global_buffer==NULL) global_buffer=mem2_malloc(size, VIDEO_AREA);
+  if(global_buffer==NULL) global_buffer=0x90002000;
   s->buffer=global_buffer;
 #endif
 

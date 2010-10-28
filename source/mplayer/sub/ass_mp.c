@@ -320,7 +320,7 @@ static void adjust_font_scale(ASS_Track* track)
 	if(track && track->PlayResY == 288	&& (!track->PlayResX || track->PlayResX==384)) // embedded font not detected
 		ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.5f;
 	else
-		ass_font_scale = mplayer_ass_font_scale;
+		ass_font_scale = mplayer_ass_font_scale / 1.5;
 }
 #endif
 

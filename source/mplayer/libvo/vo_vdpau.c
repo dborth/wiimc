@@ -35,15 +35,15 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "ass_mp.h"
+#include "sub/ass_mp.h"
 #include "mp_msg.h"
 #include "video_out.h"
 #include "video_out_internal.h"
 #include "x11_common.h"
 #include "aspect.h"
-#include "font_load.h"
-#include "sub.h"
-#include "eosd.h"
+#include "sub/font_load.h"
+#include "sub/sub.h"
+#include "sub/eosd.h"
 #include "subopt-helper.h"
 
 #include "libavcodec/vdpau.h"

@@ -40,13 +40,13 @@
 #include "help_mp.h"
 
 #include "libmpcodecs/dec_audio.h"
-#include "libvo/sub.h"
+#include "sub/sub.h"
 #include "stream/stream.h"
 #include "demuxer.h"
 #include "demux_ty_osd.h"
 #include "parse_es.h"
 #include "stheader.h"
-#include "sub_cc.h"
+#include "sub/sub_cc.h"
 #include "libavutil/avstring.h"
 #include "libavutil/intreadwrite.h"
 

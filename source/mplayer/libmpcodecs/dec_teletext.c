@@ -62,7 +62,7 @@
  * 4. libmpcodecs/dec_teletext.c: prepare_visible_page(...)
  *      processing page. adding number of just received by background process
  *      teletext page, adding current time,etc.
- * 5. libvo/sub.c: vo_update_text_teletext(...)
+ * 5. sub/sub.c: vo_update_text_teletext(...)
  *      rendering displayable osd with text and graphics
  *
  * TODO:
@@ -88,15 +88,6 @@
 #include <math.h>
 #include <stdio.h>
 
-#ifdef GEKKO
-#define HAVE_PTHREADS 1
-#include <ogc/mutex.h>
-#define pthread_mutex_init(a, b) LWP_MutexInit(a,false)
-#define pthread_mutex_lock(a)    LWP_MutexLock(*a)
-#define pthread_mutex_unlock(a)  LWP_MutexUnlock(*a)
-#define pthread_mutex_destroy(a) LWP_MutexDestroy(*a)
-#define pthread_mutex_t          mutex_t
-#else
 #ifdef HAVE_PTHREADS
 // pthreads are needed for async updates from v4l(2)
 // FIXME: try to avoid using pthread calls when running only a single
@@ -107,7 +98,6 @@
 #define pthread_mutex_destroy(m)
 #define pthread_mutex_lock(m)
 #define pthread_mutex_unlock(m)
-#endif
 #endif
 
 #include "dec_teletext.h"

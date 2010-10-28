@@ -26,11 +26,9 @@
 #include "mp_image.h"
 #include "vf.h"
 
-#include "libvo/sub.h"
+#include "sub/sub.h"
 #include "libvo/video_out.h"
-#include "eosd.h"
-
-#include "eosd.h"
+#include "sub/eosd.h"
 
 //===========================================================================//
 

@@ -36,12 +36,12 @@
 #include "vf.h"
 
 #include "libvo/fastmemcpy.h"
-#include "libvo/sub.h"
+#include "sub/sub.h"
 #include "m_option.h"
 #include "m_struct.h"
 
-#include "ass_mp.h"
-#include "eosd.h"
+#include "sub/ass_mp.h"
+#include "sub/eosd.h"
 
 #define _r(c)  ((c)>>24)
 #define _g(c)  (((c)>>16)&0xFF)

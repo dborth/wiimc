@@ -21,9 +21,9 @@
 
 #include "m_config.h"
 #include "m_option.h"
-#include "subreader.h"
+#include "sub/subreader.h"
 #include "libmpdemux/demuxer.h"
-#include "ass_mp.h"
+#include "sub/ass_mp.h"
 
 struct sh_video;
 

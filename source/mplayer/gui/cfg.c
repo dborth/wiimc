@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "config.h"
-#include "ass_mp.h"
+#include "sub/ass_mp.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 #include "mixer.h"
@@ -32,7 +32,7 @@
 #include "parser-cfg.h"
 #include "path.h"
 #include "libmpcodecs/vd.h"
-#include "libvo/sub.h"
+#include "sub/sub.h"
 #include "libvo/video_out.h"
 #include "libvo/x11_common.h"
 #include "stream/stream.h"

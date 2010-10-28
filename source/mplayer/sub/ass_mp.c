@@ -30,9 +30,9 @@
 #include "ass_mp.h"
 #include "eosd.h"
 #include "mpcommon.h"
-#include "libvo/sub.h"
+#include "sub.h"
 #include "help_mp.h"
-#include "libvo/font_load.h"
+#include "font_load.h"
 #include "stream/stream.h"
 
 #ifdef CONFIG_FONTCONFIG

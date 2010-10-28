@@ -27,7 +27,7 @@ SRCS_AUDIO_INPUT-$(ALSA1X)           += stream/ai_alsa1x.c
 SRCS_AUDIO_INPUT-$(ALSA9)            += stream/ai_alsa.c
 SRCS_AUDIO_INPUT-$(OSS)              += stream/ai_oss.c
 SRCS_COMMON-$(AUDIO_INPUT)           += $(SRCS_AUDIO_INPUT-yes)
-SRCS_COMMON-$(BITMAP_FONT)           += libvo/font_load.c
+SRCS_COMMON-$(BITMAP_FONT)           += sub/font_load.c
 SRCS_COMMON-$(CDDA)                  += stream/stream_cdda.c \
                                         stream/cdinfo.c
 SRCS_COMMON-$(CDDB)                  += stream/stream_cddb.c
@@ -99,7 +99,6 @@ SRCS_COMMON-$(FAAD_INTERNAL)         += libfaad2/bits.c \
 
 SRCS_COMMON-$(FASTMEMCPY)            += libvo/aclib.c
 SRCS_COMMON-$(FFMPEG)                += av_opts.c                   \
-                                        av_sub.c                    \
                                         libaf/af_lavcresample.c     \
                                         libmpcodecs/ad_ffmpeg.c     \
                                         libmpcodecs/vd_ffmpeg.c     \
@@ -109,6 +108,7 @@ SRCS_COMMON-$(FFMPEG)                += av_opts.c                   \
                                         libmpcodecs/vf_screenshot.c \
                                         libmpdemux/demux_lavf.c     \
                                         stream/stream_ffmpeg.c      \
+                                        sub/av_sub.c                \
 
 # These filters use private headers and do not work with shared FFmpeg.
 SRCS_COMMON-$(FFMPEG_A)              += libaf/af_lavcac3enc.c    \
@@ -119,7 +119,7 @@ SRCS_COMMON-$(FFMPEG_A)              += libaf/af_lavcac3enc.c    \
                                         libmpcodecs/vf_spp.c     \
                                         libmpcodecs/vf_uspp.c    \
 
-SRCS_COMMON-$(FREETYPE)              += libvo/font_load_ft.c
+SRCS_COMMON-$(FREETYPE)              += sub/font_load_ft.c
 SRCS_COMMON-$(FTP)                   += stream/stream_ftp.c
 SRCS_COMMON-$(GIF)                   += libmpdemux/demux_gif.c
 SRCS_COMMON-$(HAVE_POSIX_SELECT)     += libmpcodecs/vf_bmovl.c
@@ -128,8 +128,8 @@ SRCS_COMMON-$(JPEG)                  += libmpcodecs/vd_ijpg.c
 SRCS_COMMON-$(LADSPA)                += libaf/af_ladspa.c
 SRCS_COMMON-$(LIBA52)                += libmpcodecs/ad_liba52.c
 SRCS_COMMON-$(LIBASS)                += libmpcodecs/vf_ass.c \
-                                        ass_mp.c \
-                                        subassconvert.c \
+                                        sub/ass_mp.c \
+                                        sub/subassconvert.c \
 
 SRCS_COMMON-$(LIBASS_INTERNAL)       += libass/ass.c \
                                         libass/ass_bitmap.c \
@@ -278,7 +278,7 @@ SRCS_COMMON-$(TV_DSHOW)              += stream/tvi_dshow.c \
 
 SRCS_COMMON-$(TV_V4L1)               += stream/tvi_v4l.c  stream/audio_in.c
 SRCS_COMMON-$(TV_V4L2)               += stream/tvi_v4l2.c stream/audio_in.c
-SRCS_COMMON-$(UNRAR_EXEC)            += unrar_exec.c
+SRCS_COMMON-$(UNRAR_EXEC)            += sub/unrar_exec.c
 SRCS_COMMON-$(VCD)                   += stream/stream_vcd.c
 SRCS_COMMON-$(VORBIS)                += libmpcodecs/ad_libvorbis.c \
                                         libmpdemux/demux_ogg.c
@@ -335,8 +335,6 @@ SRCS_COMMON = asxparser.c \
               codec-cfg.c \
               cpudetect.c \
               edl.c \
-              eosd.c \
-              find_sub.c \
               fmt-conversion.c \
               m_config.c \
               m_option.c \
@@ -347,11 +345,7 @@ SRCS_COMMON = asxparser.c \
               path.c \
               playtree.c \
               playtreeparser.c \
-              spudec.c \
-              sub_cc.c \
               subopt-helper.c \
-              subreader.c \
-              vobsub.c \
               libaf/af.c \
               libaf/af_center.c \
               libaf/af_channels.c \
@@ -510,8 +504,6 @@ SRCS_COMMON = asxparser.c \
               libmpdemux/video.c \
               libmpdemux/yuv4mpeg.c \
               libmpdemux/yuv4mpeg_ratio.c \
-              libvo/osd.c \
-              libvo/sub.c \
               osdep/$(GETCH) \
               osdep/$(TIMER) \
               stream/open.c \
@@ -522,6 +514,14 @@ SRCS_COMMON = asxparser.c \
               stream/stream_mf.c \
               stream/stream_null.c \
               stream/url.c \
+              sub/eosd.c \
+              sub/find_sub.c \
+              sub/osd.c \
+              sub/spudec.c \
+              sub/sub.c \
+              sub/sub_cc.c \
+              sub/subreader.c \
+              sub/vobsub.c \
               $(SRCS_COMMON-yes)
 
 
@@ -689,10 +689,10 @@ SRCS_MPLAYER = command.c \
                libao2/audio_out.c \
                libvo/aspect.c \
                libvo/geometry.c \
-               libvo/spuenc.c \
                libvo/video_out.c \
                libvo/vo_mpegpes.c \
                libvo/vo_null.c \
+               sub/spuenc.c \
                $(SRCS_MPLAYER-yes)
 
 
@@ -809,6 +809,7 @@ DIRS =  . \
         stream/freesdp \
         stream/librtsp \
         stream/realrtsp \
+        sub \
         tremor \
         TOOLS \
         vidix \
@@ -1072,8 +1073,9 @@ toolsclean:
 
 TOOLS/bmovl-test$(EXESUF): -lSDL_image
 
-TOOLS/subrip$(EXESUF): vobsub.o spudec.o unrar_exec.o libvo/aclib.o \
-    ffmpeg/libswscale/libswscale.a ffmpeg/libavutil/libavutil.a $(TEST_OBJS)
+TOOLS/subrip$(EXESUF): sub/vobsub.o sub/spudec.o sub/unrar_exec.o \
+    libvo/aclib.o ffmpeg/libswscale/libswscale.a ffmpeg/libavutil/libavutil.a \
+    $(TEST_OBJS)
 
 TOOLS/vfw2menc$(EXESUF): -lwinmm -lole32
 

@@ -35,13 +35,13 @@
 #include "matroska.h"
 #include "demux_real.h"
 
-#include "ass_mp.h"
+#include "sub/ass_mp.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "vobsub.h"
-#include "subreader.h"
-#include "libvo/sub.h"
+#include "sub/vobsub.h"
+#include "sub/subreader.h"
+#include "sub/sub.h"
 
 #include "libavutil/common.h"
 

@@ -339,53 +339,58 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	browser.dir[0] = 0;
 
 	int i;
+	extern int mounting;
 
-	for(i=0; i < MAX_DEVICES; i++)
+	if(mounting!=DEVICE_SD)
 	{
-		if(part[DEVICE_SD][i].type > 0)
+		for(i=0; i < MAX_DEVICES; i++)
 		{
-			AddBrowserEntry();
+			if(part[DEVICE_SD][i].type > 0)
+			{
+				AddBrowserEntry();
 
-			sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_SD][i].mount);
+				sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_SD][i].mount);
 
-			if(strlen(part[DEVICE_SD][i].name) > 0)
-				sprintf(browserList[browser.numEntries].displayname, "%s - %s", gettext("SD"), part[DEVICE_SD][i].name);
-			else if(i == 0 && part[DEVICE_SD][1].type == 0) // only one SD partition
-				sprintf(browserList[browser.numEntries].displayname, "SD Card");
-			else
-				sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("SD Card"), i+1);
+				if(strlen(part[DEVICE_SD][i].name) > 0)
+					sprintf(browserList[browser.numEntries].displayname, "%s - %s", gettext("SD"), part[DEVICE_SD][i].name);
+				else if(i == 0 && part[DEVICE_SD][1].type == 0) // only one SD partition
+					sprintf(browserList[browser.numEntries].displayname, "SD Card");
+				else
+					sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("SD Card"), i+1);
 
-			browserList[browser.numEntries].length = 0;
-			browserList[browser.numEntries].mtime = 0;
-			browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
-			browserList[browser.numEntries].icon = ICON_SD;
-			browser.numEntries++;
+				browserList[browser.numEntries].length = 0;
+				browserList[browser.numEntries].mtime = 0;
+				browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
+				browserList[browser.numEntries].icon = ICON_SD;
+				browser.numEntries++;
+			}
 		}
 	}
-
-	for(i=0; i < MAX_DEVICES; i++)
+	if(mounting!=DEVICE_USB)
 	{
-		if(part[DEVICE_USB][i].type > 0)
+		for(i=0; i < MAX_DEVICES; i++)
 		{
-			AddBrowserEntry();
+			if(part[DEVICE_USB][i].type > 0)
+			{
+				AddBrowserEntry();
 
-			sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_USB][i].mount);
+				sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_USB][i].mount);
 
-			if(strlen(part[DEVICE_USB][i].name) > 0)
-				sprintf(browserList[browser.numEntries].displayname, "%s - %s", gettext("USB"), part[DEVICE_USB][i].name);
-			else if(i == 0 && part[DEVICE_USB][1].type == 0) // only one USB partition
-				sprintf(browserList[browser.numEntries].displayname, "USB Mass Storage");
-			else
-				sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("USB Mass Storage"), i+1);
+				if(strlen(part[DEVICE_USB][i].name) > 0)
+					sprintf(browserList[browser.numEntries].displayname, "%s - %s", gettext("USB"), part[DEVICE_USB][i].name);
+				else if(i == 0 && part[DEVICE_USB][1].type == 0) // only one USB partition
+					sprintf(browserList[browser.numEntries].displayname, "USB Mass Storage");
+				else
+					sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("USB Mass Storage"), i+1);
 
-			browserList[browser.numEntries].length = 0;
-			browserList[browser.numEntries].mtime = 0;
-			browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
-			browserList[browser.numEntries].icon = ICON_USB;
-			browser.numEntries++;
+				browserList[browser.numEntries].length = 0;
+				browserList[browser.numEntries].mtime = 0;
+				browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
+				browserList[browser.numEntries].icon = ICON_USB;
+				browser.numEntries++;
+			}
 		}
 	}
-
 	if(!WiiSettings.dvdDisabled && isInserted[DEVICE_DVD])
 	{
 		AddBrowserEntry();

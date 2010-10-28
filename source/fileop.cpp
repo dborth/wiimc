@@ -54,6 +54,8 @@ int currentDeviceNum = -1;
 bool isInserted[3] = { false, false, false };
 bool devicesChanged = false;
 u64 dvdLastUsed = 0;
+int mounting=-1;
+
 
 static char prefix[2][4] = { "sd", "usb" };
 
@@ -431,8 +433,13 @@ DEVICE_STRUCT part[2][MAX_DEVICES];
 
 static void AddPartition(sec_t sector, int device, int type, int *devnum)
 {
+	int i;
+	
 	if (*devnum >= MAX_DEVICES)
 		return;
+
+	for(i=0; i < *devnum; i++)
+		if(part[device][i].sector == sector) return; // to avoid mount same partition again
 
 	DISC_INTERFACE *disc = (DISC_INTERFACE *)sd;
 
@@ -737,9 +744,11 @@ static bool MountPartitions(int device, int silent)
 	{
 		case DEVICE_SD:
 			disc = sd;
+			mounting=DEVICE_SD;
 			break;
 		case DEVICE_USB:
 			disc = usb;
+			mounting=DEVICE_USB;
 			break;
 		default:
 			return false; // unknown device
@@ -758,6 +767,7 @@ static bool MountPartitions(int device, int silent)
 		else
 			retry = ErrorPromptRetry("USB drive not found!");
 	}
+	mounting=-1;
 	return mounted;
 }
 

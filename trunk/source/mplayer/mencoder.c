@@ -72,8 +72,8 @@
 #include "libmpdemux/muxer.h"
 #include "libmpdemux/stheader.h"
 #include "libvo/fastmemcpy.h"
-#include "libvo/font_load.h"
-#include "libvo/sub.h"
+#include "sub/font_load.h"
+#include "sub/sub.h"
 #include "libvo/video_out.h"
 #include "osdep/timer.h"
 #include "stream/stream.h"
@@ -82,7 +82,7 @@
 #include "stream/stream_dvd.h"
 #endif
 #include "stream/stream_dvdnav.h"
-#include "ass_mp.h"
+#include "sub/ass_mp.h"
 #include "codec-cfg.h"
 #include "edl.h"
 #include "help_mp.h"
@@ -94,9 +94,9 @@
 #include "parser-cfg.h"
 #include "parser-mecmd.h"
 #include "path.h"
-#include "spudec.h"
-#include "vobsub.h"
-#include "eosd.h"
+#include "sub/spudec.h"
+#include "sub/vobsub.h"
+#include "sub/eosd.h"
 #include "mencoder.h"
 
 

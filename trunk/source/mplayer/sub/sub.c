@@ -35,7 +35,7 @@
 #include "mpcommon.h"
 #include "mp_msg.h"
 #include "help_mp.h"
-#include "video_out.h"
+#include "libvo/video_out.h"
 #include "font_load.h"
 #include "sub.h"
 #include "spudec.h"
@@ -1117,7 +1117,7 @@ static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
 	    prev_dys = dys;
 	    defer_counter = 0;
 	}
-	if (defer_counter >= FONT_LOAD_DEFER) force_load_font = 1;
+		if (defer_counter >= FONT_LOAD_DEFER) force_load_font = 1;
     }
 
     if (force_load_font) {

@@ -28,16 +28,16 @@
 #include "osdep/priority.h"
 #include "path.h"
 #include "mplayer.h"
-#include "libvo/font_load.h"
-#include "libvo/sub.h"
+#include "sub/font_load.h"
+#include "sub/sub.h"
 #include "libvo/video_out.h"
 #include "cpudetect.h"
 #include "help_mp.h"
 #include "mp_msg.h"
-#include "spudec.h"
+#include "sub/spudec.h"
 #include "version.h"
-#include "vobsub.h"
-#include "av_sub.h"
+#include "sub/vobsub.h"
+#include "sub/av_sub.h"
 #include "libmpcodecs/dec_teletext.h"
 #include "libavutil/intreadwrite.h"
 #include "m_option.h"
@@ -46,7 +46,7 @@
 double sub_last_pts = -303;
 
 #ifdef CONFIG_ASS
-#include "ass_mp.h"
+#include "sub/ass_mp.h"
 ASS_Track* ass_track = 0; // current track to render
 #endif
 

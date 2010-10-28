@@ -233,6 +233,7 @@ typedef struct FFV1Context{
     GetBitContext gb;
     PutBitContext pb;
     uint64_t rc_stat[256][2];
+    uint64_t (*rc_stat2[MAX_QUANT_TABLES])[32][2];
     int version;
     int width, height;
     int chroma_h_shift, chroma_v_shift;
@@ -246,6 +247,7 @@ typedef struct FFV1Context{
     int16_t quant_tables[MAX_QUANT_TABLES][MAX_CONTEXT_INPUTS][256];
     int context_count[MAX_QUANT_TABLES];
     uint8_t state_transition[256];
+    uint8_t (*initial_states[MAX_QUANT_TABLES])[32];
     int run_index;
     int colorspace;
     int_fast16_t *sample_buffer;
@@ -299,12 +301,15 @@ static inline int get_context(PlaneContext *p, int_fast16_t *src, int_fast16_t *
         return p->quant_table[0][(L-LT) & 0xFF] + p->quant_table[1][(LT-T) & 0xFF] + p->quant_table[2][(T-RT) & 0xFF];
 }
 
-static av_always_inline av_flatten void put_symbol_inline(RangeCoder *c, uint8_t *state, int v, int is_signed, uint64_t rc_stat[256][2]){
+static av_always_inline av_flatten void put_symbol_inline(RangeCoder *c, uint8_t *state, int v, int is_signed, uint64_t rc_stat[256][2], uint64_t rc_stat2[32][2]){
     int i;
 
 #define put_rac(C,S,B) \
 do{\
+    if(rc_stat){\
     rc_stat[*(S)][B]++;\
+        rc_stat2[(S)-state][B]++;\
+    }\
     put_rac(C,S,B);\
 }while(0)
 
@@ -344,8 +349,7 @@ do{\
 }
 
 static void av_noinline put_symbol(RangeCoder *c, uint8_t *state, int v, int is_signed){
-    uint64_t rc_stat[256][2]; //we dont bother counting header bits.
-    put_symbol_inline(c, state, v, is_signed, rc_stat);
+    put_symbol_inline(c, state, v, is_signed, NULL, NULL);
 }
 
 static inline av_flatten int get_symbol_inline(RangeCoder *c, uint8_t *state, int is_signed){
@@ -493,7 +497,11 @@ static av_always_inline int encode_line(FFV1Context *s, int w, int_fast16_t *sam
         diff= fold(diff, bits);
 
         if(s->ac){
-            put_symbol_inline(c, p->state[context], diff, 1, s->rc_stat);
+            if(s->flags & CODEC_FLAG_PASS1){
+                put_symbol_inline(c, p->state[context], diff, 1, s->rc_stat, s->rc_stat2[p->quant_table_index][context]);
+            }else{
+                put_symbol_inline(c, p->state[context], diff, 1, NULL, NULL);
+            }
         }else{
             if(context == 0) run_mode=1;
 
@@ -734,6 +742,7 @@ static av_cold int init_slice_contexts(FFV1Context *f){
         int sye= f->avctx->height*(sy+1) / f->num_v_slices;
         f->slice_context[i]= fs;
         memcpy(fs, f, sizeof(*fs));
+        memset(fs->rc_stat2, 0, sizeof(fs->rc_stat2));
 
         fs->slice_width = sxe - sxs;
         fs->slice_height= sye - sys;
@@ -747,14 +756,29 @@ static av_cold int init_slice_contexts(FFV1Context *f){
     return 0;
 }
 
+static int allocate_initial_states(FFV1Context *f){
+    int i;
+
+    for(i=0; i<f->quant_table_count; i++){
+        f->initial_states[i]= av_malloc(f->context_count[i]*sizeof(*f->initial_states[i]));
+        if(!f->initial_states[i])
+            return AVERROR(ENOMEM);
+        memset(f->initial_states[i], 128, f->context_count[i]*sizeof(*f->initial_states[i]));
+    }
+    return 0;
+}
+
 #if CONFIG_FFV1_ENCODER
 static int write_extra_header(FFV1Context *f){
     RangeCoder * const c= &f->c;
     uint8_t state[CONTEXT_SIZE];
-    int i;
+    int i, j, k;
+    uint8_t state2[32][CONTEXT_SIZE];
+
+    memset(state2, 128, sizeof(state2));
     memset(state, 128, sizeof(state));
 
-    f->avctx->extradata= av_malloc(f->avctx->extradata_size= 10000);
+    f->avctx->extradata= av_malloc(f->avctx->extradata_size= 10000 + (11*11*5*5*5+11*11*11)*32);
     ff_init_range_encoder(c, f->avctx->extradata, f->avctx->extradata_size);
     ff_build_rac_states(c, 0.05*(1LL<<32), 256-8);
 
@@ -777,6 +801,23 @@ static int write_extra_header(FFV1Context *f){
     put_symbol(c, state, f->quant_table_count, 0);
     for(i=0; i<f->quant_table_count; i++)
         write_quant_tables(c, f->quant_tables[i]);
+
+    for(i=0; i<f->quant_table_count; i++){
+        for(j=0; j<f->context_count[i]*CONTEXT_SIZE; j++)
+            if(f->initial_states[i] && f->initial_states[i][0][j] != 128)
+                break;
+        if(j<f->context_count[i]*CONTEXT_SIZE){
+            put_rac(c, state, 1);
+            for(j=0; j<f->context_count[i]; j++){
+                for(k=0; k<CONTEXT_SIZE; k++){
+                    int pred= j ? f->initial_states[i][j-1][k] : 128;
+                    put_symbol(c, state2[k], (int8_t)(f->initial_states[i][j][k]-pred), 1);
+                }
+            }
+        }else{
+            put_rac(c, state, 0);
+        }
+    }
 
     f->avctx->extradata_size= ff_rac_terminate(c);
 
@@ -829,7 +870,7 @@ static int sort_stt(FFV1Context *s, uint8_t stt[256]){
 static av_cold int encode_init(AVCodecContext *avctx)
 {
     FFV1Context *s = avctx->priv_data;
-    int i, j;
+    int i, j, k, m;
 
     common_init(avctx);
 
@@ -875,6 +916,9 @@ static av_cold int encode_init(AVCodecContext *avctx)
         p->context_count= s->context_count[p->quant_table_index];
     }
 
+    if(allocate_initial_states(s) < 0)
+        return AVERROR(ENOMEM);
+
     avctx->coded_frame= &s->picture;
     switch(avctx->pix_fmt){
     case PIX_FMT_YUV444P16:
@@ -907,8 +951,17 @@ static av_cold int encode_init(AVCodecContext *avctx)
 
     s->picture_number=0;
 
+    if(avctx->flags & (CODEC_FLAG_PASS1|CODEC_FLAG_PASS2)){
+        for(i=0; i<s->quant_table_count; i++){
+            s->rc_stat2[i]= av_mallocz(s->context_count[i]*sizeof(*s->rc_stat2[i]));
+            if(!s->rc_stat2[i])
+                return AVERROR(ENOMEM);
+        }
+    }
     if(avctx->stats_in){
         char *p= avctx->stats_in;
+
+        av_assert0(s->version>=2);
 
         for(;;){
             for(j=0; j<256; j++){
@@ -922,10 +975,38 @@ static av_cold int encode_init(AVCodecContext *avctx)
                     p=next;
                 }
             }
+            for(i=0; i<s->quant_table_count; i++){
+                for(j=0; j<s->context_count[i]; j++){
+                    for(k=0; k<32; k++){
+                        for(m=0; m<2; m++){
+                            char *next;
+                            s->rc_stat2[i][j][k][m]= strtol(p, &next, 0);
+                            if(next==p){
+                                av_log(avctx, AV_LOG_ERROR, "2Pass file invalid at %d %d %d %d [%s]\n", i,j,k,m,p);
+                                return -1;
+                            }
+                            p=next;
+                        }
+                    }
+                }
+            }
             while(*p=='\n' || *p==' ') p++;
             if(p[0]==0) break;
         }
         sort_stt(s, s->state_transition);
+
+        for(i=0; i<s->quant_table_count; i++){
+            for(j=0; j<s->context_count[i]; j++){
+                for(k=0; k<32; k++){
+                    int p= 128;
+                    if(s->rc_stat2[i][j][k][0]+s->rc_stat2[i][j][k][1]){
+                        p=256*s->rc_stat2[i][j][k][1] / (s->rc_stat2[i][j][k][0]+s->rc_stat2[i][j][k][1]);
+                    }
+                    p= av_clip(p, 1, 254);
+                    s->initial_states[i][j][k]= p;
+                }
+            }
+        }
     }
 
     if(s->version>1){
@@ -939,7 +1020,19 @@ static av_cold int encode_init(AVCodecContext *avctx)
     if(init_slice_state(s) < 0)
         return -1;
 
-    avctx->stats_out= av_mallocz(1024*30);
+#define STATS_OUT_SIZE 1024*1024*6
+    if(avctx->flags & CODEC_FLAG_PASS1){
+    avctx->stats_out= av_mallocz(STATS_OUT_SIZE);
+        for(i=0; i<s->quant_table_count; i++){
+            for(j=0; j<s->slice_count; j++){
+                FFV1Context *sf= s->slice_context[j];
+                av_assert0(!sf->rc_stat2[i]);
+                sf->rc_stat2[i]= av_mallocz(s->context_count[i]*sizeof(*sf->rc_stat2[i]));
+                if(!sf->rc_stat2[i])
+                    return AVERROR(ENOMEM);
+            }
+        }
+    }
 
     return 0;
 }
@@ -957,15 +1050,18 @@ static void clear_state(FFV1Context *f){
             p->interlace_bit_state[0]= 128;
             p->interlace_bit_state[1]= 128;
 
+            if(fs->ac){
+                if(f->initial_states[p->quant_table_index]){
+                    memcpy(p->state, f->initial_states[p->quant_table_index], CONTEXT_SIZE*p->context_count);
+                }else
+                memset(p->state, 128, CONTEXT_SIZE*p->context_count);
+            }else{
             for(j=0; j<p->context_count; j++){
-                if(fs->ac){
-                    memset(p->state[j], 128, sizeof(uint8_t)*CONTEXT_SIZE);
-                }else{
                     p->vlc_state[j].drift= 0;
                     p->vlc_state[j].error_sum= 4; //FFMAX((RANGE + 32)/64, 2);
                     p->vlc_state[j].bias= 0;
                     p->vlc_state[j].count= 1;
-                }
+            }
             }
         }
     }
@@ -1075,16 +1171,27 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
     }
 
     if((avctx->flags&CODEC_FLAG_PASS1) && (f->picture_number&31)==0){
-        int j;
+        int j, k, m;
         char *p= avctx->stats_out;
-        char *end= p + 1024*30;
+        char *end= p + STATS_OUT_SIZE;
 
         memset(f->rc_stat, 0, sizeof(f->rc_stat));
+        for(i=0; i<f->quant_table_count; i++)
+            memset(f->rc_stat2[i], 0, f->context_count[i]*sizeof(*f->rc_stat2[i]));
+
         for(j=0; j<f->slice_count; j++){
             FFV1Context *fs= f->slice_context[j];
             for(i=0; i<256; i++){
                 f->rc_stat[i][0] += fs->rc_stat[i][0];
                 f->rc_stat[i][1] += fs->rc_stat[i][1];
+            }
+            for(i=0; i<f->quant_table_count; i++){
+                for(k=0; k<f->context_count[i]; k++){
+                    for(m=0; m<32; m++){
+                        f->rc_stat2[i][k][m][0] += fs->rc_stat2[i][k][m][0];
+                        f->rc_stat2[i][k][m][1] += fs->rc_stat2[i][k][m][1];
+                    }
+                }
             }
         }
 
@@ -1093,7 +1200,17 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
             p+= strlen(p);
         }
         snprintf(p, end-p, "\n");
-    } else
+
+        for(i=0; i<f->quant_table_count; i++){
+            for(j=0; j<f->context_count[i]; j++){
+                for(m=0; m<32; m++){
+                    snprintf(p, end-p, "%"PRIu64" %"PRIu64" ", f->rc_stat2[i][j][m][0], f->rc_stat2[i][j][m][1]);
+                    p+= strlen(p);
+                }
+            }
+        }
+        snprintf(p, end-p, "\n");
+    } else if(avctx->flags&CODEC_FLAG_PASS1)
         avctx->stats_out[0] = '\0';
 
     f->picture_number++;
@@ -1117,6 +1234,14 @@ static av_cold int common_end(AVCodecContext *avctx){
     }
 
     av_freep(&avctx->stats_out);
+    for(j=0; j<s->quant_table_count; j++){
+        av_freep(&s->initial_states[j]);
+        for(i=0; i<s->slice_count; i++){
+            FFV1Context *sf= s->slice_context[i];
+            av_freep(&sf->rc_stat2[j]);
+        }
+        av_freep(&s->rc_stat2[j]);
+    }
 
     return 0;
 }
@@ -1328,8 +1453,10 @@ static int read_quant_tables(RangeCoder *c, int16_t quant_table[MAX_CONTEXT_INPU
 static int read_extra_header(FFV1Context *f){
     RangeCoder * const c= &f->c;
     uint8_t state[CONTEXT_SIZE];
-    int i;
+    int i, j, k;
+    uint8_t state2[32][CONTEXT_SIZE];
 
+    memset(state2, 128, sizeof(state2));
     memset(state, 128, sizeof(state));
 
     ff_init_range_decoder(c, f->avctx->extradata, f->avctx->extradata_size);
@@ -1363,6 +1490,20 @@ static int read_extra_header(FFV1Context *f){
         if((f->context_count[i]= read_quant_tables(c, f->quant_tables[i])) < 0){
             av_log(f->avctx, AV_LOG_ERROR, "read_quant_table error\n");
             return -1;
+        }
+    }
+
+    if(allocate_initial_states(f) < 0)
+        return AVERROR(ENOMEM);
+
+    for(i=0; i<f->quant_table_count; i++){
+        if(get_rac(c, state)){
+            for(j=0; j<f->context_count[i]; j++){
+                for(k=0; k<CONTEXT_SIZE; k++){
+                    int pred= j ? f->initial_states[i][j-1][k] : 128;
+                    f->initial_states[i][j][k]= (pred+get_symbol(c, state2[k], 1))&0xFF;
+                }
+            }
         }
     }
 

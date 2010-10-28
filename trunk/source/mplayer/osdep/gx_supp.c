@@ -456,7 +456,7 @@ void GX_AllocTextureMemory()
 {
 	//make memory fixed (max texture 1024*1024, gx can't manage more)
 	if(Yltexture[0]) return;
-/*
+
 	Yltexture[0] = (u8 *) (mem2_memalign(32, 1024*MAX_HEIGHT, VIDEO_AREA));
 	Yrtexture[0] = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, VIDEO_AREA));
 	Utexture[0] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));
@@ -465,18 +465,7 @@ void GX_AllocTextureMemory()
 	Yltexture[1] = (u8 *) (mem2_memalign(32, 1024*MAX_HEIGHT, VIDEO_AREA));
 	Yrtexture[1] = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, VIDEO_AREA));
 	Utexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));
-	Vtexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));
-*/
-	Yltexture[0] = (u8 *) (0x90002000);
-	Yrtexture[0] = (u8 *) (Yltexture[0] + (1024*MAX_HEIGHT));
-	Utexture[0] = (u8 *) (Yrtexture[0] + ((MAX_WIDTH-1024)*MAX_HEIGHT));
-	Vtexture[0] = (u8 *) (Utexture[0] + (1024*(MAX_HEIGHT/2)));
-
-	Yltexture[1] = (u8 *) (Vtexture[0] + (1024*(MAX_HEIGHT/2)));
-	Yrtexture[1] = (u8 *) (Yltexture[1] + (1024*MAX_HEIGHT));
-	Utexture[1] = (u8 *) (Yrtexture[1] + ((MAX_WIDTH-1024)*MAX_HEIGHT));
-	Vtexture[1] = (u8 *) (Utexture[1] + (1024*(MAX_HEIGHT/2)));
-	
+	Vtexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));	
 }
 
 /****************************************************************************

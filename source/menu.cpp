@@ -2257,12 +2257,16 @@ static void MenuBrowse(int menu)
 				mainWindow->Remove(&backBtn);
 				ResumeGui();
 			}
-			fileBrowser->SetState(STATE_DISABLED);
 
-			if(!BrowserChangeFolder(false))
-				goto done;
-
-			fileBrowser->ResetState();
+			if(!ChangeInterface(browser.dir, SILENT))
+			{
+				fileBrowser->SetState(STATE_DISABLED);
+	
+				if(!BrowserChangeFolder(false))
+					goto done;
+	
+				fileBrowser->ResetState();
+			}
 		}
 
 		// up one level

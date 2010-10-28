@@ -339,25 +339,24 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	browser.dir[0] = 0;
 
 	int i;
-	extern int mounting;
 
-	if(mounting!=DEVICE_SD)
+	if(isInserted[DEVICE_SD])
 	{
 		for(i=0; i < MAX_DEVICES; i++)
 		{
 			if(part[DEVICE_SD][i].type > 0)
 			{
 				AddBrowserEntry();
-
+	
 				sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_SD][i].mount);
-
+	
 				if(strlen(part[DEVICE_SD][i].name) > 0)
 					sprintf(browserList[browser.numEntries].displayname, "%s - %s", gettext("SD"), part[DEVICE_SD][i].name);
 				else if(i == 0 && part[DEVICE_SD][1].type == 0) // only one SD partition
 					sprintf(browserList[browser.numEntries].displayname, "SD Card");
 				else
 					sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("SD Card"), i+1);
-
+	
 				browserList[browser.numEntries].length = 0;
 				browserList[browser.numEntries].mtime = 0;
 				browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
@@ -366,23 +365,24 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			}
 		}
 	}
-	if(mounting!=DEVICE_USB)
+
+	if(isInserted[DEVICE_USB])
 	{
 		for(i=0; i < MAX_DEVICES; i++)
 		{
 			if(part[DEVICE_USB][i].type > 0)
 			{
 				AddBrowserEntry();
-
+	
 				sprintf(browserList[browser.numEntries].filename, "%s:", part[DEVICE_USB][i].mount);
-
+	
 				if(strlen(part[DEVICE_USB][i].name) > 0)
 					sprintf(browserList[browser.numEntries].displayname, "%s - %s", gettext("USB"), part[DEVICE_USB][i].name);
 				else if(i == 0 && part[DEVICE_USB][1].type == 0) // only one USB partition
 					sprintf(browserList[browser.numEntries].displayname, "USB Mass Storage");
 				else
 					sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("USB Mass Storage"), i+1);
-
+	
 				browserList[browser.numEntries].length = 0;
 				browserList[browser.numEntries].mtime = 0;
 				browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
@@ -391,6 +391,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			}
 		}
 	}
+
 	if(!WiiSettings.dvdDisabled && isInserted[DEVICE_DVD])
 	{
 		AddBrowserEntry();

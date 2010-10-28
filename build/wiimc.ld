@@ -211,9 +211,9 @@ SECTIONS
 	_end = .;
 	PROVIDE(end = .);
 
- /* max textures = 0x32A000 (see gx_supp.c)  */
-	. = (0x90002000 + 0x32A000);
-
+ /* mplayer cache = 0x800000   */
+	. = (0x90002000 + 0x800000);
+	. = ALIGN(32);
 	.bss       :
 	{
 		__bss_start = .;

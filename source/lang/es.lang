@@ -639,3 +639,6 @@ msgstr "La fuente del subtítulo no se encuentra. El subtítulo no estará visib
 
 msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
 msgstr "WiiMC no tiene acceso al DVD - AHBPROT no está habilitado."
+
+msgid "Starting Area"
+msgstr "Área de inicio"

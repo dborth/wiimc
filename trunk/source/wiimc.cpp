@@ -530,6 +530,7 @@ int main(int argc, char *argv[])
 	GuiInit();
  	while(1)
 	{
+	ShowAreaInfo(OTHER_AREA);
 		ResetVideo_Menu();
  		WiiMenu();
 

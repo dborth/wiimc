@@ -799,14 +799,17 @@ restart:
 		if(file)
 		{
 			fseeko(file,0,SEEK_END);
-			int loadSize = ftello(file);
+			u32 loadSize = ftello(file);
 			fseeko(file,0,SEEK_SET);
 			if(ext_font_ttf)
 			{
 				SuspendGui();
-				mem2_free(ext_font_ttf, OTHER_AREA);
+				mem2_free(ext_font_ttf, EXTFONT_AREA);
 			}
-			ext_font_ttf = (u8 *)mem2_memalign(32, loadSize, OTHER_AREA); // can be a problem we have to see how to manage it
+			RemoveMem2Area(EXTFONT_AREA);
+			AddMem2Area(loadSize+1024,EXTFONT_AREA);
+			
+			ext_font_ttf = (u8 *)mem2_memalign(32, loadSize, EXTFONT_AREA); // can be a problem we have to see how to manage it
 			fread (ext_font_ttf, 1, loadSize, file);
 			fclose(file);
 
@@ -856,7 +859,7 @@ restart:
 	{
 		SuspendGui();
 		DeinitFreeType();
-		if(ext_font_ttf) free(ext_font_ttf);
+		if(ext_font_ttf) mem2_free(ext_font_ttf, EXTFONT_AREA);
 		ext_font_ttf = NULL;
 		InitFreeType((u8*)font_ttf, font_ttf_size);
 		currentFont = FONT_DEFAULT;

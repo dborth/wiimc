@@ -17,6 +17,7 @@ enum mem2_areas_enum {
 	OTHER_AREA,
 	PICTURE_AREA,
 	INDEX_AREA,
+	EXTFONT_AREA,
 	MAX_AREA
 };
  

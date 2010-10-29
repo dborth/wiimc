@@ -31,28 +31,39 @@
 #define ft_free(x) mem2_free(x,OTHER_AREA)
 #define ft_memalign(x,y) mem2_memalign(x,y,OTHER_AREA)
 
-static FT_Library ftLibrary;	/**< FreeType FT_Library instance. */
-static FT_Face ftFace;			/**< FreeType reusable FT_Face typographic object. */
-static FT_GlyphSlot ftSlot;		/**< FreeType reusable FT_GlyphSlot glyph container object. */
+static FT_Library ftLibrary = NULL;		/**< FreeType FT_Library instance. */
+static FT_Face ftFace = NULL;			/**< FreeType reusable FT_Face typographic object. */
+static FT_GlyphSlot ftSlot = NULL;		/**< FreeType reusable FT_GlyphSlot glyph container object. */
 
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 
 using namespace std;
 
-void InitFreeType(uint8_t* fontBuffer, FT_Long bufferSize)
+bool InitFreeType(uint8_t* fontBuffer, FT_Long bufferSize)
 {
 	FT_Init_FreeType(&ftLibrary);
-	FT_New_Memory_Face(ftLibrary, (FT_Byte *)fontBuffer, bufferSize, 0, &ftFace);
+	if(FT_New_Memory_Face(ftLibrary, (FT_Byte *)fontBuffer, bufferSize, 0, &ftFace) != 0)
+		return false;
+
+	if(!ftFace)
+		return false;
+
 	ftSlot = ftFace->glyph;
+
+	if(!ftSlot)
+		return false;
 
 	for(int i=0; i<50; i++)
 		fontSystem[i] = NULL;
+
+	return true;
 }
 
 void DeinitFreeType()
 {
 	ClearFontData();
-	FT_Done_FreeType(ftLibrary);
+	if(ftLibrary)
+		FT_Done_FreeType(ftLibrary);
 	ftLibrary = NULL;
 }
 

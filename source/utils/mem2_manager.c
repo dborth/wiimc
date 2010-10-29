@@ -121,10 +121,7 @@ bool AddMem2Area (u32 size, const int index)
 		return false;
 
 	if(mem2_areas[index].size == size)
-	{
-		//ClearMem2Area(index);
 		return true;
-	}
 
 	if(mem2_areas[index].size > 0 && !RemoveMem2Area(index))
 		return false;

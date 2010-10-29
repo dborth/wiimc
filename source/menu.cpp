@@ -747,6 +747,8 @@ static u8 *ext_font_ttf = NULL;
 
 void ChangeLanguage()
 {
+	char error[128] = {0};
+
 	if(WiiSettings.language == LANG_JAPANESE ||
 		WiiSettings.language == LANG_SIMP_CHINESE ||
 		WiiSettings.language == LANG_TRAD_CHINESE ||
@@ -800,32 +802,58 @@ restart:
 		{
 			fseeko(file,0,SEEK_END);
 			u32 loadSize = ftello(file);
-			fseeko(file,0,SEEK_SET);
+
+			if(loadSize == 0)
+			{
+				if(remove(filepath) == 0)
+				{
+					goto restart;
+				}
+				else
+				{
+					ErrorPrompt("Error opening font file!");
+					goto error;
+				}
+			}
+
 			if(ext_font_ttf)
 			{
 				SuspendGui();
 				mem2_free(ext_font_ttf, EXTFONT_AREA);
+				ext_font_ttf = NULL;
 			}
-			RemoveMem2Area(EXTFONT_AREA);
-			AddMem2Area(loadSize+1024,EXTFONT_AREA);
-			
-			ext_font_ttf = (u8 *)mem2_memalign(32, loadSize, EXTFONT_AREA); // can be a problem we have to see how to manage it
-			fread (ext_font_ttf, 1, loadSize, file);
+
+			if(AddMem2Area(loadSize+1024,EXTFONT_AREA))
+			{
+				ext_font_ttf = (u8 *)mem2_memalign(32, loadSize, EXTFONT_AREA); // can be a problem we have to see how to manage it
+				if(ext_font_ttf)
+				{
+					fseeko(file,0,SEEK_SET);
+					fread (ext_font_ttf, 1, loadSize, file);
+				}
+			}
 			fclose(file);
 
 			if(ext_font_ttf)
 			{
 				SuspendGui();
 				DeinitFreeType();
-				InitFreeType(ext_font_ttf, loadSize);
+
 				currentFont = newFont;
-				ResetText();
-				ResumeGui();
-				return;
+				if(InitFreeType(ext_font_ttf, loadSize))
+				{
+					ResetText();
+					ResumeGui();
+					return;
+				}
+				else
+				{
+					sprintf(error, "Could not change language. The font file is corrupted!");
+				}
 			}
 			else
 			{
-				ErrorPrompt("Could not change language. Not enough memory!");
+				sprintf(error, "Could not change language. Not enough memory!");
 			}
 		}
 		else
@@ -842,9 +870,14 @@ restart:
 
 				if (hfile > 0)
 				{
-					http_request(httppath, hfile, NULL, 1024*1024*2, NOTSILENT);
+					int res = http_request(httppath, hfile, NULL, 1024*1024*2, NOTSILENT);
 					fclose (hfile);
-					goto restart;
+
+					if(res > 0)
+						goto restart;
+
+					remove(filepath);
+					ErrorPrompt("Error downloading font file!");
 				}
 				else
 				{
@@ -852,6 +885,7 @@ restart:
 				}
 			}
 		}
+error:
 		WiiSettings.language = LANG_ENGLISH;
 	}
 
@@ -865,6 +899,9 @@ restart:
 		currentFont = FONT_DEFAULT;
 		ResetText();
 		ResumeGui();
+
+		if(error[0] != 0)
+			ErrorPrompt(error);
 	}
 	else
 	{

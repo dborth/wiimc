@@ -503,7 +503,7 @@ int main(int argc, char *argv[])
 			(1024); // padding
 	AddMem2Area (size, VIDEO_AREA);
 	AddMem2Area (6*1024*1024, GUI_AREA);
-	AddMem2Area (3*1024*1024, OTHER_AREA); // vars + ttf , we have to improve ext_ttf
+	AddMem2Area (3*1024*1024, OTHER_AREA); // vars + ttf
 
 	InitVideo2();
 	SetupPads();
@@ -521,7 +521,9 @@ int main(int argc, char *argv[])
 
 	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
- 	InitFreeType((u8*)font_ttf, font_ttf_size); // Initialize font system
+
+	if(!InitFreeType((u8*)font_ttf, font_ttf_size)) // Initialize font system
+		return 0;
 
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
@@ -530,7 +532,6 @@ int main(int argc, char *argv[])
 	GuiInit();
  	while(1)
 	{
-	ShowAreaInfo(OTHER_AREA);
 		ResetVideo_Menu();
  		WiiMenu();
 

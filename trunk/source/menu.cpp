@@ -1694,20 +1694,14 @@ static void CreditsWindow()
 	txt[i] = new GuiText("Thanks to", 20, (GXColor){160, 160, 160, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	txt[i]->SetPosition(0,y); i++; y+=36;
-	
-	GuiImageData foundmy(foundmy_png);
-	GuiImage foundmyImg(&foundmy);
-	foundmyImg.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	foundmyImg.SetPosition(-15, y);
-	alignWindow.Append(&foundmyImg);
 
 	txt[i] = new GuiText("MPlayer Team", 16, (GXColor){255, 255, 255, 255});
-	txt[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	txt[i]->SetPosition(15,y); i++; y+=20;
+	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	txt[i]->SetPosition(0,y); i++; y+=20;
 
 	txt[i] = new GuiText("shagkur & wintermute (libogc / devkitPPC)", 16, (GXColor){255, 255, 255, 255});
-	txt[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	txt[i]->SetPosition(15,y); i++; y+=44;
+	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	txt[i]->SetPosition(0,y); i++; y+=44;
 
 	txt[i] = new GuiText("This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2.", 14, (GXColor){160, 160, 160, 255});
 	txt[i]->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -2026,7 +2020,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	for(std::map<std::string,std::string>::iterator link=links.begin(); link!=links.end(); ++link)
 	{
-		if(strcmp((*link).first.c_str(), "34") == 0)
+		if(strcmp((*link).first.c_str(), WiiSettings.youtubeFormat) == 0)
 		{
 			url_unescape_string(newurl, (*link).second.c_str());
 			mem2_free(buffer, OTHER_AREA);
@@ -4790,6 +4784,7 @@ static void MenuSettingsOnlineMedia()
 	bool firstRun = true;
 	OptionList options;
 
+	sprintf(options.name[i++], "YouTube Quality");
 	sprintf(options.name[i++], "Online Media Folder");
 
 	options.length = i;
@@ -4843,6 +4838,12 @@ static void MenuSettingsOnlineMedia()
 		switch (ret)
 		{
 			case 0:
+				if(strcmp(WiiSettings.youtubeFormat, "34") == 0)
+					sprintf(WiiSettings.youtubeFormat, "5");
+				else
+					sprintf(WiiSettings.youtubeFormat, "34");
+				break;
+			case 1:
 				OnScreenKeyboard(WiiSettings.onlinemediaFolder, MAXPATHLEN);
 				if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
 					CleanupPath(WiiSettings.onlinemediaFolder);
@@ -4852,8 +4853,13 @@ static void MenuSettingsOnlineMedia()
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
+			
+			if(strcmp(WiiSettings.youtubeFormat, "5") == 0)
+				sprintf(options.value[0], "Low (400x240)");
+			else
+				sprintf(options.value[0], "High (640x360)");
 
-			snprintf(options.value[0], 60, "%s", WiiSettings.onlinemediaFolder);
+			snprintf(options.value[1], 60, "%s", WiiSettings.onlinemediaFolder);
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -4888,7 +4894,7 @@ static void MenuSettingsNetwork()
 			if(WiiSettings.smbConf[j].displayname[0] != 0)
 				sprintf(options.name[i], "%s", WiiSettings.smbConf[j].displayname);
 			else
-				sprintf(options.name[i], "%s", WiiSettings.smbConf[j].share);
+				snprintf(options.name[i], 60, "%s", WiiSettings.smbConf[j].share);
 			i++;
 		}
 	}
@@ -4903,7 +4909,7 @@ static void MenuSettingsNetwork()
 			if(WiiSettings.ftpConf[j].displayname[0] != 0)
 				sprintf(options.name[i], "%s", WiiSettings.ftpConf[j].displayname);
 			else
-				sprintf(options.name[i], "%s@%s/%s", WiiSettings.ftpConf[j].user, WiiSettings.ftpConf[j].ip, WiiSettings.ftpConf[j].folder);
+				snprintf(options.name[i], 60, "%s@%s/%s", WiiSettings.ftpConf[j].user, WiiSettings.ftpConf[j].ip, WiiSettings.ftpConf[j].folder);
 			i++;
 		}
 	}

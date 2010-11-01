@@ -365,6 +365,7 @@ prepareSettingsData ()
 	createXMLSetting("dvdDisabled", "DVD Disabled", toStr(WiiSettings.dvdDisabled));
 	// Online Media
 	createXMLSection("Online Media", "Online Media Settings");
+	createXMLSetting("youtubeFormat", "YouTube quality", WiiSettings.youtubeFormat);
 	createXMLSetting("onlinemediaFolder", "Online media folder", WiiSettings.onlinemediaFolder);
 	// Network
 	createXMLSection("Network", "Network Settings");
@@ -607,6 +608,7 @@ void DefaultSettings ()
 	WiiSettings.dvdMenu = 1;
 	WiiSettings.dvdDisabled = 0;
 	// Online Media
+	sprintf(WiiSettings.youtubeFormat, "34");
 	WiiSettings.onlinemediaFolder[0] = 0;
 	// Network
 	for(int i=0; i<MAX_SHARES; i++)
@@ -722,6 +724,10 @@ static void FixInvalidSettings()
 		WiiSettings.dvdDisabled = 0;
 
 	// Online Media
+	if(strcmp(WiiSettings.youtubeFormat, "34") != 0 &&
+		strcmp(WiiSettings.youtubeFormat, "5") != 0)
+		sprintf(WiiSettings.youtubeFormat, "34");
+
 	if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
 		CleanupPath(WiiSettings.onlinemediaFolder);
 
@@ -1016,6 +1022,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.dvdMenu, "dvdMenu");
 				loadXMLSetting(&WiiSettings.dvdDisabled, "dvdDisabled");
 				// Online Media
+				loadXMLSetting(WiiSettings.youtubeFormat, "youtubeFormat", sizeof(WiiSettings.youtubeFormat));
 				loadXMLSetting(WiiSettings.onlinemediaFolder, "onlinemediaFolder", sizeof(WiiSettings.onlinemediaFolder));
 				// Network
 				

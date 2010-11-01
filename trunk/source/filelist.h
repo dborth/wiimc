@@ -60,8 +60,6 @@ extern const u8		logo_png[];
 extern const u32	logo_png_size;
 extern const u8		logo_large_png[];
 extern const u32	logo_large_png_size;
-extern const u8		foundmy_png[];
-extern const u32	foundmy_png_size;
 
 extern const u8		button_png[];
 extern const u32	button_png_size;

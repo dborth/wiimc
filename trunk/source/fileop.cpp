@@ -838,9 +838,21 @@ void FindAppPath()
 		}		
 	}
 
-	if(usb->startup() && usb->isInserted())
+	u64 start = gettime();
+	usleep(20000);
+
+	while(diff_sec(start, gettime()) < 300) // 3 sec
 	{
-		isInserted[DEVICE_USB] = true;
+		if(usb->startup() && usb->isInserted())
+		{
+			isInserted[DEVICE_USB] = true;
+			break;
+		}
+		usleep(250000); // 1/4 sec
+	}
+
+	if(isInserted[DEVICE_USB])
+	{
 		MountPartitions(DEVICE_USB, SILENT);
 			
 		for(int m=1; m<6; m++)

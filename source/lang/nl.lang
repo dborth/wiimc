@@ -134,7 +134,7 @@ msgid "Update later"
 msgstr "Later updaten"
 
 msgid "Online media file not found."
-msgstr "Online media bestand niet gevonden"
+msgstr "Online media-bestand niet gevonden"
 
 msgid "Unrecognized DVD format!"
 msgstr "DVD-formaat niet herkend!"
@@ -308,7 +308,7 @@ msgid "Slideshow Delay"
 msgstr "Vertraging diavoorstelling"
 
 msgid "Online Media Folder"
-msgstr "Online media map"
+msgstr "Online media-map"
 
 msgid "Add SMB Share"
 msgstr "Voeg netwerkmap toe"
@@ -642,3 +642,12 @@ msgstr "WiiMC heeft geen toegang tot DVD - AHBPROT is niet ingeschakeld"
 
 msgid "Starting Area"
 msgstr "Startgedeelte"
+
+msgid "Error downloading font file!"
+msgstr "Fout bij het downloaden lettertype!"
+
+msgid "Error opening font file!"
+msgstr "Fout bij het openen lettertype!"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "Kon de taal niet veranderen. Letttertype is beschadigd!"

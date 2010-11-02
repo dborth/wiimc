@@ -841,7 +841,7 @@ void FindAppPath()
 	u64 start = gettime();
 	usleep(20000);
 
-	while(diff_sec(start, gettime()) < 300) // 3 sec
+	while(diff_sec(start, gettime()) < 5) // 5 sec
 	{
 		if(usb->startup() && usb->isInserted())
 		{

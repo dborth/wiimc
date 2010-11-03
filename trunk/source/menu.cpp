@@ -4838,10 +4838,12 @@ static void MenuSettingsOnlineMedia()
 		switch (ret)
 		{
 			case 0:
-				if(strcmp(WiiSettings.youtubeFormat, "34") == 0)
-					sprintf(WiiSettings.youtubeFormat, "5");
-				else
+				if(strcmp(WiiSettings.youtubeFormat, "5") == 0)
+					sprintf(WiiSettings.youtubeFormat, "18");
+				else if(strcmp(WiiSettings.youtubeFormat, "18") == 0)
 					sprintf(WiiSettings.youtubeFormat, "34");
+				else
+					sprintf(WiiSettings.youtubeFormat, "5");
 				break;
 			case 1:
 				OnScreenKeyboard(WiiSettings.onlinemediaFolder, MAXPATHLEN);
@@ -4856,6 +4858,8 @@ static void MenuSettingsOnlineMedia()
 			
 			if(strcmp(WiiSettings.youtubeFormat, "5") == 0)
 				sprintf(options.value[0], "Low (400x240)");
+			else if(strcmp(WiiSettings.youtubeFormat, "18") == 0)
+				sprintf(options.value[0], "Medium (480x360)");
 			else
 				sprintf(options.value[0], "High (640x360)");
 

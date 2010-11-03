@@ -725,6 +725,7 @@ static void FixInvalidSettings()
 
 	// Online Media
 	if(strcmp(WiiSettings.youtubeFormat, "34") != 0 &&
+		strcmp(WiiSettings.youtubeFormat, "18") != 0 &&
 		strcmp(WiiSettings.youtubeFormat, "5") != 0)
 		sprintf(WiiSettings.youtubeFormat, "34");
 

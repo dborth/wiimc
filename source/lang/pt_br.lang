@@ -638,4 +638,16 @@ msgid "Subtitle font file not found. Subtitles will not be visible."
 msgstr "Arquivo de fonte não encontrado. As legendas não serão exibidas."
 
 msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
-msgstr "O Wiimc não possue acesso ao DVD - AHBPROT não está habilitado."
+msgstr "O Wiimc não possui acesso ao DVD - AHBPROT não está habilitado."
+
+msgid "Starting Area"
+msgstr "Área inicial"
+
+msgid "Error downloading font file!"
+msgstr "Erro no download da fonte!"
+
+msgid "Error opening font file!"
+msgstr "Erro ao abrir a fonte!"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "A linguagem não pode ser alterada. Fonte corrompida!"

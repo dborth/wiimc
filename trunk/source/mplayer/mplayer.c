@@ -2425,6 +2425,29 @@ int reinit_video_chain(void) {
 
   sh_video->vfilter=append_filters(sh_video->vfilter);
   eosd_init(sh_video->vfilter);
+  
+#ifdef GEKKO
+if (sh_video->disp_w > 1024)
+{
+	codecs_t *c = find_video_codec(sh_video->format, sh_video->bih ? ((unsigned int *)&sh_video->bih->biCompression) : NULL, sh_video->codec, 0);
+	
+	if (strncmp(c->name, "ffmpeg", 6) == 0 || c->name == "ffodivx")
+	{
+		m_config_set_option(mconfig, "lavdopts", "lowres=1");
+		frame_dropping = 1;
+	}
+	else
+	{
+		m_config_set_option(mconfig, "lavdopts", "fast:skipframe=nonref:skiploopfilter=all");
+		frame_dropping = 0;
+	}
+}
+else
+{
+	// set back to default
+	m_config_set_option(mconfig, "lavdopts", "");
+}
+#endif
 
 #ifdef CONFIG_ASS
   if (ass_enabled)

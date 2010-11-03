@@ -3184,11 +3184,8 @@ controlledbygui = 0;
 
 pause_low_cache=1;
 audio_id=video_id=-1;
-
+force_frame_dropping=-1;
 #endif
-	
-	
-
 
   // init global sub numbers
   mpctx->global_sub_size = 0;

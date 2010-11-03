@@ -2434,19 +2434,19 @@ if (sh_video->disp_w > 1024)
 	
 	if (strncmp(c->name, "ffmpeg", 6) == 0 || strncmp(c->name, "ffodivx", 7) == 0)
 	{
-		m_config_set_option(mconfig, "lavdopts", "lowres=1");
+		m_config_set_option(mconfig, "lavdopts", "fast=0:lowres=1:skipframe=default:skiploopfilter=default");
 		force_frame_dropping = 1;
 	}
 	else
 	{
-		m_config_set_option(mconfig, "lavdopts", "fast=1:skipframe=nonref:skiploopfilter=all");
+		m_config_set_option(mconfig, "lavdopts", "fast=1:lowres=0:skipframe=nonref:skiploopfilter=all");
 		force_frame_dropping = 0;
 	}
 }
 else
 {
 	// set back to default
-	m_config_set_option(mconfig, "lavdopts", "");
+	m_config_set_option(mconfig, "lavdopts", "fast=0:lowres=0:skipframe=default:skiploopfilter=default");
 	force_frame_dropping = -1;
 }
 #endif

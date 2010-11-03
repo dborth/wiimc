@@ -185,6 +185,7 @@ static float orig_stream_cache_min_percent=-1;
 static float orig_stream_cache_seek_min_percent=-1;
 static int orig_stream_cache_size=-1;
 static bool playing_file=false;
+static int force_frame_dropping=-1;
 #endif
 
 int slave_mode=0;
@@ -2431,21 +2432,22 @@ if (sh_video->disp_w > 1024)
 {
 	codecs_t *c = find_video_codec(sh_video->format, sh_video->bih ? ((unsigned int *)&sh_video->bih->biCompression) : NULL, sh_video->codec, 0);
 	
-	if (strncmp(c->name, "ffmpeg", 6) == 0 || c->name == "ffodivx")
+	if (strncmp(c->name, "ffmpeg", 6) == 0 || strncmp(c->name, "ffodivx", 7) == 0)
 	{
 		m_config_set_option(mconfig, "lavdopts", "lowres=1");
-		frame_dropping = 1;
+		force_frame_dropping = 1;
 	}
 	else
 	{
 		m_config_set_option(mconfig, "lavdopts", "fast:skipframe=nonref:skiploopfilter=all");
-		frame_dropping = 0;
+		force_frame_dropping = 0;
 	}
 }
 else
 {
 	// set back to default
 	m_config_set_option(mconfig, "lavdopts", "");
+	force_frame_dropping = -1;
 }
 #endif
 
@@ -5067,6 +5069,11 @@ void wiiSetProperty(int command, float value)
 	switch(command)
 	{
 		case MP_CMD_FRAMEDROPPING:
+			if(force_frame_dropping >= 0)
+				cmd->args[0].v.i = force_frame_dropping;
+			else
+				cmd->args[0].v.i = (int)value;
+			break;
 		case MP_CMD_SUB_VISIBILITY:
 			cmd->args[0].v.i = (int)value;
 			break;

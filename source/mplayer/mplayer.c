@@ -2439,7 +2439,7 @@ if (sh_video->disp_w > 1024)
 	}
 	else
 	{
-		m_config_set_option(mconfig, "lavdopts", "fast:skipframe=nonref:skiploopfilter=all");
+		m_config_set_option(mconfig, "lavdopts", "fast=1:skipframe=nonref:skiploopfilter=all");
 		force_frame_dropping = 0;
 	}
 }

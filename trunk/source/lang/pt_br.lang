@@ -651,3 +651,15 @@ msgstr "Erro ao abrir a fonte!"
 
 msgid "Could not change language. The font file is corrupted!"
 msgstr "A linguagem não pode ser alterada. Fonte corrompida!"
+
+msgid "YouTube Quality"
+msgstr "Resolução YouTube"
+
+msgid "Low (400x240)"
+msgstr "Baixa (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "Média (480x360)"
+
+msgid "High (640x360)"
+msgstr "Alta (640x360)"

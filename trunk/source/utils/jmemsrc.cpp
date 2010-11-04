@@ -346,32 +346,11 @@ static inline u32 coordsRGBA8(u32 x, u32 y, u32 w)
 static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstWidth, int * dstHeight, u8 *dstPtr)
 {
 	u8 *dst;
-	int xRatio = 0, yRatio = 0;
-	int x, y, x2, y2, offset;
+	int x, y, offset;
 	u8 *pixel;
-	u32 newWidth = width;
-	u32 newHeight = height;
-	
-	if(width > (u32)MAX_TEX_WIDTH || height > (u32)MAX_TEX_HEIGHT)
-	{
-		float ratio = (float)width/(float)height;
 
-		if(ratio > (float)MAX_TEX_WIDTH/(float)MAX_TEX_HEIGHT)
-		{
-			newWidth = MAX_TEX_WIDTH;
-			newHeight = MAX_TEX_WIDTH/ratio;
-		}
-		else
-		{
-			newWidth = MAX_TEX_HEIGHT*ratio;
-			newHeight = MAX_TEX_HEIGHT;
-		}
-		xRatio = (int)((width<<16)/newWidth)+1;
-		yRatio = (int)((height<<16)/newHeight)+1;
-	}
-
-	int padWidth = newWidth;
-	int padHeight = newHeight;
+	int padWidth = width;
+	int padHeight = height;
 	if(padWidth%4) padWidth += (4-padWidth%4);
 	if(padHeight%4) padHeight += (4-padHeight%4);
 
@@ -392,7 +371,7 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstW
 		{
 			offset = coordsRGBA8(x, y, padWidth);
 
-			if(x >= (int)newWidth || y >= (int)newHeight)
+			if(x >= (int)width || y >= (int)height)
 			{
 				dst[offset] = 0;
 				dst[offset+1] = 255;
@@ -401,17 +380,7 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstW
 			}
 			else
 			{
-				if(xRatio > 0)
-				{
-					x2 = ((x*xRatio)>>16);
-					y2 = ((y*yRatio)>>16);
-					pixel = &src[rowsize*y2+x2*3];
-				}
-				else
-				{
-					pixel = &src[rowsize*y+x*3];
-				}
-
+				pixel = &src[rowsize*y+x*3];
 				dst[offset] = 255; // Alpha
 				dst[offset+1] = pixel[0]; // Red
 				dst[offset+32] = pixel[1]; // Green

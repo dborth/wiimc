@@ -636,3 +636,30 @@ msgstr "Online meedia fail on vigane."
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
 msgstr "Subtiitrite fondi faili ei leitud. Subtiitrid ei ole nähtavad."
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC'l puudub juurdepääs DVD'le - AHBPROT ei ole saadaval."
+
+msgid "Starting Area"
+msgstr "Käivituspunkt"
+
+msgid "Error downloading font file!"
+msgstr "Viga fondi faili allalaadimisel!"
+
+msgid "Error opening font file!"
+msgstr "Viga fondi faili avamisel!"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "Ei saanud keelt muuta. Fondi fail on vigane!"
+
+msgid "YouTube Quality"
+msgstr "YouTube Kvaliteet"
+
+msgid "Low (400x240)"
+msgstr "Madal (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "Keskmine (480x360)"
+
+msgid "High (640x360)"
+msgstr "Kõrge (640x360)"

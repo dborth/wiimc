@@ -6,14 +6,14 @@ COMMAND3 = (CC=$(DEVKITPPC)/bin/powerpc-eabi-gcc ./configure --host=powerpc-eabi
 
 all: dir1 dir2 dir3 dir4 dir5 dir6
 dir1:
-   cd libntfs && $(COMMAND1)
+	cd libntfs && $(COMMAND1)
 dir2:
-   cd fribidi && $(COMMAND2)
+	cd fribidi && $(COMMAND2)
 dir3:
-   cd libexif && $(COMMAND2)
+	cd libexif && $(COMMAND2)
 dir4:
-   cd libiconv && $(COMMAND2)
+	cd libiconv && $(COMMAND2)
 dir5:
-   cd pcre && $(COMMAND2)
+	cd pcre && $(COMMAND2)
 dir6:
-   cd libmpg123 && $(COMMAND3)
+	cd libmpg123 && $(COMMAND3)

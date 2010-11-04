@@ -35,6 +35,164 @@
 //#define jpg_free mem2_free
 //#define jpg_memalign mem2_memalign
 
+// ******************************************************************************************
+// ******************************************************************************************
+// scaler code by David Ashley dash@xdr.com based on algorithm used in pnmscale
+// ******************************************************************************************
+// ******************************************************************************************
+typedef struct scaler {
+	void (*callback)(void *data, unsigned char *row, int len);
+	void *callback_data;
+	int sw,sh;
+	int dw,dh;
+	int bpp;
+	unsigned char *accum;
+	unsigned char *output;
+	int yf,yr;
+	int bytewidth;
+	int obytewidth;
+} scaler;
+
+static inline void accumrow(unsigned char *d, int w, unsigned char *s,
+		int top, int bottom)
+{
+	int f;
+	f=0x100*top/bottom;
+	while(w--)
+		d[w] += s[w]*f>>8;
+}
+
+static inline void accumpixel(unsigned char *d, int bpp, unsigned char *s,
+		int top, int bottom)
+{
+	int f=0x100*top/bottom;
+	while(bpp--)
+		d[bpp] += s[bpp]*f>>8;
+}
+
+static inline void xscale(unsigned char *d, int w2, unsigned char *s, int w1, int bpp)
+{
+	int pixelcount;
+	int xf,xr;
+
+	pixelcount=w2;
+
+	xf=w2;
+	xr=w1;
+
+	memset(d, 0, w2*bpp);
+	while(pixelcount)
+	{
+		if(xr>xf)
+		{
+			accumpixel(d, bpp, s, xf, w1);
+			xr-=xf;
+			xf=0;
+		} else
+		{
+			accumpixel(d, bpp, s, xr, w1);
+			xf-=xr;
+			xr=0;
+
+		}
+		if(xr==0) // we can kick out a pixel
+		{
+			d+=bpp;
+			xr=w1;
+			--pixelcount;
+		}
+		if(xf==0) // we can step the source pointer
+		{
+			s+=bpp;
+			xf=w2;
+		}
+	}
+}
+
+void *scaler_alloc(int dw, int dh, int sw, int sh, int bpp,
+		void (*callback)(void *data, unsigned char *row, int len),
+		void *data)
+{
+	scaler *s=(scaler *)malloc(sizeof(scaler));
+	if(s)
+	{
+		s->bytewidth = sw * bpp;
+		s->obytewidth = dw * bpp;
+		s->accum = (unsigned char *)malloc(s->bytewidth);
+		s->output = (unsigned char *)malloc(s->obytewidth);
+		s->sw = sw;
+		s->sh = sh;
+		s->dw = dw;
+		s->dh = dh;
+		s->bpp = bpp;
+		s->callback = callback;
+		s->callback_data = data;
+		s->yf=dh;
+		s->yr=sh;
+		if(s->accum && s->output)
+			memset(s->accum, 0, s->bytewidth);
+		else
+		{
+			if(s->accum)
+				free(s->accum);
+			if(s->output)
+				free(s->output);
+			free(s);
+			s=0;
+		}
+	}
+ 	return s;
+}
+
+void scaler_free(void *p)
+{
+	scaler *s=(scaler *)p;
+	if(s)
+	{
+		if(s->accum)
+			free(s->accum);
+		if(s->output)
+			free(s->output);
+		free(s);
+	}
+}
+
+void scaler_feed(void *p, unsigned char *row)
+{
+	scaler *s=(scaler *)p;
+	while(s)
+	{
+		if(s->yr > s->yf)
+		{
+			accumrow(s->accum, s->bytewidth, row, s->yf, s->sh);
+			s->yr -= s->yf;
+			s->yf = 0;
+		} else
+		{
+			accumrow(s->accum, s->bytewidth, row, s->yr, s->sh);
+			s->yf -= s->yr;
+			s->yr = 0;
+		}
+		if(s->yr == 0) // we can kick out a line
+		{
+			xscale(s->output, s->dw, s->accum, s->sw, s->bpp);
+			memset(s->accum, 0, s->bytewidth);
+			s->yr = s->sh;
+			s->callback(s->callback_data, s->output, s->obytewidth);
+		}
+		if(s->yf == 0) // we're done with the input line.
+		{
+			s->yf = s->dh;
+			break;
+		}
+	}
+}
+// ******************************************************************************************
+// ******************************************************************************************
+// end of scaler code
+// ******************************************************************************************
+// ******************************************************************************************
+
 /* Expanded data source object for memory input */
 
 /**
@@ -268,10 +426,26 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstW
 	return dst;
 }
 
+struct stuffer {
+	unsigned char *dest;
+	int stride;
+};
+
+static void got_row(void *data, unsigned char *row, int len)
+{
+	struct stuffer *st = (struct stuffer *)data;
+	memcpy(st->dest, row, len);
+	st->dest += st->stride;
+}
+
 u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr jerr;
+	int output_width, output_height;
+	void *scaler;
+	float scale, scale2;
+	struct stuffer stuffer;
 
 	jpeg_create_decompress(&cinfo);
 	cinfo.err = jpeg_std_error(&jerr);
@@ -282,63 +456,49 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 		cinfo.out_color_space = JCS_RGB; 
 
 	jpeg_calc_output_dimensions(&cinfo);
-	
-	if (cinfo.output_width > (u32)MAX_TEX_WIDTH || cinfo.output_height > (u32)MAX_TEX_HEIGHT)
-	{
-		float factor = (1.0 * cinfo.output_width) / MAX_TEX_WIDTH;
-
-		if(cinfo.output_height/factor > MAX_TEX_HEIGHT)
-			factor = (1.0 * cinfo.output_height) / MAX_TEX_HEIGHT;
-
-		// libjpeg only has a simple scaler (1/2, 1/4, 1/8 etc)
-		if(factor > 8)
-			factor = 16;
-		else if(factor > 4)
-			factor = 8;
-		else if(factor > 2)
-			factor = 4;
-		else if(factor > 1)
-			factor = 2;
-		else
-			factor = 1;
-
-		if(factor > 1 && cinfo.output_width/factor < MAX_TEX_WIDTH && cinfo.output_height/factor < MAX_TEX_HEIGHT)
-		{
-			// try decreasing factor, while still staying below 1024x1024
-			if(cinfo.output_width/(factor/2) <= 1024 && cinfo.output_height/(factor/2) <= 1024)
-				factor /= 2;
-		}
-
-		cinfo.scale_num = 1;
-		cinfo.scale_denom = factor;
-		cinfo.do_fancy_upsampling = true;
-		cinfo.do_block_smoothing = false;
-		cinfo.dct_method = JDCT_IFAST;
-	}
-	
 	jpeg_start_decompress(&cinfo);
 
-	int rowsize = cinfo.output_width * cinfo.output_components;
-	u8 *tmpData = (u8 *)jpg_malloc(rowsize * cinfo.output_height);
-	JSAMPROW row_pointer[1];
-	row_pointer[0] = (u8 *)jpg_malloc(rowsize);
+	scale = (float)MAX_TEX_WIDTH / cinfo.output_width;
+	scale2 = (float)MAX_TEX_HEIGHT / cinfo.output_height;
+	if(scale2 < scale)
+		scale = scale2;
+	// guarantee that one of width or height ends up at max allowed value
+	output_width = scale * cinfo.output_width;
+	output_height = scale * cinfo.output_height;
 
-	if(!tmpData || !row_pointer[0])
+	stuffer.stride = output_width * cinfo.output_components;
+
+	u8 *tmpData = (u8 *)jpg_malloc(stuffer.stride * output_height);
+	JSAMPROW row_pointer[1];
+	row_pointer[0] = (u8 *)jpg_malloc(cinfo.output_width * cinfo.output_components);
+
+	stuffer.dest = tmpData;
+
+	scaler = scaler_alloc(output_width, output_height,
+		cinfo.output_width, cinfo.output_height,
+		cinfo.output_components, got_row, &stuffer);
+
+	if(!tmpData || !row_pointer[0] || !scaler)
 	{
 		jpeg_finish_decompress(&cinfo);
 		jpeg_destroy_decompress(&cinfo);
+		if(row_pointer[0])
+			jpg_free(row_pointer[0]);
+		if(tmpData)
+			jpg_free(tmpData);
+		if(scaler)
+			scaler_free(scaler);
 		return NULL;
 	}
 
-	size_t location = 0;
 	while (cinfo.output_scanline < cinfo.output_height)
 	{
 		jpeg_read_scanlines(&cinfo, row_pointer, 1);
-		memcpy(tmpData + location, row_pointer[0], rowsize);
-		location += rowsize;
+		scaler_feed(scaler, row_pointer[0]);
 	}
+	scaler_free(scaler);
 
-	u8 *dst = RawTo4x4RGBA(tmpData, cinfo.output_width, cinfo.output_height, rowsize, width, height, dstPtr);
+	u8 *dst = RawTo4x4RGBA(tmpData, output_width, output_height, stuffer.stride, width, height, dstPtr);
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);

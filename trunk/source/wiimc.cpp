@@ -491,7 +491,6 @@ void SetMPlayerSettings()
 /****************************************************************************
  * Main
  ***************************************************************************/	
-
 int main(int argc, char *argv[])
 {
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
@@ -502,7 +501,7 @@ int main(int argc, char *argv[])
 	USBStorage_Initialize(); // to set aside MEM2 area
 	
 	u32 size = 	//(8*1024*1024) + // cache
-			(((1024*720)+((1280-1024)*720) + (1024*360*2)) * 2) + // textures
+			(((1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2)) * 2) + // textures
 			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
 			(1024); // padding

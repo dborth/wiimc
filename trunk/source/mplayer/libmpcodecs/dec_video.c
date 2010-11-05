@@ -382,11 +382,13 @@ void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
                    int drop_frame, double pts, int *full_frame)
 {
     mp_image_t *mpi = NULL;
+    static int num_pts_errors=0;
     unsigned int t = GetTimer();
     unsigned int t2;
     double tt;
     int delay;
     int got_picture = 1;
+    extern int correct_pts_errors;
 
     mpi = mpvdec->decode(sh_video, start, in_size, drop_frame);
 
@@ -405,7 +407,11 @@ void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
         && (got_picture || sh_video->num_buffered_pts < delay)) {
         if (sh_video->num_buffered_pts ==
             sizeof(sh_video->buffered_pts) / sizeof(double))
+        {
             mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Too many buffered pts\n");
+            if(correct_pts_errors>10) correct_pts=0;
+            else correct_pts_errors++;
+        }
         else {
             int i, j;
             for (i = 0; i < sh_video->num_buffered_pts; i++)

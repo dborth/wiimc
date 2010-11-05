@@ -49,8 +49,8 @@ extern "C" {
 #define NTFS_IGNORE_HIBERFILE           0x00000010 /* Mount even if volume is hibernated */
 #define NTFS_READ_ONLY                  0x00000020 /* Mount in read only mode */
 #define NTFS_IGNORE_CASE                0x00000040 /* Ignore case sensitivity. Everything must be and  will be provided in lowercase. */
-#define NTFS_SU                         NTFS_SHOW_HIDDEN_FILES & NTFS_SHOW_SYSTEM_FILES
-#define NTFS_FORCE                      NTFS_RECOVER & NTFS_IGNORE_HIBERFILE
+#define NTFS_SU                         NTFS_SHOW_HIDDEN_FILES | NTFS_SHOW_SYSTEM_FILES
+#define NTFS_FORCE                      NTFS_RECOVER | NTFS_IGNORE_HIBERFILE
 
 /**
  * ntfs_md - NTFS mount descriptor

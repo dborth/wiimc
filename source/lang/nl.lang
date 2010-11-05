@@ -651,3 +651,15 @@ msgstr "Fout bij het openen lettertype!"
 
 msgid "Could not change language. The font file is corrupted!"
 msgstr "Kon de taal niet veranderen. Letttertype is beschadigd!"
+
+msgid "YouTube Quality"
+msgstr "YouTube kwaliteit"
+
+msgid "Low (400x240)"
+msgstr "Laag (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "Matig (480x360)"
+
+msgid "High (640x360)"
+msgstr "Hoog (640x360)"

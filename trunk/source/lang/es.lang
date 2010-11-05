@@ -642,3 +642,24 @@ msgstr "WiiMC no tiene acceso al DVD - AHBPROT no está habilitado."
 
 msgid "Starting Area"
 msgstr "Área de inicio"
+
+msgid "Error downloading font file!"
+msgstr "Error descargando la fuente del archivo!"
+
+msgid "Error opening font file!"
+msgstr "Error abriendo la fuente del archivo!"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "No se puede cambiar de idioma. Fuente del archivo erronea!"
+
+msgid "YouTube Quality"
+msgstr "Calidad de YouTube"
+
+msgid "Low (400x240)"
+msgstr "Baja (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "Media (480x360)"
+
+msgid "High (640x360)"
+msgstr "Alta (640x360)"

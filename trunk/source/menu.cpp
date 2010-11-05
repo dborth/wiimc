@@ -3872,6 +3872,7 @@ static void MenuSettingsGlobal()
 				WiiSettings.rumble ^= 1;
 				break;
 			case 6:
+				ResetSleepTimer();
 				WiiSettings.sleepTimer += 30;
 				if(WiiSettings.sleepTimer > 180)
 					WiiSettings.sleepTimer = 0;

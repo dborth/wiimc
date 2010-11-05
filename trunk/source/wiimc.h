@@ -29,6 +29,7 @@ enum {
 
 bool SaneIOS();
 void SetSleepTimer();
+void ResetSleepTimer();
 void CheckSleepTimer();
 bool InitMPlayer();
 void LoadMPlayerFile();

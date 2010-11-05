@@ -961,6 +961,8 @@ int extension_parsing = 1; // 0=off 1=mixed (used only for unstable formats)
 
 int correct_pts = 0;
 int user_correct_pts = -1;
+int correct_pts_errors;
+
 
 /*
   NOTE : Several demuxers may be opened at the same time so
@@ -1252,6 +1254,7 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
         res = vd;
 
     correct_pts = user_correct_pts;
+    correct_pts_errors = 0;
     if (correct_pts < 0)
         correct_pts = !force_fps && demux_control(res, DEMUXER_CTRL_CORRECT_PTS, NULL)
                       == DEMUXER_CTRL_OK;

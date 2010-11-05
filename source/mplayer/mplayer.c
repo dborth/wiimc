@@ -145,6 +145,8 @@
 #include <malloc.h>
 #include "osdep/gx_supp.h"
 #include "../utils/mem2_manager.h"
+#include "../video.h"
+
 
 extern int prev_dxs, prev_dys;
 extern int stop_cache_thread;
@@ -2837,7 +2839,6 @@ int gui_no_filename=0;
 m_config_set_option(mconfig,"vo","gekko");
 m_config_set_option(mconfig,"ao","gekko");
 m_config_set_option(mconfig,"osdlevel","0");
-m_config_set_option(mconfig,"nocorrect-pts","1");
 m_config_set_option(mconfig,"channels","2");
 m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
@@ -3771,7 +3772,7 @@ if(!mpctx->sh_video) goto main; // audio-only
 
 #ifdef GEKKO
 // check if video has a higher resolution than the Wii can handle
-if(mpctx->sh_video->disp_w > 1280 || mpctx->sh_video->disp_h > 720)
+if(mpctx->sh_video->disp_w > MAX_WIDTH || mpctx->sh_video->disp_h > MAX_HEIGHT)
 {
 	wii_error = 1; // resolution too large
 	goto goto_next_file;

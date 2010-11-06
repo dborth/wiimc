@@ -1,5 +1,5 @@
 COMMAND1 = (make && sudo -E make install)
-COMMAND2 = (CC=$(DEVKITPPC)/bin/powerpc-eabi-gcc CXX=$(DEVKITPPC)/bin/powerpc-eabi-g++ ./configure --host=powerpc-eabi --prefix="${DEVKITPRO}/portlibs/ppc" --libdir="${DEVKITPRO}/portlibs/ppc/lib" --disable-shared && \
+COMMAND2 = (CC=$(DEVKITPPC)/bin/powerpc-eabi-gcc CXX=$(DEVKITPPC)/bin/powerpc-eabi-g++ ./configure --host=powerpc-eabi --build=powerpc-eabi-gnu --prefix="${DEVKITPRO}/portlibs/ppc" --libdir="${DEVKITPRO}/portlibs/ppc/lib" --disable-shared && \
       make && sudo -E make install)
 COMMAND3 = (CC=$(DEVKITPPC)/bin/powerpc-eabi-gcc ./configure --host=powerpc-eabi --prefix="${DEVKITPRO}/portlibs/ppc" --libdir="${DEVKITPRO}/portlibs/ppc/lib" --enable-shared=no --enable-static=yes --with-cpu=ppc_nofpu --with-optimization=3 && \
       cd src/libmpg123 && make && sudo -E make install)

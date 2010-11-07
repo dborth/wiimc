@@ -35,7 +35,7 @@ LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map -specs=wiimc.spec
 #---------------------------------------------------------------------------------
 LIBS	:= -lmplayerwii -lmpg123 -lavformat -lavcodec -lavcore -lavutil -lpostproc \
 			-lswscale -lfribidi -ljpeg -ldi -liso9660 -liconv -lpcrecpp \
-			-lpcre -lpng -lz -lntfs -lfat -lwiiuse -lbte -logc -lfreetype -ljpeg \
+			-lpcre -lpng -lz -lntfs -lfat -lwiiuse -lbte -logc -lfreetype \
 			-lmxml -ltinysmb -lexif
 
 #---------------------------------------------------------------------------------

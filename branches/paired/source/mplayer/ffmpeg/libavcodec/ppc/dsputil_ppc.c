@@ -23,6 +23,7 @@
 #include "libavutil/cpu.h"
 #include "libavcodec/dsputil.h"
 #include "dsputil_altivec.h"
+#include "dsputil_paired.h"
 
 /* ***** WARNING ***** WARNING ***** WARNING ***** */
 /*
@@ -201,4 +202,11 @@ void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 
     }
 #endif /* HAVE_ALTIVEC */
+
+#if HAVE_PAIRED
+    dsputil_init_paired(c, avctx);
+    if (CONFIG_VC1_DECODER)
+        vc1dsp_init_paired(c, avctx);
+    float_init_paired(c, avctx);
+#endif /* HAVE_PAIRED */
 }

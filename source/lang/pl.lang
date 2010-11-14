@@ -639,3 +639,27 @@ msgstr "Nie znaleziono czcionki do napisów. Napisy będą niewidoczne."
 
 msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
 msgstr "WiiMC nie ma dostępu do DVD - AHBPROT nie jest aktywne"
+
+msgid "Starting Area"
+msgstr "Obszar Początkowy"
+
+msgid "Error downloading font file!"
+msgstr "Wystąpił błąd podczas pobierania pliku czcionki!"
+
+msgid "Error opening font file!"
+msgstr "Wystąpił błąd podczas otwierania pliku czcionki!"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "Nie można zmienić Języka. Plik czcionki jest uszkodzony!"
+
+msgid "YouTube Quality"
+msgstr "Jakość YouTube"
+
+msgid "Low (400x240)"
+msgstr "Niska (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "Średnia (480x360)"
+
+msgid "High (640x360)"
+msgstr "Wysoka (640x360)"

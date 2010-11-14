@@ -48,11 +48,9 @@
 #   define INCL_DOSERRORS
 #   include <os2.h>
 #   include <sys/ioctl.h>
-#else
-#ifndef GEKKO
+#elif !defined ( GEKKO )
 #   include <netinet/in.h>
 #   include <sys/ioctl.h>
-#endif
 #endif
 
 #ifdef DVD_STRUCT_IN_SYS_CDIO_H
@@ -270,9 +268,9 @@ int ioctl_ReadCopyright( int i_fd, int i_layer, int *pi_copyright )
                         p_buffer, sizeof(p_buffer), &ulDataLen);
 
     *pi_copyright = p_buffer[ 4 ];
-    
+
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -447,7 +445,7 @@ int ioctl_ReadDiscKey( int i_fd, int *pi_agid, uint8_t *p_key )
     memcpy( p_key, p_buffer + 4, DVD_DISCKEY_SIZE );
 
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -613,7 +611,7 @@ int ioctl_ReadTitleKey( int i_fd, int *pi_agid, int i_pos, uint8_t *p_key )
     memcpy( p_key, p_buffer + 5, DVD_KEY_SIZE );
 
 #elif defined( GEKKO )
-return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -739,7 +737,7 @@ int ioctl_ReportAgid( int i_fd, int *pi_agid )
     *pi_agid = p_buffer[ 7 ] >> 6;
 
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -875,7 +873,7 @@ int ioctl_ReportChallenge( int i_fd, int *pi_agid, uint8_t *p_challenge )
     memcpy( p_challenge, p_buffer + 4, DVD_CHALLENGE_SIZE );
 
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1010,7 +1008,7 @@ int ioctl_ReportASF( int i_fd, int *pi_remove_me, int *pi_asf )
     *pi_asf = p_buffer[ 7 ] & 1;
 
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1141,7 +1139,7 @@ int ioctl_ReportKey1( int i_fd, int *pi_agid, uint8_t *p_key )
     memcpy( p_key, p_buffer + 4, DVD_KEY_SIZE );
 
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1254,7 +1252,7 @@ int ioctl_InvalidateAgid( int i_fd, int *pi_agid )
                         &sdc, sizeof(sdc), &ulParamLen,
                         NULL, 0, &ulDataLen);
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1393,7 +1391,7 @@ int ioctl_SendChallenge( int i_fd, int *pi_agid, uint8_t *p_challenge )
                          p_buffer, sizeof(p_buffer), &ulDataLen );
 
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1532,7 +1530,7 @@ int ioctl_SendKey2( int i_fd, int *pi_agid, uint8_t *p_key )
                          p_buffer, sizeof(p_buffer), &ulDataLen );
 
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1689,7 +1687,7 @@ int ioctl_ReportRPC( int i_fd, int *p_type, int *p_mask, int *p_scheme )
     *p_scheme = p_buffer[ 6 ];
 
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1818,7 +1816,7 @@ int ioctl_SendRPC( int i_fd, int i_pdrc )
                          p_buffer, sizeof(p_buffer), &ulDataLen );
 
 #elif defined( GEKKO )
-	return -1;
+    return -1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 

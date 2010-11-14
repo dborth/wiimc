@@ -51,10 +51,8 @@
 
 #if defined( WIN32 ) && !defined( SYS_CYGWIN )
 #   include <io.h>                                                 /* read() */
-#else
-#ifndef GEKKO
+#elif !defined ( GEKKO )
 #   include <sys/uio.h>                                      /* struct iovec */
-#endif
 #endif
 
 #ifdef GEKKO
@@ -124,7 +122,6 @@ static int os2_open ( dvdcss_t, char const * );
 
 int _dvdcss_use_ioctls( dvdcss_t dvdcss )
 {
-#ifndef GEKKO
 #if defined( WIN32 )
     if( dvdcss->b_file )
     {
@@ -149,6 +146,8 @@ int _dvdcss_use_ioctls( dvdcss_t dvdcss )
     if( ulMode & OPEN_FLAGS_DASD )
         return 1;
 
+    return 0;
+#elif defined( GEKKO )
     return 0;
 #else
     struct stat fileinfo;
@@ -183,9 +182,6 @@ int _dvdcss_use_ioctls( dvdcss_t dvdcss )
     {
         return 0;
     }
-#endif
-#else
-	return 0;
 #endif
 }
 
@@ -335,7 +331,7 @@ void _dvdcss_check ( dvdcss_t dvdcss )
     }
 
     IOObjectRelease( media_iterator );
-#elif defined GEKKO
+#elif defined( GEKKO )
     free( dvdcss->psz_device );
     dvdcss->psz_device = strdup("/dev/di");
     print_debug( dvdcss, "defaulting to drive `%s'", dvdcss->psz_device );
@@ -389,16 +385,6 @@ int _dvdcss_open ( dvdcss_t dvdcss )
 
     print_debug( dvdcss, "opening target `%s'", psz_device );
 
-#ifdef GEKKO
-    print_debug( dvdcss, "using Erant's DI API for access" );
-
-    dvdcss->pf_seek = di_seek;
-    dvdcss->pf_read = di_read;
-    dvdcss->pf_readv = di_readv;
-
-    return di_open( dvdcss, psz_device );
-#else
-
 #if defined( WIN32 )
     dvdcss->b_file = 1;
     /* If device is "X:" or "X:\", we are not actually opening a file. */
@@ -439,6 +425,16 @@ int _dvdcss_open ( dvdcss_t dvdcss )
         return os2_open( dvdcss, psz_device );
     }
     else
+#elif defined( GEKKO )
+    if ( !strcmp(psz_device, "/dev/di") )
+    {
+        print_debug( dvdcss, "using Erant's DI API for access" );
+        dvdcss->pf_seek  = di_seek;
+        dvdcss->pf_read  = di_read;
+        dvdcss->pf_readv = di_readv;
+        return di_open( dvdcss, psz_device );
+    }
+    else
 #endif
     {
         print_debug( dvdcss, "using libc for access" );
@@ -447,7 +443,6 @@ int _dvdcss_open ( dvdcss_t dvdcss )
         dvdcss->pf_readv = libc_readv;
         return libc_open( dvdcss, psz_device );
     }
-#endif  
 }
 
 #if !defined(WIN32) && !defined(SYS_OS2)
@@ -893,7 +888,7 @@ static int aspi_read ( dvdcss_t dvdcss, void *p_buffer, int i_blocks )
  *****************************************************************************/
 static int libc_readv ( dvdcss_t dvdcss, struct iovec *p_iovec, int i_blocks )
 {
-#if defined( WIN32 )
+#if defined( WIN32 ) || defined( GEKKO )
     int i_index, i_len, i_total = 0;
     unsigned char *p_base;
     int i_bytes;
@@ -1208,3 +1203,4 @@ static int di_readv(dvdcss_t dvdcss, struct iovec *iov, int iovcnt) {
 	return len;
 }
 #endif
+

@@ -376,13 +376,13 @@ dvd_reader_t *DVDOpen( const char *ppath )
                     free(path);
             return ret_val;
     }
-    
+
 #ifdef GEKKO
-		if (!strcmp(path,"/dev/di")) {
-			ret_val = DVDOpenImageFile( path, have_css );
-			free(path);
-			return ret_val;
-		}
+  if (!strcmp(path, "/dev/di")) {
+    ret_val = DVDOpenImageFile( path, have_css );
+    free(path);
+    return ret_val;
+  }
 #endif
 
     /* If we can't stat the file, give up */
@@ -636,7 +636,6 @@ static dvd_file_t *DVDOpenFileUDF( dvd_reader_t *dvd, char *filename )
  */
 static int findDirFile( const char *path, const char *file, char *filename )
 {
-#ifndef GEKKO
   DIR *dir;
   struct dirent *ent;
 
@@ -653,7 +652,6 @@ static int findDirFile( const char *path, const char *file, char *filename )
     }
   }
   closedir(dir);
-#endif 
   return -1;
 }
 

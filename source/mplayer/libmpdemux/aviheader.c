@@ -669,7 +669,7 @@ if(index_mode>=2 || (priv->idx_size==0 && index_mode==1)){
     if(idx_pos>=priv->idx_size){
 //      priv->idx_size+=32;
       priv->idx_size+=1024; // +16kB
-#ifndef GEKKO //in gecko we reverse more memory for safety
+#ifndef GEKKO // in gekko we reserve more memory for safety
       priv->idx=realloc(priv->idx,priv->idx_size*sizeof(AVIINDEXENTRY));
 #else
 	if(priv->idx==NULL) priv->idx=alloc_index(5*1024*1025); //is 7Mb in total for index

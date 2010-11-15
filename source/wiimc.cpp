@@ -418,8 +418,14 @@ void LoadMPlayerFile()
 	char ext[6];
 	GetExt(loadedFile, ext);
 
-	if(strlen(ext) > 0 && strcmp(ext, "iso") == 0)
+	if(strlen(ext) > 0 && (strcasecmp(ext, "iso") == 0 || strcasecmp(ext, "ifo") == 0))
 	{
+		if(strcasecmp(ext, "ifo") == 0)
+		{
+			char *end = strrchr(loadedFile, '/');
+			*end = 0; // strip filename
+		}
+
 		wiiSetDVDDevice(loadedFile);
 
 		if(WiiSettings.dvdMenu)

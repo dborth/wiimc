@@ -60,6 +60,7 @@ void wiiRewind();
 double wiiGetTimeLength();
 double wiiGetTimePos();
 void wiiGetTimeDisplay(char *buf);
+void wiiSetDVDDevice(char *dev);
 bool wiiAudioOnly();
 char * wiiGetMetaTitle();
 char * wiiGetMetaArtist();

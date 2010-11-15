@@ -414,6 +414,23 @@ void LoadMPlayerFile()
 	// wait for previous file to end
 	while(controlledbygui == 2)
 		usleep(100);
+	
+	char ext[6];
+	GetExt(loadedFile, ext);
+
+	if(strlen(ext) > 0 && strcmp(ext, "iso") == 0)
+	{
+		wiiSetDVDDevice(loadedFile);
+
+		if(WiiSettings.dvdMenu)
+			sprintf(loadedFile, "dvdnav://");
+		else
+			sprintf(loadedFile, "dvd://");
+	}
+	else
+	{
+		wiiSetDVDDevice(NULL);
+	}
 
 	// set new file to load
 	wiiLoadFile(loadedFile);

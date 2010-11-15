@@ -2634,9 +2634,9 @@ static void pause_loop(void)
 
   if(controlledbygui != 2 && cmd && cmd->id != MP_CMD_QUIT)
   {
-	  if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
+	  if((strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0) && !dvd_device)
 	    StartDVDMotor();
-	  else if(strncmp(filename,"usb",3) == 0)
+	  else if(strncmp(filename, "usb", 3) == 0)
 		WakeupUSB();
   }
 
@@ -3183,9 +3183,15 @@ if(filename)
 wii_error = 0;
 controlledbygui = 0;
 
+// reset some MPlayer variables
 pause_low_cache=1;
 audio_id=video_id=-1;
 force_frame_dropping=-1;
+
+dvd_chapter=1;
+dvd_last_chapter=0;
+dvd_title=0;
+dvd_angle=1;
 #endif
 
   // init global sub numbers
@@ -4636,7 +4642,7 @@ void PauseAndGotoGUI()
 
 	mpctx->osd_function = OSD_PLAY;
 
-	if (strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0)
+	if ((strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0) && !dvd_device)
 		StartDVDMotor();
 	else if (strncmp(filename, "usb", 3) == 0)
 		WakeupUSB();
@@ -4705,9 +4711,9 @@ static void low_cache_loop(void)
 
 	mpctx->osd_function=OSD_PLAY;
 	SetBufferingStatus(0);
-	if(strncmp(filename,"dvd:",4) == 0 || strncmp(filename,"dvdnav:",7) == 0)
+	if((strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0) && !dvd_device)
 		StartDVDMotor();
-	else if(strncmp(filename,"usb",3) == 0)
+	else if(strncmp(filename, "usb", 3) == 0)
 		WakeupUSB();
 
 	if (cmd && cmd->id == MP_CMD_PAUSE)
@@ -4887,6 +4893,20 @@ void wiiGetTimeDisplay(char * buf)
 	sprintf(buf, "%02d:%02d:%02d / %02d:%02d:%02d",
 		pts/3600,(pts/60)%60,pts%60,
 		len/3600,(len/60)%60,len%60);
+}
+
+void wiiSetDVDDevice(char * dev)
+{
+	if(dvd_device)
+	{
+		free(dvd_device);
+		dvd_device = NULL;
+	}
+
+	if(!dev)
+		return;
+
+	dvd_device = strdup(dev);
 }
 
 bool wiiAudioOnly()

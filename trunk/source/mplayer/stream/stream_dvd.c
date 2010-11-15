@@ -1080,9 +1080,41 @@ fail:
   return STREAM_UNSUPPORTED;
 }
 
+#ifdef GEKKO
+static char *gekko_basename(char *name)
+{
+	if(!name)
+		return NULL;
+
+	char *base = strrchr(name, '/');
+
+	if(!base)
+		return strdup("");
+
+	base++;
+	return strdup(base);
+}
+
+static char *gekko_dirname(char *url)
+{
+	if(!url)
+		return NULL;
+
+	char res[1024];
+	strcpy(res, url);
+
+	char *end = strrchr(res, '/');
+
+	if(!end)
+		return strdup(url);
+
+	*end = 0;
+	return strdup(res);
+}
+#endif
+
 static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_format)
 {
-#ifndef GEKKO
     char* filename;
     struct stream_priv_s *spriv;
     int len = strlen(stream->url);
@@ -1092,10 +1124,20 @@ static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_fo
 
     mp_msg(MSGT_DVD, MSGL_INFO, ".IFO detected. Redirecting to dvd://\n");
 
+#ifdef GEKKO
+    filename = gekko_basename(stream->url);
+#else
     filename = strdup(basename(stream->url));
+#endif
 
     spriv=calloc(1, sizeof(struct stream_priv_s));
+    
+#ifdef GEKKO
+    spriv->device = gekko_dirname(stream->url);
+#else
     spriv->device = strdup(dirname(stream->url));
+#endif
+
     if(!strncasecmp(filename,"vts_",4))
     {
         if(sscanf(filename+3, "_%02d_", &spriv->title)!=1)
@@ -1108,9 +1150,6 @@ static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_fo
     stream->url=strdup("dvd://");
 
     return open_s(stream, mode, spriv, file_format);
-#else
-    return STREAM_UNSUPPORTED;
-#endif 
 }
 
 const stream_info_t stream_info_dvd = {

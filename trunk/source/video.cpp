@@ -284,11 +284,15 @@ InitVideo ()
 void
 InitVideo2 ()
 {
-	// Allocate the video buffers
-	xfb[0] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));		
-	xfb[1] = (u32 *) MEM_K0_TO_K1 (SYS_AllocateFramebuffer (vmode));
+	// Allocate framebuffers
+	xfb[0] = (u32 *) SYS_AllocateFramebuffer (vmode);
+	xfb[1] = (u32 *) SYS_AllocateFramebuffer (vmode);
+	DCInvalidateRange(xfb[0], VIDEO_GetFrameBufferSize(vmode));
+	DCInvalidateRange(xfb[1], VIDEO_GetFrameBufferSize(vmode));
+	xfb[0] = (u32 *) MEM_K0_TO_K1 (xfb[0]);
+	xfb[1] = (u32 *) MEM_K0_TO_K1 (xfb[1]);
 
-	// Clear framebuffers etc.
+	// Clear framebuffers
 	VIDEO_ClearFrameBuffer (vmode, xfb[0], COLOR_BLACK);
 	VIDEO_ClearFrameBuffer (vmode, xfb[1], COLOR_BLACK);
 	VIDEO_SetNextFramebuffer (xfb[0]);

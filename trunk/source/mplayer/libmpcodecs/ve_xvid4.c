@@ -46,6 +46,7 @@
 
 #include "img_format.h"
 #include "mp_image.h"
+#include "ve.h"
 #include "vf.h"
 
 #include <xvid.h>
@@ -460,15 +461,9 @@ uninit(struct vf_instance *vf)
 	}
 
         /* Free allocated memory */
-	if(mod->frame.quant_intra_matrix)
-	    free(mod->frame.quant_intra_matrix);
-
-	if(mod->frame.quant_inter_matrix)
-	    free(mod->frame.quant_inter_matrix);
-
-	if(mod->mux->bih)
-	    free(mod->mux->bih);
-
+	free(mod->frame.quant_intra_matrix);
+	free(mod->frame.quant_inter_matrix);
+	free(mod->mux->bih);
 	free(vf->priv);
 	vf->priv=NULL;
 
@@ -535,6 +530,9 @@ put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
 
 	if(set_frame_struct(mod, mpi) == BAD)
 		return BAD;
+
+	mod->frame.type = is_forced_key_frame(pts) || xvidenc_motion == 0 ?
+		XVID_TYPE_IVOP : XVID_TYPE_AUTO;
 
 	/* -------------------------------------------------------------------
 	 * Encode the frame
@@ -818,7 +816,7 @@ static int dispatch_settings(xvid_mplayer_module_t *mod)
 		frame->quant_intra_matrix = (unsigned char*)read_matrix(xvidenc_intra_matrix_file);
 		if(frame->quant_intra_matrix != NULL) {
 			mp_msg(MSGT_MENCODER, MSGL_INFO, "xvid: Loaded Intra matrix (switching to mpeg quantization type)\n");
-			if(xvidenc_quant_method) free(xvidenc_quant_method);
+			free(xvidenc_quant_method);
 			xvidenc_quant_method = strdup("mpeg");
 		}
 	}
@@ -826,7 +824,7 @@ static int dispatch_settings(xvid_mplayer_module_t *mod)
 		frame->quant_inter_matrix = read_matrix(xvidenc_inter_matrix_file);
 		if(frame->quant_inter_matrix) {
 			mp_msg(MSGT_MENCODER, MSGL_INFO, "\nxvid: Loaded Inter matrix (switching to mpeg quantization type)\n");
-			if(xvidenc_quant_method) free(xvidenc_quant_method);
+			free(xvidenc_quant_method);
 			xvidenc_quant_method = strdup("mpeg");
 		}
 	}

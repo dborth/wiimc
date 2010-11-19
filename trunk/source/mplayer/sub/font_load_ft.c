@@ -867,27 +867,27 @@ void free_font_desc(font_desc_t *desc)
 
 //    if (!desc->dynamic) return; // some vo_aa crap, better leaking than crashing
 
-    if (desc->name) free(desc->name);
-    if (desc->fpath) free(desc->fpath);
+    free(desc->name);
+    free(desc->fpath);
 
     for(i = 0; i < 16; i++) {
 	if (desc->pic_a[i]) {
-	    if (desc->pic_a[i]->bmp) free(desc->pic_a[i]->bmp);
-	    if (desc->pic_a[i]->pal) free(desc->pic_a[i]->pal);
-	    free (desc->pic_a[i]);
+	    free(desc->pic_a[i]->bmp);
+	    free(desc->pic_a[i]->pal);
+	    free(desc->pic_a[i]);
 	}
 	if (desc->pic_b[i]) {
-	    if (desc->pic_b[i]->bmp) free(desc->pic_b[i]->bmp);
-	    if (desc->pic_b[i]->pal) free(desc->pic_b[i]->pal);
-	    free (desc->pic_b[i]);
+	    free(desc->pic_b[i]->bmp);
+	    free(desc->pic_b[i]->pal);
+	    free(desc->pic_b[i]);
 	}
     }
 
-    if (desc->tables.g) free(desc->tables.g);
-    if (desc->tables.gt2) free(desc->tables.gt2);
-    if (desc->tables.om) free(desc->tables.om);
-    if (desc->tables.omt) free(desc->tables.omt);
-    if (desc->tables.tmp) free(desc->tables.tmp);
+    free(desc->tables.g);
+    free(desc->tables.gt2);
+    free(desc->tables.om);
+    free(desc->tables.omt);
+    free(desc->tables.tmp);
 
 #ifndef GEKKO
     for(i = 0; i < desc->face_cnt; i++) {
@@ -1178,6 +1178,7 @@ void load_font_ft(int width, int height, font_desc_t** fontp, const char *font_n
 
     // protection against vo_aa font hacks
     if (vo_font && !vo_font->dynamic) return;
+
     if (vo_font) free_font_desc(vo_font);
 
 #ifdef CONFIG_FONTCONFIG
@@ -1212,6 +1213,5 @@ void load_font_ft(int width, int height, font_desc_t** fontp, const char *font_n
         mp_msg(MSGT_OSD, MSGL_ERR, MSGTR_LIBVO_FONT_LOAD_FT_FontconfigNoMatch);
     }
 #endif
-
     *fontp=read_font_desc_ft(font_name, 0, width, height, font_scale_factor);
 }

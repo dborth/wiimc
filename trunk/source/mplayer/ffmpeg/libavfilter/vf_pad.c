@@ -25,7 +25,6 @@
  */
 
 #include "avfilter.h"
-#include "parseutils.h"
 #include "libavutil/pixdesc.h"
 #include "libavutil/colorspace.h"
 #include "libavcore/imgutils.h"
@@ -143,7 +142,7 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
     if (args)
         sscanf(args, "%d:%d:%d:%d:%s", &pad->w, &pad->h, &pad->x, &pad->y, color_string);
 
-    if (av_parse_color(pad->color, color_string, ctx) < 0)
+    if (av_parse_color(pad->color, color_string, -1, ctx) < 0)
         return AVERROR(EINVAL);
 
     /* sanity check params */
@@ -229,6 +228,9 @@ static AVFilterBufferRef *get_video_buffer(AVFilterLink *inlink, int perms, int 
                                                        w + (pad->w - pad->in_w),
                                                        h + (pad->h - pad->in_h));
     int plane;
+
+    picref->video->w = w;
+    picref->video->h = h;
 
     for (plane = 0; plane < 4 && picref->data[plane]; plane++) {
         int hsub = (plane == 1 || plane == 2) ? pad->hsub : 0;
@@ -377,7 +379,7 @@ static av_cold int color_init(AVFilterContext *ctx, const char *args, void *opaq
     color->time_base.num = frame_rate_q.den;
     color->time_base.den = frame_rate_q.num;
 
-    if ((ret = av_parse_color(color->color, color_string, ctx)) < 0)
+    if ((ret = av_parse_color(color->color, color_string, -1, ctx)) < 0)
         return ret;
 
     return 0;

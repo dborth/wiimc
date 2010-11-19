@@ -1,5 +1,5 @@
 /*
- * Bluray stream playback
+ * Blu-ray stream playback
  * by cRTrn13 <crtrn13-at-gmail.com> 2009
  *
  * This file is part of MPlayer.
@@ -276,6 +276,7 @@ static int bd_get_uks(struct bd_priv *bd)
 static off_t bd_read(struct bd_priv *bd, uint8_t *buf, int len)
 {
     int read_len;
+    int unit_offset = bd->pos % BD_UNIT_SIZE;
     len &= ~15;
     if (!len)
         return 0;
@@ -284,10 +285,14 @@ static off_t bd_read(struct bd_priv *bd, uint8_t *buf, int len)
     if (read_len != len)
         return -1;
 
-    if (bd->pos % BD_UNIT_SIZE) {
-        // decrypt in place
-        av_aes_crypt(bd->aescbc, buf, buf, len / 16, bd->iv.u8, 1);
-    } else {
+    if (unit_offset) {
+        int decrypt_len = FFMIN(len, BD_UNIT_SIZE - unit_offset);
+        av_aes_crypt(bd->aescbc, buf, buf, decrypt_len / 16, bd->iv.u8, 1);
+        buf += decrypt_len;
+        len -= decrypt_len;
+    }
+    while (len) {
+        int decrypt_len = FFMIN(len, BD_UNIT_SIZE);
         // reset aes context as at start of unit
         key enc_seed;
         bd->iv = BD_CBC_IV;
@@ -304,7 +309,9 @@ static off_t bd_read(struct bd_priv *bd, uint8_t *buf, int len)
 
         // decrypt
         av_aes_crypt(bd->aescbc, &buf[16], &buf[16],
-                     (len - 16) / 16, bd->iv.u8, 1);
+                     (decrypt_len - 16) / 16, bd->iv.u8, 1);
+        buf += decrypt_len;
+        len -= decrypt_len;
     }
 
     bd->pos += read_len;
@@ -458,6 +465,7 @@ static int bd_stream_open(stream_t *s, int mode, void* opts, int* file_format)
         bd->device = DEFAULT_BD_DEVICE;
 
     s->sector_size = BD_UNIT_SIZE;
+    s->read_chunk  = 32 * BD_UNIT_SIZE;
     s->flags       = STREAM_READ | MP_STREAM_SEEK;
     s->fill_buffer = bd_stream_fill_buffer;
     s->seek        = bd_stream_seek;
@@ -493,7 +501,7 @@ static int bd_stream_open(stream_t *s, int mode, void* opts, int* file_format)
 }
 
 const stream_info_t stream_info_bd = {
-    "Bluray",
+    "Blu-ray",
     "bd",
     "cRTrn13",
     "",

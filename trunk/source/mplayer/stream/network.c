@@ -127,9 +127,9 @@ void
 streaming_ctrl_free( streaming_ctrl_t *streaming_ctrl ) {
 	if( streaming_ctrl==NULL ) return;
 	if( streaming_ctrl->url ) url_free( streaming_ctrl->url );
-	if( streaming_ctrl->buffer ) free( streaming_ctrl->buffer );
-	if( streaming_ctrl->data ) free( streaming_ctrl->data );
-	free( streaming_ctrl );
+	free(streaming_ctrl->buffer);
+	free(streaming_ctrl->data);
+	free(streaming_ctrl);
 }
 
 URL_t*
@@ -215,14 +215,14 @@ http_send_request( URL_t *url, off_t pos ) {
 		http_set_uri( http_hdr, server_url->file );
 	}
 	if (server_url->port && server_url->port != 80)
-	    snprintf(str, 256, "Host: %s:%d", server_url->hostname, server_url->port );
+	    snprintf(str, sizeof(str), "Host: %s:%d", server_url->hostname, server_url->port );
 	else
-	    snprintf(str, 256, "Host: %s", server_url->hostname );
+	    snprintf(str, sizeof(str), "Host: %s", server_url->hostname );
 	http_set_field( http_hdr, str);
 	if (network_useragent)
-	    snprintf(str, 256, "User-Agent: %s", network_useragent);
+	    snprintf(str, sizeof(str), "User-Agent: %s", network_useragent);
 	else
-	    snprintf(str, 256, "User-Agent: %s", mplayer_version);
+	    snprintf(str, sizeof(str), "User-Agent: %s", mplayer_version);
         http_set_field(http_hdr, str);
 
 	if (network_referrer) {
@@ -247,14 +247,16 @@ http_send_request( URL_t *url, off_t pos ) {
 
 	if(pos>0) {
 	// Extend http_send_request with possibility to do partial content retrieval
-	    snprintf(str, 256, "Range: bytes=%"PRId64"-", (int64_t)pos);
+	    snprintf(str, sizeof(str), "Range: bytes=%"PRId64"-", (int64_t)pos);
 	    http_set_field(http_hdr, str);
 	}
 #ifndef GEKKO
 	if (network_cookies_enabled) cookies_set( http_hdr, server_url->hostname, server_url->url );
 #endif
 	http_set_field( http_hdr, "Connection: close");
-	http_add_basic_authentication( http_hdr, url->username, url->password );
+	if (proxy)
+		http_add_basic_proxy_authentication(http_hdr, url->username, url->password);
+	http_add_basic_authentication(http_hdr, server_url->username, server_url->password);
 	if( http_build_request( http_hdr )==NULL ) {
 		goto err_out;
 	}
@@ -331,14 +333,10 @@ http_authenticate(HTTP_header_t *http_hdr, URL_t *url, int *auth_retry) {
 		return -1;
 	}
 	if( *auth_retry>0 ) {
-		if( url->username ) {
-			free( url->username );
-			url->username = NULL;
-		}
-		if( url->password ) {
-			free( url->password );
-			url->password = NULL;
-		}
+		free(url->username);
+		url->username = NULL;
+		free(url->password);
+		url->password = NULL;
 	}
 
 	aut = http_get_field(http_hdr, "WWW-Authenticate");

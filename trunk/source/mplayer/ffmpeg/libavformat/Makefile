@@ -243,7 +243,7 @@ OBJS-$(CONFIG_RTPDEC)                    += rdt.o         \
                                             rtpdec_svq3.o \
                                             rtpdec_vp8.o  \
                                             rtpdec_xiph.o
-OBJS-$(CONFIG_RTSP_DEMUXER)              += rtsp.o httpauth.o
+OBJS-$(CONFIG_RTSP_DEMUXER)              += rtsp.o rtspdec.o httpauth.o
 OBJS-$(CONFIG_RTSP_MUXER)                += rtsp.o rtspenc.o httpauth.o \
                                             rtpenc_chain.o
 OBJS-$(CONFIG_SAP_DEMUXER)               += sapdec.o
@@ -256,7 +256,7 @@ OBJS-$(CONFIG_SMACKER_DEMUXER)           += smacker.o
 OBJS-$(CONFIG_SOL_DEMUXER)               += sol.o pcm.o
 OBJS-$(CONFIG_SOX_DEMUXER)               += soxdec.o pcm.o
 OBJS-$(CONFIG_SOX_MUXER)                 += soxenc.o
-OBJS-$(CONFIG_SPDIF_MUXER)               += spdif.o
+OBJS-$(CONFIG_SPDIF_MUXER)               += spdif.o spdifenc.o
 OBJS-$(CONFIG_SRT_DEMUXER)               += srtdec.o
 OBJS-$(CONFIG_SRT_MUXER)                 += rawenc.o
 OBJS-$(CONFIG_STR_DEMUXER)               += psxstr.o

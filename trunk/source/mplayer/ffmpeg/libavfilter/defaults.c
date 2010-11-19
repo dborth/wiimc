@@ -20,6 +20,7 @@
  */
 
 #include "libavcore/imgutils.h"
+#include "libavcore/samplefmt.h"
 #include "libavcodec/audioconvert.h"
 #include "avfilter.h"
 
@@ -81,7 +82,7 @@ fail:
 }
 
 AVFilterBufferRef *avfilter_default_get_audio_buffer(AVFilterLink *link, int perms,
-                                                     enum SampleFormat sample_fmt, int size,
+                                                     enum AVSampleFormat sample_fmt, int size,
                                                      int64_t channel_layout, int planar)
 {
     AVFilterBuffer *samples = av_mallocz(sizeof(AVFilterBuffer));
@@ -109,7 +110,7 @@ AVFilterBufferRef *avfilter_default_get_audio_buffer(AVFilterLink *link, int per
     samples->refcount   = 1;
     samples->free       = avfilter_default_free_buffer;
 
-    sample_size = av_get_bits_per_sample_format(sample_fmt) >>3;
+    sample_size = av_get_bits_per_sample_fmt(sample_fmt) >>3;
     chans_nb = avcodec_channel_layout_num_channels(channel_layout);
 
     per_channel_size = size/chans_nb;
@@ -317,7 +318,7 @@ AVFilterBufferRef *avfilter_null_get_video_buffer(AVFilterLink *link, int perms,
 }
 
 AVFilterBufferRef *avfilter_null_get_audio_buffer(AVFilterLink *link, int perms,
-                                                  enum SampleFormat sample_fmt, int size,
+                                                  enum AVSampleFormat sample_fmt, int size,
                                                   int64_t channel_layout, int packed)
 {
     return avfilter_get_audio_buffer(link->dst->outputs[0], perms, sample_fmt,

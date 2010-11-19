@@ -4,7 +4,7 @@ NAME = avfilter
 FFLIBS = avcodec avcore avutil
 FFLIBS-$(CONFIG_SCALE_FILTER) += swscale
 
-HEADERS = avfilter.h
+HEADERS = avfilter.h avfiltergraph.h
 
 OBJS = allfilters.o                                                     \
        avfilter.o                                                       \
@@ -12,7 +12,6 @@ OBJS = allfilters.o                                                     \
        defaults.o                                                       \
        formats.o                                                        \
        graphparser.o                                                    \
-       parseutils.o                                                     \
 
 OBJS-$(CONFIG_ANULL_FILTER)                  += af_anull.o
 
@@ -36,6 +35,7 @@ OBJS-$(CONFIG_PAD_FILTER)                    += vf_pad.o
 OBJS-$(CONFIG_PIXDESCTEST_FILTER)            += vf_pixdesctest.o
 OBJS-$(CONFIG_PIXELASPECT_FILTER)            += vf_aspect.o
 OBJS-$(CONFIG_SCALE_FILTER)                  += vf_scale.o
+OBJS-$(CONFIG_SETPTS_FILTER)                 += vf_setpts.o
 OBJS-$(CONFIG_SETTB_FILTER)                  += vf_settb.o
 OBJS-$(CONFIG_SLICIFY_FILTER)                += vf_slicify.o
 OBJS-$(CONFIG_TRANSPOSE_FILTER)              += vf_transpose.o

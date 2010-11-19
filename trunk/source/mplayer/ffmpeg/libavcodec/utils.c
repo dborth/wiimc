@@ -30,6 +30,8 @@
 #include "libavutil/crc.h"
 #include "libavutil/pixdesc.h"
 #include "libavcore/imgutils.h"
+#include "libavcore/internal.h"
+#include "libavcore/samplefmt.h"
 #include "avcodec.h"
 #include "dsputil.h"
 #include "libavutil/opt.h"
@@ -139,7 +141,7 @@ void avcodec_align_dimensions2(AVCodecContext *s, int *width, int *height, int l
     case PIX_FMT_YUVA420P:
         w_align= 16; //FIXME check for non mpeg style codecs and use less alignment
         h_align= 16;
-        if(s->codec_id == CODEC_ID_MPEG2VIDEO || s->codec_id == CODEC_ID_MJPEG || s->codec_id == CODEC_ID_AMV || s->codec_id == CODEC_ID_THP)
+        if(s->codec_id == CODEC_ID_MPEG2VIDEO || s->codec_id == CODEC_ID_MJPEG || s->codec_id == CODEC_ID_AMV || s->codec_id == CODEC_ID_THP || s->codec_id == CODEC_ID_H264)
             h_align= 32; // interlaced is rounded up to 2 MBs
         break;
     case PIX_FMT_YUV411P:
@@ -322,7 +324,7 @@ int avcodec_default_get_buffer(AVCodecContext *s, AVFrame *pic){
                 buf->data[i] = buf->base[i] + FFALIGN((buf->linesize[i]*EDGE_WIDTH>>v_shift) + (EDGE_WIDTH>>h_shift), stride_align[i]);
         }
         if(size[1] && !size[2])
-            ff_set_systematic_pal((uint32_t*)buf->data[1], s->pix_fmt);
+            ff_set_systematic_pal2((uint32_t*)buf->data[1], s->pix_fmt);
         buf->width  = s->width;
         buf->height = s->height;
         buf->pix_fmt= s->pix_fmt;
@@ -921,9 +923,9 @@ void avcodec_string(char *buf, int buf_size, AVCodecContext *enc, int encode)
         }
         av_strlcat(buf, ", ", buf_size);
         avcodec_get_channel_layout_string(buf + strlen(buf), buf_size - strlen(buf), enc->channels, enc->channel_layout);
-        if (enc->sample_fmt != SAMPLE_FMT_NONE) {
+        if (enc->sample_fmt != AV_SAMPLE_FMT_NONE) {
             snprintf(buf + strlen(buf), buf_size - strlen(buf),
-                     ", %s", avcodec_get_sample_fmt_name(enc->sample_fmt));
+                     ", %s", av_get_sample_fmt_name(enc->sample_fmt));
         }
         break;
     case AVMEDIA_TYPE_DATA:
@@ -1064,21 +1066,11 @@ int av_get_bits_per_sample(enum CodecID codec_id){
     }
 }
 
-int av_get_bits_per_sample_format(enum SampleFormat sample_fmt) {
-    switch (sample_fmt) {
-    case SAMPLE_FMT_U8:
-        return 8;
-    case SAMPLE_FMT_S16:
-        return 16;
-    case SAMPLE_FMT_S32:
-    case SAMPLE_FMT_FLT:
-        return 32;
-    case SAMPLE_FMT_DBL:
-        return 64;
-    default:
-        return 0;
-    }
+#if FF_API_OLD_SAMPLE_FMT
+int av_get_bits_per_sample_format(enum AVSampleFormat sample_fmt) {
+    return av_get_bits_per_sample_fmt(sample_fmt);
 }
+#endif
 
 #if !HAVE_THREADS
 int avcodec_thread_init(AVCodecContext *s, int thread_count){

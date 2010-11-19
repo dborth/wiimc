@@ -39,6 +39,7 @@
  */
 
 #include "libavcodec/dsputil.h"
+#include "libavutil/x86_cpu.h"
 #include "idct_xvid.h"
 #include "dsputil_mmx.h"
 
@@ -379,7 +380,14 @@ inline void ff_idct_xvid_sse2(short *block)
     "6:                                                          \n\t"
     : "+r"(block)
     :
-    : "%eax", "%ecx", "%edx", "%esi", "memory");
+    : XMM_CLOBBERS("%xmm0" , "%xmm1" , "%xmm2" , "%xmm3" ,
+                   "%xmm4" , "%xmm5" , "%xmm6" , "%xmm7" ,)
+#if ARCH_X86_64
+      XMM_CLOBBERS("%xmm8" , "%xmm9" , "%xmm10", "%xmm11",
+                   "%xmm12", "%xmm13", "%xmm14",)
+#endif
+      "%eax", "%ecx", "%edx", "%esi", "memory"
+    );
 }
 
 void ff_idct_xvid_sse2_put(uint8_t *dest, int line_size, short *block)

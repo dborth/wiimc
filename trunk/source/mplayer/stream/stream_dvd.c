@@ -413,16 +413,16 @@ static void dvd_close(dvd_priv_t *d)
   dvd_set_speed(dvd_device_current, -1); /* -1 => restore default */
 }
 
-static int fill_buffer(stream_t *s, char *but, int len)
+static int fill_buffer(stream_t *s, char *buf, int len)
 {
-  if(s->type == STREAMTYPE_DVD) {
-    off_t pos=dvd_read_sector(s->priv,s->buffer);
-    if(pos>=0) {
-      len=2048; // full sector
-      s->pos=2048*pos-len;
-    } else len=-1; // error
-  }
-  return len;
+  off_t pos;
+  if (len < 2048)
+    return -1;
+  pos = dvd_read_sector(s->priv, buf);
+  if (pos < 0)
+    return -1;
+  s->pos = 2048*(pos - 1);
+  return 2048; // full sector
 }
 
 static int seek(stream_t *s, off_t newpos) {

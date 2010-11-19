@@ -30,6 +30,7 @@
 #include "libavutil/pixdesc.h"
 #include "libavcore/imgutils.h"
 #include "libavcore/parseutils.h"
+#include "libavcore/samplefmt.h"
 #include "libavformat/avformat.h"
 #include "libavdevice/avdevice.h"
 #include "libswscale/swscale.h"
@@ -40,7 +41,6 @@
 #if CONFIG_AVFILTER
 # include "libavfilter/avfilter.h"
 # include "libavfilter/avfiltergraph.h"
-# include "libavfilter/graphparser.h"
 #endif
 
 #include "cmdutils.h"
@@ -163,7 +163,7 @@ typedef struct VideoState {
     int audio_buf_index; /* in bytes */
     AVPacket audio_pkt_temp;
     AVPacket audio_pkt;
-    enum SampleFormat audio_src_fmt;
+    enum AVSampleFormat audio_src_fmt;
     AVAudioConvert *reformat_ctx;
 
     int show_audio; /* if true, display audio samples */
@@ -1794,7 +1794,7 @@ static int video_thread(void *arg)
     char sws_flags_str[128];
     FFSinkContext ffsink_ctx = { .pix_fmt = PIX_FMT_YUV420P };
     AVFilterContext *filt_src = NULL, *filt_out = NULL;
-    AVFilterGraph *graph = av_mallocz(sizeof(AVFilterGraph));
+    AVFilterGraph *graph = avfilter_graph_alloc();
     snprintf(sws_flags_str, sizeof(sws_flags_str), "flags=%d", sws_flags);
     graph->scale_sws_opts = av_strdup(sws_flags_str);
 
@@ -1810,12 +1810,12 @@ static int video_thread(void *arg)
         AVFilterInOut *inputs  = av_malloc(sizeof(AVFilterInOut));
 
         outputs->name    = av_strdup("in");
-        outputs->filter  = filt_src;
+        outputs->filter_ctx = filt_src;
         outputs->pad_idx = 0;
         outputs->next    = NULL;
 
         inputs->name    = av_strdup("out");
-        inputs->filter  = filt_out;
+        inputs->filter_ctx = filt_out;
         inputs->pad_idx = 0;
         inputs->next    = NULL;
 
@@ -1885,7 +1885,7 @@ static int video_thread(void *arg)
     }
  the_end:
 #if CONFIG_AVFILTER
-    avfilter_graph_destroy(graph);
+    avfilter_graph_free(graph);
     av_freep(&graph);
 #endif
     av_free(frame);
@@ -2095,12 +2095,12 @@ static int audio_decode_frame(VideoState *is, double *pts_ptr)
             if (dec->sample_fmt != is->audio_src_fmt) {
                 if (is->reformat_ctx)
                     av_audio_convert_free(is->reformat_ctx);
-                is->reformat_ctx= av_audio_convert_alloc(SAMPLE_FMT_S16, 1,
+                is->reformat_ctx= av_audio_convert_alloc(AV_SAMPLE_FMT_S16, 1,
                                                          dec->sample_fmt, 1, NULL, 0);
                 if (!is->reformat_ctx) {
                     fprintf(stderr, "Cannot convert %s sample format to %s sample format\n",
-                        avcodec_get_sample_fmt_name(dec->sample_fmt),
-                        avcodec_get_sample_fmt_name(SAMPLE_FMT_S16));
+                        av_get_sample_fmt_name(dec->sample_fmt),
+                        av_get_sample_fmt_name(AV_SAMPLE_FMT_S16));
                         break;
                 }
                 is->audio_src_fmt= dec->sample_fmt;
@@ -2109,7 +2109,7 @@ static int audio_decode_frame(VideoState *is, double *pts_ptr)
             if (is->reformat_ctx) {
                 const void *ibuf[6]= {is->audio_buf1};
                 void *obuf[6]= {is->audio_buf2};
-                int istride[6]= {av_get_bits_per_sample_format(dec->sample_fmt)/8};
+                int istride[6]= {av_get_bits_per_sample_fmt(dec->sample_fmt)/8};
                 int ostride[6]= {2};
                 int len= data_size/istride[0];
                 if (av_audio_convert(is->reformat_ctx, obuf, ostride, ibuf, istride, len)<0) {
@@ -2268,7 +2268,7 @@ static int stream_component_open(VideoState *is, int stream_index)
             return -1;
         }
         is->audio_hw_buf_size = spec.size;
-        is->audio_src_fmt= SAMPLE_FMT_S16;
+        is->audio_src_fmt= AV_SAMPLE_FMT_S16;
     }
 
     ic->streams[stream_index]->discard = AVDISCARD_DEFAULT;

@@ -2630,7 +2630,7 @@ static void pause_loop(void)
   {
 	  if((strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0) && !dvd_device)
 	    StartDVDMotor();
-	  else if(strncmp(filename, "usb", 3) == 0)
+	  else if(strncmp(filename, "usb", 3) == 0 || (dvd_device && strncmp(dvd_device, "usb", 3) == 0))
 		WakeupUSB();
   }
 
@@ -4638,7 +4638,7 @@ void PauseAndGotoGUI()
 
 	if ((strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0) && !dvd_device)
 		StartDVDMotor();
-	else if (strncmp(filename, "usb", 3) == 0)
+	else if(strncmp(filename, "usb", 3) == 0 || (dvd_device && strncmp(dvd_device, "usb", 3) == 0))
 		WakeupUSB();
 
 	if (mpctx->audio_out && mpctx->sh_audio)
@@ -4707,7 +4707,7 @@ static void low_cache_loop(void)
 	SetBufferingStatus(0);
 	if((strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0) && !dvd_device)
 		StartDVDMotor();
-	else if(strncmp(filename, "usb", 3) == 0)
+	else if(strncmp(filename, "usb", 3) == 0 || (dvd_device && strncmp(dvd_device, "usb", 3) == 0))
 		WakeupUSB();
 
 	if (cmd && cmd->id == MP_CMD_PAUSE)

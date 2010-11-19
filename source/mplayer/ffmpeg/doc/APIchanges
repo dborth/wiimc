@@ -13,6 +13,73 @@ libavutil:   2009-03-08
 
 API changes, most recent first:
 
+2010-11-17 - r25761 - lavcore 0.13.0 - parseutils.h
+  Add av_parse_color() declared in libavcore/parseutils.h.
+
+2010-11-13 - r25745 - lavc 52.95.0 - AVCodecContext
+  Add AVCodecContext.subtitle_header and AVCodecContext.subtitle_header_size
+  fields.
+
+2010-11-13 - r25740 - lavfi 1.62.0 - avfiltergraph.h
+  Make avfiltergraph.h public.
+
+2010-11-13 - r25737 - lavfi 1.61.0 - avfiltergraph.h
+  Remove declarations from avfiltergraph.h for the functions:
+  avfilter_graph_check_validity()
+  avfilter_graph_config_links()
+  avfilter_graph_config_formats()
+  which are now internal.
+  Use avfilter_graph_config() instead.
+
+2010-11-08 - r25708 - lavu 50.33.0 - eval.h
+  Deprecate functions:
+  av_parse_and_eval_expr(),
+  av_parse_expr(),
+  av_eval_expr(),
+  av_free_expr(),
+  in favor of the functions:
+  av_expr_parse_and_eval(),
+  av_expr_parse(),
+  av_expr_eval(),
+  av_expr_free().
+
+2010-11-08 - r25707 - lavfi 1.59.0 - avfilter_free()
+  Rename avfilter_destroy() to avfilter_free().
+  This change breaks libavfilter API/ABI.
+
+2010-11-07 - r25705 - lavfi 1.58.0 - avfiltergraph.h
+  Remove graphparser.h header, move AVFilterInOut and
+  avfilter_graph_parse() declarations to libavfilter/avfiltergraph.h.
+
+2010-11-07 - r25700 - lavfi 1.57.0 - AVFilterInOut
+  Rename field AVFilterInOut.filter to AVFilterInOut.filter_ctx.
+  This change breaks libavfilter API.
+
+2010-11-04 - r25674 - lavfi 1.56.0 - avfilter_graph_free()
+  Rename avfilter_graph_destroy() to avfilter_graph_free().
+  This change breaks libavfilter API/ABI.
+
+2010-11-04 - r25673 - lavfi 1.55.0 - avfilter_graph_alloc()
+  Add avfilter_graph_alloc() to libavfilter/avfiltergraph.h.
+
+2010-11-02 - r25654 - lavcore 0.12.0 - av_get_bits_per_sample_fmt()
+  Add av_get_bits_per_sample_fmt() to libavcore/samplefmt.h and
+  deprecate av_get_bits_per_sample_format().
+
+2010-11-02 - r25653 - lavcore 0.11.0 - samplefmt.h
+  Add sample format functions in libavcore/samplefmt.h:
+  av_get_sample_fmt_name(),
+  av_get_sample_fmt(),
+  av_get_sample_fmt_string(),
+  and deprecate the corresponding libavcodec/audioconvert.h functions:
+  avcodec_get_sample_fmt_name(),
+  avcodec_get_sample_fmt(),
+  avcodec_sample_fmt_string().
+
+2010-11-02 - r25652 - lavcore 0.10.0 - samplefmt.h
+  Define enum AVSampleFormat in libavcore/samplefmt.h, deprecate enum
+  SampleFormat.
+
 2010-10-16 - r25502 - lavfi 1.52.0 - avfilter_graph_config()
   Add the function avfilter_graph_config() in avfiltergraph.h.
 

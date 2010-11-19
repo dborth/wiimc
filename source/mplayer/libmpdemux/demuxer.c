@@ -472,9 +472,13 @@ static void allocate_parser(AVCodecContext **avctx, AVCodecParserContext **parse
     init_avcodec();
 
     switch (format) {
+    case MKTAG('M', 'P', '4', 'L'):
+        codec_id = CODEC_ID_AAC_LATM;
+        break;
     case 0x2000:
     case 0x332D6361:
     case 0x332D4341:
+    case 0x20736D:
     case MKTAG('d', 'n', 'e', 't'):
     case MKTAG('s', 'a', 'c', '3'):
         codec_id = CODEC_ID_AC3;
@@ -491,12 +495,14 @@ static void allocate_parser(AVCodecContext **avctx, AVCodecParserContext **parse
         break;
     case 0x55:
     case 0x5500736d:
+    case 0x55005354:
     case MKTAG('.', 'm', 'p', '3'):
-    case MKTAG('M', 'P', 'E', ' '):
+    case MKTAG('M', 'P', '3', ' '):
     case MKTAG('L', 'A', 'M', 'E'):
         codec_id = CODEC_ID_MP3;
         break;
     case 0x50:
+    case 0x5000736d:
     case MKTAG('.', 'm', 'p', '2'):
     case MKTAG('.', 'm', 'p', '1'):
         codec_id = CODEC_ID_MP2;
@@ -961,8 +967,9 @@ int extension_parsing = 1; // 0=off 1=mixed (used only for unstable formats)
 
 int correct_pts = 0;
 int user_correct_pts = -1;
+#ifdef GEKKO
 int correct_pts_errors;
-
+#endif
 
 /*
   NOTE : Several demuxers may be opened at the same time so
@@ -1254,7 +1261,9 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
         res = vd;
 
     correct_pts = user_correct_pts;
+#ifdef GEKKO
     correct_pts_errors = 0;
+#endif
     if (correct_pts < 0)
         correct_pts = !force_fps && demux_control(res, DEMUXER_CTRL_CORRECT_PTS, NULL)
                       == DEMUXER_CTRL_OK;

@@ -236,6 +236,9 @@ void* mem2_malloc(u32 size, const int area)
 
 void mem2_free(void *ptr, const int area)
 { 
+	if(!ptr)
+		return;
+
 	if(mem2_areas[area].size==0)
 	{
 #ifdef DEBUG_MEM2_LEVEL

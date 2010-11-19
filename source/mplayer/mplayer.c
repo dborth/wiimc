@@ -402,8 +402,6 @@ static int crash_debug = 0;
 /* This header requires all the global variable declarations. */
 #include "cfg-mplayer.h"
 
-#define mp_basename2(s) (strrchr(s,'/')==NULL?(char*)s:(strrchr(s,'/')+1))
-
 const void *mpctx_get_video_out(MPContext *mpctx)
 {
     return mpctx->video_out;
@@ -514,7 +512,7 @@ char *get_metadata (metadata_t type) {
   {
   case META_NAME:
   {
-    return strdup (mp_basename2 (filename));
+    return strdup(mp_basename(filename));
   }
 
   case META_VIDEO_CODEC:
@@ -657,7 +655,7 @@ static void print_file_properties(const MPContext *mpctx, const char *filename)
 static void mp_dvdnav_context_free(MPContext *ctx){
     if (ctx->nav_smpi) free_mp_image(ctx->nav_smpi);
     ctx->nav_smpi = NULL;
-    if (ctx->nav_buffer) free(ctx->nav_buffer);
+    free(ctx->nav_buffer);
     ctx->nav_buffer = NULL;
     ctx->nav_start = NULL;
     ctx->nav_in_size = 0;
@@ -818,7 +816,7 @@ void exit_player_with_rc(enum exit_reason how, int rc)
   mpctx->playtree = NULL;
 
 
-  if(edl_records != NULL) free(edl_records); // free mem allocated for EDL
+  free(edl_records); // free mem allocated for EDL
   edl_records = NULL;
   switch(how) {
   case EXIT_QUIT:
@@ -1109,8 +1107,6 @@ static int libmpdemux_was_interrupted(int eof) {
   return eof;
 }
 
-#define mp_basename(s) (strrchr(s,'\\')==NULL?(mp_basename2(s)):(strrchr(s,'\\')+1))
-
 static int playtree_add_playlist(play_tree_t* entry)
 {
   play_tree_add_bpf(entry,filename);
@@ -1215,8 +1211,7 @@ void update_set_of_subtitles(void)
 }
 
 void init_vo_spudec(void) {
-  if (vo_spudec)
-    spudec_free(vo_spudec);
+  spudec_free(vo_spudec);
   vo_spudec = NULL;
 
   // we currently can't work without video stream
@@ -2110,8 +2105,7 @@ static void mp_dvdnav_save_smpi(int in_size,
     if (mpctx->stream->type != STREAMTYPE_DVDNAV)
         return;
 
-    if (mpctx->nav_buffer)
-        free(mpctx->nav_buffer);
+    free(mpctx->nav_buffer);
 
     mpctx->nav_buffer = malloc(in_size);
     mpctx->nav_start = start;
@@ -3328,7 +3322,7 @@ while (player_idle_mode && !filename) {
 	mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_Playing,
 		filename_recode(filename));
         if(use_filename_title && vo_wintitle == NULL)
-            vo_wintitle = strdup ( mp_basename2 (filename));
+            vo_wintitle = strdup(mp_basename(filename));
     }
 
     edl_loadfile();
@@ -3541,7 +3535,8 @@ if (mpctx->demuxer && mpctx->demuxer->type==DEMUXER_TYPE_PLAYLIST)
   current_module="handle_demux_playlist";
   while (ds_get_packet(mpctx->demuxer->video,&playlist_entry)>0)
   {
-    char *temp, *bname;
+    char *temp;
+	const char *bname;
 
     mp_msg(MSGT_CPLAYER,MSGL_V,"Adding file %s to element entry.\n",
 	    filename_recode(playlist_entry));
@@ -4212,8 +4207,7 @@ if(step_sec>0) {
   while( !brk_cmd && (cmd = mp_input_get_cmd(0,0,0)) != NULL) {
 	  brk_cmd = run_command(mpctx, cmd);
 	  if (cmd->id == MP_CMD_EDL_LOADFILE) {
-		  if (edl_filename)
-			  free(edl_filename);
+		  free(edl_filename);
 		  edl_filename = strdup(cmd->args[0].v.s);
 		  if (edl_filename)
 			  edl_loadfile();

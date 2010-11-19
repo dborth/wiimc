@@ -97,9 +97,9 @@ static void end_frame(AVFilterLink *inlink)
 
     pblack = blackframe->nblack * 100 / (inlink->w * inlink->h);
     if (pblack >= blackframe->bamount)
-        av_log(ctx, AV_LOG_INFO, "frame:%u pblack:%u pos:%"PRId64" pts:%f\n",
-               blackframe->frame, pblack, picref->pos,
-               picref->pts == AV_NOPTS_VALUE ? -1 : (double)picref->pts / AV_TIME_BASE);
+        av_log(ctx, AV_LOG_INFO, "frame:%u pblack:%u pos:%"PRId64" pts:%"PRId64" t:%f\n",
+               blackframe->frame, pblack, picref->pos, picref->pts,
+               picref->pts == AV_NOPTS_VALUE ? -1 : picref->pts * av_q2d(inlink->time_base));
 
     blackframe->frame++;
     blackframe->nblack = 0;

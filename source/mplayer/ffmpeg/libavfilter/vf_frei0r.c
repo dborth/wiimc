@@ -27,8 +27,8 @@
 #include <dlfcn.h>
 #include <frei0r.h>
 #include "libavutil/avstring.h"
+#include "libavcore/parseutils.h"
 #include "avfilter.h"
-#include "parseutils.h"
 
 typedef f0r_instance_t (*f0r_construct_f)(unsigned int width, unsigned int height);
 typedef void (*f0r_destruct_f)(f0r_instance_t instance);
@@ -91,7 +91,7 @@ static int set_param(AVFilterContext *ctx, f0r_param_info_t info, int index, cha
 
     case F0R_PARAM_COLOR:
         if (sscanf(param, "%f/%f/%f", &val.col.r, &val.col.g, &val.col.b) != 3) {
-            if (av_parse_color(rgba, param, ctx) < 0)
+            if (av_parse_color(rgba, param, -1, ctx) < 0)
                 goto fail;
             val.col.r = rgba[0] / 255.0;
             val.col.g = rgba[1] / 255.0;
@@ -330,7 +330,7 @@ static void end_frame(AVFilterLink *inlink)
     AVFilterBufferRef  *inpicref =  inlink->cur_buf;
     AVFilterBufferRef *outpicref = outlink->out_buf;
 
-    frei0r->update(frei0r->instance, (double)inpicref->pts / AV_TIME_BASE,
+    frei0r->update(frei0r->instance, inpicref->pts * av_q2d(inlink->time_base) * 1000,
                    (const uint32_t *)inpicref->data[0],
                    (uint32_t *)outpicref->data[0]);
     avfilter_unref_buffer(inpicref);

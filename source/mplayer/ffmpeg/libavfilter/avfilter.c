@@ -115,7 +115,7 @@ int avfilter_link(AVFilterContext *src, unsigned srcpad,
     link->srcpad  = &src->output_pads[srcpad];
     link->dstpad  = &dst->input_pads[dstpad];
     link->type    = src->output_pads[srcpad].type;
-    assert(PIX_FMT_NONE == -1 && SAMPLE_FMT_NONE == -1);
+    assert(PIX_FMT_NONE == -1 && AV_SAMPLE_FMT_NONE == -1);
     link->format  = -1;
 
     return 0;
@@ -201,8 +201,8 @@ char *ff_get_ref_perms_string(char *buf, size_t buf_size, int perms)
              perms & AV_PERM_READ      ? "r" : "",
              perms & AV_PERM_WRITE     ? "w" : "",
              perms & AV_PERM_PRESERVE  ? "p" : "",
-             perms & AV_PERM_REUSE     ? "r" : "",
-             perms & AV_PERM_REUSE2    ? "R" : "");
+             perms & AV_PERM_REUSE     ? "u" : "",
+             perms & AV_PERM_REUSE2    ? "U" : "");
     return buf;
 }
 
@@ -268,7 +268,7 @@ AVFilterBufferRef *avfilter_get_video_buffer(AVFilterLink *link, int perms, int 
 }
 
 AVFilterBufferRef *avfilter_get_audio_buffer(AVFilterLink *link, int perms,
-                                             enum SampleFormat sample_fmt, int size,
+                                             enum AVSampleFormat sample_fmt, int size,
                                              int64_t channel_layout, int planar)
 {
     AVFilterBufferRef *ret = NULL;
@@ -527,7 +527,7 @@ int avfilter_open(AVFilterContext **filter_ctx, AVFilter *filter, const char *in
     return 0;
 }
 
-void avfilter_destroy(AVFilterContext *filter)
+void avfilter_free(AVFilterContext *filter)
 {
     int i;
     AVFilterLink *link;

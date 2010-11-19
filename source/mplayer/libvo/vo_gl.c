@@ -595,6 +595,8 @@ static int initGl(uint32_t d_width, uint32_t d_height) {
 
 static int create_window(uint32_t d_width, uint32_t d_height, uint32_t flags, const char *title)
 {
+  if (stereo_mode == GL_3D_QUADBUFFER)
+    flags |= VOFLAG_STEREO;
 #ifdef CONFIG_GL_WIN32
   if (glctx.type == GLTYPE_W32 && !vo_w32_config(d_width, d_height, flags))
     return -1;
@@ -1095,9 +1097,9 @@ static void
 uninit(void)
 {
   uninitGl();
-  if (custom_prog) free(custom_prog);
+  free(custom_prog);
   custom_prog = NULL;
-  if (custom_tex) free(custom_tex);
+  free(custom_tex);
   custom_tex = NULL;
   uninit_mpglcontext(&glctx);
 }

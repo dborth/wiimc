@@ -1,7 +1,7 @@
 include $(SUBDIR)../config.mak
 
 NAME = avcodec
-FFLIBS = avutil avcore
+FFLIBS = avcore avutil
 
 HEADERS = avcodec.h avfft.h dxva2.h opt.h vaapi.h vdpau.h xvmc.h
 
@@ -66,6 +66,8 @@ OBJS-$(CONFIG_AMV_DECODER)             += sp5xdec.o mjpegdec.o mjpeg.o
 OBJS-$(CONFIG_ANM_DECODER)             += anm.o
 OBJS-$(CONFIG_ANSI_DECODER)            += ansi.o cga_data.o
 OBJS-$(CONFIG_APE_DECODER)             += apedec.o
+OBJS-$(CONFIG_ASS_DECODER)             += assdec.o ass.o
+OBJS-$(CONFIG_ASS_ENCODER)             += assenc.o ass.o
 OBJS-$(CONFIG_ASV1_DECODER)            += asv1.o mpeg12data.o
 OBJS-$(CONFIG_ASV1_ENCODER)            += asv1.o mpeg12data.o
 OBJS-$(CONFIG_ASV2_DECODER)            += asv1.o mpeg12data.o
@@ -576,6 +578,7 @@ OBJS-$(CONFIG_H264_PARSER)             += h264_parser.o h264.o            \
                                           h264_loopfilter.o h264_cabac.o \
                                           h264_cavlc.o h264_ps.o \
                                           mpegvideo.o error_resilience.o
+OBJS-$(CONFIG_AAC_LATM_PARSER)         += latm_parser.o
 OBJS-$(CONFIG_MJPEG_PARSER)            += mjpeg_parser.o
 OBJS-$(CONFIG_MLP_PARSER)              += mlp_parser.o mlp.o
 OBJS-$(CONFIG_MPEG4VIDEO_PARSER)       += mpeg4video_parser.o h263.o \
@@ -601,6 +604,7 @@ OBJS-$(CONFIG_CHOMP_BSF)                  += chomp_bsf.o
 OBJS-$(CONFIG_DUMP_EXTRADATA_BSF)         += dump_extradata_bsf.o
 OBJS-$(CONFIG_H264_MP4TOANNEXB_BSF)       += h264_mp4toannexb_bsf.o
 OBJS-$(CONFIG_IMX_DUMP_HEADER_BSF)        += imx_dump_header_bsf.o
+OBJS-$(CONFIG_MJPEG2JPEG_BSF)             += mjpeg2jpeg_bsf.o
 OBJS-$(CONFIG_MJPEGA_DUMP_HEADER_BSF)     += mjpega_dump_header_bsf.o
 OBJS-$(CONFIG_MOV2TEXTSUB_BSF)            += movsub_bsf.o
 OBJS-$(CONFIG_MP3_HEADER_COMPRESS_BSF)    += mp3_header_compress_bsf.o

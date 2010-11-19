@@ -50,6 +50,12 @@ version <next>:
 - transpose filter added
 - ffmpeg -force_key_frames option added
 - demuxer for receiving raw rtp:// URLs without an SDP description
+- single stream LATM/LOAS decoder
+- setpts filter added
+- Win64 support for optimized asm functions
+- MJPEG/AVI1 to JPEG/JFIF bitstream filter
+- ASS subtitle encoder and decoder
+- IEC 61937 encapsulation for E-AC3 (for HDMI passthrough)
 
 
 version 0.6:

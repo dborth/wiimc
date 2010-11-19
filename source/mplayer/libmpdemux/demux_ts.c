@@ -1100,19 +1100,15 @@ static void demux_close_ts(demuxer_t * demuxer)
 
 	if(priv)
 	{
-		if(priv->pat.section.buffer)
-			free(priv->pat.section.buffer);
-		if(priv->pat.progs)
-			free(priv->pat.progs);
+		free(priv->pat.section.buffer);
+		free(priv->pat.progs);
 
 		if(priv->pmt)
 		{
 			for(i = 0; i < priv->pmt_cnt; i++)
 			{
-				if(priv->pmt[i].section.buffer)
-					free(priv->pmt[i].section.buffer);
-				if(priv->pmt[i].es)
-					free(priv->pmt[i].es);
+				free(priv->pmt[i].section.buffer);
+				free(priv->pmt[i].es);
 			}
 			free(priv->pmt);
 		}
@@ -2963,6 +2959,11 @@ static int ts_parse(demuxer_t *demuxer , ES_stream_t *es, unsigned char *packet,
 			//IS IT TIME TO QUEUE DATA to the dp_packet?
 			if(is_start && (dp != NULL))
 			{
+				// subtitle packets _have_ to be submitted before video, otherwise
+				// they might get stuck "forever" and subtitles will be completely
+				// out of sync.
+				if (is_video)
+					fill_packet(demuxer, demuxer->sub, &priv->fifo[2].pack, &priv->fifo[2].offset, NULL);
 				retv = fill_packet(demuxer, ds, dp, dp_offset, si);
 			}
 

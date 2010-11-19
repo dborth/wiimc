@@ -36,6 +36,7 @@
 #include "bytestream.h"
 #include "bgmc.h"
 #include "dsputil.h"
+#include "libavcore/samplefmt.h"
 #include "libavutil/crc.h"
 
 #include <stdint.h>
@@ -202,7 +203,7 @@ typedef struct {
     unsigned int num_blocks;        ///< number of blocks used in the current frame
     unsigned int s_max;             ///< maximum Rice parameter allowed in entropy coding
     uint8_t *bgmc_lut;              ///< pointer at lookup tables used for BGMC
-    unsigned int *bgmc_lut_status;  ///< pointer at lookup table status flags used for BGMC
+    int *bgmc_lut_status;           ///< pointer at lookup table status flags used for BGMC
     int ltp_lag_length;             ///< number of bits used for ltp lag value
     int *use_ltp;                   ///< contains use_ltp flags for all channels
     int *ltp_lag;                   ///< contains ltp lag values for all channels
@@ -748,7 +749,7 @@ static int read_var_block_data(ALSDecContext *ctx, ALSBlockData *bd)
 
     // read all residuals
     if (sconf->bgmc) {
-        unsigned int delta[8];
+        int          delta[8];
         unsigned int k    [8];
         unsigned int b = av_clip((av_ceil_log2(bd->block_length) - 3) >> 1, 0, 5);
         unsigned int i = start;
@@ -1426,7 +1427,7 @@ static int decode_frame(AVCodecContext *avctx,
 
     // check for size of decoded data
     size = ctx->cur_frame_length * avctx->channels *
-           (av_get_bits_per_sample_format(avctx->sample_fmt) >> 3);
+           (av_get_bits_per_sample_fmt(avctx->sample_fmt) >> 3);
 
     if (size > *data_size) {
         av_log(avctx, AV_LOG_ERROR, "Decoded data exceeds buffer size.\n");
@@ -1572,11 +1573,11 @@ static av_cold int decode_init(AVCodecContext *avctx)
         ff_bgmc_init(avctx, &ctx->bgmc_lut, &ctx->bgmc_lut_status);
 
     if (sconf->floating) {
-        avctx->sample_fmt          = SAMPLE_FMT_FLT;
+        avctx->sample_fmt          = AV_SAMPLE_FMT_FLT;
         avctx->bits_per_raw_sample = 32;
     } else {
         avctx->sample_fmt          = sconf->resolution > 1
-                                     ? SAMPLE_FMT_S32 : SAMPLE_FMT_S16;
+                                     ? AV_SAMPLE_FMT_S32 : AV_SAMPLE_FMT_S16;
         avctx->bits_per_raw_sample = (sconf->resolution + 1) * 8;
     }
 
@@ -1679,7 +1680,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
         ctx->crc_buffer = av_malloc(sizeof(*ctx->crc_buffer) *
                                     ctx->cur_frame_length *
                                     avctx->channels *
-                                    (av_get_bits_per_sample_format(avctx->sample_fmt) >> 3));
+                                    (av_get_bits_per_sample_fmt(avctx->sample_fmt) >> 3));
         if (!ctx->crc_buffer) {
             av_log(avctx, AV_LOG_ERROR, "Allocating buffer memory failed.\n");
             decode_end(avctx);

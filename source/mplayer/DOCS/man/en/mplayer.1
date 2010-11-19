@@ -1,4 +1,4 @@
-.\" $Revision: 32533 $
+.\" $Revision: 32608 $
 .\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -2583,8 +2583,8 @@ Align subtitle bottom edge (default).
 .PD 1
 .
 .TP
-.B "\-subcc \ "
-Display DVD Closed Caption (CC) subtitles.
+.B "\-subcc <1\-4>\ "
+Display DVD Closed Caption (CC) subtitles from the specified channel.
 These are
 .B not
 the VOB subtitles, these are special ASCII subtitles for the
@@ -7999,6 +7999,23 @@ This overrides what is read from the DVD or the .ifo file.
 .TP
 .B \-vobsuboutindex <index>
 Specify the index of the subtitles in the output files (default: 0).
+.
+.TP
+.B \-force\-key\-frames <time>,<time>,...
+Force key frames at the specified timestamps, more precisely at the first
+frame after each specified time.
+.sp 1
+This option can be used to ensure that a seek point is present at a chapter
+mark or any other designated place in the output file.
+.sp 1
+The timestamps must be specified in ascending order.
+.sp 1
+Since MEncoder does not send timestamps along the filter chain, you probably
+need to use the fixpts filter for this option to work.
+.sp 1
+Not all codecs support forced key frames.
+Currently, support is only implemented for the following encoders:
+lavc, x264, xvid.
 .
 .
 .

@@ -32,28 +32,25 @@
 #include "libavutil/cpu.h"
 #include "avcodec.h"
 
-
+#if FF_API_OLD_SAMPLE_FMT
 /**
- * Generate string corresponding to the sample format with
- * number sample_fmt, or a header if sample_fmt is negative.
- *
- * @param[in] buf the buffer where to write the string
- * @param[in] buf_size the size of buf
- * @param[in] sample_fmt the number of the sample format to print the corresponding info string, or
- * a negative value to print the corresponding header.
- * Meaningful values for obtaining a sample format info vary from 0 to SAMPLE_FMT_NB -1.
+ * @deprecated Use av_get_sample_fmt_string() instead.
  */
+attribute_deprecated
 void avcodec_sample_fmt_string(char *buf, int buf_size, int sample_fmt);
 
 /**
- * @return NULL on error
+ * @deprecated Use av_get_sample_fmt_name() instead.
  */
+attribute_deprecated
 const char *avcodec_get_sample_fmt_name(int sample_fmt);
 
 /**
- * @return SAMPLE_FMT_NONE on error
+ * @deprecated Use av_get_sample_fmt() instead.
  */
-enum SampleFormat avcodec_get_sample_fmt(const char* name);
+attribute_deprecated
+enum AVSampleFormat avcodec_get_sample_fmt(const char* name);
+#endif
 
 /**
  * @return NULL on error
@@ -97,8 +94,8 @@ typedef struct AVAudioConvert AVAudioConvert;
  * @param flags See AV_CPU_FLAG_xx
  * @return NULL on error
  */
-AVAudioConvert *av_audio_convert_alloc(enum SampleFormat out_fmt, int out_channels,
-                                       enum SampleFormat in_fmt, int in_channels,
+AVAudioConvert *av_audio_convert_alloc(enum AVSampleFormat out_fmt, int out_channels,
+                                       enum AVSampleFormat in_fmt, int in_channels,
                                        const float *matrix, int flags);
 
 /**

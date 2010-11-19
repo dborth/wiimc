@@ -45,6 +45,7 @@
 #include "img_format.h"
 #include "mp_image.h"
 #include "vf.h"
+#include "ve.h"
 #include "ve_x264.h"
 
 #include <x264.h>
@@ -235,7 +236,7 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
     h264_module_t *mod=(h264_module_t*)vf->priv;
     int i;
 
-    memset(&mod->pic, 0, sizeof(x264_picture_t));
+    x264_picture_init(&mod->pic);
     mod->pic.img.i_csp=param.i_csp;
     mod->pic.img.i_plane=3;
     for(i=0; i<4; i++) {
@@ -244,6 +245,8 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
     }
 
     mod->pic.i_type = X264_TYPE_AUTO;
+    if (is_forced_key_frame(pts))
+        mod->pic.i_type = X264_TYPE_KEYFRAME;
 
     return encode_frame(vf, &mod->pic) >= 0;
 }

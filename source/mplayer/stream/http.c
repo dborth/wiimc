@@ -347,17 +347,16 @@ void
 http_free( HTTP_header_t *http_hdr ) {
 	HTTP_field_t *field, *field2free;
 	if( http_hdr==NULL ) return;
-	if( http_hdr->protocol!=NULL ) free( http_hdr->protocol );
-	if( http_hdr->uri!=NULL ) free( http_hdr->uri );
-	if( http_hdr->reason_phrase!=NULL ) free( http_hdr->reason_phrase );
-	if( http_hdr->field_search!=NULL ) free( http_hdr->field_search );
-	if( http_hdr->method!=NULL ) free( http_hdr->method );
-	if( http_hdr->buffer!=NULL ) free( http_hdr->buffer );
+	free(http_hdr->protocol);
+	free(http_hdr->uri);
+	free(http_hdr->reason_phrase);
+	free(http_hdr->field_search);
+	free(http_hdr->method);
+	free(http_hdr->buffer);
 	field = http_hdr->first_field;
 	while( field!=NULL ) {
 		field2free = field;
-		if (field->field_name)
-		  free(field->field_name);
+		free(field->field_name);
 		field = field->next;
 		free( field2free );
 	}
@@ -375,7 +374,7 @@ http_response_append( HTTP_header_t *http_hdr, char *response, int length ) {
 	}
 	http_hdr->buffer = realloc( http_hdr->buffer, http_hdr->buffer_size+length+1 );
 	if( http_hdr->buffer==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory (re)allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		return -1;
 	}
 	memcpy( http_hdr->buffer+http_hdr->buffer_size, response, length );
@@ -412,7 +411,7 @@ http_response_parse( HTTP_header_t *http_hdr ) {
 	len = hdr_ptr-http_hdr->buffer;
 	http_hdr->protocol = malloc(len+1);
 	if( http_hdr->protocol==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		return -1;
 	}
 	strncpy( http_hdr->protocol, http_hdr->buffer, len );
@@ -440,7 +439,7 @@ http_response_parse( HTTP_header_t *http_hdr ) {
 	len = ptr-hdr_ptr;
 	http_hdr->reason_phrase = malloc(len+1);
 	if( http_hdr->reason_phrase==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		return -1;
 	}
 	strncpy( http_hdr->reason_phrase, hdr_ptr, len );
@@ -471,7 +470,7 @@ http_response_parse( HTTP_header_t *http_hdr ) {
 		if( len==0 ) break;
 		field = realloc(field, len+1);
 		if( field==NULL ) {
-			mp_msg(MSGT_NETWORK,MSGL_ERR,"Memory allocation failed\n");
+			mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MemAllocFailed);
 			return -1;
 		}
 		strncpy( field, hdr_ptr, len );
@@ -480,7 +479,7 @@ http_response_parse( HTTP_header_t *http_hdr ) {
 		hdr_ptr = ptr+((*ptr=='\r')?2:1);
 	} while( hdr_ptr<(http_hdr->buffer+pos_hdr_sep) );
 
-	if( field!=NULL ) free( field );
+	free(field);
 
 	if( pos_hdr_sep+hdr_sep_len<http_hdr->buffer_size ) {
 		// Response has data!
@@ -504,7 +503,7 @@ http_build_request( HTTP_header_t *http_hdr ) {
 	else {
 		uri = malloc(strlen(http_hdr->uri) + 1);
 		if( uri==NULL ) {
-			mp_msg(MSGT_NETWORK,MSGL_ERR,"Memory allocation failed\n");
+			mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MemAllocFailed);
 			return NULL;
 		}
 		strcpy(uri,http_hdr->uri);
@@ -532,7 +531,7 @@ http_build_request( HTTP_header_t *http_hdr ) {
 	}
 	http_hdr->buffer = malloc(len+1);
 	if( http_hdr->buffer==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_ERR,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MemAllocFailed);
 		return NULL;
 	}
 	http_hdr->buffer_size = len;
@@ -553,7 +552,7 @@ http_build_request( HTTP_header_t *http_hdr ) {
 		memcpy( ptr, http_hdr->body, http_hdr->body_size );
 	}
 
-	if( uri ) free( uri );
+	free(uri);
 	return http_hdr->buffer;
 }
 
@@ -563,7 +562,7 @@ http_get_field( HTTP_header_t *http_hdr, const char *field_name ) {
 	http_hdr->field_search_pos = http_hdr->first_field;
 	http_hdr->field_search = realloc( http_hdr->field_search, strlen(field_name)+1 );
 	if( http_hdr->field_search==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		return NULL;
 	}
 	strcpy( http_hdr->field_search, field_name );
@@ -598,13 +597,13 @@ http_set_field( HTTP_header_t *http_hdr, const char *field_name ) {
 
 	new_field = malloc(sizeof(HTTP_field_t));
 	if( new_field==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		return;
 	}
 	new_field->next = NULL;
 	new_field->field_name = malloc(strlen(field_name)+1);
 	if( new_field->field_name==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		free(new_field);
 		return;
 	}
@@ -625,7 +624,7 @@ http_set_method( HTTP_header_t *http_hdr, const char *method ) {
 
 	http_hdr->method = malloc(strlen(method)+1);
 	if( http_hdr->method==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		return;
 	}
 	strcpy( http_hdr->method, method );
@@ -637,16 +636,17 @@ http_set_uri( HTTP_header_t *http_hdr, const char *uri ) {
 
 	http_hdr->uri = malloc(strlen(uri)+1);
 	if( http_hdr->uri==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		return;
 	}
 	strcpy( http_hdr->uri, uri );
 }
 
-int
-http_add_basic_authentication( HTTP_header_t *http_hdr, const char *username, const char *password ) {
+static int
+http_add_authentication( HTTP_header_t *http_hdr, const char *username, const char *password, const char *auth_str ) {
 	char *auth = NULL, *usr_pass = NULL, *b64_usr_pass = NULL;
 	int encoded_len, pass_len=0, out_len;
+	size_t auth_len;
 	int res = -1;
 	if( http_hdr==NULL || username==NULL ) return -1;
 
@@ -656,7 +656,7 @@ http_add_basic_authentication( HTTP_header_t *http_hdr, const char *username, co
 
 	usr_pass = malloc(strlen(username)+pass_len+2);
 	if( usr_pass==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		goto out;
 	}
 
@@ -666,7 +666,7 @@ http_add_basic_authentication( HTTP_header_t *http_hdr, const char *username, co
 	encoded_len = strlen(usr_pass)*2;
 	b64_usr_pass = malloc(encoded_len);
 	if( b64_usr_pass==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		goto out;
 	}
 
@@ -678,13 +678,14 @@ http_add_basic_authentication( HTTP_header_t *http_hdr, const char *username, co
 
 	b64_usr_pass[out_len]='\0';
 
-	auth = malloc(encoded_len+22);
+	auth_len = encoded_len + 100;
+	auth = malloc(auth_len);
 	if( auth==NULL ) {
-		mp_msg(MSGT_NETWORK,MSGL_FATAL,"Memory allocation failed\n");
+		mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MemAllocFailed);
 		goto out;
 	}
 
-	sprintf( auth, "Authorization: Basic %s", b64_usr_pass);
+	snprintf(auth, auth_len, "%s: Basic %s", auth_str, b64_usr_pass);
 	http_set_field( http_hdr, auth );
 	res = 0;
 
@@ -694,6 +695,16 @@ out:
 	free( auth );
 
 	return res;
+}
+
+int
+http_add_basic_authentication( HTTP_header_t *http_hdr, const char *username, const char *password ) {
+	return http_add_authentication(http_hdr, username, password, "Authorization");
+}
+
+int
+http_add_basic_proxy_authentication( HTTP_header_t *http_hdr, const char *username, const char *password ) {
+	return http_add_authentication(http_hdr, username, password, "Proxy-Authorization");
 }
 
 void

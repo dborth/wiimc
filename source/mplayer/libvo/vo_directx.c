@@ -229,11 +229,11 @@ static uint32_t Directx_CreateOverlay(uint32_t imgfmt)
     HRESULT ddrval;
     DDSURFACEDESC2   ddsdOverlay;
     uint32_t        i=0;
-	while ( i < NUM_FORMATS +1 && imgfmt != g_ddpf[i].img_format)
+	while ( i < NUM_FORMATS && imgfmt != g_ddpf[i].img_format)
 	{
 		i++;
 	}
-	if (!g_lpdd || !g_lpddsPrimary)
+	if (!g_lpdd || !g_lpddsPrimary || i == NUM_FORMATS)
         return 1;
     //cleanup
 	if (g_lpddsOverlay)g_lpddsOverlay->lpVtbl->Release(g_lpddsOverlay);
@@ -1182,8 +1182,7 @@ static void flip_page(void)
 	        mp_msg(MSGT_VO,MSGL_WARN,"<vo_directx><WARN>stride changed !!!! disabling direct rendering\n");
 	        vo_directrendering=0;
 	    }
-	    if (tmp_image)
-		    free(tmp_image);
+	    free(tmp_image);
 	    tmp_image = NULL;
 	    dstride = ddsdsf.lPitch;
 	    image = ddsdsf.lpSurface;

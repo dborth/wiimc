@@ -158,8 +158,8 @@ static int control(sh_video_t *sh, int cmd, void *arg, ...){
         case IMGFMT_IYUV:
         case IMGFMT_I420:
             // "converted" using pointer/stride modification
-            if(avctx->pix_fmt==PIX_FMT_YUV420P) return CONTROL_TRUE;// u/v swap
-            if(avctx->pix_fmt==PIX_FMT_YUV422P && !ctx->do_dr1) return CONTROL_TRUE;// half stride
+            if(ctx->best_csp == IMGFMT_YV12) return CONTROL_TRUE;// u/v swap
+            if(ctx->best_csp == IMGFMT_422P && !ctx->do_dr1) return CONTROL_TRUE;// half stride
             break;
 #if CONFIG_XVMC
         case IMGFMT_XVMC_IDCT_MPEG2:
@@ -233,7 +233,7 @@ static void set_format_params(struct AVCodecContext *avctx, enum PixelFormat fmt
     if (fmt == PIX_FMT_NONE)
         return;
     imgfmt = pixfmt2imgfmt(fmt);
-    if (IMGFMT_IS_XVMC(imgfmt) || IMGFMT_IS_VDPAU(imgfmt)) {
+    if (IMGFMT_IS_HWACCEL(imgfmt)) {
         sh_video_t *sh     = avctx->opaque;
         vd_ffmpeg_ctx *ctx = sh->context;
         ctx->do_dr1    = 1;
@@ -480,8 +480,7 @@ static void uninit(sh_video_t *sh){
 
     av_freep(&avctx);
     av_freep(&ctx->pic);
-    if (ctx)
-        free(ctx);
+    free(ctx);
 }
 
 static void draw_slice(struct AVCodecContext *s,
@@ -624,7 +623,7 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
         return avctx->get_buffer(avctx, pic);
     }
 
-    if (IMGFMT_IS_XVMC(ctx->best_csp) || IMGFMT_IS_VDPAU(ctx->best_csp)) {
+    if (IMGFMT_IS_HWACCEL(ctx->best_csp)) {
         type =  MP_IMGTYPE_NUMBERED | (0xffff << 16);
     } else
     if (!pic->buffer_hints) {
@@ -656,13 +655,12 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
         avctx->draw_horiz_band= draw_slice;
     } else
         avctx->draw_horiz_band= NULL;
-    if(IMGFMT_IS_VDPAU(mpi->imgfmt)) {
+    if(IMGFMT_IS_HWACCEL(mpi->imgfmt)) {
         avctx->draw_horiz_band= draw_slice;
     }
 #if CONFIG_XVMC
     if(IMGFMT_IS_XVMC(mpi->imgfmt)) {
         struct xvmc_pix_fmt *render = mpi->priv; //same as data[2]
-        avctx->draw_horiz_band= draw_slice;
         if(!avctx->xvmc_acceleration) {
             mp_msg(MSGT_DECVIDEO, MSGL_INFO, MSGTR_MPCODECS_McGetBufferShouldWorkOnlyWithXVMC);
             assert(0);
@@ -949,7 +947,7 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
     if (!mpi->planes[0])
         return NULL;
 
-    if(avctx->pix_fmt==PIX_FMT_YUV422P && mpi->chroma_y_shift==1){
+    if(ctx->best_csp == IMGFMT_422P && mpi->chroma_y_shift==1){
         // we have 422p but user wants 420p
         mpi->stride[1]*=2;
         mpi->stride[2]*=2;
@@ -983,7 +981,7 @@ static enum PixelFormat get_format(struct AVCodecContext *avctx,
 
     for(i=0;fmt[i]!=PIX_FMT_NONE;i++){
         imgfmt = pixfmt2imgfmt(fmt[i]);
-        if(!IMGFMT_IS_XVMC(imgfmt) && !IMGFMT_IS_VDPAU(imgfmt)) continue;
+        if(!IMGFMT_IS_HWACCEL(imgfmt)) continue;
         mp_msg(MSGT_DECVIDEO, MSGL_INFO, MSGTR_MPCODECS_TryingPixfmt, i);
         if(init_vo(sh, fmt[i]) >= 0) {
             break;

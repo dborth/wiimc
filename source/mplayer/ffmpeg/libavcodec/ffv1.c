@@ -251,6 +251,7 @@ typedef struct FFV1Context{
     int run_index;
     int colorspace;
     int_fast16_t *sample_buffer;
+    int gob_count;
 
     int quant_table_count;
 
@@ -299,6 +300,48 @@ static inline int get_context(PlaneContext *p, int_fast16_t *src, int_fast16_t *
               +p->quant_table[3][(LL-L) & 0xFF] + p->quant_table[4][(TT-T) & 0xFF];
     }else
         return p->quant_table[0][(L-LT) & 0xFF] + p->quant_table[1][(LT-T) & 0xFF] + p->quant_table[2][(T-RT) & 0xFF];
+}
+
+static void find_best_state(uint8_t best_state[256][256], const uint8_t one_state[256]){
+    int i,j,k,m;
+    double l2tab[256];
+
+    for(i=1; i<256; i++)
+        l2tab[i]= log2(i/256.0);
+
+    for(i=0; i<256; i++){
+        double best_len[256];
+        double p= i/256.0;
+
+        for(j=0; j<256; j++)
+            best_len[j]= 1<<30;
+
+        for(j=FFMAX(i-10,1); j<FFMIN(i+11,256); j++){
+            double occ[256]={0};
+            double len=0;
+            occ[j]=1.0;
+            for(k=0; k<256; k++){
+                double newocc[256]={0};
+                for(m=0; m<256; m++){
+                    if(occ[m]){
+                        len -=occ[m]*(     p *l2tab[    m]
+                                      + (1-p)*l2tab[256-m]);
+                    }
+                }
+                if(len < best_len[k]){
+                    best_len[k]= len;
+                    best_state[i][k]= j;
+                }
+                for(m=0; m<256; m++){
+                    if(occ[m]){
+                        newocc[    one_state[    m]] += occ[m]*   p ;
+                        newocc[256-one_state[256-m]] += occ[m]*(1-p);
+                    }
+                }
+                memcpy(occ, newocc, sizeof(occ));
+            }
+        }
+    }
 }
 
 static av_always_inline av_flatten void put_symbol_inline(RangeCoder *c, uint8_t *state, int v, int is_signed, uint64_t rc_stat[256][2], uint64_t rc_stat2[32][2]){
@@ -960,13 +1003,15 @@ static av_cold int encode_init(AVCodecContext *avctx)
     }
     if(avctx->stats_in){
         char *p= avctx->stats_in;
+        uint8_t best_state[256][256];
+        int gob_count=0;
+        char *next;
 
         av_assert0(s->version>=2);
 
         for(;;){
             for(j=0; j<256; j++){
                 for(i=0; i<2; i++){
-                    char *next;
                     s->rc_stat[j][i]= strtol(p, &next, 0);
                     if(next==p){
                         av_log(avctx, AV_LOG_ERROR, "2Pass file invalid at %d %d [%s]\n", j,i,p);
@@ -979,7 +1024,6 @@ static av_cold int encode_init(AVCodecContext *avctx)
                 for(j=0; j<s->context_count[i]; j++){
                     for(k=0; k<32; k++){
                         for(m=0; m<2; m++){
-                            char *next;
                             s->rc_stat2[i][j][k][m]= strtol(p, &next, 0);
                             if(next==p){
                                 av_log(avctx, AV_LOG_ERROR, "2Pass file invalid at %d %d %d %d [%s]\n", i,j,k,m,p);
@@ -990,20 +1034,27 @@ static av_cold int encode_init(AVCodecContext *avctx)
                     }
                 }
             }
+            gob_count= strtol(p, &next, 0);
+            if(next==p || gob_count <0){
+                av_log(avctx, AV_LOG_ERROR, "2Pass file invalid\n");
+                return -1;
+            }
+            p=next;
             while(*p=='\n' || *p==' ') p++;
             if(p[0]==0) break;
         }
         sort_stt(s, s->state_transition);
 
+        find_best_state(best_state, s->state_transition);
+
         for(i=0; i<s->quant_table_count; i++){
             for(j=0; j<s->context_count[i]; j++){
                 for(k=0; k<32; k++){
-                    int p= 128;
+                    double p= 128;
                     if(s->rc_stat2[i][j][k][0]+s->rc_stat2[i][j][k][1]){
-                        p=256*s->rc_stat2[i][j][k][1] / (s->rc_stat2[i][j][k][0]+s->rc_stat2[i][j][k][1]);
+                        p=256.0*s->rc_stat2[i][j][k][1] / (s->rc_stat2[i][j][k][0]+s->rc_stat2[i][j][k][1]);
                     }
-                    p= av_clip(p, 1, 254);
-                    s->initial_states[i][j][k]= p;
+                    s->initial_states[i][j][k]= best_state[av_clip(round(p), 1, 255)][av_clip((s->rc_stat2[i][j][k][0]+s->rc_stat2[i][j][k][1])/gob_count, 0, 255)];
                 }
             }
         }
@@ -1114,6 +1165,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
     if(avctx->gop_size==0 || f->picture_number % avctx->gop_size == 0){
         put_rac(c, &keystate, 1);
         p->key_frame= 1;
+        f->gob_count++;
         write_header(f);
         clear_state(f);
     }else{
@@ -1209,7 +1261,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
                 }
             }
         }
-        snprintf(p, end-p, "\n");
+        snprintf(p, end-p, "%d\n", f->gob_count);
     } else if(avctx->flags&CODEC_FLAG_PASS1)
         avctx->stats_out[0] = '\0';
 
@@ -1221,6 +1273,9 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
 static av_cold int common_end(AVCodecContext *avctx){
     FFV1Context *s = avctx->priv_data;
     int i, j;
+
+    if (avctx->codec->decode && s->picture.data[0])
+        avctx->release_buffer(avctx, &s->picture);
 
     for(j=0; j<s->slice_count; j++){
         FFV1Context *fs= s->slice_context[j];
@@ -1241,6 +1296,10 @@ static av_cold int common_end(AVCodecContext *avctx){
             av_freep(&sf->rc_stat2[j]);
         }
         av_freep(&s->rc_stat2[j]);
+    }
+
+    for(i=0; i<s->slice_count; i++){
+        av_freep(&s->slice_context[i]);
     }
 
     return 0;
@@ -1656,6 +1715,10 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
 
     AVFrame *picture = data;
 
+    /* release previously stored data */
+    if (p->data[0])
+        avctx->release_buffer(avctx, p);
+
     ff_init_range_decoder(c, buf, buf_size);
     ff_build_rac_states(c, 0.05*(1LL<<32), 256-8);
 
@@ -1718,9 +1781,6 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
     f->picture_number++;
 
     *picture= *p;
-
-    avctx->release_buffer(avctx, p); //FIXME
-
     *data_size = sizeof(AVFrame);
 
     return buf_size;

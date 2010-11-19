@@ -5778,7 +5778,7 @@ static void VideoProgressCallback(void *ptr)
 		if(b->GetStateChan() >= 0)
 		{
 			percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/560.0;
-			if(percent > 100) percent = 100;
+			if(percent > 1.0) percent = 1.0;
 			else if(percent < 0) percent = 0;
 			done = total*percent;
 			ShutoffRumble();
@@ -5954,7 +5954,7 @@ static void AudioProgressCallback(void *ptr)
 		if(b->GetStateChan() >= 0)
 		{
 			percent = (userInput[b->GetStateChan()].wpad->ir.x - b->GetLeft())/360.0;
-			if(percent > 100) percent = 100;
+			if(percent > 1.0) percent = 1.0;
 			else if(percent < 0) percent = 0;
 			done = total*percent;
 			wiiSeekPos(done);

@@ -37,6 +37,7 @@ void ResumeMPlayerFile();
 void StopMPlayerFile();
 extern bool ExitRequested;
 extern FreeTypeGX *fontSystem[];
+extern bool subtitleFontFound;
 extern char loadedFile[];
 extern char loadedFileDisplay[];
 extern char appPath[];

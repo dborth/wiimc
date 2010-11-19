@@ -5575,12 +5575,7 @@ static void MenuSettingsSubtitles()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	// check if subtitle font file exists
-	struct stat buf;
-	char filepath[1024];
-	sprintf(filepath, "%s/subfont.ttf", appPath);
-
-	if(stat(filepath, &buf) != 0)
+	if(!subtitleFontFound)
 		ErrorPrompt("Subtitle font file not found. Subtitles will not be visible.");
 
 	while(menuCurrent == MENU_SETTINGS_SUBTITLES && !guiShutdown)

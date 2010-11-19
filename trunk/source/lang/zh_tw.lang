@@ -636,3 +636,30 @@ msgstr "線上媒體檔無效。"
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
 msgstr "字幕字型檔找不到。字幕將不被顯示。"
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC不能讀取DVD - AHBPROT沒有開啟。"
+
+msgid "Starting Area"
+msgstr "啟動區碼"
+
+msgid "Error downloading font file!"
+msgstr "下載字型檔錯誤！"
+
+msgid "Error opening font file!"
+msgstr "開啟字型檔錯誤！"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "不能改變語言。字型檔損壞！"
+
+msgid "YouTube Quality"
+msgstr "YouTube畫質"
+
+msgid "Low (400x240)"
+msgstr "低畫質 (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "中畫質 (480x360)"
+
+msgid "High (640x360)"
+msgstr "高畫質 (640x360)"

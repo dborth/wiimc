@@ -46,6 +46,7 @@ extern char *network_useragent;
 static bool ShutdownRequested = false;
 
 bool ExitRequested = false;
+bool subtitleFontFound = false;
 char appPath[1024] = { 0 };
 char loadedFile[1024] = { 0 };
 char loadedFileDisplay[128] = { 0 };
@@ -355,7 +356,6 @@ bool InitMPlayer()
 	static bool init = false;
 	if(init) return true;
 
-
 	if(appPath[0] == 0)
 	{
 		InfoPrompt("Unable to Initialize MPlayer", "Unable to find a valid working path");
@@ -369,7 +369,14 @@ bool InitMPlayer()
 		InfoPrompt("Unable to Initialize MPlayer", msg);
 		return false;
 	}
-	
+
+	// check if subtitle font file exists
+	struct stat st;
+	char filepath[1024];
+	sprintf(filepath, "%s/subfont.ttf", appPath);
+
+	if(stat(filepath, &st) == 0)
+		subtitleFontFound = true;
 
 	sprintf(MPLAYER_DATADIR,"%s",appPath);
 	sprintf(MPLAYER_CONFDIR,"%s",appPath);
@@ -489,7 +496,12 @@ void SetMPlayerSettings()
 	}
 
 	wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);
-	wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
+
+	if(!subtitleFontFound)
+		wiiSetProperty(MP_CMD_SUB_VISIBILITY, 0);
+	else
+		wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
+
 	wiiSetProperty(MP_CMD_SUB_DELAY, WiiSettings.subtitleDelay);
 	
 	wiiSetCodepage(WiiSettings.subtitleCodepage);

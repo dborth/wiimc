@@ -5109,6 +5109,9 @@ void wiiSetProperty(int command, float value)
 
 void wiiSetCodepage(char *cp)
 {
+	if(!sub_visibility)
+		return;
+
 	if(sub_cp == NULL && cp[0] == 0) return; //cp not changed
 
 	if(sub_cp)
@@ -5144,6 +5147,9 @@ void wiiSetAudioLanguage(char *lang)
 
 void wiiSetSubtitleLanguage(char *lang)
 {
+	if(!sub_visibility)
+		return;
+
 	if(dvdsub_lang && lang[0] != 0 && strcmp(lang, dvdsub_lang) == 0)
 		return;
 
@@ -5162,6 +5168,9 @@ void wiiSetSubtitleLanguage(char *lang)
 
 void wiiSetSubtitleColor(char *color)
 {
+	if(!sub_visibility)
+		return;
+
 	if(ass_color && strcmp(color, ass_color) == 0)
 		return;
 
@@ -5183,6 +5192,9 @@ float mplayer_ass_font_scale=1;
 
 void wiiSetSubtitleSize(float size)
 {
+	if(!sub_visibility)
+		return;
+
 	if(mplayer_ass_font_scale == size)
 		return;
 	mplayer_ass_font_scale = size;

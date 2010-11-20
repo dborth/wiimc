@@ -104,8 +104,8 @@ static void scale_block_paired(const uint8_t src[64], uint8_t *dst, int linesize
 	const float scalar = 257.0;
 	vector float pair;
 	
-	uint8_t *dst1 = dst - linesize*2;
-	uint8_t *dst2 = dst - linesize;
+	uint16_t *dst1 = (uint16_t *)(dst - linesize*2);
+	uint16_t *dst2 = (uint16_t *)(dst - linesize);
 	src -= 8;
 	
 	for (int i=0; i<8; i++) {

@@ -139,7 +139,7 @@ static long check_dcbzl_effect(void)
 #else
 static long check_dcbzl_effect(void)
 {
-  return 0;
+  return 32;
 }
 #endif
 

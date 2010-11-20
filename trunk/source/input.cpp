@@ -23,6 +23,7 @@
 #include "settings.h"
 #include "libwiigui/gui.h"
 #include "mplayer/input/input.h"
+#include "mplayer/osdep/gx_supp.h"
 
 #define RUMBLE_MAX 		60000
 #define RUMBLE_COOLOFF 	10000000
@@ -132,6 +133,17 @@ void DoRumble(int i)
  * MPlayerInput
  ***************************************************************************/
 
+void MPlayerResize(float fZoomHorIncr, float fZoomVertIncr)
+{
+	if(wiiIsPaused())
+		return;
+
+	WiiSettings.videoZoomHor += fZoomHorIncr;
+	WiiSettings.videoZoomVert += fZoomVertIncr;
+	GX_SetScreenPos(WiiSettings.videoXshift, WiiSettings.videoYshift, 
+		WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
+}
+
 void MPlayerInput()
 {
 	bool ir = false;
@@ -169,11 +181,31 @@ void MPlayerInput()
 		}
 		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_RIGHT)
 		{
-			wiiFastForward();
+			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
+				MPlayerResize(+0.01F, 0.00F);
+			else
+				wiiFastForward();
 		}
 		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_LEFT)
 		{
-			wiiRewind();
+			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
+				MPlayerResize(-0.01F, 0.00F);
+			else
+				wiiRewind();
+		}
+		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_UP)
+		{
+			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
+				MPlayerResize(0.00F, +0.01F);
+			else if(!wiiIsPaused())
+				wiiSetProperty(MP_CMD_SUB_SELECT, -2);
+		}
+		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_DOWN)
+		{
+			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
+				MPlayerResize(0.00F, -0.01F);
+			else if(!wiiIsPaused())
+				wiiSetProperty(MP_CMD_SWITCH_AUDIO, -1);
 		}
 		else if(userInput[0].wpad->btns_h & WPAD_BUTTON_PLUS)
 		{
@@ -203,16 +235,6 @@ void MPlayerInput()
 				ShowVideoVolumeLevelBar();
 			}
 		}
-		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_UP)
-		{
-			if(!wiiIsPaused())
-				wiiSetProperty(MP_CMD_SUB_SELECT, -2);
-		}
-		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_DOWN)
-		{
-			if(!wiiIsPaused())
-				wiiSetProperty(MP_CMD_SWITCH_AUDIO, -1);
-		}
 
 		if(userInput[0].wpad->btns_d & WPAD_BUTTON_2)
 			wiiDVDNav(MP_CMD_DVDNAV_MENU);
@@ -231,13 +253,33 @@ void MPlayerInput()
 		}
 
 		if(userInput[0].wpad->btns_d & WPAD_BUTTON_UP)
-			wiiDVDNav(MP_CMD_DVDNAV_UP);
-		if(userInput[0].wpad->btns_d & WPAD_BUTTON_DOWN)
-			wiiDVDNav(MP_CMD_DVDNAV_DOWN);
-		if(userInput[0].wpad->btns_d & WPAD_BUTTON_RIGHT)
-			wiiDVDNav(MP_CMD_DVDNAV_RIGHT);
-		if(userInput[0].wpad->btns_d & WPAD_BUTTON_LEFT)
-			wiiDVDNav(MP_CMD_DVDNAV_LEFT);
+		{
+			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
+				MPlayerResize(0.00F, +0.01F);
+			else
+				wiiDVDNav(MP_CMD_DVDNAV_UP);
+		}
+		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_DOWN)
+		{
+			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
+				MPlayerResize(0.00F, -0.01F);
+			else
+				wiiDVDNav(MP_CMD_DVDNAV_DOWN);
+		}
+		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_RIGHT)
+		{
+			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
+				MPlayerResize(+0.01F, 0.00F);
+			else
+				wiiDVDNav(MP_CMD_DVDNAV_RIGHT);
+		}
+		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_LEFT)
+		{
+			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
+				MPlayerResize(-0.01F, 0.00F);
+			else
+				wiiDVDNav(MP_CMD_DVDNAV_LEFT);
+		}
 	}
 
 	if(volumeUpdated)

@@ -63,6 +63,7 @@ extern unsigned int *xfb[2];
 
 static int hor_pos=0, vert_pos=0;
 static float hor_zoom = 1.0f, vert_zoom = 1.0f;
+static int video_diffx, video_diffy, video_haspect, video_vaspect;
 int mplayerwidth = 640;
 int mplayerheight = 480;
 
@@ -123,12 +124,26 @@ static u8 texcoordsUV[] ATTRIBUTE_ALIGN(32) = {
 	0x00, 0x01
 };
 
+static void GX_UpdateScaling()
+{
+	int	xscale = video_haspect * hor_zoom;
+	int	yscale = video_vaspect * vert_zoom;
+
+	square[0] = square[9] = -xscale + video_diffx + hor_pos;
+	square[3] = square[6] = xscale + video_diffx + hor_pos;
+	square[1] = square[4] = yscale - video_diffy - vert_pos;
+	square[7] = square[10] = -yscale - video_diffy - vert_pos;
+
+	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
+}
+
 void GX_SetScreenPos(int _hor_pos, int _vert_pos, float _hor_zoom, float _vert_zoom)
 {
 	hor_pos = _hor_pos;
 	vert_pos = _vert_pos;
 	hor_zoom = _hor_zoom;
 	vert_zoom = _vert_zoom;
+	GX_UpdateScaling();
 }
 
 /****************************************************************************
@@ -416,7 +431,6 @@ inline void DrawMPlayer()
 		GX_Position1x8(3); GX_Color1x8(0); GX_TexCoord1x8(3); GX_TexCoord1x8(7); GX_TexCoord1x8(3);
 	GX_End();
 
-	
 	if(copyScreen == 1)
 	{
 		if(controlledbygui != 2)
@@ -450,8 +464,6 @@ inline void DrawMPlayer()
 	need_wait=true;
 }
 
-
-
 void GX_AllocTextureMemory()
 {
 	//make memory fixed (max texture 1024*1024, gx can't manage more)
@@ -484,13 +496,10 @@ void GX_AllocTextureMemory()
  ****************************************************************************/
 void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 {
-	int w,wYl,wYr,h,xscale,yscale,diffx,diffy;
+	int w,wYl,wYr,h;
 	Mtx44 p;
 
 	need_wait=false;
-
-	xscale = haspect * hor_zoom;
-	yscale = vaspect * vert_zoom;
 
 	// Allocate 32byte aligned texture memory
 	wYl = width < 1024 ? width : 1016;
@@ -506,15 +515,12 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	old_h1_2=-1;
 
 	// center, to correct difference between pitch and real width
-	diffx = (w - width)/2.0 + hor_pos;
-	diffy = (h - height)/2.0 + vert_pos;
+	video_diffx = (w - width)/2.0;
+	video_diffy = (h - height)/2.0;
+	video_haspect = haspect;
+	video_vaspect = vaspect;
 
-	square[0] = square[9] = -xscale + diffx;
-	square[3] = square[6] = xscale + diffx;
-	square[1] = square[4] = yscale - diffy;
-	square[7] = square[10] = -yscale - diffy;
-
-  	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
+	GX_UpdateScaling();
 
 	Yltexsize = (wYl*h);
 	Yrtexsize = (wYr*h);

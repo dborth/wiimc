@@ -734,7 +734,9 @@ static void ff_h264_idct_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 	vector float result, element[8];
 	
 	block[0] += 32;
-	uint8_t *base[2] = {dst,dst};
+	
+	uint8_t *dst1 = dst;
+	uint8_t *dst2 = dst;
 	
 	pair[0] = psq_l(0,block,0,7);
 	pair[1] = psq_l(16,block,0,7);
@@ -786,21 +788,21 @@ static void ff_h264_idct_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 	sub[1] = paired_msub(element[2], half, element[6]);
 	add[1] = paired_madd(element[6], half, element[2]);
 	
-	result = psq_l(0,base[0],0,4);
+	result = psq_l(0,dst1,0,4);
 	result = ps_madds0(paired_add(add[0], add[1]), scalar, result);
-	psq_st(result,0,base[0],0,4);
+	psq_st(result,0,dst1,0,4);
 	
-	result = psq_lux(base[0],stride,0,4);
+	result = psq_lux(dst1,stride,0,4);
 	result = ps_madds0(paired_add(sub[0], sub[1]), scalar, result);
-	psq_st(result,0,base[0],0,4);
+	psq_st(result,0,dst1,0,4);
 	
-	result = psq_lux(base[0],stride,0,4);
+	result = psq_lux(dst1,stride,0,4);
 	result = ps_madds0(paired_sub(sub[0], sub[1]), scalar, result);
-	psq_st(result,0,base[0],0,4);
+	psq_st(result,0,dst1,0,4);
 	
-	result = psq_lux(base[0],stride,0,4);
+	result = psq_lux(dst1,stride,0,4);
 	result = ps_madds0(paired_sub(add[0], add[1]), scalar, result);
-	psq_stx(result,0,base[0],0,4);
+	psq_stx(result,0,dst1,0,4);
 	
 	add[0] = paired_add(element[1], element[5]);
 	sub[0] = paired_sub(element[1], element[5]);
@@ -808,21 +810,21 @@ static void ff_h264_idct_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 	sub[1] = paired_msub(element[3], half, element[7]);
 	add[1] = paired_madd(element[7], half, element[3]);
 	
-	result = psq_lu(2,base[1],0,4);
+	result = psq_lu(2,dst2,0,4);
 	result = ps_madds0(paired_add(add[0], add[1]), scalar, result);
-	psq_st(result,0,base[1],0,4);
+	psq_st(result,0,dst2,0,4);
 	
-	result = psq_lux(base[1],stride,0,4);
+	result = psq_lux(dst2,stride,0,4);
 	result = ps_madds0(paired_add(sub[0], sub[1]), scalar, result);
-	psq_st(result,0,base[1],0,4);
+	psq_st(result,0,dst2,0,4);
 	
-	result = psq_lux(base[1],stride,0,4);
+	result = psq_lux(dst2,stride,0,4);
 	result = ps_madds0(paired_sub(sub[0], sub[1]), scalar, result);
-	psq_st(result,0,base[1],0,4);
+	psq_st(result,0,dst2,0,4);
 	
-	result = psq_lux(base[1],stride,0,4);
+	result = psq_lux(dst2,stride,0,4);
 	result = ps_madds0(paired_sub(add[0], add[1]), scalar, result);
-	psq_st(result,0,base[1],0,4);
+	psq_st(result,0,dst2,0,4);
 }
 
 static void ff_h264_idct_dc_add_paired(uint8_t *dst, DCTELEM *block, int stride)
@@ -881,6 +883,7 @@ static void ff_h264_idct_add8_paired(uint8_t **dest, const int *block_offset, DC
 	}
 }
 
+#if 0
 // FIXME: Rounding errors.
 static void ff_h264_idct8_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 {
@@ -890,10 +893,10 @@ static void ff_h264_idct8_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 	vector float pair[4], sub[4], add[4];
 	vector float result, pre[4];
 	
-	block[0] += 32;
+	block[0] += 33;
 	block -= 2;
 	
-	int16_t element[64];
+	float element[64];
 	int16_t *base[2] = {element-16,element-2};
 	
 	int i;
@@ -931,38 +934,38 @@ static void ff_h264_idct8_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 		pair[0] = paired_add(add[0], sub[3]);
 		pair[1] = paired_add(add[1], sub[2]);
 		
-		psq_stu(paired_merge00(pair[0], pair[1]),32,base[0],0,7);
-		psq_st(paired_merge11(pair[0], pair[1]),16,base[0],0,7);
+		psq_stu(paired_merge00(pair[0], pair[1]),64,base[0],0,0);
+		psq_st(paired_merge11(pair[0], pair[1]),32,base[0],0,0);
 		
 		pair[0] = paired_add(sub[0], add[3]);
 		pair[1] = paired_add(sub[1], add[2]);
 		
-		psq_st(paired_merge00(pair[0], pair[1]),4,base[0],0,7);
-		psq_st(paired_merge11(pair[0], pair[1]),20,base[0],0,7);
+		psq_st(paired_merge00(pair[0], pair[1]),8,base[0],0,0);
+		psq_st(paired_merge11(pair[0], pair[1]),40,base[0],0,0);
 		
 		pair[0] = paired_sub(sub[1], add[2]);
 		pair[1] = paired_sub(sub[0], add[3]);
 		
-		psq_st(paired_merge00(pair[0], pair[1]),8,base[0],0,7);
-		psq_st(paired_merge11(pair[0], pair[1]),24,base[0],0,7);
+		psq_st(paired_merge00(pair[0], pair[1]),16,base[0],0,0);
+		psq_st(paired_merge11(pair[0], pair[1]),48,base[0],0,0);
 		
 		pair[0] = paired_sub(add[1], sub[2]);
 		pair[1] = paired_sub(add[0], sub[3]);
 		
-		psq_st(paired_merge00(pair[0], pair[1]),12,base[0],0,7);
-		psq_st(paired_merge11(pair[0], pair[1]),28,base[0],0,7);
+		psq_st(paired_merge00(pair[0], pair[1]),24,base[0],0,0);
+		psq_st(paired_merge11(pair[0], pair[1]),56,base[0],0,0);
 	}
 	
 	uint8_t *in_col = dst-2;
 	
 	for (i=0; i<8; i+=2) {
-		pair[0] = psq_lu(4,base[1],0,7);
-		pair[1] = psq_l(64,base[1],0,7);
+		pair[0] = psq_lu(8,base[1],0,0);
+		pair[1] = psq_l(128,base[1],0,0);
 		pre[0] = paired_add(pair[0], pair[1]);
 		pre[1] = paired_sub(pair[0], pair[1]);
 		
-		pair[0] = psq_l(32,base[1],0,7);
-		pair[1] = psq_l(96,base[1],0,7);
+		pair[0] = psq_l(64,base[1],0,0);
+		pair[1] = psq_l(192,base[1],0,0);
 		pre[2] = paired_msub(pair[0], half, pair[1]);
 		pre[3] = paired_madd(pair[1], half, pair[0]);
 		
@@ -971,10 +974,10 @@ static void ff_h264_idct8_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 		sub[0] = paired_sub(pre[1], pre[2]);
 		sub[1] = paired_sub(pre[0], pre[3]);
 		
-		pair[0] = psq_l(16,base[1],0,7);
-		pair[1] = psq_l(48,base[1],0,7);
-		pair[2] = psq_l(80,base[1],0,7);
-		pair[3] = psq_l(112,base[1],0,7);
+		pair[0] = psq_l(32,base[1],0,0);
+		pair[1] = psq_l(96,base[1],0,0);
+		pair[2] = psq_l(160,base[1],0,0);
+		pair[3] = psq_l(224,base[1],0,0);
 		
 		pre[0] = paired_sub(paired_sub(pair[2], pair[1]), paired_madd(pair[3], half, pair[3]));
 		pre[1] = paired_sub(paired_add(pair[0], pair[3]), paired_madd(pair[1], half, pair[1]));
@@ -1064,6 +1067,7 @@ static void ff_h264_idct8_add4_paired(uint8_t *dst, const int *block_offset, DCT
 		}
 	}
 }
+#endif
 
 #define H264_WEIGHT(W,H) \
 static void weight_h264_pixels ## W ## x ## H ## _paired(uint8_t *block, int stride, int log2_denom, int weight, int offset) \
@@ -1205,9 +1209,9 @@ void ff_h264dsp_init_ppc(H264DSPContext *c)
 	c->h264_idct_add16 = ff_h264_idct_add16_paired;
 	c->h264_idct_add16intra = ff_h264_idct_add16intra_paired;
 	c->h264_idct_dc_add = ff_h264_idct_dc_add_paired;
-	c->h264_idct8_dc_add = ff_h264_idct8_dc_add_paired;
+	/* c->h264_idct8_dc_add = ff_h264_idct8_dc_add_paired;
 	c->h264_idct8_add = ff_h264_idct8_add_paired;
-	c->h264_idct8_add4 = ff_h264_idct8_add4_paired;
+	c->h264_idct8_add4 = ff_h264_idct8_add4_paired; */
 	
 	c->weight_h264_pixels_tab[0] = weight_h264_pixels16x16_paired;
 	c->weight_h264_pixels_tab[1] = weight_h264_pixels16x8_paired;
@@ -1230,4 +1234,3 @@ void ff_h264dsp_init_ppc(H264DSPContext *c)
 	c->biweight_h264_pixels_tab[8] = biweight_h264_pixels2x4_paired;
 	c->biweight_h264_pixels_tab[9] = biweight_h264_pixels2x2_paired;
 }
-

@@ -3915,8 +3915,7 @@ if (mpctx->sh_video)
 		stream_cache_min_percent=1;
 		stream_cache_seek_min_percent=5;
 	}
-
-	if(strncmp(fileplaying,"dvd:",4) != 0 && strncmp(fileplaying,"dvdnav:",7) != 0)
+	else if(strncmp(fileplaying,"dvd:",4) != 0 && strncmp(fileplaying,"dvdnav:",7) != 0)
 	{
 		seek_to_sec=load_restore_point(fileplaying)-8;
 		if(seek_to_sec < 0 || seek_to_sec+120 > demuxer_get_time_length(mpctx->demuxer))

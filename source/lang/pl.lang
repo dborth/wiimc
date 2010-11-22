@@ -641,7 +641,7 @@ msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
 msgstr "WiiMC nie ma dostępu do DVD - AHBPROT nie jest aktywne"
 
 msgid "Starting Area"
-msgstr "Obszar Początkowy"
+msgstr "Ekran Startowy"
 
 msgid "Error downloading font file!"
 msgstr "Wystąpił błąd podczas pobierania pliku czcionki!"

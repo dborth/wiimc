@@ -69,7 +69,6 @@ off_t list_end=0;
 //---- AVI header:
 priv->idx_size=0;
 priv->audio_streams=0;
-
 while(1){
   int id=stream_read_dword_le(demuxer->stream);
   unsigned chunksize,size2;
@@ -337,6 +336,8 @@ while(1){
 	    sh_audio->wf=realloc(sh_audio->wf, sizeof(*sh_audio->wf)+sh_audio->wf->cbSize);
 	}
 	sh_audio->format=sh_audio->wf->wFormatTag;
+	if (sh_audio->wf->wFormatTag == 0xfffe && sh_audio->wf->cbSize >= 22)
+	    sh_audio->format = av_le2ne16(((WAVEFORMATEXTENSIBLE *)sh_audio->wf)->SubFormat);
 	if (sh_audio->format == 1 &&
 	    last_fccHandler == mmioFOURCC('A', 'x', 'a', 'n'))
 	    sh_audio->format = last_fccHandler;
@@ -389,7 +390,7 @@ while(1){
         priv->idx=malloc(priv->idx_size<<4);
 #else   
 		priv->idx = alloc_index(priv->idx_size<<4);
-#endif      
+#endif 
 //      printf("\nindex to %p !!!!! (priv=%p)\n",priv->idx,priv);
       stream_read(demuxer->stream,(char*)priv->idx,priv->idx_size<<4);
       for (i = 0; i < priv->idx_size; i++) {	// swap index to machine endian
@@ -521,6 +522,7 @@ if (priv->isodml && (index_mode==-1 || index_mode==0 || index_mode==1)) {
      * and sorting them by offset.  The result should be the same index
      * we would get with -forceidx.
      */
+
 #ifndef GEKKO
 	idx = priv->idx = malloc(priv->idx_size * sizeof (AVIINDEXENTRY));
 #else
@@ -618,7 +620,7 @@ if (index_file_load) {
   priv->idx=malloc(priv->idx_size*sizeof(AVIINDEXENTRY));
 #else
   priv->idx=alloc_index(priv->idx_size*sizeof(AVIINDEXENTRY));
-#endif  
+#endif 
   if (!priv->idx) {
     mp_msg(MSGT_HEADER,MSGL_ERR, MSGTR_MPDEMUX_AVIHDR_FailedMallocForIdxFile, index_file_load);
     priv->idx_size = 0;
@@ -680,7 +682,7 @@ if(index_mode>=2 || (priv->idx_size==0 && index_mode==1)){
 		idx_pos=0; 
 		break;
 	}
-#endif      
+#endif    
       if(!priv->idx){idx_pos=0; break;} // error!
     }
     idx=&((AVIINDEXENTRY *)priv->idx)[idx_pos++];

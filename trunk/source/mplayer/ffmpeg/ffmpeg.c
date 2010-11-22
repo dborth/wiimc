@@ -36,6 +36,7 @@
 #include "libswscale/swscale.h"
 #include "libavcodec/opt.h"
 #include "libavcodec/audioconvert.h"
+#include "libavcore/audioconvert.h"
 #include "libavcore/parseutils.h"
 #include "libavcore/samplefmt.h"
 #include "libavutil/colorspace.h"
@@ -1123,7 +1124,7 @@ static void do_video_out(AVFormatContext *s,
             if(vdelta<=-0.6){
                 nb_frames=0;
             }else if(vdelta>0.6)
-            ost->sync_opts= lrintf(sync_ipts);
+                ost->sync_opts= lrintf(sync_ipts);
         }else if (vdelta > 1.1)
             nb_frames = lrintf(vdelta);
 //fprintf(stderr, "vdelta:%f, ost->sync_opts:%"PRId64", ost->sync_ipts:%f nb_frames:%d\n", vdelta, ost->sync_opts, get_sync_ipts(ost), nb_frames);
@@ -3541,7 +3542,7 @@ static void new_audio_stream(AVFormatContext *oc, int file_idx)
         audio_enc->sample_fmt = audio_sample_fmt;
         audio_enc->sample_rate = audio_sample_rate;
         audio_enc->channel_layout = channel_layout;
-        if (avcodec_channel_layout_num_channels(channel_layout) != audio_channels)
+        if (av_get_channel_layout_nb_channels(channel_layout) != audio_channels)
             audio_enc->channel_layout = 0;
         choose_sample_fmt(st, codec);
         choose_sample_rate(st, codec);

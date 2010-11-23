@@ -214,4 +214,3 @@ void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
         vc1dsp_init_paired(c, avctx);
 #endif /* HAVE_PAIRED */
 }
-

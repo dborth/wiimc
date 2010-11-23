@@ -1261,9 +1261,6 @@ demuxer_t *demux_open(stream_t *vs, int file_format, int audio_id,
         res = vd;
 
     correct_pts = user_correct_pts;
-#ifdef GEKKO
-    correct_pts_errors = 0;
-#endif
     if (correct_pts < 0)
         correct_pts = !force_fps && demux_control(res, DEMUXER_CTRL_CORRECT_PTS, NULL)
                       == DEMUXER_CTRL_OK;

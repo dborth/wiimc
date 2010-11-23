@@ -387,10 +387,6 @@ void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
     double tt;
     int delay;
     int got_picture = 1;
-#ifdef GEKKO
-	static int num_pts_errors=0;
-    extern int correct_pts_errors;
-#endif
 
     mpi = mpvdec->decode(sh_video, start, in_size, drop_frame);
 
@@ -409,15 +405,7 @@ void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
         && (got_picture || sh_video->num_buffered_pts < delay)) {
         if (sh_video->num_buffered_pts ==
             sizeof(sh_video->buffered_pts) / sizeof(double))
-#ifdef GEKKO
-	    {
             mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Too many buffered pts\n");
-            if(correct_pts_errors>10) correct_pts=0;
-            else correct_pts_errors++;
-        }
-#else
-            mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Too many buffered pts\n");
-#endif
         else {
             int i, j;
             for (i = 0; i < sh_video->num_buffered_pts; i++)

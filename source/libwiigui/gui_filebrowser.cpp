@@ -339,19 +339,33 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	{
 		scrollbarBoxBtn->SetPosition(0,0);
 		positionWiimote = t->wpad->ir.y - 60 - scrollbarBoxBtn->GetTop();
-
 		if(positionWiimote < scrollbarBoxBtn->GetMinY())
 			positionWiimote = scrollbarBoxBtn->GetMinY();
 		else if(positionWiimote > scrollbarBoxBtn->GetMaxY())
 			positionWiimote = scrollbarBoxBtn->GetMaxY();
 
-		newIndex = (positionWiimote-8) / (float)(height-136) * (browser.numEntries-1) - selectedItem;
-
-		if(newIndex+size >= browser.numEntries)
-			newIndex = browser.numEntries-size;
-
-		if(newIndex < 0)
+		if(size >= browser.numEntries)
+		{
 			newIndex = 0;
+		}
+		else
+		{
+			int top = scrollbarBoxBtn->GetMinY();
+			int range = scrollbarBoxBtn->GetMaxY() - top;
+			int at = positionWiimote - top;
+
+			if(at < 0)
+				at = 0;
+
+			if(at > range)
+				at = range;
+
+			int maxIndex = browser.numEntries - size;
+			newIndex = (maxIndex + 1) * at / range;
+
+			if(newIndex > maxIndex)
+				newIndex = maxIndex;
+		}
 
 		browser.pageIndex = newIndex;
 		listChanged = true;
@@ -561,17 +575,17 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	}
 	else if(listChanged || numEntries != browser.numEntries)
 	{
-		if(browser.pageIndex == 0)
-			position = scrollbarBoxBtn->GetMinY();
-		else if(browser.pageIndex+size >= browser.numEntries)
-			position = scrollbarBoxBtn->GetMaxY();
-		else
-			position = scrollbarBoxBtn->GetMinY() + (scrollbarBoxBtn->GetMaxY()-scrollbarBoxBtn->GetMinY()) * ((browser.pageIndex + size/2.0) / (float)browser.numEntries);
+		int top = scrollbarBoxBtn->GetMinY();
 
-		if(position < scrollbarBoxBtn->GetMinY())
-			position = scrollbarBoxBtn->GetMinY();
-		else if(position > scrollbarBoxBtn->GetMaxY())
-			position = scrollbarBoxBtn->GetMaxY();
+		if(browser.numEntries <= size)
+		{
+			position = top;
+		}
+		else
+		{
+			int range = scrollbarBoxBtn->GetMaxY() - top;
+			position = top + range * browser.pageIndex / (browser.numEntries - size);
+		}
 
 		scrollbarBoxBtn->SetPosition(-45, position+30);
 	}

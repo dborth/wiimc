@@ -299,7 +299,7 @@ static int play(void *data, int remaining, int flags)
 static float get_delay(void)
 {
 	if (playing)
-		return (float)((buffered + AUDIO_GetDMABytesLeft()) * request_mult) / ao_data.bps;
+		return (float)((buffered + AUDIO_GetDMABytesLeft()) * request_mult) / (float)ao_data.bps;
 	else
-		return (float)(buffered * request_mult) / ao_data.bps;
+		return (float)(buffered * request_mult) / (float)ao_data.bps;
 }

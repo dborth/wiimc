@@ -4409,9 +4409,15 @@ static void MenuSettingsVideos()
 				LanguageWindow(WiiSettings.audioLanguage);
 				break;
 			case 6:
-				WiiSettings.audioDelay += 0.1;
-				if (WiiSettings.audioDelay > 2)
-					WiiSettings.audioDelay = -2;
+				char delay[8];
+				sprintf(delay, "%.2f", WiiSettings.audioDelay);
+				if(OnScreenKeypad(delay, 7, true))
+				{
+					if(delay[0] == 0)
+						WiiSettings.audioDelay = 0;
+					else
+						WiiSettings.audioDelay = atof(delay);
+				}
 				break;
 			case 7:
 				WiiSettings.autoResume ^= 1;

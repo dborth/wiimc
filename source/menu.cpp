@@ -1466,11 +1466,14 @@ bool OnScreenKeyboard(char *var, u32 maxlen)
 	return save;
 }
 
-bool OnScreenKeypad(char *var, u32 maxlen)
+bool OnScreenKeypad(char *var, u32 maxlen, bool enableNegative = false)
 {
 	int save = -1;
 
 	GuiKeypad keypad(var, maxlen);
+	
+	if(enableNegative)
+		keypad.EnableNegative();
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
@@ -5592,7 +5595,7 @@ static void MenuSettingsSubtitles()
 			case 1:
 				char delay[8];
 				sprintf(delay, "%.2f", WiiSettings.subtitleDelay);
-				if(OnScreenKeypad(delay, 7))
+				if(OnScreenKeypad(delay, 7, true))
 				{
 					if(delay[0] == 0)
 						WiiSettings.subtitleDelay = 0;

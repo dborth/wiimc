@@ -103,7 +103,7 @@ library:
 @item id Quake II CIN video     @tab   @tab X
 @item id RoQ                    @tab X @tab X
     @tab Used in Quake III, Jedi Knight 2, other computer games.
-@item IEC61937 encapsulation @tab X @tab
+@item IEC61937 encapsulation @tab X @tab X
 @item IFF                       @tab   @tab X
     @tab Interchange File Format
 @item Interplay MVE             @tab   @tab X
@@ -121,6 +121,7 @@ library:
 @item MAXIS XA                  @tab   @tab X
     @tab Used in Sim City 3000; file extension .xa.
 @item MD Studio                 @tab   @tab X
+@item Mobotix .mxg              @tab   @tab X
 @item Monkey's Audio            @tab   @tab X
 @item Motion Pixels MVI         @tab   @tab X
 @item MOV/QuickTime/MP4         @tab X @tab X

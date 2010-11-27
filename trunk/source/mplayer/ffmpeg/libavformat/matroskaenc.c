@@ -32,6 +32,9 @@
 #include "libavutil/lfg.h"
 #include "libavcodec/xiph.h"
 #include "libavcodec/mpeg4audio.h"
+#ifndef GEKKO
+#include <strings.h>
+#endif
 
 typedef struct ebml_master {
     int64_t         pos;                ///< absolute offset in the file where the master's elements start
@@ -742,7 +745,8 @@ static int mkv_write_tag(AVFormatContext *s, AVMetadata *m, unsigned int element
     end_ebml_master(s->pb, targets);
 
     while ((t = av_metadata_get(m, "", t, AV_METADATA_IGNORE_SUFFIX)))
-        mkv_write_simpletag(s->pb, t);
+        if (strcasecmp(t->key, "title"))
+            mkv_write_simpletag(s->pb, t);
 
     end_ebml_master(s->pb, tag);
     return 0;

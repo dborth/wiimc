@@ -54,6 +54,7 @@ typedef struct PGSSubPicture {
     int          h;
     uint8_t      *rle;
     unsigned int rle_buffer_size, rle_data_len;
+    unsigned int rle_remaining_len;
 } PGSSubPicture;
 
 typedef struct PGSSubContext {
@@ -135,6 +136,11 @@ static int decode_rle(AVCodecContext *avctx, AVSubtitle *sub,
         }
     }
 
+    if (pixel_count < sub->rects[0]->w * sub->rects[0]->h) {
+        av_log(avctx, AV_LOG_ERROR, "Insufficient RLE data for subtitle\n");
+        return -1;
+    }
+
     dprintf(avctx, "Pixel Count = %d, Area = %d\n", pixel_count, sub->rects[0]->w * sub->rects[0]->h);
 
     return 0;
@@ -159,6 +165,10 @@ static int parse_picture_segment(AVCodecContext *avctx,
     uint8_t sequence_desc;
     unsigned int rle_bitmap_len, width, height;
 
+    if (buf_size <= 4)
+        return -1;
+    buf_size -= 4;
+
     /* skip 3 unknown bytes: Object ID (2 bytes), Version Number */
     buf += 3;
 
@@ -166,20 +176,23 @@ static int parse_picture_segment(AVCodecContext *avctx,
     sequence_desc = bytestream_get_byte(&buf);
 
     if (!(sequence_desc & 0x80)) {
-        av_log(avctx, AV_LOG_ERROR, "Decoder does not support object data over multiple packets.\n");
-        return -1;
+        /* Additional RLE data */
+        if (buf_size > ctx->picture.rle_remaining_len)
+            return -1;
+
+        memcpy(ctx->picture.rle + ctx->picture.rle_data_len, buf, buf_size);
+        ctx->picture.rle_data_len += buf_size;
+        ctx->picture.rle_remaining_len -= buf_size;
+
+        return 0;
     }
 
-    /* Decode rle bitmap length */
-    rle_bitmap_len = bytestream_get_be24(&buf);
-
-    /* Check to ensure we have enough data for rle_bitmap_length if just a single packet */
-    if (rle_bitmap_len > buf_size - 7) {
-        av_log(avctx, AV_LOG_ERROR, "Not enough RLE data for specified length of %d.\n", rle_bitmap_len);
+    if (buf_size <= 7)
         return -1;
-    }
+    buf_size -= 7;
 
-    ctx->picture.rle_data_len = rle_bitmap_len;
+    /* Decode rle bitmap length, stored size includes width/height data */
+    rle_bitmap_len = bytestream_get_be24(&buf) - 2*2;
 
     /* Get bitmap dimensions from data */
     width  = bytestream_get_be16(&buf);
@@ -199,7 +212,9 @@ static int parse_picture_segment(AVCodecContext *avctx,
     if (!ctx->picture.rle)
         return -1;
 
-    memcpy(ctx->picture.rle, buf, rle_bitmap_len);
+    memcpy(ctx->picture.rle, buf, buf_size);
+    ctx->picture.rle_data_len = buf_size;
+    ctx->picture.rle_remaining_len = rle_bitmap_len - buf_size;
 
     return 0;
 }
@@ -364,10 +379,13 @@ static int display_end_segment(AVCodecContext *avctx, void *data,
     /* Process bitmap */
     sub->rects[0]->pict.linesize[0] = ctx->picture.w;
 
-    if (ctx->picture.rle)
+    if (ctx->picture.rle) {
+        if (ctx->picture.rle_remaining_len)
+            av_log(avctx, AV_LOG_ERROR, "RLE data length %u is %u bytes shorter than expected\n",
+                   ctx->picture.rle_data_len, ctx->picture.rle_remaining_len);
         if(decode_rle(avctx, sub, ctx->picture.rle, ctx->picture.rle_data_len) < 0)
             return 0;
-
+    }
     /* Allocate memory for colors */
     sub->rects[0]->nb_colors    = 256;
     sub->rects[0]->pict.data[1] = av_mallocz(AVPALETTE_SIZE);

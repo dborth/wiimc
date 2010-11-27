@@ -200,6 +200,9 @@ static int config_input(AVFilterLink *link)
                              NULL, NULL, NULL, NULL, 0, ctx)) < 0)
         return AVERROR(EINVAL);
 
+    av_log(ctx, AV_LOG_INFO, "w:%d h:%d -> w:%d h:%d\n",
+           link->w, link->h, crop->w, crop->h);
+
     if (crop->w <= 0 || crop->h <= 0 ||
         crop->w > link->w || crop->h > link->h) {
         av_log(ctx, AV_LOG_ERROR,
@@ -234,11 +237,13 @@ static void start_frame(AVFilterLink *link, AVFilterBufferRef *picref)
 {
     AVFilterContext *ctx = link->dst;
     CropContext *crop = ctx->priv;
-    AVFilterBufferRef *ref2 = avfilter_ref_buffer(picref, ~0);
+    AVFilterBufferRef *ref2;
     int i;
 
     picref->video->w = crop->w;
     picref->video->h = crop->h;
+
+    ref2 = avfilter_ref_buffer(picref, ~0);
 
     crop->var_values[VAR_T] = picref->pts == AV_NOPTS_VALUE ?
         NAN : picref->pts * av_q2d(link->time_base);

@@ -142,6 +142,7 @@ void av_register_all(void)
     REGISTER_DEMUXER  (MVI, mvi);
     REGISTER_MUXDEMUX (MXF, mxf);
     REGISTER_MUXER    (MXF_D10, mxf_d10);
+    REGISTER_DEMUXER  (MXG, mxg);
     REGISTER_DEMUXER  (NC, nc);
     REGISTER_DEMUXER  (NSV, nsv);
     REGISTER_MUXER    (NULL, null);
@@ -193,7 +194,7 @@ void av_register_all(void)
     REGISTER_DEMUXER  (SMACKER, smacker);
     REGISTER_DEMUXER  (SOL, sol);
     REGISTER_MUXDEMUX (SOX, sox);
-    REGISTER_MUXER    (SPDIF, spdif);
+    REGISTER_MUXDEMUX (SPDIF, spdif);
     REGISTER_MUXDEMUX (SRT, srt);
     REGISTER_DEMUXER  (STR, str);
     REGISTER_MUXDEMUX (SWF, swf);

@@ -992,6 +992,7 @@ class GuiKeypad : public GuiWindow
 		void *operator new[](size_t size);
 		void operator delete[](void *p);		
 
+		void EnableNegative();
 		void Update(GuiTrigger * t);
 		char kptextstr[256];
 	protected:

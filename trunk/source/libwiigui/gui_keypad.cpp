@@ -46,7 +46,7 @@ GuiKeypad::GuiKeypad(char * t, u32 max)
 		{ '1', '2', '3' },	
 		{ '4', '5', '6' },
 		{ '7', '8',	'9'	},
-		{  0,  '0', '.' }
+		{ '-', '0', '.' }
 	};
 	memcpy(keys, thekeys, sizeof(thekeys));
 
@@ -106,6 +106,10 @@ GuiKeypad::GuiKeypad(char * t, u32 max)
 			}
 		}
 	}
+	
+	// disable '-' by default
+	keyBtn[3][0]->SetState(STATE_DISABLED);
+	keyBtn[3][0]->SetVisible(false);
 }
 
 /**
@@ -177,6 +181,12 @@ void *GuiKeypad::operator new[](size_t size)
 void GuiKeypad::operator delete[](void *p)
 {
 	gui_free(p);
+}
+
+void GuiKeypad::EnableNegative()
+{
+	keyBtn[3][0]->SetState(STATE_DEFAULT);
+	keyBtn[3][0]->SetVisible(true);
 }
 
 void GuiKeypad::Update(GuiTrigger * t)

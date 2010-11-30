@@ -30,7 +30,7 @@
 #include "libavutil/avconfig.h"
 #include "attributes.h"
 
-#ifdef HAVE_AV_CONFIG_H
+#if defined(HAVE_AV_CONFIG_H) || defined(GEKKO)
 
 #include "config.h"
 

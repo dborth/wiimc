@@ -408,14 +408,15 @@ void GX_UpdatePitch(u16 *pitch)
 
 inline void DrawMPlayer()
 {
-	if(need_wait)
-		GX_WaitDrawDone();
-/*	
 	DCFlushRange(Yltexture[whichtext], Yltexsize);
 	DCFlushRange(Yrtexture[whichtext], Yrtexsize);
 	DCFlushRange(Utexture[whichtext], UVtexsize);
 	DCFlushRange(Vtexture[whichtext], UVtexsize);
-*/	
+
+	if(need_wait)
+		GX_WaitDrawDone();
+	
+	
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
 
@@ -479,7 +480,7 @@ void GX_AllocTextureMemory()
 	Utexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));
 	Vtexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), VIDEO_AREA));	
 
-
+/*
 	Yltexture[0] = (u8 *) MEM_K0_TO_K1(Yltexture[0]);
 	Yrtexture[0] = (u8 *) MEM_K0_TO_K1(Yrtexture[0]);
 	Utexture[0] = (u8 *) MEM_K0_TO_K1(Utexture[0]);
@@ -489,6 +490,7 @@ void GX_AllocTextureMemory()
 	Yrtexture[1] = (u8 *) MEM_K0_TO_K1(Yrtexture[1]);
 	Utexture[1] = (u8 *) MEM_K0_TO_K1(Utexture[1]);
 	Vtexture[1] = (u8 *) MEM_K0_TO_K1(Vtexture[1]);
+	*/
 }
 
 /****************************************************************************
@@ -655,10 +657,12 @@ void GX_ResetTextureYUVPointers()
 void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
 {
 	s16 pitch = stride - w;
-	u8 * Ytexture=Yltexture[whichtext];
+	u8 * Ytexture = Yltexture[whichtext];
+	u8 *Ydst;
 
 	int dxs;
 	int dys = y0;
+	
 	for (int y = 0; y < h; y++) 
 	{
 		dxs = x0;
@@ -666,7 +670,7 @@ void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsig
 		{
 			if (*srca) 
 			{     
-				u8 *Ydst = Ytexture + ((dys & (~3)) * Ywidth) + ((dxs & (~7)) << 2) + ((dys & 3) << 3) + (dxs & 7);
+				Ydst = Ytexture + ((dys & (~3)) * Ywidth) + ((dxs & (~7)) << 2) + ((dys & 3) << 3) + (dxs & 7);				
 				*Ydst = (((*Ydst) * (*srca)) >> 8) + (*src);
 			}
 			dxs++;
@@ -677,4 +681,10 @@ void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsig
 		srca += pitch;
 	}
 }
+
+u8* GetYtexture() {return Yltexture[whichtext];}
+int GetYrowpitch() {return Yrowpitch;}
+int GetYrowpitchDf() {return Yrowpitch+df1;}
+
+
 

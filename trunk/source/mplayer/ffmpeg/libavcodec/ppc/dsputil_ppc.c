@@ -152,6 +152,91 @@ static void prefetch_ppc(void *mem, int stride, int h)
     } while(--h);
 }
 
+#ifdef GEKKO
+static void bswap_buf_gekko(uint32_t *dst, const uint32_t *src, int w)
+{
+	int i;
+	uint32_t word;
+	
+	for (i=0; i<w*4-31; i+=4) {
+		asm volatile(
+			"lwzx	%0,%1,%2\n"
+			"stwbrx	%0,%1,%3\n"
+			"addi	%1,%1,4\n"
+			"lwzx	%0,%1,%2\n"
+			"stwbrx	%0,%1,%3\n"
+			"addi	%1,%1,4\n"
+			"lwzx	%0,%1,%2\n"
+			"stwbrx	%0,%1,%3\n"
+			"addi	%1,%1,4\n"
+			"lwzx	%0,%1,%2\n"
+			"stwbrx	%0,%1,%3\n"
+			"addi	%1,%1,4\n"
+			"lwzx	%0,%1,%2\n"
+			"stwbrx	%0,%1,%3\n"
+			"addi	%1,%1,4\n"
+			"lwzx	%0,%1,%2\n"
+			"stwbrx	%0,%1,%3\n"
+			"addi	%1,%1,4\n"
+			"lwzx	%0,%1,%2\n"
+			"stwbrx	%0,%1,%3\n"
+			"addi	%1,%1,4\n"
+			"lwzx	%0,%1,%2\n"
+			"stwbrx	%0,%1,%3\n"
+			: "=r"(word)
+			: "r"(i), "b"(src), "b"(dst)
+		);
+	}
+	
+	for (; i<w*4; i+=4) {
+		asm volatile(
+			"lwzx	%0,%1,%2\n"
+			"stwbrx	%0,%1,%3\n"
+			: "=r"(word)
+			: "r"(i), "b"(src), "b"(dst)
+		);
+	}
+}
+
+static void fill_block16_gekko(uint8_t *block, uint8_t value, int line_size, int h)
+{
+	uint32_t word = value;
+	word |= (word << 8);
+	word |= (word << 16);
+	
+	block -= line_size;
+	
+	while (h--) {
+		asm volatile(
+			"stwux	%2,%0,%1\n"
+			"stw	%2,4(%0)\n"
+			"stw	%2,8(%0)\n"
+			"stw	%2,12(%0)\n"
+			: "+b"(block)
+			: "r"(line_size), "r"(word)
+		);
+	}
+}
+
+static void fill_block8_gekko(uint8_t *block, uint8_t value, int line_size, int h)
+{
+	uint32_t word = value;
+	word |= (word << 8);
+	word |= (word << 16);
+	
+	block -= line_size;
+	
+	while (h--) {
+		asm volatile(
+			"stwux	%2,%0,%1\n"
+			"stw	%2,4(%0)\n"
+			: "+b"(block)
+			: "r"(line_size), "r"(word)
+		);
+	}
+}
+#endif
+
 void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 {
     // Common optimizations whether AltiVec is available or not
@@ -166,6 +251,12 @@ void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
         default:
             break;
     }
+
+#ifdef GEKKO
+    c->bswap_buf = bswap_buf_gekko;
+    c->fill_block_tab[0] = fill_block16_gekko;
+    c->fill_block_tab[1] = fill_block8_gekko;
+#endif
 
 #if HAVE_ALTIVEC
     if(CONFIG_H264_DECODER) dsputil_h264_init_ppc(c, avctx);

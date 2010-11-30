@@ -52,7 +52,7 @@ typedef union {
  * as inline functions.
  */
 
-#ifdef HAVE_AV_CONFIG_H
+#if defined(HAVE_AV_CONFIG_H) || defined(GEKKO)
 
 #include "config.h"
 

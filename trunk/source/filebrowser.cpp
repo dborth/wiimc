@@ -98,11 +98,17 @@ void BrowserHistoryClear()
 
 void PopulateVideoPlaylist()
 {
-	if(!WiiSettings.autoPlayNextVideo || strncmp(loadedFile, "http:", 5) == 0)
+	if(!WiiSettings.autoPlayNextVideo)
 		return;
 
 	for(int i=0; i < VIDEO_PLAYLIST_SIZE; i++)
 	{
+		if(strncmp(browserList[browser.selIndex+i].filename, "http://www.youtube.com", 22) == 0)
+			continue;
+
+		if(browserList[browser.selIndex+i].type == TYPE_PLAYLIST)
+			continue;
+
 		GetFullPath(browser.selIndex+i, videoPlaylist[i]);
 		videoPlaylistSize++;
 

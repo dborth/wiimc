@@ -122,6 +122,17 @@ static int get_sockaddr(const char *buf, struct sockaddr_storage *sock)
 }
 
 #if CONFIG_RTPDEC
+static void init_rtp_handler(RTPDynamicProtocolHandler *handler,
+                             RTSPStream *rtsp_st, AVCodecContext *codec)
+{
+    if (!handler)
+        return;
+    codec->codec_id          = handler->codec_id;
+    rtsp_st->dynamic_handler = handler;
+    if (handler->open)
+        rtsp_st->dynamic_protocol_context = handler->open();
+}
+
 /* parse the rtpmap description: <codec_name>/<clock_rate>[/<other params>] */
 static int sdp_parse_rtpmap(AVFormatContext *s,
                             AVCodecContext *codec, RTSPStream *rtsp_st,
@@ -139,18 +150,9 @@ static int sdp_parse_rtpmap(AVFormatContext *s,
      * have a trailing space. */
     get_word_sep(buf, sizeof(buf), "/ ", &p);
     if (payload_type >= RTP_PT_PRIVATE) {
-        RTPDynamicProtocolHandler *handler;
-        for (handler = RTPFirstDynamicPayloadHandler;
-             handler; handler = handler->next) {
-            if (!strcasecmp(buf, handler->enc_name) &&
-                codec->codec_type == handler->codec_type) {
-                codec->codec_id          = handler->codec_id;
-                rtsp_st->dynamic_handler = handler;
-                if (handler->open)
-                    rtsp_st->dynamic_protocol_context = handler->open();
-                break;
-            }
-        }
+        RTPDynamicProtocolHandler *handler =
+            ff_rtp_handler_find_by_name(buf, codec->codec_type);
+        init_rtp_handler(handler, rtsp_st, codec);
         /* If no dynamic handler was found, check with the list of standard
          * allocated types, if such a stream for some reason happens to
          * use a private payload type. This isn't handled in rtpdec.c, since
@@ -324,8 +326,13 @@ static void sdp_parse_line(AVFormatContext *s, SDPParseState *s1,
             rtsp_st->stream_index = st->index;
             st->codec->codec_type = codec_type;
             if (rtsp_st->sdp_payload_type < RTP_PT_PRIVATE) {
+                RTPDynamicProtocolHandler *handler;
                 /* if standard payload type, we can find the codec right now */
                 ff_rtp_get_codec_info(st->codec, rtsp_st->sdp_payload_type);
+                /* Even static payload types may need a custom depacketizer */
+                handler = ff_rtp_handler_find_by_id(
+                              rtsp_st->sdp_payload_type, st->codec->codec_type);
+                init_rtp_handler(handler, rtsp_st, st->codec);
             }
         }
         /* put a default control url */
@@ -339,24 +346,24 @@ static void sdp_parse_line(AVFormatContext *s, SDPParseState *s1,
                     av_strlcpy(rt->control_uri, p,
                                sizeof(rt->control_uri));
             } else {
-            char proto[32];
-            /* get the control url */
-            st = s->streams[s->nb_streams - 1];
-            rtsp_st = st->priv_data;
+                char proto[32];
+                /* get the control url */
+                st = s->streams[s->nb_streams - 1];
+                rtsp_st = st->priv_data;
 
-            /* XXX: may need to add full url resolution */
-            av_url_split(proto, sizeof(proto), NULL, 0, NULL, 0,
-                         NULL, NULL, 0, p);
-            if (proto[0] == '\0') {
-                /* relative control URL */
-                if (rtsp_st->control_url[strlen(rtsp_st->control_url)-1]!='/')
-                av_strlcat(rtsp_st->control_url, "/",
-                           sizeof(rtsp_st->control_url));
-                av_strlcat(rtsp_st->control_url, p,
-                           sizeof(rtsp_st->control_url));
-            } else
-                av_strlcpy(rtsp_st->control_url, p,
-                           sizeof(rtsp_st->control_url));
+                /* XXX: may need to add full url resolution */
+                av_url_split(proto, sizeof(proto), NULL, 0, NULL, 0,
+                             NULL, NULL, 0, p);
+                if (proto[0] == '\0') {
+                    /* relative control URL */
+                    if (rtsp_st->control_url[strlen(rtsp_st->control_url)-1]!='/')
+                    av_strlcat(rtsp_st->control_url, "/",
+                               sizeof(rtsp_st->control_url));
+                    av_strlcat(rtsp_st->control_url, p,
+                               sizeof(rtsp_st->control_url));
+                } else
+                    av_strlcpy(rtsp_st->control_url, p,
+                               sizeof(rtsp_st->control_url));
             }
         } else if (av_strstart(p, "rtpmap:", &p) && s->nb_streams > 0) {
             /* NOTE: rtpmap is only supported AFTER the 'm=' tag */

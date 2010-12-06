@@ -116,6 +116,9 @@ struct RTPDynamicProtocolHandler_s {
     const char enc_name[50];    /* XXX: still why 50 ? ;-) */
     enum AVMediaType codec_type;
     enum CodecID codec_id;
+    int static_payload_id; /* 0 means no payload id is set. 0 is a valid
+                            * payload ID (PCMU), too, but that format doesn't
+                            * require any custom depacketization code. */
 
     // may be null
     int (*parse_sdp_a_line) (AVFormatContext *s,
@@ -187,6 +190,10 @@ struct RTPDemuxContext {
 
 extern RTPDynamicProtocolHandler *RTPFirstDynamicPayloadHandler;
 void ff_register_dynamic_payload_handler(RTPDynamicProtocolHandler *handler);
+RTPDynamicProtocolHandler *ff_rtp_handler_find_by_name(const char *name,
+                                                  enum AVMediaType codec_type);
+RTPDynamicProtocolHandler *ff_rtp_handler_find_by_id(int id,
+                                                enum AVMediaType codec_type);
 
 int ff_rtsp_next_attr_and_value(const char **p, char *attr, int attr_size, char *value, int value_size); ///< from rtsp.c, but used by rtp dynamic protocol handlers.
 

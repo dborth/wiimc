@@ -1,6 +1,6 @@
 /*
  * filter registration
- * copyright (c) 2008 Vitor Sessak
+ * Copyright (c) 2008 Vitor Sessak
  *
  * This file is part of FFmpeg.
  *
@@ -48,6 +48,7 @@ void avfilter_register_all(void)
     REGISTER_FILTER (FORMAT,      format,      vf);
     REGISTER_FILTER (FREI0R,      frei0r,      vf);
     REGISTER_FILTER (HFLIP,       hflip,       vf);
+    REGISTER_FILTER (HQDN3D,      hqdn3d,      vf);
     REGISTER_FILTER (NOFORMAT,    noformat,    vf);
     REGISTER_FILTER (NULL,        null,        vf);
     REGISTER_FILTER (OCV_SMOOTH,  ocv_smooth,  vf);
@@ -67,6 +68,7 @@ void avfilter_register_all(void)
 
     REGISTER_FILTER (BUFFER,      buffer,      vsrc);
     REGISTER_FILTER (COLOR,       color,       vsrc);
+    REGISTER_FILTER (FREI0R,      frei0r_src,  vsrc);
     REGISTER_FILTER (NULLSRC,     nullsrc,     vsrc);
 
     REGISTER_FILTER (NULLSINK,    nullsink,    vsink);

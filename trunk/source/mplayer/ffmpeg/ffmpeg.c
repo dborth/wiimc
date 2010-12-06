@@ -356,22 +356,16 @@ static int configure_filters(AVInputStream *ist, AVOutputStream *ost)
 
     graph = avfilter_graph_alloc();
 
-    if ((ret = avfilter_open(&ist->input_video_filter, avfilter_get_by_name("buffer"), "src")) < 0)
-        return ret;
-    if ((ret = avfilter_open(&ist->output_video_filter, &ffsink, "out")) < 0)
-        return ret;
-
     snprintf(args, 255, "%d:%d:%d:%d:%d", ist->st->codec->width,
              ist->st->codec->height, ist->st->codec->pix_fmt, 1, AV_TIME_BASE);
-    if ((ret = avfilter_init_filter(ist->input_video_filter, args, NULL)) < 0)
+    ret = avfilter_graph_create_filter(&ist->input_video_filter, avfilter_get_by_name("buffer"),
+                                       "src", args, NULL, graph);
+    if (ret < 0)
         return ret;
-    if ((ret = avfilter_init_filter(ist->output_video_filter, NULL, &ffsink_ctx)) < 0)
+    ret = avfilter_graph_create_filter(&ist->output_video_filter, &ffsink,
+                                       "out", NULL, &ffsink_ctx, graph);
+    if (ret < 0)
         return ret;
-
-    /* add input and output filters to the overall graph */
-    avfilter_graph_add_filter(graph, ist->input_video_filter);
-    avfilter_graph_add_filter(graph, ist->output_video_filter);
-
     last_filter = ist->input_video_filter;
 
     if (codec->width  != icodec->width || codec->height != icodec->height) {
@@ -379,14 +373,12 @@ static int configure_filters(AVInputStream *ist, AVOutputStream *ost)
                  codec->width,
                  codec->height,
                  (int)av_get_int(sws_opts, "sws_flags", NULL));
-        if ((ret = avfilter_open(&filter, avfilter_get_by_name("scale"), NULL)) < 0)
-            return ret;
-        if ((ret = avfilter_init_filter(filter, args, NULL)) < 0)
+        if ((ret = avfilter_graph_create_filter(&filter, avfilter_get_by_name("scale"),
+                                                NULL, args, NULL, graph)) < 0)
             return ret;
         if ((ret = avfilter_link(last_filter, 0, filter, 0)) < 0)
             return ret;
         last_filter = filter;
-        avfilter_graph_add_filter(graph, last_filter);
     }
 
     snprintf(args, sizeof(args), "flags=0x%X", (int)av_get_int(sws_opts, "sws_flags", NULL));
@@ -3577,6 +3569,7 @@ static void new_subtitle_stream(AVFormatContext *oc, int file_idx)
     AVOutputStream *ost;
     AVCodec *codec=NULL;
     AVCodecContext *subtitle_enc;
+    enum CodecID codec_id;
 
     st = av_new_stream(oc, oc->nb_streams < nb_streamid_map ? streamid_map[oc->nb_streams] : 0);
     if (!st) {
@@ -3587,9 +3580,14 @@ static void new_subtitle_stream(AVFormatContext *oc, int file_idx)
     subtitle_enc = st->codec;
     output_codecs = grow_array(output_codecs, sizeof(*output_codecs), &nb_output_codecs, nb_output_codecs + 1);
     if(!subtitle_stream_copy){
-        subtitle_enc->codec_id = find_codec_or_die(subtitle_codec_name, AVMEDIA_TYPE_SUBTITLE, 1,
-                                                   avcodec_opts[AVMEDIA_TYPE_SUBTITLE]->strict_std_compliance);
-        codec= output_codecs[nb_output_codecs-1] = avcodec_find_encoder_by_name(subtitle_codec_name);
+        if (subtitle_codec_name) {
+            codec_id = find_codec_or_die(subtitle_codec_name, AVMEDIA_TYPE_SUBTITLE, 1,
+                                         avcodec_opts[AVMEDIA_TYPE_SUBTITLE]->strict_std_compliance);
+            codec= output_codecs[nb_output_codecs-1] = avcodec_find_encoder_by_name(subtitle_codec_name);
+        } else {
+            codec_id = av_guess_codec(oc->oformat, NULL, oc->filename, NULL, AVMEDIA_TYPE_SUBTITLE);
+            codec = avcodec_find_encoder(codec_id);
+        }
     }
     avcodec_get_context_defaults3(st->codec, codec);
 
@@ -3608,6 +3606,7 @@ static void new_subtitle_stream(AVFormatContext *oc, int file_idx)
     if (subtitle_stream_copy) {
         st->stream_copy = 1;
     } else {
+        subtitle_enc->codec_id = codec_id;
         set_context_opts(avcodec_opts[AVMEDIA_TYPE_SUBTITLE], subtitle_enc, AV_OPT_FLAG_SUBTITLE_PARAM | AV_OPT_FLAG_ENCODING_PARAM, codec);
     }
 

@@ -114,6 +114,7 @@ Codecs:
   alacenc.c                             Jaikrishnan Menon
   alsdec.c                              Thilo Borgmann
   apedec.c                              Kostya Shishkov
+  ass*                                  Aurelien Jacobs
   asv*                                  Michael Niedermayer
   atrac3*                               Benjamin Larsson
   bgmc.c, bgmc.h                        Thilo Borgmann
@@ -136,6 +137,7 @@ Codecs:
   flac*                                 Justin Ruggles
   flashsv*                              Benjamin Larsson
   flicvideo.c                           Mike Melanson
+  g722.c                                Martin Storsjo
   g726.c                                Roman Shaposhnik
   gifdec.c                              Baptiste Coudurier
   h264*                                 Loren Merritt, Michael Niedermayer
@@ -260,6 +262,7 @@ Muxers/Demuxers:
   adtsenc.c                             Robert Swain
   aiff.c                                Baptiste Coudurier
   ape.c                                 Kostya Shishkov
+  ass*                                  Aurelien Jacobs
   avi*                                  Michael Niedermayer
   bink.c                                Peter Ross
   caf*                                  Peter Ross
@@ -320,6 +323,7 @@ Muxers/Demuxers:
   segafilm.c                            Mike Melanson
   siff.c                                Kostya Shishkov
   smacker.c                             Kostya Shishkov
+  srtdec.c                              Aurelien Jacobs
   swf.c                                 Baptiste Coudurier
   tta.c                                 Alex Beregszaszi
   txd.c                                 Ivo van Poorten

@@ -306,7 +306,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		bool mounted = ChangeInterface(browser.dir, NOTSILENT);
 		if(mounted)
 		{
-			char ext[6];
+			char ext[7];
 			GetExt(browser.dir, ext);
 			isPlaylist = IsPlaylistExt(ext);
 		}

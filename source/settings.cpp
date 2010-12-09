@@ -512,7 +512,7 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 			}
 			else
 			{
-				char ext[6];
+				char ext[7];
 				GetExt(onlinemediaList[onlinemediaSize-1].address, ext);
 
 				if(IsPlaylistExt(ext))

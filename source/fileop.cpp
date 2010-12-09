@@ -958,7 +958,7 @@ bool WakeupUSB()
 }
 }
 
-static bool FindDevice(char * filepath, int * device, int * devnum)
+bool FindDevice(char * filepath, int * device, int * devnum)
 {
 	if(!filepath || filepath[0] == 0)
 		return false;
@@ -967,13 +967,13 @@ static bool FindDevice(char * filepath, int * device, int * devnum)
 
 	if(strncmp(filepath, "dvd:", 4) == 0)
 	{
-		*device = DEVICE_DVD;
+		if(device) *device = DEVICE_DVD;
 		return true;
 	}
 
 	if(IsAllowedProtocol(filepath))
 	{
-		*device = DEVICE_INTERNET;
+		if(device) *device = DEVICE_INTERNET;
 		return true;
 	}
 
@@ -983,8 +983,8 @@ static bool FindDevice(char * filepath, int * device, int * devnum)
 
 		if(tmp > 0 && tmp < 10)
 		{
-			*devnum = tmp;
-			*device = DEVICE_SD;
+			if(devnum) *devnum = tmp;
+			if(device) *device = DEVICE_SD;
 			return true;
 		}
 		else
@@ -997,21 +997,21 @@ static bool FindDevice(char * filepath, int * device, int * devnum)
 
 	if(tmp > 0 && tmp < 10)
 	{
-		*devnum = tmp;
+		if(devnum) *devnum = tmp;
 
 		if(strncmp(filepath, "usb", 3) == 0)
 		{
-			*device = DEVICE_USB;
+			if(device) *device = DEVICE_USB;
 			return true;
 		}
 		else if(strncmp(filepath, "smb", 3) == 0)
 		{
-			*device = DEVICE_SMB;
+			if(device) *device = DEVICE_SMB;
 			return true;
 		}
 		else if(strncmp(filepath, "ftp", 3) == 0)
 		{
-			*device = DEVICE_FTP;
+			if(device) *device = DEVICE_FTP;
 			return true;
 		}
 	}
@@ -1055,7 +1055,10 @@ bool IsOnlineMediaPath(char *path)
 
 /****************************************************************************
  * CleanupPath()
- * Cleans up the filepath, removing double // and replacing \ with /
+ * Cleans up the filepath
+ * Replaces \ with /
+ * Removes double //
+ * Removes ../
  ***************************************************************************/
 void CleanupPath(char * path)
 {
@@ -1079,10 +1082,16 @@ void CleanupPath(char * path)
 		if(c == NULL) strcat(path, "/"); // should be at least one / in URL
 		return;
 	}
+	else if(strncmp(path, "mms:", 4) == 0)
+	{
+		char *c = strchr(&path[6], '/');
+		if(c == NULL) strcat(path, "/"); // should be at least one / in URL
+		return;
+	}
 
 	int pathlen = strlen(path);
-	int j = 0;
-	for(int i=0; i < pathlen && i < MAXPATHLEN; i++)
+	int i, j = 0;
+	for(i=0; i < pathlen && i < MAXPATHLEN; i++)
 	{
 		if(path[i] == '\\')
 			path[i] = '/';
@@ -1090,8 +1099,76 @@ void CleanupPath(char * path)
 		if(j == 0 || !(path[j-1] == '/' && path[i] == '/'))
 			path[j++] = path[i];
 	}
-	
-	char ext[6];
+
+	// Remove ../
+	if(strstr(path, "../") > 0)
+	{
+		int total=0;
+		int parentCount=0;
+		int dirCount=0;
+
+		// tokenize
+		char *pathArray[20];
+		char *tok = strtok(path, "/");
+
+		while (tok != NULL)
+		{
+			if(total == 20)
+			{
+				for(i=0; i < total; i++)
+					free(pathArray[i]);
+
+				path[0] = 0;
+				return;
+			}
+
+			pathArray[total] = (char *)malloc(strlen(tok)+1);
+
+			if(!pathArray[total])
+			{
+				for(i=0; i < total; i++)
+					free(pathArray[i]);
+
+				path[0] = 0;
+				return;
+			}
+
+			strcpy(pathArray[total], tok);
+			total++;
+			tok = strtok(NULL,"/");
+		}
+
+		// count ..
+		for(i=0; i < total; i++)
+			if(strcmp(pathArray[i], "..") == 0)
+				parentCount++;
+
+		dirCount = total - parentCount - 2;
+
+		if(parentCount > dirCount)
+		{
+			for(i=0; i < total; i++)
+				free(pathArray[i]);
+
+			path[0] = 0;
+			return;
+		}
+
+		sprintf(path, "%s/", pathArray[0]);
+
+		for(i=1; i <= dirCount-parentCount; i++)
+		{
+			strcat(path, pathArray[i]);
+			strcat(path, "/");
+		}
+
+		strcat(path, pathArray[total-1]);
+
+		for(i=0; i < total; i++)
+			free(pathArray[i]);
+	}
+
+	char ext[7];
 	GetExt(path, ext);
 
 	if(ext[0] == 0 && path[j-1] != '/')
@@ -1107,11 +1184,8 @@ void GetFullPath(int i, char *path)
 		path[0] = 0;
 		return;
 	}
-	
-	int device = -1;
-	int devnum = -1;
 
-	if(FindDevice(browserList[i].filename, &device, &devnum))
+	if(FindDevice(browserList[i].filename, NULL, NULL))
 		sprintf(path, "%s", browserList[i].filename);
 	else
 		sprintf(path, "%s%s", browser.dir, browserList[i].filename);
@@ -1211,14 +1285,14 @@ void GetExt(char *file, char *ext)
 	file_ext++;
 	int i = 0;
 
-	while(i < 5 && file_ext[i] != '?' && file_ext[i] != 0)
+	while(i < 6 && file_ext[i] != '?' && file_ext[i] != 0)
 	{
 		ext[i] = file_ext[i];
 		i++;
 	}
 
 	// extension is too long
-	if(i == 5 && file_ext[i] != '?' && file_ext[i] != 0)
+	if(i == 6 && file_ext[i] != '?' && file_ext[i] != 0)
 	{
 		ext[0] = 0;
 		return;
@@ -1464,7 +1538,7 @@ static bool ParseDirEntries()
 		return false;
 
 	char filename[MAXPATHLEN];
-	char ext[6];
+	char ext[7];
 	struct stat filestat;
 
 	int i = 0;
@@ -1492,7 +1566,7 @@ static bool ParseDirEntries()
 		// skip this file if it's not an allowed extension 
 		if((filestat.st_mode & _IFDIR) == 0)
 		{
-			if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent != MENU_BROWSE_ONLINEMEDIA))
+			if(!IsAllowedExt(ext) && !IsPlaylistExt(ext))
 				continue;
 		}
 
@@ -1818,7 +1892,7 @@ static int ParsePLXPlaylist()
 	}
 
 	char *root = (char*)BrowserHistoryRetrieve();
-	char ext[6];
+	char ext[7];
 	GetExt(root, ext);
 	
 	ResetBrowser();
@@ -1874,7 +1948,7 @@ static int ParsePLXPlaylist()
 int ParsePlaylistFile()
 {
 	int res;
-	char ext[6];
+	char ext[7];
 	GetExt(browser.dir, ext);
 
 	// if this file has no extension, try parsing it as a plx anyway
@@ -1917,7 +1991,6 @@ int ParsePlaylistFile()
 	}
 
 	// MPlayer thinks it can parse anything. We should check if this list is sane
-	char *playlistEntry;
 	play_tree_iter_t *pt_iter = pt_iter_create(&list, NULL);
 
 	if(!pt_iter)
@@ -1927,48 +2000,63 @@ int ParsePlaylistFile()
 		return 0;
 	}
 
-	while ((playlistEntry = pt_iter_get_next_file(pt_iter)) != NULL)
-	{
-		if(IsAllowedProtocol(playlistEntry))
-			break;
-	}
-
-	if(playlistEntry == NULL) // we reached the end of the list
-	{
-		pt_iter_destroy(&pt_iter);
-		play_tree_free(list, 1);
-		ErrorPrompt("Error loading playlist!");
-		return 0;
-	}
-
-	char *root = (char*)BrowserHistoryRetrieve();
-	GetExt(root, ext);
-
-	ResetBrowser();
-
-	AddBrowserEntry();
-	strcpy(browserList[0].filename, root);
-	sprintf(browserList[0].displayname, "Up One Level");
-	browserList[0].length = 0;
-	browserList[0].mtime = 0;
-	browserList[0].icon = ICON_FOLDER;
-
-	if(IsPlaylistExt(ext) || strncmp(root, "http:", 5) == 0)
-		browserList[0].type = TYPE_PLAYLIST;
-	else
-		browserList[0].type = TYPE_FOLDER;
-
-	browser.numEntries++;
-
+	bool browserReset = false;
 	char *start;
-
-	pt_iter_goto_head(pt_iter);
-
+	char file[MAXPATHLEN];
 	play_tree_t* i;
+
 	for(i = pt_iter->tree; i != NULL; i = i->next)
 	{
-		if(!i->files || !IsAllowedProtocol(i->files[0]))
+		if(!i->files || strlen(i->files[0]) >= MAXPATHLEN)
 			continue;
+
+		if(!FindDevice(i->files[0], NULL, NULL))
+			continue;
+
+		GetExt(i->files[0], ext);
+
+		if(!IsAllowedExt(ext) && !IsPlaylistExt(ext))
+			continue;
+
+		strcpy(file, i->files[0]);
+		CleanupPath(file);
+
+		if(file[0] == 0)
+			continue;
+
+		if(!browserReset)
+		{
+			browserReset = true;
+
+			ResetBrowser();
+
+			AddBrowserEntry();
+
+			char *root = (char*)BrowserHistoryRetrieve();
+
+			if(root[0] != 0)
+			{
+				GetExt(root, ext);
+				strcpy(browserList[0].filename, root);
+				
+				if(IsPlaylistExt(ext) || strncmp(root, "http:", 5) == 0)
+					browserList[0].type = TYPE_PLAYLIST;
+				else
+					browserList[0].type = TYPE_FOLDER;
+			}
+			else if(!IsAllowedProtocol(file))
+			{
+				sprintf(browserList[0].filename, "..");
+				browserList[0].type = TYPE_FOLDER;
+			}
+
+			sprintf(browserList[0].displayname, "Up One Level");
+			browserList[0].length = 0;
+			browserList[0].mtime = 0;
+			browserList[0].icon = ICON_FOLDER;
+
+			browser.numEntries++;
+		}
 
 		if(!AddBrowserEntry()) // add failed
 		{
@@ -1976,7 +2064,7 @@ int ParsePlaylistFile()
 			break;
 		}
 
-		snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "%s", i->files[0]);
+		snprintf(browserList[browser.numEntries].filename, MAXPATHLEN, "%s", file);
 
 		// use parameter pt_prettyformat_title for displayname if it exists
 		if(i->params) 
@@ -2006,18 +2094,32 @@ int ParsePlaylistFile()
 			{
 				snprintf(browserList[browser.numEntries].displayname, MAXJOLIET, "%s", i->files[0]);
 			}
+
+			// hide the file's extension
+			if(WiiSettings.hideExtensions)
+				StripExt(browserList[browser.numEntries].displayname);
 		}
+
 		if(IsPlaylistExt(ext))
 			browserList[browser.numEntries].type = TYPE_PLAYLIST;
 
+		if(menuCurrent == MENU_BROWSE_MUSIC)
+		{
+			// check if this file is in the playlist
+			if(MusicPlaylistFind(browser.numEntries))
+				browserList[browser.numEntries].icon = ICON_FILE_CHECKED;
+			else
+				browserList[browser.numEntries].icon = ICON_FILE;
+		}
+
 		browser.numEntries++;
 	}
+
 	pt_iter_destroy(&pt_iter);
 	play_tree_free(list, 1);
 
-	if(browser.numEntries == 1)
+	if(!browserReset)
 	{
-		ResetBrowser();
 		ErrorPrompt("Playlist does not contain any supported entries!");
 		return 0;
 	}

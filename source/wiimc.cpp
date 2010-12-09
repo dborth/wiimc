@@ -422,7 +422,7 @@ void LoadMPlayerFile()
 	while(controlledbygui == 2)
 		usleep(100);
 	
-	char ext[6];
+	char ext[7];
 	GetExt(loadedFile, ext);
 
 	if(strlen(ext) > 0 && (strcasecmp(ext, "iso") == 0 || strcasecmp(ext, "ifo") == 0))

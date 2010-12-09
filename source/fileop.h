@@ -34,6 +34,7 @@ void ResumeParseThread();
 void SuspendParseThread();
 void StopParseThread();
 void CancelFileOp();
+bool FindDevice(char * filepath, int * device, int * devnum);
 bool IsDeviceRoot(char * path);
 bool IsOnlineMediaPath(char *path);
 void CleanupPath(char * path);

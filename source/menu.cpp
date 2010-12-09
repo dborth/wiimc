@@ -762,7 +762,7 @@ void ChangeLanguage()
 
 		switch(WiiSettings.language)
 		{
-			case LANG_SIMP_CHINESE:			
+			case LANG_SIMP_CHINESE:
 				if(currentFont == FONT_SIMP_CHINESE) return;
 				sprintf(filepath, "%s/zh_cn.ttf", appPath);
 				sprintf(httppath, "%s/zh_cn.ttf", httpRoot);
@@ -2371,7 +2371,7 @@ static void MenuBrowse(int menu)
 				}
 
 				// this is a file
-				char ext[6];
+				char ext[7];
 				GetExt(browserList[browser.selIndex].filename, ext);
 				int numItems = 0;
 
@@ -2403,7 +2403,11 @@ static void MenuBrowse(int menu)
 				}
 
 				// unrecognized audio or video extension or allowed protocol
-				if(!IsAllowedExt(ext) && (!IsAllowedProtocol(browserList[browser.selIndex].filename) || strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0))
+				if(!IsAllowedExt(ext) && 
+					(IsPlaylistExt(ext) || 
+					!IsAllowedProtocol(browserList[browser.selIndex].filename) || 
+					strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
+					)
 				{
 					// parse as a playlist
 					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
@@ -2412,12 +2416,13 @@ static void MenuBrowse(int menu)
 						mainWindow->SetState(STATE_DISABLED);
 						ShowAction("Loading...");
 					}
+
 					fileBrowser->SetState(STATE_DISABLED);
 					numItems = BrowserChangeFolder();
 
 					if(numItems > 1)
 					{
-						char ext2[6];
+						char ext2[7];
 						GetExt(browserList[1].filename, ext2);
 						// let's load this one file
 						if(numItems == 2 && IsPlaylistExt(ext) && !IsPlaylistExt(ext2)) 
@@ -2511,7 +2516,7 @@ static void MenuBrowse(int menu)
 
 				if(browserList[currentIndex].image[0] != 0)
 				{
-					char ext[6];
+					char ext[7];
 					GetExt(browserList[currentIndex].image, ext);
 					if(IsImageExt(ext))	thumbIndex = browser.selIndex;
 				}

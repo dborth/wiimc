@@ -90,7 +90,7 @@ int MusicPlaylistLoad()
 	browserList[0].mtime = 0;
 	browserList[0].icon = ICON_FOLDER;
 
-	char ext[6];
+	char ext[7];
 	GetExt(browser.dir, ext);
 
 	if(IsPlaylistExt(ext) || strncmp(browser.dir, "http:", 5) == 0)
@@ -150,29 +150,130 @@ bool MusicPlaylistFind(int index)
  *  1 - enqueued
  * -1 - error
  ***************************************************************************/
-static int EnqueueFile(char * path, char * name)
+static int EnqueueFile(char * path)
 {
-	if(path == NULL || name == NULL || strcmp(name,".") == 0 || MusicPlaylistFindIndex(path) >= 0)
+	if(path == NULL || MusicPlaylistFindIndex(path) >= 0)
 		return 0;
 
-	char ext[6];
+	char ext[7];
 	GetExt(path, ext);
 
 	// check if this is a valid audio file
-	if(!IsAudioExt(ext))
+	if((!IsAudioExt(ext) && !IsPlaylistExt(ext)) || strcmp(ext, "plx") == 0)
 		return 0;
 
-	if(!AddPlaylistEntry()) // add failed
-		return -1;
+	if(IsPlaylistExt(ext))
+	{
+		// use MPlayer to try parsing the file
+		play_tree_t * list = parse_playlist_file(path);
 
-	strncpy(playlist[playlistSize-1].filepath, path, MAXPATHLEN);
-	strncpy(playlist[playlistSize-1].displayname, name, MAXJOLIET);
-	playlist[playlistSize-1].filepath[MAXPATHLEN] = 0;
-	playlist[playlistSize-1].displayname[MAXJOLIET] = 0;
+		if(!list)
+			return 0;
 
-	// hide the file's extension
-	if(WiiSettings.hideExtensions)
-		StripExt(playlist[playlistSize-1].displayname);
+		play_tree_iter_t *pt_iter = pt_iter_create(&list, NULL);
+
+		if(!pt_iter)
+		{
+			play_tree_free(list, 1);
+			return 0;
+		}
+
+		char file[MAXPATHLEN];
+		play_tree_t* i;
+
+		for(i = pt_iter->tree; i != NULL; i = i->next)
+		{
+			if(!i->files || strlen(i->files[0]) >= MAXPATHLEN)
+				continue;
+
+			if(!FindDevice(i->files[0], NULL, NULL))
+				continue;
+
+			GetExt(i->files[0], ext);
+
+			if(!IsAllowedExt(ext))
+				continue;
+
+			strcpy(file, i->files[0]);
+			CleanupPath(file);
+
+			if(file[0] == 0)
+				continue;
+
+			if(MusicPlaylistFindIndex(file) >= 0)
+				continue;
+
+			if(!AddPlaylistEntry()) // add failed
+			{
+				pt_iter_destroy(&pt_iter);
+				play_tree_free(list, 1);
+				return -1;
+			}
+
+			snprintf(playlist[playlistSize-1].filepath, MAXPATHLEN, "%s", file);
+
+			// use parameter pt_prettyformat_title for displayname if it exists
+			if(i->params) 
+			{
+				for (int n = 0; i->params[n].name != NULL; n++) 
+				{
+					if(strcasecmp(i->params[n].name,PLAY_TREE_PARAM_PRETTYFORMAT_TITLE) != 0)
+						continue;
+					if(i->params[n].value == NULL)
+						break;
+					snprintf(playlist[playlistSize-1].displayname, MAXJOLIET, "%s", i->params[n].value);
+					break;
+				}
+			}
+
+			if(playlist[playlistSize-1].displayname[0] == 0)
+			{
+				char *start = strrchr(i->files[0],'/');
+
+				// use part after last / for display name, if it's not already the end of the string
+				if(start != NULL && start[1] != 0)
+				{
+					start++;
+					snprintf(playlist[playlistSize-1].displayname, MAXJOLIET, "%s", start);
+				}
+				else
+				{
+					snprintf(playlist[playlistSize-1].displayname, MAXJOLIET, "%s", i->files[0]);
+				}
+
+				// hide the file's extension
+				if(WiiSettings.hideExtensions)
+					StripExt(playlist[playlistSize-1].displayname);
+			}
+		}
+
+		pt_iter_destroy(&pt_iter);
+		play_tree_free(list, 1);
+	}
+	else
+	{
+		if(!AddPlaylistEntry()) // add failed
+			return -1;
+
+		snprintf(playlist[playlistSize-1].filepath, MAXPATHLEN, "%s", path);
+
+		char *start = strrchr(path,'/');
+
+		// use part after last / for display name, if it's not already the end of the string
+		if(start != NULL && start[1] != 0)
+		{
+			start++;
+			snprintf(playlist[playlistSize-1].displayname, MAXJOLIET, "%s", start);
+		}
+		else
+		{
+			snprintf(playlist[playlistSize-1].displayname, MAXJOLIET, "%s", path);
+		}
+
+		// hide the file's extension
+		if(WiiSettings.hideExtensions)
+			StripExt(playlist[playlistSize-1].displayname);
+	}
 
 	shuffleIndex = -1; // reset shuffle
 	return 1;
@@ -222,7 +323,7 @@ static bool EnqueueFolder(char * path, int silent)
 		}
 		else
 		{
-			if(EnqueueFile(filepath, filename) < 0)
+			if(EnqueueFile(filepath) < 0)
 				break;
 		}
 	}
@@ -246,7 +347,7 @@ bool MusicPlaylistEnqueue(int index)
 	if(browserList[index].type == TYPE_FOLDER)
 		return EnqueueFolder(fullpath, NOTSILENT);
 
-	if(EnqueueFile(fullpath, browserList[index].filename) == 1)
+	if(EnqueueFile(fullpath) == 1)
 		return true;
 
 	return false;
@@ -277,6 +378,59 @@ void MusicPlaylistDequeue(int index)
 		browserList[index].icon = ICON_FOLDER;
 	else
 		browserList[index].icon = ICON_FILE;
+
+	if(browserList[index].type == TYPE_PLAYLIST)
+	{
+		// use MPlayer to try parsing the file
+		play_tree_t * list = parse_playlist_file(fullpath);
+
+		if(!list)
+			return;
+
+		play_tree_iter_t *pt_iter = pt_iter_create(&list, NULL);
+
+		if(!pt_iter)
+		{
+			play_tree_free(list, 1);
+			return;
+		}
+
+		char file[MAXPATHLEN];
+		char ext[7];
+		play_tree_t* i;
+
+		for(i = pt_iter->tree; i != NULL; i = i->next)
+		{
+			if(!i->files || strlen(i->files[0]) >= MAXPATHLEN)
+				continue;
+
+			if(!FindDevice(i->files[0], NULL, NULL))
+				continue;
+
+			GetExt(i->files[0], ext);
+
+			if(!IsAllowedExt(ext))
+				continue;
+
+			strcpy(file, i->files[0]);
+			CleanupPath(file);
+
+			if(file[0] == 0)
+				continue;
+
+			for(int i=0; i < playlistSize; i++)
+			{
+				if(strcmp(file, playlist[i].filepath) == 0)
+				{
+					Remove(i);
+					break;
+				}
+			}
+		}
+		pt_iter_destroy(&pt_iter);
+		play_tree_free(list, 1);
+		return;
+	}
 
 	do
 	{

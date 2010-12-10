@@ -73,7 +73,7 @@ LIBAD_EXTERN(mpg123)
 #define AD_MPG123_PACKET
 /* #define AD_MPG123_SEEKBUFFER */
 #ifdef GEKKO
-#define AD_MPG123_CALLBACK
+//#define AD_MPG123_CALLBACK
 //#define AD_MPG123_SEEKBUFFER
 #endif
 

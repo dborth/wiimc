@@ -334,7 +334,7 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 	int wp,ww;
 
 	GX_ResetTextureYUVPointers();
-
+/*
 	wp=pitch[0];
 	ww=width;
 
@@ -343,16 +343,19 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
 	ww=ww*16;
 
 	if(wp>ww) wp=ww;
-	w1 = wp >> 3;
-	w2 = wp >> 4;
 
+*/	
+	wp=(width+7)&~7;
+	ww=(width+15)&~15;
+	w1 = wp >> 3;
+	w2 = w1 / 2;
 	
 	wl = w1 > 1024/8 ? 1024/8 - 1 : w1;
 	wr = w1 > 1024/8 ? w1 - 1024/8 + 1 : 0;
 
 	df1 = ((ww >> 3) - w1)*4;
 	df2 = ((ww >> 4) - w2)*4;
-
+	
 	UVrowpitch = pitch[1]/2-w2;
 	Yrowpitch = pitch[0]/2-w1;
 
@@ -510,10 +513,18 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	wYr += 8 - (wYr % 8);
 	//wY = (width / 2) + 1;
 	//wY += 8 - (wY % 8);
+	/*
 	w = (width / 16);
 	if(w % 2) w++;
 	w=w*16;
-	h = ((int)((height/8.0)))*8;
+	*/
+
+	
+	w=(width+15)&~15;
+	
+	//h = ((int)((height/8.0)))*8;
+	
+	h=(height+7)&~7;
 	old_h1_2=-1;
 
 	// center, to correct difference between pitch and real width
@@ -575,8 +586,8 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 	if(old_h1_2 != height)
 	{
 		old_h1_2 = height;
-    	h1 = ceil((float)height / 4.0f);
-    	h2 = ceil((float)h1/2);
+    	h1 = ((height+7)&~7)/4;
+    	h2 = h1/2;
 	}
 
 	//Convert YUV frame to GX textures

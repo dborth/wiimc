@@ -429,7 +429,7 @@ parse_m3u(play_tree_parser_t* p) {
   char* line;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
 #ifdef GEKKO
-  char *title = NULL;
+  char title[256] = { 0 };
 #endif
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying extended m3u playlist...\n");
@@ -466,8 +466,7 @@ parse_m3u(play_tree_parser_t* p) {
 
       if(colon != NULL && comma == NULL) linestart = colon+1;
       else if(colon != NULL && comma != NULL && (comma-colon) < 4) linestart = comma+1;
-	  title = realloc(title, strlen(mp_pretty_title(linestart))+1);
-	  strcpy(title, mp_pretty_title(linestart));
+	  snprintf(title, 256, "%s", mp_pretty_title(linestart));
 #endif
       continue;
     }
@@ -475,7 +474,11 @@ parse_m3u(play_tree_parser_t* p) {
     play_tree_add_file(entry,line);
 #ifdef GEKKO
 	// Add the title parameter if it exists
-	play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
+    if(title[0])
+    {
+    	play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
+    	title[0] = 0;
+    }
 #endif
     if(!list)
       list = entry;
@@ -483,11 +486,7 @@ parse_m3u(play_tree_parser_t* p) {
       play_tree_append_entry(last_entry,entry);
     last_entry = entry;
   }
-#ifdef GEKKO
-  // Free the memory of title pointer
-  free(title); 
-  title = NULL;
-#endif
+
   if(!list) return NULL;
   entry = play_tree_new();
   play_tree_set_child(entry,list);

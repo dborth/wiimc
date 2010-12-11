@@ -1108,6 +1108,8 @@ void CleanupPath(char * path)
 		int dirCount=0;
 
 		// tokenize
+		char buffer[2048];
+		char *pathPtr = buffer;
 		char *pathArray[20];
 		char *tok = strtok(path, "/");
 
@@ -1115,20 +1117,15 @@ void CleanupPath(char * path)
 		{
 			if(total == 20)
 			{
-				for(i=0; i < total; i++)
-					free(pathArray[i]);
-
 				path[0] = 0;
 				return;
 			}
 
-			pathArray[total] = (char *)malloc(strlen(tok)+1);
+			pathArray[total] = pathPtr;
+			pathPtr += strlen(tok)+1;
 
 			if(!pathArray[total])
 			{
-				for(i=0; i < total; i++)
-					free(pathArray[i]);
-
 				path[0] = 0;
 				return;
 			}
@@ -1147,9 +1144,6 @@ void CleanupPath(char * path)
 
 		if(parentCount > dirCount)
 		{
-			for(i=0; i < total; i++)
-				free(pathArray[i]);
-
 			path[0] = 0;
 			return;
 		}
@@ -1163,9 +1157,6 @@ void CleanupPath(char * path)
 		}
 
 		strcat(path, pathArray[total-1]);
-
-		for(i=0; i < total; i++)
-			free(pathArray[i]);
 	}
 
 	char ext[7];

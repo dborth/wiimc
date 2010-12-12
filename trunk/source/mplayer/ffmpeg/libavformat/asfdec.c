@@ -848,6 +848,7 @@ static int ff_asf_parse_packet(AVFormatContext *s, ByteIOContext *pb, AVPacket *
     ASFContext *asf = s->priv_data;
     ASFStream *asf_st = 0;
     for (;;) {
+        int ret;
         if(url_feof(pb))
             return AVERROR_EOF;
         if (asf->packet_size_left < FRAME_HEADER_SIZE
@@ -950,8 +951,10 @@ static int ff_asf_parse_packet(AVFormatContext *s, ByteIOContext *pb, AVPacket *
             continue;
         }
 
-        get_buffer(pb, asf_st->pkt.data + asf->packet_frag_offset,
-                   asf->packet_frag_size);
+        ret = get_buffer(pb, asf_st->pkt.data + asf->packet_frag_offset,
+                         asf->packet_frag_size);
+        if (ret != asf->packet_frag_size)
+            return ret >= 0 ? AVERROR_EOF : ret;
         if (s->key && s->keylen == 20)
             ff_asfcrypt_dec(s->key, asf_st->pkt.data + asf->packet_frag_offset,
                             asf->packet_frag_size);
@@ -977,9 +980,10 @@ static int ff_asf_parse_packet(AVFormatContext *s, ByteIOContext *pb, AVPacket *
                     av_log(s, AV_LOG_ERROR, "pkt.size != ds_packet_size * ds_span (%d %d %d)\n", asf_st->pkt.size, asf_st->ds_packet_size, asf_st->ds_span);
               }else{
                 /* packet descrambling */
-                uint8_t *newdata = av_malloc(asf_st->pkt.size);
+                uint8_t *newdata = av_malloc(asf_st->pkt.size + FF_INPUT_BUFFER_PADDING_SIZE);
                 if (newdata) {
                     int offset = 0;
+                    memset(newdata + asf_st->pkt.size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
                     while (offset < asf_st->pkt.size) {
                         int off = offset / asf_st->ds_chunk_size;
                         int row = off / asf_st->ds_span;

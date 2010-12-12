@@ -46,6 +46,12 @@
          'url_open_dyn_packet_buf')
 */
 
+RTPDynamicProtocolHandler ff_realmedia_mp3_dynamic_handler = {
+    .enc_name           = "X-MP3-draft-00",
+    .codec_type         = AVMEDIA_TYPE_AUDIO,
+    .codec_id           = CODEC_ID_MP3ADU,
+};
+
 /* statistics functions */
 RTPDynamicProtocolHandler *RTPFirstDynamicPayloadHandler= NULL;
 
@@ -71,6 +77,7 @@ void av_register_rtp_dynamic_payload_handlers(void)
     ff_register_dynamic_payload_handler(&ff_mp4a_latm_dynamic_handler);
     ff_register_dynamic_payload_handler(&ff_vp8_dynamic_handler);
     ff_register_dynamic_payload_handler(&ff_qcelp_dynamic_handler);
+    ff_register_dynamic_payload_handler(&ff_realmedia_mp3_dynamic_handler);
 
     ff_register_dynamic_payload_handler(&ff_ms_rtp_asf_pfv_handler);
     ff_register_dynamic_payload_handler(&ff_ms_rtp_asf_pfa_handler);
@@ -388,7 +395,6 @@ RTPDemuxContext *rtp_parse_open(AVFormatContext *s1, AVStream *st, URLContext *r
             return NULL;
         }
     } else {
-        av_set_pts_info(st, 32, 1, 90000);
         switch(st->codec->codec_id) {
         case CODEC_ID_MPEG1VIDEO:
         case CODEC_ID_MPEG2VIDEO:
@@ -400,16 +406,12 @@ RTPDemuxContext *rtp_parse_open(AVFormatContext *s1, AVStream *st, URLContext *r
             st->need_parsing = AVSTREAM_PARSE_FULL;
             break;
         case CODEC_ID_ADPCM_G722:
-            av_set_pts_info(st, 32, 1, st->codec->sample_rate);
             /* According to RFC 3551, the stream clock rate is 8000
              * even if the sample rate is 16000. */
             if (st->codec->sample_rate == 8000)
                 st->codec->sample_rate = 16000;
             break;
         default:
-            if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-                av_set_pts_info(st, 32, 1, st->codec->sample_rate);
-            }
             break;
         }
     }
@@ -475,6 +477,12 @@ static int rtp_parse_packet_internal(RTPDemuxContext *s, AVPacket *pkt,
         av_log(st?st->codec:NULL, AV_LOG_ERROR, "RTP: PT=%02x: bad cseq %04x expected=%04x\n",
                payload_type, seq, ((s->seq + 1) & 0xffff));
         return -1;
+    }
+
+    if (buf[0] & 0x20) {
+        int padding = buf[len - 1];
+        if (len >= 12 + padding)
+            len -= padding;
     }
 
     s->seq = seq;

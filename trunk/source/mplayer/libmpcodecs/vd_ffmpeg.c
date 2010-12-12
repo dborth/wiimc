@@ -191,7 +191,7 @@ static void mp_msp_av_log_callback(void *ptr, int level, const char *fmt,
     case AV_LOG_DEBUG:  mp_level= MSGL_V   ; break;
     case AV_LOG_INFO :  mp_level= MSGL_INFO; break;
     case AV_LOG_ERROR:  mp_level= MSGL_ERR ; break;
-    default          :  mp_level= MSGL_ERR ; break;
+    default          :  mp_level= level > AV_LOG_DEBUG ? MSGL_DBG2 : MSGL_ERR; break;
     }
 
     if(ptr){
@@ -554,6 +554,7 @@ static int init_vo(sh_video_t *sh, enum PixelFormat pix_fmt){
         pix_fmt != ctx->pix_fmt ||
         !ctx->vo_initialized)
     {
+        ctx->vo_initialized = 0;
         // this is a special-case HACK for MPEG-1/2 VDPAU that uses neither get_format nor
         // sets the value correctly in avcodec_open.
         set_format_params(avctx, avctx->pix_fmt);
@@ -635,7 +636,7 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
             return avctx->get_buffer(avctx, pic);
         }
 
-        if(avctx->has_b_frames){
+        if(avctx->has_b_frames || ctx->b_count){
             type= MP_IMGTYPE_IPB;
         }else{
             type= MP_IMGTYPE_IP;

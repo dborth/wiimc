@@ -382,6 +382,7 @@ while(1){
     if(demuxer->movi_end>stream_tell(demuxer->stream))
 	demuxer->movi_end=stream_tell(demuxer->stream); // fixup movi-end
     if(index_mode && !priv->isodml){
+      int read;
       int i;
       priv->idx_size=size2>>4;
       mp_msg(MSGT_HEADER,MSGL_V,MSGTR_MPDEMUX_AVIHDR_ReadingIndexBlockChunksForFrames,
@@ -392,7 +393,8 @@ while(1){
 		priv->idx = alloc_index(priv->idx_size<<4);
 #endif 
 //      printf("\nindex to %p !!!!! (priv=%p)\n",priv->idx,priv);
-      stream_read(demuxer->stream,(char*)priv->idx,priv->idx_size<<4);
+      read = stream_read(demuxer->stream,(char*)priv->idx,priv->idx_size<<4);
+      priv->idx_size = FFMAX(read, 0) >> 4;
       for (i = 0; i < priv->idx_size; i++) {	// swap index to machine endian
 	AVIINDEXENTRY *entry=(AVIINDEXENTRY*)priv->idx + i;
 	le2me_AVIINDEXENTRY(entry);
@@ -682,7 +684,7 @@ if(index_mode>=2 || (priv->idx_size==0 && index_mode==1)){
 		idx_pos=0; 
 		break;
 	}
-#endif    
+#endif   
       if(!priv->idx){idx_pos=0; break;} // error!
     }
     idx=&((AVIINDEXENTRY *)priv->idx)[idx_pos++];

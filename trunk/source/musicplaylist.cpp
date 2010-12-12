@@ -191,7 +191,7 @@ static int EnqueueFile(char * path)
 
 			GetExt(i->files[0], ext);
 
-			if(!IsAllowedProtocol(i->files[0]) && !IsAllowedExt(ext))
+			if(!IsAllowedExt(ext))
 				continue;
 
 			strcpy(file, i->files[0]);
@@ -409,7 +409,7 @@ void MusicPlaylistDequeue(int index)
 
 			GetExt(i->files[0], ext);
 
-			if(!IsAllowedProtocol(i->files[0]) && !IsAllowedExt(ext))
+			if(!IsAllowedExt(ext))
 				continue;
 
 			strcpy(file, i->files[0]);

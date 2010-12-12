@@ -37,9 +37,10 @@
 #include "libavutil/colorspace.h"
 #include "libavutil/pixdesc.h"
 #include "libavcore/imgutils.h"
-#include "libavcore/internal.h"
 
-#if HAVE_MMX && HAVE_YASM
+#if ARCH_PPC
+#include "ppc/deinterlace.h"
+#elif HAVE_MMX && HAVE_YASM
 #include "x86/dsputil_mmx.h"
 #endif
 
@@ -58,6 +59,9 @@
 #if HAVE_MMX && HAVE_YASM
 #define deinterlace_line_inplace ff_deinterlace_line_inplace_mmx
 #define deinterlace_line         ff_deinterlace_line_mmx
+#elif HAVE_PAIRED
+#define deinterlace_line_inplace ff_deinterlace_line_inplace_paired
+#define deinterlace_line         ff_deinterlace_line_paired
 #else
 #define deinterlace_line_inplace deinterlace_line_inplace_c
 #define deinterlace_line         deinterlace_line_c
@@ -431,23 +435,72 @@ enum PixelFormat avcodec_get_pix_fmt(const char *name)
 {
     return av_get_pix_fmt(name);
 }
+#endif
 
 void avcodec_pix_fmt_string (char *buf, int buf_size, enum PixelFormat pix_fmt)
 {
-    av_get_pix_fmt_string(buf, buf_size, pix_fmt);
+    /* print header */
+    if (pix_fmt < 0)
+        snprintf (buf, buf_size,
+                  "name      " " nb_channels" " depth"
+            );
+    else{
+        PixFmtInfo info= pix_fmt_info[pix_fmt];
+
+        snprintf (buf, buf_size,
+                  "%-11s %5d %9d",
+                  av_pix_fmt_descriptors[pix_fmt].name,
+                  info.nb_channels,
+                  av_get_bits_per_pixel(&av_pix_fmt_descriptors[pix_fmt])
+            );
+    }
 }
-#endif
 
 int ff_is_hwaccel_pix_fmt(enum PixelFormat pix_fmt)
 {
     return av_pix_fmt_descriptors[pix_fmt].flags & PIX_FMT_HWACCEL;
 }
 
-#if LIBAVCODEC_VERSION_MAJOR < 53
 int ff_set_systematic_pal(uint32_t pal[256], enum PixelFormat pix_fmt){
-    return ff_set_systematic_pal2(pal, pix_fmt);
+    int i;
+
+    for(i=0; i<256; i++){
+        int r,g,b;
+
+        switch(pix_fmt) {
+        case PIX_FMT_RGB8:
+            r= (i>>5    )*36;
+            g= ((i>>2)&7)*36;
+            b= (i&3     )*85;
+            break;
+        case PIX_FMT_BGR8:
+            b= (i>>6    )*85;
+            g= ((i>>3)&7)*36;
+            r= (i&7     )*36;
+            break;
+        case PIX_FMT_RGB4_BYTE:
+            r= (i>>3    )*255;
+            g= ((i>>1)&3)*85;
+            b= (i&1     )*255;
+            break;
+        case PIX_FMT_BGR4_BYTE:
+            b= (i>>3    )*255;
+            g= ((i>>1)&3)*85;
+            r= (i&1     )*255;
+            break;
+        case PIX_FMT_GRAY8:
+            r=b=g= i;
+            break;
+        default:
+            return -1;
+        }
+        pal[i] =  b + (g<<8) + (r<<16);
+    }
+
+    return 0;
 }
 
+#if LIBAVCODEC_VERSION_MAJOR < 53
 int ff_fill_linesize(AVPicture *picture, enum PixelFormat pix_fmt, int width)
 {
     return av_image_fill_linesizes(picture->linesize, pix_fmt, width);
@@ -477,31 +530,68 @@ int avpicture_fill(AVPicture *picture, uint8_t *ptr,
 int avpicture_layout(const AVPicture* src, enum PixelFormat pix_fmt, int width, int height,
                      unsigned char *dest, int dest_size)
 {
-    int i, j, nb_planes = 0, linesizes[4];
+    const PixFmtInfo* pf = &pix_fmt_info[pix_fmt];
     const AVPixFmtDescriptor *desc = &av_pix_fmt_descriptors[pix_fmt];
+    int i, j, w, ow, h, oh, data_planes;
+    const unsigned char* s;
     int size = avpicture_get_size(pix_fmt, width, height);
 
     if (size > dest_size || size < 0)
-        return AVERROR(EINVAL);
+        return -1;
 
-    for (i = 0; i < desc->nb_components; i++)
-        nb_planes = FFMAX(desc->comp[i].plane, nb_planes);
-    nb_planes++;
+    if (pf->pixel_type == FF_PIXEL_PACKED || pf->pixel_type == FF_PIXEL_PALETTE) {
+        if (pix_fmt == PIX_FMT_YUYV422 ||
+            pix_fmt == PIX_FMT_UYVY422 ||
+            pix_fmt == PIX_FMT_BGR565BE ||
+            pix_fmt == PIX_FMT_BGR565LE ||
+            pix_fmt == PIX_FMT_BGR555BE ||
+            pix_fmt == PIX_FMT_BGR555LE ||
+            pix_fmt == PIX_FMT_BGR444BE ||
+            pix_fmt == PIX_FMT_BGR444LE ||
+            pix_fmt == PIX_FMT_RGB565BE ||
+            pix_fmt == PIX_FMT_RGB565LE ||
+            pix_fmt == PIX_FMT_RGB555BE ||
+            pix_fmt == PIX_FMT_RGB555LE ||
+            pix_fmt == PIX_FMT_RGB444BE ||
+            pix_fmt == PIX_FMT_RGB444LE)
+            w = width * 2;
+        else if (pix_fmt == PIX_FMT_UYYVYY411)
+            w = width + width/2;
+        else if (pix_fmt == PIX_FMT_PAL8)
+            w = width;
+        else
+            w = width * (pf->depth * pf->nb_channels / 8);
 
-    av_image_fill_linesizes(linesizes, pix_fmt, width);
-    for (i = 0; i < nb_planes; i++) {
-        int h, shift = (i == 1 || i == 2) ? desc->log2_chroma_h : 0;
-        const unsigned char *s = src->data[i];
-        h = (height + (1 << shift) - 1) >> shift;
+        data_planes = 1;
+        h = height;
+    } else {
+        data_planes = pf->nb_channels;
+        w = (width*pf->depth + 7)/8;
+        h = height;
+    }
 
-        for (j = 0; j < h; j++) {
-            memcpy(dest, s, linesizes[i]);
-            dest += linesizes[i];
+    ow = w;
+    oh = h;
+
+    for (i=0; i<data_planes; i++) {
+        if (i == 1) {
+            w = (- ((-width) >> desc->log2_chroma_w) * pf->depth + 7) / 8;
+            h = -((-height) >> desc->log2_chroma_h);
+            if (pix_fmt == PIX_FMT_NV12 || pix_fmt == PIX_FMT_NV21)
+                w <<= 1;
+        } else if (i == 3) {
+            w = ow;
+            h = oh;
+        }
+        s = src->data[i];
+        for(j=0; j<h; j++) {
+            memcpy(dest, s, w);
+            dest += w;
             s += src->linesize[i];
         }
     }
 
-    if (desc->flags & PIX_FMT_PAL)
+    if (pf->pixel_type == FF_PIXEL_PALETTE)
         memcpy((unsigned char *)(((size_t)dest + 3) & ~3), src->data[1], 256 * 4);
 
     return size;
@@ -824,7 +914,7 @@ int avpicture_alloc(AVPicture *picture,
         goto fail;
     avpicture_fill(picture, ptr, pix_fmt, width, height);
     if(picture->data[1] && !picture->data[2])
-        ff_set_systematic_pal2((uint32_t*)picture->data[1], pix_fmt);
+        ff_set_systematic_pal((uint32_t*)picture->data[1], pix_fmt);
 
     return 0;
  fail:
@@ -974,7 +1064,7 @@ int img_get_alpha_info(const AVPicture *src,
     return ret;
 }
 
-#if !(HAVE_MMX && HAVE_YASM)
+#if !((HAVE_MMX && HAVE_YASM) || HAVE_PAIRED)
 /* filter parameters: [-1 4 2 4 -1] // 8 */
 static void deinterlace_line_c(uint8_t *dst,
                              const uint8_t *lum_m4, const uint8_t *lum_m3,
@@ -1132,4 +1222,3 @@ int avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
     emms_c();
     return 0;
 }
-

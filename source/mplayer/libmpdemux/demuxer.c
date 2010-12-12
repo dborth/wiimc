@@ -490,6 +490,9 @@ static void allocate_parser(AVCodecContext **avctx, AVCodecParserContext **parse
     case 0x86:
         codec_id = CODEC_ID_DTS;
         break;
+    case MKTAG('f', 'L', 'a', 'C'):
+        codec_id = CODEC_ID_FLAC;
+        break;
     case MKTAG('M', 'L', 'P', ' '):
         codec_id = CODEC_ID_MLP;
         break;
@@ -967,9 +970,6 @@ int extension_parsing = 1; // 0=off 1=mixed (used only for unstable formats)
 
 int correct_pts = 0;
 int user_correct_pts = -1;
-#ifdef GEKKO
-int correct_pts_errors;
-#endif
 
 /*
   NOTE : Several demuxers may be opened at the same time so

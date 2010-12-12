@@ -295,6 +295,9 @@ typedef struct AVOutputStream {
     /* audio only */
     int audio_resample;
     ReSampleContext *resample; /* for audio resampling */
+    int resample_sample_fmt;
+    int resample_channels;
+    int resample_sample_rate;
     int reformat_pair;
     AVAudioConvert *reformat_ctx;
     AVFifoBuffer *fifo;     /* for compression: one audio fifo per codec */
@@ -768,7 +771,7 @@ static void do_audio_out(AVFormatContext *s,
     int64_t audio_out_size, audio_buf_size;
     int64_t allocated_for_size= size;
 
-    int size_out, frame_bytes, ret;
+    int size_out, frame_bytes, ret, resample_changed;
     AVCodecContext *enc= ost->st->codec;
     AVCodecContext *dec= ist->st->codec;
     int osize= av_get_bits_per_sample_fmt(enc->sample_fmt)/8;
@@ -802,18 +805,40 @@ need_realloc:
     if (enc->channels != dec->channels)
         ost->audio_resample = 1;
 
-    if (ost->audio_resample && !ost->resample) {
-        if (dec->sample_fmt != AV_SAMPLE_FMT_S16)
-            fprintf(stderr, "Warning, using s16 intermediate sample format for resampling\n");
-        ost->resample = av_audio_resample_init(enc->channels,    dec->channels,
-                                               enc->sample_rate, dec->sample_rate,
-                                               enc->sample_fmt,  dec->sample_fmt,
-                                               16, 10, 0, 0.8);
-        if (!ost->resample) {
-            fprintf(stderr, "Can not resample %d channels @ %d Hz to %d channels @ %d Hz\n",
-                    dec->channels, dec->sample_rate,
-                    enc->channels, enc->sample_rate);
-            ffmpeg_exit(1);
+    resample_changed = ost->resample_sample_fmt  != dec->sample_fmt ||
+                       ost->resample_channels    != dec->channels   ||
+                       ost->resample_sample_rate != dec->sample_rate;
+
+    if ((ost->audio_resample && !ost->resample) || resample_changed) {
+        if (resample_changed) {
+            av_log(NULL, AV_LOG_INFO, "Input stream #%d.%d frame changed from rate:%d fmt:%s ch:%d to rate:%d fmt:%s ch:%d\n",
+                   ist->file_index, ist->index,
+                   ost->resample_sample_rate, av_get_sample_fmt_name(ost->resample_sample_fmt), ost->resample_channels,
+                   dec->sample_rate, av_get_sample_fmt_name(dec->sample_fmt), dec->channels);
+            ost->resample_sample_fmt  = dec->sample_fmt;
+            ost->resample_channels    = dec->channels;
+            ost->resample_sample_rate = dec->sample_rate;
+            if (ost->resample)
+                audio_resample_close(ost->resample);
+        }
+        if (ost->resample_sample_fmt  == enc->sample_fmt &&
+            ost->resample_channels    == enc->channels   &&
+            ost->resample_sample_rate == enc->sample_rate) {
+            ost->resample = NULL;
+            ost->audio_resample = 0;
+        } else {
+            if (dec->sample_fmt != AV_SAMPLE_FMT_S16)
+                fprintf(stderr, "Warning, using s16 intermediate sample format for resampling\n");
+            ost->resample = av_audio_resample_init(enc->channels,    dec->channels,
+                                                   enc->sample_rate, dec->sample_rate,
+                                                   enc->sample_fmt,  dec->sample_fmt,
+                                                   16, 10, 0, 0.8);
+            if (!ost->resample) {
+                fprintf(stderr, "Can not resample %d channels @ %d Hz to %d channels @ %d Hz\n",
+                        dec->channels, dec->sample_rate,
+                        enc->channels, enc->sample_rate);
+                ffmpeg_exit(1);
+            }
         }
     }
 
@@ -2174,6 +2199,9 @@ static int transcode(AVFormatContext **output_files,
                 icodec->request_channels = codec->channels;
                 ist->decoding_needed = 1;
                 ost->encoding_needed = 1;
+                ost->resample_sample_fmt  = icodec->sample_fmt;
+                ost->resample_sample_rate = icodec->sample_rate;
+                ost->resample_channels    = icodec->channels;
                 break;
             case AVMEDIA_TYPE_VIDEO:
                 if (ost->st->codec->pix_fmt == PIX_FMT_NONE) {
@@ -3883,6 +3911,8 @@ static void show_usage(void)
 
 static void show_help(void)
 {
+    AVCodec *c;
+
     av_log_set_callback(log_callback_help);
     show_usage();
     show_help_options(options, "Main options:\n",
@@ -3911,6 +3941,16 @@ static void show_help(void)
     printf("\n");
     av_opt_show2(avcodec_opts[0], NULL, AV_OPT_FLAG_ENCODING_PARAM|AV_OPT_FLAG_DECODING_PARAM, 0);
     printf("\n");
+
+    /* individual codec options */
+    c = NULL;
+    while ((c = av_codec_next(c))) {
+        if (c->priv_class) {
+            av_opt_show2(&c->priv_class, NULL, AV_OPT_FLAG_ENCODING_PARAM|AV_OPT_FLAG_DECODING_PARAM, 0);
+            printf("\n");
+        }
+    }
+
     av_opt_show2(avformat_opts, NULL, AV_OPT_FLAG_ENCODING_PARAM|AV_OPT_FLAG_DECODING_PARAM, 0);
     printf("\n");
     av_opt_show2(sws_opts, NULL, AV_OPT_FLAG_ENCODING_PARAM|AV_OPT_FLAG_DECODING_PARAM, 0);

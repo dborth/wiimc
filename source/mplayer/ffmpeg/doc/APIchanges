@@ -13,6 +13,10 @@ libavutil:   2009-03-08
 
 API changes, most recent first:
 
+2010-12-09 - r25923 - lavcore 0.16.0 - avcore.h
+  Move AV_NOPTS_VALUE, AV_TIME_BASE, AV_TIME_BASE_Q symbols from
+  avcodec.h to avcore.h.
+
 2010-12-04 - r25886 - lavc 52.98.0 - CODEC_CAP_NEG_LINESIZES
   Add CODEC_CAP_NEG_LINESIZES codec capability flag in avcodec.h.
 
@@ -20,7 +24,7 @@ API changes, most recent first:
   Deprecate avcodec_pix_fmt_string() in favor of
   pixdesc.h/av_get_pix_fmt_string().
 
-2010-12-04 - r25878 - lavcore 1.15.0 - av_image_alloc()
+2010-12-04 - r25878 - lavcore 0.15.0 - av_image_alloc()
   Add av_image_alloc() to libavcore/imgutils.h.
 
 2010-12-02 - r25862 - lavfi 1.67.0 - avfilter_graph_create_filter()

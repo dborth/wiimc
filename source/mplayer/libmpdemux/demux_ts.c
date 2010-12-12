@@ -925,7 +925,7 @@ static off_t ts_detect_streams(demuxer_t *demuxer, tsdemux_init_t *param)
 		mp_msg(MSGT_DEMUXER, MSGL_INFO, "\n");
 
 
-	for(i=0; i<8192; i++)
+	for(i=0; i<NB_PID_MAX; i++)
 	{
 		if(priv->ts.pids[i] != NULL)
 		{
@@ -992,7 +992,7 @@ static demuxer_t *demux_open_ts(demuxer_t * demuxer)
 		return NULL;
 	}
 
-	for(i=0; i < 8192; i++)
+	for(i=0; i < NB_PID_MAX; i++)
 	{
 	    priv->ts.pids[i] = NULL;
 	    priv->ts.streams[i].id = -3;
@@ -1113,6 +1113,17 @@ static void demux_close_ts(demuxer_t * demuxer)
 				free(priv->pmt[i].es);
 			}
 			free(priv->pmt);
+		}
+		for (i = 0; i < NB_PID_MAX; i++)
+		{
+			free(priv->ts.pids[i]);
+			priv->ts.pids[i] = NULL;
+		}
+		for (i = 0; i < 3; i++)
+		{
+			if (priv->fifo[i].pack)
+				free_demux_packet(priv->fifo[i].pack);
+			priv->fifo[i].pack = NULL;
 		}
 		free(priv);
 	}
@@ -2184,10 +2195,9 @@ static ES_stream_t *new_pid(ts_priv_t *priv, int pid)
 {
 	ES_stream_t *tss;
 
-	tss = malloc(sizeof(ES_stream_t));
+	tss = calloc(sizeof(*tss), 1);
 	if(! tss)
 		return NULL;
-	memset(tss, 0, sizeof(ES_stream_t));
 	tss->pid = pid;
 	tss->last_cc = -1;
 	tss->type = UNKNOWN;
@@ -2679,7 +2689,12 @@ static int fill_packet(demuxer_t *demuxer, demux_stream_t *ds, demux_packet_t **
 {
 	int ret = 0;
 
-	if((*dp != NULL) && (*dp_offset > 0))
+	if(*dp && *dp_offset <= 0)
+	{
+		free_demux_packet(*dp);
+		*dp = NULL;
+	}
+	if(*dp)
 	{
 		ret = *dp_offset;
 		resize_demux_packet(*dp, ret);	//shrinked to the right size
@@ -2758,6 +2773,7 @@ static int ts_parse(demuxer_t *demuxer , ES_stream_t *es, unsigned char *packet,
 	TS_stream_info *si;
 
 
+	memset(es, 0, sizeof(*es));
 	while(1)
 	{
 		bad = ts_error = 0;
@@ -3164,7 +3180,7 @@ static int ts_parse(demuxer_t *demuxer , ES_stream_t *es, unsigned char *packet,
 			}
 			else
 			{
-				memcpy(es->start, p, sz);
+				memmove(es->start, p, sz);
 
 				if(es->size)
 					return es->size;
@@ -3260,7 +3276,7 @@ static void demux_seek_ts(demuxer_t *demuxer, float rel_seek_secs, float audio_d
   		newpos = demuxer->movi_start;	//begininng of stream
 
 	stream_seek(demuxer->stream, newpos);
-	for(i = 0; i < 8192; i++)
+	for(i = 0; i < NB_PID_MAX; i++)
 		if(priv->ts.pids[i] != NULL)
 			priv->ts.pids[i]->is_synced = 0;
 

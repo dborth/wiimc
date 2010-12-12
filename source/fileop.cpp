@@ -2006,7 +2006,7 @@ int ParsePlaylistFile()
 
 		GetExt(i->files[0], ext);
 
-		if(!IsAllowedExt(ext) && !IsPlaylistExt(ext))
+		if(!IsAllowedProtocol(i->files[0]) && !IsAllowedExt(ext) && !IsPlaylistExt(ext))
 			continue;
 
 		strcpy(file, i->files[0]);

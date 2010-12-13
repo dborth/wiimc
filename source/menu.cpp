@@ -4799,6 +4799,7 @@ static void MenuSettingsOnlineMedia()
 	bool firstRun = true;
 	OptionList options;
 
+	sprintf(options.name[i++], "Cache Fill");
 	sprintf(options.name[i++], "YouTube Quality");
 	sprintf(options.name[i++], "Online Media Folder");
 
@@ -4853,6 +4854,15 @@ static void MenuSettingsOnlineMedia()
 		switch (ret)
 		{
 			case 0:
+				if(WiiSettings.onlineCacheFill == 2)
+					WiiSettings.onlineCacheFill = 5;
+				else
+					WiiSettings.onlineCacheFill += 5;
+
+				if(WiiSettings.onlineCacheFill == 55)
+					WiiSettings.onlineCacheFill = 2;
+				break;
+			case 1:
 				if(strcmp(WiiSettings.youtubeFormat, "5") == 0)
 					sprintf(WiiSettings.youtubeFormat, "18");
 				else if(strcmp(WiiSettings.youtubeFormat, "18") == 0)
@@ -4860,7 +4870,7 @@ static void MenuSettingsOnlineMedia()
 				else
 					sprintf(WiiSettings.youtubeFormat, "5");
 				break;
-			case 1:
+			case 2:
 				OnScreenKeyboard(WiiSettings.onlinemediaFolder, MAXPATHLEN);
 				if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
 					CleanupPath(WiiSettings.onlinemediaFolder);
@@ -4870,15 +4880,17 @@ static void MenuSettingsOnlineMedia()
 		if(ret >= 0 || firstRun)
 		{
 			firstRun = false;
-			
-			if(strcmp(WiiSettings.youtubeFormat, "5") == 0)
-				sprintf(options.value[0], "Low (400x240)");
-			else if(strcmp(WiiSettings.youtubeFormat, "18") == 0)
-				sprintf(options.value[0], "Medium (480x360)");
-			else
-				sprintf(options.value[0], "High (640x360)");
 
-			snprintf(options.value[1], 60, "%s", WiiSettings.onlinemediaFolder);
+			sprintf (options.value[0], "%d%%", WiiSettings.onlineCacheFill);
+
+			if(strcmp(WiiSettings.youtubeFormat, "5") == 0)
+				sprintf(options.value[1], "Low (400x240)");
+			else if(strcmp(WiiSettings.youtubeFormat, "18") == 0)
+				sprintf(options.value[1], "Medium (480x360)");
+			else
+				sprintf(options.value[1], "High (640x360)");
+
+			snprintf(options.value[2], 60, "%s", WiiSettings.onlinemediaFolder);
 			optionBrowser.TriggerUpdate();
 		}
 

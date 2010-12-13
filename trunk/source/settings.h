@@ -118,6 +118,7 @@ struct SWiiSettings {
 	int		dvdMenu;
 	int		dvdDisabled;
 	// Online Media
+	int 	onlineCacheFill;
 	char	youtubeFormat[3];
 	char	onlinemediaFolder[MAXPATHLEN];
 	// Network

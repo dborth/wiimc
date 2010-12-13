@@ -183,6 +183,7 @@ static int pause_low_cache=0;
 static char fileplaying[MAXPATHLEN];
 static int enable_restore_points=1;
 
+static float online_stream_cache_min_percent=2;
 static float orig_stream_cache_min_percent=-1;
 static float orig_stream_cache_seek_min_percent=-1;
 static int orig_stream_cache_size=-1;
@@ -306,7 +307,7 @@ int file_filter=1;
 
 // cache2:
 #ifdef GEKKO
-       int stream_cache_size=8*1024;//12288; // 12MB cache
+       int stream_cache_size=8*1024; // 8MB cache
 #else
        int stream_cache_size=-1;
 #endif
@@ -3883,9 +3884,9 @@ if (mpctx->sh_video)
 	stream_cache_min_percent=orig_stream_cache_min_percent;
 	stream_cache_seek_min_percent=orig_stream_cache_seek_min_percent;
 
-	if(strncmp(filename,"http:",5) == 0)
+	if(strncmp(fileplaying,"http:",5) == 0 || strncmp(fileplaying,"mms:",4) == 0)
 	{
-		stream_cache_min_percent=1;
+		stream_cache_min_percent=online_stream_cache_min_percent;
 		stream_cache_seek_min_percent=5;
 	}
 	else if(strncmp(fileplaying,"dvd:",4) != 0 && strncmp(fileplaying,"dvdnav:",7) != 0)
@@ -4437,7 +4438,8 @@ static void save_restore_point(char *_filename)
 
 	if(	strncmp(_filename,"dvd:",4) == 0 || 
 		strncmp(_filename,"dvdnav:",7) == 0 || 
-		strncmp(_filename,"http:",5) == 0)
+		strncmp(_filename,"http:",5) == 0 ||
+		strncmp(_filename,"mms:",4) == 0)
 		return;
 
 	int position = demuxer_get_current_time(mpctx->demuxer);
@@ -4777,10 +4779,13 @@ static void wiiSeek(int sec, int mode)
 	if(!playing_file || controlledbygui == 2)
 		return;
 
+	if(!mpctx->stream || !mpctx->stream->seek)
+		return;
+
 	if(!mpctx->demuxer || !mpctx->demuxer->seekable)
 		return;
-	
-	if(strncmp(filename, "http:", 5) == 0)
+
+	if(strncmp(filename, "http:", 5) == 0 || strncmp(filename, "mms:", 4) == 0)
 		return;
 
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
@@ -5000,12 +5005,19 @@ bool wiiInDVDMenu()
 
 void wiiSetCacheFill(int fill)
 {
-	if(orig_stream_cache_min_percent == -1)
-		return;
-
 	orig_stream_cache_min_percent = fill;
 
-	if(stream_cache_min_percent > 1) // don't change fill for http streams
+	// only change fill for local streams
+	if(filename && strncmp(filename,"http:",5) != 0 && strncmp(filename,"mms:",5) != 0)
+		stream_cache_min_percent = fill;
+}
+
+void wiiSetOnlineCacheFill(int fill)
+{
+	online_stream_cache_min_percent = fill;
+
+	// only change fill for online streams
+	if(filename && (strncmp(filename,"http:",5) == 0 || strncmp(filename,"mms:",5) == 0))
 		stream_cache_min_percent = fill;
 }
 

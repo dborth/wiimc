@@ -72,6 +72,7 @@ void wiiUpdatePointer(int x, int y);
 bool wiiPlayingDVD();
 bool wiiInDVDMenu();
 void wiiSetCacheFill(int fill);
+void wiiSetOnlineCacheFill(int fill);
 void wiiSetAutoResume(int enable);
 void wiiSetVolume(int vol);
 void wiiSetProperty(int cmd, float val);

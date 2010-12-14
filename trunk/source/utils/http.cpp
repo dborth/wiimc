@@ -307,7 +307,7 @@ static int http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 	r += sprintf(r, "GET %s HTTP/1.1\r\n", http_path);
 	r += sprintf(r, "Host: %s\r\n", http_host);
-	r += sprintf(r, "User-Agent: %s/%s\r\n", APPNAME, APPVERSION);
+	r += sprintf(r, "User-Agent: %s/%s (IOS%d)\r\n", APPNAME, APPVERSION, IOS_GetVersion());
 	r += sprintf(r, "Cache-Control: no-cache\r\n\r\n");
 
 	res = tcp_write(s, (u8 *) request, strlen(request));

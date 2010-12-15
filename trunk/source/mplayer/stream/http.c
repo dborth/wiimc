@@ -145,6 +145,7 @@ static void scast_meta_read(int fd, streaming_ctrl_t *sc) {
     info[nlen] = 0;
     mp_msg(MSGT_DEMUXER, MSGL_INFO, "\nICY Info: %s\n", info);
 #ifdef GEKKO
+    streamtitle[0] = 0;
     if(info[0] != 0)
     {
     	char *title = strstr(info, "StreamTitle");
@@ -157,15 +158,10 @@ static void scast_meta_read(int fd, streaming_ctrl_t *sc) {
     			int len = title_end-title;
     			if(len > 128) len=128;
     			snprintf(streamtitle, len, "%s", title);
-				streamtitle_changed = 1;
 			}
     	}
     }
-    else
-    {
-    	streamtitle[0] = 0;
-    	streamtitle_changed = 1;
-    }
+    streamtitle_changed = 1;
 #endif
     free(info);
   }

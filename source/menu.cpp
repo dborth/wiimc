@@ -6126,26 +6126,38 @@ static void AudioNowPlayingCallback(void *ptr)
 			if(streamtitle_changed)
 			{
 				if(streamtitle[0] != 0)
-					audiobarNowPlaying[1]->SetText(streamtitle);
+				{
+					char *dash = strchr(streamtitle,'-');  
+					if(dash != NULL)
+					{
+						char artist[128];
+						snprintf(artist, dash-streamtitle+1, "%s", streamtitle);
+						audiobarNowPlaying[1]->SetText(artist);
+						++dash;
+						while(dash[0] == ' ') ++dash;
+						if(strlen(dash) == 0) dash = NULL;
+						audiobarNowPlaying[2]->SetText(dash);
+					}
+					else
+					{
+						audiobarNowPlaying[1]->SetText(streamtitle);
+						audiobarNowPlaying[2]->SetText(NULL);
+					}
+				}
 				else
+				{
 					audiobarNowPlaying[1]->SetText("Internet Stream");
+					audiobarNowPlaying[2]->SetText(NULL);
+				}
 				streamtitle_changed = 0;
 			}
 			if(streamname_changed)
 			{
 				if(streamname[0] != 0)
-					audiobarNowPlaying[2]->SetText(streamname);
-				else
-					audiobarNowPlaying[2]->SetText(NULL);
-				streamname_changed = 0;
-			}
-			if(streamurl_changed)
-			{
-				if(streamurl[0] != 0)
-					audiobarNowPlaying[3]->SetText(streamurl);
+					audiobarNowPlaying[3]->SetText(streamname);
 				else
 					audiobarNowPlaying[3]->SetText(NULL);
-				streamurl_changed = 0;
+				streamname_changed = 0;
 			}
 		}
 		return;
@@ -6393,8 +6405,8 @@ static void SetupGui()
 
 	videobarLeftImg = new GuiImage(actionbarLeft);
 	videobarMidImg = new GuiImage(actionbarMid);
-	videobarMidImg->SetPosition(20, 0);
-	videobarMidImg->SetTile(25); // 20x25 = 520
+	videobarMidImg->SetPosition(40, 0);
+	videobarMidImg->SetTile(24); // 20x24 = 480
 	videobarRightImg = new GuiImage(actionbarRight);
 	videobarRightImg->SetPosition(520, 0);
 
@@ -6532,8 +6544,8 @@ static void SetupGui()
 
 	audiobarLeftImg = new GuiImage(actionbarLeft);
 	audiobarMidImg = new GuiImage(actionbarMid);
-	audiobarMidImg->SetPosition(20, 0);
-	audiobarMidImg->SetTile(15); // 20x15 = 300
+	audiobarMidImg->SetPosition(40, 0);
+	audiobarMidImg->SetTile(14); // 20x14 = 280
 	audiobarRightImg = new GuiImage(actionbarRight);
 	audiobarRightImg->SetPosition(320, 0);
 
@@ -6714,8 +6726,8 @@ static void SetupGui()
 	
 	picturebarLeftImg = new GuiImage(actionbarLeft);
 	picturebarMidImg = new GuiImage(actionbarMid);
-	picturebarMidImg->SetPosition(20, 0);
-	picturebarMidImg->SetTile(12); // 20x12 = 240
+	picturebarMidImg->SetPosition(40, 0);
+	picturebarMidImg->SetTile(11); // 20x11 = 220
 	picturebarRightImg = new GuiImage(actionbarRight);
 	picturebarRightImg->SetPosition(260, 0);
 

@@ -1,0 +1,638 @@
+msgid "********"
+msgstr "••••••••"
+
+msgid "Videos"
+msgstr "Video"
+
+msgid "Music"
+msgstr "Musica"
+
+msgid "Pictures"
+msgstr "Immagini"
+
+msgid "Online Media"
+msgstr "Online Media"
+
+msgid "Please Wait"
+msgstr "Attendere Prego"
+
+msgid "Error"
+msgstr "Errore"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Retry"
+msgstr "Riprova"
+
+msgid "Cancel"
+msgstr "Annulla"
+
+msgid "Information"
+msgstr "Informazioni"
+
+msgid "Credits"
+msgstr "Crediti"
+
+msgid "Play"
+msgstr "Riproduci"
+
+msgid "Pause"
+msgstr "Pausa"
+
+msgid "Single Play"
+msgstr "Singola Esecuzione"
+
+msgid "Continuous Play"
+msgstr "Esecuzione Continua"
+
+msgid "Shuffle"
+msgstr "Casuale"
+
+msgid "Loop"
+msgstr "Ripetizione"
+
+msgid "Continuous"
+msgstr "Continua"
+
+msgid "Playlist"
+msgstr "Playlist"
+
+msgid "Restart"
+msgstr "Riavvia"
+
+msgid "Loading..."
+msgstr "Caricamento..."
+
+msgid "Global"
+msgstr "Globali"
+
+msgid "Network"
+msgstr "Rete"
+
+msgid "Subtitles"
+msgstr "Sottotitoli"
+
+msgid "Subtitle Delay"
+msgstr "Ritardo Sottotitoli"
+
+msgid "Settings"
+msgstr "Impostazioni"
+
+msgid "On"
+msgstr "On"
+
+msgid "Off"
+msgstr "Off"
+
+msgid "Always"
+msgstr "Sempre"
+
+msgid "Disabled"
+msgstr "Disabilitato"
+
+msgid "Backward"
+msgstr "Indietro"
+
+msgid "Pause"
+msgstr "Pausa"
+
+msgid "Forward"
+msgstr "Avanti"
+
+msgid "Single"
+msgstr "Singola"
+
+msgid "now playing"
+msgstr "In riproduzione"
+
+msgid "Previous"
+msgstr "Precedente"
+
+msgid "Next"
+msgstr "Successivo"
+
+msgid "Close"
+msgstr "Chiudi"
+
+msgid "DVD"
+msgstr "DVD"
+
+msgid "Go back"
+msgstr "Indietro"
+
+msgid "Update Available"
+msgstr "Aggiornamento Disponibile"
+
+msgid "An update is available!"
+msgstr "E'disponibile un aggiornamento!"
+
+msgid "Update now"
+msgstr "Aggiorna ora"
+
+msgid "Update later"
+msgstr "Aggiorna più tardi"
+
+msgid "Online media file not found."
+msgstr "File multimediale online non trovato."
+
+msgid "Unrecognized DVD format!"
+msgstr "Formato DVD sconosciuto!"
+
+msgid "Port cannot be blank!"
+msgstr "La porta non può essere vuota!"
+
+msgid "Port is not a number!"
+msgstr "La porta FTP non è un numero!"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "La porta è oltre il range (4-49151)!"
+
+msgid "Settings - Global"
+msgstr "Impostazioni - Globali"
+
+msgid "Settings - Videos"
+msgstr "Impostazioni - Video"
+
+msgid "Settings - Music"
+msgstr "Impostazioni - Musica"
+
+msgid "Settings - Pictures"
+msgstr "Impostazioni - Immagini"
+
+msgid "Settings - Online Media"
+msgstr "Impostazioni - Multimedia Online"
+
+msgid "Settings - Network"
+msgstr "Impostazioni - Rete"
+
+msgid "Settings - DVD"
+msgstr "Impostazioni - DVD"
+
+msgid "File Extensions"
+msgstr "Estensione dei files"
+
+msgid "Language"
+msgstr "Lingua"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Exit Action"
+msgstr "Uscita"
+
+msgid "Wiimote Rumble"
+msgstr "Vibrazione Wiimote"
+
+msgid "Hide"
+msgstr "Nascondi"
+
+msgid "Show"
+msgstr "Mostra"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Return to Wii Menu"
+msgstr "Ritorna al menu Wii"
+
+msgid "Power Off Wii"
+msgstr "Spegni la Wii"
+
+msgid "Return to Loader"
+msgstr "Ritorna al loader"
+
+msgid "Screen Zoom"
+msgstr "Zoom schermo"
+
+msgid "Screen Position"
+msgstr "Posizione schermo"
+
+msgid "Frame Dropping"
+msgstr "Scarta Frames"
+
+msgid "Aspect Ratio"
+msgstr "Rapporto Proporzioni Video"
+
+msgid "Cache Fill"
+msgstr "Riempimento Cache"
+
+msgid "Audio Delay"
+msgstr "Ritardo Audio"
+
+msgid "Auto-Resume"
+msgstr "Riprendi automaticamente"
+
+msgid "Videos Files Folder"
+msgstr "Cartella files video"
+
+msgid "Play Order"
+msgstr "Ordine di esecuzione"
+
+msgid "Music Files Folder"
+msgstr "Cartella files musicali"
+
+msgid "Pictures Files Folder"
+msgstr "Cartella files immagini"
+
+msgid "Display Name"
+msgstr "Nome Visualizzato"
+
+msgid "Share IP"
+msgstr "IP condivisione"
+
+msgid "Share Name"
+msgstr "Nome condivisione"
+
+msgid "Username"
+msgstr "Nome Utente"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "New Share"
+msgstr "Nuova Condivisione"
+
+msgid "Delete"
+msgstr "Cancella"
+
+msgid "Delete Share"
+msgstr "Cancella Condivisione"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "Sei sicuro di voler cancellare questa condivisione?"
+
+msgid "IP"
+msgstr "IP"
+
+msgid "Folder"
+msgstr "Cartella"
+
+msgid "Mode"
+msgstr "Modo"
+
+msgid "New Site"
+msgstr "Nuovo Sito"
+
+msgid "Passive"
+msgstr "Passivo"
+
+msgid "Active"
+msgstr "Attivo"
+
+msgid "Delete Site"
+msgstr "Cancella Sito"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "Sei sicuro di voler cancellare questo sito?"
+
+msgid "Port"
+msgstr "Porta"
+
+msgid "Rewind / Fast Forward"
+msgstr "Riavvolgi/Avanza Veloce"
+
+msgid "Error loading file!"
+msgstr "Errore caricando il file!"
+
+msgid "Resume"
+msgstr "Riprendi"
+
+msgid "Stop Slideshow"
+msgstr "Ferma Presentazione"
+
+msgid "Start Slideshow"
+msgstr "Avvia Presentazione"
+
+msgid "Slideshow Delay"
+msgstr "Ritardo Presentazione"
+
+msgid "Online Media Folder"
+msgstr "Cartella Multimediale Online"
+
+msgid "Add SMB Share"
+msgstr "Aggiungi Condivisione"
+
+msgid "Add FTP Site"
+msgstr "Aggiungi Sito FTP"
+
+msgid "DVD Menu"
+msgstr "Menu DVD"
+
+msgid "Skip to Main Title"
+msgstr "Vai al Titolo Principale"
+
+msgid "Unable to Initialize MPlayer"
+msgstr "Impossibile inizializzare Mplayer"
+
+msgid "Unable to find a valid working path"
+msgstr "Impossibile trovare un valido percorso di lavoro"
+
+msgid "Unable to change path to"
+msgstr "Impossibile cambiare percorso su"
+
+msgid "Out of memory: too many files!"
+msgstr "Memoria esaurita: troppi Files!"
+
+msgid "Directory name is too long!"
+msgstr "Nome cartella troppo lungo!"
+
+msgid "SD Card"
+msgstr "SD Card"
+
+msgid "USB Mass Storage"
+msgstr "Memoria di Massa USB"
+
+msgid "Data DVD"
+msgstr "DVD Dati"
+
+msgid "USB drive not found!"
+msgstr "Drive USB non trovato!"
+
+msgid "SD card not found!"
+msgstr "SD card non trovata!"
+
+msgid "Loading DVD..."
+msgstr "Caricamento DVD"
+
+msgid "No disc inserted!"
+msgstr "Nessun Disco Inserito!"
+
+msgid "Invalid DVD."
+msgstr "DVD non valido."
+
+msgid "Up One Level"
+msgstr "Livello superiore"
+
+msgid "Error opening"
+msgstr "Errore aprendo"
+
+msgid "Warning"
+msgstr "Attenzione"
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "Una o più immagini di questa cartella eccede le dimensioni massime consentite (6 MB)"
+
+msgid "Error loading playlist!"
+msgstr "Errore caricando la playlist!"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr "La Playlist non contiene alcuna voce supportata!"
+
+msgid "No Results Found"
+msgstr "Nessun risultato trovato"
+
+msgid "Your search did not match any media files."
+msgstr "La tua ricerca non ha trovato files multimediali."
+
+msgid "Error opening file!"
+msgstr "Errore aprendo il file!"
+
+msgid "Saving..."
+msgstr "Salvataggio in corso..."
+
+msgid "Error creating file!"
+msgstr "Errore creando il file!"
+
+msgid "Error saving file!"
+msgstr "Errore salvando il file!"
+
+msgid "Playlist is Empty"
+msgstr "La playlist è vuota"
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "Evidenzia gli oggetti e premi il pulsante + per aggiungerli alla playlist."
+
+msgid "Exit Playlist"
+msgstr "Esci dalla Playlist"
+
+msgid "Update successful!"
+msgstr "Aggiormamento Completato!"
+
+msgid "Update failed!"
+msgstr "Aggiornamento Fallito!"
+
+msgid "Initializing network..."
+msgstr "Inizializzazione Rete"
+
+msgid "Check settings file."
+msgstr "Controlla i settaggi."
+
+msgid "Share name is blank."
+msgstr "Nome condivisione vuoto."
+
+msgid "Share IP is blank."
+msgstr "Indirizzo IP condiviso Vuoto."
+
+msgid "Invalid network share settings"
+msgstr "Settaggi condivisione rete non validi"
+
+msgid "Connecting to network share..."
+msgstr "Connessione alla condivisione SMB..."
+
+msgid "Failed to connect to network share."
+msgstr "Connessione alla condivisione di rete fallita."
+
+msgid "IP is blank."
+msgstr "Indirizzo IP vuoto."
+
+msgid "Username is blank."
+msgstr "Campo nome utente vuoto."
+
+msgid "Password is blank."
+msgstr "Campo Password Vuoto."
+
+msgid "Invalid FTP site settings"
+msgstr "Settaggi FTP non validi"
+
+msgid "Connecting to FTP site..."
+msgstr "Connessione al sito FTP..."
+
+msgid "Failed to connect to FTP site."
+msgstr "Connessione al sito FTP fallita."
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "Non è stato trovato un dispositivo SD o USB valido - Almeno uno è necessario per le normali operazioni."
+
+msgid "Could not create folder"
+msgstr "Non è possibile creare la cartella"
+
+msgid "Saving settings..."
+msgstr "Salvataggio Impostazioni..."
+
+msgid "Could not save settings to"
+msgstr "Impossibile salvare le impostazioni su"
+
+msgid "Thanks to"
+msgstr "Ringraziamenti a"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "Questo software è opensource e deve essere copiato, distribuito o modificato nei termini descritti dalla GNU General Public License (GPL) Versione 2."
+
+msgid "Menu artwork"
+msgstr "Menu artwork"
+
+msgid "Coding"
+msgstr "Programmazione"
+
+msgid "Coding & menu design"
+msgstr "Programmazione & menu design"
+
+msgid "Logo"
+msgstr "Logo"
+
+msgid "Version"
+msgstr "Versione"
+
+msgid "Buffering..."
+msgstr "Buffering..."
+
+msgid "Buffering"
+msgstr "Buffering"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Impossibile inizializzare la rete (Errore #:"
+
+msgid "Settings - Subtitles"
+msgstr "Impostazioni - Sottotitoli"
+
+msgid "Visibility"
+msgstr "Visibilità"
+
+msgid "Delay"
+msgstr "Ritardo"
+
+msgid "Codepage"
+msgstr "Codifica"
+
+msgid "Subtitle Language"
+msgstr "Lingua Sottotitoli"
+
+msgid "Default"
+msgstr "Default"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "Non è possibile cambiare lingua. Memoria insufficiente!"
+
+msgid "Font Required"
+msgstr "Font Richiesto"
+
+msgid "A new font is required to display this language."
+msgstr "un nuovo font è richiesto per visualizzare questa lingua."
+
+msgid "Download font"
+msgstr "Scarica font"
+
+msgid "Unable to save font file!"
+msgstr "Impossibile salvare il font!"
+
+msgid "Out of Memory"
+msgstr "Memoria Esaurita"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr "WiiMC non ha abbastanza memoria libera per caricare il visualizzatore immagini"
+
+msgid "Close MPlayer"
+msgstr "Chiudi MPlayer"
+
+msgid "Subtitle Codepage"
+msgstr "Codifica Sottotitoli"
+
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Questa cartella contiene più voci rispetto al massimo consentito(2000). Non tutti i files saranno visibili"
+
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "Questa playlist contiene più voci rispetto al massimo consentito(2000). Non tutti i files saranno visibili"
+
+msgid "Downloading..."
+msgstr "Downloading..."
+
+msgid "Unzipping..."
+msgstr "Unzipping..."
+
+msgid "Color"
+msgstr "Colore"
+
+msgid "Size"
+msgstr "Dimensione"
+
+msgid "White"
+msgstr "Bianco"
+
+msgid "Black"
+msgstr "Nero"
+
+msgid "Yellow"
+msgstr "Giallo"
+
+msgid "Red"
+msgstr "Rosso"
+
+msgid "Sleep Timer"
+msgstr ""
+
+msgid "sec"
+msgstr ""
+
+msgid "min"
+msgstr ""
+
+msgid "Blue"
+msgstr "Blu"
+
+msgid "Green"
+msgstr "Verde"
+
+msgid "Grey"
+msgstr "Grigio"
+
+msgid "Orange"
+msgstr "Arancio"
+
+msgid "Theme"
+msgstr "Tema"
+
+msgid "Purple (Default)"
+msgstr "Viola (Default)"
+
+msgid "Auto-Play Next Video"
+msgstr "Auto-Play Video Successivo"
+
+msgid "Adding files to playlist..."
+msgstr "Aggiungi files alla playlist..."
+
+msgid "Browser Folders"
+msgstr "Sfoglia Cartelle"
+
+msgid "Static"
+msgstr "Mantieni Memorizzato"
+
+msgid "Use Last Browsed"
+msgstr "Usa l'ultimo visualizzato"
+
+msgid "Audio Language"
+msgstr "Linguaggio Audio"
+
+msgid "DVD Support"
+msgstr "Supporto DVD"
+
+msgid "Enabled"
+msgstr "Abilitato"
+
+msgid "Error loading YouTube file!"
+msgstr "Errore caricando file YouTube!"
+
+msgid "Rotate"
+msgstr "Ruota"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "Risoluzione eccede il massimo consentito (1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "L'IOS corrente è stato alterato (fake-sign). Le funzionalità e/o la stabilità possono essere compromesse."
+
+msgid "Online media file is invalid."
+msgstr "File multimediale online invalido"
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Font sottotitoli non trovato. I sottotitoli non saranno visibili."

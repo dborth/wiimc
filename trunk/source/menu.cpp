@@ -527,6 +527,10 @@ static void *ScreensaverThread(void *arg)
 
 		SuspendGui();
 		audiobar->Remove(audiobarNowPlayingBtn);
+
+		for(int i=1; i < 4; i++)
+			audiobarNowPlaying[i]->SetMaxWidth(logoLargeImg.GetWidth());
+
 		w.Append(audiobarNowPlayingBtn);
 		audiobarNowPlayingBtn->SetPosition(-8, logoLargeImg.GetHeight()+20);
 		mainWindow = &w;
@@ -556,6 +560,10 @@ static void *ScreensaverThread(void *arg)
 done:
 		SuspendGui();
 		w.Remove(audiobarNowPlayingBtn);
+
+		for(int i=1; i < 4; i++)
+			audiobarNowPlaying[i]->SetMaxWidth(screenwidth-460);
+
 		audiobar->Append(audiobarNowPlayingBtn);
 		audiobarNowPlayingBtn->SetPosition(0, 0);
 		mainWindow = oldWindow;

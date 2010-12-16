@@ -22,13 +22,12 @@
 
 static void vc1_inv_trans_8x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *block)
 {
-	const vector float half = {0.5,0.5};
+	const float half = 0.5;
 	const float scalar = 0.140625;
 	vector float pair, offset;
 	
 	offset = psq_l(0,block,1,7);
-	offset = paired_merge00(offset, offset);
-	offset = ps_madds0(offset, scalar, half);
+	asm("fmadds %0,%0,%1,%2" : "+f"(offset) : "f"(scalar), "f"(half));
 	
 	dest -= linesize;
 	
@@ -53,14 +52,14 @@ static void vc1_inv_trans_8x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 
 static void vc1_inv_trans_8x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *block)
 {
-	const vector float half = {0.5,0.5};
+	const float half = 0.5;
 	const vector float scale = {1.5,0.1328125};
 	vector float pair, offset;
 	
 	offset = psq_l(0,block,1,7);
 	offset = paired_merge00(offset, offset);
-	offset = paired_madds0(offset, scale, half);
-	offset = paired_madds1(offset, scale, half);
+	offset = ps_madds0(offset, scale, half);
+	offset = ps_madds1(offset, scale, half);
 	
 	dest -= linesize;
 	
@@ -85,14 +84,14 @@ static void vc1_inv_trans_8x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 
 static void vc1_inv_trans_4x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *block)
 {
-	const vector float half = {0.5,0.5};
+	const float half = 0.5;
 	const vector float scale = {2.125,0.09375};
 	vector float pair, offset;
 	
 	offset = psq_l(0,block,1,7);
 	offset = paired_merge00(offset, offset);
-	offset = paired_madds0(offset, scale, half);
-	offset = paired_madds1(offset, scale, half);
+	offset = ps_madds0(offset, scale, half);
+	offset = ps_madds1(offset, scale, half);
 	
 	dest -= linesize;
 	
@@ -109,14 +108,14 @@ static void vc1_inv_trans_4x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 
 static void vc1_inv_trans_4x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *block)
 {
-	const vector float half = {0.5,0.5};
+	const float half = 0.5;
 	const vector float scale = {2.125,0.1328125};
 	vector float pair, offset;
 	
 	offset = psq_l(0,block,1,7);
 	offset = paired_merge00(offset, offset);
-	offset = paired_madds0(offset, scale, half);
-	offset = paired_madds1(offset, scale, half);
+	offset = ps_madds0(offset, scale, half);
+	offset = ps_madds1(offset, scale, half);
 	
 	dest -= linesize;
 	

@@ -69,7 +69,6 @@ static void vector_fmul_add_paired(float *dst, const float *src0, const float *s
 static void vector_fmul_window_paired(float *dst, const float *src0, const float *src1, const float *win, float add_bias, int len)
 {
 	vector float pair[2], window[2];
-	vector float bias = {add_bias,add_bias};
 	vector float result;
 	
 	dst += len;
@@ -87,10 +86,10 @@ static void vector_fmul_window_paired(float *dst, const float *src0, const float
 		
 		result = paired_mul(pair[1], window[0]);
 		result = paired_msub(pair[0], window[1], result);
-		result = paired_add(result, bias);
+		result = ps_add(result, add_bias);
 		paired_stx(result, i, dst);
 		
-		result = paired_madd(pair[1], window[1], bias);
+		result = ps_madd(pair[1], window[1], add_bias);
 		result = paired_madd(pair[0], window[0], result);
 		result = paired_merge10(result, result);
 		paired_stx(result, j, dst);
@@ -106,7 +105,7 @@ static void int32_to_float_fmul_scalar_paired(float *dst, const int *src, float 
 		float src1 = *src++;
 		
 		pair = ps_merge00(src0, src1);
-		pair = ps_muls0(pair, mul);
+		pair = ps_mul(pair, mul);
 		paired_stx(pair, i, dst);
 	}
 }
@@ -116,7 +115,7 @@ static void float_to_int16_paired(int16_t *dst, const float *src, long len)
 	src -= 2;
 	dst -= 2;
 	
-	for (int i=0; i<len-1; i+=2) {
+	for (int i=0; i<(len>>1); i++) {
 		vector float pair = psq_lu(8,src,0,0);
 		psq_stu(pair,4,dst,0,7);
 	}
@@ -154,8 +153,7 @@ static void float_to_int16_interleave_paired(int16_t *dst, const float **src, lo
 				result = paired_merge11(pair[0], pair[1]);
 				psq_stx(result,i,dst+2,0,7);
 			}
-		} else
-			float_to_int16_paired(dst, src[0], len);
+		} else float_to_int16_paired(dst, src[0], len);
 	}
 }
 
@@ -198,7 +196,7 @@ static void vector_fmul_scalar_paired(float *dst, const float *src, float mul, i
 	
 	for (int i=0; i<len*4-7; i+=8) {
 		pair = paired_lx(i, src);
-		pair = ps_muls0(pair, mul);
+		pair = ps_mul(pair, mul);
 		paired_stx(pair, i, dst);
 	}
 }

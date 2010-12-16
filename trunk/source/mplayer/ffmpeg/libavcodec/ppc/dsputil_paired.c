@@ -44,7 +44,7 @@ static void put_pixels_clamped_paired(const DCTELEM *block, uint8_t *restrict pi
 
 static void put_signed_pixels_clamped_paired(const DCTELEM *block, uint8_t *restrict pixels, int line_size)
 {
-	const vector float bias = {128.0,128.0};
+	const float bias = 128.0;
 	vector float pair;
 	
 	pixels -= line_size;
@@ -52,19 +52,19 @@ static void put_signed_pixels_clamped_paired(const DCTELEM *block, uint8_t *rest
 	
 	for (int i=0; i<8; i++) {
 		pair = psq_lu(16,block,0,7);
-		pair = paired_add(pair, bias);
+		pair = ps_add(pair, bias);
 		psq_stux(pair,pixels,line_size,0,4);
 		
 		pair = psq_l(4,block,0,7);
-		pair = paired_add(pair, bias);
+		pair = ps_add(pair, bias);
 		psq_st(pair,2,pixels,0,4);
 		
 		pair = psq_l(8,block,0,7);
-		pair = paired_add(pair, bias);
+		pair = ps_add(pair, bias);
 		psq_st(pair,4,pixels,0,4);
 		
 		pair = psq_l(12,block,0,7);
-		pair = paired_add(pair, bias);
+		pair = ps_add(pair, bias);
 		psq_st(pair,6,pixels,0,4);
 	}
 }
@@ -110,22 +110,22 @@ static void scale_block_paired(const uint8_t src[64], uint8_t *dst, int linesize
 	
 	for (int i=0; i<8; i++) {
 		pair = psq_lu(8,src,0,4);
-		pair = ps_muls0(pair, scalar);
+		pair = ps_mul(pair, scalar);
 		psq_stux(pair,dst1,linesize*2,0,5);
 		psq_stux(pair,dst2,linesize*2,0,5);
 		
 		pair = psq_l(2,src,0,4);
-		pair = ps_muls0(pair, scalar);
+		pair = ps_mul(pair, scalar);
 		psq_st(pair,4,dst1,0,5);
 		psq_st(pair,4,dst2,0,5);
 		
 		pair = psq_l(4,src,0,4);
-		pair = ps_muls0(pair, scalar);
+		pair = ps_mul(pair, scalar);
 		psq_st(pair,8,dst1,0,5);
 		psq_st(pair,8,dst2,0,5);
 		
 		pair = psq_l(6,src,0,4);
-		pair = ps_muls0(pair, scalar);
+		pair = ps_mul(pair, scalar);
 		psq_st(pair,12,dst1,0,5);
 		psq_st(pair,12,dst2,0,5);
 	}

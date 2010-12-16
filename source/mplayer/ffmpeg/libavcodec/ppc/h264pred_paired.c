@@ -25,17 +25,14 @@ static void pred4x4_tm_vp8_paired(uint8_t *src, const uint8_t *topright, int str
 	vector float base, offset;
 	
 	src -= stride + 1;
-	
 	base = psq_l(0,src,1,4);
-	base = paired_merge00(base, base);
 	
 	pair[0] = psq_l(1,src,0,4);
 	pair[1] = psq_l(3,src,0,4);
 	
 	for (int y=0; y<4; y++) {
 		offset = psq_lux(src,stride,1,4);
-		offset = paired_merge00(offset, offset);
-		offset = paired_sub(base, offset);
+		asm("fsubs %0,%1,%0" : "+f"(offset) : "f"(base));
 		
 		psq_st(paired_sub(pair[0], offset),1,src,0,4);
 		psq_st(paired_sub(pair[1], offset),3,src,0,4);
@@ -48,9 +45,7 @@ static void pred16x16_tm_vp8_paired(uint8_t *src, int stride)
 	vector float base, offset;
 	
 	src -= stride + 1;
-	
 	base = psq_l(0,src,1,4);
-	base = paired_merge00(base, base);
 	
 	pair[0] = psq_l(1,src,0,4);
 	pair[1] = psq_l(3,src,0,4);
@@ -63,8 +58,7 @@ static void pred16x16_tm_vp8_paired(uint8_t *src, int stride)
 	
 	for (int y=0; y<16; y++) {
 		offset = psq_lux(src,stride,1,4);
-		offset = paired_merge00(offset, offset);
-		offset = paired_sub(base, offset);
+		asm("fsubs %0,%1,%0" : "+f"(offset) : "f"(base));
 		
 		psq_st(paired_sub(pair[0], offset),1,src,0,4);
 		psq_st(paired_sub(pair[1], offset),3,src,0,4);
@@ -83,9 +77,7 @@ static void pred8x8_tm_vp8_paired(uint8_t *src, int stride)
 	vector float base, offset;
 	
 	src -= stride + 1;
-	
 	base = psq_l(0,src,1,4);
-	base = paired_merge00(base, base);
 	
 	pair[0] = psq_l(1,src,0,4);
 	pair[1] = psq_l(3,src,0,4);
@@ -94,8 +86,7 @@ static void pred8x8_tm_vp8_paired(uint8_t *src, int stride)
 	
 	for (int y=0; y<8; y++) {
 		offset = psq_lux(src,stride,1,4);
-		offset = paired_merge00(offset, offset);
-		offset = paired_sub(base, offset);
+		asm("fsubs %0,%1,%0" : "+f"(offset) : "f"(base));
 		
 		psq_st(paired_sub(pair[0], offset),1,src,0,4);
 		psq_st(paired_sub(pair[1], offset),3,src,0,4);
@@ -112,4 +103,3 @@ void ff_h264_pred_init_ppc(H264PredContext *h, int codec_id)
 		h->pred16x16[PLANE_PRED8x8] = pred16x16_tm_vp8_paired;
 	}
 }
-

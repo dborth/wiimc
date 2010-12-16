@@ -28,7 +28,7 @@ static void ff_deinterlace_line_paired(uint8_t *dst, const uint8_t *lum_m4, cons
 {
 	const float scalar = 0.125;
 	const vector float power = {2.0,4.0};
-	const vector float half = {0.5,0.5};
+	const float half = 0.5;
 	
 	vector float pair, result;
 	
@@ -48,7 +48,7 @@ static void ff_deinterlace_line_paired(uint8_t *dst, const uint8_t *lum_m4, cons
 		pair = psq_lx(i,lum,0,4);
 		result = paired_sub(result, pair);
 		
-		result = ps_madds0(result, scalar, half);
+		result = ps_madd(result, scalar, half);
 		psq_stx(result,i,dst,0,4);
 	}
 }
@@ -57,7 +57,7 @@ static void ff_deinterlace_line_inplace_paired(uint8_t *lum_m4, uint8_t *lum_m3,
 {
 	const float scalar = 0.125;
 	const vector float power = {2.0,4.0};
-	const vector float half = {0.5,0.5};
+	const float half = 0.5;
 	
 	vector float pair, result;
 	
@@ -78,7 +78,7 @@ static void ff_deinterlace_line_inplace_paired(uint8_t *lum_m4, uint8_t *lum_m3,
 		pair = psq_lx(i,lum,0,4);
 		result = paired_sub(result, pair);
 		
-		result = ps_madds0(result, scalar, half);
+		result = ps_madd(result, scalar, half);
 		psq_stx(result,i,lum_m2,0,4);
 	}
 }
@@ -86,4 +86,3 @@ static void ff_deinterlace_line_inplace_paired(uint8_t *lum_m4, uint8_t *lum_m3,
 #endif /* HAVE_PAIRED */
 
 #endif /* AVCODEC_PPC_DEINTERLACE_H */
-

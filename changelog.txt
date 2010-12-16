@@ -6,6 +6,32 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.1.1 - December 16, 2010]
+
+* Synced to MPlayer r32709
+* Fixed image stuttering and audio sync issues
+* Fixed pointer alignment on DVD menus
+* Added ISO/IFO DVD playback, with DVD menu support
+* Added screen resizing while watching a video via the Wiimote. Just hold down
+  B and use the arrow keys (thanks clava!)
+* Performance optimizations using paired singles (thanks Extrems!)
+* Improved USB compatibility
+* Added support for playlist files in the Videos and Music areas
+* Enable negative subtitle delay values
+* Replace libmp3 with libmpg123. Fixes a number of MP3 audio bugs
+* Added a setting to change the starting area
+* New JPG scaler for the Picture Viewer (thanks puddles!)
+* Display artist and song on separate lines for SHOUTcast (thanks jhb50!)
+* Added settings for YouTube quality and caching for online media
+* Subtitle autoscaling
+* Added a delay on startup so those with slow USB drives are not bumped back to
+  the main browser list
+* Shifted all GUI elements inwards to fix left/right cropping occuring on 16:9
+  for some people
+* Fixed a Picture Viewer crash
+* Fixed lowercase bug for NTFS
+* Many other minor fixes and improvements
+
 [1.1.0 - October 8, 2010]
 
 * Synced to MPlayer r32341

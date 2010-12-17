@@ -5064,6 +5064,10 @@ void wiiSetProperty(int command, float value)
 
 	switch(command)
 	{
+		case MP_CMD_SWITCH_AUDIO:
+		case MP_CMD_SUB_SELECT:
+			cmd->nargs = 0;
+			break;
 		case MP_CMD_FRAMEDROPPING:
 			if(force_frame_dropping >= 0)
 				cmd->args[0].v.i = force_frame_dropping;

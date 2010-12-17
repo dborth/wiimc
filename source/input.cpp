@@ -198,14 +198,14 @@ void MPlayerInput()
 			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
 				MPlayerResize(0.00F, +0.01F);
 			else if(!wiiIsPaused())
-				wiiSetProperty(MP_CMD_SUB_SELECT, -2);
+				wiiSetProperty(MP_CMD_SUB_SELECT, 0);
 		}
 		else if(userInput[0].wpad->btns_d & WPAD_BUTTON_DOWN)
 		{
 			if(userInput[0].wpad->btns_h & WPAD_BUTTON_B)
 				MPlayerResize(0.00F, -0.01F);
 			else if(!wiiIsPaused())
-				wiiSetProperty(MP_CMD_SWITCH_AUDIO, -1);
+				wiiSetProperty(MP_CMD_SWITCH_AUDIO, 0);
 		}
 		else if(userInput[0].wpad->btns_h & WPAD_BUTTON_PLUS)
 		{

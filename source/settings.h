@@ -57,7 +57,7 @@ typedef struct _lang {
 	const char *abbrev2;
 } LANG;
 
-#define LANGUAGE_SIZE 138
+#define LANGUAGE_SIZE 139
 #define CODEPAGE_SIZE 28
 #define MAX_SHARES 9
 

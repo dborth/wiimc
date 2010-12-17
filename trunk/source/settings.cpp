@@ -143,6 +143,7 @@ LANG languages[LANGUAGE_SIZE] = {
 	{ "Somali", "so", "som" },
 	{ "Sundanese", "su", "sun" },
 	{ "Swahili", "sw", "swa" },
+	{ "Swedish", "sv", "swe" },
 	{ "Tagalog", "tl", "tgl" },
 	{ "Tajik", "tg", "tgk" },
 	{ "Tamil", "ta", "tam" },

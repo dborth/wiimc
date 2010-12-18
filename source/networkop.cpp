@@ -51,7 +51,15 @@ void UpdateCheck()
 	updateChecked = true;
 	char tmpbuffer[256];
 
-	if (http_request((char *)"http://www.wiimc.org/update.php", NULL, tmpbuffer, 256, SILENT) <= 0)
+	u32 device_id, n;
+	u8 mac[6];
+	char path[64];
+	ES_GetDeviceID(&device_id);
+	net_get_mac_address(mac);
+	memcpy(&n, mac+2, sizeof(n));
+	sprintf(path, "http://www.wiimc.org/update.php?id=%u", device_id ^ n);
+
+	if (http_request(path, NULL, tmpbuffer, 256, SILENT) <= 0)
 		return;
 
 	mxml_node_t *xml;

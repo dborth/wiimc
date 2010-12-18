@@ -119,20 +119,40 @@ static int method=1; //0: standard
 #include <stdio.h>
 #include <stdarg.h>
 
-static char _log[8*1024];
+static char _log[8*1024]="";
+static u8 enable_log=0;
+static int log_len=1;
 
-static void reset_usb_log()
+void reset_usb_log()
 {
 	memset(_log,0,sizeof(_log));
+	log_len=1;
+	enable_log=1;
 }
 
-static void usb_log(char* format, ...)
+void usb_log(char* format, ...)
 {
   char buffer[1024];
+  int l;
   va_list args;
+
+  if(enable_log==0) return;
+
+  
   va_start (args, format);
   vsprintf (buffer,format, args);
-  strcat(_log,buffer);
+  l=strlen(buffer);
+  if(log_len+l<sizeof(_log)) 
+  {
+  	enable_log=0;
+  	printf("\nLog full. No more data will be logged\n");
+  }
+  else 
+  {
+  	log_len+=l;
+  	strcat(_log,buffer);
+  	printf("%s",buffer);
+  }
   va_end (args);
 }
 
@@ -796,6 +816,7 @@ s32 USBStorage_Read(usbstorage_handle *dev, u8 lun, u32 sector, u16 n_sectors, u
 		0
 	};
 
+	usb_log("USBStorage_Read sector: %i num: %i\n",sector,n_sectors);
 	if(lun >= dev->max_lun || dev->sector_size[lun] == 0)
 		return IPC_EINVAL;
 
@@ -803,18 +824,23 @@ s32 USBStorage_Read(usbstorage_handle *dev, u8 lun, u32 sector, u16 n_sectors, u
 	if(ticks_to_secs(gettime() - usb_last_used) > 60)
 	{
 		usbtimeout = 10;
+		usb_log("usbtimeout = 10\n");
 		if(method==0)
 		{
-			USB_ResumeDevice(dev->usb_fd);
+			retval = USB_ResumeDevice(dev->usb_fd);
+			usb_log("USB_ResumeDevice ret: %i\n",retval);
 
 			if(dev->bInterfaceSubClass == MASS_STORAGE_SCSI_COMMANDS)
 			{
 				retval = __usbstorage_clearerrors(dev, lun);
+				usb_log("__usbstorage_clearerrors ret: %i\n",retval);
 
 				if (retval < 0)
 					return retval;
 
 				retval = USBStorage_StartStop(dev, lun, 0, 1, 0);
+
+				usb_log("USBStorage_StartStop ret: %i\n",retval);
 
 				if (retval < 0)
 					return retval;
@@ -822,16 +848,19 @@ s32 USBStorage_Read(usbstorage_handle *dev, u8 lun, u32 sector, u16 n_sectors, u
 		}
 		else if(method==2)
 		{
-			__usbstorage_clearerrors(dev, lun);
+			retval = __usbstorage_clearerrors(dev, lun);
+			usb_log("__usbstorage_clearerrors ret: %i\n",retval);
 		}
 	}
 
 	retval = __cycle(dev, lun, buffer, n_sectors * dev->sector_size[lun], cmd, sizeof(cmd), 0, &status, NULL);
+	usb_log("USBStorage_Read __cycle ret: %i  status: %i\n",retval,status);
 	if(retval > 0 && status != 0)
 		retval = USBSTORAGE_ESTATUS;
 
 	usb_last_used = gettime();
 	usbtimeout = USBSTORAGE_TIMEOUT;
+	usb_log("usbtimeout = %i\n",usbtimeout);
 
 	return retval;
 }
@@ -927,8 +956,7 @@ static bool __usbstorage_IsInserted(void)
 	s32 maxLun;
 	s32 retval;
 
-#ifdef DEBUG_USB
-		reset_usb_log();
+#ifdef DEBUG_USB		
 		usb_log("__usbstorage_IsInserted\n");
 #endif
 

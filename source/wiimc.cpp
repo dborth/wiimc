@@ -442,7 +442,7 @@ void LoadMPlayerFile()
 
 		wiiSetDVDDevice(loadedFile);
 
-		if(WiiSettings.dvdMenu)
+		if(WiiSettings.dvdMenu && strncmp(loadedFile, "smb", 3) != 0)
 			sprintf(loadedFile, "dvdnav://");
 		else
 			sprintf(loadedFile, "dvd://");

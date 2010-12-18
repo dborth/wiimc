@@ -166,12 +166,19 @@ static void USBGeckoOutput()
 /****************************************************************************
  * IOS Check
  ***************************************************************************/
-bool SaneIOS()
+bool SupportedIOS(u32 ios)
+{
+	if(ios == 58 || ios == 61)
+		return true;
+
+	return false;
+}
+
+bool SaneIOS(u32 ios)
 {
 	bool res = false;
 	u32 num_titles=0;
 	u32 tmd_size;
-	u32 ios = IOS_GetVersion();
 
 	if(ios > 200)
 		return false;
@@ -529,6 +536,16 @@ void SetMPlayerSettings()
  ***************************************************************************/	
 int main(int argc, char *argv[])
 {
+	u32 ios = IOS_GetVersion();
+
+	if(!SupportedIOS(ios))
+	{
+		s32 preferred = IOS_GetPreferredVersion();
+
+		if(SupportedIOS(preferred))
+			IOS_ReloadIOS(preferred);
+	}
+
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
 	DI_Init();

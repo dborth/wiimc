@@ -27,7 +27,8 @@ enum {
 #define NOTSILENT 0
 #define SILENT 1
 
-bool SaneIOS();
+bool SupportedIOS(u32 ios);
+bool SaneIOS(u32 ios);
 void SetSleepTimer();
 void ResetSleepTimer();
 void CheckSleepTimer();

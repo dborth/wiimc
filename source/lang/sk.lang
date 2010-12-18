@@ -545,7 +545,7 @@ msgid "This playlist contains more entries than the maximum allowed (3000). Not 
 msgstr "Tento zoznam obsahuje viac položiek ako je maximálna povolené (3000). Nie všetky pložky budú viditeľné."
 
 msgid "Downloading..."
-msgstr "SŤahovanie..."
+msgstr "Sťahovanie..."
 
 msgid "Unzipping..."
 msgstr "Rozbaľovanie..."
@@ -641,7 +641,7 @@ msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
 msgstr "WiiMC nemá prístup k DVD - AHBPROT nie je povolený"
 
 msgid "Starting Area"
-msgstr "šSpúštacia oblasť"
+msgstr "Spúštacia oblasť"
 
 msgid "Error downloading font file!"
 msgstr "Chyba pri sťahovaní súboru s fontom!"

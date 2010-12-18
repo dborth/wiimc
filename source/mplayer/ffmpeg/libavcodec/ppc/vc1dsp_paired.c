@@ -23,11 +23,11 @@
 static void vc1_inv_trans_8x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *block)
 {
 	const float half = 0.5;
-	const float scalar = 0.140625;
+	const float scale = 0.140625;
 	vector float pair, offset;
 	
 	offset = psq_l(0,block,1,7);
-	asm("fmadds %0,%0,%1,%2" : "+f"(offset) : "f"(scalar), "f"(half));
+	asm("fmadds %0,%0,%1,%2" : "+f"(offset) : "f"(scale), "f"(half));
 	
 	dest -= linesize;
 	

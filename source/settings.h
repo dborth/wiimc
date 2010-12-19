@@ -145,8 +145,8 @@ const char validVideoExtensions[][7] =
 	"3gp", "asf", "avi", "bik", "divx", "dpg", "dv", "dvr-ms", "evo", "f4v", 
 	"flc", "fli", "flv", "ifo", "iso", "ivf", "m1v", "m2t", "m2ts", "m2v", 
 	"m4v", "mkv", "mov", "mp4", "mp4v", "mpe", "mpeg", "mpg", "mqv", "nsv", 
-	"nuv", "ogm", "qt", "rmvb", "swf", "trp", "ts", "vdr", "vfw", "viv", "vob",
-	"vro", "webm", "wmv", "y4m", ""
+	"nuv", "ogm", "qt", "rm", "rmvb", "swf", "trp", "ts", "vdr", "vfw", "viv",
+	"vob", "vro", "webm", "wmv", "y4m", ""
 };
 
 const char validAudioExtensions[][5] = 

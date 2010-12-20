@@ -220,9 +220,9 @@ void check_wakeup()
 		printf("Testing wake up\n");
 	
 		if(usb->readSectors(1024,1,buf)<0)
-			printf("Error reading sector. Device wake up fail!!\n");
+			usb_log("Error reading sector. Device wake up fail!!\n");
 		else
-			printf("OK reading sector. Device wake up OK!!\n");
+			usb_log("OK reading sector. Device wake up OK!!\n");
 		
 	}
 	else 

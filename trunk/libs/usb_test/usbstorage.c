@@ -142,7 +142,7 @@ void usb_log(char* format, ...)
   va_start (args, format);
   vsprintf (buffer,format, args);
   l=strlen(buffer);
-  if(log_len+l-1>sizeof(_log)) 
+  if(log_len+l+1>sizeof(_log)) 
   {
   	enable_log=0;
   	printf("\nLog full. No more data will be logged\n");

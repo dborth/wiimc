@@ -663,3 +663,6 @@ msgstr "Mittel (480x360)"
 
 msgid "High (640x360)"
 msgstr "Hoch (640x360)"
+
+msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
+msgstr "Das aktuelle IOS wird nicht unterstützt. Funktion und/oder Stabilität können beeinträchtigt sein."

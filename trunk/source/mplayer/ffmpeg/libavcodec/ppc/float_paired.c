@@ -69,6 +69,7 @@ static void vector_fmul_add_paired(float *dst, const float *src0, const float *s
 static void vector_fmul_window_paired(float *dst, const float *src0, const float *src1, const float *win, float add_bias, int len)
 {
 	vector float pair[2], window[2];
+	vector float bias = {add_bias,add_bias};
 	vector float result;
 	
 	dst += len;
@@ -86,10 +87,10 @@ static void vector_fmul_window_paired(float *dst, const float *src0, const float
 		
 		result = paired_mul(pair[1], window[0]);
 		result = paired_msub(pair[0], window[1], result);
-		result = ps_add(result, add_bias);
+		result = paired_add(result, bias);
 		paired_stx(result, i, dst);
 		
-		result = ps_madd(pair[1], window[1], add_bias);
+		result = paired_madd(pair[1], window[1], bias);
 		result = paired_madd(pair[0], window[0], result);
 		result = paired_merge10(result, result);
 		paired_stx(result, j, dst);
@@ -105,7 +106,7 @@ static void int32_to_float_fmul_scalar_paired(float *dst, const int *src, float 
 		float src1 = *src++;
 		
 		pair = ps_merge00(src0, src1);
-		pair = ps_mul(pair, mul);
+		pair = ps_muls0(pair, mul);
 		paired_stx(pair, i, dst);
 	}
 }
@@ -196,7 +197,7 @@ static void vector_fmul_scalar_paired(float *dst, const float *src, float mul, i
 	
 	for (int i=0; i<len*4-7; i+=8) {
 		pair = paired_lx(i, src);
-		pair = ps_mul(pair, mul);
+		pair = ps_muls0(pair, mul);
 		paired_stx(pair, i, dst);
 	}
 }

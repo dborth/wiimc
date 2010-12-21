@@ -159,10 +159,10 @@
 #ifdef GEKKO
 static void *fast_memcpy_Gekko(void *to, const void *from, size_t len)
 {
-	if ((uint32_t)to & 31 || (uint32_t)from & 31)
+	if ((uint32_t)to & 31 || (uint32_t)from & 7)
 		return memcpy(to, from, len);
 	
-	double dword[4];
+	register double dword[4];
 	
 	double *src = (double *)from - 1;
 	double *dst = (double *)to - 1;

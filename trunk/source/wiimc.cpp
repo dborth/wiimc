@@ -536,16 +536,6 @@ void SetMPlayerSettings()
  ***************************************************************************/	
 int main(int argc, char *argv[])
 {
-	u32 ios = IOS_GetVersion();
-
-	if(!SupportedIOS(ios))
-	{
-		s32 preferred = IOS_GetPreferredVersion();
-
-		if(SupportedIOS(preferred))
-			IOS_ReloadIOS(preferred);
-	}
-
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
 	DI_Init();

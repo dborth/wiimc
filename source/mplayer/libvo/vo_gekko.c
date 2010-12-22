@@ -104,7 +104,7 @@ static int inline query_format(uint32_t format)
 		case IMGFMT_YV12:
 			return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW
 					| VFCAP_HWSCALE_UP | VFCAP_HWSCALE_DOWN
-					| VFCAP_ACCEPT_STRIDE | VOCAP_NOSLICES;
+					| VFCAP_ACCEPT_STRIDE;
 		default:
 			return VO_FALSE;
 	}

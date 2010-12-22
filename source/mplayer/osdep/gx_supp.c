@@ -308,7 +308,7 @@ static int w1,w2,h1,h2,df1,df2,old_h1_2=-1,wl,wr;
 static int p01,p02,p03,p11,p12,p13;
 static u16 Yrowpitch;
 static u16 UVrowpitch;
-static double *Yldst, *Yrdst, *Udst, *Vdst;
+static u64 *Yldst, *Yrdst, *Udst, *Vdst;
 
 void getStrideInfo(int *_w1,int *_df1,int *_Yrowpitch)  // for subtitle info
 {
@@ -548,18 +548,18 @@ void GX_FillTextureYUV(u16 height,u8 *buffer[3])
 {
 	int h,w;
 
-	double *Ysrc1 = (double *) buffer[0];
-	double *Ysrc2 = (double *) (buffer[0] + p01);
-	double *Ysrc3 = (double *) (buffer[0] + p02);
-	double *Ysrc4 = (double *) (buffer[0] + p03);
-	double *Usrc1 = (double *) buffer[1];
-	double *Usrc2 = (double *) (buffer[1] + p11);
-	double *Usrc3 = (double *) (buffer[1] + p12);
-	double *Usrc4 = (double *) (buffer[1] + p13);
-	double *Vsrc1 = (double *) buffer[2];
-	double *Vsrc2 = (double *) (buffer[2] + p11);
-	double *Vsrc3 = (double *) (buffer[2] + p12);
-	double *Vsrc4 = (double *) (buffer[2] + p13);
+	u64 *Ysrc1 = (u64 *) buffer[0];
+	u64 *Ysrc2 = (u64 *) (buffer[0] + p01);
+	u64 *Ysrc3 = (u64 *) (buffer[0] + p02);
+	u64 *Ysrc4 = (u64 *) (buffer[0] + p03);
+	u64 *Usrc1 = (u64 *) buffer[1];
+	u64 *Usrc2 = (u64 *) (buffer[1] + p11);
+	u64 *Usrc3 = (u64 *) (buffer[1] + p12);
+	u64 *Usrc4 = (u64 *) (buffer[1] + p13);
+	u64 *Vsrc1 = (u64 *) buffer[2];
+	u64 *Vsrc2 = (u64 *) (buffer[2] + p11);
+	u64 *Vsrc3 = (u64 *) (buffer[2] + p12);
+	u64 *Vsrc4 = (u64 *) (buffer[2] + p13);
 
 	if(old_h1_2 != height)
 	{
@@ -636,10 +636,10 @@ void GX_ResetTextureYUVPointers()
 {
 	whichtext ^= 1;
 
-	Yldst = (double *) Yltexture[whichtext];
-	Yrdst = (double *) (Yrtexture[whichtext] + 32); //first tile should be blank
-	Udst = (double *) Utexture[whichtext];
-	Vdst = (double *) Vtexture[whichtext];
+	Yldst = (u64 *) Yltexture[whichtext];
+	Yrdst = (u64 *) (Yrtexture[whichtext] + 32); //first tile should be blank
+	Udst = (u64 *) Utexture[whichtext];
+	Vdst = (u64 *) Vtexture[whichtext];
 }
 
 

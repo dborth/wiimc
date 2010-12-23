@@ -62,6 +62,10 @@ OBJS-$(CONFIG_AMRNB_DECODER)           += amrnbdec.o celp_filters.o   \
                                           celp_math.o acelp_filters.o \
                                           acelp_vectors.o             \
                                           acelp_pitch_delay.o
+OBJS-$(CONFIG_AMRWB_DECODER)           += amrwbdec.o celp_filters.o   \
+                                          celp_math.o acelp_filters.o \
+                                          acelp_vectors.o             \
+                                          acelp_pitch_delay.o lsp.o
 OBJS-$(CONFIG_AMV_DECODER)             += sp5xdec.o mjpegdec.o mjpeg.o
 OBJS-$(CONFIG_ANM_DECODER)             += anm.o
 OBJS-$(CONFIG_ANSI_DECODER)            += ansi.o cga_data.o
@@ -520,7 +524,8 @@ OBJS-$(CONFIG_MATROSKA_AUDIO_MUXER)    += xiph.o mpeg4audio.o \
                                           flacdec.o flacdata.o flac.o
 OBJS-$(CONFIG_MATROSKA_DEMUXER)        += mpeg4audio.o
 OBJS-$(CONFIG_MATROSKA_MUXER)          += xiph.o mpeg4audio.o \
-                                          flacdec.o flacdata.o flac.o
+                                          flacdec.o flacdata.o flac.o \
+                                          mpegaudiodata.o
 OBJS-$(CONFIG_MOV_DEMUXER)             += mpeg4audio.o mpegaudiodata.o
 OBJS-$(CONFIG_MPEGTS_MUXER)            += mpegvideo.o mpeg4audio.o
 OBJS-$(CONFIG_NUT_MUXER)               += mpegaudiodata.o
@@ -529,7 +534,8 @@ OBJS-$(CONFIG_OGG_DEMUXER)             += flacdec.o flacdata.o flac.o \
 OBJS-$(CONFIG_OGG_MUXER)               += xiph.o flacdec.o flacdata.o flac.o
 OBJS-$(CONFIG_RTP_MUXER)               += mpegvideo.o xiph.o
 OBJS-$(CONFIG_WEBM_MUXER)              += xiph.o mpeg4audio.o \
-                                          flacdec.o flacdata.o flac.o
+                                          flacdec.o flacdata.o flac.o \
+                                          mpegaudiodata.o
 
 # external codec libraries
 OBJS-$(CONFIG_LIBDIRAC_DECODER)           += libdiracdec.o

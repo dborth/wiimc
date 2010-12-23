@@ -235,6 +235,7 @@ Advanced options (experts only):
   --enable-pic             build position-independent code
   --malloc-prefix=PFX      prefix malloc and related names with PFX
   --enable-sram            allow use of on-chip SRAM
+  --disable-symver         disable symbol versioning
 
 Developer options (useful when working on FFmpeg itself):
   --disable-debug          disable debugging symbols
@@ -1097,6 +1098,7 @@ CMDLINE_SELECT="
     logging
     optimizations
     stripping
+    symver
     yasm
 "
 
@@ -1192,6 +1194,7 @@ aac_latm_decoder_select="aac_decoder aac_latm_parser"
 ac3_decoder_select="mdct ac3_parser"
 alac_encoder_select="lpc"
 amrnb_decoder_select="lsp"
+amrwb_decoder_select="lsp"
 atrac1_decoder_select="mdct"
 atrac3_decoder_select="mdct"
 binkaudio_dct_decoder_select="mdct rdft dct"
@@ -3244,7 +3247,11 @@ test -n "$malloc_prefix" &&
 
 if enabled small || disabled optimizations; then
     echo "#undef  av_always_inline"  >> $TMPH
-    echo "#define av_always_inline"  >> $TMPH
+    if enabled small; then
+        echo "#define av_always_inline inline"  >> $TMPH
+    else
+        echo "#define av_always_inline av_unused"  >> $TMPH
+    fi
 fi
 
 if enabled yasm; then

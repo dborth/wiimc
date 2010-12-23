@@ -112,7 +112,7 @@ static u16 __vid = 0;
 static u16 __pid = 0;
 static bool usb2_mode=true;
 
-static int method=1; //0: standard
+static int method=3; //0: standard
 
 #define DEBUG_USB
 #ifdef DEBUG_USB
@@ -159,7 +159,7 @@ void usb_log(char* format, ...)
 void set_usb_method(int _method)
 {
 	method=_method;
-	if(method<0 || method>2) method=0; 
+	if(method<0 || method>4) method=0; 
 }
 
 char * getusblog()
@@ -561,10 +561,10 @@ found:
 		
 		if (dev->altInterface !=0 && USB_SetAlternativeInterface(dev->usb_fd, dev->interface, dev->altInterface) < 0)
 		{
-			usb_log("Error USB_SetAlternativeInterface\n");
+			usb_log("Error USB_SetAlternativeInterface, alt: %i int: %i\n",dev->altInterface,dev->interface);
 			goto free_and_return;
 		}
-		else usb_log("USB_SetAlternativeInterface ok\n");
+		else usb_log("USB_SetAlternativeInterface ok, alt: %i int: %i\n",dev->altInterface,dev->interface);
 		
 		dev->suspended = 0;
 		
@@ -591,9 +591,9 @@ found:
 		
 		if (USB_SetAlternativeInterface(dev->usb_fd, dev->interface, dev->altInterface) < 0)
 		{
-			usb_log("Error USB_SetAlternativeInterface\n");
+			usb_log("Error USB_SetAlternativeInterface, alt: %i int: %i\n",dev->altInterface,dev->interface);
 		}
-		else usb_log("USB_SetAlternativeInterface ok\n");
+		else usb_log("USB_SetAlternativeInterface ok, alt: %i int: %i\n",dev->altInterface,dev->interface);
 
 		dev->suspended = 0;
 	}
@@ -607,9 +607,9 @@ found:
 		
 		if (USB_SetAlternativeInterface(dev->usb_fd, dev->interface, dev->altInterface) < 0)
 		{
-			usb_log("Error USB_SetAlternativeInterface\n");
+			usb_log("Error USB_SetAlternativeInterface, alt: %i int: %i\n",dev->altInterface,dev->interface);
 		}
-		else usb_log("USB_SetAlternativeInterface ok\n");
+		else usb_log("USB_SetAlternativeInterface ok, alt: %i int: %i\n",dev->altInterface,dev->interface);
 
 		dev->suspended = 0;
 
@@ -625,6 +625,46 @@ found:
 			}
 		}
 	}
+	else if(method==3)
+	{
+		if (USB_SetConfiguration(dev->usb_fd, dev->configuration) < 0)
+		{
+			usb_log("Error USB_SetConfiguration\n");
+			goto free_and_return;
+		}
+		else usb_log("USB_SetConfiguration ok\n");
+		
+		if (dev->altInterface !=0 && USB_SetAlternativeInterface(dev->usb_fd, dev->interface, dev->altInterface) < 0)
+		{
+			usb_log("Error USB_SetAlternativeInterface, alt: %i int: %i\n",dev->altInterface,dev->interface);
+			goto free_and_return;
+		}
+		else usb_log("USB_SetAlternativeInterface ok, alt: %i int: %i\n",dev->altInterface,dev->interface);
+		
+		dev->suspended = 0;
+		
+		retval = USBStorage_Reset(dev);
+		usb_log("USBStorage_Open, USBStorage_Reset: %i\n",retval);
+	}
+	else if(method==4)
+		{
+			if (USB_SetConfiguration(dev->usb_fd, dev->configuration) < 0)
+			{
+				usb_log("Error USB_SetConfiguration\n");
+				goto free_and_return;
+			}
+			else usb_log("USB_SetConfiguration ok\n");
+			
+			if (dev->altInterface !=0 && USB_SetAlternativeInterface(dev->usb_fd, dev->interface, dev->altInterface) < 0)
+			{
+				usb_log("Error USB_SetAlternativeInterface, alt: %i int: %i\n",dev->altInterface,dev->interface);
+				goto free_and_return;
+			}
+			else usb_log("USB_SetAlternativeInterface ok, alt: %i int: %i\n",dev->altInterface,dev->interface);
+			
+			dev->suspended = 0;
+			
+		}
 
 
 	LWP_MutexLock(dev->lock);
@@ -851,6 +891,15 @@ s32 USBStorage_Read(usbstorage_handle *dev, u8 lun, u32 sector, u16 n_sectors, u
 			retval = __usbstorage_clearerrors(dev, lun);
 			usb_log("__usbstorage_clearerrors ret: %i\n",retval);
 		}
+		else if(method==3)
+		{
+			retval = __usbstorage_clearerrors(dev, lun);
+			usb_log("__usbstorage_clearerrors ret: %i\n",retval);
+			retval = USBStorage_StartStop(dev, lun, 0, 1, 0);
+			usb_log("USBStorage_StartStop ret: %i\n",retval);
+			usleep(100);
+		}
+		
 	}
 
 	retval = __cycle(dev, lun, buffer, n_sectors * dev->sector_size[lun], cmd, sizeof(cmd), 0, &status, NULL);
@@ -1037,7 +1086,11 @@ static bool __usbstorage_IsInserted(void)
 			{
 				u8 bf[1024];
 				if(USBStorage_Read(&__usbfd, __lun, 0, 1, bf)<0)
+				{
 					usb_log("Error reading sector 0\n");
+					USBStorage_Close(&__usbfd);
+					return false;
+				}
 				else
 					usb_log("Read sector 0 ok\n");
 			}

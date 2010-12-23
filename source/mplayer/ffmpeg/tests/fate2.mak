@@ -168,7 +168,11 @@ FATE_TESTS += fate-ansi
 fate-ansi: CMD = framecrc -i $(SAMPLES)/ansi/TRE-IOM5.ANS -pix_fmt rgb24
 
 FATE_TESTS += fate-wmv8-drm
-fate-wmv8-drm: CMD = framecrc -cryptokey 137381538c84c068111902a59c5cf6c340247c39 -i $(SAMPLES)/wmv8/wmv_drm.wmv -an
+# discard last packet to avoid fails due to overread of VC-1 decoder
+fate-wmv8-drm: CMD = framecrc -cryptokey 137381538c84c068111902a59c5cf6c340247c39 -i $(SAMPLES)/wmv8/wmv_drm.wmv -an -vframes 162
+
+FATE_TESTS += fate-wmv8-drm-nodec
+fate-wmv8-drm-nodec: CMD = framecrc -cryptokey 137381538c84c068111902a59c5cf6c340247c39 -i $(SAMPLES)/wmv8/wmv_drm.wmv -acodec copy -vcodec copy
 
 FATE_TESTS += fate-binkaudio-dct
 fate-binkaudio-dct: CMD = pcm -i $(SAMPLES)/bink/binkaudio_dct.bik
@@ -266,3 +270,63 @@ fate-amrnb-12k2: CMD = pcm -i $(SAMPLES)/amrnb/12.2k.amr
 fate-amrnb-12k2: CMP = stddev
 fate-amrnb-12k2: REF = $(SAMPLES)/amrnb/12.2k.pcm
 fate-amrnb-12k2: FUZZ = 1
+
+FATE_TESTS += fate-amrwb-6k60
+fate-amrwb-6k60: CMD = pcm -i $(SAMPLES)/amrwb/seed-6k60.awb
+fate-amrwb-6k60: CMP = stddev
+fate-amrwb-6k60: REF = $(SAMPLES)/amrwb/seed-6k60.pcm
+fate-amrwb-6k60: FUZZ = 1
+
+FATE_TESTS += fate-amrwb-8k85
+fate-amrwb-8k85: CMD = pcm -i $(SAMPLES)/amrwb/seed-8k85.awb
+fate-amrwb-8k85: CMP = stddev
+fate-amrwb-8k85: REF = $(SAMPLES)/amrwb/seed-8k85.pcm
+fate-amrwb-8k85: FUZZ = 1
+
+FATE_TESTS += fate-amrwb-12k65
+fate-amrwb-12k65: CMD = pcm -i $(SAMPLES)/amrwb/seed-12k65.awb
+fate-amrwb-12k65: CMP = stddev
+fate-amrwb-12k65: REF = $(SAMPLES)/amrwb/seed-12k65.pcm
+fate-amrwb-12k65: FUZZ = 1
+
+FATE_TESTS += fate-amrwb-14k25
+fate-amrwb-14k25: CMD = pcm -i $(SAMPLES)/amrwb/seed-14k25.awb
+fate-amrwb-14k25: CMP = stddev
+fate-amrwb-14k25: REF = $(SAMPLES)/amrwb/seed-14k25.pcm
+fate-amrwb-14k25: FUZZ = 2.6
+
+FATE_TESTS += fate-amrwb-15k85
+fate-amrwb-15k85: CMD = pcm -i $(SAMPLES)/amrwb/seed-15k85.awb
+fate-amrwb-15k85: CMP = stddev
+fate-amrwb-15k85: REF = $(SAMPLES)/amrwb/seed-15k85.pcm
+fate-amrwb-15k85: FUZZ = 1
+
+FATE_TESTS += fate-amrwb-18k25
+fate-amrwb-18k25: CMD = pcm -i $(SAMPLES)/amrwb/seed-18k25.awb
+fate-amrwb-18k25: CMP = stddev
+fate-amrwb-18k25: REF = $(SAMPLES)/amrwb/seed-18k25.pcm
+fate-amrwb-18k25: FUZZ = 1
+
+FATE_TESTS += fate-amrwb-19k85
+fate-amrwb-19k85: CMD = pcm -i $(SAMPLES)/amrwb/seed-19k85.awb
+fate-amrwb-19k85: CMP = stddev
+fate-amrwb-19k85: REF = $(SAMPLES)/amrwb/seed-19k85.pcm
+fate-amrwb-19k85: FUZZ = 1
+
+FATE_TESTS += fate-amrwb-23k05
+fate-amrwb-23k05: CMD = pcm -i $(SAMPLES)/amrwb/seed-23k05.awb
+fate-amrwb-23k05: CMP = stddev
+fate-amrwb-23k05: REF = $(SAMPLES)/amrwb/seed-23k05.pcm
+fate-amrwb-23k05: FUZZ = 2
+
+FATE_TESTS += fate-amrwb-23k85
+fate-amrwb-23k85: CMD = pcm -i $(SAMPLES)/amrwb/seed-23k85.awb
+fate-amrwb-23k85: CMP = stddev
+fate-amrwb-23k85: REF = $(SAMPLES)/amrwb/seed-23k85.pcm
+fate-amrwb-23k85: FUZZ = 2
+
+FATE_TESTS += fate-amrwb-23k85-2
+fate-amrwb-23k85-2: CMD = pcm -i $(SAMPLES)/amrwb/deus-23k85.awb
+fate-amrwb-23k85-2: CMP = stddev
+fate-amrwb-23k85-2: REF = $(SAMPLES)/amrwb/deus-23k85.pcm
+fate-amrwb-23k85-2: FUZZ = 1

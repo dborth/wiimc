@@ -34,7 +34,7 @@ const DISC_INTERFACE* sd = &__io_wiisd;
 static bool reset_pressed = false;
 static bool power_pressed = false;
 
-#define USB_TEST_VERSION "1.4"
+#define USB_TEST_VERSION "1.5"
 
 static int method=0;
 static u64 timer_init=0;
@@ -193,6 +193,8 @@ void InitialScreen()
 	printf("Press A to test usb device with standard method\n");
 	printf("Press 1 to test usb device with method 1\n");
 	printf("Press 2 to test usb device with method 2\n");
+	printf("Press B to test usb device with method 3\n");
+	printf("Press - to test usb device with method 4\n");
 	printf("Press + to test wake up device (wait 20mins, then try access device)\n");
 	printf("To test all methods unplug&plug device then test another method.\n");
 	printf("On exit application log will be saved to sd:/log_usb.txt\n");
@@ -227,7 +229,7 @@ void check_wakeup()
 	}
 	else 
 	{		
-		printf ("\x1b[%d;%dH", 14, 1 ); //cursor position 
+		printf ("\x1b[%d;%dH", 15, 1 ); //cursor position 
 		printf("Wake up counter: %i                           ", (20*60)-(int)ticks_to_secs(gettime() - timer_init));
 		fflush(stdout);
 	}
@@ -276,6 +278,8 @@ int main(int argc, char **argv)
 		if ( (pressed & WPAD_BUTTON_A)) test(0);
 		else if ( (pressed & WPAD_BUTTON_1)) test(1); 
 		else if ( (pressed & WPAD_BUTTON_2)) test(2);
+		else if ( (pressed & WPAD_BUTTON_B)) test(3);
+		else if ( (pressed & WPAD_BUTTON_MINUS)) test(4);
 
 		else if ( (pressed & WPAD_BUTTON_PLUS)) enable_wakeup();
 

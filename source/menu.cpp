@@ -2145,6 +2145,8 @@ static void MenuBrowse(int menu)
 			else
 				ErrorPrompt("Online media file not found.");
 
+			if(menuPrevious == MENU_BROWSE_ONLINEMEDIA)
+				menuPrevious = MENU_BROWSE_VIDEOS;
 			UndoChangeMenu();
 			goto done;
 		}
@@ -3705,6 +3707,8 @@ static void MenuDVD()
 
 	if(!ChangeInterface(DEVICE_DVD, -1, NOTSILENT))
 	{
+		if(menuPrevious == MENU_DVD)
+			menuPrevious = MENU_BROWSE_VIDEOS;
 		UndoChangeMenu(); // go back to last menu
 		return;
 	}
@@ -3732,6 +3736,8 @@ static void MenuDVD()
 
 		if(!guiShutdown) // load failed
 		{
+			if(menuPrevious == MENU_DVD)
+				menuPrevious = MENU_BROWSE_VIDEOS;
 			UndoChangeMenu(); // go back to last menu
 			mainWindow->Remove(disabled);
 			mainWindow->SetState(STATE_DEFAULT);

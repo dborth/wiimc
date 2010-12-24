@@ -131,8 +131,7 @@ void writelog()
 	
 	log=getusblog();
 	
-	if(fatMount("sd",sd,0,2,128) )
-	{
+	
 
 		fp=fopen("sd:/log_usb.txt","wb");
 
@@ -144,7 +143,6 @@ void writelog()
 				
 			fclose(fp);
 		}
-	}
 	
 
 }
@@ -154,6 +152,9 @@ void writelog()
 
 void test(int _method)
 {
+	printf("Testing...\n");
+	usleep(5000000);
+	
 	void set_usb_method(int _method);
 
 	if(timer_init>0)
@@ -188,27 +189,20 @@ void InitialScreen()
 	
 	printf("\n");
 	printf("USB2 device test version: %s\n",USB_TEST_VERSION);
-	printf("=============================\n");	
-	printf("Press reset or Home to exit\n\n");
-	printf("Press A to test usb device with standard method\n");
-	printf("Press 1 to test usb device with method 1\n");
-	printf("Press 2 to test usb device with method 2\n");
-	printf("Press B to test usb device with method 3\n");
-	printf("Press - to test usb device with method 4\n");
-	printf("Press + to test wake up device (wait 20mins, then try access device)\n");
-	printf("To test all methods unplug&plug device then test another method.\n");
-	printf("On exit application log will be saved to sd:/log_usb.txt\n");
+	printf("=============================\n");
 
+	printf("6 tests will be run.\n");
+	printf("After each test, please unplug and replug your device when requested.\n");
+	printf("The final one tests wakeup and will take 20 minutes to run.\n");
+	printf("On exit application log will be saved to sd:/log_usb.txt\n");
+	printf("Please upload this file to wiimc.org/forum/\n");
 }
 
 void enable_wakeup()
 {
 	timer_init=gettime();
-
-	InitialScreen();
-
-	printf("\nWake up test in progress\n");
-	
+	printf ("\x1b[2J"); //clear screen
+	printf("\n\n\n\nWake up test in progress - press HOME to exit.\n\n");
 }
 
 void check_wakeup()
@@ -236,6 +230,29 @@ void check_wakeup()
 
 }
 
+void wait_a()
+{
+	u32 pressed = 0;
+	
+	while(!pressed)
+	{	
+		WPAD_ScanPads();
+		pressed = WPAD_ButtonsDown(0);
+
+		if ( (pressed & WPAD_BUTTON_A)) return;
+
+		usleep(5000);		
+	}
+}
+
+void change_dev()
+{
+	printf("Unplug your USB device now. Press A when ready.\n");
+	wait_a();
+	printf("Plug in your USB device now. Press A when ready.\n");
+	wait_a();
+}
+
 int main(int argc, char **argv) 
 {
 	void __exception_setreload(int t);	
@@ -249,11 +266,17 @@ int main(int argc, char **argv)
 	CON_EnableGecko(1,0);
 	SYS_SetResetCallback (reset_cb);
 	SYS_SetPowerCallback(power_cb);
-	
 
 	if(IOS_GetVersion()!=58) 
 	{
 		printf("\n\nYou need ios58 installed.");
+		sleep(4);
+		return 0;
+	}
+	
+	if(!fatMount("sd",sd,0,2,128) )
+	{
+		printf("\n\nYou need an SD card to run this test.");
 		sleep(4);
 		return 0;
 	}
@@ -267,7 +290,25 @@ int main(int argc, char **argv)
 	usb->startup();
 		
 	usleep(1000000);
-
+	
+	printf("Plug in your USB device now. Press A when ready.\n");
+	wait_a();
+	test(0);
+	
+	change_dev();
+	test(1);
+	
+	change_dev();
+	test(2);
+	
+	change_dev();
+	test(3);
+	
+	change_dev();
+	test(4);
+	
+	change_dev();
+	enable_wakeup();
 
 	while(!reset_pressed)
 	{	
@@ -275,17 +316,10 @@ int main(int argc, char **argv)
 		u32 pressed = WPAD_ButtonsDown(0);
 
 		if ( pressed & WPAD_BUTTON_HOME ) break;
-		if ( (pressed & WPAD_BUTTON_A)) test(0);
-		else if ( (pressed & WPAD_BUTTON_1)) test(1); 
-		else if ( (pressed & WPAD_BUTTON_2)) test(2);
-		else if ( (pressed & WPAD_BUTTON_B)) test(3);
-		else if ( (pressed & WPAD_BUTTON_MINUS)) test(4);
-
-		else if ( (pressed & WPAD_BUTTON_PLUS)) enable_wakeup();
 
 		check_wakeup();
 
-		usleep(5000);		
+		usleep(5000);
 	}
 	writelog();
 	fatUnmount("sd:");

@@ -34,7 +34,7 @@ const DISC_INTERFACE* sd = &__io_wiisd;
 static bool reset_pressed = false;
 static bool power_pressed = false;
 
-#define USB_TEST_VERSION "1.5"
+#define USB_TEST_VERSION "1.6"
 
 static int method=0;
 static u64 timer_init=0;
@@ -195,7 +195,7 @@ void InitialScreen()
 	printf("After each test, please unplug and replug your device when requested.\n");
 	printf("The final one tests wakeup and will take 20 minutes to run.\n");
 	printf("On exit application log will be saved to sd:/log_usb.txt\n");
-	printf("Please upload this file to wiimc.org/forum/\n");
+	printf("Please upload this file to wiimc.org\n");
 }
 
 void enable_wakeup()

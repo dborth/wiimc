@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <ntfs.h>
 #include <fat.h>
+#include <ext2.h>
 #include <di/di.h>
 #include <iso9660.h>
 #include <sdcard/wiisd_io.h>
@@ -329,6 +330,7 @@ void StopParseThread()
 #define PARTITION_TYPE_DOS33_EXTENDED       0x05 /* DOS 3.3+ extended partition */
 #define PARTITION_TYPE_NTFS                 0x07 /* Windows NT NTFS */
 #define PARTITION_TYPE_WIN95_EXTENDED       0x0F /* Windows 95 extended partition */
+#define PARTITION_TYPE_LINUX                0x83 /* EXT2/3/4 */
 
 #define PARTITION_STATUS_NONBOOTABLE        0x00 /* Non-bootable */
 #define PARTITION_STATUS_BOOTABLE           0x80 /* Bootable (active) */
@@ -341,6 +343,7 @@ void StopParseThread()
 
 #define T_FAT  1
 #define T_NTFS 2
+#define T_EXT2 3
 
 static const char FAT_SIG[3] = {'F', 'A', 'T'};
 
@@ -446,24 +449,37 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 
 	char mount[10];
 	sprintf(mount, "%s%i", prefix[device], *devnum+1);
+	char *name;
 
-	if(type == T_FAT)
+	switch(type)
 	{
-		if(!fatMount(mount, disc, sector, 2, 128))
-			return;
-		fatGetVolumeLabel(mount, part[device][*devnum].name);
-	}
-	else
-	{
-		if(!ntfsMount(mount, disc, sector, 2, 128, NTFS_DEFAULT | NTFS_RECOVER))
-			return;
+		case T_FAT:
+			if(!fatMount(mount, disc, sector, 2, 128))
+				return;
+			fatGetVolumeLabel(mount, part[device][*devnum].name);
+			break;
+		case T_NTFS:
+			if(!ntfsMount(mount, disc, sector, 2, 128, NTFS_DEFAULT | NTFS_RECOVER))
+				return;
 
-		const char *name = ntfsGetVolumeName(mount);
+			name = (char *)ntfsGetVolumeName(mount);
 
-		if(name)
-			strcpy(part[device][*devnum].name, name);
-		else
-			part[device][*devnum].name[0] = 0;
+			if(name)
+				strcpy(part[device][*devnum].name, name);
+			else
+				part[device][*devnum].name[0] = 0;
+			break;
+		case T_EXT2:
+			if(!ext2Mount(mount, disc, sector, 2, 128, EXT2_FLAG_64BITS | EXT2_FLAG_JOURNAL_DEV_OK))
+				return;
+
+			name = (char *)ext2GetVolumeName(mount);
+
+			if(name)
+				strcpy(part[device][*devnum].name, name);
+			else
+				part[device][*devnum].name[0] = 0;
+			break;
 	}
 
 	strcpy(part[device][*devnum].mount, mount);
@@ -557,7 +573,6 @@ static int FindPartitions(int device)
 							debug_printf("Partition %i: Invalid NTFS boot sector, not actually NTFS\n", i + 1);
 						}
 					}
-
 					break;
 				}
 				// DOS 3.3+ or Windows 95 extended partition
@@ -631,7 +646,17 @@ static int FindPartitions(int device)
 					} while (next_erb_lba);
 					break;
 				}
+				case PARTITION_TYPE_LINUX:
+				{
+					debug_printf("Partition %i: Claims to be LINUX\n", i + 1);
 
+					// Read and validate the EXT2 partition
+					if (interface->readSectors(part_lba, 1, &sector))
+					{
+						AddPartition(part_lba, device, T_EXT2, &devnum);
+					}
+					break;
+				}
 				// Ignore empty partitions
 				case PARTITION_TYPE_EMPTY:
 					debug_printf("Partition %i: Claims to be empty\n", i + 1);
@@ -703,16 +728,21 @@ static void UnmountPartitions(int device)
 
 	for(int i=0; i < MAX_DEVICES; i++)
 	{
-		if(part[device][i].type == T_FAT)
+		switch(part[device][i].type)
 		{
-			part[device][i].type = 0;
-			sprintf(mount, "%s:", part[device][i].mount);
-			fatUnmount(mount);
-		}
-		else if(part[device][i].type == T_NTFS)
-		{
-			part[device][i].type = 0;
-			ntfsUnmount(part[device][i].mount, false);
+			case T_FAT:
+				part[device][i].type = 0;
+				sprintf(mount, "%s:", part[device][i].mount);
+				fatUnmount(mount);
+				break;
+			case T_NTFS:
+				part[device][i].type = 0;
+				ntfsUnmount(part[device][i].mount, false);
+				break;
+			case T_EXT2:
+				part[device][i].type = 0;
+				ext2Unmount(part[device][i].mount);
+				break;
 		}
 		part[device][i].name[0] = 0;
 		part[device][i].mount[0] = 0;

@@ -545,7 +545,7 @@ static int FindPartitions(int device)
 			part_lba = le32_to_cpu(mbr.partitions[i].lba_start);
 
 			debug_printf(
-					"Partition %i: %s, sector %lu, type 0x%x\n",
+					"Partition %i: %s, sector %u, type 0x%x\n",
 					i + 1,
 					partition->status == PARTITION_STATUS_BOOTABLE ? "bootable (active)"
 							: "non-bootable", part_lba, partition->type);
@@ -592,7 +592,7 @@ static int FindPartitions(int device)
 							if (sector.ebr.signature == EBR_SIGNATURE)
 							{
 								debug_printf(
-										"Logical Partition @ %d: type 0x%x\n",
+										"Logical Partition @ %d: %s type 0x%x\n",
 										ebr_lba + next_erb_lba,
 										sector.ebr.partition.status
 												== PARTITION_STATUS_BOOTABLE ? "bootable (active)"
@@ -607,8 +607,13 @@ static int FindPartitions(int device)
 								next_erb_lba = le32_to_cpu(
 										sector.ebr.next_ebr.lba_start);
 
+								if(sector.ebr.partition.type==PARTITION_TYPE_LINUX)
+								{
+									debug_printf("Partition : type ext2/3/4 found\n");
+									AddPartition(part_lba, device, T_EXT2, &devnum);
+								}
 								// Check if this partition has a valid NTFS boot record
-								if (interface->readSectors(part_lba, 1, &sector))
+								else if (interface->readSectors(part_lba, 1, &sector))
 								{
 									if (sector.boot.oem_id == NTFS_OEM_ID)
 									{

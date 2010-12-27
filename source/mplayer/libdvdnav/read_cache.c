@@ -42,13 +42,13 @@
 #include "dvdnav_internal.h"
 #include "read_cache.h"
 
-#define READ_CACHE_CHUNKS 10
+#define READ_CACHE_CHUNKS 100
 
 /* all cache chunks must be memory aligned to allow use of raw devices */
 #define ALIGNMENT 2048
 
-#define READ_AHEAD_SIZE_MIN 4
-#define READ_AHEAD_SIZE_MAX 512
+#define READ_AHEAD_SIZE_MIN 40
+#define READ_AHEAD_SIZE_MAX 1024
 
 typedef struct read_cache_chunk_s {
   uint8_t     *cache_buffer;

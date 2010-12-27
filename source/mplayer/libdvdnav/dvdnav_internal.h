@@ -28,9 +28,9 @@
 #ifdef GEKKO
 #include <ogc/mutex.h>
 #define pthread_mutex_init(a, b) LWP_MutexInit(a,false)
-#define pthread_mutex_lock(a)    LWP_MutexLock(a)
-#define pthread_mutex_unlock(a)  LWP_MutexUnlock(a)
-#define pthread_mutex_destroy(a) LWP_MutexDestroy(a)
+#define pthread_mutex_lock(a)    LWP_MutexLock(*a)
+#define pthread_mutex_unlock(a)  LWP_MutexUnlock(*a)
+#define pthread_mutex_destroy(a) LWP_MutexDestroy(*a)
 #endif
 
 #ifdef WIN32

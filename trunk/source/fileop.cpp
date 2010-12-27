@@ -656,10 +656,7 @@ static int FindPartitions(int device)
 					debug_printf("Partition %i: Claims to be LINUX\n", i + 1);
 
 					// Read and validate the EXT2 partition
-					if (interface->readSectors(part_lba, 1, &sector))
-					{
-						AddPartition(part_lba, device, T_EXT2, &devnum);
-					}
+					AddPartition(part_lba, device, T_EXT2, &devnum);
 					break;
 				}
 				// Ignore empty partitions
@@ -692,6 +689,11 @@ static int FindPartitions(int device)
 							debug_printf("Partition : Valid FAT boot sector found\n");
 							AddPartition(part_lba, device, T_FAT, &devnum);
 						}
+						else
+						{
+							debug_printf("Trying : ext partition\n");
+							AddPartition(part_lba, device, T_EXT2, &devnum);
+						}
 					}
 					break;
 				}
@@ -720,6 +722,11 @@ static int FindPartitions(int device)
 					debug_printf("Partition : Valid FAT boot sector found\n");
 					AddPartition(i, device, T_FAT, &devnum);
 					break;
+				}
+				else
+				{
+					debug_printf("Trying : ext partition\n");
+					AddPartition(part_lba, device, T_EXT2, &devnum);
 				}
 			}
 		}

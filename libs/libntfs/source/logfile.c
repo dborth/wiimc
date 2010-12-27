@@ -702,6 +702,8 @@ int ntfs_empty_logfile(ntfs_attr *na)
 	s64 pos, count;
 	char buf[NTFS_BUF_SIZE];
 
+	int c=0;
+
 	ntfs_log_trace("Entering.\n");
 	
 	if (NVolLogFileEmpty(na->ni->vol))
@@ -729,6 +731,8 @@ int ntfs_empty_logfile(ntfs_attr *na)
 			return -1;
 		}
 		pos += count;
+		if(c==2) break;
+		c++;
 	}
 
 	NVolSetLogFileEmpty(na->ni->vol);

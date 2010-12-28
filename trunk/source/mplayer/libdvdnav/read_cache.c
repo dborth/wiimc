@@ -68,11 +68,7 @@ struct read_cache_s {
   uint32_t            read_ahead_size;
   int                 read_ahead_incr;
   int                 last_sector;
-#ifdef GEKKO
-  mutex_t     lock;
-#else  
   pthread_mutex_t     lock;
-#endif
 
   /* Bit of strange cross-linking going on here :) -- Gotta love C :) */
   dvdnav_t           *dvd_self;

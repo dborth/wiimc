@@ -700,9 +700,8 @@ BOOL ntfs_is_logfile_clean(ntfs_attr *log_na, RESTART_PAGE_HEADER *rp)
 int ntfs_empty_logfile(ntfs_attr *na)
 {
 	s64 pos, count;
-	char buf[NTFS_BUF_SIZE];
+	char *buf;
 
-	int c=0;
 
 	ntfs_log_trace("Entering.\n");
 	
@@ -715,8 +714,10 @@ int ntfs_empty_logfile(ntfs_attr *na)
 		return -1;
 	}
 
+	buf=ntfs_align(NTFS_BUF_SIZE);
+	if(buf==NULL) return -1;
 	memset(buf, -1, NTFS_BUF_SIZE);
-
+	
 	pos = 0;
 	while ((count = na->data_size - pos) > 0) {
 		
@@ -731,9 +732,9 @@ int ntfs_empty_logfile(ntfs_attr *na)
 			return -1;
 		}
 		pos += count;
-		if(c==2) break;
-		c++;
+		if(pos>=64*1024) break; //only clear first 64kb
 	}
+	ntfs_free(buf);
 
 	NVolSetLogFileEmpty(na->ni->vol);
 	

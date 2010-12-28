@@ -25,14 +25,6 @@
 #include "config.h"
 #endif
 
-#ifdef GEKKO
-#include <ogc/mutex.h>
-#define pthread_mutex_init(a, b) LWP_MutexInit(a,false)
-#define pthread_mutex_lock(a)    LWP_MutexLock(*a)
-#define pthread_mutex_unlock(a)  LWP_MutexUnlock(*a)
-#define pthread_mutex_destroy(a) LWP_MutexDestroy(*a)
-#endif
-
 #ifdef WIN32
 
 /* pthread_mutex_* wrapper for win32 */
@@ -63,7 +55,14 @@ static inline int _private_gettimeofday( struct timeval *tv, void *tz )
 
 #else
 
-#ifndef GEKKO
+#ifdef GEKKO
+#include <ogc/mutex.h>
+typedef mutex_t pthread_mutex_t;
+#define pthread_mutex_init(a, b) LWP_MutexInit(a,false)
+#define pthread_mutex_lock(a)    LWP_MutexLock(*a)
+#define pthread_mutex_unlock(a)  LWP_MutexUnlock(*a)
+#define pthread_mutex_destroy(a) LWP_MutexDestroy(*a)
+#else
 #include <pthread.h>
 #endif
 
@@ -171,11 +170,7 @@ struct dvdnav_s {
 
   /* VM */
   vm_t *vm;
-#ifdef GEKKO  
-  mutex_t vm_lock;
-#else
   pthread_mutex_t vm_lock;
-#endif
 
   /* Read-ahead cache */
   read_cache_t *cache;

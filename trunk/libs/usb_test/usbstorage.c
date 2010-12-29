@@ -112,7 +112,7 @@ static u16 __vid = 0;
 static u16 __pid = 0;
 static bool usb2_mode=true;
 
-static int method=3; //0: standard
+static int method=4; //0: standard
 
 #define DEBUG_USB
 #ifdef DEBUG_USB
@@ -446,6 +446,8 @@ static s32 __usbstorage_reset(usbstorage_handle *dev)
 	usleep(100);
 	usbtimeout = t;
 	usb_log("__usbstorage_reset, ret: %i\n",retval);
+	USB_ClearHalt(dev->usb_fd, dev->ep_in);usleep(100); //from http://www.usb.org/developers/devclass_docs/usbmassbulk_10.pdf
+	USB_ClearHalt(dev->usb_fd, dev->ep_out);usleep(100);
 	return retval;
 }
 
@@ -752,11 +754,15 @@ s32 USBStorage_MountLUN(usbstorage_handle *dev, u8 lun)
 	if(lun >= dev->max_lun)
 		return IPC_EINVAL;
 
+	usleep(50);
 	retval = __usbstorage_clearerrors(dev, lun);
 	if (retval<0)
 	{
-		usb_log("Error __usbstorage_clearerrors: %i\n",retval);
-		return retval;
+		usb_log("Error __usbstorage_clearerrors: %i. Reset & retry again.\n",retval);
+		USBStorage_Reset(dev);
+		retval = __usbstorage_clearerrors(dev, lun);
+		if (retval<0) usb_log("Error __usbstorage_clearerrors(2): %i.\n",retval);
+		//return retval;
 	}
 	else usb_log("__usbstorage_clearerrors Ok\n");
 	retval = USBStorage_ReadCapacity(dev, lun, &dev->sector_size[lun], NULL);
@@ -987,7 +993,9 @@ static bool __usbstorage_IsInserted(void)
 	s32 retval;
 
 #ifdef DEBUG_USB		
-		usb_log("__usbstorage_IsInserted\n");
+	usb_log("__usbstorage_IsInserted\n");
+	if(__mounted)
+		usb_log("device previously mounted.\n");
 #endif
 
 	if(__mounted)
@@ -1008,6 +1016,7 @@ static bool __usbstorage_IsInserted(void)
 			USBStorage_Close(&__usbfd);
 
 		__lwp_heap_free(&__heap, buffer);
+		usb_log("Error in USB_GetDeviceList\n");
 		return false;
 	}
 
@@ -1027,10 +1036,10 @@ static bool __usbstorage_IsInserted(void)
 			}
 		}
 		USBStorage_Close(&__usbfd);
-		__lwp_heap_free(&__heap,buffer);
-		return false;
+		//__lwp_heap_free(&__heap,buffer);
+		//return false;
 	}
-
+	usb_log("USB_GetDeviceList. device_count: %i\n",device_count);
 	for (i = 0; i < device_count; i++) {
 		vid = buffer[i].vid;
 		pid = buffer[i].pid;

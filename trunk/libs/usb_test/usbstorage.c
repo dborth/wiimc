@@ -663,7 +663,11 @@ found:
 			//goto free_and_return;
 		}
 		else usb_log("USB_SetAlternativeInterface ok, alt: %i int: %i\n",dev->altInterface,dev->interface);
-		
+		if(!usb2_mode)
+		{
+			retval = USBStorage_Reset(dev);
+			usb_log("USBStorage_Open, USBStorage_Reset: %i\n",retval);
+		}
 		dev->suspended = 0;
 		
 	}

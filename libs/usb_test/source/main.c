@@ -34,7 +34,7 @@ const DISC_INTERFACE* sd = &__io_wiisd;
 static bool reset_pressed = false;
 static bool power_pressed = false;
 
-#define USB_TEST_VERSION "1.6"
+#define USB_TEST_VERSION "1.7"
 
 static int method=0;
 static u64 timer_init=0;
@@ -215,7 +215,7 @@ void check_wakeup()
 		timer_init=0;
 		printf("Testing wake up\n");
 	
-		if(usb->readSectors(1024,1,buf)<0)
+		if(usb->readSectors(1024,1,buf)==false)
 			usb_log("Error reading sector. Device wake up fail!!\n");
 		else
 			usb_log("OK reading sector. Device wake up OK!!\n");

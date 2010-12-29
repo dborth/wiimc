@@ -13,6 +13,7 @@
 #include <ogc/machine/processor.h>
 #include <ntfs.h>
 #include <fat.h>
+#include <ext2.h>
 #include <sdcard/wiisd_io.h>
 #include <ogc/usbstorage.h>
 
@@ -43,6 +44,7 @@ static char prefix[2][4] = { "sd", "usb" };
 #define PARTITION_TYPE_DOS33_EXTENDED       0x05 /* DOS 3.3+ extended partition */
 #define PARTITION_TYPE_NTFS                 0x07 /* Windows NT NTFS */
 #define PARTITION_TYPE_WIN95_EXTENDED       0x0F /* Windows 95 extended partition */
+#define PARTITION_TYPE_LINUX                0x83 /* EXT2/3/4 */
 
 #define PARTITION_STATUS_NONBOOTABLE        0x00 /* Non-bootable */
 #define PARTITION_STATUS_BOOTABLE           0x80 /* Bootable (active) */
@@ -55,6 +57,7 @@ static char prefix[2][4] = { "sd", "usb" };
 
 #define T_FAT  1
 #define T_NTFS 2
+#define T_EXT2 3
 
 static const char FAT_SIG[3] = {'F', 'A', 'T'};
 
@@ -145,8 +148,13 @@ DEVICE_STRUCT part[2][MAX_DEVICES];
 
 static void AddPartition(sec_t sector, int device, int type, int *devnum)
 {
+	int i;
+	
 	if (*devnum >= MAX_DEVICES)
 		return;
+
+	for(i=0; i < *devnum; i++)
+		if(part[device][i].sector == sector) return; // to avoid mount same partition again
 
 	DISC_INTERFACE *disc = (DISC_INTERFACE *)sd;
 
@@ -155,30 +163,43 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 
 	char mount[10];
 	sprintf(mount, "%s%i", prefix[device], *devnum+1);
+	char *name;
 
-	if(type == T_FAT)
+	switch(type)
 	{
-		if(!fatMount(mount, disc, sector, 3, 256))
-			return;
-		fatGetVolumeLabel(mount, part[device][*devnum].name);
-	}
-	else
-	{
-		if(!ntfsMount(mount, disc, sector, 256, 3, NTFS_DEFAULT | NTFS_RECOVER))
-			return;
+		case T_FAT:
+			if(!fatMount(mount, disc, sector, 2, 128))
+				return;
+			fatGetVolumeLabel(mount, part[device][*devnum].name);
+			break;
+		case T_NTFS:
+			if(!ntfsMount(mount, disc, sector, 2, 128, NTFS_DEFAULT | NTFS_RECOVER))
+				return;
 
-		const char *name = ntfsGetVolumeName(mount);
+			name = (char *)ntfsGetVolumeName(mount);
 
-		if(name)
-			strcpy(part[device][*devnum].name, name);
-		else
-			part[device][*devnum].name[0] = 0;
+			if(name)
+				strcpy(part[device][*devnum].name, name);
+			else
+				part[device][*devnum].name[0] = 0;
+			break;
+		case T_EXT2:
+			if(!ext2Mount(mount, disc, sector, 2, 128, EXT2_FLAG_64BITS | EXT2_FLAG_JOURNAL_DEV_OK))
+				return;
+
+			name = (char *)ext2GetVolumeName(mount);
+
+			if(name)
+				strcpy(part[device][*devnum].name, name);
+			else
+				part[device][*devnum].name[0] = 0;
+			break;
 	}
 
 	strcpy(part[device][*devnum].mount, mount);
-	part[device][*devnum].type = type;
 	part[device][*devnum].interface = disc;
 	part[device][*devnum].sector = sector;
+	part[device][*devnum].type = type;
 	++*devnum;
 }
 
@@ -238,7 +259,7 @@ static int FindPartitions(int device)
 			part_lba = le32_to_cpu(mbr.partitions[i].lba_start);
 
 			debug_printf(
-					"Partition %i: %s, sector %lu, type 0x%x\n",
+					"Partition %i: %s, sector %u, type 0x%x\n",
 					i + 1,
 					partition->status == PARTITION_STATUS_BOOTABLE ? "bootable (active)"
 							: "non-bootable", part_lba, partition->type);
@@ -266,7 +287,6 @@ static int FindPartitions(int device)
 							debug_printf("Partition %i: Invalid NTFS boot sector, not actually NTFS\n", i + 1);
 						}
 					}
-
 					break;
 				}
 				// DOS 3.3+ or Windows 95 extended partition
@@ -286,7 +306,7 @@ static int FindPartitions(int device)
 							if (sector.ebr.signature == EBR_SIGNATURE)
 							{
 								debug_printf(
-										"Logical Partition @ %d: type 0x%x\n",
+										"Logical Partition @ %d: %s type 0x%x\n",
 										ebr_lba + next_erb_lba,
 										sector.ebr.partition.status
 												== PARTITION_STATUS_BOOTABLE ? "bootable (active)"
@@ -301,8 +321,13 @@ static int FindPartitions(int device)
 								next_erb_lba = le32_to_cpu(
 										sector.ebr.next_ebr.lba_start);
 
+								if(sector.ebr.partition.type==PARTITION_TYPE_LINUX)
+								{
+									debug_printf("Partition : type ext2/3/4 found\n");
+									AddPartition(part_lba, device, T_EXT2, &devnum);
+								}
 								// Check if this partition has a valid NTFS boot record
-								if (interface->readSectors(part_lba, 1, &sector))
+								else if (interface->readSectors(part_lba, 1, &sector))
 								{
 									if (sector.boot.oem_id == NTFS_OEM_ID)
 									{
@@ -340,7 +365,14 @@ static int FindPartitions(int device)
 					} while (next_erb_lba);
 					break;
 				}
+				case PARTITION_TYPE_LINUX:
+				{
+					debug_printf("Partition %i: Claims to be LINUX\n", i + 1);
 
+					// Read and validate the EXT2 partition
+					AddPartition(part_lba, device, T_EXT2, &devnum);
+					break;
+				}
 				// Ignore empty partitions
 				case PARTITION_TYPE_EMPTY:
 					debug_printf("Partition %i: Claims to be empty\n", i + 1);
@@ -371,6 +403,11 @@ static int FindPartitions(int device)
 							debug_printf("Partition : Valid FAT boot sector found\n");
 							AddPartition(part_lba, device, T_FAT, &devnum);
 						}
+						else
+						{
+							debug_printf("Trying : ext partition\n");
+							AddPartition(part_lba, device, T_EXT2, &devnum);
+						}
 					}
 					break;
 				}
@@ -400,6 +437,11 @@ static int FindPartitions(int device)
 					AddPartition(i, device, T_FAT, &devnum);
 					break;
 				}
+				else
+				{
+					debug_printf("Trying : ext partition\n");
+					AddPartition(part_lba, device, T_EXT2, &devnum);
+				}
 			}
 		}
 	}
@@ -413,21 +455,26 @@ static void UnmountPartitions(int device)
 
 	for(i=0; i < MAX_DEVICES; i++)
 	{
-		if(part[device][i].type == T_FAT)
+		switch(part[device][i].type)
 		{
-			sprintf(mount, "%s:", part[device][i].mount);
-			fatUnmount(mount);
+			case T_FAT:
+				part[device][i].type = 0;
+				sprintf(mount, "%s:", part[device][i].mount);
+				fatUnmount(mount);
+				break;
+			case T_NTFS:
+				part[device][i].type = 0;
+				ntfsUnmount(part[device][i].mount, false);
+				break;
+			case T_EXT2:
+				part[device][i].type = 0;
+				ext2Unmount(part[device][i].mount);
+				break;
 		}
-		else if(part[device][i].type == T_NTFS)
-		{
-			ntfsUnmount(part[device][i].mount, false);
-		}
-		
 		part[device][i].name[0] = 0;
 		part[device][i].mount[0] = 0;
 		part[device][i].sector = 0;
 		part[device][i].interface = NULL;
-		part[device][i].type = 0;
 	}
 
 	if(device == DEVICE_SD)
@@ -477,20 +524,12 @@ bool MountDevice(int device)
 	}
 	else
 	{
-		u64 start = gettime();
+		usleep(250000); // 1/4 sec
 
-		while (1)
+		if(usb->startup() && usb->isInserted())
 		{
-			usleep(250000); // 1/4 sec
-
-			if(usb->startup() && usb->isInserted())
-			{
-				MountPartitions(DEVICE_USB);
-				return true;
-			}
-
-			if(diff_sec(start, gettime()) > 10) // wait for 10 seconds for device init
-				break;
+			MountPartitions(DEVICE_USB);
+			return true;
 		}
 	}
 	return false;

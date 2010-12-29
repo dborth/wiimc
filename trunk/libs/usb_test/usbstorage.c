@@ -112,7 +112,7 @@ static u16 __vid = 0;
 static u16 __pid = 0;
 static bool usb2_mode=true;
 
-static int method=4; //0: standard
+static int method=5; //0: standard
 
 #define DEBUG_USB
 #ifdef DEBUG_USB
@@ -159,7 +159,7 @@ void usb_log(char* format, ...)
 void set_usb_method(int _method)
 {
 	method=_method;
-	if(method<0 || method>4) method=0; 
+	if(method<0 || method>5) method=0; 
 }
 
 char * getusblog()
@@ -648,7 +648,25 @@ found:
 		retval = USBStorage_Reset(dev);
 		usb_log("USBStorage_Open, USBStorage_Reset: %i\n",retval);
 	}
-	
+	else if(method==5)
+	{
+		if (conf != dev->configuration && USB_SetConfiguration(dev->usb_fd, dev->configuration) < 0)
+		{
+			usb_log("Error USB_SetConfiguration\n");
+			//goto free_and_return;
+		}
+		else usb_log("USB_SetConfiguration ok\n");
+		
+		if (dev->altInterface !=0 && USB_SetAlternativeInterface(dev->usb_fd, dev->interface, dev->altInterface) < 0)
+		{
+			usb_log("Error USB_SetAlternativeInterface, alt: %i int: %i\n",dev->altInterface,dev->interface);
+			//goto free_and_return;
+		}
+		else usb_log("USB_SetAlternativeInterface ok, alt: %i int: %i\n",dev->altInterface,dev->interface);
+		
+		dev->suspended = 0;
+		
+	}
 
 	LWP_MutexLock(dev->lock);
 	retval = __USB_CtrlMsgTimeout(dev, (USB_CTRLTYPE_DIR_DEVICE2HOST | USB_CTRLTYPE_TYPE_CLASS | USB_CTRLTYPE_REC_INTERFACE), USBSTORAGE_GET_MAX_LUN, 0, dev->interface, 1, max_lun);
@@ -1035,9 +1053,10 @@ static bool __usbstorage_IsInserted(void)
 				}
 			}
 		}
-		USBStorage_Close(&__usbfd);
-		//__lwp_heap_free(&__heap,buffer);
-		//return false;
+		USBStorage_Close(&__usbfd);  // device changed or unplugged, return false the first time to notify to the client that he must unmount devices
+		__lwp_heap_free(&__heap,buffer);
+		usb_log("USB_GetDeviceList. device_count: %i\n",device_count);
+		return false;
 	}
 	usb_log("USB_GetDeviceList. device_count: %i\n",device_count);
 	for (i = 0; i < device_count; i++) {

@@ -34,7 +34,7 @@ const DISC_INTERFACE* sd = &__io_wiisd;
 static bool reset_pressed = false;
 static bool power_pressed = false;
 
-#define USB_TEST_VERSION "1.7"
+#define USB_TEST_VERSION "1.8"
 
 static int method=0;
 static u64 timer_init=0;
@@ -191,7 +191,7 @@ void InitialScreen()
 	printf("USB2 device test version: %s\n",USB_TEST_VERSION);
 	printf("=============================\n");
 
-	printf("6 tests will be run.\n");
+	printf("7 tests will be run.\n");
 	printf("After each test, please unplug and replug your device when requested.\n");
 	printf("The final one tests wakeup and will take 20 minutes to run.\n");
 	printf("On exit application log will be saved to sd:/log_usb.txt\n");
@@ -306,6 +306,9 @@ int main(int argc, char **argv)
 	
 	change_dev();
 	test(4);
+
+	change_dev();
+	test(5);
 	
 	change_dev();
 	enable_wakeup();

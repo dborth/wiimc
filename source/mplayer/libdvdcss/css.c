@@ -361,11 +361,7 @@ int _dvdcss_disckey( dvdcss_t dvdcss )
 
             /* Fallback, but not to DISC as the disc key might be faulty */
             memset( p_disc_key, 0, KEY_SIZE );
-            #ifdef GEKKO
-            dvdcss->i_method = DVDCSS_METHOD_DISC;
-            #else
             dvdcss->i_method = DVDCSS_METHOD_TITLE;
-            #endif
             break;
 
         case DVDCSS_METHOD_DISC:
@@ -1156,14 +1152,16 @@ again:
 		{
 			return i;
 		}
-		if (i == 16777216 && tablestart == 0)
+		if (j & 0x0F != testval & 0x0f)
+			i += 7;
+		if (i > 16777214 && tablestart > 0)
 		{
 			tablestart = 0;
 			goto again;
 		}
-		if (j & 0x0F != testval & 0x0f)
-			i += 7;
 	}
+	printf("css.c: Error in BigTable\n");
+	return 0;
 }
 #endif
 
@@ -1199,6 +1197,7 @@ static int CrackDiscKey( dvdcss_t dvdcss, uint8_t *p_disc_key )
     K1table = malloc( 65536 * K1TABLEWIDTH );
     if( K1table == NULL )
     {
+    	printf("css.c: error creating K1table\n");
         return -1;
     }
     memset( K1table, 0 , 65536 * K1TABLEWIDTH );

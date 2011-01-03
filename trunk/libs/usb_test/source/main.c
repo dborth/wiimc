@@ -34,7 +34,7 @@ const DISC_INTERFACE* sd = &__io_wiisd;
 static bool reset_pressed = false;
 static bool power_pressed = false;
 
-#define USB_TEST_VERSION "1.8"
+#define USB_TEST_VERSION "1.9"
 
 static int method=0;
 static u64 timer_init=0;
@@ -191,7 +191,7 @@ void InitialScreen()
 	printf("USB2 device test version: %s\n",USB_TEST_VERSION);
 	printf("=============================\n");
 
-	printf("7 tests will be run.\n");
+	printf("8 tests will be run.\n");
 	printf("After each test, please unplug and replug your device when requested.\n");
 	printf("The final one tests wakeup and will take 20 minutes to run.\n");
 	printf("On exit application log will be saved to sd:/log_usb.txt\n");
@@ -213,9 +213,9 @@ void check_wakeup()
 		char buf[1024];
 
 		timer_init=0;
-		printf("Testing wake up\n");
+		printf("\n\nTesting wake up\n");
 	
-		if(usb->readSectors(1024,1,buf)==false)
+		if(usb->readSectors(512,1,buf)==false)
 			usb_log("Error reading sector. Device wake up fail!!\n");
 		else
 			usb_log("OK reading sector. Device wake up OK!!\n");
@@ -234,7 +234,7 @@ void wait_a()
 {
 	u32 pressed = 0;
 	
-	while(!pressed)
+	while(!pressed && !reset_pressed)
 	{	
 		WPAD_ScanPads();
 		pressed = WPAD_ButtonsDown(0);
@@ -243,6 +243,7 @@ void wait_a()
 
 		usleep(5000);		
 	}
+	reset_pressed=false;
 }
 
 void change_dev()
@@ -311,6 +312,10 @@ int main(int argc, char **argv)
 	test(5);
 	
 	change_dev();
+	test(6);
+
+	//printf("DONT unplug your USB device. Press A when ready.\n");
+	//wait_a();
 	enable_wakeup();
 
 	while(!reset_pressed)

@@ -159,7 +159,7 @@ void usb_log(char* format, ...)
 void set_usb_method(int _method)
 {
 	method=_method;
-	if(method<0 || method>5) method=0; 
+	if(method<0 || method>6) method=0; 
 }
 
 char * getusblog()
@@ -648,7 +648,7 @@ found:
 		retval = USBStorage_Reset(dev);
 		usb_log("USBStorage_Open, USBStorage_Reset: %i\n",retval);
 	}
-	else if(method==5)
+	else if(method==5 || method==6)
 	{
 		if (conf != dev->configuration && USB_SetConfiguration(dev->usb_fd, dev->configuration) < 0)
 		{
@@ -672,6 +672,13 @@ found:
 		
 	}
 
+	if(method==6)
+	{
+		dev->max_lun = 2;
+		usb_log("No get max lun call,  max_lun: %i\n",dev->max_lun);
+	}
+	else
+	{
 	LWP_MutexLock(dev->lock);
 	retval = __USB_CtrlMsgTimeout(dev, (USB_CTRLTYPE_DIR_DEVICE2HOST | USB_CTRLTYPE_TYPE_CLASS | USB_CTRLTYPE_REC_INTERFACE), USBSTORAGE_GET_MAX_LUN, 0, dev->interface, 1, max_lun);
 	LWP_MutexUnlock(dev->lock);
@@ -683,7 +690,7 @@ found:
 		dev->max_lun = *max_lun + 1;
 
 	usb_log("USBSTORAGE_GET_MAX_LUN, ret: %i   max_lun: %i\n",retval,dev->max_lun);
-
+	}
 	if (retval == USBSTORAGE_ETIMEDOUT)
 		goto free_and_return;
 

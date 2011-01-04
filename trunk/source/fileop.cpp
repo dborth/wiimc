@@ -1192,8 +1192,17 @@ void CleanupPath(char * path)
 
 		sprintf(path, "%s/", pathArray[0]);
 
-		for(i=1; i <= dirCount-parentCount; i++)
+		for(i=1; i < total-1; i++)
 		{
+			if(strcmp(pathArray[i], "..") == 0)
+				continue;
+
+			if(parentCount > 0)
+			{
+				parentCount--;
+				continue;
+			}
+
 			strcat(path, pathArray[i]);
 			strcat(path, "/");
 		}

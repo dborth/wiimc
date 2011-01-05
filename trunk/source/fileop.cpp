@@ -1148,6 +1148,7 @@ void CleanupPath(char * path)
 		int total=0;
 		int parentCount=0;
 		int dirCount=0;
+		int firstParent=0;
 
 		// tokenize
 		char buffer[2048];
@@ -1179,8 +1180,14 @@ void CleanupPath(char * path)
 
 		// count ..
 		for(i=0; i < total; i++)
+		{
 			if(strcmp(pathArray[i], "..") == 0)
+			{
+				if(parentCount == 0)
+					firstParent = i;
 				parentCount++;
+			}
+		}
 
 		dirCount = total - parentCount - 2;
 
@@ -1194,14 +1201,8 @@ void CleanupPath(char * path)
 
 		for(i=1; i < total-1; i++)
 		{
-			if(strcmp(pathArray[i], "..") == 0)
+			if(i > (firstParent - parentCount - 1) && i < (firstParent + parentCount))
 				continue;
-
-			if(parentCount > 0)
-			{
-				parentCount--;
-				continue;
-			}
 
 			strcat(path, pathArray[i]);
 			strcat(path, "/");
@@ -1608,7 +1609,7 @@ static bool ParseDirEntries()
 		// skip this file if it's not an allowed extension 
 		if((filestat.st_mode & _IFDIR) == 0)
 		{
-			if(!IsAllowedExt(ext) && !IsPlaylistExt(ext))
+			if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
 				continue;
 		}
 

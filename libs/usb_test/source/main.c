@@ -34,7 +34,7 @@ const DISC_INTERFACE* sd = &__io_wiisd;
 static bool reset_pressed = false;
 static bool power_pressed = false;
 
-#define USB_TEST_VERSION "1.9"
+#define USB_TEST_VERSION "1.10"
 
 static int method=0;
 static u64 timer_init=0;
@@ -148,7 +148,7 @@ void writelog()
 }
 
 
-
+static bool device_ok;
 
 void test(int _method)
 {
@@ -176,10 +176,12 @@ void test(int _method)
 	if(usb->isInserted())
 	{
 		usb_log("USB Device Compatible!!!\n");
+		device_ok=true;
 	}
 	else
 	{
 		usb_log("USB Device NOT Compatible!!!\n");
+		device_ok=false;
 	}
 }
 
@@ -202,7 +204,7 @@ void enable_wakeup()
 {
 	timer_init=gettime();
 	printf ("\x1b[2J"); //clear screen
-	printf("\n\n\n\nWake up test in progress - press HOME to exit.\n\n");
+	printf("\n\n\n\nWake up test in progress - press HOME to cancel test.\n\n");
 }
 
 void check_wakeup()
@@ -314,10 +316,13 @@ int main(int argc, char **argv)
 	change_dev();
 	test(6);
 
-	//printf("DONT unplug your USB device. Press A when ready.\n");
-	//wait_a();
-	enable_wakeup();
-
+	if(device_ok)
+	{
+		printf("DONT unplug your USB device. Press A when ready.\n");
+		wait_a();
+		enable_wakeup();
+	}
+	else printf("\nWake up test cancelled, device not compatible. Press HOME to exit.\n");
 	while(!reset_pressed)
 	{	
 		WPAD_ScanPads();
@@ -331,8 +336,8 @@ int main(int argc, char **argv)
 	}
 	writelog();
 	fatUnmount("sd:");
-	
-	usleep(50000);
+	printf("Exiting...\n");
+	usleep(5000);
 
 	return 0;
 }

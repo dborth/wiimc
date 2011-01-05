@@ -58,10 +58,12 @@ distribution.
 
 #define	SCSI_TEST_UNIT_READY		0x00
 #define	SCSI_REQUEST_SENSE			0x03
+#define	SCSI_INQUIRY				0x12
 #define SCSI_START_STOP				0x1B
 #define	SCSI_READ_CAPACITY			0x25
 #define	SCSI_READ_10				0x28
 #define	SCSI_WRITE_10				0x2A
+
 
 #define	SCSI_SENSE_REPLY_SIZE		18
 #define	SCSI_SENSE_NOT_READY		0x02
@@ -112,7 +114,7 @@ static u16 __vid = 0;
 static u16 __pid = 0;
 static bool usb2_mode=true;
 
-static int method=5; //0: standard
+ int method=5; //0: standard
 
 #define DEBUG_USB
 #ifdef DEBUG_USB
@@ -172,6 +174,8 @@ char * getusblog()
 
 static s32 __usbstorage_reset(usbstorage_handle *dev);
 static s32 __usbstorage_clearerrors(usbstorage_handle *dev, u8 lun);
+s32 USBStorage_Inquiry(usbstorage_handle *dev, u8 lun);
+
 
 /* XXX: this is a *really* dirty and ugly way to send a bulkmessage with a timeout
  *      but there's currently no other known way of doing this and it's in my humble
@@ -456,6 +460,7 @@ s32 USBStorage_Open(usbstorage_handle *dev, s32 device_id, u16 vid, u16 pid)
 	s32 retval = -1;
 	u8 conf = -1;
 	u8 *max_lun;
+	int i;
 	u32 iConf, iInterface, iEp;
 	usb_devdesc udd;
 	usb_configurationdesc *ucd;
@@ -487,21 +492,28 @@ retry_init:
 	if (retval < 0)
 		goto free_and_return;
 
-	retval = USB_GetDescriptors(dev->usb_fd, &udd);
-	if (retval < 0)
-		goto free_and_return;
-
+	for(i=0;i<6;i++)
+	{
+		retval = USB_GetDescriptors(dev->usb_fd, &udd);
+		if (retval < 0)
+		{
+			usb_log("USB_GetDescriptors error(%i), ret: %i\n",i,retval);
+			usleep(100);
+		}
+		else break;
+	}
+	if (retval < 0) goto free_and_return;
 	for (iConf = 0; iConf < udd.bNumConfigurations; iConf++) {
 		ucd = &udd.configurations[iConf];
 		for (iInterface = 0; iInterface < ucd->bNumInterfaces; iInterface++) {
 			uid = &ucd->interfaces[iInterface];
-			if(uid->bInterfaceClass    == USB_CLASS_MASS_STORAGE &&
+			if(uid->bInterfaceClass    == USB_CLASS_MASS_STORAGE && /*
 				   (uid->bInterfaceSubClass == MASS_STORAGE_SCSI_COMMANDS
 					|| uid->bInterfaceSubClass == MASS_STORAGE_RBC_COMMANDS
 					|| uid->bInterfaceSubClass == MASS_STORAGE_ATA_COMMANDS
 					|| uid->bInterfaceSubClass == MASS_STORAGE_QIC_COMMANDS
 					|| uid->bInterfaceSubClass == MASS_STORAGE_UFI_COMMANDS
-					|| uid->bInterfaceSubClass == MASS_STORAGE_SFF8070_COMMANDS) &&
+					|| uid->bInterfaceSubClass == MASS_STORAGE_SFF8070_COMMANDS) &&*/
 				   uid->bInterfaceProtocol == MASS_STORAGE_BULK_ONLY)
 			{
 				if (uid->bNumEndpoints < 2)
@@ -794,8 +806,50 @@ s32 USBStorage_MountLUN(usbstorage_handle *dev, u8 lun)
 		//return retval;
 	}
 	else usb_log("__usbstorage_clearerrors Ok\n");
+	
+	retval = USBStorage_Inquiry(dev,  lun);
+	usb_log("USBStorage_Inquiry: %i\n", retval);
+	
 	retval = USBStorage_ReadCapacity(dev, lun, &dev->sector_size[lun], NULL);
 	usb_log("USBStorage_ReadCapacity: %i    sector size: %i\n", retval,dev->sector_size[lun]);
+	return retval;
+}
+
+s32 USBStorage_Inquiry(usbstorage_handle *dev, u8 lun)
+{
+	int n;
+	s32 retval;
+	u8 cmd[] = {SCSI_INQUIRY, lun << 5,0,0,36,0};
+	u8 response[36];
+
+	
+	for(n=0;n<2;n++)
+	{
+	
+
+	memset(response,0,36);
+
+	retval = __cycle(dev, lun, response, 36, cmd, 6, 0, NULL, NULL);
+	if(retval>=0) break;
+	
+	}
+	if(retval>=0) retval=*response & 31;
+	/*
+	if(retval>=0)
+		{
+		switch(*response & 31)
+			{
+			// info from http://en.wikipedia.org/wiki/SCSI_Peripheral_Device_Type
+			case 5: // CDROM
+			case 7: // optical memory device (e.g., some optical disks)
+				is_dvd=1;
+				break;
+			default:
+				is_dvd=0;
+			break;
+			}
+		}
+*/
 	return retval;
 }
 
@@ -1090,11 +1144,14 @@ static bool __usbstorage_IsInserted(void)
 				usb_log("Error USBStorage_MountLUN(%i): %i\n",j,retval);
 			else
 				usb_log("USBStorage_MountLUN(%i) Ok\n",j);
-			if (retval == USBSTORAGE_ETIMEDOUT)
-				break;
+			//if (retval == USBSTORAGE_ETIMEDOUT)
+			//	break;
 
 			if (retval < 0)
+			{
+				__usbstorage_reset(&__usbfd);
 				continue;
+			}
 
 			__mounted = true;
 			__lun = j;

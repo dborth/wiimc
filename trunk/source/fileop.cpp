@@ -1117,17 +1117,13 @@ void CleanupPath(char * path)
 		path[0] = 0;
 		return;
 	}
-
-	if(strncmp(path, "http:", 5) == 0)
+	
+	if(IsAllowedProtocol(path))
 	{
-		char *c = strchr(&path[7], '/');
-		if(c == NULL) strcat(path, "/"); // should be at least one / in URL
-		return;
-	}
-	else if(strncmp(path, "mms:", 4) == 0)
-	{
-		char *c = strchr(&path[6], '/');
-		if(c == NULL) strcat(path, "/"); // should be at least one / in URL
+		char *c = strchr(path, ':');
+		c += 2;
+		if(strchr(c, '/') == NULL)
+			 strcat(path, "/"); // should be at least one / in URL
 		return;
 	}
 

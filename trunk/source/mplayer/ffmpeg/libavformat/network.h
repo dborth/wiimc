@@ -39,6 +39,7 @@
 #else
 #include <network.h>
 #define INADDR_LOOPBACK    ((unsigned long) 0x7f000001)  /* 127.0.0.1 */
+#define INET_ADDRSTRLEN 16
 #define gethostbyname net_gethostbyname
 #endif
 

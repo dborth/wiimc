@@ -31,7 +31,9 @@
 #include "internal.h"
 #include "libavutil/avstring.h"
 #include "libavcodec/get_bits.h"
+#ifndef GEKKO
 #include <strings.h>
+#endif
 
 /** Structure listing useful vars to parse RTP packet payload*/
 struct PayloadContext

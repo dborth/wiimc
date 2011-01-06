@@ -29,7 +29,9 @@
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
+#ifndef GEKKO
 #include <strings.h>
+#endif
 #include "internal.h"
 #include "network.h"
 #include "os_support.h"

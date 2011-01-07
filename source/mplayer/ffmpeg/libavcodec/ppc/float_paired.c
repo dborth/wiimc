@@ -85,9 +85,8 @@ static void vector_fmul_window_paired(float *dst, const float *src0, const float
 		window[1] = paired_lx(j, win);
 		window[1] = paired_merge10(window[1], window[1]);
 		
-		result = paired_mul(pair[1], window[0]);
-		result = paired_msub(pair[0], window[1], result);
-		result = paired_add(result, bias);
+		result = paired_madd(pair[0], window[1], bias);
+		result = ps_nmsub(pair[1], window[0], result);
 		paired_stx(result, i, dst);
 		
 		result = paired_madd(pair[1], window[1], bias);

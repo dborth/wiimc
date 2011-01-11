@@ -114,20 +114,22 @@ static u16 __vid = 0;
 static u16 __pid = 0;
 static bool usb2_mode=true;
 
- int method=5; //0: standard
+int method=6; //0: standard
 
 #define DEBUG_USB
 #ifdef DEBUG_USB
 #include <stdio.h>
 #include <stdarg.h>
 
-static char _log[8*1024]="";
+static char *_log=NULL;
 static u8 enable_log=0;
 static int log_len=1;
+#define USB_LOG_SIZE (8*1024)
 
 void reset_usb_log()
 {
-	memset(_log,0,sizeof(_log));
+	if(!_log)_log=(char*)malloc(sizeof(char)*(USB_LOG_SIZE)); 
+	memset(_log,0,USB_LOG_SIZE);
 	log_len=0;
 	enable_log=1;
 }
@@ -144,7 +146,7 @@ void usb_log(char* format, ...)
   va_start (args, format);
   vsprintf (buffer,format, args);
   l=strlen(buffer);
-  if(log_len+l+1>sizeof(_log)) 
+  if(log_len+l+1>USB_LOG_SIZE) 
   {
   	enable_log=0;
   	printf("\nLog full. No more data will be logged\n");
@@ -256,9 +258,9 @@ static s32 __USB_CtrlMsgTimeout(usbstorage_handle *dev, u8 bmRequestType, u8 bmR
 	return retval;
 }
 
+static u8 *arena_ptr=NULL;
 s32 USBStorage_Initialize()
 {
-	u8 *ptr;
 	u32 level;
 
 	if(__inited)
@@ -266,15 +268,15 @@ s32 USBStorage_Initialize()
 
 	_CPU_ISR_Disable(level);
 	LWP_InitQueue(&__usbstorage_waitq);
-
-	ptr = (u8*)ROUNDDOWN32(((u32)SYS_GetArena2Hi() - HEAP_SIZE));
-	if((u32)ptr < (u32)SYS_GetArena2Lo()) {
-		_CPU_ISR_Restore(level);
-		return IPC_ENOMEM;
+	if(!arena_ptr) {
+		arena_ptr = (u8*)ROUNDDOWN32(((u32)SYS_GetArena2Hi() - HEAP_SIZE));
+		if((u32)arena_ptr < (u32)SYS_GetArena2Lo()) {
+			_CPU_ISR_Restore(level);
+			return IPC_ENOMEM;
+		}
+		SYS_SetArena2Hi(arena_ptr);
 	}
-
-	SYS_SetArena2Hi(ptr);
-	__lwp_heap_init(&__heap, ptr, HEAP_SIZE, 32);
+	__lwp_heap_init(&__heap, arena_ptr, HEAP_SIZE, 32);
 	__inited = true;
 	_CPU_ISR_Restore(level);
 	return IPC_OK;
@@ -460,7 +462,6 @@ s32 USBStorage_Open(usbstorage_handle *dev, s32 device_id, u16 vid, u16 pid)
 	s32 retval = -1;
 	u8 conf = -1;
 	u8 *max_lun;
-	int i;
 	u32 iConf, iInterface, iEp;
 	usb_devdesc udd;
 	usb_configurationdesc *ucd;
@@ -477,7 +478,7 @@ s32 USBStorage_Open(usbstorage_handle *dev, s32 device_id, u16 vid, u16 pid)
 
 	dev->tag = TAG_START;
 
-	usb_log("USBStorage_Open\n");
+	usb_log("USBStorage_Open id: %i\n",device_id);
 
 	if (LWP_MutexInit(&dev->lock, false) < 0)
 		goto free_and_return;
@@ -492,21 +493,23 @@ retry_init:
 	if (retval < 0)
 		goto free_and_return;
 
-	for(i=0;i<6;i++)
+	retval = USB_GetDescriptors(dev->usb_fd, &udd);
+	if (retval < 0)
 	{
-		retval = USB_GetDescriptors(dev->usb_fd, &udd);
-		if (retval < 0)
-		{
-			usb_log("USB_GetDescriptors error(%i), ret: %i\n",i,retval);
-			usleep(100);
-		}
-		else break;
+		usb_log("USB_GetDescriptors error, ret: %i\n",retval);
+		goto free_and_return;
 	}
-	if (retval < 0) goto free_and_return;
+	else 
+	
+		usb_log("USB_GetDescriptors OK, configurations: %i\n",udd.bNumConfigurations);
+
+
 	for (iConf = 0; iConf < udd.bNumConfigurations; iConf++) {
 		ucd = &udd.configurations[iConf];
+		usb_log("  Configuration: %i\n",iConf);
 		for (iInterface = 0; iInterface < ucd->bNumInterfaces; iInterface++) {
 			uid = &ucd->interfaces[iInterface];
+			usb_log("    Interface: %i  InterfaceClass: 0x%x  numendpoints: %i\n",iInterface,uid->bInterfaceClass,uid->bNumEndpoints);
 			if(uid->bInterfaceClass    == USB_CLASS_MASS_STORAGE && /*
 				   (uid->bInterfaceSubClass == MASS_STORAGE_SCSI_COMMANDS
 					|| uid->bInterfaceSubClass == MASS_STORAGE_RBC_COMMANDS
@@ -516,6 +519,7 @@ retry_init:
 					|| uid->bInterfaceSubClass == MASS_STORAGE_SFF8070_COMMANDS) &&*/
 				   uid->bInterfaceProtocol == MASS_STORAGE_BULK_ONLY)
 			{
+				
 				if (uid->bNumEndpoints < 2)
 					continue;
 				
@@ -525,6 +529,7 @@ retry_init:
 					ued = &uid->endpoints[iEp];
 					if (ued->bmAttributes != USB_ENDPOINT_BULK)
 						continue;
+					usb_log("      USB_ENDPOINT_BULK found: 0x%x  MaxPacketSize: %i\n",ued->bEndpointAddress,ued->wMaxPacketSize);
 
 					if (ued->bEndpointAddress & USB_ENDPOINT_IN) {
 						dev->ep_in = ued->bEndpointAddress;
@@ -1161,7 +1166,7 @@ static bool __usbstorage_IsInserted(void)
 			usleep(100);
 #ifdef DEBUG_USB
 			{
-				u8 bf[1024];
+				u8 bf[2048];
 				if(USBStorage_Read(&__usbfd, __lun, 0, 1, bf)<0)
 				{
 					usb_log("Error reading sector 0\n");
@@ -1219,6 +1224,15 @@ static bool __usbstorage_Shutdown(void)
 		USBStorage_Close(&__usbfd);
 
 	return true;
+}
+
+void USBStorage_Deinitialize()
+{
+	__usbstorage_Shutdown();
+
+	LWP_CloseQueue(__usbstorage_waitq);
+
+	__inited = false;
 }
 
 DISC_INTERFACE __io_usbstorage = {

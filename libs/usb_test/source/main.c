@@ -34,7 +34,7 @@ const DISC_INTERFACE* sd = &__io_wiisd;
 static bool reset_pressed = false;
 static bool power_pressed = false;
 
-#define USB_TEST_VERSION "1.10"
+#define USB_TEST_VERSION "1.12"
 
 static int method=0;
 static u64 timer_init=0;
@@ -212,7 +212,7 @@ void check_wakeup()
 	if(timer_init==0) return;
 	if(ticks_to_secs(gettime() - timer_init) > 20*60) //20 mins
 	{
-		char buf[1024];
+		char buf[2048];
 
 		timer_init=0;
 		printf("\n\nTesting wake up\n");
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
 
 	__exception_setreload(1);
 	if(IOS_GetVersion()!=58) IOS_ReloadIOS(58);
-	usleep(5000);
+	usleep(50000);
 	
 	initialise_video(); 
 	
@@ -276,7 +276,8 @@ int main(int argc, char **argv)
 		sleep(4);
 		return 0;
 	}
-	
+
+	sd->startup();
 	if(!fatMount("sd",sd,0,2,128) )
 	{
 		printf("\n\nYou need an SD card to run this test.");
@@ -314,6 +315,32 @@ int main(int argc, char **argv)
 	test(5);
 	
 	change_dev();
+#if 1
+{
+	void USBStorage_Deinitialize();
+	usb_log("Doing IOSReload.\n");
+	fatUnmount("sd");
+	__io_wiisd.shutdown();
+	__io_wiisd.shutdown();
+	__io_usbstorage.shutdown();
+	USBStorage_Deinitialize();
+		
+	WPAD_Shutdown();
+	usleep(500*1000);
+	USB_Deinitialize();
+	usleep(50*1000);
+	IOS_ReloadIOS(58);
+	sleep(1);
+	WPAD_Init();
+
+	sd->startup();
+
+	fatMount("sd",sd,0,2,128);
+	usb->startup();
+	usleep(500*1000);
+}
+#endif
+	
 	test(6);
 
 	if(device_ok)

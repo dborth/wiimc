@@ -889,11 +889,11 @@ static void ff_h264_idct8_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 	vector float pair[4], sub[4], add[4];
 	vector float result, pre[4];
 	
-	block[0] += 33;
+	block[0] += 32;
 	block -= 2;
 	
 	float element[64];
-	int16_t *base[2] = {element-16,element-2};
+	float *base[2] = {element-16,element-2};
 	
 	int i;
 	for (i=0; i<4; i++) {

@@ -16,31 +16,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVUTIL_PPC_BSWAP_H
-#define AVUTIL_PPC_BSWAP_H
+#ifndef AVUTIL_PPC_INTMATH_H
+#define AVUTIL_PPC_INTMATH_H
 
 #include <stdint.h>
-#include "config.h"
 #include "libavutil/attributes.h"
 
-#ifdef GEKKO
-
-#define av_bswap16 av_bswap16
-static av_always_inline av_const uint16_t av_bswap16(uint16_t x)
+#define FASTDIV FASTDIV
+static inline av_const int FASTDIV(int a, int b)
 {
-    uint16_t t;
-    __asm__ ("lhbrx  %0, %y1" : "=r"(t) : "Z"(x));
-    return t;
+    int r;
+    __asm__ volatile("mulhwu  %0, %1, %2"
+                     : "=r"(r) : "r"(a), "r"(ff_inverse[b]));
+    return r;
 }
 
-#define av_bswap32 av_bswap32
-static av_always_inline av_const uint32_t av_bswap32(uint32_t x)
-{
-    uint32_t t;
-    __asm__ ("lwbrx  %0, %y1" : "=r"(t) : "Z"(x));
-    return t;
-}
-
-#endif
-
-#endif /* AVUTIL_PPC_BSWAP_H */
+#endif /* AVUTIL_PPC_INTMATH_H */

@@ -23,6 +23,8 @@
 
 #include <stdint.h>
 #include "config.h"
+#include "attributes.h"
+
 
 #if HAVE_XFORM_ASM
 

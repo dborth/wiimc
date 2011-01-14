@@ -38,13 +38,13 @@ extern "C" {
 #include "mplayer/stream/url.h"
 }
 
-#define TCP_CONNECT_TIMEOUT 	4  // 4 secs to make a connection
+#define TCP_CONNECT_TIMEOUT 	13  // 10 secs to make a connection
 #define TCP_SEND_SIZE 			(32 * 1024)
 #define TCP_RECV_SIZE 			(32 * 1024)
-#define TCP_BLOCK_RECV_TIMEOUT 	4000 // 4 secs to receive
-#define TCP_BLOCK_SEND_TIMEOUT 	4000 // 4 secs to send
-#define TCP_BLOCK_SIZE 			1024
-#define HTTP_TIMEOUT 			10000 // 10 secs to get an http response
+#define TCP_BLOCK_RECV_TIMEOUT 	15000 // 10 secs to receive
+#define TCP_BLOCK_SEND_TIMEOUT 	15000 // 10 secs to send
+#define TCP_BLOCK_SIZE 			2048
+#define HTTP_TIMEOUT 			35000 // 10 secs to get an http response
 #define IOS_O_NONBLOCK			0x04
 
 static s32 tcp_socket(void)
@@ -135,13 +135,13 @@ static int tcp_readln(const s32 s, char *buf, const u16 max_length)
 
 		ret = net_read(s, &buf[c], 1);
 
-		if (ret == 0 || ret == -EAGAIN)
+		if (ret == -EAGAIN)
 		{
 			usleep(20 * 1000);
 			continue;
 		}
 
-		if (ret < 0)
+		if (ret <= 0)
 			break;
 
 		if (c > 0 && buf[c - 1] == '\r' && buf[c] == '\n')
@@ -151,12 +151,13 @@ static int tcp_readln(const s32 s, char *buf, const u16 max_length)
 			break;
 		}
 		c++;
+		start_time = gettime();
 		usleep(100);
 	}
 	return res;
 }
 
-static int tcp_read(const s32 s, u8 *buffer, const u32 length)
+static u32 tcp_read(const s32 s, u8 *buffer, const u32 length)
 {
 	char *p;
 	u32 left, block, received, step=0;
@@ -182,17 +183,14 @@ static int tcp_read(const s32 s, u8 *buffer, const u32 length)
 
 		res = net_read(s, p, block);
 
+		if(res<=0 && res != -EAGAIN) break; 
+
 		if(res>0)
 		{
 			received += res;
 			left -= res;
 			p += res;
 		}
-		else if (res < 0 && res != -EAGAIN)
-		{
-			break;
-		}
-
 		usleep(1000);
 
 		if ((received / TCP_BLOCK_SIZE) > step)
@@ -204,7 +202,7 @@ static int tcp_read(const s32 s, u8 *buffer, const u32 length)
 	return received;
 }
 
-static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
+static u32 tcp_write(const s32 s, const u8 *buffer, const u32 length)
 {
 	const u8 *p;
 	u32 left, block, sent, step=0;
@@ -258,9 +256,9 @@ static int tcp_write(const s32 s, const u8 *buffer, const u32 length)
  * http_request
  * Retrieves the specified URL, and stores it in the specified file or buffer
  ***************************************************************************/
-static int http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent, int retry)
+static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent, int retry)
 {
-	int res = 0;
+	u32 res = 0;
 	char http_host[1024];
 	char http_path[1024];
 	u16 http_port;
@@ -314,15 +312,15 @@ static int http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 	char line[256];
 	char redirect[1024] = { 0 };
-
+	
 	for (linecount = 0; linecount < 32; linecount++)
 	{
+		memset(line,0,256);
 		if (tcp_readln(s, line, 255) != 0)
 		{
 			http_status = 404;
 			break;
 		}
-
 		if (strlen(line) < 1)
 			break;
 
@@ -413,7 +411,7 @@ static int http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 	return sizeread;
 }
 
-int http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent)
+u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent)
 {
 	return http_request(url, hfile, buffer, maxsize, silent, 0);
 }

@@ -165,10 +165,6 @@ typedef struct RTSPMessageHeader {
      * returned
      */
     char reason[256];
-
-    /** The "Content-Base:" field.
-     */
-    char content_base[4096];
 } RTSPMessageHeader;
 
 /**
@@ -313,6 +309,10 @@ typedef struct RTSPState {
 
     /** Reusable buffer for receiving packets */
     uint8_t* recvbuf;
+
+    /** Filter incoming UDP packets - receive packets only from the right
+     * source address and port. */
+    int filter_source;
 } RTSPState;
 
 /**
@@ -353,7 +353,7 @@ typedef struct RTSPStream {
 } RTSPStream;
 
 void ff_rtsp_parse_line(RTSPMessageHeader *reply, const char *buf,
-                        HTTPAuthState *auth_state);
+                        RTSPState *rt, const char *method);
 
 extern int rtsp_rtp_port_min;
 extern int rtsp_rtp_port_max;
@@ -434,13 +434,15 @@ int ff_rtsp_send_cmd(AVFormatContext *s, const char *method,
  *                   data packets (if they are encountered), until a reply
  *                   has been fully parsed. If no more data is available
  *                   without parsing a reply, it will return an error.
+ * @param method the RTSP method this is a reply to. This affects how
+ *               some response headers are acted upon. May be NULL.
  *
  * @return 1 if a data packets is ready to be received, -1 on error,
  *          and 0 on success.
  */
 int ff_rtsp_read_reply(AVFormatContext *s, RTSPMessageHeader *reply,
                        unsigned char **content_ptr,
-                       int return_on_interleaved_data);
+                       int return_on_interleaved_data, const char *method);
 
 /**
  * Skip a RTP/TCP interleaved packet.

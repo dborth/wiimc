@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 31032 $ -->
+<!-- $Revision: 32748 $ -->
 <chapter id="ports" xreflabel="Ports">
 <title>Ports</title>
 
@@ -394,7 +394,7 @@ Below are solutions for some common problems:
   </para>
   <para>
   Solution: Use the extralibdir option of configure
-  <option>--with-extralibdir="/usr/lib -lrt"</option>
+  <option>--extra-ldflags="/usr/lib -lrt"</option>
   </para>
 </listitem>
 

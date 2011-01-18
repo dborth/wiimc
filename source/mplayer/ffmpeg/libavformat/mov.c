@@ -591,8 +591,11 @@ static void mov_metadata_creation_time(AVMetadata **metadata, time_t time)
 {
     char buffer[32];
     if (time) {
+        struct tm *ptm;
         time -= 2082844800;  /* seconds between 1904-01-01 and Epoch */
-        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", gmtime(&time));
+        ptm = gmtime(&time);
+        if (!ptm) return;
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", ptm);
         av_metadata_set2(metadata, "creation_time", buffer, 0);
     }
 }
@@ -1512,10 +1515,11 @@ static void mov_build_index(MOVContext *mov, AVStream *st)
     uint64_t stream_size = 0;
 
     /* adjust first dts according to edit list */
-    if (sc->time_offset) {
+    if (sc->time_offset && mov->time_scale > 0) {
         int rescaled = sc->time_offset < 0 ? av_rescale(sc->time_offset, sc->time_scale, mov->time_scale) : sc->time_offset;
         current_dts = -rescaled;
-        if (sc->ctts_data && sc->ctts_data[0].duration / sc->stts_data[0].duration > 16) {
+        if (sc->ctts_data && sc->stts_data &&
+            sc->ctts_data[0].duration / sc->stts_data[0].duration > 16) {
             /* more than 16 frames delay, dts are likely wrong
                this happens with files created by iMovie */
             sc->wrong_dts = 1;
@@ -1746,10 +1750,10 @@ static int mov_read_trak(MOVContext *c, ByteIOContext *pb, MOVAtom atom)
         return 0;
     }
 
-    if (!sc->time_scale) {
+    if (sc->time_scale <= 0) {
         av_log(c->fc, AV_LOG_WARNING, "stream %d, timescale not set\n", st->index);
         sc->time_scale = c->time_scale;
-        if (!sc->time_scale)
+        if (sc->time_scale <= 0)
             sc->time_scale = 1;
     }
 
@@ -1784,6 +1788,10 @@ static int mov_read_trak(MOVContext *c, ByteIOContext *pb, MOVAtom atom)
 
         av_reduce(&st->avg_frame_rate.num, &st->avg_frame_rate.den,
                   sc->time_scale*st->nb_frames, st->duration, INT_MAX);
+
+        if (sc->stts_count == 1 || (sc->stts_count == 2 && sc->stts_data[1].count == 1))
+            av_reduce(&st->r_frame_rate.num, &st->r_frame_rate.den,
+                      sc->time_scale, sc->stts_data[0].duration, INT_MAX);
     }
 
     switch (st->codec->codec_id) {

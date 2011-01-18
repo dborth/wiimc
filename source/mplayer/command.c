@@ -70,8 +70,6 @@
 #include "libavutil/avstring.h"
 #include "edl.h"
 
-#define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
-
 #ifdef GEKKO
 extern int copyScreen;
 #endif

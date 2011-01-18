@@ -13,7 +13,39 @@ libavutil:   2009-03-08
 
 API changes, most recent first:
 
-2010-12-19 - r26056 - lavutil 50.35.0 - error.h
+2011-01-15 - r26374 - lavfi 1.74.0 - AVFilterBufferRefAudioProps
+  Rename AVFilterBufferRefAudioProps.samples_nb to nb_samples.
+
+2011-01-14 - r26330 - lavf 52.93.0 - av_metadata_copy()
+  Add av_metadata_copy() in avformat.h.
+
+2011-01-07 - r26262 - lavc 52.107.0 - deprecate reordered_opaque
+  Deprecate reordered_opaque in favor of pkt_pts/dts.
+
+2011-01-07 - r26261 - lavc 52.106.0 - pkt_dts
+  Add pkt_dts to AVFrame, this will in the future allow multithreading decoders
+  to not mess up dts.
+
+2011-01-07 - r26260 - lavc 52.105.0 - pkt_pts
+  Add pkt_pts to AVFrame.
+
+2011-01-XX - r26XXX - lavc 52.104.0 - av_get_profile_name()
+  Add av_get_profile_name to libavcodec/avcodec.h.
+
+2010-12-27 - r26108 - lavfi 1.71.0 - AV_PERM_NEG_LINESIZES
+  Add AV_PERM_NEG_LINESIZES in avfilter.h.
+
+2010-12-27 - r26104 - lavf 52.91.0 - av_find_best_stream()
+  Add av_find_best_stream to libavformat/avformat.h.
+
+2010-12-27 - r26103 - lavf 52.90.0
+  Add AVFMT_NOSTREAMS flag for formats with no streams,
+  like e.g. text metadata.
+
+2010-12-22 - r26073 - lavu 50.36.0 - file.h
+  Add functions av_file_map() and av_file_unmap() in file.h.
+
+2010-12-19 - r26056 - lavu 50.35.0 - error.h
   Add "not found" error codes:
   AVERROR_DEMUXER_NOT_FOUND
   AVERROR_MUXER_NOT_FOUND

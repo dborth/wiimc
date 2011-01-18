@@ -630,7 +630,7 @@ static inline int wv_unpack_mono(WavpackContext *s, GetBitContext *gb, void *dst
         else
             *dst16++ = wv_get_value_integer(s, &crc_extra_bits, S);
         count++;
-    }while(!last && count < s->samples);
+    }while(!last && count < s->max_samples);
 
     s->samples_left -= count;
     if(!s->samples_left){
@@ -660,6 +660,10 @@ static av_cold int wavpack_decode_init(AVCodecContext *avctx)
     WavpackContext *s = avctx->priv_data;
 
     s->avctx = avctx;
+    if (avctx->channels > 2) {
+        av_log(avctx, AV_LOG_ERROR, "Multichannel WavPack is not supported yet.\n");
+        return -1;
+    }
     s->stereo = (avctx->channels == 2);
     if(avctx->bits_per_coded_sample <= 16)
         avctx->sample_fmt = AV_SAMPLE_FMT_S16;

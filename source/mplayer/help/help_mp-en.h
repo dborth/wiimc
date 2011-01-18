@@ -1,4 +1,4 @@
-// $Revision: 32526 $
+// $Revision: 32777 $
 // MASTER FILE. Use this file as base for translations.
 // Translated files should be sent to the mplayer-DOCS mailing list or
 // to the help messages maintainer, see DOCS/tech/MAINTAINERS.
@@ -199,7 +199,6 @@ static const char help_text[]=
 #define MSGTR_EdloutBadStop "EDL skip canceled, last start > stop\n"
 #define MSGTR_EdloutStartSkip "EDL skip start, press 'i' again to end block.\n"
 #define MSGTR_EdloutEndSkip "EDL skip end, line written.\n"
-#define MSGTR_MPEndposNoSizeBased "Option -endpos in MPlayer does not yet support size units.\n"
 
 // mplayer.c OSD
 #define MSGTR_OSDenabled "enabled"

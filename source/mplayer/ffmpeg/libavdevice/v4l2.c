@@ -324,7 +324,7 @@ static void mmap_release_buffer(AVPacket *pkt)
 
     res = ioctl(fd, VIDIOC_QBUF, &buf);
     if (res < 0) {
-        av_log(NULL, AV_LOG_ERROR, "ioctl(VIDIOC_QBUF)\n");
+        av_log(NULL, AV_LOG_ERROR, "ioctl(VIDIOC_QBUF): %s\n", strerror(errno));
     }
     pkt->data = NULL;
     pkt->size = 0;
@@ -442,7 +442,11 @@ static int v4l2_set_parameters(AVFormatContext *s1, AVFormatParameters *ap)
     struct video_data *s = s1->priv_data;
     struct v4l2_input input;
     struct v4l2_standard standard;
+    struct v4l2_streamparm streamparm = { 0 };
+    struct v4l2_fract *tpf = &streamparm.parm.capture.timeperframe;
     int i;
+
+    streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
     if (ap->channel>=0) {
         /* set tv video input */
@@ -490,12 +494,8 @@ static int v4l2_set_parameters(AVFormatContext *s1, AVFormatParameters *ap)
     }
 
     if (ap->time_base.num && ap->time_base.den) {
-        struct v4l2_streamparm streamparm = { 0 };
-        struct v4l2_fract *tpf = &streamparm.parm.capture.timeperframe;
-
         av_log(s1, AV_LOG_DEBUG, "Setting time per frame to %d/%d\n",
                ap->time_base.num, ap->time_base.den);
-        streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         tpf->numerator = ap->time_base.num;
         tpf->denominator = ap->time_base.den;
         if (ioctl(s->fd, VIDIOC_S_PARM, &streamparm) != 0) {
@@ -511,10 +511,16 @@ static int v4l2_set_parameters(AVFormatContext *s1, AVFormatParameters *ap)
                    "The driver changed the time per frame from %d/%d to %d/%d\n",
                    ap->time_base.num, ap->time_base.den,
                    tpf->numerator, tpf->denominator);
-            ap->time_base.num = tpf->numerator;
-            ap->time_base.den = tpf->denominator;
+        }
+    } else {
+        /* if timebase value is not set in ap, read the timebase value from the driver */
+        if (ioctl(s->fd, VIDIOC_G_PARM, &streamparm) != 0) {
+            av_log(s1, AV_LOG_ERROR, "ioctl(VIDIOC_G_PARM): %s\n", strerror(errno));
+            return AVERROR(errno);
         }
     }
+    ap->time_base.num = tpf->numerator;
+    ap->time_base.den = tpf->denominator;
 
     return 0;
 }

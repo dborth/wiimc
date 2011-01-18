@@ -282,6 +282,8 @@ void ff_h264dsp_init(H264DSPContext *c)
     c->h264_idct8_add4     = ff_h264_idct8_add4_c;
     c->h264_idct_add8      = ff_h264_idct_add8_c;
     c->h264_idct_add16intra= ff_h264_idct_add16intra_c;
+    c->h264_luma_dc_dequant_idct= ff_h264_luma_dc_dequant_idct_c;
+    c->h264_chroma_dc_dequant_idct= ff_chroma_dc_dequant_idct_c;
 
     c->weight_h264_pixels_tab[0]= weight_h264_pixels16x16_c;
     c->weight_h264_pixels_tab[1]= weight_h264_pixels16x8_c;
@@ -315,6 +317,6 @@ void ff_h264dsp_init(H264DSPContext *c)
     c->h264_loop_filter_strength= NULL;
 
     if (ARCH_ARM) ff_h264dsp_init_arm(c);
-    if (HAVE_ALTIVEC || HAVE_PAIRED) ff_h264dsp_init_ppc(c);
+    if (HAVE_ALTIVEC) ff_h264dsp_init_ppc(c);
     if (HAVE_MMX) ff_h264dsp_init_x86(c);
 }

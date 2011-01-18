@@ -183,6 +183,11 @@ threshold, and defaults to 98.
 @var{threshold} is the threshold below which a pixel value is
 considered black, and defaults to 32.
 
+@section copy
+
+Copy the input source unchanged to the output. Mainly useful for
+testing purposes.
+
 @section crop
 
 Crop the input video to @var{out_w}:@var{out_h}:@var{x}:@var{y}.
@@ -261,7 +266,7 @@ crop=in_h
 # corner of the input image.
 crop=in_w-100:in_h-100:100:100
 
-# crop 10 pixels from the lefth and right borders, and 20 pixels from
+# crop 10 pixels from the left and right borders, and 20 pixels from
 # the top and bottom borders
 "crop=in_w-2*10:in_h-2*20"
 
@@ -274,7 +279,7 @@ crop=in_w-100:in_h-100:100:100
 # trembling effect
 "crop=in_w/2:in_h/2:(in_w-out_w)/2+((in_w-out_w)/2)*sin(n/10):(in_h-out_h)/2 +((in_h-out_h)/2)*sin(n/7)"
 
-# erratic camera effect depending on timestamp and position
+# erratic camera effect depending on timestamp
 "crop=in_w/2:in_h/2:(in_w-out_w)/2+((in_w-out_w)/2)*sin(t*10):(in_h-out_h)/2 +((in_h-out_h)/2)*sin(t*13)"
 
 # set x depending on the value of y
@@ -366,13 +371,14 @@ the next filter.
 The filter accepts a list of pixel format names, separated by ":",
 for example "yuv420p:monow:rgb24".
 
-The following command:
-
+Some examples follow:
 @example
-./ffmpeg -i in.avi -vf "format=yuv420p" out.avi
-@end example
+# convert the input video to the format "yuv420p"
+format=yuv420p
 
-will convert the input video to the format "yuv420p".
+# convert the input video to any of the formats in the list
+format=yuv420p:yuv444p:yuv410p
+@end example
 
 @anchor{frei0r}
 @section frei0r
@@ -499,27 +505,101 @@ input to the next filter.
 The filter accepts a list of pixel format names, separated by ":",
 for example "yuv420p:monow:rgb24".
 
-The following command:
-
+Some examples follow:
 @example
-./ffmpeg -i in.avi -vf "noformat=yuv420p, vflip" out.avi
-@end example
+# force libavfilter to use a format different from "yuv420p" for the
+# input to the vflip filter
+noformat=yuv420p,vflip
 
-will make libavfilter use a format different from "yuv420p" for the
-input to the vflip filter.
+# convert the input video to any of the formats not contained in the list
+noformat=yuv420p:yuv444p:yuv410p
+@end example
 
 @section null
 
 Pass the video source unchanged to the output.
 
-@section ocv_smooth
+@section ocv
 
-Apply smooth transform using libopencv.
+Apply video transform using libopencv.
 
 To enable this filter install libopencv library and headers and
 configure FFmpeg with --enable-libopencv.
 
-The filter accepts the following parameters:
+The filter takes the parameters: @var{filter_name}@{:=@}@var{filter_params}.
+
+@var{filter_name} is the name of the libopencv filter to apply.
+
+@var{filter_params} specifies the parameters to pass to the libopencv
+filter. If not specified the default values are assumed.
+
+Refer to the official libopencv documentation for more precise
+informations:
+@url{http://opencv.willowgarage.com/documentation/c/image_filtering.html}
+
+Follows the list of supported libopencv filters.
+
+@anchor{dilate}
+@subsection dilate
+
+Dilate an image by using a specific structuring element.
+This filter corresponds to the libopencv function @code{cvDilate}.
+
+It accepts the parameters: @var{struct_el}:@var{nb_iterations}.
+
+@var{struct_el} represents a structuring element, and has the syntax:
+@var{cols}x@var{rows}+@var{anchor_x}x@var{anchor_y}/@var{shape}
+
+@var{cols} and @var{rows} represent the number of colums and rows of
+the structuring element, @var{anchor_x} and @var{anchor_y} the anchor
+point, and @var{shape} the shape for the structuring element, and
+can be one of the values "rect", "cross", "ellipse", "custom".
+
+If the value for @var{shape} is "custom", it must be followed by a
+string of the form "=@var{filename}". The file with name
+@var{filename} is assumed to represent a binary image, with each
+printable character corresponding to a bright pixel. When a custom
+@var{shape} is used, @var{cols} and @var{rows} are ignored, the number
+or columns and rows of the read file are assumed instead.
+
+The default value for @var{struct_el} is "3x3+0x0/rect".
+
+@var{nb_iterations} specifies the number of times the transform is
+applied to the image, and defaults to 1.
+
+Follow some example:
+@example
+# use the default values
+ocv=dilate
+
+# dilate using a structuring element with a 5x5 cross, iterate two times
+ocv=dilate=5x5+2x2/cross:2
+
+# read the shape from the file diamond.shape, iterate two times
+# the file diamond.shape may contain a pattern of characters like this:
+#   *
+#  ***
+# *****
+#  ***
+#   *
+# the specified cols and rows are ignored (but not the anchor point coordinates)
+ocv=0x0+2x2/custom=diamond.shape:2
+@end example
+
+@subsection erode
+
+Erode an image by using a specific structuring element.
+This filter corresponds to the libopencv function @code{cvErode}.
+
+The filter accepts the parameters: @var{struct_el}:@var{nb_iterations},
+with the same meaning and use of those of the dilate filter
+(@pxref{dilate}).
+
+@subsection smooth
+
+Smooth the input video.
+
+The filter takes the following parameters:
 @var{type}:@var{param1}:@var{param2}:@var{param3}:@var{param4}.
 
 @var{type} is the type of smooth filter to apply, and can be one of
@@ -535,9 +615,7 @@ The default value for @var{param1} is 3, the default value for the
 other parameters is 0.
 
 These parameters correspond to the parameters assigned to the
-libopencv function @code{cvSmooth}. Refer to the official libopencv
-documentation for the exact meaning of the parameters:
-@url{http://opencv.willowgarage.com/documentation/c/image_filtering.html}
+libopencv function @code{cvSmooth}.
 
 @section overlay
 
@@ -918,6 +996,8 @@ enable automatic detection
 @end table
 
 Default value is -1.
+If interlacing is unknown or decoder does not export this information,
+top field first will be assumed.
 
 @c man end VIDEO FILTERS
 

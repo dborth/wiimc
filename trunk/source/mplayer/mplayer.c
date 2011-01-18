@@ -199,8 +199,6 @@ float start_volume = -1;
 double start_pts = MP_NOPTS_VALUE;
 char *heartbeat_cmd;
 
-#define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
-
 m_config_t* mconfig;
 
 //**************************************************************************//
@@ -450,21 +448,17 @@ static int is_valid_metadata_type (metadata_t type) {
   case META_VIDEO_CODEC:
   case META_VIDEO_BITRATE:
   case META_VIDEO_RESOLUTION:
-  {
     if (!mpctx->sh_video)
       return 0;
     break;
-  }
 
   /* check for valid audio stream */
   case META_AUDIO_CODEC:
   case META_AUDIO_BITRATE:
   case META_AUDIO_SAMPLES:
-  {
     if (!mpctx->sh_audio)
       return 0;
     break;
-  }
 
   /* check for valid demuxer */
   case META_INFO_TITLE:
@@ -474,11 +468,9 @@ static int is_valid_metadata_type (metadata_t type) {
   case META_INFO_COMMENT:
   case META_INFO_TRACK:
   case META_INFO_GENRE:
-  {
     if (!mpctx->demuxer)
       return 0;
     break;
-  }
 
   default:
     break;
@@ -1055,16 +1047,16 @@ static int libmpdemux_was_interrupted(int eof) {
        switch(cmd->id) {
        case MP_CMD_QUIT:
 	 exit_player_with_rc(EXIT_QUIT, (cmd->nargs > 0)? cmd->args[0].v.i : 0);
-       case MP_CMD_PLAY_TREE_STEP: {
+       case MP_CMD_PLAY_TREE_STEP:
 	 eof = (cmd->args[0].v.i > 0) ? PT_NEXT_ENTRY : PT_PREV_ENTRY;
 	 mpctx->play_tree_step = (cmd->args[0].v.i == 0) ? 1 : cmd->args[0].v.i;
-       } break;
-       case MP_CMD_PLAY_TREE_UP_STEP: {
+       break;
+       case MP_CMD_PLAY_TREE_UP_STEP:
 	 eof = (cmd->args[0].v.i > 0) ? PT_UP_NEXT : PT_UP_PREV;
-       } break;
-       case MP_CMD_PLAY_ALT_SRC_STEP: {
+       break;
+       case MP_CMD_PLAY_ALT_SRC_STEP:
 	 eof = (cmd->args[0].v.i > 0) ?  PT_NEXT_SRC : PT_PREV_SRC;
-       } break;
+       break;
        }
        mp_cmd_free(cmd);
   }
@@ -3672,25 +3664,7 @@ if(mpctx->sh_video) {
 // check .sub
   double fps = mpctx->sh_video ? mpctx->sh_video->fps : 25;
   current_module="read_subtitles_file";
-  if(sub_name){
-    for (i = 0; sub_name[i] != NULL; ++i)
-        add_subtitles (sub_name[i], fps, 0);
-  }
-  //scip:
-  sub_auto = 1;
-  if((strncmp(filename, "sd", 2) == 0 || strncmp(filename, "usb", 3) == 0 || strncmp(filename, "smb", 3) == 0)
-	  && vo_vobsub==NULL && sub_auto) { // auto load sub file ...
-    //char *psub = get_path( "sub/" );
-    //char **tmp = sub_filenames((psub ? psub : ""), filename);
-    char **tmp = sub_filenames("", filename);
-    int i = 0;
-    //free(psub); // release the buffer created by get_path() above
-    while (tmp[i]) {
-        add_subtitles (tmp[i], fps, 1);
-        free(tmp[i++]);
-    }
-    free(tmp);
-  }
+  load_subtitles(filename, fps, add_subtitles);
   if (mpctx->set_of_sub_size > 0)
       mpctx->sub_counts[SUB_SOURCE_SUBS] = mpctx->set_of_sub_size;
 }
@@ -3719,33 +3693,20 @@ if (select_subtitle(mpctx)) {
       }
   }
 
-if(!mpctx->sh_video) goto main; // audio-only
+  if (mpctx->sh_video)
+      reinit_video_chain();
 
-#ifdef GEKKO
-// check if video has a higher resolution than the Wii can handle
-if(mpctx->sh_video->disp_w > MAX_WIDTH || mpctx->sh_video->disp_h > MAX_HEIGHT)
-{
-	wii_error = 1; // resolution too large
-	goto goto_next_file;
-}
-#endif
-
-if(!reinit_video_chain()) {
-  if(!mpctx->sh_video){
-    if(!mpctx->sh_audio) goto goto_next_file;
-    goto main; // exit_player(MSGTR_Exit_error);
-  }
-}
-
-   if(vo_flags & 0x08 && vo_spudec)
-      spudec_set_hw_spu(vo_spudec,mpctx->video_out);
+      if (mpctx->sh_video) {
+          if (vo_flags & 0x08 && vo_spudec)
+              spudec_set_hw_spu(vo_spudec, mpctx->video_out);
 
 #ifdef CONFIG_FREETYPE
-   //force_load_font = 1;
+          //force_load_font = 1;
 #endif
+      } else if (!mpctx->sh_audio)
+          goto goto_next_file;
 
 //================== MAIN: ==========================
-main:
 current_module="main";
 
     if(playing_msg) {
@@ -3902,11 +3863,6 @@ if (seek_to_sec) {
     end_at.pos += seek_to_sec;
 }
 
-if (end_at.type == END_AT_SIZE) {
-    mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_MPEndposNoSizeBased);
-    end_at.type = END_AT_NONE;
-}
-
 #ifdef CONFIG_DVDNAV
 mp_dvdnav_context_free(mpctx);
 if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
@@ -3960,8 +3916,8 @@ if(!mpctx->sh_video) {
   if(!quiet)
     print_status(a_pos, 0, 0);
 
-  if(end_at.type == END_AT_TIME && end_at.pos < a_pos)
-    mpctx->eof = PT_NEXT_ENTRY;
+  if(end_at.type == END_AT_TIME && end_at.pos < a_pos ||
+     end_at.type == END_AT_SIZE && end_at.pos < stream_tell(mpctx->stream))
   update_subtitles(NULL, a_pos, mpctx->d_sub, 0);
   update_osd_msg();
 
@@ -4072,9 +4028,10 @@ if(auto_quality>0){
      --play_n_frames;
      if (play_n_frames <= 0) mpctx->eof = PT_NEXT_ENTRY;
  }
-// FIXME: add size based support for -endpos
- if (end_at.type == END_AT_TIME &&
-         !frame_time_remaining && end_at.pos <= mpctx->sh_video->pts)
+
+ if (!frame_time_remaining &&
+     ((end_at.type == END_AT_TIME &&       mpctx->sh_video->pts >= end_at.pos) ||
+      (end_at.type == END_AT_SIZE && stream_tell(mpctx->stream) >= end_at.pos)))
      mpctx->eof = PT_NEXT_ENTRY;
 
 } // end if(mpctx->sh_video)
@@ -4500,20 +4457,11 @@ static void reload_subtitles()
 
 	int i;
 
-
 	remove_subtitles(); //clear subs loaded
 
 	//reload subs with new cp
-	char **tmp = sub_filenames("", filename);
-
-	i=0;
-
-	while (tmp[i])
-	{
-		add_subtitles (tmp[i], mpctx->sh_video->fps, 1);
-		free(tmp[i++]);
-	}
-	free(tmp);
+	double fps = mpctx->sh_video ? mpctx->sh_video->fps : 25;
+	load_subtitles(filename, fps, add_subtitles);
 
 	if (mpctx->set_of_sub_size > 0)
 	{

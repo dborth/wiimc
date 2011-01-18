@@ -128,6 +128,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (JPEGLS, jpegls);
     REGISTER_DECODER (KGV1, kgv1);
     REGISTER_DECODER (KMVC, kmvc);
+    REGISTER_DECODER (LAGARITH, lagarith);
     REGISTER_ENCODER (LJPEG, ljpeg);
     REGISTER_DECODER (LOCO, loco);
     REGISTER_DECODER (MDEC, mdec);
@@ -222,6 +223,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (AAC, aac);
     REGISTER_DECODER (AAC_LATM, aac_latm);
     REGISTER_ENCDEC  (AC3, ac3);
+    REGISTER_ENCODER (AC3_FIXED, ac3_fixed);
     REGISTER_ENCDEC  (ALAC, alac);
     REGISTER_DECODER (ALS, als);
     REGISTER_DECODER (AMRNB, amrnb);
@@ -347,6 +349,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (DVBSUB, dvbsub);
     REGISTER_ENCDEC  (DVDSUB, dvdsub);
     REGISTER_DECODER (PGSSUB, pgssub);
+    REGISTER_DECODER (SRT, srt);
     REGISTER_ENCDEC  (XSUB, xsub);
 
     /* external libraries */

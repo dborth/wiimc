@@ -43,6 +43,19 @@ static int rtsp_read_play(AVFormatContext *s)
     rt->nb_byes = 0;
 
     if (!(rt->server_type == RTSP_SERVER_REAL && rt->need_subscription)) {
+        if (rt->transport == RTSP_TRANSPORT_RTP) {
+            for (i = 0; i < rt->nb_rtsp_streams; i++) {
+                RTSPStream *rtsp_st = rt->rtsp_streams[i];
+                RTPDemuxContext *rtpctx = rtsp_st->transport_priv;
+                if (!rtpctx)
+                    continue;
+                ff_rtp_reset_packet_queue(rtpctx);
+                rtpctx->last_rtcp_ntp_time  = AV_NOPTS_VALUE;
+                rtpctx->first_rtcp_ntp_time = AV_NOPTS_VALUE;
+                rtpctx->base_timestamp      = 0;
+                rtpctx->rtcp_ts_offset      = 0;
+            }
+        }
         if (rt->state == RTSP_STATE_PAUSED) {
             cmd[0] = 0;
         } else {
@@ -54,24 +67,18 @@ static int rtsp_read_play(AVFormatContext *s)
         if (reply->status_code != RTSP_STATUS_OK) {
             return -1;
         }
-        if (rt->transport == RTSP_TRANSPORT_RTP) {
+        if (rt->transport == RTSP_TRANSPORT_RTP &&
+            reply->range_start != AV_NOPTS_VALUE) {
             for (i = 0; i < rt->nb_rtsp_streams; i++) {
                 RTSPStream *rtsp_st = rt->rtsp_streams[i];
                 RTPDemuxContext *rtpctx = rtsp_st->transport_priv;
                 AVStream *st = NULL;
-                if (!rtpctx)
+                if (!rtpctx || rtsp_st->stream_index < 0)
                     continue;
-                if (rtsp_st->stream_index >= 0)
-                    st = s->streams[rtsp_st->stream_index];
-                ff_rtp_reset_packet_queue(rtpctx);
-                if (reply->range_start != AV_NOPTS_VALUE) {
-                    rtpctx->last_rtcp_ntp_time  = AV_NOPTS_VALUE;
-                    rtpctx->first_rtcp_ntp_time = AV_NOPTS_VALUE;
-                    if (st)
-                        rtpctx->range_start_offset =
-                            av_rescale_q(reply->range_start, AV_TIME_BASE_Q,
-                                         st->time_base);
-                }
+                st = s->streams[rtsp_st->stream_index];
+                rtpctx->range_start_offset =
+                    av_rescale_q(reply->range_start, AV_TIME_BASE_Q,
+                                 st->time_base);
             }
         }
     }
@@ -105,9 +112,6 @@ int ff_rtsp_setup_input_streams(AVFormatContext *s, RTSPMessageHeader *reply)
         av_freep(&content);
         return AVERROR_INVALIDDATA;
     }
-    if (reply->content_base[0])
-        av_strlcpy(rt->control_uri, reply->content_base,
-                   sizeof(rt->control_uri));
 
     av_log(s, AV_LOG_VERBOSE, "SDP:\n%s\n", content);
     /* now we got the SDP description, we parse it */
@@ -168,7 +172,7 @@ redo:
     for (;;) {
         RTSPMessageHeader reply;
 
-        ret = ff_rtsp_read_reply(s, &reply, NULL, 1);
+        ret = ff_rtsp_read_reply(s, &reply, NULL, 1, NULL);
         if (ret < 0)
             return ret;
         if (ret == 1) /* received '$' */

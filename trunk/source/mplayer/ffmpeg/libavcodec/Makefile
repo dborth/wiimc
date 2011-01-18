@@ -54,7 +54,8 @@ OBJS-$(CONFIG_AAC_ENCODER)             += aacenc.o aaccoder.o    \
                                           mpeg4audio.o
 OBJS-$(CONFIG_AASC_DECODER)            += aasc.o msrledec.o
 OBJS-$(CONFIG_AC3_DECODER)             += ac3dec.o ac3dec_data.o ac3.o
-OBJS-$(CONFIG_AC3_ENCODER)             += ac3enc.o ac3tab.o ac3.o
+OBJS-$(CONFIG_AC3_ENCODER)             += ac3enc_float.o ac3tab.o ac3.o
+OBJS-$(CONFIG_AC3_FIXED_ENCODER)       += ac3enc_fixed.o ac3tab.o ac3.o
 OBJS-$(CONFIG_ALAC_DECODER)            += alac.o
 OBJS-$(CONFIG_ALAC_ENCODER)            += alacenc.o
 OBJS-$(CONFIG_ALS_DECODER)             += alsdec.o bgmc.o mpeg4audio.o
@@ -184,6 +185,7 @@ OBJS-$(CONFIG_JPEGLS_DECODER)          += jpeglsdec.o jpegls.o \
 OBJS-$(CONFIG_JPEGLS_ENCODER)          += jpeglsenc.o jpegls.o
 OBJS-$(CONFIG_KGV1_DECODER)            += kgv1dec.o
 OBJS-$(CONFIG_KMVC_DECODER)            += kmvc.o
+OBJS-$(CONFIG_LAGARITH_DECODER)        += lagarith.o lagarithrac.o
 OBJS-$(CONFIG_LJPEG_ENCODER)           += ljpegenc.o mjpegenc.o mjpeg.o \
                                           mpegvideo_enc.o motion_est.o  \
                                           ratecontrol.o mpeg12data.o    \
@@ -337,6 +339,7 @@ OBJS-$(CONFIG_SONIC_DECODER)           += sonic.o
 OBJS-$(CONFIG_SONIC_ENCODER)           += sonic.o
 OBJS-$(CONFIG_SONIC_LS_ENCODER)        += sonic.o
 OBJS-$(CONFIG_SP5X_DECODER)            += sp5xdec.o mjpegdec.o mjpeg.o
+OBJS-$(CONFIG_SRT_DECODER)             += srtdec.o ass.o
 OBJS-$(CONFIG_SUNRAST_DECODER)         += sunrast.o
 OBJS-$(CONFIG_SVQ1_DECODER)            += svq1dec.o svq1.o h263.o \
                                           mpegvideo.o error_resilience.o
@@ -436,6 +439,7 @@ OBJS-$(CONFIG_PCM_F64BE_DECODER)          += pcm.o
 OBJS-$(CONFIG_PCM_F64BE_ENCODER)          += pcm.o
 OBJS-$(CONFIG_PCM_F64LE_DECODER)          += pcm.o
 OBJS-$(CONFIG_PCM_F64LE_ENCODER)          += pcm.o
+OBJS-$(CONFIG_PCM_LXF_DECODER)            += pcm.o
 OBJS-$(CONFIG_PCM_MULAW_DECODER)          += pcm.o
 OBJS-$(CONFIG_PCM_MULAW_ENCODER)          += pcm.o
 OBJS-$(CONFIG_PCM_S8_DECODER)             += pcm.o
@@ -522,17 +526,20 @@ OBJS-$(CONFIG_GXF_DEMUXER)             += mpeg12data.o
 OBJS-$(CONFIG_IFF_DEMUXER)             += iff.o
 OBJS-$(CONFIG_MATROSKA_AUDIO_MUXER)    += xiph.o mpeg4audio.o \
                                           flacdec.o flacdata.o flac.o
-OBJS-$(CONFIG_MATROSKA_DEMUXER)        += mpeg4audio.o
+OBJS-$(CONFIG_MATROSKA_DEMUXER)        += mpeg4audio.o mpegaudiodata.o
 OBJS-$(CONFIG_MATROSKA_MUXER)          += xiph.o mpeg4audio.o \
                                           flacdec.o flacdata.o flac.o \
                                           mpegaudiodata.o
 OBJS-$(CONFIG_MOV_DEMUXER)             += mpeg4audio.o mpegaudiodata.o
+OBJS-$(CONFIG_MOV_MUXER)               += mpeg4audio.o mpegaudiodata.o
 OBJS-$(CONFIG_MPEGTS_MUXER)            += mpegvideo.o mpeg4audio.o
+OBJS-$(CONFIG_MPEGTS_DEMUXER)          += mpeg4audio.o mpegaudiodata.o
 OBJS-$(CONFIG_NUT_MUXER)               += mpegaudiodata.o
 OBJS-$(CONFIG_OGG_DEMUXER)             += flacdec.o flacdata.o flac.o \
                                           dirac.o mpeg12data.o
 OBJS-$(CONFIG_OGG_MUXER)               += xiph.o flacdec.o flacdata.o flac.o
 OBJS-$(CONFIG_RTP_MUXER)               += mpegvideo.o xiph.o
+OBJS-$(CONFIG_SPDIF_DEMUXER)           += aacadtsdec.o mpeg4audio.o
 OBJS-$(CONFIG_WEBM_MUXER)              += xiph.o mpeg4audio.o \
                                           flacdec.o flacdata.o flac.o \
                                           mpegaudiodata.o
@@ -611,7 +618,7 @@ OBJS-$(CONFIG_CHOMP_BSF)                  += chomp_bsf.o
 OBJS-$(CONFIG_DUMP_EXTRADATA_BSF)         += dump_extradata_bsf.o
 OBJS-$(CONFIG_H264_MP4TOANNEXB_BSF)       += h264_mp4toannexb_bsf.o
 OBJS-$(CONFIG_IMX_DUMP_HEADER_BSF)        += imx_dump_header_bsf.o
-OBJS-$(CONFIG_MJPEG2JPEG_BSF)             += mjpeg2jpeg_bsf.o
+OBJS-$(CONFIG_MJPEG2JPEG_BSF)             += mjpeg2jpeg_bsf.o mjpeg.o
 OBJS-$(CONFIG_MJPEGA_DUMP_HEADER_BSF)     += mjpega_dump_header_bsf.o
 OBJS-$(CONFIG_MOV2TEXTSUB_BSF)            += movsub_bsf.o
 OBJS-$(CONFIG_MP3_HEADER_COMPRESS_BSF)    += mp3_header_compress_bsf.o

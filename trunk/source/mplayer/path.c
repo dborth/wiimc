@@ -196,6 +196,9 @@ void set_codec_path(const char *path)
     needs_free = 1;
 }
 
+/**
+ * @brief Returns the basename substring of a path.
+ */
 const char *mp_basename(const char *path)
 {
     char *s;
@@ -213,12 +216,12 @@ const char *mp_basename(const char *path)
 }
 
 /**
- * \brief Allocates a new buffer containing the directory name
- * \param path Original path. Must be a valid string.
+ * @brief Allocates a new buffer containing the directory name
+ * @param path Original path. Must be a valid string.
  *
- * The path returned always contains a trailing slash '/'.
- * On systems supporting DOS paths, '\' is also considered as a directory
- * separator in addition to the '/'.
+ * @note The path returned always contains a trailing slash '/'.
+ *       On systems supporting DOS paths, '\' is also considered as a directory
+ *       separator in addition to the '/'.
  */
 char *mp_dirname(const char *path)
 {
@@ -234,4 +237,40 @@ char *mp_dirname(const char *path)
     strncpy(dirname, path, len);
     dirname[len] = '\0';
     return dirname;
+}
+
+/**
+ * @brief Join two paths if path is not absolute.
+ * @param base File or directory base path.
+ * @param path Path to concatenate with the base.
+ * @return New allocated string with the path, or NULL in case of error.
+ * @warning Do not forget the trailing path separator at the end of the base
+ *          path if it is a directory: since file paths are also supported,
+ *          this separator will make the distinction.
+ * @note Paths of the form c:foo, /foo or \foo will still depends on the
+ *       current directory on Windows systems, even though they are considered
+ *       as absolute paths in this function.
+ */
+char *mp_path_join(const char *base, const char *path)
+{
+    char *ret, *tmp;
+
+#if HAVE_DOS_PATHS
+    if ((path[0] && path[1] == ':') || path[0] == '\\' || path[0] == '/')
+#else
+    if (path[0] == '/')
+#endif
+        return strdup(path);
+
+    ret = mp_dirname(base);
+    if (!ret)
+        return NULL;
+    tmp = realloc(ret, strlen(ret) + strlen(path) + 1);
+    if (!tmp) {
+        free(ret);
+        return NULL;
+    }
+    ret = tmp;
+    strcat(ret, path);
+    return ret;
 }

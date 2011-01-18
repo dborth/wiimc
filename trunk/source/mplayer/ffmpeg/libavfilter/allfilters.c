@@ -41,6 +41,7 @@ void avfilter_register_all(void)
     REGISTER_FILTER (ANULLSINK,   anullsink,   asink);
 
     REGISTER_FILTER (BLACKFRAME,  blackframe,  vf);
+    REGISTER_FILTER (COPY,        copy,        vf);
     REGISTER_FILTER (CROP,        crop,        vf);
     REGISTER_FILTER (CROPDETECT,  cropdetect,  vf);
     REGISTER_FILTER (DRAWBOX,     drawbox,     vf);
@@ -52,7 +53,7 @@ void avfilter_register_all(void)
     REGISTER_FILTER (HQDN3D,      hqdn3d,      vf);
     REGISTER_FILTER (NOFORMAT,    noformat,    vf);
     REGISTER_FILTER (NULL,        null,        vf);
-    REGISTER_FILTER (OCV_SMOOTH,  ocv_smooth,  vf);
+    REGISTER_FILTER (OCV,         ocv,         vf);
     REGISTER_FILTER (OVERLAY,     overlay,     vf);
     REGISTER_FILTER (PAD,         pad,         vf);
     REGISTER_FILTER (PIXDESCTEST, pixdesctest, vf);

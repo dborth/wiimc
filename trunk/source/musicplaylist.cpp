@@ -9,7 +9,7 @@
 #include <gccore.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/dir.h>
+#include <dirent.h>
 
 #include "wiimc.h"
 #include "filebrowser.h"
@@ -291,10 +291,10 @@ static int MusicSortCallback(const void *f1, const void *f2)
  ***************************************************************************/
 static bool EnqueueFolder(char * path, int silent)
 {
-	char filename[MAXPATHLEN];
 	char filepath[MAXPATHLEN];
 	struct stat filestat;
-	DIR_ITER *dir = diropen(path);
+	struct dirent *entry;
+	DIR *dir = opendir(path);
 
 	if(dir == NULL)
 	{
@@ -309,12 +309,13 @@ static bool EnqueueFolder(char * path, int silent)
 	
 	int start = playlistSize;
 
-	while(dirnext(dir,filename,&filestat) == 0)
+	while ((entry=readdir(dir))!=NULL)
 	{
-		if(filename[0] == '.')
+		if(entry->d_name[0] == '.')
 			continue;
 
-		sprintf(filepath, "%s/%s", path, filename);
+		sprintf(filepath, "%s/%s", path, entry->d_name);
+		stat(entry->d_name,&filestat);
 
 		if(filestat.st_mode & _IFDIR)
 		{

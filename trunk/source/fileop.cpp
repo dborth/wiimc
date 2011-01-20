@@ -12,7 +12,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <ogcsys.h>
-#include <sys/dir.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <ntfs.h>
@@ -65,7 +65,7 @@ static const DISC_INTERFACE* dvd = &__io_wiidvd;
 // folder parsing thread
 static lwp_t parsethread = LWP_THREAD_NULL;
 static int parseHalt = 0;
-static DIR_ITER * dirIter = NULL;
+static DIR *dirHandle = NULL;
 static bool ParseDirEntries();
 int findLoadedFile = 0;
 bool selectLoadedFile = false;
@@ -861,7 +861,7 @@ static bool Remount(int device, int silent)
 void FindAppPath()
 {
 	char filepath[MAXPATHLEN];
-	DIR_ITER *dir;
+	DIR *dir;
 
 	if(sd->startup() && sd->isInserted())
 	{
@@ -870,10 +870,10 @@ void FindAppPath()
 		if(CheckMount(DEVICE_SD, 1))
 		{
 			sprintf(filepath, "sd1:/apps/%s", APPFOLDER);
-			dir = diropen(filepath);
+			dir = opendir(filepath);
 			if(dir)
 			{
-				dirclose(dir);
+				closedir(dir);
 				strcpy(appPath, filepath);
 				return;
 			}
@@ -902,10 +902,10 @@ void FindAppPath()
 			if(CheckMount(DEVICE_USB, m))
 			{
 				sprintf(filepath, "usb%d:/apps/%s", m, APPFOLDER);
-				dir = diropen(filepath);
+				dir = opendir(filepath);
 				if(dir)
 				{
-					dirclose(dir);
+					closedir(dir);
 					strcpy(appPath, filepath);
 					return;
 				}
@@ -1573,11 +1573,11 @@ static int FileSortCallback(const void *f1, const void *f2)
 
 static bool ParseDirEntries()
 {
-	if(!dirIter)
+	if(!dirHandle)
 		return false;
 
-	char filename[MAXPATHLEN];
 	char ext[7];
+	struct dirent *entry;
 	struct stat filestat;
 
 	int i = 0;
@@ -1585,22 +1585,23 @@ static bool ParseDirEntries()
 
 	while(i < 20)
 	{
-		res = dirnext(dirIter,filename,&filestat);
+		entry = readdir(dirHandle);
 
-		if(res != 0)
+		if(entry == NULL)
 			break;
 
-		if(strcmp(filename, "..") == 0)
+		if(strcmp(entry->d_name, "..") == 0)
 		{
 			if(IsDeviceRoot(browser.dir))
 				continue;
 		}
-		else if(filename[0] == '.' || filename[0] == '$')
+		else if(entry->d_name[0] == '.' || entry->d_name[0] == '$')
 		{
 			continue;
 		}
 
-		GetExt(filename, ext);
+		GetExt(entry->d_name, ext);
+		stat(entry->d_name,&filestat);
 
 		// skip this file if it's not an allowed extension 
 		if((filestat.st_mode & _IFDIR) == 0)
@@ -1612,7 +1613,7 @@ static bool ParseDirEntries()
 		// add the entry
 		if(AddBrowserEntry())
 		{
-			snprintf(browserList[browser.numEntries+i].filename, MAXJOLIET, "%s", filename);
+			snprintf(browserList[browser.numEntries+i].filename, MAXJOLIET, "%s", entry->d_name);
 			browserList[browser.numEntries+i].length = filestat.st_size;
 			browserList[browser.numEntries+i].mtime = filestat.st_mtime;
 
@@ -1620,7 +1621,7 @@ static bool ParseDirEntries()
 			{
 				browserList[browser.numEntries+i].type = TYPE_FOLDER;
 
-				if(strcmp(filename, "..") == 0)
+				if(strcmp(entry->d_name, "..") == 0)
 					sprintf(browserList[browser.numEntries+i].displayname, "%s (%s)", gettext("Up One Level"), GetParentDir());
 				else
 					snprintf(browserList[browser.numEntries+i].displayname, MAXJOLIET, "%s", browserList[browser.numEntries+i].filename);
@@ -1638,8 +1639,8 @@ static bool ParseDirEntries()
 				if(menuCurrent == MENU_BROWSE_VIDEOS)
 				{
 					// check if this file was watched
-					GetFullPath(browser.numEntries+i, filename);
-					if(wiiFindRestorePoint(filename))
+					GetFullPath(browser.numEntries+i, entry->d_name);
+					if(wiiFindRestorePoint(entry->d_name))
 						browserList[browser.numEntries+i].icon = ICON_CHECK;
 				}
 				else if(menuCurrent == MENU_BROWSE_MUSIC)
@@ -1682,8 +1683,8 @@ static bool ParseDirEntries()
 				FindFile(); // try to find and select the last loaded file
 		}
 
-		dirclose(dirIter); // close directory
-		dirIter = NULL;
+		closedir(dirHandle); // close directory
+		dirHandle = NULL;
 		return false; // no more entries
 	}
 	return true; // more entries
@@ -1704,11 +1705,11 @@ ParseDirectory(bool waitParse)
 	ResetBrowser(); // reset browser
 
 	// open the directory
-	while(dirIter == NULL && retry == 1)
+	while(dirHandle == NULL && retry == 1)
 	{
-		dirIter = diropen(browser.dir);
+		dirHandle = opendir(browser.dir);
 
-		if(dirIter == NULL)
+		if(dirHandle == NULL)
 		{
 			swprintf(msg, 512, L"%s %s", gettext("Error opening"), browser.dir);
 			retry = ErrorPromptRetry(msg);
@@ -1726,7 +1727,7 @@ ParseDirectory(bool waitParse)
 	}
 
 	// if we can't open the dir, try higher levels
-	if (dirIter == NULL)
+	if (dirHandle == NULL)
 	{
 		char * devEnd = strrchr(browser.dir, '/');
 
@@ -1739,13 +1740,13 @@ ParseDirectory(bool waitParse)
 				break;
 
 			devEnd[1] = 0; // strip remaining file listing
-			dirIter = diropen(browser.dir);
-			if (dirIter)
+			dirHandle = opendir(browser.dir);
+			if (dirHandle)
 				break;
 		}
 	}
 	
-	if(dirIter == NULL)
+	if(dirHandle == NULL)
 		return -1;
 
 	if(IsDeviceRoot(browser.dir))

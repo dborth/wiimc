@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <wiiuse/wpad.h>
-#include <sys/iosupport.h>
+#include <sys/dirent.h>
 #include <di/di.h>
 
 #include "utils/FreeTypeGX.h"
@@ -433,7 +433,7 @@ void LoadMPlayerFile()
 	char ext[7];
 	GetExt(loadedFile, ext);
 
-	if(strlen(ext) > 0 && (strcasecmp(ext, "iso") == 0 || strcasecmp(ext, "ifo") == 0))
+	if(0 && strlen(ext) > 0 && (strcasecmp(ext, "iso") == 0 || strcasecmp(ext, "ifo") == 0))
 	{
 		if(strcasecmp(ext, "ifo") == 0)
 		{
@@ -443,7 +443,7 @@ void LoadMPlayerFile()
 
 		wiiSetDVDDevice(loadedFile);
 
-		if(WiiSettings.dvdMenu && strncmp(loadedFile, "smb", 3) != 0)
+		if(WiiSettings.dvdMenu)// && strncmp(loadedFile, "smb", 3) != 0)
 			sprintf(loadedFile, "dvdnav://");
 		else
 			sprintf(loadedFile, "dvd://");
@@ -594,8 +594,12 @@ int main(int argc, char *argv[])
 	StopGX();
 	UnmountAllDevices();
 
+	AUDIO_StopDMA();
+	AUDIO_RegisterDMACallback(NULL);
+	
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 	else if(WiiSettings.exitAction == EXIT_WIIMENU)
 		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
+
 }

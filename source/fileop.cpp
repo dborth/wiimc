@@ -1577,13 +1577,12 @@ static bool ParseDirEntries()
 		return false;
 
 	char ext[7];
+	char _path[MAXPATHLEN+1];
 	struct dirent *entry;
 	struct stat filestat;
 
 	int i = 0;
-	int res;
-
-	while(i < 20)
+	while(i < 20 && !parseHalt)
 	{
 		entry = readdir(dirHandle);
 
@@ -1601,10 +1600,11 @@ static bool ParseDirEntries()
 		}
 
 		GetExt(entry->d_name, ext);
-		stat(entry->d_name,&filestat);
+		sprintf(_path,"%s%s", browser.dir,ent->d_name);
+		stat(_path,&filestat);
 
 		// skip this file if it's not an allowed extension 
-		if((filestat.st_mode & _IFDIR) == 0)
+		if(!S_ISDIR(filestat.st_mode))
 		{
 			if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
 				continue;
@@ -1617,7 +1617,7 @@ static bool ParseDirEntries()
 			browserList[browser.numEntries+i].length = filestat.st_size;
 			browserList[browser.numEntries+i].mtime = filestat.st_mtime;
 
-			if(filestat.st_mode & _IFDIR)
+			if(S_ISDIR(filestat.st_mode))
 			{
 				browserList[browser.numEntries+i].type = TYPE_FOLDER;
 
@@ -1661,7 +1661,7 @@ static bool ParseDirEntries()
 		else
 		{
 			InfoPrompt("Warning", "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible.");
-			res = -1;
+			ent = NULL;
 			break;
 		}
 	}
@@ -1672,7 +1672,7 @@ static bool ParseDirEntries()
 
 	browser.numEntries += i;
 
-	if(res != 0 || parseHalt)
+	if(ent == NULL || parseHalt)
 	{
 		if(parseHalt == 0)
 		{
@@ -1798,15 +1798,15 @@ typedef struct
 
 static int ParsePLXPlaylist()
 {
-	char *buffer = (char*)mem2_malloc(64*1024, OTHER_AREA);
-
+	char *buffer = (char*)mem2_malloc(128*1024, OTHER_AREA);
 	if(!buffer)
 		return 0;
+	memset(buffer,0,128*1024);
 
-	int size = 0;
+	u32 size = 0;
 
 	if(strncmp(browser.dir, "http:", 5) == 0)
-		size = http_request(browser.dir, NULL, buffer, 64*1024, SILENT);
+		size = http_request(browser.dir, NULL, buffer, 128*1024, SILENT);
 	else
 		size = LoadFile(buffer, browser.dir, SILENT);
 
@@ -1821,7 +1821,8 @@ static int ParsePLXPlaylist()
 	// attempt to parse buffer
 	bool plxFile = false;
 	int numEntries = 0;
-	int c, lineptr = 0;
+	int c; 
+	u32 lineptr = 0;
 	char line[4096];
 
 	PLXENTRY *list = (PLXENTRY *)malloc(sizeof(PLXENTRY));

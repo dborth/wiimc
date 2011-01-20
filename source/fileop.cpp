@@ -1578,7 +1578,7 @@ static bool ParseDirEntries()
 
 	char ext[7];
 	char _path[MAXPATHLEN+1];
-	struct dirent *entry;
+	struct dirent *entry = NULL;
 	struct stat filestat;
 
 	int i = 0;
@@ -1600,7 +1600,7 @@ static bool ParseDirEntries()
 		}
 
 		GetExt(entry->d_name, ext);
-		sprintf(_path,"%s%s", browser.dir,ent->d_name);
+		sprintf(_path,"%s%s", browser.dir,entry->d_name);
 		stat(_path,&filestat);
 
 		// skip this file if it's not an allowed extension 
@@ -1661,7 +1661,7 @@ static bool ParseDirEntries()
 		else
 		{
 			InfoPrompt("Warning", "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible.");
-			ent = NULL;
+			entry = NULL;
 			break;
 		}
 	}
@@ -1672,7 +1672,7 @@ static bool ParseDirEntries()
 
 	browser.numEntries += i;
 
-	if(ent == NULL || parseHalt)
+	if(entry == NULL || parseHalt)
 	{
 		if(parseHalt == 0)
 		{

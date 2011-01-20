@@ -1454,7 +1454,7 @@ sub_data* sub_read_file (char *filename, float fps) {
     utf16--;
 
     mpsub_multiplier = (uses_time ? 100.0 : 1.0);
-    if (sub_format==SUB_INVALID) {mp_msg(MSGT_SUBREADER,MSGL_WARN,"SUB: Could not determine file format\n");return NULL;}
+    if (sub_format==SUB_INVALID) {mp_msg(MSGT_SUBREADER,MSGL_WARN,"SUB: Could not determine file format\n");free_stream(fd);return NULL;}
     srp=sr+sub_format;
     mp_msg(MSGT_SUBREADER, MSGL_V, "SUB: Detected subtitle file format: %s\n", srp->name);
 
@@ -1482,6 +1482,8 @@ sub_data* sub_read_file (char *filename, float fps) {
 	  subcp_close();
           sub_utf8=sub_utf8_prev;
 #endif
+		free_stream(fd);
+
 	    return NULL;
     }
 
@@ -1516,6 +1518,7 @@ sub_data* sub_read_file (char *filename, float fps) {
 #endif
 	  free(first);
 	  free(alloced_sub);
+	  free_stream(fd);
 	  return NULL;
 	 }
         // Apply any post processing that needs recoding first
@@ -2012,7 +2015,10 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
 			    prio++;
 			}
 #endif
-			sprintf(tmpresult, "%s/%s", path, de->d_name);
+			if(path[strlen(path)-1]!='/')
+				sprintf(tmpresult, "%s/%s", path, de->d_name);
+			else
+				sprintf(tmpresult, "%s%s", path, de->d_name);
 //			fprintf(stderr, "%s priority %d\n", tmpresult, prio);
 			if ((f = fopen(tmpresult, "rt"))) {
                             struct subfn *sub = &slist->subs[slist->sid++];

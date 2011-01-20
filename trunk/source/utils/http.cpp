@@ -38,13 +38,13 @@ extern "C" {
 #include "mplayer/stream/url.h"
 }
 
-#define TCP_CONNECT_TIMEOUT 	13  // 10 secs to make a connection
+#define TCP_CONNECT_TIMEOUT 	13  // 13 secs to make a connection
 #define TCP_SEND_SIZE 			(32 * 1024)
 #define TCP_RECV_SIZE 			(32 * 1024)
-#define TCP_BLOCK_RECV_TIMEOUT 	15000 // 10 secs to receive
-#define TCP_BLOCK_SEND_TIMEOUT 	15000 // 10 secs to send
+#define TCP_BLOCK_RECV_TIMEOUT 	15000 // 15 secs to receive
+#define TCP_BLOCK_SEND_TIMEOUT 	15000 // 15 secs to send
 #define TCP_BLOCK_SIZE 			2048
-#define HTTP_TIMEOUT 			35000 // 10 secs to get an http response
+#define HTTP_TIMEOUT 			35000 // 35 secs to get an http response
 #define IOS_O_NONBLOCK			0x04
 
 static s32 tcp_socket(void)
@@ -183,14 +183,18 @@ static u32 tcp_read(const s32 s, u8 *buffer, const u32 length)
 
 		res = net_read(s, p, block);
 
-		if(res<=0 && res != -EAGAIN) break; 
-
-		if(res>0)
+		
+		if (res == -EAGAIN)
 		{
-			received += res;
-			left -= res;
-			p += res;
+			usleep(20 * 1000);
+			continue;
 		}
+
+		if(res<=0) break; 
+
+		received += res;
+		left -= res;
+		p += res;
 		usleep(1000);
 
 		if ((received / TCP_BLOCK_SIZE) > step)
@@ -256,7 +260,7 @@ static u32 tcp_write(const s32 s, const u8 *buffer, const u32 length)
  * http_request
  * Retrieves the specified URL, and stores it in the specified file or buffer
  ***************************************************************************/
-static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent, int retry)
+static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent, int total_redirects)
 {
 	u32 res = 0;
 	char http_host[1024];
@@ -333,10 +337,11 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 	{
 		net_close(s);
 
-		if((http_status == 301 || http_status == 302) && redirect[0] != 0 && retry < 5)
+		if((http_status == 301 || http_status == 302) && redirect[0] != 0 && total_redirects < 5)  //only 5 redirects allowed
 		{
 			strcpy(url, redirect);
-			return http_request(url, hfile, buffer, maxsize, silent, ++retry);
+			total_redirects++;
+			return http_request(url, hfile, buffer, maxsize, silent, total_redirects);
 		}
 		return 0;
 	}
@@ -413,5 +418,6 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent)
 {
-	return http_request(url, hfile, buffer, maxsize, silent, 0);
+	return http_request(url, hfile, buffer, maxsize, silent, 0);	
 }
+

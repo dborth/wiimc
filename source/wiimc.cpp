@@ -11,6 +11,7 @@
 #include <string.h>
 #include <ogcsys.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <wiiuse/wpad.h>
 #include <sys/iosupport.h>
 #include <di/di.h>
@@ -389,12 +390,12 @@ bool InitMPlayer()
 	sprintf(MPLAYER_CONFDIR,"%s",appPath);
 	sprintf(MPLAYER_LIBDIR,"%s",appPath);
 	sprintf(MPLAYER_CSSDIR,"%s/css",appPath);
-	DIR_ITER *dir = diropen(MPLAYER_CSSDIR);
+	DIR *dir = opendir(MPLAYER_CSSDIR);
 
 	if(!dir && mkdir(MPLAYER_CSSDIR, 0777) != 0)
 		sprintf(MPLAYER_CSSDIR, "off");
 	else
-		dirclose(dir);
+		closedir(dir);
 
 	setenv("HOME", MPLAYER_DATADIR, 1);
 	setenv("DVDCSS_CACHE", MPLAYER_CSSDIR, 1);

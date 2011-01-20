@@ -9,7 +9,7 @@
 #include <gccore.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/dir.h>
+#include <dirent.h>
 #include <ogcsys.h>
 #include <mxml.h>
 #include <ogc/conf.h>
@@ -805,7 +805,7 @@ SaveSettings (bool silent)
 	wchar_t msg[512];
 	int datasize;
 	int offset = 0;
-	DIR_ITER *dir = NULL;
+	DIR *dir = NULL;
 	char path[6][MAXPATHLEN];
 	int d=0;
 
@@ -841,13 +841,13 @@ SaveSettings (bool silent)
 		// try paths
 		for(int i=0; i<d; i++)
 		{
-			dir = diropen(path[i]);
+			dir = opendir(path[i]);
 
 			if(!dir)
 				continue;
 
 			sprintf(filepath, path[i]);
-			dirclose(dir);
+			closedir(dir);
 			break;
 		}
 
@@ -861,7 +861,7 @@ SaveSettings (bool silent)
 
 			// ensure the necessary folders exists for saving
 			strcat(filepath, "/apps");
-			dir = diropen(filepath);
+			dir = opendir(filepath);
 			if (!dir)
 			{
 				if(mkdir(filepath, 0777) != 0)
@@ -876,12 +876,12 @@ SaveSettings (bool silent)
 			}
 			else
 			{
-				dirclose(dir);
+				closedir(dir);
 			}
 
 			strcat(filepath, "/");
 			strcat(filepath, APPFOLDER);
-			dir = diropen(filepath);
+			dir = opendir(filepath);
 			if (!dir)
 			{
 				if(mkdir(filepath, 0777) != 0)
@@ -896,7 +896,7 @@ SaveSettings (bool silent)
 			}
 			else
 			{
-				dirclose(dir);
+				closedir(dir);
 			}
 		}
 		strcat(filepath, "/settings.xml");

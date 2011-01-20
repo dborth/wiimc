@@ -1591,14 +1591,8 @@ static bool ParseDirEntries()
 
 		if(strcmp(entry->d_name, "..") == 0)
 		{
-			printf("dir .. ");
-			if(S_ISDIR(filestat.st_mode)) printf("<dir>\n");
-			else printf("??? file !!!!\n");
 			if(IsDeviceRoot(browser.dir))
-			{
-				printf("is root not added ..\n");
 				continue;
-			}
 		}
 		else if(entry->d_name[0] == '.' || entry->d_name[0] == '$')
 		{
@@ -1611,7 +1605,7 @@ static bool ParseDirEntries()
 		else
 		{
 			sprintf(_path,"%s%s", browser.dir,entry->d_name);
-			if(stat(_path,&filestat)!=0) printf("error stat: %s\n",_path);
+			stat(_path,&filestat);
 		}
 		// skip this file if it's not an allowed extension 
 		if(!S_ISDIR(filestat.st_mode))

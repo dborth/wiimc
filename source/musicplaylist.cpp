@@ -315,9 +315,9 @@ static bool EnqueueFolder(char * path, int silent)
 			continue;
 
 		sprintf(filepath, "%s/%s", path, entry->d_name);
-		stat(entry->d_name,&filestat);
+		stat(filepath,&filestat);
 
-		if(filestat.st_mode & _IFDIR)
+		if(S_ISDIR(filestat.st_mode))
 		{
 			if(!EnqueueFolder(filepath, SILENT))
 				break;
@@ -328,6 +328,7 @@ static bool EnqueueFolder(char * path, int silent)
 				break;
 		}
 	}
+	closedir(dir);
 
 	if(playlistSize-start > 1)
 		qsort(&playlist[start], playlistSize-start, sizeof(MEDIAENTRY), MusicSortCallback);

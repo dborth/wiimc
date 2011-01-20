@@ -1591,8 +1591,14 @@ static bool ParseDirEntries()
 
 		if(strcmp(entry->d_name, "..") == 0)
 		{
+			printf("dir .. ");
+			if(S_ISDIR(filestat.st_mode)) printf("<dir>\n");
+			else printf("??? file !!!!\n");
 			if(IsDeviceRoot(browser.dir))
+			{
+				printf("is root not added ..\n");
 				continue;
+			}
 		}
 		else if(entry->d_name[0] == '.' || entry->d_name[0] == '$')
 		{
@@ -1600,9 +1606,13 @@ static bool ParseDirEntries()
 		}
 
 		GetExt(entry->d_name, ext);
-		sprintf(_path,"%s%s", browser.dir,entry->d_name);
-		stat(_path,&filestat);
-
+		if(entry->d_name[0] == '.')  
+			filestat.st_mode=_IFDIR; 
+		else
+		{
+			sprintf(_path,"%s%s", browser.dir,entry->d_name);
+			if(stat(_path,&filestat)!=0) printf("error stat: %s\n",_path);
+		}
 		// skip this file if it's not an allowed extension 
 		if(!S_ISDIR(filestat.st_mode))
 		{
@@ -1617,7 +1627,7 @@ static bool ParseDirEntries()
 			browserList[browser.numEntries+i].length = filestat.st_size;
 			browserList[browser.numEntries+i].mtime = filestat.st_mtime;
 
-			if(S_ISDIR(filestat.st_mode))
+			if(S_ISDIR(filestat.st_mode)) 
 			{
 				browserList[browser.numEntries+i].type = TYPE_FOLDER;
 

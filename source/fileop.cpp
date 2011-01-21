@@ -1577,7 +1577,7 @@ static bool ParseDirEntries()
 		return false;
 
 	char ext[7];
-	char _path[MAXPATHLEN+1];
+	char path[MAXPATHLEN+1];
 	struct dirent *entry = NULL;
 	struct stat filestat;
 
@@ -1600,13 +1600,11 @@ static bool ParseDirEntries()
 		}
 
 		GetExt(entry->d_name, ext);
-		if(entry->d_name[0] == '.')  
-			filestat.st_mode=_IFDIR; 
-		else
-		{
-			sprintf(_path,"%s%s", browser.dir,entry->d_name);
-			stat(_path,&filestat);
-		}
+		snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
+
+		if(stat(entry->d_name, &filestat) < 0)
+			continue;
+
 		// skip this file if it's not an allowed extension 
 		if(!S_ISDIR(filestat.st_mode))
 		{
@@ -1800,17 +1798,20 @@ typedef struct
 	char processor[MAXPATHLEN + 1];
 } PLXENTRY;
 
+#define MAX_PLX_SIZE (64*1024)
+
 static int ParsePLXPlaylist()
 {
-	char *buffer = (char*)mem2_malloc(128*1024, OTHER_AREA);
+	char *buffer = (char*)mem2_malloc(MAX_PLX_SIZE, OTHER_AREA);
+
 	if(!buffer)
 		return 0;
-	memset(buffer,0,128*1024);
 
-	u32 size = 0;
+	memset(buffer, 0, MAX_PLX_SIZE);
+	int size = 0;
 
 	if(strncmp(browser.dir, "http:", 5) == 0)
-		size = http_request(browser.dir, NULL, buffer, 128*1024, SILENT);
+		size = http_request(browser.dir, NULL, buffer, MAX_PLX_SIZE, SILENT);
 	else
 		size = LoadFile(buffer, browser.dir, SILENT);
 
@@ -1825,8 +1826,7 @@ static int ParsePLXPlaylist()
 	// attempt to parse buffer
 	bool plxFile = false;
 	int numEntries = 0;
-	int c; 
-	u32 lineptr = 0;
+	int c, lineptr = 0;
 	char line[4096];
 
 	PLXENTRY *list = (PLXENTRY *)malloc(sizeof(PLXENTRY));

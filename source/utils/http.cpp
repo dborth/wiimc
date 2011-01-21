@@ -183,7 +183,6 @@ static u32 tcp_read(const s32 s, u8 *buffer, const u32 length)
 
 		res = net_read(s, p, block);
 
-		
 		if (res == -EAGAIN)
 		{
 			usleep(20 * 1000);
@@ -418,6 +417,5 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent)
 {
-	return http_request(url, hfile, buffer, maxsize, silent, 0);	
+	return http_request(url, hfile, buffer, maxsize, silent, 0);
 }
-

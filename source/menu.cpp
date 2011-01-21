@@ -642,6 +642,9 @@ static void *GuiThread (void *arg)
 		if(guiHalt == 1)
 			LWP_SuspendThread(guithread);
 
+		if(guiHalt == 2)
+			break;
+
 		UpdatePads();
 		mainWindow->Draw();
 
@@ -7053,21 +7056,17 @@ static void SetupGui()
 	guiSetup = true;
 }
 
-void GuiInit()
-{
-	guiHalt = 1;
-	LWP_CreateThread (&guithread, GuiThread, NULL, guistack, GSTACK, 60);
-}
-
 static void StartGuiThreads()
 {
 	showProgress = 0;
+	guiHalt = 1;
 	progressThreadHalt = 1;
 	pictureThreadHalt = 1;
 	screensaverThreadHalt = 1;
 	creditsThreadHalt = 1;
 	updateThreadHalt = 1;
 
+	LWP_CreateThread (&guithread, GuiThread, NULL, guistack, GSTACK, 60);
 	LWP_CreateThread (&progressthread, ProgressThread, NULL, progressstack, GUITH_STACK, 60);
 	LWP_CreateThread (&picturethread, PictureThread, NULL, picturestack, PICTH_STACK, 60);
 	LWP_CreateThread (&screensaverthread, ScreensaverThread, NULL, screensaverstack, GUITH_STACK, 60);
@@ -7142,6 +7141,18 @@ static void StopGuiThreads()
 		// wait for thread to finish
 		LWP_JoinThread(updatethread, NULL);
 		updatethread = LWP_THREAD_NULL;
+	}
+
+	guiHalt = 2;
+
+	if(guithread != LWP_THREAD_NULL)
+	{
+		if(LWP_ThreadIsSuspended(guithread))
+			LWP_ResumeThread (guithread);
+		
+		// wait for thread to finish
+		LWP_JoinThread(guithread, NULL);
+		guithread = LWP_THREAD_NULL;
 	}
 }
 
@@ -7283,7 +7294,6 @@ void WiiMenu()
 	}
 
 	StopGuiThreads();
-	SuspendGui();
 	DisableRumble();
 	mainWindow = NULL;
 	nowPlaying->SetVisible(false);

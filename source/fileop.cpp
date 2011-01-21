@@ -1593,22 +1593,18 @@ static bool ParseDirEntries()
 		{
 			if(IsDeviceRoot(browser.dir))
 				continue;
-		}
-		else if(entry->d_name[0] == '.' || entry->d_name[0] == '$')
-		{
-			continue;
-		}
 
-		if(strcmp(entry->d_name, "..") == 0)
-		{
 			filestat.st_mode = _IFDIR;
 		}
 		else
 		{
+			if(entry->d_name[0] == '.' || entry->d_name[0] == '$')
+				continue;
+
 			GetExt(entry->d_name, ext);
 			snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
 
-			if(stat(entry->d_name, &filestat) < 0)
+			if(stat(path, &filestat) < 0)
 				continue;
 
 			// skip this file if it's not an allowed extension 

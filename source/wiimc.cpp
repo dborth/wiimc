@@ -12,6 +12,7 @@
 #include <ogcsys.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/iosupport.h>
 #include <wiiuse/wpad.h>
 #include <di/di.h>
 
@@ -576,7 +577,7 @@ int main(int argc, char *argv[])
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
  
 	// create GUI thread
-	GuiInit();
+
  	while(1)
 	{
 		ResetVideo_Menu();
@@ -584,8 +585,8 @@ int main(int argc, char *argv[])
 
  		if(ExitRequested)
  			break;
+ 
 		ShowAreaInfo(OTHER_AREA);
-
 		MPlayerMenu();
 	}
 

@@ -49,10 +49,10 @@ char *bluray_device=NULL;
 // Open a new stream  (stdin/file/vcd/url)
 
 #ifdef GEKKO
-void CleanFileName(char *file)  //clean (//) exacmple smb1://film.avi -> smb1:/film.avi
+void CleanFileName(const char *file)  //clean (//) exacmple smb1://film.avi -> smb1:/film.avi
 {
 	char buf[1024];
-	if(strncmp(file, "smb", 3) || strncmp(file, "sd", 2) || strncmp(file, "usb", 3))
+	if(strncmp(file, "smb", 3)==0 || strncmp(file, "sd", 2)==0 || strncmp(file, "usb", 3)==0)
 	{
 		int i=0,j=0;
 		while(file[i]!='\0')
@@ -65,8 +65,8 @@ void CleanFileName(char *file)  //clean (//) exacmple smb1://film.avi -> smb1:/f
 				i++;
 		}
 		buf[j]='\0';
-	}
-	strcpy(file,buf);
+		strcpy((char*)file,buf);
+	}	
 }
 #endif
 stream_t* open_stream(const char* filename,char** options, int* file_format){

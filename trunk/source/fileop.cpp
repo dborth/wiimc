@@ -1599,17 +1599,24 @@ static bool ParseDirEntries()
 			continue;
 		}
 
-		GetExt(entry->d_name, ext);
-		snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
-
-		if(stat(entry->d_name, &filestat) < 0)
-			continue;
-
-		// skip this file if it's not an allowed extension 
-		if(!S_ISDIR(filestat.st_mode))
+		if(strcmp(entry->d_name, "..") == 0)
 		{
-			if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
+			filestat.st_mode = _IFDIR;
+		}
+		else
+		{
+			GetExt(entry->d_name, ext);
+			snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
+
+			if(stat(entry->d_name, &filestat) < 0)
 				continue;
+
+			// skip this file if it's not an allowed extension 
+			if(!S_ISDIR(filestat.st_mode))
+			{
+				if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
+					continue;
+			}
 		}
 
 		// add the entry

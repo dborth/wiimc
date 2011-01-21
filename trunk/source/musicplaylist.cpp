@@ -315,7 +315,9 @@ static bool EnqueueFolder(char * path, int silent)
 			continue;
 
 		sprintf(filepath, "%s/%s", path, entry->d_name);
-		stat(filepath,&filestat);
+
+		if(stat(filepath, &filestat) < 0)
+			continue;
 
 		if(S_ISDIR(filestat.st_mode))
 		{

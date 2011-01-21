@@ -40,7 +40,7 @@ extern "C" {
 #include "utils/http.h"
 #include "utils/gettext.h"
 
-#define PARSESTACK (8*1024)
+#define PARSESTACK (32*1024)
 #define DEVICESTACK (8*1024)
 
 static u8 parsestack[PARSESTACK] ATTRIBUTE_ALIGN (32);

@@ -429,24 +429,21 @@ void LoadMPlayerFile()
 	// wait for previous file to end
 	while(controlledbygui == 2)
 		usleep(100);
-	
+
 	char ext[7];
 	GetExt(loadedFile, ext);
 
-	if(strlen(ext) > 0 && (strcasecmp(ext, "iso") == 0 || strcasecmp(ext, "ifo") == 0))
+	if(WiiSettings.dvdMenu && strlen(ext) > 0 && 
+		(strcasecmp(ext, "iso") == 0 || strcasecmp(ext, "ifo") == 0) &&
+		strncmp(loadedFile, "smb", 3) != 0)
 	{
 		if(strcasecmp(ext, "ifo") == 0)
 		{
 			char *end = strrchr(loadedFile, '/');
 			*end = 0; // strip filename
 		}
-
 		wiiSetDVDDevice(loadedFile);
-
-		if(WiiSettings.dvdMenu && strncmp(loadedFile, "smb", 3) != 0)
-			sprintf(loadedFile, "dvdnav://");
-		else
-			sprintf(loadedFile, "dvd://");
+		sprintf(loadedFile, "dvdnav://");
 	}
 	else
 	{

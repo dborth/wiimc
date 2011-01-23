@@ -16,6 +16,8 @@
 #define MAXJOLIET			255
 #define MAX_BROWSER_SIZE	2000
 #define VIDEO_PLAYLIST_SIZE 50
+#define MAX_SUBS_SIZE	300
+
 
 enum
 {
@@ -76,6 +78,7 @@ enum
 extern BROWSERINFO browser;
 extern BROWSERENTRY * browserList;
 
+
 // Video playlist
 extern int videoPlaylistIndex;
 extern int videoPlaylistSize;
@@ -90,6 +93,7 @@ extern int playlistIndex;
 extern MEDIAENTRY * onlinemediaList;
 extern int onlinemediaSize;
 
+#ifdef __cplusplus
 char *GetParentDir();
 void ResetBrowser();
 void BrowserHistoryStore(char *path);
@@ -98,9 +102,22 @@ void BrowserHistoryDiscard();
 void PopulateVideoPlaylist();
 void ClearVideoPlaylist();
 bool AddBrowserEntry();
+void AddSubEntry(char *path);
 bool AddMediaEntry();
 bool AddPlaylistEntry();
 int BrowserChangeFolder(bool updateDir = true, bool waitParse = false);
 int BrowseDevice();
+
+extern "C" {
+#endif
+	
+extern char *subsList[MAX_SUBS_SIZE];
+extern int subs_size;
+
+#ifdef __cplusplus
+}
+#endif
+	
+
 
 #endif

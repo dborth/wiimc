@@ -28,6 +28,9 @@ using namespace std;
 BROWSERINFO browser;
 BROWSERENTRY * browserList = NULL; // list of files/folders in browser
 
+char *subsList[MAX_SUBS_SIZE]; // list of subs
+int subs_size=0;
+
 static std::vector<std::string> browserHistory; // browser.dir history - for nested playlists
 
 // video playlist
@@ -54,6 +57,7 @@ void ResetBrowser()
 	browser.selIndex = 0;
 	browser.pageIndex = 0;
 	browser.size = 0;
+	subs_size = 0;
 }
 
 bool AddBrowserEntry()
@@ -95,6 +99,14 @@ void BrowserHistoryClear()
 
 	browserHistory.clear();
 }
+
+void AddSubEntry(char *path)
+{
+	if(subs_size >= MAX_SUBS_SIZE) return;
+	strcpy(subsList[subs_size],path);
+	subs_size++;
+}
+
 
 void PopulateVideoPlaylist()
 {

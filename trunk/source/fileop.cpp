@@ -1580,6 +1580,9 @@ static bool ParseDirEntries()
 	char path[MAXPATHLEN+1];
 	struct dirent *entry = NULL;
 	struct stat filestat;
+	int j;
+	
+	char * sub_exts[] = {  "utf", "utf8", "utf-8", "sub", "srt", "smi", "rt", "txt", "ssa", "aqt", "jss", "js", "ass", NULL};
 
 	int i = 0;
 	while(i < 20 && !parseHalt)
@@ -1606,6 +1609,16 @@ static bool ParseDirEntries()
 
 			if(stat(path, &filestat) < 0)
 				continue;
+
+			//check if it's a subtitle
+			for (j = 0; sub_exts[j]; j++) 
+			{
+		    	if (strcasecmp(sub_exts[j], ext) == 0) 
+				{
+					AddSubEntry(entry->d_name);
+					break;
+		    	}
+			}
 
 			// skip this file if it's not an allowed extension 
 			if(!S_ISDIR(filestat.st_mode))

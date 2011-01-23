@@ -29,6 +29,9 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+#ifdef GEKKO
+#include "../../filebrowser.h"
+#endif
 #include "ass_mp.h"
 #include "config.h"
 #include "mp_msg.h"
@@ -1945,10 +1948,19 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
     // 1 = any subtitle file
     // 2 = any sub file containing movie name
     // 3 = sub file containing movie name and the lang extension
+#ifndef GEKKO    
 	d = opendir(path);
 	if (d) {
+#endif	
 	    mp_msg(MSGT_SUBREADER, MSGL_INFO, "Load subtitles in %s\n", path);
+#ifndef GEKKO 
 	    while ((de = readdir(d))) {
+#else
+		de = (struct dirent*)malloc(sizeof(struct dirent));
+		int h;
+		for(h=0;h<subs_size;h++) {
+		strcpy(de->d_name,subsList[h]);
+#endif	
 		// retrieve various parts of the filename
 		strcpy_strip_ext(tmp_fname_noext, de->d_name);
 		strcpy_get_ext(tmp_fname_ext, de->d_name);
@@ -2032,9 +2044,10 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
 		}
 		if (slist->sid >= MAX_SUBTITLE_FILES) break;
 	    }
-	    closedir(d);
+#ifndef GEKKO	    
+	    closedir(d);	    
 	}
-
+#endif	
     free(tmp_sub_id);
 
     free(f_fname);

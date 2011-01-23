@@ -12,7 +12,6 @@
 #include <ogcsys.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <sys/iosupport.h>
 #include <wiiuse/wpad.h>
 #include <di/di.h>
 
@@ -432,6 +431,8 @@ void LoadMPlayerFile()
 
 	char ext[7];
 	GetExt(loadedFile, ext);
+	
+	wiiSetDVDDevice(NULL);
 
 	if(WiiSettings.dvdMenu && strlen(ext) > 0 && 
 		(strcasecmp(ext, "iso") == 0 || strcasecmp(ext, "ifo") == 0) &&
@@ -444,10 +445,6 @@ void LoadMPlayerFile()
 		}
 		wiiSetDVDDevice(loadedFile);
 		sprintf(loadedFile, "dvdnav://");
-	}
-	else
-	{
-		wiiSetDVDDevice(NULL);
 	}
 
 	// set new file to load
@@ -545,6 +542,7 @@ int main(int argc, char *argv[])
 			(((1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2)) * 2) + // textures
 			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
+			(sizeof(char)*(NAME_MAX+1)*MAX_SUBS_SIZE) +
 			(1024); // padding
 	AddMem2Area (size, VIDEO_AREA);
 	AddMem2Area (6*1024*1024, GUI_AREA);
@@ -562,6 +560,8 @@ int main(int argc, char *argv[])
 	AUDIO_Init(NULL);
 	GX_AllocTextureMemory();
 	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, VIDEO_AREA);
+	for(size=0;size<MAX_SUBS_SIZE;size++)
+		subsList[size] = (char*)mem2_malloc(sizeof(char)*(NAME_MAX+1), VIDEO_AREA);
  	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
 
 	DefaultSettings(); // set defaults
@@ -590,6 +590,9 @@ int main(int argc, char *argv[])
  	// application exiting
 	StopGX();
 	UnmountAllDevices();
+
+	AUDIO_StopDMA();
+	AUDIO_RegisterDMACallback(NULL);
 
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);

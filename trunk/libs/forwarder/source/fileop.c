@@ -37,7 +37,7 @@ static char prefix[2][4] = { "sd", "usb" };
 
 #define le32_to_cpu(x) bswap32(x)
 
-#define BYTES_PER_SECTOR 512
+#define BYTES_PER_SECTOR 2048
 #define NTFS_OEM_ID                         (0x4e54465320202020ULL)
 
 #define PARTITION_TYPE_EMPTY                0x00 /* Empty */

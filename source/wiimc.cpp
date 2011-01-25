@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <wiiuse/wpad.h>
+#include <sys/iosupport.h>
 #include <di/di.h>
 
 #include "utils/FreeTypeGX.h"

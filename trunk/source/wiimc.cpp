@@ -421,7 +421,10 @@ void LoadMPlayerFile()
 {
 	SuspendDeviceThread();
 	SuspendPictureThread();
-	SuspendParseThread();
+
+	if(!WiiSettings.subtitleVisibility)
+		SuspendParseThread();
+
 	settingsSet = false;
 	nowPlayingSet = false;
 	controlledbygui = 2; // signal any previous file to end
@@ -447,6 +450,10 @@ void LoadMPlayerFile()
 		wiiSetDVDDevice(loadedFile);
 		sprintf(loadedFile, "dvdnav://");
 	}
+
+	// wait for directory parsing to finish (to find subtitles)	
+	while(WiiSettings.subtitleVisibility && !ParseDone())
+		usleep(100);
 
 	// set new file to load
 	wiiLoadFile(loadedFile);

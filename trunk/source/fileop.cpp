@@ -1410,6 +1410,21 @@ bool IsImageExt(char *ext)
 	return false;
 }
 
+static bool IsSubtitleExt(char *ext)
+{
+	if(!ext || ext[0] == 0)
+		return false;
+
+	int j=0;
+	do
+	{
+		if (strcasecmp(ext, validSubtitleExtensions[j]) == 0)
+			return true;
+	} while (validSubtitleExtensions[++j][0] != 0);
+
+	return false;
+}
+
 // check that this file's extension is on the list of visible file types
 bool IsAllowedExt(char *ext)
 {
@@ -1571,6 +1586,14 @@ static int FileSortCallback(const void *f1, const void *f2)
 	return stricmp(((BROWSERENTRY *)f1)->filename, ((BROWSERENTRY *)f2)->filename);
 }
 
+bool ParseDone()
+{
+	if(parsethread == LWP_THREAD_NULL || LWP_ThreadIsSuspended(parsethread))
+		return true;
+
+	return false;
+}
+
 static bool ParseDirEntries()
 {
 	if(!dirHandle)
@@ -1580,9 +1603,6 @@ static bool ParseDirEntries()
 	char path[MAXPATHLEN+1];
 	struct dirent *entry = NULL;
 	struct stat filestat;
-	int j;
-	
-	char * sub_exts[] = {  "utf", "utf8", "utf-8", "sub", "srt", "smi", "rt", "txt", "ssa", "aqt", "jss", "js", "ass", NULL};
 
 	int i = 0;
 	while(i < 20 && !parseHalt)
@@ -1604,25 +1624,19 @@ static bool ParseDirEntries()
 			if(entry->d_name[0] == '.' || entry->d_name[0] == '$')
 				continue;
 
-			GetExt(entry->d_name, ext);
 			snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
 
 			if(stat(path, &filestat) < 0)
 				continue;
 
-			//check if it's a subtitle
-			for (j = 0; sub_exts[j]; j++) 
-			{
-		    	if (strcasecmp(sub_exts[j], ext) == 0) 
-				{
-					AddSubEntry(entry->d_name);
-					break;
-		    	}
-			}
-
 			// skip this file if it's not an allowed extension 
 			if(!S_ISDIR(filestat.st_mode))
 			{
+				GetExt(entry->d_name, ext);
+
+				if(IsSubtitleExt(ext))
+					AddSubEntry(entry->d_name);
+
 				if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
 					continue;
 			}

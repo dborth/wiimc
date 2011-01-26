@@ -103,7 +103,7 @@ void BrowserHistoryClear()
 void AddSubEntry(char *path)
 {
 	if(subs_size >= MAX_SUBS_SIZE) return;
-	strcpy(subsList[subs_size],path);
+	strcpy(subsList[subs_size], path);
 	subs_size++;
 }
 

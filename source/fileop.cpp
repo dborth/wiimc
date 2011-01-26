@@ -1624,10 +1624,21 @@ static bool ParseDirEntries()
 			if(entry->d_name[0] == '.' || entry->d_name[0] == '$')
 				continue;
 
-			snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
+			
+#ifdef _DIRENT_HAVE_D_TYPE
+			if(entry->d_type==DT_DIR) filestat.st_mode = S_IFDIR;
+			else if(entry->d_type==DT_REG) filestat.st_mode = S_IFREG;
+			else
+			{
+#endif
 
+			snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
 			if(stat(path, &filestat) < 0)
 				continue;
+
+#ifdef _DIRENT_HAVE_D_TYPE
+			}
+#endif
 
 			// skip this file if it's not an allowed extension 
 			if(!S_ISDIR(filestat.st_mode))

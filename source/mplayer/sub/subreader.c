@@ -40,6 +40,7 @@
 #include "subreader.h"
 #include "subassconvert.h"
 #include "sub.h"
+#include "vobsub.h"
 #include "stream/stream.h"
 #include "libavutil/common.h"
 #include "libavutil/avstring.h"
@@ -1485,8 +1486,8 @@ sub_data* sub_read_file (char *filename, float fps) {
 	  subcp_close();
           sub_utf8=sub_utf8_prev;
 #endif
-		free_stream(fd);
-
+	    free_stream(fd);
+	    
 	    return NULL;
     }
 
@@ -1853,6 +1854,11 @@ static void strcpy_strip_ext(char *d, const char *s)
 	strncpy(d, s, tmp-s);
 	d[tmp-s] = 0;
     }
+}
+
+static void strcpy_strip_ext_lower(char *d, const char *s)
+{
+    strcpy_strip_ext(d, s);
     while (*d) {
 	*d = tolower(*d);
 	d++;
@@ -1915,7 +1921,7 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
     char *tmp_fname_noext, *tmp_fname_trim, *tmp_fname_ext, *tmpresult;
 
     int len, found, i;
-    char * sub_exts[] = {  "utf", "utf8", "utf-8", "sub", "srt", "smi", "rt", "txt", "ssa", "aqt", "jss", "js", "ass", NULL};
+    char *sub_exts[] = {"utf", "utf8", "utf-8", "sub", "srt", "smi", "rt", "txt", "ssa", "aqt", "jss", "js", "ass", NULL};
 
     FILE *f;
 
@@ -1923,25 +1929,25 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
     struct dirent *de;
 
     len = (strlen(fname) > 256 ? strlen(fname) : 256)
-	+(strlen(path) > 256 ? strlen(path) : 256)+2;
+         + (strlen(path) > 256 ? strlen(path) : 256) + 2;
 
-    f_fname = strdup(mp_basename(fname));
+    f_fname       = strdup(mp_basename(fname));
     f_fname_noext = malloc(len);
-    f_fname_trim = malloc(len);
+    f_fname_trim  = malloc(len);
 
     tmp_fname_noext = malloc(len);
-    tmp_fname_trim = malloc(len);
-    tmp_fname_ext = malloc(len);
+    tmp_fname_trim  = malloc(len);
+    tmp_fname_ext   = malloc(len);
 
     tmpresult = malloc(len);
 
-    strcpy_strip_ext(f_fname_noext, f_fname);
+    strcpy_strip_ext_lower(f_fname_noext, f_fname);
     strcpy_trim(f_fname_trim, f_fname_noext);
 
     tmp_sub_id = NULL;
     if (dvdsub_lang && !whiteonly(dvdsub_lang)) {
-	tmp_sub_id = malloc(strlen(dvdsub_lang)+1);
-	strcpy_trim(tmp_sub_id, dvdsub_lang);
+        tmp_sub_id = malloc(strlen(dvdsub_lang) + 1);
+        strcpy_trim(tmp_sub_id, dvdsub_lang);
     }
 
     // 0 = nothing
@@ -1952,7 +1958,7 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
 	d = opendir(path);
 	if (d) {
 #endif	
-	    mp_msg(MSGT_SUBREADER, MSGL_INFO, "Load subtitles in %s\n", path);
+        mp_msg(MSGT_SUBREADER, MSGL_INFO, "Load subtitles in %s\n", path);
 #ifndef GEKKO 
 	    while ((de = readdir(d))) {
 #else
@@ -1960,90 +1966,91 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
 		int h;
 		for(h=0;h<subs_size;h++) {
 		strcpy(de->d_name,subsList[h]);
-#endif	
-		// retrieve various parts of the filename
-		strcpy_strip_ext(tmp_fname_noext, de->d_name);
-		strcpy_get_ext(tmp_fname_ext, de->d_name);
-		strcpy_trim(tmp_fname_trim, tmp_fname_noext);
+#endif
+            // retrieve various parts of the filename
+            strcpy_strip_ext_lower(tmp_fname_noext, de->d_name);
+            strcpy_get_ext(tmp_fname_ext, de->d_name);
+            strcpy_trim(tmp_fname_trim, tmp_fname_noext);
 
-		// does it end with a subtitle extension?
-		found = 0;
+            // does it end with a subtitle extension?
+            found = 0;
 #ifdef CONFIG_ICONV
 #ifdef CONFIG_ENCA
-		for (i = ((sub_cp && strncasecmp(sub_cp, "enca", 4) != 0) ? 3 : 0); sub_exts[i]; i++) {
+            for (i = ((sub_cp && strncasecmp(sub_cp, "enca", 4) != 0) ? 3 : 0); sub_exts[i]; i++) {
 #else
-		for (i = (sub_cp ? 3 : 0); sub_exts[i]; i++) {
+            for (i = (sub_cp ? 3 : 0); sub_exts[i]; i++) {
 #endif
 #else
-		for (i = 0; sub_exts[i]; i++) {
+            for (i = 0; sub_exts[i]; i++) {
 #endif
-		    if (strcasecmp(sub_exts[i], tmp_fname_ext) == 0) {
-			found = 1;
-			break;
-		    }
-		}
+                if (strcasecmp(sub_exts[i], tmp_fname_ext) == 0) {
+                    found = 1;
+                    break;
+                }
+            }
 
-		// we have a (likely) subtitle file
-		if (found) {
-		    int prio = 0;
-		    if (!prio && tmp_sub_id)
-		    {
-			sprintf(tmpresult, "%s %s", f_fname_trim, tmp_sub_id);
-			mp_msg(MSGT_SUBREADER, MSGL_DBG2,"Potential sub: %s\n", tmp_fname_trim);
-			if (strcmp(tmp_fname_trim, tmpresult) == 0 && sub_match_fuzziness >= 1) {
-			    // matches the movie name + lang extension
-			    prio = 5;
-			}
-		    }
-		    if (!prio && strcmp(tmp_fname_trim, f_fname_trim) == 0) {
-			// matches the movie name
-			prio = 4;
-		    }
-		    if (!prio && (tmp = strstr(tmp_fname_trim, f_fname_trim)) && (sub_match_fuzziness >= 1)) {
-			// contains the movie name
-			tmp += strlen(f_fname_trim);
-			if (tmp_sub_id && strstr(tmp, tmp_sub_id)) {
-			    // with sub_id specified prefer localized subtitles
-			    prio = 3;
-			} else if ((tmp_sub_id == NULL) && whiteonly(tmp)) {
-			    // without sub_id prefer "plain" name
-			    prio = 3;
-			} else {
-			    // with no localized subs found, try any else instead
-			    prio = 2;
-			}
-		    }
-		    if (!prio) {
-			// doesn't contain the movie name
-			if (!limit_fuzziness && sub_match_fuzziness >= 2) {
-			    prio = 1;
-			}
-		    }
+            // we have a (likely) subtitle file
+            if (found) {
+                int prio = 0;
+                if (!prio && tmp_sub_id)
+                {
+                    sprintf(tmpresult, "%s %s", f_fname_trim, tmp_sub_id);
+                    mp_msg(MSGT_SUBREADER, MSGL_DBG2, "Potential sub: %s\n", tmp_fname_trim);
+                    if (strcmp(tmp_fname_trim, tmpresult) == 0 && sub_match_fuzziness >= 1) {
+                        // matches the movie name + lang extension
+                        prio = 5;
+                    }
+                }
+                if (!prio && strcmp(tmp_fname_trim, f_fname_trim) == 0) {
+                    // matches the movie name
+                    prio = 4;
+                }
+                if (!prio && (tmp = strstr(tmp_fname_trim, f_fname_trim)) && (sub_match_fuzziness >= 1)) {
+                    // contains the movie name
+                    tmp += strlen(f_fname_trim);
+                    if (tmp_sub_id && strstr(tmp, tmp_sub_id)) {
+                        // with sub_id specified prefer localized subtitles
+                        prio = 3;
+                    } else if ((tmp_sub_id == NULL) && whiteonly(tmp)) {
+                        // without sub_id prefer "plain" name
+                        prio = 3;
+                    } else {
+                        // with no localized subs found, try any else instead
+                        prio = 2;
+                    }
+                }
+                if (!prio) {
+                    // doesn't contain the movie name
+                    if (!limit_fuzziness && sub_match_fuzziness >= 2) {
+                        prio = 1;
+                    }
+                }
 
-		    if (prio) {
-			prio += prio;
+                if (prio) {
+                    prio += prio;
 #ifdef CONFIG_ICONV
-			if (i<3){ // prefer UTF-8 coded
-			    prio++;
-			}
+                    if (i < 3){ // prefer UTF-8 coded
+                        prio++;
+                    }
 #endif
-			if(path[strlen(path)-1]!='/')
-				sprintf(tmpresult, "%s/%s", path, de->d_name);
-			else
-				sprintf(tmpresult, "%s%s", path, de->d_name);
-//			fprintf(stderr, "%s priority %d\n", tmpresult, prio);
-			if ((f = fopen(tmpresult, "rt"))) {
-                            struct subfn *sub = &slist->subs[slist->sid++];
+                    if(path[strlen(path)-1]!='/')
+					sprintf(tmpresult, "%s/%s", path, de->d_name);
+				else
+					sprintf(tmpresult, "%s%s", path, de->d_name);
+                    // fprintf(stderr, "%s priority %d\n", tmpresult, prio);
+                    if ((f = fopen(tmpresult, "rt"))) {
+                        struct subfn *sub = &slist->subs[slist->sid++];
 
-                            fclose(f);
-                            sub->priority = prio;
-                            sub->fname    = strdup(tmpresult);
-			}
-		    }
+                        fclose(f);
+                        sub->priority = prio;
+                        sub->fname    = strdup(tmpresult);
+                    }
+                }
 
-		}
-		if (slist->sid >= MAX_SUBTITLE_FILES) break;
-	    }
+            }
+            if (slist->sid >= MAX_SUBTITLE_FILES)
+                break;
+        }
 #ifndef GEKKO	    
 	    closedir(d);	    
 	}
@@ -2070,7 +2077,7 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
  * @note Subtitles are tracked and scored in various places according to the
  *       user options, sorted, and then added by calling the add_f function.
  */
-void load_subtitles(const char *fname, int fps, void add_f(char *, float, int))
+void load_subtitles(const char *fname, int fps, open_sub_func add_f)
 {
     int i;
     char *mp_subdir, *path = NULL;
@@ -2119,6 +2126,52 @@ void load_subtitles(const char *fname, int fps, void add_f(char *, float, int))
         free(sub->fname);
     }
     free(slist.subs);
+}
+
+/**
+ * @brief Load VOB subtitle matching the subtitle filename.
+ *
+ * @param fname Path to subtitle filename.
+ * @param ifo Path to .ifo file.
+ * @spu SPU decoder instance.
+ * @add_f Function called when adding a vobsub.
+ */
+void load_vob_subtitle(const char *fname, const char * const ifo, void **spu,
+                       open_vob_func add_f)
+{
+    char *name, *mp_subdir;
+
+    // Load subtitles specified by vobsub option
+    if (vobsub_name) {
+        add_f(vobsub_name, ifo, 1, spu);
+        return;
+    }
+
+    // Stop here if automatic detection disabled
+    if (!sub_auto || !fname)
+        return;
+
+    // Get only the name of the subtitle file and try to open it
+    name = malloc(strlen(fname) + 1);
+    if (!name)
+        return;
+    strcpy_strip_ext(name, fname);
+    if (add_f(name, ifo, 0, spu)) {
+        free(name);
+        return;
+    }
+
+    // If still no VOB found, try loading it from ~/.mplayer/sub
+#ifndef GEKKO
+    mp_subdir = get_path("sub/");
+    if (mp_subdir) {
+        char *psub = mp_path_join(mp_subdir, mp_basename(name));
+        add_f(psub, ifo, 0, spu);
+        free(psub);
+    }
+    free(mp_subdir);
+#endif
+    free(name);
 }
 
 void list_sub_file(sub_data* subd){

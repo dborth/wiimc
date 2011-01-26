@@ -174,13 +174,18 @@ void ShowPlayList( void )
  gtk_clist_clear( GTK_CLIST( CLSelected ) );
  if ( plList )
   {
+   gchar * name, * path;
    plItem * next = plList;
    while ( next || next->next )
     {
      char * text[1][3]; text[0][2]="";
-     text[0][0]=next->name;
-     text[0][1]=next->path;
+     name = g_filename_to_utf8( next->name, -1, NULL, NULL, NULL );
+     path = g_filename_to_utf8( next->path, -1, NULL, NULL, NULL );
+     text[0][0]=name ? name : next->name;
+     text[0][1]=path ? path : next->path;
      gtk_clist_append( GTK_CLIST( CLSelected ),text[0] );
+     g_free( path );
+     g_free( name );
      NrOfSelected++;
      if ( next->next ) next=next->next; else break;
     }
@@ -236,8 +241,10 @@ static void plButtonReleased( GtkButton * button,gpointer user_data )
 	  item=calloc( 1,sizeof( plItem ) );
 	  gtk_clist_get_text( GTK_CLIST( CLSelected ),i,0,&text[0] );
 	  gtk_clist_get_text( GTK_CLIST( CLSelected ),i,1,&text[1] );
-	  item->name=strdup( text[0] );
-	  item->path=strdup( text[1] );
+	  item->name=g_filename_from_utf8( text[0], -1, NULL, NULL, NULL );
+	  if ( !item->name ) item->name = strdup( text[0] );
+	  item->path=g_filename_from_utf8( text[1], -1, NULL, NULL, NULL );
+	  if ( !item->path ) item->path = strdup( text[1] );
 	  gtkSet( gtkAddPlItem,0,(void*)item );
 	 }
 	if ( plCurrent )
@@ -278,19 +285,28 @@ static void plButtonReleased( GtkButton * button,gpointer user_data )
   case 3: // add
        {
         int i;
+        void *p;
         char * itext[1][2];
+        gchar * cpath;
         char * text[1][3]; text[0][2]="";
         gtk_clist_freeze( GTK_CLIST( CLSelected ) );
         for ( i=0;i<NrOfEntrys;i++ )
          {
           if ( CLFileSelected[i] )
            {
-	    gtk_clist_get_text( GTK_CLIST( CLFiles ),i,0,(char **)&itext );
-	    text[0][0]=itext[0][0]; text[0][1]=current_path;
-	    gtk_clist_append( GTK_CLIST( CLSelected ),text[0] );
 	    NrOfSelected++;
-	    CLListSelected=realloc( CLListSelected,NrOfSelected * sizeof( int ) );
-	    CLListSelected[NrOfSelected - 1]=0;
+	    p=realloc( CLListSelected,NrOfSelected * sizeof( int ) );
+	    if ( !p ) NrOfSelected--;
+	    else
+	     {
+	      CLListSelected=p;
+	      CLListSelected[NrOfSelected - 1]=0;
+	      gtk_clist_get_text( GTK_CLIST( CLFiles ),i,0,(char **)&itext );
+	      cpath=g_filename_to_utf8( current_path, -1, NULL, NULL, NULL );
+	      text[0][0]=itext[0][0]; text[0][1]=cpath ? cpath : current_path;
+	      gtk_clist_append( GTK_CLIST( CLSelected ),text[0] );
+	      g_free( cpath );
+	     }
 	   }
 	 }
 	gtk_clist_thaw( GTK_CLIST( CLSelected ) );
@@ -328,7 +344,7 @@ static void plCTree( GtkCTree * ctree,GtkCTreeNode * parent_node,gpointer user_d
 {
  GtkCTreeNode  * node;
  DirNodeType   * DirNode;
- gchar 		   * text;
+ gchar 		   * text, * name = NULL;
  gchar 		   * dummy = "dummy";
  int     	 	 subdir = 1;
  DIR   		   * dir = NULL;
@@ -352,12 +368,14 @@ static void plCTree( GtkCTree * ctree,GtkCTreeNode * parent_node,gpointer user_d
        if ( !strcmp( current_path,"/" ) ) sprintf( path,"/%s",dirent->d_name );
 	else sprintf( path,"%s/%s",current_path,dirent->d_name );
        text=dirent->d_name;
+       g_free( name );
+       name=g_filename_to_utf8( text, -1, NULL, NULL, NULL );
 
        if ( stat( path,&statbuf ) != -1 && S_ISDIR( statbuf.st_mode ) && dirent->d_name[0] != '.' )
 	{
 	 DirNode=malloc( sizeof( DirNodeType ) ); DirNode->scaned=0; DirNode->path=strdup( path );
 	 subdir=check_for_subdir( path );
-	 node=gtk_ctree_insert_node( ctree,parent_node,NULL,&text,4,pxOpenedBook,msOpenedBook,pxClosedBook,msClosedBook,!subdir,FALSE );
+	 node=gtk_ctree_insert_node( ctree,parent_node,NULL,(name ? &name : &text ),4,pxOpenedBook,msOpenedBook,pxClosedBook,msClosedBook,!subdir,FALSE );
 	 gtk_ctree_node_set_row_data_full( ctree,node,DirNode,NULL );
 	 if ( subdir ) node=gtk_ctree_insert_node( ctree,node,NULL,&dummy,4,NULL,NULL,NULL,NULL,FALSE,FALSE );
 	}
@@ -369,6 +387,8 @@ static void plCTree( GtkCTree * ctree,GtkCTreeNode * parent_node,gpointer user_d
    gtk_ctree_sort_node( ctree,parent_node );
    gtk_clist_thaw( GTK_CLIST( ctree ) );
   }
+
+  g_free( name );
 }
 
 static void scan_dir( char * path )
@@ -377,6 +397,7 @@ static void scan_dir( char * path )
  char		   * curr;
  struct dirent * dirent;
  struct 		 stat statbuf;
+ gchar		   * name;
  char 		   * text[1][2]; text[0][1]="";
 
  gtk_clist_clear( GTK_CLIST( CLFiles ) );
@@ -388,8 +409,10 @@ static void scan_dir( char * path )
 	 curr=calloc( 1,strlen( path ) + strlen( dirent->d_name ) + 3 ); sprintf( curr,"%s/%s",path,dirent->d_name );
 	 if ( stat( curr,&statbuf ) != -1 && ( S_ISREG( statbuf.st_mode ) || S_ISLNK( statbuf.st_mode ) ) )
 	  {
-	   text[0][0]=dirent->d_name;
-	   gtk_clist_append( GTK_CLIST( CLFiles ),text[0] );
+	   name=g_filename_to_utf8( dirent->d_name, -1, NULL, NULL, NULL );
+	   text[0][0]=name ? name : dirent->d_name;
+	   gtk_clist_append( GTK_CLIST( CLFiles ), text[0] );
+	   g_free( name );
 	   NrOfEntrys++;
 	  }
 	 free( curr );

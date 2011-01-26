@@ -35,6 +35,8 @@ bool ConnectShare (int num, bool silent);
 void CloseShare(int num);
 bool ConnectFTP(int num, bool silent);
 void CloseFTP(int num);
+bool CheckNetwork(bool silent);
+
 
 extern bool updateFound;
 extern char wiiIP[16];

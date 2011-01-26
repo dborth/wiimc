@@ -55,6 +55,7 @@ bool IsAllowedExt(char *ext);
 bool IsAllowedProtocol(char *file);
 void FindFile();
 void FindDirectory();
+bool ParseDone();
 int ParseDirectory(bool waitParse = false);
 int ParsePlaylistFile();
 int ParseOnlineMedia();

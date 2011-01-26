@@ -166,6 +166,12 @@ const char validPlaylistExtensions[][5] =
 	"asx", "m3u", "pls", "plx", "ram", "smil", ""
 };
 
+const char validSubtitleExtensions[][6] = 
+{
+	"utf", "utf8", "utf-8", "sub", "srt", "smi", "rt", "txt", "ssa", "aqt", 
+	"jss", "js", "ass", ""
+};
+
 const char validInternetProtocols[][5] =
 {
 	"http", "mms", ""

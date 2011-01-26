@@ -316,6 +316,11 @@ static bool EnqueueFolder(char * path, int silent)
 
 		sprintf(filepath, "%s/%s", path, entry->d_name);
 
+#ifdef _DIRENT_HAVE_D_TYPE
+		if(entry->d_type==DT_DIR) filestat.st_mode = S_IFDIR;
+		else if(entry->d_type==DT_REG) filestat.st_mode = S_IFREG;
+		else
+#endif
 		if(stat(filepath, &filestat) < 0)
 			continue;
 

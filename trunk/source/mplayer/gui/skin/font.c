@@ -101,7 +101,8 @@ int fntRead( char * path,char * fname )
     {
      int i;
      cutItem( command,command,'"',1 );
-     i=(int)command[0];
+     if ( !command[0] ) i=(int)'"';
+     else i=(int)command[0];
      cutItem( param,tmp,',',0 ); Fonts[id]->Fnt[i].x=atoi( tmp );
      cutItem( param,tmp,',',1 ); Fonts[id]->Fnt[i].y=atoi( tmp );
      cutItem( param,tmp,',',2 ); Fonts[id]->Fnt[i].sx=atoi( tmp );
@@ -114,11 +115,16 @@ int fntRead( char * path,char * fname )
        {
         av_strlcpy( tmp,path,sizeof( tmp )  ); av_strlcat( tmp,param,sizeof( tmp ) );
         mp_dbg( MSGT_GPLAYER,MSGL_DBG2,"[font] font imagefile: %s\n",tmp );
-        if ( skinBPRead( tmp,&Fonts[id]->Bitmap ) ) return -4;
+        if ( skinBPRead( tmp,&Fonts[id]->Bitmap ) )
+         {
+          fclose(f);
+          return -4;
+         }
        }
      }
    }
 
+ fclose(f);
  return 0;
 }
 

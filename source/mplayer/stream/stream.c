@@ -288,6 +288,8 @@ void stream_capture_do(stream_t *s)
 
 int stream_read_internal(stream_t *s, void *buf, int len)
 {
+	static int _try=0;
+
   // we will retry even if we already reached EOF previously.
   switch(s->type){
   case STREAMTYPE_STREAM:
@@ -309,11 +311,14 @@ int stream_read_internal(stream_t *s, void *buf, int len)
   default:
     len= s->fill_buffer ? s->fill_buffer(s, buf, len) : 0;
   }
-  if(len<=0){ s->eof=1; return 0; }
+  //if(len<=0){ s->eof=1; return 0; }
+  if(len==0){ if(_try>3)s->eof=1; _try++; s->buf_pos=s->buf_len=0; return 0; }
+  if(len<0) { s->eof=1; s->buf_pos=s->buf_len=0;/*printf("errno: %i\n",errno);*/if(s->error==0 && errno==EIO )s->error=1;return 0; }
   // When reading succeeded we are obviously not at eof.
   // This e.g. avoids issues with eof getting stuck when lavf seeks in MPEG-TS
   s->eof=0;
   s->pos+=len;
+  _try=0;
   return len;
 }
 

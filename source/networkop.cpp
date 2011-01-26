@@ -197,6 +197,7 @@ static void * netcb (void *arg)
 	s32 res;
 	int retry;
 	int wait;
+	static bool first=true;
 
 	while(netHalt != 2)
 	{
@@ -205,6 +206,8 @@ static void * netcb (void *arg)
 		while (retry)
 		{
 			net_deinit();
+			if(!first) net_wc24cleanup(); //kill the net
+			first=false;
 			res = net_init_async(NULL, NULL);
 
 			if(res != 0)
@@ -226,7 +229,6 @@ static void * netcb (void *arg)
 			usleep(2000);
 			continue;
 		}
-
 		if (res == 0)
 		{
 			struct in_addr hostip;
@@ -235,7 +237,9 @@ static void * netcb (void *arg)
 			{
 				strcpy(wiiIP, inet_ntoa(hostip));
 				networkInit = true;
+				
 			}
+			retry=30;
 		}
 		LWP_SuspendThread(networkthread);
 		
@@ -248,6 +252,27 @@ static void * netcb (void *arg)
  *
  * Signals the network thread to resume, or creates a new thread
  ***************************************************************************/
+extern "C"{
+void CheckMplayerNetwork() //to use in cache2.c in mplayer
+{
+	if(net_gethostip()==0)
+	{
+		networkInit = false;
+		StartNetworkThread();	
+	}
+}
+}
+
+bool CheckNetwork(bool silent) // to use in gui
+{
+	if(net_gethostip()==0)
+	{
+		networkInit = false;
+		return InitializeNetwork(false);
+	}
+	return true;
+}
+
 void StartNetworkThread()
 {
 	netHalt = 0;
@@ -335,6 +360,7 @@ void CloseShare(int num)
 bool
 ConnectShare (int num, bool silent)
 {
+	CheckNetwork(silent);
 	if(!InitializeNetwork(silent))
 		return false;
 
@@ -380,6 +406,8 @@ ConnectShare (int num, bool silent)
 			break;
 
 		retry = ErrorPromptRetry("Failed to connect to network share.");
+		if(retry) CheckNetwork(silent);
+			
 	}
 
 	if(!silent)

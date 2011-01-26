@@ -180,7 +180,7 @@ int pause_gui=0;
 int wii_error = 0;
 static int pause_low_cache=0;
 
-static char fileplaying[MAXPATHLEN];
+char fileplaying[MAXPATHLEN];
 static int enable_restore_points=1;
 
 static float online_stream_cache_min_percent=2;

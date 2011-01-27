@@ -1632,6 +1632,7 @@ static bool ParseDirEntries()
 			{
 #endif
 			snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
+
 			if(stat(path, &filestat) < 0)
 				continue;
 
@@ -1764,7 +1765,7 @@ ParseDirectory(bool waitParse)
 
 				if(device == DEVICE_SD || device == DEVICE_USB)
 					Remount(device, NOTSILENT);
-				if(device == DEVICE_SMB)
+				else if(device == DEVICE_SMB)
 					CheckNetwork(true);
 			}
 		}

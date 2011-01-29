@@ -6,6 +6,23 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.1.2 - January 29, 2011]
+
+* Synced to MPlayer r32815
+* Fixed broken audio/subtitle switching
+* Fixed "Exception (Alignment)" crash
+* Changed from mpg123 to ffmp3 (fixes some audio-related problems)
+* Added ext 2/3/4 support
+* USB compatibility improvements
+* Improved performance (set L2 cache to 64bit)
+* Large file (> 4GB) support
+* Fixed relative playlist paths
+* Paired-singles enhancements (thanks Extrems!)
+* Added IOS whitelist - a warning will now appear if you are not using IOS58 or IOS61
+* Disable dvdnav over SMB (it's too slow!)
+* Added Tamil translation (thanks dpandian!)
+* Other minor optimizations and bug fixes
+
 [1.1.1 - December 16, 2010]
 
 * Synced to MPlayer r32709

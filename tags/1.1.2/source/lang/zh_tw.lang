@@ -1,0 +1,665 @@
+msgid "********"
+msgstr "········"
+
+msgid "Videos"
+msgstr "視訊"
+
+msgid "Music"
+msgstr "音樂"
+
+msgid "Pictures"
+msgstr "圖片"
+
+msgid "Online Media"
+msgstr "線上媒體"
+
+msgid "Please Wait"
+msgstr "請稍待"
+
+msgid "Error"
+msgstr "錯誤"
+
+msgid "OK"
+msgstr "確定"
+
+msgid "Retry"
+msgstr "重試"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Information"
+msgstr "訊息"
+
+msgid "Credits"
+msgstr "作者信息"
+
+msgid "Play"
+msgstr "播放"
+
+msgid "Pause"
+msgstr "暫停"
+
+msgid "Single Play"
+msgstr "單獨播放"
+
+msgid "Continuous Play"
+msgstr "連續播放"
+
+msgid "Shuffle"
+msgstr "隨機"
+
+msgid "Loop"
+msgstr "循環"
+
+msgid "Continuous"
+msgstr "連續"
+
+msgid "Playlist"
+msgstr "播放清單"
+
+msgid "Restart"
+msgstr "重新啟動"
+
+msgid "Loading..."
+msgstr "載入中..."
+
+msgid "Global"
+msgstr "整體設定"
+
+msgid "Network"
+msgstr "網路"
+
+msgid "Subtitles"
+msgstr "字幕"
+
+msgid "Subtitle Delay"
+msgstr "字幕延遲"
+
+msgid "Settings"
+msgstr "設定"
+
+msgid "On"
+msgstr "開啟"
+
+msgid "Off"
+msgstr "關閉"
+
+msgid "Always"
+msgstr "總是"
+
+msgid "Disabled"
+msgstr "關閉"
+
+msgid "Backward"
+msgstr "後退"
+
+msgid "Pause"
+msgstr "暫停"
+
+msgid "Forward"
+msgstr "向前"
+
+msgid "Single"
+msgstr "單獨播放"
+
+msgid "now playing"
+msgstr "現正播放中"
+
+msgid "Previous"
+msgstr "向前"
+
+msgid "Next"
+msgstr "向後"
+
+msgid "Close"
+msgstr "關閉"
+
+msgid "DVD"
+msgstr "DVD光碟"
+
+msgid "Go back"
+msgstr "返回"
+
+msgid "Update Available"
+msgstr "可用的更新"
+
+msgid "An update is available!"
+msgstr "有可用的更新檔！"
+
+msgid "Update now"
+msgstr "立刻更新"
+
+msgid "Update later"
+msgstr "稍後更新"
+
+msgid "Online media file not found."
+msgstr "沒找到線上媒體檔。"
+
+msgid "Unrecognized DVD format!"
+msgstr "無法識別的DVD格式！"
+
+msgid "Port cannot be blank!"
+msgstr "埠值不能是空白！"
+
+msgid "Port is not a number!"
+msgstr "埠值不是一個數字！"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "埠值範圍允許在 (4-49151)之間！"
+
+msgid "Settings - Global"
+msgstr "設定 – 整體"
+
+msgid "Settings - Videos"
+msgstr "設定 - 視訊"
+
+msgid "Settings - Music"
+msgstr "設定 - 音樂"
+
+msgid "Settings - Pictures"
+msgstr "設定 - 圖片"
+
+msgid "Settings - Online Media"
+msgstr "設定 - 線上媒體"
+
+msgid "Settings - Network"
+msgstr "設定 - 網路"
+
+msgid "Settings - DVD"
+msgstr "設定 - DVD"
+
+msgid "File Extensions"
+msgstr "檔案副檔名"
+
+msgid "Language"
+msgstr "語言"
+
+msgid "Volume"
+msgstr "音量"
+
+msgid "Exit Action"
+msgstr "退出操作"
+
+msgid "Wiimote Rumble"
+msgstr "Wiimote震動"
+
+msgid "Hide"
+msgstr "隱藏"
+
+msgid "Show"
+msgstr "顯示"
+
+msgid "Auto"
+msgstr "自動"
+
+msgid "Return to Wii Menu"
+msgstr "返回Wii主選單"
+
+msgid "Power Off Wii"
+msgstr "關閉Wii主機"
+
+msgid "Return to Loader"
+msgstr "返回HBC"
+
+msgid "Screen Zoom"
+msgstr "螢幕縮放"
+
+msgid "Screen Position"
+msgstr "螢幕位置"
+
+msgid "Frame Dropping"
+msgstr "減少畫格"
+
+msgid "Aspect Ratio"
+msgstr "螢幕高寬比"
+
+msgid "Cache Size"
+msgstr "快取大小"
+
+msgid "Audio Delay"
+msgstr "音訊延遲"
+
+msgid "Auto-Resume"
+msgstr "自動恢復"
+
+msgid "Videos Files Folder"
+msgstr "視訊檔案夾"
+
+msgid "Play Order"
+msgstr "播放順序"
+
+msgid "Music Files Folder"
+msgstr "音樂檔案夾"
+
+msgid "Pictures Files Folder"
+msgstr "圖片檔案夾"
+
+msgid "Display Name"
+msgstr "顯示名稱"
+
+msgid "Share IP"
+msgstr "共享IP "
+
+msgid "Share Name"
+msgstr "共享檔案名稱"
+
+msgid "Username"
+msgstr "使用者名稱"
+
+msgid "Password"
+msgstr "密碼"
+
+msgid "New Share"
+msgstr "新建網路共享"
+
+msgid "Delete"
+msgstr "刪除"
+
+msgid "Delete Share"
+msgstr "刪除網路共享"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "你確定要刪除這網路共享設定嗎？"
+
+msgid "IP"
+msgstr "IP位址"
+
+msgid "Folder"
+msgstr "檔案夾"
+
+msgid "Mode"
+msgstr "模式"
+
+msgid "New Site"
+msgstr "新的網址"
+
+msgid "Passive"
+msgstr "被動"
+
+msgid "Active"
+msgstr "活動"
+
+msgid "Delete Site"
+msgstr "刪除網址"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "你確定要刪除這網址嗎？"
+
+msgid "Port"
+msgstr "埠值"
+
+msgid "Rewind / Fast Forward"
+msgstr "倒帶 / 向前快轉"
+
+msgid "Error loading file!"
+msgstr "載入檔案錯誤！"
+
+msgid "Resume"
+msgstr "繼續"
+
+msgid "Stop Slideshow"
+msgstr "停止幻燈片播放"
+
+msgid "Start Slideshow"
+msgstr "開始幻燈片播放"
+
+msgid "Slideshow Delay"
+msgstr "幻燈片延遲"
+
+msgid "Online Media Folder"
+msgstr "線上媒體檔案夾"
+
+msgid "Add SMB Share"
+msgstr "增加SMB網路共享"
+
+msgid "Add FTP Site"
+msgstr "增加FTP網址"
+
+msgid "DVD Menu"
+msgstr "DVD選單"
+
+msgid "Skip to Main Title"
+msgstr "略過主要標題"
+
+msgid "Unable to Initialize MPlayer"
+msgstr "無法初始化MPlayer"
+
+msgid "Unable to find a valid working path"
+msgstr "無法找到有效的執行路徑"
+
+msgid "Unable to change path to"
+msgstr "無法更改路徑到"
+
+msgid "Out of memory: too many files!"
+msgstr "記憶體溢出：檔案太多！"
+
+msgid "Directory name is too long!"
+msgstr "檔案夾名稱太長！"
+
+msgid "SD Card"
+msgstr "SD記憶卡"
+
+msgid "USB Mass Storage"
+msgstr "USB存儲裝置"
+
+msgid "Data DVD"
+msgstr " DVD資料光碟"
+
+msgid "USB drive not found!"
+msgstr "找不到USB裝置！"
+
+msgid "SD card not found!"
+msgstr "找不到SD記憶卡！"
+
+msgid "Loading DVD..."
+msgstr "載入DVD中..."
+
+msgid "No disc inserted!"
+msgstr "沒有插入DVD光碟！"
+
+msgid "Invalid DVD."
+msgstr "無效的DVD光碟。"
+
+msgid "Up One Level"
+msgstr "返回上層選單"
+
+msgid "Error opening"
+msgstr "開啟錯誤"
+
+msgid "Warning"
+msgstr "警告"
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "在這檔案夾中有一個或更多圖片檔若超出容量上限(6MB)其將無法檢視。"
+
+msgid "Error loading playlist!"
+msgstr "載入播放清單錯誤！"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr "播放清單沒有包含任何可支援的項目！"
+
+msgid "No Results Found"
+msgstr "沒有找到任何檔。"
+
+msgid "Your search did not match any media files."
+msgstr "搜尋結果沒有任何符合條件之媒體檔。"
+
+msgid "Error opening file!"
+msgstr "開啟檔案錯誤！"
+
+msgid "Saving..."
+msgstr "儲存中..."
+
+msgid "Error creating file!"
+msgstr "建立檔案錯誤！"
+
+msgid "Error saving file!"
+msgstr "儲存檔案錯誤！"
+
+msgid "Playlist is Empty"
+msgstr "播放清單是空的"
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "選取播放檔並按+鍵增加到你的播放清單中。"
+
+msgid "Exit Playlist"
+msgstr "退出播放清單"
+
+msgid "Update successful!"
+msgstr "更新成功！"
+
+msgid "Update failed!"
+msgstr "更新失敗！"
+
+msgid "Initializing network..."
+msgstr "網路初始化中..."
+
+msgid "Check settings file."
+msgstr "檢查設定檔。"
+
+msgid "Share name is blank."
+msgstr "共享名稱空白。"
+
+msgid "Share IP is blank."
+msgstr "共享IP位址空白。"
+
+msgid "Invalid network share settings"
+msgstr "無效的網路共享設定"
+
+msgid "Connecting to network share..."
+msgstr "正在連線到網路共享..."
+
+msgid "Failed to connect to network share."
+msgstr "網路共享連線失敗。"
+
+msgid "IP is blank."
+msgstr "IP位址空白。"
+
+msgid "Username is blank."
+msgstr "使用者名稱空白。"
+
+msgid "Password is blank."
+msgstr "密碼空白。"
+
+msgid "Invalid FTP site settings"
+msgstr "無效的FTP網址設定"
+
+msgid "Connecting to FTP site..."
+msgstr "正在連線到FTP網址..."
+
+msgid "Failed to connect to FTP site."
+msgstr "連線到FTP網址失敗。"
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "無法找到一個可用的SD記憶卡或USB裝置 - 需要其中一樣裝置才可正常操作。"
+
+msgid "Could not create folder"
+msgstr "無法建立檔案夾"
+
+msgid "Saving settings..."
+msgstr "儲存設定中..."
+
+msgid "Could not save settings to"
+msgstr "無法儲存設定"
+
+msgid "Thanks to"
+msgstr "感謝"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "這是公開原始碼的軟體而你可以複製、發行或在GNU General Public License (GPL) Version 2規則下修改。"
+
+msgid "Menu artwork"
+msgstr "功能表圖片"
+
+msgid "Coding"
+msgstr "代碼編寫"
+
+msgid "Coding & menu design"
+msgstr "代碼和功能表設計"
+
+msgid "Logo"
+msgstr "標識"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "Buffering..."
+msgstr "緩衝中..."
+
+msgid "Buffering"
+msgstr "緩衝中"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "無法初始化網路 (錯誤#："
+
+msgid "Settings - Subtitles"
+msgstr "設定 - 字幕"
+
+msgid "Visibility"
+msgstr "清晰度"
+
+msgid "Delay"
+msgstr "延遲"
+
+msgid "Codepage"
+msgstr "內碼表"
+
+msgid "Subtitle Language"
+msgstr "字幕語言"
+
+msgid "Default"
+msgstr "預設"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "無法更改語言，沒有足夠的記憶體！"
+
+msgid "Font Required"
+msgstr "需要支援的字型檔"
+
+msgid "A new font is required to display this language."
+msgstr "為能正確顯示這語言需要一個新的字型檔。"
+
+msgid "Download font"
+msgstr "下載字型檔"
+
+msgid "Unable to save font file!"
+msgstr "無法儲存字型檔檔案！"
+
+msgid "Out of Memory"
+msgstr "記憶體溢出"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr " WiiMC沒有足夠可用的記憶體來載入圖片檢視器。"
+
+msgid "Close MPlayer"
+msgstr "關閉Mplayer播放器"
+
+msgid "Subtitle Codepage"
+msgstr "字幕內碼表"
+
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "這目錄中項目數包含超過最大允許數(2000)時，將不會顯示所有項目。"
+
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "這播放清單條目數包含超過最大允許數(2000)時，將不會顯示所有條目。"
+
+msgid "Downloading..."
+msgstr "下載中..."
+
+msgid "Unzipping..."
+msgstr "解壓縮中..."
+
+msgid "Color"
+msgstr "顏色"
+
+msgid "Size"
+msgstr "尺寸"
+
+msgid "White"
+msgstr "白色"
+
+msgid "Black"
+msgstr "黑色"
+
+msgid "Yellow"
+msgstr "黃色"
+
+msgid "Red"
+msgstr "紅色"
+
+msgid "Sleep Timer"
+msgstr "睡眠計時器"
+
+msgid "sec"
+msgstr "秒"
+
+msgid "min"
+msgstr "分"
+
+msgid "Blue"
+msgstr "藍色"
+
+msgid "Green"
+msgstr "綠色"
+
+msgid "Grey"
+msgstr "灰色"
+
+msgid "Orange"
+msgstr "橙色"
+
+msgid "Theme"
+msgstr "主題"
+
+msgid "Purple (Default)"
+msgstr "紫色(預設)"
+
+msgid "Auto-Play Next Video"
+msgstr "自動播放下一個視訊"
+
+msgid "Adding files to playlist..."
+msgstr "正在增加檔案至播放清單..."
+
+msgid "Browser Folders"
+msgstr "檔案夾瀏覽器"
+
+msgid "Static"
+msgstr "靜態"
+
+msgid "Use Last Browsed"
+msgstr "使用最後所瀏覽"
+
+msgid "Audio Language"
+msgstr "音訊語言軌"
+
+msgid "DVD Support"
+msgstr "DVD支援"
+
+msgid "Enabled"
+msgstr "啟用"
+
+msgid "Error loading YouTube file!"
+msgstr "YouTube檔案載入錯誤！"
+
+msgid "Rotate"
+msgstr "旋轉"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "解析度超過最大允許像素(1280x720)！"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "現在的IOS已被修改(假的電子簽章)。功能和/或穩定可能受到不良影響。"
+
+msgid "Online media file is invalid."
+msgstr "線上媒體檔無效。"
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "字幕字型檔找不到。字幕將不被顯示。"
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC不能讀取DVD - AHBPROT沒有開啟。"
+
+msgid "Starting Area"
+msgstr "啟動區碼"
+
+msgid "Error downloading font file!"
+msgstr "下載字型檔錯誤！"
+
+msgid "Error opening font file!"
+msgstr "開啟字型檔錯誤！"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "不能改變語言。字型檔損壞！"
+
+msgid "YouTube Quality"
+msgstr "YouTube畫質"
+
+msgid "Low (400x240)"
+msgstr "低畫質 (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "中畫質 (480x360)"
+
+msgid "High (640x360)"
+msgstr "高畫質 (640x360)"

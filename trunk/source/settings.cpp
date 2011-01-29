@@ -335,6 +335,7 @@ prepareSettingsData ()
 	createXMLSetting("hideExtensions", "Hide filename extensions", toStr(WiiSettings.hideExtensions));
 	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
+	createXMLSetting("screensaverDelay", "Screensaver delay", toStr(WiiSettings.screensaverDelay));
 	createXMLSetting("lockFolders", "Static folders", toStr(WiiSettings.lockFolders));
 	createXMLSetting("startArea", "Starting area", toStr(WiiSettings.startArea));
 	// Videos
@@ -584,6 +585,7 @@ void DefaultSettings ()
 	WiiSettings.exitAction = EXIT_AUTO;
 	WiiSettings.rumble = 1;
 	WiiSettings.sleepTimer = 0;
+	WiiSettings.screensaverDelay = 300;
 	WiiSettings.lockFolders = 0;
 	WiiSettings.startArea = MENU_BROWSE_VIDEOS;
 	// Videos
@@ -661,6 +663,8 @@ static void FixInvalidSettings()
 		WiiSettings.exitAction = EXIT_AUTO;
 	if(WiiSettings.rumble != 1 && WiiSettings.rumble != 0)
 		WiiSettings.rumble = 1;
+	if(WiiSettings.screensaverDelay < 60 || WiiSettings.screensaverDelay > 3600)
+		WiiSettings.screensaverDelay = 300;
 	if(WiiSettings.lockFolders != 1 && WiiSettings.lockFolders != 0)
 		WiiSettings.lockFolders = 0;
 	if(WiiSettings.startArea < MENU_BROWSE_VIDEOS || WiiSettings.startArea > MENU_BROWSE_ONLINEMEDIA)
@@ -1002,6 +1006,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.hideExtensions, "hideExtensions");
 				loadXMLSetting(&WiiSettings.exitAction, "exitAction");
 				loadXMLSetting(&WiiSettings.rumble, "rumble");
+				loadXMLSetting(&WiiSettings.screensaverDelay, "screensaverDelay");
 				loadXMLSetting(&WiiSettings.lockFolders, "lockFolders");
 				loadXMLSetting(&WiiSettings.startArea, "startArea");
 				// Videos

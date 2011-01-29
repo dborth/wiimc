@@ -701,7 +701,7 @@ static void *GuiThread (void *arg)
 			if(ssTimer == 0)
 				ssTimer = gettime();
 
-			if(diff_sec(ssTimer, gettime()) > 240) // 4 minutes
+			if(diff_sec(ssTimer, gettime()) > (u32)(WiiSettings.screensaverDelay-60))
 				ResumeScreensaverThread();
 		}
 
@@ -3812,6 +3812,7 @@ static void MenuSettingsGlobal()
 	sprintf(options.name[i++], "Exit Action");
 	sprintf(options.name[i++], "Wiimote Rumble");
 	sprintf(options.name[i++], "Sleep Timer");
+	sprintf(options.name[i++], "Screensaver Delay");
 	sprintf(options.name[i++], "Browser Folders");
 	sprintf(options.name[i++], "Starting Area");
 
@@ -3856,6 +3857,13 @@ static void MenuSettingsGlobal()
 	mainWindow->Append(&w);
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
+
+	int ssDelay[7] = { 60, 120, 300, 600, 900, 1800, 3600 };
+	int ssDelayNum = 2;
+
+	for(i=0; i < 7; i++)
+		if(WiiSettings.screensaverDelay == ssDelay[i])
+			ssDelayNum = i;
 
 	while(menuCurrent == MENU_SETTINGS_GLOBAL && !guiShutdown)
 	{
@@ -3910,9 +3918,14 @@ static void MenuSettingsGlobal()
 					WiiSettings.sleepTimer = 0;
 				break;
 			case 7:
-				WiiSettings.lockFolders ^= 1;
+				ssDelayNum++;
+				if(ssDelayNum > 6) ssDelayNum = 0;
+				WiiSettings.screensaverDelay = ssDelay[ssDelayNum];
 				break;
 			case 8:
+				WiiSettings.lockFolders ^= 1;
+				break;
+			case 9:
 				WiiSettings.startArea++;
 				if(WiiSettings.startArea > MENU_BROWSE_ONLINEMEDIA)
 					WiiSettings.startArea = MENU_BROWSE_VIDEOS;
@@ -3976,15 +3989,16 @@ static void MenuSettingsGlobal()
 			else
 				sprintf(options.value[6], "Off");
 
-			sprintf(options.value[7], "%s", WiiSettings.lockFolders ? "Static" : "Use Last Browsed");
+			sprintf(options.value[7], "%d %s", (int)(WiiSettings.audioDelay/60), gettext("min"));
+			sprintf(options.value[8], "%s", WiiSettings.lockFolders ? "Static" : "Use Last Browsed");
 			
 			switch(WiiSettings.startArea)
 			{
-				case MENU_BROWSE_VIDEOS: 		sprintf(options.value[8], "Videos"); break;
-				case MENU_BROWSE_MUSIC: 		sprintf(options.value[8], "Music"); break;
-				case MENU_BROWSE_PICTURES: 		sprintf(options.value[8], "Pictures"); break;
-				case MENU_DVD: 					sprintf(options.value[8], "DVD"); break;
-				case MENU_BROWSE_ONLINEMEDIA: 	sprintf(options.value[8], "Online Media"); break;
+				case MENU_BROWSE_VIDEOS: 		sprintf(options.value[9], "Videos"); break;
+				case MENU_BROWSE_MUSIC: 		sprintf(options.value[9], "Music"); break;
+				case MENU_BROWSE_PICTURES: 		sprintf(options.value[9], "Pictures"); break;
+				case MENU_DVD: 					sprintf(options.value[9], "DVD"); break;
+				case MENU_BROWSE_ONLINEMEDIA: 	sprintf(options.value[9], "Online Media"); break;
 			}
 
 			optionBrowser.TriggerUpdate();

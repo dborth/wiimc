@@ -94,6 +94,7 @@ struct SWiiSettings {
 	int		exitAction;
 	int		rumble;
 	int		sleepTimer;
+	int		screensaverDelay;
 	int		lockFolders;
 	int		startArea;
 	// Videos

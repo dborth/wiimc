@@ -33,10 +33,9 @@ void StartNetworkThread();
 bool InitializeNetwork(bool silent);
 bool ConnectShare (int num, bool silent);
 void CloseShare(int num);
+void ReconnectShare(int num, bool silent);
 bool ConnectFTP(int num, bool silent);
 void CloseFTP(int num);
-bool CheckNetwork(bool silent);
-
 
 extern bool updateFound;
 extern char wiiIP[16];

@@ -666,3 +666,6 @@ msgstr "Hoch (640x360)"
 
 msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
 msgstr "Das aktuelle IOS wird nicht unterstützt. Funktion und/oder Stabilität können beeinträchtigt sein."
+
+msgid "Screensaver Delay"
+msgstr "Bildschirmschoner Wartezeit"

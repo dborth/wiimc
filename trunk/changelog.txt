@@ -14,7 +14,7 @@
 * Changed from mpg123 to ffmp3 (fixes some audio-related problems)
 * Added ext 2/3/4 support
 * USB compatibility improvements
-* Improved performance (set L2 cache to 64bit)
+* Improved performance (enabled 64-byte fetch mode for the L2 cache)
 * Large file (> 4GB) support
 * Fixed relative playlist paths
 * Paired-singles enhancements (thanks Extrems!)

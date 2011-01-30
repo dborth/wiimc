@@ -551,6 +551,10 @@ static void LoadOnlineMediaFile(char * filepath)
 	int offset = 0;
 
 	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, OTHER_AREA);
+
+	if(!savebuffer)
+		return;
+
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
 	offset = LoadFile(savebuffer, filepath, SILENT);
 
@@ -911,12 +915,14 @@ SaveSettings (bool silent)
 
 	FixInvalidSettings();
 	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, OTHER_AREA);
-	memset(savebuffer, 0, SAVEBUFFERSIZE);
-	datasize = prepareSettingsData ();
 
-	offset = SaveFile(savebuffer, filepath, datasize, silent);
-
-	mem2_free(savebuffer, OTHER_AREA);
+	if(savebuffer)
+	{
+		memset(savebuffer, 0, SAVEBUFFERSIZE);
+		datasize = prepareSettingsData();
+		offset = SaveFile(savebuffer, filepath, datasize, silent);
+		mem2_free(savebuffer, OTHER_AREA);
+	}
 
 	if(!silent)
 		CancelAction();
@@ -930,9 +936,12 @@ SaveSettings (bool silent)
 		// save restore points
 		sprintf(filepath,"%s/%s",appPath,"restore_points");
 		char * buff = wiiSaveRestorePoints(filepath);
-		SaveFile(buff, filepath, strlen(buff), SILENT);
-		mem2_free(buff,OTHER_AREA);
 
+		if(buff)
+		{
+			SaveFile(buff, filepath, strlen(buff), SILENT);
+			mem2_free(buff, OTHER_AREA);
+		}
 		return true;
 	}
 
@@ -953,10 +962,13 @@ static bool LoadSettingsFile(char * filepath)
 	int offset = 0;
 
 	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, OTHER_AREA);
-	memset(savebuffer, 0, SAVEBUFFERSIZE);
 
+	if(!savebuffer)
+		return false;
+
+	memset(savebuffer, 0, SAVEBUFFERSIZE);
 	offset = LoadFile(savebuffer, filepath, SILENT);
-	
+
 	if (offset > 0)
 	{
 		xml = mxmlLoadString(NULL, savebuffer, MXML_TEXT_CALLBACK);
@@ -1093,10 +1105,14 @@ bool LoadSettings()
 
 		sprintf(filepath,"%s/restore_points",appPath);
 		char *buffer = (char *)mem2_malloc(50*1024, OTHER_AREA);
-		int size = LoadFile(buffer, filepath, SILENT);
-		if(size > 0)
-			wiiLoadRestorePoints(buffer, size);
-		mem2_free(buffer, OTHER_AREA);
+
+		if(buffer)
+		{
+			int size = LoadFile(buffer, filepath, SILENT);
+			if(size > 0)
+				wiiLoadRestorePoints(buffer, size);
+			mem2_free(buffer, OTHER_AREA);
+		}
 	}
 	return settingsFound;
 }

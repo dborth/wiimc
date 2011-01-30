@@ -1869,7 +1869,7 @@ static void *ThumbThread (void *arg)
 
 	while(!thumbThreadHalt)
 	{
-		if(thumbLoad)
+		if(thumbBuffer && thumbLoad)
 		{
 			thumbLoad = false;
 
@@ -1916,7 +1916,7 @@ static void *ThumbThread (void *arg)
 		usleep(THREAD_SLEEP);
 	}
 	if(thumb) delete thumb;
-	mem2_free(thumbBuffer, OTHER_AREA);
+	if(thumbBuffer) mem2_free(thumbBuffer, OTHER_AREA);
 	return NULL;
 }
 
@@ -6257,10 +6257,14 @@ static void AudioNowPlayingCallback(void *ptr)
 
 		if(album && strlen(album) > 0 && year && strlen(year) > 0)
 		{
-			char *txt=(char*)mem2_malloc(sizeof(char)*1024,GUI_AREA);
-			sprintf(txt, "%s (%s)", album, year);
-			audiobarNowPlaying[3]->SetText(txt);
-			mem2_free(txt,GUI_AREA);
+			char *txt=(char*)mem2_malloc(sizeof(char)*1024, GUI_AREA);
+
+			if(txt)
+			{
+				sprintf(txt, "%s (%s)", album, year);
+				audiobarNowPlaying[3]->SetText(txt);
+				mem2_free(txt, GUI_AREA);
+			}
 		}
 		else if(album && strlen(album) > 0)
 		{

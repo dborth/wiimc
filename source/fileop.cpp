@@ -1810,11 +1810,13 @@ ParseDirectory(bool waitParse)
 		{
 			// check if any pictures were > max size and display a warning
 			for(int i=0; i < browser.numEntries; i++)
-				if(browserList[i].length > MAX_PICTURE_SIZE)
+			{
+				if(browserList[i].type == TYPE_FILE && browserList[i].length > MAX_PICTURE_SIZE)
 				{
 					InfoPrompt("Warning", "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable.");
 					break;
 				}
+			}
 		}
 	}
 

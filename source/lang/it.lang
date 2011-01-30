@@ -518,7 +518,7 @@ msgid "Font Required"
 msgstr "Font Richiesto"
 
 msgid "A new font is required to display this language."
-msgstr "un nuovo font è richiesto per visualizzare questa lingua."
+msgstr "Un nuovo font è richiesto per visualizzare questa lingua."
 
 msgid "Download font"
 msgstr "Scarica font"
@@ -632,7 +632,40 @@ msgid "The current IOS has been altered (fake-signed). Functionality and/or stab
 msgstr "L'IOS corrente è stato alterato (fake-sign). Le funzionalità e/o la stabilità possono essere compromesse."
 
 msgid "Online media file is invalid."
-msgstr "File multimediale online invalido"
+msgstr "File multimediale online invalido."
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
 msgstr "Font sottotitoli non trovato. I sottotitoli non saranno visibili."
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC non ha accesso al DVD - AHBPROT non è attivo."
+
+msgid "Starting Area"
+msgstr "Area di avvio"
+
+msgid "Error downloading font file!"
+msgstr "Errore scaricando il file dei font!"
+
+msgid "Error opening font file!"
+msgstr "Errore aprendo il file dei font!"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "Impossibile cambiare lingua. Il file dei font è danneggiato!"
+
+msgid "YouTube Quality"
+msgstr "Qualità YouTube"
+
+msgid "Low (400x240)"
+msgstr Bassa (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "Media (480x360)"
+
+msgid "High (640x360)"
+msgstr "Alta (640x360)"
+
+msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
+msgstr "L'IOS corrente non è supportato. Le funzionalità e/o la stabilità possono essere compromesse."
+
+msgid "Screensaver Delay"
+msgstr "Ritardo Screensaver"

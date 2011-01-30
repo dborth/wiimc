@@ -59,7 +59,7 @@ bool ParseDone();
 int ParseDirectory(bool waitParse = false);
 int ParsePlaylistFile();
 int ParseOnlineMedia();
-size_t LoadFile (char * buffer, char *filepath, bool silent);
+size_t LoadFile (char * buffer, size_t buffersize, char *filepath, bool silent);
 size_t SaveFile (char * buffer, char *filepath, size_t datasize, bool silent);
 
 extern DEVICE_STRUCT part[2][MAX_DEVICES];

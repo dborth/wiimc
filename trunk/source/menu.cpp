@@ -1891,7 +1891,7 @@ static void *ThumbThread (void *arg)
 				if(strncmp(browserList[loadIndex].image, "http:", 5) == 0)
 					read = http_request(browserList[loadIndex].image, NULL, thumbBuffer, 200*1024, SILENT);
 				else
-					read = LoadFile(browserList[loadIndex].image, thumbBuffer, SILENT);
+					read = LoadFile(thumbBuffer, 200*1024, browserList[loadIndex].image, SILENT);
 	
 				if(read > 0 && loadIndex == thumbIndex) // file loaded and index has not changed
 				{
@@ -3039,7 +3039,7 @@ restart:
 				{
 					sprintf(filepath, "%s%s", browser.dir, browserList[selIndex].filename);
 					pictureIndexLoading = selIndex;
-					int size = LoadFile((char *)picBuffer, filepath, SILENT);
+					int size = LoadFile((char *)picBuffer, MAX_PICTURE_SIZE, filepath, SILENT);
 
 					if(size == 0)
 						goto restart;
@@ -3092,7 +3092,7 @@ restart:
 
 				sprintf(filepath, "%s%s", browser.dir, browserList[next].filename);
 				pictureIndexLoading = next;
-				int size = LoadFile((char *)picBuffer, filepath, SILENT);
+				int size = LoadFile((char *)picBuffer, MAX_PICTURE_SIZE, filepath, SILENT);
 
 				if(size == 0)
 					goto restart;

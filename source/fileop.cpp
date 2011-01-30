@@ -1845,7 +1845,7 @@ static int ParsePLXPlaylist()
 	if(strncmp(browser.dir, "http:", 5) == 0)
 		size = http_request(browser.dir, NULL, buffer, MAX_PLX_SIZE, SILENT);
 	else
-		size = LoadFile(buffer, browser.dir, SILENT);
+		size = LoadFile(buffer, MAX_PLX_SIZE, browser.dir, SILENT);
 
 	if(size == 0)
 	{
@@ -2320,13 +2320,12 @@ void CancelFileOp()
  ***************************************************************************/
 size_t loadOffset = 0, loadSize = 0;
 
-size_t LoadFile (char * buffer, char *filepath, bool silent)
+size_t LoadFile (char * buffer, size_t buffersize, char *filepath, bool silent)
 {
 	size_t readsize = 0;
 	int retry = 1;
 	FILE * file;
 	cancelFileLoad = false;
-
 
 	// stop checking if devices were removed/inserted
 	// since we're loading a file
@@ -2334,6 +2333,8 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 
 	// halt parsing
 	SuspendParseThread();
+	
+	loadOffset = 0;
 
 	// open the file
 	while(retry)
@@ -2355,23 +2356,26 @@ size_t LoadFile (char * buffer, char *filepath, bool silent)
 		fseeko(file,0,SEEK_END);
 		loadSize = ftello(file);
 		fseeko(file,0,SEEK_SET);
-
-		while(!feof(file))
+		
+		if(loadSize < buffersize)
 		{
-			if(!silent)
-				ShowProgress ("Loading...", loadOffset, loadSize);
-			readsize = fread (buffer + loadOffset, 1, 4096, file); // read in next chunk
-
-			if(readsize <= 0)
-				break; // reading finished (or failed)
-
-			loadOffset += readsize;
-
-			if(cancelFileLoad)
+			while(!feof(file))
 			{
-				cancelFileLoad = false;
-				loadOffset = 0;
-				break;
+				if(!silent)
+					ShowProgress ("Loading...", loadOffset, loadSize);
+				readsize = fread (buffer + loadOffset, 1, 4096, file); // read in next chunk
+	
+				if(readsize <= 0)
+					break; // reading finished (or failed)
+	
+				loadOffset += readsize;
+	
+				if(cancelFileLoad)
+				{
+					cancelFileLoad = false;
+					loadOffset = 0;
+					break;
+				}
 			}
 		}
 		fclose (file);

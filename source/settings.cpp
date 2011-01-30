@@ -556,7 +556,7 @@ static void LoadOnlineMediaFile(char * filepath)
 		return;
 
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
-	offset = LoadFile(savebuffer, filepath, SILENT);
+	offset = LoadFile(savebuffer, SAVEBUFFERSIZE, filepath, SILENT);
 
 	if (offset > 0)
 	{
@@ -967,7 +967,7 @@ static bool LoadSettingsFile(char * filepath)
 		return false;
 
 	memset(savebuffer, 0, SAVEBUFFERSIZE);
-	offset = LoadFile(savebuffer, filepath, SILENT);
+	offset = LoadFile(savebuffer, SAVEBUFFERSIZE, filepath, SILENT);
 
 	if (offset > 0)
 	{
@@ -1103,12 +1103,12 @@ bool LoadSettings()
 		if(WiiSettings.theme[0] != 0)
 			ChangeTheme();
 
-		sprintf(filepath,"%s/restore_points",appPath);
+		sprintf(filepath,"%s/restore_points", appPath);
 		char *buffer = (char *)mem2_malloc(50*1024, OTHER_AREA);
 
 		if(buffer)
 		{
-			int size = LoadFile(buffer, filepath, SILENT);
+			int size = LoadFile(buffer, 50*1024, filepath, SILENT);
 			if(size > 0)
 				wiiLoadRestorePoints(buffer, size);
 			mem2_free(buffer, OTHER_AREA);

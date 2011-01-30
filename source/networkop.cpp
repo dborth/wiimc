@@ -242,7 +242,6 @@ static void * netcb (void *arg)
 			retry=30;
 		}
 		LWP_SuspendThread(networkthread);
-		
 	}
 	return NULL;
 }
@@ -252,27 +251,6 @@ static void * netcb (void *arg)
  *
  * Signals the network thread to resume, or creates a new thread
  ***************************************************************************/
-extern "C"{
-void CheckMplayerNetwork() //to use in cache2.c in mplayer
-{
-	if(net_gethostip()==0)
-	{
-		networkInit = false;
-		StartNetworkThread();	
-	}
-}
-}
-
-bool CheckNetwork(bool silent) // to use in gui
-{
-	if(net_gethostip()==0)
-	{
-		networkInit = false;
-		return InitializeNetwork(false);
-	}
-	return true;
-}
-
 void StartNetworkThread()
 {
 	netHalt = 0;
@@ -303,16 +281,26 @@ void StopNetworkThread()
 	networkthread = LWP_THREAD_NULL;
 }
 
-bool InitializeNetwork(bool silent)
+extern "C"{
+void CheckMplayerNetwork() //to use in cache2.c in mplayer
 {
-	if(networkInit)
+	if(net_gethostip()==0)
 	{
 		StopNetworkThread();
-		return true;
+		networkInit = false;
+		StartNetworkThread();	
 	}
+}
+}
 
-	if(silent)
-		return false;
+bool InitializeNetwork(bool silent)
+{
+	StopNetworkThread();
+
+	if(networkInit && net_gethostip() > 0)
+		return true;
+
+	networkInit = false;
 
 	int retry = 1;
 	wchar_t msg[150];
@@ -334,7 +322,7 @@ bool InitializeNetwork(bool silent)
 
 		CancelAction();
 
-		if(networkInit)
+		if(networkInit || silent)
 			break;
 
 		swprintf(msg, 150, L"%s %i)", gettext("Unable to initialize network (Error #:"), net_get_status());
@@ -360,7 +348,6 @@ void CloseShare(int num)
 bool
 ConnectShare (int num, bool silent)
 {
-	CheckNetwork(silent);
 	if(!InitializeNetwork(silent))
 		return false;
 
@@ -406,14 +393,19 @@ ConnectShare (int num, bool silent)
 			break;
 
 		retry = ErrorPromptRetry("Failed to connect to network share.");
-		if(retry) CheckNetwork(silent);
-			
+		if(retry) InitializeNetwork(silent);
 	}
 
 	if(!silent)
 		CancelAction();
 
 	return networkShareInit[num-1];
+}
+
+void ReconnectShare(int num, bool silent)
+{
+	CloseShare(num);
+	ConnectShare(num, silent);
 }
 
 void CloseFTP(int num)

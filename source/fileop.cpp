@@ -1755,7 +1755,7 @@ ParseDirectory(bool waitParse)
 				if(device == DEVICE_SD || device == DEVICE_USB)
 					Remount(device, NOTSILENT);
 				else if(device == DEVICE_SMB)
-					CheckNetwork(true);
+					ReconnectShare(devnum, NOTSILENT);
 			}
 		}
 	}

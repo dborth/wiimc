@@ -87,7 +87,6 @@ int MusicPlaylistLoad()
 	strcpy(browserList[0].filename, BrowserHistoryRetrieve());
 	sprintf(browserList[0].displayname, "Exit Playlist");
 	browserList[0].length = 0;
-	browserList[0].mtime = 0;
 	browserList[0].icon = ICON_FOLDER;
 
 	char ext[7];
@@ -110,7 +109,6 @@ int MusicPlaylistLoad()
 		sprintf(browserList[i+1].filename, playlist[i].filepath);
 		sprintf(browserList[i+1].displayname, playlist[i].displayname);
 		browserList[i+1].length = 0;
-		browserList[i+1].mtime = 0;
 		browserList[i+1].type = TYPE_FILE;
 		browserList[i+1].icon = ICON_FILE_CHECKED;
 	}

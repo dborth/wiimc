@@ -1627,7 +1627,7 @@ static bool ParseDirEntries()
 			#ifdef _DIRENT_HAVE_D_TYPE
 			if(entry->d_type==DT_DIR)
 				filestat.st_mode = S_IFDIR;
-			else if(entry->d_type==DT_REG)
+			else
 				filestat.st_mode = S_IFREG;
 
 			if(menuCurrent == MENU_BROWSE_PICTURES)
@@ -1659,7 +1659,6 @@ static bool ParseDirEntries()
 		{
 			snprintf(browserList[browser.numEntries+i].filename, MAXJOLIET, "%s", entry->d_name);
 			browserList[browser.numEntries+i].length = filestat.st_size;
-			browserList[browser.numEntries+i].mtime = filestat.st_mtime;
 
 			if(S_ISDIR(filestat.st_mode)) 
 			{

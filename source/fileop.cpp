@@ -41,7 +41,7 @@ extern "C" {
 #include "utils/gettext.h"
 
 #define PARSESTACK (32*1024)
-#define DEVICESTACK (8*1024)
+#define DEVICESTACK (32*1024)
 
 static u8 parsestack[PARSESTACK] ATTRIBUTE_ALIGN (32);
 static u8 devicestack[DEVICESTACK] ATTRIBUTE_ALIGN (32);
@@ -1800,7 +1800,6 @@ ParseDirectory(bool waitParse)
 		sprintf(browserList[0].filename, "..");
 		sprintf(browserList[0].displayname, "Up One Level");
 		browserList[0].length = 0;
-		browserList[0].mtime = 0;
 		browserList[0].type = TYPE_FOLDER; // flag this as a dir
 		browserList[0].icon = ICON_FOLDER;
 		browser.numEntries++;
@@ -1991,7 +1990,6 @@ static int ParsePLXPlaylist()
 	strcpy(browserList[0].filename, BrowserHistoryRetrieve());
 	sprintf(browserList[0].displayname, "Up One Level");
 	browserList[0].length = 0;
-	browserList[0].mtime = 0;
 	browserList[0].icon = ICON_FOLDER;
 
 	if(IsPlaylistExt(ext) || strncmp(root, "http:", 5) == 0)
@@ -2142,7 +2140,6 @@ int ParsePlaylistFile()
 
 			sprintf(browserList[0].displayname, "Up One Level");
 			browserList[0].length = 0;
-			browserList[0].mtime = 0;
 			browserList[0].icon = ICON_FOLDER;
 
 			browser.numEntries++;
@@ -2236,7 +2233,6 @@ int ParseOnlineMedia()
 		sprintf(browserList[0].filename, "..");
 		sprintf(browserList[0].displayname, "Up One Level");
 		browserList[0].length = 0;
-		browserList[0].mtime = 0;
 		browserList[0].type = TYPE_FOLDER;
 		browserList[0].icon = ICON_FOLDER;
 		browser.numEntries++;
@@ -2266,7 +2262,6 @@ int ParseOnlineMedia()
 			snprintf(browserList[browser.numEntries].displayname, MAXJOLIET, "%s", onlinemediaList[i].displayname);
 			snprintf(browserList[browser.numEntries].image, MAXJOLIET, "%s", onlinemediaList[i].image);
 			browserList[browser.numEntries].length = 0;
-			browserList[browser.numEntries].mtime = 0;
 			browserList[browser.numEntries].type = onlinemediaList[i].type;
 			browserList[browser.numEntries].icon = ICON_NONE;
 			browser.numEntries++;
@@ -2300,7 +2295,6 @@ int ParseOnlineMedia()
 				browserList[browser.numEntries].filename[MAXPATHLEN] = 0;
 				browserList[browser.numEntries].displayname[MAXJOLIET] = 0;
 				browserList[browser.numEntries].length = 0;
-				browserList[browser.numEntries].mtime = 0;
 				browserList[browser.numEntries].type = TYPE_FOLDER;
 				browserList[browser.numEntries].icon = ICON_FOLDER;
 				browser.numEntries++;

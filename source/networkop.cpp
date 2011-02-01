@@ -190,11 +190,11 @@ bool DownloadUpdate()
  ***************************************************************************/
 
 static lwp_t networkthread = LWP_THREAD_NULL;
-static u8 netstack[8192] ATTRIBUTE_ALIGN (32);
+static u8 netstack[32768] ATTRIBUTE_ALIGN (32);
 
 static void * netcb (void *arg)
 {
-	s32 res;
+	s32 res=-1;
 	int retry;
 	int wait;
 	static bool first=true;
@@ -203,31 +203,33 @@ static void * netcb (void *arg)
 	{
 		retry = 30;
 
-		while (retry)
+		while (retry>0 && (netHalt != 2))
 		{
 			net_deinit();
-			if(!first) net_wc24cleanup(); //kill the net
+			if(!first) net_wc24cleanup(); //kill the net 
 			first=false;
 			res = net_init_async(NULL, NULL);
 
 			if(res != 0)
-				break; // failed
+			{
+				sleep(1);
+				retry--;
+				continue;
+			}
 
 			res = net_get_status();
 			wait = 500; // only wait 10 sec
-			while (res == -EBUSY && wait > 0)
+			while (res == -EBUSY && wait > 0  && (netHalt != 2))
 			{
 				usleep(20000);
 				res = net_get_status();
 				wait--;
 			}
 
-			if (res != -EAGAIN && res != -ETIMEDOUT)
-				break;
-
+			if(res==0) break;
+			
 			retry--;
 			usleep(2000);
-			continue;
 		}
 		if (res == 0)
 		{
@@ -236,10 +238,8 @@ static void * netcb (void *arg)
 			if (hostip.s_addr)
 			{
 				strcpy(wiiIP, inet_ntoa(hostip));
-				networkInit = true;
-				
+				networkInit = true;				
 			}
-			retry=30;
 		}
 		LWP_SuspendThread(networkthread);
 	}
@@ -256,7 +256,7 @@ void StartNetworkThread()
 	netHalt = 0;
 
 	if(networkthread == LWP_THREAD_NULL)
-		LWP_CreateThread(&networkthread, netcb, NULL, netstack, 8192, 40);
+		LWP_CreateThread(&networkthread, netcb, NULL, netstack, 32768, 40);
 	else
 		LWP_ResumeThread(networkthread);
 }
@@ -286,7 +286,6 @@ void CheckMplayerNetwork() //to use in cache2.c in mplayer
 {
 	if(net_gethostip()==0)
 	{
-		StopNetworkThread();
 		networkInit = false;
 		StartNetworkThread();	
 	}

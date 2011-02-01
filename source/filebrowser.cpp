@@ -376,7 +376,6 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 					sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("SD Card"), i+1);
 	
 				browserList[browser.numEntries].length = 0;
-				browserList[browser.numEntries].mtime = 0;
 				browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
 				browserList[browser.numEntries].icon = ICON_SD;
 				browser.numEntries++;
@@ -402,7 +401,6 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 					sprintf(browserList[browser.numEntries].displayname, "%s (%d)", gettext("USB Mass Storage"), i+1);
 	
 				browserList[browser.numEntries].length = 0;
-				browserList[browser.numEntries].mtime = 0;
 				browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
 				browserList[browser.numEntries].icon = ICON_USB;
 				browser.numEntries++;
@@ -416,7 +414,6 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		sprintf(browserList[browser.numEntries].filename, "dvd:");
 		sprintf(browserList[browser.numEntries].displayname, "Data DVD");
 		browserList[browser.numEntries].length = 0;
-		browserList[browser.numEntries].mtime = 0;
 		browserList[browser.numEntries].type = TYPE_FOLDER;
 		browserList[browser.numEntries].icon = ICON_DVD;
 		browser.numEntries++;
@@ -435,7 +432,6 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			else
 				sprintf(browserList[browser.numEntries].displayname, "%s", WiiSettings.smbConf[i].share);
 			browserList[browser.numEntries].length = 0;
-			browserList[browser.numEntries].mtime = 0;
 			browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
 			browserList[browser.numEntries].icon = ICON_SMB;
 			browser.numEntries++;
@@ -454,7 +450,6 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			else
 				sprintf(browserList[browser.numEntries].displayname, "%s@%s/%s", WiiSettings.ftpConf[i].user, WiiSettings.ftpConf[i].ip, WiiSettings.ftpConf[i].folder);
 			browserList[browser.numEntries].length = 0;
-			browserList[browser.numEntries].mtime = 0;
 			browserList[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
 			browserList[browser.numEntries].icon = ICON_FTP;
 			browser.numEntries++;

@@ -3989,7 +3989,7 @@ static void MenuSettingsGlobal()
 			else
 				sprintf(options.value[6], "Off");
 
-			sprintf(options.value[7], "%d %s", (int)(WiiSettings.audioDelay/60), gettext("min"));
+			sprintf(options.value[7], "%d %s", (int)(WiiSettings.screensaverDelay/60), gettext("min"));
 			sprintf(options.value[8], "%s", WiiSettings.lockFolders ? "Static" : "Use Last Browsed");
 			
 			switch(WiiSettings.startArea)

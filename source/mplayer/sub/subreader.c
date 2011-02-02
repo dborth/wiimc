@@ -2093,8 +2093,9 @@ void load_subtitles(const char *fname, int fps, open_sub_func add_f)
         return;
         
 #ifdef GEKKO
-	if(strncmp(fname, "sd", 2) != 0 && strncmp(fname, "usb", 3) != 0 && strncmp(fname, "smb", 3) != 0)
+	if(strncmp(fname, "sd", 2) != 0 && strncmp(fname, "usb", 3) != 0 && strncmp(fname, "smb", 3) != 0 && strncmp(fname, "dvd", 3) != 0)
 		return;
+	if(strncmp(fname, "dvd://", 6) == 0 || strncmp(fname, "dvdnav", 6) == 0) return;
 #endif
 
     slist.sid  = 0;

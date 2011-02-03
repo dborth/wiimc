@@ -201,13 +201,33 @@ static void * netcb (void *arg)
 
 	while(netHalt != 2)
 	{
-		retry = 30;
-
+		retry = 5;
+		
 		while (retry>0 && (netHalt != 2))
 		{
-			net_deinit();
-			if(!first) net_wc24cleanup(); //kill the net 
+			if(!first) 
+			{
+				bool reset=false;
+				int i;
+				for(i=0;i<500 && (netHalt != 2);i++) // 10 seconds to try to reset
+				{
+					res = net_get_status();
+					if(res != -EBUSY) // trying to init net so we can't kill the net
+					{
+						net_wc24cleanup(); //kill the net 
+						reset=true;
+						break;					
+					}
+					usleep(20000);
+				}
+				if(!reset) 
+				{
+					retry--;
+					continue;
+				}
+			}
 			first=false;
+			net_deinit();
 			res = net_init_async(NULL, NULL);
 
 			if(res != 0)
@@ -218,7 +238,7 @@ static void * netcb (void *arg)
 			}
 
 			res = net_get_status();
-			wait = 500; // only wait 10 sec
+			wait = 400; // only wait 10 sec
 			while (res == -EBUSY && wait > 0  && (netHalt != 2))
 			{
 				usleep(20000);
@@ -241,7 +261,7 @@ static void * netcb (void *arg)
 				networkInit = true;				
 			}
 		}
-		LWP_SuspendThread(networkthread);
+		if(netHalt != 2) LWP_SuspendThread(networkthread);
 	}
 	return NULL;
 }
@@ -326,6 +346,9 @@ bool InitializeNetwork(bool silent)
 
 		swprintf(msg, 150, L"%s %i)", gettext("Unable to initialize network (Error #:"), net_get_status());
 		retry = ErrorPromptRetry(msg);
+		
+		if(networkInit && net_gethostip() > 0) //while waiting network thread can init the net so we check before reinit
+				return true;
 	}
 	return networkInit;
 }

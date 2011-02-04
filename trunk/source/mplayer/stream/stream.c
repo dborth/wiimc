@@ -314,6 +314,7 @@ int stream_read_internal(stream_t *s, void *buf, int len)
     len= s->fill_buffer ? s->fill_buffer(s, buf, len) : 0;
   }
 #ifdef GEKKO
+	
   if(len==0)
   {
 	  if(_try>3)
@@ -326,8 +327,7 @@ int stream_read_internal(stream_t *s, void *buf, int len)
   {
 	  s->eof=1;
 	  s->buf_pos=s->buf_len=0;
-	  //printf("errno: %i\n",errno);
-	  if(s->error==0 && errno==EIO)
+	  if(s->error==0 && (errno==EIO || errno==ENOSYS))
 		  s->error=1;
 	  return 0;
   }

@@ -244,13 +244,12 @@ static int cache_fill(cache_vars_t *s)
 	{
 		s->stream->error++; //count read error
 		
-		if(s->stream->error>1000) //num retries
+		if(s->stream->error>500) //num retries
 		{
 			s->eof=1;
 		}
 		else		
 		{
-		  //printf("Error reading stream\n");
 		  //retry if we have cache
 		  cache_fill_status=(s->max_filepos-s->read_filepos)*100.0/s->buffer_size;
 		  if(cache_fill_status<5)

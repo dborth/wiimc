@@ -204,7 +204,7 @@ static void * netcb (void *arg)
 		retry = 5;
 		
 		while (retry>0 && (netHalt != 2))
-		{
+		{			
 			if(!first) 
 			{
 				bool reset=false;
@@ -214,6 +214,7 @@ static void * netcb (void *arg)
 					res = net_get_status();
 					if(res != -EBUSY) // trying to init net so we can't kill the net
 					{
+						usleep(2000);
 						net_wc24cleanup(); //kill the net 
 						reset=true;
 						break;					
@@ -228,6 +229,8 @@ static void * netcb (void *arg)
 			}
 			first=false;
 			net_deinit();
+			
+			usleep(2000);
 			res = net_init_async(NULL, NULL);
 
 			if(res != 0)
@@ -238,7 +241,7 @@ static void * netcb (void *arg)
 			}
 
 			res = net_get_status();
-			wait = 400; // only wait 10 sec
+			wait = 400; // only wait 8 sec
 			while (res == -EBUSY && wait > 0  && (netHalt != 2))
 			{
 				usleep(20000);
@@ -247,7 +250,6 @@ static void * netcb (void *arg)
 			}
 
 			if(res==0) break;
-			
 			retry--;
 			usleep(2000);
 		}
@@ -314,7 +316,7 @@ void CheckMplayerNetwork() //to use in cache2.c in mplayer
 
 bool InitializeNetwork(bool silent)
 {
-	StopNetworkThread();
+	//StopNetworkThread();
 
 	if(networkInit && net_gethostip() > 0)
 		return true;

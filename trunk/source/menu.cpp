@@ -40,8 +40,8 @@ extern "C" {
 }
 
 #define THREAD_SLEEP 	200
-#define GSTACK 			(8192)
-#define GUITH_STACK 	(8192)
+#define GSTACK 			(16384)
+#define GUITH_STACK 	(16384)
 #define PICTH_STACK 	(16384)
 
 static u8 guistack[GSTACK] ATTRIBUTE_ALIGN (32);
@@ -568,6 +568,8 @@ done:
 		audiobarNowPlayingBtn->SetPosition(0, 0);
 		mainWindow = oldWindow;
 		ResumeGui();
+		if(screensaverThreadHalt == 2)
+			break;
 	}
 	return NULL;
 }
@@ -688,7 +690,7 @@ static void *GuiThread (void *arg)
 			ResumeUpdateThread();
 		}
 
-		if(userInput[0].wpad->data_present > 0)
+		if(userInput[0].wpad->data_present > 0 || ExitRequested)
 		{
 			if(ssTimer != 0)
 			{

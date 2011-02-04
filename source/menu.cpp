@@ -2008,6 +2008,9 @@ static void HideAudioVolumeLevelBar();
 
 bool LoadYouTubeFile(char *url, char *newurl)
 {
+	if(!ChangeInterface(DEVICE_INTERNET,0,NOTSILENT))
+		return false;
+
 	char *buffer = (char *)mem2_malloc(128*1024, OTHER_AREA);
 
 	if(!buffer)

@@ -288,15 +288,14 @@ void StartNetworkThread()
  *
  * Signals the network thread to stop
  ***************************************************************************/
-void StopNetworkThread()
+static void StopNetworkThread()
 {
-	if(networkthread == LWP_THREAD_NULL)
+	if(networkthread == LWP_THREAD_NULL || !LWP_ThreadIsSuspended(networkthread))
 		return;
 
 	netHalt = 2;
 
-	if(LWP_ThreadIsSuspended(networkthread))
-		LWP_ResumeThread(networkthread);
+	LWP_ResumeThread(networkthread);
 
 	// wait for thread to finish
 	LWP_JoinThread(networkthread, NULL);
@@ -316,7 +315,7 @@ void CheckMplayerNetwork() //to use in cache2.c in mplayer
 
 bool InitializeNetwork(bool silent)
 {
-	//StopNetworkThread();
+	StopNetworkThread();
 
 	if(networkInit && net_gethostip() > 0)
 		return true;

@@ -2574,6 +2574,7 @@ static void pause_loop(void)
   {
     if (cmd)
     {
+    printf("1 cmd->id: %i  name: %s\n",cmd->id,cmd->name);
       cmd = mp_input_get_cmd(0,1,0);
       run_command(mpctx, cmd);
       mp_cmd_free(cmd);
@@ -2595,6 +2596,16 @@ static void pause_loop(void)
     if(controlledbygui == 2) // mplayer shutdown requested!
       break;
   }  //end while
+  
+  if (cmd && cmd->id == MP_CMD_QUIT)  // exit or home button pressed, go to GUI now
+  {
+		cmd = mp_input_get_cmd(0,1,0); //execute the command
+		run_command(mpctx, cmd);
+		mp_cmd_free(cmd);
+		DrawMPlayer(); //copy screen
+		pause_gui=0; 
+		PauseAndGotoGUI();
+  }
 
   mpctx->osd_function=OSD_PLAY;
 
@@ -2808,8 +2819,8 @@ m_config_set_option(mconfig,"osdlevel","0");
 m_config_set_option(mconfig,"channels","2");
 m_config_set_option(mconfig,"sub-fuzziness","1");
 m_config_set_option(mconfig,"subfont-autoscale","3"); //movie diagonal (default)
-m_config_set_option(mconfig,"subfont-osd-scale","2.5");
-m_config_set_option(mconfig,"subfont-text-scale","2.5");
+m_config_set_option(mconfig,"subfont-osd-scale","1");
+m_config_set_option(mconfig,"subfont-text-scale","1");
 #ifdef CONFIG_ASS
 m_config_set_option(mconfig,"ass","1");
 m_config_set_option(mconfig,"ass-font-scale","2.5");
@@ -4502,7 +4513,7 @@ void PauseAndGotoGUI()
 	printf("sent control to gui\n");
 	if (controlledbygui == 0)
 		controlledbygui = 1; // send control to gui
-
+	
 	while (controlledbygui == 1)
 		usec_sleep(20000);
 
@@ -4562,6 +4573,7 @@ static void low_cache_loop(void)
 	    if (cmd)
 	    {
 	      cmd = mp_input_get_cmd(0,1,0);
+	      printf("cmd->id: %i  name: %s\n",cmd->id,cmd->name);
 	      run_command(mpctx, cmd);
 	      mp_cmd_free(cmd);
 	      cmd=NULL;
@@ -4605,6 +4617,7 @@ static void low_cache_loop(void)
 		mpctx->video_out->control(VOCTRL_RESUME, NULL); // resume video
 
 	GetRelativeTime(); // ignore time that passed during pause
+	
 }
 
 void fast_pause()
@@ -5090,8 +5103,8 @@ void wiiSetSubtitleSize(float size)
 	mplayer_ass_font_scale = size;
 #ifdef CONFIG_ASS
 	ass_force_reload = 1;
-	text_font_scale_factor = size;
-	osd_font_scale_factor = size;
+	//text_font_scale_factor = size;
+	//osd_font_scale_factor = size;
 	force_load_font = 1;
 #else
 	text_font_scale_factor = size;

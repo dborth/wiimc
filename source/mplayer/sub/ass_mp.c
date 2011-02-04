@@ -251,11 +251,29 @@ ASS_Track* ass_read_stream(ASS_Library* library, const char *fname, char *charse
 	return track;
 }
 
+#ifdef GEKKO
+static void adjust_font_scale(ASS_Track* track)
+{
+	extern uint32_t gx_height;
+	extern int mplayerheight;
+	extern float mplayer_ass_font_scale;
+
+	if(track && track->PlayResY == 288	&& (!track->PlayResX || track->PlayResX==384)) // embedded font not detected
+		ass_font_scale = ((double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.0f)+2.0f;
+	else
+		ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale / 1.8f;
+}
+#endif
+
 void ass_configure(ASS_Renderer* priv, int w, int h, int unscaled) {
 	int hinting;
 	ass_set_frame_size(priv, w, h);
 	ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
 	ass_set_use_margins(priv, ass_use_margins);
+#ifdef GEKKO
+	printf("ass_configure\n");
+	adjust_font_scale(ass_track);
+#endif	
 	ass_set_font_scale(priv, ass_font_scale);
 	if (!unscaled && (ass_hinting & 4))
 		hinting = 0;
@@ -310,23 +328,11 @@ ASS_Library* ass_init(void) {
 }
 
 int ass_force_reload = 0; // flag set if global ass-related settings were changed
-#ifdef GEKKO
-static void adjust_font_scale(ASS_Track* track)
-{
-	extern uint32_t gx_height;
-	extern int mplayerheight;
-	extern float mplayer_ass_font_scale;
-	
-	if(track && track->PlayResY == 288	&& (!track->PlayResX || track->PlayResX==384)) // embedded font not detected
-		ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.25f;
-	else
-		ass_font_scale = mplayer_ass_font_scale / 1.5;
-}
-#endif
 
 ASS_Image* ass_mp_render_frame(ASS_Renderer *priv, ASS_Track* track, long long now, int* detect_change) {
 	if (ass_force_reload) {
 #ifdef GEKKO
+		printf("ass_mp_render_frame\n");
 		adjust_font_scale(track);
 #endif
 		ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
@@ -349,9 +355,6 @@ static void eosd_ass_update(struct mp_eosd_source *src, const struct mp_eosd_set
 	struct mp_eosd_image *img;
 	if (res->changed || !src->initialized) {
 		double dar = (double) (res->w - res->ml - res->mr) / (res->h - res->mt - res->mb);
-#ifdef GEKKO
-		adjust_font_scale(ass_track);
-#endif
 		ass_configure(ass_renderer, res->w, res->h, res->unscaled);
 		ass_set_margins(ass_renderer, res->mt, res->mb, res->ml, res->mr);
 		ass_set_aspect_ratio(ass_renderer, dar, (double)res->srcw / res->srch);

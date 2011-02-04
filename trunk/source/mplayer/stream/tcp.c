@@ -213,13 +213,13 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 	do {
 		ret = net_connect(socket_server_fd,(struct sockaddr*)&server_address,server_address_size);
 		t2=ticks_to_millisecs(gettime());
-		if(t2-t1 > 5000) break; // 5 secs to try to connect
+		if(t2-t1 > 8000) break; // 8 secs to try to connect
 		usleep(500);
 	}while(ret != -EISCONN);
 	if(ret != -EISCONN)
 	{		
 		closesocket(socket_server_fd);
-		return TCP_ERROR_PORT;
+		return TCP_ERROR_FATAL;
 	}
 	net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) & ~IOS_O_NONBLOCK);		
 #elif !HAVE_WINSOCK2_H

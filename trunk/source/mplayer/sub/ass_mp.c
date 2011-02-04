@@ -271,7 +271,6 @@ void ass_configure(ASS_Renderer* priv, int w, int h, int unscaled) {
 	ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
 	ass_set_use_margins(priv, ass_use_margins);
 #ifdef GEKKO
-	printf("ass_configure\n");
 	adjust_font_scale(ass_track);
 #endif	
 	ass_set_font_scale(priv, ass_font_scale);
@@ -332,7 +331,6 @@ int ass_force_reload = 0; // flag set if global ass-related settings were change
 ASS_Image* ass_mp_render_frame(ASS_Renderer *priv, ASS_Track* track, long long now, int* detect_change) {
 	if (ass_force_reload) {
 #ifdef GEKKO
-		printf("ass_mp_render_frame\n");
 		adjust_font_scale(track);
 #endif
 		ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);

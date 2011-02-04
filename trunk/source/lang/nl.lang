@@ -26,7 +26,7 @@ msgid "Retry"
 msgstr "Opnieuw proberen"
 
 msgid "Cancel"
-msgstr "Afbreken"
+msgstr "Annuleren"
 
 msgid "Information"
 msgstr "Informatie"
@@ -663,3 +663,9 @@ msgstr "Matig (480x360)"
 
 msgid "High (640x360)"
 msgstr "Hoog (640x360)"
+
+msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
+msgstr "De huidige IOS wordt niet ondersteund. Functinaliteit en/of stabiliteit worden mogelijk negatief beïnvloed."
+
+msgid "Screensaver Delay"
+msgstr "Vertraging screensaver"

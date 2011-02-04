@@ -318,7 +318,7 @@ int stream_read_internal(stream_t *s, void *buf, int len)
   {
 	  if(_try>3)
 		  s->eof=1;
-	  try++;
+	  _try++;
 	  s->buf_pos=s->buf_len=0;
 	  return 0;
   }

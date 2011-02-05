@@ -1110,7 +1110,6 @@ void add_subtitles(char *filename, float fps, int noerr)
     if (filename == NULL || mpctx->set_of_sub_size >= MAX_SUBTITLE_FILES) {
 	return;
     }
-
     subd = sub_read_file(filename, fps);
 #ifdef CONFIG_ASS
     if (ass_enabled)
@@ -3657,7 +3656,7 @@ if(mpctx->sh_video) {
 // after reading video params we should load subtitles because
 // we know fps so now we can adjust subtitle time to ~6 seconds AST
 // check .sub
-  double fps = mpctx->sh_video ? mpctx->sh_video->fps : 25;
+  float fps = mpctx->sh_video ? mpctx->sh_video->fps : 25;
   current_module="read_subtitles_file";
   load_subtitles(filename, fps, add_subtitles);
   if (mpctx->set_of_sub_size > 0)
@@ -4455,7 +4454,7 @@ static void reload_subtitles()
 	remove_subtitles(); //clear subs loaded
 
 	//reload subs with new cp
-	double fps = mpctx->sh_video ? mpctx->sh_video->fps : 25;
+	float fps = mpctx->sh_video ? mpctx->sh_video->fps : 25;
 	load_subtitles(filename, fps, add_subtitles);
 
 	if (mpctx->set_of_sub_size > 0)

@@ -22,10 +22,11 @@
 #include "avformat.h"
 
 #include <sys/time.h>
-#if HAVE_SYS_SELECT_H
-#include <sys/select.h>
+#if HAVE_POLL_H
+#include <poll.h>
 #endif
 #include "network.h"
+#include "os_support.h"
 #include "rtsp.h"
 #include "internal.h"
 #include "libavutil/intreadwrite.h"
@@ -78,14 +79,12 @@ int ff_rtsp_setup_output_streams(AVFormatContext *s, const char *addr)
     /* Set up the RTSPStreams for each AVStream */
     for (i = 0; i < s->nb_streams; i++) {
         RTSPStream *rtsp_st;
-        AVStream *st = s->streams[i];
 
         rtsp_st = av_mallocz(sizeof(RTSPStream));
         if (!rtsp_st)
             return AVERROR(ENOMEM);
         dynarray_add(&rt->rtsp_streams, &rt->nb_rtsp_streams, rtsp_st);
 
-        st->priv_data = rtsp_st;
         rtsp_st->stream_index = i;
 
         av_strlcpy(rtsp_st->control_url, rt->control_uri, sizeof(rtsp_st->control_url));
@@ -172,23 +171,16 @@ static int rtsp_write_packet(AVFormatContext *s, AVPacket *pkt)
 {
     RTSPState *rt = s->priv_data;
     RTSPStream *rtsp_st;
-    fd_set rfds;
-    int n, tcp_fd;
-    struct timeval tv;
+    int n;
+    struct pollfd p = {url_get_file_handle(rt->rtsp_hd), POLLIN, 0};
     AVFormatContext *rtpctx;
     int ret;
 
-    tcp_fd = url_get_file_handle(rt->rtsp_hd);
-
     while (1) {
-        FD_ZERO(&rfds);
-        FD_SET(tcp_fd, &rfds);
-        tv.tv_sec = 0;
-        tv.tv_usec = 0;
-        n = select(tcp_fd + 1, &rfds, NULL, NULL, &tv);
+        n = poll(&p, 1, 0);
         if (n <= 0)
             break;
-        if (FD_ISSET(tcp_fd, &rfds)) {
+        if (p.revents & POLLIN) {
             RTSPMessageHeader reply;
 
             /* Don't let ff_rtsp_read_reply handle interleaved packets,
@@ -233,7 +225,7 @@ static int rtsp_write_close(AVFormatContext *s)
     return 0;
 }
 
-AVOutputFormat rtsp_muxer = {
+AVOutputFormat ff_rtsp_muxer = {
     "rtsp",
     NULL_IF_CONFIG_SMALL("RTSP output format"),
     NULL,

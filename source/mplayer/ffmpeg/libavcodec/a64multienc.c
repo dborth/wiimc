@@ -362,7 +362,7 @@ static int a64multi_encode_frame(AVCodecContext *avctx, unsigned char *buf,
     return 0;
 }
 
-AVCodec a64multi_encoder = {
+AVCodec ff_a64multi_encoder = {
     .name           = "a64multi",
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = CODEC_ID_A64_MULTI,
@@ -370,12 +370,12 @@ AVCodec a64multi_encoder = {
     .init           = a64multi_init_encoder,
     .encode         = a64multi_encode_frame,
     .close          = a64multi_close_encoder,
-    .pix_fmts       = (enum PixelFormat[]) {PIX_FMT_GRAY8, PIX_FMT_NONE},
+    .pix_fmts       = (const enum PixelFormat[]) {PIX_FMT_GRAY8, PIX_FMT_NONE},
     .long_name      = NULL_IF_CONFIG_SMALL("Multicolor charset for Commodore 64"),
     .capabilities   = CODEC_CAP_DELAY,
 };
 
-AVCodec a64multi5_encoder = {
+AVCodec ff_a64multi5_encoder = {
     .name           = "a64multi5",
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = CODEC_ID_A64_MULTI5,
@@ -383,7 +383,7 @@ AVCodec a64multi5_encoder = {
     .init           = a64multi_init_encoder,
     .encode         = a64multi_encode_frame,
     .close          = a64multi_close_encoder,
-    .pix_fmts       = (enum PixelFormat[]) {PIX_FMT_GRAY8, PIX_FMT_NONE},
+    .pix_fmts       = (const enum PixelFormat[]) {PIX_FMT_GRAY8, PIX_FMT_NONE},
     .long_name      = NULL_IF_CONFIG_SMALL("Multicolor charset for Commodore 64, extended with 5th color (colram)"),
     .capabilities   = CODEC_CAP_DELAY,
 };

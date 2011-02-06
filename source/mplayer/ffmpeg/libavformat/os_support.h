@@ -55,7 +55,7 @@ typedef int socklen_t;
 #define closesocket close
 #endif
 
-#if CONFIG_FFSERVER
+#ifndef GEKKO
 #if !HAVE_POLL_H
 typedef unsigned long nfds_t;
 
@@ -82,7 +82,7 @@ struct pollfd {
 
 int poll(struct pollfd *fds, nfds_t numfds, int timeout);
 #endif /* HAVE_POLL_H */
-#endif /* CONFIG_FFSERVER */
+#endif /* GEKKO */
 #endif /* CONFIG_NETWORK */
 
 #endif /* AVFORMAT_OS_SUPPORT_H */

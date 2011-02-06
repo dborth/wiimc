@@ -28,9 +28,6 @@
 #include "libavutil/avstring.h"
 #include "avformat.h"
 #include "sauce.h"
-#ifndef GEKKO
-#include <strings.h>
-#endif
 
 #define LINE_RATE 6000 /* characters per second */
 
@@ -123,11 +120,11 @@ static int read_packet(AVFormatContext *avctx, AVPacket *pkt)
     pkt->size = av_get_packet(avctx->pb, pkt, n);
     if (pkt->size <= 0)
         return AVERROR(EIO);
-    pkt->flags |= PKT_FLAG_KEY;
+    pkt->flags |= AV_PKT_FLAG_KEY;
     return 0;
 }
 
-AVInputFormat tty_demuxer = {
+AVInputFormat ff_tty_demuxer = {
     .name           = "tty",
     .long_name      = NULL_IF_CONFIG_SMALL("Tele-typewriter"),
     .priv_data_size = sizeof(TtyDemuxContext),

@@ -283,7 +283,7 @@ static inline void svq3_mc_dir_part(MpegEncContext *s,
     src  = pic->data[0] + mx + my*s->linesize;
 
     if (emu) {
-        ff_emulated_edge_mc(s->edge_emu_buffer, src, s->linesize, (width + 1), (height + 1),
+        s->dsp.emulated_edge_mc(s->edge_emu_buffer, src, s->linesize, (width + 1), (height + 1),
                             mx, my, s->h_edge_pos, s->v_edge_pos);
         src = s->edge_emu_buffer;
     }
@@ -304,7 +304,7 @@ static inline void svq3_mc_dir_part(MpegEncContext *s,
             src  = pic->data[i] + mx + my*s->uvlinesize;
 
             if (emu) {
-                ff_emulated_edge_mc(s->edge_emu_buffer, src, s->uvlinesize, (width + 1), (height + 1),
+                s->dsp.emulated_edge_mc(s->edge_emu_buffer, src, s->uvlinesize, (width + 1), (height + 1),
                                     mx, my, (s->h_edge_pos >> 1), (s->v_edge_pos >> 1));
                 src = s->edge_emu_buffer;
             }
@@ -671,12 +671,11 @@ static int svq3_decode_mb(H264Context *h, unsigned int mb_type)
         }
 
         if ((cbp & 0x30)) {
-            AV_ZERO128(h->mb_chroma_dc);
             for (i = 0; i < 2; ++i) {
-                if (svq3_decode_block(&s->gb, h->mb_chroma_dc[i], 0, 3)){
-                    av_log(h->s.avctx, AV_LOG_ERROR, "error while decoding chroma dc block\n");
-                    return -1;
-                }
+              if (svq3_decode_block(&s->gb, &h->mb[16*(16 + 4*i)], 0, 3)){
+                av_log(h->s.avctx, AV_LOG_ERROR, "error while decoding chroma dc block\n");
+                return -1;
+              }
             }
 
             if ((cbp & 0x20)) {
@@ -1063,7 +1062,7 @@ static int svq3_decode_frame(AVCodecContext *avctx,
 }
 
 
-AVCodec svq3_decoder = {
+AVCodec ff_svq3_decoder = {
     "svq3",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_SVQ3,

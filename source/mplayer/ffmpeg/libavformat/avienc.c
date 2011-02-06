@@ -109,7 +109,7 @@ static void avi_write_info_tag(ByteIOContext *pb, const char *tag, const char *s
         len++;
         put_tag(pb, tag);
         put_le32(pb, len);
-        put_strz(pb, str);
+        avio_put_str(pb, str);
         if (len & 1)
             put_byte(pb, 0);
     }
@@ -630,7 +630,7 @@ static int avi_write_trailer(AVFormatContext *s)
     return res;
 }
 
-AVOutputFormat avi_muxer = {
+AVOutputFormat ff_avi_muxer = {
     "avi",
     NULL_IF_CONFIG_SMALL("AVI format"),
     "video/x-msvideo",

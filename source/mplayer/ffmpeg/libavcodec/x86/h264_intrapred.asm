@@ -637,10 +637,6 @@ cglobal pred8x8_plane_%1, 2, 7, %2
 %endif
     paddw        m0, m1           ; sum of H coefficients
 
-    pmullw       m0, [pw_17]
-    paddw        m0, [pw_16]
-    psraw        m0, 5
-
     lea          r4, [r0+r2*4-1]
     lea          r3, [r0     -1]
     add          r4, r2
@@ -694,6 +690,10 @@ cglobal pred8x8_plane_%1, 2, 7, %2
     shl          r3, 4
     movd        r1d, m0
     movsx       r1d, r1w
+    imul        r1d, 17
+    add         r1d, 16
+    sar         r1d, 5
+    movd         m0, r1d
     add         r1d, r5d
     sub         r3d, r1d
     add         r1d, r1d
@@ -1249,7 +1249,10 @@ cglobal pred8x8l_horizontal_%1, 4,4
     sub          r0, r3
     lea          r2, [r0+r3*2]
     movq        mm0, [r0+r3*1-8]
-    punpckhbw   mm0, [r0+r3*0-8]
+    test         r1, r1
+    lea          r1, [r0+r3]
+    cmovnz       r1, r0
+    punpckhbw   mm0, [r1+r3*0-8]
     movq        mm1, [r2+r3*1-8]
     punpckhbw   mm1, [r0+r3*2-8]
     mov          r2, r0
@@ -1264,21 +1267,12 @@ cglobal pred8x8l_horizontal_%1, 4,4
     punpckhdq   mm3, mm1
     lea          r0, [r0+r3*2]
     movq        mm0, [r0+r3*0-8]
-    movq        mm1, [r2]
+    movq        mm1, [r1+r3*0-8]
     mov          r0, r2
     movq        mm4, mm3
     movq        mm2, mm3
     PALIGNR     mm4, mm0, 7, mm0
     PALIGNR     mm1, mm2, 1, mm2
-    test        r1, r1 ; top_left
-    jnz .do_left
-.fix_lt_1:
-    movq        mm5, mm3
-    pxor        mm5, mm4
-    psrlq       mm5, 56
-    psllq       mm5, 48
-    pxor        mm1, mm5
-.do_left:
     movq        mm0, mm4
     PRED4x4_LOWPASS mm2, mm1, mm4, mm3, mm5
     movq        mm4, mm0
@@ -2153,7 +2147,10 @@ cglobal pred8x8l_horizontal_up_%1, 4,4
     sub          r0, r3
     lea          r2, [r0+r3*2]
     movq        mm0, [r0+r3*1-8]
-    punpckhbw   mm0, [r0+r3*0-8]
+    test         r1, r1
+    lea          r1, [r0+r3]
+    cmovnz       r1, r0
+    punpckhbw   mm0, [r1+r3*0-8]
     movq        mm1, [r2+r3*1-8]
     punpckhbw   mm1, [r0+r3*2-8]
     mov          r2, r0
@@ -2168,21 +2165,12 @@ cglobal pred8x8l_horizontal_up_%1, 4,4
     punpckhdq   mm3, mm1
     lea          r0, [r0+r3*2]
     movq        mm0, [r0+r3*0-8]
-    movq        mm1, [r2]
+    movq        mm1, [r1+r3*0-8]
     mov          r0, r2
     movq        mm4, mm3
     movq        mm2, mm3
     PALIGNR     mm4, mm0, 7, mm0
     PALIGNR     mm1, mm2, 1, mm2
-    test        r1, r1
-    jnz .do_left
-.fix_lt_1:
-    movq        mm5, mm3
-    pxor        mm5, mm4
-    psrlq       mm5, 56
-    psllq       mm5, 48
-    pxor        mm1, mm5
-.do_left:
     movq       mm0, mm4
     PRED4x4_LOWPASS mm2, mm1, mm4, mm3, mm5
     movq       mm4, mm0

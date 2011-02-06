@@ -38,6 +38,7 @@
 #include "avcodec.h"
 #include "dsputil.h"
 #include "fft.h"
+#include "fmtconvert.h"
 
 #define ALT_BITSTREAM_READER_LE
 #include "get_bits.h"
@@ -49,10 +50,10 @@ typedef struct NellyMoserDecodeContext {
     float           state[128];
     AVLFG           random_state;
     GetBitContext   gb;
-    int             add_bias;
     float           scale_bias;
     DSPContext      dsp;
     FFTContext      imdct_ctx;
+    FmtConvertContext fmt_conv;
     DECLARE_ALIGNED(16, float,imdct_out)[NELLY_BUF_LEN * 2];
 } NellyMoserDecodeContext;
 
@@ -65,7 +66,7 @@ static void overlap_and_window(NellyMoserDecodeContext *s, float *state, float *
 
     while (bot < NELLY_BUF_LEN) {
         audio[bot] = a_in [bot]*ff_sine_128[bot]
-                    +state[bot]*ff_sine_128[top] + s->add_bias;
+                    +state[bot]*ff_sine_128[top];
 
         bot++;
         top--;
@@ -135,14 +136,9 @@ static av_cold int decode_init(AVCodecContext * avctx) {
     ff_mdct_init(&s->imdct_ctx, 8, 1, 1.0);
 
     dsputil_init(&s->dsp, avctx);
+    ff_fmt_convert_init(&s->fmt_conv, avctx);
 
-    if(s->dsp.float_to_int16 == ff_float_to_int16_c) {
-        s->add_bias = 385;
-        s->scale_bias = 1.0/(8*32768);
-    } else {
-        s->add_bias = 0;
-        s->scale_bias = 1.0/(1*8);
-    }
+    s->scale_bias = 1.0/(1*8);
 
     /* Generate overlap window */
     if (!ff_sine_128[127])
@@ -182,7 +178,7 @@ static int decode_tag(AVCodecContext * avctx,
 
     for (i=0 ; i<blocks ; i++) {
         nelly_decode_block(s, &buf[i*NELLY_BLOCK_LEN], s->float_buf);
-        s->dsp.float_to_int16(&samples[i*NELLY_SAMPLES], s->float_buf, NELLY_SAMPLES);
+        s->fmt_conv.float_to_int16(&samples[i*NELLY_SAMPLES], s->float_buf, NELLY_SAMPLES);
         *data_size += NELLY_SAMPLES*sizeof(int16_t);
     }
 
@@ -196,7 +192,7 @@ static av_cold int decode_end(AVCodecContext * avctx) {
     return 0;
 }
 
-AVCodec nellymoser_decoder = {
+AVCodec ff_nellymoser_decoder = {
     "nellymoser",
     AVMEDIA_TYPE_AUDIO,
     CODEC_ID_NELLYMOSER,

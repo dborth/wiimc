@@ -39,9 +39,7 @@
 #include "libavcore/imgutils.h"
 #include "libavcore/internal.h"
 
-#if ARCH_PPC
-#include "ppc/deinterlace.h"
-#elif HAVE_MMX && HAVE_YASM
+#if HAVE_MMX && HAVE_YASM
 #include "x86/dsputil_mmx.h"
 #endif
 
@@ -60,9 +58,6 @@
 #if HAVE_MMX && HAVE_YASM
 #define deinterlace_line_inplace ff_deinterlace_line_inplace_mmx
 #define deinterlace_line         ff_deinterlace_line_mmx
-#elif HAVE_PAIRED
-#define deinterlace_line_inplace ff_deinterlace_line_inplace_paired
-#define deinterlace_line         ff_deinterlace_line_paired
 #else
 #define deinterlace_line_inplace deinterlace_line_inplace_c
 #define deinterlace_line         deinterlace_line_c
@@ -970,7 +965,7 @@ int img_get_alpha_info(const AVPicture *src,
     return ret;
 }
 
-#if !((HAVE_MMX && HAVE_YASM) || HAVE_PAIRED)
+#if !(HAVE_MMX && HAVE_YASM)
 /* filter parameters: [-1 4 2 4 -1] // 8 */
 static void deinterlace_line_c(uint8_t *dst,
                              const uint8_t *lum_m4, const uint8_t *lum_m3,

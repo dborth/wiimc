@@ -248,6 +248,9 @@ typedef struct RTSPState {
      * of RTSPMessageHeader->real_challenge */
     enum RTSPServerType server_type;
 
+    /** the "RealChallenge1:" field from the server */
+    char real_challenge[64];
+
     /** plaintext authorization line (username:password) */
     char auth[128];
 
@@ -313,6 +316,21 @@ typedef struct RTSPState {
     /** Filter incoming UDP packets - receive packets only from the right
      * source address and port. */
     int filter_source;
+
+    /**
+     * A mask with all requested transport methods
+     */
+    int lower_transport_mask;
+
+    /**
+     * The number of returned packets
+     */
+    uint64_t packets;
+
+    /**
+     * Polling array for udp
+     */
+    struct pollfd *p;
 } RTSPState;
 
 /**
@@ -358,24 +376,6 @@ void ff_rtsp_parse_line(RTSPMessageHeader *reply, const char *buf,
 extern int rtsp_rtp_port_min;
 extern int rtsp_rtp_port_max;
 
-/**
- * Send a command to the RTSP server without waiting for the reply.
- *
- * @param s RTSP (de)muxer context
- * @param method the method for the request
- * @param url the target url for the request
- * @param headers extra header lines to include in the request
- * @param send_content if non-null, the data to send as request body content
- * @param send_content_length the length of the send_content data, or 0 if
- *                            send_content is null
- *
- * @return zero if success, nonzero otherwise
- */
-int ff_rtsp_send_cmd_with_content_async(AVFormatContext *s,
-                                        const char *method, const char *url,
-                                        const char *headers,
-                                        const unsigned char *send_content,
-                                        int send_content_length);
 /**
  * Send a command to the RTSP server without waiting for the reply.
  *
@@ -503,5 +503,18 @@ int ff_rtsp_tcp_read_packet(AVFormatContext *s, RTSPStream **prtsp_st,
  * (which should contain a RTSPState struct as priv_data).
  */
 int ff_rtsp_fetch_packet(AVFormatContext *s, AVPacket *pkt);
+
+/**
+ * Do the SETUP requests for each stream for the chosen
+ * lower transport mode.
+ */
+int ff_rtsp_make_setup_request(AVFormatContext *s, const char *host, int port,
+                               int lower_transport, const char *real_challenge);
+
+/**
+ * Undo the effect of ff_rtsp_make_setup_request, close the
+ * transport_priv and rtp_handle fields.
+ */
+void ff_rtsp_undo_setup(AVFormatContext *s);
 
 #endif /* AVFORMAT_RTSP_H */

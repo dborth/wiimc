@@ -2,10 +2,12 @@
 
 @settitle FFmpeg Documentation
 @titlepage
-@sp 7
 @center @titlefont{FFmpeg Documentation}
-@sp 3
 @end titlepage
+
+@top
+
+@contents
 
 @chapter Synopsis
 
@@ -626,7 +628,10 @@ Just enumerate the input streams in the order you want them in the output.
 @var{sync_stream_id} if specified sets the input stream to sync
 against.
 @item -map_meta_data @var{outfile}[,@var{metadata}]:@var{infile}[,@var{metadata}]
-Set meta data information of @var{outfile} from @var{infile}. Note that those
+Deprecated, use @var{-map_metadata} instead.
+
+@item -map_metadata @var{outfile}[,@var{metadata}]:@var{infile}[,@var{metadata}]
+Set metadata information of @var{outfile} from @var{infile}. Note that those
 are file indices (zero-based), not filenames.
 Optional @var{metadata} parameters specify, which metadata to copy - (g)lobal
 (i.e. metadata that applies to the whole file), per-(s)tream, per-(c)hapter or
@@ -642,7 +647,7 @@ file index can be used to create a dummy mapping that just disables automatic co
 For example to copy metadata from the first stream of the input file to global metadata
 of the output file:
 @example
-ffmpeg -i in.ogg -map_meta_data 0:0,s0 out.mp3
+ffmpeg -i in.ogg -map_metadata 0:0,s0 out.mp3
 @end example
 @item -map_chapters @var{outfile}:@var{infile}
 Copy chapters from @var{infile} to @var{outfile}. If no chapter mapping is specified,
@@ -712,8 +717,10 @@ Set the maximum demux-decode delay.
 @item -muxpreload @var{seconds}
 Set the initial demux-decode delay.
 @item -streamid @var{output-stream-index}:@var{new-value}
-Assign a new value to a stream's stream-id field in the next output file.
-All stream-id fields are reset to default for each output file.
+Assign a new stream-id value to an output stream. This option should be
+specified prior to the output filename to which it applies.
+For the situation where multiple output files exist, a streamid
+may be reassigned to a different value.
 
 For example, to set the stream 0 PID to 33 and the stream 1 PID to 36 for
 an output mpegts file:
@@ -975,6 +982,7 @@ file to which you want to add them.
 
 @include eval.texi
 @include demuxers.texi
+@include muxers.texi
 @include indevs.texi
 @include outdevs.texi
 @include protocols.texi

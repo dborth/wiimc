@@ -55,6 +55,7 @@
 #include "get_bits.h"
 #include "dsputil.h"
 #include "fft.h"
+#include "fmtconvert.h"
 
 /* override ac3.h to include coupling channel */
 #undef AC3_MAX_CHANNELS
@@ -190,7 +191,7 @@ typedef struct {
 
 ///@defgroup opt optimization
     DSPContext dsp;                         ///< for optimization
-    float add_bias;                         ///< offset for float_to_int16 conversion
+    FmtConvertContext fmt_conv;             ///< optimized conversion functions
     float mul_bias;                         ///< scaling for float_to_int16 conversion
 ///@}
 

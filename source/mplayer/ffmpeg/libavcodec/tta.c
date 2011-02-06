@@ -449,14 +449,13 @@ static int tta_decode_frame(AVCodecContext *avctx,
 static av_cold int tta_decode_close(AVCodecContext *avctx) {
     TTAContext *s = avctx->priv_data;
 
-    if (s->decode_buffer)
-        av_free(s->decode_buffer);
+    av_free(s->decode_buffer);
     av_freep(&s->ch_ctx);
 
     return 0;
 }
 
-AVCodec tta_decoder = {
+AVCodec ff_tta_decoder = {
     "tta",
     AVMEDIA_TYPE_AUDIO,
     CODEC_ID_TTA,

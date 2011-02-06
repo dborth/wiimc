@@ -20,9 +20,8 @@
  * @file
  * misc parsing utilities for libavcore
  */
-#ifndef GEKKO
+
 #include <strings.h>
-#endif
 #include "parseutils.h"
 #include "libavutil/avutil.h"
 #include "libavutil/eval.h"

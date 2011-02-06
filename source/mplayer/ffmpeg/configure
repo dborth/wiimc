@@ -277,7 +277,7 @@ die(){
     cat <<EOF
 
 If you think configure made a mistake, make sure you are using the latest
-version from SVN.  If the latest version fails, report the problem to the
+version from Git.  If the latest version fails, report the problem to the
 ffmpeg-user@mplayerhq.hu mailing list or IRC #ffmpeg on irc.freenode.net.
 EOF
     if disabled logging; then
@@ -318,6 +318,14 @@ filter(){
     shift
     for v; do
         eval "case $v in $pat) echo $v ;; esac"
+    done
+}
+
+filter_out(){
+    pat=$1
+    shift
+    for v; do
+        eval "case $v in $pat) ;; *) echo $v ;; esac"
     done
 }
 
@@ -1352,19 +1360,19 @@ libxavs_encoder_deps="libxavs"
 libxvid_encoder_deps="libxvid"
 
 # demuxers / muxers
-ac3_demuxer_deps="ac3_parser"
+ac3_demuxer_select="ac3_parser"
 asf_stream_muxer_select="asf_muxer"
 avisynth_demuxer_deps="avisynth"
-dirac_demuxer_deps="dirac_parser"
+dirac_demuxer_select="dirac_parser"
 eac3_demuxer_select="ac3_parser"
-flac_demuxer_deps="flac_parser"
+flac_demuxer_select="flac_parser"
 ipod_muxer_select="mov_muxer"
 libnut_demuxer_deps="libnut"
 libnut_muxer_deps="libnut"
 matroska_audio_muxer_select="matroska_muxer"
 matroska_demuxer_suggest="zlib bzlib"
 mov_demuxer_suggest="zlib"
-mp3_demuxer_deps="mpegaudio_parser"
+mp3_demuxer_select="mpegaudio_parser"
 mp4_muxer_select="mov_muxer"
 mpegtsraw_demuxer_select="mpegts_demuxer"
 mxf_d10_muxer_select="mxf_muxer"
@@ -1486,6 +1494,7 @@ test_deps _encoder _decoder                                             \
     pbm=pbmpipe                                                         \
     pcx                                                                 \
     pgm="pgm pgmpipe"                                                   \
+    png                                                                 \
     ppm="ppm ppmpipe"                                                   \
     rawvideo="rgb yuv"                                                  \
     roq                                                                 \
@@ -1792,11 +1801,11 @@ HOSTEXESUF=$(exesuf $host_os)
 : ${TMPDIR:=$TMP}
 : ${TMPDIR:=/tmp}
 
-if ! check_cmd type mktemp; then
+if ! check_cmd mktemp -u XXXXXX; then
     # simple replacement for missing mktemp
     # NOT SAFE FOR GENERAL USE
     mktemp(){
-        echo "${2%XXX*}.${HOSTNAME}.${UID}.$$"
+        echo "${2%%XXX*}.${HOSTNAME}.${UID}.$$"
     }
 fi
 
@@ -1809,7 +1818,6 @@ tmpfile(){
 }
 
 trap 'rm -f -- $TMPFILES' EXIT
-trap exit HUP INT TERM
 
 tmpfile TMPC  .c
 tmpfile TMPE  $EXESUF
@@ -1821,6 +1829,8 @@ tmpfile TMPSH .sh
 tmpfile TMPASM .asm
 
 unset -f mktemp
+
+chmod +x $TMPE
 
 # make sure we can execute files in $TMPDIR
 cat > $TMPSH 2>> $logfile <<EOF
@@ -1902,6 +1912,7 @@ elif $cc --vsn 2>/dev/null | grep -q "ARM C/C++ Compiler"; then
     AS_DEPFLAGS='-MMD'
     speed_cflags='-O3'
     size_cflags='-Os'
+    filter_asflags="filter_out -W${armcc_opt}*"
 elif $cc -version 2>/dev/null | grep -q TMS470; then
     cc_type=tms470
     cc_version="AV_STRINGIFY(__TI_COMPILER_VERSION__)"
@@ -2098,7 +2109,7 @@ case "$arch" in
         arch="sparc"
         subarch="sparc64"
     ;;
-    i[3-6]86|i86pc|BePC|x86_64|amd64)
+    i[3-6]86|i86pc|BePC|x86pc|x86_64|amd64)
         arch="x86"
     ;;
 esac
@@ -2304,6 +2315,7 @@ case $target_os in
         nm_opts='-P -g'
         ;;
     netbsd)
+        disable symver
         oss_indev_extralibs="-lossaudio"
         oss_outdev_extralibs="-lossaudio"
         add_cppflags -D_XOPEN_SOURCE=600
@@ -2316,11 +2328,16 @@ case $target_os in
         # (simply quits with exit-code 1, no crash, no output).
         # Thus explicitly enable PIC here.
         enable pic
+        disable symver
         SHFLAGS='-shared'
         oss_indev_extralibs="-lossaudio"
         oss_outdev_extralibs="-lossaudio"
         ;;
-    freebsd|dragonfly)
+    dragonfly)
+        enable malloc_aligned
+        disable symver
+        ;;
+    freebsd)
         enable malloc_aligned
         ;;
     bsd/os)
@@ -2429,6 +2446,10 @@ case $target_os in
         ;;
     gnu)
         ;;
+    qnx)
+        add_cppflags -D_QNX_SOURCE
+        network_extralibs="-lsocket"
+        ;;
     none)
         ;;
     *)
@@ -2524,10 +2545,18 @@ elif enabled arm; then
     check_cflags -marm
     nogas=die
 
-    check_ld <<EOF && enable vfp_args
+    if     check_cpp_condition stddef.h "defined __ARM_PCS_VFP"; then
+        enable vfp_args
+    elif ! check_cpp_condition stddef.h "defined __ARM_PCS || defined __SOFTFP__"; then
+        case "${cross_prefix:-$cc}" in
+            *hardfloat*)         enable vfp_args;   fpabi=vfp ;;
+            *) check_ld <<EOF && enable vfp_args && fpabi=vfp || fpabi=soft ;;
 __asm__ (".eabi_attribute 28, 1");
 int main(void) { return 0; }
 EOF
+        esac
+        warn "Compiler does not indicate floating-point ABI, guessing $fpabi."
+    fi
 
     # We have to check if pld is a nop and disable it.
     check_asm pld '"pld [r0]"'
@@ -2642,7 +2671,7 @@ EOF
             elf*) enabled debug && append YASMFLAGS $yasm_debug ;;
         esac
 
-        check_yasm "pabsw xmm0, xmm0" && enable yasm ||
+        check_yasm "pextrd [eax], xmm0, 1" && enable yasm ||
             die "yasm not found, use --disable-yasm for a crippled build"
     fi
 
@@ -2664,6 +2693,32 @@ if check_func dlopen; then
     ldl=
 elif check_func dlopen -ldl; then
     ldl=-ldl
+fi
+
+if enabled network; then
+    check_type "sys/types.h sys/socket.h" socklen_t
+    check_type netdb.h "struct addrinfo"
+    check_type netinet/in.h "struct ipv6_mreq" -D_DARWIN_C_SOURCE
+    check_type netinet/in.h "struct sockaddr_in6"
+    check_type "sys/types.h sys/socket.h" "struct sockaddr_storage"
+    check_struct "sys/types.h sys/socket.h" "struct sockaddr" sa_len
+    # Prefer arpa/inet.h over winsock2
+    if check_header arpa/inet.h ; then
+        check_func closesocket
+    elif check_header winsock2.h ; then
+        check_func_headers winsock2.h closesocket -lws2 && \
+            network_extralibs="-lws2" || \
+        { check_func_headers winsock2.h closesocket -lws2_32 && \
+            network_extralibs="-lws2_32"; }
+        check_type ws2tcpip.h socklen_t
+        check_type ws2tcpip.h "struct addrinfo"
+        check_type ws2tcpip.h "struct ipv6_mreq"
+        check_type ws2tcpip.h "struct sockaddr_in6"
+        check_type ws2tcpip.h "struct sockaddr_storage"
+        check_struct winsock2.h "struct sockaddr" sa_len
+    else
+        disable network
+    fi
 fi
 
 # Solaris has nanosleep in -lrt, OpenSolaris no longer needs that
@@ -2811,32 +2866,6 @@ fi
 
 texi2html -version > /dev/null 2>&1 && enable texi2html || disable texi2html
 
-if enabled network; then
-    check_type "sys/types.h sys/socket.h" socklen_t
-    check_type netdb.h "struct addrinfo"
-    check_type netinet/in.h "struct ipv6_mreq" -D_DARWIN_C_SOURCE
-    check_type netinet/in.h "struct sockaddr_in6"
-    check_type "sys/types.h sys/socket.h" "struct sockaddr_storage"
-    check_struct "sys/types.h sys/socket.h" "struct sockaddr" sa_len
-    # Prefer arpa/inet.h over winsock2
-    if check_header arpa/inet.h ; then
-        check_func closesocket
-    elif check_header winsock2.h ; then
-        check_func_headers winsock2.h closesocket -lws2 && \
-            network_extralibs="-lws2" || \
-        { check_func_headers winsock2.h closesocket -lws2_32 && \
-            network_extralibs="-lws2_32"; }
-        check_type ws2tcpip.h socklen_t
-        check_type ws2tcpip.h "struct addrinfo"
-        check_type ws2tcpip.h "struct ipv6_mreq"
-        check_type ws2tcpip.h "struct sockaddr_in6"
-        check_type ws2tcpip.h "struct sockaddr_storage"
-        check_struct winsock2.h "struct sockaddr" sa_len
-    else
-        disable network
-    fi
-fi
-
 check_header linux/videodev.h
 check_header linux/videodev2.h
 check_header sys/videoio.h
@@ -2899,7 +2928,7 @@ enabled extra_warnings && check_cflags -Winline
 check_ldflags -Wl,--warn-common
 check_ldflags -Wl,--as-needed
 check_ldflags '-Wl,-rpath-link,\$(BUILD_ROOT)/libpostproc -Wl,-rpath-link,\$(BUILD_ROOT)/libswscale -Wl,-rpath-link,\$(BUILD_ROOT)/libavfilter -Wl,-rpath-link,\$(BUILD_ROOT)/libavdevice -Wl,-rpath-link,\$(BUILD_ROOT)/libavformat -Wl,-rpath-link,\$(BUILD_ROOT)/libavcodec -Wl,-rpath-link,\$(BUILD_ROOT)/libavcore -Wl,-rpath-link,\$(BUILD_ROOT)/libavutil'
-check_ldflags -Wl,-Bsymbolic
+test_ldflags -Wl,-Bsymbolic && append SHFLAGS -Wl,-Bsymbolic
 
 echo "X{};" > $TMPV
 if test_ldflags -Wl,--version-script,$TMPV; then
@@ -2967,8 +2996,12 @@ elif enabled armcc; then
     # 2523: use of inline assembler is deprecated
     add_cflags -W${armcc_opt},--diag_suppress=2523
     add_cflags -W${armcc_opt},--diag_suppress=1207
+    add_cflags -W${armcc_opt},--diag_suppress=1293 # assignment in condition
+    add_cflags -W${armcc_opt},--diag_suppress=3343 # hardfp compat
 elif enabled tms470; then
     add_cflags -pds=824 -pds=837
+elif enabled pathscale; then
+    add_cflags -fstrict-overflow -OPT:wrap_around_unsafe_opt=OFF
 fi
 
 enabled_any $THREADS_LIST      && enable threads
@@ -3229,7 +3262,7 @@ get_version LIBPOSTPROC libpostproc/postprocess.h
 get_version LIBAVCODEC  libavcodec/avcodec.h
 get_version LIBAVCORE   libavcore/avcore.h
 get_version LIBAVDEVICE libavdevice/avdevice.h
-get_version LIBAVFORMAT libavformat/avformat.h
+get_version LIBAVFORMAT libavformat/version.h
 get_version LIBAVUTIL   libavutil/avutil.h
 get_version LIBAVFILTER libavfilter/avfilter.h
 
@@ -3243,7 +3276,6 @@ cat > $TMPH <<EOF
 #define CC_TYPE "$cc_type"
 #define CC_VERSION $cc_version
 #define restrict $_restrict
-#define ASMALIGN(ZEROBITS) ".p2align " #ZEROBITS "\\n\\t"
 #define EXTERN_PREFIX "${extern_prefix}"
 #define EXTERN_ASM ${extern_prefix}
 #define SLIBSUF "$SLIBSUF"

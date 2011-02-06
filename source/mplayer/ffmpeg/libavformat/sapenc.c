@@ -46,10 +46,7 @@ static int sap_write_close(AVFormatContext *s)
             continue;
         av_write_trailer(rtpctx);
         url_fclose(rtpctx->pb);
-        av_metadata_free(&rtpctx->streams[0]->metadata);
-        av_metadata_free(&rtpctx->metadata);
-        av_free(rtpctx->streams[0]);
-        av_free(rtpctx);
+        avformat_free_context(rtpctx);
         s->streams[i]->priv_data = NULL;
     }
 
@@ -250,7 +247,7 @@ static int sap_write_packet(AVFormatContext *s, AVPacket *pkt)
     return ff_write_chained(rtpctx, 0, pkt, s);
 }
 
-AVOutputFormat sap_muxer = {
+AVOutputFormat ff_sap_muxer = {
     "sap",
     NULL_IF_CONFIG_SMALL("SAP output format"),
     NULL,

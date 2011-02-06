@@ -58,6 +58,7 @@
 const char program_name[] = "FFplay";
 const int program_birth_year = 2003;
 
+//#define DEBUG
 //#define DEBUG_SYNC
 
 #define MAX_QUEUE_SIZE (15 * 1024 * 1024)
@@ -1569,30 +1570,23 @@ static int get_video_frame(VideoState *is, AVFrame *frame, int64_t *pts, AVPacke
         return 0;
     }
 
-    /* NOTE: ipts is the PTS of the _first_ picture beginning in
-       this packet, if any */
-    is->video_st->codec->reordered_opaque = pkt->pts;
     len1 = avcodec_decode_video2(is->video_st->codec,
                                  frame, &got_picture,
                                  pkt);
 
     if (got_picture) {
         if (decoder_reorder_pts == -1) {
-            *pts = guess_correct_pts(&is->pts_ctx, frame->reordered_opaque, pkt->dts);
+            *pts = guess_correct_pts(&is->pts_ctx, frame->pkt_pts, frame->pkt_dts);
         } else if (decoder_reorder_pts) {
-            *pts = frame->reordered_opaque;
+            *pts = frame->pkt_pts;
         } else {
-            *pts = pkt->dts;
+            *pts = frame->pkt_dts;
         }
 
         if (*pts == AV_NOPTS_VALUE) {
             *pts = 0;
         }
-    }
 
-//            if (len1 < 0)
-//                break;
-    if (got_picture){
         is->skip_frames_index += 1;
         if(is->skip_frames_index >= is->skip_frames){
             is->skip_frames_index -= FFMAX(is->skip_frames, 1.0);
@@ -1788,30 +1782,20 @@ static AVFilter input_filter =
                                   { .name = NULL }},
 };
 
-#endif  /* CONFIG_AVFILTER */
-
-static int video_thread(void *arg)
+static int configure_video_filters(AVFilterGraph *graph, VideoState *is, const char *vfilters)
 {
-    VideoState *is = arg;
-    AVFrame *frame= avcodec_alloc_frame();
-    int64_t pts_int;
-    double pts;
-    int ret;
-
-#if CONFIG_AVFILTER
-    int64_t pos;
     char sws_flags_str[128];
+    int ret;
     FFSinkContext ffsink_ctx = { .pix_fmt = PIX_FMT_YUV420P };
     AVFilterContext *filt_src = NULL, *filt_out = NULL;
-    AVFilterGraph *graph = avfilter_graph_alloc();
     snprintf(sws_flags_str, sizeof(sws_flags_str), "flags=%d", sws_flags);
     graph->scale_sws_opts = av_strdup(sws_flags_str);
 
-    if (avfilter_graph_create_filter(&filt_src, &input_filter, "src",
-                                     NULL, is, graph) < 0)
+    if ((ret = avfilter_graph_create_filter(&filt_src, &input_filter, "src",
+                                            NULL, is, graph)) < 0)
         goto the_end;
-    if (avfilter_graph_create_filter(&filt_out, &ffsink, "out",
-                                     NULL, &ffsink_ctx, graph) < 0)
+    if ((ret = avfilter_graph_create_filter(&filt_out, &ffsink, "out",
+                                            NULL, &ffsink_ctx, graph)) < 0)
         goto the_end;
 
     if(vfilters) {
@@ -1828,17 +1812,40 @@ static int video_thread(void *arg)
         inputs->pad_idx = 0;
         inputs->next    = NULL;
 
-        if (avfilter_graph_parse(graph, vfilters, inputs, outputs, NULL) < 0)
+        if ((ret = avfilter_graph_parse(graph, vfilters, inputs, outputs, NULL)) < 0)
             goto the_end;
         av_freep(&vfilters);
     } else {
-        if(avfilter_link(filt_src, 0, filt_out, 0) < 0)          goto the_end;
+        if ((ret = avfilter_link(filt_src, 0, filt_out, 0)) < 0)
+            goto the_end;
     }
 
-    if (avfilter_graph_config(graph, NULL) < 0)
+    if ((ret = avfilter_graph_config(graph, NULL)) < 0)
         goto the_end;
 
     is->out_video_filter = filt_out;
+the_end:
+    return ret;
+}
+
+#endif  /* CONFIG_AVFILTER */
+
+static int video_thread(void *arg)
+{
+    VideoState *is = arg;
+    AVFrame *frame= avcodec_alloc_frame();
+    int64_t pts_int;
+    double pts;
+    int ret;
+
+#if CONFIG_AVFILTER
+    AVFilterGraph *graph = avfilter_graph_alloc();
+    AVFilterContext *filt_out = NULL;
+    int64_t pos;
+
+    if ((ret = configure_video_filters(graph, is, vfilters)) < 0)
+        goto the_end;
+    filt_out = is->out_video_filter;
 #endif
 
     for(;;) {
@@ -1859,12 +1866,12 @@ static int video_thread(void *arg)
         }
 
         if (av_cmp_q(tb, is->video_st->time_base)) {
-            int64_t pts1 = pts_int;
+            av_unused int64_t pts1 = pts_int;
             pts_int = av_rescale_q(pts_int, tb, is->video_st->time_base);
-            av_log(NULL, AV_LOG_DEBUG, "video_thread(): "
-                   "tb:%d/%d pts:%"PRId64" -> tb:%d/%d pts:%"PRId64"\n",
-                   tb.num, tb.den, pts1,
-                   is->video_st->time_base.num, is->video_st->time_base.den, pts_int);
+            av_dlog(NULL, "video_thread(): "
+                    "tb:%d/%d pts:%"PRId64" -> tb:%d/%d pts:%"PRId64"\n",
+                    tb.num, tb.den, pts1,
+                    is->video_st->time_base.num, is->video_st->time_base.den, pts_int);
         }
 #else
         ret = get_video_frame(is, frame, &pts_int, &pkt);
@@ -1892,8 +1899,7 @@ static int video_thread(void *arg)
     }
  the_end:
 #if CONFIG_AVFILTER
-    avfilter_graph_free(graph);
-    av_freep(&graph);
+    avfilter_graph_free(&graph);
 #endif
     av_free(frame);
     return 0;

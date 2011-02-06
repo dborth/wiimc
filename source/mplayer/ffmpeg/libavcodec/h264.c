@@ -1,5 +1,5 @@
 /*
- * H.26L/H.264/AVC/JVT/14496-10/... encoder/decoder
+ * H.26L/H.264/AVC/JVT/14496-10/... decoder
  * Copyright (c) 2003 Michael Niedermayer <michaelni@gmx.at>
  *
  * This file is part of FFmpeg.
@@ -33,7 +33,6 @@
 #include "h264.h"
 #include "h264data.h"
 #include "h264_mvpred.h"
-#include "h264_parser.h"
 #include "golomb.h"
 #include "mathops.h"
 #include "rectangle.h"
@@ -233,7 +232,11 @@ nsc:
     return dst;
 }
 
-int ff_h264_decode_rbsp_trailing(H264Context *h, const uint8_t *src){
+/**
+ * Identify the exact end of the bitstream
+ * @return the length of the trailing, or 0 if damaged
+ */
+static int ff_h264_decode_rbsp_trailing(H264Context *h, const uint8_t *src){
     int v= *src;
     int r;
 
@@ -245,6 +248,93 @@ int ff_h264_decode_rbsp_trailing(H264Context *h, const uint8_t *src){
     }
     return 0;
 }
+
+#if 0
+/**
+ * DCT transforms the 16 dc values.
+ * @param qp quantization parameter ??? FIXME
+ */
+static void h264_luma_dc_dct_c(DCTELEM *block/*, int qp*/){
+//    const int qmul= dequant_coeff[qp][0];
+    int i;
+    int temp[16]; //FIXME check if this is a good idea
+    static const int x_offset[4]={0, 1*stride, 4* stride,  5*stride};
+    static const int y_offset[4]={0, 2*stride, 8* stride, 10*stride};
+
+    for(i=0; i<4; i++){
+        const int offset= y_offset[i];
+        const int z0= block[offset+stride*0] + block[offset+stride*4];
+        const int z1= block[offset+stride*0] - block[offset+stride*4];
+        const int z2= block[offset+stride*1] - block[offset+stride*5];
+        const int z3= block[offset+stride*1] + block[offset+stride*5];
+
+        temp[4*i+0]= z0+z3;
+        temp[4*i+1]= z1+z2;
+        temp[4*i+2]= z1-z2;
+        temp[4*i+3]= z0-z3;
+    }
+
+    for(i=0; i<4; i++){
+        const int offset= x_offset[i];
+        const int z0= temp[4*0+i] + temp[4*2+i];
+        const int z1= temp[4*0+i] - temp[4*2+i];
+        const int z2= temp[4*1+i] - temp[4*3+i];
+        const int z3= temp[4*1+i] + temp[4*3+i];
+
+        block[stride*0 +offset]= (z0 + z3)>>1;
+        block[stride*2 +offset]= (z1 + z2)>>1;
+        block[stride*8 +offset]= (z1 - z2)>>1;
+        block[stride*10+offset]= (z0 - z3)>>1;
+    }
+}
+#endif
+
+#undef xStride
+#undef stride
+
+static void chroma_dc_dequant_idct_c(DCTELEM *block, int qmul){
+    const int stride= 16*2;
+    const int xStride= 16;
+    int a,b,c,d,e;
+
+    a= block[stride*0 + xStride*0];
+    b= block[stride*0 + xStride*1];
+    c= block[stride*1 + xStride*0];
+    d= block[stride*1 + xStride*1];
+
+    e= a-b;
+    a= a+b;
+    b= c-d;
+    c= c+d;
+
+    block[stride*0 + xStride*0]= ((a+c)*qmul) >> 7;
+    block[stride*0 + xStride*1]= ((e+b)*qmul) >> 7;
+    block[stride*1 + xStride*0]= ((a-c)*qmul) >> 7;
+    block[stride*1 + xStride*1]= ((e-b)*qmul) >> 7;
+}
+
+#if 0
+static void chroma_dc_dct_c(DCTELEM *block){
+    const int stride= 16*2;
+    const int xStride= 16;
+    int a,b,c,d,e;
+
+    a= block[stride*0 + xStride*0];
+    b= block[stride*0 + xStride*1];
+    c= block[stride*1 + xStride*0];
+    d= block[stride*1 + xStride*1];
+
+    e= a-b;
+    a= a+b;
+    b= c-d;
+    c= c+d;
+
+    block[stride*0 + xStride*0]= (a+c);
+    block[stride*0 + xStride*1]= (e+b);
+    block[stride*1 + xStride*0]= (a-c);
+    block[stride*1 + xStride*1]= (e-b);
+}
+#endif
 
 static inline void mc_dir_part(H264Context *h, Picture *pic, int n, int square, int chroma_height, int delta, int list,
                            uint8_t *dest_y, uint8_t *dest_cb, uint8_t *dest_cr,
@@ -271,7 +361,7 @@ static inline void mc_dir_part(H264Context *h, Picture *pic, int n, int square, 
        || full_my < 0-extra_height
        || full_mx + 16/*FIXME*/ > pic_width + extra_width
        || full_my + 16/*FIXME*/ > pic_height + extra_height){
-        ff_emulated_edge_mc(s->edge_emu_buffer, src_y - 2 - 2*h->mb_linesize, h->mb_linesize, 16+5, 16+5/*FIXME*/, full_mx-2, full_my-2, pic_width, pic_height);
+        s->dsp.emulated_edge_mc(s->edge_emu_buffer, src_y - 2 - 2*h->mb_linesize, h->mb_linesize, 16+5, 16+5/*FIXME*/, full_mx-2, full_my-2, pic_width, pic_height);
             src_y= s->edge_emu_buffer + 2 + 2*h->mb_linesize;
         emu=1;
     }
@@ -292,13 +382,13 @@ static inline void mc_dir_part(H264Context *h, Picture *pic, int n, int square, 
     src_cr= pic->data[2] + (mx>>3) + (my>>3)*h->mb_uvlinesize;
 
     if(emu){
-        ff_emulated_edge_mc(s->edge_emu_buffer, src_cb, h->mb_uvlinesize, 9, 9/*FIXME*/, (mx>>3), (my>>3), pic_width>>1, pic_height>>1);
+        s->dsp.emulated_edge_mc(s->edge_emu_buffer, src_cb, h->mb_uvlinesize, 9, 9/*FIXME*/, (mx>>3), (my>>3), pic_width>>1, pic_height>>1);
             src_cb= s->edge_emu_buffer;
     }
     chroma_op(dest_cb, src_cb, h->mb_uvlinesize, chroma_height, mx&7, my&7);
 
     if(emu){
-        ff_emulated_edge_mc(s->edge_emu_buffer, src_cr, h->mb_uvlinesize, 9, 9/*FIXME*/, (mx>>3), (my>>3), pic_width>>1, pic_height>>1);
+        s->dsp.emulated_edge_mc(s->edge_emu_buffer, src_cr, h->mb_uvlinesize, 9, 9/*FIXME*/, (mx>>3), (my>>3), pic_width>>1, pic_height>>1);
             src_cr= s->edge_emu_buffer;
     }
     chroma_op(dest_cr, src_cr, h->mb_uvlinesize, chroma_height, mx&7, my&7);
@@ -527,7 +617,7 @@ static void hl_motion(H264Context *h, uint8_t *dest_y, uint8_t *dest_cb, uint8_t
 }
 
 
-static void free_tables(H264Context *h){
+static void free_tables(H264Context *h, int free_rbsp){
     int i;
     H264Context *hx;
     av_freep(&h->intra4x4_pred_mode);
@@ -550,10 +640,12 @@ static void free_tables(H264Context *h){
         av_freep(&hx->top_borders[1]);
         av_freep(&hx->top_borders[0]);
         av_freep(&hx->s.obmc_scratchpad);
-        av_freep(&hx->rbsp_buffer[1]);
-        av_freep(&hx->rbsp_buffer[0]);
-        hx->rbsp_buffer_size[0] = 0;
-        hx->rbsp_buffer_size[1] = 0;
+        if (free_rbsp){
+            av_freep(&hx->rbsp_buffer[1]);
+            av_freep(&hx->rbsp_buffer[0]);
+            hx->rbsp_buffer_size[0] = 0;
+            hx->rbsp_buffer_size[1] = 0;
+        }
         if (i) av_freep(&h->thread_context[i]);
     }
 }
@@ -661,7 +753,7 @@ int ff_h264_alloc_tables(H264Context *h){
 
     return 0;
 fail:
-    free_tables(h);
+    free_tables(h, 1);
     return -1;
 }
 
@@ -1196,19 +1288,17 @@ static av_always_inline void hl_decode_mb_internal(H264Context *h, int simple){
                     }
                 }
             }else{
-                int chroma_qpu = h->dequant4_coeff[IS_INTRA(mb_type) ? 1:4][h->chroma_qp[0]][0];
-                int chroma_qpv = h->dequant4_coeff[IS_INTRA(mb_type) ? 2:5][h->chroma_qp[1]][0];
                 if(is_h264){
                     if(h->non_zero_count_cache[ scan8[CHROMA_DC_BLOCK_INDEX+0] ])
-                        h->h264dsp.h264_chroma_dc_dequant_idct(h->mb + 16*16+0*16, &h->mb_chroma_dc[0], chroma_qpu );
+                        chroma_dc_dequant_idct_c(h->mb + 16*16     , h->dequant4_coeff[IS_INTRA(mb_type) ? 1:4][h->chroma_qp[0]][0]);
                     if(h->non_zero_count_cache[ scan8[CHROMA_DC_BLOCK_INDEX+1] ])
-                        h->h264dsp.h264_chroma_dc_dequant_idct(h->mb + 16*16+4*16, &h->mb_chroma_dc[1], chroma_qpv );
+                        chroma_dc_dequant_idct_c(h->mb + 16*16+4*16, h->dequant4_coeff[IS_INTRA(mb_type) ? 2:5][h->chroma_qp[1]][0]);
                     h->h264dsp.h264_idct_add8(dest, block_offset,
                                               h->mb, uvlinesize,
                                               h->non_zero_count_cache);
                 }else{
-                    h->h264dsp.h264_chroma_dc_dequant_idct(h->mb + 16*16+0*16, &h->mb_chroma_dc[0], chroma_qpu );
-                    h->h264dsp.h264_chroma_dc_dequant_idct(h->mb + 16*16+4*16, &h->mb_chroma_dc[1], chroma_qpv );
+                    chroma_dc_dequant_idct_c(h->mb + 16*16     , h->dequant4_coeff[IS_INTRA(mb_type) ? 1:4][h->chroma_qp[0]][0]);
+                    chroma_dc_dequant_idct_c(h->mb + 16*16+4*16, h->dequant4_coeff[IS_INTRA(mb_type) ? 2:5][h->chroma_qp[1]][0]);
                     for(i=16; i<16+8; i++){
                         if(h->non_zero_count_cache[ scan8[i] ] || h->mb[i*16]){
                             uint8_t * const ptr= dest[(i&4)>>2] + block_offset[i];
@@ -1588,6 +1678,33 @@ static void clone_slice(H264Context *dst, H264Context *src)
 }
 
 /**
+ * computes profile from profile_idc and constraint_set?_flags
+ *
+ * @param sps SPS
+ *
+ * @return profile as defined by FF_PROFILE_H264_*
+ */
+int ff_h264_get_profile(SPS *sps)
+{
+    int profile = sps->profile_idc;
+
+    switch(sps->profile_idc) {
+    case FF_PROFILE_H264_BASELINE:
+        // constraint_set1_flag set to 1
+        profile |= (sps->constraint_set_flags & 1<<1) ? FF_PROFILE_H264_CONSTRAINED : 0;
+        break;
+    case FF_PROFILE_H264_HIGH_10:
+    case FF_PROFILE_H264_HIGH_422:
+    case FF_PROFILE_H264_HIGH_444_PREDICTIVE:
+        // constraint_set3_flag set to 1
+        profile |= (sps->constraint_set_flags & 1<<3) ? FF_PROFILE_H264_INTRA : 0;
+        break;
+    }
+
+    return profile;
+}
+
+/**
  * decodes a slice header.
  * This will also call MPV_common_init() and frame_start() as needed.
  *
@@ -1666,7 +1783,7 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
     }
     h->sps = *h0->sps_buffers[h->pps.sps_id];
 
-    s->avctx->profile = h->sps.profile_idc;
+    s->avctx->profile = ff_h264_get_profile(&h->sps);
     s->avctx->level   = h->sps.level_idc;
     s->avctx->refs    = h->sps.ref_frame_count;
 
@@ -1691,7 +1808,7 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
             || av_cmp_q(h->sps.sar, s->avctx->sample_aspect_ratio))) {
         if(h != h0)
             return -1;   // width / height changed during parallelized decoding
-        free_tables(h);
+        free_tables(h, 0);
         flush_dpb(s->avctx);
         MPV_common_end(s);
     }
@@ -3246,7 +3363,7 @@ av_cold void ff_h264_free_context(H264Context *h)
 {
     int i;
 
-    free_tables(h); //FIXME cleanup init stuff perhaps
+    free_tables(h, 1); //FIXME cleanup init stuff perhaps
 
     for(i = 0; i < MAX_SPS_COUNT; i++)
         av_freep(h->sps_buffers + i);
@@ -3269,8 +3386,23 @@ av_cold int ff_h264_decode_end(AVCodecContext *avctx)
     return 0;
 }
 
+static const AVProfile profiles[] = {
+    { FF_PROFILE_H264_BASELINE,             "Baseline"              },
+    { FF_PROFILE_H264_CONSTRAINED_BASELINE, "Constrained Baseline"  },
+    { FF_PROFILE_H264_MAIN,                 "Main"                  },
+    { FF_PROFILE_H264_EXTENDED,             "Extended"              },
+    { FF_PROFILE_H264_HIGH,                 "High"                  },
+    { FF_PROFILE_H264_HIGH_10,              "High 10"               },
+    { FF_PROFILE_H264_HIGH_10_INTRA,        "High 10 Intra"         },
+    { FF_PROFILE_H264_HIGH_422,             "High 4:2:2"            },
+    { FF_PROFILE_H264_HIGH_422_INTRA,       "High 4:2:2 Intra"      },
+    { FF_PROFILE_H264_HIGH_444_PREDICTIVE,  "High 4:4:4 Predictive" },
+    { FF_PROFILE_H264_HIGH_444_INTRA,       "High 4:4:4 Intra"      },
+    { FF_PROFILE_H264_CAVLC_444,            "CAVLC 4:4:4"           },
+    { FF_PROFILE_UNKNOWN },
+};
 
-AVCodec h264_decoder = {
+AVCodec ff_h264_decoder = {
     "h264",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_H264,
@@ -3282,10 +3414,11 @@ AVCodec h264_decoder = {
     /*CODEC_CAP_DRAW_HORIZ_BAND |*/ CODEC_CAP_DR1 | CODEC_CAP_DELAY,
     .flush= flush_dpb,
     .long_name = NULL_IF_CONFIG_SMALL("H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"),
+    .profiles = NULL_IF_CONFIG_SMALL(profiles),
 };
 
 #if CONFIG_H264_VDPAU_DECODER
-AVCodec h264_vdpau_decoder = {
+AVCodec ff_h264_vdpau_decoder = {
     "h264_vdpau",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_H264,
@@ -3298,5 +3431,6 @@ AVCodec h264_vdpau_decoder = {
     .flush= flush_dpb,
     .long_name = NULL_IF_CONFIG_SMALL("H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 (VDPAU acceleration)"),
     .pix_fmts = (const enum PixelFormat[]){PIX_FMT_VDPAU_H264, PIX_FMT_NONE},
+    .profiles = NULL_IF_CONFIG_SMALL(profiles),
 };
 #endif

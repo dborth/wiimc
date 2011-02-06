@@ -45,7 +45,7 @@
 #include <float.h>
 
 static int volatile entangled_thread_counter=0;
-int (*ff_lockmgr_cb)(void **mutex, enum AVLockOp op);
+static int (*ff_lockmgr_cb)(void **mutex, enum AVLockOp op);
 static void *codec_mutex;
 
 void *av_fast_realloc(void *ptr, unsigned int *size, FF_INTERNALC_MEM_TYPE min_size)
@@ -396,6 +396,8 @@ int avcodec_default_reget_buffer(AVCodecContext *s, AVFrame *pic){
 
     /* If internal buffer type return the same buffer */
     if(pic->type == FF_BUFFER_TYPE_INTERNAL) {
+        if(s->pkt) pic->pkt_pts= s->pkt->pts;
+        else       pic->pkt_pts= AV_NOPTS_VALUE;
         pic->reordered_opaque= s->reordered_opaque;
         return 0;
     }
@@ -1158,7 +1160,7 @@ int ff_match_2uint16(const uint16_t (*tab)[2], int size, int a, int b){
 void av_log_missing_feature(void *avc, const char *feature, int want_sample)
 {
     av_log(avc, AV_LOG_WARNING, "%s not implemented. Update your FFmpeg "
-            "version to the newest one from SVN. If the problem still "
+            "version to the newest one from Git. If the problem still "
             "occurs, it means that your file has a feature which has not "
             "been implemented.", feature);
     if(want_sample)

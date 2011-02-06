@@ -399,6 +399,7 @@ static void sanitize_os(void)
  */
 int common_init(void)
 {
+#ifndef GEKKO
 #if (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(CONFIG_WIN32DLL)
     set_path_env();
 #endif
@@ -425,7 +426,7 @@ int common_init(void)
         }
         free(conf_path);
     }
-
+#endif
     // check font
 #ifdef CONFIG_FREETYPE
     init_freetype();

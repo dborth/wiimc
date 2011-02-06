@@ -202,6 +202,8 @@ void update_subtitles(sh_video_t *sh_video, double refpts, demux_stream_t *d_dvd
             if (is_av_sub(type)) {
 #ifdef CONFIG_FFMPEG
                 type = decode_avsub(d_dvdsub->sh, &packet, &len, &subpts, &endpts);
+                if (type < 0)
+                    mp_msg(MSGT_SPUDEC, MSGL_WARN, "lavc failed decoding subtitle\n");
                 if (type <= 0)
 #endif
                     continue;
@@ -397,7 +399,6 @@ static void sanitize_os(void)
  */
 int common_init(void)
 {
-#ifndef GEKKO
 #if (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(CONFIG_WIN32DLL)
     set_path_env();
 #endif
@@ -424,7 +425,7 @@ int common_init(void)
         }
         free(conf_path);
     }
-#endif
+
     // check font
 #ifdef CONFIG_FREETYPE
     init_freetype();

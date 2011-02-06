@@ -1,1 +1,0 @@
-RANLIB=/c/devkitPro/devkitPPC/bin/powerpc-eabi-ranlib.exe AR=/c/devkitPro/devkitPPC/bin/powerpc-eabi-ar CFLAGS=-mcpu=750 CC=/c/devkitPro/devkitPPC/bin/powerpc-eabi-gcc ./configure --host=ppc

@@ -406,6 +406,8 @@ static void ts_add_stream(demuxer_t * demuxer, ES_stream_t *es)
 		sh_sub_t *sh = new_sh_sub_sid(demuxer, priv->last_sid, es->pid, pid_lang_from_pmt(priv, es->pid));
  		if (sh) {
 			switch (es->type) {
+			case SPU_DVB:
+				sh->type = 'b'; break;
 			case SPU_DVD:
 				sh->type = 'v'; break;
 			case SPU_PGS:
@@ -1481,10 +1483,11 @@ static int pes_parse2(unsigned char *buf, uint16_t packet_len, ES_stream_t *es, 
 		}
 		/* SPU SUBS */
 		else if(type_from_pmt == SPU_DVB ||
-		(packet_len >= 1 && (p[0] == 0x20) && pes_is_aligned)) // && p[1] == 0x00))
+		(packet_len >= 2 && (p[0] == 0x20) && pes_is_aligned)) // && p[1] == 0x00))
 		{
-			es->start = p;
-			es->size  = packet_len;
+			// offset/length fiddling to make decoding with lavc possible
+			es->start = p + 2;
+			es->size  = packet_len - 2;
 			es->type  = SPU_DVB;
 			es->payload_size -= packet_len;
 
@@ -2983,11 +2986,6 @@ static int ts_parse(demuxer_t *demuxer , ES_stream_t *es, unsigned char *packet,
 			//IS IT TIME TO QUEUE DATA to the dp_packet?
 			if(is_start && (dp != NULL))
 			{
-				// subtitle packets _have_ to be submitted before video, otherwise
-				// they might get stuck "forever" and subtitles will be completely
-				// out of sync.
-				if (is_video)
-					fill_packet(demuxer, demuxer->sub, &priv->fifo[2].pack, &priv->fifo[2].offset, NULL);
 				retv = fill_packet(demuxer, ds, dp, dp_offset, si);
 			}
 
@@ -3128,6 +3126,9 @@ static int ts_parse(demuxer_t *demuxer , ES_stream_t *es, unsigned char *packet,
 				(*dp)->flags = 0;
 				(*dp)->pos = stream_tell(demuxer->stream);
 				(*dp)->pts = es->pts;
+				// subtitle packets must be returned immediately if possible
+				if (is_sub && !tss->payload_size)
+					retv = fill_packet(demuxer, ds, dp, dp_offset, si);
 
 				if(retv > 0)
 					return retv;
@@ -3169,7 +3170,8 @@ static int ts_parse(demuxer_t *demuxer , ES_stream_t *es, unsigned char *packet,
 			{
 				*dp_offset += sz;
 
-				if(*dp_offset >= MAX_PACK_BYTES)
+				// subtitle packets must be returned immediately if possible
+				if(*dp_offset >= MAX_PACK_BYTES || (is_sub && !tss->payload_size))
 				{
 					(*dp)->pts = tss->last_pts;
 					retv = fill_packet(demuxer, ds, dp, dp_offset, si);

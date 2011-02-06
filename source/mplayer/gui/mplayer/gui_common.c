@@ -55,7 +55,6 @@ static inline void TranslateFilename( int c,char * tmp,size_t tmplen )
  int i;
  char * p;
  size_t len;
- gchar *msg = NULL;
 
  switch ( guiIntfStruct.StreamType )
   {
@@ -73,38 +72,21 @@ static inline void TranslateFilename( int c,char * tmp,size_t tmplen )
             if ( ( len > 3 )&&( tmp[len - 3] == '.' ) ) tmp[len - 3]=0;
             else if ( ( len > 4 )&&( tmp[len - 4] == '.' ) ) tmp[len - 4]=0;
             else if ( ( len > 5 )&&( tmp[len - 5] == '.' ) ) tmp[len - 5]=0;
-           }
-          else
-           {
-            msg = g_filename_from_utf8( MSGTR_NoFileLoaded, -1, NULL, NULL, NULL );
-            av_strlcpy( tmp, ( msg ? msg : MSGTR_NoFileLoaded ), tmplen );
-           }
+           } else av_strlcpy( tmp,MSGTR_NoFileLoaded,tmplen );
           break;
 #ifdef CONFIG_DVDREAD
    case STREAMTYPE_DVD:
-          if ( guiIntfStruct.DVD.current_chapter )
-           {
-            msg = g_filename_from_utf8( MSGTR_Chapter, -1, NULL, NULL, NULL );
-            snprintf( tmp, tmplen, ( msg ? msg : MSGTR_Chapter ), guiIntfStruct.DVD.current_chapter );
-           }
-          else
-           {
-            msg = g_filename_from_utf8( MSGTR_NoChapter, -1, NULL, NULL, NULL );
-            av_strlcat( tmp, ( msg ? msg : MSGTR_NoChapter ), tmplen );
-           }
+          if ( guiIntfStruct.DVD.current_chapter ) snprintf(tmp,tmplen,MSGTR_Chapter,guiIntfStruct.DVD.current_chapter );
+            else av_strlcat( tmp,MSGTR_NoChapter,tmplen );
           break;
 #endif
 #ifdef CONFIG_VCD
    case STREAMTYPE_VCD:
-        msg = g_filename_from_utf8( MSGTR_VCDTrack, -1, NULL, NULL, NULL );
-        snprintf( tmp, tmplen, ( msg ? msg : MSGTR_VCDTrack ), guiIntfStruct.Track );
+        snprintf( tmp,tmplen,MSGTR_VCDTrack,guiIntfStruct.Track );
 	break;
 #endif
-   default:
-     msg = g_filename_from_utf8( MSGTR_NoMediaOpened, -1, NULL, NULL, NULL );
-     av_strlcpy( tmp, ( msg ? msg : MSGTR_NoMediaOpened ), tmplen );
+   default: av_strlcpy( tmp,MSGTR_NoMediaOpened,tmplen );
   }
- g_free(msg);
  if ( c )
   {
    for ( i=0;i < (int)strlen( tmp );i++ )
@@ -312,14 +294,38 @@ void Render( wsTWindow * window,wItem * Items,int nrItems,char * db,int size )
 	    3,item->pressed );
           break;
      case itSLabel:
-          image=fntRender( item,0,"%s",item->label );
+          image=fntRender( item,0,item->label );
           if ( image ) PutImage( image,item->x,item->y,1,0 );
      case itDLabel:
           {
+           int x;
+           unsigned int d;
            char * t = Translate( item->label );
-           int    l = fntTextWidth( item->fontid,t );
-           l=(l?l:item->width);
-           image=fntRender( item,l-(GetTimerMS() / 20)%l,"%s",t );
+           if ( g_strcmp0( item->text, t ) != 0 )
+            {
+             g_free( item->text );
+             item->text = g_strdup( t );
+             item->textwidth = fntTextWidth( item->fontid, t );
+             item->starttime = GetTimerMS();
+             item->last_x = 0;
+            }
+           d = GetTimerMS() - item->starttime;
+           if ( d < DELAYTIME ) x = item->last_x;   // don't scroll yet
+           else
+            {
+             int l;
+             char c[2];
+             l = (item->textwidth ? item->textwidth : item->width);
+             x = l - ((d - DELAYTIME) / 20) % l - 1;
+             c[0] = *item->text;
+             c[1] = '\0';
+             if ( x < (fntTextWidth( item->fontid, c ) + 1) >> 1)
+              {
+               item->starttime = GetTimerMS();   // stop again
+               item->last_x = x;                 // at current x pos
+              }
+            }
+           image = fntRender( item, x, t );
 	  }
           if ( image ) PutImage( image,item->x,item->y,1,0 );
           break;

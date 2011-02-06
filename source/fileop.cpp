@@ -341,9 +341,10 @@ void StopParseThread()
 #define BPB_FAT16_fileSysType  0x36
 #define BPB_FAT32_fileSysType  0x52
 
-#define T_FAT  1
-#define T_NTFS 2
-#define T_EXT2 3
+#define T_FAT		1
+#define T_NTFS		2
+#define T_EXT2		3
+#define T_ISO9660	4
 
 static const char FAT_SIG[3] = {'F', 'A', 'T'};
 
@@ -480,6 +481,11 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 			else
 				part[device][*devnum].name[0] = 0;
 			break;
+		case T_ISO9660:
+			if (!ISO9660_Mount(mount, disc))
+				return;
+			strcpy(part[device][*devnum].name, "DVD");
+			break;
 	}
 
 	strcpy(part[device][*devnum].mount, mount);
@@ -523,6 +529,12 @@ static int FindPartitions(int device)
 		EXTENDED_BOOT_RECORD ebr;
 		NTFS_BOOT_SECTOR boot;
 	} sector;
+
+	if (device == DEVICE_USB && USBStorage_IsDVD())
+	{
+		AddPartition(0, device, T_ISO9660, &devnum);
+		return devnum;
+	}
 
 	// Read the first sector on the device
 	if (!interface->readSectors(0, 1, &sector.buffer))
@@ -754,6 +766,11 @@ static void UnmountPartitions(int device)
 			case T_EXT2:
 				part[device][i].type = 0;
 				ext2Unmount(part[device][i].mount);
+				break;
+			case T_ISO9660:
+				part[device][i].type = 0;
+				sprintf(mount, "%s:", part[device][i].mount);
+				ISO9660_Unmount(mount);
 				break;
 		}
 		part[device][i].name[0] = 0;
@@ -995,6 +1012,9 @@ bool StartDVDMotor()
 
 bool WakeupUSB()
 {
+	if(USBStorage_IsDVD())
+		return true;
+
 	char buf[512];
 	return usb->readSectors(0, 1, buf);
 }

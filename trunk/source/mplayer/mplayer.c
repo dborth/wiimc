@@ -345,6 +345,7 @@ char *font_name=NULL;
 char *sub_font_name=NULL;
 float font_factor=0.75;
 char **sub_name=NULL;
+char **sub_paths = NULL;
 float sub_delay=0;
 float sub_fps=0;
 int   sub_auto = 1;
@@ -3939,9 +3940,13 @@ if(!mpctx->sh_video) {
 	  mp_msg(MSGT_CPLAYER,MSGL_FATAL, MSGTR_NotInitializeVOPorVO);
 	  mpctx->eof = 1; goto goto_next_file;
       }
-      if (frame_time < 0)
+      if (frame_time < 0) {
+          // if we have no more video, sleep some arbitrary time
+          frame_time = 1.0/20.0;
+          // only stop playing when audio is at end as well
+          if (!mpctx->sh_audio || mpctx->d_audio->eof)
 	  mpctx->eof = 1;
-      else {
+      } else {
 	  // might return with !eof && !blit_frame if !correct_pts
 	  mpctx->num_buffered_frames += blit_frame;
 	  mpctx->time_frame += frame_time / playback_speed;  // for nosound

@@ -1486,8 +1486,7 @@ sub_data* sub_read_file (char *filename, float fps) {
 	  subcp_close();
           sub_utf8=sub_utf8_prev;
 #endif
-	    free_stream(fd);
-	    
+		free_stream(fd);
 	    return NULL;
     }
 
@@ -1954,13 +1953,11 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
     // 1 = any subtitle file
     // 2 = any sub file containing movie name
     // 3 = sub file containing movie name and the lang extension
-#ifndef GEKKO    
-	d = opendir(path);
-	if (d) {
-#endif	
+#ifndef GEKKO
+    d = opendir(path);
+    if (d) {
         mp_msg(MSGT_SUBREADER, MSGL_INFO, "Load subtitles in %s\n", path);
-#ifndef GEKKO 
-	    while ((de = readdir(d))) {
+        while ((de = readdir(d))) {
 #else
 		de = (struct dirent*)malloc(sizeof(struct dirent));
 		int h;
@@ -1971,6 +1968,35 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
             strcpy_strip_ext_lower(tmp_fname_noext, de->d_name);
             strcpy_get_ext(tmp_fname_ext, de->d_name);
             strcpy_trim(tmp_fname_trim, tmp_fname_noext);
+
+            // If it's a .sub, check if there is a .idx with the same name. If
+            // there is one, it's certainly a vobsub so we skip it.
+            if (strcasecmp(tmp_fname_ext, "sub") == 0) {
+                char *idx, *idxname = strdup(de->d_name);
+
+                strcpy(idxname + strlen(de->d_name) - sizeof("idx") + 1, "idx");
+#ifdef GEKKO
+                found=0;
+                for(i=0;i<subs_size;i++) {
+                	if (strcasecmp(subsList[h], idxname) == 0) {
+                		found = 1;
+                		break;
+                	}
+                }
+                free(idxname);
+                if(found)
+                	continue;
+#else
+                idx = mp_dir_join(path, idxname);
+                free(idxname);
+                f = fopen(idx, "rt");
+                free(idx);
+                if (f) {
+                    fclose(f);
+                    continue;
+                }
+#endif
+            }
 
             // does it end with a subtitle extension?
             found = 0;
@@ -2027,34 +2053,35 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
                 }
 
                 if (prio) {
+                    char *subpath;
                     prio += prio;
 #ifdef CONFIG_ICONV
                     if (i < 3){ // prefer UTF-8 coded
                         prio++;
                     }
 #endif
-                    if(path[strlen(path)-1]!='/')
-					sprintf(tmpresult, "%s/%s", path, de->d_name);
-				else
-					sprintf(tmpresult, "%s%s", path, de->d_name);
-                    // fprintf(stderr, "%s priority %d\n", tmpresult, prio);
-                    if ((f = fopen(tmpresult, "rt"))) {
+                    subpath = mp_dir_join(path, de->d_name);
+                    // fprintf(stderr, "%s priority %d\n", subpath, prio);
+                    if ((f = fopen(subpath, "rt"))) {
                         struct subfn *sub = &slist->subs[slist->sid++];
 
                         fclose(f);
                         sub->priority = prio;
-                        sub->fname    = strdup(tmpresult);
-                    }
+                        sub->fname    = subpath;
+                    } else
+                        free(subpath);
                 }
 
             }
             if (slist->sid >= MAX_SUBTITLE_FILES)
                 break;
         }
-#ifndef GEKKO	    
-	    closedir(d);	    
-	}
-#endif	
+#ifdef GEKKO
+        free(de);
+#else
+        closedir(d);
+    }
+#endif
     free(tmp_sub_id);
 
     free(f_fname);
@@ -2111,8 +2138,21 @@ void load_subtitles(const char *fname, float fps, open_sub_func add_f)
     append_dir_subtitles(&slist, path, fname, 0);
     free(path);
 
-    // Load subtitles in ~/.mplayer/sub limiting sub fuzziness
 #ifndef GEKKO
+    // Load subtitles in dirs specified by sub-paths option
+    if (sub_paths) {
+        for (i = 0; sub_paths[i]; i++) {
+            path = mp_path_join(fname, sub_paths[i]);
+            if (!path) {
+                free(slist.subs);
+                return;
+            }
+            append_dir_subtitles(&slist, path, fname, 0);
+            free(path);
+        }
+    }
+
+    // Load subtitles in ~/.mplayer/sub limiting sub fuzziness
     mp_subdir = get_path("sub/");
     if (mp_subdir)
         append_dir_subtitles(&slist, mp_subdir, fname, 1);
@@ -2140,7 +2180,7 @@ void load_subtitles(const char *fname, float fps, open_sub_func add_f)
 void load_vob_subtitle(const char *fname, const char * const ifo, void **spu,
                        open_vob_func add_f)
 {
-    char *name, *mp_subdir;
+    char *name = NULL, *mp_subdir = NULL;
 
     // Load subtitles specified by vobsub option
     if (vobsub_name) {
@@ -2162,14 +2202,40 @@ void load_vob_subtitle(const char *fname, const char * const ifo, void **spu,
         return;
     }
 
-    // If still no VOB found, try loading it from ~/.mplayer/sub
 #ifndef GEKKO
+    // Try looking at the dirs specified by sub-paths option
+    if (sub_paths) {
+        int i;
+
+        for (i = 0; sub_paths[i]; i++) {
+            char *path, *psub;
+
+            path = mp_path_join(fname, sub_paths[i]);
+            if (!path)
+                goto out;
+
+            psub = mp_dir_join(path, mp_basename(name));
+            free(path);
+            if (!psub)
+                goto out;
+
+            if (add_f(psub, ifo, 0, spu)) {
+                free(psub);
+                goto out;
+            }
+            free(psub);
+        }
+    }
+
+    // If still no VOB found, try loading it from ~/.mplayer/sub
     mp_subdir = get_path("sub/");
     if (mp_subdir) {
         char *psub = mp_path_join(mp_subdir, mp_basename(name));
         add_f(psub, ifo, 0, spu);
         free(psub);
     }
+
+out:
     free(mp_subdir);
 #endif
     free(name);

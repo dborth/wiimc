@@ -35,6 +35,29 @@
 #
 #############################################################################
 
+if test -e ffmpeg/.svn ; then
+  echo "You have an outdated FFmpeg SVN checkout in ffmpeg/, please (re)move or replace it"
+  exit 1
+fi
+
+if test -e ffmpeg/mp_auto_pull ; then
+  if ! (cd ffmpeg && git pull --rebase --ff-only) ; then
+    echo "git pull failed, (re)move ffmpeg/mp_auto_pull to disable pulling"
+    exit 1
+  fi
+fi
+
+if ! test -e ffmpeg ; then
+  echo "No FFmpeg checkout, press enter to download one with git or CTRL+C to abort"
+  read tmp
+  if ! git clone git://git.videolan.org/ffmpeg.git ffmpeg ; then
+    rm -rf ffmpeg
+    echo "Failed to get a FFmpeg checkout"
+    exit 1
+  fi
+  touch ffmpeg/mp_auto_pull
+fi
+
 # Prevent locale nonsense from breaking basic text processing utils
 export LC_ALL=C
 
@@ -404,7 +427,7 @@ Codecs:
   --disable-liba52          disable liba52 [autodetect]
   --disable-libmpeg2        disable libmpeg2 [autodetect]
   --disable-libmpeg2-internal disable builtin libmpeg2 [autodetect]
-  --disable-musepack        disable musepack support [autodetect]
+  --enable-musepack         enable libmpcdec support (deprecated in favour of libavcodec) [disabled]
   --disable-libopencore_amrnb disable libopencore_amr narrowband [autodetect]
   --disable-libopencore_amrwb disable libopencore_amr wideband [autodetect]
   --disable-libopenjpeg     disable OpenJPEG (JPEG2000) input/output support [autodetect]
@@ -806,7 +829,7 @@ _enca=auto
 _inet6=auto
 _gethostbyname2=auto
 _ftp=auto
-_musepack=auto
+_musepack=no
 _vstream=auto
 _pthreads=auto
 _w32threads=auto
@@ -820,7 +843,7 @@ def_dos_paths="#define HAVE_DOS_PATHS 0"
 def_stream_cache="#define CONFIG_STREAM_CACHE 1"
 def_priority="#undef CONFIG_PRIORITY"
 def_pthread_cache="#undef PTHREAD_CACHE"
-_need_shmem=yes
+need_shmem=yes
 for ac_option do
   case "$ac_option" in
   --help|-help|-h)
@@ -1541,7 +1564,7 @@ fi
 
 if mingw32 ; then
   _getch=getch2-win.c
-  _need_shmem=no
+  need_shmem=no
 fi
 
 if amigaos ; then
@@ -1559,7 +1582,7 @@ fi
 if os2 ; then
   _exesuf=".exe"
   _getch=getch2-os2.c
-  _need_shmem=no
+  need_shmem=no
   _priority=yes
   def_dos_paths="#define HAVE_DOS_PATHS 1"
   def_priority="#define CONFIG_PRIORITY 1"
@@ -3501,7 +3524,7 @@ if test "$_mman" = yes ; then
 else
   def_mmap='#define HAVE_MMAP 0'
   def_mman_h='#undef HAVE_SYS_MMAN_H'
-  os2 && _need_mmap=yes
+  os2 && need_mmap=yes
 fi
 echores "$_mman"
 
@@ -3816,10 +3839,10 @@ _strsep=no
 statement_check string.h 'char *s = "Hello, world!"; strsep(&s, ",")' && _strsep=yes
 if test "$_strsep" = yes ; then
   def_strsep='#define HAVE_STRSEP 1'
- _need_strsep=no
+ need_strsep=no
 else
   def_strsep='#undef HAVE_STRSEP'
- _need_strsep=yes
+ need_strsep=yes
 fi
 echores "$_strsep"
 
@@ -3835,10 +3858,10 @@ _vsscanf=no
 cc_check && _vsscanf=yes
 if test "$_vsscanf" = yes ; then
   def_vsscanf='#define HAVE_VSSCANF 1'
-  _need_vsscanf=no
+  need_vsscanf=no
 else
   def_vsscanf='#undef HAVE_VSSCANF'
-  _need_vsscanf=yes
+  need_vsscanf=yes
 fi
 echores "$_vsscanf"
 
@@ -3848,10 +3871,10 @@ _swab=no
 define_statement_check "_XOPEN_SOURCE 600" "unistd.h" 'int a, b; swab(&a, &b, 0)' && _swab=yes
 if test "$_swab" = yes ; then
   def_swab='#define HAVE_SWAB 1'
-  _need_swab=no
+  need_swab=no
 else
   def_swab='#undef HAVE_SWAB'
-  _need_swab=yes
+  need_swab=yes
 fi
 echores "$_swab"
 
@@ -3887,10 +3910,10 @@ _gettimeofday=no
 statement_check sys/time.h 'struct timeval tv; struct timezone tz; gettimeofday(&tv, &tz)' && _gettimeofday=yes
 if test "$_gettimeofday" = yes ; then
   def_gettimeofday='#define HAVE_GETTIMEOFDAY 1'
-  _need_gettimeofday=no
+  need_gettimeofday=no
 else
   def_gettimeofday='#undef HAVE_GETTIMEOFDAY'
-  _need_gettimeofday=yes
+  need_gettimeofday=yes
 fi
 echores "$_gettimeofday"
 
@@ -3900,10 +3923,10 @@ _glob=no
 statement_check glob.h 'glob("filename", 0, 0, 0)' && _glob=yes
 if test "$_glob" = yes ; then
   def_glob='#define HAVE_GLOB 1'
-  _need_glob=no
+  need_glob=no
 else
   def_glob='#undef HAVE_GLOB'
-  _need_glob=yes
+  need_glob=yes
 fi
 echores "$_glob"
 
@@ -3913,10 +3936,10 @@ _setenv=no
 statement_check stdlib.h 'setenv("", "", 0)' && _setenv=yes
 if test "$_setenv" = yes ; then
   def_setenv='#define HAVE_SETENV 1'
-  _need_setenv=no
+  need_setenv=no
 else
   def_setenv='#undef HAVE_SETENV'
-  _need_setenv=yes
+  need_setenv=yes
 fi
 echores "$_setenv"
 
@@ -6503,7 +6526,7 @@ fi
 echores "$_libdca"
 
 echocheck "libmpcdec (musepack, version >= 1.2.1 required)"
-if test "$_musepack" = auto ; then
+if test "$_musepack" = yes ; then
   _musepack=no
   cat > $TMPC << EOF
 #include <stddef.h>
@@ -7920,14 +7943,14 @@ $(mak_enable "$cpuexts_all" "$cpuexts" HAVE)
 MENCODER = $_mencoder
 MPLAYER  = $_mplayer
 
-NEED_GETTIMEOFDAY = $_need_gettimeofday
-NEED_GLOB         = $_need_glob
-NEED_MMAP         = $_need_mmap
-NEED_SETENV       = $_need_setenv
-NEED_SHMEM        = $_need_shmem
-NEED_STRSEP       = $_need_strsep
-NEED_SWAB         = $_need_swab
-NEED_VSSCANF      = $_need_vsscanf
+NEED_GETTIMEOFDAY = $need_gettimeofday
+NEED_GLOB         = $need_glob
+NEED_MMAP         = $need_mmap
+NEED_SETENV       = $need_setenv
+NEED_SHMEM        = $need_shmem
+NEED_STRSEP       = $need_strsep
+NEED_SWAB         = $need_swab
+NEED_VSSCANF      = $need_vsscanf
 
 # features
 3DFX = $_3dfx

@@ -152,7 +152,7 @@ static void * devicecallback (void *arg)
 			{
 				dvdLastUsed = 0;
 				isInserted[DEVICE_DVD] = false;
-				ISO9660_Unmount();
+				ISO9660_Unmount("dvd:");
 
 				if(strlen(loadedFile) > 3 && strncmp(loadedFile, "dvd", 3) == 0)
 				{
@@ -948,7 +948,7 @@ bool MountDVD(bool silent)
 
 			retry = ErrorPromptRetry("No disc inserted!");
 		}
-		else if(!ISO9660_Mount())
+		else if(!ISO9660_Mount("dvd",  &__io_wiidvd))
 		{
 			if(silent)
 				break;

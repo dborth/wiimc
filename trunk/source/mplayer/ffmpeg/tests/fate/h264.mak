@@ -164,7 +164,11 @@ FATE_H264 = aud_mw_e                                                    \
             sva_nl1_b                                                   \
             sva_nl2_e                                                   \
 
-FATE_H264  := $(FATE_H264:%=fate-h264-conformance-%) fate-h264-interlace-crop
+FATE_H264  := $(FATE_H264:%=fate-h264-conformance-%)                    \
+              fate-h264-interlace-crop                                  \
+              fate-h264-lossless                                        \
+              fate-h264-extreme-plane-pred                              \
+
 FATE_TESTS += $(FATE_H264)
 fate-h264: $(FATE_H264)
 
@@ -276,7 +280,7 @@ fate-h264-conformance-frext-frext1_panasonic_c: CMD = framecrc  -i $(SAMPLES)/h2
 fate-h264-conformance-frext-frext2_panasonic_b: CMD = framecrc  -i $(SAMPLES)/h264-conformance/FRext/FRExt2_Panasonic.avc -vsync 0
 fate-h264-conformance-frext-frext3_panasonic_d: CMD = framecrc  -i $(SAMPLES)/h264-conformance/FRext/FRExt3_Panasonic.avc
 fate-h264-conformance-frext-frext4_panasonic_a: CMD = framecrc  -i $(SAMPLES)/h264-conformance/FRext/FRExt4_Panasonic.avc
-fate-h264-conformance-frext-frext_mmco4_sony_b: CMD = framecrc  -strict 1 -i $(SAMPLES)/h264-conformance/FRext/FRExt_MMCO4_Sony_B.264
+fate-h264-conformance-frext-frext_mmco4_sony_b: CMD = framecrc  -vsync 0 -i $(SAMPLES)/h264-conformance/FRext/FRExt_MMCO4_Sony_B.264
 fate-h264-conformance-frext-hcaff1_hhi_b: CMD = framecrc  -i $(SAMPLES)/h264-conformance/FRext/HCAFF1_HHI.264
 fate-h264-conformance-frext-hcafr1_hhi_c: CMD = framecrc  -i $(SAMPLES)/h264-conformance/FRext/HCAFR1_HHI.264
 fate-h264-conformance-frext-hcafr2_hhi_a: CMD = framecrc  -i $(SAMPLES)/h264-conformance/FRext/HCAFR2_HHI.264
@@ -335,3 +339,5 @@ fate-h264-conformance-sva_nl1_b: CMD = framecrc  -i $(SAMPLES)/h264-conformance/
 fate-h264-conformance-sva_nl2_e: CMD = framecrc  -i $(SAMPLES)/h264-conformance/SVA_NL2_E.264
 
 fate-h264-interlace-crop: CMD = framecrc  -vframes 3 -i $(SAMPLES)/h264/interlaced_crop.mp4
+fate-h264-lossless: CMD = framecrc -i $(SAMPLES)/h264/lossless.h264
+fate-h264-extreme-plane-pred: CMD = framemd5 -strict 1 -vsync 0 -i $(SAMPLES)/h264/extreme-plane-pred.h264

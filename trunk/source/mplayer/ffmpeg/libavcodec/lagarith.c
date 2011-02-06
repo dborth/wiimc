@@ -508,9 +508,9 @@ static av_cold int lag_decode_end(AVCodecContext *avctx)
     return 0;
 }
 
-AVCodec lagarith_decoder = {
+AVCodec ff_lagarith_decoder = {
     "lagarith",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_LAGARITH,
     sizeof(LagarithContext),
     lag_decode_init,

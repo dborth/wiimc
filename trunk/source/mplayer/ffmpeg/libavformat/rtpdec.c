@@ -27,9 +27,7 @@
 #include "mpegts.h"
 
 #include <unistd.h>
-#ifndef GEKKO
 #include <strings.h>
-#endif
 #include "network.h"
 
 #include "rtpdec.h"
@@ -46,14 +44,14 @@
          'url_open_dyn_packet_buf')
 */
 
-RTPDynamicProtocolHandler ff_realmedia_mp3_dynamic_handler = {
+static RTPDynamicProtocolHandler ff_realmedia_mp3_dynamic_handler = {
     .enc_name           = "X-MP3-draft-00",
     .codec_type         = AVMEDIA_TYPE_AUDIO,
     .codec_id           = CODEC_ID_MP3ADU,
 };
 
 /* statistics functions */
-RTPDynamicProtocolHandler *RTPFirstDynamicPayloadHandler= NULL;
+static RTPDynamicProtocolHandler *RTPFirstDynamicPayloadHandler= NULL;
 
 void ff_register_dynamic_payload_handler(RTPDynamicProtocolHandler *handler)
 {
@@ -326,9 +324,9 @@ int rtp_check_and_send_back_rr(RTPDemuxContext *s, int count)
     len = url_close_dyn_buf(pb, &buf);
     if ((len > 0) && buf) {
         int result;
-        dprintf(s->ic, "sending %d bytes of RR\n", len);
+        av_dlog(s->ic, "sending %d bytes of RR\n", len);
         result= url_write(s->rtp_ctx, buf, len);
-        dprintf(s->ic, "result from url_write: %d\n", result);
+        av_dlog(s->ic, "result from url_write: %d\n", result);
         av_free(buf);
     }
     return 0;

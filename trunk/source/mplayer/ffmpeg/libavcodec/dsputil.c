@@ -36,7 +36,6 @@
 #include "mathops.h"
 #include "mpegvideo.h"
 #include "config.h"
-#include "lpc.h"
 #include "ac3dec.h"
 #include "vorbis.h"
 #include "png.h"
@@ -356,38 +355,45 @@ void ff_emulated_edge_mc(uint8_t *buf, const uint8_t *src, int linesize, int blo
     start_x= FFMAX(0, -src_x);
     end_y= FFMIN(block_h, h-src_y);
     end_x= FFMIN(block_w, w-src_x);
+    assert(start_y < end_y && block_h);
+    assert(start_x < end_x && block_w);
 
-    // copy existing part
-    for(y=start_y; y<end_y; y++){
-        for(x=start_x; x<end_x; x++){
-            buf[x + y*linesize]= src[x + y*linesize];
-        }
-    }
+    w    = end_x - start_x;
+    src += start_y*linesize + start_x;
+    buf += start_x;
 
     //top
     for(y=0; y<start_y; y++){
-        for(x=start_x; x<end_x; x++){
-            buf[x + y*linesize]= buf[x + start_y*linesize];
-        }
+        memcpy(buf, src, w);
+        buf += linesize;
+    }
+
+    // copy existing part
+    for(; y<end_y; y++){
+        memcpy(buf, src, w);
+        src += linesize;
+        buf += linesize;
     }
 
     //bottom
-    for(y=end_y; y<block_h; y++){
-        for(x=start_x; x<end_x; x++){
-            buf[x + y*linesize]= buf[x + (end_y-1)*linesize];
-        }
+    src -= linesize;
+    for(; y<block_h; y++){
+        memcpy(buf, src, w);
+        buf += linesize;
     }
 
-    for(y=0; y<block_h; y++){
+    buf -= block_h * linesize + start_x;
+    while (block_h--){
        //left
         for(x=0; x<start_x; x++){
-            buf[x + y*linesize]= buf[start_x + y*linesize];
+            buf[x] = buf[start_x];
         }
 
        //right
         for(x=end_x; x<block_w; x++){
-            buf[x + y*linesize]= buf[end_x - 1 + y*linesize];
+            buf[x] = buf[end_x - 1];
         }
+        buf += linesize;
     }
 }
 
@@ -3751,10 +3757,10 @@ WRAPPER8_16_SQ(quant_psnr8x8_c, quant_psnr16_c)
 WRAPPER8_16_SQ(rd8x8_c, rd16_c)
 WRAPPER8_16_SQ(bit8x8_c, bit16_c)
 
-static void vector_fmul_c(float *dst, const float *src, int len){
+static void vector_fmul_c(float *dst, const float *src0, const float *src1, int len){
     int i;
     for(i=0; i<len; i++)
-        dst[i] *= src[i];
+        dst[i] = src0[i] * src1[i];
 }
 
 static void vector_fmul_reverse_c(float *dst, const float *src0, const float *src1, int len){
@@ -3770,7 +3776,9 @@ static void vector_fmul_add_c(float *dst, const float *src0, const float *src1, 
         dst[i] = src0[i] * src1[i] + src2[i];
 }
 
-void ff_vector_fmul_window_c(float *dst, const float *src0, const float *src1, const float *win, float add_bias, int len){
+static void vector_fmul_window_c(float *dst, const float *src0,
+                                 const float *src1, const float *win, int len)
+{
     int i,j;
     dst += len;
     win += len;
@@ -3780,8 +3788,8 @@ void ff_vector_fmul_window_c(float *dst, const float *src0, const float *src1, c
         float s1 = src1[j];
         float wi = win[i];
         float wj = win[j];
-        dst[i] = s0*wj - s1*wi + add_bias;
-        dst[j] = s0*wi + s1*wj + add_bias;
+        dst[i] = s0*wj - s1*wi;
+        dst[j] = s0*wi + s1*wj;
     }
 }
 
@@ -4219,6 +4227,7 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->add_pixels8 = add_pixels8_c;
     c->add_pixels4 = add_pixels4_c;
     c->sum_abs_dctelem = sum_abs_dctelem_c;
+    c->emulated_edge_mc = ff_emulated_edge_mc;
     c->gmc1 = gmc1_c;
     c->gmc = ff_gmc_c;
     c->clear_block = clear_block_c;
@@ -4431,13 +4440,10 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
 #if CONFIG_AC3_DECODER
     c->ac3_downmix = ff_ac3_downmix_c;
 #endif
-#if CONFIG_LPC
-    c->lpc_compute_autocorr = ff_lpc_compute_autocorr;
-#endif
     c->vector_fmul = vector_fmul_c;
     c->vector_fmul_reverse = vector_fmul_reverse_c;
     c->vector_fmul_add = vector_fmul_add_c;
-    c->vector_fmul_window = ff_vector_fmul_window_c;
+    c->vector_fmul_window = vector_fmul_window_c;
     c->int32_to_float_fmul_scalar = int32_to_float_fmul_scalar_c;
     c->vector_clipf = vector_clipf_c;
     c->float_to_int16 = ff_float_to_int16_c;

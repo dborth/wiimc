@@ -33,6 +33,8 @@
 #include "libavutil/common.h"
 #include "libavutil/log.h"
 
+#include "libavformat/version.h"
+
 /* unbuffered I/O */
 
 /**
@@ -61,9 +63,32 @@ typedef struct URLPollEntry {
     int revents;
 } URLPollEntry;
 
-#define URL_RDONLY 0
-#define URL_WRONLY 1
-#define URL_RDWR   2
+/**
+ * @defgroup open_modes URL open modes
+ * The flags argument to url_open and cosins must be one of the following
+ * constants, optionally ORed with other flags.
+ * @{
+ */
+#define URL_RDONLY 0  /**< read-only */
+#define URL_WRONLY 1  /**< write-only */
+#define URL_RDWR   2  /**< read-write */
+/**
+ * @}
+ */
+
+/**
+ * Use non-blocking mode.
+ * If this flag is set, operations on the context will return
+ * AVERROR(EAGAIN) if they can not be performed immediately.
+ * If this flag is not set, operations on the context will never return
+ * AVERROR(EAGAIN).
+ * Note that this flag does not affect the opening/connecting of the
+ * context. Connecting a protocol will always block if necessary (e.g. on
+ * network protocols) but never hang (e.g. on busy devices).
+ * Warning: non-blocking protocols is work-in-progress; this flag may be
+ * silently ignored.
+ */
+#define URL_FLAG_NONBLOCK 4
 
 typedef int URLInterruptCB(void);
 
@@ -126,7 +151,6 @@ int url_read(URLContext *h, unsigned char *buf, int size);
 /**
  * Read as many bytes as possible (up to size), calling the
  * read function multiple times if necessary.
- * Will also retry if the read function returns AVERROR(EAGAIN).
  * This makes special short-read handling in applications
  * unnecessary, if the return value is < size then it is
  * certain there was either an error or the end of file was reached.
@@ -365,7 +389,21 @@ void put_le16(ByteIOContext *s, unsigned int val);
 void put_be16(ByteIOContext *s, unsigned int val);
 void put_tag(ByteIOContext *s, const char *tag);
 
-void put_strz(ByteIOContext *s, const char *buf);
+#if FF_API_OLD_AVIO
+attribute_deprecated void put_strz(ByteIOContext *s, const char *buf);
+#endif
+
+/**
+ * Write a NULL-terminated string.
+ * @return number of bytes written.
+ */
+int avio_put_str(ByteIOContext *s, const char *str);
+
+/**
+ * Convert an UTF-8 string to UTF-16LE and write it.
+ * @return number of bytes written.
+ */
+int avio_put_str16le(ByteIOContext *s, const char *str);
 
 /**
  * fseek() equivalent for ByteIOContext.
@@ -443,6 +481,15 @@ unsigned int get_le24(ByteIOContext *s);
 unsigned int get_le32(ByteIOContext *s);
 uint64_t get_le64(ByteIOContext *s);
 unsigned int get_le16(ByteIOContext *s);
+
+/**
+ * Read a UTF-16 string from pb and convert it to UTF-8.
+ * The reading will terminate when either a null or invalid character was
+ * encountered or maxlen bytes have been read.
+ * @return number of bytes read (is always <= maxlen)
+ */
+int avio_get_str16le(ByteIOContext *pb, int maxlen, char *buf, int buflen);
+int avio_get_str16be(ByteIOContext *pb, int maxlen, char *buf, int buflen);
 
 char *get_strz(ByteIOContext *s, char *buf, int maxlen);
 unsigned int get_be16(ByteIOContext *s);

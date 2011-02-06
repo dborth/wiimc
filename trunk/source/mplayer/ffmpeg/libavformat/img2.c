@@ -23,9 +23,7 @@
 #include "libavutil/intreadwrite.h"
 #include "libavutil/avstring.h"
 #include "avformat.h"
-#ifndef GEKKO
 #include <strings.h>
-#endif
 
 typedef struct {
     int img_first;
@@ -349,7 +347,9 @@ static int write_packet(AVFormatContext *s, AVPacket *pkt)
     if (!img->is_pipe) {
         if (av_get_frame_filename(filename, sizeof(filename),
                                   img->path, img->img_number) < 0 && img->img_number>1) {
-            av_log(s, AV_LOG_ERROR, "Could not get frame filename from pattern\n");
+            av_log(s, AV_LOG_ERROR,
+                   "Could not get frame filename number %d from pattern '%s'\n",
+                   img->img_number, img->path);
             return AVERROR(EIO);
         }
         for(i=0; i<3; i++){
@@ -414,7 +414,7 @@ static int write_packet(AVFormatContext *s, AVPacket *pkt)
 
 /* input */
 #if CONFIG_IMAGE2_DEMUXER
-AVInputFormat image2_demuxer = {
+AVInputFormat ff_image2_demuxer = {
     .name           = "image2",
     .long_name      = NULL_IF_CONFIG_SMALL("image2 sequence"),
     .priv_data_size = sizeof(VideoData),
@@ -425,7 +425,7 @@ AVInputFormat image2_demuxer = {
 };
 #endif
 #if CONFIG_IMAGE2PIPE_DEMUXER
-AVInputFormat image2pipe_demuxer = {
+AVInputFormat ff_image2pipe_demuxer = {
     .name           = "image2pipe",
     .long_name      = NULL_IF_CONFIG_SMALL("piped image2 sequence"),
     .priv_data_size = sizeof(VideoData),
@@ -436,7 +436,7 @@ AVInputFormat image2pipe_demuxer = {
 
 /* output */
 #if CONFIG_IMAGE2_MUXER
-AVOutputFormat image2_muxer = {
+AVOutputFormat ff_image2_muxer = {
     .name           = "image2",
     .long_name      = NULL_IF_CONFIG_SMALL("image2 sequence"),
     .extensions     = "bmp,jpeg,jpg,ljpg,pam,pbm,pcx,pgm,pgmyuv,png,"
@@ -449,7 +449,7 @@ AVOutputFormat image2_muxer = {
 };
 #endif
 #if CONFIG_IMAGE2PIPE_MUXER
-AVOutputFormat image2pipe_muxer = {
+AVOutputFormat ff_image2pipe_muxer = {
     .name           = "image2pipe",
     .long_name      = NULL_IF_CONFIG_SMALL("piped image2 sequence"),
     .priv_data_size = sizeof(VideoData),

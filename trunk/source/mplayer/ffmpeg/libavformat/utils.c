@@ -29,9 +29,7 @@
 #include "audiointerleave.h"
 #include <sys/time.h>
 #include <time.h>
-#ifndef GEKKO
 #include <strings.h>
-#endif
 #include <stdarg.h>
 #if CONFIG_NETWORK
 #include "network.h"
@@ -1372,28 +1370,30 @@ void ff_reduce_index(AVFormatContext *s, int stream_index)
     }
 }
 
-int av_add_index_entry(AVStream *st,
-                            int64_t pos, int64_t timestamp, int size, int distance, int flags)
+int ff_add_index_entry(AVIndexEntry **index_entries,
+                       int *nb_index_entries,
+                       unsigned int *index_entries_allocated_size,
+                       int64_t pos, int64_t timestamp, int size, int distance, int flags)
 {
     AVIndexEntry *entries, *ie;
     int index;
 
-    if((unsigned)st->nb_index_entries + 1 >= UINT_MAX / sizeof(AVIndexEntry))
+    if((unsigned)*nb_index_entries + 1 >= UINT_MAX / sizeof(AVIndexEntry))
         return -1;
 
-    entries = av_fast_realloc(st->index_entries,
-                              &st->index_entries_allocated_size,
-                              (st->nb_index_entries + 1) *
+    entries = av_fast_realloc(*index_entries,
+                              index_entries_allocated_size,
+                              (*nb_index_entries + 1) *
                               sizeof(AVIndexEntry));
     if(!entries)
         return -1;
 
-    st->index_entries= entries;
+    *index_entries= entries;
 
-    index= av_index_search_timestamp(st, timestamp, AVSEEK_FLAG_ANY);
+    index= ff_index_search_timestamp(*index_entries, *nb_index_entries, timestamp, AVSEEK_FLAG_ANY);
 
     if(index<0){
-        index= st->nb_index_entries++;
+        index= (*nb_index_entries)++;
         ie= &entries[index];
         assert(index==0 || ie[-1].timestamp < timestamp);
     }else{
@@ -1401,8 +1401,8 @@ int av_add_index_entry(AVStream *st,
         if(ie->timestamp != timestamp){
             if(ie->timestamp <= timestamp)
                 return -1;
-            memmove(entries + index + 1, entries + index, sizeof(AVIndexEntry)*(st->nb_index_entries - index));
-            st->nb_index_entries++;
+            memmove(entries + index + 1, entries + index, sizeof(AVIndexEntry)*(*nb_index_entries - index));
+            (*nb_index_entries)++;
         }else if(ie->pos == pos && distance < ie->min_distance) //do not reduce the distance
             distance= ie->min_distance;
     }
@@ -1416,11 +1416,17 @@ int av_add_index_entry(AVStream *st,
     return index;
 }
 
-int av_index_search_timestamp(AVStream *st, int64_t wanted_timestamp,
-                              int flags)
+int av_add_index_entry(AVStream *st,
+                       int64_t pos, int64_t timestamp, int size, int distance, int flags)
 {
-    AVIndexEntry *entries= st->index_entries;
-    int nb_entries= st->nb_index_entries;
+    return ff_add_index_entry(&st->index_entries, &st->nb_index_entries,
+                              &st->index_entries_allocated_size, pos,
+                              timestamp, size, distance, flags);
+}
+
+int ff_index_search_timestamp(const AVIndexEntry *entries, int nb_entries,
+                              int64_t wanted_timestamp, int flags)
+{
     int a, b, m;
     int64_t timestamp;
 
@@ -1450,6 +1456,13 @@ int av_index_search_timestamp(AVStream *st, int64_t wanted_timestamp,
     if(m == nb_entries)
         return -1;
     return  m;
+}
+
+int av_index_search_timestamp(AVStream *st, int64_t wanted_timestamp,
+                              int flags)
+{
+    return ff_index_search_timestamp(st->index_entries, st->nb_index_entries,
+                                     wanted_timestamp, flags);
 }
 
 #define DEBUG_SEEK
@@ -2543,12 +2556,17 @@ int av_read_pause(AVFormatContext *s)
 
 void av_close_input_stream(AVFormatContext *s)
 {
-    int i;
-    AVStream *st;
-
     flush_packet_queue(s);
     if (s->iformat->read_close)
         s->iformat->read_close(s);
+    avformat_free_context(s);
+}
+
+void avformat_free_context(AVFormatContext *s)
+{
+    int i;
+    AVStream *st;
+
     for(i=0;i<s->nb_streams;i++) {
         /* free all data in a stream component */
         st = s->streams[i];
@@ -3002,7 +3020,7 @@ next_non_null:
     *next_point= this_pktl;
 }
 
-int ff_interleave_compare_dts(AVFormatContext *s, AVPacket *next, AVPacket *pkt)
+static int ff_interleave_compare_dts(AVFormatContext *s, AVPacket *next, AVPacket *pkt)
 {
     AVStream *st = s->streams[ pkt ->stream_index];
     AVStream *st2= s->streams[ next->stream_index];

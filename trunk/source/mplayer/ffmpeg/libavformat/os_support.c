@@ -245,9 +245,8 @@ int ff_socket_nonblock(int socket, int enable)
       return fcntl(socket, F_SETFL, fcntl(socket, F_GETFL) & ~O_NONBLOCK);
 #endif
 }
-#endif /* CONFIG_NETWORK */
 
-#if CONFIG_FFSERVER
+#ifndef GEKKO
 #if !HAVE_POLL_H
 int poll(struct pollfd *fds, nfds_t numfds, int timeout)
 {
@@ -316,5 +315,5 @@ int poll(struct pollfd *fds, nfds_t numfds, int timeout)
     return rc;
 }
 #endif /* HAVE_POLL_H */
-#endif /* CONFIG_FFSERVER */
-
+#endif /* GEKKO */
+#endif /* CONFIG_NETWORK */

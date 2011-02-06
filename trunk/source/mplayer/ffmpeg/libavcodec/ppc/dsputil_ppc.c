@@ -23,7 +23,9 @@
 #include "libavutil/cpu.h"
 #include "libavcodec/dsputil.h"
 #include "dsputil_altivec.h"
+#ifdef GEKKO
 #include "dsputil_paired.h"
+#endif
 
 /* ***** WARNING ***** WARNING ***** WARNING ***** */
 /*
@@ -139,7 +141,7 @@ static long check_dcbzl_effect(void)
 #else
 static long check_dcbzl_effect(void)
 {
-  return 32;
+  return 0;
 }
 #endif
 

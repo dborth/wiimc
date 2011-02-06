@@ -2,10 +2,12 @@
 
 @settitle FFprobe Documentation
 @titlepage
-@sp 7
 @center @titlefont{FFprobe Documentation}
-@sp 3
 @end titlepage
+
+@top
+
+@contents
 
 @chapter Synopsis
 
@@ -110,6 +112,7 @@ with name "STREAM".
 @c man end
 
 @include demuxers.texi
+@include muxers.texi
 @include protocols.texi
 @include indevs.texi
 

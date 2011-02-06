@@ -35,7 +35,7 @@ static void get_pixels_mmx(DCTELEM *block, const uint8_t *pixels, int line_size)
     __asm__ volatile(
         "mov $-128, %%"REG_a"           \n\t"
         "pxor %%mm7, %%mm7              \n\t"
-        ASMALIGN(4)
+        ".p2align 4                     \n\t"
         "1:                             \n\t"
         "movq (%0), %%mm0               \n\t"
         "movq (%0, %2), %%mm2           \n\t"
@@ -97,7 +97,7 @@ static inline void diff_pixels_mmx(DCTELEM *block, const uint8_t *s1, const uint
     __asm__ volatile(
         "pxor %%mm7, %%mm7              \n\t"
         "mov $-128, %%"REG_a"           \n\t"
-        ASMALIGN(4)
+        ".p2align 4                     \n\t"
         "1:                             \n\t"
         "movq (%0), %%mm0               \n\t"
         "movq (%1), %%mm2               \n\t"
@@ -1164,10 +1164,6 @@ void dsputilenc_init_mmx(DSPContext* c, AVCodecContext *avctx)
             c->hadamard8_diff[0]= ff_hadamard8_diff16_sse2;
             c->hadamard8_diff[1]= ff_hadamard8_diff_sse2;
 #endif
-        }
-
-        if (CONFIG_LPC && mm_flags & (AV_CPU_FLAG_SSE2|AV_CPU_FLAG_SSE2SLOW)) {
-            c->lpc_compute_autocorr = ff_lpc_compute_autocorr_sse2;
         }
 
 #if HAVE_SSSE3

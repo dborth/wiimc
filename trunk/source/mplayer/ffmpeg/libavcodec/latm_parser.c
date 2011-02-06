@@ -23,12 +23,7 @@
  * AAC LATM parser
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <sys/types.h>
-
+#include <stdint.h>
 #include "parser.h"
 
 #define LATM_HEADER     0x56e000        // 0x2b7 (11 bits)
@@ -110,7 +105,7 @@ static int latm_parse(AVCodecParserContext *s1, AVCodecContext *avctx,
     return next;
 }
 
-AVCodecParser aac_latm_parser = {
+AVCodecParser ff_aac_latm_parser = {
     { CODEC_ID_AAC_LATM },
     sizeof(LATMParseContext),
     NULL,

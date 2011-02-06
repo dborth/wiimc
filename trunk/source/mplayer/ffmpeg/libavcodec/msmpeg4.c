@@ -1797,12 +1797,7 @@ int ff_msmpeg4_decode_block(MpegEncContext * s, DCTELEM * block,
 #endif
                 } else {
                     /* second escape */
-#if MIN_CACHE_BITS < 23
-                    LAST_SKIP_BITS(re, &s->gb, 2);
-                    UPDATE_CACHE(re, &s->gb);
-#else
                     SKIP_BITS(re, &s->gb, 2);
-#endif
                     GET_RL_VLC(level, run, re, &s->gb, rl_vlc, TEX_VLC_BITS, 2, 1);
                     i+= run + rl->max_run[run>>7][level/qmul] + run_diff; //FIXME opt indexing
                     level = (level ^ SHOW_SBITS(re, &s->gb, 1)) - SHOW_SBITS(re, &s->gb, 1);
@@ -1816,12 +1811,7 @@ int ff_msmpeg4_decode_block(MpegEncContext * s, DCTELEM * block,
                 }
             } else {
                 /* first escape */
-#if MIN_CACHE_BITS < 22
-                LAST_SKIP_BITS(re, &s->gb, 1);
-                UPDATE_CACHE(re, &s->gb);
-#else
                 SKIP_BITS(re, &s->gb, 1);
-#endif
                 GET_RL_VLC(level, run, re, &s->gb, rl_vlc, TEX_VLC_BITS, 2, 1);
                 i+= run;
                 level = level + rl->max_level[run>>7][(run-1)&63] * qmul;//FIXME opt indexing
@@ -1918,7 +1908,7 @@ int ff_msmpeg4_decode_motion(MpegEncContext * s,
     return 0;
 }
 
-AVCodec msmpeg4v1_decoder = {
+AVCodec ff_msmpeg4v1_decoder = {
     "msmpeg4v1",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MSMPEG4V1,
@@ -1933,7 +1923,7 @@ AVCodec msmpeg4v1_decoder = {
     .pix_fmts= ff_pixfmt_list_420,
 };
 
-AVCodec msmpeg4v2_decoder = {
+AVCodec ff_msmpeg4v2_decoder = {
     "msmpeg4v2",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MSMPEG4V2,
@@ -1948,7 +1938,7 @@ AVCodec msmpeg4v2_decoder = {
     .pix_fmts= ff_pixfmt_list_420,
 };
 
-AVCodec msmpeg4v3_decoder = {
+AVCodec ff_msmpeg4v3_decoder = {
     "msmpeg4",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MSMPEG4V3,
@@ -1963,7 +1953,7 @@ AVCodec msmpeg4v3_decoder = {
     .pix_fmts= ff_pixfmt_list_420,
 };
 
-AVCodec wmv1_decoder = {
+AVCodec ff_wmv1_decoder = {
     "wmv1",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_WMV1,

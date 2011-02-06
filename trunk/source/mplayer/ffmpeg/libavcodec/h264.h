@@ -209,6 +209,7 @@ typedef struct SPS{
     int bit_depth_luma;                ///< bit_depth_luma_minus8 + 8
     int bit_depth_chroma;              ///< bit_depth_chroma_minus8 + 8
     int residual_color_transform_flag; ///< residual_colour_transform_flag
+    int constraint_set_flags;          ///< constraint_set[0-3]_flag
 }SPS;
 
 /**
@@ -407,7 +408,6 @@ typedef struct H264Context{
 
     DECLARE_ALIGNED(16, DCTELEM, mb)[16*24];
     DECLARE_ALIGNED(16, DCTELEM, mb_luma_dc)[16];
-    DECLARE_ALIGNED(16, DCTELEM, mb_chroma_dc)[2][4];
     DCTELEM mb_padding[256];        ///< as mb is addressed by scantable[i] and scantable is uint8_t we can either check that i is not too large or ensure that there is some unused stuff after mb
 
     /**
@@ -613,6 +613,11 @@ int ff_h264_decode_sei(H264Context *h);
 int ff_h264_decode_seq_parameter_set(H264Context *h);
 
 /**
+ * compute profile from sps
+ */
+int ff_h264_get_profile(SPS *sps);
+
+/**
  * Decode PPS
  */
 int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length);
@@ -625,12 +630,6 @@ int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length);
  * @return decoded bytes, might be src+1 if no escapes
  */
 const uint8_t *ff_h264_decode_nal(H264Context *h, const uint8_t *src, int *dst_length, int *consumed, int length);
-
-/**
- * Identify the exact end of the bitstream
- * @return the length of the trailing, or 0 if damaged
- */
-int ff_h264_decode_rbsp_trailing(H264Context *h, const uint8_t *src);
 
 /**
  * Free any data that may have been allocated in the H264 context like SPS, PPS etc.

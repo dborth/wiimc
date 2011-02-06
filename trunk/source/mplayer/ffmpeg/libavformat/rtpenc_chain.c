@@ -50,11 +50,7 @@ AVFormatContext *ff_rtp_chain_mux_open(AVFormatContext *s, AVStream *st,
     /* Set the synchronized start time. */
     rtpctx->start_time_realtime = s->start_time_realtime;
 
-    /* Remove the local codec, link to the original codec
-     * context instead, to give the rtp muxer access to
-     * codec parameters. */
-    av_free(rtpctx->streams[0]->codec);
-    rtpctx->streams[0]->codec = st->codec;
+    avcodec_copy_context(rtpctx->streams[0]->codec, st->codec);
 
     if (handle) {
         url_fdopen(&rtpctx->pb, handle);
@@ -70,13 +66,10 @@ AVFormatContext *ff_rtp_chain_mux_open(AVFormatContext *s, AVStream *st,
             url_close_dyn_buf(rtpctx->pb, &ptr);
             av_free(ptr);
         }
-        av_free(rtpctx->streams[0]);
-        av_free(rtpctx);
+        avformat_free_context(rtpctx);
         return NULL;
     }
 
-    /* Copy the RTP AVStream timebase back to the original AVStream */
-    st->time_base = rtpctx->streams[0]->time_base;
     return rtpctx;
 }
 

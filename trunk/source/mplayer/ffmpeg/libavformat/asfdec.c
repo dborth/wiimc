@@ -57,7 +57,7 @@ int ff_guidcmp(const void *g1, const void *g2)
 #ifdef DEBUG
 #define PRINT_IF_GUID(g,cmp) \
 if (!ff_guidcmp(g, &cmp)) \
-    dprintf(NULL, "(GUID: %s) ", #cmp)
+    av_dlog(NULL, "(GUID: %s) ", #cmp)
 
 static void print_guid(const ff_asf_guid *g)
 {
@@ -87,10 +87,10 @@ static void print_guid(const ff_asf_guid *g)
     else PRINT_IF_GUID(g, stream_bitrate_guid);
     else PRINT_IF_GUID(g, ff_asf_language_guid);
     else
-        dprintf(NULL, "(GUID: unknown) ");
+        av_dlog(NULL, "(GUID: unknown) ");
     for(i=0;i<16;i++)
-        dprintf(NULL, " 0x%02x,", (*g)[i]);
-    dprintf(NULL, "}\n");
+        av_dlog(NULL, " 0x%02x,", (*g)[i]);
+    av_dlog(NULL, "}\n");
 }
 #undef PRINT_IF_GUID
 #else
@@ -101,39 +101,6 @@ void ff_get_guid(ByteIOContext *s, ff_asf_guid *g)
 {
     assert(sizeof(*g) == 16);
     get_buffer(s, *g, sizeof(*g));
-}
-
-#if 0
-static void get_str16(ByteIOContext *pb, char *buf, int buf_size)
-{
-    int len, c;
-    char *q;
-
-    len = get_le16(pb);
-    q = buf;
-    while (len > 0) {
-        c = get_le16(pb);
-        if ((q - buf) < buf_size - 1)
-            *q++ = c;
-        len--;
-    }
-    *q = '\0';
-}
-#endif
-
-static void get_str16_nolen(ByteIOContext *pb, int len, char *buf, int buf_size)
-{
-    char* q = buf;
-    while (len > 1) {
-        uint8_t tmp;
-        uint32_t ch;
-
-        GET_UTF16(ch, (len -= 2) >= 0 ? get_le16(pb) : 0, break;)
-        PUT_UTF8(ch, tmp, if (q - buf < buf_size - 1) *q++ = tmp;)
-    }
-    if (len > 0)
-        url_fskip(pb, len);
-    *q = '\0';
 }
 
 static int asf_probe(AVProbeData *pd)
@@ -158,27 +125,28 @@ static int get_value(ByteIOContext *pb, int type){
 static void get_tag(AVFormatContext *s, const char *key, int type, int len)
 {
     char *value;
+    int64_t off = url_ftell(s->pb);
 
     if ((unsigned)len >= (UINT_MAX - 1)/2)
         return;
 
     value = av_malloc(2*len+1);
     if (!value)
-        return;
+        goto finish;
 
     if (type == 0) {         // UTF16-LE
-        get_str16_nolen(s->pb, len, value, 2*len + 1);
+        avio_get_str16le(s->pb, len, value, 2*len + 1);
     } else if (type > 1 && type <= 5) {  // boolean or DWORD or QWORD or WORD
         uint64_t num = get_value(s->pb, type);
         snprintf(value, len, "%"PRIu64, num);
     } else {
-        url_fskip(s->pb, len);
-        av_freep(&value);
         av_log(s, AV_LOG_DEBUG, "Unsupported value type %d in tag %s.\n", type, key);
-        return;
+        goto finish;
     }
     av_metadata_set2(&s->metadata, key, value, 0);
+finish:
     av_freep(&value);
+    url_fseek(s->pb, off + len, SEEK_SET);
 }
 
 static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
@@ -206,11 +174,12 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
     memset(&asf->asfid2avid, -1, sizeof(asf->asfid2avid));
     for(;;) {
         uint64_t gpos= url_ftell(pb);
+        int ret;
         ff_get_guid(pb, &g);
         gsize = get_le64(pb);
-        dprintf(s, "%08"PRIx64": ", gpos);
+        av_dlog(s, "%08"PRIx64": ", gpos);
         print_guid(&g);
-        dprintf(s, "  size=0x%"PRIx64"\n", gsize);
+        av_dlog(s, "  size=0x%"PRIx64"\n", gsize);
         if (!ff_guidcmp(&g, &ff_asf_data_header)) {
             asf->data_object_offset = url_ftell(pb);
             // if not streaming, gsize is not unlimited (how?), and there is enough space in the file..
@@ -447,7 +416,8 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             for(j = 0; j < stream_count; j++) {
                 char lang[6];
                 unsigned int lang_len = get_byte(pb);
-                get_str16_nolen(pb, lang_len, lang, sizeof(lang));
+                if ((ret = avio_get_str16le(pb, lang_len, lang, sizeof(lang))) < lang_len)
+                    url_fskip(pb, lang_len - ret);
                 if (j < 128)
                     av_strlcpy(asf->stream_languages[j], lang, sizeof(*asf->stream_languages));
             }
@@ -462,7 +432,8 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                     name_len = get_le16(pb);
                     if (name_len%2)     // must be even, broken lavf versions wrote len-1
                         name_len += 1;
-                    get_str16_nolen(pb, name_len, name, sizeof(name));
+                    if ((ret = avio_get_str16le(pb, name_len, name, sizeof(name))) < name_len)
+                        url_fskip(pb, name_len - ret);
                     value_type = get_le16(pb);
                     value_len  = get_le16(pb);
                     if (!value_type && value_len%2)
@@ -491,7 +462,8 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 value_type= get_le16(pb);
                 value_len=  get_le32(pb);
 
-                get_str16_nolen(pb, name_len, name, sizeof(name));
+                if ((ret = avio_get_str16le(pb, name_len, name, sizeof(name))) < name_len)
+                    url_fskip(pb, name_len - ret);
 //av_log(s, AV_LOG_ERROR, "%d %d %d %d %d <%s>\n", i, stream_num, name_len, value_type, value_len, name);
                 value_num= get_le16(pb);//we should use get_value() here but it does not work 2 is le16 here but le32 elsewhere
                 url_fskip(pb, value_len - 2);
@@ -574,34 +546,10 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 get_le32(pb);             // send time
                 get_le32(pb);             // flags
                 name_len = get_le32(pb);  // name length
-                get_str16_nolen(pb, name_len * 2, name, sizeof(name));
+                if ((ret = avio_get_str16le(pb, name_len * 2, name, sizeof(name))) < name_len)
+                    url_fskip(pb, name_len - ret);
                 ff_new_chapter(s, i, (AVRational){1, 10000000}, pres_time, AV_NOPTS_VALUE, name );
             }
-#if 0
-        } else if (!ff_guidcmp(&g, &ff_asf_codec_comment_header)) {
-            int len, v1, n, num;
-            char str[256], *q;
-            char tag[16];
-
-            ff_get_guid(pb, &g);
-            print_guid(&g);
-
-            n = get_le32(pb);
-            for(i=0;i<n;i++) {
-                num = get_le16(pb); /* stream number */
-                get_str16(pb, str, sizeof(str));
-                get_str16(pb, str, sizeof(str));
-                len = get_le16(pb);
-                q = tag;
-                while (len > 0) {
-                    v1 = get_byte(pb);
-                    if ((q - tag) < sizeof(tag) - 1)
-                        *q++ = v1;
-                    len--;
-                }
-                *q = '\0';
-            }
-#endif
         } else if (url_feof(pb)) {
             return -1;
         } else {
@@ -756,7 +704,7 @@ static int ff_asf_get_packet(AVFormatContext *s, ByteIOContext *pb)
     if (packet_length < asf->hdr.min_pktsize)
         padsize += asf->hdr.min_pktsize - packet_length;
     asf->packet_padsize = padsize;
-    dprintf(s, "packet: size=%d padsize=%d  left=%d\n", s->packet_size, asf->packet_padsize, asf->packet_size_left);
+    av_dlog(s, "packet: size=%d padsize=%d  left=%d\n", s->packet_size, asf->packet_padsize, asf->packet_size_left);
     return 0;
 }
 
@@ -1256,7 +1204,7 @@ static int asf_read_seek(AVFormatContext *s, int stream_index, int64_t pts, int 
     return 0;
 }
 
-AVInputFormat asf_demuxer = {
+AVInputFormat ff_asf_demuxer = {
     "asf",
     NULL_IF_CONFIG_SMALL("ASF format"),
     sizeof(ASFContext),

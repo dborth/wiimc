@@ -122,7 +122,7 @@ static av_cold int MPA_encode_init(AVCodecContext *avctx)
     s->sblimit = ff_mpa_sblimit_table[table];
     s->alloc_table = ff_mpa_alloc_tables[table];
 
-    dprintf(avctx, "%d kb/s, %d Hz, frame_size=%d bits, table=%d, padincr=%x\n",
+    av_dlog(avctx, "%d kb/s, %d Hz, frame_size=%d bits, table=%d, padincr=%x\n",
             bitrate, freq, s->frame_size, table, s->frame_frac_incr);
 
     for(i=0;i<s->nb_channels;i++)
@@ -783,7 +783,7 @@ static av_cold int MPA_encode_close(AVCodecContext *avctx)
     return 0;
 }
 
-AVCodec mp2_encoder = {
+AVCodec ff_mp2_encoder = {
     "mp2",
     AVMEDIA_TYPE_AUDIO,
     CODEC_ID_MP2,

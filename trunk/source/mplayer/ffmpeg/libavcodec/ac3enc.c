@@ -161,7 +161,7 @@ static av_cold int mdct_init(AVCodecContext *avctx, AC3MDCTContext *mdct,
 
 static void mdct512(AC3MDCTContext *mdct, CoefType *out, SampleType *in);
 
-static void apply_window(SampleType *output, const SampleType *input,
+static void apply_window(DSPContext *dsp, SampleType *output, const SampleType *input,
                          const SampleType *window, int n);
 
 static int normalize_samples(AC3EncodeContext *s);
@@ -262,7 +262,7 @@ static void apply_mdct(AC3EncodeContext *s)
             AC3Block *block = &s->blocks[blk];
             const SampleType *input_samples = &s->planar_samples[ch][blk * AC3_BLOCK_SIZE];
 
-            apply_window(s->windowed_samples, input_samples, s->mdct.window, AC3_WINDOW_SIZE);
+            apply_window(&s->dsp, s->windowed_samples, input_samples, s->mdct.window, AC3_WINDOW_SIZE);
 
             block->exp_shift[ch] = normalize_samples(s);
 
@@ -434,7 +434,7 @@ static void extract_exponents(AC3EncodeContext *s)
  * Exponent Difference Threshold.
  * New exponents are sent if their SAD exceed this number.
  */
-#define EXP_DIFF_THRESHOLD 1000
+#define EXP_DIFF_THRESHOLD 500
 
 
 /**
@@ -1815,7 +1815,7 @@ static av_cold int ac3_encode_init(AVCodecContext *avctx)
 
     avctx->frame_size = AC3_FRAME_SIZE;
 
-    ac3_common_init();
+    ff_ac3_common_init();
 
     ret = validate_options(avctx, s);
     if (ret)

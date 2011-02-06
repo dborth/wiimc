@@ -646,7 +646,6 @@ static void imdct_and_window(TwinContext *tctx, enum FrameType ftype, int wtype,
                                      prev_buf + (bsize-wsize)/2,
                                      buf1 + bsize*j,
                                      ff_sine_windows[av_log2(wsize)],
-                                     0.0,
                                      wsize/2);
         out2 += wsize;
 
@@ -783,7 +782,7 @@ static void read_and_decode_spectrum(TwinContext *tctx, GetBitContext *gb,
             dec_bark_env(tctx, bark1[i][j], bark_use_hist[i][j], i,
                          tctx->tmp_buf, gain[sub*i+j], ftype);
 
-            tctx->dsp.vector_fmul(chunk + block_size*j, tctx->tmp_buf,
+            tctx->dsp.vector_fmul(chunk + block_size*j, chunk + block_size*j, tctx->tmp_buf,
                                   block_size);
 
         }
@@ -805,7 +804,7 @@ static void read_and_decode_spectrum(TwinContext *tctx, GetBitContext *gb,
         dec_lpc_spectrum_inv(tctx, lsp, ftype, tctx->tmp_buf);
 
         for (j = 0; j < mtab->fmode[ftype].sub; j++) {
-            tctx->dsp.vector_fmul(chunk, tctx->tmp_buf, block_size);
+            tctx->dsp.vector_fmul(chunk, chunk, tctx->tmp_buf, block_size);
             chunk += block_size;
         }
     }
@@ -1119,7 +1118,7 @@ static av_cold int twin_decode_close(AVCodecContext *avctx)
     return 0;
 }
 
-AVCodec twinvq_decoder =
+AVCodec ff_twinvq_decoder =
 {
     "twinvq",
     AVMEDIA_TYPE_AUDIO,

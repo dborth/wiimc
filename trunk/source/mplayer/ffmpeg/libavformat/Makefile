@@ -3,7 +3,7 @@ include $(SUBDIR)../config.mak
 NAME = avformat
 FFLIBS = avcodec avcore avutil
 
-HEADERS = avformat.h avio.h
+HEADERS = avformat.h avio.h version.h
 
 OBJS = allformats.o         \
        cutils.o             \
@@ -109,6 +109,7 @@ OBJS-$(CONFIG_IPMOVIE_DEMUXER)           += ipmovie.o
 OBJS-$(CONFIG_ISS_DEMUXER)               += iss.o
 OBJS-$(CONFIG_IV8_DEMUXER)               += iv8.o
 OBJS-$(CONFIG_IVF_DEMUXER)               += ivfdec.o riff.o
+OBJS-$(CONFIG_IVF_MUXER)                 += ivfenc.o
 OBJS-$(CONFIG_LMLM4_DEMUXER)             += lmlm4.o
 OBJS-$(CONFIG_LXF_DEMUXER)               += lxfdec.o
 OBJS-$(CONFIG_M4V_DEMUXER)               += m4vdec.o rawdec.o
@@ -127,10 +128,11 @@ OBJS-$(CONFIG_MM_DEMUXER)                += mm.o
 OBJS-$(CONFIG_MMF_DEMUXER)               += mmf.o pcm.o
 OBJS-$(CONFIG_MMF_MUXER)                 += mmf.o riff.o
 OBJS-$(CONFIG_MOV_DEMUXER)               += mov.o riff.o isom.o
-OBJS-$(CONFIG_MOV_MUXER)                 += movenc.o riff.o isom.o avc.o movenchint.o
-OBJS-$(CONFIG_MP2_MUXER)                 += mp3.o
-OBJS-$(CONFIG_MP3_DEMUXER)               += mp3.o
-OBJS-$(CONFIG_MP3_MUXER)                 += mp3.o
+OBJS-$(CONFIG_MOV_MUXER)                 += movenc.o riff.o isom.o avc.o \
+                                            movenchint.o rtpenc_chain.o
+OBJS-$(CONFIG_MP2_MUXER)                 += mp3enc.o
+OBJS-$(CONFIG_MP3_DEMUXER)               += mp3dec.o
+OBJS-$(CONFIG_MP3_MUXER)                 += mp3enc.o
 OBJS-$(CONFIG_MPC_DEMUXER)               += mpc.o apetag.o
 OBJS-$(CONFIG_MPC8_DEMUXER)              += mpc8.o
 OBJS-$(CONFIG_MPEG1SYSTEM_MUXER)         += mpegenc.o

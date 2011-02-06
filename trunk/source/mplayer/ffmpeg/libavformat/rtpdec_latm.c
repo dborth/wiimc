@@ -23,9 +23,7 @@
 #include "internal.h"
 #include "libavutil/avstring.h"
 #include "libavcodec/get_bits.h"
-#ifndef GEKKO
 #include <strings.h>
-#endif
 
 struct PayloadContext {
     ByteIOContext *dyn_buf;

@@ -723,6 +723,7 @@ static void *GuiThread (void *arg)
 			}
 			guiShutdown = true;
 			guiHalt = 1;
+			ActivateExitThread();
 			SaveFolder();
 		}
 		usleep(THREAD_SLEEP);

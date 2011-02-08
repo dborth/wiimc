@@ -61,6 +61,11 @@ static lwp_t cthread = LWP_THREAD_NULL;
 static u8 *mplayerstack;
 static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
 
+#define EXIT_STACKSIZE (8*1024)
+static lwp_t ethread = LWP_THREAD_NULL;
+static u8 exitstack[EXIT_STACKSIZE] ATTRIBUTE_ALIGN (32);
+
+
 /****************************************************************************
  * Shutdown / Reboot / Exit
  ***************************************************************************/
@@ -93,21 +98,51 @@ void CheckSleepTimer()
 	}
 }
 
+void *exitthread(void *arg)
+{
+	sleep(6);
+
+	StopGX();
+
+	AUDIO_StopDMA();
+	AUDIO_RegisterDMACallback(NULL);
+
+	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
+		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
+	else if(WiiSettings.exitAction == EXIT_WIIMENU)
+		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
+
+	exit(0);
+
+	return NULL;
+}
+
+void ActivateExitThread()
+{
+	if(ethread == LWP_THREAD_NULL)
+		LWP_CreateThread (&ethread, exitthread, NULL, exitstack, EXIT_STACKSIZE, 40);
+}
+
+	
 static void ShutdownCB()
 {
-	if(controlledbygui != 1 && menuMode == 0)
-		return;
+//	if(controlledbygui != 1 && menuMode == 0)
+//		return;
 
 	ExitRequested = true;
 	ShutdownRequested = true;
+
+	ActivateExitThread();
 }
 
 static void ResetCB()
 {
-	if(controlledbygui != 1 && menuMode == 0)
-		return;
+//	if(controlledbygui != 1 && menuMode == 0)
+//		return;
 
 	ExitRequested = true;
+
+	ActivateExitThread();
 }
 
 /****************************************************************************
@@ -534,6 +569,7 @@ void SetMPlayerSettings()
 }
 }
 
+
 /****************************************************************************
  * Main
  ***************************************************************************/	
@@ -551,7 +587,7 @@ int main(int argc, char *argv[])
 			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
 			(sizeof(char)*(NAME_MAX+1)*MAX_SUBS_SIZE) +
-			(1024); // padding
+			(32*1024); // padding
 	AddMem2Area (size, VIDEO_AREA);
 	AddMem2Area (6*1024*1024, GUI_AREA);
 	AddMem2Area (3*1024*1024, OTHER_AREA); // vars + ttf
@@ -580,6 +616,8 @@ int main(int argc, char *argv[])
 
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
+
+ 	
  
 	// create GUI thread
 
@@ -594,13 +632,14 @@ int main(int argc, char *argv[])
 		ShowAreaInfo(OTHER_AREA);
 		MPlayerMenu();
 	}
-
+	
  	// application exiting
 	StopGX();
 	UnmountAllDevices();
 
 	AUDIO_StopDMA();
 	AUDIO_RegisterDMACallback(NULL);
+
 
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);

@@ -465,7 +465,7 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 
 			name = (char *)ntfsGetVolumeName(mount);
 
-			if(name)
+			if(name && name[0])
 				strcpy(part[device][*devnum].name, name);
 			else
 				part[device][*devnum].name[0] = 0;
@@ -476,7 +476,7 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 
 			name = (char *)ext2GetVolumeName(mount);
 
-			if(name)
+			if(name && name[0])
 				strcpy(part[device][*devnum].name, name);
 			else
 				part[device][*devnum].name[0] = 0;
@@ -484,7 +484,13 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 		case T_ISO9660:
 			if (!ISO9660_Mount(mount, disc))
 				return;
-			strcpy(part[device][*devnum].name, "DVD");
+
+			name = (char *)ISO9660_GetVolumeLabel(mount);
+
+			if(name && name[0])
+				strcpy(part[device][*devnum].name, name);
+			else
+				strcpy(part[device][*devnum].name, "DVD");
 			break;
 	}
 
@@ -1015,7 +1021,7 @@ bool WakeupUSB()
 	if(USBStorage_IsDVD())
 		return true;
 
-	char buf[512];
+	char buf[2048];  // 512 should be enough if USBStorage_IsDVD works
 	return usb->readSectors(0, 1, buf);
 }
 }

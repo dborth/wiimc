@@ -101,9 +101,7 @@ void CheckSleepTimer()
 void *exitthread(void *arg)
 {
 	sleep(6);
-
 	StopGX();
-
 	AUDIO_StopDMA();
 	AUDIO_RegisterDMACallback(NULL);
 
@@ -113,7 +111,6 @@ void *exitthread(void *arg)
 		SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
 
 	exit(0);
-
 	return NULL;
 }
 
@@ -123,25 +120,16 @@ void ActivateExitThread()
 		LWP_CreateThread (&ethread, exitthread, NULL, exitstack, EXIT_STACKSIZE, 40);
 }
 
-	
 static void ShutdownCB()
 {
-//	if(controlledbygui != 1 && menuMode == 0)
-//		return;
-
 	ExitRequested = true;
 	ShutdownRequested = true;
-
 	ActivateExitThread();
 }
 
 static void ResetCB()
 {
-//	if(controlledbygui != 1 && menuMode == 0)
-//		return;
-
 	ExitRequested = true;
-
 	ActivateExitThread();
 }
 

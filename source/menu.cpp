@@ -709,8 +709,7 @@ static void *GuiThread (void *arg)
 
 		CheckSleepTimer();
 
-		if((userInput[0].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)) && 
-				controlledbygui == 1)
+		if(userInput[0].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME))
 			ExitRequested = true; // exit program
 
 		if(ExitRequested)

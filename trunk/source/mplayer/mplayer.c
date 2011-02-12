@@ -169,9 +169,9 @@ void reinit_audio();
 void load_builtin_codecs();
 static void low_cache_loop(void);
 static float timing_sleep(float time_frame);
-static void delete_restore_point(char *_filename);
-static void save_restore_point(char *_filename);
-static int load_restore_point(char *_filename);
+static void delete_restore_point(char *_filename, char *_partitionlabel);
+static void save_restore_point(char *_filename, char *_partitionlabel);
+static int load_restore_point(char *_filename, char *_partitionlabel);
 static void remove_subtitles();
 static void reload_subtitles();
 
@@ -181,6 +181,8 @@ int wii_error = 0;
 static int pause_low_cache=0;
 
 char fileplaying[MAXPATHLEN];
+static char partitionlabelplaying[50];
+
 static int enable_restore_points=1;
 
 static float online_stream_cache_min_percent=2;
@@ -300,6 +302,7 @@ char* audio_lang=NULL;
 char* dvdsub_lang=NULL;
 static char* spudec_ifo=NULL;
 char* filename=NULL; //"MI2-Trailer.avi";
+char* partitionlabel=NULL;
 int forced_subs_only=0;
 int file_filter=1;
 
@@ -3138,6 +3141,12 @@ if(filename)
   filename = NULL;
 }
 
+if(partitionlabel)
+{
+  free(partitionlabel);
+  partitionlabel = NULL;
+}
+
   if(!FindNextFile(true))
   controlledbygui = 1; // send control back to GUI
 
@@ -3355,7 +3364,9 @@ while (player_idle_mode && !filename) {
   initialized_flags|=INITIALIZED_STREAM;
   
 #ifdef GEKKO
-  strcpy(fileplaying,filename);
+  strcpy(fileplaying, filename);
+  strncpy(partitionlabelplaying, partitionlabel, sizeof(partitionlabelplaying)); 
+  partitionlabel[sizeof(partitionlabelplaying)-1] = '\0';
 #endif
 
 #ifdef CONFIG_GUI
@@ -3823,7 +3834,7 @@ if (mpctx->sh_video)
 	}
 	else if(strncmp(fileplaying,"dvd:",4) != 0 && strncmp(fileplaying,"dvdnav:",7) != 0)
 	{
-		seek_to_sec=load_restore_point(fileplaying)-8;
+		seek_to_sec = load_restore_point(fileplaying, partitionlabelplaying) - 8;
 		if(seek_to_sec < 0 || seek_to_sec+120 > demuxer_get_time_length(mpctx->demuxer))
 			seek_to_sec = 0;
 	}
@@ -4226,7 +4237,7 @@ if(benchmark){
 }
 #ifdef GEKKO
 playing_file=false;
-save_restore_point(fileplaying);
+save_restore_point(fileplaying, partitionlabelplaying);
 DisableVideoImg();
 #endif
 
@@ -4334,12 +4345,26 @@ return 1;
 typedef struct st_restore_points restore_points_t;
 struct st_restore_points {
     char filename[MAXPATHLEN];
+    char partitionlabel[50];
+    bool hasPartitionlabel;
     int position;
 };
 
 restore_points_t restore_points[MAX_RESTORE_POINTS];
 
-static void delete_restore_point(char *_filename)
+static bool match_restore_point(int i, char *_filename, char *_partitionlabel)
+{
+    if (i >= MAX_RESTORE_POINTS)
+        return false;
+    
+    if (strcmp(_filename,restore_points[i].filename)==0 &&
+        (!restore_points[i].hasPartitionlabel || strcmp(_partitionlabel,restore_points[i].partitionlabel)==0) )
+        return true;
+    else
+        return false;
+}
+
+static void delete_restore_point(char *_filename, char *_partitionlabel)
 {
 	int i;
 	if(!enable_restore_points)
@@ -4350,15 +4375,17 @@ static void delete_restore_point(char *_filename)
 		if(restore_points[i].filename[0] == '\0')
 			continue;
 
-		if(strcmp(_filename,restore_points[i].filename) == 0)
+		if(match_restore_point(i, _filename, _partitionlabel))
 		{
 			restore_points[i].position=0;
 			restore_points[i].filename[0]='\0';
+			restore_points[i].partitionlabel[0]='\0';
+			restore_points[i].hasPartitionlabel=false;
 		}
 	}
 }
 
-static void save_restore_point(char *_filename)
+static void save_restore_point(char *_filename, char *_partitionlabel)
 {
 	int i;
 
@@ -4378,16 +4405,18 @@ static void save_restore_point(char *_filename)
 
 	if(position <= 8 || !( mpctx->demuxer->seekable))
 	{
-		delete_restore_point(_filename);
+		delete_restore_point(_filename, _partitionlabel);
 		return;
 	}
 
 	for(i=0;i<MAX_RESTORE_POINTS;i++)
 	{
-		if(restore_points[i].filename[0] == '\0' || strcmp(_filename,restore_points[i].filename) == 0)
+		if(restore_points[i].filename[0] == '\0' || match_restore_point(i, _filename, _partitionlabel))
 		{
 			restore_points[i].position=position;
 			strcpy(restore_points[i].filename,_filename);
+			strcpy(restore_points[i].partitionlabel,_partitionlabel);
+			restore_points[i].hasPartitionlabel=true;
 			return;
 		}
 	}
@@ -4396,13 +4425,17 @@ static void save_restore_point(char *_filename)
 	for(i=0; i<MAX_RESTORE_POINTS-1; i++)
 	{
 		strcpy(restore_points[i].filename,restore_points[i+1].filename);
+		strcpy(restore_points[i].partitionlabel,restore_points[i+1].partitionlabel);
 		restore_points[i].position=restore_points[i+1].position;
+		restore_points[i].hasPartitionlabel=restore_points[i+1].hasPartitionlabel;
 	}
-	restore_points[MAX_RESTORE_POINTS-1].position=position;
-	strcpy(restore_points[MAX_RESTORE_POINTS-1].filename,_filename);
+	restore_points[i].position=position;
+	strcpy(restore_points[i].filename,_filename);
+	strcpy(restore_points[i].partitionlabel,_partitionlabel);
+	restore_points[i].hasPartitionlabel=true;
 }
 
-static int load_restore_point(char *_filename)
+static int load_restore_point(char *_filename, char *_partitionlabel)
 {
 	int i;
 	if(!enable_restore_points)
@@ -4413,7 +4446,7 @@ static int load_restore_point(char *_filename)
 		if(restore_points[i].filename[0] == '\0')
 			continue;
 
-		if(strcmp(_filename,restore_points[i].filename) == 0)
+		if(match_restore_point(i, _filename, _partitionlabel))
 			return restore_points[i].position;
 	}
 	return 0;
@@ -4508,7 +4541,7 @@ void PauseAndGotoGUI()
 		mpctx->video_out->control(VOCTRL_PAUSE, NULL);
 
 	if(mpctx->sh_video)
-		save_restore_point(fileplaying);
+		save_restore_point(fileplaying, partitionlabelplaying);
 
 	stop_cache_thread = 1;
 	while(!CacheThreadSuspended())
@@ -4654,12 +4687,15 @@ void fast_continue()
  * Wii hooks
  ***************************************************************************/
 
-void wiiLoadFile(char * file)
+void wiiLoadFile(char *_filename, char *_partitionlabel)
 {
 	if(filename)
 		free(filename);
-
-	filename = strdup(file);
+	filename = strdup(_filename);
+	
+	if (partitionlabel)
+	    free(partitionlabel);
+	partitionlabel = (_partitionlabel) ? strdup(_partitionlabel) : strdup("");
 }
 
 void wiiGotoGui()
@@ -5118,25 +5154,31 @@ void wiiSetSubtitleSize(float size)
 	vo_osd_changed(OSDTYPE_SUBTITLE);
 }
 
-bool wiiFindRestorePoint(char *filename)
+bool wiiFindRestorePoint(char *filename, char *partitionlabel)
 {
 	int i;
+	char *aux_partitionlabel;
+	static char szEmptyStr[] = "";
+	
+	aux_partitionlabel = (partitionlabel) ? partitionlabel : szEmptyStr;
 
 	for(i=0; i<MAX_RESTORE_POINTS; i++)
-		if(strcmp(filename, restore_points[i].filename) == 0)
+	    if (match_restore_point(i, filename, aux_partitionlabel))
 			return true;
 	return false;
 }
 
 void wiiLoadRestorePoints(char *buffer, int size)
 {
-	int c, i = 0, lineptr = 0;
-	char *line = NULL;
+	int n, c, i = 0, lineptr = 0, fields;
+	char *line = NULL, *pc;
 
 	for(i=0; i<MAX_RESTORE_POINTS; i++)
 	{
 		restore_points[i].filename[0]='\0';
+		restore_points[i].partitionlabel[0]='\0';
 		restore_points[i].position=0;
+		restore_points[i].hasPartitionlabel=false;
 	}
 
 	i=0;
@@ -5165,7 +5207,37 @@ void wiiLoadRestorePoints(char *buffer, int size)
 			break; // discard anything remaining
 
 		lineptr += c+1;
-		sscanf(line,"%[^\t]%i",restore_points[i].filename,&(restore_points[i].position));
+		
+		pc = line;
+		fields = 1;
+		while (*pc) {
+		    if (*pc == '\t') {
+		        fields++;
+		    }
+		    pc++;
+		}
+		if (fields == 2) {
+		    // "old" format: <filename>\t<position>
+		    n = sscanf(line,"%[^\t]\t%i", restore_points[i].filename, &(restore_points[i].position));
+		    if (n!=2)
+		        continue;
+		    restore_points[i].partitionlabel[0] = '\0';
+		    restore_points[i].hasPartitionlabel = false;
+		} else if (fields == 3) {
+		    // "new" format: <filename>\t<position>\t<partitionlabel>
+    		n = sscanf(line,"%[^\t]\t%i\t%[^\0]", restore_points[i].filename, &(restore_points[i].position), restore_points[i].partitionlabel);
+	    	if (n!=3) {
+	    	    // empty patitionlabel
+		        restore_points[i].partitionlabel[0] = '\0';
+    		    n = sscanf(line,"%[^\t]\t%i\t", restore_points[i].filename, &(restore_points[i].position));
+                if (n!=2)
+    		        continue;
+    		}
+		    restore_points[i].hasPartitionlabel = true;
+		} else {
+		    // malformed restore point
+		    continue;
+		}
 		i++;
 	}
 	if(line) free(line);
@@ -5174,7 +5246,7 @@ void wiiLoadRestorePoints(char *buffer, int size)
 char * wiiSaveRestorePoints(char * path)
 {
 	int i;
-	char tmppath[MAXPATHLEN];
+	char tmppath[MAXPATHLEN+100];
 	char *buff = mem2_malloc(MAX_RESTORE_POINTS*1024 + 1024, OTHER_AREA);
 
 	if(!buff)
@@ -5186,8 +5258,12 @@ char * wiiSaveRestorePoints(char * path)
 	{
 		if(restore_points[i].filename[0]=='\0')
 			continue;
-
-		sprintf(tmppath,"%s\t%i\n",restore_points[i].filename,restore_points[i].position);
+        
+        if (restore_points[i].hasPartitionlabel)
+		    sprintf(tmppath,"%s\t%i\t%s\n", restore_points[i].filename, restore_points[i].position, restore_points[i].partitionlabel);
+		else
+		    sprintf(tmppath,"%s\t%i\n", restore_points[i].filename, restore_points[i].position);
+		    
 		strcat(buff,tmppath);
 	}
 	return buff;

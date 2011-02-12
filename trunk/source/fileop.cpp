@@ -1242,6 +1242,20 @@ void CleanupPath(char * path)
 	path[j] = 0;
 }
 
+char *GetPartitionLabel(char *path)
+{
+    int device, devnum;
+
+	if(!FindDevice(path, &device, &devnum))
+	    return NULL;
+	
+	if (device != DEVICE_SD && device != DEVICE_USB)
+	    return NULL;
+	    
+	return part[device][devnum-1].name;
+	   
+}
+
 void GetFullPath(int i, char *path)
 {
 	if(i >= browser.size)
@@ -1709,7 +1723,8 @@ static bool ParseDirEntries()
 				{
 					// check if this file was watched
 					GetFullPath(browser.numEntries+i, entry->d_name);
-					if(wiiFindRestorePoint(entry->d_name))
+					char *partitionlabel = GetPartitionLabel(entry->d_name);
+					if(wiiFindRestorePoint(entry->d_name, partitionlabel))
 						browserList[browser.numEntries+i].icon = ICON_CHECK;
 				}
 				else if(menuCurrent == MENU_BROWSE_MUSIC)

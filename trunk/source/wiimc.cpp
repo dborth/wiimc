@@ -353,7 +353,10 @@ extern "C" bool FindNextFile(bool load)
 	}
 
 	if(load)
-		wiiLoadFile(loadedFile);
+	{
+	    char *partitionlabel = GetPartitionLabel(loadedFile);
+		wiiLoadFile(loadedFile, partitionlabel);
+	}
 
 	if(controlledbygui == 1)
 		FindFile(); // try to find this file
@@ -467,11 +470,10 @@ void LoadMPlayerFile()
 	// wait for previous file to end
 	while(controlledbygui == 2)
 		usleep(100);
-
+	
+	char *partitionlabel;
 	char ext[7];
 	GetExt(loadedFile, ext);
-	
-	wiiSetDVDDevice(NULL);
 
 	if(WiiSettings.dvdMenu && strlen(ext) > 0 && 
 		(strcasecmp(ext, "iso") == 0 || strcasecmp(ext, "ifo") == 0) &&
@@ -484,6 +486,12 @@ void LoadMPlayerFile()
 		}
 		wiiSetDVDDevice(loadedFile);
 		sprintf(loadedFile, "dvdnav://");
+		partitionlabel = NULL;
+	}
+	else
+	{
+		wiiSetDVDDevice(NULL);
+		partitionlabel = GetPartitionLabel(loadedFile);
 	}
 
 	// wait for directory parsing to finish (to find subtitles)	
@@ -491,7 +499,7 @@ void LoadMPlayerFile()
 		usleep(100);
 
 	// set new file to load
-	wiiLoadFile(loadedFile);
+	wiiLoadFile(loadedFile, partitionlabel);
 
 	while(controlledbygui != 0)
 		usleep(100);

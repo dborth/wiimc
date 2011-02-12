@@ -38,6 +38,7 @@ bool FindDevice(char * filepath, int * device, int * devnum);
 bool IsDeviceRoot(char * path);
 bool IsOnlineMediaPath(char *path);
 void CleanupPath(char * path);
+char *GetPartitionLabel(char *path);
 void GetFullPath(int index, char *path);
 void FindAppPath();
 void UnmountAllDevices();

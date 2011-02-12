@@ -52,7 +52,7 @@ bool FindNextFile(bool load);
 extern int controlledbygui;
 int mplayer_main(); // in mplayer.c
 
-void wiiLoadFile(char *file);
+void wiiLoadFile(char *filename, char *partitionlabel);
 void wiiGotoGui();
 void wiiPause();
 bool wiiIsPaused();
@@ -84,7 +84,7 @@ void wiiSetAudioLanguage(char *lang);
 void wiiSetSubtitleLanguage(char *lang);
 void wiiSetSubtitleColor(char *color);
 void wiiSetSubtitleSize(float size);
-bool wiiFindRestorePoint(char *filename);
+bool wiiFindRestorePoint(char *filename, char *partitionlabel);
 void wiiLoadRestorePoints(char *buffer, int size);
 char * wiiSaveRestorePoints(char *path);
 

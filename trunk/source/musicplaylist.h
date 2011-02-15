@@ -11,7 +11,6 @@
 #define _MUSICPLAYLIST_H_
 
 int MusicPlaylistGetNextShuffle();
-void MusicPlaylistClear();
 int MusicPlaylistLoad();
 int MusicPlaylistFindIndex(char *path);
 bool MusicPlaylistFind(int index);

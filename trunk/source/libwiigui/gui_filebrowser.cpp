@@ -488,9 +488,9 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 
 				fileList[i]->SetVisible(true);
 
-				fileListText[i]->SetText(browserList[browser.pageIndex+i].displayname);
+				fileListText[i]->SetText(browserFiles[browser.pageIndex+i].display);
 
-				switch(browserList[browser.pageIndex+i].icon)
+				switch(browserFiles[browser.pageIndex+i].icon)
 				{
 					case ICON_FOLDER:
 						fileListIcon[i]->SetImage(iconFolder);

@@ -1890,10 +1890,10 @@ static void *ThumbThread (void *arg)
 			{
 				int loadIndex = thumbIndex;
 				int read = 0;
-				if(strncmp(browserList[loadIndex].image, "http:", 5) == 0)
-					read = http_request(browserList[loadIndex].image, NULL, thumbBuffer, 200*1024, SILENT);
+				if(browserFiles[loadIndex].image && strncmp(browserFiles[loadIndex].image, "http:", 5) == 0)
+					read = http_request(browserFiles[loadIndex].image, NULL, thumbBuffer, 200*1024, SILENT);
 				else
-					read = LoadFile(thumbBuffer, 200*1024, browserList[loadIndex].image, SILENT);
+					read = LoadFile(thumbBuffer, 200*1024, browserFiles[loadIndex].image, SILENT);
 	
 				if(read > 0 && loadIndex == thumbIndex) // file loaded and index has not changed
 				{
@@ -1927,7 +1927,7 @@ static int LoadNewFile()
 	if(!ChangeInterface(loadedFile, NOTSILENT))
 		return 0;
 
-	ClearVideoPlaylist();
+	ResetVideos();
 	DisableVideoImg();
 	LoadMPlayerFile();
 
@@ -1941,7 +1941,7 @@ static int LoadNewFile()
 
 	if(guiShutdown)
 	{
-		playlistIndex = -1;
+		browserinfoMusic.selIndex = -1;
 		PopulateVideoPlaylist();
 		return 1; // playing a video
 	}
@@ -1951,7 +1951,7 @@ static int LoadNewFile()
 
 	if(!wiiAudioOnly())
 	{
-		playlistIndex = -1;
+		browserinfoMusic.selIndex = -1;
 
 		if(wii_error == 1)
 			ErrorPrompt("Resolution exceeds maximum allowed (1280x720)!");
@@ -1966,14 +1966,14 @@ static int LoadNewFile()
 	// clear any play icons
 	for(int i=0; i < browser.numEntries; i++)
 	{
-		if(browserList[i].icon == ICON_PLAY)
+		if(browserFiles[i].icon == ICON_PLAY)
 		{
 			if(menuCurrent == MENU_BROWSE_ONLINEMEDIA)
-				browserList[i].icon = ICON_NONE;
+				browserFiles[i].icon = ICON_NONE;
 			else if(MusicPlaylistFind(i))
-				browserList[i].icon = ICON_FILE_CHECKED;
+				browserFiles[i].icon = ICON_FILE_CHECKED;
 			else
-				browserList[i].icon = ICON_FILE;
+				browserFiles[i].icon = ICON_FILE;
 		}
 	}
 
@@ -2060,7 +2060,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 static void MenuBrowse(int menu)
 {
 	ShutoffRumble();
-	ResetBrowser();
+	ResetFiles();
 
 	switch(menu)
 	{
@@ -2148,7 +2148,7 @@ static void MenuBrowse(int menu)
 
 	if(menu == MENU_BROWSE_ONLINEMEDIA)
 	{
-		if(onlinemediaSize == 0)
+		if(browserinfoOnlineMedia.size == 0)
 		{
 			// check if file exists
 			struct stat buf;
@@ -2336,7 +2336,7 @@ static void MenuBrowse(int menu)
 		{
 			upOneLevelBtn.ResetState();
 
-			if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
+			if(browserFiles[browser.selIndex].file && strncmp(browserFiles[browser.selIndex].file, "http:", 5) == 0)
 			{
 				mainWindow->Append(disabled);
 				mainWindow->SetState(STATE_DISABLED);
@@ -2370,7 +2370,7 @@ static void MenuBrowse(int menu)
 				fileBrowser->fileList[i]->ResetState();
 
 				// check corresponding browser entry
-				if(browserList[browser.selIndex].type == TYPE_FOLDER)
+				if(browserFiles[browser.selIndex].type == TYPE_FOLDER)
 				{
 					fileBrowser->SetState(STATE_DISABLED);
 
@@ -2381,7 +2381,7 @@ static void MenuBrowse(int menu)
 					continue;
 				}
 
-				if(browserList[browser.selIndex].type == TYPE_SEARCH)
+				if(browserFiles[browser.selIndex].type == TYPE_SEARCH)
 				{
 					char query[100] = {0};
 					char escquery[100*3+1];
@@ -2390,17 +2390,17 @@ static void MenuBrowse(int menu)
 					if(query[0] == 0)
 						continue;
 
-					strcpy(origname, browserList[browser.selIndex].filename); // save original URL
+					strcpy(origname, browserFiles[browser.selIndex].file); // save original URL
 					url_escape_string(escquery, query); // escape the string for use in a URL
-					strcat(browserList[browser.selIndex].filename, escquery); // append query to search URL
+					strcat(browserFiles[browser.selIndex].file, escquery); // append query to search URL
 				}
 
 				// this is a file
 				char ext[7];
-				GetExt(browserList[browser.selIndex].filename, ext);
+				GetExt(browserFiles[browser.selIndex].file, ext);
 				int numItems = 0;
 
-				if(strncmp(browserList[browser.selIndex].filename, "http://www.youtube.com", 22) == 0)
+				if(strncmp(browserFiles[browser.selIndex].file, "http://www.youtube.com", 22) == 0)
 				{
 					if(!mainWindow->Find(disabled))
 						mainWindow->Append(disabled);
@@ -2409,12 +2409,12 @@ static void MenuBrowse(int menu)
 
 					char url[MAXPATHLEN + 1];
 
-					if(LoadYouTubeFile(browserList[browser.selIndex].filename, url))
+					if(LoadYouTubeFile(browserFiles[browser.selIndex].file, url))
 					{
-						snprintf(loadedFileDisplay, 128, "%s", browserList[browser.selIndex].displayname);
+						snprintf(loadedFileDisplay, 128, "%s", browserFiles[browser.selIndex].display);
 						strcpy(loadedFile, url);
 						int res = LoadNewFile();
-						strcpy(loadedFile, browserList[browser.selIndex].filename);
+						strcpy(loadedFile, browserFiles[browser.selIndex].file);
 						CancelAction();
 
 						if(res == 1) // loaded a video file
@@ -2430,12 +2430,12 @@ static void MenuBrowse(int menu)
 				// unrecognized audio or video extension or allowed protocol
 				if(!IsAllowedExt(ext) && 
 					(IsPlaylistExt(ext) || 
-					!IsAllowedProtocol(browserList[browser.selIndex].filename) || 
-					strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
+					!IsAllowedProtocol(browserFiles[browser.selIndex].file) || 
+					strncmp(browserFiles[browser.selIndex].file, "http:", 5) == 0)
 					)
 				{
 					// parse as a playlist
-					if(strncmp(browserList[browser.selIndex].filename, "http:", 5) == 0)
+					if(strncmp(browserFiles[browser.selIndex].file, "http:", 5) == 0)
 					{
 						mainWindow->Append(disabled);
 						mainWindow->SetState(STATE_DISABLED);
@@ -2448,12 +2448,12 @@ static void MenuBrowse(int menu)
 					if(numItems > 1)
 					{
 						char ext2[7];
-						GetExt(browserList[1].filename, ext2);
+						GetExt(browserFiles[1].file, ext2);
 						// let's load this one file
 						if(numItems == 2 && IsPlaylistExt(ext) && !IsPlaylistExt(ext2)) 
 						{
-							sprintf(loadedFile, browserList[1].filename);
-							snprintf(loadedFileDisplay, 128, "%s", browserList[1].displayname);
+							sprintf(loadedFile, browserFiles[1].file);
+							snprintf(loadedFileDisplay, 128, "%s", browserFiles[1].display);
 							// go up one level
 							browser.selIndex = 0;
 							BrowserChangeFolder();
@@ -2468,15 +2468,15 @@ static void MenuBrowse(int menu)
 							continue;
 						}
 					}
-					else if(browserList[browser.selIndex].type != TYPE_FILE)
+					else if(browserFiles[browser.selIndex].type != TYPE_FILE)
 					{
 						CancelAction();
 						mainWindow->Remove(disabled);
 						mainWindow->SetState(STATE_DEFAULT);
 
-						if(browserList[browser.selIndex].type == TYPE_SEARCH)
+						if(browserFiles[browser.selIndex].type == TYPE_SEARCH)
 						{
-							strcpy(browserList[browser.selIndex].filename, origname); // restore original URL
+							strcpy(browserFiles[browser.selIndex].file, origname); // restore original URL
 							InfoPrompt("No Results Found", "Your search did not match any media files.");
 						}
 						fileBrowser->ResetState();
@@ -2487,10 +2487,10 @@ static void MenuBrowse(int menu)
 				if(numItems == 0)
 				{
 					GetFullPath(browser.selIndex, loadedFile);
-					snprintf(loadedFileDisplay, 128, "%s", browserList[browser.selIndex].displayname);
+					snprintf(loadedFileDisplay, 128, "%s", browserFiles[browser.selIndex].display);
 				}
 
-				playlistIndex = MusicPlaylistFindIndex(loadedFile);
+				browserinfoMusic.selIndex = MusicPlaylistFindIndex(loadedFile);
 
 				if(!mainWindow->Find(disabled))
 					mainWindow->Append(disabled);
@@ -2539,10 +2539,10 @@ static void MenuBrowse(int menu)
 				currentIndex = browser.selIndex;
 				thumbIndex = -1;
 
-				if(browserList[currentIndex].image[0] != 0)
+				if(browserFiles[currentIndex].image)
 				{
 					char ext[7];
-					GetExt(browserList[currentIndex].image, ext);
+					GetExt(browserFiles[currentIndex].image, ext);
 					if(IsImageExt(ext))	thumbIndex = browser.selIndex;
 				}
 				thumbLoad = true;
@@ -2566,8 +2566,8 @@ static void MenuBrowse(int menu)
 
 			if(addIndex > 0)
 			{
-				if(browserList[addIndex].icon == ICON_FILE_CHECKED || 
-					browserList[addIndex].icon == ICON_FOLDER_CHECKED)
+				if(browserFiles[addIndex].icon == ICON_FILE_CHECKED || 
+					browserFiles[addIndex].icon == ICON_FOLDER_CHECKED)
 				{
 					MusicPlaylistDequeue(addIndex);
 				}
@@ -2592,7 +2592,7 @@ static void MenuBrowse(int menu)
 			{
 				wiiPause();
 			}
-			else if(playlistSize > 0)
+			else if(browserinfoMusic.size > 0)
 			{
 				// start playlist
 				if(!mainWindow->Find(disabled))
@@ -2624,7 +2624,7 @@ static void MenuBrowse(int menu)
 			}
 		}
 
-		if(wiiAudioOnly() || (playlistSize > 0 && menu == MENU_BROWSE_MUSIC))
+		if(wiiAudioOnly() || (browserinfoMusic.size > 0 && menu == MENU_BROWSE_MUSIC))
 		{
 			if(audiobarPauseBtn->GetAlpha() == 128 || audiobarPauseBtn->GetState() == STATE_DISABLED)
 			{
@@ -2699,7 +2699,7 @@ static void MenuBrowse(int menu)
 		{
 			audiobarForwardBtn->ResetState();
 
-			if(playlistSize > 0)
+			if(browserinfoMusic.size > 0)
 			{
 				if(wiiAudioOnly())
 				{
@@ -2736,9 +2736,9 @@ static void MenuBrowse(int menu)
 			UpdateAudiobarModeBtn();
 		}
 
-		if(playlistSize > 0)
+		if(browserinfoMusic.size > 0)
 		{
-			if(playlistSize == 1)
+			if(browserinfoMusic.size == 1)
 			{
 				if(audiobarForwardBtn->GetAlpha() == 255 || audiobarForwardBtn->GetState() != STATE_DISABLED)
 				{
@@ -3035,14 +3035,14 @@ restart:
 
 			// load missing pictures - starting with selected index
 			if(selIndex > 0 
-				&& !browserList[selIndex].type == TYPE_FOLDER
+				&& browserFiles[selIndex].type == TYPE_FILE
 				&& pictureIndexLoaded != selIndex
-				&& browserList[selIndex].length < MAX_PICTURE_SIZE)
+				&& browserFiles[selIndex].length < MAX_PICTURE_SIZE)
 			{
 				int found = FoundPicture(selIndex);
 				if(found < 0)
 				{
-					sprintf(filepath, "%s%s", browser.dir, browserList[selIndex].filename);
+					sprintf(filepath, "%s%s", browser.dir, browserFiles[selIndex].file);
 					pictureIndexLoading = selIndex;
 					int size = LoadFile((char *)picBuffer, MAX_PICTURE_SIZE, filepath, SILENT);
 
@@ -3086,16 +3086,16 @@ restart:
 					continue;
 
 				while(next < browser.numEntries && 
-					(browserList[next].type == TYPE_FOLDER
+					(browserFiles[next].type == TYPE_FOLDER
 					|| next == selIndex 
-					|| browserList[next].length > MAX_PICTURE_SIZE
+					|| browserFiles[next].length > MAX_PICTURE_SIZE
 					|| FoundPicture(next) >= 0))
 					next++;
 
 				if(next >= browser.numEntries || next > (selIndex+(NUM_PICTURES-1)/2))
 					break;
 
-				sprintf(filepath, "%s%s", browser.dir, browserList[next].filename);
+				sprintf(filepath, "%s%s", browser.dir, browserFiles[next].file);
 				pictureIndexLoading = next;
 				int size = LoadFile((char *)picBuffer, MAX_PICTURE_SIZE, filepath, SILENT);
 
@@ -3172,13 +3172,13 @@ static void ChangePicture(int dir)
 		else if(newIndex < 1)
 			newIndex = browser.numEntries-1;
 
-		if(browserList[newIndex].type == TYPE_FOLDER)
+		if(browserFiles[newIndex].type == TYPE_FOLDER)
 			continue;
 
 		if(newIndex == browser.selIndex)
 			return; // we have wrapped around to the same image - do nothing
 
-		if(browserList[newIndex].length <= MAX_PICTURE_SIZE)
+		if(browserFiles[newIndex].length <= MAX_PICTURE_SIZE)
 			break; // found a picture we can display
 	}
 	browser.selIndex = newIndex;
@@ -3391,7 +3391,7 @@ static void PictureViewer()
 			int found = FoundPicture(browser.selIndex);
 			if(found >= 0)
 				setPicture = true;
-			else if(!browserList[browser.selIndex].type == TYPE_FOLDER
+			else if(browserFiles[browser.selIndex].type == TYPE_FILE
 				&& pictureIndexLoading != browser.selIndex)
 				CancelFileOp();
 
@@ -3477,7 +3477,7 @@ static void MenuBrowsePictures()
 {
 	int currentIndex = -1;
 	ShutoffRumble();
-	ResetBrowser();
+	ResetFiles();
 
 	if(!AllocPicBuffer())
 	{
@@ -3611,7 +3611,7 @@ static void MenuBrowsePictures()
 		}
 		
 		// update progress bar
-		if(pictureIndexLoading == browser.selIndex && !browserList[browser.selIndex].type == TYPE_FOLDER && loadSize > 0 && !pictureImg->IsVisible())
+		if(pictureIndexLoading == browser.selIndex && browserFiles[browser.selIndex].type == TYPE_FILE && loadSize > 0 && !pictureImg->IsVisible())
 		{
 			done = loadOffset/(float)loadSize;
 
@@ -3650,7 +3650,7 @@ static void MenuBrowsePictures()
 			currentIndex = browser.selIndex;
 			setPicture = false;
 
-			if(browserList[browser.selIndex].type == TYPE_FOLDER)
+			if(browserFiles[browser.selIndex].type == TYPE_FOLDER)
 			{
 				SetPicture(-1, -1); // set picture to blank
 			}
@@ -3665,7 +3665,7 @@ static void MenuBrowsePictures()
 				else
 				{
 					SetPicture(-1, -1); // set picture to blank
-					if(!browserList[browser.selIndex].type == TYPE_FOLDER && 
+					if(browserFiles[browser.selIndex].type == TYPE_FILE && 
 						pictureIndexLoading != browser.selIndex)
 					{
 						CancelFileOp();
@@ -3682,7 +3682,7 @@ static void MenuBrowsePictures()
 			{
 				fileBrowser.fileList[i]->ResetState();
 
-				if(browserList[browser.selIndex].type == TYPE_FOLDER)
+				if(browserFiles[browser.selIndex].type == TYPE_FOLDER)
 				{
 					SuspendPictureThread();
 					fileBrowser.SetState(STATE_DISABLED);
@@ -3738,7 +3738,7 @@ static void MenuDVD()
 		mainWindow->SetState(STATE_DISABLED);
 		mainWindow->Append(disabled);
 		ShowAction("Loading...");
-		ClearVideoPlaylist();
+		ResetVideos();
 		DisableVideoImg();
 		LoadMPlayerFile();
 

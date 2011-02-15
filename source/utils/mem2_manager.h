@@ -13,6 +13,7 @@
 
 enum mem2_areas_enum {
 	VIDEO_AREA,
+	BROWSER_AREA,
 	GUI_AREA,
 	OTHER_AREA,
 	PICTURE_AREA,
@@ -35,6 +36,7 @@ void* mem2_calloc(u32 num, u32 size, const int area);
 void* mem2_realloc(void *ptr, u32 newsize, const int area);
 char *mem2_strdup(const char *s, const int area);
 char *mem2_strndup(const char *s, size_t n, const int area);
+u32 mem2_size(const int i);
 
 void ShowAreaInfo(const int area); //if area == -1 print all areas info
 

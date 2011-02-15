@@ -270,12 +270,12 @@ extern "C" bool FindNextFile(bool load)
 		// clear any play icons
 		for(int i=0; i < browser.numEntries; i++)
 		{
-			if(browserList[i].icon == ICON_PLAY)
+			if(browserFiles[i].icon == ICON_PLAY)
 			{
 				if(MusicPlaylistFind(i))
-					browserList[i].icon = ICON_FILE_CHECKED;
+					browserFiles[i].icon = ICON_FILE_CHECKED;
 				else
-					browserList[i].icon = ICON_FILE;
+					browserFiles[i].icon = ICON_FILE;
 			}
 		}
 		findLoadedFile = 2; // trigger file browser update
@@ -289,16 +289,16 @@ extern "C" bool FindNextFile(bool load)
 		if(!load)
 			return false;
 
-		if(!WiiSettings.autoPlayNextVideo || videoPlaylistIndex+1 >= videoPlaylistSize)
+		if(!WiiSettings.autoPlayNextVideo || browserinfoVideos.selIndex+1 >= browserinfoVideos.size)
 		{
 			loadedFile[0] = 0;
 			loadedFileDisplay[0] = 0;
-			ClearVideoPlaylist();
+			ResetVideos();
 			return false;
 		}
 		else
 		{
-			strcpy(loadedFile, videoPlaylist[++videoPlaylistIndex]);
+			strcpy(loadedFile, browserVideos[++browserinfoVideos.selIndex].file);
 
 			char *start = strrchr(loadedFile,'/');
 
@@ -316,28 +316,28 @@ extern "C" bool FindNextFile(bool load)
 	}
 	else
 	{
-		if(playlistSize == 0 || (WiiSettings.playOrder == PLAY_SINGLE && playlistIndex != -1))
+		if(browserinfoMusic.size == 0 || (WiiSettings.playOrder == PLAY_SINGLE && browserinfoMusic.selIndex != -1))
 		{
-			playlistIndex = -1;
+			browserinfoMusic.selIndex = -1;
 			return false;
 		}
 
 		if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 		{
-			playlistIndex++;
+			browserinfoMusic.selIndex++;
 
-			if(playlistIndex >= playlistSize)
-				playlistIndex = 0;
+			if(browserinfoMusic.selIndex >= browserinfoMusic.size)
+				browserinfoMusic.selIndex = 0;
 		}
 		else if(WiiSettings.playOrder == PLAY_SHUFFLE)
 		{
-			playlistIndex = MusicPlaylistGetNextShuffle();
+			browserinfoMusic.selIndex = MusicPlaylistGetNextShuffle();
 		}
-		else if(playlistIndex == -1 || playlistIndex >= playlistSize)
+		else if(browserinfoMusic.selIndex == -1 || browserinfoMusic.selIndex >= browserinfoMusic.size)
 		{
-			playlistIndex = 0;
+			browserinfoMusic.selIndex = 0;
 		}
-		sprintf(loadedFile, "%s", playlist[playlistIndex].filepath);
+		sprintf(loadedFile, "%s", browserMusic[browserinfoMusic.selIndex].file);
 	}
 
 	if(load)
@@ -580,11 +580,10 @@ int main(int argc, char *argv[])
 	
 	u32 size = 	//(8*1024*1024) + // cache
 			(((1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2)) * 2) + // textures
-			(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE) + // browser memory
-			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
-			(sizeof(char)*(NAME_MAX+1)*MAX_SUBS_SIZE) +
+			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot			
 			(32*1024); // padding
 	AddMem2Area (size, VIDEO_AREA);
+	AddMem2Area (4*1024*1024, BROWSER_AREA);
 	AddMem2Area (6*1024*1024, GUI_AREA);
 	AddMem2Area (3*1024*1024, OTHER_AREA); // vars + ttf
 
@@ -599,10 +598,18 @@ int main(int argc, char *argv[])
 
 	AUDIO_Init(NULL);
 	GX_AllocTextureMemory();
-	browserList = (BROWSERENTRY *)mem2_malloc(sizeof(BROWSERENTRY)*MAX_BROWSER_SIZE, VIDEO_AREA);
-	for(size=0;size<MAX_SUBS_SIZE;size++)
-		subsList[size] = (char*)mem2_malloc(sizeof(char)*(NAME_MAX+1), VIDEO_AREA);
- 	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
+	browserFiles = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browser.maxSize = 2000;
+	browserSubs = (BROWSERENTRY *)mem2_calloc(1000, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browserinfoSubs.maxSize = 1000;
+	browserVideos = (BROWSERENTRY *)mem2_calloc(100, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browserinfoVideos.maxSize = 100;
+	browserMusic = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browserinfoMusic.maxSize = 2000;
+	browserOnlineMedia = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browserinfoOnlineMedia.maxSize = 2000;
+	
+	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
 
 	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
@@ -613,8 +620,6 @@ int main(int argc, char *argv[])
 	// mplayer cache thread
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
 
- 	
- 
 	// create GUI thread
 
  	while(1)

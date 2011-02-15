@@ -30,7 +30,9 @@
 #include <dirent.h>
 
 #ifdef GEKKO
-#include "../../filebrowser.h"
+extern int BrowserGetSubSize();
+extern char *BrowserGetSub(int i);
+extern int BrowserFindSub(char *path);
 #endif
 #include "ass_mp.h"
 #include "config.h"
@@ -1961,8 +1963,8 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
 #else
 		de = (struct dirent*)malloc(sizeof(struct dirent));
 		int h;
-		for(h=0;h<subs_size;h++) {
-		strcpy(de->d_name,subsList[h]);
+		for(h=0; h < BrowserGetSubSize(); h++) {
+		strcpy(de->d_name, BrowserGetSub(h));
 #endif
             // retrieve various parts of the filename
             strcpy_strip_ext_lower(tmp_fname_noext, de->d_name);
@@ -1976,13 +1978,7 @@ static void append_dir_subtitles(struct sub_list *slist, const char *path,
 
                 strcpy(idxname + strlen(de->d_name) - sizeof("idx") + 1, "idx");
 #ifdef GEKKO
-                found=0;
-                for(i=0;i<subs_size;i++) {
-                	if (strcasecmp(subsList[h], idxname) == 0) {
-                		found = 1;
-                		break;
-                	}
-                }
+                found = BrowserFindSub(idxname);
                 free(idxname);
                 if(found)
                 	continue;

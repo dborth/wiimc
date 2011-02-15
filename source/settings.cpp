@@ -496,33 +496,33 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 
 		if(name && addr) // this is a link
 		{
-			if(!AddMediaEntry())
+			if(!AddEntryOnlineMedia())
 				break;
 
-			snprintf(onlinemediaList[onlinemediaSize-1].filepath, MAXPATHLEN, "%s", path);
-			snprintf(onlinemediaList[onlinemediaSize-1].address, MAXPATHLEN, "%s", addr);
-			snprintf(onlinemediaList[onlinemediaSize-1].displayname, MAXJOLIET, "%s", name);
-			snprintf(onlinemediaList[onlinemediaSize-1].image, MAXPATHLEN, "%s", image);
+			browserOnlineMedia[browserinfoOnlineMedia.size-1].file = mem2_strdup(path, BROWSER_AREA);
+			browserOnlineMedia[browserinfoOnlineMedia.size-1].url = mem2_strdup(addr, BROWSER_AREA);
+			browserOnlineMedia[browserinfoOnlineMedia.size-1].display = mem2_strdup(name, BROWSER_AREA);
+			browserOnlineMedia[browserinfoOnlineMedia.size-1].image = mem2_strdup(image, BROWSER_AREA);
 
 			if(type)
 			{
 				if(strncmp(type, "search", 6) == 0)
-					onlinemediaList[onlinemediaSize-1].type = TYPE_SEARCH;
+					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_SEARCH;
 				else if(strncmp(type, "playlist", 8) == 0)
-					onlinemediaList[onlinemediaSize-1].type = TYPE_PLAYLIST;
+					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_PLAYLIST;
 				else
-					onlinemediaList[onlinemediaSize-1].type = TYPE_FILE;
+					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_FILE;
 			}
 			else
 			{
 				char ext[7];
-				GetExt(onlinemediaList[onlinemediaSize-1].address, ext);
+				GetExt(browserOnlineMedia[browserinfoOnlineMedia.size-1].url, ext);
 
 				if(IsPlaylistExt(ext))
-					onlinemediaList[onlinemediaSize-1].type = TYPE_PLAYLIST;
+					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_PLAYLIST;
 				else
-					onlinemediaList[onlinemediaSize-1].type = TYPE_FILE;
-			}			
+					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_FILE;
+			}
 		}
 		next = mxmlFindElement(next, top, "link", NULL, NULL, MXML_NO_DESCEND);
 	}

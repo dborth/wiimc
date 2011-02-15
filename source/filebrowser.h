@@ -14,10 +14,6 @@
 #include <gccore.h>
 
 #define MAXJOLIET			255
-#define MAX_BROWSER_SIZE	2000
-#define VIDEO_PLAYLIST_SIZE 50
-#define MAX_SUBS_SIZE	300
-
 
 enum
 {
@@ -29,33 +25,26 @@ enum
 
 typedef struct
 {
-	char dir[MAXPATHLEN]; // directory path of browserList
-	int menu; // current menu area of the browser
+	char dir[MAXPATHLEN]; // directory path
+	int menu; // current menu area
 	char lastdir[MAXPATHLEN]; // last browsed directory
-	int numEntries; // # of entries in browserList
-	int selIndex; // currently selected index of browserList
-	int pageIndex; // starting index of browserList page display
-	int size; // # of entries browerList has space allocated to store
+	int numEntries; // notifies the GUI that the # of entries changed
+	int selIndex; // currently selected index
+	int pageIndex; // starting index of page display
+	int size; // total # of entries allocated
+	int maxSize; // maximum # of entries
 } BROWSERINFO;
 
 typedef struct
 {
 	u64 length; // file length
 	int type; // TYPE_FILE,	TYPE_FOLDER, TYPE_PLAYLIST, TYPE_SEARCH
-	char filename[MAXPATHLEN + 1]; // full filename
-	char displayname[MAXJOLIET + 1]; // name for browser display
-	char image[MAXJOLIET + 1];
+	char *file; // full filename
+	char *url; // address
+	char *display; // name for browser display
+	char *image;
 	int icon; // icon to display
 } BROWSERENTRY;
-
-typedef struct
-{
-	char filepath[MAXPATHLEN + 1]; // virtual filepath
-	char address[MAXPATHLEN + 1]; // address (URL)
-	int type; // TYPE_FILE,	TYPE_PLAYLIST, TYPE_SEARCH
-	char displayname[MAXJOLIET + 1]; // name for browser display
-	char image[MAXPATHLEN + 1]; // image to display
-} MEDIAENTRY;
 
 enum
 {
@@ -73,50 +62,36 @@ enum
 	ICON_FTP
 };
 
-// Browser
 extern BROWSERINFO browser;
-extern BROWSERENTRY * browserList;
+extern BROWSERENTRY *browserFiles;
 
+extern BROWSERINFO browserinfoSubs;
+extern BROWSERENTRY *browserSubs;
 
-// Video playlist
-extern int videoPlaylistIndex;
-extern int videoPlaylistSize;
-extern char videoPlaylist[VIDEO_PLAYLIST_SIZE][1024];
+extern BROWSERINFO browserinfoVideos;
+extern BROWSERENTRY *browserVideos;
 
-// Music playlist
-extern MEDIAENTRY * playlist;
-extern int playlistSize;
-extern int playlistIndex;
+extern BROWSERINFO browserinfoMusic;
+extern BROWSERENTRY *browserMusic;
 
-// Online media
-extern MEDIAENTRY * onlinemediaList;
-extern int onlinemediaSize;
+extern BROWSERINFO browserinfoOnlineMedia;
+extern BROWSERENTRY *browserOnlineMedia;
 
-#ifdef __cplusplus
-char *GetParentDir();
-void ResetBrowser();
+void ResetFiles();
+void ResetVideos();
+void ResetMusic();
+void ResetOnlineMedia();
+bool AddEntryFiles();
+bool AddEntrySubs();
+bool AddEntryVideos();
+bool AddEntryMusic();
+bool AddEntryOnlineMedia();
 void BrowserHistoryStore(char *path);
 const char * BrowserHistoryRetrieve();
 void BrowserHistoryDiscard();
 void PopulateVideoPlaylist();
-void ClearVideoPlaylist();
-bool AddBrowserEntry();
-void AddSubEntry(char *path);
-bool AddMediaEntry();
-bool AddPlaylistEntry();
+char *GetParentDir();
 int BrowserChangeFolder(bool updateDir = true, bool waitParse = false);
 int BrowseDevice();
-
-extern "C" {
-#endif
-	
-extern char *subsList[MAX_SUBS_SIZE];
-extern int subs_size;
-
-#ifdef __cplusplus
-}
-#endif
-	
-
 
 #endif

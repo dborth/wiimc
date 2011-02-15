@@ -197,7 +197,10 @@ bool RemoveMem2Area(const int area)
 void* mem2_memalign(u8 align, u32 size, const int area)
 {
 	void *ptr;
- 
+
+	if(size == 0)
+		return NULL;
+
 	if(mem2_areas[area].size==0) 
 	{
 #ifdef DEBUG_MEM2_LEVEL
@@ -307,7 +310,7 @@ void* mem2_calloc(u32 num, u32 size, const int area)
 	return ptr;
 }
 
- char *mem2_strdup(const char *s, const int area)
+char *mem2_strdup(const char *s, const int area)
 {
     char *ptr= NULL;
     if(s){
@@ -319,7 +322,7 @@ void* mem2_calloc(u32 num, u32 size, const int area)
     return ptr;
 }
 
- char *mem2_strndup(const char *s, size_t n, const int area)
+char *mem2_strndup(const char *s, size_t n, const int area)
 {
     char *ptr= NULL;
     if(s){
@@ -329,6 +332,16 @@ void* mem2_calloc(u32 num, u32 size, const int area)
             memcpy(ptr, s, len);
     }
     return ptr;
+}
+
+u32 mem2_size(const int i)
+{
+	heap_iblock info;
+	if(mem2_areas[i].size == 0)
+		return 0;
+
+	__lwp_heap_getinfo(&mem2_areas[i].heap, &info);
+	return info.free_size;
 }
 
 #ifdef DEBUG_MEM2_LEVEL
@@ -357,5 +370,3 @@ void ShowAreaInfo(const int area) //if area == -1 print all areas info
 		for(i = 0; i < MAX_AREA; i++) PrintAreaInfo(i);
 #endif
 }
-
-

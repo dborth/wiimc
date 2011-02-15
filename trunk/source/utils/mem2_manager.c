@@ -81,7 +81,7 @@ typedef struct {
 
 static bool _inited=false;
 
-static st_mem2_area mem2_areas[MAX_AREA];
+static st_mem2_area mem2_areas[MEM2_MAX];
 
 #define ROUNDDOWN32(v)				(((u32)(v)-0x1f)&~0x1f)
 
@@ -89,7 +89,7 @@ static void initMem2Areas()
 {
 	int i;
 
-	for(i = 0; i < MAX_AREA; i++)
+	for(i = 0; i < MEM2_MAX; i++)
 	{
 		mem2_areas[i].heap_ptr = NULL;
  		mem2_areas[i].size = 0; 
@@ -104,7 +104,7 @@ static void initMem2Areas()
  
 void ClearMem2Area (const int area) 
 {
-	if(area >= MAX_AREA)
+	if(area >= MEM2_MAX)
 		return;
 
 	if(mem2_areas[area].size==0) return; // area not found
@@ -117,7 +117,7 @@ bool AddMem2Area (u32 size, const int index)
 	if(!_inited)
 		initMem2Areas();
 
-	if(index >= MAX_AREA || size == 0)
+	if(index >= MEM2_MAX || size == 0)
 		return false;
 
 	if(mem2_areas[index].size == size)
@@ -152,13 +152,13 @@ bool AddMem2Area (u32 size, const int index)
 
 bool RemoveMem2Area(const int area)
 {
-	if(area >= MAX_AREA || mem2_areas[area].size == 0)
+	if(area >= MEM2_MAX || mem2_areas[area].size == 0)
 		return false;
 
 	// a lower area is already inited - we cannot deinit this one yet
 	int i;
 
-	for(i=0; i < MAX_AREA; i++)
+	for(i=0; i < MEM2_MAX; i++)
 	{
 		if(i == area || mem2_areas[i].old_arena2hi == NULL)
 			continue;
@@ -367,6 +367,6 @@ void ShowAreaInfo(const int area) //if area == -1 print all areas info
 	if(area>=0)
 		PrintAreaInfo(area);
 	else
-		for(i = 0; i < MAX_AREA; i++) PrintAreaInfo(i);
+		for(i = 0; i < MEM2_MAX; i++) PrintAreaInfo(i);
 #endif
 }

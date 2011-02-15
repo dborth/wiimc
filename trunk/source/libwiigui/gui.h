@@ -54,10 +54,10 @@
 //#define gui_strdup  strdup
 
 #include "../utils/mem2_manager.h"
-#define gui_malloc(x) mem2_malloc(x,GUI_AREA)
-#define gui_memalign(x,y) mem2_memalign(x,y,GUI_AREA)
-#define gui_free(x) mem2_free(x,GUI_AREA)
-#define gui_strdup(x) mem2_strdup(x,GUI_AREA)
+#define gui_malloc(x) mem2_malloc(x,MEM2_GUI)
+#define gui_memalign(x,y) mem2_memalign(x,y,MEM2_GUI)
+#define gui_free(x) mem2_free(x,MEM2_GUI)
+#define gui_strdup(x) mem2_strdup(x,MEM2_GUI)
 
 
 

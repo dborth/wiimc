@@ -5247,7 +5247,7 @@ char * wiiSaveRestorePoints(char * path)
 {
 	int i;
 	char tmppath[MAXPATHLEN+100];
-	char *buff = mem2_malloc(MAX_RESTORE_POINTS*1024 + 1024, OTHER_AREA);
+	char *buff = mem2_malloc(MAX_RESTORE_POINTS*1024 + 1024, MEM2_OTHER);
 
 	if(!buff)
 		return NULL;

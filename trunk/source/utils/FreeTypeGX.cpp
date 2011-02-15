@@ -27,9 +27,9 @@
 //#define ft_memalign memalign
 
 #include "mem2_manager.h"
-#define ft_malloc(x) mem2_malloc(x,OTHER_AREA)
-#define ft_free(x) mem2_free(x,OTHER_AREA)
-#define ft_memalign(x,y) mem2_memalign(x,y,OTHER_AREA)
+#define ft_malloc(x) mem2_malloc(x,MEM2_OTHER)
+#define ft_free(x) mem2_free(x,MEM2_OTHER)
+#define ft_memalign(x,y) mem2_memalign(x,y,MEM2_OTHER)
 
 static FT_Library ftLibrary = NULL;		/**< FreeType FT_Library instance. */
 static FT_Face ftFace = NULL;			/**< FreeType reusable FT_Face typographic object. */

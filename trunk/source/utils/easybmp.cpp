@@ -1224,7 +1224,7 @@ u8 * BMP::DecodeTo4x4RGB8(u8 *dstPtr)
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = (u8 *)mem2_memalign (32, len, GUI_AREA);
+		dst = (u8 *)mem2_memalign (32, len, MEM2_GUI);
 
 	if(!dst)
 		return NULL;

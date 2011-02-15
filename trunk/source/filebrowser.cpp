@@ -51,10 +51,10 @@ static void Reset(BROWSERINFO *info, BROWSERENTRY *list)
 {
 	for(int i=0; i < info->size; i++)
 	{
-		mem2_free(list[i].file, BROWSER_AREA);
-		mem2_free(list[i].url, BROWSER_AREA);
-		mem2_free(list[i].display, BROWSER_AREA);
-		mem2_free(list[i].image, BROWSER_AREA);
+		mem2_free(list[i].file, MEM2_BROWSER);
+		mem2_free(list[i].url, MEM2_BROWSER);
+		mem2_free(list[i].display, MEM2_BROWSER);
+		mem2_free(list[i].image, MEM2_BROWSER);
 	}
 	memset(list, 0, sizeof(BROWSERENTRY)*info->maxSize);
 	info->numEntries = 0;
@@ -71,7 +71,7 @@ void ResetOnlineMedia() { Reset(&browserinfoOnlineMedia, browserOnlineMedia); }
 
 static bool AddEntry(BROWSERINFO *info, BROWSERENTRY *list)
 {
-	if(info->size == info->maxSize || mem2_size(BROWSER_AREA) < 8192)
+	if(info->size == info->maxSize || mem2_size(MEM2_BROWSER) < 8192)
 		return false;
 
 	info->size++;
@@ -160,7 +160,7 @@ void PopulateVideoPlaylist()
 			break;
 
 		GetFullPath(browser.selIndex+i, tmp);
-		browserVideos[browserinfoVideos.size-1].file = mem2_strdup(tmp, BROWSER_AREA);
+		browserVideos[browserinfoVideos.size-1].file = mem2_strdup(tmp, MEM2_BROWSER);
 	}
 }
 
@@ -349,7 +349,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 				AddEntryFiles();
 
 				sprintf(tmp, "%s:", part[DEVICE_SD][i].mount);
-				browserFiles[browser.numEntries].file = mem2_strdup(tmp, BROWSER_AREA);
+				browserFiles[browser.numEntries].file = mem2_strdup(tmp, MEM2_BROWSER);
 
 				if(strlen(part[DEVICE_SD][i].name) > 0)
 					sprintf(tmp, "%s - %s", gettext("SD"), part[DEVICE_SD][i].name);
@@ -358,7 +358,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 				else
 					sprintf(tmp, "%s (%d)", gettext("SD Card"), i+1);
 
-				browserFiles[browser.numEntries].display = mem2_strdup(tmp, BROWSER_AREA);
+				browserFiles[browser.numEntries].display = mem2_strdup(tmp, MEM2_BROWSER);
 				browserFiles[browser.numEntries].length = 0;
 				browserFiles[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
 				browserFiles[browser.numEntries].icon = ICON_SD;
@@ -376,7 +376,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 				AddEntryFiles();
 
 				sprintf(tmp, "%s:", part[DEVICE_USB][i].mount);
-				browserFiles[browser.numEntries].file = mem2_strdup(tmp, BROWSER_AREA);
+				browserFiles[browser.numEntries].file = mem2_strdup(tmp, MEM2_BROWSER);
 
 				if(strlen(part[DEVICE_USB][i].name) > 0)
 					sprintf(tmp, "%s - %s", gettext("USB"), part[DEVICE_USB][i].name);
@@ -385,7 +385,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 				else
 					sprintf(tmp, "%s (%d)", gettext("USB Mass Storage"), i+1);
 
-				browserFiles[browser.numEntries].display = mem2_strdup(tmp, BROWSER_AREA);
+				browserFiles[browser.numEntries].display = mem2_strdup(tmp, MEM2_BROWSER);
 				browserFiles[browser.numEntries].length = 0;
 				browserFiles[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
 				browserFiles[browser.numEntries].icon = ICON_USB;
@@ -397,8 +397,8 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	if(!WiiSettings.dvdDisabled && isInserted[DEVICE_DVD])
 	{
 		AddEntryFiles();
-		browserFiles[browser.numEntries].file = mem2_strdup("dvd:", BROWSER_AREA);
-		browserFiles[browser.numEntries].display = mem2_strdup("Data DVD", BROWSER_AREA);
+		browserFiles[browser.numEntries].file = mem2_strdup("dvd:", MEM2_BROWSER);
+		browserFiles[browser.numEntries].display = mem2_strdup("Data DVD", MEM2_BROWSER);
 		browserFiles[browser.numEntries].length = 0;
 		browserFiles[browser.numEntries].type = TYPE_FOLDER;
 		browserFiles[browser.numEntries].icon = ICON_DVD;
@@ -412,14 +412,14 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			AddEntryFiles();
 
 			sprintf(tmp, "smb%d:", i+1);
-			browserFiles[browser.numEntries].file = mem2_strdup(tmp, BROWSER_AREA);
+			browserFiles[browser.numEntries].file = mem2_strdup(tmp, MEM2_BROWSER);
 			
 			if(WiiSettings.smbConf[i].displayname[0] != 0)
 				sprintf(tmp, "%s", WiiSettings.smbConf[i].displayname);
 			else
 				sprintf(tmp, "%s", WiiSettings.smbConf[i].share);
 			
-			browserFiles[browser.numEntries].display = mem2_strdup(tmp, BROWSER_AREA);
+			browserFiles[browser.numEntries].display = mem2_strdup(tmp, MEM2_BROWSER);
 			browserFiles[browser.numEntries].length = 0;
 			browserFiles[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
 			browserFiles[browser.numEntries].icon = ICON_SMB;
@@ -434,14 +434,14 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 			AddEntryFiles();
 
 			sprintf(tmp, "ftp%d:", i+1);
-			browserFiles[browser.numEntries].file = mem2_strdup(tmp, BROWSER_AREA);
+			browserFiles[browser.numEntries].file = mem2_strdup(tmp, MEM2_BROWSER);
 			
 			if(WiiSettings.ftpConf[i].displayname[0] != 0)
 				sprintf(tmp, "%s", WiiSettings.ftpConf[i].displayname);
 			else
 				sprintf(tmp, "%s@%s/%s", WiiSettings.ftpConf[i].user, WiiSettings.ftpConf[i].ip, WiiSettings.ftpConf[i].folder);
 			
-			browserFiles[browser.numEntries].display = mem2_strdup(tmp, BROWSER_AREA);
+			browserFiles[browser.numEntries].display = mem2_strdup(tmp, MEM2_BROWSER);
 			browserFiles[browser.numEntries].length = 0;
 			browserFiles[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
 			browserFiles[browser.numEntries].icon = ICON_FTP;

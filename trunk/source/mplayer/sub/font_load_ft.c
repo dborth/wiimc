@@ -52,10 +52,10 @@
 #include "osd_font.h"
 #ifdef GEKKO
 #include "../../utils/mem2_manager.h"
-#define malloc(x) mem2_malloc(x,OTHER_AREA)
-#define free(x) mem2_free(x,OTHER_AREA)
-#define realloc(x,y) mem2_realloc(x,y,OTHER_AREA)
-#define calloc(x,y) mem2_calloc(x,y,OTHER_AREA)
+#define malloc(x) mem2_malloc(x,MEM2_OTHER)
+#define free(x) mem2_free(x,MEM2_OTHER)
+#define realloc(x,y) mem2_realloc(x,y,MEM2_OTHER)
+#define calloc(x,y) mem2_calloc(x,y,MEM2_OTHER)
 #endif
 
 #if (FREETYPE_MAJOR > 2) || (FREETYPE_MAJOR == 2 && FREETYPE_MINOR >= 1)

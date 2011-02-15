@@ -360,7 +360,7 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstW
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = (u8 *)mem2_memalign (32, len, GUI_AREA);
+		dst = (u8 *)mem2_memalign (32, len, MEM2_GUI);
 
 	if(!dst)
 		return NULL;

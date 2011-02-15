@@ -432,7 +432,7 @@ bool InitMPlayer()
 
 	char agent[15];
 	sprintf(agent, "%s/%s", APPNAME, APPVERSION);
-	network_useragent = mem2_strdup(agent, OTHER_AREA);
+	network_useragent = mem2_strdup(agent, MEM2_OTHER);
 
 	// create mplayer thread
 	mplayerstack=(u8*)memalign(32,STACKSIZE*sizeof(u8));
@@ -582,10 +582,10 @@ int main(int argc, char *argv[])
 			(((1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2)) * 2) + // textures
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot			
 			(32*1024); // padding
-	AddMem2Area (size, VIDEO_AREA);
-	AddMem2Area (4*1024*1024, BROWSER_AREA);
-	AddMem2Area (6*1024*1024, GUI_AREA);
-	AddMem2Area (3*1024*1024, OTHER_AREA); // vars + ttf
+	AddMem2Area (size, MEM2_VIDEO);
+	AddMem2Area (4*1024*1024, MEM2_BROWSER);
+	AddMem2Area (6*1024*1024, MEM2_GUI);
+	AddMem2Area (3*1024*1024, MEM2_OTHER); // vars + ttf
 
 	InitVideo2();
 	SetupPads();
@@ -598,15 +598,15 @@ int main(int argc, char *argv[])
 
 	AUDIO_Init(NULL);
 	GX_AllocTextureMemory();
-	browserFiles = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browserFiles = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), MEM2_BROWSER);
 	browser.maxSize = 2000;
-	browserSubs = (BROWSERENTRY *)mem2_calloc(1000, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browserSubs = (BROWSERENTRY *)mem2_calloc(1000, sizeof(BROWSERENTRY), MEM2_BROWSER);
 	browserinfoSubs.maxSize = 1000;
-	browserVideos = (BROWSERENTRY *)mem2_calloc(100, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browserVideos = (BROWSERENTRY *)mem2_calloc(100, sizeof(BROWSERENTRY), MEM2_BROWSER);
 	browserinfoVideos.maxSize = 100;
-	browserMusic = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browserMusic = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), MEM2_BROWSER);
 	browserinfoMusic.maxSize = 2000;
-	browserOnlineMedia = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), BROWSER_AREA);
+	browserOnlineMedia = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), MEM2_BROWSER);
 	browserinfoOnlineMedia.maxSize = 2000;
 	
 	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
  		if(ExitRequested)
  			break;
  
-		ShowAreaInfo(OTHER_AREA);
+		ShowAreaInfo(MEM2_OTHER);
 		MPlayerMenu();
 	}
 	

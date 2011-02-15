@@ -16,9 +16,9 @@ void* alloc_index(u32 size)
 	size &= ~0x1f;
 	_size=size;
 
-	AddMem2Area(size+(16*1024), INDEX_AREA);
+	AddMem2Area(size+(16*1024), MEM2_INDEX);
     printf("mplayer alloc_index: %u\n",size);
-    return mem2_memalign(32, size, INDEX_AREA);
+    return mem2_memalign(32, size, MEM2_INDEX);
 }
 
 void free_index()
@@ -26,7 +26,7 @@ void free_index()
 	if(_size==0)
 		return;
 
-	RemoveMem2Area(INDEX_AREA);
+	RemoveMem2Area(MEM2_INDEX);
 	printf("mplayer free_index: %u\n",_size);
 	_size=0;
 }

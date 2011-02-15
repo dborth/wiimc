@@ -1688,7 +1688,7 @@ static bool ParseDirEntries()
 				GetExt(entry->d_name, ext);
 
 				if(menuCurrent == MENU_BROWSE_VIDEOS && IsSubtitleExt(ext) && AddEntrySubs())
-					browserSubs[browserinfoSubs.size-1].file = mem2_strdup(entry->d_name, BROWSER_AREA);
+					browserSubs[browserinfoSubs.size-1].file = mem2_strdup(entry->d_name, MEM2_BROWSER);
 
 				if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
 					continue;
@@ -1698,7 +1698,7 @@ static bool ParseDirEntries()
 		// add the entry
 		if(AddEntryFiles())
 		{
-			browserFiles[browser.numEntries+i].file = mem2_strdup(entry->d_name, BROWSER_AREA);
+			browserFiles[browser.numEntries+i].file = mem2_strdup(entry->d_name, MEM2_BROWSER);
 			browserFiles[browser.numEntries+i].length = filestat.st_size;
 
 			if(S_ISDIR(filestat.st_mode)) 
@@ -1710,7 +1710,7 @@ static bool ParseDirEntries()
 				else
 					snprintf(tmp, MAXJOLIET, "%s", browserFiles[browser.numEntries+i].file);
 
-				browserFiles[browser.numEntries+i].display = mem2_strdup(tmp, BROWSER_AREA);
+				browserFiles[browser.numEntries+i].display = mem2_strdup(tmp, MEM2_BROWSER);
 				browserFiles[browser.numEntries+i].icon = ICON_FOLDER;
 			}
 			else
@@ -1718,7 +1718,7 @@ static bool ParseDirEntries()
 				if(IsPlaylistExt(ext))
 					browserFiles[browser.numEntries+i].type = TYPE_PLAYLIST;
 
-				browserFiles[browser.numEntries+i].display = mem2_strdup(browserFiles[browser.numEntries+i].file, BROWSER_AREA);
+				browserFiles[browser.numEntries+i].display = mem2_strdup(browserFiles[browser.numEntries+i].file, MEM2_BROWSER);
 				browserFiles[browser.numEntries+i].icon = ICON_NONE;
 
 				if(menuCurrent == MENU_BROWSE_VIDEOS)
@@ -1840,8 +1840,8 @@ ParseDirectory(bool waitParse)
 	if(IsDeviceRoot(browser.dir))
 	{
 		AddEntryFiles();
-		browserFiles[0].file = mem2_strdup("..", BROWSER_AREA);
-		browserFiles[0].display = mem2_strdup(gettext("Up One Level"), BROWSER_AREA);
+		browserFiles[0].file = mem2_strdup("..", MEM2_BROWSER);
+		browserFiles[0].display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
 		browserFiles[0].length = 0;
 		browserFiles[0].type = TYPE_FOLDER; // flag this as a dir
 		browserFiles[0].icon = ICON_FOLDER;
@@ -1889,7 +1889,7 @@ typedef struct
 
 static int ParsePLXPlaylist()
 {
-	char *buffer = (char*)mem2_malloc(MAX_PLX_SIZE, OTHER_AREA);
+	char *buffer = (char*)mem2_malloc(MAX_PLX_SIZE, MEM2_OTHER);
 
 	if(!buffer)
 		return 0;
@@ -1904,7 +1904,7 @@ static int ParsePLXPlaylist()
 
 	if(size == 0)
 	{
-		mem2_free(buffer, OTHER_AREA);
+		mem2_free(buffer, MEM2_OTHER);
 		if(browser.numEntries > 0 && browserFiles[browser.selIndex].type == TYPE_SEARCH)
 			return -4;
 		return 0;
@@ -1965,7 +1965,7 @@ static int ParsePLXPlaylist()
 					if(!newList) // failed to allocate required memory
 					{
 						free(list);
-						mem2_free(buffer, OTHER_AREA);
+						mem2_free(buffer, MEM2_OTHER);
 						return -1; // too many files
 					}
 					else
@@ -2015,7 +2015,7 @@ static int ParsePLXPlaylist()
 	if(numEntries == 0)
 	{
 		free(list);
-		mem2_free(buffer, OTHER_AREA);
+		mem2_free(buffer, MEM2_OTHER);
 
 		if(plxFile && browserFiles[browser.selIndex].type == TYPE_SEARCH)
 			return -5;
@@ -2030,8 +2030,8 @@ static int ParsePLXPlaylist()
 	ResetFiles();
 
 	AddEntryFiles();
-	browserFiles[0].file = mem2_strdup(BrowserHistoryRetrieve(), BROWSER_AREA);
-	browserFiles[0].display = mem2_strdup(gettext("Up One Level"), BROWSER_AREA);
+	browserFiles[0].file = mem2_strdup(BrowserHistoryRetrieve(), MEM2_BROWSER);
+	browserFiles[0].display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
 	browserFiles[0].length = 0;
 	browserFiles[0].icon = ICON_FOLDER;
 
@@ -2047,13 +2047,13 @@ static int ParsePLXPlaylist()
 		if(!AddEntryFiles()) // add failed
 		{
 			free(list);
-			mem2_free(buffer, OTHER_AREA);
+			mem2_free(buffer, MEM2_OTHER);
 			return -1;
 		}
 
-		browserFiles[browser.numEntries].file = mem2_strdup(list[i].url, BROWSER_AREA);
-		browserFiles[browser.numEntries].display = mem2_strdup(list[i].name, BROWSER_AREA);
-		browserFiles[browser.numEntries].image = mem2_strdup(list[i].thumb, BROWSER_AREA);
+		browserFiles[browser.numEntries].file = mem2_strdup(list[i].url, MEM2_BROWSER);
+		browserFiles[browser.numEntries].display = mem2_strdup(list[i].name, MEM2_BROWSER);
+		browserFiles[browser.numEntries].image = mem2_strdup(list[i].thumb, MEM2_BROWSER);
 		
 		if(list[i].type == 2)
 			browserFiles[browser.numEntries].type = TYPE_PLAYLIST;
@@ -2063,7 +2063,7 @@ static int ParsePLXPlaylist()
 		browser.numEntries++;
 	}
 	free(list);
-	mem2_free(buffer, OTHER_AREA);
+	mem2_free(buffer, MEM2_OTHER);
 
 	// try to find and select the last loaded file
 	FindFile();
@@ -2167,7 +2167,7 @@ int ParsePlaylistFile()
 			if(root[0] != 0)
 			{
 				GetExt(root, ext);
-				browserFiles[0].file = mem2_strdup(root, BROWSER_AREA);
+				browserFiles[0].file = mem2_strdup(root, MEM2_BROWSER);
 				
 				if(IsPlaylistExt(ext) || strncmp(root, "http:", 5) == 0)
 					browserFiles[0].type = TYPE_PLAYLIST;
@@ -2176,11 +2176,11 @@ int ParsePlaylistFile()
 			}
 			else if(!IsAllowedProtocol(file))
 			{
-				browserFiles[0].file = mem2_strdup("..", BROWSER_AREA);
+				browserFiles[0].file = mem2_strdup("..", MEM2_BROWSER);
 				browserFiles[0].type = TYPE_FOLDER;
 			}
 
-			browserFiles[0].display = mem2_strdup(gettext("Up One Level"), BROWSER_AREA);
+			browserFiles[0].display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
 			browserFiles[0].length = 0;
 			browserFiles[0].icon = ICON_FOLDER;
 
@@ -2193,7 +2193,7 @@ int ParsePlaylistFile()
 			break;
 		}
 
-		browserFiles[browser.numEntries].file = mem2_strdup(file, BROWSER_AREA);
+		browserFiles[browser.numEntries].file = mem2_strdup(file, MEM2_BROWSER);
 
 		// use parameter pt_prettyformat_title for displayname if it exists
 		if(i->params) 
@@ -2204,7 +2204,7 @@ int ParsePlaylistFile()
 					continue;
 				if(i->params[n].value == NULL)
 					break;
-				browserFiles[browser.numEntries].display = mem2_strdup(i->params[n].value, BROWSER_AREA);
+				browserFiles[browser.numEntries].display = mem2_strdup(i->params[n].value, MEM2_BROWSER);
 				break;
 			}
 		}
@@ -2217,11 +2217,11 @@ int ParsePlaylistFile()
 			if(start != NULL && start[1] != 0)
 			{
 				start++;
-				browserFiles[browser.numEntries].display = mem2_strdup(start, BROWSER_AREA);
+				browserFiles[browser.numEntries].display = mem2_strdup(start, MEM2_BROWSER);
 			}
 			else
 			{
-				browserFiles[browser.numEntries].display = mem2_strdup(i->files[0], BROWSER_AREA);
+				browserFiles[browser.numEntries].display = mem2_strdup(i->files[0], MEM2_BROWSER);
 			}
 
 			// hide the file's extension
@@ -2272,8 +2272,8 @@ int ParseOnlineMedia()
 	if(browser.dir[0] != 0)
 	{
 		AddEntryFiles();
-		browserFiles[0].file = mem2_strdup("..", BROWSER_AREA);
-		browserFiles[0].display = mem2_strdup(gettext("Up One Level"), BROWSER_AREA);
+		browserFiles[0].file = mem2_strdup("..", MEM2_BROWSER);
+		browserFiles[0].display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
 		browserFiles[0].length = 0;
 		browserFiles[0].type = TYPE_FOLDER;
 		browserFiles[0].icon = ICON_FOLDER;
@@ -2303,9 +2303,9 @@ int ParseOnlineMedia()
 				snprintf(tmpurl, MAXPATHLEN, "http://%s", browserOnlineMedia[i].url);
 
 			url_unescape_string(tmpurl2, tmpurl);
-			browserFiles[browser.numEntries].file = mem2_strdup(tmpurl2, BROWSER_AREA);
-			browserFiles[browser.numEntries].display = mem2_strdup(browserOnlineMedia[i].display, BROWSER_AREA);
-			browserFiles[browser.numEntries].image = mem2_strdup(browserOnlineMedia[i].image, BROWSER_AREA);
+			browserFiles[browser.numEntries].file = mem2_strdup(tmpurl2, MEM2_BROWSER);
+			browserFiles[browser.numEntries].display = mem2_strdup(browserOnlineMedia[i].display, MEM2_BROWSER);
+			browserFiles[browser.numEntries].image = mem2_strdup(browserOnlineMedia[i].image, MEM2_BROWSER);
 			browserFiles[browser.numEntries].length = 0;
 			browserFiles[browser.numEntries].type = browserOnlineMedia[i].type;
 			browserFiles[browser.numEntries].icon = ICON_NONE;
@@ -2335,8 +2335,8 @@ int ParseOnlineMedia()
 			{
 				// add the folder
 				AddEntryFiles();
-				browserFiles[browser.numEntries].file = mem2_strdup(folder, BROWSER_AREA);
-				browserFiles[browser.numEntries].display = mem2_strdup(folder, BROWSER_AREA);
+				browserFiles[browser.numEntries].file = mem2_strdup(folder, MEM2_BROWSER);
+				browserFiles[browser.numEntries].display = mem2_strdup(folder, MEM2_BROWSER);
 				browserFiles[browser.numEntries].length = 0;
 				browserFiles[browser.numEntries].type = TYPE_FOLDER;
 				browserFiles[browser.numEntries].icon = ICON_FOLDER;

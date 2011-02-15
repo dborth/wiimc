@@ -69,8 +69,8 @@ int MusicPlaylistLoad()
 	ResetFiles();
 
 	AddEntryFiles();
-	browserFiles[0].file = mem2_strdup(BrowserHistoryRetrieve(), BROWSER_AREA);
-	browserFiles[0].display = mem2_strdup("Exit Playlist", BROWSER_AREA);
+	browserFiles[0].file = mem2_strdup(BrowserHistoryRetrieve(), MEM2_BROWSER);
+	browserFiles[0].display = mem2_strdup("Exit Playlist", MEM2_BROWSER);
 	browserFiles[0].length = 0;
 	browserFiles[0].icon = ICON_FOLDER;
 
@@ -91,8 +91,8 @@ int MusicPlaylistLoad()
 		if(!AddEntryFiles())
 			break;
 
-		browserFiles[i+1].file = mem2_strdup(browserMusic[i].file, BROWSER_AREA);
-		browserFiles[i+1].display = mem2_strdup(browserMusic[i].display, BROWSER_AREA);
+		browserFiles[i+1].file = mem2_strdup(browserMusic[i].file, MEM2_BROWSER);
+		browserFiles[i+1].display = mem2_strdup(browserMusic[i].display, MEM2_BROWSER);
 		browserFiles[i+1].length = 0;
 		browserFiles[i+1].type = TYPE_FILE;
 		browserFiles[i+1].icon = ICON_FILE_CHECKED;
@@ -193,7 +193,7 @@ static int EnqueueFile(char * path)
 				return -1;
 			}
 
-			browserMusic[browserinfoMusic.size-1].file = mem2_strdup(file, BROWSER_AREA);
+			browserMusic[browserinfoMusic.size-1].file = mem2_strdup(file, MEM2_BROWSER);
 
 			// use parameter pt_prettyformat_title for display if it exists
 			if(i->params) 
@@ -204,7 +204,7 @@ static int EnqueueFile(char * path)
 						continue;
 					if(i->params[n].value == NULL)
 						break;
-					browserMusic[browserinfoMusic.size-1].display = mem2_strdup(i->params[n].value, BROWSER_AREA);
+					browserMusic[browserinfoMusic.size-1].display = mem2_strdup(i->params[n].value, MEM2_BROWSER);
 					break;
 				}
 			}
@@ -217,11 +217,11 @@ static int EnqueueFile(char * path)
 				if(start != NULL && start[1] != 0)
 				{
 					start++;
-					browserMusic[browserinfoMusic.size-1].display = mem2_strdup(start, BROWSER_AREA);
+					browserMusic[browserinfoMusic.size-1].display = mem2_strdup(start, MEM2_BROWSER);
 				}
 				else
 				{
-					browserMusic[browserinfoMusic.size-1].display = mem2_strdup(i->files[0], BROWSER_AREA);
+					browserMusic[browserinfoMusic.size-1].display = mem2_strdup(i->files[0], MEM2_BROWSER);
 				}
 
 				// hide the file's extension
@@ -238,7 +238,7 @@ static int EnqueueFile(char * path)
 		if(!AddEntryMusic()) // add failed
 			return -1;
 
-		browserMusic[browserinfoMusic.size-1].file = mem2_strdup(path, BROWSER_AREA);
+		browserMusic[browserinfoMusic.size-1].file = mem2_strdup(path, MEM2_BROWSER);
 
 		char *start = strrchr(path,'/');
 
@@ -246,11 +246,11 @@ static int EnqueueFile(char * path)
 		if(start != NULL && start[1] != 0)
 		{
 			start++;
-			browserMusic[browserinfoMusic.size-1].display = mem2_strdup(start, BROWSER_AREA);
+			browserMusic[browserinfoMusic.size-1].display = mem2_strdup(start, MEM2_BROWSER);
 		}
 		else
 		{
-			browserMusic[browserinfoMusic.size-1].display = mem2_strdup(path, BROWSER_AREA);
+			browserMusic[browserinfoMusic.size-1].display = mem2_strdup(path, MEM2_BROWSER);
 		}
 
 		// hide the file's extension
@@ -348,10 +348,10 @@ bool MusicPlaylistEnqueue(int index)
 
 static void Remove(int i)
 {
-	mem2_free(browserMusic[i].file, BROWSER_AREA);
-	mem2_free(browserMusic[i].url, BROWSER_AREA);
-	mem2_free(browserMusic[i].display, BROWSER_AREA);
-	mem2_free(browserMusic[i].image, BROWSER_AREA);
+	mem2_free(browserMusic[i].file, MEM2_BROWSER);
+	mem2_free(browserMusic[i].url, MEM2_BROWSER);
+	mem2_free(browserMusic[i].display, MEM2_BROWSER);
+	mem2_free(browserMusic[i].image, MEM2_BROWSER);
 
 	// shift entries down by one
 	for(int e=i; e < browserinfoMusic.size-1; e++)

@@ -499,10 +499,10 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 			if(!AddEntryOnlineMedia())
 				break;
 
-			browserOnlineMedia[browserinfoOnlineMedia.size-1].file = mem2_strdup(path, BROWSER_AREA);
-			browserOnlineMedia[browserinfoOnlineMedia.size-1].url = mem2_strdup(addr, BROWSER_AREA);
-			browserOnlineMedia[browserinfoOnlineMedia.size-1].display = mem2_strdup(name, BROWSER_AREA);
-			browserOnlineMedia[browserinfoOnlineMedia.size-1].image = mem2_strdup(image, BROWSER_AREA);
+			browserOnlineMedia[browserinfoOnlineMedia.size-1].file = mem2_strdup(path, MEM2_BROWSER);
+			browserOnlineMedia[browserinfoOnlineMedia.size-1].url = mem2_strdup(addr, MEM2_BROWSER);
+			browserOnlineMedia[browserinfoOnlineMedia.size-1].display = mem2_strdup(name, MEM2_BROWSER);
+			browserOnlineMedia[browserinfoOnlineMedia.size-1].image = mem2_strdup(image, MEM2_BROWSER);
 
 			if(type)
 			{
@@ -550,7 +550,7 @@ static void LoadOnlineMediaFile(char * filepath)
 {
 	int offset = 0;
 
-	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, OTHER_AREA);
+	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, MEM2_OTHER);
 
 	if(!savebuffer)
 		return;
@@ -569,7 +569,7 @@ static void LoadOnlineMediaFile(char * filepath)
 			mxmlDelete(xml);
 		}
 	}
-	mem2_free(savebuffer, OTHER_AREA);
+	mem2_free(savebuffer, MEM2_OTHER);
 }
 
 /****************************************************************************
@@ -914,14 +914,14 @@ SaveSettings (bool silent)
 		ShowAction ("Saving settings...");
 
 	FixInvalidSettings();
-	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, OTHER_AREA);
+	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, MEM2_OTHER);
 
 	if(savebuffer)
 	{
 		memset(savebuffer, 0, SAVEBUFFERSIZE);
 		datasize = prepareSettingsData();
 		offset = SaveFile(savebuffer, filepath, datasize, silent);
-		mem2_free(savebuffer, OTHER_AREA);
+		mem2_free(savebuffer, MEM2_OTHER);
 	}
 
 	if(!silent)
@@ -940,7 +940,7 @@ SaveSettings (bool silent)
 		if(buff)
 		{
 			SaveFile(buff, filepath, strlen(buff), SILENT);
-			mem2_free(buff, OTHER_AREA);
+			mem2_free(buff, MEM2_OTHER);
 		}
 		return true;
 	}
@@ -961,7 +961,7 @@ static bool LoadSettingsFile(char * filepath)
 	bool result = false;
 	int offset = 0;
 
-	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, OTHER_AREA);
+	savebuffer = (char *)mem2_malloc(SAVEBUFFERSIZE, MEM2_OTHER);
 
 	if(!savebuffer)
 		return false;
@@ -1068,7 +1068,7 @@ static bool LoadSettingsFile(char * filepath)
 		}
 	}
 
-	mem2_free(savebuffer, OTHER_AREA);
+	mem2_free(savebuffer, MEM2_OTHER);
 	return result;
 }
 
@@ -1104,14 +1104,14 @@ bool LoadSettings()
 			ChangeTheme();
 
 		sprintf(filepath,"%s/restore_points", appPath);
-		char *buffer = (char *)mem2_malloc(50*1024, OTHER_AREA);
+		char *buffer = (char *)mem2_malloc(50*1024, MEM2_OTHER);
 
 		if(buffer)
 		{
 			int size = LoadFile(buffer, 50*1024, filepath, SILENT);
 			if(size > 0)
 				wiiLoadRestorePoints(buffer, size);
-			mem2_free(buffer, OTHER_AREA);
+			mem2_free(buffer, MEM2_OTHER);
 		}
 	}
 	return settingsFound;

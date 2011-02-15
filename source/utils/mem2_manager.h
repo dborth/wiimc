@@ -12,14 +12,14 @@
 #include <ogc/system.h>
 
 enum mem2_areas_enum {
-	VIDEO_AREA,
-	BROWSER_AREA,
-	GUI_AREA,
-	OTHER_AREA,
-	PICTURE_AREA,
-	INDEX_AREA,
-	EXTFONT_AREA,
-	MAX_AREA
+	MEM2_VIDEO,
+	MEM2_BROWSER,
+	MEM2_GUI,
+	MEM2_OTHER,
+	MEM2_PICTURE,
+	MEM2_INDEX,
+	MEM2_EXTFONT,
+	MEM2_MAX
 };
  
 #ifdef __cplusplus

@@ -28,9 +28,9 @@
 //#define http_memalign memalign
 
 #include "mem2_manager.h"
-#define http_malloc(x) mem2_malloc(x, OTHER_AREA)
-#define http_free(x) mem2_free(x, OTHER_AREA)
-#define http_memalign(x,y) mem2_memalign(x,y, OTHER_AREA)
+#define http_malloc(x) mem2_malloc(x, MEM2_OTHER)
+#define http_free(x) mem2_free(x, MEM2_OTHER)
+#define http_memalign(x,y) mem2_memalign(x,y, MEM2_OTHER)
 
 #define MAX_SIZE (1024*1024*15)
 

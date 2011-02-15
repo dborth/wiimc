@@ -328,7 +328,7 @@ InitVideo2 ()
 	GX_SetDrawDoneCallback(Draw_VIDEO);
 	GX_Flush();
 
-	videoScreenshot = (u8 *) mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, VIDEO_AREA);
+	videoScreenshot = (u8 *) mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, MEM2_VIDEO);
 }
 
 }

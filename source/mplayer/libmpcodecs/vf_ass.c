@@ -54,9 +54,9 @@
 
 #ifdef GEKKO
 #include "../../utils/mem2_manager.h"
-#define malloc(x) mem2_malloc(x,OTHER_AREA)
-#define free(x) mem2_free(x,OTHER_AREA)
-#define strdup(x) mem2_strdup(x,OTHER_AREA)
+#define malloc(x) mem2_malloc(x,MEM2_OTHER)
+#define free(x) mem2_free(x,MEM2_OTHER)
+#define strdup(x) mem2_strdup(x,MEM2_OTHER)
 #endif
 
 static const struct vf_priv_s {

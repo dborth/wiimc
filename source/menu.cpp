@@ -839,13 +839,13 @@ restart:
 			if(ext_font_ttf)
 			{
 				SuspendGui();
-				mem2_free(ext_font_ttf, EXTFONT_AREA);
+				mem2_free(ext_font_ttf, MEM2_EXTFONT);
 				ext_font_ttf = NULL;
 			}
 
-			if(AddMem2Area(loadSize+1024,EXTFONT_AREA))
+			if(AddMem2Area(loadSize+1024,MEM2_EXTFONT))
 			{
-				ext_font_ttf = (u8 *)mem2_memalign(32, loadSize, EXTFONT_AREA); // can be a problem we have to see how to manage it
+				ext_font_ttf = (u8 *)mem2_memalign(32, loadSize, MEM2_EXTFONT); // can be a problem we have to see how to manage it
 				if(ext_font_ttf)
 				{
 					fseeko(file,0,SEEK_SET);
@@ -913,7 +913,7 @@ error:
 	{
 		SuspendGui();
 		DeinitFreeType();
-		if(ext_font_ttf) mem2_free(ext_font_ttf, EXTFONT_AREA);
+		if(ext_font_ttf) mem2_free(ext_font_ttf, MEM2_EXTFONT);
 		ext_font_ttf = NULL;
 		InitFreeType((u8*)font_ttf, font_ttf_size);
 		currentFont = FONT_DEFAULT;
@@ -1865,7 +1865,7 @@ static bool thumbLoad = false;
 static void *ThumbThread (void *arg)
 {
 	GuiImageData *thumb = NULL;
-	char *thumbBuffer = (char *)mem2_malloc(200*1024, OTHER_AREA);
+	char *thumbBuffer = (char *)mem2_malloc(200*1024, MEM2_OTHER);
 	thumbLoad = false;
 	thumbThreadHalt = 0;
 
@@ -1918,7 +1918,7 @@ static void *ThumbThread (void *arg)
 		usleep(THREAD_SLEEP);
 	}
 	if(thumb) delete thumb;
-	if(thumbBuffer) mem2_free(thumbBuffer, OTHER_AREA);
+	if(thumbBuffer) mem2_free(thumbBuffer, MEM2_OTHER);
 	return NULL;
 }
 
@@ -2011,7 +2011,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	if(!ChangeInterface(DEVICE_INTERNET,0,NOTSILENT))
 		return false;
 
-	char *buffer = (char *)mem2_malloc(128*1024, OTHER_AREA);
+	char *buffer = (char *)mem2_malloc(128*1024, MEM2_OTHER);
 
 	if(!buffer)
 		return false;
@@ -2020,7 +2020,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	if(size <= 0)
 	{
-		mem2_free(buffer, OTHER_AREA);
+		mem2_free(buffer, MEM2_OTHER);
 		return false;
 	}
 
@@ -2029,7 +2029,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	if(str == NULL)
 	{
-		mem2_free(buffer, OTHER_AREA);
+		mem2_free(buffer, MEM2_OTHER);
 		return false;
 	}
 
@@ -2049,11 +2049,11 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		if(strcmp((*link).first.c_str(), WiiSettings.youtubeFormat) == 0)
 		{
 			url_unescape_string(newurl, (*link).second.c_str());
-			mem2_free(buffer, OTHER_AREA);
+			mem2_free(buffer, MEM2_OTHER);
 			return true;
 		}
 	}
-	mem2_free(buffer, OTHER_AREA);
+	mem2_free(buffer, MEM2_OTHER);
 	return false;
 }
 
@@ -2882,7 +2882,7 @@ static void FreePicBuffer()
 	}
 
 	picBuffer = NULL;
-	RemoveMem2Area(PICTURE_AREA);
+	RemoveMem2Area(MEM2_PICTURE);
 }
 
 static bool AllocPicBuffer()
@@ -2892,10 +2892,10 @@ static bool AllocPicBuffer()
 
 	int maxpic = MAX_TEX_WIDTH * MAX_TEX_HEIGHT * 4; // max size of 1 RGBA8 picture
 
-	if(!AddMem2Area(MAX_PICTURE_SIZE + maxpic*5 + 16*1024, PICTURE_AREA))
+	if(!AddMem2Area(MAX_PICTURE_SIZE + maxpic*5 + 16*1024, MEM2_PICTURE))
 		return false;
 
-	picBuffer = (u8 *)mem2_memalign(32, MAX_PICTURE_SIZE, PICTURE_AREA);
+	picBuffer = (u8 *)mem2_memalign(32, MAX_PICTURE_SIZE, MEM2_PICTURE);
 
 	if(!picBuffer)
 	{
@@ -2905,7 +2905,7 @@ static bool AllocPicBuffer()
 
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		u8 *ptr = (u8 *)mem2_memalign(32, maxpic, PICTURE_AREA);
+		u8 *ptr = (u8 *)mem2_memalign(32, maxpic, MEM2_PICTURE);
 		if(!ptr)
 		{
 			FreePicBuffer();
@@ -6262,13 +6262,13 @@ static void AudioNowPlayingCallback(void *ptr)
 
 		if(album && strlen(album) > 0 && year && strlen(year) > 0)
 		{
-			char *txt=(char*)mem2_malloc(sizeof(char)*1024, GUI_AREA);
+			char *txt=(char*)mem2_malloc(sizeof(char)*1024, MEM2_GUI);
 
 			if(txt)
 			{
 				sprintf(txt, "%s (%s)", album, year);
 				audiobarNowPlaying[3]->SetText(txt);
-				mem2_free(txt, GUI_AREA);
+				mem2_free(txt, MEM2_GUI);
 			}
 		}
 		else if(album && strlen(album) > 0)

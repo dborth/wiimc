@@ -657,9 +657,14 @@ msgstr "Calidad de YouTube"
 
 msgid "Low (400x240)"
 msgstr "Baja (400x240)"
-
 msgid "Medium (480x360)"
 msgstr "Media (480x360)"
 
 msgid "High (640x360)"
 msgstr "Alta (640x360)"
+
+msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
+msgstr "El IOS actual no es soportado. La funcionalidad y/o la estabilidad pueden verse drásticamente afectadas."
+
+msgid "Screensaver Delay"
+msgstr "Retardo del Salvapantallas"

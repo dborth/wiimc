@@ -7381,7 +7381,8 @@ void MPlayerMenu()
 	menuMode = 1; // switch to MPlayer GUI mode
 	EnableRumble();
 
-	videoPaused = !wiiIsPaused();
+	videobarPauseImg->SetImage(actionbarPause);
+	videobarPauseTip->SetText("Pause");
 
 	while(controlledbygui == 0)
 	{

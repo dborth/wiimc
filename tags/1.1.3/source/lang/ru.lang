@@ -1,0 +1,571 @@
+msgid "********"
+msgstr "••••••••"
+
+msgid "Videos"
+msgstr "Видео"
+
+msgid "Music"
+msgstr "Музыка"
+
+msgid "Pictures"
+msgstr "Фото"
+
+msgid "Online Media"
+msgstr "Онлайн-медиа"
+
+msgid "Please Wait"
+msgstr "Пожалуйста подождите"
+
+msgid "Error"
+msgstr "Ошибка"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Retry"
+msgstr "Повторить"
+
+msgid "Cancel"
+msgstr "Отменить"
+
+msgid "Information"
+msgstr "Информация"
+
+msgid "Credits"
+msgstr "Credits"
+
+msgid "Play"
+msgstr "Играть"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Single Play"
+msgstr "Одиночное проигрывание"
+
+msgid "Continuous Play"
+msgstr "Продолжающееся проигрывание"
+
+msgid "Shuffle"
+msgstr "Перемешать"
+
+msgid "Loop"
+msgstr "Повторять"
+
+msgid "Continuous"
+msgstr "Продолжать"
+
+msgid "Playlist"
+msgstr "Плейлист"
+
+msgid "Restart"
+msgstr "Рестарт"
+
+msgid "Loading..."
+msgstr "Загрузка..."
+
+msgid "Global"
+msgstr "Обшее"
+
+msgid "Network"
+msgstr "Сеть"
+
+msgid "Subtitles"
+msgstr "Субтитры"
+
+msgid "Subtitle Delay"
+msgstr "Задержка субтитров"
+
+msgid "Settings"
+msgstr "Настройки"
+
+msgid "On"
+msgstr "Вкл."
+
+msgid "Off"
+msgstr "Выкл."
+
+msgid "Always"
+msgstr "Всегда"
+
+msgid "Disabled"
+msgstr "Отключено"
+
+msgid "Backward"
+msgstr "Назад"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Forward"
+msgstr "Вперед"
+
+msgid "Single"
+msgstr "Одиночное"
+
+msgid "now playing"
+msgstr "сейчас играет"
+
+msgid "Previous"
+msgstr "Пред."
+
+msgid "Next"
+msgstr "След."
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "DVD"
+msgstr "DVD"
+
+msgid "Go back"
+msgstr "Перейти назад"
+
+msgid "Update Available"
+msgstr "Есть обновления"
+
+msgid "An update is available!"
+msgstr "Доступно обновление!"
+
+msgid "Update now"
+msgstr "Обновить сейчас"
+
+msgid "Update later"
+msgstr "Обновить позднее"
+
+msgid "Online media file not found."
+msgstr "Онлайн-медиа файл не найден."
+
+msgid "Unrecognized DVD format!"
+msgstr "Нераспознанный формат DVD!"
+
+msgid "Port cannot be blank!"
+msgstr "Порт не может быть пуст!"
+
+msgid "Port is not a number!"
+msgstr "Порт - это не номер!"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "Порт вне разрешенного диапазона(4-49151) !"
+
+msgid "Settings - Global"
+msgstr "Настройки - Общие"
+
+msgid "Settings - Videos"
+msgstr "Настройки - Видео"
+
+msgid "Settings - Music"
+msgstr "Настройки - Музыка"
+
+msgid "Settings - Pictures"
+msgstr "Настройки - Фото"
+
+msgid "Settings - Online Media"
+msgstr "Настройки - Онлайн-медиа"
+
+msgid "Settings - Network"
+msgstr "Настройки - Сеть"
+
+msgid "Settings - DVD"
+msgstr "Настройки - DVD"
+
+msgid "File Extensions"
+msgstr "Расширения файлов"
+
+msgid "Language"
+msgstr "Язык"
+
+msgid "Volume"
+msgstr "Громкость"
+
+msgid "Exit Action"
+msgstr "Действие 'Выйти'"
+
+msgid "Wiimote Rumble"
+msgstr "Вибрация Wiimote"
+
+msgid "Hide"
+msgstr "Спрятать"
+
+msgid "Show"
+msgstr "Показать"
+
+msgid "Auto"
+msgstr "Автоматически"
+
+msgid "Return to Wii Menu"
+msgstr "Вернуться в Wii меню"
+
+msgid "Power Off Wii"
+msgstr "Выключить Wii"
+
+msgid "Return to Loader"
+msgstr "Вернуться в Loader"
+
+
+msgid "Screen Zoom"
+msgstr "Масштаб экрана"
+
+msgid "Screen Position"
+msgstr "Позиция на экране"
+
+msgid "Frame Dropping"
+msgstr "Frame Dropping"
+
+msgid "Aspect Ratio"
+msgstr "Соотношение сторон"
+
+msgid "Cache Fill"
+msgstr "Заполение кэша"
+
+msgid "Audio Delay"
+msgstr "Задержка звука"
+
+msgid "Auto-Resume"
+msgstr "Авто-продолжение"
+
+msgid "Videos Files Folder"
+msgstr "Папка с Видео"
+
+msgid "Play Order"
+msgstr "Порядок проигрывания"
+
+msgid "Music Files Folder"
+msgstr "Папка с Музыкой"
+
+msgid "Pictures Files Folder"
+msgstr "Папка с Фото"
+
+msgid "Display Name"
+msgstr "Имя"
+
+msgid "Share IP"
+msgstr "IP адрес"
+
+msgid "Share Name"
+msgstr "Имя шары"
+
+msgid "Username"
+msgstr "Пользователь"
+
+msgid "Password"
+msgstr "Пароль"
+
+msgid "New Share"
+msgstr "Новая шара"
+
+msgid "Delete"
+msgstr "Удалить"
+
+msgid "Delete Share"
+msgstr "Удалить шару"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "Вы уверены, что вы хотите удалить эту шару?"
+
+msgid "IP"
+msgstr "IP"
+
+msgid "Folder"
+msgstr "Папка"
+
+msgid "Mode"
+msgstr "Режим"
+
+msgid "New Site"
+msgstr "Новый сайт"
+
+msgid "Passive"
+msgstr "Пассивный"
+
+msgid "Active"
+msgstr "Активный"
+
+msgid "Delete Site"
+msgstr "Удалить сайт"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "Вы уверены, что вы хотите удалить этот сайт?"
+
+msgid "Port"
+msgstr "Порт"
+
+msgid "Rewind / Fast Forward"
+msgstr "Перемотать / Быстро вперед"
+
+msgid "Error loading file!"
+msgstr "Ошибка загрузки файла!"
+
+msgid "Resume"
+msgstr "Продолжить"
+
+msgid "Stop Slideshow"
+msgstr "Остановить слайдшоу"
+
+msgid "Start Slideshow"
+msgstr "Старт слайдшоу"
+
+msgid "Slideshow Delay"
+msgstr "Задержка слайдшоу"
+
+msgid "Online Media Folder"
+msgstr "Папка онлайн-медиа"
+
+msgid "Add SMB Share"
+msgstr "Добавить SMB шару"
+
+msgid "Add FTP Site"
+msgstr "Добавить FTP-сайт"
+
+msgid "DVD Menu"
+msgstr "Меню DVD"
+
+msgid "Skip to Main Title"
+msgstr "Пропустить до Main Title"
+
+msgid "Unable to Initialize MPlayer"
+msgstr "Не могу инициализировать MPlayer"
+
+msgid "Unable to find a valid working path"
+msgstr "Не могу найти правильный рабочий путь"
+
+msgid "Unable to change path to"
+msgstr "Не могу сменить путь на "
+
+msgid "Out of memory: too many files!"
+msgstr "Нет памяти: слишком много файлов!"
+
+msgid "Directory name is too long!"
+msgstr "Имя директории слишком длинное!"
+
+msgid "SD Card"
+msgstr "Карта SD"
+
+msgid "USB Mass Storage"
+msgstr "USB-хранилище"
+
+msgid "Data DVD"
+msgstr "DVD с данными"
+
+msgid "USB drive not found!"
+msgstr "USB-диск не найден!"
+
+msgid "SD card not found!"
+msgstr "Карта SD не найдена!"
+
+msgid "Loading DVD..."
+msgstr "Загружаю DVD..."
+
+msgid "No disc inserted!"
+msgstr "Не вставлен диск!"
+
+msgid "Invalid DVD."
+msgstr "Неправильный DVD."
+
+msgid "Up One Level"
+msgstr "На уровень вверх"
+
+msgid "Error opening"
+msgstr "Ошибка открытия"
+
+msgid "Warning"
+msgstr "Предупреждение"
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "Одна или больше фото в этой папке превышает максимальный размер (6MB) и не могут быть просмотрены."
+
+msgid "Error loading playlist!"
+msgstr "Ошибка загрузки плейлиста!"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr "Плейлист не содержит поддерживаемых записей!"
+
+msgid "No Results Found"
+msgstr "Не найдены результаты"
+
+msgid "Your search did not match any media files."
+msgstr "Ваш поиск не совпал с какими-либо медиа-файлов."
+
+msgid "Error opening file!"
+msgstr "Ошибка открытия файла!"
+
+msgid "Saving..."
+msgstr "Сохранение..."
+
+msgid "Error creating file!"
+msgstr "Ошибка создания файла!"
+
+msgid "Error saving file!"
+msgstr "Ошибка сохранения файла!"
+
+msgid "Playlist is Empty"
+msgstr "Плейлист пуст"
+
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "Наведите на запись и нажмите кнопку '+', чтобы доваить в ваш плейлист."
+
+msgid "Exit Playlist"
+msgstr "Выйти из плейлиста"
+
+msgid "Update successful!"
+msgstr "Обновление успешно!"
+
+msgid "Update failed!"
+msgstr "Обновление провалилось!"
+
+msgid "Initializing network..."
+msgstr "Инициализирую сеть..."
+
+msgid "Check settings file."
+msgstr "Проверка файла настроек."
+
+msgid "Share name is blank."
+msgstr "Имя шары пусто."
+
+msgid "Share IP is blank."
+msgstr "Адрес IP шары пуст."
+
+msgid "Invalid network share settings"
+msgstr "Неправильные настройки сетевой шары"
+
+msgid "Connecting to network share..."
+msgstr "Соединение с сетевой шарой..."
+
+msgid "Failed to connect to network share."
+msgstr "Сбой подключения к сетевой шаре."
+
+msgid "IP is blank."
+msgstr "IP пусто."
+
+msgid "Username is blank."
+msgstr "Поле 'Пользователь' пусто."
+
+msgid "Password is blank."
+msgstr "Поле 'Пароль' пусто."
+
+msgid "Invalid FTP site settings"
+msgstr "Неправильные настройки FTP"
+
+msgid "Connecting to FTP site..."
+msgstr "Соединение с FTP..."
+
+msgid "Failed to connect to FTP site."
+msgstr "Сбой подключения к FTP."
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "Не могу найти подходящее SD или USB устройство, требуется одно из них."
+
+msgid "Could not create folder"
+msgstr "Не могу создать папку"
+
+msgid "Saving settings..."
+msgstr "Сохранить настройки..."
+
+msgid "Could not save settings to"
+msgstr "Не могу сохранить настройки в"
+
+msgid "Thanks to"
+msgstr "Спасибо"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+
+msgid "Menu artwork"
+msgstr "Menu artwork"
+
+msgid ""
+msgstr ""
+
+msgid "Coding & menu design"
+msgstr "Coding & menu design"
+
+msgid "Logo"
+msgstr "Logo"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Buffering..."
+msgstr "Буферизация..."
+
+msgid "Buffering"
+msgstr "Буферизация"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Не могу инициализировать сеть(Erreur #:"
+
+msgid "Settings - Subtitles"
+msgstr "Настройки - Субтитры"
+
+msgid "Visibility"
+msgstr "Видимость"
+
+msgid "Delay"
+msgstr "Задержка"
+
+msgid "Codepage"
+msgstr "Кодировка"
+
+msgid "Subtitle Language"
+msgstr "Язык субтитров"
+
+msgid "Default"
+msgstr "По умолчанию"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "Не могу сменить язык. Недостаточно памяти!"
+
+msgid "Font Required"
+msgstr "Требуется шрифт"
+
+msgid "A new font is required to display this language."
+msgstr "Требуется новый шрифт, чтобы отобразить этот язык."
+
+msgid "Download font"
+msgstr "Скачать шрифт"
+
+msgid "Unable to save font file!"
+msgstr "Не могу сохранить файл шрифта!"
+
+msgid "Out of Memory"
+msgstr "Нет памяти"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr "У WiiMC недостаточно свободной памяти, чтобы загрузить просмотр фото."
+
+msgid "Close MPlayer"
+msgstr "Закрыть MPlayer"
+
+msgid "Subtitle Codepage"
+msgstr "Кодировка субтитров"
+
+msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "В этой папке больше записей, чем максимально возможно (2000). Не все записи будут показаны."
+
+msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
+msgstr "В этом плейлисте больше записей, чем максимально возможно (2000). Не все записи будут показаны."
+
+msgid "Downloading..."
+msgstr "Скачиваю..."
+
+msgid "Unzipping..."
+msgstr "Распаковываю..."
+
+msgid "Color"
+msgstr "Цвет"
+
+msgid "Size"
+msgstr "Размер"
+
+msgid "White"
+msgstr "Белый"
+
+msgid "Black"
+msgstr "Черный"
+
+msgid "Yellow"
+msgstr "Желтый"
+
+msgid "Red"
+msgstr "Красный"

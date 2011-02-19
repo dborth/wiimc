@@ -323,7 +323,7 @@ void StopParseThread()
 
 #define le32_to_cpu(x) bswap32(x)
 
-#define BYTES_PER_SECTOR 2048
+#define BYTES_PER_SECTOR 4096
 #define NTFS_OEM_ID                         (0x4e54465320202020ULL)
 
 #define PARTITION_TYPE_EMPTY                0x00 /* Empty */

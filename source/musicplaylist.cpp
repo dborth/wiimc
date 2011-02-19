@@ -23,7 +23,7 @@ extern "C" {
 #include "mplayer/playtree.h"
 }
 
-static int shuffleList[4000];
+static int shuffleList[2000];
 static int shuffleIndex = -1;
 
 int MusicPlaylistGetNextShuffle()

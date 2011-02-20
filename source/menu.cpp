@@ -2374,7 +2374,7 @@ static void MenuBrowse(int menu)
 				fileBrowser->fileList[i]->ResetState();
 
 				// check corresponding browser entry
-				if(browserFiles[browser.selIndex].type == TYPE_FOLDER)
+				if(!browserFiles[browser.selIndex].file || browserFiles[browser.selIndex].type == TYPE_FOLDER)
 				{
 					fileBrowser->SetState(STATE_DISABLED);
 
@@ -3046,6 +3046,9 @@ restart:
 				int found = FoundPicture(selIndex);
 				if(found < 0)
 				{
+					if(!browserFiles[selIndex].file)
+						goto restart;
+					
 					sprintf(filepath, "%s%s", browser.dir, browserFiles[selIndex].file);
 					pictureIndexLoading = selIndex;
 					int size = LoadFile((char *)picBuffer, MAX_PICTURE_SIZE, filepath, SILENT);
@@ -3098,6 +3101,9 @@ restart:
 
 				if(next >= browser.numEntries || next > (selIndex+(NUM_PICTURES-1)/2))
 					break;
+				
+				if(!browserFiles[next].file)
+					goto restart;
 
 				sprintf(filepath, "%s%s", browser.dir, browserFiles[next].file);
 				pictureIndexLoading = next;

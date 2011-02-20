@@ -189,6 +189,14 @@ static int UpdateDirName()
 		BrowserHistoryDiscard();
 		return 1;
 	}
+	
+	// something went wrong, let's reset everything
+	if(!browserFiles[browser.selIndex].file)
+	{
+		browser.dir[0] = 0;
+		BrowserHistoryClear();
+		return 1;
+	}
 
 	// entering a playlist - this is handled when the playlist is parsed
 	if(browserFiles[browser.selIndex].type == TYPE_PLAYLIST || 

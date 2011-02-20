@@ -91,13 +91,13 @@ msgstr "항상"
 msgid "Disabled"
 msgstr "불활성"
  
-msgid "Backward"
+msgid "Skip Backward"
 msgstr "뒤로"
  
 msgid "Pause"
 msgstr "일시정지"
  
-msgid "Forward"
+msgid "Skip Forward"
 msgstr "앞으로"
  
 msgid "Single"
@@ -288,10 +288,7 @@ msgstr "이 사이트를 지우기를 원하십니까?"
  
 msgid "Port"
 msgstr "포트"
- 
-msgid "Rewind / Fast Forward"
-msgstr "되감기 / 빨리 감기"
- 
+
 msgid "Error loading file!"
 msgstr "파일 로딩 에러!"
  

@@ -91,13 +91,13 @@ msgstr "Alati"
 msgid "Disabled"
 msgstr "Väljas"
 
-msgid "Backward"
+msgid "Skip Backward"
 msgstr "Eelmine"
 
 msgid "Pause"
 msgstr "Paus"
 
-msgid "Forward"
+msgid "Skip Forward"
 msgstr "Järgmine"
 
 msgid "Single"
@@ -288,9 +288,6 @@ msgstr "Oled kindel et tahad kustutada selle aadressi?"
 
 msgid "Port"
 msgstr "Port"
-
-msgid "Rewind / Fast Forward"
-msgstr "Keri Tagasi / Edasi"
 
 msgid "Error loading file!"
 msgstr "Viga faili avamisel!"

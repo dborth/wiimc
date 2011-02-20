@@ -91,13 +91,13 @@ msgstr "Toujours"
 msgid "Disabled"
 msgstr "Désactivé"
 
-msgid "Backward"
+msgid "Skip Backward"
 msgstr "Reculer"
 
 msgid "Pause"
 msgstr "Pause"
 
-msgid "Forward"
+msgid "Skip Forward"
 msgstr "Avancer"
 
 msgid "Single"
@@ -288,9 +288,6 @@ msgstr "Êtes-vous sûr de vouloir supprimer ce site ?"
 
 msgid "Port"
 msgstr "Port"
-
-msgid "Rewind / Fast Forward"
-msgstr "Relire / Avance rapide"
 
 msgid "Error loading file!"
 msgstr "Erreur lors du chargement du fichier !"

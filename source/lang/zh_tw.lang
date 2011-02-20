@@ -91,13 +91,13 @@ msgstr "總是"
 msgid "Disabled"
 msgstr "關閉"
 
-msgid "Backward"
+msgid "Skip Backward"
 msgstr "後退"
 
 msgid "Pause"
 msgstr "暫停"
 
-msgid "Forward"
+msgid "Skip Forward"
 msgstr "向前"
 
 msgid "Single"
@@ -288,9 +288,6 @@ msgstr "你確定要刪除這網址嗎？"
 
 msgid "Port"
 msgstr "埠值"
-
-msgid "Rewind / Fast Forward"
-msgstr "倒帶 / 向前快轉"
 
 msgid "Error loading file!"
 msgstr "載入檔案錯誤！"

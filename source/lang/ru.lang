@@ -91,13 +91,13 @@ msgstr "Всегда"
 msgid "Disabled"
 msgstr "Отключено"
 
-msgid "Backward"
+msgid "Skip Backward"
 msgstr "Назад"
 
 msgid "Pause"
 msgstr "Пауза"
 
-msgid "Forward"
+msgid "Skip Forward"
 msgstr "Вперед"
 
 msgid "Single"
@@ -289,9 +289,6 @@ msgstr "Вы уверены, что вы хотите удалить этот с
 
 msgid "Port"
 msgstr "Порт"
-
-msgid "Rewind / Fast Forward"
-msgstr "Перемотать / Быстро вперед"
 
 msgid "Error loading file!"
 msgstr "Ошибка загрузки файла!"

@@ -336,6 +336,7 @@ prepareSettingsData ()
 	createXMLSetting("exitAction", "Exit action", toStr(WiiSettings.exitAction));
 	createXMLSetting("rumble", "Wiimote rumble", toStr(WiiSettings.rumble));
 	createXMLSetting("screensaverDelay", "Screensaver delay", toStr(WiiSettings.screensaverDelay));
+	createXMLSetting("inactivityShutdown", "Inactivity shutdown", toStr(WiiSettings.inactivityShutdown));
 	createXMLSetting("lockFolders", "Static folders", toStr(WiiSettings.lockFolders));
 	createXMLSetting("startArea", "Starting area", toStr(WiiSettings.startArea));
 	// Videos
@@ -351,7 +352,8 @@ prepareSettingsData ()
 	createXMLSetting("audioDelay", "Audio delay", FtoStr(WiiSettings.audioDelay));
 	createXMLSetting("autoResume", "Auto-resume", toStr(WiiSettings.autoResume));
 	createXMLSetting("autoPlayNextVideo", "Auto-play next video", toStr(WiiSettings.autoPlayNextVideo));
-	createXMLSetting("seekTime", "Seek time", toStr(WiiSettings.seekTime));
+	createXMLSetting("skipBackward", "Skip backward", toStr(WiiSettings.skipBackward));
+	createXMLSetting("skipForward", "Skip forward", toStr(WiiSettings.skipForward));
 	createXMLSetting("videosFolder", "Videos folder", WiiSettings.videosFolder);
 	// Music
 	createXMLSection("Music", "Music Settings");
@@ -590,6 +592,7 @@ void DefaultSettings ()
 	WiiSettings.rumble = 1;
 	WiiSettings.sleepTimer = 0;
 	WiiSettings.screensaverDelay = 300;
+	WiiSettings.inactivityShutdown = 2;
 	WiiSettings.lockFolders = 0;
 	WiiSettings.startArea = MENU_BROWSE_VIDEOS;
 	// Videos
@@ -604,7 +607,8 @@ void DefaultSettings ()
 	WiiSettings.audioDelay = 0;
 	WiiSettings.autoResume = 1;
 	WiiSettings.autoPlayNextVideo = 0;
-	WiiSettings.seekTime = 30;
+	WiiSettings.skipBackward = 10;
+	WiiSettings.skipForward = 30;
 	WiiSettings.videosFolder[0] = 0;
 	// Music
 	WiiSettings.playOrder = PLAY_SINGLE;
@@ -669,6 +673,8 @@ static void FixInvalidSettings()
 		WiiSettings.rumble = 1;
 	if(WiiSettings.screensaverDelay < 60 || WiiSettings.screensaverDelay > 3600)
 		WiiSettings.screensaverDelay = 300;
+	if(WiiSettings.inactivityShutdown < 0 || WiiSettings.inactivityShutdown > 8)
+		WiiSettings.inactivityShutdown = 2;
 	if(WiiSettings.lockFolders != 1 && WiiSettings.lockFolders != 0)
 		WiiSettings.lockFolders = 0;
 	if(WiiSettings.startArea < MENU_BROWSE_VIDEOS || WiiSettings.startArea > MENU_BROWSE_ONLINEMEDIA)
@@ -714,8 +720,10 @@ static void FixInvalidSettings()
 		WiiSettings.autoResume = 1;
 	if(WiiSettings.autoPlayNextVideo != 1 && WiiSettings.autoPlayNextVideo != 0)
 		WiiSettings.autoPlayNextVideo = 1;
-	if(WiiSettings.seekTime < 5 || WiiSettings.seekTime > 1200)
-		WiiSettings.seekTime = 30;
+	if(WiiSettings.skipBackward < 5 || WiiSettings.skipBackward > 1200)
+		WiiSettings.skipBackward = 10;
+	if(WiiSettings.skipForward < 5 || WiiSettings.skipForward > 1200)
+		WiiSettings.skipForward = 30;
 	CleanupPath(WiiSettings.videosFolder);
 
 	// Music
@@ -1019,6 +1027,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.exitAction, "exitAction");
 				loadXMLSetting(&WiiSettings.rumble, "rumble");
 				loadXMLSetting(&WiiSettings.screensaverDelay, "screensaverDelay");
+				loadXMLSetting(&WiiSettings.inactivityShutdown, "inactivityShutdown");
 				loadXMLSetting(&WiiSettings.lockFolders, "lockFolders");
 				loadXMLSetting(&WiiSettings.startArea, "startArea");
 				// Videos
@@ -1033,7 +1042,8 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.audioDelay, "audioDelay");
 				loadXMLSetting(&WiiSettings.autoResume, "autoResume");
 				loadXMLSetting(&WiiSettings.autoPlayNextVideo, "autoPlayNextVideo");
-				loadXMLSetting(&WiiSettings.seekTime, "seekTime");
+				loadXMLSetting(&WiiSettings.skipBackward, "skipBackward");
+				loadXMLSetting(&WiiSettings.skipForward, "skipForward");
 				loadXMLSetting(WiiSettings.videosFolder, "videosFolder", sizeof(WiiSettings.videosFolder));
 				// Music
 				loadXMLSetting(&WiiSettings.playOrder, "playOrder");

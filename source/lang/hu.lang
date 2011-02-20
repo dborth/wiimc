@@ -91,13 +91,13 @@ msgstr "Mindig"
 msgid "Disabled"
 msgstr "Tiltva"
 
-msgid "Backward"
+msgid "Skip Backward"
 msgstr "Visszafelé"
 
 msgid "Pause"
 msgstr "Szünet"
 
-msgid "Forward"
+msgid "Skip Forward"
 msgstr "Előre"
 
 msgid "Single"
@@ -288,9 +288,6 @@ msgstr "Biztos, hogy törölni akarod ezt a helyet?"
 
 msgid "Port"
 msgstr "Port"
-
-msgid "Rewind / Fast Forward"
-msgstr "Előre és visszatekerés lépésköze"
 
 msgid "Error loading file!"
 msgstr "Hiba a fájl betöltésekor!"

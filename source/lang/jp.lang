@@ -91,13 +91,13 @@ msgstr "常時"
 msgid "Disabled"
 msgstr "無効"
 
-msgid "Backward"
+msgid "Skip Backward"
 msgstr "後戻し"
 
 msgid "Pause"
 msgstr "中断"
 
-msgid "Forward"
+msgid "Skip Forward"
 msgstr "先送り"
 
 msgid "Single"
@@ -288,9 +288,6 @@ msgstr "本当に削除しますか？"
 
 msgid "Port"
 msgstr "ポート"
-
-msgid "Rewind / Fast Forward"
-msgstr "後戻し／先送り時間"
 
 msgid "Error loading file!"
 msgstr "ファイルの読み込みでエラーが発生しました"

@@ -4763,21 +4763,27 @@ void wiiSeekPos(int sec)
 	wiiSeek(sec, 2);
 }
 
-static int wiiSeekTime = 30;
+static int wiiSeekForward = 30;
+static int wiiSeekBackward = 10;
 
-void wiiSetSeekTime(int sec)
+void wiiSetSeekForward(int sec)
 {
-	wiiSeekTime = sec;
+	wiiSeekForward = sec;
+}
+
+void wiiSetSeekBackward(int sec)
+{
+	wiiSeekBackward = sec;
 }
 
 void wiiFastForward()
 {
-	wiiSeek(wiiSeekTime, 0);
+	wiiSeek(wiiSeekForward, 0);
 }
 
 void wiiRewind()
 {
-	wiiSeek(-wiiSeekTime, 0);
+	wiiSeek(-wiiSeekBackward, 0);
 }
 
 double wiiGetTimeLength()

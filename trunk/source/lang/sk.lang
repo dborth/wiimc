@@ -91,13 +91,13 @@ msgstr "Stále"
 msgid "Disabled"
 msgstr "Zablokovaný"
 
-msgid "Backward"
+msgid "Skip Backward"
 msgstr "Naspäť"
 
 msgid "Pause"
 msgstr "Pauza"
 
-msgid "Forward"
+msgid "Skip Forward"
 msgstr "Dopredu"
 
 msgid "Single"
@@ -288,9 +288,6 @@ msgstr "Ste si istí, že chcete zmazať túto stránku?"
 
 msgid "Port"
 msgstr "Port"
-
-msgid "Rewind / Fast Forward"
-msgstr "Rýchle prevíjanie vpred/vzad"
 
 msgid "Error loading file!"
 msgstr "Chyba načítania súboru!"

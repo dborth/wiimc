@@ -91,13 +91,13 @@ msgstr "Întotdeauna"
 msgid "Disabled"
 msgstr "Dezactivat(ă)"
 
-msgid "Backward"
+msgid "Skip Backward"
 msgstr "Înapoi"
 
 msgid "Pause"
 msgstr "Pauză"
 
-msgid "Forward"
+msgid "Skip Forward"
 msgstr "Înainte"
 
 msgid "Single"
@@ -288,9 +288,6 @@ msgstr "Eşti sigur că vrei să ștergi acest site?"
 
 msgid "Port"
 msgstr "Port"
-
-msgid "Rewind / Fast Forward"
-msgstr "Mărime salt înainte-inapoi"
 
 msgid "Error loading file!"
 msgstr "Eroare la încărcarea fişierului!"

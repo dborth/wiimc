@@ -522,7 +522,8 @@ void SetMPlayerSettings()
 					WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
 	wiiSetAutoResume(WiiSettings.autoResume);
 	wiiSetVolume(WiiSettings.volume);
-	wiiSetSeekTime(WiiSettings.seekTime);
+	wiiSetSeekBackward(WiiSettings.skipBackward);
+	wiiSetSeekForward(WiiSettings.skipForward);
 	wiiSetCacheFill(WiiSettings.cacheFill);
 	wiiSetOnlineCacheFill(WiiSettings.onlineCacheFill);
 

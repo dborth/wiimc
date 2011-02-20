@@ -556,6 +556,9 @@ static void *ScreensaverThread(void *arg)
 				y = (int)(((double)rand() / double(RAND_MAX + 1.0)) * screenheight);
 
 			w.SetPosition(x, y);
+			
+			if(WiiSettings.inactivityShutdown > 0 && diff_sec(ssTimer, gettime()) > (u32)(WiiSettings.inactivityShutdown*60))
+				ExitRequested = true;
 		}
 done:
 		SuspendGui();
@@ -3818,6 +3821,7 @@ static void MenuSettingsGlobal()
 	sprintf(options.name[i++], "Wiimote Rumble");
 	sprintf(options.name[i++], "Sleep Timer");
 	sprintf(options.name[i++], "Screensaver Delay");
+	sprintf(options.name[i++], "Inactivity Shutdown");
 	sprintf(options.name[i++], "Browser Folders");
 	sprintf(options.name[i++], "Starting Area");
 
@@ -3928,9 +3932,14 @@ static void MenuSettingsGlobal()
 				WiiSettings.screensaverDelay = ssDelay[ssDelayNum];
 				break;
 			case 8:
-				WiiSettings.lockFolders ^= 1;
+				WiiSettings.inactivityShutdown++;
+				if(WiiSettings.inactivityShutdown > 8)
+					WiiSettings.inactivityShutdown = 0;
 				break;
 			case 9:
+				WiiSettings.lockFolders ^= 1;
+				break;
+			case 10:
 				WiiSettings.startArea++;
 				if(WiiSettings.startArea > MENU_BROWSE_ONLINEMEDIA)
 					WiiSettings.startArea = MENU_BROWSE_VIDEOS;
@@ -3995,15 +4004,21 @@ static void MenuSettingsGlobal()
 				sprintf(options.value[6], "Off");
 
 			sprintf(options.value[7], "%d %s", (int)(WiiSettings.screensaverDelay/60), gettext("min"));
-			sprintf(options.value[8], "%s", WiiSettings.lockFolders ? "Static" : "Use Last Browsed");
+			
+			if(WiiSettings.inactivityShutdown > 0)
+				sprintf(options.value[8], "%d %s", WiiSettings.inactivityShutdown, gettext("hours"));
+			else
+				sprintf(options.value[8], "Off");
+			
+			sprintf(options.value[9], "%s", WiiSettings.lockFolders ? "Static" : "Use Last Browsed");
 			
 			switch(WiiSettings.startArea)
 			{
-				case MENU_BROWSE_VIDEOS: 		sprintf(options.value[9], "Videos"); break;
-				case MENU_BROWSE_MUSIC: 		sprintf(options.value[9], "Music"); break;
-				case MENU_BROWSE_PICTURES: 		sprintf(options.value[9], "Pictures"); break;
-				case MENU_DVD: 					sprintf(options.value[9], "DVD"); break;
-				case MENU_BROWSE_ONLINEMEDIA: 	sprintf(options.value[9], "Online Media"); break;
+				case MENU_BROWSE_VIDEOS: 		sprintf(options.value[10], "Videos"); break;
+				case MENU_BROWSE_MUSIC: 		sprintf(options.value[10], "Music"); break;
+				case MENU_BROWSE_PICTURES: 		sprintf(options.value[10], "Pictures"); break;
+				case MENU_DVD: 					sprintf(options.value[10], "DVD"); break;
+				case MENU_BROWSE_ONLINEMEDIA: 	sprintf(options.value[10], "Online Media"); break;
 			}
 
 			optionBrowser.TriggerUpdate();
@@ -4371,7 +4386,8 @@ static void MenuSettingsVideos()
 	sprintf(options.name[i++], "Audio Delay");
 	sprintf(options.name[i++], "Auto-Resume");
 	sprintf(options.name[i++], "Auto-Play Next Video");
-	sprintf(options.name[i++], "Rewind / Fast Forward");
+	sprintf(options.name[i++], "Skip Backward");
+	sprintf(options.name[i++], "Skip Forward");
 	sprintf(options.name[i++], "Videos Files Folder");
 
 	options.length = i;
@@ -4415,6 +4431,18 @@ static void MenuSettingsVideos()
 	mainWindow->Append(&w);
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
+	
+	int skip[8] = { 10, 15, 30, 60, 120, 300, 600, 1200 };
+	int bwSkip = 0;
+	int fwSkip = 2;
+
+	for(i=0; i < 8; i++)
+	{
+		if(WiiSettings.skipBackward == skip[i])
+			bwSkip = i;
+		if(WiiSettings.skipForward == skip[i])
+			fwSkip = i;
+	}
 
 	while(menuCurrent == MENU_SETTINGS_VIDEOS && !guiShutdown)
 	{
@@ -4475,24 +4503,16 @@ static void MenuSettingsVideos()
 				WiiSettings.autoPlayNextVideo ^= 1;
 				break;
 			case 9:
-				if(WiiSettings.seekTime >= 1200)
-					WiiSettings.seekTime = 5;
-				else if(WiiSettings.seekTime >= 600)
-					WiiSettings.seekTime = 1200;
-				else if(WiiSettings.seekTime >= 300)
-					WiiSettings.seekTime = 600;
-				else if(WiiSettings.seekTime >= 180)
-					WiiSettings.seekTime = 300;
-				else if(WiiSettings.seekTime >= 60)
-					WiiSettings.seekTime = 180;
-				else if(WiiSettings.seekTime >= 30)
-					WiiSettings.seekTime = 60;
-				else if(WiiSettings.seekTime >= 15)
-					WiiSettings.seekTime = 30;
-				else
-					WiiSettings.seekTime = 15;
+				bwSkip++;
+				if(bwSkip > 7) bwSkip = 0;
+				WiiSettings.skipBackward = skip[bwSkip];
 				break;
 			case 10:
+				fwSkip++;
+				if(fwSkip > 7) fwSkip = 0;
+				WiiSettings.skipForward = skip[fwSkip];
+				break;
+			case 11:
 				OnScreenKeyboard(WiiSettings.videosFolder, MAXPATHLEN);
 				CleanupPath(WiiSettings.videosFolder);
 				break;
@@ -4530,8 +4550,9 @@ static void MenuSettingsVideos()
 			sprintf (options.value[6], "%.1f %s", WiiSettings.audioDelay, gettext("sec"));
 			sprintf (options.value[7], "%s", WiiSettings.autoResume ? "On" : "Off");
 			sprintf (options.value[8], "%s", WiiSettings.autoPlayNextVideo ? "On" : "Off");
-			sprintf (options.value[9], "%d %s", WiiSettings.seekTime, gettext("sec"));
-			snprintf(options.value[10], 60, "%s", WiiSettings.videosFolder);
+			sprintf (options.value[9], "%d %s", WiiSettings.skipBackward, gettext("sec"));
+			sprintf (options.value[10], "%d %s", WiiSettings.skipForward, gettext("sec"));
+			snprintf(options.value[11], 60, "%s", WiiSettings.videosFolder);
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -6499,9 +6520,9 @@ static void SetupGui()
 	videobarVolumeLevelBottomImg->SetVisible(false);
 	
 	videobarVolumeTip = new GuiTooltip("Volume");
-	videobarBackwardTip = new GuiTooltip("Backward");
+	videobarBackwardTip = new GuiTooltip("Skip Backward");
 	videobarPauseTip = new GuiTooltip("Pause");
-	videobarForwardTip = new GuiTooltip("Forward");
+	videobarForwardTip = new GuiTooltip("Skip Forward");
 	
 	videobarProgressBtn = new GuiButton(videobarProgressImg->GetWidth(), videobarProgressImg->GetHeight());
 	videobarProgressBtn->SetImage(videobarProgressImg);

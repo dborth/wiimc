@@ -95,6 +95,7 @@ struct SWiiSettings {
 	int		rumble;
 	int		sleepTimer;
 	int		screensaverDelay;
+	int		inactivityShutdown;
 	int		lockFolders;
 	int		startArea;
 	// Videos
@@ -109,7 +110,8 @@ struct SWiiSettings {
 	float 	audioDelay; // in secs
 	int 	autoResume;
 	int 	autoPlayNextVideo;
-	int		seekTime;
+	int		skipBackward;
+	int		skipForward;
 	char 	videosFolder[MAXPATHLEN];
 	// Music
 	int 	playOrder; // PLAY_SINGLE, PLAY_CONTINUOUS, PLAY_SHUFFLE, PLAY_LOOP

@@ -318,6 +318,7 @@ static int progressTotal = 0;
 
 bool menuMode = 0; // 0 - normal GUI, 1 - GUI for MPlayer
 static int slideshow = 0; // slideshow mode
+static u64 ssTimer = 0;
 
 static void UpdateMenuImages(int oldBtn, int newBtn)
 {	
@@ -640,7 +641,7 @@ extern "C" void DoMPlayerGuiDraw()
 static void *GuiThread (void *arg)
 {
 	int i;
-	u64 ssTimer = 0;
+	ssTimer = 0;
 
 	while(1)
 	{

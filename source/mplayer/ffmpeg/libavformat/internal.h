@@ -48,10 +48,7 @@ do {\
 } while(0)
 #endif
 
-time_t mktimegm(struct tm *tm);
 struct tm *brktimegm(time_t secs, struct tm *tm);
-const char *small_strptime(const char *p, const char *fmt,
-                           struct tm *dt);
 
 char *ff_data_to_hex(char *buf, const uint8_t *src, int size, int lowercase);
 
@@ -81,25 +78,6 @@ void ff_read_frame_flush(AVFormatContext *s);
 
 /** Get the current time since NTP epoch in microseconds. */
 uint64_t ff_ntp_time(void);
-
-/**
- * Probe a bytestream to determine the input format. Each time a probe returns
- * with a score that is too low, the probe buffer size is increased and another
- * attempt is made. When the maximum probe size is reached, the input format
- * with the highest score is returned.
- *
- * @param pb the bytestream to probe, it may be closed and opened again
- * @param fmt the input format is put here
- * @param filename the filename of the stream
- * @param logctx the log context
- * @param offset the offset within the bytestream to probe from
- * @param max_probe_size the maximum probe buffer size (zero for default)
- * @return 0 in case of success, a negative value corresponding to an
- * AVERROR code otherwise
- */
-int ff_probe_input_buffer(ByteIOContext **pb, AVInputFormat **fmt,
-                          const char *filename, void *logctx,
-                          unsigned int offset, unsigned int max_probe_size);
 
 #if FF_API_URL_SPLIT
 /**
@@ -179,20 +157,20 @@ int ff_get_v_length(uint64_t val);
 /**
  * Put val using a variable number of bytes.
  */
-void ff_put_v(ByteIOContext *bc, uint64_t val);
+void ff_put_v(AVIOContext *bc, uint64_t val);
 
 /**
- * Read a whole line of text from ByteIOContext. Stop reading after reaching
+ * Read a whole line of text from AVIOContext. Stop reading after reaching
  * either a \n, a \0 or EOF. The returned string is always \0 terminated,
  * and may be truncated if the buffer is too small.
  *
- * @param s the read-only ByteIOContext
+ * @param s the read-only AVIOContext
  * @param buf buffer to store the read line
  * @param maxlen size of the buffer
  * @return the length of the string written in the buffer, not including the
  *         final \0
  */
-int ff_get_line(ByteIOContext *s, char *buf, int maxlen);
+int ff_get_line(AVIOContext *s, char *buf, int maxlen);
 
 #define SPACE_CHARS " \t\r\n"
 
@@ -239,5 +217,26 @@ int ff_add_index_entry(AVIndexEntry **index_entries,
                        int *nb_index_entries,
                        unsigned int *index_entries_allocated_size,
                        int64_t pos, int64_t timestamp, int size, int distance, int flags);
+
+/**
+ * Add a new chapter.
+ *
+ * @param s media file handle
+ * @param id unique ID for this chapter
+ * @param start chapter start time in time_base units
+ * @param end chapter end time in time_base units
+ * @param title chapter title
+ *
+ * @return AVChapter or NULL on error
+ */
+AVChapter *ff_new_chapter(AVFormatContext *s, int id, AVRational time_base,
+                          int64_t start, int64_t end, const char *title);
+
+/**
+ * Ensure the index uses less memory than the maximum specified in
+ * AVFormatContext.max_index_size by discarding entries if it grows
+ * too large.
+ */
+void ff_reduce_index(AVFormatContext *s, int stream_index);
 
 #endif /* AVFORMAT_INTERNAL_H */

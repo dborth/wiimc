@@ -180,7 +180,7 @@ dvdnav_status_t dvdnav_get_PGC_positioning_flag(dvdnav_t *self, int32_t *pgc_bas
  *********************************************************************/
 
 /*
- * These functions are used to poll the playback enginge and actually get data
+ * These functions are used to poll the playback engine and actually get data
  * off the DVD.
  */
 
@@ -389,7 +389,7 @@ dvdnav_status_t dvdnav_time_search(dvdnav_t *self,
 
 /*
  * Stop playing current position and play the "GoUp"-program chain.
- * (which generally leads to the title menu or a higer-level menu).
+ * (which generally leads to the title menu or a higher-level menu).
  */
 dvdnav_status_t dvdnav_go_up(dvdnav_t *self);
 
@@ -541,7 +541,7 @@ dvdnav_status_t dvdnav_spu_language_select(dvdnav_t *self,
 /*
  * Return a string describing the title of the DVD.
  * This is an ID string encoded on the disc by the author. In many cases
- * this is a descriptive string such as `THE_MATRIX' but sometimes is sigularly
+ * this is a descriptive string such as `THE_MATRIX' but sometimes is singularly
  * uninformative such as `PDVD-011421'. Some DVD authors even forget to set this,
  * so you may also read the default of the authoring software they used, like
  * `DVDVolume'.
@@ -591,7 +591,7 @@ uint16_t dvdnav_audio_stream_to_lang(dvdnav_t *self, uint8_t stream);
 uint16_t dvdnav_audio_stream_format(dvdnav_t *self, uint8_t stream);
 
 /*
- * Returns number of channelsn in *logical* audio stream 'stream'
+ * Returns number of channels in *logical* audio stream 'stream'
  * (returns 0xffff if no such stream).
  */
 uint16_t dvdnav_audio_stream_channels(dvdnav_t *self, uint8_t stream);
@@ -660,7 +660,7 @@ user_ops_t dvdnav_get_restrictions(dvdnav_t *self);
  */
 
 /*
- * Sets the current angle. If you try to follow a non existant angle
+ * Sets the current angle. If you try to follow a non existent angle
  * the call fails.
  */
 dvdnav_status_t dvdnav_angle_change(dvdnav_t *self, int32_t angle);

@@ -33,6 +33,7 @@
 #include "libavutil/md5.h"
 #include "rm.h"
 #include "internal.h"
+#include "avio_internal.h"
 #include "libavcodec/get_bits.h"
 
 struct RDTDemuxContext {
@@ -63,7 +64,7 @@ ff_rdt_parse_open(AVFormatContext *ic, int first_stream_of_set_idx,
     do {
         s->n_streams++;
     } while (first_stream_of_set_idx + s->n_streams < ic->nb_streams &&
-             s->streams[s->n_streams]->priv_data == s->streams[0]->priv_data);
+             s->streams[s->n_streams]->id == s->streams[0]->id);
     s->prev_set_id    = -1;
     s->prev_stream_id = -1;
     s->prev_timestamp = -1;
@@ -76,11 +77,6 @@ ff_rdt_parse_open(AVFormatContext *ic, int first_stream_of_set_idx,
 void
 ff_rdt_parse_close(RDTDemuxContext *s)
 {
-    int i;
-
-    for (i = 1; i < s->n_streams; i++)
-        s->streams[i]->priv_data = NULL;
-
     av_free(s);
 }
 
@@ -135,7 +131,7 @@ ff_rdt_calc_response_and_checksum(char response[41], char chksum[9],
 static int
 rdt_load_mdpr (PayloadContext *rdt, AVStream *st, int rule_nr)
 {
-    ByteIOContext pb;
+    AVIOContext pb;
     int size;
     uint32_t tag;
 
@@ -155,7 +151,7 @@ rdt_load_mdpr (PayloadContext *rdt, AVStream *st, int rule_nr)
      */
     if (!rdt->mlti_data)
         return -1;
-    init_put_byte(&pb, rdt->mlti_data, rdt->mlti_data_size, 0,
+    ffio_init_context(&pb, rdt->mlti_data, rdt->mlti_data_size, 0,
                   NULL, NULL, NULL, NULL);
     tag = get_le32(&pb);
     if (tag == MKTAG('M', 'L', 'T', 'I')) {
@@ -300,12 +296,12 @@ rdt_parse_packet (AVFormatContext *ctx, PayloadContext *rdt, AVStream *st,
                   const uint8_t *buf, int len, int flags)
 {
     int seq = 1, res;
-    ByteIOContext pb;
+    AVIOContext pb;
 
     if (rdt->audio_pkt_cnt == 0) {
         int pos;
 
-        init_put_byte(&pb, buf, len, 0, NULL, NULL, NULL, NULL);
+        ffio_init_context(&pb, buf, len, 0, NULL, NULL, NULL, NULL);
         flags = (flags & RTP_FLAG_KEY) ? 2 : 0;
         res = ff_rm_parse_packet (rdt->rmctx, &pb, st, rdt->rmst[st->index], len, pkt,
                                   &seq, flags, *timestamp);
@@ -422,7 +418,7 @@ rdt_parse_sdp_line (AVFormatContext *s, int st_index,
         int n, first = -1;
 
         for (n = 0; n < s->nb_streams; n++)
-            if (s->streams[n]->priv_data == stream->priv_data) {
+            if (s->streams[n]->id == stream->id) {
                 int count = s->streams[n]->index + 1;
                 if (first == -1) first = n;
                 if (rdt->nb_rmst < count) {
@@ -463,10 +459,9 @@ add_dstream(AVFormatContext *s, AVStream *orig_st)
 {
     AVStream *st;
 
-    if (!(st = av_new_stream(s, 0)))
+    if (!(st = av_new_stream(s, orig_st->id)))
         return NULL;
     st->codec->codec_type = orig_st->codec->codec_type;
-    st->priv_data         = orig_st->priv_data;
     st->first_dts         = orig_st->first_dts;
 
     return st;
@@ -559,7 +554,7 @@ static RTPDynamicProtocolHandler ff_rdt_ ## n ## _handler = { \
     .open             = rdt_new_context, \
     .close            = rdt_free_context, \
     .parse_packet     = rdt_parse_packet \
-};
+}
 
 RDT_HANDLER(live_video, "x-pn-multirate-realvideo-live", AVMEDIA_TYPE_VIDEO);
 RDT_HANDLER(live_audio, "x-pn-multirate-realaudio-live", AVMEDIA_TYPE_AUDIO);

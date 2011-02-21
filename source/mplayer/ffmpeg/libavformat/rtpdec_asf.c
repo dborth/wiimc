@@ -32,6 +32,7 @@
 #include "rtpdec_formats.h"
 #include "rtsp.h"
 #include "asf.h"
+#include "avio_internal.h"
 
 /**
  * From MSDN 2.2.1.4, we learn that ASF data packets over RTP should not
@@ -72,7 +73,7 @@ static int rtp_asf_fix_header(uint8_t *buf, int len)
 }
 
 /**
- * The following code is basically a buffered ByteIOContext,
+ * The following code is basically a buffered AVIOContext,
  * with the added benefit of returning -EAGAIN (instead of 0)
  * on packet boundaries, such that the ASF demuxer can return
  * safely and resume business at the next packet.
@@ -82,9 +83,9 @@ static int packetizer_read(void *opaque, uint8_t *buf, int buf_size)
     return AVERROR(EAGAIN);
 }
 
-static void init_packetizer(ByteIOContext *pb, uint8_t *buf, int len)
+static void init_packetizer(AVIOContext *pb, uint8_t *buf, int len)
 {
-    init_put_byte(pb, buf, len, 0, NULL, packetizer_read, NULL, NULL);
+    ffio_init_context(pb, buf, len, 0, NULL, packetizer_read, NULL, NULL);
 
     /* this "fills" the buffer with its current content */
     pb->pos     = len;
@@ -95,7 +96,7 @@ int ff_wms_parse_sdp_a_line(AVFormatContext *s, const char *p)
 {
     int ret = 0;
     if (av_strstart(p, "pgmpu:data:application/vnd.ms.wms-hdr.asfv1;base64,", &p)) {
-        ByteIOContext pb;
+        AVIOContext pb;
         RTSPState *rt = s->priv_data;
         int len = strlen(p) * 6 / 8;
         char *buf = av_mallocz(len);
@@ -147,7 +148,7 @@ static int asfrtp_parse_sdp_line(AVFormatContext *s, int stream_index,
 }
 
 struct PayloadContext {
-    ByteIOContext *pktbuf, pb;
+    AVIOContext *pktbuf, pb;
     uint8_t *buf;
 };
 
@@ -161,7 +162,7 @@ static int asfrtp_parse_packet(AVFormatContext *s, PayloadContext *asf,
                                uint32_t *timestamp,
                                const uint8_t *buf, int len, int flags)
 {
-    ByteIOContext *pb = &asf->pb;
+    AVIOContext *pb = &asf->pb;
     int res, mflags, len_off;
     RTSPState *rt = s->priv_data;
 
@@ -176,7 +177,7 @@ static int asfrtp_parse_packet(AVFormatContext *s, PayloadContext *asf,
 
         av_freep(&asf->buf);
 
-        init_put_byte(pb, buf, len, 0, NULL, NULL, NULL, NULL);
+        ffio_init_context(pb, buf, len, 0, NULL, NULL, NULL, NULL);
 
         while (url_ftell(pb) + 4 < len) {
             int start_off = url_ftell(pb);
@@ -288,7 +289,7 @@ RTPDynamicProtocolHandler ff_ms_rtp_ ## n ## _handler = { \
     .open             = asfrtp_new_context, \
     .close            = asfrtp_free_context, \
     .parse_packet     = asfrtp_parse_packet,   \
-};
+}
 
 RTP_ASF_HANDLER(asf_pfv, "x-asf-pf",  AVMEDIA_TYPE_VIDEO);
 RTP_ASF_HANDLER(asf_pfa, "x-asf-pf",  AVMEDIA_TYPE_AUDIO);

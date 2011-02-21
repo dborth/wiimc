@@ -29,14 +29,14 @@
 #include "libavutil/integer.h"
 #include "libavutil/crc.h"
 #include "libavutil/pixdesc.h"
-#include "libavcore/audioconvert.h"
-#include "libavcore/imgutils.h"
-#include "libavcore/internal.h"
-#include "libavcore/samplefmt.h"
+#include "libavutil/audioconvert.h"
+#include "libavutil/imgutils.h"
+#include "libavutil/samplefmt.h"
 #include "avcodec.h"
 #include "dsputil.h"
 #include "libavutil/opt.h"
 #include "imgconvert.h"
+#include "thread.h"
 #include "audioconvert.h"
 #include "internal.h"
 #include <stdlib.h>
@@ -261,6 +261,11 @@ int avcodec_default_get_buffer(AVCodecContext *s, AVFrame *pic){
     (*picture_number)++;
 
     if(buf->base[0] && (buf->width != w || buf->height != h || buf->pix_fmt != s->pix_fmt)){
+        if(s->active_thread_type&FF_THREAD_FRAME) {
+            av_log_missing_feature(s, "Width/height changing with frame threads is", 0);
+            return -1;
+        }
+
         for(i=0; i<4; i++){
             av_freep(&buf->base[i]);
             buf->data[i]= NULL;
@@ -532,13 +537,31 @@ int attribute_align_arg avcodec_open(AVCodecContext *avctx, AVCodec *codec)
         goto free_and_end;
     }
     avctx->frame_number = 0;
+
+    if (HAVE_THREADS && !avctx->thread_opaque) {
+        ret = ff_thread_init(avctx, avctx->thread_count);
+        if (ret < 0) {
+            goto free_and_end;
+        }
+    }
+
     if (avctx->codec->max_lowres < avctx->lowres) {
         av_log(avctx, AV_LOG_ERROR, "The maximum value for lowres supported by the decoder is %d\n",
                avctx->codec->max_lowres);
         goto free_and_end;
     }
+    if (avctx->codec->sample_fmts && avctx->codec->encode) {
+        int i;
+        for (i = 0; avctx->codec->sample_fmts[i] != AV_SAMPLE_FMT_NONE; i++)
+            if (avctx->sample_fmt == avctx->codec->sample_fmts[i])
+                break;
+        if (avctx->codec->sample_fmts[i] == AV_SAMPLE_FMT_NONE) {
+            av_log(avctx, AV_LOG_ERROR, "Specified sample_fmt is not supported.\n");
+            goto free_and_end;
+        }
+    }
 
-    if(avctx->codec->init){
+    if(avctx->codec->init && !(avctx->active_thread_type&FF_THREAD_FRAME)){
         ret = avctx->codec->init(avctx);
         if (ret < 0) {
             goto free_and_end;
@@ -636,13 +659,17 @@ int attribute_align_arg avcodec_decode_video2(AVCodecContext *avctx, AVFrame *pi
 
     avctx->pkt = avpkt;
 
-    if((avctx->codec->capabilities & CODEC_CAP_DELAY) || avpkt->size){
-        ret = avctx->codec->decode(avctx, picture, got_picture_ptr,
-                                avpkt);
+    if((avctx->codec->capabilities & CODEC_CAP_DELAY) || avpkt->size || (avctx->active_thread_type&FF_THREAD_FRAME)){
+        if (HAVE_THREADS && avctx->active_thread_type&FF_THREAD_FRAME)
+             ret = ff_thread_decode_frame(avctx, picture, got_picture_ptr,
+                                          avpkt);
+        else {
+            ret = avctx->codec->decode(avctx, picture, got_picture_ptr,
+                              avpkt);
+            picture->pkt_dts= avpkt->dts;
+        }
 
         emms_c(); //needed to avoid an emms_c() call before every return;
-
-        picture->pkt_dts= avpkt->dts;
 
         if (*got_picture_ptr)
             avctx->frame_number++;
@@ -759,7 +786,7 @@ av_cold int avcodec_close(AVCodecContext *avctx)
     }
 
     if (HAVE_THREADS && avctx->thread_opaque)
-        avcodec_thread_free(avctx);
+        ff_thread_free(avctx);
     if (avctx->codec && avctx->codec->close)
         avctx->codec->close(avctx);
     avcodec_default_free_buffers(avctx);
@@ -768,6 +795,7 @@ av_cold int avcodec_close(AVCodecContext *avctx)
     if(avctx->codec && avctx->codec->encode)
         av_freep(&avctx->extradata);
     avctx->codec = NULL;
+    avctx->active_thread_type = 0;
     entangled_thread_counter--;
 
     /* Release any user-supplied mutex. */
@@ -1029,6 +1057,8 @@ void avcodec_init(void)
 
 void avcodec_flush_buffers(AVCodecContext *avctx)
 {
+    if(HAVE_THREADS && avctx->active_thread_type&FF_THREAD_FRAME)
+        ff_thread_flush(avctx);
     if(avctx->codec->flush)
         avctx->codec->flush(avctx);
 }
@@ -1117,7 +1147,7 @@ int av_get_bits_per_sample_format(enum AVSampleFormat sample_fmt) {
 #endif
 
 #if !HAVE_THREADS
-int avcodec_thread_init(AVCodecContext *s, int thread_count){
+int ff_thread_init(AVCodecContext *s, int thread_count){
     s->thread_count = thread_count;
     return -1;
 }
@@ -1138,7 +1168,7 @@ unsigned int av_xiphlacing(unsigned char *s, unsigned int v)
 }
 
 #if LIBAVCODEC_VERSION_MAJOR < 53
-#include "libavcore/parseutils.h"
+#include "libavutil/parseutils.h"
 
 int av_parse_video_frame_size(int *width_ptr, int *height_ptr, const char *str)
 {
@@ -1229,3 +1259,46 @@ unsigned int ff_toupper4(unsigned int x)
             + (toupper((x>>16)&0xFF)<<16)
             + (toupper((x>>24)&0xFF)<<24);
 }
+
+#if !HAVE_THREADS
+
+int ff_thread_get_buffer(AVCodecContext *avctx, AVFrame *f)
+{
+    f->owner = avctx;
+    return avctx->get_buffer(avctx, f);
+}
+
+void ff_thread_release_buffer(AVCodecContext *avctx, AVFrame *f)
+{
+    f->owner->release_buffer(f->owner, f);
+}
+
+void ff_thread_finish_setup(AVCodecContext *avctx)
+{
+}
+
+void ff_thread_report_progress(AVFrame *f, int progress, int field)
+{
+}
+
+void ff_thread_await_progress(AVFrame *f, int progress, int field)
+{
+}
+
+#endif
+
+#if LIBAVCODEC_VERSION_MAJOR < 53
+
+int avcodec_thread_init(AVCodecContext *s, int thread_count)
+{
+    return ff_thread_init(s, thread_count);
+}
+
+void avcodec_thread_free(AVCodecContext *s)
+{
+#if HAVE_THREADS
+    ff_thread_free(s);
+#endif
+}
+
+#endif

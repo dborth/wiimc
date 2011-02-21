@@ -289,7 +289,14 @@ static void mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
                 *q++ = lang->value[0];
                 *q++ = lang->value[1];
                 *q++ = lang->value[2];
-                *q++ = 0; /* undefined type */
+                if (st->disposition & AV_DISPOSITION_CLEAN_EFFECTS)
+                    *q++ = 0x01;
+                else if (st->disposition & AV_DISPOSITION_HEARING_IMPAIRED)
+                    *q++ = 0x02;
+                else if (st->disposition & AV_DISPOSITION_VISUAL_IMPAIRED)
+                    *q++ = 0x03;
+                else
+                    *q++ = 0; /* undefined type */
             }
             break;
         case AVMEDIA_TYPE_SUBTITLE:
@@ -586,7 +593,7 @@ static void retransmit_si_info(AVFormatContext *s)
     }
 }
 
-static int64_t get_pcr(const MpegTSWrite *ts, ByteIOContext *pb)
+static int64_t get_pcr(const MpegTSWrite *ts, AVIOContext *pb)
 {
     return av_rescale(url_ftell(pb) + 11, 8 * PCR_TIME_BASE, ts->mux_rate) +
            ts->first_pcr;

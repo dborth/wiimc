@@ -26,6 +26,7 @@
  */
 
 #include "avformat.h"
+#include "avio_internal.h"
 #include "rtp.h"
 #include "rtpdec.h"
 #include "isom.h"
@@ -42,7 +43,7 @@ static int qt_rtp_parse_packet(AVFormatContext *s, PayloadContext *qt,
                                uint32_t *timestamp, const uint8_t *buf,
                                int len, int flags)
 {
-    ByteIOContext pb;
+    AVIOContext pb;
     GetBitContext gb;
     int packing_scheme, has_payload_desc, has_packet_info, alen,
         has_marker_bit = flags & RTP_FLAG_MARKER;
@@ -69,7 +70,7 @@ static int qt_rtp_parse_packet(AVFormatContext *s, PayloadContext *qt,
      * http://developer.apple.com/quicktime/icefloe/dispatch026.html
      */
     init_get_bits(&gb, buf, len << 3);
-    init_put_byte(&pb, buf, len, 0, NULL, NULL, NULL, NULL);
+    ffio_init_context(&pb, buf, len, 0, NULL, NULL, NULL, NULL);
 
     if (len < 4)
         return AVERROR_INVALIDDATA;
@@ -246,7 +247,7 @@ RTPDynamicProtocolHandler ff_ ## m ## _rtp_ ## n ## _handler = { \
     .open             = qt_rtp_new,    \
     .close            = qt_rtp_free,   \
     .parse_packet     = qt_rtp_parse_packet, \
-};
+}
 
 RTP_QT_HANDLER(qt,        vid, "X-QT",        AVMEDIA_TYPE_VIDEO);
 RTP_QT_HANDLER(qt,        aud, "X-QT",        AVMEDIA_TYPE_AUDIO);

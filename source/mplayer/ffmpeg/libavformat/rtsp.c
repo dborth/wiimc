@@ -22,8 +22,10 @@
 #include "libavutil/base64.h"
 #include "libavutil/avstring.h"
 #include "libavutil/intreadwrite.h"
+#include "libavutil/parseutils.h"
 #include "libavutil/random_seed.h"
 #include "avformat.h"
+#include "avio_internal.h"
 
 #include <sys/time.h>
 #if HAVE_POLL_H
@@ -99,11 +101,11 @@ static void rtsp_parse_range_npt(const char *p, int64_t *start, int64_t *end)
     *end = AV_NOPTS_VALUE;
 
     get_word_sep(buf, sizeof(buf), "-", &p);
-    *start = parse_date(buf, 1);
+    av_parse_time(start, buf, 1);
     if (*p == '-') {
         p++;
         get_word_sep(buf, sizeof(buf), "-", &p);
-        *end = parse_date(buf, 1);
+        av_parse_time(end, buf, 1);
     }
 //    av_log(NULL, AV_LOG_DEBUG, "Range Start: %lld\n", *start);
 //    av_log(NULL, AV_LOG_DEBUG, "Range End: %lld\n", *end);
@@ -322,7 +324,7 @@ static void sdp_parse_line(AVFormatContext *s, SDPParseState *s1,
         if (!strcmp(ff_rtp_enc_name(rtsp_st->sdp_payload_type), "MP2T")) {
             /* no corresponding stream */
         } else {
-            st = av_new_stream(s, 0);
+            st = av_new_stream(s, rt->nb_rtsp_streams - 1);
             if (!st)
                 return;
             rtsp_st->stream_index = st->index;
@@ -1681,7 +1683,7 @@ int ff_rtsp_fetch_packet(AVFormatContext *s, AVPacket *pkt)
     case RTSP_LOWER_TRANSPORT_UDP:
     case RTSP_LOWER_TRANSPORT_UDP_MULTICAST:
         len = udp_read_packet(s, &rtsp_st, rt->recvbuf, RECVBUF_SIZE, wait_end);
-        if (len >=0 && rtsp_st->transport_priv && rt->transport == RTSP_TRANSPORT_RTP)
+        if (len > 0 && rtsp_st->transport_priv && rt->transport == RTSP_TRANSPORT_RTP)
             rtp_check_and_send_back_rr(rtsp_st->transport_priv, len);
         break;
     }
@@ -1854,7 +1856,7 @@ static int rtp_read_header(AVFormatContext *s,
     int payload_type;
     AVCodecContext codec;
     struct sockaddr_storage addr;
-    ByteIOContext pb;
+    AVIOContext pb;
     socklen_t addrlen = sizeof(addr);
 
     if (!ff_network_init())
@@ -1912,7 +1914,7 @@ static int rtp_read_header(AVFormatContext *s,
              port, payload_type);
     av_log(s, AV_LOG_VERBOSE, "SDP:\n%s\n", sdp);
 
-    init_put_byte(&pb, sdp, strlen(sdp), 0, NULL, NULL, NULL, NULL);
+    ffio_init_context(&pb, sdp, strlen(sdp), 0, NULL, NULL, NULL, NULL);
     s->pb = &pb;
 
     /* sdp_read_header initializes this again */

@@ -22,184 +22,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavcore/imgutils.h"
+#include "libavutil/imgutils.h"
 #include "avcodec.h"
-#include "vp56.h"
+#include "vp8.h"
 #include "vp8data.h"
-#include "vp8dsp.h"
-#include "h264pred.h"
 #include "rectangle.h"
 
-typedef struct {
-    uint8_t filter_level;
-    uint8_t inner_limit;
-    uint8_t inner_filter;
-} VP8FilterStrength;
-
-typedef struct {
-    uint8_t skip;
-    // todo: make it possible to check for at least (i4x4 or split_mv)
-    // in one op. are others needed?
-    uint8_t mode;
-    uint8_t ref_frame;
-    uint8_t partitioning;
-    VP56mv mv;
-    VP56mv bmv[16];
-} VP8Macroblock;
-
-typedef struct {
-    AVCodecContext *avctx;
-    DSPContext dsp;
-    VP8DSPContext vp8dsp;
-    H264PredContext hpc;
-    vp8_mc_func put_pixels_tab[3][3][3];
-    AVFrame frames[4];
-    AVFrame *framep[4];
-    uint8_t *edge_emu_buffer;
-    VP56RangeCoder c;   ///< header context, includes mb modes and motion vectors
-    int profile;
-
-    int mb_width;   /* number of horizontal MB */
-    int mb_height;  /* number of vertical MB */
-    int linesize;
-    int uvlinesize;
-
-    int keyframe;
-    int invisible;
-    int update_last;    ///< update VP56_FRAME_PREVIOUS with the current one
-    int update_golden;  ///< VP56_FRAME_NONE if not updated, or which frame to copy if so
-    int update_altref;
-    int deblock_filter;
-
-    /**
-     * If this flag is not set, all the probability updates
-     * are discarded after this frame is decoded.
-     */
-    int update_probabilities;
-
-    /**
-     * All coefficients are contained in separate arith coding contexts.
-     * There can be 1, 2, 4, or 8 of these after the header context.
-     */
-    int num_coeff_partitions;
-    VP56RangeCoder coeff_partition[8];
-
-    VP8Macroblock *macroblocks;
-    VP8Macroblock *macroblocks_base;
-    VP8FilterStrength *filter_strength;
-
-    uint8_t *intra4x4_pred_mode_top;
-    uint8_t intra4x4_pred_mode_left[4];
-    uint8_t *segmentation_map;
-
-    /**
-     * Cache of the top row needed for intra prediction
-     * 16 for luma, 8 for each chroma plane
-     */
-    uint8_t (*top_border)[16+8+8];
-
-    /**
-     * For coeff decode, we need to know whether the above block had non-zero
-     * coefficients. This means for each macroblock, we need data for 4 luma
-     * blocks, 2 u blocks, 2 v blocks, and the luma dc block, for a total of 9
-     * per macroblock. We keep the last row in top_nnz.
-     */
-    uint8_t (*top_nnz)[9];
-    DECLARE_ALIGNED(8, uint8_t, left_nnz)[9];
-
-    /**
-     * This is the index plus one of the last non-zero coeff
-     * for each of the blocks in the current macroblock.
-     * So, 0 -> no coeffs
-     *     1 -> dc-only (special transform)
-     *     2+-> full transform
-     */
-    DECLARE_ALIGNED(16, uint8_t, non_zero_count_cache)[6][4];
-    DECLARE_ALIGNED(16, DCTELEM, block)[6][4][16];
-    DECLARE_ALIGNED(16, DCTELEM, block_dc)[16];
-    uint8_t intra4x4_pred_mode_mb[16];
-
-    int chroma_pred_mode;    ///< 8x8c pred mode of the current macroblock
-    int segment;             ///< segment of the current macroblock
-
-    int mbskip_enabled;
-    int sign_bias[4]; ///< one state [0, 1] per ref frame type
-    int ref_count[3];
-
-    /**
-     * Base parameters for segmentation, i.e. per-macroblock parameters.
-     * These must be kept unchanged even if segmentation is not used for
-     * a frame, since the values persist between interframes.
-     */
-    struct {
-        int enabled;
-        int absolute_vals;
-        int update_map;
-        int8_t base_quant[4];
-        int8_t filter_level[4];     ///< base loop filter level
-    } segmentation;
-
-    /**
-     * Macroblocks can have one of 4 different quants in a frame when
-     * segmentation is enabled.
-     * If segmentation is disabled, only the first segment's values are used.
-     */
-    struct {
-        // [0] - DC qmul  [1] - AC qmul
-        int16_t luma_qmul[2];
-        int16_t luma_dc_qmul[2];    ///< luma dc-only block quant
-        int16_t chroma_qmul[2];
-    } qmat[4];
-
-    struct {
-        int simple;
-        int level;
-        int sharpness;
-    } filter;
-
-    struct {
-        int enabled;    ///< whether each mb can have a different strength based on mode/ref
-
-        /**
-         * filter strength adjustment for the following macroblock modes:
-         * [0-3] - i16x16 (always zero)
-         * [4]   - i4x4
-         * [5]   - zero mv
-         * [6]   - inter modes except for zero or split mv
-         * [7]   - split mv
-         *  i16x16 modes never have any adjustment
-         */
-        int8_t mode[VP8_MVMODE_SPLIT+1];
-
-        /**
-         * filter strength adjustment for macroblocks that reference:
-         * [0] - intra / VP56_FRAME_CURRENT
-         * [1] - VP56_FRAME_PREVIOUS
-         * [2] - VP56_FRAME_GOLDEN
-         * [3] - altref / VP56_FRAME_GOLDEN2
-         */
-        int8_t ref[4];
-    } lf_delta;
-
-    /**
-     * These are all of the updatable probabilities for binary decisions.
-     * They are only implictly reset on keyframes, making it quite likely
-     * for an interframe to desync if a prior frame's header was corrupt
-     * or missing outright!
-     */
-    struct {
-        uint8_t segmentid[3];
-        uint8_t mbskip;
-        uint8_t intra;
-        uint8_t last;
-        uint8_t golden;
-        uint8_t pred16x16[4];
-        uint8_t pred8x8c[3];
-        /* Padded to allow overreads */
-        uint8_t token[4][17][3][NUM_DCT_TOKENS-1];
-        uint8_t mvc[2][19];
-    } prob[2];
-} VP8Context;
+#if ARCH_ARM
+#   include "arm/vp8.h"
+#endif
 
 static void vp8_decode_flush(AVCodecContext *avctx)
 {
@@ -518,76 +349,10 @@ static int decode_frame_header(VP8Context *s, const uint8_t *buf, int buf_size)
     return 0;
 }
 
-static av_always_inline
-void clamp_mv(VP8Context *s, VP56mv *dst, const VP56mv *src, int mb_x, int mb_y)
+static av_always_inline void clamp_mv(VP8Context *s, VP56mv *dst, const VP56mv *src)
 {
-#define MARGIN (16 << 2)
-    dst->x = av_clip(src->x, -((mb_x << 6) + MARGIN),
-                     ((s->mb_width  - 1 - mb_x) << 6) + MARGIN);
-    dst->y = av_clip(src->y, -((mb_y << 6) + MARGIN),
-                     ((s->mb_height - 1 - mb_y) << 6) + MARGIN);
-}
-
-static av_always_inline
-void find_near_mvs(VP8Context *s, VP8Macroblock *mb,
-                   VP56mv near[2], VP56mv *best, uint8_t cnt[4])
-{
-    VP8Macroblock *mb_edge[3] = { mb + 2 /* top */,
-                                  mb - 1 /* left */,
-                                  mb + 1 /* top-left */ };
-    enum { EDGE_TOP, EDGE_LEFT, EDGE_TOPLEFT };
-    VP56mv near_mv[4]  = {{ 0 }};
-    enum { CNT_ZERO, CNT_NEAREST, CNT_NEAR, CNT_SPLITMV };
-    int idx = CNT_ZERO;
-    int best_idx = CNT_ZERO;
-    int cur_sign_bias = s->sign_bias[mb->ref_frame];
-    int *sign_bias = s->sign_bias;
-
-    /* Process MB on top, left and top-left */
-    #define MV_EDGE_CHECK(n)\
-    {\
-        VP8Macroblock *edge = mb_edge[n];\
-        int edge_ref = edge->ref_frame;\
-        if (edge_ref != VP56_FRAME_CURRENT) {\
-            uint32_t mv = AV_RN32A(&edge->mv);\
-            if (mv) {\
-                if (cur_sign_bias != sign_bias[edge_ref]) {\
-                    /* SWAR negate of the values in mv. */\
-                    mv = ~mv;\
-                    mv = ((mv&0x7fff7fff) + 0x00010001) ^ (mv&0x80008000);\
-                }\
-                if (!n || mv != AV_RN32A(&near_mv[idx]))\
-                    AV_WN32A(&near_mv[++idx], mv);\
-                cnt[idx]      += 1 + (n != 2);\
-            } else\
-                cnt[CNT_ZERO] += 1 + (n != 2);\
-        }\
-    }
-    MV_EDGE_CHECK(0)
-    MV_EDGE_CHECK(1)
-    MV_EDGE_CHECK(2)
-
-    /* If we have three distinct MVs, merge first and last if they're the same */
-    if (cnt[CNT_SPLITMV] && AV_RN32A(&near_mv[1+EDGE_TOP]) == AV_RN32A(&near_mv[1+EDGE_TOPLEFT]))
-        cnt[CNT_NEAREST] += 1;
-
-    cnt[CNT_SPLITMV] = ((mb_edge[EDGE_LEFT]->mode   == VP8_MVMODE_SPLIT) +
-                        (mb_edge[EDGE_TOP]->mode    == VP8_MVMODE_SPLIT)) * 2 +
-                       (mb_edge[EDGE_TOPLEFT]->mode == VP8_MVMODE_SPLIT);
-
-    /* Swap near and nearest if necessary */
-    if (cnt[CNT_NEAR] > cnt[CNT_NEAREST]) {
-        FFSWAP(uint8_t,     cnt[CNT_NEAREST],     cnt[CNT_NEAR]);
-        FFSWAP( VP56mv, near_mv[CNT_NEAREST], near_mv[CNT_NEAR]);
-    }
-
-    /* Choose the best mv out of 0,0 and the nearest mv */
-    if (cnt[CNT_NEAREST] >= cnt[CNT_ZERO])
-        best_idx = CNT_NEAREST;
-
-    mb->mv  = near_mv[best_idx];
-    near[0] = near_mv[CNT_NEAREST];
-    near[1] = near_mv[CNT_NEAR];
+    dst->x = av_clip(src->x, s->mv_min.x, s->mv_max.x);
+    dst->y = av_clip(src->y, s->mv_min.y, s->mv_max.y);
 }
 
 /**
@@ -700,6 +465,95 @@ int decode_splitmvs(VP8Context *s, VP56RangeCoder *c, VP8Macroblock *mb)
 }
 
 static av_always_inline
+void decode_mvs(VP8Context *s, VP8Macroblock *mb, int mb_x, int mb_y)
+{
+    VP8Macroblock *mb_edge[3] = { mb + 2 /* top */,
+                                  mb - 1 /* left */,
+                                  mb + 1 /* top-left */ };
+    enum { CNT_ZERO, CNT_NEAREST, CNT_NEAR, CNT_SPLITMV };
+    enum { EDGE_TOP, EDGE_LEFT, EDGE_TOPLEFT };
+    int idx = CNT_ZERO;
+    int cur_sign_bias = s->sign_bias[mb->ref_frame];
+    int *sign_bias = s->sign_bias;
+    VP56mv near_mv[4];
+    uint8_t cnt[4] = { 0 };
+    VP56RangeCoder *c = &s->c;
+
+    AV_ZERO32(&near_mv[0]);
+    AV_ZERO32(&near_mv[1]);
+
+    /* Process MB on top, left and top-left */
+    #define MV_EDGE_CHECK(n)\
+    {\
+        VP8Macroblock *edge = mb_edge[n];\
+        int edge_ref = edge->ref_frame;\
+        if (edge_ref != VP56_FRAME_CURRENT) {\
+            uint32_t mv = AV_RN32A(&edge->mv);\
+            if (mv) {\
+                if (cur_sign_bias != sign_bias[edge_ref]) {\
+                    /* SWAR negate of the values in mv. */\
+                    mv = ~mv;\
+                    mv = ((mv&0x7fff7fff) + 0x00010001) ^ (mv&0x80008000);\
+                }\
+                if (!n || mv != AV_RN32A(&near_mv[idx]))\
+                    AV_WN32A(&near_mv[++idx], mv);\
+                cnt[idx]      += 1 + (n != 2);\
+            } else\
+                cnt[CNT_ZERO] += 1 + (n != 2);\
+        }\
+    }
+
+    MV_EDGE_CHECK(0)
+    MV_EDGE_CHECK(1)
+    MV_EDGE_CHECK(2)
+
+    mb->partitioning = VP8_SPLITMVMODE_NONE;
+    if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[CNT_ZERO]][0])) {
+        mb->mode = VP8_MVMODE_MV;
+
+        /* If we have three distinct MVs, merge first and last if they're the same */
+        if (cnt[CNT_SPLITMV] && AV_RN32A(&near_mv[1+EDGE_TOP]) == AV_RN32A(&near_mv[1+EDGE_TOPLEFT]))
+            cnt[CNT_NEAREST] += 1;
+
+        /* Swap near and nearest if necessary */
+        if (cnt[CNT_NEAR] > cnt[CNT_NEAREST]) {
+            FFSWAP(uint8_t,     cnt[CNT_NEAREST],     cnt[CNT_NEAR]);
+            FFSWAP( VP56mv, near_mv[CNT_NEAREST], near_mv[CNT_NEAR]);
+        }
+
+        if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[CNT_NEAREST]][1])) {
+            if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[CNT_NEAR]][2])) {
+
+                /* Choose the best mv out of 0,0 and the nearest mv */
+                clamp_mv(s, &mb->mv, &near_mv[CNT_ZERO + (cnt[CNT_NEAREST] >= cnt[CNT_ZERO])]);
+                cnt[CNT_SPLITMV] = ((mb_edge[EDGE_LEFT]->mode    == VP8_MVMODE_SPLIT) +
+                                    (mb_edge[EDGE_TOP]->mode     == VP8_MVMODE_SPLIT)) * 2 +
+                                    (mb_edge[EDGE_TOPLEFT]->mode == VP8_MVMODE_SPLIT);
+
+                if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[CNT_SPLITMV]][3])) {
+                    mb->mode = VP8_MVMODE_SPLIT;
+                    mb->mv = mb->bmv[decode_splitmvs(s, c, mb) - 1];
+                } else {
+                    mb->mv.y += read_mv_component(c, s->prob->mvc[0]);
+                    mb->mv.x += read_mv_component(c, s->prob->mvc[1]);
+                    mb->bmv[0] = mb->mv;
+                }
+            } else {
+                clamp_mv(s, &mb->mv, &near_mv[CNT_NEAR]);
+                mb->bmv[0] = mb->mv;
+            }
+        } else {
+            clamp_mv(s, &mb->mv, &near_mv[CNT_NEAREST]);
+            mb->bmv[0] = mb->mv;
+        }
+    } else {
+        mb->mode = VP8_MVMODE_ZERO;
+        AV_ZERO32(&mb->mv);
+        mb->bmv[0] = mb->mv;
+    }
+}
+
+static av_always_inline
 void decode_intra4x4_modes(VP8Context *s, VP56RangeCoder *c,
                            int mb_x, int keyframe)
 {
@@ -749,9 +603,6 @@ void decode_mb_mode(VP8Context *s, VP8Macroblock *mb, int mb_x, int mb_y, uint8_
         s->chroma_pred_mode = vp8_rac_get_tree(c, vp8_pred8x8c_tree, vp8_pred8x8c_prob_intra);
         mb->ref_frame = VP56_FRAME_CURRENT;
     } else if (vp56_rac_get_prob_branchy(c, s->prob->intra)) {
-        VP56mv near[2], best;
-        uint8_t cnt[4] = { 0 };
-
         // inter MB, 16.2
         if (vp56_rac_get_prob_branchy(c, s->prob->last))
             mb->ref_frame = vp56_rac_get_prob(c, s->prob->golden) ?
@@ -761,32 +612,7 @@ void decode_mb_mode(VP8Context *s, VP8Macroblock *mb, int mb_x, int mb_y, uint8_
         s->ref_count[mb->ref_frame-1]++;
 
         // motion vectors, 16.3
-        find_near_mvs(s, mb, near, &best, cnt);
-        if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[0]][0])) {
-            mb->mode = VP8_MVMODE_MV;
-            if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[1]][1])) {
-                if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[2]][2])) {
-                    if (vp56_rac_get_prob_branchy(c, vp8_mode_contexts[cnt[3]][3])) {
-                        mb->mode = VP8_MVMODE_SPLIT;
-                        clamp_mv(s, &mb->mv, &mb->mv, mb_x, mb_y);
-                        mb->mv = mb->bmv[decode_splitmvs(s, c, mb) - 1];
-                    } else {
-                        clamp_mv(s, &mb->mv, &mb->mv, mb_x, mb_y);
-                        mb->mv.y += read_mv_component(c, s->prob->mvc[0]);
-                        mb->mv.x += read_mv_component(c, s->prob->mvc[1]);
-                    }
-                } else
-                    clamp_mv(s, &mb->mv, &near[1], mb_x, mb_y);
-            } else
-                clamp_mv(s, &mb->mv, &near[0], mb_x, mb_y);
-        } else {
-            mb->mode = VP8_MVMODE_ZERO;
-            AV_ZERO32(&mb->mv);
-        }
-        if (mb->mode != VP8_MVMODE_SPLIT) {
-            mb->partitioning = VP8_SPLITMVMODE_NONE;
-            mb->bmv[0] = mb->mv;
-        }
+        decode_mvs(s, mb, mb_x, mb_y);
     } else {
         // intra MB, 16.1
         mb->mode = vp8_rac_get_tree(c, vp8_pred16x16_tree_inter, s->prob->pred16x16);
@@ -801,6 +627,7 @@ void decode_mb_mode(VP8Context *s, VP8Macroblock *mb, int mb_x, int mb_y, uint8_
     }
 }
 
+#ifndef decode_block_coeffs_internal
 /**
  * @param c arithmetic bitstream reader context
  * @param block destination for block coefficients
@@ -854,7 +681,7 @@ skip_eob:
                     int b = vp56_rac_get_prob(c, token_prob[9+a]);
                     int cat = (a<<1) + b;
                     coeff  = 3 + (8<<cat);
-                    coeff += vp8_rac_get_coeff(c, vp8_dct_cat_prob[cat]);
+                    coeff += vp8_rac_get_coeff(c, ff_vp8_dct_cat_prob[cat]);
                 }
             }
             token_prob = probs[i+1][2];
@@ -864,6 +691,7 @@ skip_eob:
 
     return i;
 }
+#endif
 
 static av_always_inline
 int decode_block_coeffs(VP56RangeCoder *c, DCTELEM block[16],
@@ -1421,17 +1249,17 @@ static av_always_inline void idct_mb(VP8Context *s, uint8_t *dst[3], VP8Macroblo
     if (mb->mode != MODE_I4x4) {
         uint8_t *y_dst = dst[0];
         for (y = 0; y < 4; y++) {
-            uint32_t nnz4 = AV_RN32A(s->non_zero_count_cache[y]);
+            uint32_t nnz4 = AV_RL32(s->non_zero_count_cache[y]);
             if (nnz4) {
                 if (nnz4&~0x01010101) {
                     for (x = 0; x < 4; x++) {
-                        int nnz = s->non_zero_count_cache[y][x];
-                        if (nnz) {
-                            if (nnz == 1)
-                                s->vp8dsp.vp8_idct_dc_add(y_dst+4*x, s->block[y][x], s->linesize);
-                            else
-                                s->vp8dsp.vp8_idct_add(y_dst+4*x, s->block[y][x], s->linesize);
-                        }
+                        if ((uint8_t)nnz4 == 1)
+                            s->vp8dsp.vp8_idct_dc_add(y_dst+4*x, s->block[y][x], s->linesize);
+                        else if((uint8_t)nnz4 > 1)
+                            s->vp8dsp.vp8_idct_add(y_dst+4*x, s->block[y][x], s->linesize);
+                        nnz4 >>= 8;
+                        if (!nnz4)
+                            break;
                     }
                 } else {
                     s->vp8dsp.vp8_idct_dc_add4y(y_dst, s->block[y], s->linesize);
@@ -1442,19 +1270,19 @@ static av_always_inline void idct_mb(VP8Context *s, uint8_t *dst[3], VP8Macroblo
     }
 
     for (ch = 0; ch < 2; ch++) {
-        uint32_t nnz4 = AV_RN32A(s->non_zero_count_cache[4+ch]);
+        uint32_t nnz4 = AV_RL32(s->non_zero_count_cache[4+ch]);
         if (nnz4) {
             uint8_t *ch_dst = dst[1+ch];
             if (nnz4&~0x01010101) {
                 for (y = 0; y < 2; y++) {
                     for (x = 0; x < 2; x++) {
-                        int nnz = s->non_zero_count_cache[4+ch][(y<<1)+x];
-                        if (nnz) {
-                            if (nnz == 1)
-                                s->vp8dsp.vp8_idct_dc_add(ch_dst+4*x, s->block[4+ch][(y<<1)+x], s->uvlinesize);
-                            else
-                                s->vp8dsp.vp8_idct_add(ch_dst+4*x, s->block[4+ch][(y<<1)+x], s->uvlinesize);
-                        }
+                        if ((uint8_t)nnz4 == 1)
+                            s->vp8dsp.vp8_idct_dc_add(ch_dst+4*x, s->block[4+ch][(y<<1)+x], s->uvlinesize);
+                        else if((uint8_t)nnz4 > 1)
+                            s->vp8dsp.vp8_idct_add(ch_dst+4*x, s->block[4+ch][(y<<1)+x], s->uvlinesize);
+                        nnz4 >>= 8;
+                        if (!nnz4)
+                            break;
                     }
                     ch_dst += 4*s->uvlinesize;
                 }
@@ -1701,6 +1529,10 @@ static int vp8_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
     if (s->keyframe)
         memset(s->intra4x4_pred_mode_top, DC_PRED, s->mb_width*4);
 
+    #define MARGIN (16 << 2)
+    s->mv_min.y = -MARGIN;
+    s->mv_max.y = ((s->mb_height - 1) << 6) + MARGIN;
+
     for (mb_y = 0; mb_y < s->mb_height; mb_y++) {
         VP56RangeCoder *c = &s->coeff_partition[mb_y & (s->num_coeff_partitions-1)];
         VP8Macroblock *mb = s->macroblocks + (s->mb_height - mb_y - 1)*2;
@@ -1723,6 +1555,9 @@ static int vp8_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
             if (mb_y == 1) // top left edge is also 129
                 s->top_border[0][15] = s->top_border[0][23] = s->top_border[0][31] = 129;
         }
+
+        s->mv_min.x = -MARGIN;
+        s->mv_max.x = ((s->mb_width  - 1) << 6) + MARGIN;
 
         for (mb_x = 0; mb_x < s->mb_width; mb_x++, mb_xy++, mb++) {
             /* Prefetch the current frame, 4 MBs ahead */
@@ -1764,6 +1599,8 @@ static int vp8_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
             dst[0] += 16;
             dst[1] += 8;
             dst[2] += 8;
+            s->mv_min.x -= 64;
+            s->mv_max.x -= 64;
         }
         if (s->deblock_filter) {
             if (s->filter.simple)
@@ -1771,6 +1608,8 @@ static int vp8_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
             else
                 filter_mb_row(s, mb_y);
         }
+        s->mv_min.y -= 64;
+        s->mv_max.y -= 64;
     }
 
 skip_decode:

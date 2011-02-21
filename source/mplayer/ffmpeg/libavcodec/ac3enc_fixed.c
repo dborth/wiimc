@@ -270,14 +270,9 @@ static void apply_window(DSPContext *dsp, int16_t *output, const int16_t *input,
  * @param n   number of values in the array
  * @return    log2(max(abs(tab[])))
  */
-static int log2_tab(int16_t *tab, int n)
+static int log2_tab(AC3EncodeContext *s, int16_t *src, int len)
 {
-    int i, v;
-
-    v = 0;
-    for (i = 0; i < n; i++)
-        v |= abs(tab[i]);
-
+    int v = s->ac3dsp.ac3_max_msb_abs_int16(src, len);
     return av_log2(v);
 }
 
@@ -286,19 +281,15 @@ static int log2_tab(int16_t *tab, int n)
  * Left-shift each value in an array by a specified amount.
  * @param tab    input array
  * @param n      number of values in the array
- * @param lshift left shift amount. a negative value means right shift.
+ * @param lshift left shift amount
  */
-static void lshift_tab(int16_t *tab, int n, int lshift)
+static void lshift_tab(int16_t *tab, int n, unsigned int lshift)
 {
     int i;
 
     if (lshift > 0) {
         for (i = 0; i < n; i++)
             tab[i] <<= lshift;
-    } else if (lshift < 0) {
-        lshift = -lshift;
-        for (i = 0; i < n; i++)
-            tab[i] >>= lshift;
     }
 }
 
@@ -312,8 +303,7 @@ static void lshift_tab(int16_t *tab, int n, int lshift)
  */
 static int normalize_samples(AC3EncodeContext *s)
 {
-    int v = 14 - log2_tab(s->windowed_samples, AC3_WINDOW_SIZE);
-    v = FFMAX(0, v);
+    int v = 14 - log2_tab(s, s->windowed_samples, AC3_WINDOW_SIZE);
     lshift_tab(s->windowed_samples, AC3_WINDOW_SIZE, v);
     return v - 9;
 }

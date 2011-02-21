@@ -22,6 +22,7 @@
 #include "metadata.h"
 #include "riff.h"
 #include "asf.h"
+#include "avio_internal.h"
 
 #undef NDEBUG
 #include <assert.h>
@@ -188,6 +189,31 @@
                 2*PAYLOAD_HEADER_SIZE_MULTIPLE_PAYLOADS \
                 )
 
+typedef struct {
+    uint32_t seqno;
+    int is_streamed;
+    ASFStream streams[128];              ///< it's max number and it's not that big
+    /* non streamed additonnal info */
+    uint64_t nb_packets;                 ///< how many packets are there in the file, invalid if broadcasting
+    int64_t duration;                    ///< in 100ns units
+    /* packet filling */
+    unsigned char multi_payloads_present;
+    int packet_size_left;
+    int packet_timestamp_start;
+    int packet_timestamp_end;
+    unsigned int packet_nb_payloads;
+    uint8_t packet_buf[PACKET_SIZE];
+    AVIOContext pb;
+    /* only for reading */
+    uint64_t data_offset;                ///< beginning of the first data packet
+
+    int64_t last_indexed_pts;
+    ASFIndex* index_ptr;
+    uint32_t nb_index_count;
+    uint32_t nb_index_memory_alloc;
+    uint16_t maximum_packet;
+} ASFContext;
+
 static const AVCodecTag codec_asf_bmp_tags[] = {
     { CODEC_ID_MPEG4, MKTAG('M', 'P', '4', 'S') },
     { CODEC_ID_MPEG4, MKTAG('M', '4', 'S', '2') },
@@ -197,17 +223,17 @@ static const AVCodecTag codec_asf_bmp_tags[] = {
 
 #define PREROLL_TIME 3100
 
-static void put_guid(ByteIOContext *s, const ff_asf_guid *g)
+static void put_guid(AVIOContext *s, const ff_asf_guid *g)
 {
     assert(sizeof(*g) == 16);
     put_buffer(s, *g, sizeof(*g));
 }
 
-static void put_str16(ByteIOContext *s, const char *tag)
+static void put_str16(AVIOContext *s, const char *tag)
 {
     int len;
     uint8_t *pb;
-    ByteIOContext *dyn_buf;
+    AVIOContext *dyn_buf;
     if (url_open_dyn_buf(&dyn_buf) < 0)
         return;
 
@@ -218,7 +244,7 @@ static void put_str16(ByteIOContext *s, const char *tag)
     av_freep(&pb);
 }
 
-static int64_t put_header(ByteIOContext *pb, const ff_asf_guid *g)
+static int64_t put_header(AVIOContext *pb, const ff_asf_guid *g)
 {
     int64_t pos;
 
@@ -229,7 +255,7 @@ static int64_t put_header(ByteIOContext *pb, const ff_asf_guid *g)
 }
 
 /* update header size */
-static void end_header(ByteIOContext *pb, int64_t pos)
+static void end_header(AVIOContext *pb, int64_t pos)
 {
     int64_t pos1;
 
@@ -243,7 +269,7 @@ static void end_header(ByteIOContext *pb, int64_t pos)
 static void put_chunk(AVFormatContext *s, int type, int payload_length, int flags)
 {
     ASFContext *asf = s->priv_data;
-    ByteIOContext *pb = s->pb;
+    AVIOContext *pb = s->pb;
     int length;
 
     length = payload_length + 8;
@@ -269,7 +295,7 @@ static int64_t unix_to_file_time(int ti)
 static int asf_write_header1(AVFormatContext *s, int64_t file_size, int64_t data_chunk_size)
 {
     ASFContext *asf = s->priv_data;
-    ByteIOContext *pb = s->pb;
+    AVIOContext *pb = s->pb;
     AVMetadataTag *tags[5];
     int header_size, n, extra_size, extra_size2, wav_extra_size, file_time;
     int has_title;
@@ -338,7 +364,7 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size, int64_t data
     if (has_title) {
         int len;
         uint8_t *buf;
-        ByteIOContext *dyn_buf;
+        AVIOContext *dyn_buf;
 
         if (url_open_dyn_buf(&dyn_buf) < 0)
             return AVERROR(ENOMEM);
@@ -454,7 +480,7 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size, int64_t data
         const char *desc;
         int len;
         uint8_t *buf;
-        ByteIOContext *dyn_buf;
+        AVIOContext *dyn_buf;
 
         enc = s->streams[n]->codec;
         p = avcodec_find_encoder(enc->codec_id);
@@ -553,7 +579,7 @@ static int asf_write_header(AVFormatContext *s)
     asf->packet_nb_payloads = 0;
     asf->packet_timestamp_start = -1;
     asf->packet_timestamp_end = -1;
-    init_put_byte(&asf->pb, asf->packet_buf, s->packet_size, 1,
+    ffio_init_context(&asf->pb, asf->packet_buf, s->packet_size, 1,
                   NULL, NULL, NULL, NULL);
 
     return 0;
@@ -577,7 +603,7 @@ static int put_payload_parsing_info(
             )
 {
     ASFContext *asf = s->priv_data;
-    ByteIOContext *pb = s->pb;
+    AVIOContext *pb = s->pb;
     int ppi_size, i;
     int64_t start= url_ftell(pb);
 
@@ -651,7 +677,7 @@ static void flush_packet(AVFormatContext *s)
     asf->packet_nb_payloads = 0;
     asf->packet_timestamp_start = -1;
     asf->packet_timestamp_end = -1;
-    init_put_byte(&asf->pb, asf->packet_buf, s->packet_size, 1,
+    ffio_init_context(&asf->pb, asf->packet_buf, s->packet_size, 1,
                   NULL, NULL, NULL, NULL);
 }
 
@@ -666,7 +692,7 @@ static void put_payload_header(
             )
 {
     ASFContext *asf = s->priv_data;
-    ByteIOContext *pb = &asf->pb;
+    AVIOContext *pb = &asf->pb;
     int val;
 
     val = stream->num;
@@ -807,7 +833,7 @@ static int asf_write_packet(AVFormatContext *s, AVPacket *pkt)
 //
 static int asf_write_index(AVFormatContext *s, ASFIndex *index, uint16_t max, uint32_t count)
 {
-    ByteIOContext *pb = s->pb;
+    AVIOContext *pb = s->pb;
     int i;
 
     put_guid(pb, &ff_asf_simple_index_header);

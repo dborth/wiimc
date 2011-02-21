@@ -20,6 +20,7 @@
  */
 
 #include "avformat.h"
+#include "internal.h"
 #include "mpeg.h"
 
 //#define DEBUG_SEEK
@@ -123,7 +124,7 @@ static int mpegps_read_header(AVFormatContext *s,
     return 0;
 }
 
-static int64_t get_pts(ByteIOContext *pb, int c)
+static int64_t get_pts(AVIOContext *pb, int c)
 {
     uint8_t buf[5];
 
@@ -133,7 +134,7 @@ static int64_t get_pts(ByteIOContext *pb, int c)
     return ff_parse_pes_pts(buf);
 }
 
-static int find_next_start_code(ByteIOContext *pb, int *size_ptr,
+static int find_next_start_code(AVIOContext *pb, int *size_ptr,
                                 int32_t *header_state)
 {
     unsigned int state, v;
@@ -162,7 +163,7 @@ static int find_next_start_code(ByteIOContext *pb, int *size_ptr,
 
 #if 0 /* unused, remove? */
 /* XXX: optimize */
-static int find_prev_start_code(ByteIOContext *pb, int *size_ptr)
+static int find_prev_start_code(AVIOContext *pb, int *size_ptr)
 {
     int64_t pos, pos_start;
     int max_size, start_code;
@@ -201,7 +202,7 @@ static int find_prev_start_code(ByteIOContext *pb, int *size_ptr)
  *
  * @return number of bytes occupied by PSM in the bitstream
  */
-static long mpegps_psm_parse(MpegDemuxContext *m, ByteIOContext *pb)
+static long mpegps_psm_parse(MpegDemuxContext *m, AVIOContext *pb)
 {
     int psm_length, ps_info_length, es_map_length;
 

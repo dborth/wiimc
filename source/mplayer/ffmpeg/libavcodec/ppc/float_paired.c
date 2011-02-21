@@ -207,9 +207,6 @@ void float_init_paired(DSPContext *c, AVCodecContext *avctx)
 	c->vector_fmul_reverse = vector_fmul_reverse_paired;
 	c->vector_fmul_add = vector_fmul_add_paired;
 	c->vector_fmul_window = vector_fmul_window_paired;
-	c->int32_to_float_fmul_scalar = int32_to_float_fmul_scalar_paired;
-	c->float_to_int16 = float_to_int16_paired;
-	c->float_to_int16_interleave = float_to_int16_interleave_paired;
 	c->butterflies_float = butterflies_float_paired;
 	c->scalarproduct_float = scalarproduct_float_paired;
 	c->vector_fmul_scalar = vector_fmul_scalar_paired;

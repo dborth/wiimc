@@ -368,7 +368,6 @@ static void Remove(int i)
 
 void MusicPlaylistDequeue(int index)
 {
-	bool matchFound = false;
 	char fullpath[MAXPATHLEN];
 	GetFullPath(index, fullpath);
 
@@ -431,18 +430,14 @@ void MusicPlaylistDequeue(int index)
 		play_tree_free(list, 1);
 		return;
 	}
+	
+	int i=0;
 
-	do
+	while(i < browserinfoMusic.size)
 	{
-		matchFound = false;
-		for(int i=0; i < browserinfoMusic.size; i++)
-		{
-			if(strncmp(fullpath, browserMusic[i].file, len) == 0)
-			{
-				Remove(i);
-				matchFound = true;
-				break;
-			}
-		}
-	} while(matchFound);
+		if(strncmp(fullpath, browserMusic[i].file, len) == 0)
+			Remove(i);
+		else
+			i++;
+	}
 }

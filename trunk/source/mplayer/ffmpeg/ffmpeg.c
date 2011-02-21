@@ -36,9 +36,9 @@
 #include "libswscale/swscale.h"
 #include "libavcodec/opt.h"
 #include "libavcodec/audioconvert.h"
-#include "libavcore/audioconvert.h"
-#include "libavcore/parseutils.h"
-#include "libavcore/samplefmt.h"
+#include "libavutil/audioconvert.h"
+#include "libavutil/parseutils.h"
+#include "libavutil/samplefmt.h"
 #include "libavutil/colorspace.h"
 #include "libavutil/fifo.h"
 #include "libavutil/intreadwrite.h"
@@ -697,11 +697,6 @@ static int read_ffserver_streams(AVFormatContext *s, const char *filename)
             } else
                 choose_pixel_fmt(st, codec);
         }
-
-        if(!st->codec->thread_count)
-            st->codec->thread_count = 1;
-        if(st->codec->thread_count>1)
-            avcodec_thread_init(st->codec, st->codec->thread_count);
 
         if(st->codec->flags & CODEC_FLAG_BITEXACT)
             nopts = 1;
@@ -1982,7 +1977,7 @@ static int transcode(AVFormatContext **output_files,
     for(i=0;i<nb_output_files;i++) {
         os = output_files[i];
         if (!os->nb_streams && !(os->oformat->flags & AVFMT_NOSTREAMS)) {
-            dump_format(output_files[i], i, output_files[i]->filename, 1);
+            av_dump_format(output_files[i], i, output_files[i]->filename, 1);
             fprintf(stderr, "Output file #%d does not contain any stream\n", i);
             ret = AVERROR(EINVAL);
             goto fail;
@@ -2033,7 +2028,7 @@ static int transcode(AVFormatContext **output_files,
                 /* Sanity check that the stream types match */
                 if (ist_table[ost->source_index]->st->codec->codec_type != ost->st->codec->codec_type) {
                     int i= ost->file_index;
-                    dump_format(output_files[i], i, output_files[i]->filename, 1);
+                    av_dump_format(output_files[i], i, output_files[i]->filename, 1);
                     fprintf(stderr, "Codec type mismatch for mapping #%d.%d -> #%d.%d\n",
                         stream_maps[n].file_index, stream_maps[n].stream_index,
                         ost->file_index, ost->index);
@@ -2084,7 +2079,7 @@ static int transcode(AVFormatContext **output_files,
                     }
                     if (!found) {
                         int i= ost->file_index;
-                        dump_format(output_files[i], i, output_files[i]->filename, 1);
+                        av_dump_format(output_files[i], i, output_files[i]->filename, 1);
                         fprintf(stderr, "Could not find input stream matching output stream #%d.%d\n",
                                 ost->file_index, ost->index);
                         ffmpeg_exit(1);
@@ -2464,7 +2459,7 @@ static int transcode(AVFormatContext **output_files,
     /* dump the file output parameters - cannot be done before in case
        of stream copy */
     for(i=0;i<nb_output_files;i++) {
-        dump_format(output_files[i], i, output_files[i]->filename, 1);
+        av_dump_format(output_files[i], i, output_files[i]->filename, 1);
     }
 
     /* dump the stream mapping */
@@ -3236,7 +3231,7 @@ static void opt_input_file(const char *filename)
     for(i=0;i<ic->nb_streams;i++) {
         AVStream *st = ic->streams[i];
         AVCodecContext *dec = st->codec;
-        avcodec_thread_init(dec, thread_count);
+        dec->thread_count = thread_count;
         input_codecs = grow_array(input_codecs, sizeof(*input_codecs), &nb_input_codecs, nb_input_codecs + 1);
         switch (dec->codec_type) {
         case AVMEDIA_TYPE_AUDIO:
@@ -3314,7 +3309,7 @@ static void opt_input_file(const char *filename)
     input_files_ts_offset[nb_input_files] = input_ts_offset - (copy_ts ? 0 : timestamp);
     /* dump the file content */
     if (verbose >= 0)
-        dump_format(ic, nb_input_files, filename, 0);
+        av_dump_format(ic, nb_input_files, filename, 0);
 
     nb_input_files++;
 
@@ -3394,7 +3389,7 @@ static void new_video_stream(AVFormatContext *oc, int file_idx)
     ost->bitstream_filters = video_bitstream_filters;
     video_bitstream_filters= NULL;
 
-    avcodec_thread_init(st->codec, thread_count);
+    st->codec->thread_count= thread_count;
 
     video_enc = st->codec;
 
@@ -3541,7 +3536,7 @@ static void new_audio_stream(AVFormatContext *oc, int file_idx)
     ost->bitstream_filters = audio_bitstream_filters;
     audio_bitstream_filters= NULL;
 
-    avcodec_thread_init(st->codec, thread_count);
+    st->codec->thread_count= thread_count;
 
     audio_enc = st->codec;
     audio_enc->codec_type = AVMEDIA_TYPE_AUDIO;

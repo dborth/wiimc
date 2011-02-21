@@ -28,9 +28,9 @@
 #include "libavutil/avstring.h"
 #include "libavutil/colorspace.h"
 #include "libavutil/pixdesc.h"
-#include "libavcore/imgutils.h"
-#include "libavcore/parseutils.h"
-#include "libavcore/samplefmt.h"
+#include "libavutil/imgutils.h"
+#include "libavutil/parseutils.h"
+#include "libavutil/samplefmt.h"
 #include "libavformat/avformat.h"
 #include "libavdevice/avdevice.h"
 #include "libswscale/swscale.h"
@@ -712,40 +712,6 @@ static void video_image_display(VideoState *is)
         if (aspect_ratio <= 0.0)
             aspect_ratio = 1.0;
         aspect_ratio *= (float)vp->width / (float)vp->height;
-        /* if an active format is indicated, then it overrides the
-           mpeg format */
-#if 0
-        if (is->video_st->codec->dtg_active_format != is->dtg_active_format) {
-            is->dtg_active_format = is->video_st->codec->dtg_active_format;
-            printf("dtg_active_format=%d\n", is->dtg_active_format);
-        }
-#endif
-#if 0
-        switch(is->video_st->codec->dtg_active_format) {
-        case FF_DTG_AFD_SAME:
-        default:
-            /* nothing to do */
-            break;
-        case FF_DTG_AFD_4_3:
-            aspect_ratio = 4.0 / 3.0;
-            break;
-        case FF_DTG_AFD_16_9:
-            aspect_ratio = 16.0 / 9.0;
-            break;
-        case FF_DTG_AFD_14_9:
-            aspect_ratio = 14.0 / 9.0;
-            break;
-        case FF_DTG_AFD_4_3_SP_14_9:
-            aspect_ratio = 14.0 / 9.0;
-            break;
-        case FF_DTG_AFD_16_9_SP_14_9:
-            aspect_ratio = 14.0 / 9.0;
-            break;
-        case FF_DTG_AFD_SP_4_3:
-            aspect_ratio = 4.0 / 3.0;
-            break;
-        }
-#endif
 
         if (is->subtitle_st)
         {
@@ -1694,6 +1660,7 @@ static int input_init(AVFilterContext *ctx, const char *args, void *opaque)
         codec->get_buffer     = input_get_buffer;
         codec->release_buffer = input_release_buffer;
         codec->reget_buffer   = input_reget_buffer;
+        codec->thread_safe_callbacks = 1;
     }
 
     priv->frame = avcodec_alloc_frame();
@@ -2259,7 +2226,7 @@ static int stream_component_open(VideoState *is, int stream_index)
     avctx->skip_loop_filter= skip_loop_filter;
     avctx->error_recognition= error_recognition;
     avctx->error_concealment= error_concealment;
-    avcodec_thread_init(avctx, thread_count);
+    avctx->thread_count= thread_count;
 
     set_context_opts(avctx, avcodec_opts[avctx->codec_type], 0, codec);
 
@@ -2497,7 +2464,7 @@ static int decode_thread(void *arg)
                                  st_index[AVMEDIA_TYPE_VIDEO]),
                                 NULL, 0);
     if (show_status) {
-        dump_format(ic, 0, is->filename, 0);
+        av_dump_format(ic, 0, is->filename, 0);
     }
 
     /* open the streams */

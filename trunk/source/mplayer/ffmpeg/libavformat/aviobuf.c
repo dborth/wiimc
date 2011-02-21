@@ -23,6 +23,7 @@
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
 #include "avio.h"
+#include "avio_internal.h"
 #include "internal.h"
 #include <stdarg.h>
 
@@ -35,12 +36,12 @@
  */
 #define SHORT_SEEK_THRESHOLD 4096
 
-static void fill_buffer(ByteIOContext *s);
+static void fill_buffer(AVIOContext *s);
 #if !FF_API_URL_RESETBUF
-static int url_resetbuf(ByteIOContext *s, int flags);
+static int url_resetbuf(AVIOContext *s, int flags);
 #endif
 
-int init_put_byte(ByteIOContext *s,
+int ffio_init_context(AVIOContext *s,
                   unsigned char *buffer,
                   int buffer_size,
                   int write_flag,
@@ -73,7 +74,8 @@ int init_put_byte(ByteIOContext *s,
     return 0;
 }
 
-ByteIOContext *av_alloc_put_byte(
+#if FF_API_OLD_AVIO
+int init_put_byte(AVIOContext *s,
                   unsigned char *buffer,
                   int buffer_size,
                   int write_flag,
@@ -82,13 +84,27 @@ ByteIOContext *av_alloc_put_byte(
                   int (*write_packet)(void *opaque, uint8_t *buf, int buf_size),
                   int64_t (*seek)(void *opaque, int64_t offset, int whence))
 {
-    ByteIOContext *s = av_mallocz(sizeof(ByteIOContext));
-    init_put_byte(s, buffer, buffer_size, write_flag, opaque,
+    return ffio_init_context(s, buffer, buffer_size, write_flag, opaque,
+                                read_packet, write_packet, seek);
+}
+#endif
+
+AVIOContext *av_alloc_put_byte(
+                  unsigned char *buffer,
+                  int buffer_size,
+                  int write_flag,
+                  void *opaque,
+                  int (*read_packet)(void *opaque, uint8_t *buf, int buf_size),
+                  int (*write_packet)(void *opaque, uint8_t *buf, int buf_size),
+                  int64_t (*seek)(void *opaque, int64_t offset, int whence))
+{
+    AVIOContext *s = av_mallocz(sizeof(AVIOContext));
+    ffio_init_context(s, buffer, buffer_size, write_flag, opaque,
                   read_packet, write_packet, seek);
     return s;
 }
 
-static void flush_buffer(ByteIOContext *s)
+static void flush_buffer(AVIOContext *s)
 {
     if (s->buf_ptr > s->buffer) {
         if (s->write_packet && !s->error){
@@ -106,14 +122,14 @@ static void flush_buffer(ByteIOContext *s)
     s->buf_ptr = s->buffer;
 }
 
-void put_byte(ByteIOContext *s, int b)
+void put_byte(AVIOContext *s, int b)
 {
     *(s->buf_ptr)++ = b;
     if (s->buf_ptr >= s->buf_end)
         flush_buffer(s);
 }
 
-void put_nbyte(ByteIOContext *s, int b, int count)
+void put_nbyte(AVIOContext *s, int b, int count)
 {
     while (count > 0) {
         int len = FFMIN(s->buf_end - s->buf_ptr, count);
@@ -127,7 +143,7 @@ void put_nbyte(ByteIOContext *s, int b, int count)
     }
 }
 
-void put_buffer(ByteIOContext *s, const unsigned char *buf, int size)
+void put_buffer(AVIOContext *s, const unsigned char *buf, int size)
 {
     while (size > 0) {
         int len = FFMIN(s->buf_end - s->buf_ptr, size);
@@ -142,13 +158,13 @@ void put_buffer(ByteIOContext *s, const unsigned char *buf, int size)
     }
 }
 
-void put_flush_packet(ByteIOContext *s)
+void put_flush_packet(AVIOContext *s)
 {
     flush_buffer(s);
     s->must_flush = 0;
 }
 
-int64_t url_fseek(ByteIOContext *s, int64_t offset, int whence)
+int64_t url_fseek(AVIOContext *s, int64_t offset, int whence)
 {
     int64_t offset1;
     int64_t pos;
@@ -205,18 +221,18 @@ int64_t url_fseek(ByteIOContext *s, int64_t offset, int whence)
     return offset;
 }
 
-int url_fskip(ByteIOContext *s, int64_t offset)
+int url_fskip(AVIOContext *s, int64_t offset)
 {
     int64_t ret = url_fseek(s, offset, SEEK_CUR);
     return ret < 0 ? ret : 0;
 }
 
-int64_t url_ftell(ByteIOContext *s)
+int64_t url_ftell(AVIOContext *s)
 {
     return url_fseek(s, 0, SEEK_CUR);
 }
 
-int64_t url_fsize(ByteIOContext *s)
+int64_t url_fsize(AVIOContext *s)
 {
     int64_t size;
 
@@ -235,21 +251,21 @@ int64_t url_fsize(ByteIOContext *s)
     return size;
 }
 
-int url_feof(ByteIOContext *s)
+int url_feof(AVIOContext *s)
 {
     if(!s)
         return 0;
     return s->eof_reached;
 }
 
-int url_ferror(ByteIOContext *s)
+int url_ferror(AVIOContext *s)
 {
     if(!s)
         return 0;
     return s->error;
 }
 
-void put_le32(ByteIOContext *s, unsigned int val)
+void put_le32(AVIOContext *s, unsigned int val)
 {
     put_byte(s, val);
     put_byte(s, val >> 8);
@@ -257,7 +273,7 @@ void put_le32(ByteIOContext *s, unsigned int val)
     put_byte(s, val >> 24);
 }
 
-void put_be32(ByteIOContext *s, unsigned int val)
+void put_be32(AVIOContext *s, unsigned int val)
 {
     put_byte(s, val >> 24);
     put_byte(s, val >> 16);
@@ -266,13 +282,13 @@ void put_be32(ByteIOContext *s, unsigned int val)
 }
 
 #if FF_API_OLD_AVIO
-void put_strz(ByteIOContext *s, const char *str)
+void put_strz(AVIOContext *s, const char *str)
 {
     avio_put_str(s, str);
 }
 #endif
 
-int avio_put_str(ByteIOContext *s, const char *str)
+int avio_put_str(AVIOContext *s, const char *str)
 {
     int len = 1;
     if (str) {
@@ -283,7 +299,7 @@ int avio_put_str(ByteIOContext *s, const char *str)
     return len;
 }
 
-int avio_put_str16le(ByteIOContext *s, const char *str)
+int avio_put_str16le(AVIOContext *s, const char *str)
 {
     const uint8_t *q = str;
     int ret = 0;
@@ -309,7 +325,7 @@ int ff_get_v_length(uint64_t val){
     return i;
 }
 
-void ff_put_v(ByteIOContext *bc, uint64_t val){
+void ff_put_v(AVIOContext *bc, uint64_t val){
     int i= ff_get_v_length(val);
 
     while(--i>0)
@@ -318,43 +334,43 @@ void ff_put_v(ByteIOContext *bc, uint64_t val){
     put_byte(bc, val&127);
 }
 
-void put_le64(ByteIOContext *s, uint64_t val)
+void put_le64(AVIOContext *s, uint64_t val)
 {
     put_le32(s, (uint32_t)(val & 0xffffffff));
     put_le32(s, (uint32_t)(val >> 32));
 }
 
-void put_be64(ByteIOContext *s, uint64_t val)
+void put_be64(AVIOContext *s, uint64_t val)
 {
     put_be32(s, (uint32_t)(val >> 32));
     put_be32(s, (uint32_t)(val & 0xffffffff));
 }
 
-void put_le16(ByteIOContext *s, unsigned int val)
+void put_le16(AVIOContext *s, unsigned int val)
 {
     put_byte(s, val);
     put_byte(s, val >> 8);
 }
 
-void put_be16(ByteIOContext *s, unsigned int val)
+void put_be16(AVIOContext *s, unsigned int val)
 {
     put_byte(s, val >> 8);
     put_byte(s, val);
 }
 
-void put_le24(ByteIOContext *s, unsigned int val)
+void put_le24(AVIOContext *s, unsigned int val)
 {
     put_le16(s, val & 0xffff);
     put_byte(s, val >> 16);
 }
 
-void put_be24(ByteIOContext *s, unsigned int val)
+void put_be24(AVIOContext *s, unsigned int val)
 {
     put_be16(s, val >> 8);
     put_byte(s, val);
 }
 
-void put_tag(ByteIOContext *s, const char *tag)
+void put_tag(AVIOContext *s, const char *tag)
 {
     while (*tag) {
         put_byte(s, *tag++);
@@ -363,7 +379,7 @@ void put_tag(ByteIOContext *s, const char *tag)
 
 /* Input stream */
 
-static void fill_buffer(ByteIOContext *s)
+static void fill_buffer(AVIOContext *s)
 {
     uint8_t *dst= !s->max_packet_size && s->buf_end - s->buffer < s->buffer_size ? s->buf_ptr : s->buffer;
     int len= s->buffer_size - (dst - s->buffer);
@@ -410,14 +426,14 @@ unsigned long ff_crc04C11DB7_update(unsigned long checksum, const uint8_t *buf,
     return av_crc(av_crc_get_table(AV_CRC_32_IEEE), checksum, buf, len);
 }
 
-unsigned long get_checksum(ByteIOContext *s)
+unsigned long get_checksum(AVIOContext *s)
 {
     s->checksum= s->update_checksum(s->checksum, s->checksum_ptr, s->buf_ptr - s->checksum_ptr);
     s->update_checksum= NULL;
     return s->checksum;
 }
 
-void init_checksum(ByteIOContext *s,
+void init_checksum(AVIOContext *s,
                    unsigned long (*update_checksum)(unsigned long c, const uint8_t *p, unsigned int len),
                    unsigned long checksum)
 {
@@ -429,7 +445,7 @@ void init_checksum(ByteIOContext *s,
 }
 
 /* XXX: put an inline version */
-int get_byte(ByteIOContext *s)
+int get_byte(AVIOContext *s)
 {
     if (s->buf_ptr >= s->buf_end)
         fill_buffer(s);
@@ -438,7 +454,7 @@ int get_byte(ByteIOContext *s)
     return 0;
 }
 
-int url_fgetc(ByteIOContext *s)
+int url_fgetc(AVIOContext *s)
 {
     if (s->buf_ptr >= s->buf_end)
         fill_buffer(s);
@@ -447,7 +463,7 @@ int url_fgetc(ByteIOContext *s)
     return URL_EOF;
 }
 
-int get_buffer(ByteIOContext *s, unsigned char *buf, int size)
+int get_buffer(AVIOContext *s, unsigned char *buf, int size)
 {
     int len, size1;
 
@@ -494,7 +510,7 @@ int get_buffer(ByteIOContext *s, unsigned char *buf, int size)
     return size1 - size;
 }
 
-int get_partial_buffer(ByteIOContext *s, unsigned char *buf, int size)
+int get_partial_buffer(AVIOContext *s, unsigned char *buf, int size)
 {
     int len;
 
@@ -517,7 +533,7 @@ int get_partial_buffer(ByteIOContext *s, unsigned char *buf, int size)
     return len;
 }
 
-unsigned int get_le16(ByteIOContext *s)
+unsigned int get_le16(AVIOContext *s)
 {
     unsigned int val;
     val = get_byte(s);
@@ -525,7 +541,7 @@ unsigned int get_le16(ByteIOContext *s)
     return val;
 }
 
-unsigned int get_le24(ByteIOContext *s)
+unsigned int get_le24(AVIOContext *s)
 {
     unsigned int val;
     val = get_le16(s);
@@ -533,7 +549,7 @@ unsigned int get_le24(ByteIOContext *s)
     return val;
 }
 
-unsigned int get_le32(ByteIOContext *s)
+unsigned int get_le32(AVIOContext *s)
 {
     unsigned int val;
     val = get_le16(s);
@@ -541,7 +557,7 @@ unsigned int get_le32(ByteIOContext *s)
     return val;
 }
 
-uint64_t get_le64(ByteIOContext *s)
+uint64_t get_le64(AVIOContext *s)
 {
     uint64_t val;
     val = (uint64_t)get_le32(s);
@@ -549,7 +565,7 @@ uint64_t get_le64(ByteIOContext *s)
     return val;
 }
 
-unsigned int get_be16(ByteIOContext *s)
+unsigned int get_be16(AVIOContext *s)
 {
     unsigned int val;
     val = get_byte(s) << 8;
@@ -557,14 +573,14 @@ unsigned int get_be16(ByteIOContext *s)
     return val;
 }
 
-unsigned int get_be24(ByteIOContext *s)
+unsigned int get_be24(AVIOContext *s)
 {
     unsigned int val;
     val = get_be16(s) << 8;
     val |= get_byte(s);
     return val;
 }
-unsigned int get_be32(ByteIOContext *s)
+unsigned int get_be32(AVIOContext *s)
 {
     unsigned int val;
     val = get_be16(s) << 16;
@@ -572,7 +588,7 @@ unsigned int get_be32(ByteIOContext *s)
     return val;
 }
 
-char *get_strz(ByteIOContext *s, char *buf, int maxlen)
+char *get_strz(AVIOContext *s, char *buf, int maxlen)
 {
     int i = 0;
     char c;
@@ -587,7 +603,7 @@ char *get_strz(ByteIOContext *s, char *buf, int maxlen)
     return buf;
 }
 
-int ff_get_line(ByteIOContext *s, char *buf, int maxlen)
+int ff_get_line(AVIOContext *s, char *buf, int maxlen)
 {
     int i = 0;
     char c;
@@ -603,7 +619,7 @@ int ff_get_line(ByteIOContext *s, char *buf, int maxlen)
 }
 
 #define GET_STR16(type, read) \
-    int avio_get_str16 ##type(ByteIOContext *pb, int maxlen, char *buf, int buflen)\
+    int avio_get_str16 ##type(AVIOContext *pb, int maxlen, char *buf, int buflen)\
 {\
     char* q = buf;\
     int ret = 0;\
@@ -624,7 +640,7 @@ GET_STR16(be, get_be16)
 
 #undef GET_STR16
 
-uint64_t get_be64(ByteIOContext *s)
+uint64_t get_be64(AVIOContext *s)
 {
     uint64_t val;
     val = (uint64_t)get_be32(s) << 32;
@@ -632,7 +648,7 @@ uint64_t get_be64(ByteIOContext *s)
     return val;
 }
 
-uint64_t ff_get_v(ByteIOContext *bc){
+uint64_t ff_get_v(AVIOContext *bc){
     uint64_t val = 0;
     int tmp;
 
@@ -643,7 +659,7 @@ uint64_t ff_get_v(ByteIOContext *bc){
     return val;
 }
 
-int url_fdopen(ByteIOContext **s, URLContext *h)
+int url_fdopen(AVIOContext **s, URLContext *h)
 {
     uint8_t *buffer;
     int buffer_size, max_packet_size;
@@ -658,13 +674,13 @@ int url_fdopen(ByteIOContext **s, URLContext *h)
     if (!buffer)
         return AVERROR(ENOMEM);
 
-    *s = av_mallocz(sizeof(ByteIOContext));
+    *s = av_mallocz(sizeof(AVIOContext));
     if(!*s) {
         av_free(buffer);
         return AVERROR(ENOMEM);
     }
 
-    if (init_put_byte(*s, buffer, buffer_size,
+    if (ffio_init_context(*s, buffer, buffer_size,
                       (h->flags & URL_WRONLY || h->flags & URL_RDWR), h,
                       url_read, url_write, url_seek) < 0) {
         av_free(buffer);
@@ -680,7 +696,7 @@ int url_fdopen(ByteIOContext **s, URLContext *h)
     return 0;
 }
 
-int url_setbufsize(ByteIOContext *s, int buf_size)
+int url_setbufsize(AVIOContext *s, int buf_size)
 {
     uint8_t *buffer;
     buffer = av_malloc(buf_size);
@@ -696,9 +712,9 @@ int url_setbufsize(ByteIOContext *s, int buf_size)
 }
 
 #if FF_API_URL_RESETBUF
-int url_resetbuf(ByteIOContext *s, int flags)
+int url_resetbuf(AVIOContext *s, int flags)
 #else
-static int url_resetbuf(ByteIOContext *s, int flags)
+static int url_resetbuf(AVIOContext *s, int flags)
 #endif
 {
 #if FF_API_URL_RESETBUF
@@ -718,7 +734,7 @@ static int url_resetbuf(ByteIOContext *s, int flags)
     return 0;
 }
 
-int ff_rewind_with_probe_data(ByteIOContext *s, unsigned char *buf, int buf_size)
+int ff_rewind_with_probe_data(AVIOContext *s, unsigned char *buf, int buf_size)
 {
     int64_t buffer_start;
     int buffer_size;
@@ -757,7 +773,7 @@ int ff_rewind_with_probe_data(ByteIOContext *s, unsigned char *buf, int buf_size
     return 0;
 }
 
-int url_fopen(ByteIOContext **s, const char *filename, int flags)
+int url_fopen(AVIOContext **s, const char *filename, int flags)
 {
     URLContext *h;
     int err;
@@ -773,7 +789,7 @@ int url_fopen(ByteIOContext **s, const char *filename, int flags)
     return 0;
 }
 
-int url_fclose(ByteIOContext *s)
+int url_fclose(AVIOContext *s)
 {
     URLContext *h = s->opaque;
 
@@ -782,13 +798,13 @@ int url_fclose(ByteIOContext *s)
     return url_close(h);
 }
 
-URLContext *url_fileno(ByteIOContext *s)
+URLContext *url_fileno(AVIOContext *s)
 {
     return s->opaque;
 }
 
 #if CONFIG_MUXERS
-int url_fprintf(ByteIOContext *s, const char *fmt, ...)
+int url_fprintf(AVIOContext *s, const char *fmt, ...)
 {
     va_list ap;
     char buf[4096];
@@ -802,7 +818,7 @@ int url_fprintf(ByteIOContext *s, const char *fmt, ...)
 }
 #endif //CONFIG_MUXERS
 
-char *url_fgets(ByteIOContext *s, char *buf, int buf_size)
+char *url_fgets(AVIOContext *s, char *buf, int buf_size)
 {
     int c;
     char *q;
@@ -823,19 +839,19 @@ char *url_fgets(ByteIOContext *s, char *buf, int buf_size)
     return buf;
 }
 
-int url_fget_max_packet_size(ByteIOContext *s)
+int url_fget_max_packet_size(AVIOContext *s)
 {
     return s->max_packet_size;
 }
 
-int av_url_read_fpause(ByteIOContext *s, int pause)
+int av_url_read_fpause(AVIOContext *s, int pause)
 {
     if (!s->read_pause)
         return AVERROR(ENOSYS);
     return s->read_pause(s->opaque, pause);
 }
 
-int64_t av_url_read_fseek(ByteIOContext *s, int stream_index,
+int64_t av_url_read_fseek(AVIOContext *s, int stream_index,
                           int64_t timestamp, int flags)
 {
     URLContext *h = s->opaque;
@@ -859,13 +875,13 @@ int64_t av_url_read_fseek(ByteIOContext *s, int stream_index,
  * back to the server even if CONFIG_MUXERS is false. */
 #if CONFIG_MUXERS || CONFIG_NETWORK
 /* buffer handling */
-int url_open_buf(ByteIOContext **s, uint8_t *buf, int buf_size, int flags)
+int url_open_buf(AVIOContext **s, uint8_t *buf, int buf_size, int flags)
 {
     int ret;
-    *s = av_mallocz(sizeof(ByteIOContext));
+    *s = av_mallocz(sizeof(AVIOContext));
     if(!*s)
         return AVERROR(ENOMEM);
-    ret = init_put_byte(*s, buf, buf_size,
+    ret = ffio_init_context(*s, buf, buf_size,
                         (flags & URL_WRONLY || flags & URL_RDWR),
                         NULL, NULL, NULL, NULL);
     if(ret != 0)
@@ -873,7 +889,7 @@ int url_open_buf(ByteIOContext **s, uint8_t *buf, int buf_size, int flags)
     return ret;
 }
 
-int url_close_buf(ByteIOContext *s)
+int url_close_buf(AVIOContext *s)
 {
     put_flush_packet(s);
     return s->buf_ptr - s->buffer;
@@ -947,7 +963,7 @@ static int64_t dyn_buf_seek(void *opaque, int64_t offset, int whence)
     return 0;
 }
 
-static int url_open_dyn_buf_internal(ByteIOContext **s, int max_packet_size)
+static int url_open_dyn_buf_internal(AVIOContext **s, int max_packet_size)
 {
     DynBuffer *d;
     int ret;
@@ -958,13 +974,13 @@ static int url_open_dyn_buf_internal(ByteIOContext **s, int max_packet_size)
     d = av_mallocz(sizeof(DynBuffer) + io_buffer_size);
     if (!d)
         return AVERROR(ENOMEM);
-    *s = av_mallocz(sizeof(ByteIOContext));
+    *s = av_mallocz(sizeof(AVIOContext));
     if(!*s) {
         av_free(d);
         return AVERROR(ENOMEM);
     }
     d->io_buffer_size = io_buffer_size;
-    ret = init_put_byte(*s, d->io_buffer, io_buffer_size,
+    ret = ffio_init_context(*s, d->io_buffer, io_buffer_size,
                         1, d, NULL,
                         max_packet_size ? dyn_packet_buf_write : dyn_buf_write,
                         max_packet_size ? NULL : dyn_buf_seek);
@@ -977,19 +993,19 @@ static int url_open_dyn_buf_internal(ByteIOContext **s, int max_packet_size)
     return ret;
 }
 
-int url_open_dyn_buf(ByteIOContext **s)
+int url_open_dyn_buf(AVIOContext **s)
 {
     return url_open_dyn_buf_internal(s, 0);
 }
 
-int url_open_dyn_packet_buf(ByteIOContext **s, int max_packet_size)
+int url_open_dyn_packet_buf(AVIOContext **s, int max_packet_size)
 {
     if (max_packet_size <= 0)
         return -1;
     return url_open_dyn_buf_internal(s, max_packet_size);
 }
 
-int url_close_dyn_buf(ByteIOContext *s, uint8_t **pbuffer)
+int url_close_dyn_buf(AVIOContext *s, uint8_t **pbuffer)
 {
     DynBuffer *d = s->opaque;
     int size;

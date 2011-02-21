@@ -792,7 +792,7 @@ static void dvbsub_parse_pixel_data_block(AVCodecContext *avctx, DVBSubObjectDis
                 map_table = NULL;
 
             x_pos += dvbsub_read_2bit_string(pbuf + (y_pos * region->width) + x_pos,
-                                                region->width - x_pos, &buf, buf_size,
+                                                region->width - x_pos, &buf, buf_end - buf,
                                                 non_mod, map_table);
             break;
         case 0x11:
@@ -807,7 +807,7 @@ static void dvbsub_parse_pixel_data_block(AVCodecContext *avctx, DVBSubObjectDis
                 map_table = NULL;
 
             x_pos += dvbsub_read_4bit_string(pbuf + (y_pos * region->width) + x_pos,
-                                                region->width - x_pos, &buf, buf_size,
+                                                region->width - x_pos, &buf, buf_end - buf,
                                                 non_mod, map_table);
             break;
         case 0x12:
@@ -817,7 +817,7 @@ static void dvbsub_parse_pixel_data_block(AVCodecContext *avctx, DVBSubObjectDis
             }
 
             x_pos += dvbsub_read_8bit_string(pbuf + (y_pos * region->width) + x_pos,
-                                                region->width - x_pos, &buf, buf_size,
+                                                region->width - x_pos, &buf, buf_end - buf,
                                                 non_mod, NULL);
             break;
 
@@ -1423,19 +1423,26 @@ static int dvbsub_decode(AVCodecContext *avctx,
 
 #endif
 
-    if (buf_size <= 2)
+    if (buf_size <= 6 || *buf != 0x0f) {
+        av_dlog(avctx, "incomplete or broken packet");
         return -1;
+    }
 
     p = buf;
     p_end = buf + buf_size;
 
-    while (p < p_end && *p == 0x0f) {
+    while (p_end - p >= 6 && *p == 0x0f) {
         p += 1;
         segment_type = *p++;
         page_id = AV_RB16(p);
         p += 2;
         segment_length = AV_RB16(p);
         p += 2;
+
+        if (p_end - p < segment_length) {
+            av_dlog(avctx, "incomplete or broken packet");
+            return -1;
+        }
 
         if (page_id == ctx->composition_id || page_id == ctx->ancillary_id ||
             ctx->composition_id == -1 || ctx->ancillary_id == -1) {
@@ -1467,12 +1474,7 @@ static int dvbsub_decode(AVCodecContext *avctx,
         p += segment_length;
     }
 
-    if (p != p_end) {
-        av_dlog(avctx, "Junk at end of packet\n");
-        return -1;
-    }
-
-    return buf_size;
+    return p - buf;
 }
 
 

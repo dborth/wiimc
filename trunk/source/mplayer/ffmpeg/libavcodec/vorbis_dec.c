@@ -568,9 +568,9 @@ static int vorbis_parse_setup_hdr_floors(vorbis_context *vc)
             /* zero would result in a div by zero later *
              * 2^0 - 1 == 0                             */
             if (floor_setup->data.t0.amplitude_bits == 0) {
-              av_log(vc->avccontext, AV_LOG_ERROR,
-                     "Floor 0 amplitude bits is 0.\n");
-              return -1;
+                av_log(vc->avccontext, AV_LOG_ERROR,
+                       "Floor 0 amplitude bits is 0.\n");
+                return -1;
             }
             floor_setup->data.t0.amplitude_offset = get_bits(gb, 8);
             floor_setup->data.t0.num_books        = get_bits(gb, 4) + 1;
@@ -594,37 +594,34 @@ static int vorbis_parse_setup_hdr_floors(vorbis_context *vc)
 
             create_map(vc, i);
 
-            /* allocate mem for lsp coefficients */
-            {
-                /* codebook dim is for padding if codebook dim doesn't *
-                 * divide order+1 then we need to read more data       */
-                floor_setup->data.t0.lsp =
-                    av_malloc((floor_setup->data.t0.order+1 + max_codebook_dim)
-                              * sizeof(float));
-                if (!floor_setup->data.t0.lsp)
-                    return -1;
-            }
+            /* codebook dim is for padding if codebook dim doesn't *
+             * divide order+1 then we need to read more data       */
+            floor_setup->data.t0.lsp =
+                av_malloc((floor_setup->data.t0.order+1 + max_codebook_dim)
+                          * sizeof(float));
+            if (!floor_setup->data.t0.lsp)
+                return -1;
 
 #ifdef V_DEBUG /* debug output parsed headers */
             AV_DEBUG("floor0 order: %u\n", floor_setup->data.t0.order);
             AV_DEBUG("floor0 rate: %u\n", floor_setup->data.t0.rate);
             AV_DEBUG("floor0 bark map size: %u\n",
-              floor_setup->data.t0.bark_map_size);
+                     floor_setup->data.t0.bark_map_size);
             AV_DEBUG("floor0 amplitude bits: %u\n",
-              floor_setup->data.t0.amplitude_bits);
+                     floor_setup->data.t0.amplitude_bits);
             AV_DEBUG("floor0 amplitude offset: %u\n",
-              floor_setup->data.t0.amplitude_offset);
+                     floor_setup->data.t0.amplitude_offset);
             AV_DEBUG("floor0 number of books: %u\n",
-              floor_setup->data.t0.num_books);
+                     floor_setup->data.t0.num_books);
             AV_DEBUG("floor0 book list pointer: %p\n",
-              floor_setup->data.t0.book_list);
+                     floor_setup->data.t0.book_list);
             {
-              int idx;
-              for (idx = 0; idx < floor_setup->data.t0.num_books; ++idx) {
-                  AV_DEBUG("  Book %d: %u\n",
-                           idx+1,
-                           floor_setup->data.t0.book_list[idx]);
-              }
+                int idx;
+                for (idx = 0; idx < floor_setup->data.t0.num_books; ++idx) {
+                    AV_DEBUG("  Book %d: %u\n",
+                             idx+1,
+                             floor_setup->data.t0.book_list[idx]);
+                }
             }
 #endif
         } else {
@@ -802,12 +799,12 @@ static void create_map(vorbis_context *vc, uint_fast8_t floor_number)
         vf->map_size[blockflag] = n;
     }
 
-#   ifdef V_DEBUG
+#ifdef V_DEBUG
     for (idx = 0; idx <= n; ++idx) {
         AV_DEBUG("floor0 map: map at pos %d is %d\n",
                  idx, map[idx]);
     }
-#   endif
+#endif
 }
 
 static int vorbis_parse_setup_hdr_modes(vorbis_context *vc)
@@ -1040,7 +1037,6 @@ static int vorbis_floor0_decode(vorbis_context *vc,
             av_log(vc->avccontext, AV_LOG_ERROR,
                     "floor0 dec: booknumber too high!\n");
             book_idx =  0;
-            //FIXME: look above
         }
         AV_DEBUG("floor0 dec: booknumber: %u\n", book_idx);
         codebook = vc->codebooks[vf->book_list[book_idx]];
@@ -1110,11 +1106,9 @@ static int vorbis_floor0_decode(vorbis_context *vc,
                 }
 
                 /* calculate linear floor value */
-                {
-                    q = exp((((amplitude*vf->amplitude_offset) /
-                              (((1 << vf->amplitude_bits) - 1) * sqrt(p + q)))
-                             - vf->amplitude_offset) * .11512925f);
-                }
+                q = exp((((amplitude*vf->amplitude_offset) /
+                          (((1 << vf->amplitude_bits) - 1) * sqrt(p + q)))
+                         - vf->amplitude_offset) * .11512925f);
 
                 /* fill vector */
                 do {

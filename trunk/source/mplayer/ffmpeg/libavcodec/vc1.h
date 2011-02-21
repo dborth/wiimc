@@ -26,6 +26,7 @@
 #include "avcodec.h"
 #include "mpegvideo.h"
 #include "intrax8.h"
+#include "vc1dsp.h"
 
 /** Markers used in VC-1 AP frame data */
 //@{
@@ -155,6 +156,7 @@ enum COTypes {
 typedef struct VC1Context{
     MpegEncContext s;
     IntraX8Context x8;
+    VC1DSPContext vc1dsp;
 
     int bits;
 
@@ -215,6 +217,7 @@ typedef struct VC1Context{
     int k_y;              ///< Number of bits for MVs (depends on MV range)
     int range_x, range_y; ///< MV range
     uint8_t pq, altpq;    ///< Current/alternate frame quantizer scale
+    uint8_t zz_8x8[4][64];///< Zigzag table for TT_8x8, permuted for IDCT
     const uint8_t* zz_8x4;///< Zigzag scan table for TT_8x4 coding mode
     const uint8_t* zz_4x8;///< Zigzag scan table for TT_4x8 coding mode
     /** pquant parameters */

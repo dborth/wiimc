@@ -1,4 +1,4 @@
-/*
+/**
  * This file is part of FFmpeg.
  *
  * FFmpeg is free software; you can redistribute it and/or
@@ -16,26 +16,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "config.h"
-#include "avcore.h"
+#ifndef AVCODEC_ARM_VP8_H
+#define AVCODEC_ARM_VP8_H
 
-/**
- * @file
- * various utility functions
- */
+#if HAVE_ARMV6
+#define decode_block_coeffs_internal ff_decode_block_coeffs_armv6
+int ff_decode_block_coeffs_armv6(VP56RangeCoder *rc, DCTELEM block[16],
+                                 uint8_t probs[8][3][NUM_DCT_TOKENS-1],
+                                 int i, uint8_t *token_prob, int16_t qmul[2]);
+#endif
 
-unsigned avcore_version(void)
-{
-    return LIBAVCORE_VERSION_INT;
-}
-
-const char *avcore_configuration(void)
-{
-    return FFMPEG_CONFIGURATION;
-}
-
-const char *avcore_license(void)
-{
-#define LICENSE_PREFIX "libavcore license: "
-    return LICENSE_PREFIX FFMPEG_LICENSE + sizeof(LICENSE_PREFIX) - 1;
-}
+#endif

@@ -16,14 +16,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCORE_PARSEUTILS_H
-#define AVCORE_PARSEUTILS_H
+#ifndef AVUTIL_PARSEUTILS_H
+#define AVUTIL_PARSEUTILS_H
 
 #include "libavutil/rational.h"
 
 /**
  * @file
- * misc parsing utilities for libavcore
+ * misc parsing utilities
  */
 
 /**
@@ -72,4 +72,46 @@ int av_parse_video_rate(AVRational *rate, const char *str);
 int av_parse_color(uint8_t *rgba_color, const char *color_string, int slen,
                    void *log_ctx);
 
-#endif /* AVCORE_PARSEUTILS_H */
+/**
+ * Parses timestr and returns in *time a corresponding number of
+ * microseconds.
+ *
+ * @param timeval puts here the number of microseconds corresponding
+ * to the string in timestr. If the string represents a duration, it
+ * is the number of microseconds contained in the time interval.  If
+ * the string is a date, is the number of microseconds since 1st of
+ * January, 1970 up to the time of the parsed date.  If timestr cannot
+ * be successfully parsed, set *time to INT64_MIN.
+
+ * @param datestr a string representing a date or a duration.
+ * - If a date the syntax is:
+ * @code
+ * [{YYYY-MM-DD|YYYYMMDD}[T|t| ]]{{HH[:MM[:SS[.m...]]]}|{HH[MM[SS[.m...]]]}}[Z]
+ * now
+ * @endcode
+ * If the value is "now" it takes the current time.
+ * Time is local time unless Z is appended, in which case it is
+ * interpreted as UTC.
+ * If the year-month-day part is not specified it takes the current
+ * year-month-day.
+ * - If a duration the syntax is:
+ * @code
+ * [-]HH[:MM[:SS[.m...]]]
+ * [-]S+[.m...]
+ * @endcode
+ * @param duration flag which tells how to interpret timestr, if not
+ * zero timestr is interpreted as a duration, otherwise as a date
+ * @return 0 in case of success, a negative value corresponding to an
+ * AVERROR code otherwise
+ */
+int av_parse_time(int64_t *timeval, const char *timestr, int duration);
+
+/**
+ * Attempt to find a specific tag in a URL.
+ *
+ * syntax: '?tag1=val1&tag2=val2...'. Little URL decoding is done.
+ * Return 1 if found.
+ */
+int av_find_info_tag(char *arg, int arg_size, const char *tag1, const char *info);
+
+#endif /* AVUTIL_PARSEUTILS_H */

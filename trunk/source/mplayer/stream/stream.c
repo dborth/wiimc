@@ -27,9 +27,8 @@
 #include <sys/wait.h>
 #endif
 #include <fcntl.h>
-#ifndef GEKKO
 #include <strings.h>
-#endif
+#include <assert.h>
 
 #include "config.h"
 
@@ -364,6 +363,9 @@ int stream_write_buffer(stream_t *s, unsigned char *buf, int len) {
   if(rd < 0)
     return -1;
   s->pos += rd;
+#ifndef GEKKO
+  assert(rd == len && "stream_write_buffer(): unexpected short write");
+#endif
   return rd;
 }
 

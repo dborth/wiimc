@@ -60,7 +60,7 @@ static int read_header(AVFormatContext *s,
                            AVFormatParameters *ap)
 {
     AVStream *video;
-    ByteIOContext *pb = s->pb;
+    AVIOContext *pb = s->pb;
     C93DemuxContext *c93 = s->priv_data;
     int i;
     int framecount = 0;
@@ -89,7 +89,7 @@ static int read_header(AVFormatContext *s,
     video->codec->height = 192;
     /* 4:3 320x200 with 8 empty lines */
     video->sample_aspect_ratio = (AVRational) { 5, 6 };
-    video->time_base = (AVRational) { 2, 25 };
+    av_set_pts_info(video, 64, 2, 25);
     video->nb_frames = framecount;
     video->duration = framecount;
     video->start_time = 0;
@@ -105,7 +105,7 @@ static int read_header(AVFormatContext *s,
 
 static int read_packet(AVFormatContext *s, AVPacket *pkt)
 {
-    ByteIOContext *pb = s->pb;
+    AVIOContext *pb = s->pb;
     C93DemuxContext *c93 = s->priv_data;
     C93BlockRecord *br = &c93->block_records[c93->current_block];
     int datasize;

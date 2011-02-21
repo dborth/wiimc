@@ -1212,8 +1212,6 @@ void dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 	c->put_h264_chroma_pixels_tab[1] = put_h264_chroma_mc4_paired;
 	c->avg_h264_chroma_pixels_tab[0] = avg_h264_chroma_mc8_paired;
 	c->avg_h264_chroma_pixels_tab[1] = avg_h264_chroma_mc4_paired;
-	c->put_no_rnd_vc1_chroma_pixels_tab[0] = put_no_rnd_vc1_chroma_mc8_paired;
-	c->avg_no_rnd_vc1_chroma_pixels_tab[0] = avg_no_rnd_vc1_chroma_mc8_paired;
 }
 
 void ff_h264dsp_init_ppc(H264DSPContext *c)

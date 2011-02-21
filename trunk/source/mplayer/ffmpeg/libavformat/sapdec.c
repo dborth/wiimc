@@ -25,6 +25,7 @@
 #include "network.h"
 #include "os_support.h"
 #include "internal.h"
+#include "avio_internal.h"
 #if HAVE_POLL_H
 #include <poll.h>
 #endif
@@ -33,7 +34,7 @@
 struct SAPState {
     URLContext *ann_fd;
     AVFormatContext *sdp_ctx;
-    ByteIOContext sdp_pb;
+    AVIOContext sdp_pb;
     uint16_t hash;
     char *sdp;
     int eof;
@@ -142,7 +143,7 @@ static int sap_read_header(AVFormatContext *s,
     }
 
     av_log(s, AV_LOG_VERBOSE, "SDP:\n%s\n", sap->sdp);
-    init_put_byte(&sap->sdp_pb, sap->sdp, strlen(sap->sdp), 0, NULL, NULL,
+    ffio_init_context(&sap->sdp_pb, sap->sdp, strlen(sap->sdp), 0, NULL, NULL,
                   NULL, NULL);
 
     infmt = av_find_input_format("sdp");

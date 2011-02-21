@@ -31,6 +31,7 @@
 #include "avformat.h"
 #include "mms.h"
 #include "internal.h"
+#include "avio_internal.h"
 #include "libavutil/intreadwrite.h"
 #include "libavcodec/bytestream.h"
 #include "network.h"
@@ -152,10 +153,10 @@ static int send_command_packet(MMSTContext *mmst)
 
 static void mms_put_utf16(MMSContext *mms, uint8_t *src)
 {
-    ByteIOContext bic;
+    AVIOContext bic;
     int size = mms->write_out_ptr - mms->out_buffer;
     int len;
-    init_put_byte(&bic, mms->write_out_ptr,
+    ffio_init_context(&bic, mms->write_out_ptr,
             sizeof(mms->out_buffer) - size, 1, NULL, NULL, NULL, NULL);
 
     len = avio_put_str16le(&bic, src);
@@ -290,10 +291,9 @@ static MMSSCPacketType get_tcp_server_response(MMSTContext *mmst)
                 return read_result < 0 ? read_result : AVERROR_IO;
             }
             packet_type= AV_RL16(mms->in_buffer+36);
-            hr = AV_RL32(mms->in_buffer + 40);
-            if (hr) {
+            if (read_result >= 44 && (hr = AV_RL32(mms->in_buffer + 40))) {
                 av_log(NULL, AV_LOG_ERROR,
-                       "Server sent an error status code: 0x%08x\n", hr);
+                       "Server sent a message with packet type 0x%x and error status code 0x%08x\n", packet_type, hr);
                 return AVERROR_UNKNOWN;
             }
         } else {

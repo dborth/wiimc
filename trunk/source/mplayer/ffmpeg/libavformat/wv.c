@@ -19,11 +19,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavutil/audioconvert.h"
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
 #include "apetag.h"
 #include "id3v1.h"
-#include "libavcore/audioconvert.h"
 
 // specs say that maximum block size is 1Mb
 #define WV_BLOCK_LIMIT 1047576
@@ -76,7 +76,7 @@ static int wv_probe(AVProbeData *p)
         return 0;
 }
 
-static int wv_read_block_header(AVFormatContext *ctx, ByteIOContext *pb, int append)
+static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int append)
 {
     WVContext *wc = ctx->priv_data;
     uint32_t tag, ver;
@@ -201,7 +201,7 @@ static int wv_read_block_header(AVFormatContext *ctx, ByteIOContext *pb, int app
 static int wv_read_header(AVFormatContext *s,
                           AVFormatParameters *ap)
 {
-    ByteIOContext *pb = s->pb;
+    AVIOContext *pb = s->pb;
     WVContext *wc = s->priv_data;
     AVStream *st;
 

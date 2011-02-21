@@ -35,10 +35,10 @@
 #include "libswscale/swscale.h"
 #include "libpostproc/postprocess.h"
 #include "libavutil/avstring.h"
+#include "libavutil/parseutils.h"
 #include "libavutil/pixdesc.h"
 #include "libavutil/eval.h"
 #include "libavcodec/opt.h"
-#include "libavcore/avcore.h"
 #include "cmdutils.h"
 #include "version.h"
 #if CONFIG_NETWORK
@@ -114,8 +114,8 @@ double parse_number_or_die(const char *context, const char *numstr, int type, do
 
 int64_t parse_time_or_die(const char *context, const char *timestr, int is_duration)
 {
-    int64_t us = parse_date(timestr, is_duration);
-    if (us == INT64_MIN) {
+    int64_t us;
+    if (av_parse_time(&us, timestr, is_duration) < 0) {
         fprintf(stderr, "Invalid %s specification for %s: %s\n",
                 is_duration ? "duration" : "date", context, timestr);
         exit(1);
@@ -413,7 +413,6 @@ static int warned_cfg = 0;
 static void print_all_libs_info(FILE* outstream, int flags)
 {
     PRINT_LIB_INFO(outstream, avutil,   AVUTIL,   flags);
-    PRINT_LIB_INFO(outstream, avcore,   AVCORE,   flags);
     PRINT_LIB_INFO(outstream, avcodec,  AVCODEC,  flags);
     PRINT_LIB_INFO(outstream, avformat, AVFORMAT, flags);
     PRINT_LIB_INFO(outstream, avdevice, AVDEVICE, flags);

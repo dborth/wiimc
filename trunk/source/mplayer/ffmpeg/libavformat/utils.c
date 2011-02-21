@@ -323,7 +323,7 @@ FF_SYMVER(void, av_init_packet, (AVPacket *pkt), "LIBAVFORMAT_52")
 }
 #endif
 
-int av_get_packet(ByteIOContext *s, AVPacket *pkt, int size)
+int av_get_packet(AVIOContext *s, AVPacket *pkt, int size)
 {
     int ret= av_new_packet(pkt, size);
 
@@ -341,7 +341,7 @@ int av_get_packet(ByteIOContext *s, AVPacket *pkt, int size)
     return ret;
 }
 
-int av_append_packet(ByteIOContext *s, AVPacket *pkt, int size)
+int av_append_packet(AVIOContext *s, AVPacket *pkt, int size)
 {
     int ret;
     int old_size;
@@ -442,7 +442,7 @@ static int set_codec_from_probe_data(AVFormatContext *s, AVStream *st, AVProbeDa
  * Open a media file from an IO stream. 'fmt' must be specified.
  */
 int av_open_input_stream(AVFormatContext **ic_ptr,
-                         ByteIOContext *pb, const char *filename,
+                         AVIOContext *pb, const char *filename,
                          AVInputFormat *fmt, AVFormatParameters *ap)
 {
     int err;
@@ -479,7 +479,7 @@ int av_open_input_stream(AVFormatContext **ic_ptr,
         ic->priv_data = NULL;
     }
 
-    // e.g. AVFMT_NOFILE formats will not have a ByteIOContext
+    // e.g. AVFMT_NOFILE formats will not have a AVIOContext
     if (ic->pb)
         ff_id3v2_read(ic, ID3v2_DEFAULT_MAGIC);
 
@@ -524,7 +524,7 @@ int av_open_input_stream(AVFormatContext **ic_ptr,
 #define PROBE_BUF_MIN 2048
 #define PROBE_BUF_MAX (1<<20)
 
-int ff_probe_input_buffer(ByteIOContext **pb, AVInputFormat **fmt,
+int av_probe_input_buffer(AVIOContext *pb, AVInputFormat **fmt,
                           const char *filename, void *logctx,
                           unsigned int offset, unsigned int max_probe_size)
 {
@@ -555,7 +555,7 @@ int ff_probe_input_buffer(ByteIOContext **pb, AVInputFormat **fmt,
 
         /* read probe data */
         buf = av_realloc(buf, probe_size + AVPROBE_PADDING_SIZE);
-        if ((ret = get_buffer(*pb, buf + buf_offset, probe_size - buf_offset)) < 0) {
+        if ((ret = get_buffer(pb, buf + buf_offset, probe_size - buf_offset)) < 0) {
             /* fail if error was not end of file, otherwise, lower score */
             if (ret != AVERROR_EOF) {
                 av_free(buf);
@@ -585,7 +585,7 @@ int ff_probe_input_buffer(ByteIOContext **pb, AVInputFormat **fmt,
     }
 
     /* rewind. reuse probe buffer to avoid seeking */
-    if ((ret = ff_rewind_with_probe_data(*pb, buf, pd.buf_size)) < 0)
+    if ((ret = ff_rewind_with_probe_data(pb, buf, pd.buf_size)) < 0)
         av_free(buf);
 
     return ret;
@@ -598,7 +598,7 @@ int av_open_input_file(AVFormatContext **ic_ptr, const char *filename,
 {
     int err;
     AVProbeData probe_data, *pd = &probe_data;
-    ByteIOContext *pb = NULL;
+    AVIOContext *pb = NULL;
     void *logctx= ap && ap->prealloced_context ? *ic_ptr : NULL;
 
     pd->filename = "";
@@ -622,7 +622,7 @@ int av_open_input_file(AVFormatContext **ic_ptr, const char *filename,
         if (buf_size > 0) {
             url_setbufsize(pb, buf_size);
         }
-        if (!fmt && (err = ff_probe_input_buffer(&pb, &fmt, filename, logctx, 0, logctx ? (*ic_ptr)->probesize : 0)) < 0) {
+        if (!fmt && (err = av_probe_input_buffer(pb, &fmt, filename, logctx, 0, logctx ? (*ic_ptr)->probesize : 0)) < 0) {
             goto fail;
         }
     }
@@ -930,6 +930,12 @@ static void compute_pkt_fields(AVFormatContext *s, AVStream *st,
     /* do we have a video B-frame ? */
     delay= st->codec->has_b_frames;
     presentation_delayed = 0;
+
+    // ignore delay caused by frame threading so that the mpeg2-without-dts
+    // warning will not trigger
+    if (delay && st->codec->active_thread_type&FF_THREAD_FRAME)
+        delay -= st->codec->thread_count-1;
+
     /* XXX: need has_b_frame, but cannot get it if the codec is
         not initialized */
     if (delay &&
@@ -2510,6 +2516,8 @@ int av_find_best_stream(AVFormatContext *ic,
             continue;
         if (wanted_stream_nb >= 0 && stream_number++ != wanted_stream_nb)
             continue;
+        if (st->disposition & (AV_DISPOSITION_HEARING_IMPAIRED|AV_DISPOSITION_VISUAL_IMPAIRED))
+            continue;
         if (decoder_ret) {
             decoder = avcodec_find_decoder(ic->streams[i]->codec->codec_id);
             if (!decoder) {
@@ -2521,7 +2529,7 @@ int av_find_best_stream(AVFormatContext *ic,
         if (best_count >= st->codec_info_nb_frames)
             continue;
         best_count = st->codec_info_nb_frames;
-        ret = i;
+        ret = program ? program[i] : i;
         best_decoder = decoder;
         if (program && i == nb_streams - 1 && ret < 0) {
             program = NULL;
@@ -2612,7 +2620,7 @@ void avformat_free_context(AVFormatContext *s)
 
 void av_close_input_file(AVFormatContext *s)
 {
-    ByteIOContext *pb = s->iformat->flags & AVFMT_NOFILE ? NULL : s->pb;
+    AVIOContext *pb = s->iformat->flags & AVFMT_NOFILE ? NULL : s->pb;
     av_close_input_stream(s);
     if (pb)
         url_fclose(pb);
@@ -3229,14 +3237,44 @@ static void dump_stream_format(AVFormatContext *ic, int i, int index, int is_out
         if(st->codec->time_base.den && st->codec->time_base.num)
             print_fps(1/av_q2d(st->codec->time_base), "tbc");
     }
+    if (st->disposition & AV_DISPOSITION_DEFAULT)
+        av_log(NULL, AV_LOG_INFO, " (default)");
+    if (st->disposition & AV_DISPOSITION_DUB)
+        av_log(NULL, AV_LOG_INFO, " (dub)");
+    if (st->disposition & AV_DISPOSITION_ORIGINAL)
+        av_log(NULL, AV_LOG_INFO, " (original)");
+    if (st->disposition & AV_DISPOSITION_COMMENT)
+        av_log(NULL, AV_LOG_INFO, " (comment)");
+    if (st->disposition & AV_DISPOSITION_LYRICS)
+        av_log(NULL, AV_LOG_INFO, " (lyrics)");
+    if (st->disposition & AV_DISPOSITION_KARAOKE)
+        av_log(NULL, AV_LOG_INFO, " (karaoke)");
+    if (st->disposition & AV_DISPOSITION_FORCED)
+        av_log(NULL, AV_LOG_INFO, " (forced)");
+    if (st->disposition & AV_DISPOSITION_HEARING_IMPAIRED)
+        av_log(NULL, AV_LOG_INFO, " (hearing impaired)");
+    if (st->disposition & AV_DISPOSITION_VISUAL_IMPAIRED)
+        av_log(NULL, AV_LOG_INFO, " (visual impaired)");
+    if (st->disposition & AV_DISPOSITION_CLEAN_EFFECTS)
+        av_log(NULL, AV_LOG_INFO, " (clean effects)");
     av_log(NULL, AV_LOG_INFO, "\n");
     dump_metadata(NULL, st->metadata, "    ");
 }
 
+#if FF_API_DUMP_FORMAT
 void dump_format(AVFormatContext *ic,
                  int index,
                  const char *url,
                  int is_output)
+{
+    av_dump_format(ic, index, url, is_output);
+}
+#endif
+
+void av_dump_format(AVFormatContext *ic,
+                    int index,
+                    const char *url,
+                    int is_output)
 {
     int i;
     uint8_t *printed = av_mallocz(ic->nb_streams);
@@ -3313,7 +3351,7 @@ void dump_format(AVFormatContext *ic,
 }
 
 #if FF_API_PARSE_FRAME_PARAM
-#include "libavcore/parseutils.h"
+#include "libavutil/parseutils.h"
 
 int parse_image_size(int *width_ptr, int *height_ptr, const char *str)
 {
@@ -3342,163 +3380,25 @@ uint64_t ff_ntp_time(void)
   return (av_gettime() / 1000) * 1000 + NTP_OFFSET_US;
 }
 
-int64_t parse_date(const char *datestr, int duration)
+#if FF_API_PARSE_DATE
+#include "libavutil/parseutils.h"
+
+int64_t parse_date(const char *timestr, int duration)
 {
-    const char *p;
-    int64_t t;
-    struct tm dt;
-    int i;
-    static const char * const date_fmt[] = {
-        "%Y-%m-%d",
-        "%Y%m%d",
-    };
-    static const char * const time_fmt[] = {
-        "%H:%M:%S",
-        "%H%M%S",
-    };
-    const char *q;
-    int is_utc, len;
-    char lastch;
-    int negative = 0;
-
-#undef time
-    time_t now = time(0);
-
-    len = strlen(datestr);
-    if (len > 0)
-        lastch = datestr[len - 1];
-    else
-        lastch = '\0';
-    is_utc = (lastch == 'z' || lastch == 'Z');
-
-    memset(&dt, 0, sizeof(dt));
-
-    p = datestr;
-    q = NULL;
-    if (!duration) {
-        if (!strncasecmp(datestr, "now", len))
-            return (int64_t) now * 1000000;
-
-        /* parse the year-month-day part */
-        for (i = 0; i < FF_ARRAY_ELEMS(date_fmt); i++) {
-            q = small_strptime(p, date_fmt[i], &dt);
-            if (q) {
-                break;
-            }
-        }
-
-        /* if the year-month-day part is missing, then take the
-         * current year-month-day time */
-        if (!q) {
-            if (is_utc) {
-                dt = *gmtime(&now);
-            } else {
-                dt = *localtime(&now);
-            }
-            dt.tm_hour = dt.tm_min = dt.tm_sec = 0;
-        } else {
-            p = q;
-        }
-
-        if (*p == 'T' || *p == 't' || *p == ' ')
-            p++;
-
-        /* parse the hour-minute-second part */
-        for (i = 0; i < FF_ARRAY_ELEMS(time_fmt); i++) {
-            q = small_strptime(p, time_fmt[i], &dt);
-            if (q) {
-                break;
-            }
-        }
-    } else {
-        /* parse datestr as a duration */
-        if (p[0] == '-') {
-            negative = 1;
-            ++p;
-        }
-        /* parse datestr as HH:MM:SS */
-        q = small_strptime(p, time_fmt[0], &dt);
-        if (!q) {
-            /* parse datestr as S+ */
-            dt.tm_sec = strtol(p, (char **)&q, 10);
-            if (q == p)
-                /* the parsing didn't succeed */
-                return INT64_MIN;
-            dt.tm_min = 0;
-            dt.tm_hour = 0;
-        }
-    }
-
-    /* Now we have all the fields that we can get */
-    if (!q) {
-        return INT64_MIN;
-    }
-
-    if (duration) {
-        t = dt.tm_hour * 3600 + dt.tm_min * 60 + dt.tm_sec;
-    } else {
-        dt.tm_isdst = -1;       /* unknown */
-        if (is_utc) {
-            t = mktimegm(&dt);
-        } else {
-            t = mktime(&dt);
-        }
-    }
-
-    t *= 1000000;
-
-    /* parse the .m... part */
-    if (*q == '.') {
-        int val, n;
-        q++;
-        for (val = 0, n = 100000; n >= 1; n /= 10, q++) {
-            if (!isdigit(*q))
-                break;
-            val += n * (*q - '0');
-        }
-        t += val;
-    }
-    return negative ? -t : t;
+    int64_t timeval;
+    av_parse_time(&timeval, timestr, duration);
+    return timeval;
 }
+#endif
+
+#if FF_API_FIND_INFO_TAG
+#include "libavutil/parseutils.h"
 
 int find_info_tag(char *arg, int arg_size, const char *tag1, const char *info)
 {
-    const char *p;
-    char tag[128], *q;
-
-    p = info;
-    if (*p == '?')
-        p++;
-    for(;;) {
-        q = tag;
-        while (*p != '\0' && *p != '=' && *p != '&') {
-            if ((q - tag) < sizeof(tag) - 1)
-                *q++ = *p;
-            p++;
-        }
-        *q = '\0';
-        q = arg;
-        if (*p == '=') {
-            p++;
-            while (*p != '&' && *p != '\0') {
-                if ((q - arg) < arg_size - 1) {
-                    if (*p == '+')
-                        *q++ = ' ';
-                    else
-                        *q++ = *p;
-                }
-                p++;
-            }
-        }
-        *q = '\0';
-        if (!strcmp(tag, tag1))
-            return 1;
-        if (*p != '&')
-            break;
-        p++;
-    }
-    return 0;
+    return av_find_info_tag(arg, arg_size, tag1, info);
 }
+#endif
 
 int av_get_frame_filename(char *buf, int buf_size,
                           const char *path, int number)
@@ -3762,16 +3662,19 @@ int ff_hex_to_data(uint8_t *data, const char *p)
 void av_set_pts_info(AVStream *s, int pts_wrap_bits,
                      unsigned int pts_num, unsigned int pts_den)
 {
-    s->pts_wrap_bits = pts_wrap_bits;
-
-    if(av_reduce(&s->time_base.num, &s->time_base.den, pts_num, pts_den, INT_MAX)){
-        if(s->time_base.num != pts_num)
-            av_log(NULL, AV_LOG_DEBUG, "st:%d removing common factor %d from timebase\n", s->index, pts_num/s->time_base.num);
+    AVRational new_tb;
+    if(av_reduce(&new_tb.num, &new_tb.den, pts_num, pts_den, INT_MAX)){
+        if(new_tb.num != pts_num)
+            av_log(NULL, AV_LOG_DEBUG, "st:%d removing common factor %d from timebase\n", s->index, pts_num/new_tb.num);
     }else
         av_log(NULL, AV_LOG_WARNING, "st:%d has too large timebase, reducing\n", s->index);
 
-    if(!s->time_base.num || !s->time_base.den)
-        s->time_base.num= s->time_base.den= 0;
+    if(new_tb.num <= 0 || new_tb.den <= 0) {
+        av_log(NULL, AV_LOG_ERROR, "Ignoring attempt to set invalid timebase for st:%d\n", s->index);
+        return;
+    }
+    s->time_base = new_tb;
+    s->pts_wrap_bits = pts_wrap_bits;
 }
 
 int ff_url_join(char *str, int size, const char *proto,

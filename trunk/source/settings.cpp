@@ -498,32 +498,33 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 
 		if(name && addr) // this is a link
 		{
-			if(!AddEntryOnlineMedia())
+			BROWSERENTRY *o_entry = AddEntryOnlineMedia();
+			if(!o_entry)
 				break;
 
-			browserOnlineMedia[browserinfoOnlineMedia.size-1].file = mem2_strdup(path, MEM2_BROWSER);
-			browserOnlineMedia[browserinfoOnlineMedia.size-1].url = mem2_strdup(addr, MEM2_BROWSER);
-			browserOnlineMedia[browserinfoOnlineMedia.size-1].display = mem2_strdup(name, MEM2_BROWSER);
-			browserOnlineMedia[browserinfoOnlineMedia.size-1].image = mem2_strdup(image, MEM2_BROWSER);
+			o_entry->file = mem2_strdup(path, MEM2_BROWSER);
+			o_entry->url = mem2_strdup(addr, MEM2_BROWSER);
+			o_entry->display = mem2_strdup(name, MEM2_BROWSER);
+			o_entry->image = mem2_strdup(image, MEM2_BROWSER);
 
 			if(type)
 			{
 				if(strncmp(type, "search", 6) == 0)
-					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_SEARCH;
+					o_entry->type = TYPE_SEARCH;
 				else if(strncmp(type, "playlist", 8) == 0)
-					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_PLAYLIST;
+					o_entry->type = TYPE_PLAYLIST;
 				else
-					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_FILE;
+					o_entry->type = TYPE_FILE;
 			}
 			else
 			{
 				char ext[7];
-				GetExt(browserOnlineMedia[browserinfoOnlineMedia.size-1].url, ext);
+				GetExt(o_entry->url, ext);
 
 				if(IsPlaylistExt(ext))
-					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_PLAYLIST;
+					o_entry->type = TYPE_PLAYLIST;
 				else
-					browserOnlineMedia[browserinfoOnlineMedia.size-1].type = TYPE_FILE;
+					o_entry->type = TYPE_FILE;
 			}
 		}
 		next = mxmlFindElement(next, top, "link", NULL, NULL, MXML_NO_DESCEND);

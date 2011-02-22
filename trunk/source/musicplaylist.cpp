@@ -23,23 +23,26 @@ extern "C" {
 #include "mplayer/playtree.h"
 }
 
-static int shuffleList[2000];
+static int *shuffleList = NULL;
 static int shuffleIndex = -1;
 
-int MusicPlaylistGetNextShuffle()
+BROWSERENTRY * MusicPlaylistGetNextShuffle()
 {
-	if(shuffleIndex == -1 || shuffleIndex >= browserinfoMusic.size)
+	if(shuffleIndex == -1 || shuffleIndex >= browserinfoMusic.numEntries)
 	{
 		// populate new list
 		int i, n, t;
 
-		for(i=0; i < browserinfoMusic.size; i++)
+		mem2_free(shuffleList, MEM2_BROWSER);
+		shuffleList = (int *)mem2_malloc(browserinfoMusic.numEntries,MEM2_BROWSER);
+
+		for(i=0; i < browserinfoMusic.numEntries; i++)
 			shuffleList[i] = i;
 
 		// shuffle the list
-		for(i = 0; i < browserinfoMusic.size-1; i++)
+		for(i = 0; i < browserinfoMusic.numEntries-1; i++)
 		{
-			n = rand() / (RAND_MAX/(browserinfoMusic.size-i) + 1);
+			n = rand() / (RAND_MAX/(browserinfoMusic.numEntries-i) + 1);
 
 			// swap
 			t = shuffleList[i];
@@ -48,7 +51,11 @@ int MusicPlaylistGetNextShuffle()
 		}
 		shuffleIndex = 0;
 	}
-	return shuffleList[shuffleIndex++];
+	BROWSERENTRY *s = browserinfoMusic.first;
+	for(int i=0;i<shuffleList[shuffleIndex];i++)
+		s = s->next;
+	shuffleIndex++;
+	return s;
 }
 
 /****************************************************************************
@@ -59,7 +66,7 @@ int MusicPlaylistGetNextShuffle()
 
 int MusicPlaylistLoad()
 {
-	if(browserinfoMusic.size == 0)
+	if(browserinfoMusic.numEntries == 0)
 	{
 		InfoPrompt("Playlist is Empty", "Hover over items and push the + button to add them to your playlist.");
 		return 0;
@@ -68,58 +75,60 @@ int MusicPlaylistLoad()
 	BrowserHistoryStore(browser.dir);
 	ResetFiles();
 
-	AddEntryFiles();
-	browserFiles[0].file = mem2_strdup(BrowserHistoryRetrieve(), MEM2_BROWSER);
-	browserFiles[0].display = mem2_strdup("Exit Playlist", MEM2_BROWSER);
-	browserFiles[0].length = 0;
-	browserFiles[0].icon = ICON_FOLDER;
+	BROWSERENTRY *f_entry = AddEntryFiles();
+	f_entry->file = mem2_strdup(BrowserHistoryRetrieve(), MEM2_BROWSER);
+	f_entry->display = mem2_strdup("Exit Playlist", MEM2_BROWSER);
+	f_entry->length = 0;
+	f_entry->icon = ICON_FOLDER;
 
 	char ext[7];
 	GetExt(browser.dir, ext);
 
 	if(IsPlaylistExt(ext) || strncmp(browser.dir, "http:", 5) == 0)
-		browserFiles[0].type = TYPE_PLAYLIST;
+		f_entry->type = TYPE_PLAYLIST;
 	else
-		browserFiles[0].type = TYPE_FOLDER;
+		f_entry->type = TYPE_FOLDER;
 
-	browser.numEntries++;
-
-	int i;
-
-	for(i=0; i < browserinfoMusic.size; i++)
+	BROWSERENTRY *i = browserinfoMusic.first;
+	while(i)
 	{
-		if(!AddEntryFiles())
+		f_entry = AddEntryFiles();
+		if(!f_entry)
 			break;
 
-		browserFiles[i+1].file = mem2_strdup(browserMusic[i].file, MEM2_BROWSER);
-		browserFiles[i+1].display = mem2_strdup(browserMusic[i].display, MEM2_BROWSER);
-		browserFiles[i+1].length = 0;
-		browserFiles[i+1].type = TYPE_FILE;
-		browserFiles[i+1].icon = ICON_FILE_CHECKED;
+		f_entry->file = mem2_strdup(i->file, MEM2_BROWSER);
+		f_entry->display = mem2_strdup(i->display, MEM2_BROWSER);
+		f_entry->length = 0;
+		f_entry->type = TYPE_FILE;
+		f_entry->icon = ICON_FILE_CHECKED;
+		i = i->next; 
 	}
-	browser.numEntries += i;
 	return browser.numEntries;
 }
 
-int MusicPlaylistFindIndex(char * fullpath)
+BROWSERENTRY * MusicPlaylistFindIndex(char * fullpath)
 {
-	for(int i=0; i < browserinfoMusic.size; i++)
+	BROWSERENTRY *i;
+	i=browserinfoMusic.first;
+	while(i!=NULL)
 	{
-		if(strcmp(fullpath, browserMusic[i].file) == 0)
+		if(i->file && strcmp(fullpath, i->file) == 0)
 			return i;
-	}
-	return -1;
+		i=i->next;
+	}	
+
+	return NULL;
 }
 
-bool MusicPlaylistFind(int index)
+bool MusicPlaylistFind(BROWSERENTRY *index)
 {
-	if(index <= 0 || index >= browser.size)
+	if(!index)
 		return false;
 
 	char fullpath[MAXPATHLEN];
 	GetFullPath(index, fullpath);
 
-	if(MusicPlaylistFindIndex(fullpath) >= 0)
+	if(MusicPlaylistFindIndex(fullpath))
 		return true;
 
 	return false;
@@ -183,17 +192,18 @@ static int EnqueueFile(char * path)
 			if(file[0] == 0)
 				continue;
 
-			if(MusicPlaylistFindIndex(file) >= 0)
+			if(MusicPlaylistFindIndex(file))
 				continue;
 
-			if(!AddEntryMusic()) // add failed
+			BROWSERENTRY *m_entry = AddEntryMusic();
+			if(!m_entry) // add failed
 			{
 				pt_iter_destroy(&pt_iter);
 				play_tree_free(list, 1);
 				return -1;
 			}
 
-			browserMusic[browserinfoMusic.size-1].file = mem2_strdup(file, MEM2_BROWSER);
+			m_entry->file = mem2_strdup(file, MEM2_BROWSER);
 
 			// use parameter pt_prettyformat_title for display if it exists
 			if(i->params) 
@@ -204,12 +214,12 @@ static int EnqueueFile(char * path)
 						continue;
 					if(i->params[n].value == NULL)
 						break;
-					browserMusic[browserinfoMusic.size-1].display = mem2_strdup(i->params[n].value, MEM2_BROWSER);
+					m_entry->display = mem2_strdup(i->params[n].value, MEM2_BROWSER);
 					break;
 				}
 			}
 
-			if(!browserMusic[browserinfoMusic.size-1].display)
+			if(!m_entry->display)
 			{
 				char *start = strrchr(i->files[0],'/');
 
@@ -217,16 +227,16 @@ static int EnqueueFile(char * path)
 				if(start != NULL && start[1] != 0)
 				{
 					start++;
-					browserMusic[browserinfoMusic.size-1].display = mem2_strdup(start, MEM2_BROWSER);
+					m_entry->display = mem2_strdup(start, MEM2_BROWSER);
 				}
 				else
 				{
-					browserMusic[browserinfoMusic.size-1].display = mem2_strdup(i->files[0], MEM2_BROWSER);
+					m_entry->display = mem2_strdup(i->files[0], MEM2_BROWSER);
 				}
 
 				// hide the file's extension
 				if(WiiSettings.hideExtensions)
-					StripExt(browserMusic[browserinfoMusic.size-1].display);
+					StripExt(m_entry->display);
 			}
 		}
 
@@ -235,10 +245,11 @@ static int EnqueueFile(char * path)
 	}
 	else
 	{
-		if(!AddEntryMusic()) // add failed
+		BROWSERENTRY *m_entry = AddEntryMusic();
+		if(!m_entry) // add failed
 			return -1;
 
-		browserMusic[browserinfoMusic.size-1].file = mem2_strdup(path, MEM2_BROWSER);
+		m_entry->file = mem2_strdup(path, MEM2_BROWSER);
 
 		char *start = strrchr(path,'/');
 
@@ -246,16 +257,16 @@ static int EnqueueFile(char * path)
 		if(start != NULL && start[1] != 0)
 		{
 			start++;
-			browserMusic[browserinfoMusic.size-1].display = mem2_strdup(start, MEM2_BROWSER);
+			m_entry->display = mem2_strdup(start, MEM2_BROWSER);
 		}
 		else
 		{
-			browserMusic[browserinfoMusic.size-1].display = mem2_strdup(path, MEM2_BROWSER);
+			m_entry->display = mem2_strdup(path, MEM2_BROWSER);
 		}
 
 		// hide the file's extension
 		if(WiiSettings.hideExtensions)
-			StripExt(browserMusic[browserinfoMusic.size-1].display);
+			StripExt(m_entry->display);
 	}
 
 	shuffleIndex = -1; // reset shuffle
@@ -290,7 +301,7 @@ static bool EnqueueFolder(char * path, int silent)
 		return false;
 	}
 	
-	int start = browserinfoMusic.size;
+	int start = browserinfoMusic.numEntries;
 
 	while ((entry=readdir(dir))!=NULL)
 	{
@@ -321,23 +332,23 @@ static bool EnqueueFolder(char * path, int silent)
 	}
 	closedir(dir);
 
-	if(browserinfoMusic.size-start > 1)
-		qsort(&browserMusic[start], browserinfoMusic.size-start, sizeof(BROWSERENTRY), MusicSortCallback);
+	if(browserinfoMusic.numEntries-start > 1)
+		SortBrower(&browserinfoMusic, MusicSortCallback);
 
 	return true;
 }
 
-bool MusicPlaylistEnqueue(int index)
+bool MusicPlaylistEnqueue(BROWSERENTRY *index)
 {
 	char fullpath[MAXPATHLEN+1];
 	GetFullPath(index, fullpath);
 	
-	if(browserFiles[index].type == TYPE_FOLDER)
-		browserFiles[index].icon = ICON_FOLDER_CHECKED;
+	if(index->type == TYPE_FOLDER)
+		index->icon = ICON_FOLDER_CHECKED;
 	else
-		browserFiles[index].icon = ICON_FILE_CHECKED;
+		index->icon = ICON_FILE_CHECKED;
 	
-	if(browserFiles[index].type == TYPE_FOLDER)
+	if(index->type == TYPE_FOLDER)
 		return EnqueueFolder(fullpath, NOTSILENT);
 
 	if(EnqueueFile(fullpath) == 1)
@@ -346,39 +357,44 @@ bool MusicPlaylistEnqueue(int index)
 	return false;
 }
 
-static void Remove(int i)
+static void Remove(BROWSERENTRY *i)
 {
-	mem2_free(browserMusic[i].file, MEM2_BROWSER);
-	mem2_free(browserMusic[i].url, MEM2_BROWSER);
-	mem2_free(browserMusic[i].display, MEM2_BROWSER);
-	mem2_free(browserMusic[i].image, MEM2_BROWSER);
+	BROWSERENTRY *n = i->next;
+	BROWSERENTRY *p = i->prior;
 
-	// shift entries down by one
-	for(int e=i; e < browserinfoMusic.size-1; e++)
-		memcpy(&browserMusic[e], &browserMusic[e+1], sizeof(BROWSERENTRY));
+	mem2_free(i->file, MEM2_BROWSER);
+	mem2_free(i->url, MEM2_BROWSER);
+	mem2_free(i->display, MEM2_BROWSER);
+	mem2_free(i->image, MEM2_BROWSER);
 
-	browserinfoMusic.size--;
-	memset(&browserMusic[browserinfoMusic.size], 0, sizeof(BROWSERENTRY));
+	browserinfoMusic.numEntries--;
 
-	if(browserinfoMusic.selIndex >= browserinfoMusic.size)
-		browserinfoMusic.selIndex = browserinfoMusic.size-1;
+	if(browserinfoMusic.selIndex == i) browserinfoMusic.selIndex = p;
+	if(browserinfoMusic.selIndex == NULL) browserinfoMusic.selIndex = n;
+	if(browserinfoMusic.first == i) browserinfoMusic.first = n;
+	if(browserinfoMusic.last == i) browserinfoMusic.first = p;
+
+	mem2_free(i, MEM2_BROWSER);
+	n->prior = p;
+	p->next = n;
 
 	shuffleIndex = -1; // reset shuffle
+
 }
 
-void MusicPlaylistDequeue(int index)
+void MusicPlaylistDequeue(BROWSERENTRY *index)
 {
 	char fullpath[MAXPATHLEN];
 	GetFullPath(index, fullpath);
 
 	int len = strlen(fullpath);
 
-	if(browserFiles[index].type == TYPE_FOLDER)
-		browserFiles[index].icon = ICON_FOLDER;
+	if(index->type == TYPE_FOLDER)
+		index->icon = ICON_FOLDER;
 	else
-		browserFiles[index].icon = ICON_FILE;
+		index->icon = ICON_FILE;
 
-	if(browserFiles[index].type == TYPE_PLAYLIST)
+	if(index->type == TYPE_PLAYLIST)
 	{
 		// use MPlayer to try parsing the file
 		play_tree_t * list = parse_playlist_file(fullpath);
@@ -417,27 +433,35 @@ void MusicPlaylistDequeue(int index)
 			if(file[0] == 0)
 				continue;
 
-			for(int i=0; i < browserinfoMusic.size; i++)
+			BROWSERENTRY *m_entry = browserinfoMusic.first;
+			BROWSERENTRY *prior = m_entry;
+			while(m_entry)
 			{
-				if(strcmp(file, browserMusic[i].file) == 0)
+				if(strcmp(file, m_entry->file) == 0)
 				{
-					Remove(i);
+					Remove(m_entry);
 					break;
 				}
+				prior = m_entry;
+				m_entry = m_entry->next; 
 			}
 		}
 		pt_iter_destroy(&pt_iter);
 		play_tree_free(list, 1);
 		return;
 	}
-	
-	int i=0;
 
-	while(i < browserinfoMusic.size)
+	BROWSERENTRY *m_entry = browserinfoMusic.first;
+	BROWSERENTRY *aux;
+	while(m_entry)
 	{
-		if(strncmp(fullpath, browserMusic[i].file, len) == 0)
-			Remove(i);
-		else
-			i++;
+		if(strncmp(fullpath, m_entry->file, len) == 0)
+		{
+			aux = m_entry;
+			m_entry = m_entry->next; 
+			Remove(aux);			
+		}
+		else 
+			m_entry = m_entry->next; 
 	}
 }

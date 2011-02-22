@@ -15,6 +15,8 @@
 #include <string.h>
 #include <ogcsys.h>
 #include <unistd.h>
+#include "filebrowser.h"
+
 
 #define MAX_DEVICES 10
 
@@ -39,7 +41,7 @@ bool IsDeviceRoot(char * path);
 bool IsOnlineMediaPath(char *path);
 void CleanupPath(char * path);
 char *GetPartitionLabel(char *path);
-void GetFullPath(int index, char *path);
+void GetFullPath(BROWSERENTRY *entry, char *path);
 void FindAppPath();
 void UnmountAllDevices();
 bool CheckMount(int device, int devnum);

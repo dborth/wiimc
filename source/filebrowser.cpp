@@ -27,73 +27,208 @@ using namespace std;
 #include "utils/gettext.h"
 
 BROWSERINFO browser;
-BROWSERENTRY *browserFiles = NULL;
 
 BROWSERINFO browserinfoSubs;
-BROWSERENTRY *browserSubs = NULL;
 
 BROWSERINFO browserinfoVideos;
-BROWSERENTRY *browserVideos = NULL;
 
 BROWSERINFO browserinfoMusic;
-BROWSERENTRY *browserMusic = NULL;
 
 BROWSERINFO browserinfoOnlineMedia;
-BROWSERENTRY *browserOnlineMedia = NULL;
 
 static std::vector<std::string> browserHistory; // browser.dir history - for nested playlists
+
+void BrowserInit(BROWSERINFO *info)
+{
+	info->first=info->last=info->selIndex=NULL;
+	info->numEntries=0;
+	info->pageIndex=0;
+	info->dir[0]='\0';
+	info->lastdir[0]='\0';
+}
+
 
 /****************************************************************************
  * Reset()
  * Clears the browser memory
  ***************************************************************************/
-static void Reset(BROWSERINFO *info, BROWSERENTRY *list)
+static void Reset(BROWSERINFO *info)
 {
-	for(int i=0; i < info->size; i++)
+	BROWSERENTRY *i,*n;
+	i=info->first;
+	while(i!=NULL)
 	{
-		mem2_free(list[i].file, MEM2_BROWSER);
-		mem2_free(list[i].url, MEM2_BROWSER);
-		mem2_free(list[i].display, MEM2_BROWSER);
-		mem2_free(list[i].image, MEM2_BROWSER);
+		mem2_free(i->file, MEM2_BROWSER);
+		mem2_free(i->url, MEM2_BROWSER);
+		mem2_free(i->display, MEM2_BROWSER);
+		mem2_free(i->image, MEM2_BROWSER);
+		n=i->next;
+		mem2_free(i, MEM2_BROWSER);
+		i=n;
 	}
-	memset(list, 0, sizeof(BROWSERENTRY)*info->maxSize);
+
 	info->numEntries = 0;
-	info->selIndex = 0;
+	info->selIndex = NULL;
 	info->pageIndex = 0;
-	info->size = 0;
+	info->first = NULL;
+	info->last = NULL;
 }
 
-static void ResetSubs() { Reset(&browserinfoSubs, browserSubs); }
-void ResetFiles() {	ResetSubs(); Reset(&browser, browserFiles); }
-void ResetVideos() { Reset(&browserinfoVideos, browserVideos); }
-void ResetMusic() { Reset(&browserinfoMusic, browserMusic); }
-void ResetOnlineMedia() { Reset(&browserinfoOnlineMedia, browserOnlineMedia); }
-
-static bool AddEntry(BROWSERINFO *info, BROWSERENTRY *list)
+void SortBrower(BROWSERINFO *_browser, int ( * comparator ) ( const void *, const void * ) )
 {
-	if(info->size == info->maxSize || mem2_size(MEM2_BROWSER) < 8192)
-		return false;
-
-	info->size++;
-	return true;
+	/* preform a bubble sort on the list */
+	BROWSERENTRY *a = NULL;
+	BROWSERENTRY *b = NULL; 
+	BROWSERENTRY *e = NULL; 
+	BROWSERENTRY *tmp = NULL; 
+	BROWSERENTRY *tmp2 = NULL; 
+	BROWSERENTRY *head = _browser->first;
+	BROWSERENTRY *tail = _browser->last;
+	int pos;
+	if(!head) return;
+	/*  tmp2 <-> a <-> b <-> tmp */
+	while(e != head->next) 
+	{
+		a = head;
+		b = a->next;
+		while(a != e) 
+		{
+			if(comparator(a,b)>0)
+			{	   
+				pos=a->pos;
+				tmp = b->next;
+				tmp2 = a->prior;
+				b->next = a;
+				b->prior = tmp2;
+				if(tmp2) tmp2->next = b;
+				a->next = tmp;
+				a->prior = b;
+				if(tmp) tmp->prior = a;
+				if(!tmp2) head = b;
+				if(!tmp) tail = a;
+				a->pos=b->pos;
+				b->pos=pos;
+			} 
+			else 
+			{
+				a = a->next;
+			}
+			b = a->next;
+			if(b == e) e = a;
+		}
+	}
+	_browser->first = head;
+	_browser->last = tail;
+	/*
+	a = head;
+	while(1) 
+	{
+		if(a->next == NULL) 
+		{
+			_browser->last = a;
+			break;
+		}
+		a=a->next;
+	}
+	*/
 }
 
-bool AddEntryFiles() { return AddEntry(&browser, browserFiles); }
-bool AddEntrySubs() { return AddEntry(&browserinfoSubs, browserSubs); }
-bool AddEntryVideos() { return AddEntry(&browserinfoVideos, browserVideos); }
-bool AddEntryMusic() { return AddEntry(&browserinfoMusic, browserMusic); }
-bool AddEntryOnlineMedia() { return AddEntry(&browserinfoOnlineMedia, browserOnlineMedia); }
+
+static void ResetSubs() { Reset(&browserinfoSubs); }
+void ResetFiles() {	ResetSubs(); Reset(&browser); }
+void ResetVideos() { Reset(&browserinfoVideos); }
+void ResetMusic() { Reset(&browserinfoMusic); }
+void ResetOnlineMedia() { Reset(&browserinfoOnlineMedia); }
+
+static BROWSERENTRY * AddEntry(BROWSERINFO *info)
+{
+	if(mem2_size(MEM2_BROWSER) < 8192)
+		return NULL;
+
+	BROWSERENTRY *last_entry, *new_entry;
+
+	last_entry = info->last;
+	new_entry = (BROWSERENTRY *)mem2_calloc(1,sizeof(BROWSERENTRY), MEM2_BROWSER);
+	if(!new_entry) return NULL;
+	
+	if(last_entry==NULL) info->first = new_entry;
+	else last_entry->next = new_entry;
+	new_entry->prior = last_entry;
+	info->last = new_entry;
+
+	new_entry->pos=info->numEntries;
+	info->numEntries++;
+	return new_entry;
+}
+
+BROWSERENTRY * AddEntryFiles() { return AddEntry(&browser); }
+BROWSERENTRY * AddEntrySubs() { return AddEntry(&browserinfoSubs); }
+BROWSERENTRY * AddEntryVideos() { return AddEntry(&browserinfoVideos); }
+BROWSERENTRY * AddEntryMusic() { return AddEntry(&browserinfoMusic); }
+BROWSERENTRY * AddEntryOnlineMedia() { return AddEntry(&browserinfoOnlineMedia); }
+
+int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2)
+{
+	int pos;
+	BROWSERENTRY *n;
+
+	n = p1;
+	pos = 0;
+	while(n)
+	{
+		if(n == p2) return pos;
+		pos++;
+		n = n->next;
+	}
+	pos = 0;
+	n = p2;
+	while(n)
+	{
+		if(n == p1) return pos;
+		pos++;
+		n = n->next;
+	}
+	return 0;
+}
+
+int EntryPosition(BROWSERINFO *info, BROWSERENTRY * i)
+{
+	if(!i)
+		return -1;
+	return i->pos;
+}
+
+BROWSERENTRY * PositionToEntry(BROWSERINFO *info, int pos)
+{
+	BROWSERENTRY *entry;
+	if(!info) return NULL;
+	entry=info->first;
+	for(int j=0;entry && j<pos;j++)
+	{
+		entry = entry->next;
+	}
+	return entry;
+}
+
+
+
+static BROWSERENTRY *sub_list;
 
 extern "C" {
 
-int BrowserGetSubSize()
+void BrowserGetSubInit()
 {
-	return browserinfoSubs.size;
+	sub_list=browserinfoSubs.first;
 }
 
-char *BrowserGetSub(int i)
+char * BrowserGetSub(char *filename)
 {
-	return browserSubs[i].file;
+	if(!sub_list) return NULL;
+
+	strcpy(filename,sub_list->file);
+	sub_list=sub_list->next;
+
+	return filename;
 }
 
 int BrowserFindSub(char *path)
@@ -101,11 +236,15 @@ int BrowserFindSub(char *path)
 	if(!path || path[0] == 0)
 		return 0;
 
-	for(int i=0; i < browserinfoSubs.size; i++)
+	BROWSERENTRY *i;
+	i = browserinfoSubs.first;
+	while(i)
 	{
-		if (strcasecmp(browserSubs[i].file, path) == 0)
+		if (strcasecmp(i->file, path) == 0)
 			return 1;
-	}
+		i=i->next;
+	}	
+
 	return 0;
 }
 
@@ -148,20 +287,24 @@ void PopulateVideoPlaylist()
 
 	char tmp[MAXPATHLEN];
 
-	for(int i=0; i < browser.numEntries; i++)
+	BROWSERENTRY *i;
+	i=browser.first;
+	while(i!=NULL)
 	{
-		if(!browserFiles[browser.selIndex+i].file || strncmp(browserFiles[browser.selIndex+i].file, "http://www.youtube.com", 22) == 0)
+		if(!i->file || strncmp(i->file, "http://www.youtube.com", 22) == 0)
 			continue;
-
-		if(browserFiles[browser.selIndex+i].type != TYPE_FILE)
-			continue;
+		
+		if(i->type != TYPE_FILE)
+					continue;
 
 		if(!AddEntryVideos())
 			break;
 
-		GetFullPath(browser.selIndex+i, tmp);
-		browserVideos[browserinfoVideos.size-1].file = mem2_strdup(tmp, MEM2_BROWSER);
-	}
+		GetFullPath(i, tmp);
+		browserinfoVideos.last->file = mem2_strdup(tmp, MEM2_BROWSER);
+		i=i->next;
+	}	
+
 }
 
 /****************************************************************************
@@ -170,11 +313,11 @@ void PopulateVideoPlaylist()
  ***************************************************************************/
 static int UpdateDirName()
 {
-	if(browser.numEntries == 0)
+	if(!browser.first || !browser.selIndex)
 		return 1;
 
 	// we are in a playlist, and have nowhere to go back to but the device listing
-	if(browser.selIndex == 0 && (!browserFiles[0].file || strlen(browserFiles[0].file) == 0))
+	if(browser.selIndex == browser.first && (!browser.selIndex->file || strlen(browser.selIndex->file) == 0))
 	{
 		browser.dir[0] = 0;
 		BrowserHistoryClear();
@@ -182,16 +325,16 @@ static int UpdateDirName()
 	}
 
 	// exiting a playlist - return to specified location
-	if(browser.selIndex == 0 && browserFiles[0].file[0] != '.' && browser.dir[0] != 0)
+	if(browser.selIndex == browser.first && browser.selIndex->file[0] != '.' && browser.dir[0] != 0)
 	{
 		strcpy(browser.lastdir, browser.dir);
-		strcpy(browser.dir, browserFiles[0].file);
+		strcpy(browser.dir, browser.selIndex->file);
 		BrowserHistoryDiscard();
 		return 1;
 	}
 	
 	// something went wrong, let's reset everything
-	if(!browserFiles[browser.selIndex].file)
+	if(!browser.selIndex->file)
 	{
 		browser.dir[0] = 0;
 		BrowserHistoryClear();
@@ -199,8 +342,8 @@ static int UpdateDirName()
 	}
 
 	// entering a playlist - this is handled when the playlist is parsed
-	if(browserFiles[browser.selIndex].type == TYPE_PLAYLIST || 
-		strncmp(browserFiles[browser.selIndex].file, "http:", 5) == 0)
+	if(browser.selIndex->type == TYPE_PLAYLIST || 
+		strncmp(browser.selIndex->file, "http:", 5) == 0)
 	{
 		BrowserHistoryStore(browser.dir);
 		GetFullPath(browser.selIndex, browser.dir);
@@ -208,12 +351,12 @@ static int UpdateDirName()
 	}
 
 	// current directory doesn't change
-	if (strcmp(browserFiles[browser.selIndex].file,".") == 0)
+	if (strcmp(browser.selIndex->file,".") == 0)
 	{
 		return 0;
 	}
 	// go up to parent directory
-	else if (strcmp(browserFiles[browser.selIndex].file,"..") == 0)
+	else if (strcmp(browser.selIndex->file,"..") == 0)
 	{
 		// already at the top level
 		if(IsDeviceRoot(browser.dir))
@@ -246,19 +389,19 @@ static int UpdateDirName()
 	if(menuCurrent != MENU_BROWSE_ONLINEMEDIA && browser.dir[0] == 0)
 	{
 		// try to switch to device
-		if(!ChangeInterface(browserFiles[browser.selIndex].file, NOTSILENT))
+		if(!ChangeInterface(browser.selIndex->file, NOTSILENT))
 			return -1;
 	}
 
 	// Open directory
 
 	// test new directory namelength
-	if ((strlen(browser.dir)+1+strlen(browserFiles[browser.selIndex].file)) < MAXPATHLEN)
+	if ((strlen(browser.dir)+1+strlen(browser.selIndex->file)) < MAXPATHLEN)
 	{
-		if(browserFiles[browser.selIndex].type != TYPE_PLAYLIST)
+		if(browser.selIndex->type != TYPE_PLAYLIST)
 		{
 			// update current directory name
-			sprintf(browser.dir, "%s%s/",browser.dir, browserFiles[browser.selIndex].file);
+			sprintf(browser.dir, "%s%s/",browser.dir, browser.selIndex->file);
 		}
 		return 1;
 	}
@@ -334,6 +477,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 
 	ResetFiles();
 
+
 	if(menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 		return ParseOnlineMedia();
 
@@ -354,10 +498,11 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		{
 			if(part[DEVICE_SD][i].type > 0)
 			{
-				AddEntryFiles();
-
+				BROWSERENTRY *entry;
+				entry=AddEntryFiles();
+				
 				sprintf(tmp, "%s:", part[DEVICE_SD][i].mount);
-				browserFiles[browser.numEntries].file = mem2_strdup(tmp, MEM2_BROWSER);
+				entry->file = mem2_strdup(tmp, MEM2_BROWSER);
 
 				if(strlen(part[DEVICE_SD][i].name) > 0)
 					sprintf(tmp, "%s - %s", gettext("SD"), part[DEVICE_SD][i].name);
@@ -366,11 +511,10 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 				else
 					sprintf(tmp, "%s (%d)", gettext("SD Card"), i+1);
 
-				browserFiles[browser.numEntries].display = mem2_strdup(tmp, MEM2_BROWSER);
-				browserFiles[browser.numEntries].length = 0;
-				browserFiles[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
-				browserFiles[browser.numEntries].icon = ICON_SD;
-				browser.numEntries++;
+				entry->display = mem2_strdup(tmp, MEM2_BROWSER);
+				entry->length = 0;
+				entry->type = TYPE_FOLDER; // flag this as a dir
+				entry->icon = ICON_SD;
 			}
 		}
 	}
@@ -381,10 +525,11 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		{
 			if(part[DEVICE_USB][i].type > 0)
 			{
-				AddEntryFiles();
+				BROWSERENTRY *entry;
+				entry=AddEntryFiles();
 
 				sprintf(tmp, "%s:", part[DEVICE_USB][i].mount);
-				browserFiles[browser.numEntries].file = mem2_strdup(tmp, MEM2_BROWSER);
+				entry->file = mem2_strdup(tmp, MEM2_BROWSER);
 
 				if(strlen(part[DEVICE_USB][i].name) > 0)
 					sprintf(tmp, "%s - %s", gettext("USB"), part[DEVICE_USB][i].name);
@@ -393,45 +538,45 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 				else
 					sprintf(tmp, "%s (%d)", gettext("USB Mass Storage"), i+1);
 
-				browserFiles[browser.numEntries].display = mem2_strdup(tmp, MEM2_BROWSER);
-				browserFiles[browser.numEntries].length = 0;
-				browserFiles[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
-				browserFiles[browser.numEntries].icon = ICON_USB;
-				browser.numEntries++;
+				entry->display = mem2_strdup(tmp, MEM2_BROWSER);
+				entry->length = 0;
+				entry->type = TYPE_FOLDER; // flag this as a dir
+				entry->icon = ICON_USB;
 			}
 		}
 	}
 
 	if(!WiiSettings.dvdDisabled && isInserted[DEVICE_DVD])
-	{
-		AddEntryFiles();
-		browserFiles[browser.numEntries].file = mem2_strdup("dvd:", MEM2_BROWSER);
-		browserFiles[browser.numEntries].display = mem2_strdup("Data DVD", MEM2_BROWSER);
-		browserFiles[browser.numEntries].length = 0;
-		browserFiles[browser.numEntries].type = TYPE_FOLDER;
-		browserFiles[browser.numEntries].icon = ICON_DVD;
-		browser.numEntries++;
+	{		
+		BROWSERENTRY *entry;
+		entry=AddEntryFiles();
+		
+		entry->file = mem2_strdup("dvd:", MEM2_BROWSER);
+		entry->display = mem2_strdup("Data DVD", MEM2_BROWSER);
+		entry->length = 0;
+		entry->type = TYPE_FOLDER;
+		entry->icon = ICON_DVD;
 	}
 
 	for(i=0; i < MAX_SHARES; i++)
 	{
 		if(WiiSettings.smbConf[i].share[0] != 0)
 		{
-			AddEntryFiles();
+			BROWSERENTRY *entry;
+			entry=AddEntryFiles();
 
 			sprintf(tmp, "smb%d:", i+1);
-			browserFiles[browser.numEntries].file = mem2_strdup(tmp, MEM2_BROWSER);
+			entry->file = mem2_strdup(tmp, MEM2_BROWSER);
 			
 			if(WiiSettings.smbConf[i].displayname[0] != 0)
 				sprintf(tmp, "%s", WiiSettings.smbConf[i].displayname);
 			else
 				sprintf(tmp, "%s", WiiSettings.smbConf[i].share);
 			
-			browserFiles[browser.numEntries].display = mem2_strdup(tmp, MEM2_BROWSER);
-			browserFiles[browser.numEntries].length = 0;
-			browserFiles[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
-			browserFiles[browser.numEntries].icon = ICON_SMB;
-			browser.numEntries++;
+			entry->display = mem2_strdup(tmp, MEM2_BROWSER);
+			entry->length = 0;
+			entry->type = TYPE_FOLDER; // flag this as a dir
+			entry->icon = ICON_SMB;
 		}
 	}
 
@@ -439,21 +584,21 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	{
 		if(WiiSettings.ftpConf[i].ip[0] != 0)
 		{
-			AddEntryFiles();
+			BROWSERENTRY *entry;
+			entry=AddEntryFiles();
 
 			sprintf(tmp, "ftp%d:", i+1);
-			browserFiles[browser.numEntries].file = mem2_strdup(tmp, MEM2_BROWSER);
+			entry->file = mem2_strdup(tmp, MEM2_BROWSER);
 			
 			if(WiiSettings.ftpConf[i].displayname[0] != 0)
 				sprintf(tmp, "%s", WiiSettings.ftpConf[i].displayname);
 			else
 				sprintf(tmp, "%s@%s/%s", WiiSettings.ftpConf[i].user, WiiSettings.ftpConf[i].ip, WiiSettings.ftpConf[i].folder);
 			
-			browserFiles[browser.numEntries].display = mem2_strdup(tmp, MEM2_BROWSER);
-			browserFiles[browser.numEntries].length = 0;
-			browserFiles[browser.numEntries].type = TYPE_FOLDER; // flag this as a dir
-			browserFiles[browser.numEntries].icon = ICON_FTP;
-			browser.numEntries++;
+			entry->display = mem2_strdup(tmp, MEM2_BROWSER);
+			entry->length = 0;
+			entry->type = TYPE_FOLDER; // flag this as a dir
+			entry->icon = ICON_FTP;
 		}
 	}
 	if(browser.lastdir[0] != 0)

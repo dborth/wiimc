@@ -10,11 +10,11 @@
 #ifndef _MUSICPLAYLIST_H_
 #define _MUSICPLAYLIST_H_
 
-int MusicPlaylistGetNextShuffle();
+BROWSERENTRY * MusicPlaylistGetNextShuffle();
 int MusicPlaylistLoad();
-int MusicPlaylistFindIndex(char *path);
-bool MusicPlaylistFind(int index);
-bool MusicPlaylistEnqueue(int index);
-void MusicPlaylistDequeue(int index);
+BROWSERENTRY * MusicPlaylistFindIndex(char *path);
+bool MusicPlaylistFind(BROWSERENTRY *index);
+bool MusicPlaylistEnqueue(BROWSERENTRY *index);
+void MusicPlaylistDequeue(BROWSERENTRY *index);
 
 #endif

@@ -256,8 +256,13 @@ void GuiFileBrowser::ResetState()
 
 void GuiFileBrowser::TriggerUpdate()
 {
-	if(browser.selIndex >= 0 && (browser.selIndex - browser.pageIndex) >= 0)
-		selectedItem = browser.selIndex - browser.pageIndex;
+	int pos = browser.selIndex->pos;
+	if(pos<0) return;
+
+	pos = pos - browser.pageIndex;
+
+	if(pos >= 0 || pos < size)
+		selectedItem = pos;
 
 	listChanged = true;
 }
@@ -477,20 +482,21 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		}
 	}
 
-	for(int i=0; i<size; ++i)
+	BROWSERENTRY *entry = PositionToEntry(&browser, browser.pageIndex);
+	for(int i=0; i<size ; ++i)
 	{
 		if(listChanged || numEntries != browser.numEntries)
 		{
-			if(browser.pageIndex+i < browser.numEntries)
+			if(entry)
 			{
 				if(fileList[i]->GetState() == STATE_DISABLED)
 					fileList[i]->SetState(STATE_DEFAULT);
 
 				fileList[i]->SetVisible(true);
 
-				fileListText[i]->SetText(browserFiles[browser.pageIndex+i].display);
+				fileListText[i]->SetText(entry->display);
 
-				switch(browserFiles[browser.pageIndex+i].icon)
+				switch(entry->icon)
 				{
 					case ICON_FOLDER:
 						fileListIcon[i]->SetImage(iconFolder);
@@ -558,13 +564,14 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		if(fileList[i]->GetState() == STATE_SELECTED)
 		{
 			selectedItem = i;
-			browser.selIndex = browser.pageIndex + i;
+			if(entry) browser.selIndex = entry;
 		}
 
 		if(selectedItem == i)
 			fileListText[i]->SetScroll(SCROLL_HORIZONTAL);
 		else
 			fileListText[i]->SetScroll(SCROLL_NONE);
+		if(entry) entry = entry->next;
 	}
 
 	// update the location of the scroll box based on the position in the file list

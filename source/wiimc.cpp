@@ -268,15 +268,17 @@ extern "C" bool FindNextFile(bool load)
 	if(menuMode == 0 && menuCurrent == MENU_BROWSE_MUSIC)
 	{
 		// clear any play icons
-		for(int i=0; i < browser.numEntries; i++)
+		BROWSERENTRY *i = browser.first;
+		while(i)
 		{
-			if(browserFiles[i].icon == ICON_PLAY)
+			if(i->icon == ICON_PLAY)
 			{
 				if(MusicPlaylistFind(i))
-					browserFiles[i].icon = ICON_FILE_CHECKED;
+					i->icon = ICON_FILE_CHECKED;
 				else
-					browserFiles[i].icon = ICON_FILE;
+					i->icon = ICON_FILE;
 			}
+			i = i->next;
 		}
 		findLoadedFile = 2; // trigger file browser update
 	}
@@ -289,7 +291,7 @@ extern "C" bool FindNextFile(bool load)
 		if(!load)
 			return false;
 
-		if(!WiiSettings.autoPlayNextVideo || browserinfoVideos.selIndex+1 >= browserinfoVideos.size)
+		if(!WiiSettings.autoPlayNextVideo || browserinfoVideos.selIndex == browserinfoVideos.last)
 		{
 			loadedFile[0] = 0;
 			loadedFileDisplay[0] = 0;
@@ -298,7 +300,9 @@ extern "C" bool FindNextFile(bool load)
 		}
 		else
 		{
-			strcpy(loadedFile, browserVideos[++browserinfoVideos.selIndex].file);
+			strcpy(loadedFile, browserinfoVideos.selIndex->file);
+			browserinfoVideos.selIndex = browserinfoVideos.selIndex->next;
+			if(browserinfoVideos.selIndex == NULL) browserinfoVideos.selIndex = browserinfoVideos.first;
 
 			char *start = strrchr(loadedFile,'/');
 
@@ -316,28 +320,26 @@ extern "C" bool FindNextFile(bool load)
 	}
 	else
 	{
-		if(browserinfoMusic.size == 0 || (WiiSettings.playOrder == PLAY_SINGLE && browserinfoMusic.selIndex != -1))
+		if(browserinfoMusic.numEntries== 0 || (WiiSettings.playOrder == PLAY_SINGLE && browserinfoMusic.selIndex != NULL))
 		{
-			browserinfoMusic.selIndex = -1;
+			browserinfoMusic.selIndex = NULL;
 			return false;
 		}
 
 		if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 		{
-			browserinfoMusic.selIndex++;
-
-			if(browserinfoMusic.selIndex >= browserinfoMusic.size)
-				browserinfoMusic.selIndex = 0;
+			browserinfoMusic.selIndex = browserinfoMusic.selIndex->next;
+			if(browserinfoMusic.selIndex == NULL) browserinfoMusic.selIndex = browserinfoMusic.first;
 		}
 		else if(WiiSettings.playOrder == PLAY_SHUFFLE)
 		{
 			browserinfoMusic.selIndex = MusicPlaylistGetNextShuffle();
 		}
-		else if(browserinfoMusic.selIndex == -1 || browserinfoMusic.selIndex >= browserinfoMusic.size)
+		else if(browserinfoMusic.selIndex == NULL)
 		{
-			browserinfoMusic.selIndex = 0;
+			browserinfoMusic.selIndex = browserinfoMusic.first;
 		}
-		sprintf(loadedFile, "%s", browserMusic[browserinfoMusic.selIndex].file);
+		sprintf(loadedFile, "%s", browserinfoMusic.selIndex->file);
 	}
 
 	if(load)
@@ -588,6 +590,12 @@ int main(int argc, char *argv[])
 	AddMem2Area (6*1024*1024, MEM2_GUI);
 	AddMem2Area (3*1024*1024, MEM2_OTHER); // vars + ttf
 
+	BrowserInit(&browser);
+	BrowserInit(&browserinfoSubs);
+	BrowserInit(&browserinfoVideos);
+	BrowserInit(&browserinfoMusic);
+	BrowserInit(&browserinfoOnlineMedia);
+
 	InitVideo2();
 	SetupPads();
 	StartNetworkThread();
@@ -599,16 +607,6 @@ int main(int argc, char *argv[])
 
 	AUDIO_Init(NULL);
 	GX_AllocTextureMemory();
-	browserFiles = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), MEM2_BROWSER);
-	browser.maxSize = 2000;
-	browserSubs = (BROWSERENTRY *)mem2_calloc(1000, sizeof(BROWSERENTRY), MEM2_BROWSER);
-	browserinfoSubs.maxSize = 1000;
-	browserVideos = (BROWSERENTRY *)mem2_calloc(100, sizeof(BROWSERENTRY), MEM2_BROWSER);
-	browserinfoVideos.maxSize = 100;
-	browserMusic = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), MEM2_BROWSER);
-	browserinfoMusic.maxSize = 2000;
-	browserOnlineMedia = (BROWSERENTRY *)mem2_calloc(2000, sizeof(BROWSERENTRY), MEM2_BROWSER);
-	browserinfoOnlineMedia.maxSize = 2000;
 	
 	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
 
@@ -631,7 +629,7 @@ int main(int argc, char *argv[])
  		if(ExitRequested)
  			break;
  
-		ShowAreaInfo(MEM2_OTHER);
+		ShowAreaInfo(MEM2_BROWSER);
 		MPlayerMenu();
 	}
 	

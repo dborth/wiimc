@@ -23,19 +23,7 @@ enum
 	TYPE_SEARCH
 };
 
-typedef struct
-{
-	char dir[MAXPATHLEN]; // directory path
-	int menu; // current menu area
-	char lastdir[MAXPATHLEN]; // last browsed directory
-	int numEntries; // notifies the GUI that the # of entries changed
-	int selIndex; // currently selected index
-	int pageIndex; // starting index of page display
-	int size; // total # of entries allocated
-	int maxSize; // maximum # of entries
-} BROWSERINFO;
-
-typedef struct
+typedef struct _bentry
 {
 	u64 length; // file length
 	int type; // TYPE_FILE,	TYPE_FOLDER, TYPE_PLAYLIST, TYPE_SEARCH
@@ -44,7 +32,22 @@ typedef struct
 	char *display; // name for browser display
 	char *image;
 	int icon; // icon to display
+	int pos;
+	_bentry *next;
+	_bentry *prior;
 } BROWSERENTRY;
+
+typedef struct
+{
+	char dir[MAXPATHLEN]; // directory path
+	int menu; // current menu area
+	char lastdir[MAXPATHLEN]; // last browsed directory
+	int numEntries; // notifies the GUI that the # of entries changed
+	BROWSERENTRY * selIndex; // currently selected index
+	int pageIndex; // starting index of page display
+	BROWSERENTRY *first;
+	BROWSERENTRY *last;
+} BROWSERINFO;
 
 enum
 {
@@ -63,29 +66,29 @@ enum
 };
 
 extern BROWSERINFO browser;
-extern BROWSERENTRY *browserFiles;
 
 extern BROWSERINFO browserinfoSubs;
-extern BROWSERENTRY *browserSubs;
 
 extern BROWSERINFO browserinfoVideos;
-extern BROWSERENTRY *browserVideos;
 
 extern BROWSERINFO browserinfoMusic;
-extern BROWSERENTRY *browserMusic;
 
 extern BROWSERINFO browserinfoOnlineMedia;
-extern BROWSERENTRY *browserOnlineMedia;
 
+void BrowserInit(BROWSERINFO *info);
 void ResetFiles();
 void ResetVideos();
 void ResetMusic();
 void ResetOnlineMedia();
-bool AddEntryFiles();
-bool AddEntrySubs();
-bool AddEntryVideos();
-bool AddEntryMusic();
-bool AddEntryOnlineMedia();
+BROWSERENTRY* AddEntryFiles();
+BROWSERENTRY* AddEntrySubs();
+BROWSERENTRY* AddEntryVideos();
+BROWSERENTRY* AddEntryMusic();
+BROWSERENTRY* AddEntryOnlineMedia();
+int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2);
+int EntryPosition(BROWSERINFO *info, BROWSERENTRY * i);
+BROWSERENTRY * PositionToEntry(BROWSERINFO *info, int pos);
+void SortBrower(BROWSERINFO *_browser, int ( * comparator ) ( const void *, const void * ) );
 void BrowserHistoryStore(char *path);
 const char * BrowserHistoryRetrieve();
 void BrowserHistoryDiscard();

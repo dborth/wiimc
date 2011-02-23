@@ -1863,7 +1863,7 @@ bool VideoImgVisible()
  ***************************************************************************/
 
 static GuiImage *thumbImg;
-static BROWSERENTRY * thumbIndex = NULL;
+static BROWSERENTRY *thumbIndex = NULL;
 static bool thumbLoad = false;
 
 static void *ThumbThread (void *arg)
@@ -1945,7 +1945,7 @@ static int LoadNewFile()
 
 	if(guiShutdown)
 	{
-		browserinfoMusic.selIndex = browserinfoMusic.first;
+		browserinfoMusic.selIndex = NULL;
 		PopulateVideoPlaylist();
 		return 1; // playing a video
 	}
@@ -1955,7 +1955,7 @@ static int LoadNewFile()
 
 	if(!wiiAudioOnly())
 	{
-		browserinfoMusic.selIndex = browserinfoMusic.first;
+		browserinfoMusic.selIndex = NULL;
 
 		if(wii_error == 1)
 			ErrorPrompt("Resolution exceeds maximum allowed (1280x720)!");
@@ -2150,7 +2150,7 @@ static void MenuBrowse(int menu)
 	playlistAddBtn.SetTrigger(&trigPlus);
 	playlistAddBtn.SetSelectable(false);
 
-	BROWSERENTRY * currentIndex = NULL;
+	BROWSERENTRY *currentIndex = NULL;
 
 	if(menu == MENU_BROWSE_ONLINEMEDIA)
 	{
@@ -2599,7 +2599,7 @@ static void MenuBrowse(int menu)
 			{
 				wiiPause();
 			}
-			else if(browserinfoMusic.numEntries> 0)
+			else if(browserinfoMusic.numEntries > 0)
 			{
 				// start playlist
 				if(!mainWindow->Find(disabled))

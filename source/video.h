@@ -18,9 +18,8 @@ extern "C" {
 #define MAX_TEX_WIDTH 768
 #define MAX_TEX_HEIGHT 480
 
-#define MAX_WIDTH 2048
-#define MAX_HEIGHT 1080
-
+#define MAX_WIDTH 1280
+#define MAX_HEIGHT 720
 
 void InitVideo();
 void InitVideo2();

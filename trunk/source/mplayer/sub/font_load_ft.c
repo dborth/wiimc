@@ -909,9 +909,11 @@ static int load_sub_face(const char *name, int face_index, FT_Face *face)
     if (name) err = FT_New_Face(library, name, face_index, face);
 
     if (err) {
+#ifndef GEKKO    
 	char *font_file = get_path("subfont.ttf");
 	err = FT_New_Face(library, font_file, 0, face);
 	free(font_file);
+#endif	
 	if (err) {
 #ifdef GEKKO
 		char cad[100];

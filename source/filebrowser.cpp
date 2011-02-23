@@ -291,20 +291,23 @@ void PopulateVideoPlaylist()
 	i=browser.first;
 	while(i!=NULL)
 	{
-		if(!i->file || strncmp(i->file, "http://www.youtube.com", 22) == 0)
+		if(!i->file || i->type != TYPE_FILE || strncmp(i->file, "http://www.youtube.com", 22) == 0)
+		{
+			i=i->next;
 			continue;
-		
-		if(i->type != TYPE_FILE)
-					continue;
+		}
 
-		if(!AddEntryVideos())
+		BROWSERENTRY *entry = AddEntryVideos();
+		if(!entry)
 			break;
 
 		GetFullPath(i, tmp);
-		browserinfoVideos.last->file = mem2_strdup(tmp, MEM2_BROWSER);
+		entry->file = mem2_strdup(tmp, MEM2_BROWSER);
+		if(browser.selIndex == i) browserinfoVideos.selIndex = entry;
 		i=i->next;
-	}	
-
+	}
+	browserinfoVideos.selIndex = browserinfoVideos.selIndex->next;
+	if(browserinfoVideos.selIndex == NULL) browserinfoVideos.selIndex = browserinfoVideos.first;
 }
 
 /****************************************************************************

@@ -1609,6 +1609,7 @@ void FindFile()
 	}	
 
 	// move to this file
+	browser.selIndex = browser.first;
 	if(indexFound > 0)
 	{
 		entry->icon = ICON_PLAY;

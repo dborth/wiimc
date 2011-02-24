@@ -256,6 +256,11 @@ void GuiFileBrowser::ResetState()
 
 void GuiFileBrowser::TriggerUpdate()
 {
+	if(!browser.selIndex) 
+	{
+		selectedItem=0;
+		return;
+	}
 	int pos = browser.selIndex->pos;
 	if(pos<0) return;
 

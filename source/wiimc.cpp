@@ -240,7 +240,7 @@ bool SaneIOS(u32 ios)
 		if (ES_GetStoredTMDSize(titles[n], &tmd_size) < 0)
 			break;
 
-		if (tmd_size < 0 || tmd_size > 4096)
+		if (tmd_size > 4096)
 			break;
 
 		if(ES_GetStoredTMD(titles[n], (signed_blob *)tmdbuffer, tmd_size) < 0)
@@ -325,6 +325,10 @@ extern "C" bool FindNextFile(bool load)
 			browserMusic.selIndex = NULL;
 			return false;
 		}
+		if(browserMusic.selIndex == NULL) //weird case
+		{
+			browserMusic.selIndex = browserMusic.first;
+		}
 
 		if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 		{
@@ -333,9 +337,9 @@ extern "C" bool FindNextFile(bool load)
 		}
 		else if(WiiSettings.playOrder == PLAY_SHUFFLE)
 		{
-			browserMusic.selIndex = MusicPlaylistGetNextShuffle();
+					browserMusic.selIndex = MusicPlaylistGetNextShuffle();
 		}
-		else if(browserMusic.selIndex == NULL)
+		if(browserMusic.selIndex == NULL)
 		{
 			browserMusic.selIndex = browserMusic.first;
 		}

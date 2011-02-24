@@ -103,6 +103,8 @@ int MusicPlaylistLoad()
 		f_entry->icon = ICON_FILE_CHECKED;
 		i = i->next; 
 	}
+	browser.selIndex = browser.first;
+	browserMusic.selIndex = browserMusic.first;
 	return browser.numEntries;
 }
 
@@ -144,11 +146,12 @@ bool MusicPlaylistFind(BROWSERENTRY *index)
  ***************************************************************************/
 static int EnqueueFile(char * path)
 {
-	if(path == NULL || MusicPlaylistFindIndex(path) >= 0)
+	if(path == NULL || MusicPlaylistFindIndex(path))
 		return 0;
 
 	char ext[7];
 	GetExt(path, ext);
+
 
 	// check if this is a valid audio file
 	if((!IsAudioExt(ext) && !IsPlaylistExt(ext)) || strcmp(ext, "plx") == 0)
@@ -359,6 +362,7 @@ bool MusicPlaylistEnqueue(BROWSERENTRY *index)
 
 static void Remove(BROWSERENTRY *i)
 {
+	if(!i) return;
 	BROWSERENTRY *n = i->next;
 	BROWSERENTRY *p = i->prior;
 
@@ -367,10 +371,11 @@ static void Remove(BROWSERENTRY *i)
 	mem2_free(i->display, MEM2_BROWSER);
 	mem2_free(i->image, MEM2_BROWSER);
 
-	browserMusic.numEntries--;
-
-	if(browserMusic.selIndex == i) browserMusic.selIndex = p;
-	if(browserMusic.selIndex == NULL) browserMusic.selIndex = n;
+	if(browserMusic.selIndex == i) 
+	{
+		browserMusic.selIndex = p;
+		if(browserMusic.selIndex == NULL) browserMusic.selIndex = n;
+	}
 	if(browserMusic.first == i) browserMusic.first = n;
 	if(browserMusic.last == i) browserMusic.first = p;
 
@@ -379,6 +384,8 @@ static void Remove(BROWSERENTRY *i)
 	p->next = n;
 
 	shuffleIndex = -1; // reset shuffle
+
+	browserMusic.numEntries--;
 
 }
 
@@ -434,7 +441,6 @@ void MusicPlaylistDequeue(BROWSERENTRY *index)
 				continue;
 
 			BROWSERENTRY *m_entry = browserMusic.first;
-			BROWSERENTRY *prior = m_entry;
 			while(m_entry)
 			{
 				if(strcmp(file, m_entry->file) == 0)
@@ -442,7 +448,6 @@ void MusicPlaylistDequeue(BROWSERENTRY *index)
 					Remove(m_entry);
 					break;
 				}
-				prior = m_entry;
 				m_entry = m_entry->next; 
 			}
 		}

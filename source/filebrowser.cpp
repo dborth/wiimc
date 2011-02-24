@@ -154,6 +154,10 @@ BROWSERENTRY * AddEntryOnlineMedia() { return AddEntry(&browserOnlineMedia); }
 int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2)
 {
 	int pos;
+	pos= p1->pos - p2->pos;
+	if(pos<0) return -pos;
+	return pos;
+/*	
 	BROWSERENTRY *n;
 
 	n = p1;
@@ -173,6 +177,7 @@ int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2)
 		n = n->next;
 	}
 	return 0;
+*/	
 }
 
 int EntryPosition(BROWSER *info, BROWSERENTRY * i)

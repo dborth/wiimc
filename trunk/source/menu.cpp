@@ -2979,7 +2979,7 @@ static void CleanupPictures(BROWSERENTRY *selIndex)
 	// free any unused picture data
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		if(pictureData[i].index == pictureLoaded)
+		if( (pictureData[i].index == NULL) || (pictureData[i].index == pictureLoaded) )
 			continue;
 
 		if(selIndex == NULL || EntryDistance(pictureData[i].index,selIndex)> (NUM_PICTURES-1)/2)
@@ -3097,9 +3097,10 @@ restart:
 			
 			next = selIndex;
 
-			for(i=0; next->prior && i < (NUM_PICTURES-1)/2; i++)
+			for(i=0; next && i < (NUM_PICTURES-1)/2; i++)
 				next = next->prior;
-
+			
+			if(!next) goto restart;
 
 			for(i=0; i < NUM_PICTURES; i++)
 			{
@@ -3126,7 +3127,7 @@ restart:
 				if(j==-2) break;
 
 				
-				if(!next->file)
+				if(!next || !next->file)
 					goto restart;
 
 				sprintf(filepath, "%s%s", browser.dir, next->file);
@@ -3658,7 +3659,7 @@ static void MenuBrowsePictures()
 		}
 		
 		// update progress bar
-		if(pictureIndexLoading == browser.selIndex && browser.selIndex->type == TYPE_FILE && loadSize > 0 && !pictureImg->IsVisible())
+		if(browser.selIndex && pictureIndexLoading == browser.selIndex && browser.selIndex->type == TYPE_FILE && loadSize > 0 && !pictureImg->IsVisible())
 		{
 			done = loadOffset/(float)loadSize;
 
@@ -3692,7 +3693,7 @@ static void MenuBrowsePictures()
 		}
 
 		// update displayed picture
-		if(browser.selIndex != currentIndex || setPicture)
+		if( (browser.selIndex != NULL) && ((browser.selIndex != currentIndex) || setPicture) )
 		{
 			currentIndex = browser.selIndex;
 			setPicture = false;

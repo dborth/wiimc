@@ -26,19 +26,15 @@ using namespace std;
 #include "utils/mem2_manager.h"
 #include "utils/gettext.h"
 
-BROWSERINFO browser;
-
-BROWSERINFO browserinfoSubs;
-
-BROWSERINFO browserinfoVideos;
-
-BROWSERINFO browserinfoMusic;
-
-BROWSERINFO browserinfoOnlineMedia;
+BROWSER browser;
+BROWSER browserSubs;
+BROWSER browserVideos;
+BROWSER browserMusic;
+BROWSER browserOnlineMedia;
 
 static std::vector<std::string> browserHistory; // browser.dir history - for nested playlists
 
-void BrowserInit(BROWSERINFO *info)
+void BrowserInit(BROWSER *info)
 {
 	info->first=info->last=info->selIndex=NULL;
 	info->numEntries=0;
@@ -52,7 +48,7 @@ void BrowserInit(BROWSERINFO *info)
  * Reset()
  * Clears the browser memory
  ***************************************************************************/
-static void Reset(BROWSERINFO *info)
+static void Reset(BROWSER *info)
 {
 	BROWSERENTRY *i,*n;
 	i=info->first;
@@ -74,7 +70,7 @@ static void Reset(BROWSERINFO *info)
 	info->last = NULL;
 }
 
-void SortBrower(BROWSERINFO *_browser, int ( * comparator ) ( const void *, const void * ) )
+void SortBrower(BROWSER *_browser, int ( * comparator ) ( const void *, const void * ) )
 {
 	/* preform a bubble sort on the list */
 	BROWSERENTRY *a = NULL;
@@ -119,28 +115,16 @@ void SortBrower(BROWSERINFO *_browser, int ( * comparator ) ( const void *, cons
 	}
 	_browser->first = head;
 	_browser->last = tail;
-	/*
-	a = head;
-	while(1) 
-	{
-		if(a->next == NULL) 
-		{
-			_browser->last = a;
-			break;
-		}
-		a=a->next;
-	}
-	*/
 }
 
 
-static void ResetSubs() { Reset(&browserinfoSubs); }
+static void ResetSubs() { Reset(&browserSubs); }
 void ResetFiles() {	ResetSubs(); Reset(&browser); }
-void ResetVideos() { Reset(&browserinfoVideos); }
-void ResetMusic() { Reset(&browserinfoMusic); }
-void ResetOnlineMedia() { Reset(&browserinfoOnlineMedia); }
+void ResetVideos() { Reset(&browserVideos); }
+void ResetMusic() { Reset(&browserMusic); }
+void ResetOnlineMedia() { Reset(&browserOnlineMedia); }
 
-static BROWSERENTRY * AddEntry(BROWSERINFO *info)
+static BROWSERENTRY * AddEntry(BROWSER *info)
 {
 	if(mem2_size(MEM2_BROWSER) < 8192)
 		return NULL;
@@ -162,10 +146,10 @@ static BROWSERENTRY * AddEntry(BROWSERINFO *info)
 }
 
 BROWSERENTRY * AddEntryFiles() { return AddEntry(&browser); }
-BROWSERENTRY * AddEntrySubs() { return AddEntry(&browserinfoSubs); }
-BROWSERENTRY * AddEntryVideos() { return AddEntry(&browserinfoVideos); }
-BROWSERENTRY * AddEntryMusic() { return AddEntry(&browserinfoMusic); }
-BROWSERENTRY * AddEntryOnlineMedia() { return AddEntry(&browserinfoOnlineMedia); }
+BROWSERENTRY * AddEntrySubs() { return AddEntry(&browserSubs); }
+BROWSERENTRY * AddEntryVideos() { return AddEntry(&browserVideos); }
+BROWSERENTRY * AddEntryMusic() { return AddEntry(&browserMusic); }
+BROWSERENTRY * AddEntryOnlineMedia() { return AddEntry(&browserOnlineMedia); }
 
 int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2)
 {
@@ -191,14 +175,14 @@ int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2)
 	return 0;
 }
 
-int EntryPosition(BROWSERINFO *info, BROWSERENTRY * i)
+int EntryPosition(BROWSER *info, BROWSERENTRY * i)
 {
 	if(!i)
 		return -1;
 	return i->pos;
 }
 
-BROWSERENTRY * PositionToEntry(BROWSERINFO *info, int pos)
+BROWSERENTRY * PositionToEntry(BROWSER *info, int pos)
 {
 	BROWSERENTRY *entry;
 	if(!info) return NULL;
@@ -210,15 +194,13 @@ BROWSERENTRY * PositionToEntry(BROWSERINFO *info, int pos)
 	return entry;
 }
 
-
-
 static BROWSERENTRY *sub_list;
 
 extern "C" {
 
 void BrowserGetSubInit()
 {
-	sub_list=browserinfoSubs.first;
+	sub_list=browserSubs.first;
 }
 
 char * BrowserGetSub(char *filename)
@@ -237,7 +219,7 @@ int BrowserFindSub(char *path)
 		return 0;
 
 	BROWSERENTRY *i;
-	i = browserinfoSubs.first;
+	i = browserSubs.first;
 	while(i)
 	{
 		if (strcasecmp(i->file, path) == 0)
@@ -303,11 +285,11 @@ void PopulateVideoPlaylist()
 
 		GetFullPath(i, tmp);
 		entry->file = mem2_strdup(tmp, MEM2_BROWSER);
-		if(browser.selIndex == i) browserinfoVideos.selIndex = entry;
+		if(browser.selIndex == i) browserVideos.selIndex = entry;
 		i=i->next;
 	}
-	browserinfoVideos.selIndex = browserinfoVideos.selIndex->next;
-	if(browserinfoVideos.selIndex == NULL) browserinfoVideos.selIndex = browserinfoVideos.first;
+	browserVideos.selIndex = browserVideos.selIndex->next;
+	if(browserVideos.selIndex == NULL) browserVideos.selIndex = browserVideos.first;
 }
 
 /****************************************************************************

@@ -28,21 +28,21 @@ static int shuffleIndex = -1;
 
 BROWSERENTRY * MusicPlaylistGetNextShuffle()
 {
-	if(shuffleIndex == -1 || shuffleIndex >= browserinfoMusic.numEntries)
+	if(shuffleIndex == -1 || shuffleIndex >= browserMusic.numEntries)
 	{
 		// populate new list
 		int i, n, t;
 
 		mem2_free(shuffleList, MEM2_BROWSER);
-		shuffleList = (int *)mem2_malloc(browserinfoMusic.numEntries,MEM2_BROWSER);
+		shuffleList = (int *)mem2_malloc(browserMusic.numEntries,MEM2_BROWSER);
 
-		for(i=0; i < browserinfoMusic.numEntries; i++)
+		for(i=0; i < browserMusic.numEntries; i++)
 			shuffleList[i] = i;
 
 		// shuffle the list
-		for(i = 0; i < browserinfoMusic.numEntries-1; i++)
+		for(i = 0; i < browserMusic.numEntries-1; i++)
 		{
-			n = rand() / (RAND_MAX/(browserinfoMusic.numEntries-i) + 1);
+			n = rand() / (RAND_MAX/(browserMusic.numEntries-i) + 1);
 
 			// swap
 			t = shuffleList[i];
@@ -51,7 +51,7 @@ BROWSERENTRY * MusicPlaylistGetNextShuffle()
 		}
 		shuffleIndex = 0;
 	}
-	BROWSERENTRY *s = browserinfoMusic.first;
+	BROWSERENTRY *s = browserMusic.first;
 	for(int i=0;i<shuffleList[shuffleIndex];i++)
 		s = s->next;
 	shuffleIndex++;
@@ -66,7 +66,7 @@ BROWSERENTRY * MusicPlaylistGetNextShuffle()
 
 int MusicPlaylistLoad()
 {
-	if(browserinfoMusic.numEntries == 0)
+	if(browserMusic.numEntries == 0)
 	{
 		InfoPrompt("Playlist is Empty", "Hover over items and push the + button to add them to your playlist.");
 		return 0;
@@ -89,7 +89,7 @@ int MusicPlaylistLoad()
 	else
 		f_entry->type = TYPE_FOLDER;
 
-	BROWSERENTRY *i = browserinfoMusic.first;
+	BROWSERENTRY *i = browserMusic.first;
 	while(i)
 	{
 		f_entry = AddEntryFiles();
@@ -109,7 +109,7 @@ int MusicPlaylistLoad()
 BROWSERENTRY * MusicPlaylistFindIndex(char * fullpath)
 {
 	BROWSERENTRY *i;
-	i=browserinfoMusic.first;
+	i=browserMusic.first;
 	while(i!=NULL)
 	{
 		if(i->file && strcmp(fullpath, i->file) == 0)
@@ -301,7 +301,7 @@ static bool EnqueueFolder(char * path, int silent)
 		return false;
 	}
 	
-	int start = browserinfoMusic.numEntries;
+	int start = browserMusic.numEntries;
 
 	while ((entry=readdir(dir))!=NULL)
 	{
@@ -332,8 +332,8 @@ static bool EnqueueFolder(char * path, int silent)
 	}
 	closedir(dir);
 
-	if(browserinfoMusic.numEntries-start > 1)
-		SortBrower(&browserinfoMusic, MusicSortCallback);
+	if(browserMusic.numEntries-start > 1)
+		SortBrower(&browserMusic, MusicSortCallback);
 
 	return true;
 }
@@ -367,12 +367,12 @@ static void Remove(BROWSERENTRY *i)
 	mem2_free(i->display, MEM2_BROWSER);
 	mem2_free(i->image, MEM2_BROWSER);
 
-	browserinfoMusic.numEntries--;
+	browserMusic.numEntries--;
 
-	if(browserinfoMusic.selIndex == i) browserinfoMusic.selIndex = p;
-	if(browserinfoMusic.selIndex == NULL) browserinfoMusic.selIndex = n;
-	if(browserinfoMusic.first == i) browserinfoMusic.first = n;
-	if(browserinfoMusic.last == i) browserinfoMusic.first = p;
+	if(browserMusic.selIndex == i) browserMusic.selIndex = p;
+	if(browserMusic.selIndex == NULL) browserMusic.selIndex = n;
+	if(browserMusic.first == i) browserMusic.first = n;
+	if(browserMusic.last == i) browserMusic.first = p;
 
 	mem2_free(i, MEM2_BROWSER);
 	n->prior = p;
@@ -433,7 +433,7 @@ void MusicPlaylistDequeue(BROWSERENTRY *index)
 			if(file[0] == 0)
 				continue;
 
-			BROWSERENTRY *m_entry = browserinfoMusic.first;
+			BROWSERENTRY *m_entry = browserMusic.first;
 			BROWSERENTRY *prior = m_entry;
 			while(m_entry)
 			{
@@ -451,7 +451,7 @@ void MusicPlaylistDequeue(BROWSERENTRY *index)
 		return;
 	}
 
-	BROWSERENTRY *m_entry = browserinfoMusic.first;
+	BROWSERENTRY *m_entry = browserMusic.first;
 	BROWSERENTRY *aux;
 	while(m_entry)
 	{

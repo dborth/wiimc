@@ -47,7 +47,7 @@ typedef struct
 	int pageIndex; // starting index of page display
 	BROWSERENTRY *first;
 	BROWSERENTRY *last;
-} BROWSERINFO;
+} BROWSER;
 
 enum
 {
@@ -65,17 +65,13 @@ enum
 	ICON_FTP
 };
 
-extern BROWSERINFO browser;
+extern BROWSER browser;
+extern BROWSER browserSubs;
+extern BROWSER browserVideos;
+extern BROWSER browserMusic;
+extern BROWSER browserOnlineMedia;
 
-extern BROWSERINFO browserinfoSubs;
-
-extern BROWSERINFO browserinfoVideos;
-
-extern BROWSERINFO browserinfoMusic;
-
-extern BROWSERINFO browserinfoOnlineMedia;
-
-void BrowserInit(BROWSERINFO *info);
+void BrowserInit(BROWSER *info);
 void ResetFiles();
 void ResetVideos();
 void ResetMusic();
@@ -86,9 +82,9 @@ BROWSERENTRY* AddEntryVideos();
 BROWSERENTRY* AddEntryMusic();
 BROWSERENTRY* AddEntryOnlineMedia();
 int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2);
-int EntryPosition(BROWSERINFO *info, BROWSERENTRY * i);
-BROWSERENTRY * PositionToEntry(BROWSERINFO *info, int pos);
-void SortBrower(BROWSERINFO *_browser, int ( * comparator ) ( const void *, const void * ) );
+int EntryPosition(BROWSER *info, BROWSERENTRY * i);
+BROWSERENTRY * PositionToEntry(BROWSER *info, int pos);
+void SortBrower(BROWSER *_browser, int ( * comparator ) ( const void *, const void * ) );
 void BrowserHistoryStore(char *path);
 const char * BrowserHistoryRetrieve();
 void BrowserHistoryDiscard();

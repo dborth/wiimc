@@ -291,7 +291,7 @@ extern "C" bool FindNextFile(bool load)
 		if(!load)
 			return false;
 
-		if(!WiiSettings.autoPlayNextVideo || browserinfoVideos.selIndex == browserinfoVideos.last)
+		if(!WiiSettings.autoPlayNextVideo || browserVideos.selIndex == browserVideos.last)
 		{
 			loadedFile[0] = 0;
 			loadedFileDisplay[0] = 0;
@@ -300,9 +300,9 @@ extern "C" bool FindNextFile(bool load)
 		}
 		else
 		{
-			strcpy(loadedFile, browserinfoVideos.selIndex->file);
-			browserinfoVideos.selIndex = browserinfoVideos.selIndex->next;
-			if(browserinfoVideos.selIndex == NULL) browserinfoVideos.selIndex = browserinfoVideos.first;
+			strcpy(loadedFile, browserVideos.selIndex->file);
+			browserVideos.selIndex = browserVideos.selIndex->next;
+			if(browserVideos.selIndex == NULL) browserVideos.selIndex = browserVideos.first;
 
 			char *start = strrchr(loadedFile,'/');
 
@@ -320,26 +320,26 @@ extern "C" bool FindNextFile(bool load)
 	}
 	else
 	{
-		if(browserinfoMusic.numEntries== 0 || (WiiSettings.playOrder == PLAY_SINGLE && browserinfoMusic.selIndex != NULL))
+		if(browserMusic.numEntries== 0 || (WiiSettings.playOrder == PLAY_SINGLE && browserMusic.selIndex != NULL))
 		{
-			browserinfoMusic.selIndex = NULL;
+			browserMusic.selIndex = NULL;
 			return false;
 		}
 
 		if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 		{
-			browserinfoMusic.selIndex = browserinfoMusic.selIndex->next;
-			if(browserinfoMusic.selIndex == NULL) browserinfoMusic.selIndex = browserinfoMusic.first;
+			browserMusic.selIndex = browserMusic.selIndex->next;
+			if(browserMusic.selIndex == NULL) browserMusic.selIndex = browserMusic.first;
 		}
 		else if(WiiSettings.playOrder == PLAY_SHUFFLE)
 		{
-			browserinfoMusic.selIndex = MusicPlaylistGetNextShuffle();
+			browserMusic.selIndex = MusicPlaylistGetNextShuffle();
 		}
-		else if(browserinfoMusic.selIndex == NULL)
+		else if(browserMusic.selIndex == NULL)
 		{
-			browserinfoMusic.selIndex = browserinfoMusic.first;
+			browserMusic.selIndex = browserMusic.first;
 		}
-		sprintf(loadedFile, "%s", browserinfoMusic.selIndex->file);
+		sprintf(loadedFile, "%s", browserMusic.selIndex->file);
 	}
 
 	if(load)
@@ -591,10 +591,10 @@ int main(int argc, char *argv[])
 	AddMem2Area (3*1024*1024, MEM2_OTHER); // vars + ttf
 
 	BrowserInit(&browser);
-	BrowserInit(&browserinfoSubs);
-	BrowserInit(&browserinfoVideos);
-	BrowserInit(&browserinfoMusic);
-	BrowserInit(&browserinfoOnlineMedia);
+	BrowserInit(&browserSubs);
+	BrowserInit(&browserVideos);
+	BrowserInit(&browserMusic);
+	BrowserInit(&browserOnlineMedia);
 
 	InitVideo2();
 	SetupPads();

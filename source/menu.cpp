@@ -1945,7 +1945,7 @@ static int LoadNewFile()
 
 	if(guiShutdown)
 	{
-		browserinfoMusic.selIndex = NULL;
+		browserMusic.selIndex = NULL;
 		PopulateVideoPlaylist();
 		return 1; // playing a video
 	}
@@ -1955,7 +1955,7 @@ static int LoadNewFile()
 
 	if(!wiiAudioOnly())
 	{
-		browserinfoMusic.selIndex = NULL;
+		browserMusic.selIndex = NULL;
 
 		if(wii_error == 1)
 			ErrorPrompt("Resolution exceeds maximum allowed (1280x720)!");
@@ -2154,7 +2154,7 @@ static void MenuBrowse(int menu)
 
 	if(menu == MENU_BROWSE_ONLINEMEDIA)
 	{
-		if(browserinfoOnlineMedia.first == NULL)
+		if(browserOnlineMedia.first == NULL)
 		{
 			// check if file exists
 			struct stat buf;
@@ -2497,7 +2497,7 @@ static void MenuBrowse(int menu)
 					snprintf(loadedFileDisplay, 128, "%s", browser.selIndex->display);
 				}
 
-				browserinfoMusic.selIndex = MusicPlaylistFindIndex(loadedFile);
+				browserMusic.selIndex = MusicPlaylistFindIndex(loadedFile);
 
 				if(!mainWindow->Find(disabled))
 					mainWindow->Append(disabled);
@@ -2599,7 +2599,7 @@ static void MenuBrowse(int menu)
 			{
 				wiiPause();
 			}
-			else if(browserinfoMusic.numEntries > 0)
+			else if(browserMusic.numEntries > 0)
 			{
 				// start playlist
 				if(!mainWindow->Find(disabled))
@@ -2631,7 +2631,7 @@ static void MenuBrowse(int menu)
 			}
 		}
 
-		if(wiiAudioOnly() || (browserinfoMusic.numEntries > 0 && menu == MENU_BROWSE_MUSIC))
+		if(wiiAudioOnly() || (browserMusic.numEntries > 0 && menu == MENU_BROWSE_MUSIC))
 		{
 			if(audiobarPauseBtn->GetAlpha() == 128 || audiobarPauseBtn->GetState() == STATE_DISABLED)
 			{
@@ -2706,7 +2706,7 @@ static void MenuBrowse(int menu)
 		{
 			audiobarForwardBtn->ResetState();
 
-			if(browserinfoMusic.numEntries > 0)
+			if(browserMusic.numEntries > 0)
 			{
 				if(wiiAudioOnly())
 				{
@@ -2743,9 +2743,9 @@ static void MenuBrowse(int menu)
 			UpdateAudiobarModeBtn();
 		}
 
-		if(browserinfoMusic.numEntries > 0)
+		if(browserMusic.numEntries > 0)
 		{
-			if(browserinfoMusic.numEntries == 1)
+			if(browserMusic.numEntries == 1)
 			{
 				if(audiobarForwardBtn->GetAlpha() == 255 || audiobarForwardBtn->GetState() != STATE_DISABLED)
 				{

@@ -1114,7 +1114,7 @@ bool IsOnlineMediaPath(char *path)
 		return false;
 
 	BROWSERENTRY *i;
-	i=browserinfoOnlineMedia.first;
+	i=browserOnlineMedia.first;
 	while(i!=NULL)
 	{
 		if(i->file)
@@ -2287,7 +2287,7 @@ int ParsePlaylistFile()
  ***************************************************************************/
 int ParseOnlineMedia()
 {
-	if(browserinfoOnlineMedia.first == NULL)
+	if(browserOnlineMedia.first == NULL)
 		return 0;
 
 	BROWSERENTRY *f_entry, *om_entry;
@@ -2306,9 +2306,9 @@ int ParseOnlineMedia()
 	char tmpurl2[MAXPATHLEN*3];
 	int dirLen = strlen(browser.dir);
 
-	om_entry = browserinfoOnlineMedia.first;
+	om_entry = browserOnlineMedia.first;
 	while(om_entry)
-	//for(int i=0; i < browserinfoOnlineMedia.size; i++)
+	//for(int i=0; i < browserOnlineMedia.size; i++)
 	{
 		int filepathLen = strlen(om_entry->file);
 

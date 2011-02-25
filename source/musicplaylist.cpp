@@ -26,23 +26,24 @@ extern "C" {
 static int *shuffleList = NULL;
 static int shuffleIndex = -1;
 
-BROWSERENTRY * MusicPlaylistGetNextShuffle()
+BROWSERENTRY *MusicPlaylistGetNextShuffle()
 {
 	if(shuffleIndex == -1 || shuffleIndex >= browserMusic.numEntries)
 	{
 		// populate new list
 		int i, n, t;
+		int num = browserMusic.numEntries;
 
 		mem2_free(shuffleList, MEM2_BROWSER);
-		shuffleList = (int *)mem2_malloc(browserMusic.numEntries,MEM2_BROWSER);
+		shuffleList = (int *)mem2_malloc(num*sizeof(int), MEM2_BROWSER);
 
-		for(i=0; i < browserMusic.numEntries; i++)
+		for(i=0; i < num; i++)
 			shuffleList[i] = i;
 
 		// shuffle the list
-		for(i = 0; i < browserMusic.numEntries-1; i++)
+		for(i = 0; i < num-1; i++)
 		{
-			n = rand() / (RAND_MAX/(browserMusic.numEntries-i) + 1);
+			n = rand() / (RAND_MAX/(num-i) + 1);
 
 			// swap
 			t = shuffleList[i];
@@ -51,10 +52,12 @@ BROWSERENTRY * MusicPlaylistGetNextShuffle()
 		}
 		shuffleIndex = 0;
 	}
+
 	BROWSERENTRY *s = browserMusic.first;
-	for(int i=0;i<shuffleList[shuffleIndex];i++)
+	for(int i=0; i < shuffleList[shuffleIndex]; i++)
 		s = s->next;
 	shuffleIndex++;
+
 	return s;
 }
 
@@ -104,21 +107,19 @@ int MusicPlaylistLoad()
 		i = i->next; 
 	}
 	browser.selIndex = browser.first;
-	browserMusic.selIndex = browserMusic.first;
 	return browser.numEntries;
 }
 
 BROWSERENTRY * MusicPlaylistFindIndex(char * fullpath)
 {
-	BROWSERENTRY *i;
-	i=browserMusic.first;
-	while(i!=NULL)
+	BROWSERENTRY *i = browserMusic.first;
+
+	while(i)
 	{
 		if(i->file && strcmp(fullpath, i->file) == 0)
 			return i;
 		i=i->next;
 	}	
-
 	return NULL;
 }
 
@@ -362,31 +363,31 @@ bool MusicPlaylistEnqueue(BROWSERENTRY *index)
 
 static void Remove(BROWSERENTRY *i)
 {
-	if(!i) return;
+	if(!i)
+		return;
+
 	BROWSERENTRY *n = i->next;
 	BROWSERENTRY *p = i->prior;
+
+	if(browserMusic.first == i) browserMusic.first = n;
+	if(browserMusic.last == i) browserMusic.first = p;
+
+	if(n) n->prior = p;
+	if(p) p->next = n;
+
+	if(browserMusic.selIndex == i) 
+		browserMusic.selIndex = NULL;
+
+	shuffleIndex = -1; // reset shuffle
+
+	if(browserMusic.numEntries > 0)
+		browserMusic.numEntries--;
 
 	mem2_free(i->file, MEM2_BROWSER);
 	mem2_free(i->url, MEM2_BROWSER);
 	mem2_free(i->display, MEM2_BROWSER);
 	mem2_free(i->image, MEM2_BROWSER);
-
-	if(browserMusic.selIndex == i) 
-	{
-		browserMusic.selIndex = p;
-		if(browserMusic.selIndex == NULL) browserMusic.selIndex = n;
-	}
-	if(browserMusic.first == i) browserMusic.first = n;
-	if(browserMusic.last == i) browserMusic.first = p;
-
 	mem2_free(i, MEM2_BROWSER);
-	n->prior = p;
-	p->next = n;
-
-	shuffleIndex = -1; // reset shuffle
-
-	browserMusic.numEntries--;
-
 }
 
 void MusicPlaylistDequeue(BROWSERENTRY *index)

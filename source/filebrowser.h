@@ -42,7 +42,7 @@ typedef struct
 	char dir[MAXPATHLEN]; // directory path
 	int menu; // current menu area
 	char lastdir[MAXPATHLEN]; // last browsed directory
-	int numEntries; // notifies the GUI that the # of entries changed
+	int numEntries; // number of entries in the browser
 	BROWSERENTRY * selIndex; // currently selected index
 	int pageIndex; // starting index of page display
 	BROWSERENTRY *first;

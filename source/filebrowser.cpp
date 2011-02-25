@@ -117,14 +117,13 @@ void SortBrower(BROWSER *_browser, int ( * comparator ) ( const void *, const vo
 	_browser->last = tail;
 }
 
-
 static void ResetSubs() { Reset(&browserSubs); }
 void ResetFiles() {	ResetSubs(); Reset(&browser); }
 void ResetVideos() { Reset(&browserVideos); }
 void ResetMusic() { Reset(&browserMusic); }
 void ResetOnlineMedia() { Reset(&browserOnlineMedia); }
 
-static BROWSERENTRY * AddEntry(BROWSER *info)
+static BROWSERENTRY *AddEntry(BROWSER *info)
 {
 	if(mem2_size(MEM2_BROWSER) < 8192)
 		return NULL;
@@ -132,14 +131,18 @@ static BROWSERENTRY * AddEntry(BROWSER *info)
 	BROWSERENTRY *last_entry, *new_entry;
 
 	last_entry = info->last;
-	new_entry = (BROWSERENTRY *)mem2_calloc(1,sizeof(BROWSERENTRY), MEM2_BROWSER);
-	if(!new_entry) return NULL;
+	new_entry = (BROWSERENTRY *)mem2_calloc(1, sizeof(BROWSERENTRY), MEM2_BROWSER);
 	
-	if(last_entry==NULL) info->first = new_entry;
-	else last_entry->next = new_entry;
+	if(!new_entry)
+		return NULL;
+
+	if(last_entry==NULL)
+		info->first = new_entry;
+	else
+		last_entry->next = new_entry;
+
 	new_entry->prior = last_entry;
 	info->last = new_entry;
-
 	new_entry->pos=info->numEntries;
 	info->numEntries++;
 	return new_entry;
@@ -466,7 +469,6 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	}
 
 	ResetFiles();
-
 
 	if(menuCurrent == MENU_BROWSE_ONLINEMEDIA)
 		return ParseOnlineMedia();

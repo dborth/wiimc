@@ -535,11 +535,11 @@ msgstr "Mplayer 닫기"
 msgid "Subtitle Codepage"
 msgstr "자막 코드페이지"
 
-msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "이 디렉토리는 허용된 최대값(2000)이상의 내용물을 담고 있읍니다. 모든 것이 안보일수 있읍니다."
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "이 디렉토리는 허용된 최대값 이상의 내용물을 담고 있읍니다. 모든 것이 안보일수 있읍니다."
 
-msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "이 재생목록은 허용된 최대값(2000)이상의 내용물을 담고 있읍니다. 모든 것이 안보일수 있읍니다."
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "이 재생목록은 허용된 최대값 이상의 내용물을 담고 있읍니다. 모든 것이 안보일수 있읍니다."
 
 msgid "Downloading..."
 msgstr "다운로드중..." 

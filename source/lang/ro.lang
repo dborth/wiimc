@@ -535,11 +535,11 @@ msgstr "Închide MPlayer"
 msgid "Subtitle Codepage"
 msgstr "Codepage pentru subtitrări"
 
-msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Acest director conţine mai multe fişiere decât valoarea maximă permisă (2000). Nu toate fişierele vor fi vizibile."
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Acest director conţine mai multe fişiere decât valoarea maximă permisă. Nu toate fişierele vor fi vizibile."
 
-msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Această listă de redare conţine mai multe inregistrări decât valoarea maximă permisă (2000). Nu toate inregistrările vor fi vizibile."
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Această listă de redare conţine mai multe inregistrări decât valoarea maximă permisă. Nu toate inregistrările vor fi vizibile."
 
 msgid "Downloading..."
 msgstr "Descărcare..."

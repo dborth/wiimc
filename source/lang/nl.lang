@@ -535,11 +535,11 @@ msgstr "MPlayer afsluiten"
 msgid "Subtitle Codepage"
 msgstr "Ondertiteling codepagina"
 
-msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Deze map bevat meer bestanden dan het maximum aantal dat is toegestaan (2000). Niet alle bestanden zijn zichtbaar."
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Deze map bevat meer bestanden dan het maximum aantal dat is toegestaan. Niet alle bestanden zijn zichtbaar."
 
-msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Deze afspeellijst bevat meer bestanden dan het maximum aantal dat is toegestaan (2000). Niet alle bestanden zijn zichtbaar."
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Deze afspeellijst bevat meer bestanden dan het maximum aantal dat is toegestaan. Niet alle bestanden zijn zichtbaar."
 
 msgid "Downloading..."
 msgstr "Downloaden..."

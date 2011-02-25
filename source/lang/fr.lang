@@ -535,11 +535,11 @@ msgstr "Fermer MPlayer"
 msgid "Subtitle Codepage"
 msgstr "Encodage des sous-titres"
 
-msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Ce répertoire contient plus d'entrées que la limite autorisée (2000). Certaines ne seront pas visibles."
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Ce répertoire contient plus d'entrées que la limite autorisée. Certaines ne seront pas visibles."
 
-msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Cette playlist contient plus d'entrées que la limite autoriséé (2000). Certaines ne seront pas visibles."
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Cette playlist contient plus d'entrées que la limite autoriséé. Certaines ne seront pas visibles."
 
 msgid "Downloading..."
 msgstr "Téléchargement..."

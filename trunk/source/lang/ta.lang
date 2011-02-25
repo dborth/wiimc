@@ -535,11 +535,11 @@ msgstr "மூடு MPlayer"
 msgid "Subtitle Codepage"
 msgstr "துணையுரை குறிமுறை பக்கம்"
 
-msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "இந்த அடைவில் 2000 உள்ளடக்கதிக்கு மேல் உள்ளதால் காண்பிக்க இயலாது." 
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "இந்த அடைவில் உள்ளடக்கதிக்கு மேல் உள்ளதால் காண்பிக்க இயலாது." 
 
-msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "இந்த இசைப்பட்டியலில் 2000 உள்ளடக்கதிக்கு மேல் உள்ளதால் காண்பிக்க இயலாது. 
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "இந்த இசைப்பட்டியலில் உள்ளடக்கதிக்கு மேல் உள்ளதால் காண்பிக்க இயலாது. 
 
 msgid "Downloading..."
 msgstr "பதிவிறக்கம்..."

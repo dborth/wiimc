@@ -535,11 +535,11 @@ msgstr "關閉Mplayer播放器"
 msgid "Subtitle Codepage"
 msgstr "字幕內碼表"
 
-msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "這目錄中項目數包含超過最大允許數(2000)時，將不會顯示所有項目。"
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "這目錄中項目數包含超過最大允許數時，將不會顯示所有項目。"
 
-msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "這播放清單條目數包含超過最大允許數(2000)時，將不會顯示所有條目。"
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "這播放清單條目數包含超過最大允許數時，將不會顯示所有條目。"
 
 msgid "Downloading..."
 msgstr "下載中..."

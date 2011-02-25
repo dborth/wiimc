@@ -535,11 +535,11 @@ msgstr "MPlayer schließen"
 msgid "Subtitle Codepage"
 msgstr "Untertitel Zeichentabelle"
 
-msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Dieses Verzeichnis hat mehr Einträge als maximal erlaubt sind (2000). Nicht alle Einträge werden angezeigt."
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Dieses Verzeichnis hat mehr Einträge als maximal erlaubt sind. Nicht alle Einträge werden angezeigt."
 
-msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "Diese Wiedergabeliste hat mehr Einträge als maximal erlaubt sind (2000). Nicht alle Einträge werden angezeigt."
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Diese Wiedergabeliste hat mehr Einträge als maximal erlaubt sind. Nicht alle Einträge werden angezeigt."
 
 msgid "Downloading..."
 msgstr "Lade herunter..."

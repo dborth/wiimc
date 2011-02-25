@@ -538,11 +538,11 @@ msgstr "字幕コードページの設定"
 msgid "Japanese"
 msgstr "日本語"
 
-msgid "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "フォルダ内のエントリ数が多過ぎます 全てを表示できません (最大値:2,000)"
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "フォルダ内のエントリ数が多過ぎます 全てを表示できません"
 
-msgid "This playlist contains more entries than the maximum allowed (2000). Not all entries will be visible."
-msgstr "再生リストのエントリ数が多過ぎます 全てを表示できません (最大値:2,000)"
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "再生リストのエントリ数が多過ぎます 全てを表示できません"
 
 msgid "Downloading..."
 msgstr "ダウンロード中…"

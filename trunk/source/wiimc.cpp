@@ -320,28 +320,25 @@ extern "C" bool FindNextFile(bool load)
 	}
 	else
 	{
-		if(browserMusic.numEntries== 0 || (WiiSettings.playOrder == PLAY_SINGLE && browserMusic.selIndex != NULL))
+		if(browserMusic.numEntries == 0 || (WiiSettings.playOrder == PLAY_SINGLE && browserMusic.selIndex != NULL))
 		{
 			browserMusic.selIndex = NULL;
 			return false;
 		}
-		if(browserMusic.selIndex == NULL) //weird case
-		{
+
+		if(browserMusic.selIndex == NULL)
 			browserMusic.selIndex = browserMusic.first;
-		}
 
 		if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 		{
 			browserMusic.selIndex = browserMusic.selIndex->next;
-			if(browserMusic.selIndex == NULL) browserMusic.selIndex = browserMusic.first;
+
+			if(browserMusic.selIndex == NULL)
+				browserMusic.selIndex = browserMusic.first;
 		}
 		else if(WiiSettings.playOrder == PLAY_SHUFFLE)
 		{
-					browserMusic.selIndex = MusicPlaylistGetNextShuffle();
-		}
-		if(browserMusic.selIndex == NULL)
-		{
-			browserMusic.selIndex = browserMusic.first;
+			browserMusic.selIndex = MusicPlaylistGetNextShuffle();
 		}
 		sprintf(loadedFile, "%s", browserMusic.selIndex->file);
 	}

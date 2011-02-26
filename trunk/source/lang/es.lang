@@ -263,7 +263,7 @@ msgid "Are you sure that you want to delete this share?"
 msgstr "¿Seguro de eliminar carpeta compartida?"
 
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 msgid "Folder"
 msgstr "Carpeta"
@@ -661,7 +661,10 @@ msgid "High (640x360)"
 msgstr "Alta (640x360)"
 
 msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
-msgstr "El IOS actual no es soportado. La funcionalidad y/o la estabilidad pueden verse drásticamente afectadas."
+msgstr "El IOS actual no es soportado. La funcionalidad y/o estabilidad pueden verse drásticamente afectadas."
 
 msgid "Screensaver Delay"
 msgstr "Retardo del Salvapantallas"
+
+msgid "Inactivity Timer"
+msgstr "Temporizador de Inactividad"

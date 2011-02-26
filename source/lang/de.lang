@@ -92,13 +92,13 @@ msgid "Disabled"
 msgstr "Deaktiviert"
 
 msgid "Skip Backward"
-msgstr "Zurück"
+msgstr "Zurückspringen"
 
 msgid "Pause"
 msgstr "Pause"
 
 msgid "Skip Forward"
-msgstr "Vorwärts"
+msgstr "Vorwärtsspringen"
 
 msgid "Single"
 msgstr "Einzeln"
@@ -666,3 +666,6 @@ msgstr "Das aktuelle IOS wird nicht unterstützt. Funktion und/oder Stabilität 
 
 msgid "Screensaver Delay"
 msgstr "Bildschirmschoner Wartezeit"
+
+msgid "Inactivity Timer"
+msgstr "Inaktivitätstimer"

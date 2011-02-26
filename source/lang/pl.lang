@@ -482,13 +482,13 @@ msgid "Version"
 msgstr "Wersja"
 
 msgid "Buffering..."
-msgstr "Bufforowanie..."
+msgstr "Buforowanie..."
 
 msgid "Buffering"
 msgstr "Bufforowanie"
 
 msgid "Unable to initialize network (Error #:"
-msgstr "Nie można zainicjować sieci (Erreur #:"
+msgstr "Nie można zainicjować sieci (Błąd #:"
 
 msgid "Settings - Subtitles"
 msgstr "Ustawienia - Napisy"
@@ -660,3 +660,12 @@ msgstr "Średnia (480x360)"
 
 msgid "High (640x360)"
 msgstr "Wysoka (640x360)"
+
+msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
+msgstr "Aktualny IOS nie jest wspierany. Może to mieć niekorzystny wpływ na funkcjonalność i/lub stabilność."
+
+msgid "Screensaver Delay"
+msgstr "Opóźnienie wygaszacza"
+
+msgid "Inactivity Timer"
+msgstr "Licznik braku aktywności"

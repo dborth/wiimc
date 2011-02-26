@@ -1892,7 +1892,7 @@ static void *ThumbThread (void *arg)
 
 			if(thumbIndex)
 			{
-				BROWSERENTRY * loadIndex = thumbIndex;
+				BROWSERENTRY *loadIndex = thumbIndex;
 				int read = 0;
 				if(loadIndex->image && strncmp(loadIndex->image, "http:", 5) == 0)
 					read = http_request(loadIndex->image, NULL, thumbBuffer, 200*1024, SILENT);
@@ -2154,7 +2154,7 @@ static void MenuBrowse(int menu)
 
 	if(menu == MENU_BROWSE_ONLINEMEDIA)
 	{
-		if(browserOnlineMedia.first == NULL)
+		if(!browserOnlineMedia.first)
 		{
 			// check if file exists
 			struct stat buf;
@@ -2342,7 +2342,7 @@ static void MenuBrowse(int menu)
 		{
 			upOneLevelBtn.ResetState();
 
-			if(browser.selIndex->file && strncmp(browser.selIndex->file, "http:", 5) == 0)
+			if(browser.selIndex && browser.selIndex->file && strncmp(browser.selIndex->file, "http:", 5) == 0)
 			{
 				mainWindow->Append(disabled);
 				mainWindow->SetState(STATE_DISABLED);
@@ -2354,7 +2354,6 @@ static void MenuBrowse(int menu)
 				browser.selIndex = browser.first;
 				if(!BrowserChangeFolder())
 				{
-				
 					CancelAction();
 					mainWindow->Remove(disabled);
 					mainWindow->SetState(STATE_DEFAULT);
@@ -2376,13 +2375,12 @@ static void MenuBrowse(int menu)
 				fileBrowser->fileList[i]->ResetState();
 
 				// check corresponding browser entry
-				if(!browser.selIndex->file || browser.selIndex->type == TYPE_FOLDER)
+				if(!browser.selIndex || !browser.selIndex->file || browser.selIndex->type == TYPE_FOLDER)
 				{
 					fileBrowser->SetState(STATE_DISABLED);
 
 					if(!BrowserChangeFolder())
 						goto done;
-
 
 					fileBrowser->ResetState();
 					continue;
@@ -2546,7 +2544,7 @@ static void MenuBrowse(int menu)
 				currentIndex = browser.selIndex;
 				thumbIndex = NULL;
 
-				if(currentIndex->image)
+				if(currentIndex && currentIndex->image)
 				{
 					char ext[7];
 					GetExt(currentIndex->image, ext);
@@ -2569,9 +2567,9 @@ static void MenuBrowse(int menu)
 		if(playlistAddBtn.GetState() == STATE_CLICKED)
 		{
 			playlistAddBtn.ResetState();
-			BROWSERENTRY * addIndex = browser.selIndex;
+			BROWSERENTRY *addIndex = browser.selIndex;
 
-			if(addIndex)
+			if(addIndex && addIndex != browser.first)
 			{
 				if(addIndex->icon == ICON_FILE_CHECKED || 
 					addIndex->icon == ICON_FOLDER_CHECKED)
@@ -2925,21 +2923,21 @@ static bool AllocPicBuffer()
 	return true;
 }
 
-static GuiImageData * FoundPicture(BROWSERENTRY *Index)
+static GuiImageData * FoundPicture(BROWSERENTRY *index)
 {
 	for(int i=0; i < NUM_PICTURES; i++)
-	{
-		if(pictureData[i].index == Index) return pictureData[i].image;
-	}
+		if(pictureData[i].index == index)
+			return pictureData[i].image;
+
 	return NULL;
 }
 
-static picData * FoundPictureData(BROWSERENTRY *Index)
+static picData * FoundPictureData(BROWSERENTRY *index)
 {
 	for(int i=0; i < NUM_PICTURES; i++)
-	{
-		if(pictureData[i].index == Index) return &pictureData[i];
-	}
+		if(pictureData[i].index == index)
+			return &pictureData[i];
+
 	return NULL;
 }
 
@@ -2979,10 +2977,10 @@ static void CleanupPictures(BROWSERENTRY *selIndex)
 	// free any unused picture data
 	for(int i=0; i < NUM_PICTURES; i++)
 	{
-		if( (pictureData[i].index == NULL) || (pictureData[i].index == pictureLoaded) )
+		if(!pictureData[i].index || pictureData[i].index == pictureLoaded)
 			continue;
 
-		if(selIndex == NULL || EntryDistance(pictureData[i].index,selIndex)> (NUM_PICTURES-1)/2)
+		if(!selIndex || EntryDistance(pictureData[i].index, selIndex) > (NUM_PICTURES-1)/2)
 			pictureData[i].index = NULL;
 	}
 }
@@ -3050,7 +3048,7 @@ restart:
 			CleanupPictures(selIndex);
 
 			// load missing pictures - starting with selected index
-			if(selIndex > 0 
+			if(selIndex
 				&& selIndex->type == TYPE_FILE
 				&& pictureIndexLoaded != selIndex
 				&& selIndex->length < MAX_PICTURE_SIZE)
@@ -3094,7 +3092,6 @@ restart:
 			}
 
 			// fill up image buffer slots
-			
 			next = selIndex;
 
 			for(i=0; next && i < (NUM_PICTURES-1)/2; i++)
@@ -3403,7 +3400,7 @@ static void PictureZoomDragCallback(void *ptr)
 
 static void PictureViewer()
 {
-	BROWSERENTRY * currentIndex = NULL;
+	BROWSERENTRY *currentIndex = NULL;
 	closePictureViewer = 0;
 
 	GuiWindow *oldWindow = mainWindow;
@@ -3693,7 +3690,7 @@ static void MenuBrowsePictures()
 		}
 
 		// update displayed picture
-		if( (browser.selIndex != NULL) && ((browser.selIndex != currentIndex) || setPicture) )
+		if(browser.selIndex && (browser.selIndex != currentIndex || setPicture))
 		{
 			currentIndex = browser.selIndex;
 			setPicture = false;

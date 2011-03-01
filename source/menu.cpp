@@ -2063,6 +2063,16 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	return false;
 }
 
+static GuiFileBrowser *fileBrowser = NULL;
+
+void UpdateBrowser()
+{
+	if(!fileBrowser)
+		return;
+	
+	fileBrowser->TriggerUpdate();
+}
+
 static void MenuBrowse(int menu)
 {
 	ShutoffRumble();
@@ -2129,8 +2139,6 @@ static void MenuBrowse(int menu)
 		pagesize = 10;
 	else if(menu == MENU_BROWSE_MUSIC || (menu == MENU_BROWSE_ONLINEMEDIA && wiiAudioOnly()))
 		pagesize = 8;
-
-	GuiFileBrowser *fileBrowser;
 
 	if(menu == MENU_BROWSE_ONLINEMEDIA)
 	{
@@ -2813,6 +2821,7 @@ done:
 	mainWindow->Remove(fileBrowser);
 	mainWindow->Remove(&upOneLevelBtn);
 	delete fileBrowser;
+	fileBrowser = NULL;
 
 	if(VideoImgVisible())
 		mainWindow->Remove(&backBtn);

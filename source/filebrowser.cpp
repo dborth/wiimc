@@ -595,5 +595,7 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	}
 	if(browser.lastdir[0] != 0)
 		FindDirectory(); // try to find and select the last directory
+
+	UpdateBrowser();
 	return browser.numEntries;
 }

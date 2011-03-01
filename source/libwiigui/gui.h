@@ -1162,7 +1162,6 @@ class GuiFileBrowser : public GuiElement
 		GuiTrigger * trigHeldA;
 
 		int selectedItem;
-		int numEntries;
 		bool listChanged;
 };
 

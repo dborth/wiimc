@@ -1775,7 +1775,7 @@ static bool ParseDirEntries()
 
 	// Sort the file list
 	if(i > 0)
-		SortBrower(&browser,FileSortCallback);
+		SortBrower(&browser, FileSortCallback);
 
 	if(entry == NULL || parseHalt)
 	{
@@ -1786,12 +1786,15 @@ static bool ParseDirEntries()
 	
 			if(findLoadedFile == 1)
 				FindFile(); // try to find and select the last loaded file
+			
+			UpdateBrowser();
 		}
 
 		closedir(dirHandle); // close directory
 		dirHandle = NULL;
 		return false; // no more entries
 	}
+	UpdateBrowser();
 	return true; // more entries
 }
 
@@ -2089,7 +2092,7 @@ static int ParsePLXPlaylist()
 
 	// try to find and select the last loaded file
 	FindFile();
-
+	UpdateBrowser();
 	return browser.numEntries;
 }
 
@@ -2277,6 +2280,7 @@ int ParsePlaylistFile()
 
 	// try to find and select the last loaded file
 	FindFile();
+	UpdateBrowser();
 
 	return browser.numEntries;
 }
@@ -2371,13 +2375,14 @@ int ParseOnlineMedia()
 	}
 
 	// Sort the file list
-	SortBrower(&browser,FileSortCallback);
+	SortBrower(&browser, FileSortCallback);
 
 	if(browser.lastdir[0] != 0)
 		FindDirectory(); // try to find and select the last directory
 	else if(findLoadedFile == 1)
 		FindFile(); // try to find and select the last loaded file
 
+	UpdateBrowser();
 	return browser.numEntries;
 }
 

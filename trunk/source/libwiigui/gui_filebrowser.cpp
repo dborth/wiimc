@@ -16,10 +16,9 @@ GuiFileBrowser::GuiFileBrowser(int w, int s)
 	width = w;
 	height = s*32;
 	size = s;
-	numEntries = 0;
 	selectedItem = 0;
 	selectable = true;
-	listChanged = true; // trigger an initial list update
+	listChanged = false;
 	focus = 0; // allow focus
 
 	trigA = new GuiTrigger;
@@ -450,7 +449,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		}
 	}
 
-	if(listChanged || numEntries != browser.numEntries)
+	if(listChanged)
 	{
 		if(browser.numEntries > size)
 		{
@@ -485,7 +484,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	BROWSERENTRY *entry = PositionToEntry(&browser, browser.pageIndex);
 	for(int i=0; i<size ; ++i)
 	{
-		if(listChanged || numEntries != browser.numEntries)
+		if(listChanged)
 		{
 			if(entry)
 			{
@@ -580,7 +579,7 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 		position = positionWiimote; // follow wiimote cursor
 		scrollbarBoxBtn->SetPosition(-45,position+30);
 	}
-	else if(listChanged || numEntries != browser.numEntries)
+	else if(listChanged)
 	{
 		int top = scrollbarBoxBtn->GetMinY();
 
@@ -598,7 +597,6 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	}
 
 	listChanged = false;
-	numEntries = browser.numEntries;
 
 	if(updateCB)
 		updateCB(this);

@@ -35,6 +35,7 @@ bool VideoVolumeLevelBarVisible();
 void ShowVideoVolumeLevelBar();
 void HideVideoVolumeLevelBar();
 void UndoChangeMenu();
+void UpdateBrowser();
 
 void EnableVideoImg();
 bool VideoImgVisible();

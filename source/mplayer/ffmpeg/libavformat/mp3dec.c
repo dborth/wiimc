@@ -80,7 +80,7 @@ static int mp3_parse_vbr_tags(AVFormatContext *s, AVStream *st, int64_t base)
     MPADecodeHeader c;
     int vbrtag_size = 0;
 
-    v = get_be32(s->pb);
+    v = avio_rb32(s->pb);
     if(ff_mpa_check_header(v) < 0)
       return -1;
 
@@ -90,26 +90,26 @@ static int mp3_parse_vbr_tags(AVFormatContext *s, AVStream *st, int64_t base)
         return -1;
 
     /* Check for Xing / Info tag */
-    url_fseek(s->pb, xing_offtbl[c.lsf == 1][c.nb_channels == 1], SEEK_CUR);
-    v = get_be32(s->pb);
+    avio_seek(s->pb, xing_offtbl[c.lsf == 1][c.nb_channels == 1], SEEK_CUR);
+    v = avio_rb32(s->pb);
     if(v == MKBETAG('X', 'i', 'n', 'g') || v == MKBETAG('I', 'n', 'f', 'o')) {
-        v = get_be32(s->pb);
+        v = avio_rb32(s->pb);
         if(v & 0x1)
-            frames = get_be32(s->pb);
+            frames = avio_rb32(s->pb);
         if(v & 0x2)
-            size = get_be32(s->pb);
+            size = avio_rb32(s->pb);
     }
 
     /* Check for VBRI tag (always 32 bytes after end of mpegaudio header) */
-    url_fseek(s->pb, base + 4 + 32, SEEK_SET);
-    v = get_be32(s->pb);
+    avio_seek(s->pb, base + 4 + 32, SEEK_SET);
+    v = avio_rb32(s->pb);
     if(v == MKBETAG('V', 'B', 'R', 'I')) {
         /* Check tag version */
-        if(get_be16(s->pb) == 1) {
+        if(avio_rb16(s->pb) == 1) {
             /* skip delay and quality */
-            url_fseek(s->pb, 4, SEEK_CUR);
-            frames = get_be32(s->pb);
-            size = get_be32(s->pb);
+            avio_seek(s->pb, 4, SEEK_CUR);
+            frames = avio_rb32(s->pb);
+            size = avio_rb32(s->pb);
         }
     }
 
@@ -117,7 +117,7 @@ static int mp3_parse_vbr_tags(AVFormatContext *s, AVStream *st, int64_t base)
         return -1;
 
     /* Skip the vbr tag frame */
-    url_fseek(s->pb, base + vbrtag_size, SEEK_SET);
+    avio_seek(s->pb, base + vbrtag_size, SEEK_SET);
 
     spf = c.lsf ? 576 : 1152; /* Samples per frame, layer 3 */
     if(frames)
@@ -153,7 +153,7 @@ static int mp3_read_header(AVFormatContext *s,
         ff_id3v1_read(s);
 
     if (mp3_parse_vbr_tags(s, st, off) < 0)
-        url_fseek(s->pb, off, SEEK_SET);
+        avio_seek(s->pb, off, SEEK_SET);
 
     /* the parameters will be extracted from the compressed bitstream */
     return 0;

@@ -74,7 +74,7 @@ static int roq_read_header(AVFormatContext *s,
     unsigned char preamble[RoQ_CHUNK_PREAMBLE_SIZE];
 
     /* get the main header */
-    if (get_buffer(pb, preamble, RoQ_CHUNK_PREAMBLE_SIZE) !=
+    if (avio_read(pb, preamble, RoQ_CHUNK_PREAMBLE_SIZE) !=
         RoQ_CHUNK_PREAMBLE_SIZE)
         return AVERROR(EIO);
     framerate = AV_RL16(&preamble[6]);
@@ -115,7 +115,7 @@ static int roq_read_packet(AVFormatContext *s,
             return AVERROR(EIO);
 
         /* get the next chunk preamble */
-        if ((ret = get_buffer(pb, preamble, RoQ_CHUNK_PREAMBLE_SIZE)) !=
+        if ((ret = avio_read(pb, preamble, RoQ_CHUNK_PREAMBLE_SIZE)) !=
             RoQ_CHUNK_PREAMBLE_SIZE)
             return AVERROR(EIO);
 
@@ -129,29 +129,29 @@ static int roq_read_packet(AVFormatContext *s,
         case RoQ_INFO:
             if (!roq->width || !roq->height) {
                 AVStream *st = s->streams[roq->video_stream_index];
-                if (get_buffer(pb, preamble, RoQ_CHUNK_PREAMBLE_SIZE) != RoQ_CHUNK_PREAMBLE_SIZE)
+                if (avio_read(pb, preamble, RoQ_CHUNK_PREAMBLE_SIZE) != RoQ_CHUNK_PREAMBLE_SIZE)
                     return AVERROR(EIO);
                 st->codec->width  = roq->width  = AV_RL16(preamble);
                 st->codec->height = roq->height = AV_RL16(preamble + 2);
                 break;
             }
             /* don't care about this chunk anymore */
-            url_fseek(pb, RoQ_CHUNK_PREAMBLE_SIZE, SEEK_CUR);
+            avio_seek(pb, RoQ_CHUNK_PREAMBLE_SIZE, SEEK_CUR);
             break;
 
         case RoQ_QUAD_CODEBOOK:
             /* packet needs to contain both this codebook and next VQ chunk */
             codebook_offset = url_ftell(pb) - RoQ_CHUNK_PREAMBLE_SIZE;
             codebook_size = chunk_size;
-            url_fseek(pb, codebook_size, SEEK_CUR);
-            if (get_buffer(pb, preamble, RoQ_CHUNK_PREAMBLE_SIZE) !=
+            avio_seek(pb, codebook_size, SEEK_CUR);
+            if (avio_read(pb, preamble, RoQ_CHUNK_PREAMBLE_SIZE) !=
                 RoQ_CHUNK_PREAMBLE_SIZE)
                 return AVERROR(EIO);
             chunk_size = AV_RL32(&preamble[2]) + RoQ_CHUNK_PREAMBLE_SIZE * 2 +
                 codebook_size;
 
             /* rewind */
-            url_fseek(pb, codebook_offset, SEEK_SET);
+            avio_seek(pb, codebook_offset, SEEK_SET);
 
             /* load up the packet */
             ret= av_get_packet(pb, pkt, chunk_size);
@@ -198,7 +198,7 @@ static int roq_read_packet(AVFormatContext *s,
             }
 
             pkt->pos= url_ftell(pb);
-            ret = get_buffer(pb, pkt->data + RoQ_CHUNK_PREAMBLE_SIZE,
+            ret = avio_read(pb, pkt->data + RoQ_CHUNK_PREAMBLE_SIZE,
                 chunk_size);
             if (ret != chunk_size)
                 ret = AVERROR(EIO);

@@ -87,9 +87,21 @@ int init_put_byte(AVIOContext *s,
     return ffio_init_context(s, buffer, buffer_size, write_flag, opaque,
                                 read_packet, write_packet, seek);
 }
+AVIOContext *av_alloc_put_byte(
+                  unsigned char *buffer,
+                  int buffer_size,
+                  int write_flag,
+                  void *opaque,
+                  int (*read_packet)(void *opaque, uint8_t *buf, int buf_size),
+                  int (*write_packet)(void *opaque, uint8_t *buf, int buf_size),
+                  int64_t (*seek)(void *opaque, int64_t offset, int whence))
+{
+    return avio_alloc_context(buffer, buffer_size, write_flag, opaque,
+                              read_packet, write_packet, seek);
+}
 #endif
 
-AVIOContext *av_alloc_put_byte(
+AVIOContext *avio_alloc_context(
                   unsigned char *buffer,
                   int buffer_size,
                   int write_flag,
@@ -122,14 +134,14 @@ static void flush_buffer(AVIOContext *s)
     s->buf_ptr = s->buffer;
 }
 
-void put_byte(AVIOContext *s, int b)
+void avio_w8(AVIOContext *s, int b)
 {
     *(s->buf_ptr)++ = b;
     if (s->buf_ptr >= s->buf_end)
         flush_buffer(s);
 }
 
-void put_nbyte(AVIOContext *s, int b, int count)
+void ffio_fill(AVIOContext *s, int b, int count)
 {
     while (count > 0) {
         int len = FFMIN(s->buf_end - s->buf_ptr, count);
@@ -143,7 +155,7 @@ void put_nbyte(AVIOContext *s, int b, int count)
     }
 }
 
-void put_buffer(AVIOContext *s, const unsigned char *buf, int size)
+void avio_write(AVIOContext *s, const unsigned char *buf, int size)
 {
     while (size > 0) {
         int len = FFMIN(s->buf_end - s->buf_ptr, size);
@@ -164,7 +176,7 @@ void put_flush_packet(AVIOContext *s)
     s->must_flush = 0;
 }
 
-int64_t url_fseek(AVIOContext *s, int64_t offset, int whence)
+int64_t avio_seek(AVIOContext *s, int64_t offset, int whence)
 {
     int64_t offset1;
     int64_t pos;
@@ -221,15 +233,17 @@ int64_t url_fseek(AVIOContext *s, int64_t offset, int whence)
     return offset;
 }
 
+#if FF_API_OLD_AVIO
 int url_fskip(AVIOContext *s, int64_t offset)
 {
-    int64_t ret = url_fseek(s, offset, SEEK_CUR);
+    int64_t ret = avio_seek(s, offset, SEEK_CUR);
     return ret < 0 ? ret : 0;
 }
+#endif
 
 int64_t url_ftell(AVIOContext *s)
 {
-    return url_fseek(s, 0, SEEK_CUR);
+    return avio_seek(s, 0, SEEK_CUR);
 }
 
 int64_t url_fsize(AVIOContext *s)
@@ -265,26 +279,97 @@ int url_ferror(AVIOContext *s)
     return s->error;
 }
 
-void put_le32(AVIOContext *s, unsigned int val)
+void avio_wl32(AVIOContext *s, unsigned int val)
 {
-    put_byte(s, val);
-    put_byte(s, val >> 8);
-    put_byte(s, val >> 16);
-    put_byte(s, val >> 24);
+    avio_w8(s, val);
+    avio_w8(s, val >> 8);
+    avio_w8(s, val >> 16);
+    avio_w8(s, val >> 24);
 }
 
-void put_be32(AVIOContext *s, unsigned int val)
+void avio_wb32(AVIOContext *s, unsigned int val)
 {
-    put_byte(s, val >> 24);
-    put_byte(s, val >> 16);
-    put_byte(s, val >> 8);
-    put_byte(s, val);
+    avio_w8(s, val >> 24);
+    avio_w8(s, val >> 16);
+    avio_w8(s, val >> 8);
+    avio_w8(s, val);
 }
 
 #if FF_API_OLD_AVIO
 void put_strz(AVIOContext *s, const char *str)
 {
     avio_put_str(s, str);
+}
+
+#define GET(name, type) \
+    type get_be ##name(AVIOContext *s) \
+{\
+    return avio_rb ##name(s);\
+}\
+    type get_le ##name(AVIOContext *s) \
+{\
+    return avio_rl ##name(s);\
+}
+
+GET(16, unsigned int)
+GET(24, unsigned int)
+GET(32, unsigned int)
+GET(64, uint64_t)
+
+#undef GET
+
+#define PUT(name, type ) \
+    void put_le ##name(AVIOContext *s, type val)\
+{\
+        avio_wl ##name(s, val);\
+}\
+    void put_be ##name(AVIOContext *s, type val)\
+{\
+        avio_wb ##name(s, val);\
+}
+
+PUT(16, unsigned int)
+PUT(24, unsigned int)
+PUT(32, unsigned int)
+PUT(64, uint64_t)
+#undef PUT
+
+int get_byte(AVIOContext *s)
+{
+   return avio_r8(s);
+}
+int get_buffer(AVIOContext *s, unsigned char *buf, int size)
+{
+    return avio_read(s, buf, size);
+}
+int get_partial_buffer(AVIOContext *s, unsigned char *buf, int size)
+{
+    return ffio_read_partial(s, buf, size);
+}
+void put_byte(AVIOContext *s, int val)
+{
+    avio_w8(s, val);
+}
+void put_buffer(AVIOContext *s, const unsigned char *buf, int size)
+{
+    avio_write(s, buf, size);
+}
+void put_nbyte(AVIOContext *s, int b, int count)
+{
+    ffio_fill(s, b, count);
+}
+
+int url_fopen(AVIOContext **s, const char *filename, int flags)
+{
+    return avio_open(s, filename, flags);
+}
+int url_fclose(AVIOContext *s)
+{
+    return avio_close(s);
+}
+int64_t url_fseek(AVIOContext *s, int64_t offset, int whence)
+{
+    return avio_seek(s, offset, whence);
 }
 #endif
 
@@ -293,9 +378,9 @@ int avio_put_str(AVIOContext *s, const char *str)
     int len = 1;
     if (str) {
         len += strlen(str);
-        put_buffer(s, (const unsigned char *) str, len);
+        avio_write(s, (const unsigned char *) str, len);
     } else
-        put_byte(s, 0);
+        avio_w8(s, 0);
     return len;
 }
 
@@ -309,9 +394,9 @@ int avio_put_str16le(AVIOContext *s, const char *str)
         uint16_t tmp;
 
         GET_UTF8(ch, *q++, break;)
-        PUT_UTF16(ch, tmp, put_le16(s, tmp);ret += 2;)
+        PUT_UTF16(ch, tmp, avio_wl16(s, tmp);ret += 2;)
     }
-    put_le16(s, 0);
+    avio_wl16(s, 0);
     ret += 2;
     return ret;
 }
@@ -329,53 +414,55 @@ void ff_put_v(AVIOContext *bc, uint64_t val){
     int i= ff_get_v_length(val);
 
     while(--i>0)
-        put_byte(bc, 128 | (val>>(7*i)));
+        avio_w8(bc, 128 | (val>>(7*i)));
 
-    put_byte(bc, val&127);
+    avio_w8(bc, val&127);
 }
 
-void put_le64(AVIOContext *s, uint64_t val)
+void avio_wl64(AVIOContext *s, uint64_t val)
 {
-    put_le32(s, (uint32_t)(val & 0xffffffff));
-    put_le32(s, (uint32_t)(val >> 32));
+    avio_wl32(s, (uint32_t)(val & 0xffffffff));
+    avio_wl32(s, (uint32_t)(val >> 32));
 }
 
-void put_be64(AVIOContext *s, uint64_t val)
+void avio_wb64(AVIOContext *s, uint64_t val)
 {
-    put_be32(s, (uint32_t)(val >> 32));
-    put_be32(s, (uint32_t)(val & 0xffffffff));
+    avio_wb32(s, (uint32_t)(val >> 32));
+    avio_wb32(s, (uint32_t)(val & 0xffffffff));
 }
 
-void put_le16(AVIOContext *s, unsigned int val)
+void avio_wl16(AVIOContext *s, unsigned int val)
 {
-    put_byte(s, val);
-    put_byte(s, val >> 8);
+    avio_w8(s, val);
+    avio_w8(s, val >> 8);
 }
 
-void put_be16(AVIOContext *s, unsigned int val)
+void avio_wb16(AVIOContext *s, unsigned int val)
 {
-    put_byte(s, val >> 8);
-    put_byte(s, val);
+    avio_w8(s, val >> 8);
+    avio_w8(s, val);
 }
 
-void put_le24(AVIOContext *s, unsigned int val)
+void avio_wl24(AVIOContext *s, unsigned int val)
 {
-    put_le16(s, val & 0xffff);
-    put_byte(s, val >> 16);
+    avio_wl16(s, val & 0xffff);
+    avio_w8(s, val >> 16);
 }
 
-void put_be24(AVIOContext *s, unsigned int val)
+void avio_wb24(AVIOContext *s, unsigned int val)
 {
-    put_be16(s, val >> 8);
-    put_byte(s, val);
+    avio_wb16(s, val >> 8);
+    avio_w8(s, val);
 }
 
+#if FF_API_OLD_AVIO
 void put_tag(AVIOContext *s, const char *tag)
 {
     while (*tag) {
-        put_byte(s, *tag++);
+        avio_w8(s, *tag++);
     }
 }
+#endif
 
 /* Input stream */
 
@@ -445,7 +532,7 @@ void init_checksum(AVIOContext *s,
 }
 
 /* XXX: put an inline version */
-int get_byte(AVIOContext *s)
+int avio_r8(AVIOContext *s)
 {
     if (s->buf_ptr >= s->buf_end)
         fill_buffer(s);
@@ -463,7 +550,7 @@ int url_fgetc(AVIOContext *s)
     return URL_EOF;
 }
 
-int get_buffer(AVIOContext *s, unsigned char *buf, int size)
+int avio_read(AVIOContext *s, unsigned char *buf, int size)
 {
     int len, size1;
 
@@ -510,7 +597,7 @@ int get_buffer(AVIOContext *s, unsigned char *buf, int size)
     return size1 - size;
 }
 
-int get_partial_buffer(AVIOContext *s, unsigned char *buf, int size)
+int ffio_read_partial(AVIOContext *s, unsigned char *buf, int size)
 {
     int len;
 
@@ -533,58 +620,58 @@ int get_partial_buffer(AVIOContext *s, unsigned char *buf, int size)
     return len;
 }
 
-unsigned int get_le16(AVIOContext *s)
+unsigned int avio_rl16(AVIOContext *s)
 {
     unsigned int val;
-    val = get_byte(s);
-    val |= get_byte(s) << 8;
+    val = avio_r8(s);
+    val |= avio_r8(s) << 8;
     return val;
 }
 
-unsigned int get_le24(AVIOContext *s)
+unsigned int avio_rl24(AVIOContext *s)
 {
     unsigned int val;
-    val = get_le16(s);
-    val |= get_byte(s) << 16;
+    val = avio_rl16(s);
+    val |= avio_r8(s) << 16;
     return val;
 }
 
-unsigned int get_le32(AVIOContext *s)
+unsigned int avio_rl32(AVIOContext *s)
 {
     unsigned int val;
-    val = get_le16(s);
-    val |= get_le16(s) << 16;
+    val = avio_rl16(s);
+    val |= avio_rl16(s) << 16;
     return val;
 }
 
-uint64_t get_le64(AVIOContext *s)
+uint64_t avio_rl64(AVIOContext *s)
 {
     uint64_t val;
-    val = (uint64_t)get_le32(s);
-    val |= (uint64_t)get_le32(s) << 32;
+    val = (uint64_t)avio_rl32(s);
+    val |= (uint64_t)avio_rl32(s) << 32;
     return val;
 }
 
-unsigned int get_be16(AVIOContext *s)
+unsigned int avio_rb16(AVIOContext *s)
 {
     unsigned int val;
-    val = get_byte(s) << 8;
-    val |= get_byte(s);
+    val = avio_r8(s) << 8;
+    val |= avio_r8(s);
     return val;
 }
 
-unsigned int get_be24(AVIOContext *s)
+unsigned int avio_rb24(AVIOContext *s)
 {
     unsigned int val;
-    val = get_be16(s) << 8;
-    val |= get_byte(s);
+    val = avio_rb16(s) << 8;
+    val |= avio_r8(s);
     return val;
 }
-unsigned int get_be32(AVIOContext *s)
+unsigned int avio_rb32(AVIOContext *s)
 {
     unsigned int val;
-    val = get_be16(s) << 16;
-    val |= get_be16(s);
+    val = avio_rb16(s) << 16;
+    val |= avio_rb16(s);
     return val;
 }
 
@@ -593,7 +680,7 @@ char *get_strz(AVIOContext *s, char *buf, int maxlen)
     int i = 0;
     char c;
 
-    while ((c = get_byte(s))) {
+    while ((c = avio_r8(s))) {
         if (i < maxlen-1)
             buf[i++] = c;
     }
@@ -609,7 +696,7 @@ int ff_get_line(AVIOContext *s, char *buf, int maxlen)
     char c;
 
     do {
-        c = get_byte(s);
+        c = avio_r8(s);
         if (c && i < maxlen-1)
             buf[i++] = c;
     } while (c != '\n' && c);
@@ -635,16 +722,16 @@ int ff_get_line(AVIOContext *s, char *buf, int maxlen)
     return ret;\
 }\
 
-GET_STR16(le, get_le16)
-GET_STR16(be, get_be16)
+GET_STR16(le, avio_rl16)
+GET_STR16(be, avio_rb16)
 
 #undef GET_STR16
 
-uint64_t get_be64(AVIOContext *s)
+uint64_t avio_rb64(AVIOContext *s)
 {
     uint64_t val;
-    val = (uint64_t)get_be32(s) << 32;
-    val |= (uint64_t)get_be32(s);
+    val = (uint64_t)avio_rb32(s) << 32;
+    val |= (uint64_t)avio_rb32(s);
     return val;
 }
 
@@ -653,7 +740,7 @@ uint64_t ff_get_v(AVIOContext *bc){
     int tmp;
 
     do{
-        tmp = get_byte(bc);
+        tmp = avio_r8(bc);
         val= (val<<7) + (tmp&127);
     }while(tmp&128);
     return val;
@@ -773,7 +860,7 @@ int ff_rewind_with_probe_data(AVIOContext *s, unsigned char *buf, int buf_size)
     return 0;
 }
 
-int url_fopen(AVIOContext **s, const char *filename, int flags)
+int avio_open(AVIOContext **s, const char *filename, int flags)
 {
     URLContext *h;
     int err;
@@ -789,7 +876,7 @@ int url_fopen(AVIOContext **s, const char *filename, int flags)
     return 0;
 }
 
-int url_fclose(AVIOContext *s)
+int avio_close(AVIOContext *s)
 {
     URLContext *h = s->opaque;
 
@@ -813,7 +900,7 @@ int url_fprintf(AVIOContext *s, const char *fmt, ...)
     va_start(ap, fmt);
     ret = vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-    put_buffer(s, buf, strlen(buf));
+    avio_write(s, buf, strlen(buf));
     return ret;
 }
 #endif //CONFIG_MUXERS
@@ -1014,7 +1101,7 @@ int url_close_dyn_buf(AVIOContext *s, uint8_t **pbuffer)
 
     /* don't attempt to pad fixed-size packet buffers */
     if (!s->max_packet_size) {
-        put_buffer(s, padbuf, sizeof(padbuf));
+        avio_write(s, padbuf, sizeof(padbuf));
         padding = FF_INPUT_BUFFER_PADDING_SIZE;
     }
 

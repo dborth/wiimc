@@ -97,7 +97,7 @@ ogg_restore (AVFormatContext * s, int discard)
         for (i = 0; i < ogg->nstreams; i++)
             av_free (ogg->streams[i].buf);
 
-        url_fseek (bc, ost->pos, SEEK_SET);
+        avio_seek (bc, ost->pos, SEEK_SET);
         ogg->curidx = ost->curidx;
         ogg->nstreams = ost->nstreams;
         memcpy(ogg->streams, ost->streams,
@@ -207,7 +207,7 @@ ogg_read_page (AVFormatContext * s, int *str)
     uint8_t sync[4];
     int sp = 0;
 
-    if (get_buffer (bc, sync, 4) < 4)
+    if (avio_read (bc, sync, 4) < 4)
         return -1;
 
     do{
@@ -233,10 +233,10 @@ ogg_read_page (AVFormatContext * s, int *str)
         return -1;
 
     flags = url_fgetc (bc);
-    gp = get_le64 (bc);
-    serial = get_le32 (bc);
-    seq = get_le32 (bc);
-    crc = get_le32 (bc);
+    gp = avio_rl64 (bc);
+    serial = avio_rl32 (bc);
+    seq = avio_rl32 (bc);
+    crc = avio_rl32 (bc);
     nsegs = url_fgetc (bc);
 
     idx = ogg_find_stream (ogg, serial);
@@ -252,7 +252,7 @@ ogg_read_page (AVFormatContext * s, int *str)
     if(os->psize > 0)
         ogg_new_buf(ogg, idx);
 
-    if (get_buffer (bc, os->segments, nsegs) < nsegs)
+    if (avio_read (bc, os->segments, nsegs) < nsegs)
         return -1;
 
     os->nsegs = nsegs;
@@ -284,7 +284,7 @@ ogg_read_page (AVFormatContext * s, int *str)
         os->buf = nb;
     }
 
-    if (get_buffer (bc, os->buf + os->bufpos, size) < size)
+    if (avio_read (bc, os->buf + os->bufpos, size) < size)
         return -1;
 
     os->bufpos += size;
@@ -468,7 +468,7 @@ ogg_get_length (AVFormatContext * s)
     end = size > MAX_PAGE_SIZE? size - MAX_PAGE_SIZE: 0;
 
     ogg_save (s);
-    url_fseek (s->pb, end, SEEK_SET);
+    avio_seek (s->pb, end, SEEK_SET);
 
     while (!ogg_read_page (s, &i)){
         if (ogg->streams[i].granule != -1 && ogg->streams[i].granule != 0 &&
@@ -604,7 +604,7 @@ ogg_read_timestamp (AVFormatContext * s, int stream_index, int64_t * pos_arg,
     AVIOContext *bc = s->pb;
     int64_t pts = AV_NOPTS_VALUE;
     int i;
-    url_fseek(bc, *pos_arg, SEEK_SET);
+    avio_seek(bc, *pos_arg, SEEK_SET);
     ogg_reset(ogg);
 
     while (url_ftell(bc) < pos_limit && !ogg_packet(s, &i, NULL, NULL, pos_arg)) {

@@ -75,12 +75,12 @@ static int read_part_of_packet(AVFormatContext *s, int64_t *pts,
 recover:
     startpos = url_ftell(pb);
 
-    syncword = get_be16(pb);
-    streamid = get_byte(pb);
-    get_byte(pb);               /* counter not used */
-    reserved = get_byte(pb);
-    flags    = get_byte(pb);
-    length   = get_be16(pb);
+    syncword = avio_rb16(pb);
+    streamid = avio_r8(pb);
+    avio_r8(pb);               /* counter not used */
+    reserved = avio_r8(pb);
+    flags    = avio_r8(pb);
+    length   = avio_rb16(pb);
 
     pts_flag = flags & 0x10;
 
@@ -101,7 +101,7 @@ recover:
     }
 
     if (streamid == PVA_VIDEO_PAYLOAD && pts_flag) {
-        pva_pts = get_be32(pb);
+        pva_pts = avio_rb32(pb);
         length -= 4;
     } else if (streamid == PVA_AUDIO_PAYLOAD) {
         /* PVA Audio Packets either start with a signaled PES packet or
@@ -113,22 +113,22 @@ recover:
                 pes_flags;
             unsigned char pes_header_data[256];
 
-            pes_signal             = get_be24(pb);
-            get_byte(pb);
-            pes_packet_length      = get_be16(pb);
-            pes_flags              = get_be16(pb);
-            pes_header_data_length = get_byte(pb);
+            pes_signal             = avio_rb24(pb);
+            avio_r8(pb);
+            pes_packet_length      = avio_rb16(pb);
+            pes_flags              = avio_rb16(pb);
+            pes_header_data_length = avio_r8(pb);
 
             if (pes_signal != 1) {
                 pva_log(s, AV_LOG_WARNING, "expected signaled PES packet, "
                                           "trying to recover\n");
-                url_fskip(pb, length - 9);
+                avio_seek(pb, length - 9, SEEK_CUR);
                 if (!read_packet)
                     return AVERROR(EIO);
                 goto recover;
             }
 
-            get_buffer(pb, pes_header_data, pes_header_data_length);
+            avio_read(pb, pes_header_data, pes_header_data_length);
             length -= 9 + pes_header_data_length;
 
             pes_packet_length -= 3 + pes_header_data_length;
@@ -182,7 +182,7 @@ static int64_t pva_read_timestamp(struct AVFormatContext *s, int stream_index,
 
     while (*pos < pos_limit) {
         res = AV_NOPTS_VALUE;
-        url_fseek(pb, *pos, SEEK_SET);
+        avio_seek(pb, *pos, SEEK_SET);
 
         pvactx->continue_pes = 0;
         if (read_part_of_packet(s, &res, &length, &streamid, 0)) {

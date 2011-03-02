@@ -81,16 +81,16 @@ static int yop_read_header(AVFormatContext *s, AVFormatParameters *ap)
     video_dec->codec_type   = AVMEDIA_TYPE_VIDEO;
     video_dec->codec_id     = CODEC_ID_YOP;
 
-    url_fskip(pb, 6);
+    avio_seek(pb, 6, SEEK_CUR);
 
-    frame_rate              = get_byte(pb);
-    yop->frame_size         = get_byte(pb) * 2048;
-    video_dec->width        = get_le16(pb);
-    video_dec->height       = get_le16(pb);
+    frame_rate              = avio_r8(pb);
+    yop->frame_size         = avio_r8(pb) * 2048;
+    video_dec->width        = avio_rl16(pb);
+    video_dec->height       = avio_rl16(pb);
 
     video_stream->sample_aspect_ratio = (AVRational){1, 2};
 
-    ret = get_buffer(pb, video_dec->extradata, 8);
+    ret = avio_read(pb, video_dec->extradata, 8);
     if (ret < 8)
         return ret < 0 ? ret : AVERROR_EOF;
 
@@ -104,7 +104,7 @@ static int yop_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR_INVALIDDATA;
     }
 
-    url_fseek(pb, 2048, SEEK_SET);
+    avio_seek(pb, 2048, SEEK_SET);
 
     av_set_pts_info(video_stream, 32, 1, frame_rate);
 
@@ -138,7 +138,7 @@ static int yop_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     yop->video_packet.pos = url_ftell(pb);
 
-    ret = get_buffer(pb, yop->video_packet.data, yop->palette_size);
+    ret = avio_read(pb, yop->video_packet.data, yop->palette_size);
     if (ret < 0) {
         goto err_out;
     }else if (ret < yop->palette_size) {
@@ -153,9 +153,9 @@ static int yop_read_packet(AVFormatContext *s, AVPacket *pkt)
     // Set position to the start of the frame
     pkt->pos = yop->video_packet.pos;
 
-    url_fskip(pb, yop->audio_block_length - ret);
+    avio_seek(pb, yop->audio_block_length - ret, SEEK_CUR);
 
-    ret = get_buffer(pb, yop->video_packet.data + yop->palette_size,
+    ret = avio_read(pb, yop->video_packet.data + yop->palette_size,
                      actual_video_data_size);
     if (ret < 0)
         goto err_out;
@@ -198,7 +198,7 @@ static int yop_read_seek(AVFormatContext *s, int stream_index,
     frame_pos      = timestamp * yop->frame_size + pos_min;
     yop->odd_frame = timestamp & 1;
 
-    url_fseek(s->pb, frame_pos, SEEK_SET);
+    avio_seek(s->pb, frame_pos, SEEK_SET);
     return 0;
 }
 

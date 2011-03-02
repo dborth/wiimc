@@ -101,12 +101,12 @@ static int wc3_read_header(AVFormatContext *s,
     wc3->vpkt.data = NULL; wc3->vpkt.size = 0;
 
     /* skip the first 3 32-bit numbers */
-    url_fseek(pb, 12, SEEK_CUR);
+    avio_seek(pb, 12, SEEK_CUR);
 
     /* traverse through the chunks and load the header information before
      * the first BRCH tag */
-    fourcc_tag = get_le32(pb);
-    size = (get_be32(pb) + 1) & (~1);
+    fourcc_tag = avio_rl32(pb);
+    size = (avio_rb32(pb) + 1) & (~1);
 
     do {
         switch (fourcc_tag) {
@@ -114,12 +114,12 @@ static int wc3_read_header(AVFormatContext *s,
         case SOND_TAG:
         case INDX_TAG:
             /* SOND unknown, INDX unnecessary; ignore both */
-            url_fseek(pb, size, SEEK_CUR);
+            avio_seek(pb, size, SEEK_CUR);
             break;
 
         case PC__TAG:
             /* number of palettes, unneeded */
-            url_fseek(pb, 12, SEEK_CUR);
+            avio_seek(pb, 12, SEEK_CUR);
             break;
 
         case BNAM_TAG:
@@ -127,7 +127,7 @@ static int wc3_read_header(AVFormatContext *s,
             buffer = av_malloc(size+1);
             if (!buffer)
                 return AVERROR(ENOMEM);
-            if ((ret = get_buffer(pb, buffer, size)) != size)
+            if ((ret = avio_read(pb, buffer, size)) != size)
                 return AVERROR(EIO);
             buffer[size] = 0;
             av_metadata_set2(&s->metadata, "title", buffer,
@@ -136,13 +136,13 @@ static int wc3_read_header(AVFormatContext *s,
 
         case SIZE_TAG:
             /* video resolution override */
-            wc3->width  = get_le32(pb);
-            wc3->height = get_le32(pb);
+            wc3->width  = avio_rl32(pb);
+            wc3->height = avio_rl32(pb);
             break;
 
         case PALT_TAG:
             /* one of several palettes */
-            url_fseek(pb, -8, SEEK_CUR);
+            avio_seek(pb, -8, SEEK_CUR);
             av_append_packet(pb, &wc3->vpkt, 8 + PALETTE_SIZE);
             break;
 
@@ -154,9 +154,9 @@ static int wc3_read_header(AVFormatContext *s,
             break;
         }
 
-        fourcc_tag = get_le32(pb);
+        fourcc_tag = avio_rl32(pb);
         /* chunk sizes are 16-bit aligned */
-        size = (get_be32(pb) + 1) & (~1);
+        size = (avio_rb32(pb) + 1) & (~1);
         if (url_feof(pb))
             return AVERROR(EIO);
 
@@ -205,9 +205,9 @@ static int wc3_read_packet(AVFormatContext *s,
 
     while (!packet_read) {
 
-        fourcc_tag = get_le32(pb);
+        fourcc_tag = avio_rl32(pb);
         /* chunk sizes are 16-bit aligned */
-        size = (get_be32(pb) + 1) & (~1);
+        size = (avio_rb32(pb) + 1) & (~1);
         if (url_feof(pb))
             return AVERROR(EIO);
 
@@ -219,13 +219,13 @@ static int wc3_read_packet(AVFormatContext *s,
 
         case SHOT_TAG:
             /* load up new palette */
-            url_fseek(pb, -8, SEEK_CUR);
+            avio_seek(pb, -8, SEEK_CUR);
             av_append_packet(pb, &wc3->vpkt, 8 + 4);
             break;
 
         case VGA__TAG:
             /* send out video chunk */
-            url_fseek(pb, -8, SEEK_CUR);
+            avio_seek(pb, -8, SEEK_CUR);
             ret= av_append_packet(pb, &wc3->vpkt, 8 + size);
             // ignore error if we have some data
             if (wc3->vpkt.size > 0)
@@ -240,9 +240,9 @@ static int wc3_read_packet(AVFormatContext *s,
         case TEXT_TAG:
             /* subtitle chunk */
 #if 0
-            url_fseek(pb, size, SEEK_CUR);
+            avio_seek(pb, size, SEEK_CUR);
 #else
-            if ((unsigned)size > sizeof(text) || (ret = get_buffer(pb, text, size)) != size)
+            if ((unsigned)size > sizeof(text) || (ret = avio_read(pb, text, size)) != size)
                 ret = AVERROR(EIO);
             else {
                 int i = 0;

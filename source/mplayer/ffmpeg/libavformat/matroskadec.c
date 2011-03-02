@@ -543,10 +543,10 @@ static int ebml_read_num(MatroskaDemuxContext *matroska, AVIOContext *pb,
     int read = 1, n = 1;
     uint64_t total = 0;
 
-    /* The first byte tells us the length in bytes - get_byte() can normally
+    /* The first byte tells us the length in bytes - avio_r8() can normally
      * return 0, but since that's not a valid first ebmlID byte, we can
      * use it safely here to catch EOS. */
-    if (!(total = get_byte(pb))) {
+    if (!(total = avio_r8(pb))) {
         /* we might encounter EOS here */
         if (!url_feof(pb)) {
             int64_t pos = url_ftell(pb);
@@ -570,7 +570,7 @@ static int ebml_read_num(MatroskaDemuxContext *matroska, AVIOContext *pb,
     /* read out length */
     total ^= 1 << ff_log2_tab[total];
     while (n++ < read)
-        total = (total << 8) | get_byte(pb);
+        total = (total << 8) | avio_r8(pb);
 
     *number = total;
 
@@ -605,7 +605,7 @@ static int ebml_read_uint(AVIOContext *pb, int size, uint64_t *num)
     /* big-endian ordering; build up number */
     *num = 0;
     while (n++ < size)
-        *num = (*num << 8) | get_byte(pb);
+        *num = (*num << 8) | avio_r8(pb);
 
     return 0;
 }
@@ -619,9 +619,9 @@ static int ebml_read_float(AVIOContext *pb, int size, double *num)
     if (size == 0) {
         *num = 0;
     } else if (size == 4) {
-        *num= av_int2flt(get_be32(pb));
+        *num= av_int2flt(avio_rb32(pb));
     } else if(size==8){
-        *num= av_int2dbl(get_be64(pb));
+        *num= av_int2dbl(avio_rb64(pb));
     } else
         return AVERROR_INVALIDDATA;
 
@@ -639,7 +639,7 @@ static int ebml_read_ascii(AVIOContext *pb, int size, char **str)
      * byte more, read the string and NULL-terminate it ourselves. */
     if (!(*str = av_malloc(size + 1)))
         return AVERROR(ENOMEM);
-    if (get_buffer(pb, (uint8_t *) *str, size) != size) {
+    if (avio_read(pb, (uint8_t *) *str, size) != size) {
         av_freep(str);
         return AVERROR(EIO);
     }
@@ -660,7 +660,7 @@ static int ebml_read_binary(AVIOContext *pb, int length, EbmlBin *bin)
 
     bin->size = length;
     bin->pos  = url_ftell(pb);
-    if (get_buffer(pb, bin->data, length) != length) {
+    if (avio_read(pb, bin->data, length) != length) {
         av_freep(&bin->data);
         return AVERROR(EIO);
     }
@@ -831,7 +831,7 @@ static int ebml_parse_elem(MatroskaDemuxContext *matroska,
                      return ebml_parse_nest(matroska, syntax->def.n, data);
     case EBML_PASS:  return ebml_parse_id(matroska, syntax->def.n, id, data);
     case EBML_STOP:  return 1;
-    default:         return url_fseek(pb,length,SEEK_CUR)<0 ? AVERROR(EIO) : 0;
+    default:         return avio_seek(pb,length,SEEK_CUR)<0 ? AVERROR(EIO) : 0;
     }
     if (res == AVERROR_INVALIDDATA)
         av_log(matroska->ctx, AV_LOG_ERROR, "Invalid element\n");
@@ -1130,7 +1130,7 @@ static void matroska_execute_seekhead(MatroskaDemuxContext *matroska)
             continue;
 
         /* seek */
-        if (url_fseek(matroska->ctx->pb, offset, SEEK_SET) != offset)
+        if (avio_seek(matroska->ctx->pb, offset, SEEK_SET) != offset)
             continue;
 
         /* We don't want to lose our seekhead level, so we add
@@ -1159,7 +1159,7 @@ static void matroska_execute_seekhead(MatroskaDemuxContext *matroska)
     }
 
     /* seek back */
-    url_fseek(matroska->ctx->pb, before_pos, SEEK_SET);
+    avio_seek(matroska->ctx->pb, before_pos, SEEK_SET);
     matroska->level_up = level_up;
     matroska->current_id = saved_id;
 }
@@ -1376,12 +1376,12 @@ static int matroska_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 return AVERROR(ENOMEM);
             ffio_init_context(&b, extradata, extradata_size, 1,
                           NULL, NULL, NULL, NULL);
-            put_buffer(&b, "TTA1", 4);
-            put_le16(&b, 1);
-            put_le16(&b, track->audio.channels);
-            put_le16(&b, track->audio.bitdepth);
-            put_le32(&b, track->audio.out_samplerate);
-            put_le32(&b, matroska->ctx->duration * track->audio.out_samplerate);
+            avio_write(&b, "TTA1", 4);
+            avio_wl16(&b, 1);
+            avio_wl16(&b, track->audio.channels);
+            avio_wl16(&b, track->audio.bitdepth);
+            avio_wl32(&b, track->audio.out_samplerate);
+            avio_wl32(&b, matroska->ctx->duration * track->audio.out_samplerate);
         } else if (codec_id == CODEC_ID_RV10 || codec_id == CODEC_ID_RV20 ||
                    codec_id == CODEC_ID_RV30 || codec_id == CODEC_ID_RV40) {
             extradata_offset = 26;
@@ -1393,13 +1393,13 @@ static int matroska_read_header(AVFormatContext *s, AVFormatParameters *ap)
             int flavor;
             ffio_init_context(&b, track->codec_priv.data,track->codec_priv.size,
                           0, NULL, NULL, NULL, NULL);
-            url_fskip(&b, 22);
-            flavor                       = get_be16(&b);
-            track->audio.coded_framesize = get_be32(&b);
-            url_fskip(&b, 12);
-            track->audio.sub_packet_h    = get_be16(&b);
-            track->audio.frame_size      = get_be16(&b);
-            track->audio.sub_packet_size = get_be16(&b);
+            avio_seek(&b, 22, SEEK_CUR);
+            flavor                       = avio_rb16(&b);
+            track->audio.coded_framesize = avio_rb32(&b);
+            avio_seek(&b, 12, SEEK_CUR);
+            track->audio.sub_packet_h    = avio_rb16(&b);
+            track->audio.frame_size      = avio_rb16(&b);
+            track->audio.sub_packet_size = avio_rb16(&b);
             track->audio.buf = av_malloc(track->audio.frame_size * track->audio.sub_packet_h);
             if (codec_id == CODEC_ID_RA_288) {
                 st->codec->block_align = track->audio.coded_framesize;
@@ -1889,7 +1889,7 @@ static int matroska_read_seek(AVFormatContext *s, int stream_index,
     timestamp = FFMAX(timestamp, st->index_entries[0].timestamp);
 
     if ((index = av_index_search_timestamp(st, timestamp, flags)) < 0) {
-        url_fseek(s->pb, st->index_entries[st->nb_index_entries-1].pos, SEEK_SET);
+        avio_seek(s->pb, st->index_entries[st->nb_index_entries-1].pos, SEEK_SET);
         while ((index = av_index_search_timestamp(st, timestamp, flags)) < 0) {
             matroska_clear_queue(matroska);
             if (matroska_parse_cluster(matroska) < 0)
@@ -1914,7 +1914,7 @@ static int matroska_read_seek(AVFormatContext *s, int stream_index,
         }
     }
 
-    url_fseek(s->pb, st->index_entries[index_min].pos, SEEK_SET);
+    avio_seek(s->pb, st->index_entries[index_min].pos, SEEK_SET);
     matroska->skip_to_keyframe = !(flags & AVSEEK_FLAG_ANY);
     matroska->skip_to_timecode = st->index_entries[index].timestamp;
     matroska->done = 0;

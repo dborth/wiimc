@@ -96,7 +96,7 @@ static int flic_read_header(AVFormatContext *s,
     flic->frame_number = 0;
 
     /* load the whole header and pull out the width and height */
-    if (get_buffer(pb, header, FLIC_HEADER_SIZE) != FLIC_HEADER_SIZE)
+    if (avio_read(pb, header, FLIC_HEADER_SIZE) != FLIC_HEADER_SIZE)
         return AVERROR(EIO);
 
     magic_number = AV_RL16(&header[4]);
@@ -130,12 +130,12 @@ static int flic_read_header(AVFormatContext *s,
     memcpy(st->codec->extradata, header, FLIC_HEADER_SIZE);
 
     /* peek at the preamble to detect TFTD videos - they seem to always start with an audio chunk */
-    if (get_buffer(pb, preamble, FLIC_PREAMBLE_SIZE) != FLIC_PREAMBLE_SIZE) {
+    if (avio_read(pb, preamble, FLIC_PREAMBLE_SIZE) != FLIC_PREAMBLE_SIZE) {
         av_log(s, AV_LOG_ERROR, "Failed to peek at preamble\n");
         return AVERROR(EIO);
     }
 
-    url_fseek(pb, -FLIC_PREAMBLE_SIZE, SEEK_CUR);
+    avio_seek(pb, -FLIC_PREAMBLE_SIZE, SEEK_CUR);
 
     /* Time to figure out the framerate:
      * If the first preamble's magic number is 0xAAAA then this file is from
@@ -173,7 +173,7 @@ static int flic_read_header(AVFormatContext *s,
         av_set_pts_info(st, 64, FLIC_MC_SPEED, 70);
 
         /* rewind the stream since the first chunk is at offset 12 */
-        url_fseek(pb, 12, SEEK_SET);
+        avio_seek(pb, 12, SEEK_SET);
 
         /* send over abbreviated FLIC header chunk */
         av_free(st->codec->extradata);
@@ -207,7 +207,7 @@ static int flic_read_packet(AVFormatContext *s,
 
     while (!packet_read) {
 
-        if ((ret = get_buffer(pb, preamble, FLIC_PREAMBLE_SIZE)) !=
+        if ((ret = avio_read(pb, preamble, FLIC_PREAMBLE_SIZE)) !=
             FLIC_PREAMBLE_SIZE) {
             ret = AVERROR(EIO);
             break;
@@ -225,7 +225,7 @@ static int flic_read_packet(AVFormatContext *s,
             pkt->pts = flic->frame_number++;
             pkt->pos = url_ftell(pb);
             memcpy(pkt->data, preamble, FLIC_PREAMBLE_SIZE);
-            ret = get_buffer(pb, pkt->data + FLIC_PREAMBLE_SIZE,
+            ret = avio_read(pb, pkt->data + FLIC_PREAMBLE_SIZE,
                 size - FLIC_PREAMBLE_SIZE);
             if (ret != size - FLIC_PREAMBLE_SIZE) {
                 av_free_packet(pkt);
@@ -239,11 +239,11 @@ static int flic_read_packet(AVFormatContext *s,
             }
 
             /* skip useless 10B sub-header (yes, it's not accounted for in the chunk header) */
-            url_fseek(pb, 10, SEEK_CUR);
+            avio_seek(pb, 10, SEEK_CUR);
 
             pkt->stream_index = flic->audio_stream_index;
             pkt->pos = url_ftell(pb);
-            ret = get_buffer(pb, pkt->data, size);
+            ret = avio_read(pb, pkt->data, size);
 
             if (ret != size) {
                 av_free_packet(pkt);
@@ -253,7 +253,7 @@ static int flic_read_packet(AVFormatContext *s,
             packet_read = 1;
         } else {
             /* not interested in this chunk */
-            url_fseek(pb, size - 6, SEEK_CUR);
+            avio_seek(pb, size - 6, SEEK_CUR);
         }
     }
 

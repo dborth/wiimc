@@ -112,6 +112,7 @@
 #include "mp_core.h"
 #include "mp_fifo.h"
 #include "mp_msg.h"
+#include "mp_strings.h"
 #include "mpcommon.h"
 #include "mplayer.h"
 #include "osdep/getch2.h"
@@ -500,7 +501,6 @@ static char *get_demuxer_info (char *tag) {
 }
 
 char *get_metadata (metadata_t type) {
-  char meta[128];
   sh_audio_t * const sh_audio = mpctx->sh_audio;
   sh_video_t * const sh_video = mpctx->sh_video;
 
@@ -522,18 +522,14 @@ char *get_metadata (metadata_t type) {
     else if (sh_video->format == 0x10000005)
       return strdup("h264");
     else if (sh_video->format >= 0x20202020)
-      snprintf(meta, sizeof(meta), "%.4s", (char *) &sh_video->format);
-    else
-      snprintf(meta, sizeof(meta), "0x%08X", sh_video->format);
-    return strdup(meta);
+      return mp_asprintf("%.4s", (char *)&sh_video->format);
+    return mp_asprintf("0x%08X", sh_video->format);
 
   case META_VIDEO_BITRATE:
-    snprintf(meta, sizeof(meta), "%d kbps", (int) (sh_video->i_bps * 8 / 1024));
-    return strdup(meta);
+    return mp_asprintf("%d kbps", (int)(sh_video->i_bps * 8 / 1024));
 
   case META_VIDEO_RESOLUTION:
-    snprintf(meta, sizeof(meta), "%d x %d", sh_video->disp_w, sh_video->disp_h);
-    return strdup(meta);
+    return mp_asprintf("%d x %d", sh_video->disp_w, sh_video->disp_h);
 
   case META_AUDIO_CODEC:
     if (sh_audio->codec && sh_audio->codec->name)
@@ -541,12 +537,10 @@ char *get_metadata (metadata_t type) {
     break;
 
   case META_AUDIO_BITRATE:
-    snprintf(meta, sizeof(meta), "%d kbps", (int)(sh_audio->i_bps * 8 / 1000));
-    return strdup(meta);
+    return mp_asprintf("%d kbps", (int)(sh_audio->i_bps * 8 / 1000));
 
   case META_AUDIO_SAMPLES:
-    snprintf(meta, sizeof(meta), "%d Hz, %d ch.", sh_audio->samplerate, sh_audio->channels);
-    return strdup(meta);
+    return mp_asprintf("%d Hz, %d ch.", sh_audio->samplerate, sh_audio->channels);
 
   /* check for valid demuxer */
   case META_INFO_TITLE:
@@ -1790,31 +1784,7 @@ static double written_audio_pts(sh_audio_t *sh_audio, demux_stream_t *d_audio)
 {
     double buffered_output;
     // first calculate the end pts of audio that has been output by decoder
-    double a_pts = sh_audio->pts;
-    if (a_pts != MP_NOPTS_VALUE)
-	// Good, decoder supports new way of calculating audio pts.
-	// sh_audio->pts is the timestamp of the latest input packet with
-	// known pts that the decoder has decoded. sh_audio->pts_bytes is
-	// the amount of bytes the decoder has written after that timestamp.
-	a_pts += sh_audio->pts_bytes / (double) sh_audio->o_bps;
-    else {
-	// Decoder doesn't support new way of calculating pts (or we're
-	// being called before it has decoded anything with known timestamp).
-	// Use the old method of audio pts calculation: take the timestamp
-	// of last packet with known pts the decoder has read data from,
-	// and add amount of bytes read after the beginning of that packet
-	// divided by input bps. This will be inaccurate if the input/output
-	// ratio is not constant for every audio packet or if it is constant
-	// but not accurately known in sh_audio->i_bps.
-
-	a_pts = d_audio->pts;
-	// ds_tell_pts returns bytes read after last timestamp from
-	// demuxing layer, decoder might use sh_audio->a_in_buffer for bytes
-	// it has read but not decoded
-	if (sh_audio->i_bps)
-	    a_pts += (ds_tell_pts(d_audio) - sh_audio->a_in_buffer_len) /
-		(double)sh_audio->i_bps;
-    }
+    double a_pts = calc_a_pts(sh_audio, d_audio);
     // Now a_pts hopefully holds the pts for end of audio from decoder.
     // Substract data in buffers between decoder and audio out.
 

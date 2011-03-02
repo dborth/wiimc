@@ -370,8 +370,7 @@ attribute_deprecated int init_put_byte(AVIOContext *s,
                   int (*read_packet)(void *opaque, uint8_t *buf, int buf_size),
                   int (*write_packet)(void *opaque, uint8_t *buf, int buf_size),
                   int64_t (*seek)(void *opaque, int64_t offset, int whence));
-#endif
-AVIOContext *av_alloc_put_byte(
+attribute_deprecated AVIOContext *av_alloc_put_byte(
                   unsigned char *buffer,
                   int buffer_size,
                   int write_flag,
@@ -380,18 +379,73 @@ AVIOContext *av_alloc_put_byte(
                   int (*write_packet)(void *opaque, uint8_t *buf, int buf_size),
                   int64_t (*seek)(void *opaque, int64_t offset, int whence));
 
-void put_byte(AVIOContext *s, int b);
-void put_nbyte(AVIOContext *s, int b, int count);
-void put_buffer(AVIOContext *s, const unsigned char *buf, int size);
-void put_le64(AVIOContext *s, uint64_t val);
-void put_be64(AVIOContext *s, uint64_t val);
-void put_le32(AVIOContext *s, unsigned int val);
-void put_be32(AVIOContext *s, unsigned int val);
-void put_le24(AVIOContext *s, unsigned int val);
-void put_be24(AVIOContext *s, unsigned int val);
-void put_le16(AVIOContext *s, unsigned int val);
-void put_be16(AVIOContext *s, unsigned int val);
-void put_tag(AVIOContext *s, const char *tag);
+/**
+ * @defgroup old_avio_funcs Old put_/get_*() functions
+ * @deprecated use the avio_ -prefixed functions instead.
+ * @{
+ */
+attribute_deprecated int          get_buffer(AVIOContext *s, unsigned char *buf, int size);
+attribute_deprecated int          get_partial_buffer(AVIOContext *s, unsigned char *buf, int size);
+attribute_deprecated int          get_byte(AVIOContext *s);
+attribute_deprecated unsigned int get_le16(AVIOContext *s);
+attribute_deprecated unsigned int get_le24(AVIOContext *s);
+attribute_deprecated unsigned int get_le32(AVIOContext *s);
+attribute_deprecated uint64_t     get_le64(AVIOContext *s);
+attribute_deprecated unsigned int get_be16(AVIOContext *s);
+attribute_deprecated unsigned int get_be24(AVIOContext *s);
+attribute_deprecated unsigned int get_be32(AVIOContext *s);
+attribute_deprecated uint64_t     get_be64(AVIOContext *s);
+
+attribute_deprecated void         put_byte(AVIOContext *s, int b);
+attribute_deprecated void         put_nbyte(AVIOContext *s, int b, int count);
+attribute_deprecated void         put_buffer(AVIOContext *s, const unsigned char *buf, int size);
+attribute_deprecated void         put_le64(AVIOContext *s, uint64_t val);
+attribute_deprecated void         put_be64(AVIOContext *s, uint64_t val);
+attribute_deprecated void         put_le32(AVIOContext *s, unsigned int val);
+attribute_deprecated void         put_be32(AVIOContext *s, unsigned int val);
+attribute_deprecated void         put_le24(AVIOContext *s, unsigned int val);
+attribute_deprecated void         put_be24(AVIOContext *s, unsigned int val);
+attribute_deprecated void         put_le16(AVIOContext *s, unsigned int val);
+attribute_deprecated void         put_be16(AVIOContext *s, unsigned int val);
+attribute_deprecated void         put_tag(AVIOContext *s, const char *tag);
+/**
+ * @}
+ */
+
+
+/**
+ * @defgroup old_url_f_funcs Old url_f* functions
+ * @deprecated use the avio_ -prefixed functions instead.
+ * @{
+ */
+attribute_deprecated int url_fopen( AVIOContext **s, const char *url, int flags);
+attribute_deprecated int url_fclose(AVIOContext *s);
+attribute_deprecated int64_t url_fseek(AVIOContext *s, int64_t offset, int whence);
+attribute_deprecated int url_fskip(AVIOContext *s, int64_t offset);
+/**
+ * @}
+ */
+#endif
+
+AVIOContext *avio_alloc_context(
+                  unsigned char *buffer,
+                  int buffer_size,
+                  int write_flag,
+                  void *opaque,
+                  int (*read_packet)(void *opaque, uint8_t *buf, int buf_size),
+                  int (*write_packet)(void *opaque, uint8_t *buf, int buf_size),
+                  int64_t (*seek)(void *opaque, int64_t offset, int whence));
+
+void avio_w8(AVIOContext *s, int b);
+void avio_write(AVIOContext *s, const unsigned char *buf, int size);
+void avio_wl64(AVIOContext *s, uint64_t val);
+void avio_wb64(AVIOContext *s, uint64_t val);
+void avio_wl32(AVIOContext *s, unsigned int val);
+void avio_wb32(AVIOContext *s, unsigned int val);
+void avio_wl24(AVIOContext *s, unsigned int val);
+void avio_wb24(AVIOContext *s, unsigned int val);
+void avio_wl16(AVIOContext *s, unsigned int val);
+void avio_wb16(AVIOContext *s, unsigned int val);
 
 #if FF_API_OLD_AVIO
 attribute_deprecated void put_strz(AVIOContext *s, const char *buf);
@@ -413,14 +467,7 @@ int avio_put_str16le(AVIOContext *s, const char *str);
  * fseek() equivalent for AVIOContext.
  * @return new position or AVERROR.
  */
-int64_t url_fseek(AVIOContext *s, int64_t offset, int whence);
-
-/**
- * Skip given number of bytes forward.
- * @param offset number of bytes
- * @return 0 on success, <0 on error
- */
-int url_fskip(AVIOContext *s, int64_t offset);
+int64_t avio_seek(AVIOContext *s, int64_t offset, int whence);
 
 /**
  * ftell() equivalent for AVIOContext.
@@ -468,23 +515,15 @@ void put_flush_packet(AVIOContext *s);
  * Read size bytes from AVIOContext into buf.
  * @return number of bytes read or AVERROR
  */
-int get_buffer(AVIOContext *s, unsigned char *buf, int size);
-
-/**
- * Read size bytes from AVIOContext into buf.
- * This reads at most 1 packet. If that is not enough fewer bytes will be
- * returned.
- * @return number of bytes read or AVERROR
- */
-int get_partial_buffer(AVIOContext *s, unsigned char *buf, int size);
+int avio_read(AVIOContext *s, unsigned char *buf, int size);
 
 /** @note return 0 if EOF, so you cannot use it if EOF handling is
     necessary */
-int get_byte(AVIOContext *s);
-unsigned int get_le24(AVIOContext *s);
-unsigned int get_le32(AVIOContext *s);
-uint64_t get_le64(AVIOContext *s);
-unsigned int get_le16(AVIOContext *s);
+int          avio_r8  (AVIOContext *s);
+unsigned int avio_rl16(AVIOContext *s);
+unsigned int avio_rl24(AVIOContext *s);
+unsigned int avio_rl32(AVIOContext *s);
+uint64_t     avio_rl64(AVIOContext *s);
 
 /**
  * Read a UTF-16 string from pb and convert it to UTF-8.
@@ -496,10 +535,10 @@ int avio_get_str16le(AVIOContext *pb, int maxlen, char *buf, int buflen);
 int avio_get_str16be(AVIOContext *pb, int maxlen, char *buf, int buflen);
 
 char *get_strz(AVIOContext *s, char *buf, int maxlen);
-unsigned int get_be16(AVIOContext *s);
-unsigned int get_be24(AVIOContext *s);
-unsigned int get_be32(AVIOContext *s);
-uint64_t get_be64(AVIOContext *s);
+unsigned int avio_rb16(AVIOContext *s);
+unsigned int avio_rb24(AVIOContext *s);
+unsigned int avio_rb32(AVIOContext *s);
+uint64_t     avio_rb64(AVIOContext *s);
 
 uint64_t ff_get_v(AVIOContext *bc);
 
@@ -559,9 +598,9 @@ int ff_rewind_with_probe_data(AVIOContext *s, unsigned char *buf, int buf_size);
  * @return 0 in case of success, a negative value corresponding to an
  * AVERROR code in case of failure
  */
-int url_fopen(AVIOContext **s, const char *url, int flags);
+int avio_open(AVIOContext **s, const char *url, int flags);
 
-int url_fclose(AVIOContext *s);
+int avio_close(AVIOContext *s);
 URLContext *url_fileno(AVIOContext *s);
 
 /**

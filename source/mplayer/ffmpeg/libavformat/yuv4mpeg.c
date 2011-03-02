@@ -108,21 +108,21 @@ static int yuv4_write_packet(AVFormatContext *s, AVPacket *pkt)
             av_log(s, AV_LOG_ERROR, "Error. YUV4MPEG stream header write failed.\n");
             return AVERROR(EIO);
         } else {
-            put_buffer(pb, buf2, strlen(buf2));
+            avio_write(pb, buf2, strlen(buf2));
         }
     }
 
     /* construct frame header */
 
     m = snprintf(buf1, sizeof(buf1), "%s\n", Y4M_FRAME_MAGIC);
-    put_buffer(pb, buf1, strlen(buf1));
+    avio_write(pb, buf1, strlen(buf1));
 
     width = st->codec->width;
     height = st->codec->height;
 
     ptr = picture->data[0];
     for(i=0;i<height;i++) {
-        put_buffer(pb, ptr, width);
+        avio_write(pb, ptr, width);
         ptr += picture->linesize[0];
     }
 
@@ -135,11 +135,11 @@ static int yuv4_write_packet(AVFormatContext *s, AVPacket *pkt)
     ptr1 = picture->data[1];
     ptr2 = picture->data[2];
     for(i=0;i<height;i++) {     /* Cb */
-        put_buffer(pb, ptr1, width);
+        avio_write(pb, ptr1, width);
         ptr1 += picture->linesize[1];
     }
     for(i=0;i<height;i++) {     /* Cr */
-        put_buffer(pb, ptr2, width);
+        avio_write(pb, ptr2, width);
             ptr2 += picture->linesize[2];
     }
     }
@@ -200,7 +200,7 @@ static int yuv4_read_header(AVFormatContext *s, AVFormatParameters *ap)
     struct frame_attributes *s1 = s->priv_data;
 
     for (i=0; i<MAX_YUV4_HEADER; i++) {
-        header[i] = get_byte(pb);
+        header[i] = avio_r8(pb);
         if (header[i] == '\n') {
             header[i+1] = 0x20;  // Add a space after last option. Makes parsing "444" vs "444alpha" easier.
             header[i+2] = 0;
@@ -352,7 +352,7 @@ static int yuv4_read_packet(AVFormatContext *s, AVPacket *pkt)
     struct frame_attributes *s1 = s->priv_data;
 
     for (i=0; i<MAX_FRAME_HEADER; i++) {
-        header[i] = get_byte(s->pb);
+        header[i] = avio_r8(s->pb);
         if (header[i] == '\n') {
             header[i+1] = 0;
             break;

@@ -860,24 +860,24 @@ static int mp4_read_iods(AVFormatContext *s, const uint8_t *buf, unsigned size,
 
     len = ff_mp4_read_descr(s, &pb, &tag);
     if (tag == MP4IODescrTag) {
-        get_be16(&pb); // ID
-        get_byte(&pb);
-        get_byte(&pb);
-        get_byte(&pb);
-        get_byte(&pb);
-        get_byte(&pb);
+        avio_rb16(&pb); // ID
+        avio_r8(&pb);
+        avio_r8(&pb);
+        avio_r8(&pb);
+        avio_r8(&pb);
+        avio_r8(&pb);
         len = ff_mp4_read_descr(s, &pb, &tag);
         if (tag == MP4ESDescrTag) {
-            *es_id = get_be16(&pb); /* ES_ID */
+            *es_id = avio_rb16(&pb); /* ES_ID */
             av_dlog(s, "ES_ID %#x\n", *es_id);
-            get_byte(&pb); /* priority */
+            avio_r8(&pb); /* priority */
             len = ff_mp4_read_descr(s, &pb, &tag);
             if (tag == MP4DecConfigDescrTag) {
                 *dec_config_descr = av_malloc(len);
                 if (!*dec_config_descr)
                     return AVERROR(ENOMEM);
                 *dec_config_descr_size = len;
-                get_buffer(&pb, *dec_config_descr, len);
+                avio_read(&pb, *dec_config_descr, len);
             }
         }
     }
@@ -1316,7 +1316,7 @@ static int mpegts_resync(AVFormatContext *s)
         if (c < 0)
             return -1;
         if (c == 0x47) {
-            url_fseek(pb, -1, SEEK_CUR);
+            avio_seek(pb, -1, SEEK_CUR);
             return 0;
         }
     }
@@ -1332,13 +1332,13 @@ static int read_packet(AVFormatContext *s, uint8_t *buf, int raw_packet_size)
     int skip, len;
 
     for(;;) {
-        len = get_buffer(pb, buf, TS_PACKET_SIZE);
+        len = avio_read(pb, buf, TS_PACKET_SIZE);
         if (len != TS_PACKET_SIZE)
             return AVERROR(EIO);
         /* check paquet sync byte */
         if (buf[0] != 0x47) {
             /* find a new packet start */
-            url_fseek(pb, -TS_PACKET_SIZE, SEEK_CUR);
+            avio_seek(pb, -TS_PACKET_SIZE, SEEK_CUR);
             if (mpegts_resync(s) < 0)
                 return AVERROR(EAGAIN);
             else
@@ -1346,7 +1346,7 @@ static int read_packet(AVFormatContext *s, uint8_t *buf, int raw_packet_size)
         } else {
             skip = raw_packet_size - TS_PACKET_SIZE;
             if (skip > 0)
-                url_fskip(pb, skip);
+                avio_seek(pb, skip, SEEK_CUR);
             break;
         }
     }
@@ -1455,7 +1455,7 @@ static int mpegts_read_header(AVFormatContext *s,
 
     /* read the first 1024 bytes to get packet size */
     pos = url_ftell(pb);
-    len = get_buffer(pb, buf, sizeof(buf));
+    len = avio_read(pb, buf, sizeof(buf));
     if (len != sizeof(buf))
         goto fail;
     ts->raw_packet_size = get_packet_size(buf, sizeof(buf));
@@ -1468,7 +1468,7 @@ static int mpegts_read_header(AVFormatContext *s,
         /* normal demux */
 
         /* first do a scaning to get all the services */
-        if (url_fseek(pb, pos, SEEK_SET) < 0)
+        if (avio_seek(pb, pos, SEEK_SET) < 0)
             av_log(s, AV_LOG_ERROR, "Unable to seek back to the start\n");
 
         mpegts_open_section_filter(ts, SDT_PID, sdt_cb, ts, 1);
@@ -1533,7 +1533,7 @@ static int mpegts_read_header(AVFormatContext *s,
 #endif
     }
 
-    url_fseek(pb, pos, SEEK_SET);
+    avio_seek(pb, pos, SEEK_SET);
     return 0;
  fail:
     return -1;
@@ -1564,8 +1564,8 @@ static int mpegts_raw_read_packet(AVFormatContext *s,
             /* we read the next PCR (XXX: optimize it by using a bigger buffer */
             pos = url_ftell(s->pb);
             for(i = 0; i < MAX_PACKET_READAHEAD; i++) {
-                url_fseek(s->pb, pos + i * ts->raw_packet_size, SEEK_SET);
-                get_buffer(s->pb, pcr_buf, 12);
+                avio_seek(s->pb, pos + i * ts->raw_packet_size, SEEK_SET);
+                avio_read(s->pb, pcr_buf, 12);
                 if (parse_pcr(&next_pcr_h, &next_pcr_l, pcr_buf) == 0) {
                     /* XXX: not precise enough */
                     ts->pcr_incr = ((next_pcr_h - pcr_h) * 300 + (next_pcr_l - pcr_l)) /
@@ -1573,7 +1573,7 @@ static int mpegts_raw_read_packet(AVFormatContext *s,
                     break;
                 }
             }
-            url_fseek(s->pb, pos, SEEK_SET);
+            avio_seek(s->pb, pos, SEEK_SET);
             /* no next PCR found: we use previous increment */
             ts->cur_pcr = pcr_h * 300 + pcr_l;
         }
@@ -1649,8 +1649,8 @@ static int64_t mpegts_get_pcr(AVFormatContext *s, int stream_index,
     pos = ((*ppos  + ts->raw_packet_size - 1 - ts->pos47) / ts->raw_packet_size) * ts->raw_packet_size + ts->pos47;
     if (find_next) {
         for(;;) {
-            url_fseek(s->pb, pos, SEEK_SET);
-            if (get_buffer(s->pb, buf, TS_PACKET_SIZE) != TS_PACKET_SIZE)
+            avio_seek(s->pb, pos, SEEK_SET);
+            if (avio_read(s->pb, buf, TS_PACKET_SIZE) != TS_PACKET_SIZE)
                 return AV_NOPTS_VALUE;
             if ((pcr_pid < 0 || (AV_RB16(buf + 1) & 0x1fff) == pcr_pid) &&
                 parse_pcr(&timestamp, &pcr_l, buf) == 0) {
@@ -1663,8 +1663,8 @@ static int64_t mpegts_get_pcr(AVFormatContext *s, int stream_index,
             pos -= ts->raw_packet_size;
             if (pos < 0)
                 return AV_NOPTS_VALUE;
-            url_fseek(s->pb, pos, SEEK_SET);
-            if (get_buffer(s->pb, buf, TS_PACKET_SIZE) != TS_PACKET_SIZE)
+            avio_seek(s->pb, pos, SEEK_SET);
+            if (avio_read(s->pb, buf, TS_PACKET_SIZE) != TS_PACKET_SIZE)
                 return AV_NOPTS_VALUE;
             if ((pcr_pid < 0 || (AV_RB16(buf + 1) & 0x1fff) == pcr_pid) &&
                 parse_pcr(&timestamp, &pcr_l, buf) == 0) {
@@ -1774,14 +1774,14 @@ static int read_seek(AVFormatContext *s, int stream_index, int64_t target_ts, in
     pos= url_ftell(s->pb);
 
     for(;;) {
-        url_fseek(s->pb, pos, SEEK_SET);
-        if (get_buffer(s->pb, buf, TS_PACKET_SIZE) != TS_PACKET_SIZE)
+        avio_seek(s->pb, pos, SEEK_SET);
+        if (avio_read(s->pb, buf, TS_PACKET_SIZE) != TS_PACKET_SIZE)
             return -1;
 //        pid = AV_RB16(buf + 1) & 0x1fff;
         if(buf[1] & 0x40) break;
         pos += ts->raw_packet_size;
     }
-    url_fseek(s->pb, pos, SEEK_SET);
+    avio_seek(s->pb, pos, SEEK_SET);
 
     return 0;
 }

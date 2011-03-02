@@ -32,4 +32,16 @@ int ffio_init_context(AVIOContext *s,
                   int64_t (*seek)(void *opaque, int64_t offset, int whence));
 
 
+/**
+ * Read size bytes from AVIOContext into buf.
+ * This reads at most 1 packet. If that is not enough fewer bytes will be
+ * returned.
+ * @return number of bytes read or AVERROR
+ */
+int ffio_read_partial(AVIOContext *s, unsigned char *buf, int size);
+
+void ffio_fill(AVIOContext *s, int b, int count);
+
+#define ffio_wfourcc(pb, str) avio_wl32(pb, MKTAG((str)[0], (str)[1], (str)[2], (str)[3]))
+
 #endif // AVFORMAT_AVIO_INTERNAL_H

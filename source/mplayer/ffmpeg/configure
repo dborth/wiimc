@@ -86,7 +86,6 @@ Configuration options:
   --disable-ffserver       disable ffserver build
   --disable-avdevice       disable libavdevice build
   --disable-avcodec        disable libavcodec build
-  --disable-avcore         disable libavcore build
   --disable-avformat       disable libavformat build
   --disable-swscale        disable libswscale build
   --enable-postproc        enable GPLed postprocessing support [no]
@@ -223,6 +222,7 @@ Advanced options (experts only):
   --disable-mmx2           disable MMX2 optimizations
   --disable-sse            disable SSE optimizations
   --disable-ssse3          disable SSSE3 optimizations
+  --disable-avx            disable AVX optimizations
   --disable-armv5te        disable armv5te optimizations
   --disable-armv6          disable armv6 optimizations
   --disable-armv6t2        disable armv6t2 optimizations
@@ -243,7 +243,8 @@ Developer options (useful when working on FFmpeg itself):
   --disable-optimizations  disable compiler optimizations
   --enable-extra-warnings  enable more compiler warnings
   --disable-stripping      disable stripping of executables and shared libraries
-  --samples=PATH           location of test samples for FATE
+  --samples=PATH           location of test samples for FATE, if not set use
+                           \$FATE_SAMPLES at make invocation time.
 
 NOTE: Object files are built at the place where configure is launched.
 EOF
@@ -311,6 +312,10 @@ sh_quote(){
     v=$(echo "$1" | sed "s/'/'\\\\''/g")
     test "x$v" = "x${v#*[!A-Za-z0-9_/.+-]}" || v="'$v'"
     echo "$v"
+}
+
+cleanws(){
+    echo "$@" | sed 's/^ *//;s/  */ /g;s/ *$//'
 }
 
 filter(){
@@ -867,7 +872,6 @@ CONFIG_LIST="
     $COMPONENT_LIST
     aandct
     avcodec
-    avcore
     avdevice
     avfilter
     avformat
@@ -973,6 +977,7 @@ ARCH_EXT_LIST='
     armv6
     armv6t2
     armvfp
+    avx
     iwmmxt
     mmi
     mmx
@@ -1181,6 +1186,7 @@ mmx_deps="x86"
 mmx2_deps="mmx"
 sse_deps="mmx"
 ssse3_deps="sse"
+avx_deps="ssse3"
 
 aligned_stack_if_any="ppc x86"
 fast_64bit_if_any="alpha ia64 mips64 parisc64 ppc64 sparc64 x86_64"
@@ -1585,7 +1591,6 @@ host_os=$target_os_default
 
 # configurable options
 enable avcodec
-enable avcore
 enable avdevice
 enable avfilter
 enable avformat
@@ -1861,8 +1866,11 @@ if   $cc -v 2>&1 | grep -q '^gcc.*LLVM'; then
 elif $cc -v 2>&1 | grep -qi ^gcc; then
     cc_type=gcc
     cc_version=__VERSION__
-    gcc_extra_ver=$(expr "$($cc --version | head -n1)" : '.*\((.*)\)')
-    cc_ident="gcc $($cc -dumpversion) $gcc_extra_ver"
+    gcc_version=$($cc --version | head -n1)
+    gcc_basever=$($cc -dumpversion)
+    gcc_pkg_ver=$(expr "$gcc_version" : '[^ ]* \(([^)]*)\)')
+    gcc_ext_ver=$(expr "$gcc_version" : ".*$gcc_pkg_ver $gcc_basever \\(.*\\)")
+    cc_ident=$(cleanws "gcc $gcc_basever $gcc_pkg_ver $gcc_ext_ver")
     if ! $cc -dumpversion | grep -q '^2\.'; then
         CC_DEPFLAGS='-MMD -MF $(@:.o=.d) -MT $@'
         AS_DEPFLAGS='-MMD -MF $(@:.o=.d) -MT $@'
@@ -2038,17 +2046,13 @@ add_asflags $extra_cflags
 
 if test -n "$sysroot"; then
     case "$cc_type" in
-        gcc|llvm_gcc)
+        gcc|llvm_gcc|clang)
             add_cppflags --sysroot="$sysroot"
             add_ldflags --sysroot="$sysroot"
         ;;
         tms470)
             add_cppflags -I"$sysinclude"
             add_ldflags  --sysroot="$sysroot"
-        ;;
-        clang)
-            add_cppflags -isysroot "$sysroot"
-            add_ldflags -isysroot "$sysroot"
         ;;
     esac
 fi
@@ -2305,6 +2309,7 @@ case $target_os in
     haiku)
         prefix_default="/boot/common"
         network_extralibs="-lnetwork"
+        host_libs=
         ;;
     sunos)
         FFSERVERLDFLAGS=""
@@ -2420,7 +2425,7 @@ case $target_os in
         ranlib="echo ignoring ranlib"
         ;;
     os/2*)
-        strip="lxlite"
+        strip="lxlite -CS"
         ln_s="cp -f"
         add_ldflags -Zomf -Zbin-files -Zargs-wild -Zmap
         SHFLAGS='$(SUBDIR)$(NAME).def -Zdll -Zomf'
@@ -2492,8 +2497,6 @@ die_license_disabled version3 libopencore_amrnb
 die_license_disabled version3 libopencore_amrwb
 
 enabled version3 && { enabled gpl && enable gplv3 || enable lgplv3; }
-
-check_deps $ARCH_EXT_LIST
 
 disabled optimizations || check_cflags -fomit-frame-pointer
 
@@ -2673,6 +2676,7 @@ EOF
 
         check_yasm "pextrd [eax], xmm0, 1" && enable yasm ||
             die "yasm not found, use --disable-yasm for a crippled build"
+        check_yasm "vpaddw xmm0, xmm0, xmm0" || disable avx
     fi
 
     case "$cpu" in
@@ -2927,7 +2931,7 @@ enabled extra_warnings && check_cflags -Winline
 # add some linker flags
 check_ldflags -Wl,--warn-common
 check_ldflags -Wl,--as-needed
-check_ldflags '-Wl,-rpath-link,\$(BUILD_ROOT)/libpostproc -Wl,-rpath-link,\$(BUILD_ROOT)/libswscale -Wl,-rpath-link,\$(BUILD_ROOT)/libavfilter -Wl,-rpath-link,\$(BUILD_ROOT)/libavdevice -Wl,-rpath-link,\$(BUILD_ROOT)/libavformat -Wl,-rpath-link,\$(BUILD_ROOT)/libavcodec -Wl,-rpath-link,\$(BUILD_ROOT)/libavcore -Wl,-rpath-link,\$(BUILD_ROOT)/libavutil'
+check_ldflags '-Wl,-rpath-link,\$(BUILD_ROOT)/libpostproc -Wl,-rpath-link,\$(BUILD_ROOT)/libswscale -Wl,-rpath-link,\$(BUILD_ROOT)/libavfilter -Wl,-rpath-link,\$(BUILD_ROOT)/libavdevice -Wl,-rpath-link,\$(BUILD_ROOT)/libavformat -Wl,-rpath-link,\$(BUILD_ROOT)/libavcodec -Wl,-rpath-link,\$(BUILD_ROOT)/libavutil'
 test_ldflags -Wl,-Bsymbolic && append SHFLAGS -Wl,-Bsymbolic
 
 echo "X{};" > $TMPV
@@ -3137,7 +3141,6 @@ if enabled source_path_used; then
         doc
         libavcodec
         libavcodec/$arch
-        libavcore
         libavdevice
         libavfilter
         libavfilter/$arch
@@ -3157,7 +3160,6 @@ if enabled source_path_used; then
         doc/texi2pod.pl
         libavcodec/Makefile
         libavcodec/${arch}/Makefile
-        libavcore/Makefile
         libavdevice/Makefile
         libavfilter/Makefile
         libavfilter/${arch}/Makefile
@@ -3244,7 +3246,7 @@ SLIB_CREATE_DEF_CMD=${SLIB_CREATE_DEF_CMD}
 SLIB_EXTRA_CMD=${SLIB_EXTRA_CMD}
 SLIB_INSTALL_EXTRA_CMD=${SLIB_INSTALL_EXTRA_CMD}
 SLIB_UNINSTALL_EXTRA_CMD=${SLIB_UNINSTALL_EXTRA_CMD}
-SAMPLES=$samples
+SAMPLES=${samples:-\$(FATE_SAMPLES)}
 EOF
 
 get_version(){
@@ -3260,7 +3262,6 @@ get_version(){
 get_version LIBSWSCALE  libswscale/swscale.h
 get_version LIBPOSTPROC libpostproc/postprocess.h
 get_version LIBAVCODEC  libavcodec/avcodec.h
-get_version LIBAVCORE   libavcore/avcore.h
 get_version LIBAVDEVICE libavdevice/avdevice.h
 get_version LIBAVFORMAT libavformat/version.h
 get_version LIBAVUTIL   libavutil/avutil.h
@@ -3388,10 +3389,9 @@ EOF
 }
 
 pkgconfig_generate libavutil "FFmpeg utility library" "$LIBAVUTIL_VERSION"
-pkgconfig_generate libavcore "FFmpeg multimedia shared core utilities library" "$LIBAVCORE_VERSION" "" "libavutil = $LIBAVUTIL_VERSION"
-pkgconfig_generate libavcodec "FFmpeg codec library" "$LIBAVCODEC_VERSION" "$extralibs" "libavcore = $LIBAVCORE_VERSION"
+pkgconfig_generate libavcodec "FFmpeg codec library" "$LIBAVCODEC_VERSION" "$extralibs"
 pkgconfig_generate libavformat "FFmpeg container format library" "$LIBAVFORMAT_VERSION" "$extralibs" "libavcodec = $LIBAVCODEC_VERSION"
 pkgconfig_generate libavdevice "FFmpeg device handling library" "$LIBAVDEVICE_VERSION" "$extralibs" "libavformat = $LIBAVFORMAT_VERSION"
-pkgconfig_generate libavfilter "FFmpeg video filtering library" "$LIBAVFILTER_VERSION" "$extralibs" "libavcore = $LIBAVCORE_VERSION"
+pkgconfig_generate libavfilter "FFmpeg video filtering library" "$LIBAVFILTER_VERSION" "$extralibs"
 pkgconfig_generate libpostproc "FFmpeg post processing library" "$LIBPOSTPROC_VERSION"
 pkgconfig_generate libswscale "FFmpeg image rescaling library" "$LIBSWSCALE_VERSION" "" "libavutil = $LIBAVUTIL_VERSION"

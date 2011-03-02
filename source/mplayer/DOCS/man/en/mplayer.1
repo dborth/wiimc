@@ -1,4 +1,4 @@
-.\" $Revision: 32880 $
+.\" $Revision: 32946 $
 .\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -370,30 +370,6 @@ Pause.
 Stop playing and quit.
 .IPs "PREVIOUS and NEXT"
 Seek backward/\:forward 1 minute.
-.RE
-.PD 1
-.PP
-.RS
-(The following keys are only valid if GUI support is compiled in
-and will take precedence over the keys defined above.)
-.RE
-.PP
-.PD 0
-.RS
-.IPs ENTER
-Start playing.
-.IPs "ESC\ \ "
-Stop playing.
-.IPs "l\ \ \ \ "
-Load file.
-.IPs "t\ \ \ \ "
-Load subtitle.
-.IPs "c\ \ \ \ "
-Open skin browser.
-.IPs "p\ \ \ \ "
-Open playlist.
-.IPs "r\ \ \ \ "
-Open preferences.
 .RE
 .PD 1
 .PP
@@ -11769,8 +11745,16 @@ input bindings (see '\-input keylist' for the full list)
 GUI configuration file
 .
 .TP
+~/.mplayer/\:gui.history
+GUI directory history
+.
+.TP
 ~/.mplayer/\:gui.pl
 GUI playlist
+.
+.TP
+~/.mplayer/\:gui.url
+GUI URL list
 .
 .TP
 ~/.mplayer/\:font/

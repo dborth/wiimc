@@ -198,6 +198,10 @@ void ff_emulated_edge_mc(uint8_t *buf, const uint8_t *src, int linesize,
                          int block_w, int block_h,
                          int src_x, int src_y, int w, int h);
 
+void ff_add_pixels_clamped_c(const DCTELEM *block, uint8_t *dest, int linesize);
+void ff_put_pixels_clamped_c(const DCTELEM *block, uint8_t *dest, int linesize);
+void ff_put_signed_pixels_clamped_c(const DCTELEM *block, uint8_t *dest, int linesize);
+
 /**
  * DSPContext.
  */
@@ -389,9 +393,6 @@ typedef struct DSPContext {
     /* assume len is a multiple of 4, and arrays are 16-byte aligned */
     void (*vector_fmul_window)(float *dst, const float *src0, const float *src1, const float *win, int len);
     /* assume len is a multiple of 8, and arrays are 16-byte aligned */
-#ifdef GEKKO
-    void (*int32_to_float_fmul_scalar)(float *dst, const int *src, float mul, int len);
-#endif
     void (*vector_clipf)(float *dst /* align 16 */, const float *src /* align 16 */, float min, float max, int len /* align 16 */);
     /**
      * Multiply a vector of floats by a scalar float.  Source and
@@ -443,13 +444,6 @@ typedef struct DSPContext {
      * @param len length of vectors, multiple of 4
      */
     void (*butterflies_float)(float *restrict v1, float *restrict v2, int len);
-
-#ifdef GEKKO
-    /* C version: convert floats from the range [384.0,386.0] to ints in [-32768,32767]
-     * simd versions: convert floats from [-32768.0,32767.0] without rescaling and arrays are 16byte aligned */
-    void (*float_to_int16)(int16_t *dst, const float *src, long len);
-    void (*float_to_int16_interleave)(int16_t *dst, const float **src, long len, int channels);
-#endif
 
     /* (I)DCT */
     void (*fdct)(DCTELEM *block/* align 16*/);

@@ -187,39 +187,6 @@ static void vc1_loop_filter_iblk(VC1Context *v, int pq)
     }
 }
 
-/** Put block onto picture
- */
-static void vc1_put_block(VC1Context *v, DCTELEM block[6][64])
-{
-    uint8_t *Y;
-    int ys, us, vs;
-    DSPContext *dsp = &v->s.dsp;
-
-    if(v->rangeredfrm) {
-        int i, j, k;
-        for(k = 0; k < 6; k++)
-            for(j = 0; j < 8; j++)
-                for(i = 0; i < 8; i++)
-                    block[k][i + j*8] = (block[k][i + j*8] - 64) << 1;
-
-    }
-    ys = v->s.current_picture.linesize[0];
-    us = v->s.current_picture.linesize[1];
-    vs = v->s.current_picture.linesize[2];
-    Y = v->s.dest[0];
-
-    dsp->put_pixels_clamped(block[0], Y, ys);
-    dsp->put_pixels_clamped(block[1], Y + 8, ys);
-    Y += ys * 8;
-    dsp->put_pixels_clamped(block[2], Y, ys);
-    dsp->put_pixels_clamped(block[3], Y + 8, ys);
-
-    if(!(v->s.flags & CODEC_FLAG_GRAY)) {
-        dsp->put_pixels_clamped(block[4], v->s.dest[1], us);
-        dsp->put_pixels_clamped(block[5], v->s.dest[2], vs);
-    }
-}
-
 /** Do motion compensation over 1 macroblock
  * Mostly adapted hpel_motion and qpel_motion from mpegvideo.c
  */
@@ -2042,8 +2009,7 @@ static int vc1_decode_p_block(VC1Context *v, DCTELEM block[64], int n, int mquan
             if(i==1)
                 v->vc1dsp.vc1_inv_trans_8x8_dc(dst, linesize, block);
             else{
-                v->vc1dsp.vc1_inv_trans_8x8(block);
-                s->dsp.add_pixels_clamped(block, dst, linesize);
+                v->vc1dsp.vc1_inv_trans_8x8_add(dst, linesize, block);
             }
             if(apply_filter && cbp_top  & 0xC)
                 v->vc1dsp.vc1_v_loop_filter8(dst, linesize, v->pq);
@@ -2150,7 +2116,7 @@ static int vc1_decode_p_mb(VC1Context *v)
 {
     MpegEncContext *s = &v->s;
     GetBitContext *gb = &s->gb;
-    int i, j;
+    int i;
     int mb_pos = s->mb_x + s->mb_y * s->mb_stride;
     int cbp; /* cbp decoding stuff */
     int mqdiff, mquant; /* MB quantization */
@@ -2182,6 +2148,8 @@ static int vc1_decode_p_mb(VC1Context *v)
     {
         if (!skipped)
         {
+            vc1_idct_func idct8x8_fn;
+
             GET_MVDATA(dmv_x, dmv_y);
 
             if (s->mb_intra) {
@@ -2216,6 +2184,7 @@ static int vc1_decode_p_mb(VC1Context *v)
                                 VC1_TTMB_VLC_BITS, 2);
             if(!s->mb_intra) vc1_mc_1mv(v, 0);
             dst_idx = 0;
+            idct8x8_fn = v->vc1dsp.vc1_inv_trans_8x8_put_signed[!!v->rangeredfrm];
             for (i=0; i<6; i++)
             {
                 s->dc_val[0][s->block_index[i]] = 0;
@@ -2233,9 +2202,9 @@ static int vc1_decode_p_mb(VC1Context *v)
 
                     vc1_decode_intra_block(v, s->block[i], i, val, mquant, (i&4)?v->codingset2:v->codingset);
                     if((i>3) && (s->flags & CODEC_FLAG_GRAY)) continue;
-                    v->vc1dsp.vc1_inv_trans_8x8(s->block[i]);
-                    if(v->rangeredfrm) for(j = 0; j < 64; j++) s->block[i][j] <<= 1;
-                    s->dsp.put_signed_pixels_clamped(s->block[i], s->dest[dst_idx] + off, i & 4 ? s->uvlinesize : s->linesize);
+                    idct8x8_fn(s->dest[dst_idx] + off,
+                               i & 4 ? s->uvlinesize : s->linesize,
+                               s->block[i]);
                     if(v->pq >= 9 && v->overlap) {
                         if(v->c_avail)
                             v->vc1dsp.vc1_h_overlap(s->dest[dst_idx] + off, i & 4 ? s->uvlinesize : s->linesize);
@@ -2300,6 +2269,7 @@ static int vc1_decode_p_mb(VC1Context *v)
         {
             int intra_count = 0, coded_inter = 0;
             int is_intra[6], is_coded[6];
+            vc1_idct_func idct8x8_fn;
             /* Get CBPCY */
             cbp = get_vlc2(&v->s.gb, v->cbpcy_vlc->table, VC1_CBPCY_P_VLC_BITS, 2);
             for (i=0; i<6; i++)
@@ -2349,6 +2319,7 @@ static int vc1_decode_p_mb(VC1Context *v)
             }
             if (!v->ttmbf && coded_inter)
                 ttmb = get_vlc2(gb, ff_vc1_ttmb_vlc[v->tt_index].table, VC1_TTMB_VLC_BITS, 2);
+            idct8x8_fn = v->vc1dsp.vc1_inv_trans_8x8_put_signed[!!v->rangeredfrm];
             for (i=0; i<6; i++)
             {
                 dst_idx += i >> 2;
@@ -2364,9 +2335,9 @@ static int vc1_decode_p_mb(VC1Context *v)
 
                     vc1_decode_intra_block(v, s->block[i], i, is_coded[i], mquant, (i&4)?v->codingset2:v->codingset);
                     if((i>3) && (s->flags & CODEC_FLAG_GRAY)) continue;
-                    v->vc1dsp.vc1_inv_trans_8x8(s->block[i]);
-                    if(v->rangeredfrm) for(j = 0; j < 64; j++) s->block[i][j] <<= 1;
-                    s->dsp.put_signed_pixels_clamped(s->block[i], s->dest[dst_idx] + off, (i&4)?s->uvlinesize:s->linesize);
+                    idct8x8_fn(s->dest[dst_idx] + off,
+                               (i&4)?s->uvlinesize:s->linesize,
+                               s->block[i]);
                     if(v->pq >= 9 && v->overlap) {
                         if(v->c_avail)
                             v->vc1dsp.vc1_h_overlap(s->dest[dst_idx] + off, i & 4 ? s->uvlinesize : s->linesize);
@@ -2442,7 +2413,7 @@ static void vc1_decode_b_mb(VC1Context *v)
 {
     MpegEncContext *s = &v->s;
     GetBitContext *gb = &s->gb;
-    int i, j;
+    int i;
     int mb_pos = s->mb_x + s->mb_y * s->mb_stride;
     int cbp = 0; /* cbp decoding stuff */
     int mqdiff, mquant; /* MB quantization */
@@ -2455,6 +2426,7 @@ static void vc1_decode_b_mb(VC1Context *v)
     int skipped, direct;
     int dmv_x[2], dmv_y[2];
     int bmvtype = BMV_TYPE_BACKWARD;
+    vc1_idct_func idct8x8_fn;
 
     mquant = v->pq; /* Loosy initialization */
     s->mb_intra = 0;
@@ -2552,6 +2524,7 @@ static void vc1_decode_b_mb(VC1Context *v)
         }
     }
     dst_idx = 0;
+    idct8x8_fn = v->vc1dsp.vc1_inv_trans_8x8_put_signed[!!v->rangeredfrm];
     for (i=0; i<6; i++)
     {
         s->dc_val[0][s->block_index[i]] = 0;
@@ -2569,9 +2542,9 @@ static void vc1_decode_b_mb(VC1Context *v)
 
             vc1_decode_intra_block(v, s->block[i], i, val, mquant, (i&4)?v->codingset2:v->codingset);
             if((i>3) && (s->flags & CODEC_FLAG_GRAY)) continue;
-            v->vc1dsp.vc1_inv_trans_8x8(s->block[i]);
-            if(v->rangeredfrm) for(j = 0; j < 64; j++) s->block[i][j] <<= 1;
-            s->dsp.put_signed_pixels_clamped(s->block[i], s->dest[dst_idx] + off, i & 4 ? s->uvlinesize : s->linesize);
+            idct8x8_fn(s->dest[dst_idx] + off,
+                       i & 4 ? s->uvlinesize : s->linesize,
+                       s->block[i]);
         } else if(val) {
             vc1_decode_p_block(v, s->block[i], i, mquant, ttmb, first_block, s->dest[dst_idx] + off, (i&4)?s->uvlinesize:s->linesize, (i&4) && (s->flags & CODEC_FLAG_GRAY), 0, 0, 0);
             if(!v->ttmbf && ttmb < 8) ttmb = -1;
@@ -2584,11 +2557,12 @@ static void vc1_decode_b_mb(VC1Context *v)
  */
 static void vc1_decode_i_blocks(VC1Context *v)
 {
-    int k, j;
+    int k;
     MpegEncContext *s = &v->s;
     int cbp, val;
     uint8_t *coded_val;
     int mb_pos;
+    vc1_idct_func idct8x8_fn;
 
     /* select codingmode used for VLC tables selection */
     switch(v->y_ac_table_index){
@@ -2623,11 +2597,22 @@ static void vc1_decode_i_blocks(VC1Context *v)
     s->mb_x = s->mb_y = 0;
     s->mb_intra = 1;
     s->first_slice_line = 1;
+    if(v->pq >= 9 && v->overlap) {
+        idct8x8_fn = v->vc1dsp.vc1_inv_trans_8x8_put_signed[!!v->rangeredfrm];
+    } else
+        idct8x8_fn = v->vc1dsp.vc1_inv_trans_8x8_put[!!v->rangeredfrm];
     for(s->mb_y = 0; s->mb_y < s->mb_height; s->mb_y++) {
         s->mb_x = 0;
         ff_init_block_index(s);
         for(; s->mb_x < s->mb_width; s->mb_x++) {
+            uint8_t *dst[6];
             ff_update_block_index(s);
+            dst[0] = s->dest[0];
+            dst[1] = dst[0] + 8;
+            dst[2] = s->dest[0] + s->linesize * 8;
+            dst[3] = dst[2] + 8;
+            dst[4] = s->dest[1];
+            dst[5] = s->dest[2];
             s->dsp.clear_blocks(s->block[0]);
             mb_pos = s->mb_x + s->mb_y * s->mb_width;
             s->current_picture.mb_type[mb_pos] = MB_TYPE_INTRA;
@@ -2651,13 +2636,12 @@ static void vc1_decode_i_blocks(VC1Context *v)
 
                 vc1_decode_i_block(v, s->block[k], k, val, (k<4)? v->codingset : v->codingset2);
 
-                v->vc1dsp.vc1_inv_trans_8x8(s->block[k]);
-                if(v->pq >= 9 && v->overlap) {
-                    for(j = 0; j < 64; j++) s->block[k][j] += 128;
-                }
+                if (k > 3 && (s->flags & CODEC_FLAG_GRAY)) continue;
+                idct8x8_fn(dst[k],
+                           k & 4 ? s->uvlinesize : s->linesize,
+                           s->block[k]);
             }
 
-            vc1_put_block(v, s->block);
             if(v->pq >= 9 && v->overlap) {
                 if(s->mb_x) {
                     v->vc1dsp.vc1_h_overlap(s->dest[0], s->linesize);
@@ -2713,6 +2697,7 @@ static void vc1_decode_i_blocks_adv(VC1Context *v)
     int mqdiff;
     int overlap;
     GetBitContext *gb = &s->gb;
+    vc1_idct_func idct8x8_fn;
 
     /* select codingmode used for VLC tables selection */
     switch(v->y_ac_table_index){
@@ -2743,6 +2728,7 @@ static void vc1_decode_i_blocks_adv(VC1Context *v)
     s->mb_x = s->mb_y = 0;
     s->mb_intra = 1;
     s->first_slice_line = 1;
+    idct8x8_fn = v->vc1dsp.vc1_inv_trans_8x8_put_signed[0];
     for(s->mb_y = 0; s->mb_y < s->mb_height; s->mb_y++) {
         s->mb_x = 0;
         ff_init_block_index(s);
@@ -2799,9 +2785,9 @@ static void vc1_decode_i_blocks_adv(VC1Context *v)
                 vc1_decode_i_block_adv(v, s->block[k], k, val, (k<4)? v->codingset : v->codingset2, mquant);
 
                 if (k > 3 && (s->flags & CODEC_FLAG_GRAY)) continue;
-                v->vc1dsp.vc1_inv_trans_8x8(s->block[k]);
-                s->dsp.put_signed_pixels_clamped(s->block[k], dst[k],
-                                                 k & 4 ? s->uvlinesize : s->linesize);
+                idct8x8_fn(dst[k],
+                           k & 4 ? s->uvlinesize : s->linesize,
+                           s->block[k]);
             }
 
             if(overlap) {

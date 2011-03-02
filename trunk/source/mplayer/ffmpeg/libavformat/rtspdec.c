@@ -311,7 +311,7 @@ retry:
 
     ret = ff_rtsp_fetch_packet(s, pkt);
     if (ret < 0) {
-        if (ret == FF_NETERROR(ETIMEDOUT) && !rt->packets) {
+        if (ret == AVERROR(ETIMEDOUT) && !rt->packets) {
             if (rt->lower_transport == RTSP_LOWER_TRANSPORT_UDP &&
                 rt->lower_transport_mask & (1 << RTSP_LOWER_TRANSPORT_TCP)) {
                 RTSPMessageHeader reply1, *reply = &reply1;
@@ -382,7 +382,7 @@ static int rtsp_read_close(AVFormatContext *s)
 #if 0
     /* NOTE: it is valid to flush the buffer here */
     if (rt->lower_transport == RTSP_LOWER_TRANSPORT_TCP) {
-        url_fclose(&rt->rtsp_gb);
+        avio_close(&rt->rtsp_gb);
     }
 #endif
     ff_rtsp_send_cmd_async(s, "TEARDOWN", rt->control_uri, NULL);

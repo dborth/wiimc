@@ -134,8 +134,10 @@ const AVCodecTag codec_movvideo_tags[] = {
     { CODEC_ID_RAWVIDEO, MKTAG('W', 'R', 'A', 'W') },
 
     { CODEC_ID_H264, MKTAG('a', 'v', 'c', '1') }, /* AVC-1/H.264 */
-    { CODEC_ID_H264, MKTAG('a', 'i', '5', '5') }, /* Flip4Mac AVC Intra 50 */
-    { CODEC_ID_H264, MKTAG('a', 'i', '1', '5') }, /* Flip4Mac AVC Intra 100 */
+    { CODEC_ID_H264, MKTAG('a', 'i', '5', '5') }, /* AVC Intra  50 / 1080 */
+    { CODEC_ID_H264, MKTAG('a', 'i', '5', 'q') }, /* AVC Intra  50 /  720 */
+    { CODEC_ID_H264, MKTAG('a', 'i', '1', '5') }, /* AVC Intra 100 / 1080 */
+    { CODEC_ID_H264, MKTAG('a', 'i', '1', 'q') }, /* AVC Intra 100 /  720 */
 
     { CODEC_ID_MPEG1VIDEO, MKTAG('m', '1', 'v', '1') }, /* Apple MPEG-1 Camcorder */
     { CODEC_ID_MPEG1VIDEO, MKTAG('m', 'p', 'e', 'g') }, /* MPEG */
@@ -346,7 +348,7 @@ int ff_mp4_read_descr_len(AVIOContext *pb)
     int len = 0;
     int count = 4;
     while (count--) {
-        int c = get_byte(pb);
+        int c = avio_r8(pb);
         len = (len << 7) | (c & 0x7f);
         if (!(c & 0x80))
             break;
@@ -357,7 +359,7 @@ int ff_mp4_read_descr_len(AVIOContext *pb)
 int ff_mp4_read_descr(AVFormatContext *fc, AVIOContext *pb, int *tag)
 {
     int len;
-    *tag = get_byte(pb);
+    *tag = avio_r8(pb);
     len = ff_mp4_read_descr_len(pb);
     av_dlog(fc, "MPEG4 description: tag=0x%02x len=%d\n", *tag, len);
     return len;
@@ -375,11 +377,11 @@ static const AVCodecTag mp4_audio_types[] = {
 int ff_mp4_read_dec_config_descr(AVFormatContext *fc, AVStream *st, AVIOContext *pb)
 {
     int len, tag;
-    int object_type_id = get_byte(pb);
-    get_byte(pb); /* stream type */
-    get_be24(pb); /* buffer size db */
-    get_be32(pb); /* max bitrate */
-    get_be32(pb); /* avg bitrate */
+    int object_type_id = avio_r8(pb);
+    avio_r8(pb); /* stream type */
+    avio_rb24(pb); /* buffer size db */
+    avio_rb32(pb); /* max bitrate */
+    avio_rb32(pb); /* avg bitrate */
 
     st->codec->codec_id= ff_codec_get_id(ff_mp4_obj_type, object_type_id);
     av_dlog(fc, "esds object type id 0x%02x\n", object_type_id);
@@ -392,7 +394,7 @@ int ff_mp4_read_dec_config_descr(AVFormatContext *fc, AVStream *st, AVIOContext 
         st->codec->extradata = av_mallocz(len + FF_INPUT_BUFFER_PADDING_SIZE);
         if (!st->codec->extradata)
             return AVERROR(ENOMEM);
-        get_buffer(pb, st->codec->extradata, len);
+        avio_read(pb, st->codec->extradata, len);
         st->codec->extradata_size = len;
         if (st->codec->codec_id == CODEC_ID_AAC) {
             MPEG4AudioConfig cfg;

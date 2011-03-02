@@ -83,17 +83,17 @@ static int mtv_read_header(AVFormatContext *s, AVFormatParameters *ap)
     AVStream        *st;
     unsigned int    audio_subsegments;
 
-    url_fskip(pb, 3);
-    mtv->file_size         = get_le32(pb);
-    mtv->segments          = get_le32(pb);
-    url_fskip(pb, 32);
-    mtv->audio_identifier  = get_le24(pb);
-    mtv->audio_br          = get_le16(pb);
-    mtv->img_colorfmt      = get_le24(pb);
-    mtv->img_bpp           = get_byte(pb);
-    mtv->img_width         = get_le16(pb);
-    mtv->img_height        = get_le16(pb);
-    mtv->img_segment_size  = get_le16(pb);
+    avio_seek(pb, 3, SEEK_CUR);
+    mtv->file_size         = avio_rl32(pb);
+    mtv->segments          = avio_rl32(pb);
+    avio_seek(pb, 32, SEEK_CUR);
+    mtv->audio_identifier  = avio_rl24(pb);
+    mtv->audio_br          = avio_rl16(pb);
+    mtv->img_colorfmt      = avio_rl24(pb);
+    mtv->img_bpp           = avio_r8(pb);
+    mtv->img_width         = avio_rl16(pb);
+    mtv->img_height        = avio_rl16(pb);
+    mtv->img_segment_size  = avio_rl16(pb);
 
     /* Calculate width and height if missing from header */
 
@@ -105,8 +105,8 @@ static int mtv_read_header(AVFormatContext *s, AVFormatParameters *ap)
         mtv->img_height=mtv->img_segment_size / (mtv->img_bpp>>3)
                         / mtv->img_width;
 
-    url_fskip(pb, 4);
-    audio_subsegments = get_le16(pb);
+    avio_seek(pb, 4, SEEK_CUR);
+    audio_subsegments = avio_rl16(pb);
     mtv->full_segment_size =
         audio_subsegments * (MTV_AUDIO_PADDING_SIZE + MTV_ASUBCHUNK_DATA_SIZE) +
         mtv->img_segment_size;
@@ -146,7 +146,7 @@ static int mtv_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     // Jump over header
 
-    if(url_fseek(pb, MTV_HEADER_SIZE, SEEK_SET) != MTV_HEADER_SIZE)
+    if(avio_seek(pb, MTV_HEADER_SIZE, SEEK_SET) != MTV_HEADER_SIZE)
         return AVERROR(EIO);
 
     return 0;
@@ -164,7 +164,7 @@ static int mtv_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     if((url_ftell(pb) - s->data_offset + mtv->img_segment_size) % mtv->full_segment_size)
     {
-        url_fskip(pb, MTV_AUDIO_PADDING_SIZE);
+        avio_seek(pb, MTV_AUDIO_PADDING_SIZE, SEEK_CUR);
 
         ret = av_get_packet(pb, pkt, MTV_ASUBCHUNK_DATA_SIZE);
         if(ret < 0)

@@ -498,7 +498,7 @@ void ff_rtsp_undo_setup(AVFormatContext *s)
                     url_close_dyn_buf(rtpctx->pb, &ptr);
                     av_free(ptr);
                 } else {
-                    url_fclose(rtpctx->pb);
+                    avio_close(rtpctx->pb);
                 }
                 avformat_free_context(rtpctx);
             } else if (rt->transport == RTSP_TRANSPORT_RDT && CONFIG_RTPDEC)
@@ -1528,7 +1528,7 @@ redirect:
             goto fail;
         lower_transport_mask &= ~(1 << lower_transport);
         if (lower_transport_mask == 0 && err == 1) {
-            err = FF_NETERROR(EPROTONOSUPPORT);
+            err = AVERROR(EPROTONOSUPPORT);
             goto fail;
         }
     } while (err);
@@ -1615,7 +1615,7 @@ static int udp_read_packet(AVFormatContext *s, RTSPStream **prtsp_st,
             }
 #endif
         } else if (n == 0 && ++timeout_cnt >= MAX_TIMEOUTS) {
-            return FF_NETERROR(ETIMEDOUT);
+            return AVERROR(ETIMEDOUT);
         } else if (n < 0 && errno != EINTR)
             return AVERROR(errno);
     }
@@ -1784,7 +1784,7 @@ static int sdp_read_header(AVFormatContext *s, AVFormatParameters *ap)
     /* read the whole sdp file */
     /* XXX: better loading */
     content = av_malloc(SDP_MAX_SIZE);
-    size = get_buffer(s->pb, content, SDP_MAX_SIZE - 1);
+    size = avio_read(s->pb, content, SDP_MAX_SIZE - 1);
     if (size <= 0) {
         av_free(content);
         return AVERROR_INVALIDDATA;

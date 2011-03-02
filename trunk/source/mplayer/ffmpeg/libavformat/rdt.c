@@ -153,28 +153,28 @@ rdt_load_mdpr (PayloadContext *rdt, AVStream *st, int rule_nr)
         return -1;
     ffio_init_context(&pb, rdt->mlti_data, rdt->mlti_data_size, 0,
                   NULL, NULL, NULL, NULL);
-    tag = get_le32(&pb);
+    tag = avio_rl32(&pb);
     if (tag == MKTAG('M', 'L', 'T', 'I')) {
         int num, chunk_nr;
 
         /* read index of MDPR chunk numbers */
-        num = get_be16(&pb);
+        num = avio_rb16(&pb);
         if (rule_nr < 0 || rule_nr >= num)
             return -1;
-        url_fskip(&pb, rule_nr * 2);
-        chunk_nr = get_be16(&pb);
-        url_fskip(&pb, (num - 1 - rule_nr) * 2);
+        avio_seek(&pb, rule_nr * 2, SEEK_CUR);
+        chunk_nr = avio_rb16(&pb);
+        avio_seek(&pb, (num - 1 - rule_nr) * 2, SEEK_CUR);
 
         /* read MDPR chunks */
-        num = get_be16(&pb);
+        num = avio_rb16(&pb);
         if (chunk_nr >= num)
             return -1;
         while (chunk_nr--)
-            url_fskip(&pb, get_be32(&pb));
-        size = get_be32(&pb);
+            avio_seek(&pb, avio_rb32(&pb), SEEK_CUR);
+        size = avio_rb32(&pb);
     } else {
         size = rdt->mlti_data_size;
-        url_fseek(&pb, 0, SEEK_SET);
+        avio_seek(&pb, 0, SEEK_SET);
     }
     if (ff_rm_read_mdpr_codecdata(rdt->rmctx, &pb, st, rdt->rmst[st->index], size) < 0)
         return -1;
@@ -311,7 +311,7 @@ rdt_parse_packet (AVFormatContext *ctx, PayloadContext *rdt, AVStream *st,
         if (res > 0) {
             if (st->codec->codec_id == CODEC_ID_AAC) {
                 memcpy (rdt->buffer, buf + pos, len - pos);
-                rdt->rmctx->pb = av_alloc_put_byte (rdt->buffer, len - pos, 0,
+                rdt->rmctx->pb = avio_alloc_context (rdt->buffer, len - pos, 0,
                                                     NULL, NULL, NULL, NULL);
             }
             goto get_cache;

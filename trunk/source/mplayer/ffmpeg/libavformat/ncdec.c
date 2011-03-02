@@ -68,12 +68,12 @@ static int nc_read_packet(AVFormatContext *s, AVPacket *pkt)
     while (state != NC_VIDEO_FLAG) {
         if (url_feof(s->pb))
             return AVERROR(EIO);
-        state = (state<<8) + get_byte(s->pb);
+        state = (state<<8) + avio_r8(s->pb);
     }
 
-    get_byte(s->pb);
-    size = get_le16(s->pb);
-    url_fskip(s->pb, 9);
+    avio_r8(s->pb);
+    size = avio_rl16(s->pb);
+    avio_seek(s->pb, 9, SEEK_CUR);
 
     if (size == 0) {
         av_log(s, AV_LOG_DEBUG, "Next packet size is zero\n");

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 31032 $ -->
+<!-- $Revision: 32959 $ -->
 <appendix id="skin">
 <title><application>MPlayer</application> skin format</title>
 
@@ -22,15 +22,15 @@ Currently there are four windows to be decorated: the
 <link linkend="skin-file-main">main window</link>, the
 <link linkend="skin-file-subwindow">subwindow</link>, the
 <link linkend="skin-file-main">playbar</link>, and the
-<link linkend="skin-file-menu">skin menu</link> (which can be activated
-by a right click).
+<link linkend="skin-file-menu">skin menu</link>.
 
 <itemizedlist>
 <listitem>
   <para>
-  The <emphasis role="bold">main window</emphasis> and/or the
-  <emphasis role="bold">playbar</emphasis> is where you can control
-  <application>MPlayer</application>. The background of the window is an image.
+  The <emphasis role="bold">main window</emphasis> is where you can control
+  <application>MPlayer</application>. The <emphasis role="bold">playbar</emphasis>
+  shows up in fullscreen mode when moving the mouse to the bottom of
+  the screen. The background of the windows is an image.
   Various items can (and must) be placed in the window:
   <emphasis>buttons</emphasis>, <emphasis>potmeters</emphasis> (sliders) and
   <emphasis>labels</emphasis>.
@@ -82,7 +82,8 @@ by a right click).
 <listitem>
   <para>
   The <emphasis role="bold">skin menu</emphasis> is just a way to control
-  <application>MPlayer</application> by means of menu entries. Two images
+  <application>MPlayer</application> by means of menu entries (which can be
+  activated by a middle mouse button click). Two images
   are required for the menu: one of them is the base image that shows the
   menu in its normal state, the other one is used to display the selected
   entries. When you pop up the menu, the first image is shown. If you move
@@ -206,17 +207,18 @@ where <replaceable>window name</replaceable> can be one of these strings:
   <emphasis role="bold">sub</emphasis> - for the subwindow
 </para></listitem>
 <listitem><para>
-  <emphasis role="bold">menu</emphasis> - for the skin menu
+  <emphasis role="bold">playbar</emphasis> - for the playbar
 </para></listitem>
 <listitem><para>
-  <emphasis role="bold">playbar</emphasis> - playbar
+  <emphasis role="bold">menu</emphasis> - for the skin menu
 </para></listitem>
 </itemizedlist>
 </para>
 
 <para>
-(The sub and menu blocks are optional - you do not need to create a menu or
-decorate the subwindow.)
+(The sub, playbar and menu blocks are optional - you do not need to decorate
+the subwindow, have a playbar or create a menu. A default menu is always
+available by a right mouse button click.)
 </para>
 
 <para>
@@ -446,12 +448,12 @@ blocks.
 
 <varlistentry>
   <term><literal>
-  <anchor id="skin-font"/>font = fontfile, fontid
+  <anchor id="skin-font"/>font = fontfile
   </literal></term>
   <listitem><para>
   Defines a font. <literal>fontfile</literal> is the name of a font description
   file with a <filename>.fnt</filename> extension (do not specify the extension
-  here).  <literal>fontid</literal> is used to refer to the font
+  here) and is used to refer to the font
   (see <link linkend="skin-dlabel">dlabel</link>
   and <link linkend="skin-slabel">slabel</link>). Up to 25 fonts can be defined.
   </para></listitem>
@@ -459,21 +461,21 @@ blocks.
 
 <varlistentry>
   <term><literal>
-  <anchor id="skin-slabel"/>slabel = X, Y, fontid, "text"
+  <anchor id="skin-slabel"/>slabel = X, Y, fontfile, "text"
   </literal></term>
   <listitem><para>
   Place a static label at the position <literal>X,Y</literal>.
   <literal>text</literal> is displayed using the font identified by
-  <literal>fontid</literal>. The text is just a raw string
+  <literal>fontfile</literal>. The text is just a raw string
   (<literal>$x</literal> variables do not work) that must be enclosed between
   double quotes (but the " character cannot be part of the text). The
-  label is displayed using the font identified by <literal>fontid</literal>.
+  label is displayed using the font identified by <literal>fontfile</literal>.
   </para></listitem>
 </varlistentry>
 
 <varlistentry>
   <term><literal>
-  <anchor id="skin-dlabel"/>dlabel = X, Y, length, align, fontid, "text"
+  <anchor id="skin-dlabel"/>dlabel = X, Y, length, align, fontfile, "text"
   </literal></term>
   <listitem>
   <para>
@@ -490,7 +492,7 @@ blocks.
   The text to be displayed is given by <literal>text</literal>: It must be
   written between double quotes (but the " character cannot be part of the
   text). The label is displayed using the font identified by
-  <literal>fontid</literal>. You can use the following variables in the text:
+  <literal>fontfile</literal>. You can use the following variables in the text:
   </para>
 
   <informaltable>
@@ -742,7 +744,8 @@ image file to be used for the font (you do not have to specify the extension).
 Here <literal>X</literal> and <literal>Y</literal> specify the position of the
 <literal>char</literal> character in the image (<literal>0,0</literal> is the
 upper left corner). <literal>width</literal> and <literal>height</literal> are
-the dimensions of the character in pixels.
+the dimensions of the character in pixels. The character may be in UTF-8
+encoding.
 </para>
 
 <para>

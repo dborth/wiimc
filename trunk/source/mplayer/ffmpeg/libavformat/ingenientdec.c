@@ -27,19 +27,19 @@ static int ingenient_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
     int ret, size, w, h, unk1, unk2;
 
-    if (get_le32(s->pb) != MKTAG('M', 'J', 'P', 'G'))
+    if (avio_rl32(s->pb) != MKTAG('M', 'J', 'P', 'G'))
         return AVERROR(EIO); // FIXME
 
-    size = get_le32(s->pb);
+    size = avio_rl32(s->pb);
 
-    w = get_le16(s->pb);
-    h = get_le16(s->pb);
+    w = avio_rl16(s->pb);
+    h = avio_rl16(s->pb);
 
-    url_fskip(s->pb, 8); // zero + size (padded?)
-    url_fskip(s->pb, 2);
-    unk1 = get_le16(s->pb);
-    unk2 = get_le16(s->pb);
-    url_fskip(s->pb, 22); // ASCII timestamp
+    avio_seek(s->pb, 8, SEEK_CUR); // zero + size (padded?)
+    avio_seek(s->pb, 2, SEEK_CUR);
+    unk1 = avio_rl16(s->pb);
+    unk2 = avio_rl16(s->pb);
+    avio_seek(s->pb, 22, SEEK_CUR); // ASCII timestamp
 
     av_log(s, AV_LOG_DEBUG, "Ingenient packet: size=%d, width=%d, height=%d, unk1=%d unk2=%d\n",
         size, w, h, unk1, unk2);
@@ -49,7 +49,7 @@ static int ingenient_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     pkt->pos = url_ftell(s->pb);
     pkt->stream_index = 0;
-    ret = get_buffer(s->pb, pkt->data, size);
+    ret = avio_read(s->pb, pkt->data, size);
     if (ret < 0) {
         av_free_packet(pkt);
         return ret;

@@ -1,6 +1,6 @@
 /*
  * Bink Audio decoder
- * Copyright (c) 2007-2010 Peter Ross (pross@xvid.org)
+ * Copyright (c) 2007-2011 Peter Ross (pross@xvid.org)
  * Copyright (c) 2009 Daniel Verkamp (daniel@drv.nu)
  *
  * This file is part of FFmpeg.
@@ -34,6 +34,7 @@
 #include "dsputil.h"
 #include "fft.h"
 #include "fmtconvert.h"
+#include "libavutil/intfloat_readwrite.h"
 
 extern const uint16_t ff_wma_critical_freqs[25];
 
@@ -44,6 +45,7 @@ typedef struct {
     GetBitContext gb;
     DSPContext dsp;
     FmtConvertContext fmt_conv;
+    int version_b;          ///< Bink version 'b'
     int first;
     int channels;
     int frame_len;          ///< transform size (samples)
@@ -81,24 +83,25 @@ static av_cold int decode_init(AVCodecContext *avctx)
     } else {
         frame_len_bits = 11;
     }
-    s->frame_len = 1 << frame_len_bits;
 
     if (avctx->channels > MAX_CHANNELS) {
         av_log(avctx, AV_LOG_ERROR, "too many channels: %d\n", avctx->channels);
         return -1;
     }
 
+    s->version_b = avctx->codec_tag == MKTAG('B','I','K','b');
+
     if (avctx->codec->id == CODEC_ID_BINKAUDIO_RDFT) {
         // audio is already interleaved for the RDFT format variant
         sample_rate  *= avctx->channels;
-        s->frame_len *= avctx->channels;
         s->channels = 1;
-        if (avctx->channels == 2)
-            frame_len_bits++;
+        if (!s->version_b)
+            frame_len_bits += av_log2(avctx->channels);
     } else {
         s->channels = avctx->channels;
     }
 
+    s->frame_len     = 1 << frame_len_bits;
     s->overlap_len   = s->frame_len / 16;
     s->block_size    = (s->frame_len - s->overlap_len) * s->channels;
     sample_rate_half = (sample_rate + 1) / 2;
@@ -114,10 +117,10 @@ static av_cold int decode_init(AVCodecContext *avctx)
         return AVERROR(ENOMEM);
 
     /* populate bands data */
-    s->bands[0] = 1;
+    s->bands[0] = 2;
     for (i = 1; i < s->num_bands; i++)
-        s->bands[i] = ff_wma_critical_freqs[i - 1] * (s->frame_len / 2) / sample_rate_half;
-    s->bands[s->num_bands] = s->frame_len / 2;
+        s->bands[i] = (ff_wma_critical_freqs[i - 1] * s->frame_len / sample_rate_half) & ~1;
+    s->bands[s->num_bands] = s->frame_len;
 
     s->first = 1;
     avctx->sample_fmt = AV_SAMPLE_FMT_S16;
@@ -164,9 +167,13 @@ static void decode_block(BinkAudioContext *s, short *out, int use_dct)
 
     for (ch = 0; ch < s->channels; ch++) {
         FFTSample *coeffs = s->coeffs_ptr[ch];
-        q = 0.0f;
-        coeffs[0] = get_float(gb) * s->root;
-        coeffs[1] = get_float(gb) * s->root;
+        if (s->version_b) {
+            coeffs[0] = av_int2flt(get_bits(gb, 32)) * s->root;
+            coeffs[1] = av_int2flt(get_bits(gb, 32)) * s->root;
+        } else {
+            coeffs[0] = get_float(gb) * s->root;
+            coeffs[1] = get_float(gb) * s->root;
+        }
 
         for (i = 0; i < s->num_bands; i++) {
             /* constant is result of 0.066399999/log10(M_E) */
@@ -174,15 +181,15 @@ static void decode_block(BinkAudioContext *s, short *out, int use_dct)
             quant[i] = expf(FFMIN(value, 95) * 0.15289164787221953823f) * s->root;
         }
 
-        // find band (k)
-        for (k = 0; s->bands[k] < 1; k++) {
-            q = quant[k];
-        }
+        k = 0;
+        q = quant[0];
 
         // parse coefficients
         i = 2;
         while (i < s->frame_len) {
-            if (get_bits1(gb)) {
+            if (s->version_b) {
+                j = i + 16;
+            } else if (get_bits1(gb)) {
                 j = i + rle_length_tab[get_bits(gb, 4)] * 8;
             } else {
                 j = i + 8;
@@ -194,11 +201,11 @@ static void decode_block(BinkAudioContext *s, short *out, int use_dct)
             if (width == 0) {
                 memset(coeffs + i, 0, (j - i) * sizeof(*coeffs));
                 i = j;
-                while (s->bands[k] * 2 < i)
+                while (s->bands[k] < i)
                     q = quant[k++];
             } else {
                 while (i < j) {
-                    if (s->bands[k] * 2 == i)
+                    if (s->bands[k] == i)
                         q = quant[k++];
                     coeff = get_bits(gb, width);
                     if (coeff) {

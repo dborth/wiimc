@@ -332,7 +332,7 @@ int av_get_packet(AVIOContext *s, AVPacket *pkt, int size)
 
     pkt->pos= url_ftell(s);
 
-    ret= get_buffer(s, pkt->data, size);
+    ret= avio_read(s, pkt->data, size);
     if(ret<=0)
         av_free_packet(pkt);
     else
@@ -351,7 +351,7 @@ int av_append_packet(AVIOContext *s, AVPacket *pkt, int size)
     ret = av_grow_packet(pkt, size);
     if (ret < 0)
         return ret;
-    ret = get_buffer(s, pkt->data + old_size, size);
+    ret = avio_read(s, pkt->data + old_size, size);
     av_shrink_packet(pkt, old_size + FFMAX(ret, 0));
     return ret;
 }
@@ -555,7 +555,7 @@ int av_probe_input_buffer(AVIOContext *pb, AVInputFormat **fmt,
 
         /* read probe data */
         buf = av_realloc(buf, probe_size + AVPROBE_PADDING_SIZE);
-        if ((ret = get_buffer(pb, buf + buf_offset, probe_size - buf_offset)) < 0) {
+        if ((ret = avio_read(pb, buf + buf_offset, probe_size - buf_offset)) < 0) {
             /* fail if error was not end of file, otherwise, lower score */
             if (ret != AVERROR_EOF) {
                 av_free(buf);
@@ -616,7 +616,7 @@ int av_open_input_file(AVFormatContext **ic_ptr, const char *filename,
        hack needed to handle RTSP/TCP */
     if (!fmt || !(fmt->flags & AVFMT_NOFILE)) {
         /* if no file needed do not try to open one */
-        if ((err=url_fopen(&pb, filename, URL_RDONLY)) < 0) {
+        if ((err=avio_open(&pb, filename, URL_RDONLY)) < 0) {
             goto fail;
         }
         if (buf_size > 0) {
@@ -647,7 +647,7 @@ int av_open_input_file(AVFormatContext **ic_ptr, const char *filename,
  fail:
     av_freep(&pd->buf);
     if (pb)
-        url_fclose(pb);
+        avio_close(pb);
     if (ap && ap->prealloced_context)
         av_free(*ic_ptr);
     *ic_ptr = NULL;
@@ -1531,7 +1531,7 @@ int av_seek_frame_binary(AVFormatContext *s, int stream_index, int64_t target_ts
         return -1;
 
     /* do the seek */
-    if ((ret = url_fseek(s->pb, pos, SEEK_SET)) < 0)
+    if ((ret = avio_seek(s->pb, pos, SEEK_SET)) < 0)
         return ret;
 
     av_update_cur_dts(s, st, ts);
@@ -1671,7 +1671,7 @@ static int av_seek_frame_byte(AVFormatContext *s, int stream_index, int64_t pos,
     if     (pos < pos_min) pos= pos_min;
     else if(pos > pos_max) pos= pos_max;
 
-    url_fseek(s->pb, pos, SEEK_SET);
+    avio_seek(s->pb, pos, SEEK_SET);
 
 #if 0
     av_update_cur_dts(s, st, ts);
@@ -1701,11 +1701,11 @@ static int av_seek_frame_generic(AVFormatContext *s,
         if(st->nb_index_entries){
             assert(st->index_entries);
             ie= &st->index_entries[st->nb_index_entries-1];
-            if ((ret = url_fseek(s->pb, ie->pos, SEEK_SET)) < 0)
+            if ((ret = avio_seek(s->pb, ie->pos, SEEK_SET)) < 0)
                 return ret;
             av_update_cur_dts(s, st, ie->timestamp);
         }else{
-            if ((ret = url_fseek(s->pb, s->data_offset, SEEK_SET)) < 0)
+            if ((ret = avio_seek(s->pb, s->data_offset, SEEK_SET)) < 0)
                 return ret;
         }
         for(i=0;; i++) {
@@ -1732,7 +1732,7 @@ static int av_seek_frame_generic(AVFormatContext *s,
             return 0;
     }
     ie = &st->index_entries[index];
-    if ((ret = url_fseek(s->pb, ie->pos, SEEK_SET)) < 0)
+    if ((ret = avio_seek(s->pb, ie->pos, SEEK_SET)) < 0)
         return ret;
     av_update_cur_dts(s, st, ie->timestamp);
 
@@ -1956,7 +1956,7 @@ static void av_estimate_timings_from_pts(AVFormatContext *ic, int64_t old_offset
     if (offset < 0)
         offset = 0;
 
-    url_fseek(ic->pb, offset, SEEK_SET);
+    avio_seek(ic->pb, offset, SEEK_SET);
     read_size = 0;
     for(;;) {
         if (read_size >= DURATION_MAX_READ_SIZE<<(FFMAX(retry-1,0)))
@@ -1991,7 +1991,7 @@ static void av_estimate_timings_from_pts(AVFormatContext *ic, int64_t old_offset
 
     fill_all_stream_timings(ic);
 
-    url_fseek(ic->pb, old_offset, SEEK_SET);
+    avio_seek(ic->pb, old_offset, SEEK_SET);
     for (i=0; i<ic->nb_streams; i++) {
         st= ic->streams[i];
         st->cur_dts= st->first_dts;
@@ -2623,7 +2623,7 @@ void av_close_input_file(AVFormatContext *s)
     AVIOContext *pb = s->iformat->flags & AVFMT_NOFILE ? NULL : s->pb;
     av_close_input_stream(s);
     if (pb)
-        url_fclose(pb);
+        avio_close(pb);
 }
 
 AVStream *av_new_stream(AVFormatContext *s, int id)

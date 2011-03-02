@@ -204,7 +204,7 @@ dvdnav_status_t dvdnav_get_next_block(dvdnav_t *self, uint8_t *buf,
 /*
  * This basically does the same as dvdnav_get_next_block. The only difference is
  * that it avoids a memcopy, when the requested block was found in the cache.
- * I such a case (cache hit) this function will return a different pointer than
+ * In such a case (cache hit) this function will return a different pointer than
  * the one handed in, pointing directly into the relevant block in the cache.
  * Those pointers must _never_ be freed but instead returned to the library via
  * dvdnav_free_cache_block().
@@ -318,7 +318,7 @@ dvdnav_status_t dvdnav_menu_call(dvdnav_t *self, DVDMenuID_t menu);
 
 /*
  * Return the title number and part currently being played.
- * A title of 0 indicates, we are in a menu. In this case, part
+ * A title of 0 indicates we are in a menu. In this case, part
  * is set to the current menu's ID.
  */
 dvdnav_status_t dvdnav_current_title_info(dvdnav_t *self, int32_t *title,
@@ -360,7 +360,7 @@ dvdnav_status_t dvdnav_part_search(dvdnav_t *self, int32_t part);
  * VOBU boundary before the given sector. The sector number is not
  * meant to be an absolute physical DVD sector, but a relative sector
  * in the current program. This function cannot leave the current
- * program and will fail, if asked to do so.
+ * program and will fail if asked to do so.
  *
  * If program chain based positioning is enabled
  * (see dvdnav_set_PGC_positioning_flag()), this will seek to the relative
@@ -429,12 +429,12 @@ dvdnav_status_t dvdnav_get_position(dvdnav_t *self, uint32_t *pos,
 
 /*
  * Most functions related to highlights take a NAV PCI packet as a parameter.
- * While you can get the such a packet from libdvdnav, for players with internal
- * FIFOs, this will result in errors, because due to the FIFO length, libdvdnav will
- * be ahead in the stream compared to what the user is seeing on screen.
- * Therefore, player applications who have a NAV packet available, which is
- * better in sync with the actual playback should always pass this one to these
- * functions.
+ * While you can get such a packet from libdvdnav, this will result in
+ * errors for players with internal FIFOs because due to the FIFO length,
+ * libdvdnav will be ahead in the stream compared to what the user is
+ * seeing on screen.  Therefore, player applications who have a NAV
+ * packet available, which is better in sync with the actual playback,
+ * should always pass this one to these functions.
  */
 
 /*
@@ -491,7 +491,7 @@ dvdnav_status_t dvdnav_button_select(dvdnav_t *self, pci_t *pci, int32_t button)
 dvdnav_status_t dvdnav_button_select_and_activate(dvdnav_t *self, pci_t *pci, int32_t button);
 
 /*
- * Activate (press) a button and execute specified command.
+ * Activate ("press") a button and execute specified command.
  */
 dvdnav_status_t dvdnav_button_activate_cmd(dvdnav_t *self, int32_t button, vm_cmd_t *cmd);
 

@@ -287,6 +287,9 @@ void stream_capture_do(stream_t *s)
 
 int stream_read_internal(stream_t *s, void *buf, int len)
 {
+#ifdef GEKKO
+  static int _try=0;
+#endif
   int orig_len = len;
   // we will retry even if we already reached EOF previously.
   switch(s->type){
@@ -309,6 +312,36 @@ int stream_read_internal(stream_t *s, void *buf, int len)
   default:
     len= s->fill_buffer ? s->fill_buffer(s, buf, len) : 0;
   }
+#ifdef GEKKO
+  if(len==0)
+  {
+    if(_try>3)
+      s->eof=1;
+    else if(_try == 0)
+    {
+      off_t pos = s->pos;
+      stream_reset(s);
+      stream_seek_internal(s, pos);
+    }
+    _try++;
+    s->buf_pos=s->buf_len=0;
+    return 0;
+  }
+  if(len<0)
+  {
+    s->eof=1;
+    s->buf_pos=s->buf_len=0;
+    if(s->error==0 && (errno==EIO || errno==ENOSYS))
+    {
+      s->error=1;
+      off_t pos = s->pos;
+      stream_reset(s);
+      stream_seek_internal(s, pos);
+    }
+    return 0;
+  }
+
+#else
   if(len<=0){
     if (!s->eof) {
       // just in case this is an error e.g. due to network
@@ -327,10 +360,14 @@ int stream_read_internal(stream_t *s, void *buf, int len)
     s->eof=1;
     return 0;
   }
+#endif
   // When reading succeeded we are obviously not at eof.
   // This e.g. avoids issues with eof getting stuck when lavf seeks in MPEG-TS
   s->eof=0;
   s->pos+=len;
+#ifdef GEKKO
+  _try=0;
+#endif  
   return len;
 }
 

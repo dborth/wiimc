@@ -157,6 +157,7 @@ BROWSERENTRY * AddEntryOnlineMedia() { return AddEntry(&browserOnlineMedia); }
 int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2)
 {
 	int pos;
+	if(!p1 || !p2) return 0;
 	pos= p1->pos - p2->pos;
 	if(pos<0) return -pos;
 	return pos;
@@ -458,14 +459,20 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		int res = ParsePlaylistFile();
 
 		if(res > 0)
+		{
+			UpdateBrowser();
 			return browser.numEntries;
+		}
 
 		// parsing failed - setup last browser dir
 		strcpy(browser.dir, BrowserHistoryRetrieve());
 		BrowserHistoryDiscard();
 
 		if(browser.numEntries > 0) // parsing failed, but we held onto the last listing
+		{
+			UpdateBrowser();
 			return res; // so we can return without any more work required
+		}
 	}
 
 	ResetFiles();
@@ -477,7 +484,10 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 		ParseDirectory(waitParse);
 
 	if(browser.numEntries > 0)
+	{
+		UpdateBrowser();
 		return browser.numEntries;
+	}
 
 	browser.dir[0] = 0;
 

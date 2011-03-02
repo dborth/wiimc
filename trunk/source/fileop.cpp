@@ -2322,7 +2322,10 @@ int ParseOnlineMedia()
 		{
 			// unknown protocol - reject entry
 			if(!om_entry->url || (!IsAllowedProtocol(om_entry->url) && strstr(om_entry->url, "://") != NULL))
+			{
+				om_entry = om_entry->next;
 				continue;
+			}
 
 			f_entry = AddEntryFiles();
 

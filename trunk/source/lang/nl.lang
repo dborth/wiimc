@@ -666,3 +666,6 @@ msgstr "De huidige IOS wordt niet ondersteund. Functinaliteit en/of stabiliteit 
 
 msgid "Screensaver Delay"
 msgstr "Vertraging screensaver"
+
+msgid "Inactivity Shutdown"
+msgstr "Afsluiten bij inactiviteit"

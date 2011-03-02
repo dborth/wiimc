@@ -3101,40 +3101,29 @@ restart:
 			}
 
 			// fill up image buffer slots
+			if(!selIndex) goto restart;
 			next = selIndex;
 
 			for(i=0; next && i < (NUM_PICTURES-1)/2; i++)
 				next = next->prior;
 			
-			if(!next) goto restart;
+			if(!next) next = browser.first;
 
 			for(i=0; i < NUM_PICTURES; i++)
 			{
 				if(pictureData[i].index != NULL)
 					continue;
 
-				int j=-1;
-
 				while(next && 
 					(next->type == TYPE_FOLDER
 					|| next == selIndex 
 					|| next->length > MAX_PICTURE_SIZE
-					|| FoundPicture(next)))
-				{
-					if(next == selIndex) j=0;
-					if(j > (NUM_PICTURES-1)/2) 
-					{
-						j = -2;  //out of limit break main for
-						break;
-					}
-					if(j>=0) j++;
-					next = next->next;
-				}
-				if(j==-2) break;
+					|| FoundPicture(next))) next = next->next;
 
 				
-				if(!next || !next->file)
-					goto restart;
+				if(!next || !next->file) break;
+
+				if(EntryDistance(next,selIndex)>(NUM_PICTURES-1)/2) break;
 
 				sprintf(filepath, "%s%s", browser.dir, next->file);
 				pictureIndexLoading = next;
@@ -3154,7 +3143,7 @@ restart:
 						setPicture = true; // trigger picture to be reloaded
 				}
 				pictureIndexLoading = NULL;
-				next++;
+				next = next->next;
 			}
 		}
 		usleep(THREAD_SLEEP);
@@ -3628,6 +3617,8 @@ static void MenuBrowsePictures()
 	// start picture thread
 	loadPictures = 1; // trigger picture thread
 	ResumePictureThread();
+
+	fileBrowser.ResetState();
 
 	while(menuCurrent == MENU_BROWSE_PICTURES && !guiShutdown)
 	{

@@ -186,7 +186,7 @@ static char partitionlabelplaying[50];
 
 static int enable_restore_points=1;
 
-static float online_stream_cache_min_percent=2;
+static float online_stream_cache_min_percent=20;
 static float orig_stream_cache_min_percent=-1;
 static float orig_stream_cache_seek_min_percent=-1;
 static int orig_stream_cache_size=-1;
@@ -2573,7 +2573,6 @@ static void pause_loop(void)
   {
     if (cmd)
     {
-    printf("1 cmd->id: %i  name: %s\n",cmd->id,cmd->name);
       cmd = mp_input_get_cmd(0,1,0);
       run_command(mpctx, cmd);
       mp_cmd_free(cmd);

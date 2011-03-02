@@ -621,7 +621,7 @@ void DefaultSettings ()
 	WiiSettings.dvdMenu = 1;
 	WiiSettings.dvdDisabled = 0;
 	// Online Media
-	WiiSettings.onlineCacheFill = 2;
+	WiiSettings.onlineCacheFill = 20;
 	sprintf(WiiSettings.youtubeFormat, "34");
 	WiiSettings.onlinemediaFolder[0] = 0;
 	// Network
@@ -744,8 +744,8 @@ static void FixInvalidSettings()
 		WiiSettings.dvdDisabled = 0;
 
 	// Online Media
-	if(WiiSettings.onlineCacheFill < 2 || WiiSettings.onlineCacheFill > 100)
-		WiiSettings.onlineCacheFill = 2;
+	if(WiiSettings.onlineCacheFill < 5 || WiiSettings.onlineCacheFill > 100)
+		WiiSettings.onlineCacheFill = 20;
 	if(strcmp(WiiSettings.youtubeFormat, "34") != 0 &&
 		strcmp(WiiSettings.youtubeFormat, "18") != 0 &&
 		strcmp(WiiSettings.youtubeFormat, "5") != 0)

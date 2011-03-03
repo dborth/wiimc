@@ -666,5 +666,5 @@ msgstr "El IOS actual no es soportado. La funcionalidad y/o estabilidad pueden v
 msgid "Screensaver Delay"
 msgstr "Retardo del Salvapantallas"
 
-msgid "Inactivity Timer"
-msgstr "Temporizador de Inactividad"
+msgid "Inactivity Shutdown"
+msgstr "Cierre por Inactividad"

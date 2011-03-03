@@ -767,7 +767,7 @@ static void FixInvalidSettings()
 	// Subtitles
 	if(WiiSettings.subtitleVisibility < 0 || WiiSettings.subtitleVisibility > 1)
 		WiiSettings.subtitleVisibility = 1;
-	if(WiiSettings.subtitleDelay < -2 || WiiSettings.subtitleDelay > 2)
+	if(WiiSettings.subtitleDelay < -60 || WiiSettings.subtitleDelay > 60)
 		WiiSettings.subtitleDelay = 0;
 
 	if(WiiSettings.subtitleLanguage[0] != 0)

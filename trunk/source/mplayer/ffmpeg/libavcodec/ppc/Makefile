@@ -38,5 +38,6 @@ PAIRED-OBJS-$(CONFIG_RDFT)             += ppc/rdft_paired.o
 
 OBJS-$(HAVE_PAIRED)                    += ppc/dsputil_paired.o          \
                                           ppc/float_paired.o            \
+                                          ppc/fmtconvert_paired.o      \
                                           $(PAIRED-OBJS-yes)
                                           

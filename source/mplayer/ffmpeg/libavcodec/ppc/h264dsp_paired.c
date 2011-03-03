@@ -1019,6 +1019,7 @@ static void ff_h264_idct8_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 		psq_st(result,0,in_row,0,4);
 	}
 }
+#endif
 
 static void ff_h264_idct8_dc_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 {
@@ -1057,20 +1058,19 @@ static void ff_h264_idct8_add4_paired(uint8_t *dst, const int *block_offset, DCT
 		if (nnz) {
 			if (nnz==1 && block[i*16])
 				ff_h264_idct8_dc_add_paired(dst + block_offset[i], block + i*16, stride);
-			else ff_h264_idct8_add_paired(dst + block_offset[i], block + i*16, stride);
+			else ff_h264_idct8_add_c(dst + block_offset[i], block + i*16, stride);
 		}
 	}
 }
-#endif
 
 #define H264_WEIGHT(W,H) \
 static void weight_h264_pixels ## W ## x ## H ## _paired(uint8_t *block, int stride, int log2_denom, int weight, int offset) \
 { \
 	vector float pair; \
 	 \
-	uint16_t poweru = 1 << log2_denom; \
+	uint16_t poweri = 1 << log2_denom; \
 	register float powerf; \
-	asm volatile("psq_l %0,%1,1,5" : "=f"(powerf) : "o"(poweru)); \
+	asm volatile("psq_l %0,%1,1,5" : "=f"(powerf) : "o"(poweri)); \
 	 \
 	int16_t weighti = weight; \
 	register float weightf; \
@@ -1128,9 +1128,9 @@ static void biweight_h264_pixels ## W ## x ## H ## _paired(uint8_t *dst, uint8_t
 { \
 	vector float pair[2]; \
 	 \
-	uint16_t poweru = 1 << log2_denom + 1; \
+	uint16_t poweri = 1 << log2_denom + 1; \
 	vector float powerf; \
-	asm volatile("psq_l %0,%1,1,5\n" : "=f"(powerf) : "o"(poweru)); \
+	asm volatile("psq_l %0,%1,1,5\n" : "=f"(powerf) : "o"(poweri)); \
 	powerf = paired_merge00(powerf, powerf); \
 	 \
 	int16_t weighti[2] = {weightd,weights}; \
@@ -1212,6 +1212,8 @@ void dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 	c->put_h264_chroma_pixels_tab[1] = put_h264_chroma_mc4_paired;
 	c->avg_h264_chroma_pixels_tab[0] = avg_h264_chroma_mc8_paired;
 	c->avg_h264_chroma_pixels_tab[1] = avg_h264_chroma_mc4_paired;
+	//c->put_no_rnd_vc1_chroma_pixels_tab[0] = put_no_rnd_vc1_chroma_mc8_paired;
+	//c->avg_no_rnd_vc1_chroma_pixels_tab[0] = avg_no_rnd_vc1_chroma_mc8_paired;
 }
 
 void ff_h264dsp_init_ppc(H264DSPContext *c)
@@ -1221,9 +1223,9 @@ void ff_h264dsp_init_ppc(H264DSPContext *c)
 	c->h264_idct_add16 = ff_h264_idct_add16_paired;
 	c->h264_idct_add16intra = ff_h264_idct_add16intra_paired;
 	c->h264_idct_dc_add = ff_h264_idct_dc_add_paired;
-	/* c->h264_idct8_dc_add = ff_h264_idct8_dc_add_paired;
-	c->h264_idct8_add = ff_h264_idct8_add_paired;
-	c->h264_idct8_add4 = ff_h264_idct8_add4_paired; */
+	c->h264_idct8_dc_add = ff_h264_idct8_dc_add_paired;
+	//c->h264_idct8_add = ff_h264_idct8_add_paired;
+	c->h264_idct8_add4 = ff_h264_idct8_add4_paired;
 	
 	c->weight_h264_pixels_tab[0] = weight_h264_pixels16x16_paired;
 	c->weight_h264_pixels_tab[1] = weight_h264_pixels16x8_paired;

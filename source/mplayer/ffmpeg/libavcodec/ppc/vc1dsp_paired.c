@@ -132,10 +132,10 @@ static void vc1_inv_trans_4x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 
 void vc1dsp_init_paired(DSPContext *dsp, AVCodecContext *avctx)
 {
-#if 0
+/*
 	dsp->vc1_inv_trans_8x8_dc = vc1_inv_trans_8x8_dc_paired;
 	dsp->vc1_inv_trans_8x4_dc = vc1_inv_trans_8x4_dc_paired;
 	dsp->vc1_inv_trans_4x8_dc = vc1_inv_trans_4x8_dc_paired;
 	dsp->vc1_inv_trans_4x4_dc = vc1_inv_trans_4x4_dc_paired;
-#endif
+*/
 }

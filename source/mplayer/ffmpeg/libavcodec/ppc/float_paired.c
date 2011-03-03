@@ -20,19 +20,21 @@
 #include "dsputil_paired.h"
 #include "libavutil/ppc/paired.h"
 
-static void vector_fmul_paired(float *dst, const float *src, int len)
+
+static void vector_fmul_paired(float *dst, const float *src0, const float *src1, int len)
 {
 	vector float pair[2];
 	vector float result;
 	
 	for (int i=0; i<len*4-7; i+=8) {
-		pair[0] = paired_lx(i, src);
-		pair[1] = paired_lx(i, dst);
+		pair[0] = paired_lx(i, src0);
+		pair[1] = paired_lx(i, src1);
 		
-		result = paired_mul(pair[1], pair[0]);
+		result = paired_mul(pair[0], pair[1]);
 		paired_stx(result, i, dst);
 	}
 }
+
 
 static void vector_fmul_reverse_paired(float *dst, const float *src0, const float *src1, int len)
 {
@@ -93,20 +95,6 @@ static void vector_fmul_window_paired(float *dst, const float *src0, const float
 		result = paired_madd(pair[0], window[0], result);
 		result = paired_merge10(result, result);
 		paired_stx(result, j, dst);
-	}
-}
-
-static void int32_to_float_fmul_scalar_paired(float *dst, const int *src, float mul, int len)
-{
-	vector float pair;
-	
-	for (int i=0; i<len*4-7; i+=8) {
-		float src0 = *src++;
-		float src1 = *src++;
-		
-		pair = ps_merge00(src0, src1);
-		pair = ps_muls0(pair, mul);
-		paired_stx(pair, i, dst);
 	}
 }
 
@@ -205,8 +193,10 @@ void float_init_paired(DSPContext *c, AVCodecContext *avctx)
 {
 	c->vector_fmul = vector_fmul_paired;
 	c->vector_fmul_reverse = vector_fmul_reverse_paired;
+
 	c->vector_fmul_add = vector_fmul_add_paired;
 	c->vector_fmul_window = vector_fmul_window_paired;
+	
 	c->butterflies_float = butterflies_float_paired;
 	c->scalarproduct_float = scalarproduct_float_paired;
 	c->vector_fmul_scalar = vector_fmul_scalar_paired;

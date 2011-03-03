@@ -63,8 +63,9 @@ av_cold void ff_fmt_convert_init(FmtConvertContext *c, AVCodecContext *avctx)
     c->float_to_int16_interleave  = float_to_int16_interleave_c;
 
     if (ARCH_ARM) ff_fmt_convert_init_arm(c, avctx);
-#ifndef GEKKO
-    if (ARCH_PPC) ff_fmt_convert_init_ppc(c, avctx);
+#ifdef GEKKO
+	if (HAVE_PAIRED) ff_fmt_convert_init_paired(c, avctx);
+    else if (ARCH_PPC) ff_fmt_convert_init_ppc(c, avctx);
 #endif
     if (HAVE_MMX) ff_fmt_convert_init_x86(c, avctx);
 }

@@ -3195,26 +3195,25 @@ static void ChangePicture(int dir)
 	while(1)
 	{
 		usleep(THREAD_SLEEP);
-		if(dir>0)
+		if(dir > 0)
 		{
-			for(i=0;i<dir && newIndex;i++)
+			for(i=0; i < dir && newIndex; i++)
 				newIndex = newIndex->next;
 		}
 		else
 		{
-			for(i=dir;i<0 && newIndex;i++)
+			for(i=dir; i < 0 && newIndex; i++)
 				newIndex = newIndex->prior;
 		}
-			
 
 		if(!newIndex)
 		{
-			if(dir>0)
+			if(dir > 0)
 				newIndex = browser.first;
 			else
 				newIndex = browser.last;
 		}
-		
+
 		if(newIndex->type == TYPE_FOLDER)
 			continue;
 
@@ -5728,9 +5727,17 @@ static void MenuSettingsSubtitles()
 				if(OnScreenKeypad(delay, 7, true))
 				{
 					if(delay[0] == 0)
+					{
 						WiiSettings.subtitleDelay = 0;
+					}
 					else
-						WiiSettings.subtitleDelay = atof(delay);
+					{
+						float delayValue = atof(delay);
+						if(delayValue >= -60 && delayValue <= 60)
+							WiiSettings.subtitleDelay = delayValue;
+						else
+							ErrorPrompt("Invalid subtitle delay.");
+					}
 				}
 				break;
 			case 2:

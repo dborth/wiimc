@@ -5277,7 +5277,7 @@ static void MenuSettingsNetworkSMB()
 					}
 				}
 
-				OnScreenKeypad(WiiSettings.smbConf[netEditIndex].ip, 80);
+				OnScreenKeyboard(WiiSettings.smbConf[netEditIndex].ip, 80);
 				break;
 
 			case 2:

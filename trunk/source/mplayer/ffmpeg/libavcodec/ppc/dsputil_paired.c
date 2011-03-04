@@ -4,7 +4,7 @@
  * MPlayer CE is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * MPlayer CE is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -185,7 +185,7 @@ static void ac3_downmix_paired(float (*samples)[256], float (*matrix)[2], int ou
 			paired_stx(result[1], i, samples[1]);
 		}
 	} else if (out_ch == 1) {
-		for(i=0; i<len*4-15; i+=16) {
+		for (i=0; i<len*4-15; i+=16) {
 			result[0] = result[1] = zero;
 			
 			for(c=0; c<in_ch; c++) {

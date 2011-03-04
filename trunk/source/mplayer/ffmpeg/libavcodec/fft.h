@@ -111,6 +111,7 @@ extern SINTABLE(65536);
 int ff_fft_init(FFTContext *s, int nbits, int inverse);
 
 void ff_fft_init_altivec(FFTContext *s);
+void ff_fft_init_paired(FFTContext *s);
 void ff_fft_init_mmx(FFTContext *s);
 void ff_fft_init_arm(FFTContext *s);
 void ff_dct_init_mmx(DCTContext *s);
@@ -212,6 +213,7 @@ int ff_rdft_init(RDFTContext *s, int nbits, enum RDFTransformType trans);
 void ff_rdft_end(RDFTContext *s);
 
 void ff_rdft_init_arm(RDFTContext *s);
+void ff_rdft_init_paired(RDFTContext *s);
 
 static av_always_inline void ff_rdft_calc(RDFTContext *s, FFTSample *data)
 {

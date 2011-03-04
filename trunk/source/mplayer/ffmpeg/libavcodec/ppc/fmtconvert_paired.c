@@ -4,7 +4,7 @@
  * MPlayer CE is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * MPlayer CE is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,7 +19,6 @@
 #include "libavcodec/fmtconvert.h"
 #include "dsputil_paired.h"
 #include "libavutil/ppc/paired.h"
-
 
 static void int32_to_float_fmul_scalar_paired(float *dst, const int *src, float mul, int len)
 {
@@ -82,9 +81,9 @@ static void float_to_int16_interleave_paired(int16_t *dst, const float **src, lo
 	}
 }
 
-void ff_fmt_convert_init_paired(FmtConvertContext *c, AVCodecContext *avctx)
+void ff_fmt_convert_init_ppc(FmtConvertContext *c, AVCodecContext *avctx)
 {
-    c->int32_to_float_fmul_scalar = int32_to_float_fmul_scalar_paired;
-    c->float_to_int16 = float_to_int16_paired;
-    c->float_to_int16_interleave = float_to_int16_interleave_paired;
+	c->int32_to_float_fmul_scalar = int32_to_float_fmul_scalar_paired;
+	c->float_to_int16 = float_to_int16_paired;
+	c->float_to_int16_interleave = float_to_int16_interleave_paired;
 }

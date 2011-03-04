@@ -4,7 +4,7 @@
  * MPlayer CE is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * MPlayer CE is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,7 +20,6 @@
 #include "dsputil_paired.h"
 #include "libavutil/ppc/paired.h"
 
-
 static void vector_fmul_paired(float *dst, const float *src0, const float *src1, int len)
 {
 	vector float pair[2];
@@ -34,7 +33,6 @@ static void vector_fmul_paired(float *dst, const float *src0, const float *src1,
 		paired_stx(result, i, dst);
 	}
 }
-
 
 static void vector_fmul_reverse_paired(float *dst, const float *src0, const float *src1, int len)
 {
@@ -68,10 +66,9 @@ static void vector_fmul_add_paired(float *dst, const float *src0, const float *s
 	}
 }
 
-static void vector_fmul_window_paired(float *dst, const float *src0, const float *src1, const float *win, float add_bias, int len)
+static void vector_fmul_window_paired(float *dst, const float *src0, const float *src1, const float *win, int len)
 {
 	vector float pair[2], window[2];
-	vector float bias = {add_bias,add_bias};
 	vector float result;
 	
 	dst += len;
@@ -87,11 +84,11 @@ static void vector_fmul_window_paired(float *dst, const float *src0, const float
 		window[1] = paired_lx(j, win);
 		window[1] = paired_merge10(window[1], window[1]);
 		
-		result = paired_madd(pair[0], window[1], bias);
-		result = ps_nmsub(pair[1], window[0], result);
+		result = paired_mul(pair[1], window[0]);
+		result = paired_msub(pair[0], window[1], result);
 		paired_stx(result, i, dst);
 		
-		result = paired_madd(pair[1], window[1], bias);
+		result = paired_mul(pair[1], window[1]);
 		result = paired_madd(pair[0], window[0], result);
 		result = paired_merge10(result, result);
 		paired_stx(result, j, dst);
@@ -147,7 +144,7 @@ void float_init_paired(DSPContext *c, AVCodecContext *avctx)
 	c->vector_fmul = vector_fmul_paired;
 	c->vector_fmul_reverse = vector_fmul_reverse_paired;
 	c->vector_fmul_add = vector_fmul_add_paired;
-	c->vector_fmul_window = vector_fmul_window_paired;	
+	c->vector_fmul_window = vector_fmul_window_paired;
 	c->butterflies_float = butterflies_float_paired;
 	c->scalarproduct_float = scalarproduct_float_paired;
 	c->vector_fmul_scalar = vector_fmul_scalar_paired;

@@ -1,7 +1,7 @@
 include $(SUBDIR)../config.mak
 
 NAME = avcodec
-FFLIBS = avcore avutil
+FFLIBS = avutil
 
 HEADERS = avcodec.h avfft.h dxva2.h opt.h vaapi.h vdpau.h xvmc.h
 
@@ -55,8 +55,10 @@ OBJS-$(CONFIG_AAC_ENCODER)             += aacenc.o aaccoder.o    \
                                           mpeg4audio.o
 OBJS-$(CONFIG_AASC_DECODER)            += aasc.o msrledec.o
 OBJS-$(CONFIG_AC3_DECODER)             += ac3dec.o ac3dec_data.o ac3.o
-OBJS-$(CONFIG_AC3_ENCODER)             += ac3enc_float.o ac3tab.o ac3.o
-OBJS-$(CONFIG_AC3_FIXED_ENCODER)       += ac3enc_fixed.o ac3tab.o ac3.o
+OBJS-$(CONFIG_AC3_ENCODER)             += ac3enc_float.o ac3tab.o ac3.o \
+                                          ac3dsp.o
+OBJS-$(CONFIG_AC3_FIXED_ENCODER)       += ac3enc_fixed.o ac3tab.o ac3.o \
+                                          ac3dsp.o
 OBJS-$(CONFIG_ALAC_DECODER)            += alac.o
 OBJS-$(CONFIG_ALAC_ENCODER)            += alacenc.o
 OBJS-$(CONFIG_ALS_DECODER)             += alsdec.o bgmc.o mpeg4audio.o
@@ -415,7 +417,7 @@ OBJS-$(CONFIG_WNV1_DECODER)            += wnv1.o
 OBJS-$(CONFIG_WS_SND1_DECODER)         += ws-snd1.o
 OBJS-$(CONFIG_XAN_DPCM_DECODER)        += dpcm.o
 OBJS-$(CONFIG_XAN_WC3_DECODER)         += xan.o
-OBJS-$(CONFIG_XAN_WC4_DECODER)         += xan.o
+OBJS-$(CONFIG_XAN_WC4_DECODER)         += xxan.o
 OBJS-$(CONFIG_XL_DECODER)              += xl.o
 OBJS-$(CONFIG_XSUB_DECODER)            += xsubdec.o
 OBJS-$(CONFIG_XSUB_ENCODER)            += xsubenc.o

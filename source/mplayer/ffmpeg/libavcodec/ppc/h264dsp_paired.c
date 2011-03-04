@@ -4,7 +4,7 @@
  * MPlayer CE is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * MPlayer CE is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -460,7 +460,7 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 	}
 }
 
-static void put_no_rnd_vc1_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
+void ff_put_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
 {
 	const vector float zero = {0.0,0.0};
 	const float offset = 0.4375;
@@ -581,7 +581,7 @@ static void put_no_rnd_vc1_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int str
 	}
 }
 
-static void avg_no_rnd_vc1_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
+void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
 {
 	const vector float zero = {0.0,0.0};
 	const float offset = 0.4375;
@@ -1212,8 +1212,6 @@ void dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 	c->put_h264_chroma_pixels_tab[1] = put_h264_chroma_mc4_paired;
 	c->avg_h264_chroma_pixels_tab[0] = avg_h264_chroma_mc8_paired;
 	c->avg_h264_chroma_pixels_tab[1] = avg_h264_chroma_mc4_paired;
-	//c->put_no_rnd_vc1_chroma_pixels_tab[0] = put_no_rnd_vc1_chroma_mc8_paired;
-	//c->avg_no_rnd_vc1_chroma_pixels_tab[0] = avg_no_rnd_vc1_chroma_mc8_paired;
 }
 
 void ff_h264dsp_init_ppc(H264DSPContext *c)
@@ -1223,8 +1221,8 @@ void ff_h264dsp_init_ppc(H264DSPContext *c)
 	c->h264_idct_add16 = ff_h264_idct_add16_paired;
 	c->h264_idct_add16intra = ff_h264_idct_add16intra_paired;
 	c->h264_idct_dc_add = ff_h264_idct_dc_add_paired;
-	c->h264_idct8_dc_add = ff_h264_idct8_dc_add_paired;
 	//c->h264_idct8_add = ff_h264_idct8_add_paired;
+	c->h264_idct8_dc_add = ff_h264_idct8_dc_add_paired;
 	c->h264_idct8_add4 = ff_h264_idct8_add4_paired;
 	
 	c->weight_h264_pixels_tab[0] = weight_h264_pixels16x16_paired;

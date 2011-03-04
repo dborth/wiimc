@@ -66,6 +66,7 @@ typedef struct VC1DSPContext {
 
 void ff_vc1dsp_init(VC1DSPContext* c);
 void ff_vc1dsp_init_altivec(VC1DSPContext* c);
+void ff_vc1dsp_init_paired(VC1DSPContext* c);
 void ff_vc1dsp_init_mmx(VC1DSPContext* dsp);
 
 #endif /* AVCODEC_VC1DSP_H */

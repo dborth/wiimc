@@ -4,7 +4,7 @@
  * MPlayer CE is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * MPlayer CE is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,8 +17,12 @@
  */
 
 #include "libavcodec/dsputil.h"
+#include "libavcodec/vc1dsp.h"
 #include "dsputil_paired.h"
 #include "libavutil/ppc/paired.h"
+
+void ff_put_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y);
+void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y);
 
 static void vc1_inv_trans_8x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *block)
 {
@@ -130,12 +134,13 @@ static void vc1_inv_trans_4x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 	}
 }
 
-void vc1dsp_init_paired(DSPContext *dsp, AVCodecContext *avctx)
+void ff_vc1dsp_init_paired(VC1DSPContext *dsp)
 {
-/*
 	dsp->vc1_inv_trans_8x8_dc = vc1_inv_trans_8x8_dc_paired;
 	dsp->vc1_inv_trans_8x4_dc = vc1_inv_trans_8x4_dc_paired;
 	dsp->vc1_inv_trans_4x8_dc = vc1_inv_trans_4x8_dc_paired;
 	dsp->vc1_inv_trans_4x4_dc = vc1_inv_trans_4x4_dc_paired;
-*/
+	
+	dsp->put_no_rnd_vc1_chroma_pixels_tab[0] = ff_put_vc1_chroma_mc8_paired_nornd;
+	dsp->avg_no_rnd_vc1_chroma_pixels_tab[0] = ff_avg_vc1_chroma_mc8_paired_nornd;
 }

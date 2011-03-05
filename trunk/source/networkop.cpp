@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009
+ * Tantric 2009-2011
  *
  * networkop.cpp
  * Network and SMB support routines

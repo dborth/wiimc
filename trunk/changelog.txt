@@ -6,9 +6,20 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.1.4 - March 4, 2011]
+
+* Synced to MPlayer r32994
+* Fixed crash in Online Media area
+* Fixed crashes on ogg and mp4 files
+* Fixed YouTube support
+* Added Inactivity Shutdown setting
+* Added separate settings to change backward/forward skip
+* Improved memory management
+* Other minor changes
+
 [1.1.3 - February 19, 2011]
 
-* Synced to MPlayer 32866
+* Synced to MPlayer r32866
 * Fixed crash for some USB drives
 * Added option to change screensaver delay
 * Fixed incorrect warning about picture sizes being > 6MB

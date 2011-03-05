@@ -1,6 +1,6 @@
 /****************************************************************************
- * libwiigui Template
- * Tantric 2009
+ * WiiMC
+ * Tantric 2009-2011
  *
  * input.h
  * Wii/GameCube controller management

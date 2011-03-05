@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009-2010
+ * Tantric 2009-2011
  *
  * menu.cpp
  * Menu flow routines - handles all menu logic
@@ -2031,7 +2031,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	}
 
 	buffer[size-1] = 0;
-	char *str = strstr(buffer, "swfHTML");
+	char *str = strstr(buffer, "flashvars");
 
 	if(str == NULL)
 	{
@@ -4960,13 +4960,10 @@ static void MenuSettingsOnlineMedia()
 		switch (ret)
 		{
 			case 0:
-				if(WiiSettings.onlineCacheFill == 2)
-					WiiSettings.onlineCacheFill = 5;
-				else
-					WiiSettings.onlineCacheFill += 5;
+				WiiSettings.onlineCacheFill += 5;
 
-				if(WiiSettings.onlineCacheFill == 55)
-					WiiSettings.onlineCacheFill = 2;
+				if(WiiSettings.onlineCacheFill > 50)
+					WiiSettings.onlineCacheFill = 5;
 				break;
 			case 1:
 				if(strcmp(WiiSettings.youtubeFormat, "5") == 0)

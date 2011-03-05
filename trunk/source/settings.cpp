@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009
+ * Tantric 2009-2011
  *
  * settings.cpp
  * Settings save/load to XML file
@@ -19,11 +19,9 @@
 #include "fileop.h"
 #include "filebrowser.h"
 #include "input.h"
-#include "button_mapping.h"
 #include "settings.h"
 #include "utils/gettext.h"
 #include "utils/mem2_manager.h"
-
 
 #define SAVEBUFFERSIZE (64*1024)
 

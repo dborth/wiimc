@@ -588,3 +588,18 @@ int BrowserChangeFolder(bool updateDir, bool waitParse)
 	UpdateBrowser();
 	return browser.numEntries;
 }
+
+void GetDisplay(BROWSERENTRY *entry, char *buf, int buflen)
+{
+	buf[0] = 0;
+
+	if(entry->display)
+	{
+		snprintf(buf, buflen, "%s", entry->display);
+		return;
+	}
+	snprintf(buf, buflen, "%s", entry->file);
+
+	if(WiiSettings.hideExtensions)
+		StripExt(buf);
+}

@@ -1742,7 +1742,6 @@ static bool ParseDirEntries()
 				if(IsPlaylistExt(ext))
 					f_entry->type = TYPE_PLAYLIST;
 
-				f_entry->display = mem2_strdup(f_entry->file, MEM2_BROWSER);
 				f_entry->icon = ICON_NONE;
 
 				if(menuCurrent == MENU_BROWSE_VIDEOS)
@@ -1761,10 +1760,6 @@ static bool ParseDirEntries()
 					else
 						f_entry->icon = ICON_FILE;
 				}
-
-				// hide the file's extension
-				if(WiiSettings.hideExtensions)
-					StripExt(f_entry->display);
 			}
 			i++;
 		}

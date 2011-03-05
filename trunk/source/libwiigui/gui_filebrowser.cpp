@@ -482,6 +482,8 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	}
 
 	BROWSERENTRY *entry = PositionToEntry(&browser, browser.pageIndex);
+	char disp[255];
+
 	for(int i=0; i<size ; ++i)
 	{
 		if(listChanged)
@@ -493,7 +495,8 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 
 				fileList[i]->SetVisible(true);
 
-				fileListText[i]->SetText(entry->display);
+				GetDisplay(entry, disp, 255);
+				fileListText[i]->SetText(disp);
 
 				switch(entry->icon)
 				{

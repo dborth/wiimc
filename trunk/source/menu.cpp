@@ -2471,7 +2471,7 @@ static void MenuBrowse(int menu)
 						if(numItems == 2 && IsPlaylistExt(ext) && !IsPlaylistExt(ext2)) 
 						{
 							sprintf(loadedFile, browser.first->next->file);
-							snprintf(loadedFileDisplay, 128, "%s", browser.first->next->display);
+							GetDisplay(browser.first->next, loadedFileDisplay, 128);
 							// go up one level
 							browser.selIndex = 0;
 							BrowserChangeFolder();
@@ -2505,7 +2505,7 @@ static void MenuBrowse(int menu)
 				if(numItems == 0)
 				{
 					GetFullPath(browser.selIndex, loadedFile);
-					snprintf(loadedFileDisplay, 128, "%s", browser.selIndex->display);
+					GetDisplay(browser.selIndex, loadedFileDisplay, 128);
 				}
 
 				browserMusic.selIndex = MusicPlaylistFindIndex(loadedFile);

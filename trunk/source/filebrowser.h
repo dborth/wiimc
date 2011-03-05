@@ -92,5 +92,6 @@ void PopulateVideoPlaylist();
 char *GetParentDir();
 int BrowserChangeFolder(bool updateDir = true, bool waitParse = false);
 int BrowseDevice();
+void GetDisplay(BROWSERENTRY *entry, char *buf, int buflen);
 
 #endif

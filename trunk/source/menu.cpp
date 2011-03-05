@@ -2405,7 +2405,12 @@ static void MenuBrowse(int menu)
 
 					strcpy(origname, browser.selIndex->file); // save original URL
 					url_escape_string(escquery, query); // escape the string for use in a URL
-					strcat(browser.selIndex->file, escquery); // append query to search URL
+
+					// append query to search URL
+					char tmp[1024];
+					snprintf(tmp, 1024, "%s%s", browser.selIndex->file, escquery);
+					mem2_free(browser.selIndex->file, MEM2_BROWSER);
+					browser.selIndex->file = mem2_strdup(tmp, MEM2_BROWSER);
 				}
 
 				// this is a file

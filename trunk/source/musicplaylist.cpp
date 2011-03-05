@@ -461,7 +461,7 @@ void MusicPlaylistDequeue(BROWSERENTRY *index)
 	BROWSERENTRY *aux;
 	while(m_entry)
 	{
-		if(strncmp(fullpath, m_entry->file, len) == 0)
+		if(m_entry->file && strncmp(fullpath, m_entry->file, len) == 0)
 		{
 			aux = m_entry;
 			m_entry = m_entry->next; 

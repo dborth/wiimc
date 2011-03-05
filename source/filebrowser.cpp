@@ -161,27 +161,6 @@ int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2)
 	pos= p1->pos - p2->pos;
 	if(pos<0) return -pos;
 	return pos;
-/*	
-	BROWSERENTRY *n;
-
-	n = p1;
-	pos = 0;
-	while(n)
-	{
-		if(n == p2) return pos;
-		pos++;
-		n = n->next;
-	}
-	pos = 0;
-	n = p2;
-	while(n)
-	{
-		if(n == p1) return pos;
-		pos++;
-		n = n->next;
-	}
-	return 0;
-*/	
 }
 
 int EntryPosition(BROWSER *info, BROWSERENTRY * i)

@@ -1351,6 +1351,9 @@ bool ChangeInterface(char * filepath, bool silent)
  ***************************************************************************/
 static int FileSortCallback(const void *f1, const void *f2)
 {
+	if(!((BROWSERENTRY *)f1)->file || !((BROWSERENTRY *)f2)->file)
+		return -1;
+
 	// Special case for implicit directories 
 	if(((BROWSERENTRY *)f1)->file[0] == '.' || ((BROWSERENTRY *)f2)->file[0] == '.')
 	{
@@ -1547,7 +1550,7 @@ void FindDirectory()
 	i=browser.first;
 	while(i!=NULL)
 	{
-		if(strcmp(i->file, browser.lastdir) == 0)
+		if(i->file && strcmp(i->file, browser.lastdir) == 0)
 		{
 			indexFound = i->pos;
 			break;
@@ -1767,7 +1770,7 @@ static bool ParseDirEntries()
 		}
 		else
 		{
-			InfoPrompt("Warning", "This directory contains more entries than the maximum allowed (2000). Not all entries will be visible.");
+			InfoPrompt("Warning", "This directory contains more entries than the maximum allowed. Not all entries will be visible.");
 			entry = NULL;
 			break;
 		}
@@ -1863,6 +1866,9 @@ ParseDirectory(bool waitParse)
 	{
 		BROWSERENTRY *f_entry = AddEntryFiles();
 		
+		if(!f_entry)
+			return 0;
+
 		f_entry->file = mem2_strdup("..", MEM2_BROWSER);
 		f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
 		f_entry->length = 0;
@@ -2057,6 +2063,14 @@ static int ParsePLXPlaylist()
 	ResetFiles();
 
 	BROWSERENTRY *f_entry = AddEntryFiles();
+
+	if(!f_entry)
+	{
+		free(list);
+		mem2_free(buffer, MEM2_OTHER);
+		return -1;
+	}
+
 	f_entry->file = mem2_strdup(BrowserHistoryRetrieve(), MEM2_BROWSER);
 	f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
 	f_entry->length = 0;
@@ -2187,6 +2201,9 @@ int ParsePlaylistFile()
 
 			ResetFiles();
 			f_entry = AddEntryFiles();
+			
+			if(!f_entry) // add failed
+				break;
 
 			char *root = (char*)BrowserHistoryRetrieve();
 
@@ -2300,6 +2317,10 @@ int ParseOnlineMedia()
 	if(browser.dir[0] != 0)
 	{
 		f_entry = AddEntryFiles();
+		
+		if(!f_entry)
+			return 0;
+		
 		f_entry->file = mem2_strdup("..", MEM2_BROWSER);
 		f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
 		f_entry->length = 0;
@@ -2313,21 +2334,29 @@ int ParseOnlineMedia()
 
 	om_entry = browserOnlineMedia.first;
 	while(om_entry)
-	//for(int i=0; i < browserOnlineMedia.size; i++)
 	{
+		if(!om_entry->file || !om_entry->url)
+		{
+			om_entry = om_entry->next;
+			continue;
+		}
+		
 		int filepathLen = strlen(om_entry->file);
 
 		// add file
 		if(strcmp(browser.dir, om_entry->file) == 0)
 		{
 			// unknown protocol - reject entry
-			if(!om_entry->url || (!IsAllowedProtocol(om_entry->url) && strstr(om_entry->url, "://") != NULL))
+			if(!IsAllowedProtocol(om_entry->url) && strstr(om_entry->url, "://") != NULL)
 			{
 				om_entry = om_entry->next;
 				continue;
 			}
 
 			f_entry = AddEntryFiles();
+			
+			if(!f_entry)
+				break;
 
 			if(IsAllowedProtocol(om_entry->url))
 				snprintf(tmpurl, MAXPATHLEN, "%s", om_entry->url);
@@ -2355,7 +2384,7 @@ int ParseOnlineMedia()
 			f_entry = browser.first;
 			while(f_entry)
 			{
-				if(strcmp(f_entry->file, folder) == 0)
+				if(f_entry->file && strcmp(f_entry->file, folder) == 0)
 				{
 					matchFound = true;
 					break;
@@ -2367,6 +2396,10 @@ int ParseOnlineMedia()
 			{
 				// add the folder
 				f_entry = AddEntryFiles();
+				
+				if(!f_entry)
+					break;
+
 				f_entry->file = mem2_strdup(folder, MEM2_BROWSER);
 				f_entry->display = mem2_strdup(folder, MEM2_BROWSER);
 				f_entry->length = 0;

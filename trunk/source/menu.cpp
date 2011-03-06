@@ -558,7 +558,9 @@ static void *ScreensaverThread(void *arg)
 
 			w.SetPosition(x, y);
 			
-			if(WiiSettings.inactivityShutdown > 0 && diff_sec(ssTimer, gettime()) > (u32)(WiiSettings.inactivityShutdown*60))
+			if(WiiSettings.inactivityShutdown > 0 && 
+				!(wiiAudioOnly() && !wiiIsPaused()) &&
+				diff_sec(ssTimer, gettime()) > (u32)(WiiSettings.inactivityShutdown*3600))
 				ExitRequested = true;
 		}
 done:

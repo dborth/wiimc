@@ -82,6 +82,7 @@ play_tree_parser_get_line(play_tree_parser_t* p) {
 
   assert(p->buffer_end < p->buffer_size);
   assert(!p->buffer[p->buffer_end]);
+
   while(1) {
 
     if(resize) {
@@ -702,6 +703,7 @@ parse_textplain(play_tree_parser_t* p) {
   int embedded;
 #ifdef GEKKO
   int linenum = 0;
+  int linelen = 0;
 #endif
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
 
@@ -709,22 +711,27 @@ parse_textplain(play_tree_parser_t* p) {
   play_tree_parser_stop_keeping(p);
 
   while((line = play_tree_parser_get_line(p)) != NULL) {
+	strstrip(line);
 #ifdef GEKKO
 	linenum++;
+	linelen = strlen(line);
 	
-	if(linenum > 10)
+	if(linelen > 1024 || linenum > 500)
 	{
 		if(list) play_tree_free(list, 1);
 		return NULL; // abort - this might be a stream
 	}
 #endif
-    strstrip(line);
     if(line[0] == '\0' || line[0] == '#' || (line[0] == '/' && line[1] == '/'))
       continue;
 
     //Special check for embedded smil or ram reference in file
     embedded = 0;
+#ifdef GEKKO
+    if (linelen > 5)
+#else
     if (strlen(line) > 5)
+#endif
       for(c = line; c[0]; c++ )
         if ( ((c[0] == '.') && //start with . and next have smil with optional ? or &
            (tolower(c[1]) == 's') && (tolower(c[2])== 'm') &&

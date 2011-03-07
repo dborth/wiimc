@@ -561,7 +561,10 @@ static void *ScreensaverThread(void *arg)
 			if(WiiSettings.inactivityShutdown > 0 && 
 				!(wiiAudioOnly() && !wiiIsPaused()) &&
 				diff_sec(ssTimer, gettime()) > (u32)(WiiSettings.inactivityShutdown*3600))
+			{
 				ExitRequested = true;
+				ShutdownRequested = true;
+			}
 		}
 done:
 		SuspendGui();

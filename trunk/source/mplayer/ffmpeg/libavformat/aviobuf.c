@@ -239,12 +239,12 @@ int url_fskip(AVIOContext *s, int64_t offset)
     int64_t ret = avio_seek(s, offset, SEEK_CUR);
     return ret < 0 ? ret : 0;
 }
-#endif
 
 int64_t url_ftell(AVIOContext *s)
 {
     return avio_seek(s, 0, SEEK_CUR);
 }
+#endif
 
 int64_t url_fsize(AVIOContext *s)
 {
@@ -468,7 +468,7 @@ void put_tag(AVIOContext *s, const char *tag)
 
 static void fill_buffer(AVIOContext *s)
 {
-    uint8_t *dst= !s->max_packet_size && s->buf_end - s->buffer < s->buffer_size ? s->buf_ptr : s->buffer;
+    uint8_t *dst= !s->max_packet_size && s->buf_end - s->buffer < s->buffer_size ? s->buf_end : s->buffer;
     int len= s->buffer_size - (dst - s->buffer);
     int max_buffer_size = s->max_packet_size ? s->max_packet_size : IO_BUFFER_SIZE;
 
@@ -675,20 +675,13 @@ unsigned int avio_rb32(AVIOContext *s)
     return val;
 }
 
+#if FF_API_OLD_AVIO
 char *get_strz(AVIOContext *s, char *buf, int maxlen)
 {
-    int i = 0;
-    char c;
-
-    while ((c = avio_r8(s))) {
-        if (i < maxlen-1)
-            buf[i++] = c;
-    }
-
-    buf[i] = 0; /* Ensure null terminated, but may be truncated */
-
+    avio_get_str(s, INT_MAX, buf, maxlen);
     return buf;
 }
+#endif
 
 int ff_get_line(AVIOContext *s, char *buf, int maxlen)
 {
@@ -703,6 +696,23 @@ int ff_get_line(AVIOContext *s, char *buf, int maxlen)
 
     buf[i] = 0;
     return i;
+}
+
+int avio_get_str(AVIOContext *s, int maxlen, char *buf, int buflen)
+{
+    int i;
+
+    // reserve 1 byte for terminating 0
+    buflen = FFMIN(buflen - 1, maxlen);
+    for (i = 0; i < buflen; i++)
+        if (!(buf[i] = avio_r8(s)))
+            return i + 1;
+    if (buflen)
+        buf[i] = 0;
+    for (; i < maxlen; i++)
+        if (!avio_r8(s))
+            return i + 1;
+    return maxlen;
 }
 
 #define GET_STR16(type, read) \

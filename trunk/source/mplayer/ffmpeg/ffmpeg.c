@@ -1352,7 +1352,7 @@ static void print_report(AVFormatContext **output_files,
 
     total_size = url_fsize(oc->pb);
     if(total_size<0) // FIXME improve url_fsize() so it works with non seekable output too
-        total_size= url_ftell(oc->pb);
+        total_size= avio_tell(oc->pb);
 
     buf[0] = '\0';
     ti1 = 1e10;
@@ -2555,7 +2555,7 @@ static int transcode(AVFormatContext **output_files,
         }
 
         /* finish if limit size exhausted */
-        if (limit_filesize != 0 && limit_filesize <= url_ftell(output_files[0]->pb))
+        if (limit_filesize != 0 && limit_filesize <= avio_tell(output_files[0]->pb))
             break;
 
         /* read a frame from it and output it in the fifo */
@@ -2578,7 +2578,8 @@ static int transcode(AVFormatContext **output_files,
         memset(no_packet, 0, sizeof(no_packet));
 
         if (do_pkt_dump) {
-            av_pkt_dump_log(NULL, AV_LOG_DEBUG, &pkt, do_hex_dump);
+            av_pkt_dump_log2(NULL, AV_LOG_DEBUG, &pkt, do_hex_dump,
+                             is->streams[pkt.stream_index]);
         }
         /* the following test is needed in case new streams appear
            dynamically in stream : we ignore them */

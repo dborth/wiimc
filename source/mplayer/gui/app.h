@@ -105,13 +105,13 @@
 #define evFirstLoad       7005
 
 typedef struct {
-    int msg;
+    int message;
     const char *name;
 } evName;
 
 // Skin items
 
-#define itNULL      0
+#define itNone      0
 #define itButton    101
 #define itHPotmeter 102
 #define itVPotmeter 103
@@ -121,25 +121,24 @@ typedef struct {
 #define itPotmeter  107
 #define itFont      108
 
+#define itPLMButton (itNone - 1)
+#define itPRMButton (itNone - 2)
+
 // Button states
 
-#define btnPressed  0
+#define btnDisabled 0
 #define btnReleased 1
-#define btnDisabled 2
+#define btnPressed  2
+
+// Item definition
+
+#define MAX_ITEMS 64
 
 typedef struct {
     int type;
 
     int x, y;
     int width, height;
-
-    int px, py, psx, psy;
-
-    int msg, msg2;
-    int pressed, tmp;
-    int key, key2;
-    int phases;
-    float value;
 
     txSample Bitmap;
     txSample Mask;
@@ -148,14 +147,20 @@ typedef struct {
     int align;
     char *label;
 
+    int pwidth, pheight;
+    int numphases;
+    float value;
+
+    int message;
+
+    int R, G, B;
+
     char *text;
     int textwidth;
     unsigned int starttime;
     int last_x;
 
-    int event;
-
-    int R, G, B;
+    int pressed, tmp;
 } wItem;
 
 typedef struct {
@@ -175,21 +180,22 @@ typedef struct {
     wsTWindow menuWindow;
     int menuIsPresent;
 
-    int NumberOfItems;
-    wItem Items[256];
+    int IndexOfMainItems;
+    wItem mainItems[MAX_ITEMS];
 
-    int NumberOfMenuItems;
-    wItem MenuItems[64];
+    int IndexOfBarItems;
+    wItem barItems[MAX_ITEMS];
 
-    int NumberOfBarItems;
-    wItem barItems[256];
-} listItems;
+    int IndexOfMenuItems;
+    wItem menuItems[MAX_ITEMS];
+} guiItems;
 
-extern listItems appMPlayer;
+extern guiItems appMPlayer;
 
-int appFindMessage(unsigned char *);
-void appInitStruct(listItems *);
-void btnModify(int, float);
-void btnSet(int, int);
+int appFindMessage(unsigned char *str);
+void appFreeStruct(void);
+void appInitStruct(void);
+void btnModify(int event, float state);
+void btnSet(int event, int set);
 
 #endif /* MPLAYER_GUI_APP_H */

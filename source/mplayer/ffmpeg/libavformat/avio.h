@@ -281,6 +281,8 @@ int64_t av_url_read_seek(URLContext *h, int stream_index,
  */
 #define AVSEEK_FORCE 0x20000
 
+#define URL_PROTOCOL_FLAG_NESTED_SCHEME 1 /*< The protocol name can be the first part of a nested protocol scheme */
+
 typedef struct URLProtocol {
     const char *name;
     int (*url_open)(URLContext *h, const char *url, int flags);
@@ -295,6 +297,7 @@ typedef struct URLProtocol {
     int (*url_get_file_handle)(URLContext *h);
     int priv_data_size;
     const AVClass *priv_data_class;
+    int flags;
 } URLProtocol;
 
 #if FF_API_REGISTER_PROTOCOL
@@ -422,6 +425,7 @@ attribute_deprecated int url_fopen( AVIOContext **s, const char *url, int flags)
 attribute_deprecated int url_fclose(AVIOContext *s);
 attribute_deprecated int64_t url_fseek(AVIOContext *s, int64_t offset, int whence);
 attribute_deprecated int url_fskip(AVIOContext *s, int64_t offset);
+attribute_deprecated int64_t url_ftell(AVIOContext *s);
 /**
  * @}
  */
@@ -473,7 +477,7 @@ int64_t avio_seek(AVIOContext *s, int64_t offset, int whence);
  * ftell() equivalent for AVIOContext.
  * @return position or AVERROR.
  */
-int64_t url_ftell(AVIOContext *s);
+#define avio_tell(s) avio_seek((s), 0, SEEK_CUR)
 
 /**
  * Get the filesize.
@@ -526,6 +530,20 @@ unsigned int avio_rl32(AVIOContext *s);
 uint64_t     avio_rl64(AVIOContext *s);
 
 /**
+ * Read a string from pb into buf. The reading will terminate when either
+ * a NULL character was encountered, maxlen bytes have been read, or nothing
+ * more can be read from pb. The result is guaranteed to be NULL-terminated, it
+ * will be truncated if buf is too small.
+ * Note that the string is not interpreted or validated in any way, it
+ * might get truncated in the middle of a sequence for multi-byte encodings.
+ *
+ * @return number of bytes read (is always <= maxlen).
+ * If reading ends on EOF or error, the return value will be one more than
+ * bytes actually read.
+ */
+int avio_get_str(AVIOContext *pb, int maxlen, char *buf, int buflen);
+
+/**
  * Read a UTF-16 string from pb and convert it to UTF-8.
  * The reading will terminate when either a null or invalid character was
  * encountered or maxlen bytes have been read.
@@ -534,7 +552,12 @@ uint64_t     avio_rl64(AVIOContext *s);
 int avio_get_str16le(AVIOContext *pb, int maxlen, char *buf, int buflen);
 int avio_get_str16be(AVIOContext *pb, int maxlen, char *buf, int buflen);
 
-char *get_strz(AVIOContext *s, char *buf, int maxlen);
+#if FF_API_OLD_AVIO
+/**
+ * @deprecated use avio_get_str instead
+ */
+attribute_deprecated char *get_strz(AVIOContext *s, char *buf, int maxlen);
+#endif
 unsigned int avio_rb16(AVIOContext *s);
 unsigned int avio_rb24(AVIOContext *s);
 unsigned int avio_rb32(AVIOContext *s);

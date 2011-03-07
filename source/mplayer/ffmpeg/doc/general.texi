@@ -352,7 +352,6 @@ following image formats are supported:
 @item Bethesda VID video     @tab     @tab  X
     @tab Used in some games from Bethesda Softworks.
 @item Bink Video             @tab     @tab  X
-    @tab Support for version 'b' is missing.
 @item Brute Force & Ignorance   @tab   @tab X
     @tab Used in the game Flash Traffic: City of Angels.
 @item C93 video              @tab     @tab  X
@@ -511,6 +510,8 @@ following image formats are supported:
     @tab not completely working
 @item Wing Commander III / Xan  @tab     @tab  X
     @tab Used in Wing Commander III .MVE files.
+@item Wing Commander IV / Xan  @tab     @tab  X
+    @tab Used in Wing Commander IV.
 @item Winnov WNV1            @tab     @tab  X
 @item WMV7                   @tab  X  @tab  X
 @item YAMAHA SMAF            @tab  X  @tab  X
@@ -706,6 +707,7 @@ performance on systems without hardware floating point support).
 
 @multitable @columnfractions .4 .1
 @item Name         @tab Support
+@item Apple HTTP Live Streaming @tab X
 @item file         @tab X
 @item Gopher       @tab X
 @item HTTP         @tab X
@@ -985,7 +987,7 @@ you should only need to add the directory where the LIB files are installed
 (i.e. @file{c:\msys\usr\local\bin}). This is not a typo, the LIB files are
 installed in the @file{bin} directory. And instead of adding the static
 libraries (@file{libxxx.a} files) you should add the MSVC import libraries
-(@file{avcodec.lib}, @file{avformat.lib}, @file{avcore.lib}, and
+(@file{avcodec.lib}, @file{avformat.lib}, and
 @file{avutil.lib}). Note that you should not use the GCC import
 libraries (@file{libxxx.dll.a} files), as these will give you undefined
 reference errors. There should be no need for @file{libmingwex.a},

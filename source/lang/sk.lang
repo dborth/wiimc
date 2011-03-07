@@ -92,13 +92,13 @@ msgid "Disabled"
 msgstr "Zablokovaný"
 
 msgid "Skip Backward"
-msgstr "Naspäť"
+msgstr "Preskočiť späť"
 
 msgid "Pause"
 msgstr "Pauza"
 
 msgid "Skip Forward"
-msgstr "Dopredu"
+msgstr "Preskočiť vpred"
 
 msgid "Single"
 msgstr "Jediný"
@@ -535,11 +535,11 @@ msgstr "Zatvor MPlayer"
 msgid "Subtitle Codepage"
 msgstr "Kódovanie titulkov"
 
-msgid "This directory contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Tento adresár obsahuje viac položiek ako je maximálna povolené (3000). Nie všetky pložky budú viditeľné."
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Tento adresár obsahuje viac položiek ako je maximálna povolené. Nie všetky pložky budú zobrazené."
 
-msgid "This playlist contains more entries than the maximum allowed (3000). Not all entries will be visible."
-msgstr "Tento zoznam obsahuje viac položiek ako je maximálna povolené (3000). Nie všetky pložky budú viditeľné."
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Tento zoznam obsahuje viac položiek ako je maximálna povolené. Nie všetky pložky budú zobrazené."
 
 msgid "Downloading..."
 msgstr "Sťahovanie..."
@@ -666,3 +666,6 @@ msgstr "Aktuálny IOS nie je podporovaný. Funkčnosť alebo stabilita môže by
 
 msgid "Screensaver Delay"
 msgstr "Čas šetriča"
+
+msgid "Inactivity Shutdown"
+msgstr "Vypnutie pri nečinnosti"

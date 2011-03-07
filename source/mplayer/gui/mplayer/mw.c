@@ -88,7 +88,7 @@ void mplMainDraw( void )
    btnModify( evSetVolume,guiIntfStruct.Volume );
 
    fast_memcpy( mplDrawBuffer,appMPlayer.main.Bitmap.Image,appMPlayer.main.Bitmap.ImageSize );
-   Render( &appMPlayer.mainWindow,appMPlayer.Items,appMPlayer.NumberOfItems,mplDrawBuffer,appMPlayer.main.Bitmap.ImageSize );
+   Render( &appMPlayer.mainWindow,appMPlayer.mainItems,appMPlayer.IndexOfMainItems,mplDrawBuffer,appMPlayer.main.Bitmap.ImageSize );
    mplMainRender=0;
   }
  wsPutImage( &appMPlayer.mainWindow );
@@ -393,9 +393,6 @@ set_volume:
   }
 }
 
-#define itPLMButton (itNULL - 1)
-#define itPRMButton (itNULL - 2)
-
 void mplMainMouseHandle( int Button,int X,int Y,int RX,int RY )
 {
  static int     itemtype = 0;
@@ -406,9 +403,9 @@ void mplMainMouseHandle( int Button,int X,int Y,int RX,int RY )
  static int     SelectedItem = -1;
         int     currentselected = -1;
 
- for ( i=0;i < appMPlayer.NumberOfItems + 1;i++ )
-  if ( ( appMPlayer.Items[i].pressed != btnDisabled )&&
-       ( wgIsRect( X,Y,appMPlayer.Items[i].x,appMPlayer.Items[i].y,appMPlayer.Items[i].x+appMPlayer.Items[i].width,appMPlayer.Items[i].y+appMPlayer.Items[i].height ) ) )
+ for ( i=0;i <= appMPlayer.IndexOfMainItems;i++ )
+  if ( ( appMPlayer.mainItems[i].pressed != btnDisabled )&&
+       ( wgIsRect( X,Y,appMPlayer.mainItems[i].x,appMPlayer.mainItems[i].y,appMPlayer.mainItems[i].x+appMPlayer.mainItems[i].width,appMPlayer.mainItems[i].y+appMPlayer.mainItems[i].height ) ) )
    { currentselected=i; break; }
 
  switch ( Button )
@@ -428,22 +425,22 @@ void mplMainMouseHandle( int Button,int X,int Y,int RX,int RY )
           SelectedItem=currentselected;
           if ( SelectedItem == -1 ) break;
           boxMoved=0;
-          item=&appMPlayer.Items[SelectedItem];
+          item=&appMPlayer.mainItems[SelectedItem];
           itemtype=item->type;
           item->pressed=btnPressed;
           switch( item->type )
            {
             case itButton:
                  if ( ( SelectedItem > -1 ) &&
-                    ( ( ( item->msg == evPlaySwitchToPause && item->msg == evPauseSwitchToPlay ) ) ||
-                      ( ( item->msg == evPauseSwitchToPlay && item->msg == evPlaySwitchToPause ) ) ) )
+                    ( ( ( item->message == evPlaySwitchToPause && item->message == evPauseSwitchToPlay ) ) ||
+                      ( ( item->message == evPauseSwitchToPlay && item->message == evPlaySwitchToPause ) ) ) )
                   { item->pressed=btnDisabled; }
                  break;
            }
           break;
    case wsRLMouseButton:
           boxMoved=0;
-          item=&appMPlayer.Items[SelectedItem];
+          item=&appMPlayer.mainItems[SelectedItem];
           item->pressed=btnReleased;
           SelectedItem=-1;
           if ( currentselected == - 1 ) { itemtype=0; break; }
@@ -452,17 +449,17 @@ void mplMainMouseHandle( int Button,int X,int Y,int RX,int RY )
            {
             case itPotmeter:
             case itHPotmeter:
-                 btnModify( item->msg,(float)( X - item->x ) / item->width * 100.0f );
-		 mplEventHandling( item->msg,item->value );
+                 btnModify( item->message,(float)( X - item->x ) / item->width * 100.0f );
+		 mplEventHandling( item->message,item->value );
                  value=item->value;
                  break;
 	    case itVPotmeter:
-                 btnModify( item->msg, ( 1. - (float)( Y - item->y ) / item->height) * 100.0f );
-		 mplEventHandling( item->msg,item->value );
+                 btnModify( item->message, ( 1. - (float)( Y - item->y ) / item->height) * 100.0f );
+		 mplEventHandling( item->message,item->value );
                  value=item->value;
                  break;
            }
-          mplEventHandling( item->msg,value );
+          mplEventHandling( item->message,value );
           itemtype=0;
           break;
 
@@ -474,18 +471,18 @@ void mplMainMouseHandle( int Button,int X,int Y,int RX,int RY )
    case wsP5MouseButton: value=-2.5f; goto rollerhandled;
    case wsP4MouseButton: value= 2.5f;
 rollerhandled:
-          item=&appMPlayer.Items[currentselected];
+          item=&appMPlayer.mainItems[currentselected];
           if ( ( item->type == itHPotmeter )||( item->type == itVPotmeter )||( item->type == itPotmeter ) )
            {
             item->value+=value;
-            btnModify( item->msg,item->value );
-            mplEventHandling( item->msg,item->value );
+            btnModify( item->message,item->value );
+            mplEventHandling( item->message,item->value );
            }
           break;
 
 // --- moving
    case wsMoveMouse:
-          item=&appMPlayer.Items[SelectedItem];
+          item=&appMPlayer.mainItems[SelectedItem];
           switch ( itemtype )
            {
             case itPLMButton:
@@ -506,7 +503,7 @@ rollerhandled:
 potihandled:
                  if ( item->value > 100.0f ) item->value=100.0f;
                  if ( item->value < 0.0f ) item->value=0.0f;
-                 mplEventHandling( item->msg,item->value );
+                 mplEventHandling( item->message,item->value );
                  break;
            }
           break;

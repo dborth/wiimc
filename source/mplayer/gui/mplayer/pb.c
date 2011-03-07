@@ -106,14 +106,11 @@ static void mplPBDraw( void )
    vo_mouse_autohide=0;
 
    fast_memcpy( mplPBDrawBuffer,appMPlayer.bar.Bitmap.Image,appMPlayer.bar.Bitmap.ImageSize );
-   Render( &appMPlayer.barWindow,appMPlayer.barItems,appMPlayer.NumberOfBarItems,mplPBDrawBuffer,appMPlayer.bar.Bitmap.ImageSize );
+   Render( &appMPlayer.barWindow,appMPlayer.barItems,appMPlayer.IndexOfBarItems,mplPBDrawBuffer,appMPlayer.bar.Bitmap.ImageSize );
    wsConvert( &appMPlayer.barWindow,mplPBDrawBuffer,appMPlayer.bar.Bitmap.ImageSize );
   }
  wsPutImage( &appMPlayer.barWindow );
 }
-
-#define itPLMButton (itNULL - 1)
-#define itPRMButton (itNULL - 2)
 
 static void mplPBMouseHandle( int Button, int X, int Y, int RX, int RY )
 {
@@ -125,7 +122,7 @@ static void mplPBMouseHandle( int Button, int X, int Y, int RX, int RY )
  static int     SelectedItem = -1;
 	int     currentselected = -1;
 
- for ( i=0;i < appMPlayer.NumberOfBarItems + 1;i++ )
+ for ( i=0;i <= appMPlayer.IndexOfBarItems;i++ )
    if ( ( appMPlayer.barItems[i].pressed != btnDisabled )&&
       ( wgIsRect( X,Y,appMPlayer.barItems[i].x,appMPlayer.barItems[i].y,appMPlayer.barItems[i].x+appMPlayer.barItems[i].width,appMPlayer.barItems[i].y+appMPlayer.barItems[i].height ) ) )
     { currentselected=i; break; }
@@ -155,8 +152,8 @@ static void mplPBMouseHandle( int Button, int X, int Y, int RX, int RY )
 	 {
 	  case itButton:
 	       if ( ( SelectedItem > -1 ) &&
-	         ( ( ( item->msg == evPlaySwitchToPause && item->msg == evPauseSwitchToPlay ) ) ||
-		 ( ( item->msg == evPauseSwitchToPlay && item->msg == evPlaySwitchToPause ) ) ) )
+	         ( ( ( item->message == evPlaySwitchToPause && item->message == evPauseSwitchToPlay ) ) ||
+		 ( ( item->message == evPauseSwitchToPlay && item->message == evPlaySwitchToPause ) ) ) )
 		 { item->pressed=btnDisabled; }
 	       break;
 	 }
@@ -173,17 +170,17 @@ static void mplPBMouseHandle( int Button, int X, int Y, int RX, int RY )
 	 {
 	  case itPotmeter:
 	  case itHPotmeter:
-	       btnModify( item->msg,(float)( X - item->x ) / item->width * 100.0f );
-	       mplEventHandling( item->msg,item->value );
+	       btnModify( item->message,(float)( X - item->x ) / item->width * 100.0f );
+	       mplEventHandling( item->message,item->value );
 	       value=item->value;
 	       break;
 	  case itVPotmeter:
-	       btnModify( item->msg, ( 1. - (float)( Y - item->y ) / item->height) * 100.0f );
-	       mplEventHandling( item->msg,item->value );
+	       btnModify( item->message, ( 1. - (float)( Y - item->y ) / item->height) * 100.0f );
+	       mplEventHandling( item->message,item->value );
 	       value=item->value;
 	       break;
 	 }
-	mplEventHandling( item->msg,value );
+	mplEventHandling( item->message,value );
 
 	itemtype=0;
 	break;
@@ -195,8 +192,8 @@ rollerhandled:
         if ( ( item->type == itHPotmeter )||( item->type == itVPotmeter )||( item->type == itPotmeter ) )
 	 {
 	  item->value+=value;
-	  btnModify( item->msg,item->value );
-	  mplEventHandling( item->msg,item->value );
+	  btnModify( item->message,item->value );
+	  mplEventHandling( item->message,item->value );
 	 }
 	break;
 // ---
@@ -218,7 +215,7 @@ rollerhandled:
 potihandled:
 	       if ( item->value > 100.0f ) item->value=100.0f;
 	       if ( item->value < 0.0f ) item->value=0.0f;
-	       mplEventHandling( item->msg,item->value );
+	       mplEventHandling( item->message,item->value );
 	       break;
 	 }
         break;

@@ -3918,10 +3918,11 @@ static void MenuSettingsGlobal()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	int ssDelay[7] = { 60, 120, 300, 600, 900, 1800, 3600 };
+	int ssDelay[] = { 60, 120, 300, 600, 900, 1800, 3600 };
+	int ssNum = sizeof(ssDelay) / sizeof(int);
 	int ssDelayNum = 2;
 
-	for(i=0; i < 7; i++)
+	for(i=0; i < ssNum; i++)
 		if(WiiSettings.screensaverDelay == ssDelay[i])
 			ssDelayNum = i;
 
@@ -3979,7 +3980,7 @@ static void MenuSettingsGlobal()
 				break;
 			case 7:
 				ssDelayNum++;
-				if(ssDelayNum > 6) ssDelayNum = 0;
+				if(ssDelayNum == ssNum) ssDelayNum = 0;
 				WiiSettings.screensaverDelay = ssDelay[ssDelayNum];
 				break;
 			case 8:
@@ -4483,11 +4484,12 @@ static void MenuSettingsVideos()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 	
-	int skip[8] = { 10, 15, 30, 60, 120, 300, 600, 1200 };
+	int skip[] = { 5, 10, 15, 30, 60, 120, 300, 600, 1200 };
+	int skipNum = sizeof(skip) / sizeof(int);
 	int bwSkip = 0;
 	int fwSkip = 2;
 
-	for(i=0; i < 8; i++)
+	for(i=0; i < skipNum; i++)
 	{
 		if(WiiSettings.skipBackward == skip[i])
 			bwSkip = i;
@@ -4555,12 +4557,12 @@ static void MenuSettingsVideos()
 				break;
 			case 9:
 				bwSkip++;
-				if(bwSkip > 7) bwSkip = 0;
+				if(bwSkip == skipNum) bwSkip = 0;
 				WiiSettings.skipBackward = skip[bwSkip];
 				break;
 			case 10:
 				fwSkip++;
-				if(fwSkip > 7) fwSkip = 0;
+				if(fwSkip == skipNum) fwSkip = 0;
 				WiiSettings.skipForward = skip[fwSkip];
 				break;
 			case 11:

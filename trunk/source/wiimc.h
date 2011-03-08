@@ -39,6 +39,7 @@ void StopMPlayerFile();
 void ActivateExitThread();
 
 extern bool ExitRequested;
+extern bool ShutdownRequested;
 extern FreeTypeGX *fontSystem[];
 extern bool subtitleFontFound;
 extern char loadedFile[];

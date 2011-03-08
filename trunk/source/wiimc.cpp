@@ -44,9 +44,8 @@ extern void __exception_setreload(int t);
 extern char *network_useragent;
 }
 
-static bool ShutdownRequested = false;
-
 bool ExitRequested = false;
+bool ShutdownRequested = false;
 bool subtitleFontFound = false;
 char appPath[1024] = { 0 };
 char loadedFile[1024] = { 0 };

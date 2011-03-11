@@ -27,6 +27,7 @@
 extern "C" {
 #include "mplayer/playtree.h"
 #include "mplayer/stream/url.h"
+#include "mplayer/libdvdcss/libdvdcss.h"
 }
 
 #include "wiimc.h"
@@ -55,6 +56,7 @@ int currentDeviceNum = -1;
 bool isInserted[3] = { false, false, false };
 bool devicesChanged = false;
 u64 dvdLastUsed = 0;
+dvdcss_t dvdcss = NULL;
 
 static char prefix[2][4] = { "sd", "usb" };
 
@@ -482,6 +484,12 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 				part[device][*devnum].name[0] = 0;
 			break;
 		case T_ISO9660:
+		    if (device == DEVICE_USB)
+		    {
+		        char device[] = "/dev/usb";
+		        dvdcss = dvdcss_open(device);
+		    }
+
 			if (!ISO9660_Mount(mount, disc))
 				return;
 
@@ -777,6 +785,11 @@ static void UnmountPartitions(int device)
 				part[device][i].type = 0;
 				sprintf(mount, "%s:", part[device][i].mount);
 				ISO9660_Unmount(mount);
+				if (dvdcss)
+				{
+				    dvdcss_close(dvdcss);
+				    dvdcss = NULL;
+				}
 				break;
 		}
 		part[device][i].name[0] = 0;
@@ -971,7 +984,7 @@ bool MountDVD(bool silent)
 
 			retry = ErrorPromptRetry("No disc inserted!");
 		}
-		else if(!ISO9660_Mount("dvd",  &__io_wiidvd))
+		else if(!ISO9660_Mount("dvd", dvd))
 		{
 			if(silent)
 				break;

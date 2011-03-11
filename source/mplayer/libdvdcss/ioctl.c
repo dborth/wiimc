@@ -140,6 +140,13 @@ static void OS2InitSDC( struct OS2_ExecSCSICmd *, int );
 #endif
 
 /*****************************************************************************
+ * Local prototypes, GEKKO specific
+ *****************************************************************************/
+#if defined( GEKKO )
+static void GekkoInitRDC ( raw_device_command *, int );
+#endif
+
+/*****************************************************************************
  * ioctl_ReadCopyright: check whether the disc is encrypted or not
  *****************************************************************************/
 int ioctl_ReadCopyright( int i_fd, int i_layer, int *pi_copyright )
@@ -270,7 +277,11 @@ int ioctl_ReadCopyright( int i_fd, int i_layer, int *pi_copyright )
     *pi_copyright = p_buffer[ 4 ];
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_READ_DVD_STRUCTURE, 8 );
+    rdc.command[ 6 ] = i_layer;
+    rdc.command[ 7 ] = DVD_STRUCT_COPYRIGHT;
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
+    *pi_copyright = p_buffer[ 4 ];
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -445,7 +456,13 @@ int ioctl_ReadDiscKey( int i_fd, int *pi_agid, uint8_t *p_key )
     memcpy( p_key, p_buffer + 4, DVD_DISCKEY_SIZE );
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_READ_DVD_STRUCTURE, DVD_DISCKEY_SIZE + 4 );
+    rdc.command[ 7 ]  = DVD_STRUCT_DISCKEY;
+    rdc.command[ 10 ] = *pi_agid << 6;
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
+    if( i_ret < 0 )
+        return i_ret;
+    memcpy( p_key, p_buffer + 4, DVD_DISCKEY_SIZE );
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -611,7 +628,14 @@ int ioctl_ReadTitleKey( int i_fd, int *pi_agid, int i_pos, uint8_t *p_key )
     memcpy( p_key, p_buffer + 5, DVD_KEY_SIZE );
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_REPORT_KEY, 12 );
+    rdc.command[ 2 ] = ( i_pos >> 24 ) & 0xff;
+    rdc.command[ 3 ] = ( i_pos >> 16 ) & 0xff;
+    rdc.command[ 4 ] = ( i_pos >>  8 ) & 0xff;
+    rdc.command[ 5 ] = ( i_pos       ) & 0xff;
+    rdc.command[ 10 ] = DVD_REPORT_TITLE_KEY | (*pi_agid << 6);
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
+    memcpy( p_key, p_buffer + 5, DVD_KEY_SIZE );
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -737,7 +761,10 @@ int ioctl_ReportAgid( int i_fd, int *pi_agid )
     *pi_agid = p_buffer[ 7 ] >> 6;
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_REPORT_KEY, 8 );
+    rdc.command[ 10 ] = DVD_REPORT_AGID | (*pi_agid << 6);
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
+    *pi_agid = p_buffer[ 7 ] >> 6;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -873,7 +900,10 @@ int ioctl_ReportChallenge( int i_fd, int *pi_agid, uint8_t *p_challenge )
     memcpy( p_challenge, p_buffer + 4, DVD_CHALLENGE_SIZE );
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_REPORT_KEY, 16 );
+    rdc.command[ 10 ] = DVD_REPORT_CHALLENGE | (*pi_agid << 6);
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
+    memcpy( p_challenge, p_buffer + 4, DVD_CHALLENGE_SIZE );
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1008,7 +1038,10 @@ int ioctl_ReportASF( int i_fd, int *pi_remove_me, int *pi_asf )
     *pi_asf = p_buffer[ 7 ] & 1;
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_REPORT_KEY, 8 );
+    rdc.command[ 10 ] = DVD_REPORT_ASF;
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
+    *pi_asf = p_buffer[ 7 ] & 1;
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1139,7 +1172,10 @@ int ioctl_ReportKey1( int i_fd, int *pi_agid, uint8_t *p_key )
     memcpy( p_key, p_buffer + 4, DVD_KEY_SIZE );
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_REPORT_KEY, 12 );
+    rdc.command[ 10 ] = DVD_REPORT_KEY1 | (*pi_agid << 6);
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
+    memcpy( p_key, p_buffer + 4, DVD_KEY_SIZE );
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1252,7 +1288,9 @@ int ioctl_InvalidateAgid( int i_fd, int *pi_agid )
                         &sdc, sizeof(sdc), &ulParamLen,
                         NULL, 0, &ulDataLen);
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_REPORT_KEY, 0 );
+    rdc.command[ 10 ] = DVD_INVALIDATE_AGID | (*pi_agid << 6);
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1391,7 +1429,11 @@ int ioctl_SendChallenge( int i_fd, int *pi_agid, uint8_t *p_challenge )
                          p_buffer, sizeof(p_buffer), &ulDataLen );
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_SEND_KEY, 16 );
+    rdc.command[ 10 ] = DVD_SEND_CHALLENGE | (*pi_agid << 6);
+    p_buffer[ 1 ] = 0xe;
+    memcpy( p_buffer + 4, p_challenge, DVD_CHALLENGE_SIZE );
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1530,7 +1572,11 @@ int ioctl_SendKey2( int i_fd, int *pi_agid, uint8_t *p_key )
                          p_buffer, sizeof(p_buffer), &ulDataLen );
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_SEND_KEY, 12 );
+    rdc.command[ 10 ] = DVD_SEND_KEY2 | (*pi_agid << 6);
+    p_buffer[ 1 ] = 0xa;
+    memcpy( p_buffer + 4, p_key, DVD_KEY_SIZE );
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1687,7 +1733,12 @@ int ioctl_ReportRPC( int i_fd, int *p_type, int *p_mask, int *p_scheme )
     *p_scheme = p_buffer[ 6 ];
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_REPORT_KEY, 8 );
+    rdc.command[ 10 ] = DVD_REPORT_RPC;
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
+    *p_type = p_buffer[ 4 ] >> 6;
+    *p_mask = p_buffer[ 5 ];
+    *p_scheme = p_buffer[ 6 ];
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1816,7 +1867,11 @@ int ioctl_SendRPC( int i_fd, int i_pdrc )
                          p_buffer, sizeof(p_buffer), &ulDataLen );
 
 #elif defined( GEKKO )
-    return -1;
+    INIT_RDC( GPCMD_SEND_KEY, 8 );
+    rdc.command[ 10 ] = DVD_SEND_RPC;
+    p_buffer[ 1 ] = 6;
+    p_buffer[ 4 ] = i_pdrc;
+    i_ret = USBStorage_ioctl( B_RAW_DEVICE_COMMAND, &rdc, sizeof(rdc) );
 #else
 #   error "DVD ioctls are unavailable on this system"
 
@@ -1825,6 +1880,36 @@ int ioctl_SendRPC( int i_fd, int i_pdrc )
 }
 
 /* Local prototypes */
+
+#if defined( GEKKO )
+/*****************************************************************************
+ * GekkoInitRDC: initialize a RDC structure for the GEKKO
+ *****************************************************************************
+ * This function initializes a BeOS raw device command structure for future
+ * use, either a read command or a write command.
+ *****************************************************************************/
+static void GekkoInitRDC( raw_device_command *p_rdc, int i_type )
+{
+    memset( p_rdc->data, 0, p_rdc->data_length );
+
+    switch( i_type )
+    {
+        case GPCMD_SEND_KEY:
+            /* leave the flags to 0 */
+            break;
+
+        case GPCMD_READ_DVD_STRUCTURE:
+        case GPCMD_REPORT_KEY:
+            p_rdc->flags = B_RAW_DEVICE_DATA_IN;
+            break;
+    }
+
+    p_rdc->command[ 0 ]      = i_type;
+    p_rdc->command[ 8 ]      = (p_rdc->data_length >> 8) & 0xff;
+    p_rdc->command[ 9 ]      =  p_rdc->data_length       & 0xff;
+    p_rdc->command_length    = 12;
+}
+#endif
 
 #if defined( SYS_BEOS )
 /*****************************************************************************

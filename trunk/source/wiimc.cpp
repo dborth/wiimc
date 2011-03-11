@@ -427,11 +427,11 @@ bool InitMPlayer()
 
 	setenv("HOME", MPLAYER_DATADIR, 1);
 	setenv("DVDCSS_CACHE", MPLAYER_CSSDIR, 1);
-	setenv("DVDCSS_METHOD", "disc", 1);
+	setenv("DVDCSS_METHOD", "key", 1);
 	setenv("DVDCSS_VERBOSE", "0", 1);
 	setenv("DVDREAD_VERBOSE", "0", 1);
 	setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
-
+	
 	char agent[15];
 	sprintf(agent, "%s/%s", APPNAME, APPVERSION);
 	network_useragent = mem2_strdup(agent, MEM2_OTHER);

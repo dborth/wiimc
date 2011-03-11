@@ -56,6 +56,7 @@
 #endif
 
 #ifdef GEKKO
+#    include <ogc/usbstorage.h>
 #    include <di/di.h>
 #    include <malloc.h>
 extern bool StartDVDMotor();
@@ -100,6 +101,12 @@ static int di_open  ( dvdcss_t, char const * );
 static int di_seek  ( dvdcss_t, int );
 static int di_read  ( dvdcss_t, void *, int );
 static int di_readv ( dvdcss_t, struct iovec *, int );
+
+static int usb_open  ( dvdcss_t, char const * );
+static int usb_seek  ( dvdcss_t, int );
+static int usb_read  ( dvdcss_t, void *, int );
+static int usb_readv ( dvdcss_t, struct iovec *, int );
+static const DISC_INTERFACE *usb = &__io_usbstorage;
 #endif
 
 #ifdef WIN32
@@ -148,6 +155,11 @@ int _dvdcss_use_ioctls( dvdcss_t dvdcss )
 
     return 0;
 #elif defined( GEKKO )
+    if (dvdcss->pf_read == usb_read)
+        return 1;
+    else if (dvdcss->pf_read == di_read)
+        return 0;
+    else
     return 0;
 #else
     struct stat fileinfo;
@@ -218,6 +230,8 @@ void _dvdcss_check ( dvdcss_t dvdcss )
     ULONG rc;
 
     int i;
+#elif defined( GEKKO )
+
 #else
     char *ppsz_devices[] = { "/dev/dvd", "/dev/cdrom", "/dev/hdc", NULL };
     int i, i_fd;
@@ -433,6 +447,14 @@ int _dvdcss_open ( dvdcss_t dvdcss )
         dvdcss->pf_read  = di_read;
         dvdcss->pf_readv = di_readv;
         return di_open( dvdcss, psz_device );
+    }
+    else if ( !strcmp(psz_device, "/dev/usb") )
+    {
+        print_debug( dvdcss, "using Wii USB API for access" );
+        dvdcss->pf_seek  = usb_seek;
+        dvdcss->pf_read  = usb_read;
+        dvdcss->pf_readv = usb_readv;
+        return usb_open( dvdcss, psz_device );
     }
     else
 #endif
@@ -1187,6 +1209,81 @@ static int di_readv(dvdcss_t dvdcss, struct iovec *iov, int iovcnt) {
 	ret = DI_ReadDVD(bfr, len / DVDCSS_BLOCK_SIZE, dvdcss->i_pos);
 	if (ret < 0) {
 		print_debug( dvdcss, "DI: readv failed with %d", ret);
+		free(bfr);
+		return -1;
+	}
+
+	ptr = bfr;
+	for (i = 0; i < iovcnt; ++i) {
+		memcpy(iov[i].iov_base, ptr, iov[i].iov_len);
+		ptr += iov[i].iov_len;
+	}
+
+	dvdcss->i_pos += len / DVDCSS_BLOCK_SIZE;
+	free(bfr);
+
+	return len;
+}
+
+static int usb_open(dvdcss_t dvdcss, char const * psz_device)
+{
+    int ret;
+    
+	if (strcmp(psz_device, "/dev/usb")) {
+		print_debug(dvdcss, "USB: unknown device '%s'", psz_device);
+		return -1;
+	}
+	
+    ret = (int)usb->isInserted();
+    if (ret == 0)
+        return -1;
+	
+	dvdcss->i_pos = 0;	
+	return 0;
+}
+
+static int usb_seek(dvdcss_t dvdcss, int i_blocks) {
+	if (dvdcss->i_pos == i_blocks )
+		return i_blocks;
+
+	dvdcss->i_pos = i_blocks;
+	return dvdcss->i_pos;
+}
+
+static int usb_read(dvdcss_t dvdcss, void *buffer, int blocks)
+{
+	int ret;
+
+    ret = (int)usb->readSectors(dvdcss->i_pos, blocks, buffer);
+	if (ret == 0) {
+		print_debug(dvdcss, "USB: read failed with %d", ret);
+		return -1;
+	}
+
+	dvdcss->i_pos += blocks;
+	return blocks;
+}
+
+static int usb_readv(dvdcss_t dvdcss, struct iovec *iov, int iovcnt) {
+	int len;
+	int i;
+	void *bfr, *ptr;
+	int ret;
+
+	len = 0;
+	for (i = 0; i < iovcnt; ++i)
+		len += iov[i].iov_len;
+
+	bfr = memalign(32, len);
+	if (bfr == NULL) {
+		print_debug(dvdcss, "USB: can't allocate %d bytes",
+					len * DVDCSS_BLOCK_SIZE);
+		return -1;
+	}
+
+    ret = (int)usb->readSectors(dvdcss->i_pos, len/DVDCSS_BLOCK_SIZE, bfr);
+	if (ret == 0) {
+		print_debug(dvdcss, "USB: read failed with %d", ret);
 		free(bfr);
 		return -1;
 	}

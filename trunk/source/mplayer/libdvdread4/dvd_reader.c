@@ -378,7 +378,7 @@ dvd_reader_t *DVDOpen( const char *ppath )
     }
 
 #ifdef GEKKO
-  if (!strcmp(path, "/dev/di")) {
+  if (!strcmp(path, "/dev/di") || !strcmp(path, "/dev/usb")) {
     ret_val = DVDOpenImageFile( path, have_css );
     free(path);
     return ret_val;

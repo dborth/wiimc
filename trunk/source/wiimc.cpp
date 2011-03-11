@@ -574,11 +574,23 @@ void SetMPlayerSettings()
  ***************************************************************************/	
 int main(int argc, char *argv[])
 {
+	AUDIO_Init(NULL);
+	DSP_Init();
+	AUDIO_StopDMA();
+	AUDIO_RegisterDMACallback(NULL);
+
+	InitVideo();
+	
+	// Wii Power/Reset buttons
+	SYS_SetPowerCallback(ShutdownCB);
+	SYS_SetResetCallback(ResetCB);
+	
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
+	
 	DI_Init();
 	WPAD_Init();
-	InitVideo();
+	
 	USBStorage_Initialize(); // to set aside MEM2 area
 	
 	u32 size = 	//(8*1024*1024) + // cache
@@ -599,13 +611,7 @@ int main(int argc, char *argv[])
 	InitVideo2();
 	SetupPads();
 	StartNetworkThread();
-
-	// Wii Power/Reset buttons
 	WPAD_SetPowerButtonCallback((WPADShutdownCallback)ShutdownCB);
-	SYS_SetPowerCallback(ShutdownCB);
-	SYS_SetResetCallback(ResetCB);
-
-	AUDIO_Init(NULL);
 	GX_AllocTextureMemory();
 	
 	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc

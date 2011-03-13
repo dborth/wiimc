@@ -577,20 +577,16 @@ int main(int argc, char *argv[])
 	AUDIO_Init(NULL);
 	DSP_Init();
 	AUDIO_StopDMA();
-	AUDIO_RegisterDMACallback(NULL);
-
 	InitVideo();
-	
+
 	// Wii Power/Reset buttons
 	SYS_SetPowerCallback(ShutdownCB);
 	SYS_SetResetCallback(ResetCB);
 	
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
-	
 	DI_Init();
 	WPAD_Init();
-	
 	USBStorage_Initialize(); // to set aside MEM2 area
 	
 	u32 size = 	//(8*1024*1024) + // cache
@@ -645,7 +641,6 @@ int main(int argc, char *argv[])
 
 	AUDIO_StopDMA();
 	AUDIO_RegisterDMACallback(NULL);
-
 
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);

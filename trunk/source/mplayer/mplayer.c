@@ -3694,6 +3694,15 @@ if (select_subtitle(mpctx)) {
       }
   }
 
+#ifdef GEKKO
+  // check if video has a higher resolution than the Wii can handle
+  if(mpctx->sh_video && (mpctx->sh_video->disp_w > MAX_WIDTH || mpctx->sh_video->disp_h > MAX_HEIGHT))
+  {
+	wii_error = 1; // resolution too large
+	goto goto_next_file;
+  }
+#endif
+
   if (mpctx->sh_video)
       reinit_video_chain();
 

@@ -49,6 +49,7 @@ bool ShutdownRequested = false;
 bool subtitleFontFound = false;
 char appPath[1024] = { 0 };
 char loadedFile[1024] = { 0 };
+char loadedDevice[16] = { 0 };
 char loadedFileDisplay[128] = { 0 };
 static bool settingsSet = false;
 
@@ -481,6 +482,8 @@ void LoadMPlayerFile()
 	else
 	{
 		wiiSetDVDDevice(NULL);
+		if (strncmp(loadedFile, "dvd://", 6) == 0 || strncmp(loadedFile, "dvdnav://", 9) == 0)
+		    wiiSetDVDDevice(loadedDevice);
 		partitionlabel = GetPartitionLabel(loadedFile);
 	}
 
@@ -585,6 +588,7 @@ int main(int argc, char *argv[])
 	
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
+
 	DI_Init();
 	WPAD_Init();
 	USBStorage_Initialize(); // to set aside MEM2 area

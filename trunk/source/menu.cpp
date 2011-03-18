@@ -3773,8 +3773,21 @@ done:
 static void MenuDVD()
 {
 	ResumeGui();
+	int device = -1;
 
-	if(!ChangeInterface(DEVICE_DVD, -1, NOTSILENT))
+	if(USBStorage_IsDVD())
+	{
+		if (ChangeInterface(DEVICE_DVD, -1, SILENT))
+			device = DEVICE_DVD;
+		else
+			device = DEVICE_USB;
+	}
+	else if (ChangeInterface(DEVICE_DVD, -1, NOTSILENT))
+	{
+		device = DEVICE_DVD;
+	}
+
+	if (device == -1)
 	{
 		if(menuPrevious == MENU_DVD)
 			menuPrevious = MENU_BROWSE_VIDEOS;
@@ -3788,6 +3801,12 @@ static void MenuDVD()
 			sprintf(loadedFile, "dvdnav://");
 		else
 			sprintf(loadedFile, "dvd://");
+
+		if (device == DEVICE_DVD)
+			sprintf(loadedDevice, "/dev/di");
+		else
+			sprintf(loadedDevice, "/dev/usb");
+
 		sprintf(loadedFileDisplay, "DVD");
 		mainWindow->SetState(STATE_DISABLED);
 		mainWindow->Append(disabled);

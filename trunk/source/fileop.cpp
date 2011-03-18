@@ -51,8 +51,6 @@ extern "C" u32 __di_check_ahbprot(void);
 
 #define THREAD_SLEEP 100
 
-int currentDevice = -1;
-int currentDeviceNum = -1;
 bool isInserted[3] = { false, false, false };
 bool devicesChanged = false;
 u64 dvdLastUsed = 0;
@@ -131,11 +129,14 @@ static void * devicecallback (void *arg)
 				UnmountPartitions(DEVICE_USB);
 				usb->shutdown();
 
-				if(strlen(loadedFile) > 3 && strncmp(loadedFile, "usb", 3) == 0)
+				if(strlen(loadedFile) > 3 && (strncmp(loadedFile, "usb", 3) == 0 ||
+				    (strncmp(loadedFile, "dvd", 3) == 0 && strcmp(loadedDevice, "/dev/usb") == 0)))
 				{
 					loadedFile[0] = 0;
 					StopMPlayerFile();
 					DisableVideoImg();
+					if(menuCurrent == MENU_DVD)
+						UndoChangeMenu();
 				}
 				isInserted[DEVICE_USB] = false;
 				devicesChanged = true;
@@ -156,7 +157,7 @@ static void * devicecallback (void *arg)
 				isInserted[DEVICE_DVD] = false;
 				ISO9660_Unmount("dvd:");
 
-				if(strlen(loadedFile) > 3 && strncmp(loadedFile, "dvd", 3) == 0)
+				if(strlen(loadedFile) > 3 && strncmp(loadedFile, "dvd", 3) == 0 && strcmp(loadedDevice,"/dev/di") == 0)
 				{
 					loadedFile[0] = 0;
 					StopMPlayerFile();
@@ -955,7 +956,7 @@ void FindAppPath()
  *
  * Tests if a ISO9660 DVD is inserted and available, and mounts it
  ***************************************************************************/
-bool MountDVD(bool silent)
+static bool MountDVD(bool silent)
 {
 	bool mounted = false;
 	int retry = 1;
@@ -1328,12 +1329,6 @@ bool ChangeInterface(int device, int devnum, bool silent)
 		case DEVICE_INTERNET:
 			mounted = InitializeNetwork(silent);
 			break;
-	}
-
-	if(mounted)
-	{
-		currentDevice = device;
-		currentDeviceNum = devnum;
 	}
 
 	return mounted;

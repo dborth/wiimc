@@ -43,6 +43,7 @@ extern bool ShutdownRequested;
 extern FreeTypeGX *fontSystem[];
 extern bool subtitleFontFound;
 extern char loadedFile[];
+extern char loadedDevice[];
 extern char loadedFileDisplay[];
 extern char appPath[];
 

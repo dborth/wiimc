@@ -667,5 +667,5 @@ msgstr "Aktualny IOS nie jest wspierany. Może to mieć niekorzystny wpływ na f
 msgid "Screensaver Delay"
 msgstr "Opóźnienie wygaszacza"
 
-msgid "Inactivity Timer"
-msgstr "Licznik braku aktywności"
+msgid "Inactivity Shutdown"
+msgstr "Wyłączenie przy braku aktywności"

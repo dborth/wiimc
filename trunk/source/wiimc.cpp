@@ -600,7 +600,7 @@ int main(int argc, char *argv[])
 	AddMem2Area (size, MEM2_VIDEO);
 	AddMem2Area (2*1024*1024, MEM2_BROWSER);
 	AddMem2Area (6*1024*1024, MEM2_GUI);
-	AddMem2Area (3*1024*1024, MEM2_OTHER); // vars + ttf
+	AddMem2Area (4*1024*1024, MEM2_OTHER); // vars + ttf
 
 	BrowserInit(&browser);
 	BrowserInit(&browserSubs);

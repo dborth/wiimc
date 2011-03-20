@@ -47,7 +47,7 @@ GuiText::GuiText(const char * t, int s, GXColor c)
 	if(t)
 	{
 		origText = gui_strdup(t);
-		text = charToWideChar(gettext(t));
+		text = this->ToWchar(gettext(t));
 	}
 
 	for(int i=0; i < 20; i++)
@@ -79,7 +79,7 @@ GuiText::GuiText(const char * t)
 	if(t)
 	{
 		origText = gui_strdup(t);
-		text = charToWideChar(gettext(t));
+		text = this->ToWchar(gettext(t));
 	}
 
 	for(int i=0; i < 20; i++)
@@ -139,6 +139,25 @@ void GuiText::operator delete[](void *p)
 	gui_free(p);
 }
 
+wchar_t* GuiText::ToWchar(const char* t)
+{
+	wchar_t *str = new wchar_t[strlen(t) + 1];
+
+	if(!str)
+		return NULL;
+
+	int bt = mbstowcs(str, t, strlen(t));
+	if (bt > 0)
+	{
+		str[bt] = (wchar_t)'\0';
+		return str;
+	}
+
+	wchar_t *temp = str;
+	while((*temp++ = *t++));
+	return str;
+}
+
 void GuiText::SetText(const char * t)
 {
 	if(origText)
@@ -159,7 +178,7 @@ void GuiText::SetText(const char * t)
 	if(t)
 	{
 		origText = gui_strdup(t);
-		text = charToWideChar(gettext(t));
+		text = this->ToWchar(gettext(t));
 	}
 }
 
@@ -330,7 +349,7 @@ void GuiText::ResetText()
 	if(text)
 		delete[] text;
 
-	text = charToWideChar(gettext(origText));
+	text = this->ToWchar(gettext(origText));
 
 	for(int i=0; i < textDynNum; i++)
 	{

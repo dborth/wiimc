@@ -276,7 +276,7 @@ void PopulateVideoPlaylist()
 		if(browser.selIndex == i) browserVideos.selIndex = entry;
 		i=i->next;
 	}
-	if(browserVideos.selIndex)browserVideos.selIndex = browserVideos.selIndex->next;
+	if(browserVideos.selIndex) browserVideos.selIndex = browserVideos.selIndex->next;
 	if(!browserVideos.selIndex) browserVideos.selIndex = browserVideos.first;
 }
 

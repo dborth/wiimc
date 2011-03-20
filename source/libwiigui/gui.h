@@ -729,7 +729,7 @@ class GuiText : public GuiElement
 		void *operator new(size_t size);
 		void operator delete(void *p);
 		void *operator new[](size_t size);
-		void operator delete[](void *p);		
+		void operator delete[](void *p);
 
 		//!Sets the text of the GuiText element
 		//!\param t Text
@@ -778,6 +778,7 @@ class GuiText : public GuiElement
 		//!Constantly called to draw the text
 		void Draw();
 	protected:
+		wchar_t* ToWchar(const char * t);
 		GXColor color; //!< Font color
 		wchar_t* text; //!< Translated Unicode text value
 		wchar_t *textDyn[20]; //!< Text value, if max width, scrolling, or wrapping enabled

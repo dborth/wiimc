@@ -291,7 +291,7 @@ extern "C" bool FindNextFile(bool load)
 		if(!load)
 			return false;
 
-		if(!WiiSettings.autoPlayNextVideo || browserVideos.selIndex == browserVideos.last)
+		if(!WiiSettings.autoPlayNextVideo || !browserVideos.selIndex)
 		{
 			loadedFile[0] = 0;
 			loadedFileDisplay[0] = 0;
@@ -302,7 +302,6 @@ extern "C" bool FindNextFile(bool load)
 		{
 			strcpy(loadedFile, browserVideos.selIndex->file);
 			browserVideos.selIndex = browserVideos.selIndex->next;
-			if(browserVideos.selIndex == NULL) browserVideos.selIndex = browserVideos.first;
 
 			char *start = strrchr(loadedFile,'/');
 

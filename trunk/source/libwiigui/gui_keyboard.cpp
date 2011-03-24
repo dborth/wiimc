@@ -10,7 +10,7 @@
 
 #include "gui.h"
 
-static char tmptxt[MAX_KEYBOARD_DISPLAY];
+static char tmptxt[MAX_KEYBOARD_DISPLAY+1];
 
 static char * GetDisplayText(char * t)
 {
@@ -23,7 +23,7 @@ static char * GetDisplayText(char * t)
 		return t;
 
 	strncpy(tmptxt, &t[len-MAX_KEYBOARD_DISPLAY], MAX_KEYBOARD_DISPLAY);
-	tmptxt[MAX_KEYBOARD_DISPLAY-1] = 0;
+	tmptxt[MAX_KEYBOARD_DISPLAY] = 0;
 	return &tmptxt[0];
 }
 

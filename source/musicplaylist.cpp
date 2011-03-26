@@ -370,7 +370,7 @@ static void Remove(BROWSERENTRY *i)
 	BROWSERENTRY *p = i->prior;
 
 	if(browserMusic.first == i) browserMusic.first = n;
-	if(browserMusic.last == i) browserMusic.first = p;
+	if(browserMusic.last == i) browserMusic.last = p;
 
 	if(n) n->prior = p;
 	if(p) p->next = n;

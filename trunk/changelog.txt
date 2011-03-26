@@ -6,6 +6,15 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.1.5 - March 25, 2011]
+
+* Synced to MPlayer r33036
+* Fixed Inactivity Shutdown feature
+* Fixed plain playlist support
+* Added support for encrypted DVDs for USB DVD drives (thanks clava!)
+* Fixed network initialization for some USB LAN adapters
+* Other minor changes
+
 [1.1.4 - March 4, 2011]
 
 * Synced to MPlayer r32994

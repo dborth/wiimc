@@ -1597,7 +1597,7 @@ void FindDirectory()
 
 void FindFile()
 {
-	if(loadedFile[0] == 0 || browser.dir[0] == 0)
+	if(loadedFile[0] == 0 || browser.dir[0] == 0 || (menuCurrent != MENU_BROWSE_VIDEOS && menuCurrent != MENU_BROWSE_MUSIC && menuCurrent != MENU_BROWSE_ONLINEMEDIA))
 	{
 		findLoadedFile = 0;
 		return;
@@ -1620,7 +1620,6 @@ void FindFile()
 	}	
 
 	// move to this file
-	browser.selIndex = browser.first;
 	if(indexFound > 0)
 	{
 		entry->icon = ICON_PLAY;

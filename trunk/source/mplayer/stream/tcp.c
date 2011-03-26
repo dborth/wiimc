@@ -219,7 +219,7 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 	if(ret != -EISCONN)
 	{		
 		closesocket(socket_server_fd);
-		return TCP_ERROR_FATAL;
+		return TCP_ERROR_PORT;
 	}
 	net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) & ~IOS_O_NONBLOCK);		
 #elif !HAVE_WINSOCK2_H

@@ -214,8 +214,8 @@ msgstr "減少畫格"
 msgid "Aspect Ratio"
 msgstr "螢幕高寬比"
 
-msgid "Cache Size"
-msgstr "快取大小"
+msgid "Cache Fill"
+msgstr "快取填補"
 
 msgid "Audio Delay"
 msgstr "音訊延遲"
@@ -278,7 +278,7 @@ msgid "Passive"
 msgstr "被動"
 
 msgid "Active"
-msgstr "活動"
+msgstr "主動"
 
 msgid "Delete Site"
 msgstr "刪除網址"
@@ -341,7 +341,7 @@ msgid "USB Mass Storage"
 msgstr "USB存儲裝置"
 
 msgid "Data DVD"
-msgstr " DVD資料光碟"
+msgstr "DVD資料光碟"
 
 msgid "USB drive not found!"
 msgstr "找不到USB裝置！"
@@ -527,7 +527,7 @@ msgid "Out of Memory"
 msgstr "記憶體溢出"
 
 msgid "WiiMC does not have enough free memory to load the picture viewer."
-msgstr " WiiMC沒有足夠可用的記憶體來載入圖片檢視器。"
+msgstr "WiiMC沒有足夠可用的記憶體來載入圖片檢視器。"
 
 msgid "Close MPlayer"
 msgstr "關閉Mplayer播放器"
@@ -666,3 +666,6 @@ msgstr "現在的IOS不支援。功能和/或穩定可能會受到不良影響"
 
 msgid "Screensaver Delay"
 msgstr "螢幕保護程式延遲"
+
+msgid "Inactivity Shutdown"
+msgstr "閒置關機"

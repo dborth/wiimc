@@ -4054,6 +4054,7 @@ static void MenuSettingsGlobal()
 				case LANG_RUSSIAN:				sprintf(options.value[1], "Russian"); break;
 				case LANG_SLOVAK:				sprintf(options.value[1], "Slovak"); break;
 				case LANG_TAMIL:				sprintf(options.value[1], "Tamil"); break;
+				case LANG_SWEDISH:				sprintf(options.value[1], "Swedish"); break;
 			}
 			
 			sprintf (options.value[2], "%d%%", WiiSettings.volume);

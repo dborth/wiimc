@@ -54,6 +54,8 @@ extern const u8		sk_lang[];
 extern const u32	sk_lang_size;
 extern const u8		ta_lang[];
 extern const u32	ta_lang_size;
+extern const u8		sv_lang[];
+extern const u32	sv_lang_size;
 
 // Sounds
 

@@ -2,20 +2,20 @@
  * MXF demuxer.
  * Copyright (c) 2006 SmartJog S.A., Baptiste Coudurier <baptiste dot coudurier at smartjog dot com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -179,7 +179,7 @@ static int64_t klv_decode_ber_length(AVIOContext *pb)
 static int mxf_read_sync(AVIOContext *pb, const uint8_t *key, unsigned size)
 {
     int i, b;
-    for (i = 0; i < size && !url_feof(pb); i++) {
+    for (i = 0; i < size && !pb->eof_reached; i++) {
         b = avio_r8(pb);
         if (b == key[0])
             i = 0;
@@ -262,7 +262,7 @@ static int mxf_decrypt_triplet(AVFormatContext *s, AVPacket *pkt, KLVPacket *klv
         av_aes_init(mxf->aesc, s->key, 128, 1);
     }
     // crypto context
-    avio_seek(pb, klv_decode_ber_length(pb), SEEK_CUR);
+    avio_skip(pb, klv_decode_ber_length(pb));
     // plaintext offset
     klv_decode_ber_length(pb);
     plaintext_size = avio_rb64(pb);
@@ -297,7 +297,7 @@ static int mxf_decrypt_triplet(AVFormatContext *s, AVPacket *pkt, KLVPacket *klv
                      &pkt->data[plaintext_size], size >> 4, ivec, 1);
     pkt->size = orig_size;
     pkt->stream_index = index;
-    avio_seek(pb, end - avio_tell(pb), SEEK_CUR);
+    avio_skip(pb, end - avio_tell(pb));
     return 0;
 }
 
@@ -305,7 +305,7 @@ static int mxf_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
     KLVPacket klv;
 
-    while (!url_feof(s->pb)) {
+    while (!s->pb->eof_reached) {
         if (klv_read_packet(&klv, s->pb) < 0)
             return -1;
         PRINT_KEY(s, "read packet", klv.key);
@@ -339,7 +339,7 @@ static int mxf_read_packet(AVFormatContext *s, AVPacket *pkt)
             return 0;
         } else
         skip:
-            avio_seek(s->pb, klv.length, SEEK_CUR);
+            avio_skip(s->pb, klv.length);
     }
     return AVERROR_EOF;
 }
@@ -397,7 +397,7 @@ static int mxf_read_content_storage(void *arg, AVIOContext *pb, int tag, int siz
         mxf->packages_refs = av_malloc(mxf->packages_count * sizeof(UID));
         if (!mxf->packages_refs)
             return -1;
-        avio_seek(pb, 4, SEEK_CUR); /* useless size of objects, always 16 according to specs */
+        avio_skip(pb, 4); /* useless size of objects, always 16 according to specs */
         avio_read(pb, (uint8_t *)mxf->packages_refs, mxf->packages_count * sizeof(UID));
         break;
     }
@@ -416,7 +416,7 @@ static int mxf_read_source_clip(void *arg, AVIOContext *pb, int tag, int size, U
         break;
     case 0x1101:
         /* UMID, only get last 16 bytes */
-        avio_seek(pb, 16, SEEK_CUR);
+        avio_skip(pb, 16);
         avio_read(pb, source_clip->source_package_uid, 16);
         break;
     case 0x1102:
@@ -437,7 +437,7 @@ static int mxf_read_material_package(void *arg, AVIOContext *pb, int tag, int si
         package->tracks_refs = av_malloc(package->tracks_count * sizeof(UID));
         if (!package->tracks_refs)
             return -1;
-        avio_seek(pb, 4, SEEK_CUR); /* useless size of objects, always 16 according to specs */
+        avio_skip(pb, 4); /* useless size of objects, always 16 according to specs */
         avio_read(pb, (uint8_t *)package->tracks_refs, package->tracks_count * sizeof(UID));
         break;
     }
@@ -482,7 +482,7 @@ static int mxf_read_sequence(void *arg, AVIOContext *pb, int tag, int size, UID 
         sequence->structural_components_refs = av_malloc(sequence->structural_components_count * sizeof(UID));
         if (!sequence->structural_components_refs)
             return -1;
-        avio_seek(pb, 4, SEEK_CUR); /* useless size of objects, always 16 according to specs */
+        avio_skip(pb, 4); /* useless size of objects, always 16 according to specs */
         avio_read(pb, (uint8_t *)sequence->structural_components_refs, sequence->structural_components_count * sizeof(UID));
         break;
     }
@@ -500,12 +500,12 @@ static int mxf_read_source_package(void *arg, AVIOContext *pb, int tag, int size
         package->tracks_refs = av_malloc(package->tracks_count * sizeof(UID));
         if (!package->tracks_refs)
             return -1;
-        avio_seek(pb, 4, SEEK_CUR); /* useless size of objects, always 16 according to specs */
+        avio_skip(pb, 4); /* useless size of objects, always 16 according to specs */
         avio_read(pb, (uint8_t *)package->tracks_refs, package->tracks_count * sizeof(UID));
         break;
     case 0x4401:
         /* UMID, only get last 16 bytes */
-        avio_seek(pb, 16, SEEK_CUR);
+        avio_skip(pb, 16);
         avio_read(pb, package->package_uid, 16);
         break;
     case 0x4701:
@@ -558,7 +558,7 @@ static int mxf_read_generic_descriptor(void *arg, AVIOContext *pb, int tag, int 
         descriptor->sub_descriptors_refs = av_malloc(descriptor->sub_descriptors_count * sizeof(UID));
         if (!descriptor->sub_descriptors_refs)
             return -1;
-        avio_seek(pb, 4, SEEK_CUR); /* useless size of objects, always 16 according to specs */
+        avio_skip(pb, 4); /* useless size of objects, always 16 according to specs */
         avio_read(pb, (uint8_t *)descriptor->sub_descriptors_refs, descriptor->sub_descriptors_count * sizeof(UID));
         break;
     case 0x3004:
@@ -914,7 +914,7 @@ static int mxf_read_header(AVFormatContext *s, AVFormatParameters *ap)
     }
     avio_seek(s->pb, -14, SEEK_CUR);
     mxf->fc = s;
-    while (!url_feof(s->pb)) {
+    while (!s->pb->eof_reached) {
         const MXFMetadataReadTableEntry *metadata;
 
         if (klv_read_packet(&klv, s->pb) < 0)
@@ -943,7 +943,7 @@ static int mxf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             }
         }
         if (!metadata->read)
-            avio_seek(s->pb, klv.length, SEEK_CUR);
+            avio_skip(s->pb, klv.length);
     }
     return mxf_parse_structural_metadata(mxf);
 }

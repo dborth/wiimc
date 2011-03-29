@@ -2,20 +2,20 @@
  * H.26L/H.264/AVC/JVT/14496-10/... encoder/decoder
  * Copyright (c) 2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -1363,7 +1363,7 @@ void ff_h264_pred_init(H264PredContext *h, int codec_id){
     h->pred16x16_add[VERT_PRED8x8]= pred16x16_vertical_add_c;
     h->pred16x16_add[ HOR_PRED8x8]= pred16x16_horizontal_add_c;
 
-    if (ARCH_ARM)    ff_h264_pred_init_arm(h, codec_id);
+    if (ARCH_ARM) ff_h264_pred_init_arm(h, codec_id);
     if (HAVE_PAIRED) ff_h264_pred_init_ppc(h, codec_id);
-    if (HAVE_MMX)    ff_h264_pred_init_x86(h, codec_id);
+    if (HAVE_MMX) ff_h264_pred_init_x86(h, codec_id);
 }

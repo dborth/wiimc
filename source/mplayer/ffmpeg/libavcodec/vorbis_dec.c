@@ -3,20 +3,20 @@
  * Vorbis I decoder
  * @author Denes Balatoni  ( dbalatoni programozo hu )
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -1448,7 +1448,7 @@ void vorbis_inverse_coupling(float *mag, float *ang, int blocksize)
 static int vorbis_parse_audio_packet(vorbis_context *vc)
 {
     GetBitContext *gb = &vc->gb;
-
+    FFTContext *mdct;
     uint_fast8_t previous_window = vc->previous_window;
     uint_fast8_t mode_number;
     uint_fast8_t blockflag;
@@ -1552,11 +1552,13 @@ static int vorbis_parse_audio_packet(vorbis_context *vc)
 
 // Dotproduct, MDCT
 
+    mdct = &vc->mdct[blockflag];
+
     for (j = vc->audio_channels-1;j >= 0; j--) {
         ch_floor_ptr = vc->channel_floors   + j           * blocksize / 2;
         ch_res_ptr   = vc->channel_residues + res_chan[j] * blocksize / 2;
         vc->dsp.vector_fmul(ch_floor_ptr, ch_floor_ptr, ch_res_ptr, blocksize / 2);
-        ff_imdct_half(&vc->mdct[blockflag], ch_res_ptr, ch_floor_ptr);
+        mdct->imdct_half(mdct, ch_res_ptr, ch_floor_ptr);
     }
 
 // Overlap/add, save data for next overlapping  FPMATH

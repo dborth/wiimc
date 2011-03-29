@@ -489,6 +489,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_LPC 1
 #define CONFIG_MDCT 1
 #define CONFIG_RDFT 1
+#define CONFIG_SINEWIN 1
 
 /* Use these registers in FFmpeg x86 inline asm. No proper detection yet. */
 #ifndef MP_DEBUG
@@ -497,8 +498,8 @@ char MPLAYER_CSSDIR[512];
 #define HAVE_EBP_AVAILABLE 0
 #endif
 
-#define FFMPEG_CONFIGURATION "--enable-gpl --enable-postproc"
-#define FFMPEG_LICENSE "GPL version 2 or later"
+#define LIBAV_CONFIGURATION "--enable-gpl --enable-postproc"
+#define LIBAV_LICENSE "GPL version 2 or later"
 
 /* External libraries used through FFmpeg. */
 #define CONFIG_LIBFAAC 0
@@ -570,6 +571,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_INDEO5_DECODER 1
 #define CONFIG_INTERPLAY_VIDEO_DECODER 1
 #define CONFIG_JPEGLS_DECODER 1
+#define CONFIG_JV_DECODER 1
 #define CONFIG_KGV1_DECODER 1
 #define CONFIG_KMVC_DECODER 1
 #define CONFIG_LAGARITH_DECODER 1
@@ -976,6 +978,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_ISS_DEMUXER 1
 #define CONFIG_IV8_DEMUXER 1
 #define CONFIG_IVF_DEMUXER 1
+#define CONFIG_JV_DEMUXER 1
 #define CONFIG_LMLM4_DEMUXER 1
 #define CONFIG_LXF_DEMUXER 1
 #define CONFIG_M4V_DEMUXER 1

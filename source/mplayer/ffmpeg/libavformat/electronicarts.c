@@ -2,20 +2,20 @@
  * Copyright (c) 2004  The ffmpeg Project
  * Copyright (c) 2006-2008 Peter Ross
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -109,7 +109,7 @@ static int process_audio_header_elements(AVFormatContext *s)
     ea->sample_rate = -1;
     ea->num_channels = 1;
 
-    while (!url_feof(pb) && inHeader) {
+    while (!pb->eof_reached && inHeader) {
         int inSubheader;
         uint8_t byte;
         byte = avio_r8(pb);
@@ -118,7 +118,7 @@ static int process_audio_header_elements(AVFormatContext *s)
         case 0xFD:
             av_log (s, AV_LOG_DEBUG, "entered audio subheader\n");
             inSubheader = 1;
-            while (!url_feof(pb) && inSubheader) {
+            while (!pb->eof_reached && inSubheader) {
                 uint8_t subbyte;
                 subbyte = avio_r8(pb);
 
@@ -222,7 +222,7 @@ static int process_audio_header_eacs(AVFormatContext *s)
     ea->bytes        = avio_r8(pb);   /* 1=8-bit, 2=16-bit */
     ea->num_channels = avio_r8(pb);
     compression_type = avio_r8(pb);
-    avio_seek(pb, 13, SEEK_CUR);
+    avio_skip(pb, 13);
 
     switch (compression_type) {
     case 0:
@@ -261,7 +261,7 @@ static int process_video_header_mdec(AVFormatContext *s)
 {
     EaDemuxContext *ea = s->priv_data;
     AVIOContext *pb = s->pb;
-    avio_seek(pb, 4, SEEK_CUR);
+    avio_skip(pb, 4);
     ea->width  = avio_rl16(pb);
     ea->height = avio_rl16(pb);
     ea->time_base = (AVRational){1,15};
@@ -274,7 +274,7 @@ static int process_video_header_vp6(AVFormatContext *s)
     EaDemuxContext *ea = s->priv_data;
     AVIOContext *pb = s->pb;
 
-    avio_seek(pb, 16, SEEK_CUR);
+    avio_skip(pb, 16);
     ea->time_base.den = avio_rl32(pb);
     ea->time_base.num = avio_rl32(pb);
     ea->video_codec = CODEC_ID_VP6;
@@ -316,7 +316,7 @@ static int process_ea_header(AVFormatContext *s) {
             case SHEN_TAG :
                 blockid = avio_rl32(pb);
                 if (blockid == GSTR_TAG) {
-                    avio_seek(pb, 4, SEEK_CUR);
+                    avio_skip(pb, 4);
                 } else if ((blockid & 0xFFFF)!=PT00_TAG) {
                     av_log (s, AV_LOG_ERROR, "unknown SCHl headerid\n");
                     return 0;
@@ -474,19 +474,19 @@ static int ea_read_packet(AVFormatContext *s,
         /* audio data */
         case ISNh_TAG:
             /* header chunk also contains data; skip over the header portion*/
-            avio_seek(pb, 32, SEEK_CUR);
+            avio_skip(pb, 32);
             chunk_size -= 32;
         case ISNd_TAG:
         case SCDl_TAG:
         case SNDC_TAG:
         case SDEN_TAG:
             if (!ea->audio_codec) {
-                avio_seek(pb, chunk_size, SEEK_CUR);
+                avio_skip(pb, chunk_size);
                 break;
             } else if (ea->audio_codec == CODEC_ID_PCM_S16LE_PLANAR ||
                        ea->audio_codec == CODEC_ID_MP3) {
                 num_samples = avio_rl32(pb);
-                avio_seek(pb, 8, SEEK_CUR);
+                avio_skip(pb, 8);
                 chunk_size -= 12;
             }
             ret = av_get_packet(pb, pkt, chunk_size);
@@ -541,7 +541,7 @@ static int ea_read_packet(AVFormatContext *s,
             goto get_video_packet;
 
         case mTCD_TAG:
-            avio_seek(pb, 8, SEEK_CUR);  // skip ea dct header
+            avio_skip(pb, 8);  // skip ea dct header
             chunk_size -= 8;
             goto get_video_packet;
 
@@ -560,7 +560,7 @@ get_video_packet:
             break;
 
         default:
-            avio_seek(pb, chunk_size, SEEK_CUR);
+            avio_skip(pb, chunk_size);
             break;
         }
     }

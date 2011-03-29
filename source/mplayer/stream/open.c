@@ -38,7 +38,6 @@
 
 
 /// We keep these 2 for the gui atm, but they will be removed.
-int vcd_track=0;
 char* cdrom_device=NULL;
 int dvd_chapter=1;
 int dvd_last_chapter=0;
@@ -69,6 +68,7 @@ void CleanFileName(const char *file)  //clean (//) exacmple smb1://film.avi -> s
 	}	
 }
 #endif
+
 stream_t* open_stream(const char* filename,char** options, int* file_format){
   int dummy = DEMUXER_TYPE_UNKNOWN;
   if (!file_format) file_format = &dummy;

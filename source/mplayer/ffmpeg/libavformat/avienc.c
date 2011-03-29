@@ -2,20 +2,20 @@
  * AVI muxer
  * Copyright (c) 2000 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -393,7 +393,7 @@ static int avi_write_header(AVFormatContext *s)
     avi->movi_list = ff_start_tag(pb, "LIST");
     ffio_wfourcc(pb, "movi");
 
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     return 0;
 }
@@ -438,15 +438,15 @@ static int avi_write_ix(AVFormatContext *s)
              avio_wl32(pb, ((uint32_t)ie->len & ~0x80000000) |
                           (ie->flags & 0x10 ? 0 : 0x80000000));
          }
-         put_flush_packet(pb);
+         avio_flush(pb);
          pos = avio_tell(pb);
 
          /* Updating one entry in the AVI OpenDML master index */
          avio_seek(pb, avist->indexes.indx_start - 8, SEEK_SET);
          ffio_wfourcc(pb, "indx");            /* enabling this entry */
-         avio_seek(pb, 8, SEEK_CUR);
+         avio_skip(pb, 8);
          avio_wl32(pb, avi->riff_id);         /* nEntriesInUse */
-         avio_seek(pb, 16*avi->riff_id, SEEK_CUR);
+         avio_skip(pb, 16*avi->riff_id);
          avio_wl64(pb, ix);                   /* qwOffset */
          avio_wl32(pb, pos - ix);             /* dwSize */
          avio_wl32(pb, avist->indexes.entry); /* dwDuration */
@@ -578,7 +578,7 @@ static int avi_write_packet(AVFormatContext *s, AVPacket *pkt)
     if (size & 1)
         avio_w8(pb, 0);
 
-    put_flush_packet(pb);
+    avio_flush(pb);
     return 0;
 }
 
@@ -603,7 +603,7 @@ static int avi_write_trailer(AVFormatContext *s)
             file_size = avio_tell(pb);
             avio_seek(pb, avi->odml_list - 8, SEEK_SET);
             ffio_wfourcc(pb, "LIST"); /* Making this AVI OpenDML one */
-            avio_seek(pb, 16, SEEK_CUR);
+            avio_skip(pb, 16);
 
             for (n=nb_frames=0;n<s->nb_streams;n++) {
                 AVCodecContext *stream = s->streams[n]->codec;
@@ -624,7 +624,7 @@ static int avi_write_trailer(AVFormatContext *s)
             avi_write_counters(s, avi->riff_id);
         }
     }
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     for (i=0; i<s->nb_streams; i++) {
          AVIStream *avist= s->streams[i]->priv_data;

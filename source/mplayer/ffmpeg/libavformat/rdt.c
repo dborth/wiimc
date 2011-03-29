@@ -2,20 +2,20 @@
  * Realmedia RTSP protocol (RDT) support.
  * Copyright (c) 2007 Ronald S. Bultje
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -161,16 +161,16 @@ rdt_load_mdpr (PayloadContext *rdt, AVStream *st, int rule_nr)
         num = avio_rb16(&pb);
         if (rule_nr < 0 || rule_nr >= num)
             return -1;
-        avio_seek(&pb, rule_nr * 2, SEEK_CUR);
+        avio_skip(&pb, rule_nr * 2);
         chunk_nr = avio_rb16(&pb);
-        avio_seek(&pb, (num - 1 - rule_nr) * 2, SEEK_CUR);
+        avio_skip(&pb, (num - 1 - rule_nr) * 2);
 
         /* read MDPR chunks */
         num = avio_rb16(&pb);
         if (chunk_nr >= num)
             return -1;
         while (chunk_nr--)
-            avio_seek(&pb, avio_rb32(&pb), SEEK_CUR);
+            avio_skip(&pb, avio_rb32(&pb));
         size = avio_rb32(&pb);
     } else {
         size = rdt->mlti_data_size;

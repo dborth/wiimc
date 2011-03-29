@@ -2,20 +2,20 @@
  * TTA demuxer
  * Copyright (c) 2006 Alex Beregszaszi
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -50,7 +50,7 @@ static int tta_read_header(AVFormatContext *s, AVFormatParameters *ap)
     if (avio_rl32(s->pb) != AV_RL32("TTA1"))
         return -1; // not tta file
 
-    avio_seek(s->pb, 2, SEEK_CUR); // FIXME: flags
+    avio_skip(s->pb, 2); // FIXME: flags
     channels = avio_rl16(s->pb);
     bps = avio_rl16(s->pb);
     samplerate = avio_rl32(s->pb);
@@ -65,7 +65,7 @@ static int tta_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return -1;
     }
 
-    avio_seek(s->pb, 4, SEEK_CUR); // header crc
+    avio_skip(s->pb, 4); // header crc
 
     framelen = samplerate*256/245;
     c->totalframes = datalen / framelen + ((datalen % framelen) ? 1 : 0);
@@ -91,7 +91,7 @@ static int tta_read_header(AVFormatContext *s, AVFormatParameters *ap)
         av_add_index_entry(st, framepos, i*framelen, size, 0, AVINDEX_KEYFRAME);
         framepos += size;
     }
-    avio_seek(s->pb, 4, SEEK_CUR); // seektable crc
+    avio_skip(s->pb, 4); // seektable crc
 
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id = CODEC_ID_TTA;

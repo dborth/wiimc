@@ -2,20 +2,20 @@
  * Beam Software SIFF demuxer
  * Copyright (c) 2007 Konstantin Shishkov
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -103,7 +103,7 @@ static int siff_parse_vbv1(AVFormatContext *s, SIFFContext *c, AVIOContext *pb)
     }
     width = avio_rl16(pb);
     height = avio_rl16(pb);
-    avio_seek(pb, 4, SEEK_CUR);
+    avio_skip(pb, 4);
     c->frames = avio_rl16(pb);
     if(!c->frames){
         av_log(s, AV_LOG_ERROR, "File contains no frames ???\n");
@@ -113,7 +113,7 @@ static int siff_parse_vbv1(AVFormatContext *s, SIFFContext *c, AVIOContext *pb)
     c->rate = avio_rl16(pb);
     c->block_align = c->rate * (c->bits >> 3);
 
-    avio_seek(pb, 16, SEEK_CUR); //zeroes
+    avio_skip(pb, 16); //zeroes
 
     st = av_new_stream(s, 0);
     if (!st)
@@ -145,7 +145,7 @@ static int siff_parse_soun(AVFormatContext *s, SIFFContext *c, AVIOContext *pb)
         av_log(s, AV_LOG_ERROR, "Header chunk size is incorrect\n");
         return -1;
     }
-    avio_seek(pb, 4, SEEK_CUR); //unknown value
+    avio_skip(pb, 4); //unknown value
     c->rate = avio_rl16(pb);
     c->bits = avio_rl16(pb);
     c->block_align = c->rate * (c->bits >> 3);
@@ -160,7 +160,7 @@ static int siff_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     if (avio_rl32(pb) != TAG_SIFF)
         return -1;
-    avio_seek(pb, 4, SEEK_CUR); //ignore size
+    avio_skip(pb, 4); //ignore size
     tag = avio_rl32(pb);
 
     if (tag != TAG_VBV1 && tag != TAG_SOUN){
@@ -176,7 +176,7 @@ static int siff_read_header(AVFormatContext *s, AVFormatParameters *ap)
         av_log(s, AV_LOG_ERROR, "'BODY' chunk is missing\n");
         return -1;
     }
-    avio_seek(pb, 4, SEEK_CUR); //ignore size
+    avio_skip(pb, 4); //ignore size
 
     return 0;
 }

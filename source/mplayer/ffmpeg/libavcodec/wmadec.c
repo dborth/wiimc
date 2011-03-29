@@ -1,21 +1,21 @@
 /*
  * WMA compatible decoder
- * Copyright (c) 2002 The FFmpeg Project
+ * Copyright (c) 2002 The Libav Project
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -447,6 +447,7 @@ static int wma_decode_block(WMACodecContext *s)
     int coef_nb_bits, total_gain;
     int nb_coefs[MAX_CHANNELS];
     float mdct_norm;
+    FFTContext *mdct;
 
 #ifdef TRACE
     tprintf(s->avctx, "***decode_block: %d:%d\n", s->frame_count - 1, s->block_num);
@@ -742,12 +743,14 @@ static int wma_decode_block(WMACodecContext *s)
     }
 
 next:
+    mdct = &s->mdct_ctx[bsize];
+
     for(ch = 0; ch < s->nb_channels; ch++) {
         int n4, index;
 
         n4 = s->block_len / 2;
         if(s->channel_coded[ch]){
-            ff_imdct_calc(&s->mdct_ctx[bsize], s->output, s->coefs[ch]);
+            mdct->imdct_calc(mdct, s->output, s->coefs[ch]);
         }else if(!(s->ms_stereo && ch==1))
             memset(s->output, 0, sizeof(s->output));
 

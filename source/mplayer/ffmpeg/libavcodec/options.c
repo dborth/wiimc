@@ -2,20 +2,20 @@
  * Copyright (c) 2001 Fabrice Bellard
  * Copyright (c) 2002-2004 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -436,6 +436,16 @@ static const AVOption options[]={
 {"slice", NULL, 0, FF_OPT_TYPE_CONST, FF_THREAD_SLICE, INT_MIN, INT_MAX, V|E|D, "thread_type"},
 {"frame", NULL, 0, FF_OPT_TYPE_CONST, FF_THREAD_FRAME, INT_MIN, INT_MAX, V|E|D, "thread_type"},
 {"vbv_delay", "initial buffer fill time in periods of 27Mhz clock", 0, FF_OPT_TYPE_INT64, 0, 0, INT64_MAX},
+{"audio_service_type", "audio service type", OFFSET(audio_service_type), FF_OPT_TYPE_INT, AV_AUDIO_SERVICE_TYPE_MAIN, 0, AV_AUDIO_SERVICE_TYPE_NB-1, A|E, "audio_service_type"},
+{"ma", "Main Audio Service", 0, FF_OPT_TYPE_CONST, AV_AUDIO_SERVICE_TYPE_MAIN,              INT_MIN, INT_MAX, A|E, "audio_service_type"},
+{"ef", "Effects",            0, FF_OPT_TYPE_CONST, AV_AUDIO_SERVICE_TYPE_EFFECTS,           INT_MIN, INT_MAX, A|E, "audio_service_type"},
+{"vi", "Visually Impaired",  0, FF_OPT_TYPE_CONST, AV_AUDIO_SERVICE_TYPE_VISUALLY_IMPAIRED, INT_MIN, INT_MAX, A|E, "audio_service_type"},
+{"hi", "Hearing Impaired",   0, FF_OPT_TYPE_CONST, AV_AUDIO_SERVICE_TYPE_HEARING_IMPAIRED,  INT_MIN, INT_MAX, A|E, "audio_service_type"},
+{"di", "Dialogue",           0, FF_OPT_TYPE_CONST, AV_AUDIO_SERVICE_TYPE_DIALOGUE,          INT_MIN, INT_MAX, A|E, "audio_service_type"},
+{"co", "Commentary",         0, FF_OPT_TYPE_CONST, AV_AUDIO_SERVICE_TYPE_COMMENTARY,        INT_MIN, INT_MAX, A|E, "audio_service_type"},
+{"em", "Emergency",          0, FF_OPT_TYPE_CONST, AV_AUDIO_SERVICE_TYPE_EMERGENCY,         INT_MIN, INT_MAX, A|E, "audio_service_type"},
+{"vo", "Voice Over",         0, FF_OPT_TYPE_CONST, AV_AUDIO_SERVICE_TYPE_VOICE_OVER,        INT_MIN, INT_MAX, A|E, "audio_service_type"},
+{"ka", "Karaoke",            0, FF_OPT_TYPE_CONST, AV_AUDIO_SERVICE_TYPE_KARAOKE,           INT_MIN, INT_MAX, A|E, "audio_service_type"},
 {NULL},
 };
 

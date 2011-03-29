@@ -2,20 +2,20 @@
  * Westwood Studios Multimedia Formats Demuxer (VQA, AUD)
  * Copyright (c) 2003 The ffmpeg Project
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -303,7 +303,7 @@ static int wsvqa_read_header(AVFormatContext *s,
             break;
         }
 
-        avio_seek(pb, chunk_size, SEEK_CUR);
+        avio_skip(pb, chunk_size);
     } while (chunk_tag != FINF_TAG);
 
     return 0;
@@ -348,7 +348,7 @@ static int wsvqa_read_packet(AVFormatContext *s,
             }
             /* stay on 16-bit alignment */
             if (skip_byte)
-                avio_seek(pb, 1, SEEK_CUR);
+                avio_skip(pb, 1);
 
             return ret;
         } else {
@@ -359,7 +359,7 @@ static int wsvqa_read_packet(AVFormatContext *s,
             default:
                 av_log(s, AV_LOG_INFO, "Skipping unknown chunk 0x%08X\n", chunk_type);
             }
-            avio_seek(pb, chunk_size + skip_byte, SEEK_CUR);
+            avio_skip(pb, chunk_size + skip_byte);
         }
     }
 

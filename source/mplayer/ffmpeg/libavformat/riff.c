@@ -2,20 +2,20 @@
  * RIFF codec tags
  * Copyright (c) 2000 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -299,6 +299,7 @@ const AVCodecTag ff_codec_wav_tags[] = {
     { CODEC_ID_IMC,             0x0401 },
     { CODEC_ID_GSM_MS,          0x1500 },
     { CODEC_ID_TRUESPEECH,      0x1501 },
+    { CODEC_ID_AAC,             0x1600 }, /* ADTS AAC */
     { CODEC_ID_AAC_LATM,        0x1602 },
     { CODEC_ID_AC3,             0x2000 },
     { CODEC_ID_DTS,             0x2001 },
@@ -501,7 +502,7 @@ void ff_get_wav_header(AVIOContext *pb, AVCodecContext *codec, int size)
             codec->bits_per_coded_sample = avio_rl16(pb);
             codec->channel_layout = avio_rl32(pb); /* dwChannelMask */
             id = avio_rl32(pb); /* 4 first bytes of GUID */
-            avio_seek(pb, 12, SEEK_CUR); /* skip end of GUID */
+            avio_skip(pb, 12); /* skip end of GUID */
             cbSize -= 22;
             size -= 22;
         }
@@ -514,7 +515,7 @@ void ff_get_wav_header(AVIOContext *pb, AVCodecContext *codec, int size)
 
         /* It is possible for the chunk to contain garbage at the end */
         if (size > 0)
-            avio_seek(pb, size, SEEK_CUR);
+            avio_skip(pb, size);
     }
     codec->codec_id = ff_wav_codec_get_id(id, codec->bits_per_coded_sample);
     if (codec->codec_id == CODEC_ID_AAC_LATM) {

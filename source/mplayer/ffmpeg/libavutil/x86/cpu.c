@@ -3,20 +3,20 @@
  * (c)1997-99 by H. Dietz and R. Fisher
  * Converted to C and improved by Fabrice Bellard.
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -135,16 +135,24 @@ int ff_get_cpu_flags_x86(void)
         }
     }
 
-    if (!strncmp(vendor.c, "GenuineIntel", 12) &&
-        family == 6 && (model == 9 || model == 13 || model == 14)) {
-        /* 6/9 (pentium-m "banias"), 6/13 (pentium-m "dothan"), and 6/14 (core1 "yonah")
-         * theoretically support sse2, but it's usually slower than mmx,
-         * so let's just pretend they don't. AV_CPU_FLAG_SSE2 is disabled and
-         * AV_CPU_FLAG_SSE2SLOW is enabled so that SSE2 is not used unless
-         * explicitly enabled by checking AV_CPU_FLAG_SSE2SLOW. The same
-         * situation applies for AV_CPU_FLAG_SSE3 and AV_CPU_FLAG_SSE3SLOW. */
-        if (rval & AV_CPU_FLAG_SSE2) rval ^= AV_CPU_FLAG_SSE2SLOW|AV_CPU_FLAG_SSE2;
-        if (rval & AV_CPU_FLAG_SSE3) rval ^= AV_CPU_FLAG_SSE3SLOW|AV_CPU_FLAG_SSE3;
+    if (!strncmp(vendor.c, "GenuineIntel", 12)) {
+        if (family == 6 && (model == 9 || model == 13 || model == 14)) {
+            /* 6/9 (pentium-m "banias"), 6/13 (pentium-m "dothan"), and 6/14 (core1 "yonah")
+            * theoretically support sse2, but it's usually slower than mmx,
+            * so let's just pretend they don't. AV_CPU_FLAG_SSE2 is disabled and
+            * AV_CPU_FLAG_SSE2SLOW is enabled so that SSE2 is not used unless
+            * explicitly enabled by checking AV_CPU_FLAG_SSE2SLOW. The same
+            * situation applies for AV_CPU_FLAG_SSE3 and AV_CPU_FLAG_SSE3SLOW. */
+            if (rval & AV_CPU_FLAG_SSE2) rval ^= AV_CPU_FLAG_SSE2SLOW|AV_CPU_FLAG_SSE2;
+            if (rval & AV_CPU_FLAG_SSE3) rval ^= AV_CPU_FLAG_SSE3SLOW|AV_CPU_FLAG_SSE3;
+        }
+        /* The Atom processor has SSSE3 support, which is useful in many cases,
+         * but sometimes the SSSE3 version is slower than the SSE2 equivalent
+         * on the Atom, but is generally faster on other processors supporting
+         * SSSE3. This flag allows for selectively disabling certain SSSE3
+         * functions on the Atom. */
+        if (family == 6 && model == 28)
+            rval |= AV_CPU_FLAG_ATOM;
     }
 
     return rval;

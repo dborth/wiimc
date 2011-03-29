@@ -4,20 +4,20 @@
  * Copyright (c) 2006-2010 Justin Ruggles <justin.ruggles@gmail.com>
  * Copyright (c) 2006-2010 Prakash Punnoor <prakash@punnoor.de>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -27,8 +27,10 @@
  */
 
 //#define DEBUG
+//#define ASSERT_LEVEL 2
 
 #include "libavutil/audioconvert.h"
+#include "libavutil/avassert.h"
 #include "libavutil/crc.h"
 #include "avcodec.h"
 #include "put_bits.h"
@@ -76,7 +78,7 @@ typedef struct AC3Block {
     int16_t  **band_psd;                        ///< psd per critical band
     int16_t  **mask;                            ///< masking curve
     uint16_t **qmant;                           ///< quantized mantissas
-    int8_t   exp_shift[AC3_MAX_CHANNELS];       ///< exponent shift values
+    uint8_t  coeff_shift[AC3_MAX_CHANNELS];     ///< fixed-point coefficient shift values
     uint8_t  new_rematrixing_strategy;          ///< send new rematrixing flags in this block
     uint8_t  rematrixing_flags[4];              ///< rematrixing flags
 } AC3Block;
@@ -165,7 +167,7 @@ static av_cold int mdct_init(AVCodecContext *avctx, AC3MDCTContext *mdct,
 static void mdct512(AC3MDCTContext *mdct, CoefType *out, SampleType *in);
 
 static void apply_window(DSPContext *dsp, SampleType *output, const SampleType *input,
-                         const SampleType *window, int n);
+                         const SampleType *window, unsigned int len);
 
 static int normalize_samples(AC3EncodeContext *s);
 
@@ -224,7 +226,7 @@ static void adjust_frame_size(AC3EncodeContext *s)
 
 /**
  * Deinterleave input samples.
- * Channels are reordered from FFmpeg's default order to AC-3 order.
+ * Channels are reordered from Libav's default order to AC-3 order.
  */
 static void deinterleave_input_samples(AC3EncodeContext *s,
                                        const SampleType *samples)
@@ -267,7 +269,7 @@ static void apply_mdct(AC3EncodeContext *s)
 
             apply_window(&s->dsp, s->windowed_samples, input_samples, s->mdct.window, AC3_WINDOW_SIZE);
 
-            block->exp_shift[ch] = normalize_samples(s);
+            block->coeff_shift[ch] = normalize_samples(s);
 
             mdct512(&s->mdct, block->mdct_coef[ch], s->windowed_samples);
         }
@@ -326,10 +328,10 @@ static void compute_rematrixing_strategy(AC3EncodeContext *s)
                 CoefType rt = block->mdct_coef[1][i];
                 CoefType md = lt + rt;
                 CoefType sd = lt - rt;
-                sum[0] += lt * lt;
-                sum[1] += rt * rt;
-                sum[2] += md * md;
-                sum[3] += sd * sd;
+                MAC_COEF(sum[0], lt, lt);
+                MAC_COEF(sum[1], rt, rt);
+                MAC_COEF(sum[2], md, md);
+                MAC_COEF(sum[3], sd, sd);
             }
 
             /* compare sums to determine if rematrixing will be used for this band */
@@ -414,18 +416,18 @@ static void extract_exponents(AC3EncodeContext *s)
             AC3Block *block = &s->blocks[blk];
             uint8_t *exp   = block->exp[ch];
             int32_t *coef = block->fixed_coef[ch];
-            int exp_shift  = block->exp_shift[ch];
             for (i = 0; i < AC3_MAX_COEFS; i++) {
                 int e;
                 int v = abs(coef[i]);
                 if (v == 0)
                     e = 24;
                 else {
-                    e = 23 - av_log2(v) + exp_shift;
+                    e = 23 - av_log2(v);
                     if (e >= 24) {
                         e = 24;
                         coef[i] = 0;
                     }
+                    av_assert2(e >= 0);
                 }
                 exp[i] = e;
             }
@@ -648,16 +650,19 @@ static void group_exponents(AC3EncodeContext *s)
                 exp1   = p[0];
                 p     += group_size;
                 delta0 = exp1 - exp0 + 2;
+                av_assert2(delta0 >= 0 && delta0 <= 4);
 
                 exp0   = exp1;
                 exp1   = p[0];
                 p     += group_size;
                 delta1 = exp1 - exp0 + 2;
+                av_assert2(delta1 >= 0 && delta1 <= 4);
 
                 exp0   = exp1;
                 exp1   = p[0];
                 p     += group_size;
                 delta2 = exp1 - exp0 + 2;
+                av_assert2(delta2 >= 0 && delta2 <= 4);
 
                 block->grouped_exp[ch][i] = ((delta0 * 5 + delta1) * 5) + delta2;
             }
@@ -945,6 +950,7 @@ static int cbr_bit_allocation(AC3EncodeContext *s)
     int snr_offset, snr_incr;
 
     bits_left = 8 * s->frame_size - (s->frame_bits + s->exponent_bits);
+    av_assert2(bits_left >= 0);
 
     snr_offset = s->coarse_snr_offset << 4;
 
@@ -1090,18 +1096,8 @@ static int compute_bit_allocation(AC3EncodeContext *s)
  */
 static inline int sym_quant(int c, int e, int levels)
 {
-    int v;
-
-    if (c >= 0) {
-        v = (levels * (c << e)) >> 24;
-        v = (v + 1) >> 1;
-        v = (levels >> 1) + v;
-    } else {
-        v = (levels * ((-c) << e)) >> 24;
-        v = (v + 1) >> 1;
-        v = (levels >> 1) - v;
-    }
-    assert(v >= 0 && v < levels);
+    int v = ((((levels * c) >> (24 - e)) + 1) >> 1) + (levels >> 1);
+    av_assert2(v >= 0 && v < levels);
     return v;
 }
 
@@ -1123,7 +1119,7 @@ static inline int asym_quant(int c, int e, int qbits)
     m = (1 << (qbits-1));
     if (v >= m)
         v = m - 1;
-    assert(v >= -m);
+    av_assert2(v >= -m);
     return v & ((1 << qbits)-1);
 }
 
@@ -1132,7 +1128,7 @@ static inline int asym_quant(int c, int e, int qbits)
  * Quantize a set of mantissas for a single channel in a single block.
  */
 static void quantize_mantissas_blk_ch(AC3EncodeContext *s, int32_t *fixed_coef,
-                                      int8_t exp_shift, uint8_t *exp,
+                                      uint8_t *exp,
                                       uint8_t *bap, uint16_t *qmant, int n)
 {
     int i;
@@ -1140,7 +1136,7 @@ static void quantize_mantissas_blk_ch(AC3EncodeContext *s, int32_t *fixed_coef,
     for (i = 0; i < n; i++) {
         int v;
         int c = fixed_coef[i];
-        int e = exp[i] - exp_shift;
+        int e = exp[i];
         int b = bap[i];
         switch (b) {
         case 0:
@@ -1236,7 +1232,7 @@ static void quantize_mantissas(AC3EncodeContext *s)
         s->qmant1_ptr = s->qmant2_ptr = s->qmant4_ptr = NULL;
 
         for (ch = 0; ch < s->channels; ch++) {
-            quantize_mantissas_blk_ch(s, block->fixed_coef[ch], block->exp_shift[ch],
+            quantize_mantissas_blk_ch(s, block->fixed_coef[ch],
                                       block->exp[ch], block->bap[ch],
                                       block->qmant[ch], s->nb_coefs[ch]);
         }
@@ -1436,10 +1432,11 @@ static void output_frame_end(AC3EncodeContext *s)
     frame_size_58 = ((s->frame_size >> 2) + (s->frame_size >> 4)) << 1;
 
     /* pad the remainder of the frame with zeros */
+    av_assert2(s->frame_size * 8 - put_bits_count(&s->pb) >= 18);
     flush_put_bits(&s->pb);
     frame = s->pb.buf;
     pad_bytes = s->frame_size - (put_bits_ptr(&s->pb) - frame) - 2;
-    assert(pad_bytes >= 0);
+    av_assert2(pad_bytes >= 0);
     if (pad_bytes > 0)
         memset(put_bits_ptr(&s->pb), 0, pad_bytes);
 
@@ -1499,9 +1496,9 @@ static int ac3_encode_frame(AVCodecContext *avctx, unsigned char *frame,
 
     apply_mdct(s);
 
-    compute_rematrixing_strategy(s);
-
     scale_coefficients(s);
+
+    compute_rematrixing_strategy(s);
 
     apply_rematrixing(s);
 
@@ -1660,6 +1657,18 @@ static av_cold int validate_options(AVCodecContext *avctx, AC3EncodeContext *s)
     if (s->cutoff > (s->sample_rate >> 1))
         s->cutoff = s->sample_rate >> 1;
 
+    /* validate audio service type / channels combination */
+    if ((avctx->audio_service_type == AV_AUDIO_SERVICE_TYPE_KARAOKE &&
+         avctx->channels == 1) ||
+        ((avctx->audio_service_type == AV_AUDIO_SERVICE_TYPE_COMMENTARY ||
+          avctx->audio_service_type == AV_AUDIO_SERVICE_TYPE_EMERGENCY  ||
+          avctx->audio_service_type == AV_AUDIO_SERVICE_TYPE_VOICE_OVER)
+         && avctx->channels > 1)) {
+        av_log(avctx, AV_LOG_ERROR, "invalid audio service type for the "
+                                    "specified number of channels\n");
+        return AVERROR(EINVAL);
+    }
+
     return 0;
 }
 
@@ -1802,7 +1811,9 @@ static av_cold int ac3_encode_init(AVCodecContext *avctx)
         return ret;
 
     s->bitstream_id   = 8 + s->bit_alloc.sr_shift;
-    s->bitstream_mode = 0; /* complete main audio service */
+    s->bitstream_mode = avctx->audio_service_type;
+    if (s->bitstream_mode == AV_AUDIO_SERVICE_TYPE_KARAOKE)
+        s->bitstream_mode = 0x7;
 
     s->frame_size_min  = 2 * ff_ac3_frame_size_tab[s->frame_size_code][s->bit_alloc.sr_code];
     s->bits_written    = 0;
@@ -1836,7 +1847,7 @@ static av_cold int ac3_encode_init(AVCodecContext *avctx)
     avctx->coded_frame= avcodec_alloc_frame();
 
     dsputil_init(&s->dsp, avctx);
-    ff_ac3dsp_init(&s->ac3dsp);
+    ff_ac3dsp_init(&s->ac3dsp, avctx->flags & CODEC_FLAG_BITEXACT);
 
     return 0;
 init_fail:

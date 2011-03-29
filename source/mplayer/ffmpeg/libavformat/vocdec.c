@@ -2,20 +2,20 @@
  * Creative Voice File demuxer.
  * Copyright (c) 2006  Aurelien Jacobs <aurel@gnuage.org>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -45,13 +45,13 @@ static int voc_read_header(AVFormatContext *s, AVFormatParameters *ap)
     int header_size;
     AVStream *st;
 
-    avio_seek(pb, 20, SEEK_CUR);
+    avio_skip(pb, 20);
     header_size = avio_rl16(pb) - 22;
     if (header_size != 4) {
         av_log(s, AV_LOG_ERROR, "unknown header size: %d\n", header_size);
         return AVERROR(ENOSYS);
     }
-    avio_seek(pb, header_size, SEEK_CUR);
+    avio_skip(pb, header_size);
     st = av_new_stream(s, 0);
     if (!st)
         return AVERROR(ENOMEM);
@@ -80,7 +80,7 @@ voc_get_packet(AVFormatContext *s, AVPacket *pkt, AVStream *st, int max_size)
         if (!voc->remaining_size) {
             if (url_is_streamed(s->pb))
                 return AVERROR(EIO);
-            voc->remaining_size = url_fsize(pb) - avio_tell(pb);
+            voc->remaining_size = avio_size(pb) - avio_tell(pb);
         }
         max_size -= 4;
 
@@ -114,13 +114,13 @@ voc_get_packet(AVFormatContext *s, AVPacket *pkt, AVStream *st, int max_size)
             dec->bits_per_coded_sample = avio_r8(pb);
             dec->channels = avio_r8(pb);
             tmp_codec = avio_rl16(pb);
-            avio_seek(pb, 4, SEEK_CUR);
+            avio_skip(pb, 4);
             voc->remaining_size -= 12;
             max_size -= 12;
             break;
 
         default:
-            avio_seek(pb, voc->remaining_size, SEEK_CUR);
+            avio_skip(pb, voc->remaining_size);
             max_size -= voc->remaining_size;
             voc->remaining_size = 0;
             break;

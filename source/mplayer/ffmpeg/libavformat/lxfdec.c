@@ -2,20 +2,20 @@
  * LXF demuxer
  * Copyright (c) 2010 Tomas Härdin
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -90,7 +90,7 @@ static int sync(AVFormatContext *s, uint8_t *header)
         return ret < 0 ? ret : AVERROR_EOF;
 
     while (memcmp(buf, LXF_IDENT, LXF_IDENT_LENGTH)) {
-        if (url_feof(s->pb))
+        if (s->pb->eof_reached)
             return AVERROR_EOF;
 
         memmove(buf, &buf[1], LXF_IDENT_LENGTH-1);
@@ -137,8 +137,8 @@ static int get_packet_header(AVFormatContext *s, uint8_t *header, uint32_t *form
     case 0:
         //video
         //skip VBI data and metadata
-        avio_seek(pb, (int64_t)(uint32_t)AV_RL32(&header[44]) +
-                      (int64_t)(uint32_t)AV_RL32(&header[52]), SEEK_CUR);
+        avio_skip(pb, (int64_t)(uint32_t)AV_RL32(&header[44]) +
+                      (int64_t)(uint32_t)AV_RL32(&header[52]));
         break;
     case 1:
         //audio
@@ -255,7 +255,7 @@ static int lxf_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     if (format == 1) {
         //skip extended field data
-        avio_seek(s->pb, (uint32_t)AV_RL32(&header[40]), SEEK_CUR);
+        avio_skip(s->pb, (uint32_t)AV_RL32(&header[40]));
     }
 
     return 0;

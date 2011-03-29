@@ -1,4 +1,4 @@
-.\" $Revision: 32946 $
+.\" $Revision: 33107 $
 .\" MPlayer (C) 2000-2010 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
@@ -1006,12 +1006,14 @@ several 'echo "seek 10" > mp_pipe' and the pipe will stay valid.
 .B \-key\-fifo\-size <2\-65000>
 Specify the size of the FIFO that buffers key events (default: 7).
 A FIFO of size n can buffer (n\-1) events.
-If it is too small some events may be lost
-(leading to "stuck mouse buttons" and similar effects).
+If it is too small some events may be lost.
 If it is too big, MPlayer may seem to hang while it
 processes the buffered events.
 To get the same behavior as before this option was introduced,
 set it to 2 for Linux or 1024 for Windows.
+For small value you should disable double-clicks by setting
+\-doubleclick\-time to 0 so they do not compete with regular
+events for buffer space.
 .
 .TP
 .B \-lircconf <filename> (LIRC only)
@@ -1573,6 +1575,35 @@ Enabled when playing from an external MP3 file, as we need to seek
 to the very exact position to keep A/V sync.
 Can be slow especially when seeking backwards since it has to rewind
 to the beginning to find an exact frame position.
+.
+.TP
+.B \-http-header-fields <field1,field2>
+Set custom HTTP fields when accessing HTTP stream.
+.sp 1
+.I EXAMPLE:
+.PD 0
+.RSs
+.IPs
+mplayer \-http\-header\-fields 'Field1: value1','Field2: value2' http://localhost:1234
+.br
+Will generate HTTP request:
+.RSss
+.br
+GET / HTTP/1.0
+.br
+Host: localhost:1234
+.br
+User-Agent: MPlayer
+.br
+Icy-MetaData: 1
+.br
+Field1: value1
+.br
+Field2: value2
+.br
+Connection: close
+.REss
+.RE
 .
 .TP
 .B \-idx (also see \-forceidx)
@@ -3271,6 +3302,11 @@ Fixes fullscreen switching on OpenBox 1.x.
 .PD 1
 .
 .TP
+.B \-gamma <\-100\-100>
+Adjust the gamma of the video signal (default: 0).
+Not supported by all video output drivers.
+.
+.TP
 .B \-geometry x[%][:y[%]] or [WxH][+-x+-y]
 Adjust where the output is on the screen initially.
 The x and y specifications are in pixels measured from the top-left of the
@@ -4198,8 +4234,6 @@ Useful for benchmarking.
 .TP
 .B "aa\ \ \ \ \ "
 ASCII art video output driver that works on a text console.
-You can get a list and an explanation of available suboptions
-by executing 'mplayer \-vo aa:help'.
 .br
 .I NOTE:
 The driver does not handle \-aspect correctly.

@@ -2,20 +2,20 @@
  * RAW Ingenient MJPEG demuxer
  * Copyright (c) 2005 Alex Beregszaszi
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -35,11 +35,11 @@ static int ingenient_read_packet(AVFormatContext *s, AVPacket *pkt)
     w = avio_rl16(s->pb);
     h = avio_rl16(s->pb);
 
-    avio_seek(s->pb, 8, SEEK_CUR); // zero + size (padded?)
-    avio_seek(s->pb, 2, SEEK_CUR);
+    avio_skip(s->pb, 8); // zero + size (padded?)
+    avio_skip(s->pb, 2);
     unk1 = avio_rl16(s->pb);
     unk2 = avio_rl16(s->pb);
-    avio_seek(s->pb, 22, SEEK_CUR); // ASCII timestamp
+    avio_skip(s->pb, 22); // ASCII timestamp
 
     av_log(s, AV_LOG_DEBUG, "Ingenient packet: size=%d, width=%d, height=%d, unk1=%d unk2=%d\n",
         size, w, h, unk1, unk2);

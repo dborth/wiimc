@@ -77,6 +77,8 @@ version <next>:
 - Wing Commander IV movies decoder added
 - movie source added
 - Bink version 'b' audio and video decoder
+- Bitmap Brothers JV playback system
+- Apple HTTP Live Streaming protocol handler
 
 
 version 0.6:

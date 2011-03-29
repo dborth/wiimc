@@ -2,20 +2,20 @@
  * UDP prototype streaming system
  * Copyright (c) 2000, 2001, 2002 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -27,6 +27,7 @@
 #define _BSD_SOURCE     /* Needed for using struct ip_mreq with recent glibc */
 #define _DARWIN_C_SOURCE /* Needed for using IP_MULTICAST_TTL on OS X */
 #include "avformat.h"
+#include "avio_internal.h"
 #include "libavutil/parseutils.h"
 #include <unistd.h>
 #include "internal.h"
@@ -243,7 +244,7 @@ static int udp_port(struct sockaddr_storage *addr, int addr_len)
  * @param uri of the remote server
  * @return zero if no error.
  */
-int udp_set_remote_url(URLContext *h, const char *uri)
+int ff_udp_set_remote_url(URLContext *h, const char *uri)
 {
     UDPContext *s = h->priv_data;
     char hostname[256], buf[10];
@@ -282,7 +283,7 @@ int udp_set_remote_url(URLContext *h, const char *uri)
  * @param h media file context
  * @return the local port number
  */
-int udp_get_local_port(URLContext *h)
+int ff_udp_get_local_port(URLContext *h)
 {
     UDPContext *s = h->priv_data;
     return s->local_port;
@@ -365,7 +366,7 @@ static int udp_open(URLContext *h, const char *uri, int flags)
         if (flags & URL_WRONLY)
             goto fail;
     } else {
-        if (udp_set_remote_url(h, uri) < 0)
+        if (ff_udp_set_remote_url(h, uri) < 0)
             goto fail;
     }
 
@@ -452,7 +453,7 @@ static int udp_read(URLContext *h, uint8_t *buf, int size)
 
     for(;;) {
         if (url_interrupt_cb())
-            return AVERROR(EINTR);
+            return AVERROR_EXIT;
         ret = poll(&p, 1, 100);
         if (ret < 0) {
             if (ff_neterrno() == AVERROR(EINTR))

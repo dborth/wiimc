@@ -2,20 +2,20 @@
  * ARM NEON optimised DSP functions
  * Copyright (c) 2008 Mans Rullgard <mans@mansr.com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -788,4 +788,27 @@ NOVFP   ldr             r2,  [sp]
 2:      vst1.f32        {q8},[r0,:128]!
         vst1.f32        {q9},[r0,:128]!
         bx              lr
+endfunc
+
+function ff_apply_window_int16_neon, export=1
+        push            {r4,lr}
+        add             r4,  r1,  r3,  lsl #1
+        add             lr,  r0,  r3,  lsl #1
+        sub             r4,  r4,  #16
+        sub             lr,  lr,  #16
+        mov             r12, #-16
+1:
+        vld1.16         {q0},     [r1,:128]!
+        vld1.16         {q2},     [r2,:128]!
+        vld1.16         {q1},     [r4,:128], r12
+        vrev64.16       q3,  q2
+        vqrdmulh.s16    q0,  q0,  q2
+        vqrdmulh.s16    d2,  d2,  d7
+        vqrdmulh.s16    d3,  d3,  d6
+        vst1.16         {q0},     [r0,:128]!
+        vst1.16         {q1},     [lr,:128], r12
+        subs            r3,  r3,  #16
+        bgt             1b
+
+        pop             {r4,pc}
 endfunc

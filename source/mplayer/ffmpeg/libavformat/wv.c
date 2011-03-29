@@ -2,20 +2,20 @@
  * WavPack demuxer
  * Copyright (c) 2006,2011 Konstantin Shishkov
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -153,7 +153,7 @@ static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int appen
                     chmask = avio_rl32(pb);
                     break;
                 case 5:
-                    avio_seek(pb, 1, SEEK_CUR);
+                    avio_skip(pb, 1);
                     chan |= (avio_r8(pb) & 0xF) << 8;
                     chmask = avio_rl24(pb);
                     break;
@@ -166,10 +166,10 @@ static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int appen
                 rate = avio_rl24(pb);
                 break;
             default:
-                avio_seek(pb, size, SEEK_CUR);
+                avio_skip(pb, size);
             }
             if(id&0x40)
-                avio_seek(pb, 1, SEEK_CUR);
+                avio_skip(pb, 1);
         }
         if(rate == -1){
             av_log(ctx, AV_LOG_ERROR, "Cannot determine custom sampling rate\n");
@@ -241,7 +241,7 @@ static int wv_read_packet(AVFormatContext *s,
     int ret;
     int size, ver, off;
 
-    if (url_feof(s->pb))
+    if (s->pb->eof_reached)
         return AVERROR(EIO);
     if(wc->block_parsed){
         if(wv_read_block_header(s, s->pb, 0) < 0)

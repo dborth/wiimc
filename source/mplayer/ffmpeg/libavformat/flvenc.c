@@ -1,21 +1,21 @@
 /*
  * FLV muxer
- * Copyright (c) 2003 The FFmpeg Project
+ * Copyright (c) 2003 The Libav Project
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -291,7 +291,7 @@ static int flv_write_header(AVFormatContext *s)
     data_size= avio_tell(pb) - metadata_size_pos - 10;
     avio_seek(pb, metadata_size_pos, SEEK_SET);
     avio_wb24(pb, data_size);
-    avio_seek(pb, data_size + 10 - 3, SEEK_CUR);
+    avio_skip(pb, data_size + 10 - 3);
     avio_wb32(pb, data_size + 11);
 
     for (i = 0; i < s->nb_streams; i++) {
@@ -318,7 +318,7 @@ static int flv_write_header(AVFormatContext *s)
             data_size = avio_tell(pb) - pos;
             avio_seek(pb, -data_size - 10, SEEK_CUR);
             avio_wb24(pb, data_size);
-            avio_seek(pb, data_size + 10 - 3, SEEK_CUR);
+            avio_skip(pb, data_size + 10 - 3);
             avio_wb32(pb, data_size + 11); // previous tag size
         }
     }
@@ -430,7 +430,7 @@ static int flv_write_packet(AVFormatContext *s, AVPacket *pkt)
     avio_wb32(pb,size+flags_size+11); // previous tag size
     flv->duration = FFMAX(flv->duration, pkt->pts + flv->delay + pkt->duration);
 
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     av_free(data);
 

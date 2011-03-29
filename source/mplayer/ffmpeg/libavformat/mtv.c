@@ -2,20 +2,20 @@
  * mtv demuxer
  * Copyright (c) 2006 Reynaldo H. Verdejo Pinochet
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -83,10 +83,10 @@ static int mtv_read_header(AVFormatContext *s, AVFormatParameters *ap)
     AVStream        *st;
     unsigned int    audio_subsegments;
 
-    avio_seek(pb, 3, SEEK_CUR);
+    avio_skip(pb, 3);
     mtv->file_size         = avio_rl32(pb);
     mtv->segments          = avio_rl32(pb);
-    avio_seek(pb, 32, SEEK_CUR);
+    avio_skip(pb, 32);
     mtv->audio_identifier  = avio_rl24(pb);
     mtv->audio_br          = avio_rl16(pb);
     mtv->img_colorfmt      = avio_rl24(pb);
@@ -105,7 +105,7 @@ static int mtv_read_header(AVFormatContext *s, AVFormatParameters *ap)
         mtv->img_height=mtv->img_segment_size / (mtv->img_bpp>>3)
                         / mtv->img_width;
 
-    avio_seek(pb, 4, SEEK_CUR);
+    avio_skip(pb, 4);
     audio_subsegments = avio_rl16(pb);
     mtv->full_segment_size =
         audio_subsegments * (MTV_AUDIO_PADDING_SIZE + MTV_ASUBCHUNK_DATA_SIZE) +
@@ -164,7 +164,7 @@ static int mtv_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     if((avio_tell(pb) - s->data_offset + mtv->img_segment_size) % mtv->full_segment_size)
     {
-        avio_seek(pb, MTV_AUDIO_PADDING_SIZE, SEEK_CUR);
+        avio_skip(pb, MTV_AUDIO_PADDING_SIZE);
 
         ret = av_get_packet(pb, pkt, MTV_ASUBCHUNK_DATA_SIZE);
         if(ret < 0)

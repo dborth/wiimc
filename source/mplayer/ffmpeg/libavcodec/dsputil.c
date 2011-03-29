@@ -5,20 +5,20 @@
  *
  * gmc & q-pel & 32/64 bit based MC by Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -222,6 +222,12 @@ static void bswap_buf(uint32_t *dst, const uint32_t *src, int w){
     }
 }
 
+static void bswap16_buf(uint16_t *dst, const uint16_t *src, int len)
+{
+    while (len--)
+        *dst++ = av_bswap16(*src++);
+}
+
 static int sse4_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int h)
 {
     int s, i;
@@ -292,17 +298,11 @@ static int sse16_c(void *v, uint8_t *pix1, uint8_t *pix2, int line_size, int h)
 
 /* draw the edges of width 'w' of an image of size width, height */
 //FIXME check that this is ok for mpeg4 interlaced
-static void draw_edges_c(uint8_t *buf, int wrap, int width, int height, int w)
+static void draw_edges_c(uint8_t *buf, int wrap, int width, int height, int w, int sides)
 {
     uint8_t *ptr, *last_line;
     int i;
 
-    last_line = buf + (height - 1) * wrap;
-    for(i=0;i<w;i++) {
-        /* top and bottom */
-        memcpy(buf - (i + 1) * wrap, buf, width);
-        memcpy(last_line + (i + 1) * wrap, last_line, width);
-    }
     /* left and right */
     ptr = buf;
     for(i=0;i<height;i++) {
@@ -310,13 +310,16 @@ static void draw_edges_c(uint8_t *buf, int wrap, int width, int height, int w)
         memset(ptr + width, ptr[width-1], w);
         ptr += wrap;
     }
-    /* corners */
-    for(i=0;i<w;i++) {
-        memset(buf - (i + 1) * wrap - w, buf[0], w); /* top left */
-        memset(buf - (i + 1) * wrap + width, buf[width-1], w); /* top right */
-        memset(last_line + (i + 1) * wrap - w, last_line[0], w); /* top left */
-        memset(last_line + (i + 1) * wrap + width, last_line[width-1], w); /* top right */
-    }
+
+    /* top and bottom + corners */
+    buf -= w;
+    last_line = buf + (height - 1) * wrap;
+    if (sides & EDGE_TOP)
+        for(i = 0; i < w; i++)
+            memcpy(buf - (i + 1) * wrap, buf, width + w + w); // top
+    if (sides & EDGE_BOTTOM)
+        for (i = 0; i < w; i++)
+            memcpy(last_line + (i + 1) * wrap, last_line, width + w + w); // bottom
 }
 
 /**
@@ -3884,6 +3887,19 @@ static int32_t scalarproduct_and_madd_int16_c(int16_t *v1, const int16_t *v2, co
     return res;
 }
 
+static void apply_window_int16_c(int16_t *output, const int16_t *input,
+                                 const int16_t *window, unsigned int len)
+{
+    int i;
+    int len2 = len >> 1;
+
+    for (i = 0; i < len2; i++) {
+        int16_t w       = window[i];
+        output[i]       = (MUL16(input[i],       w) + (1 << 14)) >> 15;
+        output[len-i-1] = (MUL16(input[len-i-1], w) + (1 << 14)) >> 15;
+    }
+}
+
 #define W0 2048
 #define W1 2841 /* 2048*sqrt (2)*cos (1*pi/16) */
 #define W2 2676 /* 2048*sqrt (2)*cos (2*pi/16) */
@@ -4324,6 +4340,7 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->add_hfyu_left_prediction  = add_hfyu_left_prediction_c;
     c->add_hfyu_left_prediction_bgr32 = add_hfyu_left_prediction_bgr32_c;
     c->bswap_buf= bswap_buf;
+    c->bswap16_buf = bswap16_buf;
 #if CONFIG_PNG_DECODER
     c->add_png_paeth_prediction= ff_add_png_paeth_prediction;
 #endif
@@ -4357,6 +4374,7 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->vector_clipf = vector_clipf_c;
     c->scalarproduct_int16 = scalarproduct_int16_c;
     c->scalarproduct_and_madd_int16 = scalarproduct_and_madd_int16_c;
+    c->apply_window_int16 = apply_window_int16_c;
     c->scalarproduct_float = scalarproduct_float_c;
     c->butterflies_float = butterflies_float_c;
     c->vector_fmul_scalar = vector_fmul_scalar_c;

@@ -2,20 +2,20 @@
  * VC-1 test bitstreams format muxer.
  * Copyright (c) 2008 Konstantin Shishkov
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -62,7 +62,7 @@ static int vc1test_write_packet(AVFormatContext *s, AVPacket *pkt)
     avio_wl32(pb, pkt->size | ((pkt->flags & AV_PKT_FLAG_KEY) ? 0x80000000 : 0));
     avio_wl32(pb, pkt->pts);
     avio_write(pb, pkt->data, pkt->size);
-    put_flush_packet(pb);
+    avio_flush(pb);
     ctx->frames++;
 
     return 0;
@@ -76,7 +76,7 @@ static int vc1test_write_trailer(AVFormatContext *s)
     if (!url_is_streamed(s->pb)) {
         avio_seek(pb, 0, SEEK_SET);
         avio_wl24(pb, ctx->frames);
-        put_flush_packet(pb);
+        avio_flush(pb);
     }
     return 0;
 }

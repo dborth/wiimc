@@ -2,20 +2,20 @@
  * Ogg muxer
  * Copyright (c) 2007 Baptiste Coudurier <baptiste dot coudurier at free dot fr>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -99,14 +99,14 @@ static int ogg_write_page(AVFormatContext *s, OGGPage *page, int extra_flags)
     avio_write(pb, page->data, page->size);
 
     ogg_update_checksum(s, pb, crc_offset);
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     size = url_close_dyn_buf(pb, &buf);
     if (size < 0)
         return size;
 
     avio_write(s->pb, buf, size);
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     av_free(buf);
     oggstream->page_count--;
     return 0;

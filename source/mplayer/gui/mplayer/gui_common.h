@@ -19,21 +19,10 @@
 #ifndef MPLAYER_GUI_GUI_COMMON_H
 #define MPLAYER_GUI_GUI_COMMON_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <inttypes.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include "gui/app.h"
-#include "gui/bitmap.h"
-#include "gui/wm/ws.h"
 
-#define DELAYTIME 2500   // in milliseconds
+#define DLABEL_DELAY 2500   // in milliseconds
 
-char * Translate( char * str );
-void PutImage( txSample * bf,int x, int y, int max, int ofs );
-void SimplePotmeterPutImage( txSample * bf, int x, int y, float frac );
-void Render( wsTWindow * window, wItem * Items, int nrItems, char * db, int size );
+void Render(wsTWindow *window, wItem *Items, int nrItems, char *db, int size);
 
 #endif /* MPLAYER_GUI_GUI_COMMON_H */

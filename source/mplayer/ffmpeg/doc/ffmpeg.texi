@@ -586,6 +586,28 @@ Set the ISO 639 language code (3 letters) of the current audio stream.
 @table @option
 @item -atag @var{fourcc/tag}
 Force audio tag/fourcc.
+@item -audio_service_type @var{type}
+Set the type of service that the audio stream contains.
+@table @option
+@item ma
+Main Audio Service (default)
+@item ef
+Effects
+@item vi
+Visually Impaired
+@item hi
+Hearing Impaired
+@item di
+Dialogue
+@item co
+Commentary
+@item em
+Emergency
+@item vo
+Voice Over
+@item ka
+Karaoke
+@end table
 @item -absf @var{bitstream_filter}
 Bitstream filters available are "dump_extra", "remove_extra", "noise", "mp3comp", "mp3decomp".
 @end table
@@ -622,11 +644,43 @@ Synchronize read on input.
 @section Advanced options
 
 @table @option
-@item -map @var{input_stream_id}[:@var{sync_stream_id}]
-Set stream mapping from input streams to output streams.
-Just enumerate the input streams in the order you want them in the output.
-@var{sync_stream_id} if specified sets the input stream to sync
-against.
+@item -map @var{input_file_id}.@var{input_stream_id}[:@var{sync_file_id}.@var{sync_stream_id}]
+
+Designate an input stream as a source for the output file. Each input
+stream is identified by the input file index @var{input_file_id} and
+the input stream index @var{input_stream_id} within the input
+file. Both indexes start at 0. If specified,
+@var{sync_file_id}.@var{sync_stream_id} sets which input stream
+is used as a presentation sync reference.
+
+The @code{-map} options must be specified just after the output file.
+If any @code{-map} options are used, the number of @code{-map} options
+on the command line must match the number of streams in the output
+file. The first @code{-map} option on the command line specifies the
+source for output stream 0, the second @code{-map} option specifies
+the source for output stream 1, etc.
+
+For example, if you have two audio streams in the first input file,
+these streams are identified by "0.0" and "0.1". You can use
+@code{-map} to select which stream to place in an output file. For
+example:
+@example
+ffmpeg -i INPUT out.wav -map 0.1
+@end example
+will map the input stream in @file{INPUT} identified by "0.1" to
+the (single) output stream in @file{out.wav}.
+
+For example, to select the stream with index 2 from input file
+@file{a.mov} (specified by the identifier "0.2"), and stream with
+index 6 from input @file{b.mov} (specified by the identifier "1.6"),
+and copy them to the output file @file{out.mov}:
+@example
+ffmpeg -i a.mov -i b.mov -vcodec copy -acodec copy out.mov -map 0.2 -map 1.6
+@end example
+
+To add more streams to the output file, you can use the
+@code{-newaudio}, @code{-newvideo}, @code{-newsubtitle} options.
+
 @item -map_meta_data @var{outfile}[,@var{metadata}]:@var{infile}[,@var{metadata}]
 Deprecated, use @var{-map_metadata} instead.
 
@@ -735,7 +789,7 @@ A preset file contains a sequence of @var{option}=@var{value} pairs,
 one for each line, specifying a sequence of options which would be
 awkward to specify on the command line. Lines starting with the hash
 ('#') character are ignored and are used to provide comments. Check
-the @file{ffpresets} directory in the FFmpeg source tree for examples.
+the @file{ffpresets} directory in the Libav source tree for examples.
 
 Preset files are specified with the @code{vpre}, @code{apre},
 @code{spre}, and @code{fpre} options. The @code{fpre} option takes the
@@ -981,6 +1035,7 @@ file to which you want to add them.
 @c man end EXAMPLES
 
 @include eval.texi
+@include encoders.texi
 @include demuxers.texi
 @include muxers.texi
 @include indevs.texi
@@ -996,11 +1051,11 @@ file to which you want to add them.
 @settitle FFmpeg video converter
 
 @c man begin SEEALSO
-ffplay(1), ffprobe(1), ffserver(1) and the FFmpeg HTML documentation
+ffplay(1), ffprobe(1), ffserver(1) and the Libav HTML documentation
 @c man end
 
 @c man begin AUTHORS
-The FFmpeg developers
+The Libav developers
 @c man end
 
 @end ignore

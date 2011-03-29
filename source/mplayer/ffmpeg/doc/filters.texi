@@ -92,7 +92,7 @@ Follows a BNF description for the filtergraph syntax:
 @chapter Audio Filters
 @c man begin AUDIO FILTERS
 
-When you configure your FFmpeg build, you can disable any of the
+When you configure your Libav build, you can disable any of the
 existing filters using --disable-filters.
 The configure output will show the audio filters included in your
 build.
@@ -155,7 +155,7 @@ tools.
 @chapter Video Filters
 @c man begin VIDEO FILTERS
 
-When you configure your FFmpeg build, you can disable any of the
+When you configure your Libav build, you can disable any of the
 existing filters using --disable-filters.
 The configure output will show the video filters included in your
 build.
@@ -386,7 +386,7 @@ format=yuv420p:yuv444p:yuv410p
 Apply a frei0r effect to the input video.
 
 To enable compilation of this filter you need to install the frei0r
-header and configure FFmpeg with --enable-frei0r.
+header and configure Libav with --enable-frei0r.
 
 The filter supports the syntax:
 @example
@@ -524,7 +524,7 @@ Pass the video source unchanged to the output.
 Apply video transform using libopencv.
 
 To enable this filter install libopencv library and headers and
-configure FFmpeg with --enable-libopencv.
+configure Libav with --enable-libopencv.
 
 The filter takes the parameters: @var{filter_name}@{:=@}@var{filter_params}.
 
@@ -657,13 +657,13 @@ Follow some examples:
 overlay=main_w-overlay_w-10:main_h-overlay_h-10
 
 # insert a transparent PNG logo in the bottom left corner of the input
-movie=0:png:logo.png [logo];
+movie=logo.png [logo];
 [in][logo] overlay=10:main_h-overlay_h-10 [out]
 
 # insert 2 different transparent PNG logos (second logo on bottom
 # right corner):
-movie=0:png:logo1.png [logo1];
-movie=0:png:logo2.png [logo2];
+movie=logo1.png [logo1];
+movie=logo2.png [logo2];
 [in][logo1]       overlay=10:H-h-10 [in+logo1];
 [in+logo1][logo2] overlay=W-w-10:H-h-10 [out]
 
@@ -1088,6 +1088,61 @@ to the pad with identifier "in".
 "color=red@@0.2:qcif:10 [color]; [in][color] overlay [out]"
 @end example
 
+@section movie
+
+Read a video stream from a movie container.
+
+It accepts the syntax: @var{movie_name}[:@var{options}] where
+@var{movie_name} is the name of the resource to read (not necessarily
+a file but also a device or a stream accessed through some protocol),
+and @var{options} is an optional sequence of @var{key}=@var{value}
+pairs, separated by ":".
+
+The description of the accepted options follows.
+
+@table @option
+
+@item format_name, f
+Specifies the format assumed for the movie to read, and can be either
+the name of a container or an input device. If not specified the
+format is guessed from @var{movie_name} or by probing.
+
+@item seek_point, sp
+Specifies the seek point in seconds, the frames will be output
+starting from this seek point, the parameter is evaluated with
+@code{av_strtod} so the numerical value may be suffixed by an IS
+postfix. Default value is "0".
+
+@item stream_index, si
+Specifies the index of the video stream to read. If the value is -1,
+the best suited video stream will be automatically selected. Default
+value is "-1".
+
+@end table
+
+This filter allows to overlay a second video on top of main input of
+a filtergraph as shown in this graph:
+@example
+input -----------> deltapts0 --> overlay --> output
+                                    ^
+                                    |
+movie --> scale--> deltapts1 -------+
+@end example
+
+Some examples follow:
+@example
+# skip 3.2 seconds from the start of the avi file in.avi, and overlay it
+# on top of the input labelled as "in".
+movie=in.avi:seek_point=3.2, scale=180:-1, setpts=PTS-STARTPTS [movie];
+[in] setpts=PTS-STARTPTS, [movie] overlay=16:16 [out]
+
+# read from a video4linux2 device, and overlay it on top of the input
+# labelled as "in"
+movie=/dev/video0:f=video4linux2, scale=180:-1, setpts=PTS-STARTPTS [movie];
+[in] setpts=PTS-STARTPTS, [movie] overlay=16:16 [out]
+
+@end example
+
 @section nullsrc
 
 Null video source, never return images. It is mainly useful as a
@@ -1109,7 +1164,7 @@ timebase. The expression can contain the constants "PI", "E", "PHI",
 Provide a frei0r source.
 
 To enable compilation of this filter you need to install the frei0r
-header and configure FFmpeg with --enable-frei0r.
+header and configure Libav with --enable-frei0r.
 
 The source supports the syntax:
 @example

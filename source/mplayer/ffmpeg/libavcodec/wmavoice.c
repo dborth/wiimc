@@ -2,20 +2,20 @@
  * Windows Media Audio Voice decoder.
  * Copyright (c) 2009 Ronald S. Bultje
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -36,8 +36,9 @@
 #include "acelp_filters.h"
 #include "lsp.h"
 #include "libavutil/lzo.h"
-#include "avfft.h"
-#include "fft.h"
+#include "dct.h"
+#include "rdft.h"
+#include "sinewin.h"
 
 #define MAX_BLOCKS           8   ///< maximum number of blocks per frame
 #define MAX_LSPS             16  ///< maximum filter order
@@ -558,7 +559,7 @@ static void calc_input_response(WMAVoiceContext *s, float *lpcs,
     int n, idx;
 
     /* Create frequency power spectrum of speech input (i.e. RDFT of LPCs) */
-    ff_rdft_calc(&s->rdft, lpcs);
+    s->rdft.rdft_calc(&s->rdft, lpcs);
 #define log_range(var, assign) do { \
         float tmp = log10f(assign);  var = tmp; \
         max       = FFMAX(max, tmp); min = FFMIN(min, tmp); \
@@ -601,8 +602,8 @@ static void calc_input_response(WMAVoiceContext *s, float *lpcs,
      * is a sinus input) by doing a phase shift (in theory, H(sin())=cos()).
      * Hilbert_Transform(RDFT(x)) = Laplace_Transform(x), which calculates the
      * "moment" of the LPCs in this filter. */
-    ff_dct_calc(&s->dct, lpcs);
-    ff_dct_calc(&s->dst, lpcs);
+    s->dct.dct_calc(&s->dct, lpcs);
+    s->dst.dct_calc(&s->dst, lpcs);
 
     /* Split out the coefficient indexes into phase/magnitude pairs */
     idx = 255 + av_clip(lpcs[64],               -255, 255);
@@ -623,7 +624,7 @@ static void calc_input_response(WMAVoiceContext *s, float *lpcs,
     coeffs[1] = last_coeff;
 
     /* move into real domain */
-    ff_rdft_calc(&s->irdft, coeffs);
+    s->irdft.rdft_calc(&s->irdft, coeffs);
 
     /* tilt correction and normalize scale */
     memset(&coeffs[remainder], 0, sizeof(coeffs[0]) * (128 - remainder));
@@ -693,8 +694,8 @@ static void wiener_denoise(WMAVoiceContext *s, int fcb_type,
         /* apply coefficients (in frequency spectrum domain), i.e. complex
          * number multiplication */
         memset(&synth_pf[size], 0, sizeof(synth_pf[0]) * (128 - size));
-        ff_rdft_calc(&s->rdft, synth_pf);
-        ff_rdft_calc(&s->rdft, coeffs);
+        s->rdft.rdft_calc(&s->rdft, synth_pf);
+        s->rdft.rdft_calc(&s->rdft, coeffs);
         synth_pf[0] *= coeffs[0];
         synth_pf[1] *= coeffs[1];
         for (n = 1; n < 64; n++) {
@@ -702,7 +703,7 @@ static void wiener_denoise(WMAVoiceContext *s, int fcb_type,
             synth_pf[n * 2]     = v1 * coeffs[n * 2] - v2 * coeffs[n * 2 + 1];
             synth_pf[n * 2 + 1] = v2 * coeffs[n * 2] + v1 * coeffs[n * 2 + 1];
         }
-        ff_rdft_calc(&s->irdft, synth_pf);
+        s->irdft.rdft_calc(&s->irdft, synth_pf);
     }
 
     /* merge filter output with the history of previous runs */

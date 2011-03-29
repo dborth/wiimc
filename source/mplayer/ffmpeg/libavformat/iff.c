@@ -4,20 +4,20 @@
  * Copyright (c) 2010 Peter Ross <pross@xvid.org>
  * Copyright (c) 2010 Sebastian Vater <cdgs.basty@googlemail.com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -134,11 +134,11 @@ static int iff_read_header(AVFormatContext *s,
         return AVERROR(ENOMEM);
 
     st->codec->channels = 1;
-    avio_seek(pb, 8, SEEK_CUR);
+    avio_skip(pb, 8);
     // codec_tag used by ByteRun1 decoder to distinguish progressive (PBM) and interlaced (ILBM) content
     st->codec->codec_tag = avio_rl32(pb);
 
-    while(!url_feof(pb)) {
+    while(!pb->eof_reached) {
         uint64_t orig_pos;
         int res;
         const char *metadata_tag = NULL;
@@ -152,10 +152,10 @@ static int iff_read_header(AVFormatContext *s,
 
             if (data_size < 14)
                 return AVERROR_INVALIDDATA;
-            avio_seek(pb, 12, SEEK_CUR);
+            avio_skip(pb, 12);
             st->codec->sample_rate = avio_rb16(pb);
             if (data_size >= 16) {
-                avio_seek(pb, 1, SEEK_CUR);
+                avio_skip(pb, 1);
                 compression        = avio_r8(pb);
             }
             break;
@@ -186,14 +186,14 @@ static int iff_read_header(AVFormatContext *s,
                 return AVERROR_INVALIDDATA;
             st->codec->width                 = avio_rb16(pb);
             st->codec->height                = avio_rb16(pb);
-            avio_seek(pb, 4, SEEK_CUR); // x, y offset
+            avio_skip(pb, 4); // x, y offset
             st->codec->bits_per_coded_sample = avio_r8(pb);
             if (data_size >= 11) {
-                avio_seek(pb, 1, SEEK_CUR); // masking
+                avio_skip(pb, 1); // masking
                 compression                  = avio_r8(pb);
             }
             if (data_size >= 16) {
-                avio_seek(pb, 3, SEEK_CUR); // paddding, transparent
+                avio_skip(pb, 3); // paddding, transparent
                 st->sample_aspect_ratio.num  = avio_r8(pb);
                 st->sample_aspect_ratio.den  = avio_r8(pb);
             }
@@ -223,7 +223,7 @@ static int iff_read_header(AVFormatContext *s,
                 return res;
             }
         }
-        avio_seek(pb, data_size - (avio_tell(pb) - orig_pos) + (data_size & 1), SEEK_CUR);
+        avio_skip(pb, data_size - (avio_tell(pb) - orig_pos) + (data_size & 1));
     }
 
     avio_seek(pb, iff->body_pos, SEEK_SET);

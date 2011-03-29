@@ -76,7 +76,7 @@ void ff_imdct_half_paired(FFTContext *s, FFTSample *output, const FFTSample *inp
 		psq_stx(result,revtab[j+1]*8,output,0,0);
 	}
 	
-	ff_fft_calc(s, (FFTComplex *)output);
+	s->fft_calc(s, (FFTComplex *)output);
 	
 	for (k=0; k<n8; k+=2) {
 		pair[0] = psq_lu(-8,base[3][0],0,0);

@@ -1,10 +1,10 @@
 @chapter Protocols
 @c man begin PROTOCOLS
 
-Protocols are configured elements in FFmpeg which allow to access
+Protocols are configured elements in Libav which allow to access
 resources which require the use of a particular protocol.
 
-When you configure your FFmpeg build, all the supported protocols are
+When you configure your Libav build, all the supported protocols are
 enabled by default. You can list all available ones using the
 configure option "--list-protocols".
 
@@ -18,6 +18,22 @@ The option "-protocols" of the ff* tools will display the list of
 supported protocols.
 
 A description of the currently available protocols follows.
+
+@section applehttp
+
+Read Apple HTTP Live Streaming compliant segmented stream as
+a uniform one. The M3U8 playlists describing the segments can be
+remote HTTP resources or local files, accessed using the standard
+file protocol.
+HTTP is default, specific protocol can be declared by specifying
+"+@var{proto}" after the applehttp URI scheme name, where @var{proto}
+is either "file" or "http".
+
+@example
+applehttp://host/path/to/remote/resource.m3u8
+applehttp+http://host/path/to/remote/resource.m3u8
+applehttp+file://path/to/local/resource.m3u8
+@end example
 
 @section concat
 
@@ -417,9 +433,9 @@ set the time to live value (for multicast only)
 
 @item connect=@var{1|0}
 Initialize the UDP socket with @code{connect()}. In this case, the
-destination address can't be changed with udp_set_remote_url later.
+destination address can't be changed with ff_udp_set_remote_url later.
 If the destination address isn't known at the start, this option can
-be specified in udp_set_remote_url, too.
+be specified in ff_udp_set_remote_url, too.
 This allows finding out the source address for the packets with getsockname,
 and makes writes return with AVERROR(ECONNREFUSED) if "destination
 unreachable" is received.

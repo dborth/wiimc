@@ -3,20 +3,20 @@
  * Copyright (c) 2000, 2001 Fabrice Bellard
  * Copyright (c) 2002-2004 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * MMX optimization by Nick Kurshev <nickols_k@mail.ru>
@@ -783,7 +783,7 @@ static void h263_h_loop_filter_mmx(uint8_t *src, int stride, int qscale){
 
 /* draw the edges of width 'w' of an image of size width, height
    this mmx version can only handle w==8 || w==16 */
-static void draw_edges_mmx(uint8_t *buf, int wrap, int width, int height, int w)
+static void draw_edges_mmx(uint8_t *buf, int wrap, int width, int height, int w, int sides)
 {
     uint8_t *ptr, *last_line;
     int i;
@@ -836,36 +836,43 @@ static void draw_edges_mmx(uint8_t *buf, int wrap, int width, int height, int w)
         );
     }
 
-    for(i=0;i<w;i+=4) {
-        /* top and bottom (and hopefully also the corners) */
-        ptr= buf - (i + 1) * wrap - w;
-        __asm__ volatile(
-                "1:                             \n\t"
-                "movq (%1, %0), %%mm0           \n\t"
-                "movq %%mm0, (%0)               \n\t"
-                "movq %%mm0, (%0, %2)           \n\t"
-                "movq %%mm0, (%0, %2, 2)        \n\t"
-                "movq %%mm0, (%0, %3)           \n\t"
-                "add $8, %0                     \n\t"
-                "cmp %4, %0                     \n\t"
-                " jb 1b                         \n\t"
-                : "+r" (ptr)
-                : "r" ((x86_reg)buf - (x86_reg)ptr - w), "r" ((x86_reg)-wrap), "r" ((x86_reg)-wrap*3), "r" (ptr+width+2*w)
-        );
-        ptr= last_line + (i + 1) * wrap - w;
-        __asm__ volatile(
-                "1:                             \n\t"
-                "movq (%1, %0), %%mm0           \n\t"
-                "movq %%mm0, (%0)               \n\t"
-                "movq %%mm0, (%0, %2)           \n\t"
-                "movq %%mm0, (%0, %2, 2)        \n\t"
-                "movq %%mm0, (%0, %3)           \n\t"
-                "add $8, %0                     \n\t"
-                "cmp %4, %0                     \n\t"
-                " jb 1b                         \n\t"
-                : "+r" (ptr)
-                : "r" ((x86_reg)last_line - (x86_reg)ptr - w), "r" ((x86_reg)wrap), "r" ((x86_reg)wrap*3), "r" (ptr+width+2*w)
-        );
+    /* top and bottom (and hopefully also the corners) */
+    if (sides&EDGE_TOP) {
+        for(i = 0; i < w; i += 4) {
+            ptr= buf - (i + 1) * wrap - w;
+            __asm__ volatile(
+                    "1:                             \n\t"
+                    "movq (%1, %0), %%mm0           \n\t"
+                    "movq %%mm0, (%0)               \n\t"
+                    "movq %%mm0, (%0, %2)           \n\t"
+                    "movq %%mm0, (%0, %2, 2)        \n\t"
+                    "movq %%mm0, (%0, %3)           \n\t"
+                    "add $8, %0                     \n\t"
+                    "cmp %4, %0                     \n\t"
+                    " jb 1b                         \n\t"
+                    : "+r" (ptr)
+                    : "r" ((x86_reg)buf - (x86_reg)ptr - w), "r" ((x86_reg)-wrap), "r" ((x86_reg)-wrap*3), "r" (ptr+width+2*w)
+            );
+        }
+    }
+
+    if (sides&EDGE_BOTTOM) {
+        for(i = 0; i < w; i += 4) {
+            ptr= last_line + (i + 1) * wrap - w;
+            __asm__ volatile(
+                    "1:                             \n\t"
+                    "movq (%1, %0), %%mm0           \n\t"
+                    "movq %%mm0, (%0)               \n\t"
+                    "movq %%mm0, (%0, %2)           \n\t"
+                    "movq %%mm0, (%0, %2, 2)        \n\t"
+                    "movq %%mm0, (%0, %3)           \n\t"
+                    "add $8, %0                     \n\t"
+                    "cmp %4, %0                     \n\t"
+                    " jb 1b                         \n\t"
+                    : "+r" (ptr)
+                    : "r" ((x86_reg)last_line - (x86_reg)ptr - w), "r" ((x86_reg)wrap), "r" ((x86_reg)wrap*3), "r" (ptr+width+2*w)
+            );
+        }
     }
 }
 
@@ -2388,6 +2395,20 @@ int32_t ff_scalarproduct_int16_sse2(const int16_t *v1, const int16_t *v2, int or
 int32_t ff_scalarproduct_and_madd_int16_mmx2(int16_t *v1, const int16_t *v2, const int16_t *v3, int order, int mul);
 int32_t ff_scalarproduct_and_madd_int16_sse2(int16_t *v1, const int16_t *v2, const int16_t *v3, int order, int mul);
 int32_t ff_scalarproduct_and_madd_int16_ssse3(int16_t *v1, const int16_t *v2, const int16_t *v3, int order, int mul);
+
+void ff_apply_window_int16_mmxext    (int16_t *output, const int16_t *input,
+                                      const int16_t *window, unsigned int len);
+void ff_apply_window_int16_mmxext_ba (int16_t *output, const int16_t *input,
+                                      const int16_t *window, unsigned int len);
+void ff_apply_window_int16_sse2      (int16_t *output, const int16_t *input,
+                                      const int16_t *window, unsigned int len);
+void ff_apply_window_int16_sse2_ba   (int16_t *output, const int16_t *input,
+                                      const int16_t *window, unsigned int len);
+void ff_apply_window_int16_ssse3     (int16_t *output, const int16_t *input,
+                                      const int16_t *window, unsigned int len);
+void ff_apply_window_int16_ssse3_atom(int16_t *output, const int16_t *input,
+                                      const int16_t *window, unsigned int len);
+
 void ff_add_hfyu_median_prediction_mmx2(uint8_t *dst, const uint8_t *top, const uint8_t *diff, int w, int *left, int *left_top);
 int  ff_add_hfyu_left_prediction_ssse3(uint8_t *dst, const uint8_t *src, int w, int left);
 int  ff_add_hfyu_left_prediction_sse4(uint8_t *dst, const uint8_t *src, int w, int left);
@@ -2749,6 +2770,11 @@ void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
 #if HAVE_YASM
             c->scalarproduct_int16 = ff_scalarproduct_int16_mmx2;
             c->scalarproduct_and_madd_int16 = ff_scalarproduct_and_madd_int16_mmx2;
+            if (avctx->flags & CODEC_FLAG_BITEXACT) {
+                c->apply_window_int16 = ff_apply_window_int16_mmxext_ba;
+            } else {
+                c->apply_window_int16 = ff_apply_window_int16_mmxext;
+            }
 #endif
         }
         if(mm_flags & AV_CPU_FLAG_SSE){
@@ -2771,13 +2797,30 @@ void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
 #if HAVE_YASM
             c->scalarproduct_int16 = ff_scalarproduct_int16_sse2;
             c->scalarproduct_and_madd_int16 = ff_scalarproduct_and_madd_int16_sse2;
+            if (avctx->flags & CODEC_FLAG_BITEXACT) {
+                c->apply_window_int16 = ff_apply_window_int16_sse2_ba;
+            } else {
+                if (!(mm_flags & AV_CPU_FLAG_SSE2SLOW)) {
+                    c->apply_window_int16 = ff_apply_window_int16_sse2;
+                }
+            }
 
             c->emulated_edge_mc = emulated_edge_mc_sse;
             c->gmc= gmc_sse;
 #endif
         }
-        if((mm_flags & AV_CPU_FLAG_SSSE3) && !(mm_flags & (AV_CPU_FLAG_SSE42|AV_CPU_FLAG_3DNOW)) && HAVE_YASM) // cachesplit
-            c->scalarproduct_and_madd_int16 = ff_scalarproduct_and_madd_int16_ssse3;
+        if (mm_flags & AV_CPU_FLAG_SSSE3) {
+#if HAVE_YASM
+            if (mm_flags & AV_CPU_FLAG_ATOM) {
+                c->apply_window_int16 = ff_apply_window_int16_ssse3_atom;
+            } else {
+                c->apply_window_int16 = ff_apply_window_int16_ssse3;
+            }
+            if (!(mm_flags & (AV_CPU_FLAG_SSE42|AV_CPU_FLAG_3DNOW))) { // cachesplit
+                c->scalarproduct_and_madd_int16 = ff_scalarproduct_and_madd_int16_ssse3;
+            }
+#endif
+        }
     }
 
     if (CONFIG_ENCODERS)

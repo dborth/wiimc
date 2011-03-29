@@ -3,20 +3,20 @@
  * Copyright (c) 2007 Justin Ruggles
  * Copyright (c) 2009 Peter Ross
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -114,22 +114,22 @@ static int read_kuki_chunk(AVFormatContext *s, int64_t size)
             av_log(s, AV_LOG_ERROR, "invalid AAC magic cookie\n");
             return AVERROR_INVALIDDATA;
         }
-        avio_seek(pb, skip, SEEK_CUR);
+        avio_skip(pb, skip);
     } else if (st->codec->codec_id == CODEC_ID_ALAC) {
 #define ALAC_PREAMBLE 12
 #define ALAC_HEADER   36
         if (size < ALAC_PREAMBLE + ALAC_HEADER) {
             av_log(s, AV_LOG_ERROR, "invalid ALAC magic cookie\n");
-            avio_seek(pb, size, SEEK_CUR);
+            avio_skip(pb, size);
             return AVERROR_INVALIDDATA;
         }
-        avio_seek(pb, ALAC_PREAMBLE, SEEK_CUR);
+        avio_skip(pb, ALAC_PREAMBLE);
         st->codec->extradata = av_mallocz(ALAC_HEADER + FF_INPUT_BUFFER_PADDING_SIZE);
         if (!st->codec->extradata)
             return AVERROR(ENOMEM);
         avio_read(pb, st->codec->extradata, ALAC_HEADER);
         st->codec->extradata_size = ALAC_HEADER;
-        avio_seek(pb, size - ALAC_PREAMBLE - ALAC_HEADER, SEEK_CUR);
+        avio_skip(pb, size - ALAC_PREAMBLE - ALAC_HEADER);
     } else {
         st->codec->extradata = av_mallocz(size + FF_INPUT_BUFFER_PADDING_SIZE);
         if (!st->codec->extradata)
@@ -201,7 +201,7 @@ static int read_header(AVFormatContext *s,
     int found_data, ret;
     int64_t size;
 
-    avio_seek(pb, 8, SEEK_CUR); /* magic, version, file flags */
+    avio_skip(pb, 8); /* magic, version, file flags */
 
     /* audio description chunk */
     if (avio_rb32(pb) != MKBETAG('d','e','s','c')) {
@@ -219,7 +219,7 @@ static int read_header(AVFormatContext *s,
 
     /* parse each chunk */
     found_data = 0;
-    while (!url_feof(pb)) {
+    while (!pb->eof_reached) {
 
         /* stop at data chunk if seeking is not supported or
            data chunk size is unknown */
@@ -228,16 +228,16 @@ static int read_header(AVFormatContext *s,
 
         tag  = avio_rb32(pb);
         size = avio_rb64(pb);
-        if (url_feof(pb))
+        if (pb->eof_reached)
             break;
 
         switch (tag) {
         case MKBETAG('d','a','t','a'):
-            avio_seek(pb, 4, SEEK_CUR); /* edit count */
+            avio_skip(pb, 4); /* edit count */
             caf->data_start = avio_tell(pb);
             caf->data_size  = size < 0 ? -1 : size - 4;
             if (caf->data_size > 0 && !url_is_streamed(pb))
-                avio_seek(pb, caf->data_size, SEEK_CUR);
+                avio_skip(pb, caf->data_size);
             found_data = 1;
             break;
 
@@ -265,7 +265,7 @@ static int read_header(AVFormatContext *s,
         case MKBETAG('f','r','e','e'):
             if (size < 0)
                 return AVERROR_INVALIDDATA;
-            avio_seek(pb, size, SEEK_CUR);
+            avio_skip(pb, size);
             break;
         }
     }
@@ -284,7 +284,7 @@ static int read_header(AVFormatContext *s,
                                 "block size or frame size are variable.\n");
         return AVERROR_INVALIDDATA;
     }
-    s->file_size = url_fsize(pb);
+    s->file_size = avio_size(pb);
     s->file_size = FFMAX(0, s->file_size);
 
     av_set_pts_info(st, 64, 1, st->codec->sample_rate);
@@ -307,7 +307,7 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
     int res, pkt_size = 0, pkt_frames = 0;
     int64_t left      = CAF_MAX_PKT_SIZE;
 
-    if (url_feof(pb))
+    if (pb->eof_reached)
         return AVERROR(EIO);
 
     /* don't read past end of data chunk */

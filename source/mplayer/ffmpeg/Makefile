@@ -15,7 +15,7 @@ OBJS        = $(PROGS-yes:%=%.o) cmdutils.o
 MANPAGES    = $(PROGS-yes:%=doc/%.1)
 PODPAGES    = $(PROGS-yes:%=doc/%.pod)
 HTMLPAGES   = $(PROGS-yes:%=doc/%.html)
-TOOLS       = $(addprefix tools/, $(addsuffix $(EXESUF), cws2fws pktdumper probetest qt-faststart trasher))
+TOOLS       = $(addprefix tools/, $(addsuffix $(EXESUF), cws2fws graph2dot lavfi-showfiltfmts pktdumper probetest qt-faststart trasher))
 TESTTOOLS   = audiogen videogen rotozoom tiny_psnr base64
 HOSTPROGS  := $(TESTTOOLS:%=tests/%)
 
@@ -30,7 +30,6 @@ FFLIBS-$(CONFIG_AVFORMAT) += avformat
 FFLIBS-$(CONFIG_AVCODEC)  += avcodec
 FFLIBS-$(CONFIG_POSTPROC) += postproc
 FFLIBS-$(CONFIG_SWSCALE)  += swscale
-FFLIBS-$(CONFIG_AVCORE)   += avcore
 
 FFLIBS := avutil
 
@@ -66,7 +65,7 @@ config.h: .config
 
 SUBDIR_VARS := OBJS FFLIBS CLEANFILES DIRS TESTPROGS EXAMPLES SKIPHEADERS \
                ALTIVEC-OBJS MMX-OBJS NEON-OBJS X86-OBJS YASM-OBJS-FFT YASM-OBJS \
-               HOSTPROGS BUILT_HEADERS TESTOBJS ARCH_HEADERS
+               HOSTPROGS BUILT_HEADERS TESTOBJS ARCH_HEADERS ARMV6-OBJS
 
 define RESET
 $(1) :=
@@ -93,13 +92,14 @@ tools/%$(EXESUF): tools/%.o
 tools/%.o: tools/%.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $(CC_O) $<
 
+-include $(wildcard tools/*.d)
+
 ffplay.o: CFLAGS += $(SDL_CFLAGS)
 
 VERSION_SH  = $(SRC_PATH_BARE)/version.sh
 GIT_LOG     = $(SRC_PATH_BARE)/.git/logs/HEAD
-SVN_ENTRIES = $(SRC_PATH_BARE)/.svn/entries
 
-.version: $(wildcard $(GIT_LOG) $(SVN_ENTRIES)) $(VERSION_SH) config.mak
+.version: $(wildcard $(GIT_LOG)) $(VERSION_SH) config.mak
 .version: M=@
 
 version.h .version:
@@ -169,13 +169,14 @@ clean:: testclean
 	$(RM) $(CLEANSUFFIXES)
 	$(RM) doc/*.html doc/*.pod doc/*.1
 	$(RM) $(TOOLS)
+	$(RM) $(CLEANSUFFIXES:%=tools/%)
 
 distclean::
 	$(RM) $(DISTCLEANSUFFIXES)
 	$(RM) version.h config.* libavutil/avconfig.h
 
 config:
-	$(SRC_PATH)/configure $(value FFMPEG_CONFIGURATION)
+	$(SRC_PATH)/configure $(value LIBAV_CONFIGURATION)
 
 # regression tests
 
@@ -289,7 +290,7 @@ fate: $(FATE)
 
 $(FATE): ffmpeg$(EXESUF) $(FATE_UTILS:%=tests/%$(HOSTEXESUF))
 	@echo "TEST    $(@:fate-%=%)"
-	$(Q)$(SRC_PATH)/tests/fate-run.sh $@ "$(SAMPLES)" "$(TARGET_EXEC)" "$(TARGET_PATH)" '$(CMD)' '$(CMP)' '$(REF)' '$(FUZZ)'
+	$(Q)$(SRC_PATH)/tests/fate-run.sh $@ "$(SAMPLES)" "$(TARGET_EXEC)" "$(TARGET_PATH)" '$(CMD)' '$(CMP)' '$(REF)' '$(FUZZ)' '$(THREADS)'
 
 fate-list:
 	@printf '%s\n' $(sort $(FATE))

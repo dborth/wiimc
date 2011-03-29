@@ -2,20 +2,20 @@
  * id Quake II CIN File Demuxer
  * Copyright (c) 2003 The ffmpeg Project
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -227,7 +227,7 @@ static int idcin_read_packet(AVFormatContext *s,
     unsigned char r, g, b;
     unsigned char palette_buffer[768];
 
-    if (url_feof(s->pb))
+    if (s->pb->eof_reached)
         return AVERROR(EIO);
 
     if (idcin->next_chunk_is_video) {
@@ -257,7 +257,7 @@ static int idcin_read_packet(AVFormatContext *s,
 
         chunk_size = avio_rl32(pb);
         /* skip the number of decoded bytes (always equal to width * height) */
-        avio_seek(pb, 4, SEEK_CUR);
+        avio_skip(pb, 4);
         chunk_size -= 4;
         ret= av_get_packet(pb, pkt, chunk_size);
         if (ret < 0)

@@ -2,20 +2,20 @@
  * SAUCE header parser
  * Copyright (c) 2010 Peter Ross <pross@xvid.org>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -33,7 +33,7 @@ int ff_sauce_read(AVFormatContext *avctx, uint64_t *fsize, int *got_width, int g
     AVIOContext *pb = avctx->pb;
     char buf[36];
     int datatype, filetype, t1, t2, nb_comments, flags;
-    uint64_t start_pos = url_fsize(pb) - 128;
+    uint64_t start_pos = avio_size(pb) - 128;
 
     avio_seek(pb, start_pos, SEEK_SET);
     if (avio_read(pb, buf, 7) != 7)
@@ -51,14 +51,14 @@ int ff_sauce_read(AVFormatContext *avctx, uint64_t *fsize, int *got_width, int g
     GET_SAUCE_META("artist",    20)
     GET_SAUCE_META("publisher", 20)
     GET_SAUCE_META("date",      8)
-    avio_seek(pb, 4, SEEK_CUR);
+    avio_skip(pb, 4);
     datatype    = avio_r8(pb);
     filetype    = avio_r8(pb);
     t1          = avio_rl16(pb);
     t2          = avio_rl16(pb);
     nb_comments = avio_r8(pb);
     flags       = avio_r8(pb);
-    avio_seek(pb, 4, SEEK_CUR);
+    avio_skip(pb, 4);
     GET_SAUCE_META("encoder",   22);
 
     if (got_width && datatype && filetype) {

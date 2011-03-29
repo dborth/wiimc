@@ -3,20 +3,20 @@
  * Copyright (c) 2001 Fabrice Bellard
  * Copyright (c) 2009 Baptiste Coudurier <baptiste dot coudurier at gmail dot com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -259,7 +259,7 @@ static int mov_read_default(MOVContext *c, AVIOContext *pb, MOVAtom atom)
 
     if (atom.size < 0)
         atom.size = INT64_MAX;
-    while (total_size + 8 < atom.size && !url_feof(pb)) {
+    while (total_size + 8 < atom.size && !pb->eof_reached) {
         int (*parse)(MOVContext*, AVIOContext*, MOVAtom) = NULL;
         a.size = atom.size;
         a.type=0;
@@ -296,7 +296,7 @@ static int mov_read_default(MOVContext *c, AVIOContext *pb, MOVAtom atom)
             parse = mov_read_udta_string;
 
         if (!parse) { /* skip leaf atoms data */
-            avio_seek(pb, a.size, SEEK_CUR);
+            avio_skip(pb, a.size);
         } else {
             int64_t start_pos = avio_tell(pb);
             int64_t left;
@@ -304,18 +304,18 @@ static int mov_read_default(MOVContext *c, AVIOContext *pb, MOVAtom atom)
             if (err < 0)
                 return err;
             if (c->found_moov && c->found_mdat &&
-                (url_is_streamed(pb) || start_pos + a.size == url_fsize(pb)))
+                (url_is_streamed(pb) || start_pos + a.size == avio_size(pb)))
                 return 0;
             left = a.size - avio_tell(pb) + start_pos;
             if (left > 0) /* skip garbage at atom end */
-                avio_seek(pb, left, SEEK_CUR);
+                avio_skip(pb, left);
         }
 
         total_size += a.size;
     }
 
     if (total_size < atom.size && atom.size < 0x7ffff)
-        avio_seek(pb, atom.size - total_size, SEEK_CUR);
+        avio_skip(pb, atom.size - total_size);
 
     return 0;
 }
@@ -357,7 +357,7 @@ static int mov_read_dref(MOVContext *c, AVIOContext *pb, MOVAtom atom)
             uint16_t volume_len, len;
             int16_t type;
 
-            avio_seek(pb, 10, SEEK_CUR);
+            avio_skip(pb, 10);
 
             volume_len = avio_r8(pb);
             volume_len = FFMIN(volume_len, 27);
@@ -365,7 +365,7 @@ static int mov_read_dref(MOVContext *c, AVIOContext *pb, MOVAtom atom)
             dref->volume[volume_len] = 0;
             av_log(c->fc, AV_LOG_DEBUG, "volume %s, len %d\n", dref->volume, volume_len);
 
-            avio_seek(pb, 12, SEEK_CUR);
+            avio_skip(pb, 12);
 
             len = avio_r8(pb);
             len = FFMIN(len, 63);
@@ -373,7 +373,7 @@ static int mov_read_dref(MOVContext *c, AVIOContext *pb, MOVAtom atom)
             dref->filename[len] = 0;
             av_log(c->fc, AV_LOG_DEBUG, "filename %s, len %d\n", dref->filename, len);
 
-            avio_seek(pb, 16, SEEK_CUR);
+            avio_skip(pb, 16);
 
             /* read next level up_from_alias/down_to_target */
             dref->nlvl_from = avio_rb16(pb);
@@ -381,7 +381,7 @@ static int mov_read_dref(MOVContext *c, AVIOContext *pb, MOVAtom atom)
             av_log(c->fc, AV_LOG_DEBUG, "nlvl from %d, nlvl to %d\n",
                    dref->nlvl_from, dref->nlvl_to);
 
-            avio_seek(pb, 16, SEEK_CUR);
+            avio_skip(pb, 16);
 
             for (type = 0; type != -1 && avio_tell(pb) < next; ) {
                 type = avio_rb16(pb);
@@ -416,7 +416,7 @@ static int mov_read_dref(MOVContext *c, AVIOContext *pb, MOVAtom atom)
                             dref->dir[j] = '/';
                     av_log(c->fc, AV_LOG_DEBUG, "dir %s\n", dref->dir);
                 } else
-                    avio_seek(pb, len, SEEK_CUR);
+                    avio_skip(pb, len);
             }
         }
         avio_seek(pb, next, SEEK_SET);
@@ -492,16 +492,20 @@ static int mov_read_esds(MOVContext *c, AVIOContext *pb, MOVAtom atom)
 static int mov_read_dac3(MOVContext *c, AVIOContext *pb, MOVAtom atom)
 {
     AVStream *st;
-    int ac3info, acmod, lfeon;
+    int ac3info, acmod, lfeon, bsmod;
 
     if (c->fc->nb_streams < 1)
         return 0;
     st = c->fc->streams[c->fc->nb_streams-1];
 
     ac3info = avio_rb24(pb);
+    bsmod = (ac3info >> 14) & 0x7;
     acmod = (ac3info >> 11) & 0x7;
     lfeon = (ac3info >> 10) & 0x1;
     st->codec->channels = ((int[]){2,1,2,3,3,4,4,5})[acmod] + lfeon;
+    st->codec->audio_service_type = bsmod;
+    if (st->codec->channels > 1 && bsmod == 0x7)
+        st->codec->audio_service_type = AV_AUDIO_SERVICE_TYPE_KARAOKE;
 
     return 0;
 }
@@ -663,9 +667,9 @@ static int mov_read_mvhd(MOVContext *c, AVIOContext *pb, MOVAtom atom)
 
     avio_rb16(pb); /* preferred volume */
 
-    avio_seek(pb, 10, SEEK_CUR); /* reserved */
+    avio_skip(pb, 10); /* reserved */
 
-    avio_seek(pb, 36, SEEK_CUR); /* display matrix */
+    avio_skip(pb, 36); /* display matrix */
 
     avio_rb32(pb); /* preview time */
     avio_rb32(pb); /* preview duration */
@@ -782,7 +786,7 @@ static int mov_read_wave(MOVContext *c, AVIOContext *pb, MOVAtom atom)
         if (mov_read_default(c, pb, atom) < 0)
             return -1;
     } else
-        avio_seek(pb, atom.size, SEEK_CUR);
+        avio_skip(pb, atom.size);
     return 0;
 }
 
@@ -833,7 +837,7 @@ static int mov_read_strf(MOVContext *c, AVIOContext *pb, MOVAtom atom)
     if (!st->codec->extradata)
         return AVERROR(ENOMEM);
     st->codec->extradata_size = atom.size - 40;
-    avio_seek(pb, 40, SEEK_CUR);
+    avio_skip(pb, 40);
     avio_read(pb, st->codec->extradata, atom.size - 40);
     return 0;
 }
@@ -945,7 +949,7 @@ int ff_mov_read_stsd_entries(MOVContext *c, AVIOContext *pb, int entries)
              * in the MOV demuxer, patch welcome. */
         multiple_stsd:
             av_log(c->fc, AV_LOG_WARNING, "multiple fourcc not supported\n");
-            avio_seek(pb, size - (avio_tell(pb) - start_pos), SEEK_CUR);
+            avio_skip(pb, size - (avio_tell(pb) - start_pos));
             continue;
         }
         /* we cannot demux concatenated h264 streams because of different extradata */
@@ -1003,7 +1007,7 @@ int ff_mov_read_stsd_entries(MOVContext *c, AVIOContext *pb, int entries)
                 len = 31;
             mov_read_mac_string(c, pb, len, st->codec->codec_name, 32);
             if (len < 31)
-                avio_seek(pb, 31 - len, SEEK_CUR);
+                avio_skip(pb, 31 - len);
             /* codec_tag YV12 triggers an UV swap in rawdec.c */
             if (!memcmp(st->codec->codec_name, "Planar Y'CbCr 8-bit 4:2:0", 25))
                 st->codec->codec_tag=MKTAG('I', '4', '2', '0');
@@ -1174,7 +1178,7 @@ int ff_mov_read_stsd_entries(MOVContext *c, AVIOContext *pb, int entries)
             st->codec->height = sc->height;
         } else {
             /* other codec type, just skip (rtp, mp4s, tmcd ...) */
-            avio_seek(pb, size - (avio_tell(pb) - start_pos), SEEK_CUR);
+            avio_skip(pb, size - (avio_tell(pb) - start_pos));
         }
         /* this will read extra atoms at the end (wave, alac, damr, avcC, SMI ...) */
         a.size = size - (avio_tell(pb) - start_pos);
@@ -1182,7 +1186,7 @@ int ff_mov_read_stsd_entries(MOVContext *c, AVIOContext *pb, int entries)
             if (mov_read_default(c, pb, a) < 0)
                 return -1;
         } else if (a.size > 0)
-            avio_seek(pb, a.size, SEEK_CUR);
+            avio_skip(pb, a.size);
     }
 
     if(st->codec->codec_type==AVMEDIA_TYPE_AUDIO && st->codec->sample_rate==0 && sc->time_scale>1)
@@ -2078,13 +2082,13 @@ static int mov_read_wide(MOVContext *c, AVIOContext *pb, MOVAtom atom)
     if (atom.size < 8)
         return 0; /* continue */
     if (avio_rb32(pb) != 0) { /* 0 sized mdat atom... use the 'wide' atom size */
-        avio_seek(pb, atom.size - 4, SEEK_CUR);
+        avio_skip(pb, atom.size - 4);
         return 0;
     }
     atom.type = avio_rl32(pb);
     atom.size -= 8;
     if (atom.type != MKTAG('m','d','a','t')) {
-        avio_seek(pb, atom.size, SEEK_CUR);
+        avio_skip(pb, atom.size);
         return 0;
     }
     err = mov_read_mdat(c, pb, atom);
@@ -2351,7 +2355,7 @@ static int mov_read_header(AVFormatContext *s, AVFormatParameters *ap)
     mov->fc = s;
     /* .mov and .mp4 aren't streamable anyway (only progressive download if moov is before mdat) */
     if(!url_is_streamed(pb))
-        atom.size = url_fsize(pb);
+        atom.size = avio_size(pb);
     else
         atom.size = INT64_MAX;
 
@@ -2411,7 +2415,7 @@ static int mov_read_packet(AVFormatContext *s, AVPacket *pkt)
         mov->found_mdat = 0;
         if (!url_is_streamed(s->pb) ||
             mov_read_default(mov, s->pb, (MOVAtom){ AV_RL32("root"), INT64_MAX }) < 0 ||
-            url_feof(s->pb))
+            s->pb->eof_reached)
             return AVERROR_EOF;
         av_dlog(s, "read fragments, offset 0x%llx\n", avio_tell(s->pb));
         goto retry;

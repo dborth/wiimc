@@ -17,15 +17,15 @@ Understanding these overoptimized functions:
 As many functions tend to be a bit difficult to understand because
 of optimizations, it can be hard to optimize them further, or write
 architecture-specific versions. It is recommended to look at older
-revisions of the interesting files (web frontends for the various FFmpeg
-branches are listed at http://ffmpeg.org/download.html).
+revisions of the interesting files (web frontends for the various Libav
+branches are listed at http://libav.org/download.html).
 Alternatively, look into the other architecture-specific versions in
 the x86/, ppc/, alpha/ subdirectories. Even if you don't exactly
 comprehend the instructions, it could help understanding the functions
 and how they can be optimized.
 
 NOTE: If you still don't understand some function, ask at our mailing list!!!
-(http://lists.mplayerhq.hu/mailman/listinfo/ffmpeg-devel)
+(https://lists.libav.org/mailman/listinfo/libav-devel)
 
 
 When is an optimization justified?
@@ -201,7 +201,7 @@ Inline asm vs. external asm
 ---------------------------
 Both inline asm (__asm__("..") in a .c file, handled by a compiler such as gcc)
 and external asm (.s or .asm files, handled by an assembler such as yasm/nasm)
-are accepted in FFmpeg. Which one to use differs per specific case.
+are accepted in Libav. Which one to use differs per specific case.
 
 - if your code is intended to be inlined in a C function, inline asm is always
    better, because external asm cannot be inlined

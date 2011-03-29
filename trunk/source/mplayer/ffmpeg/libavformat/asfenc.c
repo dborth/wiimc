@@ -2,20 +2,20 @@
  * ASF muxer
  * Copyright (c) 2000, 2001 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -574,7 +574,7 @@ static int asf_write_header(AVFormatContext *s)
         return -1;
     }
 
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
 
     asf->packet_nb_payloads = 0;
     asf->packet_timestamp_start = -1;
@@ -672,7 +672,7 @@ static void flush_packet(AVFormatContext *s)
 
     avio_write(s->pb, asf->packet_buf, s->packet_size - packet_hdr_size);
 
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     asf->nb_packets++;
     asf->packet_nb_payloads = 0;
     asf->packet_timestamp_start = -1;
@@ -864,7 +864,7 @@ static int asf_write_trailer(AVFormatContext *s)
     if ((!asf->is_streamed) && (asf->nb_index_count != 0)) {
         asf_write_index(s, asf->index_ptr, asf->maximum_packet, asf->nb_index_count);
     }
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
 
     if (asf->is_streamed || url_is_streamed(s->pb)) {
         put_chunk(s, 0x4524, 0, 0); /* end of stream */
@@ -875,7 +875,7 @@ static int asf_write_trailer(AVFormatContext *s)
         asf_write_header1(s, file_size, data_size - asf->data_offset);
     }
 
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     av_free(asf->index_ptr);
     return 0;
 }

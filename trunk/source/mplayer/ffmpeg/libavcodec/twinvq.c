@@ -2,20 +2,20 @@
  * TwinVQ decoder
  * Copyright (c) 2009 Vitor Sessak
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -24,6 +24,7 @@
 #include "dsputil.h"
 #include "fft.h"
 #include "lsp.h"
+#include "sinewin.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -608,6 +609,7 @@ static void dec_lpc_spectrum_inv(TwinContext *tctx, float *lsp,
 static void imdct_and_window(TwinContext *tctx, enum FrameType ftype, int wtype,
                             float *in, float *prev, int ch)
 {
+    FFTContext *mdct = &tctx->mdct_ctx[ftype];
     const ModeTab *mtab = tctx->mtab;
     int bsize = mtab->size / mtab->fmode[ftype].sub;
     int size  = mtab->size;
@@ -640,7 +642,7 @@ static void imdct_and_window(TwinContext *tctx, enum FrameType ftype, int wtype,
 
         wsize = types_sizes[wtype_to_wsize[sub_wtype]];
 
-        ff_imdct_half(&tctx->mdct_ctx[ftype], buf1 + bsize*j, in + bsize*j);
+        mdct->imdct_half(mdct, buf1 + bsize*j, in + bsize*j);
 
         tctx->dsp.vector_fmul_window(out2,
                                      prev_buf + (bsize-wsize)/2,

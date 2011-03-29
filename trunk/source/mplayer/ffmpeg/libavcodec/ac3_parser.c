@@ -3,20 +3,20 @@
  * Copyright (c) 2003 Fabrice Bellard
  * Copyright (c) 2003 Michael Niedermayer
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -69,7 +69,7 @@ int ff_ac3_parse_header(GetBitContext *gbc, AC3HeaderInfo *hdr)
 
         skip_bits(gbc, 5); // skip bsid, already got it
 
-        skip_bits(gbc, 3); // skip bitstream mode
+        hdr->bitstream_mode = get_bits(gbc, 3);
         hdr->channel_mode = get_bits(gbc, 3);
 
         if(hdr->channel_mode == AC3_CHMODE_STEREO) {
@@ -151,6 +151,9 @@ static int ac3_sync(uint64_t state, AACAC3ParseContext *hdr_info,
     hdr_info->channels = hdr.channels;
     hdr_info->channel_layout = hdr.channel_layout;
     hdr_info->samples = hdr.num_blocks * 256;
+    hdr_info->service_type = hdr.bitstream_mode;
+    if (hdr.bitstream_mode == 0x7 && hdr.channels > 1)
+        hdr_info->service_type = AV_AUDIO_SERVICE_TYPE_KARAOKE;
     if(hdr.bitstream_id>10)
         hdr_info->codec_id = CODEC_ID_EAC3;
     else if (hdr_info->codec_id == CODEC_ID_NONE)

@@ -2,20 +2,20 @@
  * Interplay MVE File Demuxer
  * Copyright (c) 2003 The ffmpeg Project
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -225,7 +225,7 @@ static int process_ipmovie_chunk(IPMVEContext *s, AVIOContext *pb,
         return chunk_type;
 
     /* read the next chunk, wherever the file happens to be pointing */
-    if (url_feof(pb))
+    if (pb->eof_reached)
         return CHUNK_EOF;
     if (avio_read(pb, chunk_preamble, CHUNK_PREAMBLE_SIZE) !=
         CHUNK_PREAMBLE_SIZE)
@@ -271,7 +271,7 @@ static int process_ipmovie_chunk(IPMVEContext *s, AVIOContext *pb,
     while ((chunk_size > 0) && (chunk_type != CHUNK_BAD)) {
 
         /* read the next chunk, wherever the file happens to be pointing */
-        if (url_feof(pb)) {
+        if (pb->eof_reached) {
             chunk_type = CHUNK_EOF;
             break;
         }
@@ -299,12 +299,12 @@ static int process_ipmovie_chunk(IPMVEContext *s, AVIOContext *pb,
 
         case OPCODE_END_OF_STREAM:
             debug_ipmovie("end of stream\n");
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_END_OF_CHUNK:
             debug_ipmovie("end of chunk\n");
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_CREATE_TIMER:
@@ -359,7 +359,7 @@ static int process_ipmovie_chunk(IPMVEContext *s, AVIOContext *pb,
 
         case OPCODE_START_STOP_AUDIO:
             debug_ipmovie("start/stop audio\n");
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_INIT_VIDEO_BUFFERS:
@@ -393,12 +393,12 @@ static int process_ipmovie_chunk(IPMVEContext *s, AVIOContext *pb,
         case OPCODE_UNKNOWN_14:
         case OPCODE_UNKNOWN_15:
             debug_ipmovie("unknown (but documented) opcode %02X\n", opcode_type);
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_SEND_BUFFER:
             debug_ipmovie("send buffer\n");
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_AUDIO_FRAME:
@@ -407,22 +407,22 @@ static int process_ipmovie_chunk(IPMVEContext *s, AVIOContext *pb,
             /* log position and move on for now */
             s->audio_chunk_offset = avio_tell(pb);
             s->audio_chunk_size = opcode_size;
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_SILENCE_FRAME:
             debug_ipmovie("silence frame\n");
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_INIT_VIDEO_MODE:
             debug_ipmovie("initialize video mode\n");
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_CREATE_GRADIENT:
             debug_ipmovie("create gradient\n");
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_SET_PALETTE:
@@ -464,7 +464,7 @@ static int process_ipmovie_chunk(IPMVEContext *s, AVIOContext *pb,
 
         case OPCODE_SET_PALETTE_COMPRESSED:
             debug_ipmovie("set palette compressed\n");
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_SET_DECODING_MAP:
@@ -473,7 +473,7 @@ static int process_ipmovie_chunk(IPMVEContext *s, AVIOContext *pb,
             /* log position and move on for now */
             s->decode_map_chunk_offset = avio_tell(pb);
             s->decode_map_chunk_size = opcode_size;
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         case OPCODE_VIDEO_DATA:
@@ -482,7 +482,7 @@ static int process_ipmovie_chunk(IPMVEContext *s, AVIOContext *pb,
             /* log position and move on for now */
             s->video_chunk_offset = avio_tell(pb);
             s->video_chunk_size = opcode_size;
-            avio_seek(pb, opcode_size, SEEK_CUR);
+            avio_skip(pb, opcode_size);
             break;
 
         default:
@@ -532,7 +532,7 @@ static int ipmovie_read_header(AVFormatContext *s,
     while (memcmp(signature_buffer, signature, sizeof(signature))) {
         memmove(signature_buffer, signature_buffer + 1, sizeof(signature_buffer) - 1);
         signature_buffer[sizeof(signature_buffer) - 1] = avio_r8(pb);
-        if (url_feof(pb))
+        if (pb->eof_reached)
             return AVERROR_EOF;
     }
     /* initialize private context members */

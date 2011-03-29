@@ -3,20 +3,20 @@
  * Copyright (c) 2000, 2001, 2002 Fabrice Bellard
  * Copyright (c) 2004 Michael Niedermayer
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -276,7 +276,7 @@ static int read_packet(AVFormatContext *s1, AVPacket *pkt)
                 av_log(s1, AV_LOG_ERROR, "Could not open file : %s\n",filename);
                 return AVERROR(EIO);
             }
-            size[i]= url_fsize(f[i]);
+            size[i]= avio_size(f[i]);
 
             if(codec->codec_id != CODEC_ID_RAWVIDEO)
                 break;
@@ -287,7 +287,7 @@ static int read_packet(AVFormatContext *s1, AVPacket *pkt)
             infer_size(&codec->width, &codec->height, size[0]);
     } else {
         f[0] = s1->pb;
-        if (url_feof(f[0]))
+        if (f[0]->eof_reached)
             return AVERROR(EIO);
         size[0]= 4096;
     }
@@ -372,8 +372,8 @@ static int write_packet(AVFormatContext *s, AVPacket *pkt)
         avio_write(pb[0], pkt->data        , ysize);
         avio_write(pb[1], pkt->data + ysize, (pkt->size - ysize)/2);
         avio_write(pb[2], pkt->data + ysize +(pkt->size - ysize)/2, (pkt->size - ysize)/2);
-        put_flush_packet(pb[1]);
-        put_flush_packet(pb[2]);
+        avio_flush(pb[1]);
+        avio_flush(pb[2]);
         avio_close(pb[1]);
         avio_close(pb[2]);
     }else{
@@ -402,7 +402,7 @@ static int write_packet(AVFormatContext *s, AVPacket *pkt)
         }
         avio_write(pb[0], pkt->data, pkt->size);
     }
-    put_flush_packet(pb[0]);
+    avio_flush(pb[0]);
     if (!img->is_pipe) {
         avio_close(pb[0]);
     }

@@ -2,20 +2,20 @@
  * Matroska muxer
  * Copyright (c) 2007 David Conrad
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -438,29 +438,15 @@ static int put_xiph_codecpriv(AVFormatContext *s, AVIOContext *pb, AVCodecContex
 
 static void get_aac_sample_rates(AVFormatContext *s, AVCodecContext *codec, int *sample_rate, int *output_sample_rate)
 {
-    int sri;
+    MPEG4AudioConfig mp4ac;
 
-    if (codec->extradata_size < 2) {
-        av_log(s, AV_LOG_WARNING, "No AAC extradata, unable to determine samplerate.\n");
+    if (ff_mpeg4audio_get_config(&mp4ac, codec->extradata, codec->extradata_size) < 0) {
+        av_log(s, AV_LOG_WARNING, "Error parsing AAC extradata, unable to determine samplerate.\n");
         return;
     }
 
-    sri = ((codec->extradata[0] << 1) & 0xE) | (codec->extradata[1] >> 7);
-    if (sri > 12) {
-        av_log(s, AV_LOG_WARNING, "AAC samplerate index out of bounds\n");
-        return;
-    }
-    *sample_rate = ff_mpeg4audio_sample_rates[sri];
-
-    // if sbr, get output sample rate as well
-    if (codec->extradata_size == 5) {
-        sri = (codec->extradata[4] >> 3) & 0xF;
-        if (sri > 12) {
-            av_log(s, AV_LOG_WARNING, "AAC output samplerate index out of bounds\n");
-            return;
-        }
-        *output_sample_rate = ff_mpeg4audio_sample_rates[sri];
-    }
+    *sample_rate        = mp4ac.sample_rate;
+    *output_sample_rate = mp4ac.ext_sample_rate;
 }
 
 static int mkv_write_codecprivate(AVFormatContext *s, AVIOContext *pb, AVCodecContext *codec, int native_id, int qt_id)
@@ -873,7 +859,7 @@ static int mkv_write_header(AVFormatContext *s)
     mkv->cur_audio_pkt.size = 0;
     mkv->audio_buffer_size  = 0;
 
-    put_flush_packet(pb);
+    avio_flush(pb);
     return 0;
 }
 
@@ -1172,7 +1158,7 @@ static int mkv_write_trailer(AVFormatContext *s)
     end_ebml_master(pb, mkv->segment);
     av_free(mkv->tracks);
     av_destruct_packet(&mkv->cur_audio_pkt);
-    put_flush_packet(pb);
+    avio_flush(pb);
     return 0;
 }
 

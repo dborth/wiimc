@@ -1,20 +1,20 @@
 /*
  * copyright (c) 2001 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -31,57 +31,7 @@
 #include "libavutil/avutil.h"
 #include "libavutil/cpu.h"
 
-#define LIBAVCODEC_VERSION_MAJOR 52
-#define LIBAVCODEC_VERSION_MINOR 113
-#define LIBAVCODEC_VERSION_MICRO  2
-
-#define LIBAVCODEC_VERSION_INT  AV_VERSION_INT(LIBAVCODEC_VERSION_MAJOR, \
-                                               LIBAVCODEC_VERSION_MINOR, \
-                                               LIBAVCODEC_VERSION_MICRO)
-#define LIBAVCODEC_VERSION      AV_VERSION(LIBAVCODEC_VERSION_MAJOR,    \
-                                           LIBAVCODEC_VERSION_MINOR,    \
-                                           LIBAVCODEC_VERSION_MICRO)
-#define LIBAVCODEC_BUILD        LIBAVCODEC_VERSION_INT
-
-#define LIBAVCODEC_IDENT        "Lavc" AV_STRINGIFY(LIBAVCODEC_VERSION)
-
-/**
- * Those FF_API_* defines are not part of public API.
- * They may change, break or disappear at any time.
- */
-#ifndef FF_API_PALETTE_CONTROL
-#define FF_API_PALETTE_CONTROL  (LIBAVCODEC_VERSION_MAJOR < 54)
-#endif
-#ifndef FF_API_MM_FLAGS
-#define FF_API_MM_FLAGS         (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
-#ifndef FF_API_OPT_SHOW
-#define FF_API_OPT_SHOW         (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
-#ifndef FF_API_AUDIO_OLD
-#define FF_API_AUDIO_OLD        (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
-#ifndef FF_API_VIDEO_OLD
-#define FF_API_VIDEO_OLD        (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
-#ifndef FF_API_SUBTITLE_OLD
-#define FF_API_SUBTITLE_OLD     (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
-#ifndef FF_API_USE_LPC
-#define FF_API_USE_LPC          (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
-#ifndef FF_API_SET_STRING_OLD
-#define FF_API_SET_STRING_OLD   (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
-#ifndef FF_API_INOFFICIAL
-#define FF_API_INOFFICIAL       (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
-#ifndef FF_API_OLD_SAMPLE_FMT
-#define FF_API_OLD_SAMPLE_FMT   (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
-#ifndef FF_API_OLD_AUDIOCONVERT
-#define FF_API_OLD_AUDIOCONVERT (LIBAVCODEC_VERSION_MAJOR < 53)
-#endif
+#include "libavcodec/version.h"
 
 #if LIBAVCODEC_VERSION_MAJOR < 53
 #   define FF_INTERNALC_MEM_TYPE unsigned int
@@ -261,6 +211,7 @@ enum CodecID {
     CODEC_ID_MXPEG,
     CODEC_ID_LAGARITH,
     CODEC_ID_PRORES,
+    CODEC_ID_JV,
 
     /* various PCM "codecs" */
     CODEC_ID_PCM_S16LE= 0x10000,
@@ -593,6 +544,19 @@ enum AVLPCType {
     AV_LPC_TYPE_LEVINSON    =  2, ///< Levinson-Durbin recursion
     AV_LPC_TYPE_CHOLESKY    =  3, ///< Cholesky factorization
     AV_LPC_TYPE_NB              , ///< Not part of ABI
+};
+
+enum AVAudioServiceType {
+    AV_AUDIO_SERVICE_TYPE_MAIN              = 0,
+    AV_AUDIO_SERVICE_TYPE_EFFECTS           = 1,
+    AV_AUDIO_SERVICE_TYPE_VISUALLY_IMPAIRED = 2,
+    AV_AUDIO_SERVICE_TYPE_HEARING_IMPAIRED  = 3,
+    AV_AUDIO_SERVICE_TYPE_DIALOGUE          = 4,
+    AV_AUDIO_SERVICE_TYPE_COMMENTARY        = 5,
+    AV_AUDIO_SERVICE_TYPE_EMERGENCY         = 6,
+    AV_AUDIO_SERVICE_TYPE_VOICE_OVER        = 7,
+    AV_AUDIO_SERVICE_TYPE_KARAOKE           = 8,
+    AV_AUDIO_SERVICE_TYPE_NB                   , ///< Not part of ABI
 };
 
 typedef struct RcOverride{
@@ -2277,6 +2241,7 @@ typedef struct AVCodecContext {
      */
      int profile;
 #define FF_PROFILE_UNKNOWN -99
+#define FF_PROFILE_RESERVED -100
 
 #define FF_PROFILE_AAC_MAIN 0
 #define FF_PROFILE_AAC_LOW  1
@@ -2288,6 +2253,13 @@ typedef struct AVCodecContext {
 #define FF_PROFILE_DTS_96_24   40
 #define FF_PROFILE_DTS_HD_HRA  50
 #define FF_PROFILE_DTS_HD_MA   60
+
+#define FF_PROFILE_MPEG2_422    0
+#define FF_PROFILE_MPEG2_HIGH   1
+#define FF_PROFILE_MPEG2_SS     2
+#define FF_PROFILE_MPEG2_SNR_SCALABLE  3
+#define FF_PROFILE_MPEG2_MAIN   4
+#define FF_PROFILE_MPEG2_SIMPLE 5
 
 #define FF_PROFILE_H264_CONSTRAINED  (1<<9)  // 8+1; constraint_set1_flag
 #define FF_PROFILE_H264_INTRA        (1<<11) // 8+3; constraint_set3_flag
@@ -2305,6 +2277,11 @@ typedef struct AVCodecContext {
 #define FF_PROFILE_H264_HIGH_444_PREDICTIVE  244
 #define FF_PROFILE_H264_HIGH_444_INTRA       (244|FF_PROFILE_H264_INTRA)
 #define FF_PROFILE_H264_CAVLC_444            44
+
+#define FF_PROFILE_VC1_SIMPLE   0
+#define FF_PROFILE_VC1_MAIN     1
+#define FF_PROFILE_VC1_COMPLEX  2
+#define FF_PROFILE_VC1_ADVANCED 3
 
     /**
      * level
@@ -2900,6 +2877,13 @@ typedef struct AVCodecContext {
      * - decoding: unused.
      */
     uint64_t vbv_delay;
+
+    /**
+     * Type of service that the audio stream conveys.
+     * - encoding: Set by user.
+     * - decoding: Set by libavcodec.
+     */
+    enum AVAudioServiceType audio_service_type;
 } AVCodecContext;
 
 /**
@@ -4250,7 +4234,7 @@ attribute_deprecated int av_parse_video_frame_rate(AVRational *frame_rate, const
 
 /**
  * Logs a generic warning message about a missing feature. This function is
- * intended to be used internally by FFmpeg (libavcodec, libavformat, etc.)
+ * intended to be used internally by Libav (libavcodec, libavformat, etc.)
  * only, and would normally not be used by applications.
  * @param[in] avc a pointer to an arbitrary struct of which the first field is
  * a pointer to an AVClass struct
@@ -4264,7 +4248,7 @@ void av_log_missing_feature(void *avc, const char *feature, int want_sample);
 
 /**
  * Log a generic warning message asking for a sample. This function is
- * intended to be used internally by FFmpeg (libavcodec, libavformat, etc.)
+ * intended to be used internally by Libav (libavcodec, libavformat, etc.)
  * only, and would normally not be used by applications.
  * @param[in] avc a pointer to an arbitrary struct of which the first field is
  * a pointer to an AVClass struct
@@ -4301,7 +4285,7 @@ enum AVLockOp {
  * lockmgr should store/get a pointer to a user allocated mutex. It's
  * NULL upon AV_LOCK_CREATE and != NULL for all other ops.
  *
- * @param cb User defined callback. Note: FFmpeg may invoke calls to this
+ * @param cb User defined callback. Note: Libav may invoke calls to this
  *           callback during the call to av_lockmgr_register().
  *           Thus, the application must be prepared to handle that.
  *           If cb is set to NULL the lockmgr will be unregistered.

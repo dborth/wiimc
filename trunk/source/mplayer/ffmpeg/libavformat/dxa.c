@@ -2,20 +2,20 @@
  * DXA demuxer
  * Copyright (c) 2007 Konstantin Shishkov
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -96,7 +96,7 @@ static int dxa_read_header(AVFormatContext *s, AVFormatParameters *ap)
         c->has_sound = 1;
         size = avio_rb32(pb);
         c->vidpos = avio_tell(pb) + size;
-        avio_seek(pb, 16, SEEK_CUR);
+        avio_skip(pb, 16);
         fsize = avio_rl32(pb);
 
         ast = av_new_stream(s, 0);
@@ -104,11 +104,11 @@ static int dxa_read_header(AVFormatContext *s, AVFormatParameters *ap)
             return -1;
         ff_get_wav_header(pb, ast->codec, fsize);
         // find 'data' chunk
-        while(avio_tell(pb) < c->vidpos && !url_feof(pb)){
+        while(avio_tell(pb) < c->vidpos && !pb->eof_reached){
             tag = avio_rl32(pb);
             fsize = avio_rl32(pb);
             if(tag == MKTAG('d', 'a', 't', 'a')) break;
-            avio_seek(pb, fsize, SEEK_CUR);
+            avio_skip(pb, fsize);
         }
         c->bpc = (fsize + c->frames - 1) / c->frames;
         if(ast->codec->block_align)
@@ -162,7 +162,7 @@ static int dxa_read_packet(AVFormatContext *s, AVPacket *pkt)
         return 0;
     }
     avio_seek(s->pb, c->vidpos, SEEK_SET);
-    while(!url_feof(s->pb) && c->frames){
+    while(!s->pb->eof_reached && c->frames){
         avio_read(s->pb, buf, 4);
         switch(AV_RL32(buf)){
         case MKTAG('N', 'U', 'L', 'L'):

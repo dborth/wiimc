@@ -2,20 +2,20 @@
  * VQF demuxer
  * Copyright (c) 2009 Vitor Sessak
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -72,7 +72,7 @@ static int vqf_read_header(AVFormatContext *s, AVFormatParameters *ap)
     if (!st)
         return AVERROR(ENOMEM);
 
-    avio_seek(s->pb, 12, SEEK_CUR);
+    avio_skip(s->pb, 12);
 
     header_size = avio_rb32(s->pb);
 
@@ -101,7 +101,7 @@ static int vqf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             st->codec->channels = avio_rb32(s->pb) + 1;
             read_bitrate        = avio_rb32(s->pb);
             rate_flag           = avio_rb32(s->pb);
-            avio_seek(s->pb, len-12, SEEK_CUR);
+            avio_skip(s->pb, len-12);
 
             st->codec->bit_rate              = read_bitrate*1000;
             st->codec->bits_per_coded_sample = 16;
@@ -140,7 +140,7 @@ static int vqf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             av_log(s, AV_LOG_ERROR, "Unknown chunk: %c%c%c%c\n",
                    ((char*)&chunk_tag)[0], ((char*)&chunk_tag)[1],
                    ((char*)&chunk_tag)[2], ((char*)&chunk_tag)[3]);
-            avio_seek(s->pb, FFMIN(len, header_size), SEEK_CUR);
+            avio_skip(s->pb, FFMIN(len, header_size));
             break;
         }
 

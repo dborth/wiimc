@@ -2,20 +2,20 @@
  * AIFF/AIFF-C demuxer
  * Copyright (c) 2006  Patrick Guimond
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -51,7 +51,7 @@ static int get_tag(AVIOContext *pb, uint32_t * tag)
 {
     int size;
 
-    if (url_feof(pb))
+    if (pb->eof_reached)
         return AVERROR(EIO);
 
     *tag = avio_rl32(pb);
@@ -70,7 +70,7 @@ static void get_meta(AVFormatContext *s, const char *key, int size)
     int res;
 
     if (!str) {
-        avio_seek(s->pb, size, SEEK_CUR);
+        avio_skip(s->pb, size);
         return;
     }
 
@@ -152,7 +152,7 @@ static unsigned int get_aiff_header(AVIOContext *pb, AVCodecContext *codec,
 
     /* Chunk is over */
     if (size)
-        avio_seek(pb, size, SEEK_CUR);
+        avio_skip(pb, size);
 
     return num_frames;
 }
@@ -242,7 +242,7 @@ static int aiff_read_header(AVFormatContext *s,
                 av_log(s, AV_LOG_ERROR, "file is not seekable\n");
                 return -1;
             }
-            avio_seek(pb, size - 8, SEEK_CUR);
+            avio_skip(pb, size - 8);
             break;
         case MKTAG('w', 'a', 'v', 'e'):
             if ((uint64_t)size > (1<<30))
@@ -256,7 +256,7 @@ static int aiff_read_header(AVFormatContext *s,
         default: /* Jump */
             if (size & 1)   /* Always even aligned */
                 size++;
-            avio_seek(pb, size, SEEK_CUR);
+            avio_skip(pb, size);
         }
     }
 

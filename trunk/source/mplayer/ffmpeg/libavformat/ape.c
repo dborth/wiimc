@@ -3,20 +3,20 @@
  * Copyright (c) 2007 Benjamin Zores <ben@geexbox.org>
  *  based upon libdemac from Dave Chapman.
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -187,7 +187,7 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
         /* Skip any unknown bytes at the end of the descriptor.
            This is for future compatibility */
         if (ape->descriptorlength > 52)
-            avio_seek(pb, ape->descriptorlength - 52, SEEK_CUR);
+            avio_skip(pb, ape->descriptorlength - 52);
 
         /* Read header data */
         ape->compressiontype      = avio_rl16(pb);
@@ -212,7 +212,7 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
         ape->finalframeblocks     = avio_rl32(pb);
 
         if (ape->formatflags & MAC_FORMAT_FLAG_HAS_PEAK_LEVEL) {
-            avio_seek(pb, 4, SEEK_CUR); /* Skip the peak level */
+            avio_skip(pb, 4); /* Skip the peak level */
             ape->headerlength += 4;
         }
 
@@ -239,9 +239,13 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
 
         /* Skip any stored wav header */
         if (!(ape->formatflags & MAC_FORMAT_FLAG_CREATE_WAV_HEADER))
-            avio_seek(pb, ape->wavheaderlength, SEEK_CUR);
+            avio_skip(pb, ape->wavheaderlength);
     }
 
+    if(!ape->totalframes){
+        av_log(s, AV_LOG_ERROR, "No frames in the file!\n");
+        return AVERROR(EINVAL);
+    }
     if(ape->totalframes > UINT_MAX / sizeof(APEFrame)){
         av_log(s, AV_LOG_ERROR, "Too many frames: %d\n", ape->totalframes);
         return -1;
@@ -337,7 +341,7 @@ static int ape_read_packet(AVFormatContext * s, AVPacket * pkt)
     APEContext *ape = s->priv_data;
     uint32_t extra_size = 8;
 
-    if (url_feof(s->pb))
+    if (s->pb->eof_reached)
         return AVERROR(EIO);
     if (ape->currentframe > ape->totalframes)
         return AVERROR(EIO);

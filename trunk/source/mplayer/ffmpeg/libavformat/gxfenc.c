@@ -2,20 +2,20 @@
  * GXF muxer.
  * Copyright (c) 2006 SmartJog S.A., Baptiste Coudurier <baptiste dot coudurier at smartjog dot com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -310,7 +310,7 @@ static int gxf_write_material_data_section(AVFormatContext *s)
     /* estimated size */
     avio_w8(pb, MAT_SIZE);
     avio_w8(pb, 4);
-    avio_wb32(pb, url_fsize(pb) / 1024);
+    avio_wb32(pb, avio_size(pb) / 1024);
 
     return updateSize(pb, pos);
 }
@@ -753,7 +753,7 @@ static int gxf_write_header(AVFormatContext *s)
 
     gxf->packet_count = 3;
 
-    put_flush_packet(pb);
+    avio_flush(pb);
     return 0;
 }
 
@@ -781,12 +781,12 @@ static int gxf_write_trailer(AVFormatContext *s)
     gxf_write_map_packet(s, 1);
     gxf_write_flt_packet(s);
     gxf_write_umf_packet(s);
-    put_flush_packet(pb);
+    avio_flush(pb);
     /* update duration in all map packets */
     for (i = 1; i < gxf->map_offsets_nb; i++) {
         avio_seek(pb, gxf->map_offsets[i], SEEK_SET);
         gxf_write_map_packet(s, 1);
-        put_flush_packet(pb);
+        avio_flush(pb);
     }
 
     avio_seek(pb, end, SEEK_SET);
@@ -895,7 +895,7 @@ static int gxf_write_packet(AVFormatContext *s, AVPacket *pkt)
         gxf->packet_count = 0;
     }
 
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     return 0;
 }

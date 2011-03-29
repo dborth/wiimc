@@ -2,20 +2,20 @@
  * MP3 demuxer
  * Copyright (c) 2003 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -90,7 +90,7 @@ static int mp3_parse_vbr_tags(AVFormatContext *s, AVStream *st, int64_t base)
         return -1;
 
     /* Check for Xing / Info tag */
-    avio_seek(s->pb, xing_offtbl[c.lsf == 1][c.nb_channels == 1], SEEK_CUR);
+    avio_skip(s->pb, xing_offtbl[c.lsf == 1][c.nb_channels == 1]);
     v = avio_rb32(s->pb);
     if(v == MKBETAG('X', 'i', 'n', 'g') || v == MKBETAG('I', 'n', 'f', 'o')) {
         v = avio_rb32(s->pb);
@@ -107,7 +107,7 @@ static int mp3_parse_vbr_tags(AVFormatContext *s, AVStream *st, int64_t base)
         /* Check tag version */
         if(avio_rb16(s->pb) == 1) {
             /* skip delay and quality */
-            avio_seek(s->pb, 4, SEEK_CUR);
+            avio_skip(s->pb, 4);
             frames = avio_rb32(s->pb);
             size = avio_rb32(s->pb);
         }

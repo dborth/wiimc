@@ -1,26 +1,26 @@
 /*
  * FLV demuxer
- * Copyright (c) 2003 The FFmpeg Project
+ * Copyright (c) 2003 The Libav Project
  *
  * This demuxer will generate a 1 byte extradata for VP6F content.
  * It is composed of:
  *  - upper 4bits: difference between encoded width and visible width
  *  - lower 4bits: difference between encoded height and visible height
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -28,6 +28,7 @@
 #include "libavcodec/bytestream.h"
 #include "libavcodec/mpeg4audio.h"
 #include "avformat.h"
+#include "avio_internal.h"
 #include "flv.h"
 
 typedef struct {
@@ -113,7 +114,7 @@ static int flv_set_video_codec(AVFormatContext *s, AVStream *vstream, int flv_co
 static int amf_get_string(AVIOContext *ioc, char *buffer, int buffsize) {
     int length = avio_rb16(ioc);
     if(length >= buffsize) {
-        avio_seek(ioc, length, SEEK_CUR);
+        avio_skip(ioc, length);
         return -1;
     }
 
@@ -149,7 +150,7 @@ static int amf_parse_object(AVFormatContext *s, AVStream *astream, AVStream *vst
             unsigned int keylen;
 
             while(avio_tell(ioc) < max_pos - 2 && (keylen = avio_rb16(ioc))) {
-                avio_seek(ioc, keylen, SEEK_CUR); //skip key string
+                avio_skip(ioc, keylen); //skip key string
                 if(amf_parse_object(s, NULL, NULL, NULL, max_pos, depth + 1) < 0)
                     return -1; //if we couldn't skip, bomb out.
             }
@@ -162,7 +163,7 @@ static int amf_parse_object(AVFormatContext *s, AVStream *astream, AVStream *vst
         case AMF_DATA_TYPE_UNSUPPORTED:
             break; //these take up no additional space
         case AMF_DATA_TYPE_MIXEDARRAY:
-            avio_seek(ioc, 4, SEEK_CUR); //skip 32-bit max array index
+            avio_skip(ioc, 4); //skip 32-bit max array index
             while(avio_tell(ioc) < max_pos - 2 && amf_get_string(ioc, str_val, sizeof(str_val)) > 0) {
                 //this is the only case in which we would want a nested parse to not skip over the object
                 if(amf_parse_object(s, astream, vstream, str_val, max_pos, depth + 1) < 0)
@@ -182,7 +183,7 @@ static int amf_parse_object(AVFormatContext *s, AVStream *astream, AVStream *vst
         }
             break;
         case AMF_DATA_TYPE_DATE:
-            avio_seek(ioc, 8 + 2, SEEK_CUR); //timestamp (double) and UTC offset (int16)
+            avio_skip(ioc, 8 + 2); //timestamp (double) and UTC offset (int16)
             break;
         default: //unsupported type, we couldn't skip
             return -1;
@@ -254,7 +255,7 @@ static int flv_read_header(AVFormatContext *s,
 {
     int offset, flags;
 
-    avio_seek(s->pb, 4, SEEK_CUR);
+    avio_skip(s->pb, 4);
     flags = avio_r8(s->pb);
     /* old flvtool cleared this field */
     /* FIXME: better fix needed */
@@ -278,7 +279,7 @@ static int flv_read_header(AVFormatContext *s,
 
     offset = avio_rb32(s->pb);
     avio_seek(s->pb, offset, SEEK_SET);
-    avio_seek(s->pb, 4, SEEK_CUR);
+    avio_skip(s->pb, 4);
 
     s->start_time = 0;
 
@@ -304,16 +305,16 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
     int64_t dts, pts = AV_NOPTS_VALUE;
     AVStream *st = NULL;
 
- for(;;avio_seek(s->pb, 4, SEEK_CUR)){ /* pkt size is repeated at end. skip it */
+ for(;;avio_skip(s->pb, 4)){ /* pkt size is repeated at end. skip it */
     pos = avio_tell(s->pb);
     type = avio_r8(s->pb);
     size = avio_rb24(s->pb);
     dts = avio_rb24(s->pb);
     dts |= avio_r8(s->pb) << 24;
 //    av_log(s, AV_LOG_DEBUG, "type:%d, size:%d, dts:%d\n", type, size, dts);
-    if (url_feof(s->pb))
+    if (s->pb->eof_reached)
         return AVERROR_EOF;
-    avio_seek(s->pb, 3, SEEK_CUR); /* stream id, always 0 */
+    avio_skip(s->pb, 3); /* stream id, always 0 */
     flags = 0;
 
     if(size == 0)
@@ -373,7 +374,7 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
     if(!url_is_streamed(s->pb) && (!s->duration || s->duration==AV_NOPTS_VALUE)){
         int size;
         const int64_t pos= avio_tell(s->pb);
-        const int64_t fsize= url_fsize(s->pb);
+        const int64_t fsize= avio_size(s->pb);
         avio_seek(s->pb, fsize-4, SEEK_SET);
         size= avio_rb32(s->pb);
         avio_seek(s->pb, fsize-3-size, SEEK_SET);
@@ -454,14 +455,14 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
         pkt->flags |= AV_PKT_FLAG_KEY;
 
 leave:
-    avio_seek(s->pb, 4, SEEK_CUR);
+    avio_skip(s->pb, 4);
     return ret;
 }
 
 static int flv_read_seek(AVFormatContext *s, int stream_index,
     int64_t ts, int flags)
 {
-    return av_url_read_fseek(s->pb, stream_index, ts, flags);
+    return ffio_read_seek(s->pb, stream_index, ts, flags);
 }
 
 #if 0 /* don't know enough to implement this */
@@ -482,7 +483,7 @@ static int flv_read_seek2(AVFormatContext *s, int stream_index,
             ts = av_rescale_rnd(ts, 1000, AV_TIME_BASE,
                 flags & AVSEEK_FLAG_BACKWARD ? AV_ROUND_DOWN : AV_ROUND_UP);
         }
-        ret = av_url_read_fseek(s->pb, stream_index, ts, flags);
+        ret = ffio_read_seek(s->pb, stream_index, ts, flags);
     }
 
     if (ret == AVERROR(ENOSYS))

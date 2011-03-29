@@ -2,20 +2,20 @@
  * Microsoft RTP/ASF support.
  * Copyright (c) 2008 Ronald S. Bultje
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -187,11 +187,11 @@ static int asfrtp_parse_packet(AVFormatContext *s, PayloadContext *asf,
                 flags |= RTP_FLAG_KEY;
             len_off = avio_rb24(pb);
             if (mflags & 0x20)   /**< relative timestamp */
-                avio_seek(pb, 4, SEEK_CUR);
+                avio_skip(pb, 4);
             if (mflags & 0x10)   /**< has duration */
-                avio_seek(pb, 4, SEEK_CUR);
+                avio_skip(pb, 4);
             if (mflags & 0x8)    /**< has location ID */
-                avio_seek(pb, 4, SEEK_CUR);
+                avio_skip(pb, 4);
             off = avio_tell(pb);
 
             if (!(mflags & 0x40)) {
@@ -214,7 +214,7 @@ static int asfrtp_parse_packet(AVFormatContext *s, PayloadContext *asf,
                     return AVERROR(EIO);
 
                 avio_write(asf->pktbuf, buf + off, len - off);
-                avio_seek(pb, len - off, SEEK_CUR);
+                avio_skip(pb, len - off);
                 if (!(flags & RTP_FLAG_MARKER))
                     return -1;
                 out_len     = url_close_dyn_buf(asf->pktbuf, &asf->buf);
@@ -234,7 +234,7 @@ static int asfrtp_parse_packet(AVFormatContext *s, PayloadContext *asf,
                 asf->buf = av_realloc(asf->buf, out_len);
                 memcpy(asf->buf + prev_len, buf + off,
                        FFMIN(cur_len, len - off));
-                avio_seek(pb, cur_len, SEEK_CUR);
+                avio_skip(pb, cur_len);
             }
         }
 

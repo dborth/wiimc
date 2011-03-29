@@ -2,20 +2,20 @@
  * Animated GIF muxer
  * Copyright (c) 2000 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -287,7 +287,7 @@ static int gif_write_header(AVFormatContext *s)
 
     gif_image_write_header(pb, width, height, loop_count, NULL);
 
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     return 0;
 }
 
@@ -322,7 +322,7 @@ static int gif_write_video(AVFormatContext *s,
     gif_image_write_image(pb, 0, 0, enc->width, enc->height,
                           buf, enc->width * 3, PIX_FMT_RGB24);
 
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     return 0;
 }
 
@@ -340,7 +340,7 @@ static int gif_write_trailer(AVFormatContext *s)
     AVIOContext *pb = s->pb;
 
     avio_w8(pb, 0x3b);
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     return 0;
 }
 

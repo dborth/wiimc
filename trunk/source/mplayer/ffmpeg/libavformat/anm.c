@@ -2,20 +2,20 @@
  * Deluxe Paint Animation demuxer
  * Copyright (c) 2009 Peter Ross
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -83,7 +83,7 @@ static int read_header(AVFormatContext *s,
     AVStream *st;
     int i, ret;
 
-    avio_seek(pb, 4, SEEK_CUR); /* magic number */
+    avio_skip(pb, 4); /* magic number */
     if (avio_rl16(pb) != MAX_PAGES) {
         av_log_ask_for_sample(s, "max_pages != " AV_STRINGIFY(MAX_PAGES) "\n");
         return AVERROR_INVALIDDATA;
@@ -91,7 +91,7 @@ static int read_header(AVFormatContext *s,
 
     anm->nb_pages   = avio_rl16(pb);
     anm->nb_records = avio_rl32(pb);
-    avio_seek(pb, 2, SEEK_CUR); /* max records per page */
+    avio_skip(pb, 2); /* max records per page */
     anm->page_table_offset = avio_rl16(pb);
     if (avio_rl32(pb) != ANIM_TAG)
         return AVERROR_INVALIDDATA;
@@ -107,13 +107,13 @@ static int read_header(AVFormatContext *s,
     st->codec->height     = avio_rl16(pb);
     if (avio_r8(pb) != 0)
         goto invalid;
-    avio_seek(pb, 1, SEEK_CUR); /* frame rate multiplier info */
+    avio_skip(pb, 1); /* frame rate multiplier info */
 
     /* ignore last delta record (used for looping) */
     if (avio_r8(pb))  /* has_last_delta */
         anm->nb_records = FFMAX(anm->nb_records - 1, 0);
 
-    avio_seek(pb, 1, SEEK_CUR); /* last_delta_valid */
+    avio_skip(pb, 1); /* last_delta_valid */
 
     if (avio_r8(pb) != 0)
         goto invalid;
@@ -121,15 +121,15 @@ static int read_header(AVFormatContext *s,
     if (avio_r8(pb) != 1)
         goto invalid;
 
-    avio_seek(pb, 1, SEEK_CUR); /* other recs per frame */
+    avio_skip(pb, 1); /* other recs per frame */
 
     if (avio_r8(pb) != 1)
         goto invalid;
 
-    avio_seek(pb, 32, SEEK_CUR); /* record_types */
+    avio_skip(pb, 32); /* record_types */
     st->nb_frames = avio_rl32(pb);
     av_set_pts_info(st, 64, 1, avio_rl16(pb));
-    avio_seek(pb, 58, SEEK_CUR);
+    avio_skip(pb, 58);
 
     /* color cycling and palette data */
     st->codec->extradata_size = 16*8 + 4*256;
@@ -181,7 +181,7 @@ static int read_packet(AVFormatContext *s,
     Page *p;
     int tmp, record_size;
 
-    if (url_feof(s->pb))
+    if (s->pb->eof_reached)
         return AVERROR(EIO);
 
     if (anm->page < 0)
@@ -193,7 +193,7 @@ repeat:
     /* parse page header */
     if (anm->record < 0) {
         avio_seek(pb, anm->page_table_offset + MAX_PAGES*6 + (anm->page<<16), SEEK_SET);
-        avio_seek(pb, 8 + 2*p->nb_records, SEEK_CUR);
+        avio_skip(pb, 8 + 2*p->nb_records);
         anm->record = 0;
     }
 

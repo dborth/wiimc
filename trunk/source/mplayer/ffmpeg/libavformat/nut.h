@@ -2,20 +2,20 @@
  * "NUT" Container Format (de)muxer
  * Copyright (c) 2006 Michael Niedermayer
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -82,6 +82,10 @@ typedef struct {
 } StreamContext;
 
 typedef struct {
+    AVRational *time_base;
+} ChapterContext;
+
+typedef struct {
     AVFormatContext *avf;
 //    int written_packet_size;
 //    int64_t packet_start;
@@ -90,6 +94,7 @@ typedef struct {
     const uint8_t *header[128];
     uint64_t next_startcode;     ///< stores the next startcode if it has already been parsed but the stream is not seekable
     StreamContext *stream;
+    ChapterContext *chapter;
     unsigned int max_distance;
     unsigned int time_base_count;
     int64_t last_syncpoint_pos;

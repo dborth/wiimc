@@ -2,20 +2,20 @@
  * RTP network protocol
  * Copyright (c) 2002 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -27,6 +27,7 @@
 #include "libavutil/parseutils.h"
 #include "libavutil/avstring.h"
 #include "avformat.h"
+#include "avio_internal.h"
 #include "rtpdec.h"
 
 #include <unistd.h>
@@ -71,10 +72,10 @@ int rtp_set_remote_url(URLContext *h, const char *uri)
                  path, sizeof(path), uri);
 
     ff_url_join(buf, sizeof(buf), "udp", NULL, hostname, port, "%s", path);
-    udp_set_remote_url(s->rtp_hd, buf);
+    ff_udp_set_remote_url(s->rtp_hd, buf);
 
     ff_url_join(buf, sizeof(buf), "udp", NULL, hostname, port + 1, "%s", path);
-    udp_set_remote_url(s->rtcp_hd, buf);
+    ff_udp_set_remote_url(s->rtcp_hd, buf);
     return 0;
 }
 
@@ -191,7 +192,7 @@ static int rtp_open(URLContext *h, const char *uri, int flags)
     if (url_open(&s->rtp_hd, buf, flags) < 0)
         goto fail;
     if (local_rtp_port>=0 && local_rtcp_port<0)
-        local_rtcp_port = udp_get_local_port(s->rtp_hd) + 1;
+        local_rtcp_port = ff_udp_get_local_port(s->rtp_hd) + 1;
 
     build_udp_url(buf, sizeof(buf),
                   hostname, rtcp_port, local_rtcp_port, ttl, max_packet_size,
@@ -241,7 +242,7 @@ static int rtp_read(URLContext *h, uint8_t *buf, int size)
 #else
     for(;;) {
         if (url_interrupt_cb())
-            return AVERROR(EINTR);
+            return AVERROR_EXIT;
         /* build fdset to listen to RTP and RTCP packets */
         n = poll(p, 2, 100);
         if (n > 0) {
@@ -326,7 +327,7 @@ static int rtp_close(URLContext *h)
 int rtp_get_local_rtp_port(URLContext *h)
 {
     RTPContext *s = h->priv_data;
-    return udp_get_local_port(s->rtp_hd);
+    return ff_udp_get_local_port(s->rtp_hd);
 }
 
 /**
@@ -338,7 +339,7 @@ int rtp_get_local_rtp_port(URLContext *h)
 int rtp_get_local_rtcp_port(URLContext *h)
 {
     RTPContext *s = h->priv_data;
-    return udp_get_local_port(s->rtcp_hd);
+    return ff_udp_get_local_port(s->rtcp_hd);
 }
 
 static int rtp_get_file_handle(URLContext *h)

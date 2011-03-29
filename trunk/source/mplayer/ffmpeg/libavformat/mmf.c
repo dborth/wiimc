@@ -2,20 +2,20 @@
  * Yamaha SMAF format
  * Copyright (c) 2005 Vidar Madsen
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -102,7 +102,7 @@ static int mmf_write_header(AVFormatContext *s)
 
     av_set_pts_info(s->streams[0], 64, 1, s->streams[0]->codec->sample_rate);
 
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     return 0;
 }
@@ -160,7 +160,7 @@ static int mmf_write_trailer(AVFormatContext *s)
 
         avio_seek(pb, pos, SEEK_SET);
 
-        put_flush_packet(pb);
+        avio_flush(pb);
     }
     return 0;
 }
@@ -195,7 +195,7 @@ static int mmf_read_header(AVFormatContext *s,
     file_size = avio_rb32(pb);
 
     /* Skip some unused chunks that may or may not be present */
-    for(;; avio_seek(pb, size, SEEK_CUR)) {
+    for(;; avio_skip(pb, size)) {
         tag = avio_rl32(pb);
         size = avio_rb32(pb);
         if(tag == MKTAG('C','N','T','I')) continue;
@@ -226,7 +226,7 @@ static int mmf_read_header(AVFormatContext *s,
     avio_r8(pb); /* time base g */
 
     /* Skip some unused chunks that may or may not be present */
-    for(;; avio_seek(pb, size, SEEK_CUR)) {
+    for(;; avio_skip(pb, size)) {
         tag = avio_rl32(pb);
         size = avio_rb32(pb);
         if(tag == MKTAG('A','t','s','q')) continue;
@@ -266,7 +266,7 @@ static int mmf_read_packet(AVFormatContext *s,
     AVStream *st;
     int ret, size;
 
-    if (url_feof(s->pb))
+    if (s->pb->eof_reached)
         return AVERROR(EIO);
     st = s->streams[0];
 

@@ -6,20 +6,20 @@
  * derived from the code by
  * Copyright (C) 2009 Thomas P. Higdon <thomas.p.higdon@gmail.com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -81,7 +81,7 @@ static int yop_read_header(AVFormatContext *s, AVFormatParameters *ap)
     video_dec->codec_type   = AVMEDIA_TYPE_VIDEO;
     video_dec->codec_id     = CODEC_ID_YOP;
 
-    avio_seek(pb, 6, SEEK_CUR);
+    avio_skip(pb, 6);
 
     frame_rate              = avio_r8(pb);
     yop->frame_size         = avio_r8(pb) * 2048;
@@ -153,7 +153,7 @@ static int yop_read_packet(AVFormatContext *s, AVPacket *pkt)
     // Set position to the start of the frame
     pkt->pos = yop->video_packet.pos;
 
-    avio_seek(pb, yop->audio_block_length - ret, SEEK_CUR);
+    avio_skip(pb, yop->audio_block_length - ret);
 
     ret = avio_read(pb, yop->video_packet.data + yop->palette_size,
                      actual_video_data_size);
@@ -190,7 +190,7 @@ static int yop_read_seek(AVFormatContext *s, int stream_index,
         return -1;
 
     pos_min        = s->data_offset;
-    pos_max        = url_fsize(s->pb) - yop->frame_size;
+    pos_max        = avio_size(s->pb) - yop->frame_size;
     frame_count    = (pos_max - pos_min) / yop->frame_size;
 
     timestamp      = FFMAX(0, FFMIN(frame_count, timestamp));

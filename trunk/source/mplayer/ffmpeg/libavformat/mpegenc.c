@@ -2,20 +2,20 @@
  * MPEG1/2 muxer
  * Copyright (c) 2000, 2001, 2002 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -936,7 +936,7 @@ static int flush_packet(AVFormatContext *ctx, int stream_index,
     for(i=0;i<zero_trail_bytes;i++)
         avio_w8(ctx->pb, 0x00);
 
-    put_flush_packet(ctx->pb);
+    avio_flush(ctx->pb);
 
     s->packet_number++;
 
@@ -965,7 +965,7 @@ static void put_vcd_padding_sector(AVFormatContext *ctx)
 
     s->vcd_padding_bytes_written += s->packet_size;
 
-    put_flush_packet(ctx->pb);
+    avio_flush(ctx->pb);
 
     /* increasing the packet number is correct. The SCR of the following packs
        is calculated from the packet_number and it has to include the padding
@@ -1221,7 +1221,7 @@ static int mpeg_mux_end(AVFormatContext *ctx)
        it as it is usually not needed by decoders and because it
        complicates MPEG stream concatenation. */
     //avio_wb32(ctx->pb, ISO_11172_END_CODE);
-    //put_flush_packet(ctx->pb);
+    //avio_flush(ctx->pb);
 
     for(i=0;i<ctx->nb_streams;i++) {
         stream = ctx->streams[i]->priv_data;

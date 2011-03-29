@@ -2,20 +2,20 @@
  * AIFF/AIFF-C muxer
  * Copyright (c) 2006  Patrick Guimond
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -98,7 +98,7 @@ static int aiff_write_header(AVFormatContext *s)
     av_set_pts_info(s->streams[0], 64, 1, s->streams[0]->codec->sample_rate);
 
     /* Data is starting here */
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     return 0;
 }
@@ -140,7 +140,7 @@ static int aiff_write_trailer(AVFormatContext *s)
         /* return to the end */
         avio_seek(pb, end_size, SEEK_SET);
 
-        put_flush_packet(pb);
+        avio_flush(pb);
     }
 
     return 0;

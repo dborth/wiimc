@@ -2,20 +2,20 @@
  * Bethsoft VID format Demuxer
  * Copyright (c) 2007 Nicholas Tung
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -67,7 +67,7 @@ static int vid_read_header(AVFormatContext *s,
     *    bytes: 'V' 'I' 'D'
     *    int16s: always_512, nframes, width, height, delay, always_14
     */
-    avio_seek(pb, 5, SEEK_CUR);
+    avio_skip(pb, 5);
     vid->nframes = avio_rl16(pb);
 
     stream = av_new_stream(s, 0);
@@ -179,7 +179,7 @@ static int vid_read_packet(AVFormatContext *s,
     int audio_length;
     int ret_value;
 
-    if(vid->is_finished || url_feof(pb))
+    if(vid->is_finished || pb->eof_reached)
         return AVERROR(EIO);
 
     block_type = avio_r8(pb);

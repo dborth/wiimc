@@ -2,20 +2,20 @@
  * H.264 MP4 to Annex B byte stream format filter
  * Copyright (c) 2007 Benoit Fouet <benoit.fouet@free.fr>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -75,7 +75,7 @@ static int h264_mp4toannexb_filter(AVBitStreamFilterContext *bsfc,
     if (!ctx->extradata_parsed) {
         uint16_t unit_size;
         uint64_t total_size = 0;
-        uint8_t *out = NULL, unit_nb, sps_done = 0;
+        uint8_t *out = NULL, unit_nb, sps_done = 0, sps_seen = 0, pps_seen = 0;
         const uint8_t *extradata = avctx->extradata+4;
         static const uint8_t nalu_header[4] = {0, 0, 0, 1};
 
@@ -89,7 +89,13 @@ static int h264_mp4toannexb_filter(AVBitStreamFilterContext *bsfc,
         if (!unit_nb) {
             unit_nb = *extradata++; /* number of pps unit(s) */
             sps_done++;
+
+            if (unit_nb)
+                pps_seen = 1;
+        } else {
+            sps_seen = 1;
         }
+
         while (unit_nb--) {
             void *tmp;
 
@@ -110,11 +116,21 @@ static int h264_mp4toannexb_filter(AVBitStreamFilterContext *bsfc,
             memcpy(out+total_size-unit_size,   extradata+2, unit_size);
             extradata += 2+unit_size;
 
-            if (!unit_nb && !sps_done++)
+            if (!unit_nb && !sps_done++) {
                 unit_nb = *extradata++; /* number of pps unit(s) */
+                if (unit_nb)
+                    pps_seen = 1;
+            }
         }
 
-        memset(out + total_size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
+        if(out)
+            memset(out + total_size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
+
+        if (!sps_seen)
+            av_log(avctx, AV_LOG_WARNING, "Warning: SPS NALU missing or invalid. The resulting stream may not play.\n");
+        if (!pps_seen)
+            av_log(avctx, AV_LOG_WARNING, "Warning: PPS NALU missing or invalid. The resulting stream may not play.\n");
+
         av_free(avctx->extradata);
         avctx->extradata      = out;
         avctx->extradata_size = total_size;

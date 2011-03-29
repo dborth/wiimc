@@ -2,20 +2,20 @@
  * "Real" compatible demuxer.
  * Copyright (c) 2000, 2001 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -132,7 +132,7 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
     if (version == 3) {
         int header_size = avio_rb16(pb);
         int64_t startpos = avio_tell(pb);
-        avio_seek(pb, 14, SEEK_CUR);
+        avio_skip(pb, 14);
         rm_read_metadata(s, 0);
         if ((startpos + header_size) >= avio_tell(pb) + 2) {
             // fourcc (should always be "lpcJ")
@@ -141,7 +141,7 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
         }
         // Skip extra header crap (this should never happen)
         if ((startpos + header_size) > avio_tell(pb))
-            avio_seek(pb, header_size + startpos - avio_tell(pb), SEEK_CUR);
+            avio_skip(pb, header_size + startpos - avio_tell(pb));
         st->codec->sample_rate = 8000;
         st->codec->channels = 1;
         st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -150,7 +150,7 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
         int flavor, sub_packet_h, coded_framesize, sub_packet_size;
         int codecdata_length;
         /* old version (4) */
-        avio_seek(pb, 2, SEEK_CUR); /* unused */
+        avio_skip(pb, 2); /* unused */
         avio_rb32(pb); /* .ra4 */
         avio_rb32(pb); /* data size */
         avio_rb16(pb); /* version2 */
@@ -321,7 +321,7 @@ ff_rm_read_mdpr_codecdata (AVFormatContext *s, AVIOContext *pb,
 skip:
     /* skip codec info */
     size = avio_tell(pb) - codec_pos;
-    avio_seek(pb, codec_data_size - size, SEEK_CUR);
+    avio_skip(pb, codec_data_size - size);
 
     return 0;
 }
@@ -340,7 +340,7 @@ static int rm_read_index(AVFormatContext *s)
         size     = avio_rb32(pb);
         if (size < 20)
             return -1;
-        avio_seek(pb, 2, SEEK_CUR);
+        avio_skip(pb, 2);
         n_pkts   = avio_rb32(pb);
         str_id   = avio_rb16(pb);
         next_off = avio_rb32(pb);
@@ -353,10 +353,10 @@ static int rm_read_index(AVFormatContext *s)
             goto skip;
 
         for (n = 0; n < n_pkts; n++) {
-            avio_seek(pb, 2, SEEK_CUR);
+            avio_skip(pb, 2);
             pts = avio_rb32(pb);
             pos = avio_rb32(pb);
-            avio_seek(pb, 4, SEEK_CUR); /* packet no. */
+            avio_skip(pb, 4); /* packet no. */
 
             av_add_index_entry(st, pos, pts, 0, 0, AVINDEX_KEYFRAME);
         }
@@ -409,7 +409,7 @@ static int rm_read_header(AVFormatContext *s, AVFormatParameters *ap)
     avio_rb32(pb); /* number of headers */
 
     for(;;) {
-        if (url_feof(pb))
+        if (pb->eof_reached)
             return -1;
         tag = avio_rl32(pb);
         tag_size = avio_rb32(pb);
@@ -469,7 +469,7 @@ static int rm_read_header(AVFormatContext *s, AVFormatParameters *ap)
             goto header_end;
         default:
             /* unknown tag: skip it */
-            avio_seek(pb, tag_size - 10, SEEK_CUR);
+            avio_skip(pb, tag_size - 10);
             break;
         }
     }
@@ -515,7 +515,7 @@ static int sync(AVFormatContext *s, int64_t *timestamp, int *flags, int *stream_
     AVStream *st;
     uint32_t state=0xFFFFFFFF;
 
-    while(!url_feof(pb)){
+    while(!pb->eof_reached){
         int len, num, i;
         *pos= avio_tell(pb) - 3;
         if(rm->remaining_len > 0){
@@ -529,7 +529,7 @@ static int sync(AVFormatContext *s, int64_t *timestamp, int *flags, int *stream_
             if(state == MKBETAG('I', 'N', 'D', 'X')){
                 int n_pkts, expected_len;
                 len = avio_rb32(pb);
-                avio_seek(pb, 2, SEEK_CUR);
+                avio_skip(pb, 2);
                 n_pkts = avio_rb32(pb);
                 expected_len = 20 + n_pkts * 14;
                 if (len == 20)
@@ -566,7 +566,7 @@ static int sync(AVFormatContext *s, int64_t *timestamp, int *flags, int *stream_
         if (i == s->nb_streams) {
 skip:
             /* skip packet if unknown number */
-            avio_seek(pb, len, SEEK_CUR);
+            avio_skip(pb, len);
             rm->remaining_len = 0;
             continue;
         }
@@ -848,7 +848,7 @@ static int rm_read_packet(AVFormatContext *s, AVPacket *pkt)
                     st = s->streams[i];
             }
 
-            if(len<0 || url_feof(s->pb))
+            if(len<0 || s->pb->eof_reached)
                 return AVERROR(EIO);
 
             res = ff_rm_parse_packet (s, s->pb, st, st->priv_data, len, pkt,
@@ -929,7 +929,7 @@ static int64_t rm_read_dts(AVFormatContext *s, int stream_index,
                 break;
         }
 
-        avio_seek(s->pb, len, SEEK_CUR);
+        avio_skip(s->pb, len);
     }
     *ppos = pos;
     return dts;

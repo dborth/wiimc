@@ -3,20 +3,20 @@
  * Copyright (c) 2008-2010 Peter Ross (pross@xvid.org)
  * Copyright (c) 2009 Daniel Verkamp (daniel@drv.nu)
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -98,7 +98,7 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR(EIO);
     }
 
-    avio_seek(pb, 4, SEEK_CUR);
+    avio_skip(pb, 4);
 
     vst->codec->width  = avio_rl32(pb);
     vst->codec->height = avio_rl32(pb);
@@ -127,7 +127,7 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
     }
 
     if (bink->num_audio_tracks) {
-        avio_seek(pb, 4 * bink->num_audio_tracks, SEEK_CUR);
+        avio_skip(pb, 4 * bink->num_audio_tracks);
 
         for (i = 0; i < bink->num_audio_tracks; i++) {
             ast = av_new_stream(s, 1);
@@ -169,7 +169,7 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
                            keyframe ? AVINDEX_KEYFRAME : 0);
     }
 
-    avio_seek(pb, 4, SEEK_CUR);
+    avio_skip(pb, 4);
 
     bink->current_track = -1;
     return 0;
@@ -225,7 +225,7 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
                     AV_RL32(pkt->data) / (2 * s->streams[bink->current_track]->codec->channels);
             return 0;
         } else {
-            avio_seek(pb, audio_size, SEEK_CUR);
+            avio_skip(pb, audio_size);
         }
     }
 

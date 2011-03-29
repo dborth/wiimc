@@ -2,20 +2,20 @@
  * FFmpeg main
  * Copyright (c) 2000-2003 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -69,12 +69,7 @@
 #include <sys/select.h>
 #endif
 
-#if HAVE_TERMIOS_H
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <termios.h>
-#elif HAVE_CONIO_H
+#if HAVE_KBHIT
 #include <conio.h>
 #endif
 #include <time.h>
@@ -340,12 +335,6 @@ typedef struct AVInputFile {
     int nb_streams;       /* nb streams we are aware of */
 } AVInputFile;
 
-#if HAVE_TERMIOS_H
-
-/* init terminal so that we can grab keys */
-static struct termios oldtty;
-#endif
-
 #if CONFIG_AVFILTER
 
 static int configure_filters(AVInputStream *ist, AVOutputStream *ost)
@@ -423,9 +412,6 @@ static int configure_filters(AVInputStream *ist, AVOutputStream *ost)
 static void term_exit(void)
 {
     av_log(NULL, AV_LOG_QUIET, "");
-#if HAVE_TERMIOS_H
-    tcsetattr (0, TCSANOW, &oldtty);
-#endif
 }
 
 static volatile int received_sigterm = 0;
@@ -439,26 +425,6 @@ sigterm_handler(int sig)
 
 static void term_init(void)
 {
-#if HAVE_TERMIOS_H
-    struct termios tty;
-
-    tcgetattr (0, &tty);
-    oldtty = tty;
-    atexit(term_exit);
-
-    tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP
-                          |INLCR|IGNCR|ICRNL|IXON);
-    tty.c_oflag |= OPOST;
-    tty.c_lflag &= ~(ECHO|ECHONL|ICANON|IEXTEN);
-    tty.c_cflag &= ~(CSIZE|PARENB);
-    tty.c_cflag |= CS8;
-    tty.c_cc[VMIN] = 1;
-    tty.c_cc[VTIME] = 0;
-
-    tcsetattr (0, TCSANOW, &tty);
-    signal(SIGQUIT, sigterm_handler); /* Quit (POSIX).  */
-#endif
-
     signal(SIGINT , sigterm_handler); /* Interrupt (ANSI).  */
     signal(SIGTERM, sigterm_handler); /* Termination (ANSI).  */
 #ifdef SIGXCPU
@@ -469,25 +435,7 @@ static void term_init(void)
 /* read a key without blocking */
 static int read_key(void)
 {
-#if HAVE_TERMIOS_H
-    int n = 1;
-    unsigned char ch;
-    struct timeval tv;
-    fd_set rfds;
-
-    FD_ZERO(&rfds);
-    FD_SET(0, &rfds);
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-    n = select(1, &rfds, NULL, NULL, &tv);
-    if (n > 0) {
-        n = read(0, &ch, 1);
-        if (n == 1)
-            return ch;
-
-        return n;
-    }
-#elif HAVE_CONIO_H
+#if HAVE_KBHIT
     if(kbhit())
         return(getch());
 #endif
@@ -506,7 +454,6 @@ static int ffmpeg_exit(int ret)
     /* close files */
     for(i=0;i<nb_output_files;i++) {
         AVFormatContext *s = output_files[i];
-        int j;
         if (!(s->oformat->flags & AVFMT_NOFILE) && s->pb)
             avio_close(s->pb);
         avformat_free_context(s);
@@ -1350,8 +1297,8 @@ static void print_report(AVFormatContext **output_files,
 
     oc = output_files[0];
 
-    total_size = url_fsize(oc->pb);
-    if(total_size<0) // FIXME improve url_fsize() so it works with non seekable output too
+    total_size = avio_size(oc->pb);
+    if(total_size<0) // FIXME improve avio_size() so it works with non seekable output too
         total_size= avio_tell(oc->pb);
 
     buf[0] = '\0';
@@ -2153,6 +2100,7 @@ static int transcode(AVFormatContext **output_files,
                 codec->sample_rate = icodec->sample_rate;
                 codec->channels = icodec->channels;
                 codec->frame_size = icodec->frame_size;
+                codec->audio_service_type = icodec->audio_service_type;
                 codec->block_align= icodec->block_align;
                 if(codec->block_align == 1 && codec->codec_id == CODEC_ID_MP3)
                     codec->block_align= 0;
@@ -2490,7 +2438,11 @@ static int transcode(AVFormatContext **output_files,
     }
 
     if (!using_stdin && verbose >= 0) {
+#if HAVE_KBHIT
         fprintf(stderr, "Press [q] to stop encoding\n");
+#else
+        fprintf(stderr, "Press ctrl-c to stop encoding\n");
+#endif
         url_set_interrupt_cb(decode_interrupt_cb);
     }
     term_init();
@@ -4182,7 +4134,7 @@ static const OptionDef options[] = {
     { "f", HAS_ARG, {(void*)opt_format}, "force format", "fmt" },
     { "i", HAS_ARG, {(void*)opt_input_file}, "input file name", "filename" },
     { "y", OPT_BOOL, {(void*)&file_overwrite}, "overwrite output files" },
-    { "map", HAS_ARG | OPT_EXPERT, {(void*)opt_map}, "set input stream mapping", "file:stream[:syncfile:syncstream]" },
+    { "map", HAS_ARG | OPT_EXPERT, {(void*)opt_map}, "set input stream mapping", "file.stream[:syncfile.syncstream]" },
     { "map_meta_data", HAS_ARG | OPT_EXPERT, {(void*)opt_map_meta_data}, "DEPRECATED set meta data information of outfile from infile",
       "outfile[,metadata]:infile[,metadata]" },
     { "map_metadata", HAS_ARG | OPT_EXPERT, {(void*)opt_map_metadata}, "set metadata information of outfile from infile",

@@ -2,20 +2,20 @@
  * WMA compatible encoder
  * Copyright (c) 2007 Michael Niedermayer
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -77,6 +77,7 @@ static int encode_init(AVCodecContext * avctx){
 static void apply_window_and_mdct(AVCodecContext * avctx, const signed short * audio, int len) {
     WMACodecContext *s = avctx->priv_data;
     int window_index= s->frame_len_bits - s->block_len_bits;
+    FFTContext *mdct = &s->mdct_ctx[window_index];
     int i, j, channel;
     const float * win = s->windows[window_index];
     int window_len = 1 << s->block_len_bits;
@@ -89,7 +90,7 @@ static void apply_window_and_mdct(AVCodecContext * avctx, const signed short * a
             s->output[i+window_len]  = audio[j] / n * win[window_len - i - 1];
             s->frame_out[channel][i] = audio[j] / n * win[i];
         }
-        ff_mdct_calc(&s->mdct_ctx[window_index], s->coefs[channel], s->output);
+        mdct->mdct_calc(mdct, s->coefs[channel], s->output);
     }
 }
 

@@ -2,20 +2,20 @@
  * Raw FLAC demuxer
  * Copyright (c) 2001 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -46,7 +46,7 @@ static int flac_read_header(AVFormatContext *s,
     }
 
     /* process metadata blocks */
-    while (!url_feof(s->pb) && !metadata_last) {
+    while (!s->pb->eof_reached && !metadata_last) {
         avio_read(s->pb, header, 4);
         ff_flac_parse_block_header(header, &metadata_last, &metadata_type,
                                    &metadata_size);
@@ -65,7 +65,7 @@ static int flac_read_header(AVFormatContext *s,
             break;
         /* skip metadata block for unsupported types */
         default:
-            ret = avio_seek(s->pb, metadata_size, SEEK_CUR);
+            ret = avio_skip(s->pb, metadata_size);
             if (ret < 0)
                 return ret;
         }

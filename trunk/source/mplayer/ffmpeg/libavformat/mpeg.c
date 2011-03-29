@@ -2,20 +2,20 @@
  * MPEG1/2 demuxer
  * Copyright (c) 2000, 2001, 2002 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -143,7 +143,7 @@ static int find_next_start_code(AVIOContext *pb, int *size_ptr,
     state = *header_state;
     n = *size_ptr;
     while (n > 0) {
-        if (url_feof(pb))
+        if (pb->eof_reached)
             break;
         v = avio_r8(pb);
         n--;
@@ -212,7 +212,7 @@ static long mpegps_psm_parse(MpegDemuxContext *m, AVIOContext *pb)
     ps_info_length = avio_rb16(pb);
 
     /* skip program_stream_info */
-    avio_seek(pb, ps_info_length, SEEK_CUR);
+    avio_skip(pb, ps_info_length);
     es_map_length = avio_rb16(pb);
 
     /* at least one es available? */
@@ -223,7 +223,7 @@ static long mpegps_psm_parse(MpegDemuxContext *m, AVIOContext *pb)
         /* remember mapping from stream id to stream type */
         m->psm_es_type[es_id] = type;
         /* skip program_stream_info */
-        avio_seek(pb, es_info_length, SEEK_CUR);
+        avio_skip(pb, es_info_length);
         es_map_length -= 4 + es_info_length;
     }
     avio_rb32(pb); /* crc32 */
@@ -253,7 +253,7 @@ static int mpegps_read_pes_header(AVFormatContext *s,
         last_sync = avio_tell(s->pb);
     //printf("startcode=%x pos=0x%"PRIx64"\n", startcode, avio_tell(s->pb));
     if (startcode < 0){
-        if(url_feof(s->pb))
+        if(s->pb->eof_reached)
             return AVERROR_EOF;
         //FIXME we should remember header_state
         return AVERROR(EAGAIN);
@@ -264,7 +264,7 @@ static int mpegps_read_pes_header(AVFormatContext *s,
     if (startcode == SYSTEM_HEADER_START_CODE)
         goto redo;
     if (startcode == PADDING_STREAM) {
-        avio_seek(s->pb, avio_rb16(s->pb), SEEK_CUR);
+        avio_skip(s->pb, avio_rb16(s->pb));
         goto redo;
     }
     if (startcode == PRIVATE_STREAM_2) {
@@ -281,7 +281,7 @@ static int mpegps_read_pes_header(AVFormatContext *s,
             }
             m->sofdec -= !m->sofdec;
         }
-        avio_seek(s->pb, len, SEEK_CUR);
+        avio_skip(s->pb, len);
         goto redo;
     }
     if (startcode == PROGRAM_STREAM_MAP) {
@@ -359,7 +359,7 @@ static int mpegps_read_pes_header(AVFormatContext *s,
                 av_log(s, AV_LOG_WARNING, "pes_ext %X is invalid\n", pes_ext);
                 pes_ext=skip=0;
             }
-            avio_seek(s->pb, skip, SEEK_CUR);
+            avio_skip(s->pb, skip);
             header_len -= skip;
 
             if (pes_ext & 0x01) { /* PES extension 2 */
@@ -375,7 +375,7 @@ static int mpegps_read_pes_header(AVFormatContext *s,
         }
         if(header_len < 0)
             goto error_redo;
-        avio_seek(s->pb, header_len, SEEK_CUR);
+        avio_skip(s->pb, header_len);
     }
     else if( c!= 0xf )
         goto redo;
@@ -433,7 +433,7 @@ static int mpegps_read_packet(AVFormatContext *s,
 
     if(startcode == 0x1bd) {
         dvdaudio_substream_type = avio_r8(s->pb);
-        avio_seek(s->pb, 3, SEEK_CUR);
+        avio_skip(s->pb, 3);
         len -= 4;
     }
 
@@ -525,7 +525,7 @@ static int mpegps_read_packet(AVFormatContext *s,
     } else {
     skip:
         /* skip packet */
-        avio_seek(s->pb, len, SEEK_CUR);
+        avio_skip(s->pb, len);
         goto redo;
     }
     /* no stream found: add a new stream */
@@ -602,7 +602,7 @@ static int64_t mpegps_read_dts(AVFormatContext *s, int stream_index,
             dts != AV_NOPTS_VALUE) {
             break;
         }
-        avio_seek(s->pb, len, SEEK_CUR);
+        avio_skip(s->pb, len);
     }
 #ifdef DEBUG_SEEK
     printf("pos=0x%"PRIx64" dts=0x%"PRIx64" %0.3f\n", pos, dts, dts / 90000.0);

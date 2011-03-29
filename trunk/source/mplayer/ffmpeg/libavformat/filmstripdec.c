@@ -2,20 +2,20 @@
  * Adobe Filmstrip demuxer
  * Copyright (c) 2010 Peter Ross
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -43,7 +43,7 @@ static int read_header(AVFormatContext *s,
     if (url_is_streamed(s->pb))
         return AVERROR(EIO);
 
-    avio_seek(pb, url_fsize(pb) - 36, SEEK_SET);
+    avio_seek(pb, avio_size(pb) - 36, SEEK_SET);
     if (avio_rb32(pb) != RAND_TAG) {
         av_log(s, AV_LOG_ERROR, "magic number not found");
         return AVERROR_INVALIDDATA;
@@ -59,7 +59,7 @@ static int read_header(AVFormatContext *s,
         return AVERROR_INVALIDDATA;
     }
 
-    avio_seek(pb, 2, SEEK_CUR);
+    avio_skip(pb, 2);
     st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codec->codec_id   = CODEC_ID_RAWVIDEO;
     st->codec->pix_fmt    = PIX_FMT_RGBA;
@@ -80,11 +80,11 @@ static int read_packet(AVFormatContext *s,
     FilmstripDemuxContext *film = s->priv_data;
     AVStream *st = s->streams[0];
 
-    if (url_feof(s->pb))
+    if (s->pb->eof_reached)
         return AVERROR(EIO);
     pkt->dts = avio_tell(s->pb) / (st->codec->width * (st->codec->height + film->leading) * 4);
     pkt->size = av_get_packet(s->pb, pkt, st->codec->width * st->codec->height * 4);
-    avio_seek(s->pb, st->codec->width * film->leading * 4, SEEK_CUR);
+    avio_skip(s->pb, st->codec->width * film->leading * 4);
     if (pkt->size < 0)
         return pkt->size;
     pkt->flags |= AV_PKT_FLAG_KEY;

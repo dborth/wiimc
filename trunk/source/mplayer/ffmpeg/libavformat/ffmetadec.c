@@ -2,20 +2,20 @@
  * Metadata demuxer
  * Copyright (c) 2010 Anton Khirnov
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -48,7 +48,7 @@ static void get_line(AVIOContext *s, uint8_t *buf, int size)
                 buf[i++] = c;
         }
         buf[i] = 0;
-    } while (!url_feof(s) && (buf[0] == ';' || buf[0] == '#' || buf[0] == 0));
+    } while (!s->eof_reached && (buf[0] == ';' || buf[0] == '#' || buf[0] == 0));
 }
 
 static AVChapter *read_chapter(AVFormatContext *s)
@@ -61,14 +61,14 @@ static AVChapter *read_chapter(AVFormatContext *s)
 
     if (sscanf(line, "TIMEBASE=%d/%d", &tb.num, &tb.den))
         get_line(s->pb, line, sizeof(line));
-    if (!sscanf(line, "START=%lld", &start)) {
+    if (!sscanf(line, "START=%"SCNd64, &start)) {
         av_log(s, AV_LOG_ERROR, "Expected chapter start timestamp, found %s.\n", line);
         start = (s->nb_chapters && s->chapters[s->nb_chapters - 1]->end != AV_NOPTS_VALUE) ?
                  s->chapters[s->nb_chapters - 1]->end : 0;
     } else
         get_line(s->pb, line, sizeof(line));
 
-    if (!sscanf(line, "END=%lld", &end)) {
+    if (!sscanf(line, "END=%"SCNd64, &end)) {
         av_log(s, AV_LOG_ERROR, "Expected chapter end timestamp, found %s.\n", line);
         end = AV_NOPTS_VALUE;
     }
@@ -126,7 +126,7 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
     AVMetadata **m = &s->metadata;
     uint8_t line[1024];
 
-    while(!url_feof(s->pb)) {
+    while(!s->pb->eof_reached) {
         get_line(s->pb, line, sizeof(line));
 
         if (!memcmp(line, ID_STREAM, strlen(ID_STREAM))) {

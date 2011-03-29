@@ -2,20 +2,20 @@
  * MP3 muxer
  * Copyright (c) 2003 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -23,6 +23,7 @@
 #include "avformat.h"
 #include "id3v1.h"
 #include "id3v2.h"
+#include "rawenc.h"
 #include "libavutil/intreadwrite.h"
 #include "libavutil/opt.h"
 
@@ -125,14 +126,6 @@ static int id3v2_put_ttag(AVFormatContext *s, const char *str1, const char *str2
     return len + ID3v2_HEADER_SIZE;
 }
 
-
-static int mp3_write_packet(struct AVFormatContext *s, AVPacket *pkt)
-{
-    avio_write(s->pb, pkt->data, pkt->size);
-    put_flush_packet(s->pb);
-    return 0;
-}
-
 static int mp3_write_trailer(struct AVFormatContext *s)
 {
     uint8_t buf[ID3v1_TAG_SIZE];
@@ -140,7 +133,7 @@ static int mp3_write_trailer(struct AVFormatContext *s)
     /* write the id3v1 tag */
     if (id3v1_create_tag(s, buf) > 0) {
         avio_write(s->pb, buf, ID3v1_TAG_SIZE);
-        put_flush_packet(s->pb);
+        avio_flush(s->pb);
     }
     return 0;
 }
@@ -155,7 +148,7 @@ AVOutputFormat ff_mp2_muxer = {
     CODEC_ID_MP2,
     CODEC_ID_NONE,
     NULL,
-    mp3_write_packet,
+    ff_raw_write_packet,
     mp3_write_trailer,
 };
 #endif
@@ -254,7 +247,7 @@ AVOutputFormat ff_mp3_muxer = {
     CODEC_ID_MP3,
     CODEC_ID_NONE,
     mp3_write_header,
-    mp3_write_packet,
+    ff_raw_write_packet,
     mp3_write_trailer,
     AVFMT_NOTIMESTAMPS,
     .priv_class = &mp3_muxer_class,

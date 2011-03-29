@@ -3,20 +3,20 @@
  * Copyright (c) 2009 Maxim Poliakovski
  * Copyright (c) 2009 Benjamin Larsson
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -36,6 +36,7 @@
 #include "get_bits.h"
 #include "dsputil.h"
 #include "fft.h"
+#include "sinewin.h"
 
 #include "atrac.h"
 #include "atrac1data.h"
@@ -99,7 +100,7 @@ static void at1_imdct(AT1Ctx *q, float *spec, float *out, int nbits,
         for (i = 0; i < transf_size / 2; i++)
             FFSWAP(float, spec[i], spec[transf_size - 1 - i]);
     }
-    ff_imdct_half(mdct_context, out, spec);
+    mdct_context->imdct_half(mdct_context, out, spec);
 }
 
 

@@ -2,20 +2,20 @@
  * RTP input format
  * Copyright (c) 2002 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -320,7 +320,7 @@ int rtp_check_and_send_back_rr(RTPDemuxContext *s, int count)
         avio_w8(pb, 0);
     }
 
-    put_flush_packet(pb);
+    avio_flush(pb);
     len = url_close_dyn_buf(pb, &buf);
     if ((len > 0) && buf) {
         int result;
@@ -348,7 +348,7 @@ void rtp_send_punch_packets(URLContext* rtp_handle)
     avio_wb32(pb, 0); /* Timestamp */
     avio_wb32(pb, 0); /* SSRC */
 
-    put_flush_packet(pb);
+    avio_flush(pb);
     len = url_close_dyn_buf(pb, &buf);
     if ((len > 0) && buf)
         url_write(rtp_handle, buf, len);
@@ -363,7 +363,7 @@ void rtp_send_punch_packets(URLContext* rtp_handle)
     avio_wb16(pb, 1); /* length in words - 1 */
     avio_wb32(pb, 0); /* our own SSRC */
 
-    put_flush_packet(pb);
+    avio_flush(pb);
     len = url_close_dyn_buf(pb, &buf);
     if ((len > 0) && buf)
         url_write(rtp_handle, buf, len);

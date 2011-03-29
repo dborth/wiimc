@@ -2,20 +2,20 @@
  * Apple HTTP Live Streaming Protocol Handler
  * Copyright (c) 2010 Martin Storsjo
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -75,57 +75,6 @@ static int read_chomp_line(AVIOContext *s, char *buf, int maxlen)
     return len;
 }
 
-static void make_absolute_url(char *buf, int size, const char *base,
-                              const char *rel)
-{
-    char *sep;
-    /* Absolute path, relative to the current server */
-    if (base && strstr(base, "://") && rel[0] == '/') {
-        if (base != buf)
-            av_strlcpy(buf, base, size);
-        sep = strstr(buf, "://");
-        if (sep) {
-            sep += 3;
-            sep = strchr(sep, '/');
-            if (sep)
-                *sep = '\0';
-        }
-        av_strlcat(buf, rel, size);
-        return;
-    }
-    /* If rel actually is an absolute url, just copy it */
-    if (!base || strstr(rel, "://") || rel[0] == '/') {
-        av_strlcpy(buf, rel, size);
-        return;
-    }
-    if (base != buf)
-        av_strlcpy(buf, base, size);
-    /* Remove the file name from the base url */
-    sep = strrchr(buf, '/');
-    if (sep)
-        sep[1] = '\0';
-    else
-        buf[0] = '\0';
-    while (av_strstart(rel, "../", NULL) && sep) {
-        /* Remove the path delimiter at the end */
-        sep[0] = '\0';
-        sep = strrchr(buf, '/');
-        /* If the next directory name to pop off is "..", break here */
-        if (!strcmp(sep ? &sep[1] : buf, "..")) {
-            /* Readd the slash we just removed */
-            av_strlcat(buf, "/", size);
-            break;
-        }
-        /* Cut off the directory name */
-        if (sep)
-            sep[1] = '\0';
-        else
-            buf[0] = '\0';
-        rel += 3;
-    }
-    av_strlcat(buf, rel, size);
-}
-
 static void free_segment_list(AppleHTTPContext *s)
 {
     int i;
@@ -174,7 +123,7 @@ static int parse_playlist(URLContext *h, const char *url)
 
     free_segment_list(s);
     s->finished = 0;
-    while (!url_feof(in)) {
+    while (!in->eof_reached) {
         read_chomp_line(in, line, sizeof(line));
         if (av_strstart(line, "#EXT-X-STREAM-INF:", &ptr)) {
             struct variant_info info = {{0}};
@@ -201,7 +150,7 @@ static int parse_playlist(URLContext *h, const char *url)
                     goto fail;
                 }
                 seg->duration = duration;
-                make_absolute_url(seg->url, sizeof(seg->url), url, line);
+                ff_make_absolute_url(seg->url, sizeof(seg->url), url, line);
                 dynarray_add(&s->segments, &s->n_segments, seg);
                 is_segment = 0;
             } else if (is_variant) {
@@ -211,7 +160,7 @@ static int parse_playlist(URLContext *h, const char *url)
                     goto fail;
                 }
                 var->bandwidth = bandwidth;
-                make_absolute_url(var->url, sizeof(var->url), url, line);
+                ff_make_absolute_url(var->url, sizeof(var->url), url, line);
                 dynarray_add(&s->variants, &s->n_variants, var);
                 is_variant = 0;
             }
@@ -318,7 +267,7 @@ retry:
             return AVERROR_EOF;
         while (av_gettime() - s->last_load_time < s->target_duration*1000000) {
             if (url_interrupt_cb())
-                return AVERROR(EINTR);
+                return AVERROR_EXIT;
             usleep(100*1000);
         }
         goto retry;
@@ -328,7 +277,7 @@ retry:
     ret = url_open(&s->seg_hd, url, URL_RDONLY);
     if (ret < 0) {
         if (url_interrupt_cb())
-            return AVERROR(EINTR);
+            return AVERROR_EXIT;
         av_log(NULL, AV_LOG_WARNING, "Unable to open %s\n", url);
         s->cur_seq_no++;
         goto retry;

@@ -2,20 +2,20 @@
  * AC-3 tables
  * copyright (c) 2001 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -141,7 +141,7 @@ const uint8_t ff_ac3_rematrix_band_tab[5] = { 13, 25, 37, 61, 253 };
 /* AC-3 MDCT window */
 
 /* MDCT window */
-const int16_t ff_ac3_window[AC3_WINDOW_SIZE/2] = {
+DECLARE_ALIGNED(16, const int16_t, ff_ac3_window)[AC3_WINDOW_SIZE/2] = {
     4,    7,   12,   16,   21,   28,   34,   42,
    51,   61,   72,   84,   97,  111,  127,  145,
   164,  184,  207,  231,  257,  285,  315,  347,

@@ -23,33 +23,45 @@
 #include "mp_fifo.h"
 
 int key_fifo_size = 7;
-static int *key_fifo_data = NULL;
-static int key_fifo_read=0;
-static int key_fifo_write=0;
+static int *key_fifo_data;
+static unsigned key_fifo_read;
+static unsigned key_fifo_write;
+static int previous_down_key;
 
 static void mplayer_put_key_internal(int code){
-  int fifo_free = key_fifo_read - key_fifo_write - 1;
-  if (fifo_free < 0) fifo_free += key_fifo_size;
-//  printf("mplayer_put_key(%d)\n",code);
+  int fifo_free = key_fifo_read + key_fifo_size - key_fifo_write;
   if (key_fifo_data == NULL)
     key_fifo_data = malloc(key_fifo_size * sizeof(int));
   if(!fifo_free) return; // FIFO FULL!!
   // reserve some space for key release events to avoid stuck keys
-  if((code & MP_KEY_DOWN) && fifo_free < (key_fifo_size >> 1))
+  // Make sure we do not reset key state because of a down event
+  if((code & MP_KEY_DOWN) && fifo_free <= (key_fifo_size >> 1))
     return;
-  key_fifo_data[key_fifo_write]=code;
-  key_fifo_write=(key_fifo_write+1)%key_fifo_size;
+  // in the worst case, just reset key state
+  if (fifo_free == 1) {
+    // HACK: this ensures that a fifo size of 2 does
+    // not queue any key presses while still allowing
+    // the mouse wheel to work (which sends down and up
+    // at nearly the same time
+    if (code != previous_down_key)
+      code = 0;
+    code |= MP_KEY_RELEASE_ALL;
+  }
+  key_fifo_data[key_fifo_write % key_fifo_size]=code;
+  key_fifo_write++;
+  if (code & MP_KEY_DOWN)
+    previous_down_key = code & ~MP_KEY_DOWN;
+  else
+    previous_down_key = 0;
 }
 
 int mplayer_get_key(int fd){
   int key;
-//  printf("mplayer_get_key(%d)\n",fd);
   if (key_fifo_data == NULL)
     return MP_INPUT_NOTHING;
   if(key_fifo_write==key_fifo_read) return MP_INPUT_NOTHING;
-  key=key_fifo_data[key_fifo_read];
-  key_fifo_read=(key_fifo_read+1)%key_fifo_size;
-//  printf("mplayer_get_key => %d\n",key);
+  key=key_fifo_data[key_fifo_read % key_fifo_size];
+  key_fifo_read++;
   return key;
 }
 
@@ -62,9 +74,9 @@ static void put_double(int code) {
 }
 
 void mplayer_put_key(int code) {
-  static u64 last_key_time[2];
+  static unsigned last_key_time[2];
   static int last_key[2];
-  u64 now = GetTimerMS();
+  unsigned now = GetTimerMS();
   // ignore system-doubleclick if we generate these events ourselves
   if (doubleclick_time &&
       (code & ~MP_KEY_DOWN) >= MOUSE_BTN0_DBL &&

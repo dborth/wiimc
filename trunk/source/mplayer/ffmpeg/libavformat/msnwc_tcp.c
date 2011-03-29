@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2008  Ramiro Polla <ramiro@lisha.ufsc.br>
+ * Copyright (C) 2008  Ramiro Polla
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -88,9 +88,9 @@ static int msnwc_tcp_read_header(AVFormatContext *ctx, AVFormatParameters *ap)
 
     /* Some files start with "connected\r\n\r\n".
      * So skip until we find the first byte of struct size */
-    while(avio_r8(pb) != HEADER_SIZE && !url_feof(pb));
+    while(avio_r8(pb) != HEADER_SIZE && !pb->eof_reached);
 
-    if(url_feof(pb)) {
+    if(pb->eof_reached) {
         av_log(ctx, AV_LOG_ERROR, "Could not find valid start.");
         return -1;
     }
@@ -104,19 +104,19 @@ static int msnwc_tcp_read_packet(AVFormatContext *ctx, AVPacket *pkt)
     uint16_t keyframe;
     uint32_t size, timestamp;
 
-    avio_seek(pb, 1, SEEK_CUR); /* one byte has been read ahead */
-    avio_seek(pb, 2, SEEK_CUR);
-    avio_seek(pb, 2, SEEK_CUR);
+    avio_skip(pb, 1); /* one byte has been read ahead */
+    avio_skip(pb, 2);
+    avio_skip(pb, 2);
     keyframe = avio_rl16(pb);
     size = avio_rl32(pb);
-    avio_seek(pb, 4, SEEK_CUR);
-    avio_seek(pb, 4, SEEK_CUR);
+    avio_skip(pb, 4);
+    avio_skip(pb, 4);
     timestamp = avio_rl32(pb);
 
     if(!size || av_get_packet(pb, pkt, size) != size)
         return -1;
 
-    avio_seek(pb, 1, SEEK_CUR); /* Read ahead one byte of struct size like read_header */
+    avio_skip(pb, 1); /* Read ahead one byte of struct size like read_header */
 
     pkt->pts = timestamp;
     pkt->dts = timestamp;

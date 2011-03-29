@@ -2,20 +2,20 @@
  * R3D REDCODE demuxer
  * Copyright (c) 2008 Baptiste Coudurier <baptiste dot coudurier at gmail dot com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -72,7 +72,7 @@ static int r3d_read_red1(AVFormatContext *s)
     tmp = avio_rb32(s->pb); // filenum
     av_dlog(s, "filenum %d\n", tmp);
 
-    avio_seek(s->pb, 32, SEEK_CUR); // unknown
+    avio_skip(s->pb, 32); // unknown
 
     st->codec->width  = avio_rb32(s->pb);
     st->codec->height = avio_rb32(s->pb);
@@ -152,7 +152,7 @@ static void r3d_read_reos(AVFormatContext *s)
     tmp = avio_rb32(s->pb);
     av_dlog(s, "num audio chunks %d\n", tmp);
 
-    avio_seek(s->pb, 6*4, SEEK_CUR);
+    avio_skip(s->pb, 6*4);
 }
 
 static int r3d_read_header(AVFormatContext *s, AVFormatParameters *ap)
@@ -180,7 +180,7 @@ static int r3d_read_header(AVFormatContext *s, AVFormatParameters *ap)
     if (url_is_streamed(s->pb))
         return 0;
     // find REOB/REOF/REOS to load index
-    avio_seek(s->pb, url_fsize(s->pb)-48-8, SEEK_SET);
+    avio_seek(s->pb, avio_size(s->pb)-48-8, SEEK_SET);
     if (read_atom(s, &atom) < 0)
         av_log(s, AV_LOG_ERROR, "error reading end atom\n");
 
@@ -332,7 +332,7 @@ static int r3d_read_packet(AVFormatContext *s, AVPacket *pkt)
             break;
         default:
         skip:
-            avio_seek(s->pb, atom.size-8, SEEK_CUR);
+            avio_skip(s->pb, atom.size-8);
         }
     }
     return err;

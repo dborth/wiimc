@@ -2,20 +2,20 @@
  * FFM (ffserver live feed) demuxer
  * Copyright (c) 2001 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -91,7 +91,7 @@ static int ffm_resync(AVFormatContext *s, int state)
 {
     av_log(s, AV_LOG_ERROR, "resyncing\n");
     while (state != PACKET_ID) {
-        if (url_feof(s->pb)) {
+        if (s->pb->eof_reached) {
             av_log(s, AV_LOG_ERROR, "cannot find FFM syncword\n");
             return -1;
         }
@@ -187,7 +187,7 @@ static int64_t get_dts(AVFormatContext *s, int64_t pos)
     int64_t dts;
 
     ffm_seek1(s, pos);
-    avio_seek(pb, 4, SEEK_CUR);
+    avio_skip(pb, 4);
     dts = avio_rb64(pb);
 #ifdef DEBUG_SEEK
     av_log(s, AV_LOG_DEBUG, "dts=%0.6f\n", dts / 1000000.0);
@@ -282,7 +282,7 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
     ffm->write_index = avio_rb64(pb);
     /* get also filesize */
     if (!url_is_streamed(pb)) {
-        ffm->file_size = url_fsize(pb);
+        ffm->file_size = avio_size(pb);
         if (ffm->write_index)
             adjust_write_index(s);
     } else {

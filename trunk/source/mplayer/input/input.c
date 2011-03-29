@@ -1100,6 +1100,15 @@ interpret_key(int code, int paused)
   unsigned int j;
   mp_cmd_t* ret;
 
+  if (code & MP_KEY_RELEASE_ALL) {
+      code &= ~MP_KEY_RELEASE_ALL;
+      memset(key_down, 0, sizeof(key_down));
+      num_key_down = 0;
+      last_key_down = 0;
+      if (!code)
+          return NULL;
+  }
+
   if(mp_input_key_cb) {
       if (code & MP_KEY_DOWN)
 	  return NULL;
@@ -1713,6 +1722,7 @@ mp_input_get_section(void) {
 
 void
 mp_input_init(void) {
+#ifndef GEKKO
   char* file;
 
   file = config_file[0] != '/' ? get_path(config_file) : config_file;
@@ -1727,12 +1737,7 @@ mp_input_init(void) {
       free(file);
     }
     // Try global conf dir
-#ifdef GEKKO
-    file = (char*)malloc(sizeof(char)*100);
-    sprintf(file,"%s%s",MPLAYER_CONFDIR,"/input.conf");
-#else
     file = MPLAYER_CONFDIR "/input.conf";
-#endif
     if(! mp_input_parse_config(file))
       mp_msg(MSGT_INPUT,MSGL_V,"Falling back on default (hardcoded) input config\n");
   }
@@ -1802,7 +1807,7 @@ mp_input_init(void) {
     else
       mp_msg(MSGT_INPUT,MSGL_ERR,MSGTR_INPUT_INPUT_ErrCantOpenFile,in_file,strerror(errno));
   }
-
+#endif
 }
 
 void

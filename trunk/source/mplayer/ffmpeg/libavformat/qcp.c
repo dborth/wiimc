@@ -2,20 +2,20 @@
  * QCP format (.qcp) demuxer
  * Copyright (c) 2009 Kenan Gillet
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -93,7 +93,7 @@ static int qcp_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     avio_rb32(pb);                    // "RIFF"
     s->file_size = avio_rl32(pb) + 8;
-    avio_seek(pb, 8 + 4 + 1 + 1, SEEK_CUR);    // "QLCMfmt " + chunk-size + major-version + minor-version
+    avio_skip(pb, 8 + 4 + 1 + 1);    // "QLCMfmt " + chunk-size + major-version + minor-version
 
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->channels   = 1;
@@ -110,13 +110,13 @@ static int qcp_read_header(AVFormatContext *s, AVFormatParameters *ap)
         av_log(s, AV_LOG_ERROR, "Unknown codec GUID.\n");
         return AVERROR_INVALIDDATA;
     }
-    avio_seek(pb, 2 + 80, SEEK_CUR); // codec-version + codec-name
+    avio_skip(pb, 2 + 80); // codec-version + codec-name
     st->codec->bit_rate = avio_rl16(pb);
 
     s->packet_size = avio_rl16(pb);
-    avio_seek(pb, 2, SEEK_CUR); // block-size
+    avio_skip(pb, 2); // block-size
     st->codec->sample_rate = avio_rl16(pb);
-    avio_seek(pb, 2, SEEK_CUR); // sample-size
+    avio_skip(pb, 2); // sample-size
 
     memset(c->rates_per_mode, -1, sizeof(c->rates_per_mode));
     nb_rates = avio_rl32(pb);
@@ -129,7 +129,7 @@ static int qcp_read_header(AVFormatContext *s, AVFormatParameters *ap)
         } else
             c->rates_per_mode[mode] = size;
     }
-    avio_seek(pb, 16 - 2*nb_rates + 20, SEEK_CUR); // empty entries of rate-map-table + reserved
+    avio_skip(pb, 16 - 2*nb_rates + 20); // empty entries of rate-map-table + reserved
 
     return 0;
 }
@@ -140,7 +140,7 @@ static int qcp_read_packet(AVFormatContext *s, AVPacket *pkt)
     QCPContext    *c  = s->priv_data;
     unsigned int  chunk_size, tag;
 
-    while(!url_feof(pb)) {
+    while(!pb->eof_reached) {
         if (c->data_size) {
             int pkt_size, ret, mode = avio_r8(pb);
 
@@ -174,14 +174,14 @@ static int qcp_read_packet(AVFormatContext *s, AVPacket *pkt)
         case MKTAG('v', 'r', 'a', 't'):
             if (avio_rl32(pb)) // var-rate-flag
                 s->packet_size = 0;
-            avio_seek(pb, 4, SEEK_CUR); // size-in-packets
+            avio_skip(pb, 4); // size-in-packets
             break;
         case MKTAG('d', 'a', 't', 'a'):
             c->data_size = chunk_size;
             break;
 
         default:
-            avio_seek(pb, chunk_size, SEEK_CUR);
+            avio_skip(pb, chunk_size);
         }
     }
     return AVERROR_EOF;

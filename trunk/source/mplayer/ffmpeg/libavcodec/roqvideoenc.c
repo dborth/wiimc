@@ -5,27 +5,27 @@
  * Copyright (C) 2004-2007 Eric Lasota
  *    Based on RoQ specs (C) 2001 Tim Ferguson
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /**
  * @file
  * id RoQ encoder by Vitor. Based on the Switchblade3 library and the
- * Switchblade3 FFmpeg glue by Eric Lasota.
+ * Switchblade3 Libav glue by Eric Lasota.
  */
 
 /*
@@ -898,9 +898,20 @@ static void roq_encode_video(RoqContext *enc)
     for (i=0; i<enc->width*enc->height/64; i++)
         gather_data_for_cel(tempData->cel_evals + i, enc, tempData);
 
-    /* Quake 3 can't handle chunks bigger than 65536 bytes */
-    if (tempData->mainChunkSize/8 > 65536) {
-        enc->lambda *= .8;
+    /* Quake 3 can't handle chunks bigger than 65535 bytes */
+    if (tempData->mainChunkSize/8 > 65535) {
+        av_log(enc->avctx, AV_LOG_ERROR,
+               "Warning, generated a frame too big (%d > 65535), "
+               "try using a smaller qscale value.\n",
+               tempData->mainChunkSize/8);
+        enc->lambda *= 1.5;
+        tempData->mainChunkSize = 0;
+        memset(tempData->used_option, 0, sizeof(tempData->used_option));
+        memset(tempData->codebooks.usedCB4, 0,
+               sizeof(tempData->codebooks.usedCB4));
+        memset(tempData->codebooks.usedCB2, 0,
+               sizeof(tempData->codebooks.usedCB2));
+
         goto retry_encode;
     }
 

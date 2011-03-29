@@ -3,20 +3,20 @@
  * Copyright (c) 2007-2011 Peter Ross (pross@xvid.org)
  * Copyright (c) 2009 Daniel Verkamp (daniel@drv.nu)
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -32,7 +32,8 @@
 #define ALT_BITSTREAM_READER_LE
 #include "get_bits.h"
 #include "dsputil.h"
-#include "fft.h"
+#include "dct.h"
+#include "rdft.h"
 #include "fmtconvert.h"
 #include "libavutil/intfloat_readwrite.h"
 
@@ -223,11 +224,11 @@ static void decode_block(BinkAudioContext *s, short *out, int use_dct)
 
         if (CONFIG_BINKAUDIO_DCT_DECODER && use_dct) {
             coeffs[0] /= 0.5;
-            ff_dct_calc (&s->trans.dct,  coeffs);
+            s->trans.dct.dct_calc(&s->trans.dct,  coeffs);
             s->dsp.vector_fmul_scalar(coeffs, coeffs, s->frame_len / 2, s->frame_len);
         }
         else if (CONFIG_BINKAUDIO_RDFT_DECODER)
-            ff_rdft_calc(&s->trans.rdft, coeffs);
+            s->trans.rdft.rdft_calc(&s->trans.rdft, coeffs);
     }
 
     s->fmt_conv.float_to_int16_interleave(out, (const float **)s->coeffs_ptr,

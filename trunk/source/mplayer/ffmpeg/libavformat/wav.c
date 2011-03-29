@@ -6,20 +6,20 @@
  * RF64 demuxer
  * Copyright (c) 2009 Daniel Verkamp
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -71,7 +71,7 @@ static int wav_write_header(AVFormatContext *s)
     /* data header */
     wav->data = ff_start_tag(pb, "data");
 
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     return 0;
 }
@@ -96,7 +96,7 @@ static int wav_write_trailer(AVFormatContext *s)
     WAVContext    *wav = s->priv_data;
     int64_t file_size;
 
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     if (!url_is_streamed(s->pb)) {
         ff_end_tag(pb, wav->data);
@@ -107,7 +107,7 @@ static int wav_write_trailer(AVFormatContext *s)
         avio_wl32(pb, (uint32_t)(file_size - 8));
         avio_seek(pb, file_size, SEEK_SET);
 
-        put_flush_packet(pb);
+        avio_flush(pb);
 
         if(s->streams[0]->codec->codec_tag != 0x01) {
             /* Update num_samps in fact chunk */
@@ -118,7 +118,7 @@ static int wav_write_trailer(AVFormatContext *s)
             avio_seek(pb, wav->data-12, SEEK_SET);
             avio_wl32(pb, number_of_samples);
             avio_seek(pb, file_size, SEEK_SET);
-            put_flush_packet(pb);
+            avio_flush(pb);
         }
     }
     return 0;
@@ -155,12 +155,12 @@ static int64_t find_tag(AVIOContext *pb, uint32_t tag1)
     int64_t size;
 
     for (;;) {
-        if (url_feof(pb))
+        if (pb->eof_reached)
             return -1;
         size = next_tag(pb, &tag);
         if (tag == tag1)
             break;
-        avio_seek(pb, size, SEEK_CUR);
+        avio_skip(pb, size);
     }
     return size;
 }
@@ -217,7 +217,7 @@ static int wav_read_header(AVFormatContext *s,
         avio_rl64(pb); /* RIFF size */
         data_size = avio_rl64(pb);
         sample_count = avio_rl64(pb);
-        avio_seek(pb, size - 16, SEEK_CUR); /* skip rest of ds64 chunk */
+        avio_skip(pb, size - 16); /* skip rest of ds64 chunk */
     }
 
     /* parse fmt header */
@@ -234,7 +234,7 @@ static int wav_read_header(AVFormatContext *s,
     av_set_pts_info(st, 64, 1, st->codec->sample_rate);
 
     for (;;) {
-        if (url_feof(pb))
+        if (pb->eof_reached)
             return -1;
         size = next_tag(pb, &tag);
         if (tag == MKTAG('d', 'a', 't', 'a')){
@@ -243,7 +243,7 @@ static int wav_read_header(AVFormatContext *s,
             sample_count = avio_rl32(pb);
             size -= 4;
         }
-        avio_seek(pb, size, SEEK_CUR);
+        avio_skip(pb, size);
     }
     if (rf64)
         size = data_size;
@@ -269,14 +269,14 @@ static int64_t find_guid(AVIOContext *pb, const uint8_t guid1[16])
     uint8_t guid[16];
     int64_t size;
 
-    while (!url_feof(pb)) {
+    while (!pb->eof_reached) {
         avio_read(pb, guid, 16);
         size = avio_rl64(pb);
         if (size <= 24)
             return -1;
         if (!memcmp(guid, guid1, 16))
             return size;
-        avio_seek(pb, FFALIGN(size, INT64_C(8)) - 24, SEEK_CUR);
+        avio_skip(pb, FFALIGN(size, INT64_C(8)) - 24);
     }
     return -1;
 }
@@ -410,7 +410,7 @@ static int w64_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     /* subtract chunk header size - normal wav file doesn't count it */
     ff_get_wav_header(pb, st->codec, size - 24);
-    avio_seek(pb, FFALIGN(size, INT64_C(8)) - size, SEEK_CUR);
+    avio_skip(pb, FFALIGN(size, INT64_C(8)) - size);
 
     st->need_parsing = AVSTREAM_PARSE_FULL;
 

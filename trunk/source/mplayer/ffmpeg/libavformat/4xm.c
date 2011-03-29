@@ -2,20 +2,20 @@
  * 4X Technologies .4xm File Demuxer (no muxer)
  * Copyright (c) 2003  The ffmpeg Project
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -106,7 +106,7 @@ static int fourxm_read_header(AVFormatContext *s,
     fourxm->fps = 1.0;
 
     /* skip the first 3 32-bit numbers */
-    avio_seek(pb, 12, SEEK_CUR);
+    avio_skip(pb, 12);
 
     /* check for LIST-HEAD */
     GET_LIST_HEADER();
@@ -259,7 +259,7 @@ static int fourxm_read_packet(AVFormatContext *s,
             return ret;
         fourcc_tag = AV_RL32(&header[0]);
         size = AV_RL32(&header[4]);
-        if (url_feof(pb))
+        if (pb->eof_reached)
             return AVERROR(EIO);
         switch (fourcc_tag) {
 
@@ -322,12 +322,12 @@ static int fourxm_read_packet(AVFormatContext *s,
                 fourxm->tracks[track_number].audio_pts += audio_frame_count;
 
             } else {
-                avio_seek(pb, size, SEEK_CUR);
+                avio_skip(pb, size);
             }
             break;
 
         default:
-            avio_seek(pb, size, SEEK_CUR);
+            avio_skip(pb, size);
             break;
         }
     }

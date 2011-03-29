@@ -2,20 +2,20 @@
  * Provide registration of all codecs, parsers and bitstream filters for libavcodec.
  * Copyright (c) 2002 Fabrice Bellard
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -126,6 +126,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (INDEO5, indeo5);
     REGISTER_DECODER (INTERPLAY_VIDEO, interplay_video);
     REGISTER_ENCDEC  (JPEGLS, jpegls);
+    REGISTER_DECODER (JV, jv);
     REGISTER_DECODER (KGV1, kgv1);
     REGISTER_DECODER (KMVC, kmvc);
     REGISTER_DECODER (LAGARITH, lagarith);
@@ -265,8 +266,6 @@ void avcodec_register_all(void)
     REGISTER_DECODER (SHORTEN, shorten);
     REGISTER_DECODER (SIPR, sipr);
     REGISTER_DECODER (SMACKAUD, smackaud);
-    REGISTER_ENCDEC  (SONIC, sonic);
-    REGISTER_ENCODER (SONIC_LS, sonic_ls);
     REGISTER_DECODER (TRUEHD, truehd);
     REGISTER_DECODER (TRUESPEECH, truespeech);
     REGISTER_DECODER (TTA, tta);

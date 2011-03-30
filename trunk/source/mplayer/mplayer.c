@@ -5175,6 +5175,9 @@ bool wiiFindRestorePoint(char *filename, char *partitionlabel)
 	char *aux_partitionlabel;
 	static char szEmptyStr[] = "";
 	
+	if(!filename)
+		return false;
+	
 	aux_partitionlabel = (partitionlabel) ? partitionlabel : szEmptyStr;
 
 	for(i=0; i<MAX_RESTORE_POINTS; i++)
@@ -5211,17 +5214,27 @@ void wiiLoadRestorePoints(char *buffer, int size)
 		{
 			if(buffer[lineptr+c] == '\n')
 			{
+				if(c == 0)
+					break;
+				
 				line = strndup(&buffer[lineptr], c);
+				
+				if(!line)
+					break;
+
 				if(line[c-1] == '\r') line[c-1] = 0;
 				break;
 			}
 			c++;
 		}
 
-		if(lineptr+c > size) // we've run out of new lines
+		if(lineptr+c == size) // we've run out of new lines
 			break; // discard anything remaining
 
 		lineptr += c+1;
+		
+		if(!line)
+			continue;
 		
 		pc = line;
 		fields = 1;

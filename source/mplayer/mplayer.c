@@ -5210,9 +5210,9 @@ void wiiLoadRestorePoints(char *buffer, int size)
 			line=NULL;
 		}
 		c = 0;
-		while(lineptr+c < size)
+		while(lineptr+c <= size)
 		{
-			if(buffer[lineptr+c] == '\n')
+			if(lineptr+c == size || buffer[lineptr+c] == '\n')
 			{
 				if(c == 0)
 					break;
@@ -5227,9 +5227,6 @@ void wiiLoadRestorePoints(char *buffer, int size)
 			}
 			c++;
 		}
-
-		if(lineptr+c == size) // we've run out of new lines
-			break; // discard anything remaining
 
 		lineptr += c+1;
 		

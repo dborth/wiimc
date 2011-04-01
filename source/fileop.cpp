@@ -503,6 +503,11 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 			break;
 	}
 
+	int c=strlen(part[device][*devnum].name)-1;
+
+	while (c >= 0 && part[device][*devnum].name[c]==' ')
+		part[device][*devnum].name[c--] = 0;
+
 	strcpy(part[device][*devnum].mount, mount);
 	part[device][*devnum].interface = disc;
 	part[device][*devnum].sector = sector;

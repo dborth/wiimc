@@ -5250,7 +5250,7 @@ void wiiLoadRestorePoints(char *buffer, int size)
 		    restore_points[i].hasPartitionlabel = false;
 		} else if (fields == 3) {
 		    // "new" format: <filename>\t<position>\t<partitionlabel>
-    		n = sscanf(line,"%[^\t]\t%i\t%[^\0]", restore_points[i].filename, &(restore_points[i].position), restore_points[i].partitionlabel);
+			n = sscanf(line,"%[^\t]\t%i%*[\t]%[^\n]", restore_points[i].filename, &(restore_points[i].position), restore_points[i].partitionlabel);
 	    	if (n!=3) {
 	    	    // empty patitionlabel
 		        restore_points[i].partitionlabel[0] = '\0';

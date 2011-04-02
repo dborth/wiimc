@@ -669,3 +669,6 @@ msgstr "Čas šetriča"
 
 msgid "Inactivity Shutdown"
 msgstr "Vypnutie pri nečinnosti"
+
+msgid "Invalid subtitle delay."
+msgstr "Neplatné oneskorenia titulkov."

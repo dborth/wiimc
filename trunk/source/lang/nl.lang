@@ -650,7 +650,7 @@ msgid "Could not change language. The font file is corrupted!"
 msgstr "Kon de taal niet veranderen. Letttertype is beschadigd!"
 
 msgid "YouTube Quality"
-msgstr "YouTube kwaliteit"
+msgstr "YouTube-kwaliteit"
 
 msgid "Low (400x240)"
 msgstr "Laag (400x240)"
@@ -669,3 +669,6 @@ msgstr "Vertraging screensaver"
 
 msgid "Inactivity Shutdown"
 msgstr "Afsluiten bij inactiviteit"
+
+msgid "Invalid subtitle delay."
+msgstr "Ongeldige vertraging screensaver"

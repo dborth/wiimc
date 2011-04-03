@@ -666,3 +666,12 @@ msgstr "L'IOS corrente non è supportato. Le funzionalità e/o la stabilità pos
 
 msgid "Screensaver Delay"
 msgstr "Ritardo Screensaver"
+
+msgid "Inactivity Shutdown"
+msgstr "Spegnimento per inattività"
+
+msgid "Invalid subtitle delay."
+msgstr "Ritardo sottotitoli non valido."
+
+msgid "hours"
+msgstr "ore"

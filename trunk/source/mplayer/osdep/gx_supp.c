@@ -100,7 +100,7 @@ static camera cam = {
 	{ 0.0f, 0.0f, -0.5f }
 };
 
-static u16 square[] ATTRIBUTE_ALIGN(32) = {
+static s16 square[] ATTRIBUTE_ALIGN(32) = {
 	-HASPECT,  VASPECT,  0,
 	 HASPECT,  VASPECT,  0,
 	 HASPECT, -VASPECT,  0,
@@ -315,7 +315,7 @@ static void draw_initYUV()
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX2, GX_TEX_ST, GX_U8, 0);
 
-	GX_SetArray(GX_VA_POS, square, 3 * sizeof(u16));
+	GX_SetArray(GX_VA_POS, square, 3 * sizeof(s16));
 	GX_SetArray(GX_VA_CLR0, colors, sizeof(GXColor));
 	GX_SetArray(GX_VA_TEX0, texcoordsY, 2 * sizeof(f32));
 	GX_SetArray(GX_VA_TEX1, texcoordsY, 2 * sizeof(f32));

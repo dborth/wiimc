@@ -5023,7 +5023,7 @@ void wiiSetProperty(int command, float value)
 		case MP_CMD_FRAMEDROPPING:
 			cmd->name = strdup("frame_drop"); break;
 		case MP_CMD_SWITCH_RATIO:
-			cmd->name = strdup("switch_ratio"); break;
+			cmd->name = strdup("switch_ratio"); ass_force_reload = 1; force_load_font = 1; break;
 		case MP_CMD_SWITCH_AUDIO:
 			cmd->name = strdup("switch_audio"); break;
 		case MP_CMD_AUDIO_DELAY:

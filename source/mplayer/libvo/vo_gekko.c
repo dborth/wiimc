@@ -39,6 +39,8 @@
 #include "osdep/keycodes.h"
 #include "osdep/gx_supp.h"
 #include "fastmemcpy.h"
+#include "csputils.h"
+
 
 #include <gccore.h>
 
@@ -160,8 +162,29 @@ static void check_events(void)
 {
 }
 
+static int valid_csp(void *p)
+{
+	int *csp = p;
+	return *csp > 0 && *csp < MP_CSP_XYZ;
+}
+
+extern int colorspace;
+extern int levelconv;
+
+static const opt_t subopts[] = {
+	{"colorspace", OPT_ARG_INT,  &colorspace, valid_csp},
+	{"levelconv",  OPT_ARG_BOOL, &levelconv,  NULL},
+	{NULL}
+};
+
+
 static int preinit(const char *arg)
 {
+	colorspace = MP_CSP_DEFAULT;
+	levelconv = 1;
+
+	subopt_parse(arg, subopts);
+
 	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
 		mplayerwidth = 854; // 480 * (16/9)
 
@@ -182,7 +205,7 @@ static int control(uint32_t request, void *data, ...)
             vo_screenwidth = image_width;
             vo_screenheight = image_height;
             aspect_save_screenres(vo_screenwidth, vo_screenheight);
-            return VO_TRUE;
+            return VO_TRUE; 
 		default:
 			return VO_NOTIMPL;
 	}

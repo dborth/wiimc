@@ -37,6 +37,7 @@
 #include <wiiuse/wpad.h>
 
 #include "../libvo/video_out.h"
+#include "../libvo/csputils.h"
 #include "gx_supp.h"
 #include "../../utils/mem2_manager.h"
 #include "../../video.h"
@@ -67,6 +68,10 @@ static int video_diffx, video_diffy, video_haspect, video_vaspect;
 int mplayerwidth = 640;
 int mplayerheight = 480;
 
+int colorspace = MP_CSP_DEFAULT;
+int levelconv = 1;
+
+
 /*** 3D GX ***/
 
 /*** Texture memory ***/
@@ -95,7 +100,7 @@ static camera cam = {
 	{ 0.0f, 0.0f, -0.5f }
 };
 
-static s16 square[] ATTRIBUTE_ALIGN(32) = {
+static u16 square[] ATTRIBUTE_ALIGN(32) = {
 	-HASPECT,  VASPECT,  0,
 	 HASPECT,  VASPECT,  0,
 	 HASPECT, -VASPECT,  0,
@@ -135,6 +140,8 @@ static void GX_UpdateScaling()
 	square[7] = square[10] = -yscale - video_diffy - vert_pos;
 
 	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
+	GX_SetArray(GX_VA_POS, square, 3 * sizeof(f32));
+	GX_InvVtxCache();
 }
 
 void GX_SetScreenPos(int _hor_pos, int _vert_pos, float _hor_zoom, float _vert_zoom)
@@ -149,7 +156,7 @@ void GX_SetScreenPos(int _hor_pos, int _vert_pos, float _hor_zoom, float _vert_z
 /****************************************************************************
  * draw_initYUV - Internal function to setup TEV for YUV->RGB conversion.
  ****************************************************************************/
-static void draw_initYUV(void)
+static void draw_initYUV()
 {
 	//Setup TEV
 	GX_SetNumChans(1);
@@ -165,10 +172,41 @@ static void draw_initYUV(void)
 
 	//Y'UV->RGB formulation 3
 	GX_SetNumTevStages(13);
+/*	
 	GX_SetTevKColor(GX_KCOLOR0, (GXColor){ 255,      0,        0,    18.624});	//R {1, 0, 0, 16*1.164}
 	GX_SetTevKColor(GX_KCOLOR1, (GXColor){  0,       0,       255,   41.82});	//B {0, 0, 1, 0.164}
 	GX_SetTevKColor(GX_KCOLOR2, (GXColor){203.745, 103.6575,   0,     255});	// {1.598/2, 0.813/2, 0}
 	GX_SetTevKColor(GX_KCOLOR3, (GXColor){  0,     24.92625, 128.52,  255});	// {0, 0.391/4, 2.016/4}
+*/
+	GX_SetTevKColor(GX_KCOLOR0, (GXColor){255,	 0,   0, levelconv ? 18 : 0});	//R {1, 0, 0, 16*1.164}
+	GX_SetTevKColor(GX_KCOLOR1, (GXColor){	0,	 0, 255, levelconv ? 41 : 0});	//B {0, 0, 1, 0.164}
+	
+	static const GXColor uv_coeffs[MP_CSP_COUNT][2] = {
+		[MP_CSP_DEFAULT] = {
+			{203, 103,	 0, 255},	// {1.596/2, 0.813/2, 0}
+			{  0,  24, 128, 255}	// {0, 0.391/4, 2.018/4}
+		},
+		[MP_CSP_BT_601] = {
+			{179,  90,	 0, 255},	// {1.403/2, 0.714/2, 0}
+			{  0,  21, 112, 255}	// {0, 0.344/4, 1.773/4}
+		},
+		[MP_CSP_BT_709] = {
+			{200,  59,	 0, 255},	// {1.5701/2, 0.4664/2, 0}
+			{  0,  11, 118, 255}	// {0, 0.187/4, 1.8556/4}
+		},
+		[MP_CSP_SMPTE_240M] = {
+			{201,  63,	 0, 255},	// {1.5756/2, 0.5/2, 0}
+			{  0,  13, 116, 255}	// {0, 0.2253/4, 1.827/4}
+		},
+		[MP_CSP_EBU] = {
+			{145,  73,	 0, 255},	// {1.140/2, 0.581/2, 0}
+			{  0,  24, 129, 255}	// {0, 0.396/4, 2.029/4}
+		},
+	};
+	
+	GX_SetTevKColor(GX_KCOLOR2, uv_coeffs[colorspace][0]);
+	GX_SetTevKColor(GX_KCOLOR3, uv_coeffs[colorspace][1]);
+
 	//Stage 0: TEVREG0 <- { 0, 2Um, 2Up }; TEVREG0A <- {16*1.164}
 	GX_SetTevKColorSel(GX_TEVSTAGE0, GX_TEV_KCSEL_K1);
 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD2, GX_TEXMAP2, GX_COLOR0A0);
@@ -277,7 +315,7 @@ static void draw_initYUV(void)
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX2, GX_TEX_ST, GX_U8, 0);
 
-	GX_SetArray(GX_VA_POS, square, 3 * sizeof(s16));
+	GX_SetArray(GX_VA_POS, square, 3 * sizeof(u16));
 	GX_SetArray(GX_VA_CLR0, colors, sizeof(GXColor));
 	GX_SetArray(GX_VA_TEX0, texcoordsY, 2 * sizeof(f32));
 	GX_SetArray(GX_VA_TEX1, texcoordsY, 2 * sizeof(f32));

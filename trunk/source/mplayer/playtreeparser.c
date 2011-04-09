@@ -44,10 +44,6 @@
 
 #define WHITES " \n\r\t"
 
-#ifdef GEKKO
-#define mp_pretty_title(s) (strrchr((s),',')==NULL?(char*)(s):(strrchr((s),',')+1))
-#endif
-
 static void
 strstrip(char* str) {
   char* i;
@@ -460,14 +456,11 @@ parse_m3u(play_tree_parser_t* p) {
       }
 #endif
 #ifdef GEKKO
-	  // Get the title of .m3u entry
-      char *colon = strchr(line, ':');
-      char *comma = strchr(line, ',');
-      int linestart = line;
-
-      if(colon != NULL && comma == NULL) linestart = colon+1;
-      else if(colon != NULL && comma != NULL && (comma-colon) < 4) linestart = comma+1;
-	  snprintf(title, 256, "%s", mp_pretty_title(linestart));
+      if(strncasecmp(line,"#EXTINF:",8) == 0) {
+	    // Get the title of .m3u entry
+        char *comma = strchr(line, ',');
+        if(comma) snprintf(title, 256, "%s", comma+1);
+      }
 #endif
       continue;
     }

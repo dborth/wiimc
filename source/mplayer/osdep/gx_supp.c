@@ -140,7 +140,7 @@ static void GX_UpdateScaling()
 	square[7] = square[10] = -yscale - video_diffy - vert_pos;
 
 	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
-	GX_SetArray(GX_VA_POS, square, 3 * sizeof(f32));
+	GX_SetArray(GX_VA_POS, square, 3 * sizeof(s16));
 	GX_InvVtxCache();
 }
 

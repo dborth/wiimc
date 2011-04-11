@@ -400,6 +400,9 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_hei
   	DCFlushRange (texcoordsY, 16*sizeof(f32)); // update memory BEFORE the GPU accesses it!
   	DCFlushRange (texcoordsUV, 8*sizeof(f32)); // update memory BEFORE the GPU accesses it!
 
+
+
+	
 	
 	// Update scaling
 	draw_initYUV();
@@ -466,20 +469,58 @@ inline void DrawMPlayer()
 	need_wait=true;
 }
 
-void GX_AllocTextureMemory()
+void GX_AllocTextureMemory(u16 width, u16 height, u16 chroma_width, u16 chroma_height)
 {
-	//make memory fixed (max texture 1024*1024, gx can't manage more)
-	if(Yltexture[0]) return;
+	if( width > MAX_WIDTH) width = MAX_WIDTH;
+	if( height > MAX_HEIGHT) height = MAX_HEIGHT;
+	if( chroma_width > 1024) chroma_width = 1024;
+	if( chroma_height > MAX_HEIGHT) chroma_height = MAX_HEIGHT;
 
-	Yltexture[0] = (u8 *) (mem2_memalign(32, 1024*MAX_HEIGHT, MEM2_VIDEO));
-	Yrtexture[0] = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, MEM2_VIDEO));
-	Utexture[0] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));
-	Vtexture[0] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));
+	width=(width+7)&~7;
+	chroma_width = (chroma_width+7)&~7;
+		
+	height=(height+3)&~3;
+	chroma_height = (chroma_height+3)&~3;
+
+	//for security
+	width+=16;
+	height+=8;
+	chroma_width+=16;
+	chroma_height+=8;
+
+	int wYl,wYr;
+	wYl = width < 1024 ? width : 1016;
+	wYl += 8 - (wYl % 8);
+	wYr = width <= 1024 ? 0 : width - 1024;
+	wYr += 8 - (wYr % 8);
+
+	Yltexsize = (wYl*height);
+	Yrtexsize = (wYr*height);
+	UVtexsize = chroma_width*chroma_height;
+
+
+	AddMem2Area( ((Yltexsize + Yrtexsize + (UVtexsize*2)) * 2) + 1024,MEM2_TEXTURES);
+	Yltexture[0] = (u8 *) (mem2_memalign(32, Yltexsize, MEM2_TEXTURES));
+	Yrtexture[0] = (u8 *) (mem2_memalign(32, Yrtexsize, MEM2_TEXTURES));
+	Utexture[0] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
+	Vtexture[0] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
 	
-	Yltexture[1] = (u8 *) (mem2_memalign(32, 1024*MAX_HEIGHT, MEM2_VIDEO));
-	Yrtexture[1] = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, MEM2_VIDEO));
-	Utexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));
-	Vtexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));	
+	Yltexture[1] = (u8 *) (mem2_memalign(32, Yltexsize, MEM2_TEXTURES));
+	Yrtexture[1] = (u8 *) (mem2_memalign(32, Yrtexsize, MEM2_TEXTURES));
+	Utexture[1] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
+	Vtexture[1] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));	
+	
+	
+	memset(Yltexture[0], 0, Yltexsize);
+	memset(Yrtexture[0], 0, Yrtexsize);
+	memset(Utexture[0], 0x80, UVtexsize);
+	memset(Vtexture[0], 0x80, UVtexsize);
+	
+	memset(Yltexture[1], 0, Yltexsize);
+	memset(Yrtexture[1], 0, Yrtexsize);
+	memset(Utexture[1], 0x80, UVtexsize);
+	memset(Vtexture[1], 0x80, UVtexsize);
+
 }
 
 /****************************************************************************
@@ -487,16 +528,11 @@ void GX_AllocTextureMemory()
  ****************************************************************************/
 void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 {
-	int w,wYl,wYr,h;
+	int w,h;
 	Mtx44 p;
 
 	need_wait=false;
 
-	// Allocate 32byte aligned texture memory
-	wYl = width < 1024 ? width : 1016;
-	wYl += 8 - (wYl % 8);
-	wYr = width <= 1024 ? 0 : width - 1024;
-	wYr += 8 - (wYr % 8);
 	w=(width+15)&~15;
 	h=(height+7)&~7;
 
@@ -507,20 +543,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	video_vaspect = vaspect;
 
 	GX_UpdateScaling();
-
-	Yltexsize = (wYl*h);
-	Yrtexsize = (wYr*h);
-	UVtexsize = (w*h)/4;
-	
-	memset(Yltexture[0], 0, 1024*MAX_HEIGHT);
-	memset(Yrtexture[0], 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
-	memset(Utexture[0], 0x80, 1024*(MAX_HEIGHT/2));
-	memset(Vtexture[0], 0x80, 1024*(MAX_HEIGHT/2));
-	
-	memset(Yltexture[1], 0, 1024*MAX_HEIGHT);
-	memset(Yrtexture[1], 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
-	memset(Utexture[1], 0x80, 1024*(MAX_HEIGHT/2));
-	memset(Vtexture[1], 0x80, 1024*(MAX_HEIGHT/2));
 
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	GX_SetCullMode(GX_CULL_NONE);

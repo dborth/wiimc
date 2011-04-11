@@ -1018,6 +1018,8 @@ static bool LoadSettingsFile(char * filepath)
 
 			if(result)
 			{
+				extern int debug_to_sd;
+				loadXMLSetting(&debug_to_sd, "DebugToSd");
 				// Global
 				loadXMLSetting(WiiSettings.theme, "theme", sizeof(WiiSettings.theme));
 				loadXMLSetting(&WiiSettings.language, "language");

@@ -3700,12 +3700,14 @@ if (select_subtitle(mpctx)) {
   }
 
 #ifdef GEKKO
+/*
   // check if video has a higher resolution than the Wii can handle
   if(mpctx->sh_video && (mpctx->sh_video->disp_w > MAX_WIDTH || mpctx->sh_video->disp_h > MAX_HEIGHT))
   {
 	wii_error = 1; // resolution too large
 	goto goto_next_file;
   }
+ */
 #endif
 
   if (mpctx->sh_video)
@@ -4252,6 +4254,8 @@ DisableVideoImg();
 
 // time to uninit all, except global stuff:
 printf("mplayer: end film. UNINIT\n");
+RemoveMem2Area(MEM2_TEXTURES);
+
 uninit_player(INITIALIZED_ALL);
 //uninit_player(INITIALIZED_ALL-(INITIALIZED_DEMUXER+INITIALIZED_INPUT+INITIALIZED_VCODEC+INITIALIZED_GETCH2+INITIALIZED_GUI+(fixed_vo?INITIALIZED_VO:0)));
 //uninit_player(INITIALIZED_ALL-(INITIALIZED_INPUT+INITIALIZED_GETCH2));

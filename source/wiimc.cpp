@@ -65,6 +65,8 @@ static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
 static lwp_t ethread = LWP_THREAD_NULL;
 static u8 exitstack[EXIT_STACKSIZE] ATTRIBUTE_ALIGN (32);
 
+static void SaveLogToSD();
+
 
 /****************************************************************************
  * Shutdown / Reboot / Exit
@@ -105,6 +107,8 @@ void *exitthread(void *arg)
 	AUDIO_StopDMA();
 	AUDIO_RegisterDMACallback(NULL);
 
+	SaveLogToSD();
+
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 	else if(WiiSettings.exitAction == EXIT_WIIMENU)
@@ -140,6 +144,65 @@ static void ResetCB()
 static bool gecko = false;
 static mutex_t gecko_mutex = 0;
 
+
+
+
+#include <fat.h>
+#include <sdcard/wiisd_io.h>
+#include <time.h>
+#define GECKO_BUFFER_SIZE 4096
+
+static char *gecko_buf1 = NULL;
+static char *gecko_buf2 = NULL;
+static char *gecko_buf = NULL;
+static int cnt_gecko_buf = 0;
+int debug_to_sd = 0;
+
+
+
+static void SaveLogToSD()
+{
+	char _file[128];
+	FILE *fp;
+	const DISC_INTERFACE* sd = &__io_wiisd;
+
+	if(!debug_to_sd) return;
+
+	
+	sd->startup();
+	
+	if(!fatMount("sdlog",sd,0,4,128)) return;
+
+	char s[50];
+	size_t i;
+	struct tm tim;
+	time_t now;
+	now = time(NULL);
+	tim = *(localtime(&now));
+	i = strftime(s,49,"%Y%m%d_%k%M%S",&tim);
+
+	
+	sprintf(_file,"sdlog:/wiimclog_%s.txt",s);
+	fp=fopen(_file,"wb");
+	
+	if(fp)
+	{
+		fprintf(fp,"buffer1:\n");
+			
+		if(gecko_buf == gecko_buf1)
+			fwrite(gecko_buf2,1, GECKO_BUFFER_SIZE ,fp);
+		else
+			fwrite(gecko_buf1,1, GECKO_BUFFER_SIZE ,fp);
+
+		fprintf(fp,"\n\n========================================================\nbuffer2:\n");
+
+		fwrite(gecko_buf,1, GECKO_BUFFER_SIZE ,fp);
+			
+		fclose(fp);
+	}
+	fatUnmount("sdlog");
+}
+
 static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
 {
 	if (!gecko || !ptr || len <= 0)
@@ -147,9 +210,27 @@ static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len
 
 	u32 level;
 	LWP_MutexLock(gecko_mutex);
+		
+	
 	level = IRQ_Disable();
 	usb_sendbuffer(1, ptr, len);
 	IRQ_Restore(level);
+
+	if(debug_to_sd)
+	{
+		if(len >= GECKO_BUFFER_SIZE) len = GECKO_BUFFER_SIZE - 1;
+		
+		if(cnt_gecko_buf + len >= GECKO_BUFFER_SIZE)
+		{
+			if(gecko_buf == gecko_buf1) gecko_buf = gecko_buf2;
+			else gecko_buf = gecko_buf1;
+			cnt_gecko_buf = 0;
+			memset(gecko_buf,0,GECKO_BUFFER_SIZE);
+		}
+		memcpy(gecko_buf+cnt_gecko_buf,ptr,len);
+		cnt_gecko_buf+=len;
+	}
+	
 	LWP_MutexUnlock(gecko_mutex);
 	return len;
 }
@@ -182,6 +263,12 @@ static void USBGeckoOutput()
 	gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
 
 	LWP_MutexInit(&gecko_mutex, false);
+
+	gecko_buf1 = (char*) malloc(sizeof(char) * GECKO_BUFFER_SIZE);
+	gecko_buf2 = (char*) malloc(sizeof(char) * GECKO_BUFFER_SIZE);
+	gecko_buf = gecko_buf1;
+	gecko_buf1[0] = '\0';
+	gecko_buf2[0] = '\0';
 
 	devoptab_list[STD_OUT] = &gecko_out;
 	devoptab_list[STD_ERR] = &gecko_out;
@@ -593,12 +680,12 @@ int main(int argc, char *argv[])
 	USBStorage_Initialize(); // to set aside MEM2 area
 	
 	u32 size = 	//(8*1024*1024) + // cache
-			(((1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2)) * 2) + // textures
+			//(((1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2)) * 2) + // textures
 			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot			
-			(32*1024); // padding
+			(1024); // padding
 	AddMem2Area (size, MEM2_VIDEO);
 	AddMem2Area (2*1024*1024, MEM2_BROWSER);
-	AddMem2Area (6*1024*1024, MEM2_GUI);
+	AddMem2Area (6*1024*1024, MEM2_GUI); 
 	AddMem2Area (4*1024*1024, MEM2_OTHER); // vars + ttf
 
 	BrowserInit(&browser);
@@ -611,7 +698,7 @@ int main(int argc, char *argv[])
 	SetupPads();
 	StartNetworkThread();
 	WPAD_SetPowerButtonCallback((WPADShutdownCallback)ShutdownCB);
-	GX_AllocTextureMemory();
+	//GX_AllocTextureMemory(0,0,0,0);
 	
 	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
 
@@ -644,6 +731,8 @@ int main(int argc, char *argv[])
 
 	AUDIO_StopDMA();
 	AUDIO_RegisterDMACallback(NULL);
+
+	SaveLogToSD();
 
 	if(ShutdownRequested || WiiSettings.exitAction == EXIT_POWEROFF)
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);

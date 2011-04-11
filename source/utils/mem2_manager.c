@@ -16,9 +16,6 @@
 #include <unistd.h>
 #include "mem2_manager.h"
 
-//1: critical errors     2: detailed info
-//#define DEBUG_MEM2_LEVEL 1  // to get info about used mem, it's an approximation because of memory fragmentation
-
 #ifdef DEBUG_MEM2_LEVEL
 #include <stdio.h>
 #endif
@@ -49,7 +46,7 @@ static __inline__ u32 __lwp_heap_blocksize(heap_block *block)
 
 /*** end from libogc (lwp_heap.inl)  ****/
 
-u32 __lwp_heap_block_size(heap_cntrl *theheap,void *ptr)
+static u32 __lwp_heap_block_size(heap_cntrl *theheap,void *ptr)
 {
 	heap_block *block;
 	u32 dsize, level;
@@ -194,7 +191,7 @@ bool RemoveMem2Area(const int area)
 }
 
  
-void* mem2_memalign(u8 align, u32 size, const int area)
+void* _mem2_memalign(u8 align, u32 size, const int area, const char *file, int line)
 {
 	void *ptr;
 
@@ -204,7 +201,7 @@ void* mem2_memalign(u8 align, u32 size, const int area)
 	if(mem2_areas[area].size==0) 
 	{
 #ifdef DEBUG_MEM2_LEVEL
-		printf("mem2 malloc error: area %i not found\n",area);
+		printf("mem2 malloc error: area %i not found. File: %s:%i\n",area, file, line);
 #endif		
 		return NULL; // area not found
 	}
@@ -214,7 +211,7 @@ void* mem2_memalign(u8 align, u32 size, const int area)
 #ifdef DEBUG_MEM2_LEVEL		
 	if(ptr == NULL || (mem2_areas[area].allocated + size > mem2_areas[area].size) ) 
 	{
-		printf("Error not enough mem in malloc, size: %u  area: %i  allocated: %u	top allocated: %u\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated);
+		printf("Error not enough mem in malloc, size: %u  area: %i  allocated: %u	top allocated: %u. File: %s:%i\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated, file, line);
 		return NULL;
 	}
 #else
@@ -227,17 +224,17 @@ void* mem2_memalign(u8 align, u32 size, const int area)
 	if(mem2_areas[area].allocated > mem2_areas[area].top_allocated) mem2_areas[area].top_allocated = mem2_areas[area].allocated;
 
 	if(DEBUG_MEM2_LEVEL == 2)
-		printf("mem malloc: %u  area: %i  allocated: %u  top allocated: %u \n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated );
+		printf("mem malloc: %u  area: %i  allocated: %u  top allocated: %u . File: %s:%i\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated, file, line );
 #endif
 	return ptr;
 }
 
-void* mem2_malloc(u32 size, const int area)
+void* _mem2_malloc(u32 size, const int area, const char *file, int line)
 {
-	return mem2_memalign(32, size, area);
+	return _mem2_memalign(32, size, area, file, line);
 }
 
-void mem2_free(void *ptr, const int area)
+void _mem2_free(void *ptr, const int area, const char *file, int line)
 { 
 	if(!ptr)
 		return;
@@ -245,7 +242,7 @@ void mem2_free(void *ptr, const int area)
 	if(mem2_areas[area].size==0)
 	{
 #ifdef DEBUG_MEM2_LEVEL
-		printf("mem2 free error: area %i not found\n",area);
+		printf("mem2 free error: area %i not found. File: %s:%i\n",area, file, line);
 #endif		
 		return; // area not found
 	}
@@ -257,77 +254,77 @@ void mem2_free(void *ptr, const int area)
 	 
 	if(size == 0)
 	{
-		printf("mem2 free error: block not found in area %i\n",area);
+		printf("mem2 free error: block not found in area %i. File: %s:%i\n",area, file, line);
 		return;
 	}
 	
 	mem2_areas[area].allocated -= size;
 
 	if(DEBUG_MEM2_LEVEL == 2)
- 		printf("mem2 free: %u	area: %i  allocated: %u  top allocated: %u\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated);
+ 		printf("mem2 free: %u	area: %i  allocated: %u  top allocated: %u. File: %s:%i\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated, file, line);
  
 	__lwp_heap_free(&mem2_areas[area].heap, ptr);
 #endif
 	
  }
 
-void* mem2_realloc(void *ptr, u32 newsize, const int area)
+void* _mem2_realloc(void *ptr, u32 newsize, const int area, const char *file, int line)
 {
 	void *newptr=NULL;
 
-	if(ptr==NULL) return mem2_malloc(newsize, area);
+	if(ptr==NULL) return _mem2_malloc(newsize, area, file, line);
 	if(newsize==0)
 	{
-		mem2_free(ptr,area);
+		_mem2_free(ptr, area, file, line);
 		return NULL;
 	}
 	
 	if(mem2_areas[area].size==0)
 	{
 #ifdef DEBUG_MEM2_LEVEL
-		printf("mem2 free error: area %i not found\n",area);
+		printf("mem2 free error: area %i not found. File: %s:%i\n",area, file, line);
 #endif		
 		return NULL; // area not found
 	}
 
-	u32 size=__lwp_heap_block_size(&mem2_areas[area].heap,ptr); 		
+	u32 size=__lwp_heap_block_size(&mem2_areas[area].heap, ptr); 		
 
-	if(size>newsize) size=newsize;
+	if(size>newsize) size = newsize;
 	
-	newptr = mem2_malloc(newsize, area);
+	newptr = _mem2_malloc(newsize, area, file, line);
 	
 	if(newptr == NULL) return NULL;
-	memcpy(newptr,ptr,size);
-	mem2_free(ptr,area);
+	memcpy(newptr, ptr, size);
+	_mem2_free(ptr, area, file, line);
 	return newptr;
 }
 
-void* mem2_calloc(u32 num, u32 size, const int area)
+void* _mem2_calloc(u32 num, u32 size, const int area, const char *file, int line)
 {
-	void *ptr = mem2_malloc(num*size,area);
+	void *ptr = _mem2_malloc(num*size, area, file, line);
 	if( ptr == NULL ) return NULL;
 	memset(ptr, 0, num*size);
 	return ptr;
 }
 
-char *mem2_strdup(const char *s, const int area)
+char *_mem2_strdup(const char *s, const int area, const char *file, int line)
 {
     char *ptr= NULL;
     if(s){
         int len = strlen(s) + 1;
-        ptr = mem2_calloc(1, len, area);
+        ptr = _mem2_calloc(1, len, area, file, line);
         if (ptr)
             memcpy(ptr, s, len);
     }
     return ptr;
 }
 
-char *mem2_strndup(const char *s, size_t n, const int area)
+char *_mem2_strndup(const char *s, size_t n, const int area, const char *file, int line)
 {
     char *ptr= NULL;
     if(s){
         int len = n + 1;
-        ptr = mem2_calloc(1, len, area);
+        ptr = _mem2_calloc(1, len, area, file, line);
         if (ptr)
             memcpy(ptr, s, len);
     }

@@ -38,12 +38,9 @@ void GX_SetScreenPos(int xshift, int yshift, float xzoom, float yzoom);
 void DrawMPlayer();
 void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect);
 void GX_RenderTexture();
-void GX_UpdatePitch(u16 *pitch);
-void GX_ResetTextureYUVPointers();
 void GX_AllocTextureMemory();
-void GX_FillTextureYUV(u16 height,u8 *buffer[3]);
-void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch);
-void getStrideInfo(int *_w1,int *_df1,int *_Yrowpitch);
+void GX_FillTextureYUV(u8 *buffer[3], int stride[3]);
+void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_height);
 void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride);
 
 

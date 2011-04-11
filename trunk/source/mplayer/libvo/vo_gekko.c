@@ -60,27 +60,15 @@ static const vo_info_t info = {
 const LIBVO_EXTERN (gekko)
 
 static u16 pitch[3];
-static u32 image_width = 0, image_height = 0;
+static u16 image_width = 0, image_height = 0;
+static u16 chroma_width, chroma_height;
+
 
 u32 gx_width, gx_height;
 
 static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y)
 {
-	if (y == 0)
-	{
-		GX_ResetTextureYUVPointers();
-		
-		if (stride[0] != pitch[0])
-		{
-			pitch[0] = stride[0];
-			pitch[1] = stride[1];
-			pitch[2] = stride[2];
-			
-			GX_UpdatePitch(pitch);
-		}
-	}
-	
-	GX_FillTextureYUV(h, image);
+	GX_FillTextureYUV(image, stride);
 	return 0;
 }
 
@@ -88,6 +76,16 @@ static void draw_osd(void)
 {
 	vo_draw_text(image_width, image_height, vo_draw_alpha_gekko);
 }
+
+static uint32_t draw_image(mp_image_t *mpi)
+{
+	if (mpi->flags & MP_IMGFLAG_PLANAR) {
+		GX_FillTextureYUV(mpi->planes, mpi->stride);
+	}
+	
+	return VO_TRUE;
+}
+
 
 static void flip_page(void)
 {
@@ -101,15 +99,9 @@ static int draw_frame(uint8_t *src[])
 
 static int inline query_format(uint32_t format)
 {
-	switch (format)
-	{
-		case IMGFMT_YV12:
-			return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW
-					| VFCAP_HWSCALE_UP | VFCAP_HWSCALE_DOWN
-					| VFCAP_ACCEPT_STRIDE;
-		default:
-			return VO_FALSE;
-	}
+	if (mp_get_chroma_shift(format, NULL, NULL))	// Accept any planar YUV format.
+		return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW | VFCAP_OSD | VFCAP_HWSCALE_UP | VFCAP_HWSCALE_DOWN | VFCAP_ACCEPT_STRIDE | VOCAP_NOSLICES;
+	else return VO_FALSE;
 }
 
 void reinit_video()
@@ -118,7 +110,7 @@ void reinit_video()
 	SetMPlayerSettings(); // pass settings from WiiMC into MPlayer
 
 	GX_StartYUV(image_width, image_height, gx_width / 2, gx_height / 2 ); 
-	GX_ConfigTextureYUV(image_width, image_height, pitch);	
+	GX_ConfigTextureYUV(image_width, image_height, chroma_width, chroma_height);	
 }
 
 static int config(uint32_t width, uint32_t height, uint32_t d_width,
@@ -127,10 +119,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 {
 	image_width = width;
 	image_height = height;
-
-	pitch[0] = 0;
-	pitch[1] = 0;
-	pitch[2] = 0;
 	
 	float screen_aspect = (float)mplayerwidth / (float)mplayerheight;
 	float image_aspect = (float)d_width / (float)d_height;
@@ -148,6 +136,13 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	
 	vo_screenheight = image_height;
 	vo_screenwidth = image_width;
+
+	
+	int xs, ys;
+	mp_get_chroma_shift(format, &xs, &ys);
+	chroma_width=image_width >> xs;
+	chroma_height=image_height >> ys;
+	
 	reinit_video();
 	return 0;
 }
@@ -202,10 +197,13 @@ static int control(uint32_t request, void *data, ...)
 		case VOCTRL_QUERY_FORMAT:
 			return query_format(*((uint32_t *)data));
 		case VOCTRL_UPDATE_SCREENINFO:
-            vo_screenwidth = image_width;
-            vo_screenheight = image_height;
+            vo_screenwidth = mplayerheight;
+            vo_screenheight = mplayerwidth;
             aspect_save_screenres(vo_screenwidth, vo_screenheight);
             return VO_TRUE; 
+
+		case VOCTRL_DRAW_IMAGE:
+			return draw_image(data);            
 		default:
 			return VO_NOTIMPL;
 	}

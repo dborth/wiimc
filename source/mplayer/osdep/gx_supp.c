@@ -122,11 +122,11 @@ static f32 texcoordsY[] ATTRIBUTE_ALIGN(32) = {
 	0.0f, 1.0f
 };
 
-static u8 texcoordsUV[] ATTRIBUTE_ALIGN(32) = {
-	0x00, 0x00,
-	0x01, 0x00,
-	0x01, 0x01,
-	0x00, 0x01
+static f32 texcoordsUV[] ATTRIBUTE_ALIGN(32) = {
+	0.0f, 0.0f,
+	1.0f, 0.0f,
+	1.0f, 1.0f,
+	0.0f, 1.0f
 };
 
 static void GX_UpdateScaling()
@@ -172,12 +172,6 @@ static void draw_initYUV()
 
 	//Y'UV->RGB formulation 3
 	GX_SetNumTevStages(13);
-/*	
-	GX_SetTevKColor(GX_KCOLOR0, (GXColor){ 255,      0,        0,    18.624});	//R {1, 0, 0, 16*1.164}
-	GX_SetTevKColor(GX_KCOLOR1, (GXColor){  0,       0,       255,   41.82});	//B {0, 0, 1, 0.164}
-	GX_SetTevKColor(GX_KCOLOR2, (GXColor){203.745, 103.6575,   0,     255});	// {1.598/2, 0.813/2, 0}
-	GX_SetTevKColor(GX_KCOLOR3, (GXColor){  0,     24.92625, 128.52,  255});	// {0, 0.391/4, 2.016/4}
-*/
 	GX_SetTevKColor(GX_KCOLOR0, (GXColor){255,	 0,   0, levelconv ? 18 : 0});	//R {1, 0, 0, 16*1.164}
 	GX_SetTevKColor(GX_KCOLOR1, (GXColor){	0,	 0, 255, levelconv ? 41 : 0});	//B {0, 0, 1, 0.164}
 	
@@ -313,13 +307,13 @@ static void draw_initYUV()
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX2, GX_TEX_ST, GX_U8, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX2, GX_TEX_ST, GX_F32, 0);
 
 	GX_SetArray(GX_VA_POS, square, 3 * sizeof(s16));
 	GX_SetArray(GX_VA_CLR0, colors, sizeof(GXColor));
 	GX_SetArray(GX_VA_TEX0, texcoordsY, 2 * sizeof(f32));
 	GX_SetArray(GX_VA_TEX1, texcoordsY, 2 * sizeof(f32));
-	GX_SetArray(GX_VA_TEX2, texcoordsUV, 2 * sizeof(u8));
+	GX_SetArray(GX_VA_TEX2, texcoordsUV, 2 * sizeof(f32));
 
 	//init YUV texture objects
 	GX_InitTexObj(&YltexObj[0], Yltexture[0], (u16) Ylwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
@@ -342,18 +336,11 @@ static void draw_initYUV()
 }
 
 //------- rodries change: to avoid image_buffer intermediate ------
-static int w1,w2,h1,h2,df1,df2,old_h1_2=-1,wl,wr;
+static int w1,w2,h1,h2,wl,wr,st0,st1;
 static int p01,p02,p03,p11,p12,p13;
 static u16 Yrowpitch;
 static u16 UVrowpitch;
 static u64 *Yldst, *Yrdst, *Udst, *Vdst;
-
-void getStrideInfo(int *_w1,int *_df1,int *_Yrowpitch)  // for subtitle info
-{
-	*_w1=w1;
-	*_df1=df1;
-	*_Yrowpitch=Yrowpitch;
-}
 
 static void draw_scaling()
 {
@@ -367,74 +354,57 @@ static void draw_scaling()
 	GX_SetViewport(0, 0, vmode->fbWidth, vmode->efbHeight, 0, 1);
 }
 
-void GX_ConfigTextureYUV(u16 width, u16 height, u16 *pitch)
+void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_height)
 {
-	int wp,ww;
+	int wp;
 
-	GX_ResetTextureYUVPointers();
+	Ywidth=(width+7)&~7;
+	UVwidth = (chroma_width+7)&~7;
 
-	wp=(width+7)&~7;
-	ww=(width+15)&~15;
-	w1 = wp >> 3;
-	w2 = w1 / 2;
+	st0=st1=0;
 	
+	w1 = Ywidth / 8;	
+	w2 = UVwidth / 8;
+		
 	wl = w1 > 1024/8 ? 1024/8 - 1 : w1;
 	wr = w1 > 1024/8 ? w1 - 1024/8 + 1 : 0;
 
-	df1 = ((ww >> 3) - w1)*4;
-	df2 = ((ww >> 4) - w2)*4;
+	Ylwidth = Ywidth > 1016 ? 1024 : Ywidth;
+	Yrwidth = Ywidth > 1024 ? Ywidth - 1016 + 8: 8;
 
-	UVrowpitch = pitch[1]/2-w2;
-	Yrowpitch = pitch[0]/2-w1;
+	Yheight =  (height+3)&~3;
+	UVheight = (chroma_height+3)&~3;
 
-	Ywidth = ww;
-	UVwidth = ww>>1;
-	Ylwidth = ww > 1016 ? 1024 : ww;
-	Yrwidth = ww > 1024 ? ww - 1016 + 8: 8;
 
-	if (ww <= 1024)
+  	f32 YtexcoordS = (double)width / (double)Ywidth;
+	f32 UVtexcoordS = (double)chroma_width / (double)UVwidth;
+	
+	f32 YtexcoordT = (double)height / (double)Yheight;
+	f32 UVtexcoordT = (double)chroma_height / (double)UVheight;
+
+	if (Ywidth <= 1024)
 	{
-		texcoordsY[2] = texcoordsY[4] = 1.0f;
+		texcoordsY[2] = texcoordsY[4] = YtexcoordS;
+		texcoordsY[5] = texcoordsY[7] = YtexcoordT;
 		texcoordsY[8] = texcoordsY[14] = 0.0f;
 	}
 	else
-	{
-		texcoordsY[2] = texcoordsY[4] = (float)Ywidth / 1024.0f;
-		texcoordsY[8] = texcoordsY[14] = (-1016.0f + 8.0f) / (float)Yrwidth;
+	{  //not sure about this code
+		texcoordsY[2] = texcoordsY[4] = (double)Ywidth / 1024.0f;
+		texcoordsY[5] = texcoordsY[7] = YtexcoordT;
+		texcoordsY[8] = texcoordsY[14] = (-1016.0f + 8.0f) / (double)Yrwidth;
 	}
+	texcoordsUV[2] = texcoordsUV[4] = UVtexcoordS;
+	texcoordsUV[5] = texcoordsUV[7] = UVtexcoordT;
+	
   	DCFlushRange (texcoordsY, 16*sizeof(f32)); // update memory BEFORE the GPU accesses it!
+  	DCFlushRange (texcoordsUV, 8*sizeof(f32)); // update memory BEFORE the GPU accesses it!
 
-	Yheight = height;
-	UVheight = height>>1;
-
+	
 	// Update scaling
 	draw_initYUV();
 	draw_scaling();
 
-	p01= pitch[0];
-	p02= pitch[0] * 2;
-	p03= pitch[0] * 3;
-	p11= pitch[1];
-	p12= pitch[1] * 2;
-	p13= pitch[1] * 3;
-
-	vo_dwidth = width;
-	vo_dheight = height;
-}
-
-void GX_UpdatePitch(u16 *pitch)
-{
-	//black
-	memset(Yltexture[0], 0, 1024*MAX_HEIGHT);
-	memset(Yrtexture[0], 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
-	memset(Utexture[0], 0x80, 1024*(MAX_HEIGHT/2));
-	memset(Vtexture[0], 0x80, 1024*(MAX_HEIGHT/2));
-	
-	memset(Yltexture[1], 0, 1024*MAX_HEIGHT);
-	memset(Yrtexture[1], 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
-	memset(Utexture[1], 0x80, 1024*(MAX_HEIGHT/2));
-	memset(Vtexture[1], 0x80, 1024*(MAX_HEIGHT/2));
-	GX_ConfigTextureYUV(vo_dwidth, vo_dheight, pitch);
 }
 
 inline void DrawMPlayer()
@@ -510,18 +480,6 @@ void GX_AllocTextureMemory()
 	Yrtexture[1] = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, MEM2_VIDEO));
 	Utexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));
 	Vtexture[1] = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));	
-
-/*
-	Yltexture[0] = (u8 *) MEM_K0_TO_K1(Yltexture[0]);
-	Yrtexture[0] = (u8 *) MEM_K0_TO_K1(Yrtexture[0]);
-	Utexture[0] = (u8 *) MEM_K0_TO_K1(Utexture[0]);
-	Vtexture[0] = (u8 *) MEM_K0_TO_K1(Vtexture[0]);
-
-	Yltexture[1] = (u8 *) MEM_K0_TO_K1(Yltexture[1]);
-	Yrtexture[1] = (u8 *) MEM_K0_TO_K1(Yrtexture[1]);
-	Utexture[1] = (u8 *) MEM_K0_TO_K1(Utexture[1]);
-	Vtexture[1] = (u8 *) MEM_K0_TO_K1(Vtexture[1]);
-	*/
 }
 
 /****************************************************************************
@@ -541,7 +499,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	wYr += 8 - (wYr % 8);
 	w=(width+15)&~15;
 	h=(height+7)&~7;
-	old_h1_2=-1;
 
 	// center, to correct difference between pitch and real width
 	video_diffx = (w - width)/2.0;
@@ -571,7 +528,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_SetZMode(GX_FALSE, GX_ALWAYS, GX_TRUE);
 	GX_CopyDisp(xfb[whichfb ^ 1], GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
-	guOrtho(p, mplayerheight/2, -(mplayerheight/2), -(mplayerwidth/2), mplayerwidth/2, 10, 1000);
+	guOrtho(p, mplayerheight/2.0, -(mplayerheight/2.0), -(mplayerwidth/2.0), mplayerwidth/2.0, 10.0, 1000.0);
 	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
@@ -582,87 +539,111 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_Flush();
 }
 
-void GX_FillTextureYUV(u16 height,u8 *buffer[3])
+#define LUMA_COPY(type) \
+{ \
+	type *Yldst = (type *)Yltexture[whichtext] - 1; \
+	type *Yrdst = (type *)Yrtexture[whichtext] - 1; \
+	 \
+	type *Ysrc1 = (type *)buffer[0] - 1; \
+	type *Ysrc2 = (type *)(buffer[0] + stride[0]) - 1; \
+	type *Ysrc3 = (type *)(buffer[0] + (stride[0] * 2)) - 1; \
+	type *Ysrc4 = (type *)(buffer[0] + (stride[0] * 3)) - 1; \
+	 \
+	int rows = Yheight / 4; \
+	 \
+	while (rows--) { \
+		int tiles = wl; \
+		 \
+		while (tiles--) { \
+			*++Yldst = *++Ysrc1; \
+			*++Yldst = *++Ysrc2; \
+			*++Yldst = *++Ysrc3; \
+			*++Yldst = *++Ysrc4; \
+		} \
+		if (wr>0){ \
+			tiles = wr; \
+			 \
+			while (tiles--) { \
+				*++Yrdst = *++Ysrc1; \
+				*++Yrdst = *++Ysrc2; \
+				*++Yrdst = *++Ysrc3; \
+				*++Yrdst = *++Ysrc4; \
+			} \
+			Yldst += 4; \
+			Yrdst += 4; \
+		}\
+		 \
+		Ysrc1 = (type *)((u32)Ysrc1 + Yrowpitch); \
+		Ysrc2 = (type *)((u32)Ysrc2 + Yrowpitch); \
+		Ysrc3 = (type *)((u32)Ysrc3 + Yrowpitch); \
+		Ysrc4 = (type *)((u32)Ysrc4 + Yrowpitch); \
+	} \
+}
+
+#define CHROMA_COPY(type) \
+{ \
+	type *Udst = (type *)Utexture[whichtext] - 1; \
+	type *Vdst = (type *)Vtexture[whichtext] - 1; \
+	 \
+	type *Usrc1 = (type *)buffer[1] - 1; \
+	type *Usrc2 = (type *)(buffer[1] + stride[1]) - 1; \
+	type *Usrc3 = (type *)(buffer[1] + (stride[1] * 2)) - 1; \
+	type *Usrc4 = (type *)(buffer[1] + (stride[1] * 3)) - 1; \
+	 \
+	type *Vsrc1 = (type *)buffer[2] - 1; \
+	type *Vsrc2 = (type *)(buffer[2] + stride[2]) - 1; \
+	type *Vsrc3 = (type *)(buffer[2] + (stride[2] * 2)) - 1; \
+	type *Vsrc4 = (type *)(buffer[2] + (stride[2] * 3)) - 1; \
+	 \
+	int rows = UVheight / 4; \
+	 \
+	while (rows--) { \
+		int tiles = UVwidth / 8; \
+		 \
+		while (tiles--) { \
+			*++Udst = *++Usrc1; \
+			*++Udst = *++Usrc2; \
+			*++Udst = *++Usrc3; \
+			*++Udst = *++Usrc4; \
+			 \
+			*++Vdst = *++Vsrc1; \
+			*++Vdst = *++Vsrc2; \
+			*++Vdst = *++Vsrc3; \
+			*++Vdst = *++Vsrc4; \
+		} \
+		 \
+		Usrc1 = (type *)((u32)Usrc1 + UVrowpitch); \
+		Usrc2 = (type *)((u32)Usrc2 + UVrowpitch); \
+		Usrc3 = (type *)((u32)Usrc3 + UVrowpitch); \
+		Usrc4 = (type *)((u32)Usrc4 + UVrowpitch); \
+		 \
+		Vsrc1 = (type *)((u32)Vsrc1 + UVrowpitch); \
+		Vsrc2 = (type *)((u32)Vsrc2 + UVrowpitch); \
+		Vsrc3 = (type *)((u32)Vsrc3 + UVrowpitch); \
+		Vsrc4 = (type *)((u32)Vsrc4 + UVrowpitch); \
+	} \
+}
+	
+void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 {
-	int h,w;
-
-	u64 *Ysrc1 = (u64 *) buffer[0];
-	u64 *Ysrc2 = (u64 *) (buffer[0] + p01);
-	u64 *Ysrc3 = (u64 *) (buffer[0] + p02);
-	u64 *Ysrc4 = (u64 *) (buffer[0] + p03);
-	u64 *Usrc1 = (u64 *) buffer[1];
-	u64 *Usrc2 = (u64 *) (buffer[1] + p11);
-	u64 *Usrc3 = (u64 *) (buffer[1] + p12);
-	u64 *Usrc4 = (u64 *) (buffer[1] + p13);
-	u64 *Vsrc1 = (u64 *) buffer[2];
-	u64 *Vsrc2 = (u64 *) (buffer[2] + p11);
-	u64 *Vsrc3 = (u64 *) (buffer[2] + p12);
-	u64 *Vsrc4 = (u64 *) (buffer[2] + p13);
-
-	if(old_h1_2 != height)
+	whichtext ^= 1;
+	
+	if(st0!=stride[0] || st1!=stride[1])
 	{
-		old_h1_2 = height;
-    	h1 = ((height+7)&~7)/4;
-    	h2 = h1/2;
+		st0=stride[0];
+		st1=stride[1];
+		Yrowpitch = (stride[0] * 4) - Ywidth;
+		UVrowpitch = (stride[1] * 4) - UVwidth;
 	}
+	
+	if (stride[0] & 7)
+		LUMA_COPY(u64)
+	else LUMA_COPY(double)
 
-	//Convert YUV frame to GX textures
-	//Convert Y plane to texture
-	for (h = 0; h < h1; h++)
-	{
-
-		for (w = 0; w < wl; w++)
-		{
-			*Yldst++ = *Ysrc1++;
-			*Yldst++ = *Ysrc2++;
-			*Yldst++ = *Ysrc3++;
-			*Yldst++ = *Ysrc4++;
-		}
-		for (w = 0; w < wr; w++)
-		{
-			*Yrdst++ = *Ysrc1++;
-			*Yrdst++ = *Ysrc2++;
-			*Yrdst++ = *Ysrc3++;
-			*Yrdst++ = *Ysrc4++;
-		}
-		if (wr==0)	Yldst+=df1;
-		else	
-		{
-			Yldst += 4; //last tile should be blank
-			Yrdst+=df1;
-		}
-		Yrdst += 4; //first tile should be blank
-		Ysrc1 += Yrowpitch;
-		Ysrc2 += Yrowpitch;
-		Ysrc3 += Yrowpitch;
-		Ysrc4 += Yrowpitch;
-	}
-
-	//Convert U&V planes to textures
-	for (h = 0; h < h2; h++)
-	{
-		for (w = 0; w < w2; w++)
-		{
-			*Udst++ = *Usrc1++;
-			*Udst++ = *Usrc2++;
-			*Udst++ = *Usrc3++;
-			*Udst++ = *Usrc4++;
-			*Vdst++ = *Vsrc1++;
-			*Vdst++ = *Vsrc2++;
-			*Vdst++ = *Vsrc3++;
-			*Vdst++ = *Vsrc4++;
-		}
-		Udst+=df2;
-		Vdst+=df2;
-		Usrc1 += UVrowpitch;
-		Usrc2 += UVrowpitch;
-		Usrc3 += UVrowpitch;
-		Usrc4 += UVrowpitch;
-		Vsrc1 += UVrowpitch;
-		Vsrc2 += UVrowpitch;
-		Vsrc3 += UVrowpitch;
-		Vsrc4 += UVrowpitch;
-	}
+	
+	if (stride[1] & 7)
+		CHROMA_COPY(u64)
+	else CHROMA_COPY(double)
 }
 
 void GX_RenderTexture()
@@ -670,17 +651,7 @@ void GX_RenderTexture()
 	DrawMPlayer();
 }
 
-void GX_ResetTextureYUVPointers()
-{
-	whichtext ^= 1;
-
-	Yldst = (u64 *) Yltexture[whichtext];
-	Yrdst = (u64 *) (Yrtexture[whichtext] + 32); //first tile should be blank
-	Udst = (u64 *) Utexture[whichtext];
-	Vdst = (u64 *) Vtexture[whichtext];
-}
-
-
+//not needed we are using ass video filter for subs
 void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
 {
 	s16 pitch = stride - w;
@@ -708,10 +679,4 @@ void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsig
 		srca += pitch;
 	}
 }
-
-u8* GetYtexture() {return Yltexture[whichtext];}
-int GetYrowpitch() {return Yrowpitch;}
-int GetYrowpitchDf() {return Yrowpitch+df1;}
-
-
 

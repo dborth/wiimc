@@ -20,7 +20,6 @@
    Boston, MA 02110-1301 USA.
 */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,8 +40,6 @@
 #include "fastmemcpy.h"
 #include "csputils.h"
 #include "../../utils/mem2_manager.h"
-
-
 
 #include <gccore.h>
 
@@ -65,7 +62,6 @@ static u16 pitch[3];
 static u16 image_width = 0, image_height = 0;
 static u16 chroma_width, chroma_height;
 
-
 u32 gx_width, gx_height;
 
 static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y)
@@ -81,13 +77,11 @@ static void draw_osd(void)
 
 static uint32_t draw_image(mp_image_t *mpi)
 {
-	if (mpi->flags & MP_IMGFLAG_PLANAR) {
+	if (mpi->flags & MP_IMGFLAG_PLANAR)
 		GX_FillTextureYUV(mpi->planes, mpi->stride);
-	}
-	
+
 	return VO_TRUE;
 }
-
 
 static void flip_page(void)
 {
@@ -138,7 +132,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	
 	vo_screenheight = image_height;
 	vo_screenwidth = image_width;
-
 	
 	int xs, ys;
 	mp_get_chroma_shift(format, &xs, &ys);

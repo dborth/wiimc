@@ -99,6 +99,7 @@ struct SWiiSettings {
 	int		inactivityShutdown;
 	int		lockFolders;
 	int		startArea;
+	int		debug;
 	// Videos
 	float	videoZoomHor; // horizontal zoom amount
 	float	videoZoomVert; // vertical zoom amount

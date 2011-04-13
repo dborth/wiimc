@@ -1018,8 +1018,6 @@ static bool LoadSettingsFile(char * filepath)
 
 			if(result)
 			{
-				extern int debug_to_sd;
-				loadXMLSetting(&debug_to_sd, "DebugToSd");
 				// Global
 				loadXMLSetting(WiiSettings.theme, "theme", sizeof(WiiSettings.theme));
 				loadXMLSetting(&WiiSettings.language, "language");
@@ -1031,6 +1029,7 @@ static bool LoadSettingsFile(char * filepath)
 				loadXMLSetting(&WiiSettings.inactivityShutdown, "inactivityShutdown");
 				loadXMLSetting(&WiiSettings.lockFolders, "lockFolders");
 				loadXMLSetting(&WiiSettings.startArea, "startArea");
+				loadXMLSetting(&WiiSettings.debug, "debug");
 				// Videos
 				loadXMLSetting(&WiiSettings.videoZoomHor, "videoZoomHor");
 				loadXMLSetting(&WiiSettings.videoZoomVert, "videoZoomVert");

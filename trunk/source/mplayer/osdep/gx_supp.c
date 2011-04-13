@@ -42,10 +42,8 @@
 #include "../../utils/mem2_manager.h"
 #include "../../video.h"
 
-
 #define HASPECT 320
 #define VASPECT 240
-
 
 static int drawMode = 0;
 
@@ -70,7 +68,6 @@ int mplayerheight = 480;
 
 int colorspace = MP_CSP_DEFAULT;
 int levelconv = 1;
-
 
 /*** 3D GX ***/
 
@@ -375,7 +372,6 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_hei
 	Yheight =  (height+3)&~3;
 	UVheight = (chroma_height+3)&~3;
 
-
   	f32 YtexcoordS = (double)width / (double)Ywidth;
 	f32 UVtexcoordS = (double)chroma_width / (double)UVwidth;
 	
@@ -399,15 +395,10 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_hei
 	
   	DCFlushRange (texcoordsY, 16*sizeof(f32)); // update memory BEFORE the GPU accesses it!
   	DCFlushRange (texcoordsUV, 8*sizeof(f32)); // update memory BEFORE the GPU accesses it!
-
-
-
-	
 	
 	// Update scaling
 	draw_initYUV();
 	draw_scaling();
-
 }
 
 inline void DrawMPlayer()
@@ -419,7 +410,6 @@ inline void DrawMPlayer()
 
 	if(need_wait)
 		GX_WaitDrawDone();
-	
 	
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
@@ -446,6 +436,7 @@ inline void DrawMPlayer()
 	{
 		drawMode = DrawMPlayerGui();
 	}
+	
 	if(copyScreen == 2)
 	{
 		copyScreen = 0;
@@ -498,7 +489,6 @@ void GX_AllocTextureMemory(u16 width, u16 height, u16 chroma_width, u16 chroma_h
 	Yrtexsize = (wYr*height);
 	UVtexsize = chroma_width*chroma_height;
 
-
 	AddMem2Area( ((Yltexsize + Yrtexsize + (UVtexsize*2)) * 2) + 1024,MEM2_TEXTURES);
 	Yltexture[0] = (u8 *) (mem2_memalign(32, Yltexsize, MEM2_TEXTURES));
 	Yrtexture[0] = (u8 *) (mem2_memalign(32, Yrtexsize, MEM2_TEXTURES));
@@ -510,7 +500,6 @@ void GX_AllocTextureMemory(u16 width, u16 height, u16 chroma_width, u16 chroma_h
 	Utexture[1] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
 	Vtexture[1] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));	
 	
-	
 	memset(Yltexture[0], 0, Yltexsize);
 	memset(Yrtexture[0], 0, Yrtexsize);
 	memset(Utexture[0], 0x80, UVtexsize);
@@ -520,7 +509,6 @@ void GX_AllocTextureMemory(u16 width, u16 height, u16 chroma_width, u16 chroma_h
 	memset(Yrtexture[1], 0, Yrtexsize);
 	memset(Utexture[1], 0x80, UVtexsize);
 	memset(Vtexture[1], 0x80, UVtexsize);
-
 }
 
 /****************************************************************************
@@ -701,4 +689,3 @@ void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsig
 		srca += pitch;
 	}
 }
-

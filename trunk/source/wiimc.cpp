@@ -15,6 +15,9 @@
 #include <wiiuse/wpad.h>
 #include <sys/iosupport.h>
 #include <di/di.h>
+#include <fat.h>
+#include <sdcard/wiisd_io.h>
+#include <time.h>
 
 #include "utils/FreeTypeGX.h"
 #include "utils/gettext.h"
@@ -66,7 +69,6 @@ static lwp_t ethread = LWP_THREAD_NULL;
 static u8 exitstack[EXIT_STACKSIZE] ATTRIBUTE_ALIGN (32);
 
 static void SaveLogToSD();
-
 
 /****************************************************************************
  * Shutdown / Reboot / Exit
@@ -144,21 +146,11 @@ static void ResetCB()
 static bool gecko = false;
 static mutex_t gecko_mutex = 0;
 
-
-
-
-#include <fat.h>
-#include <sdcard/wiisd_io.h>
-#include <time.h>
 #define GECKO_BUFFER_SIZE 4096
 
-static char *gecko_buf1 = NULL;
-static char *gecko_buf2 = NULL;
-static char *gecko_buf = NULL;
-static int cnt_gecko_buf = 0;
-int debug_to_sd = 0;
-
-
+static char *gecko_buf[2] = { NULL, NULL };
+static char *gecko_buf_ptr = NULL;
+static int gecko_buf_size = 0;
 
 static void SaveLogToSD()
 {
@@ -166,9 +158,8 @@ static void SaveLogToSD()
 	FILE *fp;
 	const DISC_INTERFACE* sd = &__io_wiisd;
 
-	if(!debug_to_sd) return;
+	if(!WiiSettings.debug) return;
 
-	
 	sd->startup();
 	
 	if(!fatMount("sdlog",sd,0,4,128)) return;
@@ -181,23 +172,20 @@ static void SaveLogToSD()
 	tim = *(localtime(&now));
 	i = strftime(s,49,"%Y%m%d_%k%M%S",&tim);
 
-	
-	sprintf(_file,"sdlog:/wiimclog_%s.txt",s);
+	sprintf(_file,"sdlog:/wiimc_log_%s.txt",s);
 	fp=fopen(_file,"wb");
 	
 	if(fp)
 	{
 		fprintf(fp,"buffer1:\n");
 			
-		if(gecko_buf == gecko_buf1)
-			fwrite(gecko_buf2,1, GECKO_BUFFER_SIZE ,fp);
+		if(gecko_buf_ptr == gecko_buf[0])
+			fwrite(gecko_buf[1], 1, GECKO_BUFFER_SIZE, fp);
 		else
-			fwrite(gecko_buf1,1, GECKO_BUFFER_SIZE ,fp);
+			fwrite(gecko_buf[0], 1, GECKO_BUFFER_SIZE, fp);
 
 		fprintf(fp,"\n\n========================================================\nbuffer2:\n");
-
-		fwrite(gecko_buf,1, GECKO_BUFFER_SIZE ,fp);
-			
+		fwrite(gecko_buf_ptr, 1, GECKO_BUFFER_SIZE, fp);
 		fclose(fp);
 	}
 	fatUnmount("sdlog");
@@ -210,25 +198,23 @@ static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len
 
 	u32 level;
 	LWP_MutexLock(gecko_mutex);
-		
-	
 	level = IRQ_Disable();
 	usb_sendbuffer(1, ptr, len);
 	IRQ_Restore(level);
 
-	if(debug_to_sd)
+	if(WiiSettings.debug)
 	{
 		if(len >= GECKO_BUFFER_SIZE) len = GECKO_BUFFER_SIZE - 1;
 		
-		if(cnt_gecko_buf + len >= GECKO_BUFFER_SIZE)
+		if(gecko_buf_size + len >= GECKO_BUFFER_SIZE)
 		{
-			if(gecko_buf == gecko_buf1) gecko_buf = gecko_buf2;
-			else gecko_buf = gecko_buf1;
-			cnt_gecko_buf = 0;
-			memset(gecko_buf,0,GECKO_BUFFER_SIZE);
+			if(gecko_buf_ptr == gecko_buf[0]) gecko_buf_ptr = gecko_buf[1];
+			else gecko_buf_ptr = gecko_buf[0];
+			gecko_buf_size = 0;
+			memset(gecko_buf_ptr, 0, GECKO_BUFFER_SIZE);
 		}
-		memcpy(gecko_buf+cnt_gecko_buf,ptr,len);
-		cnt_gecko_buf+=len;
+		memcpy(gecko_buf+gecko_buf_size, ptr, len);
+		gecko_buf_size+=len;
 	}
 	
 	LWP_MutexUnlock(gecko_mutex);
@@ -264,11 +250,11 @@ static void USBGeckoOutput()
 
 	LWP_MutexInit(&gecko_mutex, false);
 
-	gecko_buf1 = (char*) malloc(sizeof(char) * GECKO_BUFFER_SIZE);
-	gecko_buf2 = (char*) malloc(sizeof(char) * GECKO_BUFFER_SIZE);
-	gecko_buf = gecko_buf1;
-	gecko_buf1[0] = '\0';
-	gecko_buf2[0] = '\0';
+	gecko_buf[0] = (char*) malloc(GECKO_BUFFER_SIZE);
+	gecko_buf[1] = (char*) malloc(GECKO_BUFFER_SIZE);
+	gecko_buf_ptr = gecko_buf[0];
+	gecko_buf[0][0] = '\0';
+	gecko_buf[1][0] = '\0';
 
 	devoptab_list[STD_OUT] = &gecko_out;
 	devoptab_list[STD_ERR] = &gecko_out;
@@ -685,7 +671,7 @@ int main(int argc, char *argv[])
 			(1024); // padding
 	AddMem2Area (size, MEM2_VIDEO);
 	AddMem2Area (2*1024*1024, MEM2_BROWSER);
-	AddMem2Area (6*1024*1024, MEM2_GUI); 
+	AddMem2Area (6*1024*1024, MEM2_GUI);
 	AddMem2Area (4*1024*1024, MEM2_OTHER); // vars + ttf
 
 	BrowserInit(&browser);
@@ -698,8 +684,7 @@ int main(int argc, char *argv[])
 	SetupPads();
 	StartNetworkThread();
 	WPAD_SetPowerButtonCallback((WPADShutdownCallback)ShutdownCB);
-	//GX_AllocTextureMemory(0,0,0,0);
-	
+
 	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
 
 	DefaultSettings(); // set defaults

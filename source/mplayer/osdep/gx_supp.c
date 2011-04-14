@@ -5,6 +5,7 @@
 *	sepp256 2008-2010 - Coded YUV->RGB conversion in TEV
 *	Contains some improvements by Extrems
 *	Tantric / rodries 2009-2010 - rewritten using threads, with GUI overlaid
+*     Extrems 2009-2011
 *
 *	This program is free software; you can redistribute it and/or modify
 *	it under the terms of the GNU General Public License as published by
@@ -72,15 +73,14 @@ int levelconv = 1;
 /*** 3D GX ***/
 
 /*** Texture memory ***/
-static u8 *Yltexture[2] = {NULL, NULL};
-static u8 *Yrtexture[2] = {NULL, NULL};
-static u8 *Utexture[2] = {NULL, NULL};
-static u8 *Vtexture[2] = {NULL, NULL};
-static int whichtext=0;
+static u8 *Yltexture = NULL;
+static u8 *Yrtexture =  NULL;
+static u8 *Utexture = NULL;
+static u8 *Vtexture = NULL;
 
 static u32 Yltexsize,Yrtexsize,UVtexsize;
 
-static GXTexObj YltexObj[2],YrtexObj[2],UtexObj[2],VtexObj[2];
+static GXTexObj YltexObj,YrtexObj,UtexObj,VtexObj;
 static u16 Ylwidth, Yrwidth, Ywidth, Yheight, UVwidth, UVheight;
 
 static Mtx view;
@@ -113,6 +113,7 @@ static f32 texcoordsY[] ATTRIBUTE_ALIGN(32) = {
 	1.0f, 0.0f,
 	1.0f, 1.0f,
 	0.0f, 1.0f,
+	
 	0.0f, 0.0f,
 	1.0f, 0.0f,
 	1.0f, 1.0f,
@@ -313,23 +314,15 @@ static void draw_initYUV()
 	GX_SetArray(GX_VA_TEX2, texcoordsUV, 2 * sizeof(f32));
 
 	//init YUV texture objects
-	GX_InitTexObj(&YltexObj[0], Yltexture[0], (u16) Ylwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&YltexObj[0], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&YrtexObj[0], Yrtexture[0], (u16) Yrwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&YrtexObj[0], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&UtexObj[0], Utexture[0], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&UtexObj[0], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&VtexObj[0], Vtexture[0], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&VtexObj[0], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&YltexObj, Yltexture, (u16) Ylwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&YltexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&YrtexObj, Yrtexture, (u16) Yrwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&YrtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&UtexObj, Utexture, (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&UtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
+	GX_InitTexObj(&VtexObj, Vtexture, (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjLOD(&VtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
 
-	GX_InitTexObj(&YltexObj[1], Yltexture[1], (u16) Ylwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&YltexObj[1], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&YrtexObj[1], Yrtexture[1], (u16) Yrwidth, (u16) Yheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&YrtexObj[1], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&UtexObj[1], Utexture[1], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&UtexObj[1], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
-	GX_InitTexObj(&VtexObj[1], Vtexture[1], (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-	GX_InitTexObjLOD(&VtexObj[1], GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
 }
 
 //------- rodries change: to avoid image_buffer intermediate ------
@@ -360,53 +353,53 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_hei
 
 	st0=st1=0;
 	
-	w1 = Ywidth / 8;	
-	w2 = UVwidth / 8;
-		
-	wl = w1 > 1024/8 ? 1024/8 - 1 : w1;
-	wr = w1 > 1024/8 ? w1 - 1024/8 + 1 : 0;
+	w1 = Ywidth / 8;        
+    w2 = UVwidth / 8;
+            
+    wl = w1 > 1024/8 ? 1024/8 - 1 : w1;
+    wr = w1 > 1024/8 ? w1 - 1024/8 + 1 : 0;
 
-	Ylwidth = Ywidth > 1016 ? 1024 : Ywidth;
-	Yrwidth = Ywidth > 1024 ? Ywidth - 1016 + 8: 8;
+    Ylwidth = Ywidth > 1016 ? 1024 : Ywidth;
+    Yrwidth = Ywidth > 1024 ? Ywidth - 1016 + 8: 8;
 
-	Yheight =  (height+3)&~3;
-	UVheight = (chroma_height+3)&~3;
+    Yheight =  (height+3)&~3;
+    UVheight = (chroma_height+3)&~3;
 
-  	f32 YtexcoordS = (double)width / (double)Ywidth;
-	f32 UVtexcoordS = (double)chroma_width / (double)UVwidth;
-	
-	f32 YtexcoordT = (double)height / (double)Yheight;
-	f32 UVtexcoordT = (double)chroma_height / (double)UVheight;
+    f32 YtexcoordS = (double)width / (double)Ywidth;
+    f32 UVtexcoordS = (double)chroma_width / (double)UVwidth;
+    
+    f32 YtexcoordT = (double)height / (double)Yheight;
+    f32 UVtexcoordT = (double)chroma_height / (double)UVheight;
 
-	if (Ywidth <= 1024)
-	{
-		texcoordsY[2] = texcoordsY[4] = YtexcoordS;
-		texcoordsY[5] = texcoordsY[7] = YtexcoordT;
-		texcoordsY[8] = texcoordsY[14] = 0.0f;
-	}
-	else
-	{  //not sure about this code
-		texcoordsY[2] = texcoordsY[4] = (double)Ywidth / 1024.0f;
-		texcoordsY[5] = texcoordsY[7] = YtexcoordT;
-		texcoordsY[8] = texcoordsY[14] = (-1016.0f + 8.0f) / (double)Yrwidth;
-	}
-	texcoordsUV[2] = texcoordsUV[4] = UVtexcoordS;
-	texcoordsUV[5] = texcoordsUV[7] = UVtexcoordT;
-	
-  	DCFlushRange (texcoordsY, 16*sizeof(f32)); // update memory BEFORE the GPU accesses it!
-  	DCFlushRange (texcoordsUV, 8*sizeof(f32)); // update memory BEFORE the GPU accesses it!
-	
-	// Update scaling
-	draw_initYUV();
-	draw_scaling();
+    if (Ywidth <= 1024)
+    {
+            texcoordsY[2] = texcoordsY[4] = YtexcoordS;
+            texcoordsY[5] = texcoordsY[7] = YtexcoordT;
+            texcoordsY[8] = texcoordsY[14] = 0.0f;
+    }
+    else
+    {  //not sure about this code
+            texcoordsY[2] = texcoordsY[4] = (double)Ywidth / 1024.0f;
+            texcoordsY[5] = texcoordsY[7] = YtexcoordT;
+            texcoordsY[8] = texcoordsY[14] = (-1016.0f + 8.0f) / (double)Yrwidth;
+    }
+    texcoordsUV[2] = texcoordsUV[4] = UVtexcoordS;
+    texcoordsUV[5] = texcoordsUV[7] = UVtexcoordT;
+    
+    DCFlushRange (texcoordsY, 16*sizeof(f32)); // update memory BEFORE the GPU accesses it!
+    DCFlushRange (texcoordsUV, 8*sizeof(f32)); // update memory BEFORE the GPU accesses it!
+    
+    // Update scaling
+    draw_initYUV();
+    draw_scaling();
 }
 
 inline void DrawMPlayer()
 {
-	DCFlushRange(Yltexture[whichtext], Yltexsize);
-	DCFlushRange(Yrtexture[whichtext], Yrtexsize);
-	DCFlushRange(Utexture[whichtext], UVtexsize);
-	DCFlushRange(Vtexture[whichtext], UVtexsize);
+	DCFlushRange(Yltexture, Yltexsize);
+	DCFlushRange(Yrtexture, Yrtexsize);
+	DCFlushRange(Utexture, UVtexsize);
+	DCFlushRange(Vtexture, UVtexsize);
 
 	if(need_wait)
 		GX_WaitDrawDone();
@@ -414,10 +407,10 @@ inline void DrawMPlayer()
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
 
-	GX_LoadTexObj(&YltexObj[whichtext], GX_TEXMAP0);	// MAP0 <- Yl
-	GX_LoadTexObj(&YrtexObj[whichtext], GX_TEXMAP1);	// MAP1 <- Yr
-	GX_LoadTexObj(&UtexObj[whichtext], GX_TEXMAP2);	// MAP2 <- U
-	GX_LoadTexObj(&VtexObj[whichtext], GX_TEXMAP3);	// MAP3 <- V
+	GX_LoadTexObj(&YltexObj, GX_TEXMAP0);	// MAP0 <- Yl
+	GX_LoadTexObj(&YrtexObj, GX_TEXMAP1);	// MAP1 <- Yr
+	GX_LoadTexObj(&UtexObj, GX_TEXMAP2);	// MAP2 <- U
+	GX_LoadTexObj(&VtexObj, GX_TEXMAP3);	// MAP3 <- V
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 		GX_Position1x8(0); GX_Color1x8(0); GX_TexCoord1x8(0); GX_TexCoord1x8(4); GX_TexCoord1x8(0);
@@ -474,10 +467,13 @@ void GX_AllocTextureMemory(u16 width, u16 height, u16 chroma_width, u16 chroma_h
 	chroma_height = (chroma_height+3)&~3;
 
 	//for security
-	width+=16;
-	height+=8;
+	width+=32;
+	height+=16;
 	chroma_width+=16;
 	chroma_height+=8;
+
+	width+=128;
+	height+=64;
 
 	int wYl,wYr;
 	wYl = width < 1024 ? width : 1016;
@@ -489,26 +485,18 @@ void GX_AllocTextureMemory(u16 width, u16 height, u16 chroma_width, u16 chroma_h
 	Yrtexsize = (wYr*height);
 	UVtexsize = chroma_width*chroma_height;
 
-	AddMem2Area( ((Yltexsize + Yrtexsize + (UVtexsize*2)) * 2) + 1024,MEM2_TEXTURES);
-	Yltexture[0] = (u8 *) (mem2_memalign(32, Yltexsize, MEM2_TEXTURES));
-	Yrtexture[0] = (u8 *) (mem2_memalign(32, Yrtexsize, MEM2_TEXTURES));
-	Utexture[0] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
-	Vtexture[0] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
+	if(!AddMem2Area( (Yltexsize + Yrtexsize + (UVtexsize*2))  + 1024,MEM2_TEXTURES))
+		printf("Not enough memory to create textures\n");
+		
+	Yltexture = (u8 *) (mem2_memalign(32, Yltexsize, MEM2_TEXTURES));
+	Yrtexture = (u8 *) (mem2_memalign(32, Yrtexsize, MEM2_TEXTURES));
+	Utexture = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
+	Vtexture = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
 	
-	Yltexture[1] = (u8 *) (mem2_memalign(32, Yltexsize, MEM2_TEXTURES));
-	Yrtexture[1] = (u8 *) (mem2_memalign(32, Yrtexsize, MEM2_TEXTURES));
-	Utexture[1] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
-	Vtexture[1] = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));	
-	
-	memset(Yltexture[0], 0, Yltexsize);
-	memset(Yrtexture[0], 0, Yrtexsize);
-	memset(Utexture[0], 0x80, UVtexsize);
-	memset(Vtexture[0], 0x80, UVtexsize);
-	
-	memset(Yltexture[1], 0, Yltexsize);
-	memset(Yrtexture[1], 0, Yrtexsize);
-	memset(Utexture[1], 0x80, UVtexsize);
-	memset(Vtexture[1], 0x80, UVtexsize);
+	memset(Yltexture, 0, Yltexsize);
+	memset(Yrtexture, 0, Yrtexsize);
+	memset(Utexture, 0x80, UVtexsize);
+	memset(Vtexture, 0x80, UVtexsize);
 }
 
 /****************************************************************************
@@ -549,18 +537,19 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_Flush();
 }
 
+
 #define LUMA_COPY(type) \
 { \
-	type *Yldst = (type *)Yltexture[whichtext] - 1; \
-	type *Yrdst = (type *)Yrtexture[whichtext] - 1; \
+	type *Yldst = (type *)Yltexture - 1; \
+	type *Yrdst = (type *)Yrtexture - 1; \
 	 \
 	type *Ysrc1 = (type *)buffer[0] - 1; \
 	type *Ysrc2 = (type *)(buffer[0] + stride[0]) - 1; \
 	type *Ysrc3 = (type *)(buffer[0] + (stride[0] * 2)) - 1; \
 	type *Ysrc4 = (type *)(buffer[0] + (stride[0] * 3)) - 1; \
 	 \
+	Yrdst += 4; \
 	int rows = Yheight / 4; \
-	 \
 	while (rows--) { \
 		int tiles = wl; \
 		 \
@@ -592,8 +581,8 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 
 #define CHROMA_COPY(type) \
 { \
-	type *Udst = (type *)Utexture[whichtext] - 1; \
-	type *Vdst = (type *)Vtexture[whichtext] - 1; \
+	type *Udst = (type *)Utexture - 1; \
+	type *Vdst = (type *)Vtexture - 1; \
 	 \
 	type *Usrc1 = (type *)buffer[1] - 1; \
 	type *Usrc2 = (type *)(buffer[1] + stride[1]) - 1; \
@@ -636,8 +625,8 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	
 void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 {
-	whichtext ^= 1;
-	
+	static float x1=0,x2=0;
+
 	if(st0!=stride[0] || st1!=stride[1])
 	{
 		st0=stride[0];
@@ -646,6 +635,9 @@ void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 		UVrowpitch = (stride[1] * 4) - UVwidth;
 	}
 	
+	if(need_wait)
+		GX_WaitDrawDone();
+
 	if (stride[0] & 7)
 		LUMA_COPY(u64)
 	else LUMA_COPY(double)
@@ -665,7 +657,7 @@ void GX_RenderTexture()
 void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
 {
 	s16 pitch = stride - w;
-	u8 * Ytexture = Yltexture[whichtext];
+	u8 * Ytexture = Yltexture;
 	u8 *Ydst;
 
 	int dxs;

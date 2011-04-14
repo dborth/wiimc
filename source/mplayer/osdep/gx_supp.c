@@ -354,44 +354,45 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_hei
 	st0=st1=0;
 	
 	w1 = Ywidth / 8;        
-    w2 = UVwidth / 8;
+	w2 = UVwidth / 8;
             
-    wl = w1 > 1024/8 ? 1024/8 - 1 : w1;
-    wr = w1 > 1024/8 ? w1 - 1024/8 + 1 : 0;
+	wl = w1 > 1024/8 ? 1024/8 - 1 : w1;
+	wr = w1 > 1024/8 ? w1 - 1024/8 + 1 : 0;
 
-    Ylwidth = Ywidth > 1016 ? 1024 : Ywidth;
-    Yrwidth = Ywidth > 1024 ? Ywidth - 1016 + 8: 8;
+	Ylwidth = Ywidth > 1016 ? 1024 : Ywidth;
+	Yrwidth = Ywidth > 1024 ? Ywidth - 1016 + 8: 8;
 
-    Yheight =  (height+3)&~3;
-    UVheight = (chroma_height+3)&~3;
+	Yheight =  (height+3)&~3;
+	UVheight = (chroma_height+3)&~3;
 
-    f32 YtexcoordS = (double)width / (double)Ywidth;
-    f32 UVtexcoordS = (double)chroma_width / (double)UVwidth;
-    
-    f32 YtexcoordT = (double)height / (double)Yheight;
-    f32 UVtexcoordT = (double)chroma_height / (double)UVheight;
+	f32 YtexcoordS = (double)width / (double)Ywidth;
+	f32 UVtexcoordS = (double)chroma_width / (double)UVwidth;
 
-    if (Ywidth <= 1024)
-    {
-            texcoordsY[2] = texcoordsY[4] = YtexcoordS;
-            texcoordsY[5] = texcoordsY[7] = YtexcoordT;
-            texcoordsY[8] = texcoordsY[14] = 0.0f;
-    }
-    else
-    {  //not sure about this code
-            texcoordsY[2] = texcoordsY[4] = (double)Ywidth / 1024.0f;
-            texcoordsY[5] = texcoordsY[7] = YtexcoordT;
-            texcoordsY[8] = texcoordsY[14] = (-1016.0f + 8.0f) / (double)Yrwidth;
-    }
-    texcoordsUV[2] = texcoordsUV[4] = UVtexcoordS;
-    texcoordsUV[5] = texcoordsUV[7] = UVtexcoordT;
-    
-    DCFlushRange (texcoordsY, 16*sizeof(f32)); // update memory BEFORE the GPU accesses it!
-    DCFlushRange (texcoordsUV, 8*sizeof(f32)); // update memory BEFORE the GPU accesses it!
-    
-    // Update scaling
-    draw_initYUV();
-    draw_scaling();
+	f32 YtexcoordT = (double)height / (double)Yheight;
+	f32 UVtexcoordT = (double)chroma_height / (double)UVheight;
+
+	if (Ywidth <= 1024)
+	{
+		texcoordsY[2] = texcoordsY[4] = YtexcoordS;
+		texcoordsY[5] = texcoordsY[7] = YtexcoordT;
+		texcoordsY[8] = texcoordsY[14] = 0.0f;
+	}
+	else
+	{
+		// not sure about this code
+		texcoordsY[2] = texcoordsY[4] = (double)Ywidth / 1024.0f;
+		texcoordsY[5] = texcoordsY[7] = YtexcoordT;
+		texcoordsY[8] = texcoordsY[14] = (-1016.0f + 8.0f) / (double)Yrwidth;
+	}
+	texcoordsUV[2] = texcoordsUV[4] = UVtexcoordS;
+	texcoordsUV[5] = texcoordsUV[7] = UVtexcoordT;
+
+	DCFlushRange (texcoordsY, 16*sizeof(f32)); // update memory BEFORE the GPU accesses it!
+	DCFlushRange (texcoordsUV, 8*sizeof(f32)); // update memory BEFORE the GPU accesses it!
+
+	// Update scaling
+	draw_initYUV();
+	draw_scaling();
 }
 
 inline void DrawMPlayer()
@@ -534,7 +535,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_Flush();
 }
 
-
 #define LUMA_COPY(type) \
 { \
 	type *Yldst = (type *)Yltexture - 1; \
@@ -622,8 +622,6 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	
 void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 {
-	static float x1=0,x2=0;
-
 	if(st0!=stride[0] || st1!=stride[1])
 	{
 		st0=stride[0];
@@ -637,12 +635,13 @@ void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 
 	if (stride[0] & 7)
 		LUMA_COPY(u64)
-	else LUMA_COPY(double)
+	else
+		LUMA_COPY(double)
 
-	
 	if (stride[1] & 7)
 		CHROMA_COPY(u64)
-	else CHROMA_COPY(double)
+	else
+		CHROMA_COPY(double)
 }
 
 void GX_RenderTexture()

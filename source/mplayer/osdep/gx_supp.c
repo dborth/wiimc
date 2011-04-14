@@ -472,9 +472,6 @@ void GX_AllocTextureMemory(u16 width, u16 height, u16 chroma_width, u16 chroma_h
 	chroma_width+=16;
 	chroma_height+=8;
 
-	width+=128;
-	height+=64;
-
 	int wYl,wYr;
 	wYl = width < 1024 ? width : 1016;
 	wYl += 8 - (wYl % 8);

@@ -337,6 +337,7 @@ prepareSettingsData ()
 	createXMLSetting("inactivityShutdown", "Inactivity shutdown", toStr(WiiSettings.inactivityShutdown));
 	createXMLSetting("lockFolders", "Static folders", toStr(WiiSettings.lockFolders));
 	createXMLSetting("startArea", "Starting area", toStr(WiiSettings.startArea));
+	createXMLSetting("debug", "Debug", toStr(WiiSettings.debug));
 	// Videos
 	createXMLSection("Videos", "Videos Settings");
 	createXMLSetting("videoZoomHor", "Horizontal video zoom", FtoStr(WiiSettings.videoZoomHor));

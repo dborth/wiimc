@@ -646,7 +646,7 @@ void SetMPlayerSettings()
 
 /****************************************************************************
  * Main
- ***************************************************************************/	
+ ***************************************************************************/
 int main(int argc, char *argv[])
 {
 	AUDIO_Init(NULL);
@@ -665,14 +665,10 @@ int main(int argc, char *argv[])
 	WPAD_Init();
 	USBStorage_Initialize(); // to set aside MEM2 area
 	
-	u32 size = 	//(8*1024*1024) + // cache
-			//(((1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2)) * 2) + // textures
-			(vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot			
-			(1024); // padding
-	AddMem2Area (size, MEM2_VIDEO);
+	AddMem2Area ((vmode->fbWidth * vmode->efbHeight * 4) + 128, MEM2_VIDEO); //videoScreenshot
 	AddMem2Area (2*1024*1024, MEM2_BROWSER);
 	AddMem2Area (6*1024*1024, MEM2_GUI);
-	AddMem2Area (4*1024*1024, MEM2_OTHER); // vars + ttf
+	AddMem2Area (5*1024*1024, MEM2_OTHER); // vars + ttf
 
 	BrowserInit(&browser);
 	BrowserInit(&browserSubs);
@@ -706,7 +702,6 @@ int main(int argc, char *argv[])
  		if(ExitRequested)
  			break;
  
-		ShowAreaInfo(MEM2_BROWSER);
 		MPlayerMenu();
 	}
 	

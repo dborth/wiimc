@@ -3,9 +3,8 @@
 *	softdev 2007
 *	dhewg 2008
 *	sepp256 2008-2010 - Coded YUV->RGB conversion in TEV
-*	Contains some improvements by Extrems
-*	Tantric / rodries 2009-2010 - rewritten using threads, with GUI overlaid
-*     Extrems 2009-2011
+*	Extrems 2009-2011
+*	Tantric / rodries 2009-2011
 *
 *	This program is free software; you can redistribute it and/or modify
 *	it under the terms of the GNU General Public License as published by

@@ -505,8 +505,8 @@ bool InitMPlayer()
 	setenv("DVDREAD_VERBOSE", "0", 1);
 	setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
 	
-	char agent[15];
-	sprintf(agent, "%s/%s", APPNAME, APPVERSION);
+	char agent[30];
+	sprintf(agent, "%s/%s (IOS%d)", APPNAME, APPVERSION, IOS_GetVersion());
 	network_useragent = mem2_strdup(agent, MEM2_OTHER);
 
 	// create mplayer thread
@@ -704,7 +704,7 @@ int main(int argc, char *argv[])
  
 		MPlayerMenu();
 	}
-	
+ 	
  	// application exiting
 	StopGX();
 	UnmountAllDevices();

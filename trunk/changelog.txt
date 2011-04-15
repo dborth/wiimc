@@ -6,6 +6,17 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.1.6 - April 14, 2011]
+
+* Synced to MPlayer r33122
+* Fixed an issue with music playlist queuing
+* Fixed an issue playing a music playlist with a picture slideshow
+* Fixed a bug that caused some MMS streams not to work
+* Fixed a bug that caused WiiMC to crash with a malformed restore_points file
+* Added a setting to write a debug log to SD - set "debug" to "1"
+* Video rendering corrections and optimizations
+* Translation updates
+
 [1.1.5 - March 25, 2011]
 
 * Synced to MPlayer r33036

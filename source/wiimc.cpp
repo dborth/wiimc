@@ -665,7 +665,10 @@ int main(int argc, char *argv[])
 	WPAD_Init();
 	USBStorage_Initialize(); // to set aside MEM2 area
 	
-	AddMem2Area ((vmode->fbWidth * vmode->efbHeight * 4) + 128, MEM2_VIDEO); //videoScreenshot
+	u32 size = ( (1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2) ) + // textures
+                (vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot                     
+                (32*1024); // padding	
+	AddMem2Area (size, MEM2_VIDEO); 
 	AddMem2Area (2*1024*1024, MEM2_BROWSER);
 	AddMem2Area (6*1024*1024, MEM2_GUI);
 	AddMem2Area (5*1024*1024, MEM2_OTHER); // vars + ttf
@@ -680,6 +683,7 @@ int main(int argc, char *argv[])
 	SetupPads();
 	StartNetworkThread();
 	WPAD_SetPowerButtonCallback((WPADShutdownCallback)ShutdownCB);
+	GX_AllocTextureMemory();
 
 	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
 

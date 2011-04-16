@@ -453,47 +453,15 @@ inline void DrawMPlayer()
 	need_wait=true;
 }
 
-void GX_AllocTextureMemory(u16 width, u16 height, u16 chroma_width, u16 chroma_height)
+void GX_AllocTextureMemory()
 {
-	if( width > MAX_WIDTH) width = MAX_WIDTH;
-	if( height > MAX_HEIGHT) height = MAX_HEIGHT;
-	if( chroma_width > 1024) chroma_width = 1024;
-	if( chroma_height > MAX_HEIGHT) chroma_height = MAX_HEIGHT;
+        //make memory fixed (max texture 1024*1024, gx can't manage more)
+        if(Yltexture) return;
 
-	width=(width+7)&~7;
-	chroma_width = (chroma_width+7)&~7;
-		
-	height=(height+3)&~3;
-	chroma_height = (chroma_height+3)&~3;
-
-	//for security
-	width+=32;
-	height+=16;
-	chroma_width+=16;
-	chroma_height+=8;
-
-	int wYl,wYr;
-	wYl = width < 1024 ? width : 1016;
-	wYl += 8 - (wYl % 8);
-	wYr = width <= 1024 ? 0 : width - 1024;
-	wYr += 8 - (wYr % 8);
-
-	Yltexsize = (wYl*height);
-	Yrtexsize = (wYr*height);
-	UVtexsize = chroma_width*chroma_height;
-
-	if(!AddMem2Area( (Yltexsize + Yrtexsize + (UVtexsize*2))  + 1024,MEM2_TEXTURES))
-		printf("Not enough memory to create textures\n");
-		
-	Yltexture = (u8 *) (mem2_memalign(32, Yltexsize, MEM2_TEXTURES));
-	Yrtexture = (u8 *) (mem2_memalign(32, Yrtexsize, MEM2_TEXTURES));
-	Utexture = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
-	Vtexture = (u8 *) (mem2_memalign(32, UVtexsize, MEM2_TEXTURES));
-	
-	memset(Yltexture, 0, Yltexsize);
-	memset(Yrtexture, 0, Yrtexsize);
-	memset(Utexture, 0x80, UVtexsize);
-	memset(Vtexture, 0x80, UVtexsize);
+        Yltexture = (u8 *) (mem2_memalign(32, 1024*MAX_HEIGHT, MEM2_VIDEO));
+        Yrtexture = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, MEM2_VIDEO));
+        Utexture = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));
+        Vtexture = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));  
 }
 
 /****************************************************************************
@@ -501,13 +469,28 @@ void GX_AllocTextureMemory(u16 width, u16 height, u16 chroma_width, u16 chroma_h
  ****************************************************************************/
 void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 {
-	int w,h;
+	int w,wYl,wYr,h;
 	Mtx44 p;
 
 	need_wait=false;
 
+	// Allocate 32byte aligned texture memory
+	wYl = width < 1024 ? width : 1016;
+	wYl += 8 - (wYl % 8);
+	wYr = width <= 1024 ? 0 : width - 1024;
+	wYr += 8 - (wYr % 8);
 	w=(width+15)&~15;
 	h=(height+7)&~7;
+
+	Yltexsize = (wYl*h);
+    Yrtexsize = (wYr*h);
+	UVtexsize = (w*h)/4;
+        
+    memset(Yltexture, 0, 1024*MAX_HEIGHT);
+    memset(Yrtexture, 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
+    memset(Utexture, 0x80, 1024*(MAX_HEIGHT/2));
+    memset(Vtexture, 0x80, 1024*(MAX_HEIGHT/2));	
+	
 
 	// center, to correct difference between pitch and real width
 	video_diffx = (w - width)/2.0;

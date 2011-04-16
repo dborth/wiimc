@@ -4254,7 +4254,6 @@ DisableVideoImg();
 
 // time to uninit all, except global stuff:
 printf("mplayer: end film. UNINIT\n");
-RemoveMem2Area(MEM2_TEXTURES);
 
 uninit_player(INITIALIZED_ALL);
 //uninit_player(INITIALIZED_ALL-(INITIALIZED_DEMUXER+INITIALIZED_INPUT+INITIALIZED_VCODEC+INITIALIZED_GETCH2+INITIALIZED_GUI+(fixed_vo?INITIALIZED_VO:0)));

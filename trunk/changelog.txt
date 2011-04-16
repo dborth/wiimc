@@ -6,6 +6,10 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.1.7 - April 16, 2011]
+
+* Fixed a bug that caused a crash if Aspect Ratio was not set to Auto
+
 [1.1.6 - April 14, 2011]
 
 * Synced to MPlayer r33122

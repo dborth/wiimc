@@ -3937,9 +3937,9 @@ static void MenuSettingsGlobal()
 	mainWindow->Append(&titleTxt);
 	ResumeGui();
 
-	int ssDelay[] = { 60, 120, 300, 600, 900, 1800, 3600 };
+	int ssDelay[] = { 120, 300, 600, 900, 1800, 3600 };
 	int ssNum = sizeof(ssDelay) / sizeof(int);
-	int ssDelayNum = 2;
+	int ssDelayNum = 1;
 
 	for(i=0; i < ssNum; i++)
 		if(WiiSettings.screensaverDelay == ssDelay[i])

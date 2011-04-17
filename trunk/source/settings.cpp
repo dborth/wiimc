@@ -671,7 +671,7 @@ static void FixInvalidSettings()
 		WiiSettings.exitAction = EXIT_AUTO;
 	if(WiiSettings.rumble != 1 && WiiSettings.rumble != 0)
 		WiiSettings.rumble = 1;
-	if(WiiSettings.screensaverDelay < 60 || WiiSettings.screensaverDelay > 3600)
+	if(WiiSettings.screensaverDelay < 120 || WiiSettings.screensaverDelay > 3600)
 		WiiSettings.screensaverDelay = 300;
 	if(WiiSettings.inactivityShutdown < 0 || WiiSettings.inactivityShutdown > 8)
 		WiiSettings.inactivityShutdown = 2;

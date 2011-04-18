@@ -22,6 +22,7 @@ static u16 presetStyle = 0;
 #define TEXT_SCROLL_DELAY			8
 #define	TEXT_SCROLL_INITIAL_DELAY	6
 
+
 /**
  * Constructor for the GuiText class.
  */
@@ -200,7 +201,10 @@ void GuiText::SetWText(wchar_t * t)
 	textScrollInitialDelay = TEXT_SCROLL_INITIAL_DELAY;
 
 	if(t)
-		text = wcsdup(t);
+	{
+		text = new wchar_t[wcslen(t) + 1];
+		wcscpy(text, t);
+	}
 }
 
 int GuiText::GetLength()
@@ -469,14 +473,15 @@ void GuiText::Draw()
 	{
 		if(textDynNum == 0)
 		{
-			textDyn[0] = wcsdup(text);
+			textDyn[0] = new wchar_t[textlen + 1];
+			wcscpy(textDyn[0], text);
 
 			if(!textDyn[0])
 				return;
 
 			textDynNum = 1;
 
-			int len = wcslen(textDyn[0]);
+			int len = textlen;
 
 			while(len > 0 && fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
 				textDyn[0][--len] = 0;

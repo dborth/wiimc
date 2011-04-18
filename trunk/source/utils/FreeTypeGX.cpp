@@ -39,6 +39,45 @@ FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 
 using namespace std;
 
+// Standard operators
+// overloaded new operator
+void * operator new(size_t size)
+{
+	void *p = mem2_malloc(size,MEM2_OTHER);
+
+	if (!p)
+	{
+		bad_alloc ba;
+		throw ba;
+	}
+	return p;
+}
+
+// overloaded delete operator
+void  operator delete(void *p)
+{
+	mem2_free(p,MEM2_OTHER);
+}
+
+// overloaded new operator for arrays
+void * operator new[](size_t size)
+{
+	void *p = mem2_malloc(size,MEM2_OTHER);
+
+	if (!p)
+	{
+		bad_alloc ba;
+		throw ba;
+	}
+	return p;
+}
+
+// overloaded delete operator for arrays
+void  operator delete[](void *p)
+{
+	mem2_free(p,MEM2_OTHER);
+}
+
 bool InitFreeType(uint8_t* fontBuffer, FT_Long bufferSize)
 {
 	FT_Init_FreeType(&ftLibrary);

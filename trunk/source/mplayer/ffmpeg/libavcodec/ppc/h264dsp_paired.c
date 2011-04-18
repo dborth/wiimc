@@ -22,19 +22,19 @@
 #include "dsputil_paired.h"
 #include "libavutil/ppc/paired.h"
 
-#define CHROMAMC_VEC_OP {										\
-	const float scalar = 0.015625;								\
-	int16_t iAB[2] = {(8-x)*(8-y),(  x)*(8-y)};					\
-	int16_t iCD[2] = {(8-x)*(  y),(  x)*(  y)};					\
-	asm volatile("psq_l %0,%1,0,7" : "=f"(fAB) : "o"(*iAB));	\
-	asm volatile("psq_l %0,%1,0,7" : "=f"(fCD) : "o"(*iCD));	\
-	fAB = ps_mul(fAB, scalar);									\
-	fCD = ps_mul(fCD, scalar);									\
-}																\
+#define CHROMAMC_VEC_OP {									\
+	const float scalar = 0.015625;							\
+	vec_s16_t iAB = {(8-x)*(8-y),(  x)*(8-y)};				\
+	vec_s16_t iCD = {(8-x)*(  y),(  x)*(  y)};				\
+	asm volatile("psq_l %0,%1,0,7" : "=f"(fAB) : "o"(iAB));	\
+	asm volatile("psq_l %0,%1,0,7" : "=f"(fCD) : "o"(iCD));	\
+	fAB = ps_mul(fAB, scalar);								\
+	fCD = ps_mul(fCD, scalar);								\
+}															\
 
 static void put_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
 {
-	const vector float zero = {0.0,0.0};
+	const vec_f32_t zero = {0.0,0.0};
 	const float half = 0.5;
 	
 	vector float fAB, fCD;
@@ -49,7 +49,7 @@ static void put_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 	
 	int i;
 	if (!paired_cmpu1(EQ, fCD, zero)) {
-		for (i=0; i<h; i++) {
+		for (i = 0; i < h; i++) {
 			pair[0] = psq_lux(src1,stride,0,4);
 			pair[1] = psq_l(2,src1,0,4);
 			
@@ -75,7 +75,7 @@ static void put_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 		fAB = paired_sum1(fCD, fAB, fAB);
 		
 		if (!paired_cmpu0(EQ, fCD, zero)) {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[2] = psq_lux(src2,stride,0,4);
 				
@@ -91,7 +91,7 @@ static void put_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 				psq_st(result,2,dst,0,4);
 			}
 		} else {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[1] = psq_l(2,src1,0,4);
 				
@@ -111,7 +111,7 @@ static void put_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 
 static void put_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
 {
-	const vector float zero = {0.0,0.0};
+	const vec_f32_t zero = {0.0,0.0};
 	const float half = 0.5;
 	
 	vector float fAB, fCD;
@@ -126,7 +126,7 @@ static void put_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 	
 	int i;
 	if (!paired_cmpu1(EQ, fCD, zero)) {
-		for (i=0; i<h; i++) {
+		for (i = 0; i < h; i++) {
 			pair[0] = psq_lux(src1,stride,0,4);
 			pair[1] = psq_l(2,src1,0,4);
 			
@@ -170,7 +170,7 @@ static void put_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 		fAB = paired_sum1(fCD, fAB, fAB);
 		
 		if (!paired_cmpu0(EQ, fCD, zero)) {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[2] = psq_lux(src2,stride,0,4);
 				
@@ -200,7 +200,7 @@ static void put_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 				psq_st(result,6,dst,0,4);
 			}
 		} else {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[1] = psq_l(2,src1,0,4);
 				
@@ -232,7 +232,7 @@ static void put_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 
 static void avg_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
 {
-	const vector float zero = {0.0,0.0};
+	const vec_f32_t zero = {0.0,0.0};
 	const float half = 0.5;
 	
 	vector float fAB, fCD;
@@ -247,7 +247,7 @@ static void avg_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 	
 	int i;
 	if (!paired_cmpu1(EQ, fCD, zero)) {
-		for (i=0; i<h; i++) {
+		for (i = 0; i < h; i++) {
 			pair[0] = psq_lux(src1,stride,0,4);
 			pair[1] = psq_l(2,src1,0,4);
 			
@@ -277,7 +277,7 @@ static void avg_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 		fAB = paired_sum1(fCD, fAB, fAB);
 		
 		if (!paired_cmpu0(EQ, fCD, zero)) {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[1] = psq_lux(src2,stride,0,4);
 				
@@ -297,7 +297,7 @@ static void avg_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 				psq_st(ps_madd(result, half, half),2,dst,0,4);
 			}
 		} else {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[1] = psq_l(2,src1,0,4);
 				
@@ -320,7 +320,7 @@ static void avg_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 
 static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
 {
-	const vector float zero = {0.0,0.0};
+	const vec_f32_t zero = {0.0,0.0};
 	const float half = 0.5;
 	
 	vector float fAB, fCD;
@@ -335,7 +335,7 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 	
 	int i;
 	if (!paired_cmpu1(EQ, fCD, zero)) {
-		for (i=0; i<h; i++) {
+		for (i = 0; i < h; i++) {
 			pair[0] = psq_lux(src1,stride,0,4);
 			pair[1] = psq_l(2,src1,0,4);
 			
@@ -387,7 +387,7 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 		fAB = paired_sum1(fCD, fAB, fAB);
 		
 		if (!paired_cmpu0(EQ, fCD, zero)) {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[1] = psq_lux(src2,stride,0,4);
 				
@@ -425,7 +425,7 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 				psq_st(ps_madd(result, half, half),6,dst,0,4);
 			}
 		} else {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[1] = psq_l(2,src1,0,4);
 				
@@ -462,7 +462,7 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 
 void ff_put_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
 {
-	const vector float zero = {0.0,0.0};
+	const vec_f32_t zero = {0.0,0.0};
 	const float offset = 0.4375;
 	
 	vector float fAB, fCD;
@@ -477,7 +477,7 @@ void ff_put_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 	
 	int i;
 	if (!paired_cmpu1(EQ, fCD, zero)) {
-		for (i=0; i<h; i++) {
+		for (i = 0; i < h; i++) {
 			pair[0] = psq_lux(src1,stride,0,4);
 			pair[1] = psq_l(2,src1,0,4);
 			
@@ -521,7 +521,7 @@ void ff_put_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 		fAB = paired_sum1(fCD, fAB, fAB);
 		
 		if (!paired_cmpu0(EQ, fCD, zero)) {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[2] = psq_lux(src2,stride,0,4);
 				
@@ -551,7 +551,7 @@ void ff_put_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 				psq_st(result,6,dst,0,4);
 			}
 		} else {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[1] = psq_l(2,src1,0,4);
 				
@@ -583,7 +583,7 @@ void ff_put_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 
 void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y)
 {
-	const vector float zero = {0.0,0.0};
+	const vec_f32_t zero = {0.0,0.0};
 	const float offset = 0.4375;
 	const float half = 0.5;
 	
@@ -599,7 +599,7 @@ void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 	
 	int i;
 	if (!paired_cmpu1(EQ, fCD, zero)) {
-		for (i=0; i<h; i++) {
+		for (i = 0; i < h; i++) {
 			pair[0] = psq_lux(src1,stride,0,4);
 			pair[1] = psq_l(2,src1,0,4);
 			
@@ -651,7 +651,7 @@ void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 		fAB = paired_sum1(fCD, fAB, fAB);
 		
 		if (!paired_cmpu0(EQ, fCD, zero)) {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[1] = psq_lux(src2,stride,0,4);
 				
@@ -689,7 +689,7 @@ void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 				psq_st(ps_madd(result, half, offset),6,dst,0,4);
 			}
 		} else {
-			for (i=0; i<h; i++) {
+			for (i = 0; i < h; i++) {
 				pair[0] = psq_lux(src1,stride,0,4);
 				pair[1] = psq_l(2,src1,0,4);
 				
@@ -836,7 +836,7 @@ static void ff_h264_idct_dc_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 	
 	dst -= stride;
 	
-	for (int i=0; i<4; i++) {
+	for (int i = 0; i < 4; i++) {
 		pair = psq_lux(dst,stride,0,4);
 		pair = paired_add(pair, offset);
 		psq_st(pair,0,dst,0,4);
@@ -849,10 +849,10 @@ static void ff_h264_idct_dc_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 
 static void ff_h264_idct_add16_paired(uint8_t *dst, const int *block_offset, DCTELEM *block, int stride, const uint8_t nnzc[48])
 {
-	for (int i=0; i<16; i++) {
+	for (int i = 0; i < 16; i++) {
 		int nnz = nnzc[scan8[i]];
-		if(nnz) {
-			if (nnz==1 && block[i*16])
+		if (nnz) {
+			if (nnz == 1 && block[i*16])
 				ff_h264_idct_dc_add_paired(dst + block_offset[i], block + i*16, stride);
 			else ff_h264_idct_add_paired(dst + block_offset[i], block + i*16, stride);
 		}
@@ -861,7 +861,7 @@ static void ff_h264_idct_add16_paired(uint8_t *dst, const int *block_offset, DCT
 
 static void ff_h264_idct_add16intra_paired(uint8_t *dst, const int *block_offset, DCTELEM *block, int stride, const uint8_t nnzc[48])
 {
-	for (int i=0; i<16; i++) {
+	for (int i = 0; i < 16; i++) {
 		if (nnzc[scan8[i]])
 			ff_h264_idct_add_paired(dst + block_offset[i], block + i*16, stride);
 		else if (block[i*16])
@@ -871,7 +871,7 @@ static void ff_h264_idct_add16intra_paired(uint8_t *dst, const int *block_offset
 
 static void ff_h264_idct_add8_paired(uint8_t **dest, const int *block_offset, DCTELEM *block, int stride, const uint8_t nnzc[48])
 {
-	for (int i=16; i<16+8; i++) {
+	for (int i = 16; i < 24; i++) {
 		if (nnzc[scan8[i]])
 			ff_h264_idct_add_paired(dest[(i&4)>>2] + block_offset[i], block + i*16, stride);
 		else if (block[i*16])
@@ -1032,7 +1032,7 @@ static void ff_h264_idct8_dc_add_paired(uint8_t *dst, DCTELEM *block, int stride
 	
 	dst -= stride;
 	
-	for (int i=0; i<8; i++) {
+	for (int i = 0; i < 8; i++) {
 		pair = psq_lux(dst,stride,0,4);
 		pair = paired_add(pair, offset);
 		psq_st(pair,0,dst,0,4);
@@ -1053,10 +1053,10 @@ static void ff_h264_idct8_dc_add_paired(uint8_t *dst, DCTELEM *block, int stride
 
 static void ff_h264_idct8_add4_paired(uint8_t *dst, const int *block_offset, DCTELEM *block, int stride, const uint8_t nnzc[48])
 {
-	for (int i=0; i<16; i+=4) {
+	for (int i = 0; i < 16; i += 4) {
 		int nnz = nnzc[scan8[i]];
 		if (nnz) {
-			if (nnz==1 && block[i*16])
+			if (nnz == 1 && block[i*16])
 				ff_h264_idct8_dc_add_paired(dst + block_offset[i], block + i*16, stride);
 			else ff_h264_idct8_add_c(dst + block_offset[i], block + i*16, stride);
 		}
@@ -1084,7 +1084,7 @@ static void weight_h264_pixels ## W ## x ## H ## _paired(uint8_t *block, int str
 	 \
 	block -= stride; \
 	 \
-	for (int y=0; y<H; y++) { \
+	for (int y = 0; y < H; y++) { \
 		pair = psq_lux(block,stride,0,4); \
 		pair = ps_madd(pair, weightf, offsetf); \
 		psq_st(pair,0,block,0,4); \
@@ -1133,9 +1133,9 @@ static void biweight_h264_pixels ## W ## x ## H ## _paired(uint8_t *dst, uint8_t
 	asm volatile("psq_l %0,%1,1,5\n" : "=f"(powerf) : "o"(poweri)); \
 	powerf = paired_merge00(powerf, powerf); \
 	 \
-	int16_t weighti[2] = {weightd,weights}; \
+	vec_s16_t weighti = {weightd,weights}; \
 	vector float weightf; \
-	asm volatile("psq_l %0,%1,0,7" : "=f"(weightf) : "o"(*weighti)); \
+	asm volatile("psq_l %0,%1,0,7" : "=f"(weightf) : "o"(weighti)); \
 	weightf = paired_div(weightf, powerf); \
 	 \
 	int16_t offseti = offset; \
@@ -1146,7 +1146,7 @@ static void biweight_h264_pixels ## W ## x ## H ## _paired(uint8_t *dst, uint8_t
 	dst -= stride; \
 	src -= stride; \
 	 \
-	for (int y=0; y<H; y++) { \
+	for (int y = 0; y < H; y++) { \
 		pair[0] = psq_lux(dst,stride,0,4); \
 		pair[1] = psq_lux(src,stride,0,4); \
 		pair[0] = ps_madds1(pair[1], weightf, ps_madds0(pair[0], weightf, offsetf)); \

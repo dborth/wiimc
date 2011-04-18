@@ -4,7 +4,7 @@
  * MPlayer CE is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * MPlayer CE is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,6 +20,12 @@
 #define AVUTIL_PPC_PAIRED_H
 
 #include <paired.h>
+
+typedef float vec_f32_t __attribute__((vector_size(8)));
+typedef unsigned char vec_u8_t __attribute__((vector_size(2)));
+typedef unsigned short vec_u16_t __attribute__((vector_size(4)));
+typedef signed char vec_s8_t __attribute__((vector_size(2)));
+typedef signed short vec_s16_t __attribute__((vector_size(4)));
 
 #define psq_l(d, rA, W, I) ({																\
 	vector float frD;																		\

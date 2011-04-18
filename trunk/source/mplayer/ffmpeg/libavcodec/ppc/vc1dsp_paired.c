@@ -35,7 +35,7 @@ static void vc1_inv_trans_8x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 	
 	dest -= linesize;
 	
-	for (int i=0; i<8; i++) {
+	for (int i = 0; i < 8; i++) {
 		pair = psq_lux(dest,linesize,0,4);
 		pair = paired_add(pair, offset);
 		psq_st(pair,0,dest,0,4);
@@ -57,7 +57,7 @@ static void vc1_inv_trans_8x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 static void vc1_inv_trans_8x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *block)
 {
 	const float half = 0.5;
-	const vector float scale = {1.5,0.1328125};
+	const vec_f32_t scale = {1.5,0.1328125};
 	vector float pair, offset;
 	
 	offset = psq_l(0,block,1,7);
@@ -67,7 +67,7 @@ static void vc1_inv_trans_8x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 	
 	dest -= linesize;
 	
-	for (int i=0; i<4; i++) {
+	for (int i = 0; i < 4; i++) {
 		pair = psq_lux(dest,linesize,0,4);
 		pair = paired_add(pair, offset);
 		psq_st(pair,0,dest,0,4);
@@ -89,7 +89,7 @@ static void vc1_inv_trans_8x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 static void vc1_inv_trans_4x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *block)
 {
 	const float half = 0.5;
-	const vector float scale = {2.125,0.09375};
+	const vec_f32_t scale = {2.125,0.09375};
 	vector float pair, offset;
 	
 	offset = psq_l(0,block,1,7);
@@ -99,7 +99,7 @@ static void vc1_inv_trans_4x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 	
 	dest -= linesize;
 	
-	for (int i=0; i<8; i++) {
+	for (int i = 0; i < 8; i++) {
 		pair = psq_lux(dest,linesize,0,4);
 		pair = paired_add(pair, offset);
 		psq_st(pair,0,dest,0,4);
@@ -113,7 +113,7 @@ static void vc1_inv_trans_4x8_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 static void vc1_inv_trans_4x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *block)
 {
 	const float half = 0.5;
-	const vector float scale = {2.125,0.1328125};
+	const vec_f32_t scale = {2.125,0.1328125};
 	vector float pair, offset;
 	
 	offset = psq_l(0,block,1,7);
@@ -123,7 +123,7 @@ static void vc1_inv_trans_4x4_dc_paired(uint8_t *dest, int linesize, DCTELEM *bl
 	
 	dest -= linesize;
 	
-	for (int i=0; i<4; i++) {
+	for (int i = 0; i < 4; i++) {
 		pair = psq_lux(dest,linesize,0,4);
 		pair = paired_add(pair, offset);
 		psq_st(pair,0,dest,0,4);

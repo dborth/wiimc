@@ -27,7 +27,7 @@ static void put_pixels_clamped_paired(const DCTELEM *block, uint8_t *restrict pi
 	pixels -= line_size;
 	block -= 8;
 	
-	for (int i=0; i<8; i++) {
+	for (int i = 0; i < 8; i++) {
 		pair = psq_lu(16,block,0,7);
 		psq_stux(pair,pixels,line_size,0,4);
 		
@@ -50,7 +50,7 @@ static void put_signed_pixels_clamped_paired(const DCTELEM *block, uint8_t *rest
 	pixels -= line_size;
 	block -= 8;
 	
-	for (int i=0; i<8; i++) {
+	for (int i = 0; i < 8; i++) {
 		pair = psq_lu(16,block,0,7);
 		pair = ps_add(pair, bias);
 		psq_stux(pair,pixels,line_size,0,4);
@@ -76,7 +76,7 @@ static void add_pixels_clamped_paired(const DCTELEM *block, uint8_t *restrict pi
 	pixels -= line_size;
 	block -= 8;
 	
-	for (int i=0; i<8; i++) {
+	for (int i = 0; i < 8; i++) {
 		pair[0] = psq_lux(pixels,line_size,0,4);
 		pair[1] = psq_lu(16,block,0,7);
 		pair[0] = paired_add(pair[0], pair[1]);
@@ -108,7 +108,7 @@ static void scale_block_paired(const uint8_t src[64], uint8_t *dst, int linesize
 	uint16_t *dst2 = (uint16_t *)(dst - linesize);
 	src -= 8;
 	
-	for (int i=0; i<8; i++) {
+	for (int i = 0; i < 8; i++) {
 		pair = psq_lu(8,src,0,4);
 		pair = ps_mul(pair, scalar);
 		psq_stux(pair,dst1,linesize*2,0,5);
@@ -133,12 +133,12 @@ static void scale_block_paired(const uint8_t src[64], uint8_t *dst, int linesize
 
 static void vorbis_inverse_coupling_paired(float *mag, float *ang, int blocksize)
 {
-	const vector float zero = {0.0,0.0};
+	const vec_f32_t zero = {0.0,0.0};
 	
 	vector float pair[2], result[2];
 	vector float neg, sel;
 	
-	for (int i=0; i<blocksize*4-7; i+=8) {
+	for (int i = 0; i < blocksize*4-7; i += 8) {
 		pair[0] = paired_lx(i, mag);
 		pair[1] = paired_lx(i, ang);
 		
@@ -164,17 +164,17 @@ static void vorbis_inverse_coupling_paired(float *mag, float *ang, int blocksize
 
 static void ac3_downmix_paired(float (*samples)[256], float (*matrix)[2], int out_ch, int in_ch, int len)
 {
-	const vector float zero = {0.0,0.0};
+	const vec_f32_t zero = {0.0,0.0};
 	
 	vector float result[2];
 	vector float pair, coeffs;
 	
 	int i, c;
 	if (out_ch == 2) {
-		for (i=0; i<len*4-7; i+=8) {
+		for (i = 0; i < len*4-7; i += 8) {
 			result[0] = result[1] = zero;
 			
-			for(c=0; c<in_ch; c++) {
+			for (c = 0; c < in_ch; c++) {
 				coeffs = psq_l(0,matrix[c],0,0);
 				pair = paired_lx(i, samples[c]);
 				result[0] = paired_madds0(pair, coeffs, result[0]);
@@ -185,10 +185,10 @@ static void ac3_downmix_paired(float (*samples)[256], float (*matrix)[2], int ou
 			paired_stx(result[1], i, samples[1]);
 		}
 	} else if (out_ch == 1) {
-		for (i=0; i<len*4-15; i+=16) {
+		for (i = 0; i < len*4-15; i += 16) {
 			result[0] = result[1] = zero;
 			
-			for(c=0; c<in_ch; c++) {
+			for (c = 0; c < in_ch; c++) {
 				coeffs = psq_l(0,matrix[c],1,0);
 				pair = paired_lx(i, samples[c]);
 				result[0] = paired_madds0(pair, coeffs, result[0]);
@@ -205,7 +205,7 @@ static void ac3_downmix_paired(float (*samples)[256], float (*matrix)[2], int ou
 void dsputil_init_paired(DSPContext *c, AVCodecContext *avctx)
 {
 	register uint32_t gqr;
-	asm volatile(
+	__asm__ volatile (
 		"li		%0,4\n"
 		"oris	%0,%0,4\n"
 		"mtspr	916,%0\n"

@@ -48,8 +48,8 @@ static void pred16x16_plane_paired(uint8_t *src, int stride)
 	const uint8_t *src1 = src + 8 * stride - 1;
 	const uint8_t *src2 = src1 - 2 * stride;
 	
-	int16_t iH = src0[1] - src0[-1];
-	int16_t iV = src1[0] - src2[0];
+	int iH = src0[1] - src0[-1];
+	int iV = src1[0] - src2[0];
 	
 	for (int k = 2; k <= 8; k++) {
 		src1 += stride; src2 -= stride;
@@ -60,13 +60,13 @@ static void pred16x16_plane_paired(uint8_t *src, int stride)
 	iH = (5 * iH + 32) >> 6;
 	iV = (5 * iV + 32) >> 6;
 	
-	int16_t iHV[2] = {iH, iV};
+	vec_s16_t iHV = {iH, iV};
 	uint16_t iA = 16 * (src1[0] + src2[16] + 1) - 7 * (iV + iH);
 	
 	asm("psq_l	%0,%2,0,7\n"
 		"psq_l	%1,%3,1,5\n"
 		: "=f"(fHV), "=f"(fA)
-		: "o"(*iHV), "o"(iA));
+		: "o"(iHV), "o"(iA));
 	
 	fH = ps_muls0(scale, fHV);
 	fV = ps_muls1(scale, fHV);
@@ -140,8 +140,8 @@ static void pred8x8_plane_paired(uint8_t *src, int stride)
 	const uint8_t *src1 = src + 4 * stride - 1;
 	const uint8_t *src2 = src1 - 2 * stride;
 	
-	int16_t iH = src0[1] - src0[-1];
-	int16_t iV = src1[0] - src2[0];
+	int iH = src0[1] - src0[-1];
+	int iV = src1[0] - src2[0];
 	
 	for (int k = 2; k <= 4; k++) {
 		src1 += stride; src2 -= stride;
@@ -152,13 +152,13 @@ static void pred8x8_plane_paired(uint8_t *src, int stride)
 	iH = (17 * iH + 16) >> 5;
 	iV = (17 * iV + 16) >> 5;
 	
-	int16_t iHV[2] = {iH, iV};
+	vec_s16_t iHV = {iH, iV};
 	uint16_t iA = 16 * (src1[0] + src2[8] + 1) - 3 * (iV + iH);
 	
 	asm("psq_l	%0,%2,0,7\n"
 		"psq_l	%1,%3,1,5\n"
 		: "=f"(fHV), "=f"(fA)
-		: "o"(*iHV), "o"(iA));
+		: "o"(iHV), "o"(iA));
 	
 	fH = ps_muls0(scale, fHV);
 	fV = ps_muls1(scale, fHV);

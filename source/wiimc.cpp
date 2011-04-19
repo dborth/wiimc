@@ -647,6 +647,10 @@ void SetMPlayerSettings()
 /****************************************************************************
  * Main
  ***************************************************************************/
+extern "C" { 
+	s32 __STM_Close();
+	s32 __STM_Init();
+}
 int main(int argc, char *argv[])
 {
 	AUDIO_Init(NULL);
@@ -655,9 +659,13 @@ int main(int argc, char *argv[])
 	InitVideo();
 
 	// Wii Power/Reset buttons
+	__STM_Close();
+	__STM_Init();
+	__STM_Close();
+	__STM_Init();
 	SYS_SetPowerCallback(ShutdownCB);
 	SYS_SetResetCallback(ResetCB);
-	
+
 	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	__exception_setreload(8);
 

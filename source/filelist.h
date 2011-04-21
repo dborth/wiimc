@@ -20,6 +20,8 @@ extern const u8		jp_lang[];
 extern const u32	jp_lang_size;
 extern const u8		en_lang[];
 extern const u32	en_lang_size;
+extern const u8		da_lang[];
+extern const u32	da_lang_size;
 extern const u8		de_lang[];
 extern const u32	de_lang_size;
 extern const u8		fr_lang[];

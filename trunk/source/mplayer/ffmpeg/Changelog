@@ -79,6 +79,13 @@ version <next>:
 - Bink version 'b' audio and video decoder
 - Bitmap Brothers JV playback system
 - Apple HTTP Live Streaming protocol handler
+- sndio support for playback and record
+- Linux framebuffer input device added
+- Chronomaster DFA decoder
+- Mobotix MxPEG decoder
+- AAC encoding via libvo-aacenc
+- AMR-WB encoding via libvo-amrwbenc
+- xWMA demuxer
 
 
 version 0.6:

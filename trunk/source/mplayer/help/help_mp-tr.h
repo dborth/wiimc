@@ -752,7 +752,6 @@ static const char help_text[]=
 #define MSGTR_NEMFMR "Üzgünüm, menü oluşturmak için yeterli hafıza yok."
 #define MSGTR_IDFGCVD "Üzgünüm, KGA ile uyumlu video çıkış sürücüsü bulunamadı."
 #define MSGTR_NEEDLAVC "Üzgünüm, MPEG olmayan dosyaları DXR3/H+ aygıtınızla oynatamazsınız. \nLütfen DXR3/H+ ayarlarından lavc seçeneğini etkinleştirin."
-#define MSGTR_UNKNOWNWINDOWTYPE "Bilinmeyen pencere türü bulundu..."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[arayüz] Hata : arayüz ayar dosyası %d satırı: %s"
@@ -760,18 +759,14 @@ static const char help_text[]=
 #define MSGTR_SKIN_SkinFileNotReadable "[arayüz] ( %s ) dosyası okunabilir değil.\n"
 #define MSGTR_SKIN_BITMAP_16bit  "16 bit veya daha az derinlikteki bitmap desteklenmiyor (%s).\n"
 #define MSGTR_SKIN_BITMAP_FileNotFound  "( %s ) dosyası bulunamadı\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "BMP okuma hatası (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "TGA okuma hatası (%s)\n"
 #define MSGTR_SKIN_BITMAP_PNGReadError "PNG okuma hatası (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "RLE paketlenen TGA desteklemiyor (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "bilinmeyen dosya türü (%s)\n"
 #define MSGTR_SKIN_BITMAP_ConversionError "24 bit --> 32 bit dönüştürme hatası (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "Bilinmeyen ileti: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "yetersiz bellek\n"
+#define MSGTR_SKIN_UnknownMessage "Bilinmeyen ileti: %s\n"
+#define MSGTR_SKIN_NotEnoughMemory "yetersiz bellek\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "Çok sayıda yazıtipi tanıtıldı\n"
 #define MSGTR_SKIN_FONT_FontFileNotFound "yazıtipi dosyası bulunamadı\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "yazıtipi görüntü dosyası bulunamadı\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "Varolmayan yazıtipi tanımlayıcısı (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "Varolmayan yazıtipi tanımlayıcısı (%s)\n"
 #define MSGTR_SKIN_UnknownParameter "bilinmeyen parametre (%s)\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Arayüz bulunamadı (%s).\n"
 #define MSGTR_SKIN_SKINCFG_SelectedSkinNotFound "Seçili arayüz ( %s ) bulunamadı , 'varsayılan'ı deneyiniz...\n"
@@ -968,11 +963,6 @@ static const char help_text[]=
 #define MSGTR_MSGBOX_LABEL_FatalError "Önemli hata!"
 #define MSGTR_MSGBOX_LABEL_Error "Hata!"
 #define MSGTR_MSGBOX_LABEL_Warning "Uyarı!"
-
-// bitmap.c
-
-#define MSGTR_NotEnoughMemoryC32To1 "[c32to1] görüntü için yeterli bellek yok\n"
-#define MSGTR_NotEnoughMemoryC1To32 "[c1to32] görüntü için yeterli bellek yok\n"
 
 // cfg.c
 

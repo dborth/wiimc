@@ -4,7 +4,7 @@
 #ifndef MPLAYER_HELP_MP_H
 #define MPLAYER_HELP_MP_H
 
-// $Revision: 33112 $
+// $Revision: 33227 $
 // MASTER FILE. Use this file as base for translations.
 // Translated files should be sent to the mplayer-DOCS mailing list or
 // to the help messages maintainer, see DOCS/tech/MAINTAINERS.
@@ -578,30 +578,28 @@ static const char help_text[]=
 #define MSGTR_NEMFMR "Sorry, not enough memory for menu rendering."
 #define MSGTR_IDFGCVD "Sorry, no GUI-compatible video output driver found.\n"
 #define MSGTR_NEEDLAVC "Sorry, you cannot play non-MPEG files with your DXR3/H+ device without reencoding.\nPlease enable lavc in the DXR3/H+ configuration box."
-#define MSGTR_UNKNOWNWINDOWTYPE "Unknown window type found ..."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "Error in skin config file on line %d: %s"
 #define MSGTR_SKIN_ERROR_SECTION "No section specified for '%s'.\n"
 #define MSGTR_SKIN_ERROR_WINDOW "No window specified for '%s'.\n"
-#define MSGTR_SKIN_ERROR_IN_WINDOW "This item is not supported by '%s'.\n"
+#define MSGTR_SKIN_ERROR_ITEM "This item is not supported by '%s'.\n"
+#define MSGTR_SKIN_UNKNOWN_ITEM "Unknown item '%s'\n"
+#define MSGTR_SKIN_UNKNOWN_NAME "Unknown name '%s'\n"
 #define MSGTR_SKIN_SkinFileNotFound "Skin file %s not found.\n"
 #define MSGTR_SKIN_SkinFileNotReadable "Skin file %s not readable.\n"
-#define MSGTR_SKIN_BITMAP_16bit  "Bitmaps of 16 bits or less depth not supported (%s).\n"
-#define MSGTR_SKIN_BITMAP_FileNotFound  "File not found (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "BMP read error (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "TGA read error (%s)\n"
-#define MSGTR_SKIN_BITMAP_PNGReadError "PNG read error (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "RLE packed TGA not supported (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "unknown file type (%s)\n"
-#define MSGTR_SKIN_BITMAP_ConversionError "24 bit to 32 bit conversion error (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "unknown message: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "not enough memory\n"
+#define MSGTR_SKIN_BITMAP_16bit  "Color depth of bitmap %s is 16 bits or less which is not supported.\n"
+#define MSGTR_SKIN_BITMAP_FileNotFound  "Bitmap %s not found.\n"
+#define MSGTR_SKIN_BITMAP_PNGReadError "PNG read error in %s\n"
+#define MSGTR_SKIN_BITMAP_ConversionError "24 bit to 32 bit conversion error in %s\n"
+#define MSGTR_SKIN_UnknownMessage "Unknown message '%s'\n"
+#define MSGTR_SKIN_NotEnoughMemory "Not enough memory\n"
+#define MSGTR_SKIN_TooManyItemsDeclared "Too many items declared.\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "Too many fonts declared.\n"
-#define MSGTR_SKIN_FONT_FontFileNotFound "Font file not found.\n"
+#define MSGTR_SKIN_FONT_FontFileNotFound "Font description file not found.\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "Font image file not found.\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "non-existent font identifier (%s)\n"
-#define MSGTR_SKIN_UnknownParameter "unknown parameter (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "Font '%s' not found.\n"
+#define MSGTR_SKIN_UnknownParameter "Unknown parameter '%s'\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Skin '%s' not found.\n"
 #define MSGTR_SKIN_SKINCFG_SelectedSkinNotFound "Selected skin '%s' not found, trying skin 'default'...\n"
 #define MSGTR_SKIN_SKINCFG_SkinCfgError "Config file processing error with skin '%s'\n"
@@ -798,10 +796,6 @@ static const char help_text[]=
 #define MSGTR_MSGBOX_LABEL_FatalError "Fatal error!"
 #define MSGTR_MSGBOX_LABEL_Error "Error!"
 #define MSGTR_MSGBOX_LABEL_Warning "Warning!"
-
-// bitmap.c
-#define MSGTR_NotEnoughMemoryC32To1 "[c32to1] not enough memory for image\n"
-#define MSGTR_NotEnoughMemoryC1To32 "[c1to32] not enough memory for image\n"
 
 // cfg.c
 #define MSGTR_ConfigFileReadError "[cfg] config file read error ...\n"
@@ -1197,7 +1191,7 @@ static const char help_text[]=
 
 // ao_pcm.c
 #define MSGTR_AO_PCM_FileInfo "[AO PCM] File: %s (%s)\nPCM: Samplerate: %iHz Channels: %s Format %s\n"
-#define MSGTR_AO_PCM_HintInfo "[AO PCM] Info: Faster dumping is achieved with -vc null -vo null -ao pcm:fast\n[AO PCM] Info: To write WAVE files use -ao pcm:waveheader (default).\n"
+#define MSGTR_AO_PCM_HintInfo "[AO PCM] Info: Faster dumping is achieved with -benchmark -vc null -vo null -ao pcm:fast\n[AO PCM] Info: To write WAVE files use -ao pcm:waveheader (default).\n"
 #define MSGTR_AO_PCM_CantOpenOutputFile "[AO PCM] Failed to open %s for writing!\n"
 
 // ao_sdl.c

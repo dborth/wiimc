@@ -118,7 +118,7 @@ typedef struct {
 }AVMetadataTag;
 
 typedef struct AVMetadata AVMetadata;
-#if FF_API_OLD_METADATA
+#if FF_API_OLD_METADATA2
 typedef struct AVMetadataConv AVMetadataConv;
 #endif
 
@@ -159,7 +159,7 @@ attribute_deprecated int av_metadata_set(AVMetadata **pm, const char *key, const
  */
 int av_metadata_set2(AVMetadata **pm, const char *key, const char *value, int flags);
 
-#if FF_API_OLD_METADATA
+#if FF_API_OLD_METADATA2
 /**
  * This function is provided for compatibility reason and currently does nothing.
  */
@@ -317,7 +317,7 @@ typedef struct AVOutputFormat {
 
     enum CodecID subtitle_codec; /**< default subtitle codec */
 
-#if FF_API_OLD_METADATA
+#if FF_API_OLD_METADATA2
     const AVMetadataConv *metadata_conv;
 #endif
 
@@ -437,7 +437,7 @@ typedef struct AVInputFormat {
      */
     int (*read_seek2)(struct AVFormatContext *s, int stream_index, int64_t min_ts, int64_t ts, int64_t max_ts, int flags);
 
-#if FF_API_OLD_METADATA
+#if FF_API_OLD_METADATA2
     const AVMetadataConv *metadata_conv;
 #endif
 
@@ -742,7 +742,7 @@ typedef struct AVFormatContext {
     /**
      * Decoding: total stream bitrate in bit/s, 0 if not
      * available. Never set it directly if the file_size and the
-     * duration are known as FFmpeg can compute it automatically.
+     * duration are known as Libav can compute it automatically.
      */
     int bit_rate;
 
@@ -899,7 +899,9 @@ AVInputFormat  *av_iformat_next(AVInputFormat  *f);
  */
 AVOutputFormat *av_oformat_next(AVOutputFormat *f);
 
-enum CodecID av_guess_image2_codec(const char *filename);
+#if FF_API_GUESS_IMG2_CODEC
+attribute_deprecated enum CodecID av_guess_image2_codec(const char *filename);
+#endif
 
 /* XXX: Use automatic init with either ELF sections or C file parser */
 /* modules. */
@@ -978,7 +980,6 @@ void av_hex_dump_log(void *avcl, int level, uint8_t *buf, int size);
  */
 void av_pkt_dump2(FILE *f, AVPacket *pkt, int dump_payload, AVStream *st);
 
-attribute_deprecated void av_pkt_dump(FILE *f, AVPacket *pkt, int dump_payload);
 
 /**
  * Send a nice dump of a packet to the log.
@@ -994,8 +995,11 @@ attribute_deprecated void av_pkt_dump(FILE *f, AVPacket *pkt, int dump_payload);
 void av_pkt_dump_log2(void *avcl, int level, AVPacket *pkt, int dump_payload,
                       AVStream *st);
 
+#if FF_API_PKT_DUMP
+attribute_deprecated void av_pkt_dump(FILE *f, AVPacket *pkt, int dump_payload);
 attribute_deprecated void av_pkt_dump_log(void *avcl, int level, AVPacket *pkt,
                                           int dump_payload);
+#endif
 
 /**
  * Initialize libavformat and register all the muxers, demuxers and
@@ -1504,12 +1508,6 @@ int64_t parse_date(const char *datestr, int duration);
  */
 int64_t av_gettime(void);
 
-/* ffm-specific for ffserver */
-#define FFM_PACKET_SIZE 4096
-int64_t ffm_read_write_index(int fd);
-int ffm_write_write_index(int fd, int64_t pos);
-void ffm_set_write_index(AVFormatContext *s, int64_t pos, int64_t file_size);
-
 #if FF_API_FIND_INFO_TAG
 /**
  * @deprecated use av_find_info_tag in libavutil instead.
@@ -1549,12 +1547,16 @@ int av_filename_number_test(const char *filename);
  *           all the contexts in the array (an AVCodecContext per RTP stream)
  *           must contain only one AVStream.
  * @param n_files number of AVCodecContexts contained in ac
- * @param buff buffer where the SDP will be stored (must be allocated by
- *             the caller)
+ * @param buf buffer where the SDP will be stored (must be allocated by
+ *            the caller)
  * @param size the size of the buffer
  * @return 0 if OK, AVERROR_xxx on error
  */
-int avf_sdp_create(AVFormatContext *ac[], int n_files, char *buff, int size);
+int av_sdp_create(AVFormatContext *ac[], int n_files, char *buf, int size);
+
+#if FF_API_SDP_CREATE
+attribute_deprecated int avf_sdp_create(AVFormatContext *ac[], int n_files, char *buff, int size);
+#endif
 
 /**
  * Return a positive value if the given filename has one of the given

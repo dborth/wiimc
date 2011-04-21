@@ -22,6 +22,7 @@
 #define AVFORMAT_NETWORK_H
 
 #include "config.h"
+#include "os_support.h"
 
 #if HAVE_WINSOCK2_H
 #include <winsock2.h>
@@ -62,6 +63,10 @@ static inline int ff_neterrno() {
 #include <arpa/inet.h>
 #endif
 
+#if HAVE_POLL_H
+#include <poll.h>
+#endif
+
 int ff_socket_nonblock(int socket, int enable);
 
 static inline int ff_network_init(void)
@@ -73,7 +78,16 @@ static inline int ff_network_init(void)
 #endif
     return 1;
 }
-
+#ifndef GEKKO
+static inline int ff_network_wait_fd(int fd, int write)
+{
+    int ev = write ? POLLOUT : POLLIN;
+    struct pollfd p = { .fd = fd, .events = ev, .revents = 0 };
+    int ret;
+    ret = poll(&p, 1, 100);
+    return ret < 0 ? ff_neterrno() : p.revents & ev ? 0 : AVERROR(EAGAIN);
+}
+#endif
 static inline void ff_network_close(void)
 {
 #if HAVE_WINSOCK2_H

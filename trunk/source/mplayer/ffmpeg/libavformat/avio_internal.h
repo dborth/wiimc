@@ -21,6 +21,7 @@
 #define AVFORMAT_AVIO_INTERNAL_H
 
 #include "avio.h"
+#include "url.h"
 
 int ffio_init_context(AVIOContext *s,
                   unsigned char *buffer,
@@ -66,13 +67,35 @@ uint64_t ffio_read_varlen(AVIOContext *bc);
 /** @warning must be called before any I/O */
 int ffio_set_buf_size(AVIOContext *s, int buf_size);
 
-int     ffio_read_pause(AVIOContext *h,    int pause);
-int64_t ffio_read_seek (AVIOContext *h,    int stream_index,
-                        int64_t timestamp, int flags);
+void ffio_init_checksum(AVIOContext *s,
+                        unsigned long (*update_checksum)(unsigned long c, const uint8_t *p, unsigned int len),
+                        unsigned long checksum);
+unsigned long ffio_get_checksum(AVIOContext *s);
+unsigned long ff_crc04C11DB7_update(unsigned long checksum, const uint8_t *buf,
+                                    unsigned int len);
 
-/* udp.c */
-int ff_udp_set_remote_url(URLContext *h, const char *uri);
-int ff_udp_get_local_port(URLContext *h);
+/**
+ * Open a write only packetized memory stream with a maximum packet
+ * size of 'max_packet_size'.  The stream is stored in a memory buffer
+ * with a big endian 4 byte header giving the packet size in bytes.
+ *
+ * @param s new IO context
+ * @param max_packet_size maximum packet size (must be > 0)
+ * @return zero if no error.
+ */
+int ffio_open_dyn_packet_buf(AVIOContext **s, int max_packet_size);
 
+/**
+ * Create and initialize a AVIOContext for accessing the
+ * resource referenced by the URLContext h.
+ * @note When the URLContext h has been opened in read+write mode, the
+ * AVIOContext can be used only for writing.
+ *
+ * @param s Used to return the pointer to the created AVIOContext.
+ * In case of failure the pointed to value is set to NULL.
+ * @return 0 in case of success, a negative value corresponding to an
+ * AVERROR code in case of failure
+ */
+int ffio_fdopen(AVIOContext **s, URLContext *h);
 
 #endif // AVFORMAT_AVIO_INTERNAL_H

@@ -241,6 +241,16 @@ ogg_read_page (AVFormatContext * s, int *str)
 
     idx = ogg_find_stream (ogg, serial);
     if (idx < 0){
+        if (ogg->headers) {
+                int n;
+
+                for (n = 0; n < ogg->nstreams; n++) {
+                    av_free(ogg->streams[n].buf);
+                    av_free(ogg->streams[n].private);
+                }
+                ogg->curidx   = -1;
+                ogg->nstreams = 0;
+        }
         idx = ogg_new_stream (s, serial);
         if (idx < 0)
             return -1;
@@ -455,7 +465,7 @@ ogg_get_length (AVFormatContext * s)
     int i;
     int64_t size, end;
 
-    if(url_is_streamed(s->pb))
+    if(!s->pb->seekable)
         return 0;
 
 // already set

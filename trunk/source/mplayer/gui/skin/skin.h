@@ -19,11 +19,9 @@
 #ifndef MPLAYER_GUI_SKIN_H
 #define MPLAYER_GUI_SKIN_H
 
-#include "gui/bitmap.h"
+#include "gui/util/bitmap.h"
 
 int skinBPRead(char *fname, txSample *bf);
 int skinRead(char *dname);
-char *strswap(char *in, char what, char whereof);
-char *trim(char *in);
 
 #endif /* MPLAYER_GUI_SKIN_H */

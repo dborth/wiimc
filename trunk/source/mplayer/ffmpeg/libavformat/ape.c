@@ -250,6 +250,11 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
         av_log(s, AV_LOG_ERROR, "Too many frames: %d\n", ape->totalframes);
         return -1;
     }
+    if (ape->seektablelength && (ape->seektablelength / sizeof(*ape->seektable)) < ape->totalframes) {
+        av_log(s, AV_LOG_ERROR, "Number of seek entries is less than number of frames: %d vs. %d\n",
+               ape->seektablelength / sizeof(*ape->seektable), ape->totalframes);
+        return AVERROR_INVALIDDATA;
+    }
     ape->frames       = av_malloc(ape->totalframes * sizeof(APEFrame));
     if(!ape->frames)
         return AVERROR(ENOMEM);
@@ -291,7 +296,7 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
     ape_dumpinfo(s, ape);
 
     /* try to read APE tags */
-    if (!url_is_streamed(pb)) {
+    if (pb->seekable) {
         ff_ape_parse_tag(s);
         avio_seek(pb, 0, SEEK_SET);
     }

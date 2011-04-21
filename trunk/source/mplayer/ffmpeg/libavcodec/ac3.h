@@ -48,6 +48,17 @@
 #define EXP_D25   2
 #define EXP_D45   3
 
+/* pre-defined gain values */
+#define LEVEL_PLUS_3DB          1.4142135623730950
+#define LEVEL_PLUS_1POINT5DB    1.1892071150027209
+#define LEVEL_MINUS_1POINT5DB   0.8408964152537145
+#define LEVEL_MINUS_3DB         0.7071067811865476
+#define LEVEL_MINUS_4POINT5DB   0.5946035575013605
+#define LEVEL_MINUS_6DB         0.5000000000000000
+#define LEVEL_MINUS_9DB         0.3535533905932738
+#define LEVEL_ZERO              0.0000000000000000
+#define LEVEL_ONE               1.0000000000000000
+
 /** Delta bit allocation strategy */
 typedef enum {
     DBA_REUSE = 0,
@@ -163,24 +174,5 @@ int ff_ac3_bit_alloc_calc_mask(AC3BitAllocParameters *s, int16_t *band_psd,
                                int dba_mode, int dba_nsegs, uint8_t *dba_offsets,
                                uint8_t *dba_lengths, uint8_t *dba_values,
                                int16_t *mask);
-
-/**
- * Calculate bit allocation pointers.
- * The SNR is the difference between the masking curve and the signal.  AC-3
- * uses this value for each frequency bin to allocate bits.  The snroffset
- * parameter is a global adjustment to the SNR for all bins.
- *
- * @param[in]  mask       masking curve
- * @param[in]  psd        signal power for each frequency bin
- * @param[in]  start      starting bin location
- * @param[in]  end        ending bin location
- * @param[in]  snr_offset SNR adjustment
- * @param[in]  floor      noise floor
- * @param[in]  bap_tab    look-up table for bit allocation pointers
- * @param[out] bap        bit allocation pointers
- */
-void ff_ac3_bit_alloc_calc_bap(int16_t *mask, int16_t *psd, int start, int end,
-                               int snr_offset, int floor,
-                               const uint8_t *bap_tab, uint8_t *bap);
 
 #endif /* AVCODEC_AC3_H */

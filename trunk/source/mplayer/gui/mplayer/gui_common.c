@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -331,7 +331,7 @@ static void PutImage(txSample *bf, int x, int y, int max, int ofs)
         for (ix = x; ix < (int)(x + bf->Width); ix++) {
             tmp = drw[i++];
 
-            if (tmp != 0x00ff00ff)
+            if (tmp != TRANSPARENT)
                 buf[iy * image_width + ix] = tmp;
         }
 #else
@@ -341,7 +341,7 @@ static void PutImage(txSample *bf, int x, int y, int max, int ofs)
         for (ix = x; ix < (int)(x + bf->Width); ix++) {
             tmp = drw[i++];
 
-            if (tmp != 0x00ff00ff)
+            if (tmp != TRANSPARENT)
                 buf[yc + ix] = tmp;
         }
 
@@ -369,7 +369,7 @@ static void SimplePotmeterPutImage(txSample *bf, int x, int y, float frac)
         for (ix = x; ix < (int)(x + w); ix++) {
             tmp = drw[i++];
 
-            if (tmp != 0x00ff00ff)
+            if (tmp != TRANSPARENT)
                 buf[iy * image_width + ix] = tmp;
         }
 

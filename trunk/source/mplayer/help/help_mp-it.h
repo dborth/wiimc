@@ -567,7 +567,6 @@ static const char help_text[]=
 #define MSGTR_NEMFMR "Mi dispiace, non c'è abbastanza memoria per visualizzare il menu."
 #define MSGTR_IDFGCVD "Mi dispiace, non ho trovato un driver di output video compatibile con la GUI."
 #define MSGTR_NEEDLAVC "Mi dispiace, non puoi riprodurre file non-MPEG con il tuo dispositivo DXR3/H+\nsenza ricodificarli.\nAbilita lavc nella finestra di configurazione DXR3/H+."
-#define MSGTR_UNKNOWNWINDOWTYPE "Trovato tipo finestra sconosciuto..."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[skin] errore nel file di configurazione della skin alla riga %d: %s"
@@ -575,18 +574,14 @@ static const char help_text[]=
 #define MSGTR_SKIN_SkinFileNotReadable "[skin] file ( %s ) non leggibile.\n"
 #define MSGTR_SKIN_BITMAP_16bit  "Bitmap con profondità di 16 bit o inferiore non supportate (%s).\n"
 #define MSGTR_SKIN_BITMAP_FileNotFound  "File non trovato (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "BMP, errore di lettura (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "TGA, errore di lettura (%s)\n"
 #define MSGTR_SKIN_BITMAP_PNGReadError "PNG, errore di lettura (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "RLE packed TGA non supportato (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "tipo di file sconosciuto (%s)\n"
 #define MSGTR_SKIN_BITMAP_ConversionError "errore nella conversione da 24 bit a 32 bit (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "messaggio sconosciuto: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "memoria insufficiente\n"
+#define MSGTR_SKIN_UnknownMessage "messaggio sconosciuto: %s\n"
+#define MSGTR_SKIN_NotEnoughMemory "memoria insufficiente\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "dichiarati troppi font\n"
 #define MSGTR_SKIN_FONT_FontFileNotFound "file dei font non trovato\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "file delle immagini dei font non trovato\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "identificatore del font inesistente (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "identificatore del font inesistente (%s)\n"
 #define MSGTR_SKIN_UnknownParameter "parametro sconosciuto  (%s)\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Skin non trovata (%s).\n"
 #define MSGTR_SKIN_SKINCFG_SelectedSkinNotFound "Skin scelta ( %s ) not trovata, provo con la 'default'...\n"
@@ -782,10 +777,6 @@ static const char help_text[]=
 #define MSGTR_MSGBOX_LABEL_FatalError "Errore fatale!"
 #define MSGTR_MSGBOX_LABEL_Error "Errore!"
 #define MSGTR_MSGBOX_LABEL_Warning "Avvertimento!"
-
-// bitmap.c
-#define MSGTR_NotEnoughMemoryC32To1 "[c32to1] non c'è abbastanza memoria per l'immagine\n"
-#define MSGTR_NotEnoughMemoryC1To32 "[c1to32] non c'è abbastanza memoria per l'immagine\n"
 
 // cfg.c
 #define MSGTR_ConfigFileReadError "[cfg] errore di lettura file di configurazione...\n"

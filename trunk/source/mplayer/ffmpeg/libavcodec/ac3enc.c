@@ -29,15 +29,19 @@
 //#define DEBUG
 //#define ASSERT_LEVEL 2
 
+#include <stdint.h>
+
 #include "libavutil/audioconvert.h"
 #include "libavutil/avassert.h"
 #include "libavutil/crc.h"
+#include "libavutil/opt.h"
 #include "avcodec.h"
 #include "put_bits.h"
 #include "dsputil.h"
 #include "ac3dsp.h"
 #include "ac3.h"
 #include "audioconvert.h"
+#include "fft.h"
 
 
 #ifndef CONFIG_AC3ENC_FLOAT
@@ -54,16 +58,52 @@
 #define AC3_REMATRIXING_NONE    1
 #define AC3_REMATRIXING_ALWAYS  3
 
-/** Scale a float value by 2^bits and convert to an integer. */
-#define SCALE_FLOAT(a, bits) lrintf((a) * (float)(1 << (bits)))
-
-
 #if CONFIG_AC3ENC_FLOAT
-#include "ac3enc_float.h"
+#define MAC_COEF(d,a,b) ((d)+=(a)*(b))
+typedef float SampleType;
+typedef float CoefType;
+typedef float CoefSumType;
 #else
-#include "ac3enc_fixed.h"
+#define MAC_COEF(d,a,b) MAC64(d,a,b)
+typedef int16_t SampleType;
+typedef int32_t CoefType;
+typedef int64_t CoefSumType;
 #endif
 
+typedef struct AC3MDCTContext {
+    const SampleType *window;           ///< MDCT window function
+    FFTContext fft;                     ///< FFT context for MDCT calculation
+} AC3MDCTContext;
+
+/**
+ * Encoding Options used by AVOption.
+ */
+typedef struct AC3EncOptions {
+    /* AC-3 metadata options*/
+    int dialogue_level;
+    int bitstream_mode;
+    float center_mix_level;
+    float surround_mix_level;
+    int dolby_surround_mode;
+    int audio_production_info;
+    int mixing_level;
+    int room_type;
+    int copyright;
+    int original;
+    int extended_bsi_1;
+    int preferred_stereo_downmix;
+    float ltrt_center_mix_level;
+    float ltrt_surround_mix_level;
+    float loro_center_mix_level;
+    float loro_surround_mix_level;
+    int extended_bsi_2;
+    int dolby_surround_ex_mode;
+    int dolby_headphone_mode;
+    int ad_converter_type;
+
+    /* other encoding options */
+    int allow_per_frame_metadata;
+} AC3EncOptions;
 
 /**
  * Data for a single audio block.
@@ -81,12 +121,15 @@ typedef struct AC3Block {
     uint8_t  coeff_shift[AC3_MAX_CHANNELS];     ///< fixed-point coefficient shift values
     uint8_t  new_rematrixing_strategy;          ///< send new rematrixing flags in this block
     uint8_t  rematrixing_flags[4];              ///< rematrixing flags
+    struct AC3Block *exp_ref_block[AC3_MAX_CHANNELS]; ///< reference blocks for EXP_REUSE
 } AC3Block;
 
 /**
  * AC-3 encoder private context.
  */
 typedef struct AC3EncodeContext {
+    AVClass *av_class;                      ///< AVClass used for AVOption
+    AC3EncOptions options;                  ///< encoding options
     PutBitContext pb;                       ///< bitstream writer context
     DSPContext dsp;
     AC3DSPContext ac3dsp;                   ///< AC-3 optimized functions
@@ -111,8 +154,17 @@ typedef struct AC3EncodeContext {
     int channels;                           ///< total number of channels               (nchans)
     int lfe_on;                             ///< indicates if there is an LFE channel   (lfeon)
     int lfe_channel;                        ///< channel index of the LFE channel
+    int has_center;                         ///< indicates if there is a center channel
+    int has_surround;                       ///< indicates if there are one or more surround channels
     int channel_mode;                       ///< channel mode                           (acmod)
     const uint8_t *channel_map;             ///< channel map used to reorder channels
+
+    int center_mix_level;                   ///< center mix level code
+    int surround_mix_level;                 ///< surround mix level code
+    int ltrt_center_mix_level;              ///< Lt/Rt center mix level code
+    int ltrt_surround_mix_level;            ///< Lt/Rt surround mix level code
+    int loro_center_mix_level;              ///< Lo/Ro center mix level code
+    int loro_surround_mix_level;            ///< Lo/Ro surround mix level code
 
     int cutoff;                             ///< user-specified cutoff frequency, in Hz
     int bandwidth_code[AC3_MAX_CHANNELS];   ///< bandwidth code (0 to 60)               (chbwcod)
@@ -135,10 +187,6 @@ typedef struct AC3EncodeContext {
     int frame_bits;                         ///< all frame bits except exponents and mantissas
     int exponent_bits;                      ///< number of bits used for exponents
 
-    /* mantissa encoding */
-    int mant1_cnt, mant2_cnt, mant4_cnt;    ///< mantissa counts for bap=1,2,4
-    uint16_t *qmant1_ptr, *qmant2_ptr, *qmant4_ptr; ///< mantissa pointers for bap=1,2,4
-
     SampleType **planar_samples;
     uint8_t *bap_buffer;
     uint8_t *bap1_buffer;
@@ -156,6 +204,82 @@ typedef struct AC3EncodeContext {
     DECLARE_ALIGNED(16, SampleType, windowed_samples)[AC3_WINDOW_SIZE];
 } AC3EncodeContext;
 
+typedef struct AC3Mant {
+    uint16_t *qmant1_ptr, *qmant2_ptr, *qmant4_ptr; ///< mantissa pointers for bap=1,2,4
+    int mant1_cnt, mant2_cnt, mant4_cnt;    ///< mantissa counts for bap=1,2,4
+} AC3Mant;
+
+#define CMIXLEV_NUM_OPTIONS 3
+static const float cmixlev_options[CMIXLEV_NUM_OPTIONS] = {
+    LEVEL_MINUS_3DB, LEVEL_MINUS_4POINT5DB, LEVEL_MINUS_6DB
+};
+
+#define SURMIXLEV_NUM_OPTIONS 3
+static const float surmixlev_options[SURMIXLEV_NUM_OPTIONS] = {
+    LEVEL_MINUS_3DB, LEVEL_MINUS_6DB, LEVEL_ZERO
+};
+
+#define EXTMIXLEV_NUM_OPTIONS 8
+static const float extmixlev_options[EXTMIXLEV_NUM_OPTIONS] = {
+    LEVEL_PLUS_3DB,  LEVEL_PLUS_1POINT5DB,  LEVEL_ONE,       LEVEL_MINUS_4POINT5DB,
+    LEVEL_MINUS_3DB, LEVEL_MINUS_4POINT5DB, LEVEL_MINUS_6DB, LEVEL_ZERO
+};
+
+
+#define OFFSET(param) offsetof(AC3EncodeContext, options.param)
+#define AC3ENC_PARAM (AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_ENCODING_PARAM)
+
+static const AVOption options[] = {
+/* Metadata Options */
+{"per_frame_metadata", "Allow Changing Metadata Per-Frame", OFFSET(allow_per_frame_metadata), FF_OPT_TYPE_INT, 0, 0, 1, AC3ENC_PARAM},
+/* downmix levels */
+{"center_mixlev", "Center Mix Level", OFFSET(center_mix_level), FF_OPT_TYPE_FLOAT, LEVEL_MINUS_4POINT5DB, 0.0, 1.0, AC3ENC_PARAM},
+{"surround_mixlev", "Surround Mix Level", OFFSET(surround_mix_level), FF_OPT_TYPE_FLOAT, LEVEL_MINUS_6DB, 0.0, 1.0, AC3ENC_PARAM},
+/* audio production information */
+{"mixing_level", "Mixing Level", OFFSET(mixing_level), FF_OPT_TYPE_INT, -1, -1, 111, AC3ENC_PARAM},
+{"room_type", "Room Type", OFFSET(room_type), FF_OPT_TYPE_INT, -1, -1, 2, AC3ENC_PARAM, "room_type"},
+    {"notindicated", "Not Indicated (default)", 0, FF_OPT_TYPE_CONST, 0, INT_MIN, INT_MAX, AC3ENC_PARAM, "room_type"},
+    {"large",        "Large Room",              0, FF_OPT_TYPE_CONST, 1, INT_MIN, INT_MAX, AC3ENC_PARAM, "room_type"},
+    {"small",        "Small Room",              0, FF_OPT_TYPE_CONST, 2, INT_MIN, INT_MAX, AC3ENC_PARAM, "room_type"},
+/* other metadata options */
+{"copyright", "Copyright Bit", OFFSET(copyright), FF_OPT_TYPE_INT, 0, 0, 1, AC3ENC_PARAM},
+{"dialnorm", "Dialogue Level (dB)", OFFSET(dialogue_level), FF_OPT_TYPE_INT, -31, -31, -1, AC3ENC_PARAM},
+{"dsur_mode", "Dolby Surround Mode", OFFSET(dolby_surround_mode), FF_OPT_TYPE_INT, 0, 0, 2, AC3ENC_PARAM, "dsur_mode"},
+    {"notindicated", "Not Indicated (default)",    0, FF_OPT_TYPE_CONST, 0, INT_MIN, INT_MAX, AC3ENC_PARAM, "dsur_mode"},
+    {"on",           "Dolby Surround Encoded",     0, FF_OPT_TYPE_CONST, 1, INT_MIN, INT_MAX, AC3ENC_PARAM, "dsur_mode"},
+    {"off",          "Not Dolby Surround Encoded", 0, FF_OPT_TYPE_CONST, 2, INT_MIN, INT_MAX, AC3ENC_PARAM, "dsur_mode"},
+{"original", "Original Bit Stream", OFFSET(original), FF_OPT_TYPE_INT, 1, 0, 1, AC3ENC_PARAM},
+/* extended bitstream information */
+{"dmix_mode", "Preferred Stereo Downmix Mode", OFFSET(preferred_stereo_downmix), FF_OPT_TYPE_INT, -1, -1, 2, AC3ENC_PARAM, "dmix_mode"},
+    {"notindicated", "Not Indicated (default)", 0, FF_OPT_TYPE_CONST, 0, INT_MIN, INT_MAX, AC3ENC_PARAM, "dmix_mode"},
+    {"ltrt", "Lt/Rt Downmix Preferred",         0, FF_OPT_TYPE_CONST, 1, INT_MIN, INT_MAX, AC3ENC_PARAM, "dmix_mode"},
+    {"loro", "Lo/Ro Downmix Preferred",         0, FF_OPT_TYPE_CONST, 2, INT_MIN, INT_MAX, AC3ENC_PARAM, "dmix_mode"},
+{"ltrt_cmixlev", "Lt/Rt Center Mix Level", OFFSET(ltrt_center_mix_level), FF_OPT_TYPE_FLOAT, -1.0, -1.0, 2.0, AC3ENC_PARAM},
+{"ltrt_surmixlev", "Lt/Rt Surround Mix Level", OFFSET(ltrt_surround_mix_level), FF_OPT_TYPE_FLOAT, -1.0, -1.0, 2.0, AC3ENC_PARAM},
+{"loro_cmixlev", "Lo/Ro Center Mix Level", OFFSET(loro_center_mix_level), FF_OPT_TYPE_FLOAT, -1.0, -1.0, 2.0, AC3ENC_PARAM},
+{"loro_surmixlev", "Lo/Ro Surround Mix Level", OFFSET(loro_surround_mix_level), FF_OPT_TYPE_FLOAT, -1.0, -1.0, 2.0, AC3ENC_PARAM},
+{"dsurex_mode", "Dolby Surround EX Mode", OFFSET(dolby_surround_ex_mode), FF_OPT_TYPE_INT, -1, -1, 2, AC3ENC_PARAM, "dsurex_mode"},
+    {"notindicated", "Not Indicated (default)",       0, FF_OPT_TYPE_CONST, 0, INT_MIN, INT_MAX, AC3ENC_PARAM, "dsurex_mode"},
+    {"on",           "Dolby Surround EX Encoded",     0, FF_OPT_TYPE_CONST, 1, INT_MIN, INT_MAX, AC3ENC_PARAM, "dsurex_mode"},
+    {"off",          "Not Dolby Surround EX Encoded", 0, FF_OPT_TYPE_CONST, 2, INT_MIN, INT_MAX, AC3ENC_PARAM, "dsurex_mode"},
+{"dheadphone_mode", "Dolby Headphone Mode", OFFSET(dolby_headphone_mode), FF_OPT_TYPE_INT, -1, -1, 2, AC3ENC_PARAM, "dheadphone_mode"},
+    {"notindicated", "Not Indicated (default)",     0, FF_OPT_TYPE_CONST, 0, INT_MIN, INT_MAX, AC3ENC_PARAM, "dheadphone_mode"},
+    {"on",           "Dolby Headphone Encoded",     0, FF_OPT_TYPE_CONST, 1, INT_MIN, INT_MAX, AC3ENC_PARAM, "dheadphone_mode"},
+    {"off",          "Not Dolby Headphone Encoded", 0, FF_OPT_TYPE_CONST, 2, INT_MIN, INT_MAX, AC3ENC_PARAM, "dheadphone_mode"},
+{"ad_conv_type", "A/D Converter Type", OFFSET(ad_converter_type), FF_OPT_TYPE_INT, -1, -1, 1, AC3ENC_PARAM, "ad_conv_type"},
+    {"standard", "Standard (default)", 0, FF_OPT_TYPE_CONST, 0, INT_MIN, INT_MAX, AC3ENC_PARAM, "ad_conv_type"},
+    {"hdcd",     "HDCD",               0, FF_OPT_TYPE_CONST, 1, INT_MIN, INT_MAX, AC3ENC_PARAM, "ad_conv_type"},
+{NULL}
+};
+
+#if CONFIG_AC3ENC_FLOAT
+static AVClass ac3enc_class = { "AC-3 Encoder", av_default_item_name,
+                                options, LIBAVUTIL_VERSION_INT };
+#else
+static AVClass ac3enc_class = { "Fixed-Point AC-3 Encoder", av_default_item_name,
+                                options, LIBAVUTIL_VERSION_INT };
+#endif
+
 
 /* prototypes for functions in ac3enc_fixed.c and ac3enc_float.c */
 
@@ -163,8 +287,6 @@ static av_cold void mdct_end(AC3MDCTContext *mdct);
 
 static av_cold int mdct_init(AVCodecContext *avctx, AC3MDCTContext *mdct,
                              int nbits);
-
-static void mdct512(AC3MDCTContext *mdct, CoefType *out, SampleType *in);
 
 static void apply_window(DSPContext *dsp, SampleType *output, const SampleType *input,
                          const SampleType *window, unsigned int len);
@@ -204,6 +326,36 @@ static const int64_t ac3_channel_layouts[] = {
      AV_CH_LAYOUT_5POINT1,
      AV_CH_LAYOUT_5POINT1_BACK,
      0
+};
+
+
+/**
+ * LUT to select the bandwidth code based on the bit rate, sample rate, and
+ * number of full-bandwidth channels.
+ * bandwidth_tab[fbw_channels-1][sample rate code][bit rate code]
+ */
+static const uint8_t ac3_bandwidth_tab[5][3][19] = {
+//      32  40  48  56  64  80  96 112 128 160 192 224 256 320 384 448 512 576 640
+
+    { {  0,  0,  0, 12, 16, 32, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48 },
+      {  0,  0,  0, 16, 20, 36, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56 },
+      {  0,  0,  0, 32, 40, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60 } },
+
+    { {  0,  0,  0,  0,  0,  0,  0, 20, 24, 32, 48, 48, 48, 48, 48, 48, 48, 48, 48 },
+      {  0,  0,  0,  0,  0,  0,  4, 24, 28, 36, 56, 56, 56, 56, 56, 56, 56, 56, 56 },
+      {  0,  0,  0,  0,  0,  0, 20, 44, 52, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60 } },
+
+    { {  0,  0,  0,  0,  0,  0,  0,  0,  0, 16, 24, 32, 40, 48, 48, 48, 48, 48, 48 },
+      {  0,  0,  0,  0,  0,  0,  0,  0,  4, 20, 28, 36, 44, 56, 56, 56, 56, 56, 56 },
+      {  0,  0,  0,  0,  0,  0,  0,  0, 20, 40, 48, 60, 60, 60, 60, 60, 60, 60, 60 } },
+
+    { {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 12, 24, 32, 48, 48, 48, 48, 48, 48 },
+      {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 16, 28, 36, 56, 56, 56, 56, 56, 56 },
+      {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 32, 48, 60, 60, 60, 60, 60, 60, 60 } },
+
+    { {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  8, 20, 32, 40, 48, 48, 48, 48 },
+      {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 12, 24, 36, 44, 56, 56, 56, 56 },
+      {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 28, 44, 60, 60, 60, 60, 60, 60 } }
 };
 
 
@@ -271,7 +423,8 @@ static void apply_mdct(AC3EncodeContext *s)
 
             block->coeff_shift[ch] = normalize_samples(s);
 
-            mdct512(&s->mdct, block->mdct_coef[ch], s->windowed_samples);
+            s->mdct.fft.mdct_calcw(&s->mdct.fft, block->mdct_coef[ch],
+                                   s->windowed_samples);
         }
     }
 }
@@ -409,28 +562,13 @@ static av_cold void exponent_init(AC3EncodeContext *s)
  */
 static void extract_exponents(AC3EncodeContext *s)
 {
-    int blk, ch, i;
+    int blk, ch;
 
     for (ch = 0; ch < s->channels; ch++) {
         for (blk = 0; blk < AC3_MAX_BLOCKS; blk++) {
             AC3Block *block = &s->blocks[blk];
-            uint8_t *exp   = block->exp[ch];
-            int32_t *coef = block->fixed_coef[ch];
-            for (i = 0; i < AC3_MAX_COEFS; i++) {
-                int e;
-                int v = abs(coef[i]);
-                if (v == 0)
-                    e = 24;
-                else {
-                    e = 23 - av_log2(v);
-                    if (e >= 24) {
-                        e = 24;
-                        coef[i] = 0;
-                    }
-                    av_assert2(e >= 0);
-                }
-                exp[i] = e;
-            }
+            s->ac3dsp.extract_exponents(block->exp[ch], block->fixed_coef[ch],
+                                        AC3_MAX_COEFS);
         }
     }
 }
@@ -578,7 +716,7 @@ static void encode_exponents_blk_ch(uint8_t *exp, int nb_exps, int exp_strategy)
 static void encode_exponents(AC3EncodeContext *s)
 {
     int blk, blk1, ch;
-    uint8_t *exp, *exp1, *exp_strategy;
+    uint8_t *exp, *exp_strategy;
     int nb_coefs, num_reuse_blocks;
 
     for (ch = 0; ch < s->channels; ch++) {
@@ -590,9 +728,13 @@ static void encode_exponents(AC3EncodeContext *s)
         while (blk < AC3_MAX_BLOCKS) {
             blk1 = blk + 1;
 
-            /* count the number of EXP_REUSE blocks after the current block */
-            while (blk1 < AC3_MAX_BLOCKS && exp_strategy[blk1] == EXP_REUSE)
+            /* count the number of EXP_REUSE blocks after the current block
+               and set exponent reference block pointers */
+            s->blocks[blk].exp_ref_block[ch] = &s->blocks[blk];
+            while (blk1 < AC3_MAX_BLOCKS && exp_strategy[blk1] == EXP_REUSE) {
+                s->blocks[blk1].exp_ref_block[ch] = &s->blocks[blk];
                 blk1++;
+            }
             num_reuse_blocks = blk1 - blk - 1;
 
             /* for the EXP_REUSE case we select the min of the exponents */
@@ -600,15 +742,8 @@ static void encode_exponents(AC3EncodeContext *s)
 
             encode_exponents_blk_ch(exp, nb_coefs, exp_strategy[blk]);
 
-            /* copy encoded exponents for reuse case */
-            exp1 = exp + AC3_MAX_COEFS;
-            while (blk < blk1-1) {
-                memcpy(exp1, exp, nb_coefs * sizeof(*exp));
-                exp1 += AC3_MAX_COEFS;
-                blk++;
-            }
+            exp += AC3_MAX_COEFS * (num_reuse_blocks + 1);
             blk = blk1;
-            exp = exp1;
         }
     }
 }
@@ -786,8 +921,18 @@ static void bit_alloc_init(AC3EncodeContext *s)
  */
 static void count_frame_bits(AC3EncodeContext *s)
 {
+    AC3EncOptions *opt = &s->options;
     int blk, ch;
     int frame_bits = 0;
+
+    if (opt->audio_production_info)
+        frame_bits += 7;
+    if (s->bitstream_id == 6) {
+        if (opt->extended_bsi_1)
+            frame_bits += 14;
+        if (opt->extended_bsi_2)
+            frame_bits += 14;
+    }
 
     for (blk = 0; blk < AC3_MAX_BLOCKS; blk++) {
         /* stereo rematrixing */
@@ -802,31 +947,6 @@ static void count_frame_bits(AC3EncodeContext *s)
         }
     }
     s->frame_bits = s->frame_bits_fixed + frame_bits;
-}
-
-
-/**
- * Calculate the number of bits needed to encode a set of mantissas.
- */
-static int compute_mantissa_size(int mant_cnt[5], uint8_t *bap, int nb_coefs)
-{
-    int bits, b, i;
-
-    bits = 0;
-    for (i = 0; i < nb_coefs; i++) {
-        b = bap[i];
-        if (b <= 4) {
-            // bap=1 to bap=4 will be counted in compute_mantissa_size_final
-            mant_cnt[b]++;
-        } else if (b <= 13) {
-            // bap=5 to bap=13 use (bap-1) bits
-            bits += b - 1;
-        } else {
-            // bap=14 uses 14 bits and bap=15 uses 16 bits
-            bits += (b == 14) ? 14 : 16;
-        }
-    }
-    return bits;
 }
 
 
@@ -911,7 +1031,7 @@ static int bit_alloc(AC3EncodeContext *s, int snr_offset)
     reset_block_bap(s);
     mantissa_bits = 0;
     for (blk = 0; blk < AC3_MAX_BLOCKS; blk++) {
-        AC3Block *block = &s->blocks[blk];
+        AC3Block *block;
         // initialize grouped mantissa counts. these are set so that they are
         // padded to the next whole group size when bits are counted in
         // compute_mantissa_size_final
@@ -923,15 +1043,14 @@ static int bit_alloc(AC3EncodeContext *s, int snr_offset)
                blocks within a frame are the exponent values.  We can take
                advantage of that by reusing the bit allocation pointers
                whenever we reuse exponents. */
-            if (s->exp_strategy[ch][blk] == EXP_REUSE) {
-                memcpy(block->bap[ch], s->blocks[blk-1].bap[ch], AC3_MAX_COEFS);
-            } else {
-                ff_ac3_bit_alloc_calc_bap(block->mask[ch], block->psd[ch], 0,
+            block = s->blocks[blk].exp_ref_block[ch];
+            if (s->exp_strategy[ch][blk] != EXP_REUSE) {
+                s->ac3dsp.bit_alloc_calc_bap(block->mask[ch], block->psd[ch], 0,
                                           s->nb_coefs[ch], snr_offset,
                                           s->bit_alloc.floor, ff_ac3_bap_tab,
                                           block->bap[ch]);
             }
-            mantissa_bits += compute_mantissa_size(mant_cnt, block->bap[ch], s->nb_coefs[ch]);
+            mantissa_bits += s->ac3dsp.compute_mantissa_size(mant_cnt, block->bap[ch], s->nb_coefs[ch]);
         }
         mantissa_bits += compute_mantissa_size_final(mant_cnt);
     }
@@ -1096,7 +1215,7 @@ static int compute_bit_allocation(AC3EncodeContext *s)
  */
 static inline int sym_quant(int c, int e, int levels)
 {
-    int v = ((((levels * c) >> (24 - e)) + 1) >> 1) + (levels >> 1);
+    int v = (((levels * c) >> (24 - e)) + levels) >> 1;
     av_assert2(v >= 0 && v < levels);
     return v;
 }
@@ -1127,7 +1246,7 @@ static inline int asym_quant(int c, int e, int qbits)
 /**
  * Quantize a set of mantissas for a single channel in a single block.
  */
-static void quantize_mantissas_blk_ch(AC3EncodeContext *s, int32_t *fixed_coef,
+static void quantize_mantissas_blk_ch(AC3Mant *s, int32_t *fixed_coef,
                                       uint8_t *exp,
                                       uint8_t *bap, uint16_t *qmant, int n)
 {
@@ -1228,12 +1347,13 @@ static void quantize_mantissas(AC3EncodeContext *s)
 
     for (blk = 0; blk < AC3_MAX_BLOCKS; blk++) {
         AC3Block *block = &s->blocks[blk];
-        s->mant1_cnt  = s->mant2_cnt  = s->mant4_cnt  = 0;
-        s->qmant1_ptr = s->qmant2_ptr = s->qmant4_ptr = NULL;
+        AC3Block *ref_block;
+        AC3Mant m = { 0 };
 
         for (ch = 0; ch < s->channels; ch++) {
-            quantize_mantissas_blk_ch(s, block->fixed_coef[ch],
-                                      block->exp[ch], block->bap[ch],
+            ref_block = block->exp_ref_block[ch];
+            quantize_mantissas_blk_ch(&m, block->fixed_coef[ch],
+                                      ref_block->exp[ch], ref_block->bap[ch],
                                       block->qmant[ch], s->nb_coefs[ch]);
         }
     }
@@ -1245,6 +1365,8 @@ static void quantize_mantissas(AC3EncodeContext *s)
  */
 static void output_frame_header(AC3EncodeContext *s)
 {
+    AC3EncOptions *opt = &s->options;
+
     put_bits(&s->pb, 16, 0x0b77);   /* frame header */
     put_bits(&s->pb, 16, 0);        /* crc1: will be filled later */
     put_bits(&s->pb, 2,  s->bit_alloc.sr_code);
@@ -1253,20 +1375,43 @@ static void output_frame_header(AC3EncodeContext *s)
     put_bits(&s->pb, 3,  s->bitstream_mode);
     put_bits(&s->pb, 3,  s->channel_mode);
     if ((s->channel_mode & 0x01) && s->channel_mode != AC3_CHMODE_MONO)
-        put_bits(&s->pb, 2, 1);     /* XXX -4.5 dB */
+        put_bits(&s->pb, 2, s->center_mix_level);
     if (s->channel_mode & 0x04)
-        put_bits(&s->pb, 2, 1);     /* XXX -6 dB */
+        put_bits(&s->pb, 2, s->surround_mix_level);
     if (s->channel_mode == AC3_CHMODE_STEREO)
-        put_bits(&s->pb, 2, 0);     /* surround not indicated */
+        put_bits(&s->pb, 2, opt->dolby_surround_mode);
     put_bits(&s->pb, 1, s->lfe_on); /* LFE */
-    put_bits(&s->pb, 5, 31);        /* dialog norm: -31 db */
+    put_bits(&s->pb, 5, -opt->dialogue_level);
     put_bits(&s->pb, 1, 0);         /* no compression control word */
     put_bits(&s->pb, 1, 0);         /* no lang code */
-    put_bits(&s->pb, 1, 0);         /* no audio production info */
-    put_bits(&s->pb, 1, 0);         /* no copyright */
-    put_bits(&s->pb, 1, 1);         /* original bitstream */
+    put_bits(&s->pb, 1, opt->audio_production_info);
+    if (opt->audio_production_info) {
+        put_bits(&s->pb, 5, opt->mixing_level - 80);
+        put_bits(&s->pb, 2, opt->room_type);
+    }
+    put_bits(&s->pb, 1, opt->copyright);
+    put_bits(&s->pb, 1, opt->original);
+    if (s->bitstream_id == 6) {
+        /* alternate bit stream syntax */
+        put_bits(&s->pb, 1, opt->extended_bsi_1);
+        if (opt->extended_bsi_1) {
+            put_bits(&s->pb, 2, opt->preferred_stereo_downmix);
+            put_bits(&s->pb, 3, s->ltrt_center_mix_level);
+            put_bits(&s->pb, 3, s->ltrt_surround_mix_level);
+            put_bits(&s->pb, 3, s->loro_center_mix_level);
+            put_bits(&s->pb, 3, s->loro_surround_mix_level);
+        }
+        put_bits(&s->pb, 1, opt->extended_bsi_2);
+        if (opt->extended_bsi_2) {
+            put_bits(&s->pb, 2, opt->dolby_surround_ex_mode);
+            put_bits(&s->pb, 2, opt->dolby_headphone_mode);
+            put_bits(&s->pb, 1, opt->ad_converter_type);
+            put_bits(&s->pb, 9, 0);     /* xbsi2 and encinfo : reserved */
+        }
+    } else {
     put_bits(&s->pb, 1, 0);         /* no time code 1 */
     put_bits(&s->pb, 1, 0);         /* no time code 2 */
+    }
     put_bits(&s->pb, 1, 0);         /* no additional bit stream info */
 }
 
@@ -1367,9 +1512,10 @@ static void output_audio_block(AC3EncodeContext *s, int blk)
     /* mantissas */
     for (ch = 0; ch < s->channels; ch++) {
         int b, q;
+        AC3Block *ref_block = block->exp_ref_block[ch];
         for (i = 0; i < s->nb_coefs[ch]; i++) {
             q = block->qmant[ch][i];
-            b = block->bap[ch][i];
+            b = ref_block->bap[ch][i];
             switch (b) {
             case 0:                                         break;
             case 1: if (q != 128) put_bits(&s->pb,   5, q); break;
@@ -1479,6 +1625,268 @@ static void output_frame(AC3EncodeContext *s, unsigned char *frame)
 }
 
 
+static void dprint_options(AVCodecContext *avctx)
+{
+#ifdef DEBUG
+    AC3EncodeContext *s = avctx->priv_data;
+    AC3EncOptions *opt = &s->options;
+    char strbuf[32];
+
+    switch (s->bitstream_id) {
+    case  6:  strncpy(strbuf, "AC-3 (alt syntax)", 32);      break;
+    case  8:  strncpy(strbuf, "AC-3 (standard)", 32);        break;
+    case  9:  strncpy(strbuf, "AC-3 (dnet half-rate)", 32);  break;
+    case 10:  strncpy(strbuf, "AC-3 (dnet quater-rate", 32); break;
+    default: snprintf(strbuf, 32, "ERROR");
+    }
+    av_dlog(avctx, "bitstream_id: %s (%d)\n", strbuf, s->bitstream_id);
+    av_dlog(avctx, "sample_fmt: %s\n", av_get_sample_fmt_name(avctx->sample_fmt));
+    av_get_channel_layout_string(strbuf, 32, s->channels, avctx->channel_layout);
+    av_dlog(avctx, "channel_layout: %s\n", strbuf);
+    av_dlog(avctx, "sample_rate: %d\n", s->sample_rate);
+    av_dlog(avctx, "bit_rate: %d\n", s->bit_rate);
+    if (s->cutoff)
+        av_dlog(avctx, "cutoff: %d\n", s->cutoff);
+
+    av_dlog(avctx, "per_frame_metadata: %s\n",
+            opt->allow_per_frame_metadata?"on":"off");
+    if (s->has_center)
+        av_dlog(avctx, "center_mixlev: %0.3f (%d)\n", opt->center_mix_level,
+                s->center_mix_level);
+    else
+        av_dlog(avctx, "center_mixlev: {not written}\n");
+    if (s->has_surround)
+        av_dlog(avctx, "surround_mixlev: %0.3f (%d)\n", opt->surround_mix_level,
+                s->surround_mix_level);
+    else
+        av_dlog(avctx, "surround_mixlev: {not written}\n");
+    if (opt->audio_production_info) {
+        av_dlog(avctx, "mixing_level: %ddB\n", opt->mixing_level);
+        switch (opt->room_type) {
+        case 0:  strncpy(strbuf, "notindicated", 32); break;
+        case 1:  strncpy(strbuf, "large", 32);        break;
+        case 2:  strncpy(strbuf, "small", 32);        break;
+        default: snprintf(strbuf, 32, "ERROR (%d)", opt->room_type);
+        }
+        av_dlog(avctx, "room_type: %s\n", strbuf);
+    } else {
+        av_dlog(avctx, "mixing_level: {not written}\n");
+        av_dlog(avctx, "room_type: {not written}\n");
+    }
+    av_dlog(avctx, "copyright: %s\n", opt->copyright?"on":"off");
+    av_dlog(avctx, "dialnorm: %ddB\n", opt->dialogue_level);
+    if (s->channel_mode == AC3_CHMODE_STEREO) {
+        switch (opt->dolby_surround_mode) {
+        case 0:  strncpy(strbuf, "notindicated", 32); break;
+        case 1:  strncpy(strbuf, "on", 32);           break;
+        case 2:  strncpy(strbuf, "off", 32);          break;
+        default: snprintf(strbuf, 32, "ERROR (%d)", opt->dolby_surround_mode);
+        }
+        av_dlog(avctx, "dsur_mode: %s\n", strbuf);
+    } else {
+        av_dlog(avctx, "dsur_mode: {not written}\n");
+    }
+    av_dlog(avctx, "original: %s\n", opt->original?"on":"off");
+
+    if (s->bitstream_id == 6) {
+        if (opt->extended_bsi_1) {
+            switch (opt->preferred_stereo_downmix) {
+            case 0:  strncpy(strbuf, "notindicated", 32); break;
+            case 1:  strncpy(strbuf, "ltrt", 32);         break;
+            case 2:  strncpy(strbuf, "loro", 32);         break;
+            default: snprintf(strbuf, 32, "ERROR (%d)", opt->preferred_stereo_downmix);
+            }
+            av_dlog(avctx, "dmix_mode: %s\n", strbuf);
+            av_dlog(avctx, "ltrt_cmixlev: %0.3f (%d)\n",
+                    opt->ltrt_center_mix_level, s->ltrt_center_mix_level);
+            av_dlog(avctx, "ltrt_surmixlev: %0.3f (%d)\n",
+                    opt->ltrt_surround_mix_level, s->ltrt_surround_mix_level);
+            av_dlog(avctx, "loro_cmixlev: %0.3f (%d)\n",
+                    opt->loro_center_mix_level, s->loro_center_mix_level);
+            av_dlog(avctx, "loro_surmixlev: %0.3f (%d)\n",
+                    opt->loro_surround_mix_level, s->loro_surround_mix_level);
+        } else {
+            av_dlog(avctx, "extended bitstream info 1: {not written}\n");
+        }
+        if (opt->extended_bsi_2) {
+            switch (opt->dolby_surround_ex_mode) {
+            case 0:  strncpy(strbuf, "notindicated", 32); break;
+            case 1:  strncpy(strbuf, "on", 32);           break;
+            case 2:  strncpy(strbuf, "off", 32);          break;
+            default: snprintf(strbuf, 32, "ERROR (%d)", opt->dolby_surround_ex_mode);
+            }
+            av_dlog(avctx, "dsurex_mode: %s\n", strbuf);
+            switch (opt->dolby_headphone_mode) {
+            case 0:  strncpy(strbuf, "notindicated", 32); break;
+            case 1:  strncpy(strbuf, "on", 32);           break;
+            case 2:  strncpy(strbuf, "off", 32);          break;
+            default: snprintf(strbuf, 32, "ERROR (%d)", opt->dolby_headphone_mode);
+            }
+            av_dlog(avctx, "dheadphone_mode: %s\n", strbuf);
+
+            switch (opt->ad_converter_type) {
+            case 0:  strncpy(strbuf, "standard", 32); break;
+            case 1:  strncpy(strbuf, "hdcd", 32);     break;
+            default: snprintf(strbuf, 32, "ERROR (%d)", opt->ad_converter_type);
+            }
+            av_dlog(avctx, "ad_conv_type: %s\n", strbuf);
+        } else {
+            av_dlog(avctx, "extended bitstream info 2: {not written}\n");
+        }
+    }
+#endif
+}
+
+
+#define FLT_OPTION_THRESHOLD 0.01
+
+static int validate_float_option(float v, const float *v_list, int v_list_size)
+{
+    int i;
+
+    for (i = 0; i < v_list_size; i++) {
+        if (v < (v_list[i] + FLT_OPTION_THRESHOLD) &&
+            v > (v_list[i] - FLT_OPTION_THRESHOLD))
+            break;
+    }
+    if (i == v_list_size)
+        return -1;
+
+    return i;
+}
+
+
+static void validate_mix_level(void *log_ctx, const char *opt_name,
+                               float *opt_param, const float *list,
+                               int list_size, int default_value, int min_value,
+                               int *ctx_param)
+{
+    int mixlev = validate_float_option(*opt_param, list, list_size);
+    if (mixlev < min_value) {
+        mixlev = default_value;
+        if (*opt_param >= 0.0) {
+            av_log(log_ctx, AV_LOG_WARNING, "requested %s is not valid. using "
+                   "default value: %0.3f\n", opt_name, list[mixlev]);
+        }
+    }
+    *opt_param = list[mixlev];
+    *ctx_param = mixlev;
+}
+
+
+/**
+ * Validate metadata options as set by AVOption system.
+ * These values can optionally be changed per-frame.
+ */
+static int validate_metadata(AVCodecContext *avctx)
+{
+    AC3EncodeContext *s = avctx->priv_data;
+    AC3EncOptions *opt = &s->options;
+
+    /* validate mixing levels */
+    if (s->has_center) {
+        validate_mix_level(avctx, "center_mix_level", &opt->center_mix_level,
+                           cmixlev_options, CMIXLEV_NUM_OPTIONS, 1, 0,
+                           &s->center_mix_level);
+    }
+    if (s->has_surround) {
+        validate_mix_level(avctx, "surround_mix_level", &opt->surround_mix_level,
+                           surmixlev_options, SURMIXLEV_NUM_OPTIONS, 1, 0,
+                           &s->surround_mix_level);
+    }
+
+    /* set audio production info flag */
+    if (opt->mixing_level >= 0 || opt->room_type >= 0) {
+        if (opt->mixing_level < 0) {
+            av_log(avctx, AV_LOG_ERROR, "mixing_level must be set if "
+                   "room_type is set\n");
+            return AVERROR(EINVAL);
+        }
+        if (opt->mixing_level < 80) {
+            av_log(avctx, AV_LOG_ERROR, "invalid mixing level. must be between "
+                   "80dB and 111dB\n");
+            return AVERROR(EINVAL);
+        }
+        /* default room type */
+        if (opt->room_type < 0)
+            opt->room_type = 0;
+        opt->audio_production_info = 1;
+    } else {
+        opt->audio_production_info = 0;
+    }
+
+    /* set extended bsi 1 flag */
+    if ((s->has_center || s->has_surround) &&
+        (opt->preferred_stereo_downmix >= 0 ||
+         opt->ltrt_center_mix_level   >= 0 ||
+         opt->ltrt_surround_mix_level >= 0 ||
+         opt->loro_center_mix_level   >= 0 ||
+         opt->loro_surround_mix_level >= 0)) {
+        /* default preferred stereo downmix */
+        if (opt->preferred_stereo_downmix < 0)
+            opt->preferred_stereo_downmix = 0;
+        /* validate Lt/Rt center mix level */
+        validate_mix_level(avctx, "ltrt_center_mix_level",
+                           &opt->ltrt_center_mix_level, extmixlev_options,
+                           EXTMIXLEV_NUM_OPTIONS, 5, 0,
+                           &s->ltrt_center_mix_level);
+        /* validate Lt/Rt surround mix level */
+        validate_mix_level(avctx, "ltrt_surround_mix_level",
+                           &opt->ltrt_surround_mix_level, extmixlev_options,
+                           EXTMIXLEV_NUM_OPTIONS, 6, 3,
+                           &s->ltrt_surround_mix_level);
+        /* validate Lo/Ro center mix level */
+        validate_mix_level(avctx, "loro_center_mix_level",
+                           &opt->loro_center_mix_level, extmixlev_options,
+                           EXTMIXLEV_NUM_OPTIONS, 5, 0,
+                           &s->loro_center_mix_level);
+        /* validate Lo/Ro surround mix level */
+        validate_mix_level(avctx, "loro_surround_mix_level",
+                           &opt->loro_surround_mix_level, extmixlev_options,
+                           EXTMIXLEV_NUM_OPTIONS, 6, 3,
+                           &s->loro_surround_mix_level);
+        opt->extended_bsi_1 = 1;
+    } else {
+        opt->extended_bsi_1 = 0;
+    }
+
+    /* set extended bsi 2 flag */
+    if (opt->dolby_surround_ex_mode >= 0 ||
+        opt->dolby_headphone_mode   >= 0 ||
+        opt->ad_converter_type      >= 0) {
+        /* default dolby surround ex mode */
+        if (opt->dolby_surround_ex_mode < 0)
+            opt->dolby_surround_ex_mode = 0;
+        /* default dolby headphone mode */
+        if (opt->dolby_headphone_mode < 0)
+            opt->dolby_headphone_mode = 0;
+        /* default A/D converter type */
+        if (opt->ad_converter_type < 0)
+            opt->ad_converter_type = 0;
+        opt->extended_bsi_2 = 1;
+    } else {
+        opt->extended_bsi_2 = 0;
+    }
+
+    /* set bitstream id for alternate bitstream syntax */
+    if (opt->extended_bsi_1 || opt->extended_bsi_2) {
+        if (s->bitstream_id > 8 && s->bitstream_id < 11) {
+            static int warn_once = 1;
+            if (warn_once) {
+                av_log(avctx, AV_LOG_WARNING, "alternate bitstream syntax is "
+                       "not compatible with reduced samplerates. writing of "
+                       "extended bitstream information will be disabled.\n");
+                warn_once = 0;
+            }
+        } else {
+            s->bitstream_id = 6;
+        }
+    }
+
+    return 0;
+}
+
+
 /**
  * Encode a single AC-3 frame.
  */
@@ -1488,6 +1896,12 @@ static int ac3_encode_frame(AVCodecContext *avctx, unsigned char *frame,
     AC3EncodeContext *s = avctx->priv_data;
     const SampleType *samples = data;
     int ret;
+
+    if (s->options.allow_per_frame_metadata) {
+        ret = validate_metadata(avctx);
+        if (ret)
+            return ret;
+    }
 
     if (s->bit_alloc.sr_code == 1)
         adjust_frame_size(s);
@@ -1597,6 +2011,8 @@ static av_cold int set_channel_info(AC3EncodeContext *s, int channels,
     default:
         return AVERROR(EINVAL);
     }
+    s->has_center   = (s->channel_mode & 0x01) && s->channel_mode != AC3_CHMODE_MONO;
+    s->has_surround =  s->channel_mode & 0x04;
 
     s->channel_map  = ff_ac3_enc_channel_map[s->channel_mode][s->lfe_on];
     *channel_layout = ch_layout;
@@ -1635,6 +2051,7 @@ static av_cold int validate_options(AVCodecContext *avctx, AC3EncodeContext *s)
     s->sample_rate        = avctx->sample_rate;
     s->bit_alloc.sr_shift = i % 3;
     s->bit_alloc.sr_code  = i / 3;
+    s->bitstream_id       = 8 + s->bit_alloc.sr_shift;
 
     /* validate bit rate */
     for (i = 0; i < 19; i++) {
@@ -1669,6 +2086,10 @@ static av_cold int validate_options(AVCodecContext *avctx, AC3EncodeContext *s)
         return AVERROR(EINVAL);
     }
 
+    ret = validate_metadata(avctx);
+    if (ret)
+        return ret;
+
     return 0;
 }
 
@@ -1689,9 +2110,7 @@ static av_cold void set_bandwidth(AC3EncodeContext *s)
         bw_code        = av_clip((fbw_coeffs - 73) / 3, 0, 60);
     } else {
         /* use default bandwidth setting */
-        /* XXX: should compute the bandwidth according to the frame
-           size, so that we avoid annoying high frequency artifacts */
-        bw_code = 50;
+        bw_code = ac3_bandwidth_tab[s->fbw_channels-1][s->bit_alloc.sr_code][s->frame_size_code/2];
     }
 
     /* set number of coefficients for each channel */
@@ -1810,7 +2229,6 @@ static av_cold int ac3_encode_init(AVCodecContext *avctx)
     if (ret)
         return ret;
 
-    s->bitstream_id   = 8 + s->bit_alloc.sr_shift;
     s->bitstream_mode = avctx->audio_service_type;
     if (s->bitstream_mode == AV_AUDIO_SERVICE_TYPE_KARAOKE)
         s->bitstream_mode = 0x7;
@@ -1848,6 +2266,8 @@ static av_cold int ac3_encode_init(AVCodecContext *avctx)
 
     dsputil_init(&s->dsp, avctx);
     ff_ac3dsp_init(&s->ac3dsp, avctx->flags & CODEC_FLAG_BITEXACT);
+
+    dprint_options(avctx);
 
     return 0;
 init_fail:

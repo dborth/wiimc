@@ -67,16 +67,6 @@ static const uint8_t quantization_tab[16] = {
 static float dynamic_range_tab[256];
 
 /** Adjustments in dB gain */
-#define LEVEL_PLUS_3DB          1.4142135623730950
-#define LEVEL_PLUS_1POINT5DB    1.1892071150027209
-#define LEVEL_MINUS_1POINT5DB   0.8408964152537145
-#define LEVEL_MINUS_3DB         0.7071067811865476
-#define LEVEL_MINUS_4POINT5DB   0.5946035575013605
-#define LEVEL_MINUS_6DB         0.5000000000000000
-#define LEVEL_MINUS_9DB         0.3535533905932738
-#define LEVEL_ZERO              0.0000000000000000
-#define LEVEL_ONE               1.0000000000000000
-
 static const float gain_levels[9] = {
     LEVEL_PLUS_3DB,
     LEVEL_PLUS_1POINT5DB,
@@ -194,6 +184,7 @@ static av_cold int ac3_decode_init(AVCodecContext *avctx)
     ff_mdct_init(&s->imdct_512, 9, 1, 1.0);
     ff_kbd_window_init(s->window, 5.0, 256);
     dsputil_init(&s->dsp, avctx);
+    ff_ac3dsp_init(&s->ac3dsp, avctx->flags & CODEC_FLAG_BITEXACT);
     ff_fmt_convert_init(&s->fmt_conv, avctx);
     av_lfg_init(&s->dith_state, 0);
 
@@ -1182,8 +1173,8 @@ static int decode_audio_block(AC3DecodeContext *s, int blk)
         /* channel delta offset, len and bit allocation */
         for (ch = !cpl_in_use; ch <= fbw_channels; ch++) {
             if (s->dba_mode[ch] == DBA_NEW) {
-                s->dba_nsegs[ch] = get_bits(gbc, 3);
-                for (seg = 0; seg <= s->dba_nsegs[ch]; seg++) {
+                s->dba_nsegs[ch] = get_bits(gbc, 3) + 1;
+                for (seg = 0; seg < s->dba_nsegs[ch]; seg++) {
                     s->dba_offsets[ch][seg] = get_bits(gbc, 5);
                     s->dba_lengths[ch][seg] = get_bits(gbc, 4);
                     s->dba_values[ch][seg] = get_bits(gbc, 3);
@@ -1223,7 +1214,7 @@ static int decode_audio_block(AC3DecodeContext *s, int blk)
             /* Compute bit allocation */
             const uint8_t *bap_tab = s->channel_uses_aht[ch] ?
                                      ff_eac3_hebap_tab : ff_ac3_bap_tab;
-            ff_ac3_bit_alloc_calc_bap(s->mask[ch], s->psd[ch],
+            s->ac3dsp.bit_alloc_calc_bap(s->mask[ch], s->psd[ch],
                                       s->start_freq[ch], s->end_freq[ch],
                                       s->snr_offset[ch],
                                       s->bit_alloc_params.floor,

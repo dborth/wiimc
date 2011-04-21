@@ -25,6 +25,7 @@
 #include "libavutil/error.h"
 #include "avformat.h"
 #include "avio.h"
+#include "url.h"
 
 #define PRIV_SIZE 128
 
@@ -35,7 +36,7 @@ static int md5_open(URLContext *h, const char *filename, int flags)
         return -1;
     }
 
-    if (flags != URL_WRONLY)
+    if (flags != AVIO_WRONLY)
         return AVERROR(EINVAL);
 
     av_md5_init(h->priv_data);
@@ -64,11 +65,11 @@ static int md5_close(URLContext *h)
     av_strstart(filename, "md5:", &filename);
 
     if (*filename) {
-        err = url_open(&out, filename, URL_WRONLY);
+        err = ffurl_open(&out, filename, AVIO_WRONLY);
         if (err)
             return err;
-        err = url_write(out, buf, i*2+1);
-        url_close(out);
+        err = ffurl_write(out, buf, i*2+1);
+        ffurl_close(out);
     } else {
         if (fwrite(buf, 1, i*2+1, stdout) < i*2+1)
             err = AVERROR(errno);

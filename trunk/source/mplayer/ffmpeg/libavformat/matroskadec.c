@@ -1117,7 +1117,7 @@ static void matroska_execute_seekhead(MatroskaDemuxContext *matroska)
     int i;
 
     // we should not do any seeking in the streaming case
-    if (url_is_streamed(matroska->ctx->pb) ||
+    if (!matroska->ctx->pb->seekable ||
         (matroska->ctx->flags & AVFMT_FLAG_IGNIDX))
         return;
 
@@ -1329,9 +1329,12 @@ static int matroska_read_header(AVFormatContext *s, AVFormatParameters *ap)
         } else if (!strcmp(track->codec_id, "A_MS/ACM")
                    && track->codec_priv.size >= 14
                    && track->codec_priv.data != NULL) {
+            int ret;
             ffio_init_context(&b, track->codec_priv.data, track->codec_priv.size,
-                          URL_RDONLY, NULL, NULL, NULL, NULL);
-            ff_get_wav_header(&b, st->codec, track->codec_priv.size);
+                          AVIO_RDONLY, NULL, NULL, NULL, NULL);
+            ret = ff_get_wav_header(&b, st->codec, track->codec_priv.size);
+            if (ret < 0)
+                return ret;
             codec_id = st->codec->codec_id;
             extradata_offset = FFMIN(track->codec_priv.size, 18);
         } else if (!strcmp(track->codec_id, "V_QUICKTIME")

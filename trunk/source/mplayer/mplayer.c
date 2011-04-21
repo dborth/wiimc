@@ -2250,6 +2250,19 @@ static int fill_audio_out_buffers(void)
     return 1;
 }
 
+#ifndef GEKKO
+static void handle_udp_master(double time)
+{
+#ifdef CONFIG_NETWORKING
+    if (udp_master) {
+      char current_time[256];
+      snprintf(current_time, sizeof(current_time), "%f", time);
+      send_udp(udp_ip, udp_port, current_time);
+    }
+#endif /* CONFIG_NETWORKING */
+}
+#endif
+
 static int sleep_until_update(float *time_frame, float *aq_sleep_time)
 {
     int frame_time_remaining = 0;
@@ -2316,15 +2329,8 @@ static int sleep_until_update(float *time_frame, float *aq_sleep_time)
     	*time_frame = timing_sleep(*time_frame);
 #ifdef GEKKO
     else usleep(1); // to help LWP threads
-#endif
-#ifndef GEKKO
-#ifdef CONFIG_NETWORKING
-    if (udp_master) {
-      char current_time[256];
-      sprintf(current_time, "%f", mpctx->sh_video->pts);
-      send_udp(udp_ip, udp_port, current_time);
-    }
-#endif /* CONFIG_NETWORKING */
+#else
+    handle_udp_master(mpctx->sh_video->pts);
 #endif
     return frame_time_remaining;
 }
@@ -3737,8 +3743,6 @@ current_module="main";
 if(verbose) term_osd = 0;
 
 {
-int frame_time_remaining=0; // flag
-int blit_frame=0;
 mpctx->num_buffered_frames=0;
 mpctx->framestep_found=0;
 
@@ -3939,6 +3943,10 @@ if(!mpctx->sh_video) {
   update_osd_msg();
 
 } else {
+  int frame_time_remaining = 0;
+  int blit_frame = 1;
+  // skip timing after seek
+  int skip_timing = mpctx->startup_decode_retry > 0;
 
 /*========================== PLAY VIDEO ============================*/
 
@@ -4004,6 +4012,7 @@ if(!mpctx->sh_video) {
         }
     }
 #endif
+    if (!skip_timing)
     frame_time_remaining = sleep_until_update(&mpctx->time_frame, &aq_sleep_time);
 
 //====================== FLIP PAGE (VIDEO BLT): =========================

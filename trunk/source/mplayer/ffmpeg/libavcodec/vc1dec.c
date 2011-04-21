@@ -1499,16 +1499,16 @@ static int vc1_decode_i_block(VC1Context *v, DCTELEM block[64], int n, int coded
         if(s->ac_pred) {
             if(dc_pred_dir) { //left
                 for(k = 1; k < 8; k++)
-                    block[k] += ac_val[k];
+                    block[k << v->left_blk_sh] += ac_val[k];
             } else { //top
                 for(k = 1; k < 8; k++)
-                    block[k << 3] += ac_val[k + 8];
+                    block[k << v->top_blk_sh] += ac_val[k + 8];
             }
         }
         /* save AC coeffs for further prediction */
         for(k = 1; k < 8; k++) {
-            ac_val2[k] = block[k];
-            ac_val2[k + 8] = block[k << 3];
+            ac_val2[k]     = block[k << v->left_blk_sh];
+            ac_val2[k + 8] = block[k << v->top_blk_sh];
         }
 
         /* scale AC coeffs */
@@ -1545,15 +1545,15 @@ not_coded:
         if(s->ac_pred) {
             if(dc_pred_dir) { //left
                 for(k = 1; k < 8; k++) {
-                    block[k] = ac_val[k] * scale;
-                    if(!v->pquantizer && block[k])
-                        block[k] += (block[k] < 0) ? -v->pq : v->pq;
+                    block[k << v->left_blk_sh] = ac_val[k] * scale;
+                    if(!v->pquantizer && block[k << v->left_blk_sh])
+                        block[k << v->left_blk_sh] += (block[k << v->left_blk_sh] < 0) ? -v->pq : v->pq;
                 }
             } else { //top
                 for(k = 1; k < 8; k++) {
-                    block[k << 3] = ac_val[k + 8] * scale;
-                    if(!v->pquantizer && block[k << 3])
-                        block[k << 3] += (block[k << 3] < 0) ? -v->pq : v->pq;
+                    block[k << v->top_blk_sh] = ac_val[k + 8] * scale;
+                    if(!v->pquantizer && block[k << v->top_blk_sh])
+                        block[k << v->top_blk_sh] += (block[k << v->top_blk_sh] < 0) ? -v->pq : v->pq;
                 }
             }
             i = 63;
@@ -1680,25 +1680,25 @@ static int vc1_decode_i_block_adv(VC1Context *v, DCTELEM block[64], int n, int c
 
                 if(dc_pred_dir) { //left
                     for(k = 1; k < 8; k++)
-                        block[k] += (ac_val[k] * q2 * ff_vc1_dqscale[q1 - 1] + 0x20000) >> 18;
+                        block[k << v->left_blk_sh] += (ac_val[k] * q2 * ff_vc1_dqscale[q1 - 1] + 0x20000) >> 18;
                 } else { //top
                     for(k = 1; k < 8; k++)
-                        block[k << 3] += (ac_val[k + 8] * q2 * ff_vc1_dqscale[q1 - 1] + 0x20000) >> 18;
+                        block[k << v->top_blk_sh] += (ac_val[k + 8] * q2 * ff_vc1_dqscale[q1 - 1] + 0x20000) >> 18;
                 }
             } else {
                 if(dc_pred_dir) { //left
                     for(k = 1; k < 8; k++)
-                        block[k] += ac_val[k];
+                        block[k << v->left_blk_sh] += ac_val[k];
                 } else { //top
                     for(k = 1; k < 8; k++)
-                        block[k << 3] += ac_val[k + 8];
+                        block[k << v->top_blk_sh] += ac_val[k + 8];
                 }
             }
         }
         /* save AC coeffs for further prediction */
         for(k = 1; k < 8; k++) {
-            ac_val2[k] = block[k];
-            ac_val2[k + 8] = block[k << 3];
+            ac_val2[k    ] = block[k << v->left_blk_sh];
+            ac_val2[k + 8] = block[k << v->top_blk_sh];
         }
 
         /* scale AC coeffs */
@@ -1740,15 +1740,15 @@ static int vc1_decode_i_block_adv(VC1Context *v, DCTELEM block[64], int n, int c
         if(use_pred) {
             if(dc_pred_dir) { //left
                 for(k = 1; k < 8; k++) {
-                    block[k] = ac_val2[k] * scale;
-                    if(!v->pquantizer && block[k])
-                        block[k] += (block[k] < 0) ? -mquant : mquant;
+                    block[k << v->left_blk_sh] = ac_val2[k] * scale;
+                    if(!v->pquantizer && block[k << v->left_blk_sh])
+                        block[k << v->left_blk_sh] += (block[k << v->left_blk_sh] < 0) ? -mquant : mquant;
                 }
             } else { //top
                 for(k = 1; k < 8; k++) {
-                    block[k << 3] = ac_val2[k + 8] * scale;
-                    if(!v->pquantizer && block[k << 3])
-                        block[k << 3] += (block[k << 3] < 0) ? -mquant : mquant;
+                    block[k << v->top_blk_sh] = ac_val2[k + 8] * scale;
+                    if(!v->pquantizer && block[k << v->top_blk_sh])
+                        block[k << v->top_blk_sh] += (block[k << v->top_blk_sh] < 0) ? -mquant : mquant;
                 }
             }
             i = 63;
@@ -1878,25 +1878,25 @@ static int vc1_decode_intra_block(VC1Context *v, DCTELEM block[64], int n, int c
 
                 if(dc_pred_dir) { //left
                     for(k = 1; k < 8; k++)
-                        block[k] += (ac_val[k] * q2 * ff_vc1_dqscale[q1 - 1] + 0x20000) >> 18;
+                        block[k << v->left_blk_sh] += (ac_val[k] * q2 * ff_vc1_dqscale[q1 - 1] + 0x20000) >> 18;
                 } else { //top
                     for(k = 1; k < 8; k++)
-                        block[k << 3] += (ac_val[k + 8] * q2 * ff_vc1_dqscale[q1 - 1] + 0x20000) >> 18;
+                        block[k << v->top_blk_sh] += (ac_val[k + 8] * q2 * ff_vc1_dqscale[q1 - 1] + 0x20000) >> 18;
                 }
             } else {
                 if(dc_pred_dir) { //left
                     for(k = 1; k < 8; k++)
-                        block[k] += ac_val[k];
+                        block[k << v->left_blk_sh] += ac_val[k];
                 } else { //top
                     for(k = 1; k < 8; k++)
-                        block[k << 3] += ac_val[k + 8];
+                        block[k << v->top_blk_sh] += ac_val[k + 8];
                 }
             }
         }
         /* save AC coeffs for further prediction */
         for(k = 1; k < 8; k++) {
-            ac_val2[k] = block[k];
-            ac_val2[k + 8] = block[k << 3];
+            ac_val2[k    ] = block[k << v->left_blk_sh];
+            ac_val2[k + 8] = block[k << v->top_blk_sh];
         }
 
         /* scale AC coeffs */
@@ -1938,15 +1938,15 @@ static int vc1_decode_intra_block(VC1Context *v, DCTELEM block[64], int n, int c
         if(use_pred) {
             if(dc_pred_dir) { //left
                 for(k = 1; k < 8; k++) {
-                    block[k] = ac_val2[k] * scale;
-                    if(!v->pquantizer && block[k])
-                        block[k] += (block[k] < 0) ? -mquant : mquant;
+                    block[k << v->left_blk_sh] = ac_val2[k] * scale;
+                    if(!v->pquantizer && block[k << v->left_blk_sh])
+                        block[k << v->left_blk_sh] += (block[k << v->left_blk_sh] < 0) ? -mquant : mquant;
                 }
             } else { //top
                 for(k = 1; k < 8; k++) {
-                    block[k << 3] = ac_val2[k + 8] * scale;
-                    if(!v->pquantizer && block[k << 3])
-                        block[k << 3] += (block[k << 3] < 0) ? -mquant : mquant;
+                    block[k << v->top_blk_sh] = ac_val2[k + 8] * scale;
+                    if(!v->pquantizer && block[k << v->top_blk_sh])
+                        block[k << v->top_blk_sh] += (block[k << v->top_blk_sh] < 0) ? -mquant : mquant;
                 }
             }
             i = 63;
@@ -3097,6 +3097,116 @@ static void vc1_decode_blocks(VC1Context *v, int mby_start, int mby_end)
     }
 }
 
+static inline float get_float_val(GetBitContext* gb)
+{
+    return (float)get_bits_long(gb, 30) / (1<<15) - (1<<14);
+}
+
+static void vc1_sprite_parse_transform(VC1Context *v, GetBitContext* gb, float c[7])
+{
+    c[1] = c[3] = 0.0f;
+
+    switch (get_bits(gb, 2)) {
+    case 0:
+        c[0] = 1.0f;
+        c[2] = get_float_val(gb);
+        c[4] = 1.0f;
+        break;
+    case 1:
+        c[0] = c[4] = get_float_val(gb);
+        c[2] = get_float_val(gb);
+        break;
+    case 2:
+        c[0] = get_float_val(gb);
+        c[2] = get_float_val(gb);
+        c[4] = get_float_val(gb);
+        break;
+    case 3:
+        av_log_ask_for_sample(v->s.avctx, NULL);
+        c[0] = get_float_val(gb);
+        c[1] = get_float_val(gb);
+        c[2] = get_float_val(gb);
+        c[3] = get_float_val(gb);
+        c[4] = get_float_val(gb);
+        break;
+    }
+    c[5] = get_float_val(gb);
+    if (get_bits1(gb))
+        c[6] = get_float_val(gb);
+    else
+        c[6] = 1.0f;
+}
+
+static void vc1_parse_sprites(VC1Context *v, GetBitContext* gb)
+{
+    int effect_type, effect_flag, effect_pcount1, effect_pcount2, i;
+    float effect_params1[14], effect_params2[10];
+
+    float coefs[2][7];
+    vc1_sprite_parse_transform(v, gb, coefs[0]);
+    av_log(v->s.avctx, AV_LOG_DEBUG, "S1:");
+    for (i = 0; i < 7; i++)
+        av_log(v->s.avctx, AV_LOG_DEBUG, " %.3f", coefs[0][i]);
+    av_log(v->s.avctx, AV_LOG_DEBUG, "\n");
+
+    if (v->two_sprites) {
+        vc1_sprite_parse_transform(v, gb, coefs[1]);
+        av_log(v->s.avctx, AV_LOG_DEBUG, "S2:");
+        for (i = 0; i < 7; i++)
+            av_log(v->s.avctx, AV_LOG_DEBUG, " %.3f", coefs[1][i]);
+        av_log(v->s.avctx, AV_LOG_DEBUG, "\n");
+    }
+    skip_bits(gb, 2);
+    if (effect_type = get_bits_long(gb, 30)){
+        switch (effect_pcount1 = get_bits(gb, 4)) {
+        case 2:
+            effect_params1[0] = get_float_val(gb);
+            effect_params1[1] = get_float_val(gb);
+            break;
+        case 7:
+            vc1_sprite_parse_transform(v, gb, effect_params1);
+            break;
+        case 14:
+            vc1_sprite_parse_transform(v, gb, effect_params1);
+            vc1_sprite_parse_transform(v, gb, &effect_params1[7]);
+            break;
+        default:
+            av_log_ask_for_sample(v->s.avctx, NULL);
+            return;
+        }
+        if (effect_type != 13 || effect_params1[0] != coefs[0][6]) {
+            // effect 13 is simple alpha blending and matches the opacity above
+            av_log(v->s.avctx, AV_LOG_DEBUG, "Effect: %d; params: ", effect_type);
+            for (i = 0; i < effect_pcount1; i++)
+                av_log(v->s.avctx, AV_LOG_DEBUG, " %.3f", effect_params1[i]);
+            av_log(v->s.avctx, AV_LOG_DEBUG, "\n");
+        }
+
+        effect_pcount2 = get_bits(gb, 16);
+        if (effect_pcount2 > 10) {
+            av_log(v->s.avctx, AV_LOG_ERROR, "Too many effect parameters\n");
+            return;
+        } else if (effect_pcount2) {
+            i = 0;
+            av_log(v->s.avctx, AV_LOG_DEBUG, "Effect params 2: ");
+            while (i < effect_pcount2){
+                effect_params2[i] = get_float_val(gb);
+                av_log(v->s.avctx, AV_LOG_DEBUG, " %.3f", effect_params2[i]);
+                i++;
+            }
+            av_log(v->s.avctx, AV_LOG_DEBUG, "\n");
+        }
+    }
+    if (effect_flag = get_bits1(gb))
+        av_log(v->s.avctx, AV_LOG_DEBUG, "Effect flag set\n");
+
+    if (get_bits_count(gb) >= gb->size_in_bits +
+       (v->s.avctx->codec_id == CODEC_ID_WMV3 ? 64 : 0))
+        av_log(v->s.avctx, AV_LOG_ERROR, "Buffer overrun\n");
+    if (get_bits_count(gb) < gb->size_in_bits - 8)
+        av_log(v->s.avctx, AV_LOG_WARNING, "Buffer not fully read\n");
+}
+
 /** Initialize a VC1/WMV3 decoder
  * @todo TODO: Handle VC-1 IDUs (Transport level?)
  * @todo TODO: Decypher remaining bits in extra_data
@@ -3126,13 +3236,6 @@ static av_cold int vc1_decode_init(AVCodecContext *avctx)
         return -1;
     if (vc1_init_common(v) < 0) return -1;
     ff_vc1dsp_init(&v->vc1dsp);
-    for (i = 0; i < 64;  i++) {
-#define transpose(x) ((x>>3) | ((x&7)<<3))
-        v->zz_8x8[0][i] = transpose(wmv1_scantable[0][i]);
-        v->zz_8x8[1][i] = transpose(wmv1_scantable[1][i]);
-        v->zz_8x8[2][i] = transpose(wmv1_scantable[2][i]);
-        v->zz_8x8[3][i] = transpose(wmv1_scantable[3][i]);
-    }
 
     avctx->coded_width = avctx->width;
     avctx->coded_height = avctx->height;
@@ -3160,7 +3263,7 @@ static av_cold int vc1_decode_init(AVCodecContext *avctx)
         {
             av_log(avctx, AV_LOG_INFO, "Read %i bits in overflow\n", -count);
         }
-    } else { // VC1/WVC1
+    } else { // VC1/WVC1/WVP2
         const uint8_t *start = avctx->extradata;
         uint8_t *end = avctx->extradata + avctx->extradata_size;
         const uint8_t *next;
@@ -3204,6 +3307,7 @@ static av_cold int vc1_decode_init(AVCodecContext *avctx)
             av_log(avctx, AV_LOG_ERROR, "Incomplete extradata\n");
             return -1;
         }
+        v->res_sprite = (avctx->codec_tag == MKTAG('W','V','P','2'));
     }
     avctx->profile = v->profile;
     if (v->profile == PROFILE_ADVANCED)
@@ -3214,6 +3318,22 @@ static av_cold int vc1_decode_init(AVCodecContext *avctx)
 
     s->mb_width = (avctx->coded_width+15)>>4;
     s->mb_height = (avctx->coded_height+15)>>4;
+
+    if (v->profile == PROFILE_ADVANCED || v->res_fasttx) {
+        for (i = 0; i < 64;  i++) {
+#define transpose(x) ((x>>3) | ((x&7)<<3))
+            v->zz_8x8[0][i] = transpose(wmv1_scantable[0][i]);
+            v->zz_8x8[1][i] = transpose(wmv1_scantable[1][i]);
+            v->zz_8x8[2][i] = transpose(wmv1_scantable[2][i]);
+            v->zz_8x8[3][i] = transpose(wmv1_scantable[3][i]);
+        }
+        v->left_blk_sh = 0;
+        v->top_blk_sh  = 3;
+    } else {
+        memcpy(v->zz_8x8, wmv1_scantable, 4*64);
+        v->left_blk_sh = 3;
+        v->top_blk_sh  = 0;
+    }
 
     /* Allocate mb bitplanes */
     v->mv_type_mb_plane = av_malloc(s->mb_stride * s->mb_height);
@@ -3359,6 +3479,14 @@ static int vc1_decode_frame(AVCodecContext *avctx,
         init_get_bits(&s->gb, buf2, buf_size2*8);
     } else
         init_get_bits(&s->gb, buf, buf_size*8);
+
+    if (v->res_sprite) {
+        v->new_sprite = !get_bits1(&s->gb);
+        v->two_sprites = get_bits1(&s->gb);
+        if (!v->new_sprite)
+            goto end;
+    }
+
     // do parse frame header
     if(v->profile < PROFILE_ADVANCED) {
         if(vc1_parse_frame_header(v, &s->gb) == -1) {
@@ -3370,11 +3498,11 @@ static int vc1_decode_frame(AVCodecContext *avctx,
         }
     }
 
-    if(v->res_sprite && (s->pict_type!=FF_I_TYPE)){
-        goto err;
+    if (v->res_sprite && s->pict_type!=FF_I_TYPE) {
+        av_log(v->s.avctx, AV_LOG_WARNING, "Sprite decoder: expected I-frame\n");
     }
 
-    // for hurry_up==5
+    // for skipping the frame
     s->current_picture.pict_type= s->pict_type;
     s->current_picture.key_frame= s->pict_type == FF_I_TYPE;
 
@@ -3382,17 +3510,21 @@ static int vc1_decode_frame(AVCodecContext *avctx,
     if(s->last_picture_ptr==NULL && (s->pict_type==FF_B_TYPE || s->dropable)){
         goto err;
     }
+#if FF_API_HURRY_UP
     /* skip b frames if we are in a hurry */
     if(avctx->hurry_up && s->pict_type==FF_B_TYPE) return -1;//buf_size;
+#endif
     if(   (avctx->skip_frame >= AVDISCARD_NONREF && s->pict_type==FF_B_TYPE)
        || (avctx->skip_frame >= AVDISCARD_NONKEY && s->pict_type!=FF_I_TYPE)
        ||  avctx->skip_frame >= AVDISCARD_ALL) {
         goto end;
     }
+#if FF_API_HURRY_UP
     /* skip everything if we are in a hurry>=5 */
     if(avctx->hurry_up>=5) {
         goto err;
     }
+#endif
 
     if(s->next_p_frame_damaged){
         if(s->pict_type==FF_B_TYPE)
@@ -3451,6 +3583,8 @@ assert(s->current_picture.pict_type == s->pict_type);
     }
 
 end:
+    if (v->res_sprite)
+        vc1_parse_sprites(v, &s->gb);
     av_free(buf2);
     for (i = 0; i < n_slices; i++)
         av_free(slices[i].buf);

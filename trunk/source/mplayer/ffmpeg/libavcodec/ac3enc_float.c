@@ -69,17 +69,6 @@ static av_cold int mdct_init(AVCodecContext *avctx, AC3MDCTContext *mdct,
 
 
 /**
- * Calculate a 512-point MDCT
- * @param out 256 output frequency coefficients
- * @param in  512 windowed input audio samples
- */
-static void mdct512(AC3MDCTContext *mdct, float *out, float *in)
-{
-    mdct->fft.mdct_calc(&mdct->fft, out, in);
-}
-
-
-/**
  * Apply KBD window to input samples prior to MDCT.
  */
 static void apply_window(DSPContext *dsp, float *output, const float *input,
@@ -120,5 +109,6 @@ AVCodec ff_ac3_encoder = {
     NULL,
     .sample_fmts = (const enum AVSampleFormat[]){AV_SAMPLE_FMT_FLT,AV_SAMPLE_FMT_NONE},
     .long_name = NULL_IF_CONFIG_SMALL("ATSC A/52A (AC-3)"),
+    .priv_class = &ac3enc_class,
     .channel_layouts = ac3_channel_layouts,
 };

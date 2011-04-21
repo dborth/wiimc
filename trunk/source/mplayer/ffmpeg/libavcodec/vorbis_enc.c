@@ -394,7 +394,7 @@ static void put_float(PutBitContext *pb, float f)
     mant = (int)ldexp(frexp(f, &exp), 20);
     exp += 788 - 20;
     if (mant < 0) {
-        res |= (1 << 31);
+        res |= (1U << 31);
         mant = -mant;
     }
     res |= mant | (exp << 21);
@@ -957,7 +957,7 @@ static av_cold int vorbis_encode_init(AVCodecContext *avccontext)
     vorbis_enc_context *venc = avccontext->priv_data;
 
     if (avccontext->channels != 2) {
-        av_log(avccontext, AV_LOG_ERROR, "Current FFmpeg Vorbis encoder only supports 2 channels.\n");
+        av_log(avccontext, AV_LOG_ERROR, "Current Libav Vorbis encoder only supports 2 channels.\n");
         return -1;
     }
 

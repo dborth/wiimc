@@ -81,6 +81,8 @@ library:
     @tab Audio format used in some games by CRYO Interactive Entertainment.
 @item D-Cinema audio            @tab X @tab X
 @item Deluxe Paint Animation    @tab   @tab X
+@item DFA                       @tab   @tab X
+    @tab This format is used in Chronomaster game
 @item DV video                  @tab X @tab X
 @item DXA                       @tab   @tab X
     @tab This format is used in the non-Windows version of the Feeble Files
@@ -256,6 +258,8 @@ library:
     @tab Multimedia format used in Westwood Studios games.
 @item Westwood Studios VQA      @tab   @tab X
     @tab Multimedia format used in Westwood Studios games.
+@item xWMA                      @tab   @tab X
+    @tab Microsoft audio container used by XAudio 2.
 @item YUV4MPEG pipe             @tab X @tab X
 @item Psygnosis YOP             @tab   @tab X
 @end multitable
@@ -371,6 +375,8 @@ following image formats are supported:
 @item Cirrus Logic AccuPak   @tab     @tab  X
     @tab fourcc: CLJR
 @item Creative YUV (CYUV)    @tab     @tab  X
+@item DFA                    @tab     @tab  X
+    @tab Codec used in Chronomaster game.
 @item Dirac                  @tab  E  @tab  E
     @tab supported through external libdirac/libschroedinger libraries
 @item Deluxe Paint Animation @tab     @tab  X
@@ -439,6 +445,7 @@ following image formats are supported:
 @item Miro VideoXL           @tab     @tab  X
     @tab fourcc: VIXL
 @item MJPEG (Motion JPEG)    @tab  X  @tab  X
+@item Mobotix MxPEG video    @tab     @tab  X
 @item Motion Pixels video    @tab     @tab  X
 @item MPEG-1 video           @tab  X  @tab  X
 @item MPEG-1/2 video XvMC (X-Video Motion Compensation)  @tab     @tab  X
@@ -535,7 +542,7 @@ following image formats are supported:
 @item Name @tab Encoding @tab Decoding @tab Comments
 @item 8SVX audio             @tab     @tab  X
 @item AAC                    @tab  E  @tab  X
-    @tab encoding supported through external library libfaac
+    @tab encoding supported through external library libfaac and libvo-aacenc
 @item AC-3                   @tab IX  @tab  X
 @item ADPCM 4X Movie         @tab     @tab  X
 @item ADPCM CDROM XA         @tab     @tab  X
@@ -583,7 +590,8 @@ following image formats are supported:
 @item ADPCM Yamaha           @tab  X  @tab  X
 @item AMR-NB                 @tab  E  @tab  X
     @tab encoding supported through external library libopencore-amrnb
-@item AMR-WB                 @tab     @tab  X
+@item AMR-WB                 @tab  E  @tab  X
+    @tab encoding supported through external library libvo-amrwbenc
 @item Apple lossless audio   @tab  X  @tab  X
     @tab QuickTime fourcc 'alac'
 @item Atrac 1                @tab     @tab  X
@@ -807,10 +815,6 @@ assembler functions. Just download the Perl script and put it somewhere
 in your PATH, Libav's configure will pick it up automatically.
 
 @section Windows
-
-To get help and instructions for building Libav under Windows, check out
-the FFmpeg Windows Help Forum at
-@url{http://ffmpeg.arrozcru.org/}.
 
 @subsection Native Windows compilation
 

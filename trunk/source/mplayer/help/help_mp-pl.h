@@ -707,7 +707,6 @@ static const char help_text[]=
 #define MSGTR_NEMFMR "Za mało pamięci na renderowanie menu."
 #define MSGTR_IDFGCVD "Brak sterownika video zgodnego z GUI."
 #define MSGTR_NEEDLAVC "Niestety, nie można odtwarzać plików innych niż MPEG przy użyciu urządzenia DXR3/H+ bez kowersji.\nProszę włączyć lavc w polu sterowania DXR3/H+."
-#define MSGTR_UNKNOWNWINDOWTYPE "Okno nieznanego typu ..."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[skórka] błąd w pliku konfiguracyjnym skórki, linia %d: %s"
@@ -718,18 +717,14 @@ static const char help_text[]=
 #define MSGTR_SKIN_SkinFileNotReadable "[skórka] nie mogę odczytać pliku ( %s ).\n"
 #define MSGTR_SKIN_BITMAP_16bit  "Bitmapy o głębokości <=16 bitów nie są obsgługiwane (%s).\n"
 #define MSGTR_SKIN_BITMAP_FileNotFound  "Pliku nie znaleziono (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "Błąd odczytu BMP (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "Błąd odczytu TGA (%s)\n"
 #define MSGTR_SKIN_BITMAP_PNGReadError "Błąd odczytu PNG (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "TGA spakowany RLE nie jest obsługiwany (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "nieznany typ pliku (%s)\n"
 #define MSGTR_SKIN_BITMAP_ConversionError "Błąd konwersji 24 bitów do 32 bitów (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "nieznana wiadomość: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "za mało pamięci\n"
+#define MSGTR_SKIN_UnknownMessage "nieznana wiadomość: %s\n"
+#define MSGTR_SKIN_NotEnoughMemory "za mało pamięci\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "Zadeklarowano za dużo czcionek.\n"
 #define MSGTR_SKIN_FONT_FontFileNotFound "Nie znalazłem pliku z czcionką.\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "Nie znalazłem pliku z obrazem czcionki.\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "Nieistniejący identyfikator czcionki (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "Nieistniejący identyfikator czcionki (%s)\n"
 #define MSGTR_SKIN_UnknownParameter "nieznany parametr (%s)\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Skórka nie znaleziona (%s).\n"
 #define MSGTR_SKIN_SKINCFG_SelectedSkinNotFound "Wybrana skórka ( %s ) nie odnaleziona, próbuję 'default'...\n"
@@ -925,11 +920,6 @@ static const char help_text[]=
 #define MSGTR_MSGBOX_LABEL_FatalError "Błąd krytyczny!"
 #define MSGTR_MSGBOX_LABEL_Error "Błąd!"
 #define MSGTR_MSGBOX_LABEL_Warning "Uwaga!"
-
-// bitmap.c
-
-#define MSGTR_NotEnoughMemoryC32To1 "[c32to1] za mało pamięci na obraz\n"
-#define MSGTR_NotEnoughMemoryC1To32 "[c1to32] za mało pamięci na obraz\n"
 
 // cfg.c
 

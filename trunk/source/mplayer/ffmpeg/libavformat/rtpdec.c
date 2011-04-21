@@ -25,6 +25,7 @@
 #include "libavcodec/get_bits.h"
 #include "avformat.h"
 #include "mpegts.h"
+#include "url.h"
 
 #include <unistd.h>
 #include <strings.h>
@@ -41,7 +42,7 @@
          buffer to 'rtp_write_packet' contains all the packets for ONE
          frame. Each packet should have a four byte header containing
          the length in big endian format (same trick as
-         'url_open_dyn_packet_buf')
+         'ffio_open_dyn_packet_buf')
 */
 
 static RTPDynamicProtocolHandler ff_realmedia_mp3_dynamic_handler = {
@@ -264,7 +265,7 @@ int rtp_check_and_send_back_rr(RTPDemuxContext *s, int count)
         return -1;
     s->last_octet_count = s->octet_count;
 
-    if (url_open_dyn_buf(&pb) < 0)
+    if (avio_open_dyn_buf(&pb) < 0)
         return -1;
 
     // Receiver Report
@@ -321,12 +322,12 @@ int rtp_check_and_send_back_rr(RTPDemuxContext *s, int count)
     }
 
     avio_flush(pb);
-    len = url_close_dyn_buf(pb, &buf);
+    len = avio_close_dyn_buf(pb, &buf);
     if ((len > 0) && buf) {
         int result;
         av_dlog(s->ic, "sending %d bytes of RR\n", len);
-        result= url_write(s->rtp_ctx, buf, len);
-        av_dlog(s->ic, "result from url_write: %d\n", result);
+        result= ffurl_write(s->rtp_ctx, buf, len);
+        av_dlog(s->ic, "result from ffurl_write: %d\n", result);
         av_free(buf);
     }
     return 0;
@@ -339,7 +340,7 @@ void rtp_send_punch_packets(URLContext* rtp_handle)
     int len;
 
     /* Send a small RTP packet */
-    if (url_open_dyn_buf(&pb) < 0)
+    if (avio_open_dyn_buf(&pb) < 0)
         return;
 
     avio_w8(pb, (RTP_VERSION << 6));
@@ -349,13 +350,13 @@ void rtp_send_punch_packets(URLContext* rtp_handle)
     avio_wb32(pb, 0); /* SSRC */
 
     avio_flush(pb);
-    len = url_close_dyn_buf(pb, &buf);
+    len = avio_close_dyn_buf(pb, &buf);
     if ((len > 0) && buf)
-        url_write(rtp_handle, buf, len);
+        ffurl_write(rtp_handle, buf, len);
     av_free(buf);
 
     /* Send a minimal RTCP RR */
-    if (url_open_dyn_buf(&pb) < 0)
+    if (avio_open_dyn_buf(&pb) < 0)
         return;
 
     avio_w8(pb, (RTP_VERSION << 6));
@@ -364,9 +365,9 @@ void rtp_send_punch_packets(URLContext* rtp_handle)
     avio_wb32(pb, 0); /* our own SSRC */
 
     avio_flush(pb);
-    len = url_close_dyn_buf(pb, &buf);
+    len = avio_close_dyn_buf(pb, &buf);
     if ((len > 0) && buf)
-        url_write(rtp_handle, buf, len);
+        ffurl_write(rtp_handle, buf, len);
     av_free(buf);
 }
 

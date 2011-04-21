@@ -24,6 +24,7 @@
 #include "libavutil/avstring.h"
 #include "avformat.h"
 #include "avio_internal.h"
+#include "internal.h"
 #include <strings.h>
 
 typedef struct {
@@ -183,9 +184,16 @@ static int read_probe(AVProbeData *p)
     return 0;
 }
 
+enum CodecID ff_guess_image2_codec(const char *filename)
+{
+    return av_str2id(img_tags, filename);
+}
+
+#if FF_API_GUESS_IMG2_CODEC
 enum CodecID av_guess_image2_codec(const char *filename){
     return av_str2id(img_tags, filename);
 }
+#endif
 
 static int read_header(AVFormatContext *s1, AVFormatParameters *ap)
 {
@@ -270,7 +278,7 @@ static int read_packet(AVFormatContext *s1, AVPacket *pkt)
                                   s->path, s->img_number)<0 && s->img_number > 1)
             return AVERROR(EIO);
         for(i=0; i<3; i++){
-            if (avio_open(&f[i], filename, URL_RDONLY) < 0) {
+            if (avio_open(&f[i], filename, AVIO_RDONLY) < 0) {
                 if(i==1)
                     break;
                 av_log(s1, AV_LOG_ERROR, "Could not open file : %s\n",filename);
@@ -354,7 +362,7 @@ static int write_packet(AVFormatContext *s, AVPacket *pkt)
             return AVERROR(EIO);
         }
         for(i=0; i<3; i++){
-            if (avio_open(&pb[i], filename, URL_WRONLY) < 0) {
+            if (avio_open(&pb[i], filename, AVIO_WRONLY) < 0) {
                 av_log(s, AV_LOG_ERROR, "Could not open file : %s\n",filename);
                 return AVERROR(EIO);
             }

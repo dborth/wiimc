@@ -232,6 +232,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_WMV3,         MKTAG('W', 'M', 'V', 'P') },
     { CODEC_ID_VC1,          MKTAG('W', 'V', 'C', '1') },
     { CODEC_ID_VC1,          MKTAG('W', 'M', 'V', 'A') },
+    { CODEC_ID_VC1,          MKTAG('W', 'V', 'P', '2') },
     { CODEC_ID_LOCO,         MKTAG('L', 'O', 'C', 'O') },
     { CODEC_ID_WNV1,         MKTAG('W', 'N', 'V', '1') },
     { CODEC_ID_AASC,         MKTAG('A', 'A', 'S', 'C') },
@@ -479,7 +480,7 @@ void ff_put_bmp_header(AVIOContext *pb, AVCodecContext *enc, const AVCodecTag *t
  * WAVEFORMATEX adds 'WORD  cbSize' and basically makes itself
  * an openended structure.
  */
-void ff_get_wav_header(AVIOContext *pb, AVCodecContext *codec, int size)
+int ff_get_wav_header(AVIOContext *pb, AVCodecContext *codec, int size)
 {
     int id;
 
@@ -509,6 +510,8 @@ void ff_get_wav_header(AVIOContext *pb, AVCodecContext *codec, int size)
         codec->extradata_size = cbSize;
         if (cbSize > 0) {
             codec->extradata = av_mallocz(codec->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE);
+            if (!codec->extradata)
+                return AVERROR(ENOMEM);
             avio_read(pb, codec->extradata, codec->extradata_size);
             size -= cbSize;
         }
@@ -523,6 +526,8 @@ void ff_get_wav_header(AVIOContext *pb, AVCodecContext *codec, int size)
         codec->channels    = 0;
         codec->sample_rate = 0;
     }
+
+    return 0;
 }
 
 

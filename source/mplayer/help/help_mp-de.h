@@ -769,30 +769,28 @@ static const char help_text[]=
 #define MSGTR_NEMFMR "Sorry, nicht genug Speicher für Menü-Rendering."
 #define MSGTR_IDFGCVD "Sorry, es wurde kein GUI-kompatibler Ausgabetreiber gefunden.\n"
 #define MSGTR_NEEDLAVC "Sorry, du versuchst, Nicht-MPEG Dateien ohne erneute Encodierung abzuspielen.\nBitte aktiviere lavc in der DXR3/H+-Konfigurationsbox."
-#define MSGTR_UNKNOWNWINDOWTYPE "Unbekannten Fenstertyp gefunden ..."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "Fehler in Skin-Konfigurationsdatei in Zeile %d: %s"
 #define MSGTR_SKIN_ERROR_SECTION "Für '%s' wurde kein Abschnitt angegeben.\n"
 #define MSGTR_SKIN_ERROR_WINDOW "Für '%s' wurde kein Fenster angegeben.\n"
-#define MSGTR_SKIN_ERROR_IN_WINDOW "Dieses Element wird in '%s' nicht unterstützt.\n"
+#define MSGTR_SKIN_ERROR_ITEM "Dieses Element wird in '%s' nicht unterstützt.\n"
+#define MSGTR_SKIN_UNKNOWN_ITEM "Unbekanntes Element '%s'\n"
+#define MSGTR_SKIN_UNKNOWN_NAME "Unbekannter Name '%s'\n"
 #define MSGTR_SKIN_SkinFileNotFound "Skin-Datei %s nicht gefunden.\n"
 #define MSGTR_SKIN_SkinFileNotReadable "Skin-Datei %s nicht lesbar.\n"
-#define MSGTR_SKIN_BITMAP_16bit  "Bitmaps mit 16 Bits oder weniger werden nicht unterstützt (%s).\n"
-#define MSGTR_SKIN_BITMAP_FileNotFound  "Datei nicht gefunden (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "BMP-Lesefehler (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "TGA-Lesefehler (%s)\n"
-#define MSGTR_SKIN_BITMAP_PNGReadError "PNG-Lesefehler (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "RLE-gepacktes TGA wird nicht unterstützt (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "unbekannter Dateityp (%s)\n"
-#define MSGTR_SKIN_BITMAP_ConversionError "Konvertierungsfehler von 24 Bit auf 32 Bit (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "unbekannte Nachricht: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "nicht genug Speicher\n"
+#define MSGTR_SKIN_BITMAP_16bit  "Die Farbtiefe von %s beträgt 16 bpp oder weniger, was nicht unterstützt wird.\n"
+#define MSGTR_SKIN_BITMAP_FileNotFound  "Bitmap %s nicht gefunden.\n"
+#define MSGTR_SKIN_BITMAP_PNGReadError "PNG-Lesefehler in %s\n"
+#define MSGTR_SKIN_BITMAP_ConversionError "24-bpp-zu-32-bpp-Konvertierungsfehler in %s\n"
+#define MSGTR_SKIN_UnknownMessage "Unbekannte Nachricht '%s'\n"
+#define MSGTR_SKIN_NotEnoughMemory "Nicht genug Speicher\n"
+#define MSGTR_SKIN_TooManyItemsDeclared "Zu viele Elemente deklariert.\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "Zu viele Schriften deklariert.\n"
-#define MSGTR_SKIN_FONT_FontFileNotFound "Schriftdatei nicht gefunden.\n"
-#define MSGTR_SKIN_FONT_FontImageNotFound "Schriftbilddatei nicht gefunden.\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "nicht existierende Schriftbezeichnung (%s)\n"
-#define MSGTR_SKIN_UnknownParameter "unbekannter Parameter (%s)\n"
+#define MSGTR_SKIN_FONT_FontFileNotFound "Schrift-Beschreibungsdatei nicht gefunden.\n"
+#define MSGTR_SKIN_FONT_FontImageNotFound "Schrift-Bilddatei nicht gefunden.\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "Schrift '%s' nicht gefunden.\n"
+#define MSGTR_SKIN_UnknownParameter "Unbekannter Parameter '%s'\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Skin '%s' nicht gefunden.\n"
 #define MSGTR_SKIN_SKINCFG_SelectedSkinNotFound "Ausgewähltes Skin '%s' nicht gefunden, Skin 'default' wird versucht ...\n"
 #define MSGTR_SKIN_SKINCFG_SkinCfgError "Verarbeitungsfehler in Konfigurationsdatei des Skins '%s'\n"
@@ -991,10 +989,6 @@ static const char help_text[]=
 #define MSGTR_MSGBOX_LABEL_Error "Fehler!"
 #define MSGTR_MSGBOX_LABEL_Warning "Warnung!"
 
-// bitmap.c
-#define MSGTR_NotEnoughMemoryC32To1 "[c32to1] Für das Bild ist nicht genügend Speicher vorhanden.\n"
-#define MSGTR_NotEnoughMemoryC1To32 "[c1to32] Für das Bild ist nicht genügend Speicher vorhanden.\n"
-
 // cfg.c
 #define MSGTR_ConfigFileReadError "[cfg] Fehler beim Lesen der Konfigurationsdatei ...\n"
 #define MSGTR_UnableToSaveOption "[cfg] Kann die Option '%s' nicht speichern.\n"
@@ -1155,8 +1149,8 @@ static const char help_text[]=
 // ao_pcm.c
 #define MSGTR_AO_PCM_FileInfo "[AO PCM] Datei: %s (%s)\nPCM: Samplerate: %iHz Kanäle: %s Format %s\n"
 #define MSGTR_AO_PCM_HintInfo \
-"[AO PCM] Info: Das Anlegen von Dump-Dateien wird am Schnellsten mit\n" \
-"         -vc null -vo null -ao pcm:fast erreicht.\n" \
+"[AO PCM] Info: Das Anlegen von Dump-Dateien wird am schnellsten mit\n" \
+"         -benchmark -vc null -vo null -ao pcm:fast erreicht.\n" \
 "[AO PCM] Info: Um WAVE-Dateien zu schreiben, benutze\n" \
 "         -ao pcm:waveheader (Standard).\n"
 #define MSGTR_AO_PCM_CantOpenOutputFile "[AO PCM] Öffnen von %s zum Schreiben fehlgeschlagen!\n"
@@ -2179,3 +2173,4 @@ static const char help_text[]=
 #define MSGTR_TVI_DS_NoVideoCaptureDevice "tvi_dshow: Kein Gerät für Videoerfassung gefunden\n"
 #define MSGTR_TVI_DS_NoAudioCaptureDevice "tvi_dshow: Kein Gerät für Audioerfassung gefunden\n"
 #define MSGTR_TVI_DS_GetActualMediatypeFailed "tvi_dshow: Kann eigentlichen Medientyp nicht ermitteln (Fehler:0x%x).\nNehme an, dieser entspricht dem angeforderten.\n"
+

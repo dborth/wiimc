@@ -353,6 +353,39 @@ drawbox
 drawbox=10:20:200:60:red@@0.5"
 @end example
 
+@section fade
+
+Apply fade-in/out effect to input video.
+
+It accepts the parameters:
+@var{type}:@var{start_frame}:@var{nb_frames}
+
+@var{type} specifies if the effect type, can be either "in" for
+fade-in, or "out" for a fade-out effect.
+
+@var{start_frame} specifies the number of the start frame for starting
+to apply the fade effect.
+
+@var{nb_frames} specifies the number of frames for which the fade
+effect has to last. At the end of the fade-in effect the output video
+will have the same intensity as the input video, at the end of the
+fade-out transition the output video will be completely black.
+
+A few usage examples follow, usable too as test scenarios.
+@example
+# fade in first 30 frames of video
+fade=in:0:30
+
+# fade out last 45 frames of a 200-frame video
+fade=out:155:45
+
+# fade in first 25 frames and fade out last 25 frames of a 1000-frame video
+fade=in:0:25, fade=out:975:25
+
+# make first 5 frames black, then fade in from frame 5-24
+fade=in:5:20
+@end example
+
 @section fifo
 
 Buffer input images and send them when they are requested.
@@ -437,6 +470,10 @@ Fix the banding artifacts that are sometimes introduced into nearly flat
 regions by truncation to 8bit colordepth.
 Interpolate the gradients that should go where the bands are, and
 dither them.
+
+This filter is designed for playback only.  Do not use it prior to
+lossy compression, because compression tends to lose the dither and
+bring back the bands.
 
 The filter takes two optional parameters, separated by ':':
 @var{strength}:@var{radius}
@@ -715,7 +752,7 @@ For example:
 @example
 # Add paddings with color "violet" to the input video. Output video
 # size is 640x480, the top-left corner of the input video is placed at
-# row 0, column 40.
+# column 0, row 40.
 pad=640:480:0:40:violet
 @end example
 
@@ -755,6 +792,36 @@ use, for the respective output size, a value that maintains the aspect
 ratio of the input image.
 
 The default value of @var{width} and @var{height} is 0.
+
+@anchor{setdar}
+@section setdar
+
+Set the Display Aspect Ratio for the filter output video.
+
+This is done by changing the specified Sample (aka Pixel) Aspect
+Ratio, according to the following equation:
+@math{DAR = HORIZONTAL_RESOLUTION / VERTICAL_RESOLUTION * SAR}
+
+Keep in mind that this filter does not modify the pixel dimensions of
+the video frame. Also the display aspect ratio set by this filter may
+be changed by later filters in the filterchain, e.g. in case of
+scaling or if another "setdar" or a "setsar" filter is applied.
+
+The filter accepts a parameter string which represents the wanted
+display aspect ratio.
+The parameter can be a floating point number string, or an expression
+of the form @var{num}:@var{den}, where @var{num} and @var{den} are the
+numerator and denominator of the aspect ratio.
+If the parameter is not specified, it is assumed the value "0:1".
+
+For example to change the display aspect ratio to 16:9, specify:
+@example
+setdar=16:9
+# the above is equivalent to
+setdar=1.77777
+@end example
+
+See also the "setsar" filter documentation (@pxref{setsar}).
 
 @section setpts
 
@@ -814,6 +881,32 @@ setpts=N/(25*TB)
 
 # fixed rate 25 fps with some jitter
 setpts='1/(25*TB) * (N + 0.05 * sin(N*2*PI/25))'
+@end example
+
+@anchor{setsar}
+@section setsar
+
+Set the Sample (aka Pixel) Aspect Ratio for the filter output video.
+
+Note that as a consequence of the application of this filter, the
+output display aspect ratio will change according to the following
+equation:
+@math{DAR = HORIZONTAL_RESOLUTION / VERTICAL_RESOLUTION * SAR}
+
+Keep in mind that the sample aspect ratio set by this filter may be
+changed by later filters in the filterchain, e.g. if another "setsar"
+or a "setdar" filter is applied.
+
+The filter accepts a parameter string which represents the wanted
+sample aspect ratio.
+The parameter can be a floating point number string, or an expression
+of the form @var{num}:@var{den}, where @var{num} and @var{den} are the
+numerator and denominator of the aspect ratio.
+If the parameter is not specified, it is assumed the value "0:1".
+
+For example to change the sample aspect ratio to 10:11, specify:
+@example
+setsar=10:11
 @end example
 
 @section settb

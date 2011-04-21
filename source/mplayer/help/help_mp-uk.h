@@ -555,7 +555,6 @@ static const char help_text[]=
 #define MSGTR_NEMFMR "Вибачте, не достатньо пам'яті для рендерення меню."
 #define MSGTR_IDFGCVD "Вибачте, не знаходжу відео драйвер для підтримки GUI."
 #define MSGTR_NEEDLAVC "Вибачте, ви не можете програвати не MPEG файли з вашим DXR3/H+ пристроєм без перекодування.\nВключіть lavc у нашалтунки DXR3/H+."
-#define MSGTR_UNKNOWNWINDOWTYPE "Знайдено невідомий тип вікна..."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[скін] помилка у налаштунках скіна у рядку %d: %s"
@@ -563,18 +562,14 @@ static const char help_text[]=
 #define MSGTR_SKIN_SkinFileNotReadable "[skin] файл ( %s ) не прочитати.\n"
 #define MSGTR_SKIN_BITMAP_16bit  "Глибина матриці у 16 біт і менше не підтримується (%s).\n"
 #define MSGTR_SKIN_BITMAP_FileNotFound  "Файл не знайдено (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "Помилка читання BMP (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "Помилка читання TGA (%s)\n"
 #define MSGTR_SKIN_BITMAP_PNGReadError "Помилка читання PNG (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "RLE запакований у TGA не підримується (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "тип файлу невідомий (%s)\n"
 #define MSGTR_SKIN_BITMAP_ConversionError "помилка конвертування з 24 до 32 біт (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "невідоме повідомлення: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "недостатньо пам'яті\n"
+#define MSGTR_SKIN_UnknownMessage "невідоме повідомлення: %s\n"
+#define MSGTR_SKIN_NotEnoughMemory "недостатньо пам'яті\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "Вказано забагато шрифтів.\n"
 #define MSGTR_SKIN_FONT_FontFileNotFound "Файл шрифту не знайдено.\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "Font image file not found.\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "ідентифікатор шрифту не існує (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "ідентифікатор шрифту не існує (%s)\n"
 #define MSGTR_SKIN_UnknownParameter "невідомий параметр (%s)\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Скін не знайдено (%s).\n"
 #define MSGTR_SKIN_SKINCFG_SelectedSkinNotFound "Обраний скін ( %s ) не знайдено, обираю 'default'...\n"
@@ -770,10 +765,6 @@ static const char help_text[]=
 #define MSGTR_MSGBOX_LABEL_FatalError "Фатальна помилка!"
 #define MSGTR_MSGBOX_LABEL_Error "Помилка!"
 #define MSGTR_MSGBOX_LABEL_Warning "Попередження!"
-
-// bitmap.c
-#define MSGTR_NotEnoughMemoryC32To1 "[c32to1] недостатньо пам'яті для картинки\n"
-#define MSGTR_NotEnoughMemoryC1To32 "[c1to32] недостатньо пам'яті для картинки\n"
 
 // cfg.c
 #define MSGTR_ConfigFileReadError "[cfg] помилка читання файлу налаштунків ...\n"

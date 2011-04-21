@@ -35,28 +35,28 @@
 #
 #############################################################################
 
-if test -e ffmpeg/.svn ; then
-  echo "You have an outdated FFmpeg SVN checkout in ffmpeg/, please (re)move or replace it"
-  exit 1
-fi
-
-if test -e ffmpeg/mp_auto_pull ; then
-  if ! (cd ffmpeg && git pull --rebase --ff-only) ; then
-    echo "git pull failed, (re)move ffmpeg/mp_auto_pull to disable pulling"
+  if test -e ffmpeg/.svn ; then
+    echo "You have an outdated FFmpeg SVN checkout in ffmpeg/, please (re)move or replace it"
     exit 1
   fi
-fi
 
-if ! test -e ffmpeg ; then
-  echo "No FFmpeg checkout, press enter to download one with git or CTRL+C to abort"
-  read tmp
-  if ! git clone --depth 1 git://git.videolan.org/ffmpeg.git ffmpeg ; then
-    rm -rf ffmpeg
-    echo "Failed to get a FFmpeg checkout"
-    exit 1
+  if test -e ffmpeg/mp_auto_pull ; then
+    if ! (cd ffmpeg && git pull --rebase --ff-only) ; then
+      echo "git pull failed, (re)move ffmpeg/mp_auto_pull to disable pulling"
+      exit 1
+    fi
   fi
-  touch ffmpeg/mp_auto_pull
-fi
+
+  if ! test -e ffmpeg ; then
+    echo "No FFmpeg checkout, press enter to download one with git or CTRL+C to abort"
+    read tmp
+    if ! git clone --depth 1 git://git.videolan.org/ffmpeg.git ffmpeg ; then
+      rm -rf ffmpeg
+      echo "Failed to get a FFmpeg checkout"
+      exit 1
+    fi
+    touch ffmpeg/mp_auto_pull
+  fi
 
 # Prevent locale nonsense from breaking basic text processing utils
 export LC_ALL=C
@@ -2583,7 +2583,7 @@ elif test -z "$CFLAGS" ; then
     CFLAGS="-O2 $_march $_mcpu $_pipe"
   else
     CFLAGS="-O4 $_march $_mcpu $_pipe -ffast-math -fomit-frame-pointer"
-    WARNFLAGS="-Wall -Wno-switch -Wno-parentheses -Wpointer-arith -Wredundant-decls"
+    WARNFLAGS="-Wall -Wno-switch -Wno-parentheses -Wpointer-arith -Wredundant-decls -Werror-implicit-function-declaration"
     extra_ldflags="$extra_ldflags -ffast-math"
   fi
 else
@@ -3705,6 +3705,14 @@ fi
 echores "$_soundcard_h"
 
 
+echocheck "sys/videoio.h"
+sys_videoio_h=no
+def_sys_videoio_h='#undef HAVE_SYS_VIDEOIO_H'
+header_check sys/videoio.h && sys_videoio_h=yes &&
+    def_sys_videoio_h='#define HAVE_SYS_VIDEOIO_H 1'
+echores "$sys_videoio_h"
+
+
 echocheck "sys/dvdio.h"
 _dvdio=no
 # FreeBSD 8.1 has broken dvdio.h
@@ -4404,6 +4412,7 @@ if test "$_vdpau" = yes ; then
   def_vdpau='#define CONFIG_VDPAU 1'
   libs_mplayer="$libs_mplayer -lvdpau"
   vomodules="vdpau $vomodules"
+  libavhwaccels="MPEG1_VDPAU_HWACCEL MPEG2_VDPAU_HWACCEL"
 else
   def_vdpau='#define CONFIG_VDPAU 0'
   novomodules="vdpau $novomodules"
@@ -6968,7 +6977,7 @@ echores "$_libdv"
 echocheck "CrystalHD"
 if test "$crystalhd" = auto ; then
    crystalhd=no
-   statement_check_broken libcrystalhd/bc_dts_types.h libcrystalhd/libcrystalhd_if.h 'DtsGetVersion(0, 0, 0)' -lcrystalhd $_ld_lm && crystalhd=yes
+   statement_check_broken libcrystalhd/bc_dts_types.h libcrystalhd/libcrystalhd_if.h 'DtsCrystalHDVersion(0, 0)' -lcrystalhd $_ld_lm && crystalhd=yes
 fi
 
 if test "$crystalhd" = yes ; then
@@ -7137,7 +7146,7 @@ struct vpx_codec_ctx decoder;
 int main(void) {
   vpx_codec_dec_init(NULL, &vpx_codec_vp8_dx_algo, NULL, 0);
   vpx_codec_enc_init(NULL, &vpx_codec_vp8_dx_algo, NULL, 0);
-  return 0;
+  return VPX_CQ;
 }
 EOF
     cc_check -lvpx && _libvpx_lavc=yes && extra_ldflags="$extra_ldflags -lvpx"
@@ -7380,6 +7389,8 @@ if test "$_tv_v4l2" = auto ; then
   _tv_v4l2=no
   if test "$_tv" = yes && linux ; then
     header_check_broken sys/time.h linux/videodev2.h && _tv_v4l2=yes
+  elif test "$_tv" = yes && test "$sys_videoio_h" = "yes" ; then
+    _tv_v4l2=yes
   fi
 fi
 if test "$_tv_v4l2" = yes ; then
@@ -8187,7 +8198,7 @@ $mak_libavcodec_mpegaudio_hp
 !CONFIG_LIBRTMP = $nolibrtmp
 CONFIG_LIBRTMP  = $_librtmp
 
-CONFIG_AC3DSP   = $_mencoder
+CONFIG_AC3DSP   = yes
 CONFIG_BZLIB    = $bzlib
 CONFIG_CRYSTALHD= $crystalhd
 CONFIG_ENCODERS = yes
@@ -8305,6 +8316,7 @@ $def_soundcard_h
 $def_sys_asoundlib_h
 $def_sys_soundcard_h
 $def_sys_sysinfo_h
+$def_sys_videoio_h
 $def_termios_h
 $def_termios_sys_h
 $def_winsock2_h

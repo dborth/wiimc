@@ -21,6 +21,7 @@
 #include "avformat.h"
 #include "rtp.h"
 #include "rdt.h"
+#include "url.h"
 
 #define REGISTER_MUXER(X,x) { \
     extern AVOutputFormat ff_##x##_muxer; \
@@ -34,7 +35,7 @@
 
 #define REGISTER_PROTOCOL(X,x) { \
     extern URLProtocol ff_##x##_protocol; \
-    if(CONFIG_##X##_PROTOCOL) av_register_protocol2(&ff_##x##_protocol, sizeof(ff_##x##_protocol)); }
+    if(CONFIG_##X##_PROTOCOL) ffurl_register_protocol(&ff_##x##_protocol, sizeof(ff_##x##_protocol)); }
 
 void av_register_all(void)
 {
@@ -75,6 +76,7 @@ void av_register_all(void)
     REGISTER_DEMUXER  (CDG, cdg);
     REGISTER_MUXER    (CRC, crc);
     REGISTER_MUXDEMUX (DAUD, daud);
+    REGISTER_DEMUXER  (DFA, dfa);
     REGISTER_MUXDEMUX (DIRAC, dirac);
     REGISTER_MUXDEMUX (DNXHD, dnxhd);
     REGISTER_DEMUXER  (DSICIN, dsicin);
@@ -223,6 +225,7 @@ void av_register_all(void)
     REGISTER_DEMUXER  (WTV, wtv);
     REGISTER_DEMUXER  (WV, wv);
     REGISTER_DEMUXER  (XA, xa);
+    REGISTER_DEMUXER  (XWMA, xwma);
     REGISTER_DEMUXER  (YOP, yop);
     REGISTER_MUXDEMUX (YUV4MPEGPIPE, yuv4mpegpipe);
 

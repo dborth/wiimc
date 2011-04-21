@@ -675,7 +675,9 @@ static AVStream * parse_media_type(AVFormatContext *s, AVStream *st, int sid,
         if (!st)
             return NULL;
         if (!ff_guidcmp(formattype, format_waveformatex)) {
-            ff_get_wav_header(pb, st->codec, size);
+            int ret = ff_get_wav_header(pb, st->codec, size);
+            if (ret < 0)
+                return NULL;
         } else {
             if (ff_guidcmp(formattype, format_none))
                 av_log(s, AV_LOG_WARNING, "unknown formattype:"PRI_GUID"\n", ARG_GUID(formattype));
@@ -1061,7 +1063,7 @@ static int read_seek(AVFormatContext *s, int stream_index,
     int i;
 
     if ((flags & AVSEEK_FLAG_FRAME) || (flags & AVSEEK_FLAG_BYTE))
-        return AVERROR_NOTSUPP;
+        return AVERROR(ENOSYS);
 
     /* timestamp adjustment is required because wtv->pts values are absolute,
      * whereas AVIndexEntry->timestamp values are relative to epoch. */

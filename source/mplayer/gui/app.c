@@ -34,7 +34,6 @@ static const evName evNames[] = {
     { evNext,              "evNext"              },
     { evLoad,              "evLoad"              },
     { evEqualizer,         "evEqualizer"         },
-    { evEqualizer,         "evEqualeaser"        }, // NOTE TO MYSELF: any skin using this?
     { evPlayList,          "evPlaylist"          },
     { evExit,              "evExit"              },
     { evIconify,           "evIconify"           },
@@ -107,7 +106,7 @@ void appFreeStruct(void)
     appClearItem(&appMPlayer.bar);
     appMPlayer.barIsPresent = 0;
 
-    appClearItem(&appMPlayer.menuBase);
+    appClearItem(&appMPlayer.menu);
     appClearItem(&appMPlayer.menuSelected);
     appMPlayer.menuIsPresent = 0;
 
@@ -142,7 +141,6 @@ void btnModify(int event, float state)
             switch (appMPlayer.mainItems[i].type) {
             case itButton:
                 appMPlayer.mainItems[i].pressed = (int)state;
-                appMPlayer.mainItems[i].tmp     = (int)state;
                 break;
 
             case itPotmeter:
@@ -163,7 +161,6 @@ void btnModify(int event, float state)
             switch (appMPlayer.barItems[i].type) {
             case itButton:
                 appMPlayer.barItems[i].pressed = (int)state;
-                appMPlayer.barItems[i].tmp     = (int)state;
                 break;
 
             case itPotmeter:
@@ -184,17 +181,11 @@ void btnSet(int event, int set)
 {
     int i;
 
-    for (i = 0; i <= appMPlayer.IndexOfMainItems; i++) {
-        if (appMPlayer.mainItems[i].message == event) {
+    for (i = 0; i <= appMPlayer.IndexOfMainItems; i++)
+        if (appMPlayer.mainItems[i].message == event)
             appMPlayer.mainItems[i].pressed = set;
-            appMPlayer.barItems[i].tmp      = 0;
-        }
-    }
 
-    for (i = 0; i <= appMPlayer.IndexOfBarItems; i++) {
-        if (appMPlayer.barItems[i].message == event) {
+    for (i = 0; i <= appMPlayer.IndexOfBarItems; i++)
+        if (appMPlayer.barItems[i].message == event)
             appMPlayer.barItems[i].pressed = set;
-            appMPlayer.barItems[i].tmp     = 0;
-        }
-    }
 }

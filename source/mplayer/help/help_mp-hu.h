@@ -572,7 +572,6 @@ static const char help_text[]=
 #define MSGTR_NEMFMR "Nincs elég memória a menü rendereléséhez."
 #define MSGTR_IDFGCVD "Nem találtam GUI-kompatibilis videó meghajtót."
 #define MSGTR_NEEDLAVC "Nem MPEG fájl lejátszása nem lehetséges a DXR3/H+ hardverrel újrakódolás nélkül.\nKapcsold be a lavc opciót a DXR3/H+ konfigurációs panelen."
-#define MSGTR_UNKNOWNWINDOWTYPE "Ismeretlen ablak típust találtam ..."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[skin] hiba a skin konfigurációs fájljának %d. sorában: %s"
@@ -580,18 +579,14 @@ static const char help_text[]=
 #define MSGTR_SKIN_SkinFileNotReadable "[skin] fájl ( %s ) nem olvasható.\n"
 #define MSGTR_SKIN_BITMAP_16bit  "16 vagy kevesebb bites bitmap nem támogatott (%s).\n"
 #define MSGTR_SKIN_BITMAP_FileNotFound  "A fájl nem található (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "BMP olvasási hiba (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "TGA olvasási hiba (%s)\n"
 #define MSGTR_SKIN_BITMAP_PNGReadError "PNG olvasási hiba (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "RLE tömörített TGA-k nincsenek támogatva (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "ismeretlen tipusú fájl (%s)\n"
 #define MSGTR_SKIN_BITMAP_ConversionError "hiba a 24-ről 32 bitre konvertálás közben (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "ismeretlen üzenet: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "nincs elég memória\n"
+#define MSGTR_SKIN_UnknownMessage "ismeretlen üzenet: %s\n"
+#define MSGTR_SKIN_NotEnoughMemory "nincs elég memória\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "Túl sok betűtipus van deklarálva.\n"
 #define MSGTR_SKIN_FONT_FontFileNotFound "Nem találom a betűtipus fájlt.\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "Nem találom a betűtipus képfájlt.\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "nemlétező betűtipus azonosító (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "nemlétező betűtipus azonosító (%s)\n"
 #define MSGTR_SKIN_UnknownParameter "ismeretlen paraméter (%s)\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Skin nem található (%s).\n"
 #define MSGTR_SKIN_SKINCFG_SelectedSkinNotFound "A kiválasztott skin ( %s ) nem található, a 'default'-ot próbálom meg...\n"
@@ -788,10 +783,6 @@ static const char help_text[]=
 #define MSGTR_MSGBOX_LABEL_FatalError "Végzetes hiba!"
 #define MSGTR_MSGBOX_LABEL_Error "Hiba!"
 #define MSGTR_MSGBOX_LABEL_Warning "Figyelmeztetés!"
-
-// bitmap.c
-#define MSGTR_NotEnoughMemoryC32To1 "[c32to1] nincs elég memória a képhez\n"
-#define MSGTR_NotEnoughMemoryC1To32 "[c1to32] nincs elég memória a képhez\n"
 
 // cfg.c
 #define MSGTR_ConfigFileReadError "[cfg] hiba a konfigurációs fájl olvasásakor ...\n"

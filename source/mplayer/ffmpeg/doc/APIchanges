@@ -12,6 +12,86 @@ libavutil:   2009-03-08
 
 API changes, most recent first:
 
+2011-04-12 - lavf 52.107.0 - avio.h
+  Avio cleanup, part II - deprecate the entire URLContext API:
+    175389c add avio_check as a replacement for url_exist
+    ff1ec0c add avio_pause and avio_seek_time as replacements
+            for _av_url_read_fseek/fpause
+    cdc6a87 deprecate av_protocol_next(), avio_enum_protocols
+            should be used instead.
+    80c6e23 rename url_set_interrupt_cb->avio_set_interrupt_cb.
+    f87b1b3 rename open flags: URL_* -> AVIO_*
+    f8270bb add avio_enum_protocols.
+    5593f03 deprecate URLProtocol.
+    c486dad deprecate URLContext.
+    026e175 deprecate the typedef for URLInterruptCB
+    8e76a19 deprecate av_register_protocol2.
+    b840484 deprecate URL_PROTOCOL_FLAG_NESTED_SCHEME
+    1305d93 deprecate av_url_read_seek
+    fa104e1 deprecate av_url_read_pause
+    727c7aa deprecate url_get_filename().
+    5958df3 deprecate url_max_packet_size().
+    1869ea0 deprecate url_get_file_handle().
+    32a97d4 deprecate url_filesize().
+    e52a914 deprecate url_close().
+    58a48c6 deprecate url_seek().
+    925e908 deprecate url_write().
+    dce3756 deprecate url_read_complete().
+    bc371ac deprecate url_read().
+    0589da0 deprecate url_open().
+    62eaaea deprecate url_connect.
+    5652bb9 deprecate url_alloc.
+    333e894 deprecate url_open_protocol
+    e230705 deprecate url_poll and URLPollEntry
+
+2011-04-10 - lavu  50.40.0 - pixfmt.h
+  Add PIX_FMT_BGR48LE and PIX_FMT_BGR48BE pixel formats
+
+2011-04-08 - lavf 52.106.0 - avformat.h
+  Minor avformat.h cleanup:
+    a9bf9d8 deprecate av_guess_image2_codec
+    c3675df rename avf_sdp_create->av_sdp_create
+
+2011-04-03 - lavf 52.105.0 - avio.h
+  Large-scale renaming/deprecating of AVIOContext-related functions:
+    724f6a0 deprecate url_fdopen
+    403ee83 deprecate url_open_dyn_packet_buf
+    6dc7d80 rename url_close_dyn_buf       -> avio_close_dyn_buf
+    b92c545 rename url_open_dyn_buf        -> avio_open_dyn_buf
+    8978fed introduce an AVIOContext.seekable field as a replacement for
+            AVIOContext.is_streamed and url_is_streamed()
+    b64030f deprecate get_checksum()
+    4c4427a deprecate init_checksum()
+    4ec153b deprecate udp_set_remote_url/get_local_port
+    933e90a deprecate av_url_read_fseek/fpause
+    8d9769a deprecate url_fileno
+    b7f2fdd rename put_flush_packet -> avio_flush
+    35f1023 deprecate url_close_buf
+    83fddae deprecate url_open_buf
+    d9d86e0 rename url_fprintf -> avio_printf
+    59f65d9 deprecate url_setbufsize
+    3e68b3b deprecate url_ferror
+    66e5b1d deprecate url_feof
+    e8bb2e2 deprecate url_fget_max_packet_size
+    76aa876 rename url_fsize -> avio_size
+    e519753 deprecate url_fgetc
+    655e45e deprecate url_fgets
+    a2704c9 rename url_ftell -> avio_tell
+    e16ead0 deprecate get_strz() in favor of avio_get_str
+    0300db8,2af07d3 rename url_fskip -> avio_skip
+    6b4aa5d rename url_fseek -> avio_seek
+    61840b4 deprecate put_tag
+    22a3212 rename url_fopen/fclose -> avio_open/close.
+    0ac8e2b deprecate put_nbyte
+    77eb550 rename put_byte          -> avio_w8
+                   put_[b/l]e<type>  -> avio_w[b/l]<type>
+                   put_buffer        -> avio_write
+    b7effd4 rename get_byte          -> avio_r8,
+                   get_[b/l]e<type>  -> avio_r[b/l]<type>
+                   get_buffer        -> avio_read
+    b3db9ce deprecate get_partial_buffer
+    8d9ac96 rename av_alloc_put_byte -> avio_alloc_context
+
 2011-03-25 - 34b47d7 - lavc 52.115.0 - AVCodecContext.audio_service_type
   Add audio_service_type field to AVCodecContext.
 
@@ -453,15 +533,21 @@ API changes, most recent first:
 
 2010-05-26 - r23334 - lavc 52.72.0 - CODEC_CAP_EXPERIMENTAL
   Add CODEC_CAP_EXPERIMENTAL flag.
+  NOTE: this was backported to 0.6
 
 2010-05-23 - r23255 - lavu 50.16.0 - av_get_random_seed()
   Add av_get_random_seed().
 
 2010-05-18 - r23161 - lavf 52.63.0 - AVFMT_FLAG_RTP_HINT
   Add AVFMT_FLAG_RTP_HINT as possible value for AVFormatContext.flags.
+  NOTE: this was backported to 0.6
 
 2010-05-09 - r23066 - lavfi 1.20.0 - AVFilterPicRef
   Add interlaced and top_field_first fields to AVFilterPicRef.
+
+------------------------------8<-------------------------------------
+                   0.6 branch was cut here
+----------------------------->8--------------------------------------
 
 2010-05-01 - r23002 - lavf 52.62.0 - probe function
   Add av_probe_input_format2 to API, it allows ignoring probe

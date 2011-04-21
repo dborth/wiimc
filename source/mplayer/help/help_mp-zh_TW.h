@@ -725,7 +725,6 @@ static const char help_text[]=
 #define MSGTR_NEMFMR "抱歉, 没有足够的内存用于菜單渲染。"
 #define MSGTR_IDFGCVD "抱歉, 未找到 GUI-兼容的視頻輸出驅動。"
 #define MSGTR_NEEDLAVC "抱歉, 不能用没有重編碼的 DXR3/H+ 設備播放 non-MPEG 文件\n請啟用 DXR3/H+ 配置盒中的 lavc。"
-#define MSGTR_UNKNOWNWINDOWTYPE "發現未知窗口類型 ..."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[skin] 皮膚配置文件的 %d: %s行出錯"
@@ -733,18 +732,14 @@ static const char help_text[]=
 #define MSGTR_SKIN_SkinFileNotReadable "[skin] 文件 (%s) 不可讀。\n"
 #define MSGTR_SKIN_BITMAP_16bit  "不支持少于 16 比特色深的位圖 (%s)。\n"
 #define MSGTR_SKIN_BITMAP_FileNotFound  "找不到文件 (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "BMP 讀取錯誤 (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "TGA 讀取錯誤 (%s)\n"
 #define MSGTR_SKIN_BITMAP_PNGReadError "PNG 讀取錯誤 (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "不支持 RLE 格式壓縮的 TGA (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "未知的文件格式 (%s)\n"
 #define MSGTR_SKIN_BITMAP_ConversionError "24 比特到 32 比特的轉換發生錯誤 (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "未知信息: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "内存不够\n"
+#define MSGTR_SKIN_UnknownMessage "未知信息: %s\n"
+#define MSGTR_SKIN_NotEnoughMemory "内存不够\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "聲明字體太多。\n"
 #define MSGTR_SKIN_FONT_FontFileNotFound "找不到字體文件。\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "找不到字體圖像文件。\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "不存在的字體標簽 (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "不存在的字體標簽 (%s)\n"
 #define MSGTR_SKIN_UnknownParameter "未知參數 (%s)\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "找不到皮膚 (%s)。\n"
 #define MSGTR_SKIN_SKINCFG_SelectedSkinNotFound "没找到選定的皮膚 (%s), 試着使用默認的...\n"
@@ -940,11 +935,6 @@ static const char help_text[]=
 #define MSGTR_MSGBOX_LABEL_FatalError "致命錯誤!"
 #define MSGTR_MSGBOX_LABEL_Error "錯誤!"
 #define MSGTR_MSGBOX_LABEL_Warning "警告!"
-
-// bitmap.c
-
-#define MSGTR_NotEnoughMemoryC32To1 "[c32to1] 内存不够, 容不下圖片\n"
-#define MSGTR_NotEnoughMemoryC1To32 "[c1to32] 内存不够, 容不下圖片\n"
 
 // cfg.c
 

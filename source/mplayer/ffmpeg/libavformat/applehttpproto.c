@@ -29,6 +29,7 @@
 #include "libavutil/avstring.h"
 #include "avformat.h"
 #include "internal.h"
+#include "url.h"
 #include <unistd.h>
 
 /*
@@ -114,7 +115,7 @@ static int parse_playlist(URLContext *h, const char *url)
     char line[1024];
     const char *ptr;
 
-    if ((ret = avio_open(&in, url, URL_RDONLY)) < 0)
+    if ((ret = avio_open(&in, url, AVIO_RDONLY)) < 0)
         return ret;
 
     read_chomp_line(in, line, sizeof(line));
@@ -179,8 +180,8 @@ static int applehttp_open(URLContext *h, const char *uri, int flags)
     int ret, i;
     const char *nested_url;
 
-    if (flags & (URL_WRONLY | URL_RDWR))
-        return AVERROR_NOTSUPP;
+    if (flags & (AVIO_WRONLY | AVIO_RDWR))
+        return AVERROR(ENOSYS);
 
     s = av_mallocz(sizeof(AppleHTTPContext));
     if (!s)
@@ -240,12 +241,12 @@ static int applehttp_read(URLContext *h, uint8_t *buf, int size)
 
 start:
     if (s->seg_hd) {
-        ret = url_read(s->seg_hd, buf, size);
+        ret = ffurl_read(s->seg_hd, buf, size);
         if (ret > 0)
             return ret;
     }
     if (s->seg_hd) {
-        url_close(s->seg_hd);
+        ffurl_close(s->seg_hd);
         s->seg_hd = NULL;
         s->cur_seq_no++;
     }
@@ -274,7 +275,7 @@ retry:
     }
     url = s->segments[s->cur_seq_no - s->start_seq_no]->url,
     av_log(NULL, AV_LOG_DEBUG, "opening %s\n", url);
-    ret = url_open(&s->seg_hd, url, URL_RDONLY);
+    ret = ffurl_open(&s->seg_hd, url, AVIO_RDONLY);
     if (ret < 0) {
         if (url_interrupt_cb())
             return AVERROR_EXIT;
@@ -291,17 +292,15 @@ static int applehttp_close(URLContext *h)
 
     free_segment_list(s);
     free_variant_list(s);
-    url_close(s->seg_hd);
+    ffurl_close(s->seg_hd);
     av_free(s);
     return 0;
 }
 
 URLProtocol ff_applehttp_protocol = {
-    "applehttp",
-    applehttp_open,
-    applehttp_read,
-    NULL, /* write */
-    NULL, /* seek */
-    applehttp_close,
-    .flags = URL_PROTOCOL_FLAG_NESTED_SCHEME,
+    .name      = "applehttp",
+    .url_open  = applehttp_open,
+    .url_read  = applehttp_read,
+    .url_close = applehttp_close,
+    .flags     = URL_PROTOCOL_FLAG_NESTED_SCHEME,
 };

@@ -53,9 +53,6 @@ const char *udp_ip = "127.0.0.1"; // where the master sends datagrams
                                   // (can be a broadcast address)
 float udp_seek_threshold = 1.0;   // how far off before we seek
 
-// remember where the master is in the file
-static float udp_master_position = -1.0;
-
 // how far off is still considered equal
 #define UDP_TIMING_TOLERANCE 0.02
 
@@ -76,7 +73,7 @@ static void set_blocking(int fd, int blocking)
 // master_position if successful.  if the master has exited, returns 1.
 // returns -1 on error.
 // otherwise, returns 0.
-static int get_udp(int blocking, float *master_position)
+static int get_udp(int blocking, double *master_position)
 {
     char mesg[100];
 
@@ -84,6 +81,9 @@ static int get_udp(int blocking, float *master_position)
     int n;
 
     static int sockfd = -1;
+
+    *master_position = MP_NOPTS_VALUE;
+
     if (sockfd == -1) {
         struct timeval tv = { .tv_sec = 30 };
         struct sockaddr_in servaddr = { 0 };
@@ -105,6 +105,7 @@ static int get_udp(int blocking, float *master_position)
 
     while (-1 != (n = recvfrom(sockfd, mesg, sizeof(mesg)-1, 0,
                                NULL, NULL))) {
+        char *end;
         // flush out any further messages so we don't get behind
         if (chars_received == -1)
             set_blocking(sockfd, 0);
@@ -113,7 +114,11 @@ static int get_udp(int blocking, float *master_position)
         mesg[chars_received] = 0;
         if (strcmp(mesg, "bye") == 0)
             return 1;
-        sscanf(mesg, "%f", master_position);
+        *master_position = strtod(mesg, &end);
+        if (*end) {
+            mp_msg(MSGT_CPLAYER, MSGL_WARN, "Could not parse udp string!\n");
+            *master_position = MP_NOPTS_VALUE;
+        }
     }
 
     return 0;
@@ -159,11 +164,13 @@ void send_udp(const char *send_to_ip, int port, char *mesg)
 // position.  returns 1 if the master tells us to exit, 0 otherwise.
 int udp_slave_sync(MPContext *mpctx)
 {
+    double udp_master_position;
+
     // grab any waiting datagrams without blocking
     int master_exited = get_udp(0, &udp_master_position);
 
-    while (!master_exited) {
-        float my_position = mpctx->sh_video->pts;
+    while (udp_master_position != MP_NOPTS_VALUE && !master_exited) {
+        double my_position = mpctx->sh_video->pts;
 
         // if we're way off, seek to catch up
         if (FFABS(my_position - udp_master_position) > udp_seek_threshold) {

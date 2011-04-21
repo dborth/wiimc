@@ -178,6 +178,8 @@ External library support:
   --enable-libschroedinger enable Dirac support via libschroedinger [no]
   --enable-libspeex        enable Speex decoding via libspeex [no]
   --enable-libtheora       enable Theora encoding via libtheora [no]
+  --enable-libvo-aacenc    enable AAC encoding via libvo-aacenc [no]
+  --enable-libvo-amrwbenc  enable AMR-WB encoding via libvo-amrwbenc [no]
   --enable-libvorbis       enable Vorbis encoding via libvorbis,
                            native implementation exists [no]
   --enable-libvpx          enable VP8 support via libvpx [no]
@@ -242,7 +244,6 @@ Developer options (useful when working on Libav itself):
   --enable-debug=LEVEL     set the debug level [$debuglevel]
   --disable-optimizations  disable compiler optimizations
   --enable-extra-warnings  enable more compiler warnings
-  --disable-stripping      disable stripping of executables and shared libraries
   --samples=PATH           location of test samples for FATE, if not set use
                            \$FATE_SAMPLES at make invocation time.
 
@@ -938,6 +939,8 @@ CONFIG_LIST="
     libschroedinger
     libspeex
     libtheora
+    libvo_aacenc
+    libvo_amrwbenc
     libvorbis
     libvpx
     libx264
@@ -1094,6 +1097,7 @@ HAVE_LIST="
     sdl
     sdl_video_size
     setmode
+    sndio_h
     socklen_t
     soundcard_h
     poll_h
@@ -1141,7 +1145,6 @@ CMDLINE_SELECT="
     extra_warnings
     logging
     optimizations
-    stripping
     symver
     yasm
 "
@@ -1179,7 +1182,6 @@ CMDLINE_SET="
     pkg_config
     samples
     source_path
-    strip
     sysinclude
     sysroot
     target_exec
@@ -1237,7 +1239,7 @@ rdft_select="fft"
 aac_decoder_select="mdct rdft sinewin"
 aac_encoder_select="mdct sinewin"
 aac_latm_decoder_select="aac_decoder aac_latm_parser"
-ac3_decoder_select="mdct ac3_parser"
+ac3_decoder_select="mdct ac3dsp ac3_parser"
 ac3_encoder_select="mdct ac3dsp"
 ac3_fixed_encoder_select="ac3dsp"
 alac_encoder_select="lpc"
@@ -1386,6 +1388,8 @@ libschroedinger_decoder_deps="libschroedinger"
 libschroedinger_encoder_deps="libschroedinger"
 libspeex_decoder_deps="libspeex"
 libtheora_encoder_deps="libtheora"
+libvo_aacenc_encoder_deps="libvo_aacenc"
+libvo_amrwbenc_encoder_deps="libvo_amrwbenc"
 libvorbis_encoder_deps="libvorbis"
 libvpx_decoder_deps="libvpx"
 libvpx_encoder_deps="libvpx"
@@ -1429,10 +1433,13 @@ alsa_indev_deps="alsa_asoundlib_h snd_pcm_htimestamp"
 alsa_outdev_deps="alsa_asoundlib_h"
 bktr_indev_deps_any="dev_bktr_ioctl_bt848_h machine_ioctl_bt848_h dev_video_bktr_ioctl_bt848_h dev_ic_bt8xx_h"
 dv1394_indev_deps="dv1394 dv_demuxer"
+fbdev_indev_deps="linux_fb_h"
 jack_indev_deps="jack_jack_h"
 libdc1394_indev_deps="libdc1394"
 oss_indev_deps_any="soundcard_h sys_soundcard_h"
 oss_outdev_deps_any="soundcard_h sys_soundcard_h"
+sndio_indev_deps="sndio_h"
+sndio_outdev_deps="sndio_h"
 v4l_indev_deps="linux_videodev_h"
 v4l2_indev_deps_any="linux_videodev2_h sys_videoio_h"
 vfwcap_indev_deps="capCreateCaptureWindow vfwcap_defines"
@@ -1604,7 +1611,6 @@ nm_default="nm"
 objformat="elf"
 pkg_config_default=pkg-config
 ranlib="ranlib"
-strip_default="strip"
 yasmexe="yasm"
 nogas=":"
 
@@ -1637,7 +1643,6 @@ enable network
 enable optimizations
 enable protocols
 enable static
-enable stripping
 enable swscale
 enable swscale_alpha
 
@@ -1814,17 +1819,16 @@ cc_default="${cross_prefix}${cc_default}"
 nm_default="${cross_prefix}${nm_default}"
 pkg_config_default="${cross_prefix}${pkg_config_default}"
 ranlib="${cross_prefix}${ranlib}"
-strip_default="${cross_prefix}${strip_default}"
 
 sysinclude_default="${sysroot}/usr/include"
 
-set_default cc nm pkg_config strip sysinclude
+set_default cc nm pkg_config sysinclude
 enabled cross_compile || host_cc_default=$cc
 set_default host_cc
 
 exesuf() {
     case $1 in
-        mingw32*|cygwin*|*-dos|freedos|opendos|os/2*) echo .exe ;;
+        mingw32*|cygwin*|*-dos|freedos|opendos|os/2*|symbian) echo .exe ;;
     esac
 }
 
@@ -2377,7 +2381,6 @@ case $target_os in
         ;;
     bsd/os)
         add_extralibs -lpoll -lgnugetopt
-        strip="strip -d"
         ;;
     darwin)
         enable malloc_aligned
@@ -2385,7 +2388,6 @@ case $target_os in
         enabled ppc && add_asflags -force_cpusubtype_ALL
         SHFLAGS='-dynamiclib -Wl,-single_module -Wl,-install_name,$(SHLIBDIR)/$(SLIBNAME),-current_version,$(LIBVERSION),-compatibility_version,$(LIBMAJOR)'
         enabled x86_32 && append SHFLAGS -Wl,-read_only_relocs,suppress
-        strip="${strip} -x"
         add_ldflags -Wl,-dynamic,-search_paths_first
         SLIBSUF=".dylib"
         SLIBNAME_WITH_VERSION='$(SLIBPREF)$(FULLNAME).$(LIBVERSION)$(SLIBSUF)'
@@ -2455,7 +2457,6 @@ case $target_os in
         ranlib="echo ignoring ranlib"
         ;;
     os/2*)
-        strip="lxlite -CS"
         ln_s="cp -f"
         add_ldflags -Zomf -Zbin-files -Zargs-wild -Zmap
         SHFLAGS='$(SUBDIR)$(NAME).def -Zdll -Zomf'
@@ -2484,6 +2485,11 @@ case $target_os in
     qnx)
         add_cppflags -D_QNX_SOURCE
         network_extralibs="-lsocket"
+        ;;
+    symbian)
+        SLIBSUF=".dll"
+        enable dos_paths
+        add_cflags --include=$sysinclude/gcce/gcce.h
         ;;
     none)
         ;;
@@ -2525,6 +2531,8 @@ die_license_disabled nonfree libfaac
 
 die_license_disabled version3 libopencore_amrnb
 die_license_disabled version3 libopencore_amrwb
+die_license_disabled version3 libvo_aacenc
+die_license_disabled version3 libvo_amrwbenc
 
 enabled version3 && { enabled gpl && enable gplv3 || enable lgplv3; }
 
@@ -2832,7 +2840,7 @@ for thread in $THREADS_LIST; do
 done
 
 check_lib math.h sin -lm
-disabled vaapi || check_lib va/va.h vaInitialize -lva
+enabled vaapi && require vaapi va/va.h vaInitialize -lva
 
 check_mathfunc exp2
 check_mathfunc exp2f
@@ -2864,6 +2872,8 @@ enabled librtmp    && require_pkg_config librtmp librtmp/rtmp.h RTMP_Socket
 enabled libschroedinger && require_pkg_config schroedinger-1.0 schroedinger/schro.h schro_init
 enabled libspeex   && require  libspeex speex/speex.h speex_decoder_init -lspeex
 enabled libtheora  && require  libtheora theora/theoraenc.h th_info_init -ltheoraenc -ltheoradec -logg
+enabled libvo_aacenc && require libvo_aacenc vo-aacenc/voAAC.h voGetAACEncAPI -lvo-aacenc
+enabled libvo_amrwbenc && require libvo_amrwbenc vo-amrwbenc/enc_if.h E_IF_init -lvo-amrwbenc
 enabled libvorbis  && require  libvorbis vorbis/vorbisenc.h vorbis_info_init -lvorbisenc -lvorbis -logg
 enabled libvpx     && {
     enabled libvpx_decoder && { check_lib2 "vpx/vpx_decoder.h vpx/vp8dx.h" vpx_codec_dec_init_ver -lvpx ||
@@ -2894,6 +2904,7 @@ fi
 
 texi2html -version > /dev/null 2>&1 && enable texi2html || disable texi2html
 
+check_header linux/fb.h
 check_header linux/videodev.h
 check_header linux/videodev2.h
 check_header sys/videoio.h
@@ -2912,12 +2923,15 @@ check_cpp_condition vfw.h "WM_CAP_DRIVER_CONNECT > WM_USER" && enable vfwcap_def
   check_header dev/video/bktr/ioctl_bt848.h; } ||
 check_header dev/ic/bt8xx.h
 
+check_header sndio.h
 check_header sys/soundcard.h
 check_header soundcard.h
 
 enabled_any alsa_indev alsa_outdev && check_lib2 alsa/asoundlib.h snd_pcm_htimestamp -lasound
 
 enabled jack_indev && check_lib2 jack/jack.h jack_client_open -ljack
+
+enabled_any sndio_indev sndio_outdev && check_lib2 sndio.h sio_open -lsndio
 
 enabled x11grab                         &&
 check_header X11/Xlib.h                 &&
@@ -3102,7 +3116,6 @@ if enabled sparc; then
     echo "VIS enabled               ${vis-no}"
 fi
 echo "debug symbols             ${debug-no}"
-echo "strip symbols             ${stripping-no}"
 echo "optimizations             ${optimizations-no}"
 echo "static                    ${static-no}"
 echo "shared                    ${shared-no}"
@@ -3128,6 +3141,9 @@ echo "librtmp enabled           ${librtmp-no}"
 echo "libschroedinger enabled   ${libschroedinger-no}"
 echo "libspeex enabled          ${libspeex-no}"
 echo "libtheora enabled         ${libtheora-no}"
+echo "libva enabled             ${vaapi-no}"
+echo "libvo-aacenc support      ${libvo_aacenc-no}"
+echo "libvo-amrwbenc support    ${libvo_amrwbenc-no}"
 echo "libvorbis enabled         ${libvorbis-no}"
 echo "libvpx enabled            ${libvpx-no}"
 echo "libx264 enabled           ${libx264-no}"
@@ -3196,8 +3212,6 @@ if enabled source_path_used; then
     map 'test -f "$source_path/$v" && $ln_s "$source_path/$v" $v' $FILES
 fi
 
-enabled stripping || strip="echo skipping strip"
-
 config_files="$TMPH config.mak"
 
 cat > config.mak <<EOF
@@ -3225,9 +3239,7 @@ YASM=$yasmexe
 YASMDEP=$yasmexe
 AR=$ar
 RANLIB=$ranlib
-CP=cp -p
 LN_S=$ln_s
-STRIP=$strip
 CPPFLAGS=$CPPFLAGS
 CFLAGS=$CFLAGS
 ASFLAGS=$ASFLAGS
@@ -3271,7 +3283,7 @@ SLIB_CREATE_DEF_CMD=${SLIB_CREATE_DEF_CMD}
 SLIB_EXTRA_CMD=${SLIB_EXTRA_CMD}
 SLIB_INSTALL_EXTRA_CMD=${SLIB_INSTALL_EXTRA_CMD}
 SLIB_UNINSTALL_EXTRA_CMD=${SLIB_UNINSTALL_EXTRA_CMD}
-SAMPLES=${samples:-\$(FATE_SAMPLES)}
+SAMPLES:=${samples:-\$(FATE_SAMPLES)}
 EOF
 
 get_version(){

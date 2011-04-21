@@ -218,6 +218,7 @@ typedef struct VC1Context{
     int range_x, range_y; ///< MV range
     uint8_t pq, altpq;    ///< Current/alternate frame quantizer scale
     uint8_t zz_8x8[4][64];///< Zigzag table for TT_8x8, permuted for IDCT
+    int left_blk_sh, top_blk_sh; ///< Either 3 or 0, positions of l/t in blk[]
     const uint8_t* zz_8x4;///< Zigzag scan table for TT_8x4 coding mode
     const uint8_t* zz_4x8;///< Zigzag scan table for TT_4x8 coding mode
     /** pquant parameters */
@@ -304,6 +305,12 @@ typedef struct VC1Context{
     uint8_t range_mapuv_flag;
     uint8_t range_mapy;
     uint8_t range_mapuv;
+    //@}
+
+    /** Frame decoding info for sprite modes */
+    //@{
+    int new_sprite;
+    int two_sprites;
     //@}
 
     int p_frame_skipped;

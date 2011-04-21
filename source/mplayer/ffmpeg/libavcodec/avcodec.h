@@ -212,6 +212,7 @@ enum CodecID {
     CODEC_ID_LAGARITH,
     CODEC_ID_PRORES,
     CODEC_ID_JV,
+    CODEC_ID_DFA,
 
     /* various PCM "codecs" */
     CODEC_ID_PCM_S16LE= 0x10000,
@@ -1034,6 +1035,10 @@ typedef struct AVPanScan{
 #define FF_BUFFER_HINTS_PRESERVE 0x04 // User must not alter buffer content.
 #define FF_BUFFER_HINTS_REUSABLE 0x08 // Codec will reuse the buffer (update).
 
+enum AVPacketSideDataType {
+    AV_PKT_DATA_PALETTE,
+};
+
 typedef struct AVPacket {
     /**
      * Presentation timestamp in AVStream->time_base units; the time at which
@@ -1055,6 +1060,17 @@ typedef struct AVPacket {
     int   size;
     int   stream_index;
     int   flags;
+    /**
+     * Additional packet data that can be provided by the container.
+     * Packet can contain several types of side information.
+     */
+    struct {
+        uint8_t *data;
+        int      size;
+        enum AVPacketSideDataType type;
+    } *side_data;
+    int side_data_elems;
+
     /**
      * Duration of this packet in AVStream->time_base units, 0 if unknown.
      * Equals next_pts - this_pts in presentation order.
@@ -1207,13 +1223,15 @@ typedef struct AVCodecContext {
      */
     enum PixelFormat pix_fmt;
 
+#if FF_API_RATE_EMU
     /**
      * Frame rate emulation. If not zero, the lower layer (i.e. format handler)
      * has to read frames at native frame rate.
      * - encoding: Set by user.
      * - decoding: unused
      */
-    int rate_emu;
+    attribute_deprecated int rate_emu;
+#endif
 
     /**
      * If non NULL, 'draw_horiz_band' is called by the libavcodec
@@ -1319,13 +1337,15 @@ typedef struct AVCodecContext {
 
     int b_frame_strategy;
 
+#if FF_API_HURRY_UP
     /**
      * hurry up amount
      * - encoding: unused
      * - decoding: Set by user. 1-> Skip B-frames, 2-> Skip IDCT/dequant too, 5-> Skip everything except header
      * @deprecated Deprecated in favor of skip_idct and skip_frame.
      */
-    int hurry_up;
+    attribute_deprecated int hurry_up;
+#endif
 
     struct AVCodec *codec;
 
@@ -1813,19 +1833,21 @@ typedef struct AVCodecContext {
      */
     uint64_t error[4];
 
+#if FF_API_MB_Q
     /**
      * minimum MB quantizer
      * - encoding: unused
      * - decoding: unused
      */
-    int mb_qmin;
+    attribute_deprecated int mb_qmin;
 
     /**
      * maximum MB quantizer
      * - encoding: unused
      * - decoding: unused
      */
-    int mb_qmax;
+    attribute_deprecated int mb_qmax;
+#endif
 
     /**
      * motion estimation comparison function
@@ -2146,16 +2168,19 @@ typedef struct AVCodecContext {
      */
     int error_rate;
 
+#if FF_API_ANTIALIAS_ALGO
     /**
      * MP3 antialias algorithm, see FF_AA_* below.
      * - encoding: unused
      * - decoding: Set by user.
      */
-    int antialias_algo;
+    attribute_deprecated int antialias_algo;
 #define FF_AA_AUTO    0
 #define FF_AA_FASTINT 1 //not implemented yet
 #define FF_AA_INT     2
 #define FF_AA_FLOAT   3
+#endif
+
     /**
      * quantizer noise shaping
      * - encoding: Set by user.
@@ -2580,7 +2605,7 @@ typedef struct AVCodecContext {
      */
     int64_t timecode_frame_start;
 
-#if LIBAVCODEC_VERSION_MAJOR < 53
+#if FF_API_REQUEST_CHANNELS
     /**
      * Decoder should decode to this many channels if it can (0 for default)
      * - encoding: unused
@@ -2934,7 +2959,7 @@ typedef struct AVCodec {
     const enum AVSampleFormat *sample_fmts; ///< array of supported sample formats, or NULL if unknown, array is terminated by -1
     const int64_t *channel_layouts;         ///< array of support channel layouts, or NULL if unknown. array is terminated by 0
     uint8_t max_lowres;                     ///< maximum value for lowres supported by the decoder
-    AVClass *priv_class;                    ///< AVClass for the private context
+    const AVClass *priv_class;              ///< AVClass for the private context
     const AVProfile *profiles;              ///< array of recognized profiles, or NULL if unknown, array is terminated by {FF_PROFILE_UNKNOWN}
 
     /**
@@ -3191,6 +3216,28 @@ int av_dup_packet(AVPacket *pkt);
  * @param pkt packet to free
  */
 void av_free_packet(AVPacket *pkt);
+
+/**
+ * Allocate new information of a packet.
+ *
+ * @param pkt packet
+ * @param type side information type
+ * @param size side information size
+ * @return pointer to fresh allocated data or NULL otherwise
+ */
+uint8_t* av_packet_new_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
+                                 int size);
+
+/**
+ * Get side information from packet.
+ *
+ * @param pkt packet
+ * @param type desired side information type
+ * @param size pointer for side information size to store (optional)
+ * @return pointer to data if present or NULL otherwise
+ */
+uint8_t* av_packet_get_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
+                                 int *size);
 
 /* resample.c */
 

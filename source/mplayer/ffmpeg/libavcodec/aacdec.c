@@ -964,19 +964,19 @@ static inline float *VMUL4S(float *dst, const float *v, unsigned idx,
     union float754 s = { .f = *scale };
     union float754 t;
 
-    t.i = s.i ^ (sign & 1<<31);
+    t.i = s.i ^ (sign & 1U<<31);
     *dst++ = v[idx    & 3] * t.f;
 
     sign <<= nz & 1; nz >>= 1;
-    t.i = s.i ^ (sign & 1<<31);
+    t.i = s.i ^ (sign & 1U<<31);
     *dst++ = v[idx>>2 & 3] * t.f;
 
     sign <<= nz & 1; nz >>= 1;
-    t.i = s.i ^ (sign & 1<<31);
+    t.i = s.i ^ (sign & 1U<<31);
     *dst++ = v[idx>>4 & 3] * t.f;
 
     sign <<= nz & 1; nz >>= 1;
-    t.i = s.i ^ (sign & 1<<31);
+    t.i = s.i ^ (sign & 1U<<31);
     *dst++ = v[idx>>6 & 3] * t.f;
 
     return dst;
@@ -1169,11 +1169,11 @@ static int decode_spectrum_and_dequant(AACContext *ac, float coef[1024],
                                     b += 4;
                                     n = (1 << b) + SHOW_UBITS(re, gb, b);
                                     LAST_SKIP_BITS(re, gb, b);
-                                    *icf++ = cbrt_tab[n] | (bits & 1<<31);
+                                    *icf++ = cbrt_tab[n] | (bits & 1U<<31);
                                     bits <<= 1;
                                 } else {
                                     unsigned v = ((const uint32_t*)vq)[cb_idx & 15];
-                                    *icf++ = (bits & 1<<31) | v;
+                                    *icf++ = (bits & 1U<<31) | v;
                                     bits <<= !!v;
                                 }
                                 cb_idx >>= 4;
@@ -2250,6 +2250,7 @@ static int latm_decode_audio_specific_config(struct LATMContext *latmctx,
                                              GetBitContext *gb)
 {
     AVCodecContext *avctx = latmctx->aac_ctx.avctx;
+    MPEG4AudioConfig m4ac;
     int  config_start_bit = get_bits_count(gb);
     int     bits_consumed, esize;
 
@@ -2259,8 +2260,7 @@ static int latm_decode_audio_specific_config(struct LATMContext *latmctx,
         return AVERROR_INVALIDDATA;
     } else {
         bits_consumed =
-            decode_audio_specific_config(&latmctx->aac_ctx, avctx,
-                                         &latmctx->aac_ctx.m4ac,
+            decode_audio_specific_config(NULL, avctx, &m4ac,
                                          gb->buffer + (config_start_bit / 8),
                                          get_bits_left(gb) / 8);
 

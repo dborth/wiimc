@@ -105,7 +105,9 @@ static const AVOption options[]={
 {"extradata_size", NULL, OFFSET(extradata_size), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX},
 {"time_base", NULL, OFFSET(time_base), FF_OPT_TYPE_RATIONAL, DEFAULT, INT_MIN, INT_MAX},
 {"g", "set the group of picture size", OFFSET(gop_size), FF_OPT_TYPE_INT, 12, INT_MIN, INT_MAX, V|E},
+#if FF_API_RATE_EMU
 {"rate_emu", "frame rate emulation", OFFSET(rate_emu), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX},
+#endif
 {"ar", "set audio sampling rate (in Hz)", OFFSET(sample_rate), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX},
 {"ac", "set number of audio channels", OFFSET(channels), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX},
 {"cutoff", "set cutoff bandwidth", OFFSET(cutoff), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, A|E},
@@ -125,7 +127,9 @@ static const AVOption options[]={
 {"rc_strategy", "ratecontrol method", OFFSET(rc_strategy), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
 {"b_strategy", "strategy to choose between I/P/B-frames", OFFSET(b_frame_strategy), FF_OPT_TYPE_INT, 0, INT_MIN, INT_MAX, V|E},
 {"wpredp", "weighted prediction analysis method", OFFSET(weighted_p_pred), FF_OPT_TYPE_INT, 0, INT_MIN, INT_MAX, V|E},
-{"hurry_up", NULL, OFFSET(hurry_up), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|D},
+#if FF_API_HURRY_UP
+{"hurry_up", "deprecated, use skip_idct/skip_frame instead", OFFSET(hurry_up), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|D},
+#endif
 {"ps", "rtp payload size in bytes", OFFSET(rtp_payload_size), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
 {"mv_bits", NULL, OFFSET(mv_bits), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX},
 {"header_bits", NULL, OFFSET(header_bits), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX},
@@ -255,8 +259,10 @@ static const AVOption options[]={
 {"pf", "forward predicted MVs of P-frames", 0, FF_OPT_TYPE_CONST, FF_DEBUG_VIS_MV_P_FOR, INT_MIN, INT_MAX, V|D, "debug_mv"},
 {"bf", "forward predicted MVs of B-frames", 0, FF_OPT_TYPE_CONST, FF_DEBUG_VIS_MV_B_FOR, INT_MIN, INT_MAX, V|D, "debug_mv"},
 {"bb", "backward predicted MVs of B-frames", 0, FF_OPT_TYPE_CONST, FF_DEBUG_VIS_MV_B_BACK, INT_MIN, INT_MAX, V|D, "debug_mv"},
+#if FF_API_MB_Q
 {"mb_qmin", "obsolete, use qmin", OFFSET(mb_qmin), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
 {"mb_qmax", "obsolete, use qmax", OFFSET(mb_qmax), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
+#endif
 {"cmp", "full pel me compare function", OFFSET(me_cmp), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E, "cmp_func"},
 {"subcmp", "sub pel me compare function", OFFSET(me_sub_cmp), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E, "cmp_func"},
 {"mbcmp", "macroblock compare function", OFFSET(mb_cmp), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E, "cmp_func"},
@@ -313,7 +319,9 @@ static const AVOption options[]={
 {"inter_threshold", NULL, OFFSET(inter_threshold), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
 {"flags2", NULL, OFFSET(flags2), FF_OPT_TYPE_FLAGS, CODEC_FLAG2_FASTPSKIP|CODEC_FLAG2_BIT_RESERVOIR|CODEC_FLAG2_PSY|CODEC_FLAG2_MBTREE, 0, UINT_MAX, V|A|E|D, "flags2"},
 {"error", NULL, OFFSET(error_rate), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
+#if FF_API_ANTIALIAS_ALGO
 {"antialias", "MP3 antialias algorithm", OFFSET(antialias_algo), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|D, "aa"},
+#endif
 {"auto", NULL, 0, FF_OPT_TYPE_CONST, FF_AA_AUTO, INT_MIN, INT_MAX, V|D, "aa"},
 {"fastint", NULL, 0, FF_OPT_TYPE_CONST, FF_AA_FASTINT, INT_MIN, INT_MAX, V|D, "aa"},
 {"int", NULL, 0, FF_OPT_TYPE_CONST, FF_AA_INT, INT_MIN, INT_MAX, V|D, "aa"},
@@ -400,7 +408,9 @@ static const AVOption options[]={
 {"timecode_frame_start", "GOP timecode frame start number, in non drop frame format", OFFSET(timecode_frame_start), FF_OPT_TYPE_INT64, 0, 0, INT64_MAX, V|E},
 {"drop_frame_timecode", NULL, 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_DROP_FRAME_TIMECODE, INT_MIN, INT_MAX, V|E, "flags2"},
 {"non_linear_q", "use non linear quantizer", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_NON_LINEAR_QUANT, INT_MIN, INT_MAX, V|E, "flags2"},
+#if FF_API_REQUEST_CHANNELS
 {"request_channels", "set desired number of audio channels", OFFSET(request_channels), FF_OPT_TYPE_INT, DEFAULT, 0, INT_MAX, A|D},
+#endif
 {"drc_scale", "percentage of dynamic range compression to apply", OFFSET(drc_scale), FF_OPT_TYPE_FLOAT, 1.0, 0.0, 1.0, A|D},
 {"reservoir", "use bit reservoir", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_BIT_RESERVOIR, INT_MIN, INT_MAX, A|E, "flags2"},
 {"mbtree", "use macroblock tree ratecontrol (x264 only)", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_MBTREE, INT_MIN, INT_MAX, V|E, "flags2"},

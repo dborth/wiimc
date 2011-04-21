@@ -539,7 +539,7 @@ int attribute_align_arg avcodec_open(AVCodecContext *avctx, AVCodec *codec)
     avctx->frame_number = 0;
 
     if (HAVE_THREADS && !avctx->thread_opaque) {
-        ret = ff_thread_init(avctx, avctx->thread_count);
+        ret = ff_thread_init(avctx);
         if (ret < 0) {
             goto free_and_end;
         }
@@ -1107,6 +1107,7 @@ int av_get_bits_per_sample(enum CodecID codec_id){
     case CODEC_ID_ADPCM_MS:
     case CODEC_ID_ADPCM_YAMAHA:
         return 4;
+    case CODEC_ID_ADPCM_G722:
     case CODEC_ID_PCM_ALAW:
     case CODEC_ID_PCM_MULAW:
     case CODEC_ID_PCM_S8:
@@ -1147,8 +1148,7 @@ int av_get_bits_per_sample_format(enum AVSampleFormat sample_fmt) {
 #endif
 
 #if !HAVE_THREADS
-int ff_thread_init(AVCodecContext *s, int thread_count){
-    s->thread_count = thread_count;
+int ff_thread_init(AVCodecContext *s){
     return -1;
 }
 #endif
@@ -1189,7 +1189,7 @@ int ff_match_2uint16(const uint16_t (*tab)[2], int size, int a, int b){
 
 void av_log_missing_feature(void *avc, const char *feature, int want_sample)
 {
-    av_log(avc, AV_LOG_WARNING, "%s not implemented. Update your FFmpeg "
+    av_log(avc, AV_LOG_WARNING, "%s not implemented. Update your Libav "
             "version to the newest one from Git. If the problem still "
             "occurs, it means that your file has a feature which has not "
             "been implemented.", feature);
@@ -1204,7 +1204,7 @@ void av_log_ask_for_sample(void *avc, const char *msg)
     if (msg)
         av_log(avc, AV_LOG_WARNING, "%s ", msg);
     av_log(avc, AV_LOG_WARNING, "If you want to help, upload a sample "
-            "of this file to ftp://upload.libav.org/MPlayer/incoming/ "
+            "of this file to ftp://upload.libav.org/incoming/ "
             "and contact the libav-devel mailing list.\n");
 }
 
@@ -1291,7 +1291,8 @@ void ff_thread_await_progress(AVFrame *f, int progress, int field)
 
 int avcodec_thread_init(AVCodecContext *s, int thread_count)
 {
-    return ff_thread_init(s, thread_count);
+    s->thread_count = thread_count;
+    return ff_thread_init(s);
 }
 
 void avcodec_thread_free(AVCodecContext *s)

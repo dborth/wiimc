@@ -31,8 +31,6 @@
 #include "asfcrypt.h"
 #include "avlanguage.h"
 
-void ff_mms_set_stream_selection(URLContext *h, AVFormatContext *format);
-
 typedef struct {
     int asfid2avid[128];                 ///< conversion table from asf ID 2 AVStream ID
     ASFStream streams[128];              ///< it's max number and it's not that big
@@ -290,7 +288,9 @@ static int asf_read_stream_properties(AVFormatContext *s, int64_t size)
 
     st->codec->codec_type = type;
     if (type == AVMEDIA_TYPE_AUDIO) {
-        ff_get_wav_header(pb, st->codec, type_specific_size);
+        int ret = ff_get_wav_header(pb, st->codec, type_specific_size);
+        if (ret < 0)
+            return ret;
         if (is_dvr_ms_audio) {
             // codec_id and codec_tag are unreliable in dvr_ms
             // files. Set them later by probing stream.
@@ -365,15 +365,14 @@ static int asf_read_stream_properties(AVFormatContext *s, int64_t size)
         /* This is true for all paletted codecs implemented in ffmpeg */
         if (st->codec->extradata_size && (st->codec->bits_per_coded_sample <= 8)) {
             int av_unused i;
-            st->codec->palctrl = av_mallocz(sizeof(AVPaletteControl));
 #if HAVE_BIGENDIAN
             for (i = 0; i < FFMIN(st->codec->extradata_size, AVPALETTE_SIZE)/4; i++)
-                st->codec->palctrl->palette[i] = av_bswap32(((uint32_t*)st->codec->extradata)[i]);
+                asf_st->palette[i] = av_bswap32(((uint32_t*)st->codec->extradata)[i]);
 #else
-            memcpy(st->codec->palctrl->palette, st->codec->extradata,
-                    FFMIN(st->codec->extradata_size, AVPALETTE_SIZE));
+            memcpy(asf_st->palette, st->codec->extradata,
+                   FFMIN(st->codec->extradata_size, AVPALETTE_SIZE));
 #endif
-            st->codec->palctrl->palette_changed = 1;
+            asf_st->palette_changed = 1;
         }
 
         st->codec->codec_tag = tag1;
@@ -966,6 +965,17 @@ static int ff_asf_parse_packet(AVFormatContext *s, AVIOContext *pb, AVPacket *pk
             asf_st->pkt.stream_index = asf->stream_index;
             asf_st->pkt.pos =
             asf_st->packet_pos= asf->packet_pos;
+            if (asf_st->pkt.data && asf_st->palette_changed) {
+                uint8_t *pal;
+                pal = av_packet_new_side_data(pkt, AV_PKT_DATA_PALETTE,
+                                              AVPALETTE_SIZE);
+                if (!pal) {
+                    av_log(s, AV_LOG_ERROR, "Cannot append palette to packet\n");
+                } else {
+                    memcpy(pal, asf_st->palette, AVPALETTE_SIZE);
+                    asf_st->palette_changed = 0;
+                }
+            }
 //printf("new packet: stream:%d key:%d packet_key:%d audio:%d size:%d\n",
 //asf->stream_index, asf->packet_key_frame, asf_st->pkt.flags & AV_PKT_FLAG_KEY,
 //s->streams[asf->stream_index]->codec->codec_type == AVMEDIA_TYPE_AUDIO, asf->packet_obj_size);
@@ -1122,13 +1132,8 @@ static void asf_reset_header(AVFormatContext *s)
 
 static int asf_read_close(AVFormatContext *s)
 {
-    int i;
-
     asf_reset_header(s);
-    for(i=0;i<s->nb_streams;i++) {
-        AVStream *st = s->streams[i];
-        av_free(st->codec->palctrl);
-    }
+
     return 0;
 }
 
@@ -1244,7 +1249,7 @@ static int asf_read_seek(AVFormatContext *s, int stream_index, int64_t pts, int 
 
     /* Try using the protocol's read_seek if available */
     if(s->pb) {
-        int ret = ffio_read_seek(s->pb, stream_index, pts, flags);
+        int ret = avio_seek_time(s->pb, stream_index, pts, flags);
         if(ret >= 0)
             asf_reset_header(s);
         if (ret != AVERROR(ENOSYS))

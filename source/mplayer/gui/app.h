@@ -19,7 +19,7 @@
 #ifndef MPLAYER_GUI_APP_H
 #define MPLAYER_GUI_APP_H
 
-#include "bitmap.h"
+#include "util/bitmap.h"
 #include "wm/ws.h"
 
 // User events
@@ -119,7 +119,7 @@ typedef struct {
 #define itDLabel    105
 #define itBase      106
 #define itPotmeter  107
-#define itFont      108
+#define itMenu      108
 
 #define itPLMButton (itNone - 1)
 #define itPRMButton (itNone - 2)
@@ -160,7 +160,7 @@ typedef struct {
     unsigned int starttime;
     int last_x;
 
-    int pressed, tmp;
+    int pressed;
 } wItem;
 
 typedef struct {
@@ -175,7 +175,7 @@ typedef struct {
     wsTWindow barWindow;
     int barIsPresent;
 
-    wItem menuBase;
+    wItem menu;
     wItem menuSelected;
     wsTWindow menuWindow;
     int menuIsPresent;

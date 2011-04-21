@@ -31,15 +31,16 @@ OBJS-$(CONFIG_ENCODERS)                += faandct.o jfdctfst.o jfdctint.o
 OBJS-$(CONFIG_DCT)                     += dct.o
 OBJS-$(CONFIG_DWT)                     += dwt.o
 OBJS-$(CONFIG_DXVA2)                   += dxva2.o
-FFT-OBJS-$(CONFIG_HARDCODED_TABLES)    += cos_tables.o
-OBJS-$(CONFIG_FFT)                     += avfft.o fft.o $(FFT-OBJS-yes)
+FFT-OBJS-$(CONFIG_HARDCODED_TABLES)    += cos_tables.o cos_fixed_tables.o
+OBJS-$(CONFIG_FFT)                     += avfft.o fft_fixed.o fft_float.o \
+                                          $(FFT-OBJS-yes)
 OBJS-$(CONFIG_GOLOMB)                  += golomb.o
 OBJS-$(CONFIG_H264DSP)                 += h264dsp.o h264idct.o
 OBJS-$(CONFIG_H264PRED)                += h264pred.o
 OBJS-$(CONFIG_HUFFMAN)                 += huffman.o
 OBJS-$(CONFIG_LPC)                     += lpc.o
 OBJS-$(CONFIG_LSP)                     += lsp.o
-OBJS-$(CONFIG_MDCT)                    += mdct.o
+OBJS-$(CONFIG_MDCT)                    += mdct_fixed.o mdct_float.o
 RDFT-OBJS-$(CONFIG_HARDCODED_TABLES)   += sin_tables.o
 OBJS-$(CONFIG_RDFT)                    += rdft.o $(RDFT-OBJS-yes)
 OBJS-$(CONFIG_SINEWIN)                 += sinewin.o
@@ -103,6 +104,7 @@ OBJS-$(CONFIG_COOK_DECODER)            += cook.o
 OBJS-$(CONFIG_CSCD_DECODER)            += cscd.o
 OBJS-$(CONFIG_CYUV_DECODER)            += cyuv.o
 OBJS-$(CONFIG_DCA_DECODER)             += dca.o synth_filter.o dcadsp.o
+OBJS-$(CONFIG_DFA_DECODER)             += dfa.o
 OBJS-$(CONFIG_DNXHD_DECODER)           += dnxhddec.o dnxhddata.o
 OBJS-$(CONFIG_DNXHD_ENCODER)           += dnxhdenc.o dnxhddata.o       \
                                           mpegvideo_enc.o motion_est.o \
@@ -270,6 +272,7 @@ OBJS-$(CONFIG_MSMPEG4V3_ENCODER)       += msmpeg4.o msmpeg4data.o h263dec.o \
 OBJS-$(CONFIG_MSRLE_DECODER)           += msrle.o msrledec.o
 OBJS-$(CONFIG_MSVIDEO1_DECODER)        += msvideo1.o
 OBJS-$(CONFIG_MSZH_DECODER)            += lcldec.o
+OBJS-$(CONFIG_MXPEG_DECODER)           += mxpegdec.o
 OBJS-$(CONFIG_NELLYMOSER_DECODER)      += nellymoserdec.o nellymoser.o
 OBJS-$(CONFIG_NELLYMOSER_ENCODER)      += nellymoserenc.o nellymoser.o
 OBJS-$(CONFIG_NUV_DECODER)             += nuv.o rtjpeg.o
@@ -565,6 +568,8 @@ OBJS-$(CONFIG_LIBSCHROEDINGER_ENCODER)    += libschroedingerenc.o \
                                              libdirac_libschro.o
 OBJS-$(CONFIG_LIBSPEEX_DECODER)           += libspeexdec.o
 OBJS-$(CONFIG_LIBTHEORA_ENCODER)          += libtheoraenc.o
+OBJS-$(CONFIG_LIBVO_AACENC_ENCODER)       += libvo-aacenc.o mpeg4audio.o
+OBJS-$(CONFIG_LIBVO_AMRWBENC_ENCODER)     += libvo-amrwbenc.o
 OBJS-$(CONFIG_LIBVORBIS_ENCODER)          += libvorbis.o vorbis_data.o
 OBJS-$(CONFIG_LIBVPX_DECODER)             += libvpxdec.o
 OBJS-$(CONFIG_LIBVPX_ENCODER)             += libvpxenc.o
@@ -653,7 +658,7 @@ SKIPHEADERS                            += mpegaudio3.h
 
 EXAMPLES = api
 
-TESTPROGS = cabac dct eval fft h264 iirfilter rangecoder snow
+TESTPROGS = cabac dct eval fft fft-fixed h264 iirfilter rangecoder snow
 TESTPROGS-$(HAVE_MMX) += motion
 TESTOBJS = dctref.o
 
@@ -669,6 +674,9 @@ $(SUBDIR)dct-test$(EXESUF): $(SUBDIR)dctref.o
 
 $(SUBDIR)cos_tables.c: $(SUBDIR)costablegen$(HOSTEXESUF)
 	$(M)./$< > $@
+
+$(SUBDIR)cos_fixed_tables.c: $(SUBDIR)costablegen$(HOSTEXESUF)
+	$(M)./$< cos fixed > $@
 
 $(SUBDIR)sin_tables.c: $(SUBDIR)costablegen$(HOSTEXESUF)
 	$(M)./$< sin > $@

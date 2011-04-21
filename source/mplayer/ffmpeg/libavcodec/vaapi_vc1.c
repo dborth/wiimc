@@ -24,7 +24,7 @@
 #include "vc1.h"
 #include "vc1data.h"
 
-/** Translate FFmpeg MV modes to VA API */
+/** Translate Libav MV modes to VA API */
 static int get_VAMvModeVC1(enum MVModes mv_mode)
 {
     switch (mv_mode) {
@@ -116,7 +116,7 @@ static inline VAMvModeVC1 vc1_get_MVMODE2(VC1Context *v)
     return 0;
 }
 
-/** Pack FFmpeg bitplanes into a VABitPlaneBuffer element */
+/** Pack Libav bitplanes into a VABitPlaneBuffer element */
 static inline void vc1_pack_bitplanes(uint8_t *bitplane, int n, const uint8_t *ff_bp[3], int x, int y, int stride)
 {
     const int bitplane_index = n / 2;
@@ -160,6 +160,9 @@ static int vaapi_vc1_start_frame(AVCodecContext *avctx, av_unused const uint8_t 
     pic_param->sequence_fields.bits.syncmarker                      = s->resync_marker;
     pic_param->sequence_fields.bits.rangered                        = v->rangered;
     pic_param->sequence_fields.bits.max_b_frames                    = s->avctx->max_b_frames;
+#if VA_CHECK_VERSION(0,32,0)
+    pic_param->sequence_fields.bits.profile                         = v->profile;
+#endif
     pic_param->coded_width                                          = s->avctx->coded_width;
     pic_param->coded_height                                         = s->avctx->coded_height;
     pic_param->entrypoint_fields.value                              = 0; /* reset all bits */

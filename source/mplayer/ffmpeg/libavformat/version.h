@@ -47,6 +47,9 @@
 #ifndef FF_API_OLD_METADATA
 #define FF_API_OLD_METADATA            (LIBAVFORMAT_VERSION_MAJOR < 53)
 #endif
+#ifndef FF_API_OLD_METADATA2
+#define FF_API_OLD_METADATA2           (LIBAVFORMAT_VERSION_MAJOR < 54)
+#endif
 #ifndef FF_API_URL_CLASS
 #define FF_API_URL_CLASS               (LIBAVFORMAT_VERSION_MAJOR >= 53)
 #endif
@@ -87,7 +90,7 @@
 #define FF_API_SYMVER                  (LIBAVFORMAT_VERSION_MAJOR < 53)
 #endif
 #ifndef FF_API_OLD_AVIO
-#define FF_API_OLD_AVIO                (LIBAVFORMAT_VERSION_MAJOR < 53)
+#define FF_API_OLD_AVIO                (LIBAVFORMAT_VERSION_MAJOR < 54)
 #endif
 #ifndef FF_API_INDEX_BUILT
 #define FF_API_INDEX_BUILT             (LIBAVFORMAT_VERSION_MAJOR < 53)
@@ -100,6 +103,15 @@
 #endif
 #ifndef FF_API_FIND_INFO_TAG
 #define FF_API_FIND_INFO_TAG           (LIBAVFORMAT_VERSION_MAJOR < 54)
+#endif
+#ifndef FF_API_PKT_DUMP
+#define FF_API_PKT_DUMP                (LIBAVFORMAT_VERSION_MAJOR < 54)
+#endif
+#ifndef FF_API_GUESS_IMG2_CODEC
+#define FF_API_GUESS_IMG2_CODEC        (LIBAVFORMAT_VERSION_MAJOR < 54)
+#endif
+#ifndef FF_API_SDP_CREATE
+#define FF_API_SDP_CREATE              (LIBAVFORMAT_VERSION_MAJOR < 54)
 #endif
 
 #endif //AVFORMAT_VERSION_H

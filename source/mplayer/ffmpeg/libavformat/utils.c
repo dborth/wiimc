@@ -31,6 +31,7 @@
 #include "libavutil/avstring.h"
 #include "riff.h"
 #include "audiointerleave.h"
+#include "url.h"
 #include <sys/time.h>
 #include <time.h>
 #include <strings.h>
@@ -217,7 +218,7 @@ AVOutputFormat *av_guess_format(const char *short_name, const char *filename,
 #if CONFIG_IMAGE2_MUXER
     if (!short_name && filename &&
         av_filename_number_test(filename) &&
-        av_guess_image2_codec(filename) != CODEC_ID_NONE) {
+        ff_guess_image2_codec(filename) != CODEC_ID_NONE) {
         return av_guess_format("image2", NULL, NULL);
     }
 #endif
@@ -270,7 +271,7 @@ enum CodecID av_guess_codec(AVOutputFormat *fmt, const char *short_name,
 
 #if CONFIG_IMAGE2_MUXER
         if(!strcmp(fmt->name, "image2") || !strcmp(fmt->name, "image2pipe")){
-            codec_id= av_guess_image2_codec(filename);
+            codec_id= ff_guess_image2_codec(filename);
         }
 #endif
         if(codec_id == CODEC_ID_NONE)
@@ -371,7 +372,7 @@ AVInputFormat *av_probe_input_format2(AVProbeData *pd, int is_opened, int *score
 {
     AVProbeData lpd = *pd;
     AVInputFormat *fmt1 = NULL, *fmt;
-    int score;
+    int score, id3 = 0;
 
     if (lpd.buf_size > 10 && ff_id3v2_match(lpd.buf, ID3v2_DEFAULT_MAGIC)) {
         int id3len = ff_id3v2_tag_len(lpd.buf);
@@ -379,6 +380,7 @@ AVInputFormat *av_probe_input_format2(AVProbeData *pd, int is_opened, int *score
             lpd.buf += id3len;
             lpd.buf_size -= id3len;
         }
+        id3 = 1;
     }
 
     fmt = NULL;
@@ -399,6 +401,16 @@ AVInputFormat *av_probe_input_format2(AVProbeData *pd, int is_opened, int *score
         }else if (score == *score_max)
             fmt = NULL;
     }
+
+    /* a hack for files with huge id3v2 tags -- try to guess by file extension. */
+    if (!fmt && id3 && *score_max < AVPROBE_SCORE_MAX/4) {
+        while ((fmt = av_iformat_next(fmt)))
+            if (fmt->extensions && av_match_ext(lpd.filename, fmt->extensions)) {
+                *score_max = AVPROBE_SCORE_MAX/4;
+                break;
+            }
+    }
+
     return fmt;
 }
 
@@ -620,7 +632,7 @@ int av_open_input_file(AVFormatContext **ic_ptr, const char *filename,
        hack needed to handle RTSP/TCP */
     if (!fmt || !(fmt->flags & AVFMT_NOFILE)) {
         /* if no file needed do not try to open one */
-        if ((err=avio_open(&pb, filename, URL_RDONLY)) < 0) {
+        if ((err=avio_open(&pb, filename, AVIO_RDONLY)) < 0) {
             goto fail;
         }
         if (buf_size > 0) {
@@ -2019,7 +2031,7 @@ static void av_estimate_timings(AVFormatContext *ic, int64_t old_offset)
 
     if ((!strcmp(ic->iformat->name, "mpeg") ||
          !strcmp(ic->iformat->name, "mpegts")) &&
-        file_size && !url_is_streamed(ic->pb)) {
+        file_size && ic->pb->seekable) {
         /* get accurate estimate from the PTSes */
         av_estimate_timings_from_pts(ic, old_offset);
     } else if (av_has_duration(ic)) {
@@ -2168,22 +2180,23 @@ enum CodecID av_codec_get_id(const AVCodecTag * const *tags, unsigned int tag)
 
 static void compute_chapters_end(AVFormatContext *s)
 {
-    unsigned int i;
+    unsigned int i, j;
+    int64_t max_time = s->duration + (s->start_time == AV_NOPTS_VALUE) ? 0 : s->start_time;
 
-    for (i=0; i+1<s->nb_chapters; i++)
+    for (i = 0; i < s->nb_chapters; i++)
         if (s->chapters[i]->end == AV_NOPTS_VALUE) {
-            assert(s->chapters[i]->start <= s->chapters[i+1]->start);
-            assert(!av_cmp_q(s->chapters[i]->time_base, s->chapters[i+1]->time_base));
-            s->chapters[i]->end = s->chapters[i+1]->start;
-        }
+            AVChapter *ch = s->chapters[i];
+            int64_t   end = max_time ? av_rescale_q(max_time, AV_TIME_BASE_Q, ch->time_base)
+                                     : INT64_MAX;
 
-    if (s->nb_chapters && s->chapters[i]->end == AV_NOPTS_VALUE) {
-        assert(s->start_time != AV_NOPTS_VALUE);
-        assert(s->duration > 0);
-        s->chapters[i]->end = av_rescale_q(s->start_time + s->duration,
-                                           AV_TIME_BASE_Q,
-                                           s->chapters[i]->time_base);
-    }
+            for (j = 0; j < s->nb_chapters; j++) {
+                AVChapter *ch1 = s->chapters[j];
+                int64_t next_start = av_rescale_q(ch1->start, ch1->time_base, ch->time_base);
+                if (j != i && next_start > ch->start && next_start < end)
+                    end = next_start;
+            }
+            ch->end = (end == INT64_MAX) ? ch->start : end;
+        }
 }
 
 static int get_std_framerate(int i){
@@ -2566,7 +2579,7 @@ int av_read_play(AVFormatContext *s)
     if (s->iformat->read_play)
         return s->iformat->read_play(s);
     if (s->pb)
-        return ffio_read_pause(s->pb, 0);
+        return avio_pause(s->pb, 0);
     return AVERROR(ENOSYS);
 }
 
@@ -2575,7 +2588,7 @@ int av_read_pause(AVFormatContext *s)
     if (s->iformat->read_pause)
         return s->iformat->read_pause(s);
     if (s->pb)
-        return ffio_read_pause(s->pb, 1);
+        return avio_pause(s->pb, 1);
     return AVERROR(ENOSYS);
 }
 
@@ -3050,7 +3063,10 @@ static int ff_interleave_compare_dts(AVFormatContext *s, AVPacket *next, AVPacke
     AVStream *st2= s->streams[ next->stream_index];
     int64_t a= st2->time_base.num * (int64_t)st ->time_base.den;
     int64_t b= st ->time_base.num * (int64_t)st2->time_base.den;
-    return av_rescale_rnd(pkt->dts, b, a, AV_ROUND_DOWN) < next->dts;
+    int64_t dts1 = av_rescale_rnd(pkt->dts, b, a, AV_ROUND_DOWN);
+    if (dts1 == next->dts)
+        return pkt->stream_index < next->stream_index;
+    return dts1 < next->dts;
 }
 
 int av_interleave_packet_per_dts(AVFormatContext *s, AVPacket *out, AVPacket *pkt, int flush){
@@ -3532,22 +3548,26 @@ static void pkt_dump_internal(void *avcl, FILE *f, int level, AVPacket *pkt, int
         av_hex_dump(f, pkt->data, pkt->size);
 }
 
+#if FF_API_PKT_DUMP
 void av_pkt_dump(FILE *f, AVPacket *pkt, int dump_payload)
 {
     AVRational tb = { 1, AV_TIME_BASE };
     pkt_dump_internal(NULL, f, 0, pkt, dump_payload, tb);
 }
+#endif
 
 void av_pkt_dump2(FILE *f, AVPacket *pkt, int dump_payload, AVStream *st)
 {
     pkt_dump_internal(NULL, f, 0, pkt, dump_payload, st->time_base);
 }
 
+#if FF_API_PKT_DUMP
 void av_pkt_dump_log(void *avcl, int level, AVPacket *pkt, int dump_payload)
 {
     AVRational tb = { 1, AV_TIME_BASE };
     pkt_dump_internal(avcl, NULL, level, pkt, dump_payload, tb);
 }
+#endif
 
 void av_pkt_dump_log2(void *avcl, int level, AVPacket *pkt, int dump_payload,
                       AVStream *st)

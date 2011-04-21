@@ -63,6 +63,7 @@ SRCS_COMMON-$(FFMPEG)                += av_opts.c                   \
                                         libaf/af_lavcresample.c     \
                                         libmpcodecs/ad_ffmpeg.c     \
                                         libmpcodecs/vd_ffmpeg.c     \
+                                        libmpcodecs/vf_geq.c        \
                                         libmpcodecs/vf_lavc.c       \
                                         libmpcodecs/vf_lavcdeint.c  \
                                         libmpcodecs/vf_pp.c         \
@@ -74,7 +75,6 @@ SRCS_COMMON-$(FFMPEG)                += av_opts.c                   \
 # These filters use private headers and do not work with shared FFmpeg.
 SRCS_COMMON-$(FFMPEG_A)              += libaf/af_lavcac3enc.c    \
                                         libmpcodecs/vf_fspp.c    \
-                                        libmpcodecs/vf_geq.c     \
                                         libmpcodecs/vf_mcdeint.c \
                                         libmpcodecs/vf_qp.c      \
                                         libmpcodecs/vf_spp.c     \
@@ -517,7 +517,7 @@ SRCS_MPLAYER-$(GL_SDL)       += libvo/sdl_common.c
 SRCS_MPLAYER-$(GL_WIN32)     += libvo/w32_common.c
 SRCS_MPLAYER-$(GL_X11)       += libvo/x11_common.c
 SRCS_MPLAYER-$(MATRIXVIEW)   += libvo/vo_matrixview.c libvo/matrixview.c
-SRCS_MPLAYER-$(GUI)          += gui/bitmap.c
+SRCS_MPLAYER-$(GUI)          += gui/util/bitmap.c
 SRCS_MPLAYER-$(GUI_GTK)      += gui/app.c \
                                 gui/cfg.c \
                                 gui/interface.c \
@@ -538,9 +538,10 @@ SRCS_MPLAYER-$(GUI_GTK)      += gui/app.c \
                                 gui/mplayer/gtk/opts.c \
                                 gui/mplayer/gtk/pl.c \
                                 gui/mplayer/gtk/sb.c \
-                                gui/skin/cut.c \
                                 gui/skin/font.c \
                                 gui/skin/skin.c \
+                                gui/util/cut.c \
+                                gui/util/string.c \
                                 gui/wm/ws.c \
                                 gui/wm/wsxdnd.c \
 

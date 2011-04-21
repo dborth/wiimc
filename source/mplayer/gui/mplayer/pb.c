@@ -20,7 +20,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <inttypes.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
@@ -161,8 +160,11 @@ static void mplPBMouseHandle( int Button, int X, int Y, int RX, int RY )
 
 	break;
    case wsRLMouseButton:
-	item=&appMPlayer.barItems[SelectedItem];
-	item->pressed=btnReleased;
+        if ( SelectedItem != -1 )   // NOTE TO MYSELF: only if itButton, itHPotmeter or itVPotmeter
+         {
+          item=&appMPlayer.barItems[SelectedItem];
+          item->pressed=btnReleased;
+         }
 	SelectedItem=-1;
 	if ( currentselected == - 1 ) { itemtype=0; break; }
 	value=0;

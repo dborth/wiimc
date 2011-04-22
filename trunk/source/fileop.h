@@ -56,6 +56,7 @@ bool IsAudioExt(char *ext);
 bool IsImageExt(char *ext);
 bool IsAllowedExt(char *ext);
 bool IsAllowedProtocol(char *file);
+bool IsInternetStream(char *file);
 void FindFile();
 void FindDirectory();
 bool ParseDone();

@@ -2454,7 +2454,7 @@ static void MenuBrowse(int menu)
 				if(!IsAllowedExt(ext) && 
 					(IsPlaylistExt(ext) || 
 					!IsAllowedProtocol(browser.selIndex->file) || 
-					strncmp(browser.selIndex->file, "http:", 5) == 0)
+					(strncmp(browser.selIndex->file, "http:", 5) == 0 && !IsInternetStream(browser.selIndex->file)))
 					)
 				{
 					// parse as a playlist

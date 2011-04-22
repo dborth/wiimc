@@ -1555,6 +1555,19 @@ bool IsAllowedProtocol(char *file)
 	return false;
 }
 
+bool IsInternetStream(char *file)
+{
+	if(strncmp(file, "http://", 7) != 0)
+		return false;
+
+	char *pos = strchr(&file[7], '/');
+	
+	if(!pos || pos == &file[strlen(file)-1])
+		return true;
+
+	return false;
+}
+
 void FindDirectory()
 {
 	int indexFound = -1;

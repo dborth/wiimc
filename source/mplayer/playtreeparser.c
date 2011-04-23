@@ -709,6 +709,9 @@ parse_textplain(play_tree_parser_t* p) {
 	linenum++;
 	linelen = strlen(line);
 	
+	if(linenum > 10 && !list)
+		return NULL; // abort - this might be a stream
+	
 	if(linelen > 1024 || linenum > 500)
 	{
 		if(list) play_tree_free(list, 1);

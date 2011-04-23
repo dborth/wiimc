@@ -20,6 +20,7 @@
 #include "libavcodec/h264data.h"
 #include "libavcodec/h264dsp.h"
 #include "dsputil_paired.h"
+#include "util_paired.h"
 #include "libavutil/ppc/paired.h"
 
 #define CHROMAMC_VEC_OP {									\
@@ -1068,59 +1069,55 @@ static void weight_h264_pixels ## W ## x ## H ## _paired(uint8_t *block, int str
 { \
 	vector float pair; \
 	 \
-	uint16_t poweri = 1 << log2_denom; \
-	register float powerf; \
-	asm volatile("psq_l %0,%1,1,5" : "=f"(powerf) : "o"(poweri)); \
-	 \
+	FAST_LSCALE(log2_denom, GQR_TYPE_S16); \
 	int16_t weighti = weight; \
 	register float weightf; \
-	asm volatile("psq_l %0,%1,1,7" : "=f"(weightf) : "o"(weighti)); \
-	weightf = (weightf / powerf); \
+	asm("psq_l %0,%1,1,1" : "=f"(weightf) : "o"(weighti)); \
 	 \
 	int16_t offseti = offset; \
 	register float offsetf; \
-	asm volatile("psq_l %0,%1,1,7" : "=f"(offsetf) : "o"(offseti)); \
-	offsetf = (offsetf + 0.5); \
+	asm("psq_l %0,%1,1,7" : "=f"(offsetf) : "o"(offseti)); \
+	offsetf += 0.5; \
 	 \
 	block -= stride; \
 	 \
 	for (int y = 0; y < H; y++) { \
 		pair = psq_lux(block,stride,0,4); \
-		pair = ps_madd(pair, weightf, offsetf); \
+		pair = ps_madds0(pair, weightf, offsetf); \
 		psq_st(pair,0,block,0,4); \
 		 \
 		if (W == 2) continue; \
 		 \
 		pair = psq_l(2,block,0,4); \
-		pair = ps_madd(pair, weightf, offsetf); \
+		pair = ps_madds0(pair, weightf, offsetf); \
 		psq_st(pair,2,block,0,4); \
 		 \
 		if (W == 4) continue; \
 		 \
 		pair = psq_l(4,block,0,4); \
-		pair = ps_madd(pair, weightf, offsetf); \
+		pair = ps_madds0(pair, weightf, offsetf); \
 		psq_st(pair,4,block,0,4); \
 		 \
 		pair = psq_l(6,block,0,4); \
-		pair = ps_madd(pair, weightf, offsetf); \
+		pair = ps_madds0(pair, weightf, offsetf); \
 		psq_st(pair,6,block,0,4); \
 		 \
 		if (W == 8) continue; \
 		 \
 		pair = psq_l(8,block,0,4); \
-		pair = ps_madd(pair, weightf, offsetf); \
+		pair = ps_madds0(pair, weightf, offsetf); \
 		psq_st(pair,8,block,0,4); \
 		 \
 		pair = psq_l(10,block,0,4); \
-		pair = ps_madd(pair, weightf, offsetf); \
+		pair = ps_madds0(pair, weightf, offsetf); \
 		psq_st(pair,10,block,0,4); \
 		 \
 		pair = psq_l(12,block,0,4); \
-		pair = ps_madd(pair, weightf, offsetf); \
+		pair = ps_madds0(pair, weightf, offsetf); \
 		psq_st(pair,12,block,0,4); \
 		 \
 		pair = psq_l(14,block,0,4); \
-		pair = ps_madd(pair, weightf, offsetf); \
+		pair = ps_madds0(pair, weightf, offsetf); \
 		psq_st(pair,14,block,0,4); \
 	} \
 } \
@@ -1128,20 +1125,15 @@ static void biweight_h264_pixels ## W ## x ## H ## _paired(uint8_t *dst, uint8_t
 { \
 	vector float pair[2]; \
 	 \
-	uint16_t poweri = 1 << log2_denom + 1; \
-	vector float powerf; \
-	asm volatile("psq_l %0,%1,1,5\n" : "=f"(powerf) : "o"(poweri)); \
-	powerf = paired_merge00(powerf, powerf); \
-	 \
+	FAST_LSCALE(log2_denom+1, GQR_TYPE_S16); \
 	vec_s16_t weighti = {weightd,weights}; \
 	vector float weightf; \
-	asm volatile("psq_l %0,%1,0,7" : "=f"(weightf) : "o"(weighti)); \
-	weightf = paired_div(weightf, powerf); \
+	asm("psq_l %0,%1,0,1" : "=f"(weightf) : "o"(weighti)); \
 	 \
 	int16_t offseti = offset; \
 	register float offsetf; \
-	asm volatile("psq_l %0,%1,1,7" : "=f"(offsetf) : "o"(offseti)); \
-	offsetf = (offsetf + 0.5); \
+	asm("psq_l %0,%1,1,7" : "=f"(offsetf) : "o"(offseti)); \
+	offsetf += 0.5; \
 	 \
 	dst -= stride; \
 	src -= stride; \

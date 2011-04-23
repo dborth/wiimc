@@ -27,6 +27,14 @@ typedef unsigned short vec_u16_t __attribute__((vector_size(4)));
 typedef signed char vec_s8_t __attribute__((vector_size(2)));
 typedef signed short vec_s16_t __attribute__((vector_size(4)));
 
+enum {
+	GQR_TYPE_FLOAT = 0,
+	GQR_TYPE_U8 = 4,
+	GQR_TYPE_U16,
+	GQR_TYPE_S8,
+	GQR_TYPE_S16,
+};
+
 #define psq_l(d, rA, W, I) ({																\
 	vector float frD;																		\
 	asm volatile("psq_l	%0,%1(%2),%3,%4" : "=f"(frD) : "i"(d), "b"(rA), "i"(W), "i"(I));	\

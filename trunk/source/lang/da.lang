@@ -2,16 +2,16 @@ msgid "********"
 msgstr "••••••••"
 
 msgid "Videos"
-msgstr "Videos"
+msgstr "Videoer"
 
 msgid "Music"
-msgstr "Musikk"
+msgstr "Musik"
 
 msgid "Pictures"
 msgstr "Billeder"
 
 msgid "Online Media"
-msgstr "Online Media"
+msgstr "Online Medier"
 
 msgid "Please Wait"
 msgstr "Vent venligst"
@@ -23,16 +23,16 @@ msgid "OK"
 msgstr "OK"
 
 msgid "Retry"
-msgstr "Prøve igen"
+msgstr "Prøv igen"
 
 msgid "Cancel"
-msgstr "Avbryd"
+msgstr "Afbryd"
 
 msgid "Information"
 msgstr "Information"
 
 msgid "Credits"
-msgstr "Credits"
+msgstr "Bidragsydere"
 
 msgid "Play"
 msgstr "Afspil"
@@ -47,7 +47,7 @@ msgid "Continuous Play"
 msgstr "Spil i rækkefølge"
 
 msgid "Shuffle"
-msgstr "Mix"
+msgstr "Bland"
 
 msgid "Loop"
 msgstr "Gentage"
@@ -56,7 +56,7 @@ msgid "Continuous"
 msgstr "I rækkefølge"
 
 msgid "Playlist"
-msgstr "Afspelningsliste"
+msgstr "Afspilningsliste"
 
 msgid "Restart"
 msgstr "Genstart"
@@ -65,25 +65,25 @@ msgid "Loading..."
 msgstr "Indlæser..."
 
 msgid "Global"
-msgstr "Generell"
+msgstr "Generelt"
 
 msgid "Network"
 msgstr "Netværk"
 
 msgid "Subtitles"
-msgstr "Undertitler"
+msgstr "Undertekster"
 
 msgid "Subtitle Delay"
-msgstr "Undertitelsynk"
+msgstr "Undertekst forsinkelse"
 
 msgid "Settings"
 msgstr "Indstillinger"
 
 msgid "On"
-msgstr "På"
+msgstr "Til"
 
 msgid "Off"
-msgstr "Af"
+msgstr "Fra"
 
 msgid "Always"
 msgstr "Altid"
@@ -92,19 +92,19 @@ msgid "Disabled"
 msgstr "Deaktiveret"
 
 msgid "Skip Backward"
-msgstr "Forrige spår"
+msgstr "Forrige spor"
 
 msgid "Pause"
 msgstr "Pause"
 
 msgid "Skip Forward"
-msgstr "Næste spår"
+msgstr "Næste spor"
 
 msgid "Single"
-msgstr "Eneste"
+msgstr "Enkelt"
 
 msgid "now playing"
-msgstr "Spiller lige nu"
+msgstr "Afspiller"
 
 msgid "Previous"
 msgstr "Forrige"
@@ -134,7 +134,7 @@ msgid "Update later"
 msgstr "Opdater senere"
 
 msgid "Online media file not found."
-msgstr "Online mediafil ikke fundet."
+msgstr "Online mediefil ikke fundet."
 
 msgid "Unrecognized DVD format!"
 msgstr "Ukendt DVD-Format!"
@@ -146,22 +146,22 @@ msgid "Port is not a number!"
 msgstr "Porten er ikke et nummer!"
 
 msgid "Port is outside the allowed range (4-49151)!"
-msgstr "Porten er udenfor tilladt rækkevidde (4-49151)!"
+msgstr "Porten er udenfor det tilladte område (4-49151)!"
 
 msgid "Settings - Global"
-msgstr "Indstillinger - Generelle"
+msgstr "Indstillinger - Generelt"
 
 msgid "Settings - Videos"
-msgstr "Indstillinger - Videos"
+msgstr "Indstillinger - Videoer"
 
 msgid "Settings - Music"
-msgstr "Indstillinger - Musikk"
+msgstr "Indstillinger - Musik"
 
 msgid "Settings - Pictures"
 msgstr "Indstillinger - Billeder"
 
 msgid "Settings - Online Media"
-msgstr "Indstillinger - Online Media"
+msgstr "Indstillinger - Online Medier"
 
 msgid "Settings - Network"
 msgstr "Indstillinger - Netværk"
@@ -170,7 +170,7 @@ msgid "Settings - DVD"
 msgstr "Indstillinger - DVD"
 
 msgid "File Extensions"
-msgstr "Filtypenavn"
+msgstr "Filendelser"
 
 msgid "Language"
 msgstr "Sprog"
@@ -179,7 +179,7 @@ msgid "Volume"
 msgstr "Lydstyrke"
 
 msgid "Exit Action"
-msgstr "Bagefter sluk"
+msgstr "Handling ved afslutning"
 
 msgid "Wiimote Rumble"
 msgstr "Wiimote-vibrationer"
@@ -212,13 +212,13 @@ msgid "Frame Dropping"
 msgstr "Frame Dropping"
 
 msgid "Aspect Ratio"
-msgstr "Aspekt/Format"
+msgstr "Skærmformat"
 
 msgid "Cache Fill"
-msgstr "Cachepåfyldning"
+msgstr "Mellemlager fyldning"
 
 msgid "Audio Delay"
-msgstr "Audio-synk"
+msgstr "Lyd forsinkelse"
 
 msgid "Auto-Resume"
 msgstr "Automatisk genoptagelse"
@@ -227,7 +227,7 @@ msgid "Videos Files Folder"
 msgstr "Videomappe"
 
 msgid "Play Order"
-msgstr "Spilfølge"
+msgstr "Rækkefølge"
 
 msgid "Music Files Folder"
 msgstr "Musikmappe"
@@ -236,31 +236,31 @@ msgid "Pictures Files Folder"
 msgstr "Billedmappe"
 
 msgid "Display Name"
-msgstr "Ønsket navn på plads"
+msgstr "Vist navn"
 
 msgid "Share IP"
-msgstr "Share-IP"
+msgstr "Delings-IP"
 
 msgid "Share Name"
-msgstr "Share-navn"
+msgstr "Dele-navn"
 
 msgid "Username"
-msgstr "Anvendernavn"
+msgstr "Brugernavn"
 
 msgid "Password"
 msgstr "Adgangskode"
 
 msgid "New Share"
-msgstr "Ny Share"
+msgstr "Ny deling"
 
 msgid "Delete"
 msgstr "Slet"
 
 msgid "Delete Share"
-msgstr "Slet Share"
+msgstr "Slet deling"
 
 msgid "Are you sure that you want to delete this share?"
-msgstr "Er du sikker på at du vil slette denne share?"
+msgstr "Er du sikker på at du vil slette denne deling?"
 
 msgid "IP"
 msgstr "IP"
@@ -272,7 +272,7 @@ msgid "Mode"
 msgstr "Mode"
 
 msgid "New Site"
-msgstr "Ny site"
+msgstr "Ny Side"
 
 msgid "Passive"
 msgstr "Passiv"
@@ -281,37 +281,37 @@ msgid "Active"
 msgstr "Aktiv"
 
 msgid "Delete Site"
-msgstr "Slet site"
+msgstr "Slet side"
 
 msgid "Are you sure that you want to delete this site?"
-msgstr "Er du sikker på at du vil slette denne site?"
+msgstr "Er du sikker på at du vil slette denne Side?"
 
 msgid "Port"
 msgstr "Port"
 
 msgid "Error loading file!"
-msgstr "Fejl vid indlæsning af fil!"
+msgstr "Fejl ved indlæsning af fil!"
 
 msgid "Resume"
-msgstr "Genoptage"
+msgstr "Genoptag"
 
 msgid "Stop Slideshow"
-msgstr "Stoppe billedspil"
+msgstr "Stop slideshow"
 
 msgid "Start Slideshow"
-msgstr "Starte billedspil"
+msgstr "Starte slideshow"
 
 msgid "Slideshow Delay"
 msgstr "Tid mellem billedskift"
 
 msgid "Online Media Folder"
-msgstr "Online Media-mappe"
+msgstr "Online Medie-mappe"
 
 msgid "Add SMB Share"
-msgstr "Ny SMB-Share"
+msgstr "Tilføj SMB-deling"
 
 msgid "Add FTP Site"
-msgstr "Ny FTP-site"
+msgstr "Tilføj FTP-side"
 
 msgid "DVD Menu"
 msgstr "DVD-menu"
@@ -323,13 +323,13 @@ msgid "Unable to Initialize MPlayer"
 msgstr "Kan ikke initialisere MPlayer"
 
 msgid "Unable to find a valid working path"
-msgstr "Kan ikke finde gyldig path"
+msgstr "Kan ikke finde gyldig sti"
 
 msgid "Unable to change path to"
-msgstr "Kan ej ændre path til"
+msgstr "Kan ikke ændre sti til"
 
 msgid "Out of memory: too many files!"
-msgstr "Hukommelse slut: for mange filer!"
+msgstr "Hukommelse fyldt: for mange filer!"
 
 msgid "Directory name is too long!"
 msgstr "Mappenavnet er for langt!"
@@ -353,13 +353,13 @@ msgid "Loading DVD..."
 msgstr "Indlæser DVD..."
 
 msgid "No disc inserted!"
-msgstr "Ingen indsat disc!"
+msgstr "Ingen indsat disk!"
 
 msgid "Invalid DVD."
 msgstr "Ugyldig DVD."
 
 msgid "Up One Level"
-msgstr "Op et trin"
+msgstr "Et trin op"
 
 msgid "Error opening"
 msgstr "Fejl ved åbning"
@@ -368,19 +368,19 @@ msgid "Warning"
 msgstr "Advarsel"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "En eller flere billeder i denne mappe overstiger maksimal størrelse (6 MB) og kommer ikke til at være eksekverbare."
+msgstr "En eller flere billeder i denne mappe overstiger maksimal størrelse (6 MB) og vil ikke kunne vises."
 
 msgid "Error loading playlist!"
-msgstr "Fejl ved indlæsning af afspelningsliste!"
+msgstr "Fejl ved indlæsning af afspilningsliste!"
 
 msgid "Playlist does not contain any supported entries!"
-msgstr "Afspelningslisten indeholder ikke understøttede filformater!"
+msgstr "Afspilningslisten indeholder ikke understøttede filformater!"
 
 msgid "No Results Found"
 msgstr "Ingen resultater"
 
 msgid "Your search did not match any media files."
-msgstr "Din søgning matchede ikke nogen mediafil."
+msgstr "Din søgning matchede ikke nogen mediefil."
 
 msgid "Error opening file!"
 msgstr "Fejl ved åbning af fil!"
@@ -389,19 +389,19 @@ msgid "Saving..."
 msgstr "Gemmer..."
 
 msgid "Error creating file!"
-msgstr "Fejl ved skabende af fil!"
+msgstr "Fejl ved oprettelse af fil!"
 
 msgid "Error saving file!"
-msgstr "Fejl ved gemmelse af fil!"
+msgstr "Fejl mens fil blev gemt!"
 
 msgid "Playlist is Empty"
-msgstr "Afspelningslisten er tom"
+msgstr "Afspilningslisten er tom"
 
 msgid "Hover over items and push the + button to add them to your playlist."
-msgstr "Svæve over elementer og tryk på + tasten for at tilføje dem til din afspelningsliste."
+msgstr "Peg på elementer og tryk på + tasten for at tilføje dem til din afspilningsliste."
 
 msgid "Exit Playlist"
-msgstr "Forlad afspelningsliste."
+msgstr "Forlad afspilningsliste."
 
 msgid "Update successful!"
 msgstr "Opdateringen lykkedes!"
@@ -416,28 +416,28 @@ msgid "Check settings file."
 msgstr "Tjek indstillingsfil."
 
 msgid "Share name is blank."
-msgstr "Pladsnavn er tomt."
+msgstr "Delingsnavn er tomt."
 
 msgid "Share IP is blank."
-msgstr "Share-IP er tomt."
+msgstr "Delings-IP er tomt."
 
 msgid "Invalid network share settings"
-msgstr "Ugyldige indstillinger på netværks-share"
+msgstr "Ugyldige indstillinger på netværks-deling"
 
 msgid "Connecting to network share..."
-msgstr "Forbinder till netværks-share..."
+msgstr "Forbinder till netværks-deling..."
 
 msgid "Failed to connect to network share."
-msgstr "Lykkedes ikke forbinde till netværks-share."
+msgstr "Lykkedes ikke forbinde till netværks-deling."
 
 msgid "IP is blank."
 msgstr "IP er tomt."
 
 msgid "Username is blank."
-msgstr "Anvendernavn er tomt."
+msgstr "Brugernavnet er tomt."
 
 msgid "Password is blank."
-msgstr "Adgangskode er tomt."
+msgstr "Adgangskoden er tomt."
 
 msgid "Invalid FTP site settings"
 msgstr "Ugyldige FTP-indstillinger"
@@ -446,13 +446,13 @@ msgid "Connecting to FTP site..."
 msgstr "Forbinder til FTP..."
 
 msgid "Failed to connect to FTP site."
-msgstr "Lykkedes ikke forbinde til FTP."
+msgstr "Lykkedes ikke at forbinde til FTP."
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "Kunne ikke detektere SD-kort eller USB-enhed - du må bruge en for normal funktion."
+msgstr "Kunne ikke finde SD-kort eller USB-enhed - En sådan er nødvendig for normalt brug."
 
 msgid "Could not create folder"
-msgstr "Kunne ikke skabe mappe."
+msgstr "Kunne ikke oprette mappe."
 
 msgid "Saving settings..."
 msgstr "Gemmer indstillinger..."
@@ -464,7 +464,7 @@ msgid "Thanks to"
 msgstr "Tak til"
 
 msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
-msgstr "Denne software er åben kildekode og må kopieres, distribueres og modifieres i henhold til GNU General Public License (GPL) Version 2."
+msgstr "Denne software er open source og må kopieres, distribueres og modifieres i henhold til GNU General Public License (GPL) Version 2."
 
 msgid "Menu artwork"
 msgstr "Menudesign"
@@ -482,31 +482,31 @@ msgid "Version"
 msgstr "Version"
 
 msgid "Buffering..."
-msgstr "Buffrer..."
+msgstr "Buffer..."
 
 msgid "Buffering"
-msgstr "Buffrer"
+msgstr "Buffer"
 
 msgid "Unable to initialize network (Error #:"
-msgstr "Kan ikke initialisere netværk (Fejlkod #:"
+msgstr "Kan ikke initialisere netværk (Fejlkode #:"
 
 msgid "Settings - Subtitles"
-msgstr "Indstillinger - Undertitler"
+msgstr "Indstillinger - Undertekster"
 
 msgid "Visibility"
 msgstr "Visibilitet"
 
 msgid "Delay"
-msgstr "Synk"
+msgstr "Forsinkelse"
 
 msgid "Codepage"
-msgstr "Tegntabell"
+msgstr "Tegntabel"
 
 msgid "Subtitle Language"
-msgstr "Undertitelsprog"
+msgstr "Undertekstsprog"
 
 msgid "Default"
-msgstr "Default"
+msgstr "Standard"
 
 msgid "Could not change language. Not enough memory!"
 msgstr "Kunne ikke ændre sprog. Ikke nok hukommelse!"
@@ -515,7 +515,7 @@ msgid "Font Required"
 msgstr "Font påkrævet"
 
 msgid "A new font is required to display this language."
-msgstr "En ny font er påkrævet at vise dette sprog."
+msgstr "En ny font er påkrævet for at vise dette sprog."
 
 msgid "Download font"
 msgstr "Download font"
@@ -533,16 +533,16 @@ msgid "Close MPlayer"
 msgstr "Sluk Mplayer"
 
 msgid "Subtitle Codepage"
-msgstr "Tegntabell for undertitel"
+msgstr "Tegntabel for undertekst"
 
 msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
 msgstr "Denne mappe indeholder flere emner end maksimalt tilladt. Nogle emner vil derfor ikke være synlige."
 
 msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
-msgstr "Denne spilleliste indeholder flere emner end maksimalt tilladt. Nogle emner vil derfor ikke være synlige."
+msgstr "Denne afspilningsliste indeholder flere emner end maksimalt tilladt. Nogle emner vil derfor ikke være synlige."
 
 msgid "Downloading..."
-msgstr "Downloading..."
+msgstr "Downloader..."
 
 msgid "Unzipping..."
 msgstr "Pakker op..."
@@ -590,16 +590,16 @@ msgid "Orange"
 msgstr "Orange"
 
 msgid "Purple (Default)"
-msgstr "Lila (Default)"
+msgstr "Lila (Standard)"
 
 msgid "Auto-Play Next Video"
-msgstr "Afspel næste video automatisk"
+msgstr "Afspil næste video automatisk"
 
 msgid "Adding files to playlist..."
 msgstr "Tilføjer filer til afspilningsliste..."
 
 msgid "Browser Folders"
-msgstr "Startmappe"
+msgstr "Startemapper"
 
 msgid "Static"
 msgstr "Fast"
@@ -608,10 +608,10 @@ msgid "Use Last Browsed"
 msgstr "Sidst besøgte mappe"
 
 msgid "Audio Language"
-msgstr "Audio-sprog"
+msgstr "Lyd-sprog"
 
 msgid "DVD Support"
-msgstr "DVD-stød"
+msgstr "DVD-Support"
 
 msgid "Enabled"
 msgstr "Aktiveret"
@@ -620,7 +620,7 @@ msgid "Error loading YouTube file!"
 msgstr "Fejl ved indlæsning af YouTube-fil!"
 
 msgid "Rotate"
-msgstr "Rotere"
+msgstr "Roter"
 
 msgid "Resolution exceeds maximum allowed (1280x720)!"
 msgstr "Opløsning overstiger maksimalt tilladt (1280x720)!"
@@ -629,13 +629,13 @@ msgid "The current IOS has been altered (fake-signed). Functionality and/or stab
 msgstr "Den anvendte IOS er blevet modifieret (fake-signed). Funktionalitet og/eller stabilitet kan blive påvirket negativt."
 
 msgid "Online media file is invalid."
-msgstr "Online mediafilen er ugyldig."
+msgstr "Den online mediefil er ugyldig."
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
-msgstr "Font for undertitel ikke fundet. Undertitler kommer ikke til at vises."
+msgstr "Font for undertekster ikke fundet. Undertekster bliver ikke vises."
 
 msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
-msgstr "WiiMC har ikke DVD-access - AHBPROT er ikke aktiveret."
+msgstr "WiiMC har ikke DVD-adgang - AHBPROT er ikke aktiveret."
 
 msgid "Starting Area"
 msgstr "Startsted"
@@ -644,7 +644,7 @@ msgid "Error downloading font file!"
 msgstr "Fejl ved download af fontfil!"
 
 msgid "Error opening font file!"
-msgstr "Fel ved åbning af fontfil!"
+msgstr "Fejl ved åbning af fontfil!"
 
 msgid "Could not change language. The font file is corrupted!"
 msgstr "Kunne ikke skifte sprog. Fontfilen er beskadiget!"
@@ -656,7 +656,7 @@ msgid "Low (400x240)"
 msgstr "Lav (400x240)"
 
 msgid "Medium (480x360)"
-msgstr "Medium (480x360)"
+msgstr "Mellem (480x360)"
 
 msgid "High (640x360)"
 msgstr "Høj (640x360)"
@@ -668,7 +668,7 @@ msgid "Screensaver Delay"
 msgstr "Pauseskærm tidsrum"
 
 msgid "Inactivity Shutdown"
-msgstr "Sluk ved tomgang"
+msgstr "Sluk ved inaktivitet"
 
 msgid "Invalid subtitle delay."
-msgstr "Ugyldig undertitelsynk."
+msgstr "Ugyldig undertekst forsinkelse."

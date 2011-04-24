@@ -29,11 +29,11 @@ INSTALLSTRIP = -s
 WINDRES = windres
 
 EXTRA_INC = -I$(DEVKITPRO)/portlibs/ppc/include -I$(DEVKITPRO)/libogc/include -Ilibdvdread4 -Ilibdvdnav -I$(DEVKITPRO)/portlibs/ppc/include/freetype2 -I$(DEVKITPRO)/libogc/include/ogc/machine -I$(DEVKITPPC)/../buildscripts/powerpc-eabi/gcc/gcc/include
-WIIFLAGS = -mpaired -DGEKKO -mrvl -mcpu=750 -mtune=750 -meabi -mhard-float -mdouble-float
+WIIFLAGS = -mpaired -DGEKKO -mrvl -mcpu=750 -meabi -msdata -mmultiple -mstring -mrecip
 
-CFLAGS   = -std=gnu99  -O4   -pipe -ffast-math -fomit-frame-pointer -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE $(EXTRA_INC) -I. -Iffmpeg $(WIIFLAGS)
-CXXFLAGS = -O4   -pipe -ffast-math -fomit-frame-pointer -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS $(EXTRA_INC) -I. -Iffmpeg $(WIIFLAGS)
-CC_DEPFLAGS = -MD -MP -O4   -pipe -ffast-math -fomit-frame-pointer
+CFLAGS   = -std=gnu99 -O3 -pipe -ffast-math -fomit-frame-pointer -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE $(EXTRA_INC) -I. -Iffmpeg $(WIIFLAGS)
+CXXFLAGS = -O3 -pipe -ffast-math -fomit-frame-pointer -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS $(EXTRA_INC) -I. -Iffmpeg $(WIIFLAGS)
+CC_DEPFLAGS = -MD -MP -O3 -pipe -g -ffast-math -mcpu=750 -meabi -mrvl -msdata -mpaired -mmultiple -mstring -mrecip
 
 CFLAGS_DHAHELPER         = 
 CFLAGS_FAAD_FIXED        = 
@@ -242,7 +242,7 @@ FFMPEG     = yes
 FFMPEG_A   = yes
 
 ASFLAGS    = $(CFLAGS)
-AS_DEPFLAGS= -MD -MP -O4   -pipe -ffast-math -fomit-frame-pointer
+AS_DEPFLAGS= -MD -MP -O3 -pipe -g -ffast-math -mcpu=750 -meabi -mrvl -msdata -mpaired -mmultiple -mstring -mrecip
 HOSTCC     = $(HOST_CC)
 HOSTCFLAGS = -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 -O3
 HOSTLIBS   = -lm

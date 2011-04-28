@@ -195,6 +195,8 @@ char * BrowserGetSub(char *filename)
 {
 	if(!sub_list) return NULL;
 
+	if(!sub_list->file) return NULL;
+
 	strcpy(filename,sub_list->file);
 	sub_list=sub_list->next;
 

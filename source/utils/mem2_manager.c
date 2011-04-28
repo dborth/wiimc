@@ -111,17 +111,30 @@ void ClearMem2Area (const int area)
 
 bool AddMem2Area (u32 size, const int index)  
 {
+	u32 level;
+
+	_CPU_ISR_Disable(level);
+
 	if(!_inited)
 		initMem2Areas();
 
 	if(index >= MEM2_MAX || size == 0)
+	{
+		_CPU_ISR_Restore(level);
 		return false;
+	}
 
 	if(mem2_areas[index].size == size)
+	{
+		_CPU_ISR_Restore(level);
 		return true;
+	}
 
 	if(mem2_areas[index].size > 0 && !RemoveMem2Area(index))
+	{
+		_CPU_ISR_Restore(level);
 		return false;
+	}
 
 #ifdef DEBUG_MEM2_LEVEL
 	//if(DEBUG_MEM2_LEVEL == 2)
@@ -138,20 +151,29 @@ bool AddMem2Area (u32 size, const int index)
 #endif		
 		mem2_areas[index].old_arena2hi = NULL;
 		mem2_areas[index].heap_ptr = NULL;
+		_CPU_ISR_Restore(level);
 		return false; // not enough mem2
 	}
 
 	SYS_SetArena2Hi(mem2_areas[index].heap_ptr);
 	__lwp_heap_init(&mem2_areas[index].heap, mem2_areas[index].heap_ptr, size, 32);
 	mem2_areas[index].size = size;
+	_CPU_ISR_Restore(level);
 	return true;
 }
 
 bool RemoveMem2Area(const int area)
 {
-	if(area >= MEM2_MAX || mem2_areas[area].size == 0)
-		return false;
+	u32 level;
+	
+	_CPU_ISR_Disable(level);
 
+	if(area >= MEM2_MAX || mem2_areas[area].size == 0)
+	{
+		_CPU_ISR_Restore(level);
+		return false;
+	}
+	
 	// a lower area is already inited - we cannot deinit this one yet
 	int i;
 
@@ -165,7 +187,8 @@ bool RemoveMem2Area(const int area)
 #ifdef DEBUG_MEM2_LEVEL		
 			if(DEBUG_MEM2_LEVEL)
 				printf("RemoveMem2Area FAILED: %i\n", area);
-#endif				
+#endif		
+			_CPU_ISR_Restore(level);
 			return false;
 		}
 	}
@@ -186,6 +209,7 @@ bool RemoveMem2Area(const int area)
 	mem2_areas[area].allocated = 0;
 	mem2_areas[area].top_allocated = 0;
 #endif
+	_CPU_ISR_Restore(level);
 
 	return true;
 }

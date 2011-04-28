@@ -382,11 +382,11 @@ extern "C" bool FindNextFile(bool load)
 			if(start != NULL && start[1] != 0)
 			{
 				start++;
-				snprintf(loadedFileDisplay, 128, "%s", start);
+				snprintf(loadedFileDisplay, 127, "%s", start);
 			}
 			else
 			{
-				snprintf(loadedFileDisplay, 128, "%s", loadedFile);
+				snprintf(loadedFileDisplay, 127, "%s", loadedFile);
 			}
 		}
 	}

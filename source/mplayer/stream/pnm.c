@@ -204,7 +204,9 @@ static int rm_write(int s, const char *buf, int len) {
     if (n > 0)
       total += n;
     else if (n < 0) {
-#if !HAVE_WINSOCK2_H
+#ifdef GEKKO
+	if (timeout>0 && (n == -EAGAIN)) {
+#elif !HAVE_WINSOCK2_H
       if (timeout>0 && (errno == EAGAIN || errno == EINPROGRESS)) {
 #else
       if (timeout>0 && (errno == EAGAIN || WSAGetLastError() == WSAEINPROGRESS)) {
@@ -240,6 +242,10 @@ static ssize_t rm_read(int fd, void *buf, size_t count) {
     }
 
     ret=recv (fd, ((uint8_t*)buf)+total, count-total, 0);
+
+#ifdef GEKKO   
+	if (ret == -EAGAIN) continue;
+#endif
 
     if (ret<=0) {
       mp_msg(MSGT_OPEN, MSGL_ERR, "input_pnm: read error.\n");

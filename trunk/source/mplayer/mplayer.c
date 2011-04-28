@@ -3140,6 +3140,7 @@ current_module = NULL;
 play_next_file:	
 	
 #ifdef GEKKO
+usleep(100);
 
 if(filename)
 {
@@ -3152,7 +3153,6 @@ if(partitionlabel)
   free(partitionlabel);
   partitionlabel = NULL;
 }
-
   if(!FindNextFile(true))
   controlledbygui = 1; // send control back to GUI
 
@@ -3164,7 +3164,6 @@ if(partitionlabel)
   if(controlledbygui == 2)
 	  controlledbygui = 0; // none playing, so discard
 }
-
 wii_error = 0;
 controlledbygui = 0;
 
@@ -3459,7 +3458,6 @@ if(mpctx->stream->type==STREAMTYPE_DVDNAV){
 }
 #endif
 
-
 // CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
 goto_enable_cache:
 
@@ -3574,6 +3572,8 @@ if (ts_prog) {
 }
 // select audio stream
 select_audio(mpctx->demuxer, audio_id, audio_lang);
+
+
 // DUMP STREAMS:
 if((stream_dump_type)&&(stream_dump_type<4)){
   FILE *f;
@@ -3665,6 +3665,7 @@ if(!mpctx->sh_video && !mpctx->sh_audio){
 
 /* display clip info */
 demux_info_print(mpctx->demuxer);
+
 //================== Read SUBTITLES (DVD & TEXT) ==========================
 if(vo_spudec==NULL && mpctx->sh_video &&
      (mpctx->stream->type==STREAMTYPE_DVD || mpctx->stream->type == STREAMTYPE_DVDNAV)){
@@ -3833,6 +3834,7 @@ mpctx->startup_decode_retry = DEFAULT_STARTUP_DECODE_RETRY;
 if(play_n_frames==0){
   mpctx->eof=PT_NEXT_ENTRY; goto goto_next_file;
 }
+
 
 #ifdef GEKKO
 seek_to_sec = 0;
@@ -4268,6 +4270,7 @@ uninit_player(INITIALIZED_ALL);
 //uninit_player(INITIALIZED_ALL-(INITIALIZED_DEMUXER+INITIALIZED_INPUT+INITIALIZED_VCODEC+INITIALIZED_GETCH2+INITIALIZED_GUI+(fixed_vo?INITIALIZED_VO:0)));
 //uninit_player(INITIALIZED_ALL-(INITIALIZED_INPUT+INITIALIZED_GETCH2));
 
+
 if(mpctx->set_of_sub_size > 0) {
     current_module="sub_free";
     for(i = 0; i < mpctx->set_of_sub_size; ++i) {
@@ -4289,7 +4292,6 @@ if(ass_library)
 //remove_subtitles();
 
 #ifdef GEKKO
- 
 goto play_next_file;
 
 #else
@@ -4710,13 +4712,14 @@ void fast_continue()
 
 void wiiLoadFile(char *_filename, char *_partitionlabel)
 {
+	if (partitionlabel)
+	    free(partitionlabel);
+	partitionlabel = (_partitionlabel) ? strdup(_partitionlabel) : strdup("");
+
 	if(filename)
 		free(filename);
 	filename = strdup(_filename);
 	
-	if (partitionlabel)
-	    free(partitionlabel);
-	partitionlabel = (_partitionlabel) ? strdup(_partitionlabel) : strdup("");
 }
 
 void wiiGotoGui()
@@ -4738,10 +4741,10 @@ void wiiPause()
 bool wiiIsPaused()
 {
 	if(!playing_file || controlledbygui == 2)
-		return true;
+		return false;
 
 	if(!mpctx->sh_video && !mpctx->sh_audio)
-		return true;
+		return false;
 
 	if(mpctx->was_paused == 1)
 		return true;
@@ -5305,4 +5308,5 @@ char * wiiSaveRestorePoints(char * path)
 	}
 	return buff;
 }
+
 #endif

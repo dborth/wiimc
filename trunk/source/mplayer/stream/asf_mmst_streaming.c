@@ -62,7 +62,7 @@
 
 typedef struct
 {
-  uint8_t buf[BUF_SIZE];
+  uint8_t *buf;
   int     num_bytes;
 
 } command_t;
@@ -107,6 +107,9 @@ static void send_command (int s, int command, uint32_t switches,
 
   len8 = (length + 7) / 8;
 
+  cmd.buf = (uint8_t*)malloc(BUF_SIZE*sizeof(uint8_t));
+  if(cmd.buf == NULL) return;
+
   cmd.num_bytes = 0;
 
   put_32 (&cmd, 0x00000001); /* start sequence */
@@ -130,6 +133,7 @@ static void send_command (int s, int command, uint32_t switches,
   if (send (s, cmd.buf, len8*8+48, 0) != (len8*8+48)) {
     mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_WriteError);
   }
+  free(cmd.buf);
 }
 
 #ifdef CONFIG_ICONV
@@ -168,8 +172,10 @@ static void string_utf16(char *dest, char *src, int len) {
 
 static void get_answer (int s)
 {
-  char  data[BUF_SIZE];
+  char  *data;
   int   command = 0x1b;
+
+  data = (char*) malloc(BUF_SIZE*sizeof(char));
 
   while (command == 0x1b) {
     int len;
@@ -177,6 +183,7 @@ static void get_answer (int s)
     len = recv (s, data, BUF_SIZE, 0) ;
     if (!len) {
       mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_EOFAlert);
+      free(data);
       return;
     }
 
@@ -185,6 +192,7 @@ static void get_answer (int s)
     if (command == 0x1b)
       send_command (s, 0x1b, 0, 0, 0, data);
   }
+  free(data);
 }
 
 static int get_data (int s, char *buf, size_t count)
@@ -195,7 +203,7 @@ static int get_data (int s, char *buf, size_t count)
   while (total < count) {
 
     len = recv (s, &buf[total], count-total, 0);
-
+	if(len==-EAGAIN) continue;
     if (len<=0) {
       perror ("read error:");
       return 0;
@@ -203,10 +211,10 @@ static int get_data (int s, char *buf, size_t count)
 
     total += len;
 
-    if (len != 0) {
+//    if (len != 0) {
 //      mp_msg(MSGT_NETWORK,MSGL_INFO,"[%d/%d]", total, count);
-      fflush (stdout);
-    }
+//      fflush (stdout);
+//    }
 
   }
 
@@ -263,10 +271,13 @@ static int get_header (int s, uint8_t *header, streaming_ctrl_t *streaming_ctrl)
 
       int32_t packet_len;
       int command;
-      char data[BUF_SIZE];
+      char *data;
+
+      data = (char*) malloc(BUF_SIZE*sizeof(char));
 
       if (!get_data (s, (char*)&packet_len, 4)) {
 	mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_packet_lenReadFailed);
+	free(data);
 	return 0;
       }
 
@@ -277,11 +288,13 @@ static int get_header (int s, uint8_t *header, streaming_ctrl_t *streaming_ctrl)
       if (packet_len < 0 || packet_len > BUF_SIZE) {
         mp_msg(MSGT_NETWORK, MSGL_FATAL,
                 MSGTR_MPDEMUX_MMST_InvalidRTSPPacketSize);
+        free(data);
         return 0;
       }
 
       if (!get_data (s, data, packet_len)) {
 	mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_CmdDataReadFailed);
+    free(data);
 	return 0;
       }
 
@@ -291,6 +304,7 @@ static int get_header (int s, uint8_t *header, streaming_ctrl_t *streaming_ctrl)
 
       if (command == 0x1b)
 	send_command (s, 0x1b, 0, 0, 0, data);
+	  free(data);
 
     }
 
@@ -388,12 +402,14 @@ static int interp_header (uint8_t *header, int header_len)
 
 static int get_media_packet (int s, int padding, streaming_ctrl_t *stream_ctrl) {
   unsigned char  pre_header[8];
-  char           data[BUF_SIZE];
+  char           *data;
 
   if (!get_data (s, pre_header, 8)) {
     mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_PreHeaderReadFailed);
     return 0;
   }
+
+  data = (char*) malloc(BUF_SIZE*sizeof(char));
 
 //  for (i=0; i<8; i++)
 //    mp_msg(MSGT_NETWORK,MSGL_INFO,"pre_header[%d] = %02x (%d)\n",
@@ -409,11 +425,13 @@ static int get_media_packet (int s, int padding, streaming_ctrl_t *stream_ctrl) 
 
     if (packet_len < 0 || packet_len > BUF_SIZE) {
       mp_msg(MSGT_NETWORK, MSGL_FATAL, MSGTR_MPDEMUX_MMST_InvalidRTSPPacketSize);
+      free(data);
       return 0;
     }
 
     if (!get_data (s, data, packet_len)) {
       mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_MediaDataReadFailed);
+      free(data);
       return 0;
     }
 
@@ -426,6 +444,7 @@ static int get_media_packet (int s, int padding, streaming_ctrl_t *stream_ctrl) 
 
     if (!get_data (s, (char*)&packet_len, 4)) {
       mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_packet_lenReadFailed);
+      free(data);
       return 0;
     }
 
@@ -433,11 +452,13 @@ static int get_media_packet (int s, int padding, streaming_ctrl_t *stream_ctrl) 
 
     if (packet_len < 0 || packet_len > BUF_SIZE) {
       mp_msg(MSGT_NETWORK,MSGL_FATAL,MSGTR_MPDEMUX_MMST_InvalidRTSPPacketSize);
+      free(data);
       return 0;
     }
 
     if (!get_data (s, data, packet_len)) {
       mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_CmdDataReadFailed);
+      free(data);
       return 0;
     }
 
@@ -445,6 +466,7 @@ static int get_media_packet (int s, int padding, streaming_ctrl_t *stream_ctrl) 
 	 || (pre_header[5] != 0xfa) || (pre_header[4] != 0xce) ) {
 
       mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_MissingSignature);
+      free(data);
       return -1;
     }
 
@@ -456,20 +478,24 @@ static int get_media_packet (int s, int padding, streaming_ctrl_t *stream_ctrl) 
       send_command (s, 0x1b, 0, 0, 0, data);
     else if (command == 0x1e) {
       mp_msg(MSGT_NETWORK,MSGL_INFO,MSGTR_MPDEMUX_MMST_PatentedTechnologyJoke);
+      free(data);
       return 0;
     }
     else if (command == 0x21 ) {
 	// Looks like it's new in WMS9
 	// Unknown command, but ignoring it seems to work.
+	free(data);
 	return 0;
     }
     else if (command != 0x05) {
       mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_MMST_UnknownCmd,command);
+      free(data);
       return -1;
     }
   }
 
 //  mp_msg(MSGT_NETWORK,MSGL_INFO,"get media packet succ\n");
+  free(data);
 
   return 1;
 }
@@ -517,7 +543,7 @@ static int asf_mmst_streaming_seek( int fd, off_t pos, streaming_ctrl_t *streami
 int asf_mmst_streaming_start(stream_t *stream)
 {
   char                 str[1024];
-  char                 data[BUF_SIZE];
+  char                 *data;
   uint8_t              asf_header[HDR_BUF_SIZE];
   int                  asf_header_len;
   int                  len, i, packet_length;
@@ -562,6 +588,8 @@ int asf_mmst_streaming_start(stream_t *stream)
   * This command is sent at the very start of protocol initiation. It sends local information to the serve
   * cmd 1 0x01
   * */
+
+   data = (char*) malloc(BUF_SIZE*sizeof(char));
 
   /* prepare for the url encoding conversion */
 #ifdef CONFIG_ICONV
@@ -616,6 +644,7 @@ int asf_mmst_streaming_start(stream_t *stream)
 //  mp_msg(MSGT_NETWORK,MSGL_INFO,"---------------------------------- asf_header %d\n",asf_header);
   if (asf_header_len==0) { //error reading header
     closesocket(s);
+    free(data);
     return -1;
   }
   packet_length = interp_header (asf_header, asf_header_len);
@@ -679,6 +708,7 @@ int asf_mmst_streaming_start(stream_t *stream)
   if (url_conv != (iconv_t)(-1))
     iconv_close(url_conv);
 #endif
+  free(data);
 
   return 0;
 }

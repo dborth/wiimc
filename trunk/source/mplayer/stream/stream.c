@@ -315,6 +315,7 @@ int stream_read_internal(stream_t *s, void *buf, int len)
 #ifdef GEKKO
   if(len==0)
   {
+  	 printf("stream error len==0, try: %i\n",_try);
     if(_try>3)
       s->eof=1;
     else if(_try == 0)
@@ -322,6 +323,7 @@ int stream_read_internal(stream_t *s, void *buf, int len)
       off_t pos = s->pos;
       stream_reset(s);
       stream_seek_internal(s, pos);
+      printf("stream error seek\n");
     }
     _try++;
     s->buf_pos=s->buf_len=0;
@@ -341,7 +343,9 @@ int stream_read_internal(stream_t *s, void *buf, int len)
       off_t pos = s->pos;
       stream_reset(s);
       stream_seek_internal(s, pos);
+      printf("stream error2 seek\n");
     }
+    printf("stream s->error: %i\n",s->error);
     return 0;
   }
 

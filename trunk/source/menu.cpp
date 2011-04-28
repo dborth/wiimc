@@ -6110,7 +6110,7 @@ static void AudioProgressCallback(void *ptr)
 	GuiButton *b = (GuiButton *)ptr;
 
 	double total = wiiGetTimeLength();
-	int done = wiiGetTimePos();
+	double done = wiiGetTimePos();
 	double percent = 0;
 
 	if(!wiiAudioOnly())

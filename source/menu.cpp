@@ -2167,6 +2167,7 @@ static void MenuBrowse(int menu)
 
 	if(menu == MENU_BROWSE_ONLINEMEDIA)
 	{
+	
 		if(!browserOnlineMedia.first)
 		{
 			// check if file exists

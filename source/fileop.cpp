@@ -1736,6 +1736,13 @@ static bool ParseDirEntries()
 					BROWSERENTRY *s_entry = AddEntrySubs();
 					if(s_entry)
 						s_entry->file = mem2_strdup(entry->d_name, MEM2_BROWSER);
+					if(s_entry->file == NULL) //no mem
+					{
+						DeleteEntrySubs(s_entry);						
+						InfoPrompt("Warning", "This directory contains more entries than the maximum allowed. Not all entries will be visible.");
+						entry = NULL;
+						break;						
+					}	
 				}
 
 				if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
@@ -1748,6 +1755,11 @@ static bool ParseDirEntries()
 		if(f_entry)
 		{
 			f_entry->file = mem2_strdup(entry->d_name, MEM2_BROWSER);
+			if(f_entry->file == NULL) //no mem
+			{
+				DeleteEntryFiles(f_entry);
+				goto nomemParseDirEntries;
+			}
 			f_entry->length = filestat.st_size;
 
 			if(S_ISDIR(filestat.st_mode)) 
@@ -1760,6 +1772,11 @@ static bool ParseDirEntries()
 					snprintf(tmp, MAXJOLIET, "%s", f_entry->file);
 
 				f_entry->display = mem2_strdup(tmp, MEM2_BROWSER);
+				if(f_entry->display == NULL) //no mem
+				{
+					DeleteEntryFiles(f_entry);
+					goto nomemParseDirEntries;
+				}
 				f_entry->icon = ICON_FOLDER;
 			}
 			else
@@ -1790,6 +1807,7 @@ static bool ParseDirEntries()
 		}
 		else
 		{
+nomemParseDirEntries:		
 			InfoPrompt("Warning", "This directory contains more entries than the maximum allowed. Not all entries will be visible.");
 			entry = NULL;
 			break;
@@ -1890,7 +1908,17 @@ ParseDirectory(bool waitParse)
 			return 0;
 
 		f_entry->file = mem2_strdup("..", MEM2_BROWSER);
+		if(f_entry->file == NULL) //no mem
+		{
+			DeleteEntryFiles(f_entry);
+			return 0;
+		}
 		f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
+		if(f_entry->display == NULL) //no mem
+		{
+			DeleteEntryFiles(f_entry);
+			return 0;
+		}
 		f_entry->length = 0;
 		f_entry->type = TYPE_FOLDER; // flag this as a dir
 		f_entry->icon = ICON_FOLDER;
@@ -2092,7 +2120,21 @@ static int ParsePLXPlaylist()
 	}
 
 	f_entry->file = mem2_strdup(BrowserHistoryRetrieve(), MEM2_BROWSER);
+	if(f_entry->file == NULL) //no mem
+	{
+		DeleteEntryFiles(f_entry);
+		free(list);
+		mem2_free(buffer, MEM2_OTHER);
+		return -1;
+	}	
 	f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
+	if(f_entry->display == NULL) //no mem
+	{
+		DeleteEntryFiles(f_entry);
+		free(list);
+		mem2_free(buffer, MEM2_OTHER);
+		return -1;
+	}	
 	f_entry->length = 0;
 	f_entry->icon = ICON_FOLDER;
 
@@ -2111,9 +2153,39 @@ static int ParsePLXPlaylist()
 			return -1;
 		}
 
-		f_entry->file = mem2_strdup(list[i].url, MEM2_BROWSER);
-		f_entry->display = mem2_strdup(list[i].name, MEM2_BROWSER);
-		f_entry->image = mem2_strdup(list[i].thumb, MEM2_BROWSER);
+		if(list[i].url)
+		{
+			f_entry->file = mem2_strdup(list[i].url, MEM2_BROWSER);
+			if(f_entry->file == NULL) //no mem
+			{
+				DeleteEntryFiles(f_entry);
+				free(list);
+				mem2_free(buffer, MEM2_OTHER);
+				return -1;
+			}	
+		}
+		if(list[i].name)
+		{
+			f_entry->display = mem2_strdup(list[i].name, MEM2_BROWSER);
+			if(f_entry->display == NULL) //no mem
+			{
+				DeleteEntryFiles(f_entry);
+				free(list);
+				mem2_free(buffer, MEM2_OTHER);
+				return -1;
+			}	
+		}
+		if(list[i].thumb)
+		{
+			f_entry->image = mem2_strdup(list[i].thumb, MEM2_BROWSER);
+			if(f_entry->image == NULL) //no mem
+			{
+				DeleteEntryFiles(f_entry);
+				free(list);
+				mem2_free(buffer, MEM2_OTHER);
+				return -1;
+			}
+		}	
 		
 		if(list[i].type == 2)
 			f_entry->type = TYPE_PLAYLIST;
@@ -2231,6 +2303,11 @@ int ParsePlaylistFile()
 			{
 				GetExt(root, ext);
 				f_entry->file = mem2_strdup(root, MEM2_BROWSER);
+				if(f_entry->file == NULL) //no mem
+				{
+					DeleteEntryFiles(f_entry);
+					break;
+				}		
 				
 				if(IsPlaylistExt(ext) || strncmp(root, "http:", 5) == 0)
 					f_entry->type = TYPE_PLAYLIST;
@@ -2240,10 +2317,20 @@ int ParsePlaylistFile()
 			else if(!IsAllowedProtocol(file))
 			{
 				f_entry->file = mem2_strdup("..", MEM2_BROWSER);
+				if(f_entry->file == NULL) //no mem
+				{
+					DeleteEntryFiles(f_entry);
+					break;
+				}	
 				f_entry->type = TYPE_FOLDER;
 			}
 
 			f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
+			if(f_entry->display == NULL) //no mem
+			{
+				DeleteEntryFiles(f_entry);
+				break;
+			}	
 			f_entry->length = 0;
 			f_entry->icon = ICON_FOLDER;
 
@@ -2252,11 +2339,17 @@ int ParsePlaylistFile()
 		f_entry = AddEntryFiles();
 		if(!f_entry) // add failed
 		{
+nomemParsePlaylistFile:		
 			InfoPrompt("Warning", "This playlist contains more entries than the maximum allowed. Not all entries will be visible.");
 			break;
 		}
 
 		f_entry->file = mem2_strdup(file, MEM2_BROWSER);
+		if(f_entry->file == NULL) //no mem
+		{
+			DeleteEntryFiles(f_entry);
+			goto nomemParsePlaylistFile;
+		}	
 
 		// use parameter pt_prettyformat_title for displayname if it exists
 		if(i->params) 
@@ -2268,6 +2361,11 @@ int ParsePlaylistFile()
 				if(i->params[n].value == NULL)
 					break;
 				f_entry->display = mem2_strdup(i->params[n].value, MEM2_BROWSER);
+				if(f_entry->display == NULL) //no mem
+				{
+					DeleteEntryFiles(f_entry);
+					goto nomemParsePlaylistFile;
+				}
 				break;
 			}
 		}
@@ -2285,6 +2383,11 @@ int ParsePlaylistFile()
 			else
 			{
 				f_entry->display = mem2_strdup(i->files[0], MEM2_BROWSER);
+			}
+			if(f_entry->display == NULL) //no mem
+			{
+				DeleteEntryFiles(f_entry);
+				goto nomemParsePlaylistFile;
 			}
 
 			// hide the file's extension
@@ -2342,7 +2445,17 @@ int ParseOnlineMedia()
 			return 0;
 		
 		f_entry->file = mem2_strdup("..", MEM2_BROWSER);
+		if(f_entry->file == NULL) //no mem
+		{
+			DeleteEntryFiles(f_entry);
+			return 0;
+		}
 		f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
+		if(f_entry->display == NULL) //no mem
+		{
+			DeleteEntryFiles(f_entry);
+			return 0;
+		}
 		f_entry->length = 0;
 		f_entry->type = TYPE_FOLDER;
 		f_entry->icon = ICON_FOLDER;
@@ -2384,9 +2497,30 @@ int ParseOnlineMedia()
 				snprintf(tmpurl, MAXPATHLEN, "http://%s", om_entry->url);
 
 			url_unescape_string(tmpurl2, tmpurl);
-			f_entry->file = mem2_strdup(tmpurl2, MEM2_BROWSER);
-			f_entry->display = mem2_strdup(om_entry->display, MEM2_BROWSER);
-			f_entry->image = mem2_strdup(om_entry->image, MEM2_BROWSER);
+			f_entry->file = mem2_strdup(tmpurl2, MEM2_BROWSER);			
+			if(f_entry->file == NULL) //no mem
+			{
+				DeleteEntryFiles(f_entry);
+				break;
+			}
+			if(om_entry->display)
+			{
+				f_entry->display = mem2_strdup(om_entry->display, MEM2_BROWSER);
+				if(f_entry->display == NULL) //no mem
+				{
+					DeleteEntryFiles(f_entry);
+					break;
+				}
+			}
+			if(om_entry->image)
+			{
+				f_entry->image = mem2_strdup(om_entry->image, MEM2_BROWSER);
+				if(f_entry->image == NULL) //no mem
+				{
+					DeleteEntryFiles(f_entry);
+					break;
+				}
+			}
 			f_entry->length = 0;
 			f_entry->type = om_entry->type;
 			f_entry->icon = ICON_NONE;
@@ -2421,7 +2555,17 @@ int ParseOnlineMedia()
 					break;
 
 				f_entry->file = mem2_strdup(folder, MEM2_BROWSER);
+				if(f_entry->file == NULL) //no mem
+				{
+					DeleteEntryFiles(f_entry);
+					break;
+				}
 				f_entry->display = mem2_strdup(folder, MEM2_BROWSER);
+				if(f_entry->display == NULL) //no mem
+				{
+					DeleteEntryFiles(f_entry);
+					break;
+				}
 				f_entry->length = 0;
 				f_entry->type = TYPE_FOLDER;
 				f_entry->icon = ICON_FOLDER;

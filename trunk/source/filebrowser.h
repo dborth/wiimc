@@ -81,6 +81,13 @@ BROWSERENTRY* AddEntrySubs();
 BROWSERENTRY* AddEntryVideos();
 BROWSERENTRY* AddEntryMusic();
 BROWSERENTRY* AddEntryOnlineMedia();
+bool DeleteEntryFiles(BROWSERENTRY *entry);
+bool DeleteEntrySubs(BROWSERENTRY *entry);
+bool DeleteEntryVideos(BROWSERENTRY *entry);
+bool DeleteEntryMusic(BROWSERENTRY *entry);
+bool DeleteEntryOnlineMedia(BROWSERENTRY *entry);
+
+
 int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2);
 int EntryPosition(BROWSER *info, BROWSERENTRY * i);
 BROWSERENTRY * PositionToEntry(BROWSER *info, int pos);

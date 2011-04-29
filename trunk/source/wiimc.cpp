@@ -61,7 +61,6 @@ static bool settingsSet = false;
 #define CACHE_STACKSIZE (8*1024)
 static lwp_t mthread = LWP_THREAD_NULL;
 static lwp_t cthread = LWP_THREAD_NULL;
-static u8 *mplayerstack;
 static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
 
 #define EXIT_STACKSIZE (8*1024)
@@ -462,6 +461,8 @@ void show_mem()
 
 bool InitMPlayer()
 {
+	u8 *mplayerstack;
+
 	static bool init = false;
 	if(init) return true;
 

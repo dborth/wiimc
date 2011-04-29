@@ -154,6 +154,46 @@ BROWSERENTRY * AddEntryVideos() { return AddEntry(&browserVideos); }
 BROWSERENTRY * AddEntryMusic() { return AddEntry(&browserMusic); }
 BROWSERENTRY * AddEntryOnlineMedia() { return AddEntry(&browserOnlineMedia); }
 
+bool DeleteEntry(BROWSER *info, BROWSERENTRY *entry)
+{
+	BROWSERENTRY *i,*p,*n;
+	if(entry == NULL) return false;
+	i = info->first;
+	while(i)
+	{
+		if (i == entry)
+		{
+			p=i->prior;
+			n=i->next;
+			if(p==NULL) //first
+				info->first = n;
+			else 
+				p->next=n;
+			if(n==NULL) //last	
+				info->last =p;
+			else
+				n->prior=p;
+			
+			mem2_free(i->file, MEM2_BROWSER);
+			mem2_free(i->url, MEM2_BROWSER);
+			mem2_free(i->display, MEM2_BROWSER);
+			mem2_free(i->image, MEM2_BROWSER);
+			mem2_free(i, MEM2_BROWSER);
+				
+			return true;
+		}
+		i=i->next;
+	}	
+	return false;
+}
+
+bool DeleteEntryFiles(BROWSERENTRY *entry) { return DeleteEntry(&browser, entry); }
+bool DeleteEntrySubs(BROWSERENTRY *entry) { return DeleteEntry(&browserSubs, entry); }
+bool DeleteEntryVideos(BROWSERENTRY *entry) { return DeleteEntry(&browserVideos, entry); }
+bool DeleteEntryMusic(BROWSERENTRY *entry) { return DeleteEntry(&browserMusic, entry); }
+bool DeleteEntryOnlineMedia(BROWSERENTRY *entry) { return DeleteEntry(&browserOnlineMedia, entry); }
+
+
 int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2)
 {
 	int pos;
@@ -275,6 +315,11 @@ void PopulateVideoPlaylist()
 
 		GetFullPath(i, tmp);
 		entry->file = mem2_strdup(tmp, MEM2_BROWSER);
+		if(entry->file == NULL) //no mem
+		{
+			DeleteEntryVideos(entry);
+			break;
+		}	
 		if(browser.selIndex == i) browserVideos.selIndex = entry;
 		i=i->next;
 	}

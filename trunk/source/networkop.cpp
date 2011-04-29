@@ -41,6 +41,7 @@ bool updateFound = false; // true if an app update was found
 
 void UpdateCheck()
 {
+
 	// we only check for an update if we have internet + SD/USB
 	if(updateChecked || !networkInit)
 		return;
@@ -205,37 +206,38 @@ static void * netcb (void *arg)
 		
 		while (retry>0 && (netHalt != 2))
 		{			
+			//printf("init network - retry: %i\n",retry);
+
 			if(prevInit) 
 			{
-				bool reset=false;
 				int i;
-				for(i=0; i < 500 && (netHalt != 2); i++) // 10 seconds to try to reset
+				//printf("prevInit. net_deinit\n");
+				net_deinit();
+				for(i=0; i < 400 && (netHalt != 2); i++) // 10 seconds to try to reset
 				{
 					res = net_get_status();
 					if(res != -EBUSY) // trying to init net so we can't kill the net
 					{
 						usleep(2000);
 						net_wc24cleanup(); //kill the net 
-						reset=true;
+						//printf("net_wc24cleanup\n");
+						prevInit=false; // net_wc24cleanup is called only once
+						usleep(20000);
 						break;					
 					}
 					usleep(20000);
 				}
-				if(!reset) 
-				{
-					retry--;
-					continue;
-				}
 			}
-
-			net_deinit();			
+						
 			usleep(2000);
+			//printf("net_init_async\n");
 			res = net_init_async(NULL, NULL);
 
 			if(res != 0)
 			{
 				sleep(1);
 				retry--;
+				//printf("error net_init_async. retry: %i\n",retry);
 				continue;
 			}
 
@@ -247,6 +249,7 @@ static void * netcb (void *arg)
 				res = net_get_status();
 				wait--;
 			}
+			//printf("end net_init_async. wait: %i  res: %i\n",wait, res);
 
 			if(res==0) break;
 			retry--;
@@ -262,7 +265,8 @@ static void * netcb (void *arg)
 				networkInit = true;	
 				prevInit = true;
 			}
-		}
+			//printf("net ok: %s\n", wiiIP);
+		}//else  printf("net error. res: %i\n", res);
 		if(netHalt != 2) LWP_SuspendThread(networkthread);
 	}
 	return NULL;

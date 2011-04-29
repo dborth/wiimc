@@ -2191,6 +2191,7 @@ static int fill_audio_out_buffers(void)
 #endif
     }
 
+    if(bytes_to_write==0) mpctx->audio_out->resume();
     while (bytes_to_write) {
 	int res;
 	playsize = bytes_to_write;

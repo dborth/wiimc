@@ -193,6 +193,8 @@ static void audio_pause(void)
 static void audio_resume(void)
 {
 	playing = true;
+	switch_buffers();
+	AUDIO_StartDMA();
 }
 
 static int get_space(void)

@@ -494,41 +494,34 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 		const char *addr = mxmlElementGetAttr(next, "addr");
 		const char *image = mxmlElementGetAttr(next, "image");
 		const char *type = mxmlElementGetAttr(next, "type");
-		
 
 		if(name && addr) // this is a link
 		{
 			BROWSERENTRY *o_entry = AddEntryOnlineMedia();
 			if(!o_entry)
 				break;
+
+			o_entry->file = mem2_strdup(path, MEM2_BROWSER);
+			if(!o_entry->file) // no mem
+			{
+				DeleteEntryOnlineMedia(o_entry);
+				break;
+			}
 			
-			if(path)
+			o_entry->url = mem2_strdup(addr, MEM2_BROWSER);
+			if(!o_entry->url) // no mem
 			{
-				o_entry->file = mem2_strdup(path, MEM2_BROWSER);
-				if(!o_entry->file) // no mem
-				{
-					DeleteEntryOnlineMedia(o_entry);
-					break;
-				}
+				DeleteEntryOnlineMedia(o_entry);
+				break;
 			}
-			if(addr)
+			
+			o_entry->display = mem2_strdup(name, MEM2_BROWSER);
+			if(!o_entry->display) // no mem
 			{
-				o_entry->url = mem2_strdup(addr, MEM2_BROWSER);
-				if(!o_entry->url) // no mem
-				{
-					DeleteEntryOnlineMedia(o_entry);
-					break;
-				}
-				}
-			if(name)
-			{
-				o_entry->display = mem2_strdup(name, MEM2_BROWSER);
-				if(!o_entry->display) // no mem
-				{
-					DeleteEntryOnlineMedia(o_entry);
-					break;
-				}
+				DeleteEntryOnlineMedia(o_entry);
+				break;
 			}
+
 			if(image)
 			{
 				o_entry->image = mem2_strdup(image, MEM2_BROWSER);
@@ -577,7 +570,6 @@ static void RecurseOnlineMedia(mxml_node_t * top, char * path)
 		}
 		next = mxmlFindElement(next, top, "folder", NULL, NULL, MXML_NO_DESCEND);
 	}
-
 }
 
 /****************************************************************************

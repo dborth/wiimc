@@ -2167,7 +2167,6 @@ static void MenuBrowse(int menu)
 
 	if(menu == MENU_BROWSE_ONLINEMEDIA)
 	{
-	
 		if(!browserOnlineMedia.first)
 		{
 			// check if file exists
@@ -5937,9 +5936,9 @@ static void VideoProgressCallback(void *ptr)
 {
 	GuiButton *b = (GuiButton *)ptr;
 
-	float total = wiiGetTimeLength();
-	int done = wiiGetTimePos();
-	float percent = 0;
+	double total = wiiGetTimeLength();
+	double done = wiiGetTimePos();
+	double percent = 0;
 	
 	if(total > 0)
 		percent = done/total;
@@ -5953,7 +5952,7 @@ static void VideoProgressCallback(void *ptr)
 			else if(percent < 0) percent = 0;
 			done = total*percent;
 			ShutoffRumble();
-			wiiSeekPos(done);
+			wiiSeekPos((int)done);
 		}
 		b->ResetState();
 	}
@@ -6128,7 +6127,7 @@ static void AudioProgressCallback(void *ptr)
 			if(percent > 1.0) percent = 1.0;
 			else if(percent < 0) percent = 0;
 			done = total*percent;
-			wiiSeekPos(done);
+			wiiSeekPos((int)done);
 		}
 		b->ResetState();
 	}

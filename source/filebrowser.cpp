@@ -157,7 +157,7 @@ BROWSERENTRY * AddEntryOnlineMedia() { return AddEntry(&browserOnlineMedia); }
 bool DeleteEntry(BROWSER *info, BROWSERENTRY *entry)
 {
 	BROWSERENTRY *i,*p,*n;
-	if(entry == NULL) return false;
+	if(!entry) return false;
 	i = info->first;
 	while(i)
 	{
@@ -165,11 +165,11 @@ bool DeleteEntry(BROWSER *info, BROWSERENTRY *entry)
 		{
 			p=i->prior;
 			n=i->next;
-			if(p==NULL) //first
+			if(!p) //first
 				info->first = n;
 			else 
 				p->next=n;
-			if(n==NULL) //last	
+			if(!n) //last	
 				info->last =p;
 			else
 				n->prior=p;
@@ -192,7 +192,6 @@ bool DeleteEntrySubs(BROWSERENTRY *entry) { return DeleteEntry(&browserSubs, ent
 bool DeleteEntryVideos(BROWSERENTRY *entry) { return DeleteEntry(&browserVideos, entry); }
 bool DeleteEntryMusic(BROWSERENTRY *entry) { return DeleteEntry(&browserMusic, entry); }
 bool DeleteEntryOnlineMedia(BROWSERENTRY *entry) { return DeleteEntry(&browserOnlineMedia, entry); }
-
 
 int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2)
 {
@@ -233,9 +232,8 @@ void BrowserGetSubInit()
 
 char * BrowserGetSub(char *filename)
 {
-	if(!sub_list) return NULL;
-
-	if(!sub_list->file) return NULL;
+	if(!sub_list || !sub_list->file)
+		return NULL;
 
 	strcpy(filename,sub_list->file);
 	sub_list=sub_list->next;
@@ -315,7 +313,7 @@ void PopulateVideoPlaylist()
 
 		GetFullPath(i, tmp);
 		entry->file = mem2_strdup(tmp, MEM2_BROWSER);
-		if(entry->file == NULL) //no mem
+		if(!entry->file) // no mem
 		{
 			DeleteEntryVideos(entry);
 			break;

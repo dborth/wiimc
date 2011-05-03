@@ -79,15 +79,15 @@ int MusicPlaylistLoad()
 	ResetFiles();
 
 	BROWSERENTRY *f_entry = AddEntryFiles();
-	if(f_entry == NULL) return 0;
+	if(!f_entry) return 0;
 	f_entry->file = mem2_strdup(BrowserHistoryRetrieve(), MEM2_BROWSER);
-	if(f_entry->file == NULL) //no mem
+	if(!f_entry->file) // no mem
 	{
 		DeleteEntryFiles(f_entry);
 		return 0;
 	}
 	f_entry->display = mem2_strdup("Exit Playlist", MEM2_BROWSER);
-	if(f_entry->display == NULL) //no mem
+	if(!f_entry->display) // no mem
 	{
 		DeleteEntryFiles(f_entry);
 		return 0;
@@ -111,7 +111,7 @@ int MusicPlaylistLoad()
 			break;
 
 		f_entry->file = mem2_strdup(i->file, MEM2_BROWSER);
-		if(f_entry->file == NULL) //no mem
+		if(!f_entry->file) // no mem
 		{
 			DeleteEntryFiles(f_entry);
 			break;
@@ -119,7 +119,7 @@ int MusicPlaylistLoad()
 		if(i->display)
 		{
 			f_entry->display = mem2_strdup(i->display, MEM2_BROWSER);
-			if(f_entry->display == NULL) //no mem
+			if(!f_entry->display) // no mem
 			{
 				DeleteEntryFiles(f_entry);
 				break;
@@ -322,7 +322,7 @@ static int EnqueueFile(char * path)
 			DeleteEntryMusic(m_entry);
 			return -1;
 		}
-		
+
 		// hide the file's extension
 		if(WiiSettings.hideExtensions)
 			StripExt(m_entry->display);
@@ -367,11 +367,8 @@ static bool EnqueueFolder(char * path, int silent)
 		if(entry->d_name[0] == '.')
 			continue;
 
-
 		if(strlen(path)+strlen(entry->d_name)>MAXPATHLEN) continue;
-
 		snprintf(filepath, MAXPATHLEN, "%s/%s", path, entry->d_name);
-		
 
 #ifdef _DIRENT_HAVE_D_TYPE
 		if(entry->d_type==DT_DIR)

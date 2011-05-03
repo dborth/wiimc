@@ -1736,7 +1736,7 @@ static bool ParseDirEntries()
 					BROWSERENTRY *s_entry = AddEntrySubs();
 					if(s_entry)
 						s_entry->file = mem2_strdup(entry->d_name, MEM2_BROWSER);
-					if(s_entry->file == NULL) //no mem
+					if(!s_entry->file) // no mem
 					{
 						DeleteEntrySubs(s_entry);						
 						InfoPrompt("Warning", "This directory contains more entries than the maximum allowed. Not all entries will be visible.");
@@ -1755,7 +1755,7 @@ static bool ParseDirEntries()
 		if(f_entry)
 		{
 			f_entry->file = mem2_strdup(entry->d_name, MEM2_BROWSER);
-			if(f_entry->file == NULL) //no mem
+			if(!f_entry->file) // no mem
 			{
 				DeleteEntryFiles(f_entry);
 				goto nomemParseDirEntries;
@@ -1772,7 +1772,7 @@ static bool ParseDirEntries()
 					snprintf(tmp, MAXJOLIET, "%s", f_entry->file);
 
 				f_entry->display = mem2_strdup(tmp, MEM2_BROWSER);
-				if(f_entry->display == NULL) //no mem
+				if(!f_entry->display) //no mem
 				{
 					DeleteEntryFiles(f_entry);
 					goto nomemParseDirEntries;
@@ -1908,13 +1908,13 @@ ParseDirectory(bool waitParse)
 			return 0;
 
 		f_entry->file = mem2_strdup("..", MEM2_BROWSER);
-		if(f_entry->file == NULL) //no mem
+		if(!f_entry->file) // no mem
 		{
 			DeleteEntryFiles(f_entry);
 			return 0;
 		}
 		f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
-		if(f_entry->display == NULL) //no mem
+		if(!f_entry->display) // no mem
 		{
 			DeleteEntryFiles(f_entry);
 			return 0;
@@ -1966,7 +1966,7 @@ typedef struct
 	char processor[MAXPATHLEN + 1];
 } PLXENTRY;
 
-#define MAX_PLX_SIZE (64*1024)
+#define MAX_PLX_SIZE (512*1024)
 
 static int ParsePLXPlaylist()
 {
@@ -2120,7 +2120,7 @@ static int ParsePLXPlaylist()
 	}
 
 	f_entry->file = mem2_strdup(BrowserHistoryRetrieve(), MEM2_BROWSER);
-	if(f_entry->file == NULL) //no mem
+	if(!f_entry->file) // no mem
 	{
 		DeleteEntryFiles(f_entry);
 		free(list);
@@ -2128,7 +2128,7 @@ static int ParsePLXPlaylist()
 		return -1;
 	}	
 	f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
-	if(f_entry->display == NULL) //no mem
+	if(!f_entry->display) // no mem
 	{
 		DeleteEntryFiles(f_entry);
 		free(list);
@@ -2156,7 +2156,7 @@ static int ParsePLXPlaylist()
 		if(list[i].url)
 		{
 			f_entry->file = mem2_strdup(list[i].url, MEM2_BROWSER);
-			if(f_entry->file == NULL) //no mem
+			if(!f_entry->file) // no mem
 			{
 				DeleteEntryFiles(f_entry);
 				free(list);
@@ -2164,10 +2164,11 @@ static int ParsePLXPlaylist()
 				return -1;
 			}	
 		}
+
 		if(list[i].name)
 		{
 			f_entry->display = mem2_strdup(list[i].name, MEM2_BROWSER);
-			if(f_entry->display == NULL) //no mem
+			if(!f_entry->display) // no mem
 			{
 				DeleteEntryFiles(f_entry);
 				free(list);
@@ -2175,10 +2176,11 @@ static int ParsePLXPlaylist()
 				return -1;
 			}	
 		}
+
 		if(list[i].thumb)
 		{
 			f_entry->image = mem2_strdup(list[i].thumb, MEM2_BROWSER);
-			if(f_entry->image == NULL) //no mem
+			if(!f_entry->image) // no mem
 			{
 				DeleteEntryFiles(f_entry);
 				free(list);
@@ -2303,7 +2305,7 @@ int ParsePlaylistFile()
 			{
 				GetExt(root, ext);
 				f_entry->file = mem2_strdup(root, MEM2_BROWSER);
-				if(f_entry->file == NULL) //no mem
+				if(!f_entry->file) //no mem
 				{
 					DeleteEntryFiles(f_entry);
 					break;
@@ -2317,7 +2319,7 @@ int ParsePlaylistFile()
 			else if(!IsAllowedProtocol(file))
 			{
 				f_entry->file = mem2_strdup("..", MEM2_BROWSER);
-				if(f_entry->file == NULL) //no mem
+				if(!f_entry->file) // no mem
 				{
 					DeleteEntryFiles(f_entry);
 					break;
@@ -2326,7 +2328,7 @@ int ParsePlaylistFile()
 			}
 
 			f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
-			if(f_entry->display == NULL) //no mem
+			if(!f_entry->display) // no mem
 			{
 				DeleteEntryFiles(f_entry);
 				break;
@@ -2345,7 +2347,7 @@ nomemParsePlaylistFile:
 		}
 
 		f_entry->file = mem2_strdup(file, MEM2_BROWSER);
-		if(f_entry->file == NULL) //no mem
+		if(!f_entry->file) // no mem
 		{
 			DeleteEntryFiles(f_entry);
 			goto nomemParsePlaylistFile;
@@ -2361,7 +2363,7 @@ nomemParsePlaylistFile:
 				if(i->params[n].value == NULL)
 					break;
 				f_entry->display = mem2_strdup(i->params[n].value, MEM2_BROWSER);
-				if(f_entry->display == NULL) //no mem
+				if(!f_entry->display) // no mem
 				{
 					DeleteEntryFiles(f_entry);
 					goto nomemParsePlaylistFile;
@@ -2384,7 +2386,7 @@ nomemParsePlaylistFile:
 			{
 				f_entry->display = mem2_strdup(i->files[0], MEM2_BROWSER);
 			}
-			if(f_entry->display == NULL) //no mem
+			if(!f_entry->display) // no mem
 			{
 				DeleteEntryFiles(f_entry);
 				goto nomemParsePlaylistFile;
@@ -2445,13 +2447,13 @@ int ParseOnlineMedia()
 			return 0;
 		
 		f_entry->file = mem2_strdup("..", MEM2_BROWSER);
-		if(f_entry->file == NULL) //no mem
+		if(!f_entry->file) // no mem
 		{
 			DeleteEntryFiles(f_entry);
 			return 0;
 		}
 		f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
-		if(f_entry->display == NULL) //no mem
+		if(!f_entry->display) // no mem
 		{
 			DeleteEntryFiles(f_entry);
 			return 0;
@@ -2497,7 +2499,7 @@ int ParseOnlineMedia()
 				snprintf(tmpurl, MAXPATHLEN, "http://%s", om_entry->url);
 
 			url_unescape_string(tmpurl2, tmpurl);
-			f_entry->file = mem2_strdup(tmpurl2, MEM2_BROWSER);			
+			f_entry->file = mem2_strdup(tmpurl2, MEM2_BROWSER);
 			if(f_entry->file == NULL) //no mem
 			{
 				DeleteEntryFiles(f_entry);
@@ -2505,7 +2507,7 @@ int ParseOnlineMedia()
 			}
 			if(om_entry->display)
 			{
-				f_entry->display = mem2_strdup(om_entry->display, MEM2_BROWSER);
+			f_entry->display = mem2_strdup(om_entry->display, MEM2_BROWSER);
 				if(f_entry->display == NULL) //no mem
 				{
 					DeleteEntryFiles(f_entry);
@@ -2514,7 +2516,7 @@ int ParseOnlineMedia()
 			}
 			if(om_entry->image)
 			{
-				f_entry->image = mem2_strdup(om_entry->image, MEM2_BROWSER);
+			f_entry->image = mem2_strdup(om_entry->image, MEM2_BROWSER);
 				if(f_entry->image == NULL) //no mem
 				{
 					DeleteEntryFiles(f_entry);

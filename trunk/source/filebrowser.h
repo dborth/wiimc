@@ -87,7 +87,6 @@ bool DeleteEntryVideos(BROWSERENTRY *entry);
 bool DeleteEntryMusic(BROWSERENTRY *entry);
 bool DeleteEntryOnlineMedia(BROWSERENTRY *entry);
 
-
 int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2);
 int EntryPosition(BROWSER *info, BROWSERENTRY * i);
 BROWSERENTRY * PositionToEntry(BROWSER *info, int pos);

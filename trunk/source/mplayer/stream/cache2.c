@@ -146,6 +146,7 @@ static int cache_read(cache_vars_t *s, unsigned char *buf, int size)
 	if(newb<=0 || pos<0 || pos+newb > s->buffer_size) // very very odd error
     {
     	//debug_str="Ehh. very very odd error !!! Report bug...\n";
+    	printf("Ehh. very very odd error !!! Report bug... pos: %i  newb: %i\n",pos,newb);
     	continue;
 	}
     memcpy(buf,&s->buffer[pos],newb);
@@ -262,6 +263,7 @@ static int cache_fill(cache_vars_t *s)
 		
 		if(s->stream->error>500) //num retries
 		{
+			printf("error > 500. eof = 1\n");
 			s->eof=1;
 		}
 		else		
@@ -272,13 +274,13 @@ static int cache_fill(cache_vars_t *s)
 		  {	  
 	  		s->eof=1;
 	  		cache_fill_status=-1;  		
-	  		//printf("error: %i\n",s->stream->error);
+	  		printf("error: %i cache_fill_status<5  eof=1\n",s->stream->error);
 	  	  }
 	  	  else 
 		  {
 			extern char fileplaying[MAXPATHLEN];
 			//s->eof=0;
-				//printf("retry read (%f): %i -> %s \n",cache_fill_status,s->stream->error,fileplaying);
+				printf("retry read (%f): %i -> %s \n",cache_fill_status,s->stream->error,fileplaying);
 				
 				if(s->stream->error>3 && strncmp(fileplaying,"smb",3)==0)//only reset network in samba, maybe we can check internet streams later, samba can reconnect
 					CheckMplayerNetwork();	
@@ -288,9 +290,11 @@ static int cache_fill(cache_vars_t *s)
   	else
   	{
   		cache_fill_status=-1;  	
+  		printf("error. eof = 1\n");
   		s->eof=1;
   	}
   }
+  else s->stream->error=0;
 #else
   s->eof= !len;
 #endif
@@ -373,6 +377,7 @@ static cache_vars_t* cache_init(int size,int sector){
   }//32kb min_size
   s->buffer_size=num*sector;
   s->sector_size=sector;
+  printf("s->buffer_size: %i  sector: %i\n",s->buffer_size,sector);
 #if !defined(__MINGW32__) && !defined(PTHREAD_CACHE) && !defined(__OS2__) && !defined(GEKKO)
   s->buffer=shmem_alloc(s->buffer_size);
 #else

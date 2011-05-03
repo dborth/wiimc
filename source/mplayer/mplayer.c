@@ -185,6 +185,8 @@ char fileplaying[MAXPATHLEN];
 static char partitionlabelplaying[50];
 
 static int enable_restore_points=1;
+static int end_film_error=0;
+
 
 static float online_stream_cache_min_percent=20;
 static float orig_stream_cache_min_percent=-1;
@@ -2479,6 +2481,7 @@ static double update_video(int *blit_frame)
     //--------------------  Decode a frame: -----------------------
     double frame_time;
     *blit_frame = 0; // Don't blit if we hit EOF
+    
     if (!correct_pts) {
 	unsigned char* start=NULL;
 	void *decoded_frame = NULL;
@@ -2512,6 +2515,7 @@ static double update_video(int *blit_frame)
 	    mpctx->delay -= frame_time;
 	// video_read_frame can change fps (e.g. for ASF video)
 	vo_fps = sh_video->fps;
+	
 	drop_frame = check_framedrop(frame_time);
 	update_subtitles(sh_video, sh_video->pts, mpctx->d_sub, 0);
 	update_teletext(sh_video, mpctx->demuxer, 0);
@@ -2528,7 +2532,6 @@ static double update_video(int *blit_frame)
 	/// save back last still frame for future display
 	mp_dvdnav_save_smpi(in_size,start,decoded_frame);
 #endif
-
 	current_module = "filter_video";
 	*blit_frame = (decoded_frame && filter_video(sh_video, decoded_frame,
 							sh_video->pts));
@@ -2566,7 +2569,6 @@ static double update_video(int *blit_frame)
 		mpctx->delay -= frame_time;
 	*blit_frame = res > 0;
 	}
-	
 	return frame_time;
 }
 
@@ -3154,8 +3156,14 @@ if(partitionlabel)
   free(partitionlabel);
   partitionlabel = NULL;
 }
+
+if(end_film_error==0)
+{
   if(!FindNextFile(true))
   controlledbygui = 1; // send control back to GUI
+}
+else //end film by error
+	controlledbygui = 1; // send control back to GUI
 
   while (!filename)
 {
@@ -3165,6 +3173,7 @@ if(partitionlabel)
   if(controlledbygui == 2)
 	  controlledbygui = 0; // none playing, so discard
 }
+end_film_error=0;
 wii_error = 0;
 controlledbygui = 0;
 
@@ -3839,7 +3848,6 @@ if(play_n_frames==0){
 
 #ifdef GEKKO
 seek_to_sec = 0;
-
 if (mpctx->sh_video)
 {
 	stream_cache_min_percent=orig_stream_cache_min_percent;
@@ -3857,8 +3865,12 @@ if (mpctx->sh_video)
 			seek_to_sec = 0;
 	}
 
+//OSD is not used
+	force_load_font = 0;
+/*
 	if (!vo_font || !sub_font || prev_dxs != mpctx->sh_video->disp_w || prev_dys != mpctx->sh_video->disp_h)
 	{
+	
 	    force_load_font = 0;
 	    ReInitTTFLib();
 		load_font_ft(mpctx->sh_video->disp_w, mpctx->sh_video->disp_h, &vo_font, font_name, osd_font_scale_factor);
@@ -3879,6 +3891,7 @@ if (mpctx->sh_video)
 		else
 			sub_font = vo_font;
 		}
+		*/
 	}
 #endif
 
@@ -3958,6 +3971,7 @@ if(!mpctx->sh_video) {
 
   if (!mpctx->num_buffered_frames) {
   double frame_time;
+  
   	frame_time = update_video(&blit_frame);
       while (!blit_frame && mpctx->startup_decode_retry > 0) {
           double delay = mpctx->delay;
@@ -4262,10 +4276,12 @@ if(benchmark){
 playing_file=false;
 save_restore_point(fileplaying, partitionlabelplaying);
 DisableVideoImg();
+end_film_error=stream_error(mpctx->stream);
 #endif
 
+
 // time to uninit all, except global stuff:
-printf("mplayer: end film. UNINIT\n");
+printf("mplayer: end film. UNINIT. err: %i\n",stream_error(mpctx->stream));
 
 uninit_player(INITIALIZED_ALL);
 //uninit_player(INITIALIZED_ALL-(INITIALIZED_DEMUXER+INITIALIZED_INPUT+INITIALIZED_VCODEC+INITIALIZED_GETCH2+INITIALIZED_GUI+(fixed_vo?INITIALIZED_VO:0)));
@@ -4529,7 +4545,7 @@ static void reload_subtitles()
 	if (mpctx->global_sub_size)
 	{
 		select_subtitle(mpctx);
-		force_load_font = 1;
+		//force_load_font = 1;
 #ifdef CONFIG_ASS		
 		ass_force_reload = 1;
 #endif		
@@ -5039,7 +5055,7 @@ void wiiSetProperty(int command, float value)
 		case MP_CMD_FRAMEDROPPING:
 			cmd->name = strdup("frame_drop"); break;
 		case MP_CMD_SWITCH_RATIO:
-			cmd->name = strdup("switch_ratio"); ass_force_reload = 1; force_load_font = 1; break;
+			cmd->name = strdup("switch_ratio"); ass_force_reload = 1; /*force_load_font = 1;*/ break;
 		case MP_CMD_SWITCH_AUDIO:
 			cmd->name = strdup("switch_audio"); break;
 		case MP_CMD_AUDIO_DELAY:
@@ -5101,7 +5117,7 @@ void wiiSetCodepage(char *cp)
 
 	//reload_subtitles();
 	ass_force_reload = 1;
-	force_load_font = 1;
+	//force_load_font = 1;
 	vo_osd_changed(OSDTYPE_SUBTITLE);
 }
 
@@ -5135,7 +5151,7 @@ void wiiSetSubtitleLanguage(char *lang)
 	else
 		dvdsub_lang = strdup(lang);
 	ass_force_reload = 1;
-	force_load_font = 1;
+	//force_load_font = 1;
 
 	vo_osd_changed(OSDTYPE_SUBTITLE);
 }
@@ -5157,7 +5173,7 @@ void wiiSetSubtitleColor(char *color)
 		ass_border_color = strdup("00000000");
 
 	ass_force_reload = 1;
-	force_load_font = 1;
+	//force_load_font = 1;
 	reload_subtitles();
 	vo_osd_changed(OSDTYPE_SUBTITLE);
 }
@@ -5176,11 +5192,11 @@ void wiiSetSubtitleSize(float size)
 	ass_force_reload = 1;
 	//text_font_scale_factor = size;
 	//osd_font_scale_factor = size;
-	force_load_font = 1;
+	//force_load_font = 1;
 #else
 	text_font_scale_factor = size;
 	osd_font_scale_factor = size;
-	force_load_font = 1;
+	//force_load_font = 1;
 #endif	
 	vo_osd_changed(OSDTYPE_SUBTITLE);
 }

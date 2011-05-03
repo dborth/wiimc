@@ -115,11 +115,14 @@ static int control(int cmd, void *arg)
 
 void reinit_audio()
 {
+	AUDIO_RegisterDMACallback(switch_buffers);
+/*
 	if(!playing)
 	{
 		switch_buffers();
 		AUDIO_StartDMA();
 	}
+*/	
 }
 
 static int init(int rate, int channels, int format, int flags)
@@ -193,8 +196,11 @@ static void audio_pause(void)
 static void audio_resume(void)
 {
 	playing = true;
-	switch_buffers();
-	AUDIO_StartDMA();
+	if(AUDIO_GetDMAEnableFlag()==0)
+	{
+		switch_buffers();
+		AUDIO_StartDMA();
+	}
 }
 
 static int get_space(void)
@@ -289,7 +295,7 @@ static int play(void *data, int remaining, int flags)
 		buffered += BUFFER_SIZE;
 	}
 
-	if (!playing && buffered > request_size)
+	if (!playing)// && buffered > request_size)
 	{
 		playing = true;
 		switch_buffers();

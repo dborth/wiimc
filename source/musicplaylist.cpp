@@ -344,7 +344,7 @@ static int MusicSortCallback(const void *f1, const void *f2)
  ***************************************************************************/
 static bool EnqueueFolder(char * path, int silent)
 {
-	char filepath[MAXPATHLEN+1];
+	char *filepath;
 	struct stat filestat;
 	struct dirent *entry;
 	DIR *dir = opendir(path);
@@ -361,6 +361,9 @@ static bool EnqueueFolder(char * path, int silent)
 	}
 	
 	int start = browserMusic.numEntries;
+
+	filepath = (char*)mem2_malloc((MAXPATHLEN+1)*sizeof(char), MEM2_BROWSER);
+	if(!filepath) return false;
 
 	while ((entry=readdir(dir))!=NULL)
 	{
@@ -390,6 +393,7 @@ static bool EnqueueFolder(char * path, int silent)
 				break;
 		}
 	}
+	mem2_free(filepath, MEM2_BROWSER);
 	closedir(dir);
 
 	if(browserMusic.numEntries-start > 1)

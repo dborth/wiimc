@@ -2509,6 +2509,21 @@ static void MenuBrowse(int menu)
 
 				if(numItems == 0)
 				{
+					if(menuCurrent == MENU_BROWSE_VIDEOS) 
+					{
+						char aux[1024];
+						GetFullPath(browser.selIndex, aux);
+						if(strcmp(loadedFile, aux) == 0)
+						{
+							ResumeMPlayerFile();
+							// wait until MPlayer is ready to take control (or return control)
+							while(!guiShutdown && controlledbygui != 1)
+								usleep(THREAD_SLEEP);
+
+							goto done;
+						}
+					}
+
 					GetFullPath(browser.selIndex, loadedFile);
 					GetDisplay(browser.selIndex, loadedFileDisplay, 128);
 				}
@@ -2518,8 +2533,8 @@ static void MenuBrowse(int menu)
 				if(!mainWindow->Find(disabled))
 					mainWindow->Append(disabled);
 				mainWindow->SetState(STATE_DISABLED);
-				ShowAction("Loading...");
 
+				ShowAction("Loading...");
 				int res = LoadNewFile();
 				CancelAction();
 

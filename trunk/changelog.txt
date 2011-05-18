@@ -6,6 +6,18 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.1.8 - May 17, 2011]
+
+* Synced to MPlayer r33269
+* Added Danish translation
+* Clicking on a browser file already loaded will now resume instead of reload
+* Faster loading of online streams
+* Fixed a bug with some MMS streams
+* Improved network initialization - now you can unplug/plug USB ethernet
+* Fixed a potential crash caused by the audio code
+* Improved memory management
+* Other minor optimizations and improvements
+
 [1.1.7 - April 16, 2011]
 
 * Fixed a bug that caused a crash if Aspect Ratio was not set to Auto

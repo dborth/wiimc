@@ -2061,7 +2061,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	{
 		int fmt = atoi((*link).first.c_str();
 
-		if(fmt <= 0)
+		if(fmt != 5 && fmt != 18 && fmt != 34)
 			continue;
 	
 		if(fmt == WiiSettings.youtubeFormat || (fmt < WiiSettings.youtubeFormat && fmt > format))

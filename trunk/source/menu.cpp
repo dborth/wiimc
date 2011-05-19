@@ -2055,16 +2055,27 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	while (re.FindAndConsume(&input, &format, &link))
 		links[format] = link;
 
+	int format = 0;
+
 	for(std::map<std::string,std::string>::iterator link=links.begin(); link!=links.end(); ++link)
 	{
-		if(strcmp((*link).first.c_str(), WiiSettings.youtubeFormat) == 0)
-		{
-			url_unescape_string(newurl, (*link).second.c_str());
-			mem2_free(buffer, MEM2_OTHER);
-			return true;
-		}
+		int fmt = atoi((*link).first.c_str();
+
+		if(fmt <= 0)
+			continue;
+	
+		if(fmt == WiiSettings.youtubeFormat || (fmt < WiiSettings.youtubeFormat && fmt > format))
+			format = fmt;
 	}
+	
+	if(format > 0)
+		url_unescape_string(newurl, (*link).second.c_str());
+	
 	mem2_free(buffer, MEM2_OTHER);
+
+	if(format > 0)
+		return true;
+
 	return false;
 }
 
@@ -5014,12 +5025,12 @@ static void MenuSettingsOnlineMedia()
 					WiiSettings.onlineCacheFill = 5;
 				break;
 			case 1:
-				if(strcmp(WiiSettings.youtubeFormat, "5") == 0)
-					sprintf(WiiSettings.youtubeFormat, "18");
-				else if(strcmp(WiiSettings.youtubeFormat, "18") == 0)
-					sprintf(WiiSettings.youtubeFormat, "34");
+				if(WiiSettings.youtubeFormat == 5)
+					WiiSettings.youtubeFormat = 18;
+				else if(WiiSettings.youtubeFormat == 18)
+					WiiSettings.youtubeFormat = 34;
 				else
-					sprintf(WiiSettings.youtubeFormat, "5");
+					WiiSettings.youtubeFormat = 5;
 				break;
 			case 2:
 				OnScreenKeyboard(WiiSettings.onlinemediaFolder, MAXPATHLEN);
@@ -5034,9 +5045,9 @@ static void MenuSettingsOnlineMedia()
 
 			sprintf (options.value[0], "%d%%", WiiSettings.onlineCacheFill);
 
-			if(strcmp(WiiSettings.youtubeFormat, "5") == 0)
+			if(WiiSettings.youtubeFormat == 5)
 				sprintf(options.value[1], "Low (400x240)");
-			else if(strcmp(WiiSettings.youtubeFormat, "18") == 0)
+			else if(WiiSettings.youtubeFormat == 18)
 				sprintf(options.value[1], "Medium (480x360)");
 			else
 				sprintf(options.value[1], "High (640x360)");

@@ -2,7 +2,7 @@
 *	gx_supp.c - Generic GX Support for Emulators
 *	softdev 2007
 *	dhewg 2008
-*	sepp256 2008-2010 - Coded YUV->RGB conversion in TEV
+*	sepp256 2008-2011 - Coded YUV->RGB conversion and filters in TEV
 *	Extrems 2009-2011
 *	Tantric / rodries 2009-2011
 *
@@ -54,6 +54,11 @@ int DrawMPlayerGui();
 int copyScreen = 0;
 extern int pause_gui;
 extern int controlledbygui;
+
+//Global variables for brightness and contrast filters
+//Ranges for both should be constrained to [-1.0,1.0]
+float g_brightness = 0.0f;
+float g_contrast = 0.0f;
 
 /*** 2D ***/
 static bool need_wait=false;
@@ -168,7 +173,7 @@ static void draw_initYUV()
 	//V:  GX_TEXMAP3, GX_TEXCOORD2
 
 	//Y'UV->RGB formulation 3
-	GX_SetNumTevStages(13);
+	GX_SetNumTevStages(15);
 	GX_SetTevKColor(GX_KCOLOR0, (GXColor){255,	 0,   0, levelconv ? 18 : 0});	//R {1, 0, 0, 16*1.164}
 	GX_SetTevKColor(GX_KCOLOR1, (GXColor){	0,	 0, 255, levelconv ? 41 : 0});	//B {0, 0, 1, 0.164}
 	
@@ -195,8 +200,52 @@ static void draw_initYUV()
 		},
 	};
 	
-	GX_SetTevKColor(GX_KCOLOR2, uv_coeffs[colorspace][0]);
-	GX_SetTevKColor(GX_KCOLOR3, uv_coeffs[colorspace][1]);
+	//Brightness/Contrast Filter Setup:
+	// color_out = clamp[(Image - 128)*C + 128 + B] = clamp[(Image*C) - 128*C + 128 + B]
+	// 2 constant values will be stored in the alpha components of GX_KCOLOR2 & GX_KCOLOR3
+	g_brightness = (g_brightness>1.0f) ? 1.0f : (g_brightness<-1.0f) ? -1.0f : g_brightness;
+	g_contrast = (g_contrast>1.0f) ? 1.0f : (g_contrast<-1.0f) ? -1.0f : g_contrast;
+	int brightness_offset;
+	u8 contrast_konst, contrast_InD, brightness_konst, brightness_TB, brightness_OP;
+	if (g_contrast <= 0.0f) {
+		contrast_konst = (u8)((1 + (g_contrast * 0.5))*255);
+		brightness_offset = -((int)contrast_konst)/2 + 128 + ((int)(g_brightness*255));
+		contrast_InD = GX_CC_ZERO;
+	}
+	else {
+		contrast_konst = (u8)(g_contrast * 255);
+		brightness_offset = -((int)contrast_konst)/2 + ((int)(g_brightness*255));
+		contrast_InD = GX_CC_CPREV;
+	}
+
+	if (brightness_offset > 255) {
+		brightness_konst = (u8)(brightness_offset - 128);
+		brightness_TB = GX_TB_ADDHALF;
+		brightness_OP = GX_TEV_ADD;
+	}
+	else if (brightness_offset >= 0) {
+		brightness_konst = (u8)(brightness_offset);
+		brightness_TB = GX_TB_ZERO;
+		brightness_OP = GX_TEV_ADD;
+	}
+	else if (brightness_offset >= -255) {
+		brightness_konst = (u8)(-brightness_offset);
+		brightness_TB = GX_TB_ZERO;
+		brightness_OP = GX_TEV_SUB;
+	}
+	else {
+		brightness_konst = (u8)(-brightness_offset - 128);
+		brightness_TB = GX_TB_SUBHALF;
+		brightness_OP = GX_TEV_SUB;
+	}
+
+	GXColor KColor2 = (GXColor) {uv_coeffs[colorspace][0].r, uv_coeffs[colorspace][0].g,
+		uv_coeffs[colorspace][0].b, contrast_konst};
+	GXColor KColor3 = (GXColor) {uv_coeffs[colorspace][1].r, uv_coeffs[colorspace][1].g,
+		uv_coeffs[colorspace][1].b, brightness_konst};
+
+	GX_SetTevKColor(GX_KCOLOR2, KColor2);
+	GX_SetTevKColor(GX_KCOLOR3, KColor3);
 
 	//Stage 0: TEVREG0 <- { 0, 2Um, 2Up }; TEVREG0A <- {16*1.164}
 	GX_SetTevKColorSel(GX_TEVSTAGE0, GX_TEV_KCSEL_K1);
@@ -285,13 +334,28 @@ static void draw_initYUV()
 	GX_SetTevAlphaIn(GX_TEVSTAGE11, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
 	GX_SetTevAlphaOp(GX_TEVSTAGE11, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
 	//Stage 12: TEVPREV <- { (Y'-16)*1.164 +1.598V, (Y'-16)*1.164 -0.813V -.394Up (+.394Um), (Y'-16)*1.164 -2.032Um (+2.032Up)} = { (Y'-16)*1.164 +1.139V, (Y'-16)*1.164 -0.58V -.394U, (Y'-16)*1.164 +2.032U}
+	//			TEVPREVA <- contrast_konst
 	GX_SetTevKColorSel(GX_TEVSTAGE12, GX_TEV_KCSEL_K3);
 	GX_SetTevOrder(GX_TEVSTAGE12, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
 	GX_SetTevColorIn(GX_TEVSTAGE12, GX_CC_ZERO, GX_CC_KONST, GX_CC_C0, GX_CC_CPREV);
 	GX_SetTevColorOp(GX_TEVSTAGE12, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
-	GX_SetTevKAlphaSel(GX_TEVSTAGE12, GX_TEV_KASEL_1);
+	GX_SetTevKAlphaSel(GX_TEVSTAGE12, GX_TEV_KASEL_K2_A);
 	GX_SetTevAlphaIn(GX_TEVSTAGE12, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
 	GX_SetTevAlphaOp(GX_TEVSTAGE12, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	//Stage 13: TEVPREV <- Image * contrast_konst; TEVPREVA <- brightness_konst
+	GX_SetTevOrder(GX_TEVSTAGE13, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE13, GX_CC_ZERO, GX_CC_CPREV, GX_CC_APREV, contrast_InD);
+	GX_SetTevColorOp(GX_TEVSTAGE13, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_DISABLE, GX_TEVPREV);
+	GX_SetTevKAlphaSel(GX_TEVSTAGE13, GX_TEV_KASEL_K3_A);
+	GX_SetTevAlphaIn(GX_TEVSTAGE13, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+	GX_SetTevAlphaOp(GX_TEVSTAGE13, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	//Stage 14: TEVPREV <- Image * contrast_konst + brightness_konst
+	GX_SetTevOrder(GX_TEVSTAGE14, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLORNULL);
+	GX_SetTevColorIn(GX_TEVSTAGE14, GX_CC_APREV, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV);
+	GX_SetTevColorOp(GX_TEVSTAGE14, brightness_OP, brightness_TB, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
+	GX_SetTevKAlphaSel(GX_TEVSTAGE14, GX_TEV_KCSEL_1);
+	GX_SetTevAlphaIn(GX_TEVSTAGE14, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+	GX_SetTevAlphaOp(GX_TEVSTAGE14, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_ENABLE, GX_TEVPREV);
 
 	//Setup vertex description/format
 	GX_ClearVtxDesc();

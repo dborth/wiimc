@@ -1,4 +1,4 @@
-/****************************************************************************
+IsAllowedProtocol/****************************************************************************
  * WiiMC
  * Tantric 2009-2011
  *
@@ -2065,7 +2065,10 @@ bool LoadYouTubeFile(char *url, char *newurl)
 			continue;
 	
 		if(fmt == WiiSettings.youtubeFormat || (fmt < WiiSettings.youtubeFormat && fmt > chosenFormat))
+		{
+			chosenFormat = fmt;
 			url_unescape_string(newurl, (*link).second.c_str());
+		}
 	}
 	
 	mem2_free(buffer, MEM2_OTHER);

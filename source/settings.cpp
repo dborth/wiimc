@@ -772,8 +772,8 @@ static void FixInvalidSettings()
 	// Online Media
 	if(WiiSettings.onlineCacheFill < 5 || WiiSettings.onlineCacheFill > 100)
 		WiiSettings.onlineCacheFill = 20;
-	if(WiiSettings.youtubeFormat != "34" && WiiSettings.youtubeFormat != "18" && WiiSettings.youtubeFormat != "5")
-		WiiSettings.youtubeFormat, "34");
+	if(WiiSettings.youtubeFormat != 34 && WiiSettings.youtubeFormat != 18 && WiiSettings.youtubeFormat != 5)
+		WiiSettings.youtubeFormat = 34;
 
 	if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
 		CleanupPath(WiiSettings.onlinemediaFolder);

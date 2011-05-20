@@ -2055,25 +2055,22 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	while (re.FindAndConsume(&input, &format, &link))
 		links[format] = link;
 
-	int format = 0;
+	int chosenFormat = 0;
 
 	for(std::map<std::string,std::string>::iterator link=links.begin(); link!=links.end(); ++link)
 	{
-		int fmt = atoi((*link).first.c_str();
+		int fmt = atoi((*link).first.c_str());
 
 		if(fmt != 5 && fmt != 18 && fmt != 34)
 			continue;
 	
-		if(fmt == WiiSettings.youtubeFormat || (fmt < WiiSettings.youtubeFormat && fmt > format))
-			format = fmt;
+		if(fmt == WiiSettings.youtubeFormat || (fmt < WiiSettings.youtubeFormat && fmt > chosenFormat))
+			url_unescape_string(newurl, (*link).second.c_str());
 	}
-	
-	if(format > 0)
-		url_unescape_string(newurl, (*link).second.c_str());
 	
 	mem2_free(buffer, MEM2_OTHER);
 
-	if(format > 0)
+	if(chosenFormat > 0)
 		return true;
 
 	return false;

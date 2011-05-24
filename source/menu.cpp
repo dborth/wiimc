@@ -2461,14 +2461,15 @@ static void MenuBrowse(int menu)
 					continue;
 				}
 
-				// unrecognized audio or video extension or allowed protocol
+				// identified as a playlist, or file is an unrecognized audio or video extension or allowed protocol
+				// parse as a playlist
 				if(!IsAllowedExt(ext) && 
-					(IsPlaylistExt(ext) || 
+					(browser.selIndex->type == TYPE_PLAYLIST ||
+					IsPlaylistExt(ext) || 
 					!IsAllowedProtocol(browser.selIndex->file) || 
 					(strncmp(browser.selIndex->file, "http:", 5) == 0 && !IsInternetStream(browser.selIndex->file)))
 					)
 				{
-					// parse as a playlist
 					if(strncmp(browser.selIndex->file, "http:", 5) == 0)
 					{
 						mainWindow->Append(disabled);

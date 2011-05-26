@@ -695,7 +695,6 @@ void GX_RenderTexture()
 	DrawMPlayer();
 }
 
-//not needed we are using ass video filter for subs
 void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
 {
 	s16 pitch = stride - w;

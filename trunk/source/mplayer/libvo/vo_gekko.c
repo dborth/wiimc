@@ -72,7 +72,6 @@ static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y
 
 static void draw_osd(void)
 {
-return; //we are not using osd, subs are sendered using ass filter
 	vo_draw_text(image_width, image_height, vo_draw_alpha_gekko);
 }
 

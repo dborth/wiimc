@@ -19,6 +19,7 @@
 #include <libexif/exif-data.h>
 #include <wiiuse/wpad.h>
 #include <di/di.h>
+#include <iso9660.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogc/machine/processor.h>
 

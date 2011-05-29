@@ -173,6 +173,7 @@ static void * devicecallback (void *arg)
 				{
 					DI_StopMotor();
 					dvdLastUsed = 0;
+					ISO9660_Unmount("dvd:");
 				}
 			}
 		}
@@ -1026,8 +1027,10 @@ bool StartDVDMotor()
 
 	if(dvdLastUsed)
 		return true;
+	
+	ISO9660_Unmount("dvd:");
 
-	if(dvd->startup())
+	if(ISO9660_Mount("dvd", dvd))
 	{
 		dvdLastUsed = gettime();
 		return true;

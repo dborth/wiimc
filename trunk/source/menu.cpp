@@ -7521,6 +7521,7 @@ void MPlayerMenu()
 		{
 			DI_StopMotor();
 			dvdLastUsed = 0;
+			ISO9660_Unmount("dvd:");
 		}
 	}
 

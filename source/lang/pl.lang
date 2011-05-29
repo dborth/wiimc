@@ -669,3 +669,6 @@ msgstr "Opóźnienie wygaszacza"
 
 msgid "Inactivity Shutdown"
 msgstr "Wyłączenie przy braku aktywności"
+
+msgid "Invalid subtitle delay."
+msgstr "Niepoprawne opóźnienie napisów"

@@ -698,7 +698,6 @@ void GX_RenderTexture()
 void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
 {
 	s16 pitch = stride - w;
-	u8 * Ytexture = Yltexture;
 	u8 *Ydst;
 
 	int dxs;
@@ -710,8 +709,11 @@ void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsig
 		for (int x = 0; x < w; x++) 
 		{
 			if (*srca) 
-			{     
-				Ydst = Ytexture + ((dys & (~3)) * Ywidth) + ((dxs & (~7)) << 2) + ((dys & 3) << 3) + (dxs & 7);				
+			{
+				if (dxs < 1024)
+					Ydst = Yltexture + ((dys & (~3)) * Ylwidth) + ((dxs & (~7)) << 2) + ((dys & 3) << 3) + (dxs & 7);
+				else
+					Ydst = Yrtexture + ((dys & (~3)) * Yrwidth) + ((dxs & (~7)) << 2) + ((dys & 3) << 3) + (dxs & 7);
 				*Ydst = (((*Ydst) * (*srca)) >> 8) + (*src);
 			}
 			dxs++;

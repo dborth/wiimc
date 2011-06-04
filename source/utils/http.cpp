@@ -18,6 +18,8 @@
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <fcntl.h>
+#include <ctype.h>
+
 
 #include "menu.h"
 #include "http.h"
@@ -46,6 +48,50 @@ extern "C" {
 #define TCP_BLOCK_SIZE 			2048
 #define HTTP_TIMEOUT 			35000 // 35 secs to get an http response
 #define IOS_O_NONBLOCK			0x04
+
+static int _httoi(const char *value)
+{
+  struct CHexMap
+  {
+    char chr;
+    int value;
+  };
+  const int HexMapL = 16;
+  CHexMap HexMap[HexMapL] =
+  {
+    {'0', 0}, {'1', 1},
+    {'2', 2}, {'3', 3},
+    {'4', 4}, {'5', 5},
+    {'6', 6}, {'7', 7},
+    {'8', 8}, {'9', 9},
+    {'A', 10}, {'B', 11},
+    {'C', 12}, {'D', 13},
+    {'E', 14}, {'F', 15}
+  };
+  //char *mstr = strdup(value);
+  char *s = (char *)value;
+  int result = 0;
+  if (*s == '0' && toupper(*(s + 1)) == 'X') s += 2;
+  bool firsttime = true;
+  while (*s != '\0')
+  {
+    bool found = false;
+    for (int i = 0; i < HexMapL; i++)
+    {
+      if (toupper(*s) == HexMap[i].chr)
+      {
+        if (!firsttime) result <<= 4;
+        result |= HexMap[i].value;
+        found = true;
+        break;
+      }
+    }
+    if (!found) break;
+    s++;
+    firsttime = false;
+  }
+  return result;
+}
 
 static s32 tcp_socket(void)
 {
@@ -81,9 +127,8 @@ static s32 tcp_connect(char *host, const u16 port)
 	struct hostent *hp;
 	struct sockaddr_in sa;
 	struct in_addr val;
-	fd_set myset;
-	struct timeval tv;
 	s32 s, res;
+	u64 t1;
 
 	s = tcp_socket();
 	if (s < 0)
@@ -107,17 +152,20 @@ static s32 tcp_connect(char *host, const u16 port)
 		memcpy((char *) &sa.sin_addr, hp->h_addr_list[0], hp->h_length);
 	}
 
-	res = net_connect (s, (struct sockaddr *) &sa, sizeof (sa));
-
-	if (res == EINPROGRESS)
+	t1=ticks_to_secs(gettime());
+	do 
 	{
-		tv.tv_sec = TCP_CONNECT_TIMEOUT;
-		tv.tv_usec = 0;
-		FD_ZERO(&myset);
-		FD_SET(s, &myset);
-		if (net_select(s+1, NULL, &myset, NULL, &tv) <= 0)
-			return -1;
+		res = net_connect(s,(struct sockaddr*) &sa, sizeof (sa));
+		if(ticks_to_secs(gettime())-t1 > TCP_CONNECT_TIMEOUT*1000) break; 
+		usleep(500);
+	}while(res != -EISCONN);
+	if(res != -EISCONN)
+	{		
+		net_close(s);
+		return -1;
 	}
+
+	
 	return s;
 }
 
@@ -161,7 +209,7 @@ static u32 tcp_read(const s32 s, u8 *buffer, const u32 length)
 {
 	char *p;
 	u32 left, block, received, step=0;
-	s64 t;
+	u64 t;
 	s32 res;
 
 	p = (char *)buffer;
@@ -315,7 +363,8 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 	char line[256];
 	char redirect[1024] = { 0 };
-	
+	char encoding[128] = { 0 };
+	bool chunked = false;
 	for (linecount = 0; linecount < 32; linecount++)
 	{
 		memset(line,0,256);
@@ -330,6 +379,7 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 		sscanf(line, "HTTP/1.%*u %u", &http_status);
 		sscanf(line, "Content-Length: %u", &content_length);
 		sscanf(line, "Location: %s", redirect);
+		sscanf(line, "Transfer-Encoding: %s", encoding);		
 	}
 
 	if (http_status != 200)
@@ -356,12 +406,38 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 		return 0;
 	}
 
+	chunked = !(strcmp("chunked",encoding));
+	
 	if (buffer != NULL)
 	{
+	
 		if(!silent)
 			ShowAction("Downloading...");
 
-		sizeread = tcp_read(s, (u8 *)buffer, content_length);
+		if(chunked)
+		{
+			do
+			{
+				if (tcp_readln(s, line, 255) != 0) // read chunk size
+				{
+					http_status = 404;
+					return sizeread;
+				}
+
+				content_length=_httoi(line);
+
+				if(content_length>0)
+					sizeread += tcp_read(s, (u8 *)buffer, content_length);
+
+				if (tcp_readln(s, line, 255) != 0)  // read \r\n (chunk boundary)
+				{
+					http_status = 404;
+					return sizeread;
+				}				
+			}while(content_length > 0);	
+			content_length = sizeread;
+		}
+		else sizeread = tcp_read(s, (u8 *)buffer, content_length);
 
 		if(!silent)
 			CancelAction();

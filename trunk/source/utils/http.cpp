@@ -416,29 +416,43 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 		if(chunked)
 		{
+			u32 ret;
 			do
 			{
 				if (tcp_readln(s, line, 255) != 0) // read chunk size
 				{
 					http_status = 404;
+					net_close(s);
 					return sizeread;
 				}
 
 				content_length=_httoi(line);
 
 				if(content_length>0)
-					sizeread += tcp_read(s, (u8 *)buffer, content_length);
-
+				{
+					if(sizeread+content_length > maxsize) 
+					{
+						content_length=maxsize-sizeread-1;
+						sizeread += tcp_read(s, (u8 *)buffer+sizeread, content_length);
+						break;
+					}
+					ret = tcp_read(s, (u8 *)buffer+sizeread, content_length);
+					if(ret<=0) break;
+					sizeread += ret;
+					
+				}
 				if (tcp_readln(s, line, 255) != 0)  // read \r\n (chunk boundary)
 				{
 					http_status = 404;
+					net_close(s);
 					return sizeread;
 				}				
-			}while(content_length > 0);	
+			}while(content_length > 0);
+			buffer[sizeread]='\0';
 			content_length = sizeread;
 		}
 		else sizeread = tcp_read(s, (u8 *)buffer, content_length);
-
+		
 		if(!silent)
 			CancelAction();
 	}

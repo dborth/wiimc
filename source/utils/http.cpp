@@ -310,8 +310,8 @@ static u32 tcp_write(const s32 s, const u8 *buffer, const u32 length)
 static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool silent, int total_redirects)
 {
 	u32 res = 0;
-	char http_host[1024];
-	char http_path[1024];
+	char *http_host=NULL;
+	char *http_path=NULL;
 	u16 http_port;
 	URL_t *tmpurl;
 
@@ -336,6 +336,8 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 		url_free(tmpurl);
 		return 0;
 	}
+	http_host = (char*) malloc(1024*sizeof(char));
+	http_path = (char*) malloc(1024*sizeof(char));
 
 	strcpy(http_host, tmpurl->hostname);
 	strcpy(http_path, tmpurl->file);
@@ -349,10 +351,16 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 	int s = tcp_connect(http_host, http_port);
 
 	if (s < 0)
+	{
+		free(http_path);
+		free(http_host);
 		return 0;
+	}
+	char *request = NULL;
+	char *r;
 
-	char request[1024];
-	char *r = request;
+	request = (char*) malloc(1024*sizeof(char));
+	r = request;
 
 	r += sprintf(r, "GET %s HTTP/1.1\r\n", http_path);
 	r += sprintf(r, "Host: %s\r\n", http_host);
@@ -361,14 +369,20 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 	res = tcp_write(s, (u8 *) request, strlen(request));
 
-	char line[256];
-	char redirect[1024] = { 0 };
+	free(request);
+	free(http_path);
+	free(http_host);
+
+	char *line = NULL;
+	char *redirect = NULL;
 	char encoding[128] = { 0 };
 	bool chunked = false;
+	redirect = (char*) malloc(1024*sizeof(char));
+	line = (char*) malloc(1055*sizeof(char));
 	for (linecount = 0; linecount < 32; linecount++)
 	{
-		memset(line,0,256);
-		if (tcp_readln(s, line, 255) != 0)
+		memset(line,0,1055);
+		if (tcp_readln(s, line, 1054) != 0)
 		{
 			http_status = 404;
 			break;
@@ -381,6 +395,7 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 		sscanf(line, "Location: %s", redirect);
 		sscanf(line, "Transfer-Encoding: %s", encoding);		
 	}
+	free(line);
 
 	if (http_status != 200)
 	{
@@ -388,12 +403,14 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 		if((http_status == 301 || http_status == 302) && redirect[0] != 0 && total_redirects < 5)  //only 5 redirects allowed
 		{
-			strcpy(url, redirect);
-			total_redirects++;
-			return http_request(url, hfile, buffer, maxsize, silent, total_redirects);
+			u32 ret;
+			ret = http_request(redirect, hfile, buffer, maxsize, silent, total_redirects+1);
+			free(redirect);
+			return ret; 
 		}
 		return 0;
 	}
+	free(redirect);
 
 	// length unknown - just read as much as we can
 	if(content_length == 0)
@@ -407,10 +424,8 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 	}
 
 	chunked = !(strcmp("chunked",encoding));
-	
 	if (buffer != NULL)
 	{
-	
 		if(!silent)
 			ShowAction("Downloading...");
 
@@ -447,12 +462,10 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 					net_close(s);
 					return sizeread;
 				}				
-			}while(content_length > 0);
-			buffer[sizeread]='\0';
+			}while(content_length > 0);			
 			content_length = sizeread;
 		}
 		else sizeread = tcp_read(s, (u8 *)buffer, content_length);
-		
 		if(!silent)
 			CancelAction();
 	}

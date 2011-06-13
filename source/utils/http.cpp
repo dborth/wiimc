@@ -395,10 +395,11 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 		sscanf(line, "Location: %s", redirect);
 		sscanf(line, "Transfer-Encoding: %s", encoding);		
 	}
-	free(line);
+	
 
 	if (http_status != 200)
 	{
+		free(line);
 		net_close(s);
 
 		if((http_status == 301 || http_status == 302) && redirect[0] != 0 && total_redirects < 5)  //only 5 redirects allowed
@@ -419,6 +420,7 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 	}
 	else if (content_length > maxsize)
 	{
+		free(line);
 		net_close(s);
 		return 0;
 	}
@@ -434,9 +436,10 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 			u32 ret;
 			do
 			{
-				if (tcp_readln(s, line, 255) != 0) // read chunk size
+				if (tcp_readln(s, line, 1054) != 0) // read chunk size
 				{
 					http_status = 404;
+					free(line);
 					net_close(s);
 					return sizeread;
 				}
@@ -456,16 +459,21 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 					sizeread += ret;
 					
 				}
-				if (tcp_readln(s, line, 255) != 0)  // read \r\n (chunk boundary)
+				if (tcp_readln(s, line, 1054) != 0)  // read \r\n (chunk boundary)
 				{
 					http_status = 404;
+					free(line);
 					net_close(s);
 					return sizeread;
 				}				
 			}while(content_length > 0);			
 			content_length = sizeread;
 		}
-		else sizeread = tcp_read(s, (u8 *)buffer, content_length);
+		else 
+		{
+			free(line);
+			sizeread = tcp_read(s, (u8 *)buffer, content_length);
+		}
 		if(!silent)
 			CancelAction();
 	}
@@ -475,6 +483,7 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 		u32 bufSize = (1024 * 32);
 		u32 bytesLeft = content_length;
 		u32 readSize;
+		free(line);
 
 		if(!silent)
 			ShowProgress("Downloading...", 0, content_length);

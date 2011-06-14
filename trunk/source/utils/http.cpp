@@ -51,46 +51,46 @@ extern "C" {
 
 static int _httoi(const char *value)
 {
-  struct CHexMap
-  {
-    char chr;
-    int value;
-  };
-  const int HexMapL = 16;
-  CHexMap HexMap[HexMapL] =
-  {
-    {'0', 0}, {'1', 1},
-    {'2', 2}, {'3', 3},
-    {'4', 4}, {'5', 5},
-    {'6', 6}, {'7', 7},
-    {'8', 8}, {'9', 9},
-    {'A', 10}, {'B', 11},
-    {'C', 12}, {'D', 13},
-    {'E', 14}, {'F', 15}
-  };
-  //char *mstr = strdup(value);
-  char *s = (char *)value;
-  int result = 0;
-  if (*s == '0' && toupper(*(s + 1)) == 'X') s += 2;
-  bool firsttime = true;
-  while (*s != '\0')
-  {
-    bool found = false;
-    for (int i = 0; i < HexMapL; i++)
-    {
-      if (toupper(*s) == HexMap[i].chr)
-      {
-        if (!firsttime) result <<= 4;
-        result |= HexMap[i].value;
-        found = true;
-        break;
-      }
-    }
-    if (!found) break;
-    s++;
-    firsttime = false;
-  }
-  return result;
+	struct CHexMap
+	{
+		char chr;
+		int value;
+	};
+	const int HexMapL = 16;
+	CHexMap HexMap[HexMapL] =
+	{
+		{'0', 0}, {'1', 1},
+		{'2', 2}, {'3', 3},
+		{'4', 4}, {'5', 5},
+		{'6', 6}, {'7', 7},
+		{'8', 8}, {'9', 9},
+		{'A', 10}, {'B', 11},
+		{'C', 12}, {'D', 13},
+		{'E', 14}, {'F', 15}
+	};
+
+	char *s = (char *)value;
+	int result = 0;
+	if (*s == '0' && toupper(*(s + 1)) == 'X') s += 2;
+	bool firsttime = true;
+	while (*s != '\0')
+	{
+		bool found = false;
+		for (int i = 0; i < HexMapL; i++)
+		{
+			if (toupper(*s) == HexMap[i].chr)
+			{
+				if (!firsttime) result <<= 4;
+				result |= HexMap[i].value;
+				found = true;
+				break;
+			}
+		}
+		if (!found) break;
+		s++;
+		firsttime = false;
+	}
+	return result;
 }
 
 static s32 tcp_socket(void)
@@ -158,14 +158,13 @@ static s32 tcp_connect(char *host, const u16 port)
 		res = net_connect(s,(struct sockaddr*) &sa, sizeof (sa));
 		if(ticks_to_secs(gettime())-t1 > TCP_CONNECT_TIMEOUT*1000) break; 
 		usleep(500);
-	}while(res != -EISCONN);
+	} while(res != -EISCONN);
 	if(res != -EISCONN)
 	{		
 		net_close(s);
 		return -1;
 	}
 
-	
 	return s;
 }
 
@@ -336,8 +335,8 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 		url_free(tmpurl);
 		return 0;
 	}
-	http_host = (char*) malloc(1024*sizeof(char));
-	http_path = (char*) malloc(1024*sizeof(char));
+	http_host = (char*) malloc(1024);
+	http_path = (char*) malloc(1024);
 
 	strcpy(http_host, tmpurl->hostname);
 	strcpy(http_path, tmpurl->file);
@@ -359,7 +358,7 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 	char *request = NULL;
 	char *r;
 
-	request = (char*) malloc(1024*sizeof(char));
+	request = (char*) malloc(1024);
 	r = request;
 
 	r += sprintf(r, "GET %s HTTP/1.1\r\n", http_path);
@@ -377,8 +376,8 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 	char *redirect = NULL;
 	char encoding[128] = { 0 };
 	bool chunked = false;
-	redirect = (char*) malloc(1024*sizeof(char));
-	line = (char*) malloc(1055*sizeof(char));
+	redirect = (char*) malloc(1024);
+	line = (char*) malloc(1055);
 	for (linecount = 0; linecount < 32; linecount++)
 	{
 		memset(line,0,1055);
@@ -395,7 +394,6 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 		sscanf(line, "Location: %s", redirect);
 		sscanf(line, "Transfer-Encoding: %s", encoding);		
 	}
-	
 
 	if (http_status != 200)
 	{
@@ -404,8 +402,7 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 
 		if((http_status == 301 || http_status == 302) && redirect[0] != 0 && total_redirects < 5)  //only 5 redirects allowed
 		{
-			u32 ret;
-			ret = http_request(redirect, hfile, buffer, maxsize, silent, total_redirects+1);
+			u32 ret = http_request(redirect, hfile, buffer, maxsize, silent, total_redirects+1);
 			free(redirect);
 			return ret; 
 		}
@@ -444,9 +441,9 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 					return sizeread;
 				}
 
-				content_length=_httoi(line);
+				content_length = _httoi(line);
 
-				if(content_length>0)
+				if(content_length > 0)
 				{
 					if(sizeread+content_length > maxsize) 
 					{
@@ -457,7 +454,6 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 					ret = tcp_read(s, (u8 *)buffer+sizeread, content_length);
 					if(ret<=0) break;
 					sizeread += ret;
-					
 				}
 				if (tcp_readln(s, line, 1054) != 0)  // read \r\n (chunk boundary)
 				{
@@ -466,7 +462,7 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 					net_close(s);
 					return sizeread;
 				}				
-			}while(content_length > 0);			
+			} while(content_length > 0);			
 			content_length = sizeread;
 		}
 		else 

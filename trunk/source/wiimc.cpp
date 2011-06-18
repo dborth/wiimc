@@ -164,7 +164,6 @@ static void SaveLogToSD()
 	if(!fatMount("sdlog",sd,0,4,128)) return;
 
 	char s[50];
-	size_t i;
 	struct tm tim;
 	time_t now;
 	now = time(NULL);

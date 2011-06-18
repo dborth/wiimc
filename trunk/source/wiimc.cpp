@@ -168,7 +168,6 @@ static void SaveLogToSD()
 	time_t now;
 	now = time(NULL);
 	tim = *(localtime(&now));
-	i = strftime(s,49,"%Y%m%d_%k%M%S",&tim);
 
 	sprintf(_file,"sdlog:/wiimc_log_%s.txt",s);
 	fp=fopen(_file,"wb");

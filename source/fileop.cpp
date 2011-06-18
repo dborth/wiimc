@@ -821,19 +821,9 @@ static bool MountPartitions(int device, int silent)
 {
 	bool mounted = false;
 	int retry = 1;
-	const DISC_INTERFACE* disc = NULL;
-
-	switch(device)
-	{
-		case DEVICE_SD:
-			disc = sd;
-			break;
-		case DEVICE_USB:
-			disc = usb;
-			break;
-		default:
-			return false; // unknown device
-	}
+	
+	if(device != DEVICE_SD && device != DEVICE_USB)
+		return false; // unknown device
 
 	while(retry)
 	{

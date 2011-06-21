@@ -652,6 +652,7 @@ extern "C" {
 }
 int main(int argc, char *argv[])
 {
+	L2Enhance();
 	AUDIO_Init(NULL);
 	DSP_Init();
 	AUDIO_StopDMA();

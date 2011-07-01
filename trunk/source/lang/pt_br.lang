@@ -660,3 +660,12 @@ msgstr "Média (480x360)"
 
 msgid "High (640x360)"
 msgstr "Alta (640x360)"
+
+msgid "Screensaver Delay"
+msgstr "Tempo para proteção de tela"
+
+msgid "Inactivity Shutdown"
+msgstr "Desligar por inatividade"
+
+msgid "Invalid subtitle delay."
+msgstr "Atraso de legenda inválido"

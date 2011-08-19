@@ -30,7 +30,7 @@
 #include "libavutil/avconfig.h"
 #include "attributes.h"
 
-#if defined(HAVE_AV_CONFIG_H) || defined(GEKKO)
+#ifdef HAVE_AV_CONFIG_H
 
 #include "config.h"
 
@@ -40,8 +40,6 @@
 #   include "avr32/bswap.h"
 #elif ARCH_BFIN
 #   include "bfin/bswap.h"
-#elif ARCH_PPC
-#	include "ppc/bswap.h"
 #elif ARCH_SH4
 #   include "sh4/bswap.h"
 #elif ARCH_X86
@@ -59,27 +57,33 @@
 #ifndef av_bswap16
 static av_always_inline av_const uint16_t av_bswap16(uint16_t x)
 {
+#if defined(GEKKO)
+    return __builtin_bswap16(x);
+#else
     x= (x>>8) | (x<<8);
     return x;
+#endif
 }
 #endif
 
 #ifndef av_bswap32
 static av_always_inline av_const uint32_t av_bswap32(uint32_t x)
 {
+#if AV_GCC_VERSION_AT_LEAST(4,3)
+    return __builtin_bswap32(x);
+#else
     x= ((x<<8)&0xFF00FF00) | ((x>>8)&0x00FF00FF);
     x= (x>>16) | (x<<16);
     return x;
+#endif
 }
 #endif
 
 #ifndef av_bswap64
 static inline uint64_t av_const av_bswap64(uint64_t x)
 {
-#if 0
-    x= ((x<< 8)&0xFF00FF00FF00FF00ULL) | ((x>> 8)&0x00FF00FF00FF00FFULL);
-    x= ((x<<16)&0xFFFF0000FFFF0000ULL) | ((x>>16)&0x0000FFFF0000FFFFULL);
-    return (x>>32) | (x<<32);
+#if AV_GCC_VERSION_AT_LEAST(4,3)
+    return __builtin_bswap64(x);
 #else
     union {
         uint64_t ll;

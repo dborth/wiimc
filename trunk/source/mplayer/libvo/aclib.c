@@ -156,37 +156,76 @@
 
 #endif /* ARCH_X86 */
 
-#ifdef GEKKO
+#if defined(GEKKO)
+
+static inline void small_memcpy(void *to, const void *from, size_t len)
+{
+	__asm__ volatile (
+		"mtxer  %2\n"
+		"lswx   %%r5,%y1\n"
+		"stswx  %%r5,%y0\n"
+		: "=Z"(*(unsigned char *)to)
+		: "Z"(*(const unsigned char *)from), "r"(len)
+		: "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12"
+	);
+}
+
 static void *fast_memcpy_Gekko(void *to, const void *from, size_t len)
 {
-	if ((uint32_t)to & 31 || (uint32_t)from & 7)
-		return memcpy(to, from, len);
+	void *retval = to;
+	int delta;
 	
-	register double dword[4];
+	if (len < 32)
+		goto end;
 	
-	double *src = (double *)from - 1;
-	double *dst = (double *)to - 1;
-	
-	for (int i=0; i<len; i+=32) {
-		asm volatile(
-			"dcbt	%6,%7\n"
-			"lfdu	%2,8(%0)\n"
-			"lfdu	%3,8(%0)\n"
-			"lfdu	%4,8(%0)\n"
-			"lfdu	%5,8(%0)\n"
-			"dcbz	%6,%8\n"
-			"stfdu	%2,8(%1)\n"
-			"stfdu	%3,8(%1)\n"
-			"stfdu	%4,8(%1)\n"
-			"stfdu	%5,8(%1)\n"
-			: "+b"(src), "+b"(dst), "=d"(dword[0]), "=d"(dword[1]), "=d"(dword[2]), "=d"(dword[3])
-			: "r"(i), "b"(from), "b"(to)
-		);
+	if (delta = (intptr_t)to & 31) {
+		delta = 32 - delta;
+		len -= delta;
+		small_memcpy(to, from, delta);
+		
+		from = (const unsigned char *)from + delta;
+		to = (unsigned char *)to + delta;
 	}
 	
-	return to;
+	if (len > 32) {
+		size_t lines = len / 32;
+		
+		do {
+			__asm__ volatile (
+				"lwz   %%r5,0(%0)\n"
+				"lwz   %%r6,4(%0)\n"
+				"lwz   %%r7,8(%0)\n"
+				"lwz   %%r8,12(%0)\n"
+				"lwz   %%r9,16(%0)\n"
+				"lwz   %%r10,20(%0)\n"
+				"lwz   %%r11,24(%0)\n"
+				"lwz   %%r12,28(%0)\n"
+				"dcbz  0,%1\n"
+				"stw   %%r5,0(%1)\n"
+				"stw   %%r6,4(%1)\n"
+				"stw   %%r7,8(%1)\n"
+				"stw   %%r8,12(%1)\n"
+				"stw   %%r9,16(%1)\n"
+				"stw   %%r10,20(%1)\n"
+				"stw   %%r11,24(%1)\n"
+				"stw   %%r12,28(%1)\n"
+				:: "b"(from), "b"(to)
+				: "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12"
+			);
+			
+			from = (const unsigned char *)from + 32;
+			to = (unsigned char *)to + 32;
+		} while (--lines);
+		
+		len &= 31;
+	}
+	
+end:
+	if (len) small_memcpy(to, from, len);
+	return retval;
 }
-#endif
+
+#endif /* GEKKO */
 
 #undef fast_memcpy
 void * fast_memcpy(void * to, const void * from, size_t len)
@@ -214,7 +253,7 @@ void * fast_memcpy(void * to, const void * from, size_t len)
 		fast_memcpy_3DNow(to, from, len);
 #elif HAVE_MMX
 		fast_memcpy_MMX(to, from, len);
-#elif GEKKO
+#elif defined(GEKKO)
 		fast_memcpy_Gekko(to, from, len);
 #else
 		memcpy(to, from, len); // prior to mmx we use the standart memcpy

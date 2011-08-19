@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2010-2011 Extrems <metaradil@gmail.com>
+ *
  * This file is part of MPlayer CE.
  *
  * MPlayer CE is free software; you can redistribute it and/or
@@ -25,7 +27,7 @@ static void vector_fmul_paired(float *dst, const float *src0, const float *src1,
 	vector float pair[2];
 	vector float result;
 	
-	for (int i=0; i<len*4-7; i+=8) {
+	for (int i = 0; i < len*4; i += 8) {
 		pair[0] = paired_lx(i, src0);
 		pair[1] = paired_lx(i, src1);
 		
@@ -41,7 +43,7 @@ static void vector_fmul_reverse_paired(float *dst, const float *src0, const floa
 	
 	src1 += len;
 	
-	for (int i=0; i<len*4-7; i+=8) {
+	for (int i = 0; i < len*4; i += 8) {
 		pair[0] = paired_lx(i, src0);
 		pair[1] = psq_lu(-8,src1,0,0);
 		pair[1] = paired_merge10(pair[1], pair[1]);
@@ -56,7 +58,7 @@ static void vector_fmul_add_paired(float *dst, const float *src0, const float *s
 	vector float pair[3];
 	vector float result;
 	
-	for (int i=0; i<len*4-7; i+=8) {
+	for (int i = 0; i < len*4; i += 8) {
 		pair[0] = paired_lx(i, src0);
 		pair[1] = paired_lx(i, src1);
 		pair[2] = paired_lx(i, src2);
@@ -75,7 +77,7 @@ static void vector_fmul_window_paired(float *dst, const float *src0, const float
 	win += len;
 	src0 += len;
 	
-	for (int i=-len*4, j=len*4-8; i<0; i+=8, j-=8) {
+	for (int i = -len*4, j = len*4 - 8; i < 0; i += 8, j -= 8) {
 		pair[0] = paired_lx(i, src0);
 		pair[1] = paired_lx(j, src1);
 		pair[1] = paired_merge10(pair[1], pair[1]);
@@ -100,7 +102,7 @@ static void butterflies_float_paired(float *restrict v1, float *restrict v2, int
 	vector float pair[2];
 	vector float result;
 	
-	for (int i=0; i<len*4-7; i+=8) {
+	for (int i = 0; i < len*4; i += 8) {
 		pair[0] = paired_lx(i, v1);
 		pair[1] = paired_lx(i, v2);
 		
@@ -117,14 +119,14 @@ static float scalarproduct_float_paired(const float *v1, const float *v2, int le
 	vector float pair[2];
 	vector float result = {0.0,0.0};
 	
-	for (int i=0; i<len*4-7; i+=8) {
+	for (int i = 0; i < len*4; i += 8) {
 		pair[0] = paired_lx(i, v1);
 		pair[1] = paired_lx(i, v2);
 		result = paired_madd(pair[0], pair[1], result);
 	}
 	
 	register float scalar;
-	asm("ps_sum0	%0,%1,%1,%1" : "=f"(scalar) : "f"(result));
+	asm("ps_sum0 %0,%1,%1,%1" : "=f"(scalar) : "f"(result));
 	return scalar;
 }
 
@@ -132,7 +134,7 @@ static void vector_fmul_scalar_paired(float *dst, const float *src, float mul, i
 {
 	vector float pair;
 	
-	for (int i=0; i<len*4-7; i+=8) {
+	for (int i = 0; i < len*4; i += 8) {
 		pair = paired_lx(i, src);
 		pair = ps_muls0(pair, mul);
 		paired_stx(pair, i, dst);

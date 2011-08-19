@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2010-2011 Extrems <metaradil@gmail.com>
+ *
  * This file is part of MPlayer CE.
  *
  * MPlayer CE is free software; you can redistribute it and/or
@@ -24,7 +26,7 @@ static void int32_to_float_fmul_scalar_paired(float *dst, const int *src, float 
 {
 	vector float pair;
 	
-	for (int i=0; i<len*4-7; i+=8) {
+	for (int i = 0; i < len*4; i += 8) {
 		float src0 = *src++;
 		float src1 = *src++;
 		
@@ -39,8 +41,8 @@ static void float_to_int16_paired(int16_t *dst, const float *src, long len)
 	src -= 2;
 	dst -= 2;
 	
-	for (int i=0; i<(len>>1); i++) {
-		vector float pair = psq_lu(8,src,0,0);
+	for (int i = 0; i < (len>>1); i++) {
+		vec_f32_t pair = psq_lu(8,src,0,0);
 		psq_stu(pair,4,dst,0,7);
 	}
 }
@@ -50,11 +52,10 @@ static void float_to_int16_interleave_paired(int16_t *dst, const float **src, lo
 	vector float pair[2];
 	vector float result;
 	
-	int i, c;
 	if (channels > 2) {
 		dst -= 2;
-		for (i=0; i<len*4-7; i+=8, dst+=channels) {
-			for (c=0; c<channels-1; c+=2) {
+		for (int i = 0; i < len*4; i += 8, dst += channels) {
+			for (int c = 0; c < channels - 1; c += 2) {
 				pair[0] = paired_lx(i, src[c]);
 				pair[1] = paired_lx(i, src[c+1]);
 				
@@ -67,7 +68,7 @@ static void float_to_int16_interleave_paired(int16_t *dst, const float **src, lo
 		}
 	} else {
 		if (channels == 2) {
-			for (i=0; i<len*4-7; i+=8) {
+			for (int i = 0; i < len*4; i += 8) {
 				pair[0] = paired_lx(i, src[0]);
 				pair[1] = paired_lx(i, src[1]);
 				

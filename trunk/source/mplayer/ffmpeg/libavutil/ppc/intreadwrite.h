@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008 Mans Rullgard <mans@mansr.com>
+ * Copyright (c) 2011 Extrems <metaradil@gmail.com>
  *
  * This file is part of Libav.
  *
@@ -105,30 +106,29 @@ static av_always_inline void AV_WL64(void *p, uint64_t v)
 #define AV_RB64(p) (*(const uint64_t *)(p))
 #define AV_WB64(p, v) (*(uint64_t *)(p) = (v))
 
-#ifdef GEKKO
+#if defined(GEKKO)
 
 #define AV_COPY64 AV_COPY64
 static av_always_inline void AV_COPY64(void *d, const void *s)
 {
     register double v;
-    __asm__ ("lfd%U2%X2   %0, %2  \n\t"
-             "stfd%U1%X1  %0, %1  \n\t"
+    __asm__ ("lfd%X2   %0, %2  \n\t"
+             "stfd%X1  %0, %1  \n\t"
              : "=d"(v), "=m"(*(uint64_t*)d)
              : "m"(*(const uint64_t*)s));
 }
 
-#define AV_COPY128 AV_COPY128
-static av_always_inline void AV_COPY128(void *d, const void *s)
+#define AV_SWAP64 AV_SWAP64
+static av_always_inline void AV_SWAP64(void *a, void *b)
 {
     register double v[2];
-    __asm__ ("lfd%U4%X4   %0, %4  \n\t"
-             "lfd%U5%X5   %1, %5  \n\t"
-             "stfd%U2%X2  %0, %2  \n\t"
-             "stfd%U3%X3  %1, %3  \n\t"
-             : "=d"(v[0]), "=d"(v[1]), "=m"(*(uint64_t*)d), "=m"(*((uint64_t*)d+1))
-             : "m"(*(const uint64_t*)s), "m"(*((const uint64_t*)s+1)));
+    __asm__ ("lfd%X2   %0, %2  \n\t"
+             "lfd%X3   %1, %3  \n\t"
+             "stfd%X3  %0, %3  \n\t"
+             "stfd%X2  %1, %2  \n\t"
+             : "=d"(v[0]), "=d"(v[1]), "+m"(*(uint64_t*)a), "+m"(*(uint64_t*)b));
 }
 
-#endif
+#endif /* GEKKO */
 
 #endif /* AVUTIL_PPC_INTREADWRITE_H */

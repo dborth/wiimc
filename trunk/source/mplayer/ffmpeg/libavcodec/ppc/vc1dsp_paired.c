@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2010-2011 Extrems <metaradil@gmail.com>
+ *
  * This file is part of MPlayer CE.
  *
  * MPlayer CE is free software; you can redistribute it and/or

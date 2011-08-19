@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2010-2011 Extrems <metaradil@gmail.com>
+ *
  * This file is part of MPlayer CE.
  *
  * MPlayer CE is free software; you can redistribute it and/or
@@ -55,18 +57,18 @@ static void put_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 			pair[3] = psq_l(2,src2,0,4);
 			
 			result = ps_madds0(pair[0], fAB, half);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_stux(result,dst,stride,0,4);
 			
 			pair[0] = psq_l(4,src1,1,4);
 			pair[2] = psq_l(4,src2,1,4);
 			
 			result = ps_madds0(pair[1], fAB, half);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(result,2,dst,0,4);
 		} while (--h);
 	} else {
@@ -94,13 +96,13 @@ static void put_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 				pair[1] = psq_l(2,src1,0,4);
 				
 				result = ps_madds0(pair[0], fAB, half);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_stux(result,dst,stride,0,4);
 				
 				pair[0] = psq_l(4,src1,1,4);
 				
 				result = ps_madds0(pair[1], fAB, half);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(result,2,dst,0,4);
 			} while (--h);
 		}
@@ -131,36 +133,36 @@ static void put_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 			pair[3] = psq_l(2,src2,0,4);
 			
 			result = ps_madds0(pair[0], fAB, half);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_stux(result,dst,stride,0,4);
 			
 			pair[0] = psq_l(4,src1,0,4);
 			pair[2] = psq_l(4,src2,0,4);
 			
 			result = ps_madds0(pair[1], fAB, half);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(result,2,dst,0,4);
 			
 			pair[1] = psq_l(6,src1,0,4);
 			pair[3] = psq_l(6,src2,0,4);
 			
 			result = ps_madds0(pair[0], fAB, half);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_st(result,4,dst,0,4);
 			
 			pair[0] = psq_l(8,src1,1,4);
 			pair[2] = psq_l(8,src2,1,4);
 			
 			result = ps_madds0(pair[1], fAB, half);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(result,6,dst,0,4);
 		} while (--h);
 	} else {
@@ -202,25 +204,25 @@ static void put_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 				pair[1] = psq_l(2,src1,0,4);
 				
 				result = ps_madds0(pair[0], fAB, half);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_stux(result,dst,stride,0,4);
 				
 				pair[0] = psq_l(4,src1,0,4);
 				
 				result = ps_madds0(pair[1], fAB, half);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(result,2,dst,0,4);
 				
 				pair[1] = psq_l(6,src1,0,4);
 				
 				result = ps_madds0(pair[0], fAB, half);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_st(result,4,dst,0,4);
 				
 				pair[0] = psq_l(8,src1,1,4);
 				
 				result = ps_madds0(pair[1], fAB, half);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(result,6,dst,0,4);
 			} while (--h);
 		}
@@ -253,9 +255,9 @@ static void avg_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 			result = psq_lux(dst,stride,0,4);
 			
 			result = ps_madds0(pair[0], fAB, result);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_st(ps_madd(result, half, half),0,dst,0,4);
 			
 			pair[0] = psq_l(4,src1,1,4);
@@ -264,9 +266,9 @@ static void avg_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 			result = psq_l(2,dst,0,4);
 			
 			result = ps_madds0(pair[1], fAB, result);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(ps_madd(result, half, half),2,dst,0,4);
 		} while (--h);
 	} else {
@@ -300,14 +302,14 @@ static void avg_h264_chroma_mc4_paired(uint8_t *dst, uint8_t *src, int stride, i
 				result = psq_lux(dst,stride,0,4);
 				
 				result = ps_madds0(pair[0], fAB, result);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_st(ps_madd(result, half, half),0,dst,0,4);
 				
 				pair[0] = psq_l(4,src1,1,4);
 				result = psq_l(2,dst,0,4);
 				
 				result = ps_madds0(pair[1], fAB, result);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(ps_madd(result, half, half),2,dst,0,4);
 			} while (--h);
 		}
@@ -340,9 +342,9 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 			result = psq_lux(dst,stride,0,4);
 			
 			result = ps_madds0(pair[0], fAB, result);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_st(ps_madd(result, half, half),0,dst,0,4);
 			
 			pair[0] = psq_l(4,src1,0,4);
@@ -351,9 +353,9 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 			result = psq_l(2,dst,0,4);
 			
 			result = ps_madds0(pair[1], fAB, result);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(ps_madd(result, half, half),2,dst,0,4);
 			
 			pair[1] = psq_l(6,src1,0,4);
@@ -362,9 +364,9 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 			result = psq_l(4,dst,0,4);
 			
 			result = ps_madds0(pair[0], fAB, result);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_st(ps_madd(result, half, half),4,dst,0,4);
 			
 			pair[0] = psq_l(8,src1,1,4);
@@ -373,9 +375,9 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 			result = psq_l(6,dst,0,4);
 			
 			result = ps_madds0(pair[1], fAB, result);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(ps_madd(result, half, half),6,dst,0,4);
 		} while (--h);
 	} else {
@@ -427,28 +429,28 @@ static void avg_h264_chroma_mc8_paired(uint8_t *dst, uint8_t *src, int stride, i
 				result = psq_lux(dst,stride,0,4);
 				
 				result = ps_madds0(pair[0], fAB, result);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_st(ps_madd(result, half, half),0,dst,0,4);
 				
 				pair[0] = psq_l(4,src1,0,4);
 				result = psq_l(2,dst,0,4);
 				
 				result = ps_madds0(pair[1], fAB, result);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(ps_madd(result, half, half),2,dst,0,4);
 				
 				pair[1] = psq_l(6,src1,0,4);
 				result = psq_l(4,dst,0,4);
 				
 				result = ps_madds0(pair[0], fAB, result);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_st(ps_madd(result, half, half),4,dst,0,4);
 				
 				pair[0] = psq_l(8,src1,1,4);
 				result = psq_l(6,dst,0,4);
 				
 				result = ps_madds0(pair[1], fAB, result);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(ps_madd(result, half, half),6,dst,0,4);
 			} while (--h);
 		}
@@ -479,36 +481,36 @@ void ff_put_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 			pair[3] = psq_l(2,src2,0,4);
 			
 			result = ps_madds0(pair[0], fAB, offset);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_stux(result,dst,stride,0,4);
 			
 			pair[0] = psq_l(4,src1,0,4);
 			pair[2] = psq_l(4,src2,0,4);
 			
 			result = ps_madds0(pair[1], fAB, offset);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(result,2,dst,0,4);
 			
 			pair[1] = psq_l(6,src1,0,4);
 			pair[3] = psq_l(6,src2,0,4);
 			
 			result = ps_madds0(pair[0], fAB, offset);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_st(result,4,dst,0,4);
 			
 			pair[0] = psq_l(8,src1,1,4);
 			pair[2] = psq_l(8,src2,1,4);
 			
 			result = ps_madds0(pair[1], fAB, offset);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(result,6,dst,0,4);
 		} while (--h);
 	} else {
@@ -550,25 +552,25 @@ void ff_put_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 				pair[1] = psq_l(2,src1,0,4);
 				
 				result = ps_madds0(pair[0], fAB, offset);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_stux(result,dst,stride,0,4);
 				
 				pair[0] = psq_l(4,src1,0,4);
 				
 				result = ps_madds0(pair[1], fAB, offset);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(result,2,dst,0,4);
 				
 				pair[1] = psq_l(6,src1,0,4);
 				
 				result = ps_madds0(pair[0], fAB, offset);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_st(result,4,dst,0,4);
 				
 				pair[0] = psq_l(8,src1,1,4);
 				
 				result = ps_madds0(pair[1], fAB, offset);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(result,6,dst,0,4);
 			} while (--h);
 		}
@@ -602,9 +604,9 @@ void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 			result = psq_lux(dst,stride,0,4);
 			
 			result = ps_madds0(pair[0], fAB, result);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_st(ps_madd(result, half, offset),0,dst,0,4);
 			
 			pair[0] = psq_l(4,src1,0,4);
@@ -613,9 +615,9 @@ void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 			result = psq_l(2,dst,0,4);
 			
 			result = ps_madds0(pair[1], fAB, result);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(ps_madd(result, half, offset),2,dst,0,4);
 			
 			pair[1] = psq_l(6,src1,0,4);
@@ -624,9 +626,9 @@ void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 			result = psq_l(4,dst,0,4);
 			
 			result = ps_madds0(pair[0], fAB, result);
-			result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 			result = ps_madds0(pair[2], fCD, result);
-			result = ps_madds1(paired_merge10(pair[2], pair[3]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[2], pair[3]), fCD, result);
 			psq_st(ps_madd(result, half, offset),4,dst,0,4);
 			
 			pair[0] = psq_l(8,src1,1,4);
@@ -635,9 +637,9 @@ void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 			result = psq_l(6,dst,0,4);
 			
 			result = ps_madds0(pair[1], fAB, result);
-			result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+			result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 			result = ps_madds0(pair[3], fCD, result);
-			result = ps_madds1(paired_merge10(pair[3], pair[2]), fCD, result);
+			result = ps_madds1(ps_merge10(pair[3], pair[2]), fCD, result);
 			psq_st(ps_madd(result, half, offset),6,dst,0,4);
 		} while (--h);
 	} else {
@@ -689,28 +691,28 @@ void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 				result = psq_lux(dst,stride,0,4);
 				
 				result = ps_madds0(pair[0], fAB, result);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_st(ps_madd(result, half, offset),0,dst,0,4);
 				
 				pair[0] = psq_l(4,src1,0,4);
 				result = psq_l(2,dst,0,4);
 				
 				result = ps_madds0(pair[1], fAB, result);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(ps_madd(result, half, offset),2,dst,0,4);
 				
 				pair[1] = psq_l(6,src1,0,4);
 				result = psq_l(4,dst,0,4);
 				
 				result = ps_madds0(pair[0], fAB, result);
-				result = ps_madds1(paired_merge10(pair[0], pair[1]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[0], pair[1]), fAB, result);
 				psq_st(ps_madd(result, half, offset),4,dst,0,4);
 				
 				pair[0] = psq_l(8,src1,1,4);
 				result = psq_l(6,dst,0,4);
 				
 				result = ps_madds0(pair[1], fAB, result);
-				result = ps_madds1(paired_merge10(pair[1], pair[0]), fAB, result);
+				result = ps_madds1(ps_merge10(pair[1], pair[0]), fAB, result);
 				psq_st(ps_madd(result, half, offset),6,dst,0,4);
 			} while (--h);
 		}
@@ -720,102 +722,106 @@ void ff_avg_vc1_chroma_mc8_paired_nornd(uint8_t *dst, uint8_t *src, int stride, 
 static void ff_h264_idct_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 {
 	const float half = 0.5;
-	const float scalar = 0.015625;
-	vector float pair[2], sub[2], add[2];
-	vector float result, element[8];
-	
-	block[0] += 32;
+	vector float pair[2], subv[2], addv[2];
+	vector float result, coeffs[8];
 	
 	uint8_t *dst1 = dst;
-	uint8_t *dst2 = dst;
+	uint8_t *dst2 = dst + 2;
+	
+	block[0] += 32;
+	QUANT_REVERSE(6, GQR_TYPE_U8);
 	
 	pair[0] = psq_l(0,block,0,7);
 	pair[1] = psq_l(16,block,0,7);
-	add[0] = paired_add(pair[0], pair[1]);
-	sub[0] = paired_sub(pair[0], pair[1]);
+	addv[0] = paired_add(pair[0], pair[1]);
+	subv[0] = paired_sub(pair[0], pair[1]);
 	
 	pair[0] = psq_l(8,block,0,7);
 	pair[1] = psq_l(24,block,0,7);
-	sub[1] = ps_msub(pair[0], half, pair[1]);
-	add[1] = ps_madd(pair[1], half, pair[0]);
+	subv[1] = ps_msub(pair[0], half, pair[1]);
+	addv[1] = ps_madd(pair[1], half, pair[0]);
 	
-	pair[0] = paired_add(add[0], add[1]);
-	pair[1] = paired_add(sub[0], sub[1]);
+	pair[0] = paired_add(addv[0], addv[1]);
+	pair[1] = paired_add(subv[0], subv[1]);
 	
-	element[0] = paired_merge00(pair[0], pair[1]);
-	element[2] = paired_merge11(pair[0], pair[1]);
+	coeffs[0] = paired_merge00(pair[0], pair[1]);
+	coeffs[2] = paired_merge11(pair[0], pair[1]);
 	
-	pair[0] = paired_sub(sub[0], sub[1]);
-	pair[1] = paired_sub(add[0], add[1]);
+	pair[0] = paired_sub(subv[0], subv[1]);
+	pair[1] = paired_sub(addv[0], addv[1]);
 	
-	element[1] = paired_merge00(pair[0], pair[1]);
-	element[3] = paired_merge11(pair[0], pair[1]);
+	coeffs[1] = paired_merge00(pair[0], pair[1]);
+	coeffs[3] = paired_merge11(pair[0], pair[1]);
 	
 	pair[0] = psq_l(4,block,0,7);
 	pair[1] = psq_l(20,block,0,7);
-	add[0] = paired_add(pair[0], pair[1]);
-	sub[0] = paired_sub(pair[0], pair[1]);
+	addv[0] = paired_add(pair[0], pair[1]);
+	subv[0] = paired_sub(pair[0], pair[1]);
 	
 	pair[0] = psq_l(12,block,0,7);
 	pair[1] = psq_l(28,block,0,7);
-	sub[1] = ps_msub(pair[0], half, pair[1]);
-	add[1] = ps_madd(pair[1], half, pair[0]);
+	subv[1] = ps_msub(pair[0], half, pair[1]);
+	addv[1] = ps_madd(pair[1], half, pair[0]);
 	
-	pair[0] = paired_add(add[0], add[1]);
-	pair[1] = paired_add(sub[0], sub[1]);
+	pair[0] = paired_add(addv[0], addv[1]);
+	pair[1] = paired_add(subv[0], subv[1]);
 	
-	element[4] = paired_merge00(pair[0], pair[1]);
-	element[6] = paired_merge11(pair[0], pair[1]);
+	coeffs[4] = paired_merge00(pair[0], pair[1]);
+	coeffs[6] = paired_merge11(pair[0], pair[1]);
 	
-	pair[0] = paired_sub(sub[0], sub[1]);
-	pair[1] = paired_sub(add[0], add[1]);
+	pair[0] = paired_sub(subv[0], subv[1]);
+	pair[1] = paired_sub(addv[0], addv[1]);
 	
-	element[5] = paired_merge00(pair[0], pair[1]);
-	element[7] = paired_merge11(pair[0], pair[1]);
+	coeffs[5] = paired_merge00(pair[0], pair[1]);
+	coeffs[7] = paired_merge11(pair[0], pair[1]);
 	
-	add[0] = paired_add(element[0], element[4]);
-	sub[0] = paired_sub(element[0], element[4]);
+	addv[0] = paired_add(coeffs[0], coeffs[4]);
+	subv[0] = paired_sub(coeffs[0], coeffs[4]);
 	
-	sub[1] = ps_msub(element[2], half, element[6]);
-	add[1] = ps_madd(element[6], half, element[2]);
+	subv[1] = ps_msub(coeffs[2], half, coeffs[6]);
+	addv[1] = ps_madd(coeffs[6], half, coeffs[2]);
 	
-	result = psq_l(0,dst1,0,4);
-	result = ps_madd(paired_add(add[0], add[1]), scalar, result);
-	psq_st(result,0,dst1,0,4);
+	pair[0] = paired_add(addv[0], addv[1]);
+	pair[1] = paired_add(subv[0], subv[1]);
 	
-	result = psq_lux(dst1,stride,0,4);
-	result = ps_madd(paired_add(sub[0], sub[1]), scalar, result);
-	psq_st(result,0,dst1,0,4);
+	result = psq_l(0,dst1,0,1);
+	psq_st(ps_add(pair[0], result),0,dst1,0,1);
 	
-	result = psq_lux(dst1,stride,0,4);
-	result = ps_madd(paired_sub(sub[0], sub[1]), scalar, result);
-	psq_st(result,0,dst1,0,4);
+	result = psq_lux(dst1,stride,0,1);
+	psq_st(ps_add(pair[1], result),0,dst1,0,1);
 	
-	result = psq_lux(dst1,stride,0,4);
-	result = ps_madd(paired_sub(add[0], add[1]), scalar, result);
-	psq_stx(result,0,dst1,0,4);
+	pair[0] = paired_sub(subv[0], subv[1]);
+	pair[1] = paired_sub(addv[0], addv[1]);
 	
-	add[0] = paired_add(element[1], element[5]);
-	sub[0] = paired_sub(element[1], element[5]);
+	result = psq_lux(dst1,stride,0,1);
+	psq_st(ps_add(pair[0], result),0,dst1,0,1);
 	
-	sub[1] = ps_msub(element[3], half, element[7]);
-	add[1] = ps_madd(element[7], half, element[3]);
+	result = psq_lux(dst1,stride,0,1);
+	psq_st(ps_add(pair[1], result),0,dst1,0,1);
 	
-	result = psq_lu(2,dst2,0,4);
-	result = ps_madd(paired_add(add[0], add[1]), scalar, result);
-	psq_st(result,0,dst2,0,4);
+	addv[0] = paired_add(coeffs[1], coeffs[5]);
+	subv[0] = paired_sub(coeffs[1], coeffs[5]);
 	
-	result = psq_lux(dst2,stride,0,4);
-	result = ps_madd(paired_add(sub[0], sub[1]), scalar, result);
-	psq_st(result,0,dst2,0,4);
+	subv[1] = ps_msub(coeffs[3], half, coeffs[7]);
+	addv[1] = ps_madd(coeffs[7], half, coeffs[3]);
 	
-	result = psq_lux(dst2,stride,0,4);
-	result = ps_madd(paired_sub(sub[0], sub[1]), scalar, result);
-	psq_st(result,0,dst2,0,4);
+	pair[0] = paired_add(addv[0], addv[1]);
+	pair[1] = paired_add(subv[0], subv[1]);
 	
-	result = psq_lux(dst2,stride,0,4);
-	result = ps_madd(paired_sub(add[0], add[1]), scalar, result);
-	psq_st(result,0,dst2,0,4);
+	result = psq_l(0,dst2,0,1);
+	psq_st(ps_add(pair[0], result),0,dst2,0,1);
+	
+	result = psq_lux(dst2,stride,0,1);
+	psq_st(ps_add(pair[1], result),0,dst2,0,1);
+	
+	pair[0] = paired_sub(subv[0], subv[1]);
+	pair[1] = paired_sub(addv[0], addv[1]);
+	
+	result = psq_lux(dst2,stride,0,1);
+	psq_st(ps_add(pair[0], result),0,dst2,0,1);
+	
+	result = psq_lux(dst2,stride,0,1);
+	psq_st(ps_add(pair[1], result),0,dst2,0,1);
 }
 
 static void ff_h264_idct_dc_add_paired(uint8_t *dst, DCTELEM *block, int stride)
@@ -878,138 +884,142 @@ static void ff_h264_idct8_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 {
 	const float half = 0.5;
 	const float quarter = 0.25;
-	const float scalar = 0.015625;
-	vector float pair[4], sub[4], add[4];
-	vector float result, pre[4];
+	vector float pair[4], subv[4], addv[4];
+	vector float result, prev[4];
 	
 	block[0] += 32;
+	QUANT_REVERSE(6, GQR_TYPE_U8);
+	
+	float coeffs[64];
+	float *dct = coeffs - 16;
 	block -= 2;
 	
-	float element[64];
-	float *base[2] = {element-16,element-2};
-	
-	int i;
-	for (i=0; i<4; i++) {
+	for (int i = 0; i < 4; i++) {
 		pair[0] = psq_lu(4,block,0,7);
 		pair[1] = psq_l(64,block,0,7);
-		pre[0] = paired_add(pair[0], pair[1]);
-		pre[1] = paired_sub(pair[0], pair[1]);
+		prev[0] = paired_add(pair[0], pair[1]);
+		prev[1] = paired_sub(pair[0], pair[1]);
 		
-		pair[0] = psq_l(32,block,0,7);
-		pair[1] = psq_l(96,block,0,7);
-		pre[2] = ps_msub(pair[0], half, pair[1]);
-		pre[3] = ps_madd(pair[1], half, pair[0]);
+		pair[2] = psq_l(32,block,0,7);
+		pair[3] = psq_l(96,block,0,7);
+		prev[2] = ps_msub(pair[2], half, pair[3]);
+		prev[3] = ps_madd(pair[3], half, pair[2]);
 		
-		add[0] = paired_add(pre[0], pre[3]);
-		add[1] = paired_add(pre[1], pre[2]);
-		sub[0] = paired_sub(pre[1], pre[2]);
-		sub[1] = paired_sub(pre[0], pre[3]);
+		addv[0] = paired_add(prev[0], prev[3]);
+		addv[1] = paired_add(prev[1], prev[2]);
+		subv[0] = paired_sub(prev[1], prev[2]);
+		subv[1] = paired_sub(prev[0], prev[3]);
 		
 		pair[0] = psq_l(16,block,0,7);
 		pair[1] = psq_l(48,block,0,7);
 		pair[2] = psq_l(80,block,0,7);
 		pair[3] = psq_l(112,block,0,7);
 		
-		pre[0] = paired_sub(paired_sub(pair[2], pair[1]), ps_madd(pair[3], half, pair[3]));
-		pre[1] = paired_sub(paired_add(pair[0], pair[3]), ps_madd(pair[1], half, pair[1]));
-		pre[2] = paired_add(paired_sub(pair[3], pair[0]), ps_madd(pair[2], half, pair[2]));
-		pre[3] = paired_add(paired_add(pair[1], pair[2]), ps_madd(pair[0], half, pair[0]));
+		prev[0] = paired_sub(ps_sub(pair[2], pair[1]), ps_madd(pair[3], half, pair[3]));
+		prev[1] = paired_sub(ps_add(pair[0], pair[3]), ps_madd(pair[1], half, pair[1]));
+		prev[2] = paired_add(ps_sub(pair[3], pair[0]), ps_madd(pair[2], half, pair[2]));
+		prev[3] = paired_add(ps_add(pair[1], pair[2]), ps_madd(pair[0], half, pair[0]));
 		
-		add[2] = ps_madd(pre[3], quarter, pre[0]);
-		add[3] = ps_madd(pre[2], quarter, pre[1]);
-		sub[2] = ps_msub(pre[1], quarter, pre[2]);
-		sub[3] = ps_nmsub(pre[0], quarter, pre[3]);
+		addv[2] = ps_madd(prev[3], quarter, prev[0]);
+		addv[3] = ps_madd(prev[2], quarter, prev[1]);
+		subv[2] = ps_msub(prev[1], quarter, prev[2]);
+		subv[3] = ps_nmsub(prev[0], quarter, prev[3]);
 		
-		pair[0] = paired_add(add[0], sub[3]);
-		pair[1] = paired_add(add[1], sub[2]);
+		pair[0] = paired_add(addv[0], subv[3]);
+		pair[1] = paired_add(addv[1], subv[2]);
 		
-		psq_stu(paired_merge00(pair[0], pair[1]),64,base[0],0,0);
-		psq_st(paired_merge11(pair[0], pair[1]),32,base[0],0,0);
+		psq_stu(ps_merge00(pair[0], pair[1]),64,dct,0,0);
+		psq_st(ps_merge11(pair[0], pair[1]),32,dct,0,0);
 		
-		pair[0] = paired_add(sub[0], add[3]);
-		pair[1] = paired_add(sub[1], add[2]);
+		pair[2] = paired_add(subv[0], addv[3]);
+		pair[3] = paired_add(subv[1], addv[2]);
 		
-		psq_st(paired_merge00(pair[0], pair[1]),8,base[0],0,0);
-		psq_st(paired_merge11(pair[0], pair[1]),40,base[0],0,0);
+		psq_st(ps_merge00(pair[2], pair[3]),8,dct,0,0);
+		psq_st(ps_merge11(pair[2], pair[3]),40,dct,0,0);
 		
-		pair[0] = paired_sub(sub[1], add[2]);
-		pair[1] = paired_sub(sub[0], add[3]);
+		pair[0] = paired_sub(subv[1], addv[2]);
+		pair[1] = paired_sub(subv[0], addv[3]);
 		
-		psq_st(paired_merge00(pair[0], pair[1]),16,base[0],0,0);
-		psq_st(paired_merge11(pair[0], pair[1]),48,base[0],0,0);
+		psq_st(ps_merge00(pair[0], pair[1]),16,dct,0,0);
+		psq_st(ps_merge11(pair[0], pair[1]),48,dct,0,0);
 		
-		pair[0] = paired_sub(add[1], sub[2]);
-		pair[1] = paired_sub(add[0], sub[3]);
+		pair[2] = paired_sub(addv[1], subv[2]);
+		pair[3] = paired_sub(addv[0], subv[3]);
 		
-		psq_st(paired_merge00(pair[0], pair[1]),24,base[0],0,0);
-		psq_st(paired_merge11(pair[0], pair[1]),56,base[0],0,0);
+		psq_st(ps_merge00(pair[2], pair[3]),24,dct,0,0);
+		psq_st(ps_merge11(pair[2], pair[3]),56,dct,0,0);
 	}
 	
-	uint8_t *in_col = dst-2;
+	uint8_t *dst1 = dst - 2;
+	uint8_t *dst2 = dst;
+	dct = coeffs - 2;
 	
-	for (i=0; i<4; i++) {
-		pair[0] = psq_lu(8,base[1],0,0);
-		pair[1] = psq_l(128,base[1],0,0);
-		pre[0] = paired_add(pair[0], pair[1]);
-		pre[1] = paired_sub(pair[0], pair[1]);
+	for (int i = 0; i < 4; i++) {
+		pair[0] = psq_lu(8,dct,0,0);
+		pair[1] = psq_l(128,dct,0,0);
+		prev[0] = paired_add(pair[0], pair[1]);
+		prev[1] = paired_sub(pair[0], pair[1]);
 		
-		pair[0] = psq_l(64,base[1],0,0);
-		pair[1] = psq_l(192,base[1],0,0);
-		pre[2] = ps_msub(pair[0], half, pair[1]);
-		pre[3] = ps_madd(pair[1], half, pair[0]);
+		pair[2] = psq_l(64,dct,0,0);
+		pair[3] = psq_l(192,dct,0,0);
+		prev[2] = ps_msub(pair[2], half, pair[3]);
+		prev[3] = ps_madd(pair[3], half, pair[2]);
 		
-		add[0] = paired_add(pre[0], pre[3]);
-		add[1] = paired_add(pre[1], pre[2]);
-		sub[0] = paired_sub(pre[1], pre[2]);
-		sub[1] = paired_sub(pre[0], pre[3]);
+		addv[0] = paired_add(prev[0], prev[3]);
+		addv[1] = paired_add(prev[1], prev[2]);
+		subv[0] = paired_sub(prev[1], prev[2]);
+		subv[1] = paired_sub(prev[0], prev[3]);
 		
-		pair[0] = psq_l(32,base[1],0,0);
-		pair[1] = psq_l(96,base[1],0,0);
-		pair[2] = psq_l(160,base[1],0,0);
-		pair[3] = psq_l(224,base[1],0,0);
+		pair[0] = psq_l(32,dct,0,0);
+		pair[1] = psq_l(96,dct,0,0);
+		pair[2] = psq_l(160,dct,0,0);
+		pair[3] = psq_l(224,dct,0,0);
 		
-		pre[0] = paired_sub(paired_sub(pair[2], pair[1]), ps_madd(pair[3], half, pair[3]));
-		pre[1] = paired_sub(paired_add(pair[0], pair[3]), ps_madd(pair[1], half, pair[1]));
-		pre[2] = paired_add(paired_sub(pair[3], pair[0]), ps_madd(pair[2], half, pair[2]));
-		pre[3] = paired_add(paired_add(pair[1], pair[2]), ps_madd(pair[0], half, pair[0]));
+		prev[0] = paired_sub(ps_sub(pair[2], pair[1]), ps_madd(pair[3], half, pair[3]));
+		prev[1] = paired_sub(ps_add(pair[0], pair[3]), ps_madd(pair[1], half, pair[1]));
+		prev[2] = paired_add(ps_sub(pair[3], pair[0]), ps_madd(pair[2], half, pair[2]));
+		prev[3] = paired_add(ps_add(pair[1], pair[2]), ps_madd(pair[0], half, pair[0]));
 		
-		add[2] = ps_madd(pre[3], quarter, pre[0]);
-		add[3] = ps_madd(pre[2], quarter, pre[1]);
-		sub[2] = ps_msub(pre[1], quarter, pre[2]);
-		sub[3] = ps_nmsub(pre[0], quarter, pre[3]);
+		addv[2] = ps_madd(prev[3], quarter, prev[0]);
+		addv[3] = ps_madd(prev[2], quarter, prev[1]);
+		subv[2] = ps_msub(prev[1], quarter, prev[2]);
+		subv[3] = ps_nmsub(prev[0], quarter, prev[3]);
 		
-		result = psq_lu(2,in_col,0,4);
-		result = ps_madd(paired_add(add[0], sub[3]), scalar, result);
-		psq_st(result,0,in_col,0,4);
-		uint8_t *in_row = in_col;
+		pair[0] = paired_add(addv[0], subv[3]);
+		pair[1] = paired_add(addv[1], subv[2]);
 		
-		result = psq_lux(in_row,stride,0,4);
-		result = ps_madd(paired_add(add[1], sub[2]), scalar, result);
-		psq_st(result,0,in_row,0,4);
+		result = psq_lu(2,dst1,0,1); dst2 = dst1;
+		psq_st(ps_add(pair[0], result),0,dst1,0,1);
 		
-		result = psq_lux(in_row,stride,0,4);
-		result = ps_madd(paired_add(sub[0], add[3]), scalar, result);
-		psq_st(result,0,in_row,0,4);
+		result = psq_lux(dst2,stride,0,1);
+		psq_st(ps_add(pair[1], result),0,dst2,0,1);
 		
-		result = psq_lux(in_row,stride,0,4);
-		result = ps_madd(paired_add(sub[1], add[2]), scalar, result);
-		psq_st(result,0,in_row,0,4);
+		pair[2] = paired_add(subv[0], addv[3]);
+		pair[3] = paired_add(subv[1], addv[2]);
 		
-		result = psq_lux(in_row,stride,0,4);
-		result = ps_madd(paired_sub(sub[1], add[2]), scalar, result);
-		psq_st(result,0,in_row,0,4);
+		result = psq_lux(dst2,stride,0,1);
+		psq_st(ps_add(pair[2], result),0,dst2,0,1);
 		
-		result = psq_lux(in_row,stride,0,4);
-		result = ps_madd(paired_sub(sub[0], add[3]), scalar, result);
-		psq_st(result,0,in_row,0,4);
+		result = psq_lux(dst2,stride,0,1);
+		psq_st(ps_add(pair[3], result),0,dst2,0,1);
 		
-		result = psq_lux(in_row,stride,0,4);
-		result = ps_madd(paired_sub(add[1], sub[2]), scalar, result);
-		psq_st(result,0,in_row,0,4);
+		pair[0] = paired_sub(subv[1], addv[2]);
+		pair[1] = paired_sub(subv[0], addv[3]);
 		
-		result = psq_lux(in_row,stride,0,4);
-		result = ps_madd(paired_sub(add[0], sub[3]), scalar, result);
-		psq_st(result,0,in_row,0,4);
+		result = psq_lux(dst2,stride,0,1);
+		psq_st(ps_add(pair[0], result),0,dst2,0,1);
+		
+		result = psq_lux(dst2,stride,0,1);
+		psq_st(ps_add(pair[1], result),0,dst2,0,1);
+		
+		pair[2] = paired_sub(addv[1], subv[2]);
+		pair[3] = paired_sub(addv[0], subv[3]);
+		
+		result = psq_lux(dst2,stride,0,1);
+		psq_st(ps_add(pair[2], result),0,dst2,0,1);
+		
+		result = psq_lux(dst2,stride,0,1);
+		psq_st(ps_add(pair[3], result),0,dst2,0,1);
 	}
 }
 #endif

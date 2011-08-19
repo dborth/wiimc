@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2010-2011 Extrems <metaradil@gmail.com>
+ *
  * This file is part of MPlayer CE.
  *
  * MPlayer CE is free software; you can redistribute it and/or
@@ -34,8 +36,8 @@ static void pred4x4_tm_vp8_paired(uint8_t *src, const uint8_t *topright, int str
 		offset = psq_lux(src,stride,1,4);
 		asm("fsubs %0,%1,%0" : "+f"(offset) : "f"(base));
 		
-		psq_st(paired_sub(pair[0], offset),1,src,0,4);
-		psq_st(paired_sub(pair[1], offset),3,src,0,4);
+		psq_st(ps_sub(pair[0], offset),1,src,0,4);
+		psq_st(ps_sub(pair[1], offset),3,src,0,4);
 	}
 }
 
@@ -120,14 +122,14 @@ static void pred16x16_tm_vp8_paired(uint8_t *src, int stride)
 		offset = psq_lux(src,stride,1,4);
 		asm("fsubs %0,%1,%0" : "+f"(offset) : "f"(base));
 		
-		psq_st(paired_sub(pair[0], offset),1,src,0,4);
-		psq_st(paired_sub(pair[1], offset),3,src,0,4);
-		psq_st(paired_sub(pair[2], offset),5,src,0,4);
-		psq_st(paired_sub(pair[3], offset),7,src,0,4);
-		psq_st(paired_sub(pair[4], offset),9,src,0,4);
-		psq_st(paired_sub(pair[5], offset),11,src,0,4);
-		psq_st(paired_sub(pair[6], offset),13,src,0,4);
-		psq_st(paired_sub(pair[7], offset),15,src,0,4);
+		psq_st(ps_sub(pair[0], offset),1,src,0,4);
+		psq_st(ps_sub(pair[1], offset),3,src,0,4);
+		psq_st(ps_sub(pair[2], offset),5,src,0,4);
+		psq_st(ps_sub(pair[3], offset),7,src,0,4);
+		psq_st(ps_sub(pair[4], offset),9,src,0,4);
+		psq_st(ps_sub(pair[5], offset),11,src,0,4);
+		psq_st(ps_sub(pair[6], offset),13,src,0,4);
+		psq_st(ps_sub(pair[7], offset),15,src,0,4);
 	}
 }
 
@@ -199,10 +201,10 @@ static void pred8x8_tm_vp8_paired(uint8_t *src, int stride)
 		offset = psq_lux(src,stride,1,4);
 		asm("fsubs %0,%1,%0" : "+f"(offset) : "f"(base));
 		
-		psq_st(paired_sub(pair[0], offset),1,src,0,4);
-		psq_st(paired_sub(pair[1], offset),3,src,0,4);
-		psq_st(paired_sub(pair[2], offset),5,src,0,4);
-		psq_st(paired_sub(pair[3], offset),7,src,0,4);
+		psq_st(ps_sub(pair[0], offset),1,src,0,4);
+		psq_st(ps_sub(pair[1], offset),3,src,0,4);
+		psq_st(ps_sub(pair[2], offset),5,src,0,4);
+		psq_st(ps_sub(pair[3], offset),7,src,0,4);
 	}
 }
 

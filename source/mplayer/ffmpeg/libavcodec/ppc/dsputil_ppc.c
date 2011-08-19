@@ -2,6 +2,7 @@
  * Copyright (c) 2002 Brian Foley
  * Copyright (c) 2002 Dieter Shirley
  * Copyright (c) 2003-2004 Romain Dolbeau <romain@dolbeau.org>
+ * Copyright (c) 2010-2011 Extrems <metaradil@gmail.com>
  *
  * This file is part of Libav.
  *
@@ -23,9 +24,7 @@
 #include "libavutil/cpu.h"
 #include "libavcodec/dsputil.h"
 #include "dsputil_altivec.h"
-#ifdef GEKKO
 #include "dsputil_paired.h"
-#endif
 
 /* ***** WARNING ***** WARNING ***** WARNING ***** */
 /*
@@ -153,52 +152,8 @@ static void prefetch_ppc(void *mem, int stride, int h)
         p+= stride;
     } while(--h);
 }
-#ifdef GEKKO
-static void bswap_buf_gekko(uint32_t *dst, const uint32_t *src, int w)
-{
-	int i;
-	uint32_t word;
-	
-	for (i=0; i<w*4-31; i+=4) {
-		asm volatile(
-			"lwzx	%0,%1,%2\n"
-			"stwbrx	%0,%1,%3\n"
-			"addi	%1,%1,4\n"
-			"lwzx	%0,%1,%2\n"
-			"stwbrx	%0,%1,%3\n"
-			"addi	%1,%1,4\n"
-			"lwzx	%0,%1,%2\n"
-			"stwbrx	%0,%1,%3\n"
-			"addi	%1,%1,4\n"
-			"lwzx	%0,%1,%2\n"
-			"stwbrx	%0,%1,%3\n"
-			"addi	%1,%1,4\n"
-			"lwzx	%0,%1,%2\n"
-			"stwbrx	%0,%1,%3\n"
-			"addi	%1,%1,4\n"
-			"lwzx	%0,%1,%2\n"
-			"stwbrx	%0,%1,%3\n"
-			"addi	%1,%1,4\n"
-			"lwzx	%0,%1,%2\n"
-			"stwbrx	%0,%1,%3\n"
-			"addi	%1,%1,4\n"
-			"lwzx	%0,%1,%2\n"
-			"stwbrx	%0,%1,%3\n"
-			: "=r"(word)
-			: "r"(i), "b"(src), "b"(dst)
-		);
-	}
-	
-	for (; i<w*4; i+=4) {
-		asm volatile(
-			"lwzx	%0,%1,%2\n"
-			"stwbrx	%0,%1,%3\n"
-			: "=r"(word)
-			: "r"(i), "b"(src), "b"(dst)
-		);
-	}
-}
 
+#if defined(GEKKO)
 static void fill_block16_gekko(uint8_t *block, uint8_t value, int line_size, int h)
 {
 	uint32_t word = value;
@@ -207,8 +162,8 @@ static void fill_block16_gekko(uint8_t *block, uint8_t value, int line_size, int
 	
 	block -= line_size;
 	
-	while (h--) {
-		asm volatile(
+	do {
+		__asm__ volatile (
 			"stwux	%2,%0,%1\n"
 			"stw	%2,4(%0)\n"
 			"stw	%2,8(%0)\n"
@@ -216,7 +171,7 @@ static void fill_block16_gekko(uint8_t *block, uint8_t value, int line_size, int
 			: "+b"(block)
 			: "r"(line_size), "r"(word)
 		);
-	}
+	} while (--h);
 }
 
 static void fill_block8_gekko(uint8_t *block, uint8_t value, int line_size, int h)
@@ -227,16 +182,16 @@ static void fill_block8_gekko(uint8_t *block, uint8_t value, int line_size, int 
 	
 	block -= line_size;
 	
-	while (h--) {
-		asm volatile(
+	do {
+		__asm__ volatile (
 			"stwux	%2,%0,%1\n"
 			"stw	%2,4(%0)\n"
 			: "+b"(block)
 			: "r"(line_size), "r"(word)
 		);
-	}
+	} while (--h);
 }
-#endif
+#endif /* GEKKO */
 
 void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 {
@@ -253,8 +208,7 @@ void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
             break;
     }
 
-#ifdef GEKKO
-    c->bswap_buf = bswap_buf_gekko;
+#if defined(GEKKO)
     c->fill_block_tab[0] = fill_block16_gekko;
     c->fill_block_tab[1] = fill_block8_gekko;
 #endif
@@ -294,12 +248,10 @@ void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 #endif /* HAVE_ALTIVEC */
 
 #if HAVE_PAIRED
-
     dsputil_init_paired(c, avctx);
     float_init_paired(c, avctx);
 
     if (CONFIG_H264_DECODER)
         dsputil_h264_init_ppc(c, avctx);
- 
 #endif /* HAVE_PAIRED */
 }

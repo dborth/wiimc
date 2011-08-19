@@ -1,10 +1,12 @@
 /*
+ * Copyright (c) 2011 Extrems <metaradil@gmail.com>
+ *
  * This file is part of MPlayer CE.
  *
  * MPlayer CE is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * MPlayer CE is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,8 +28,8 @@
 static inline av_const int FASTDIV(int a, int b)
 {
     int r;
-    __asm__ volatile("mulhwu  %0, %1, %2"
-                     : "=r"(r) : "r"(a), "r"(ff_inverse[b]));
+    __asm__ ("mulhwu  %0, %1, %2"
+             : "=r"(r) : "r"(a), "r"(ff_inverse[b]));
     return r;
 }
 

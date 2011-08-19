@@ -40,6 +40,8 @@ extern const u8		ko_lang[];
 extern const u32	ko_lang_size;
 extern const u8		ro_lang[];
 extern const u32	ro_lang_size;
+extern const u8		bg_lang[];
+extern const u32	bg_lang_size;
 extern const u8		et_lang[];
 extern const u32	et_lang_size;
 extern const u8		pt_lang[];

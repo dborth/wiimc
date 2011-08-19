@@ -231,6 +231,7 @@ bool LoadLanguage()
 		case LANG_TAMIL: file = (char *)ta_lang; eof = file + ta_lang_size; break;
 		case LANG_SWEDISH: file = (char *)sv_lang; eof = file + sv_lang_size; break;
 		case LANG_DANISH: file = (char *)da_lang; eof = file + da_lang_size; break;
+		case LANG_BULGARIAN: file = (char *)bg_lang; eof = file + bg_lang_size; break;
 		default: return false;
 	}
 

@@ -777,7 +777,8 @@ void ChangeLanguage()
 		WiiSettings.language == LANG_TRAD_CHINESE ||
 		WiiSettings.language == LANG_KOREAN ||
 		WiiSettings.language == LANG_RUSSIAN || 
-		WiiSettings.language == LANG_TAMIL)
+		WiiSettings.language == LANG_TAMIL || 
+		WiiSettings.language == LANG_BULGARIAN)
 	{
 		char filepath[MAXPATHLEN];
 		char httppath[MAXPATHLEN];
@@ -817,6 +818,7 @@ void ChangeLanguage()
 				newFont = FONT_TAMIL;
 				break;
 			case LANG_RUSSIAN:
+			case LANG_BULGARIAN:
 				if(currentFont == FONT_GENERIC) return;
 				sprintf(filepath, "%s/gen.ttf", appPath);
 				sprintf(httppath, "%s/gen.ttf", httpRoot);
@@ -4084,6 +4086,7 @@ static void MenuSettingsGlobal()
 				case LANG_TAMIL:				sprintf(options.value[1], "Tamil"); break;
 				case LANG_SWEDISH:				sprintf(options.value[1], "Swedish"); break;
 				case LANG_DANISH:				sprintf(options.value[1], "Danish"); break;
+				case LANG_BULGARIAN:			sprintf(options.value[1], "Bulgarian"); break;
 			}
 			
 			sprintf (options.value[2], "%d%%", WiiSettings.volume);

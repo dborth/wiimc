@@ -1,7 +1,4 @@
 /*
- * Libavformat API example: Output a media file in any supported
- * libavformat format. The default codecs are used.
- *
  * Copyright (c) 2003 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,11 +19,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+/**
+ * @file
+ * libavformat API example.
+ *
+ * @example libavformat/output-example.c
+ * Output a media file in any supported libavformat format.
+ * The default codecs are used.
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
+#include "libavutil/mathematics.h"
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
 
@@ -492,7 +500,7 @@ int main(int argc, char **argv)
 
     /* open the output file, if needed */
     if (!(fmt->flags & AVFMT_NOFILE)) {
-        if (avio_open(&oc->pb, filename, AVIO_WRONLY) < 0) {
+        if (avio_open(&oc->pb, filename, AVIO_FLAG_WRITE) < 0) {
             fprintf(stderr, "Could not open '%s'\n", filename);
             exit(1);
         }

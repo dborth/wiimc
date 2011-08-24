@@ -363,7 +363,7 @@ static int demux_asf_fill_buffer(demuxer_t *demux, demux_stream_t *ds){
             unsigned char segtype=p[1];
             unsigned padding;
             unsigned plen;
-	    unsigned sequence;
+            unsigned sequence;
             unsigned long time=0;
             unsigned short duration=0;
 
@@ -654,7 +654,8 @@ static demuxer_t* demux_open_asf(demuxer_t* demuxer)
     }
 
     if(demuxer->audio->id!=-2){
-        mp_msg(MSGT_DEMUXER,MSGL_V,MSGTR_ASFSearchingForAudioStream,demuxer->audio->id);
+        mp_msg(MSGT_DEMUXER, MSGL_V,
+               "ASF: Searching for audio stream (id:%d).\n", demuxer->audio->id);
         if(!ds_fill_buffer(demuxer->audio)){
             mp_msg(MSGT_DEMUXER,MSGL_INFO,"ASF: " MSGTR_MissingAudioStream);
             demuxer->audio->sh=NULL;

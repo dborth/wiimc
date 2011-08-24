@@ -21,6 +21,7 @@
 #include "avformat.h"
 #include "avio_internal.h"
 #include "rm.h"
+#include "libavutil/dict.h"
 
 typedef struct {
     int nb_packets;
@@ -71,7 +72,7 @@ static int rv10_write_header(AVFormatContext *ctx,
     const char *desc, *mimetype;
     int nb_packets, packet_total_size, packet_max_size, size, packet_avg_size, i;
     int bit_rate, v, duration, flags, data_pos;
-    AVMetadataTag *tag;
+    AVDictionaryEntry *tag;
 
     start_ptr = s->buf_ptr;
 
@@ -127,13 +128,13 @@ static int rv10_write_header(AVFormatContext *ctx,
     ffio_wfourcc(s,"CONT");
     size =  4 * 2 + 10;
     for(i=0; i<FF_ARRAY_ELEMS(ff_rm_metadata); i++) {
-        tag = av_metadata_get(ctx->metadata, ff_rm_metadata[i], NULL, 0);
+        tag = av_dict_get(ctx->metadata, ff_rm_metadata[i], NULL, 0);
         if(tag) size += strlen(tag->value);
     }
     avio_wb32(s,size);
     avio_wb16(s,0);
     for(i=0; i<FF_ARRAY_ELEMS(ff_rm_metadata); i++) {
-        tag = av_metadata_get(ctx->metadata, ff_rm_metadata[i], NULL, 0);
+        tag = av_dict_get(ctx->metadata, ff_rm_metadata[i], NULL, 0);
         put_str(s, tag ? tag->value : "");
     }
 
@@ -460,15 +461,15 @@ static int rm_write_trailer(AVFormatContext *s)
 
 
 AVOutputFormat ff_rm_muxer = {
-    "rm",
-    NULL_IF_CONFIG_SMALL("RealMedia format"),
-    "application/vnd.rn-realmedia",
-    "rm,ra",
-    sizeof(RMMuxContext),
-    CODEC_ID_AC3,
-    CODEC_ID_RV10,
-    rm_write_header,
-    rm_write_packet,
-    rm_write_trailer,
+    .name              = "rm",
+    .long_name         = NULL_IF_CONFIG_SMALL("RealMedia format"),
+    .mime_type         = "application/vnd.rn-realmedia",
+    .extensions        = "rm,ra",
+    .priv_data_size    = sizeof(RMMuxContext),
+    .audio_codec       = CODEC_ID_AC3,
+    .video_codec       = CODEC_ID_RV10,
+    .write_header      = rm_write_header,
+    .write_packet      = rm_write_packet,
+    .write_trailer     = rm_write_trailer,
     .codec_tag= (const AVCodecTag* const []){ff_rm_codec_tags, 0},
 };

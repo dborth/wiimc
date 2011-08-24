@@ -28,7 +28,8 @@
 #define AVCODEC_AC3_H
 
 #define AC3_MAX_CODED_FRAME_SIZE 3840 /* in bytes */
-#define AC3_MAX_CHANNELS 6 /* including LFE channel */
+#define AC3_MAX_CHANNELS 7            /**< maximum number of channels, including coupling channel */
+#define CPL_CH 0                      /**< coupling channel index */
 
 #define AC3_MAX_COEFS   256
 #define AC3_BLOCK_SIZE  256
@@ -91,7 +92,7 @@ typedef struct AC3BitAllocParameters {
  * Coded AC-3 header values up to the lfeon element, plus derived values.
  */
 typedef struct {
-    /** @defgroup coded Coded elements
+    /** @name Coded elements
      * @{
      */
     uint16_t sync_word;
@@ -109,7 +110,7 @@ typedef struct {
     int num_blocks;                         ///< number of audio blocks
     /** @} */
 
-    /** @defgroup derived Derived values
+    /** @name Derived values
      * @{
      */
     uint8_t sr_shift;

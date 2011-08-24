@@ -35,7 +35,7 @@
 #include "img_format.h"
 #include "mp_image.h"
 #include "vf.h"
-#include "vd_ffmpeg.h"
+#include "av_helpers.h"
 #include "libvo/fastmemcpy.h"
 
 #define XMIN(a,b) ((a) < (b) ? (a) : (b))
@@ -175,12 +175,12 @@ static void filter(struct vf_priv_s *p, uint8_t *dst[3], uint8_t *src[3], int ds
     for(i=0; i<count; i++){
         const int x1= offset[i+count-1][0];
         const int y1= offset[i+count-1][1];
-        int offset, out_size;
+        int offset;
         p->frame->data[0]= p->src[0] + x1 + y1 * p->frame->linesize[0];
         p->frame->data[1]= p->src[1] + x1/2 + y1/2 * p->frame->linesize[1];
         p->frame->data[2]= p->src[2] + x1/2 + y1/2 * p->frame->linesize[2];
 
-        out_size = avcodec_encode_video(p->avctx_enc[i], p->outbuf, p->outbuf_size, p->frame);
+        avcodec_encode_video(p->avctx_enc[i], p->outbuf, p->outbuf_size, p->frame);
         p->frame_dec = p->avctx_enc[i]->coded_frame;
 
         offset= (BLOCK-x1) + (BLOCK-y1)*p->frame_dec->linesize[0];

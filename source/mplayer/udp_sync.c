@@ -43,6 +43,7 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 #include "udp_sync.h"
+#include "osdep/timer.h"
 
 
 // config options for UDP sync
@@ -71,7 +72,7 @@ static void set_blocking(int fd, int blocking)
 
 // gets a datagram from the master with or without blocking.  updates
 // master_position if successful.  if the master has exited, returns 1.
-// returns -1 on error.
+// returns -1 on error or if no message received.
 // otherwise, returns 0.
 static int get_udp(int blocking, double *master_position)
 {
@@ -81,9 +82,6 @@ static int get_udp(int blocking, double *master_position)
     int n;
 
     static int sockfd = -1;
-
-    *master_position = MP_NOPTS_VALUE;
-
     if (sockfd == -1) {
         struct timeval tv = { .tv_sec = 30 };
         struct sockaddr_in servaddr = { 0 };
@@ -117,9 +115,11 @@ static int get_udp(int blocking, double *master_position)
         *master_position = strtod(mesg, &end);
         if (*end) {
             mp_msg(MSGT_CPLAYER, MSGL_WARN, "Could not parse udp string!\n");
-            *master_position = MP_NOPTS_VALUE;
+            return -1;
         }
     }
+    if (chars_received == -1)
+        return -1;
 
     return 0;
 }
@@ -161,15 +161,29 @@ void send_udp(const char *send_to_ip, int port, char *mesg)
 }
 
 // this function makes sure we stay as close as possible to the master's
-// position.  returns 1 if the master tells us to exit, 0 otherwise.
+// position.  returns 1 if the master tells us to exit,
+// -1 on error and normal timing should be used again, 0 otherwise.
 int udp_slave_sync(MPContext *mpctx)
 {
-    double udp_master_position;
+    // remember where the master is in the file
+    static double udp_master_position;
+    // whether we timed out before waiting for a master message
+    static int timed_out = -1;
+    // last time we received a valid master message
+    static unsigned last_success;
+    int master_exited;
+
+    if (timed_out < 0) {
+        // initialize
+        udp_master_position = mpctx->sh_video->pts - udp_seek_threshold / 2;
+        timed_out = 0;
+        last_success = GetTimerMS();
+    }
 
     // grab any waiting datagrams without blocking
-    int master_exited = get_udp(0, &udp_master_position);
+    master_exited = get_udp(0, &udp_master_position);
 
-    while (udp_master_position != MP_NOPTS_VALUE && !master_exited) {
+    while (!master_exited || (!timed_out && master_exited < 0)) {
         double my_position = mpctx->sh_video->pts;
 
         // if we're way off, seek to catch up
@@ -195,8 +209,18 @@ int udp_slave_sync(MPContext *mpctx)
         // arrived.  call get_udp again, but this time block until we receive
         // a datagram.
         master_exited = get_udp(1, &udp_master_position);
+        if (master_exited < 0)
+            timed_out = 1;
     }
 
-    return master_exited;
+    if (master_exited >= 0) {
+        last_success = GetTimerMS();
+        timed_out = 0;
+    } else {
+        master_exited = 0;
+        timed_out |= GetTimerMS() - last_success > 30000;
+    }
+
+    return timed_out ? -1 : master_exited;
 }
 #endif

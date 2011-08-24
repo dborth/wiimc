@@ -26,7 +26,7 @@
 
 #if !defined(_MSC_VER) && !defined(GEKKO)
 #include <sys/param.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #else
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 255

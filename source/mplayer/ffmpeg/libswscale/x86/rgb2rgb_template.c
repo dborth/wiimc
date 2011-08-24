@@ -30,14 +30,7 @@
 #undef MOVNTQ
 #undef EMMS
 #undef SFENCE
-#undef MMREG_SIZE
 #undef PAVGB
-
-#if COMPILE_TEMPLATE_SSE2
-#define MMREG_SIZE 16
-#else
-#define MMREG_SIZE 8
-#endif
 
 #if COMPILE_TEMPLATE_AMD3DNOW
 #define PREFETCH  "prefetch"
@@ -64,7 +57,11 @@
 #define SFENCE " # nop"
 #endif
 
-static inline void RENAME(rgb24tobgr32)(const uint8_t *src, uint8_t *dst, long src_size)
+#if !COMPILE_TEMPLATE_SSE2
+
+#if !COMPILE_TEMPLATE_AMD3DNOW
+
+static inline void RENAME(rgb24tobgr32)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     uint8_t *dest = dst;
     const uint8_t *s = src;
@@ -146,7 +143,7 @@ static inline void RENAME(rgb24tobgr32)(const uint8_t *src, uint8_t *dst, long s
             MOVNTQ"     %%mm4, 16%0"
 
 
-static inline void RENAME(rgb32tobgr24)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb32tobgr24)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     uint8_t *dest = dst;
     const uint8_t *s = src;
@@ -189,7 +186,7 @@ static inline void RENAME(rgb32tobgr24)(const uint8_t *src, uint8_t *dst, long s
  MMX2, 3DNOW optimization by Nick Kurshev
  32-bit C version, and and&add trick by Michael Niedermayer
 */
-static inline void RENAME(rgb15to16)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb15to16)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     register const uint8_t* s=src;
     register uint8_t* d=dst;
@@ -233,7 +230,7 @@ static inline void RENAME(rgb15to16)(const uint8_t *src, uint8_t *dst, long src_
     }
 }
 
-static inline void RENAME(rgb16to15)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb16to15)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     register const uint8_t* s=src;
     register uint8_t* d=dst;
@@ -282,7 +279,7 @@ static inline void RENAME(rgb16to15)(const uint8_t *src, uint8_t *dst, long src_
     }
 }
 
-static inline void RENAME(rgb32to16)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb32to16)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint8_t *s = src;
     const uint8_t *end;
@@ -374,7 +371,7 @@ static inline void RENAME(rgb32to16)(const uint8_t *src, uint8_t *dst, long src_
     }
 }
 
-static inline void RENAME(rgb32tobgr16)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb32tobgr16)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint8_t *s = src;
     const uint8_t *end;
@@ -429,7 +426,7 @@ static inline void RENAME(rgb32tobgr16)(const uint8_t *src, uint8_t *dst, long s
     }
 }
 
-static inline void RENAME(rgb32to15)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb32to15)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint8_t *s = src;
     const uint8_t *end;
@@ -521,7 +518,7 @@ static inline void RENAME(rgb32to15)(const uint8_t *src, uint8_t *dst, long src_
     }
 }
 
-static inline void RENAME(rgb32tobgr15)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb32tobgr15)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint8_t *s = src;
     const uint8_t *end;
@@ -576,7 +573,7 @@ static inline void RENAME(rgb32tobgr15)(const uint8_t *src, uint8_t *dst, long s
     }
 }
 
-static inline void RENAME(rgb24tobgr16)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb24tobgr16)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint8_t *s = src;
     const uint8_t *end;
@@ -633,7 +630,7 @@ static inline void RENAME(rgb24tobgr16)(const uint8_t *src, uint8_t *dst, long s
     }
 }
 
-static inline void RENAME(rgb24to16)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb24to16)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint8_t *s = src;
     const uint8_t *end;
@@ -690,7 +687,7 @@ static inline void RENAME(rgb24to16)(const uint8_t *src, uint8_t *dst, long src_
     }
 }
 
-static inline void RENAME(rgb24tobgr15)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb24tobgr15)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint8_t *s = src;
     const uint8_t *end;
@@ -747,7 +744,7 @@ static inline void RENAME(rgb24tobgr15)(const uint8_t *src, uint8_t *dst, long s
     }
 }
 
-static inline void RENAME(rgb24to15)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb24to15)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint8_t *s = src;
     const uint8_t *end;
@@ -825,7 +822,7 @@ static inline void RENAME(rgb24to15)(const uint8_t *src, uint8_t *dst, long src_
        |
    original bits
 */
-static inline void RENAME(rgb15tobgr24)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb15tobgr24)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint16_t *end;
     const uint16_t *mm_end;
@@ -928,7 +925,7 @@ static inline void RENAME(rgb15tobgr24)(const uint8_t *src, uint8_t *dst, long s
     }
 }
 
-static inline void RENAME(rgb16tobgr24)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb16tobgr24)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint16_t *end;
     const uint16_t *mm_end;
@@ -1049,7 +1046,7 @@ static inline void RENAME(rgb16tobgr24)(const uint8_t *src, uint8_t *dst, long s
     MOVNTQ"     %%mm0,  %0      \n\t"                               \
     MOVNTQ"     %%mm3, 8%0      \n\t"                               \
 
-static inline void RENAME(rgb15to32)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb15to32)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint16_t *end;
     const uint16_t *mm_end;
@@ -1091,7 +1088,7 @@ static inline void RENAME(rgb15to32)(const uint8_t *src, uint8_t *dst, long src_
     }
 }
 
-static inline void RENAME(rgb16to32)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb16to32)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     const uint16_t *end;
     const uint16_t *mm_end;
@@ -1133,7 +1130,7 @@ static inline void RENAME(rgb16to32)(const uint8_t *src, uint8_t *dst, long src_
     }
 }
 
-static inline void RENAME(shuffle_bytes_2103)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(shuffle_bytes_2103)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     x86_reg idx = 15 - src_size;
     const uint8_t *s = src-idx;
@@ -1195,7 +1192,7 @@ static inline void RENAME(shuffle_bytes_2103)(const uint8_t *src, uint8_t *dst, 
     }
 }
 
-static inline void RENAME(rgb24tobgr24)(const uint8_t *src, uint8_t *dst, long src_size)
+static inline void RENAME(rgb24tobgr24)(const uint8_t *src, uint8_t *dst, int src_size)
 {
     unsigned i;
     x86_reg mmx_size= 23 - src_size;
@@ -1263,10 +1260,10 @@ static inline void RENAME(rgb24tobgr24)(const uint8_t *src, uint8_t *dst, long s
 }
 
 static inline void RENAME(yuvPlanartoyuy2)(const uint8_t *ysrc, const uint8_t *usrc, const uint8_t *vsrc, uint8_t *dst,
-                                           long width, long height,
-                                           long lumStride, long chromStride, long dstStride, long vertLumPerChroma)
+                                           int width, int height,
+                                           int lumStride, int chromStride, int dstStride, int vertLumPerChroma)
 {
-    long y;
+    int y;
     const x86_reg chromWidth= width>>1;
     for (y=0; y<height; y++) {
         //FIXME handle 2 lines at once (fewer prefetches, reuse some chroma, but very likely memory-limited anyway)
@@ -1320,18 +1317,18 @@ static inline void RENAME(yuvPlanartoyuy2)(const uint8_t *ysrc, const uint8_t *u
  * (If this is a problem for anyone then tell me, and I will fix it.)
  */
 static inline void RENAME(yv12toyuy2)(const uint8_t *ysrc, const uint8_t *usrc, const uint8_t *vsrc, uint8_t *dst,
-                                      long width, long height,
-                                      long lumStride, long chromStride, long dstStride)
+                                      int width, int height,
+                                      int lumStride, int chromStride, int dstStride)
 {
     //FIXME interpolate chroma
     RENAME(yuvPlanartoyuy2)(ysrc, usrc, vsrc, dst, width, height, lumStride, chromStride, dstStride, 2);
 }
 
 static inline void RENAME(yuvPlanartouyvy)(const uint8_t *ysrc, const uint8_t *usrc, const uint8_t *vsrc, uint8_t *dst,
-                                           long width, long height,
-                                           long lumStride, long chromStride, long dstStride, long vertLumPerChroma)
+                                           int width, int height,
+                                           int lumStride, int chromStride, int dstStride, int vertLumPerChroma)
 {
-    long y;
+    int y;
     const x86_reg chromWidth= width>>1;
     for (y=0; y<height; y++) {
         //FIXME handle 2 lines at once (fewer prefetches, reuse some chroma, but very likely memory-limited anyway)
@@ -1385,8 +1382,8 @@ static inline void RENAME(yuvPlanartouyvy)(const uint8_t *ysrc, const uint8_t *u
  * (If this is a problem for anyone then tell me, and I will fix it.)
  */
 static inline void RENAME(yv12touyvy)(const uint8_t *ysrc, const uint8_t *usrc, const uint8_t *vsrc, uint8_t *dst,
-                                      long width, long height,
-                                      long lumStride, long chromStride, long dstStride)
+                                      int width, int height,
+                                      int lumStride, int chromStride, int dstStride)
 {
     //FIXME interpolate chroma
     RENAME(yuvPlanartouyvy)(ysrc, usrc, vsrc, dst, width, height, lumStride, chromStride, dstStride, 2);
@@ -1396,8 +1393,8 @@ static inline void RENAME(yv12touyvy)(const uint8_t *ysrc, const uint8_t *usrc, 
  * Width should be a multiple of 16.
  */
 static inline void RENAME(yuv422ptouyvy)(const uint8_t *ysrc, const uint8_t *usrc, const uint8_t *vsrc, uint8_t *dst,
-                                         long width, long height,
-                                         long lumStride, long chromStride, long dstStride)
+                                         int width, int height,
+                                         int lumStride, int chromStride, int dstStride)
 {
     RENAME(yuvPlanartouyvy)(ysrc, usrc, vsrc, dst, width, height, lumStride, chromStride, dstStride, 1);
 }
@@ -1406,8 +1403,8 @@ static inline void RENAME(yuv422ptouyvy)(const uint8_t *ysrc, const uint8_t *usr
  * Width should be a multiple of 16.
  */
 static inline void RENAME(yuv422ptoyuy2)(const uint8_t *ysrc, const uint8_t *usrc, const uint8_t *vsrc, uint8_t *dst,
-                                         long width, long height,
-                                         long lumStride, long chromStride, long dstStride)
+                                         int width, int height,
+                                         int lumStride, int chromStride, int dstStride)
 {
     RENAME(yuvPlanartoyuy2)(ysrc, usrc, vsrc, dst, width, height, lumStride, chromStride, dstStride, 1);
 }
@@ -1417,10 +1414,10 @@ static inline void RENAME(yuv422ptoyuy2)(const uint8_t *ysrc, const uint8_t *usr
  * (If this is a problem for anyone then tell me, and I will fix it.)
  */
 static inline void RENAME(yuy2toyv12)(const uint8_t *src, uint8_t *ydst, uint8_t *udst, uint8_t *vdst,
-                                      long width, long height,
-                                      long lumStride, long chromStride, long srcStride)
+                                      int width, int height,
+                                      int lumStride, int chromStride, int srcStride)
 {
-    long y;
+    int y;
     const x86_reg chromWidth= width>>1;
     for (y=0; y<height; y+=2) {
         __asm__ volatile(
@@ -1513,10 +1510,12 @@ static inline void RENAME(yuy2toyv12)(const uint8_t *src, uint8_t *ydst, uint8_t
                      SFENCE"     \n\t"
                      :::"memory");
 }
+#endif /* !COMPILE_TEMPLATE_AMD3DNOW */
 
-static inline void RENAME(planar2x)(const uint8_t *src, uint8_t *dst, long srcWidth, long srcHeight, long srcStride, long dstStride)
+#if COMPILE_TEMPLATE_MMX2 || COMPILE_TEMPLATE_AMD3DNOW
+static inline void RENAME(planar2x)(const uint8_t *src, uint8_t *dst, int srcWidth, int srcHeight, int srcStride, int dstStride)
 {
-    long x,y;
+    int x,y;
 
     dst[0]= src[0];
 
@@ -1530,7 +1529,6 @@ static inline void RENAME(planar2x)(const uint8_t *src, uint8_t *dst, long srcWi
     dst+= dstStride;
 
     for (y=1; y<srcHeight; y++) {
-#if COMPILE_TEMPLATE_MMX2 || COMPILE_TEMPLATE_AMD3DNOW
         const x86_reg mmxSize= srcWidth&~15;
         __asm__ volatile(
             "mov           %4, %%"REG_a"            \n\t"
@@ -1564,17 +1562,10 @@ static inline void RENAME(planar2x)(const uint8_t *src, uint8_t *dst, long srcWi
             "punpckhbw              %%mm3, %%mm7    \n\t"
             "punpcklbw              %%mm2, %%mm4    \n\t"
             "punpckhbw              %%mm2, %%mm6    \n\t"
-#if 1
             MOVNTQ"                 %%mm5,  (%2, %%"REG_a", 2)  \n\t"
             MOVNTQ"                 %%mm7, 8(%2, %%"REG_a", 2)  \n\t"
             MOVNTQ"                 %%mm4,  (%3, %%"REG_a", 2)  \n\t"
             MOVNTQ"                 %%mm6, 8(%3, %%"REG_a", 2)  \n\t"
-#else
-            "movq                   %%mm5,  (%2, %%"REG_a", 2)  \n\t"
-            "movq                   %%mm7, 8(%2, %%"REG_a", 2)  \n\t"
-            "movq                   %%mm4,  (%3, %%"REG_a", 2)  \n\t"
-            "movq                   %%mm6, 8(%3, %%"REG_a", 2)  \n\t"
-#endif
             "add                       $8, %%"REG_a"            \n\t"
             "movq       -1(%0, %%"REG_a"), %%mm4    \n\t"
             "movq       -1(%1, %%"REG_a"), %%mm5    \n\t"
@@ -1584,12 +1575,6 @@ static inline void RENAME(planar2x)(const uint8_t *src, uint8_t *dst, long srcWi
                "g" (-mmxSize)
             : "%"REG_a
         );
-#else
-        const x86_reg mmxSize=1;
-
-        dst[0        ]= (3*src[0] +   src[srcStride])>>2;
-        dst[dstStride]= (  src[0] + 3*src[srcStride])>>2;
-#endif
 
         for (x=mmxSize-1; x<srcWidth-1; x++) {
             dst[2*x          +1]= (3*src[x+0] +   src[x+srcStride+1])>>2;
@@ -1605,7 +1590,6 @@ static inline void RENAME(planar2x)(const uint8_t *src, uint8_t *dst, long srcWi
     }
 
     // last line
-#if 1
     dst[0]= src[0];
 
     for (x=0; x<srcWidth-1; x++) {
@@ -1613,18 +1597,14 @@ static inline void RENAME(planar2x)(const uint8_t *src, uint8_t *dst, long srcWi
         dst[2*x+2]= (  src[x] + 3*src[x+1])>>2;
     }
     dst[2*srcWidth-1]= src[srcWidth-1];
-#else
-    for (x=0; x<srcWidth; x++) {
-        dst[2*x+0]=
-        dst[2*x+1]= src[x];
-    }
-#endif
 
     __asm__ volatile(EMMS"       \n\t"
                      SFENCE"     \n\t"
                      :::"memory");
 }
+#endif /* COMPILE_TEMPLATE_MMX2 || COMPILE_TEMPLATE_AMD3DNOW */
 
+#if !COMPILE_TEMPLATE_AMD3DNOW
 /**
  * Height should be a multiple of 2 and width should be a multiple of 16.
  * (If this is a problem for anyone then tell me, and I will fix it.)
@@ -1632,10 +1612,10 @@ static inline void RENAME(planar2x)(const uint8_t *src, uint8_t *dst, long srcWi
  * FIXME: Write HQ version.
  */
 static inline void RENAME(uyvytoyv12)(const uint8_t *src, uint8_t *ydst, uint8_t *udst, uint8_t *vdst,
-                                      long width, long height,
-                                      long lumStride, long chromStride, long srcStride)
+                                      int width, int height,
+                                      int lumStride, int chromStride, int srcStride)
 {
-    long y;
+    int y;
     const x86_reg chromWidth= width>>1;
     for (y=0; y<height; y+=2) {
         __asm__ volatile(
@@ -1728,6 +1708,7 @@ static inline void RENAME(uyvytoyv12)(const uint8_t *src, uint8_t *ydst, uint8_t
                      SFENCE"     \n\t"
                      :::"memory");
 }
+#endif /* !COMPILE_TEMPLATE_AMD3DNOW */
 
 /**
  * Height should be a multiple of 2 and width should be a multiple of 2.
@@ -1737,13 +1718,13 @@ static inline void RENAME(uyvytoyv12)(const uint8_t *src, uint8_t *ydst, uint8_t
  * FIXME: Write HQ version.
  */
 static inline void RENAME(rgb24toyv12)(const uint8_t *src, uint8_t *ydst, uint8_t *udst, uint8_t *vdst,
-                                       long width, long height,
-                                       long lumStride, long chromStride, long srcStride)
+                                       int width, int height,
+                                       int lumStride, int chromStride, int srcStride)
 {
-    long y;
+    int y;
     const x86_reg chromWidth= width>>1;
     for (y=0; y<height-2; y+=2) {
-        long i;
+        int i;
         for (i=0; i<2; i++) {
             __asm__ volatile(
                 "mov                        %2, %%"REG_a"   \n\t"
@@ -1976,62 +1957,19 @@ static inline void RENAME(rgb24toyv12)(const uint8_t *src, uint8_t *ydst, uint8_
                      SFENCE"     \n\t"
                      :::"memory");
 
-    for (; y<height; y+=2) {
-        long i;
-        for (i=0; i<chromWidth; i++) {
-            unsigned int b = src[6*i+0];
-            unsigned int g = src[6*i+1];
-            unsigned int r = src[6*i+2];
-
-            unsigned int Y  =  ((RY*r + GY*g + BY*b)>>RGB2YUV_SHIFT) + 16;
-            unsigned int V  =  ((RV*r + GV*g + BV*b)>>RGB2YUV_SHIFT) + 128;
-            unsigned int U  =  ((RU*r + GU*g + BU*b)>>RGB2YUV_SHIFT) + 128;
-
-            udst[i]     = U;
-            vdst[i]     = V;
-            ydst[2*i]   = Y;
-
-            b = src[6*i+3];
-            g = src[6*i+4];
-            r = src[6*i+5];
-
-            Y  =  ((RY*r + GY*g + BY*b)>>RGB2YUV_SHIFT) + 16;
-            ydst[2*i+1]     = Y;
-        }
-        ydst += lumStride;
-        src  += srcStride;
-
-        for (i=0; i<chromWidth; i++) {
-            unsigned int b = src[6*i+0];
-            unsigned int g = src[6*i+1];
-            unsigned int r = src[6*i+2];
-
-            unsigned int Y  =  ((RY*r + GY*g + BY*b)>>RGB2YUV_SHIFT) + 16;
-
-            ydst[2*i]     = Y;
-
-            b = src[6*i+3];
-            g = src[6*i+4];
-            r = src[6*i+5];
-
-            Y  =  ((RY*r + GY*g + BY*b)>>RGB2YUV_SHIFT) + 16;
-            ydst[2*i+1]     = Y;
-        }
-        udst += chromStride;
-        vdst += chromStride;
-        ydst += lumStride;
-        src  += srcStride;
-    }
+     rgb24toyv12_c(src, ydst, udst, vdst, width, height-y, lumStride, chromStride, srcStride);
 }
+#endif /* !COMPILE_TEMPLATE_SSE2 */
 
+#if !COMPILE_TEMPLATE_AMD3DNOW
 static void RENAME(interleaveBytes)(const uint8_t *src1, const uint8_t *src2, uint8_t *dest,
-                                    long width, long height, long src1Stride,
-                                    long src2Stride, long dstStride)
+                                    int width, int height, int src1Stride,
+                                    int src2Stride, int dstStride)
 {
-    long h;
+    int h;
 
     for (h=0; h < height; h++) {
-        long w;
+        int w;
 
 #if COMPILE_TEMPLATE_SSE2
         __asm__(
@@ -2093,15 +2031,18 @@ static void RENAME(interleaveBytes)(const uint8_t *src1, const uint8_t *src2, ui
             ::: "memory"
             );
 }
+#endif /* !COMPILE_TEMPLATE_AMD3DNOW */
 
+#if !COMPILE_TEMPLATE_SSE2
+#if !COMPILE_TEMPLATE_AMD3DNOW
 static inline void RENAME(vu9_to_vu12)(const uint8_t *src1, const uint8_t *src2,
                                        uint8_t *dst1, uint8_t *dst2,
-                                       long width, long height,
-                                       long srcStride1, long srcStride2,
-                                       long dstStride1, long dstStride2)
+                                       int width, int height,
+                                       int srcStride1, int srcStride2,
+                                       int dstStride1, int dstStride2)
 {
     x86_reg y;
-    long x,w,h;
+    int x,w,h;
     w=width/2; h=height/2;
     __asm__ volatile(
         PREFETCH" %0    \n\t"
@@ -2190,12 +2131,12 @@ static inline void RENAME(vu9_to_vu12)(const uint8_t *src1, const uint8_t *src2,
 
 static inline void RENAME(yvu9_to_yuy2)(const uint8_t *src1, const uint8_t *src2, const uint8_t *src3,
                                         uint8_t *dst,
-                                        long width, long height,
-                                        long srcStride1, long srcStride2,
-                                        long srcStride3, long dstStride)
+                                        int width, int height,
+                                        int srcStride1, int srcStride2,
+                                        int srcStride3, int dstStride)
 {
     x86_reg x;
-    long y,w,h;
+    int y,w,h;
     w=width/2; h=height;
     for (y=0;y<h;y++) {
         const uint8_t* yp=src1+srcStride1*y;
@@ -2256,7 +2197,7 @@ static inline void RENAME(yvu9_to_yuy2)(const uint8_t *src1, const uint8_t *src2
                 :"memory");
         }
         for (; x<w; x++) {
-            const long x2 = x<<2;
+            const int x2 = x<<2;
             d[8*x+0] = yp[x2];
             d[8*x+1] = up[x];
             d[8*x+2] = yp[x2+1];
@@ -2273,6 +2214,7 @@ static inline void RENAME(yvu9_to_yuy2)(const uint8_t *src1, const uint8_t *src2
             ::: "memory"
         );
 }
+#endif /* !COMPILE_TEMPLATE_AMD3DNOW */
 
 static void RENAME(extract_even)(const uint8_t *src, uint8_t *dst, x86_reg count)
 {
@@ -2311,6 +2253,7 @@ static void RENAME(extract_even)(const uint8_t *src, uint8_t *dst, x86_reg count
     }
 }
 
+#if !COMPILE_TEMPLATE_AMD3DNOW
 static void RENAME(extract_even2)(const uint8_t *src, uint8_t *dst0, uint8_t *dst1, x86_reg count)
 {
     dst0+=   count;
@@ -2356,6 +2299,7 @@ static void RENAME(extract_even2)(const uint8_t *src, uint8_t *dst0, uint8_t *ds
         count++;
     }
 }
+#endif /* !COMPILE_TEMPLATE_AMD3DNOW */
 
 static void RENAME(extract_even2avg)(const uint8_t *src0, const uint8_t *src1, uint8_t *dst0, uint8_t *dst1, x86_reg count)
 {
@@ -2410,6 +2354,7 @@ static void RENAME(extract_even2avg)(const uint8_t *src0, const uint8_t *src1, u
     }
 }
 
+#if !COMPILE_TEMPLATE_AMD3DNOW
 static void RENAME(extract_odd2)(const uint8_t *src, uint8_t *dst0, uint8_t *dst1, x86_reg count)
 {
     dst0+=   count;
@@ -2456,6 +2401,7 @@ static void RENAME(extract_odd2)(const uint8_t *src, uint8_t *dst0, uint8_t *dst
         count++;
     }
 }
+#endif /* !COMPILE_TEMPLATE_AMD3DNOW */
 
 static void RENAME(extract_odd2avg)(const uint8_t *src0, const uint8_t *src1, uint8_t *dst0, uint8_t *dst1, x86_reg count)
 {
@@ -2513,11 +2459,11 @@ static void RENAME(extract_odd2avg)(const uint8_t *src0, const uint8_t *src1, ui
 }
 
 static void RENAME(yuyvtoyuv420)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, const uint8_t *src,
-                                 long width, long height,
-                                 long lumStride, long chromStride, long srcStride)
+                                 int width, int height,
+                                 int lumStride, int chromStride, int srcStride)
 {
-    long y;
-    const long chromWidth= -((-width)>>1);
+    int y;
+    const int chromWidth= -((-width)>>1);
 
     for (y=0; y<height; y++) {
         RENAME(extract_even)(src, ydst, width);
@@ -2537,12 +2483,13 @@ static void RENAME(yuyvtoyuv420)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, co
         );
 }
 
+#if !COMPILE_TEMPLATE_AMD3DNOW
 static void RENAME(yuyvtoyuv422)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, const uint8_t *src,
-                                 long width, long height,
-                                 long lumStride, long chromStride, long srcStride)
+                                 int width, int height,
+                                 int lumStride, int chromStride, int srcStride)
 {
-    long y;
-    const long chromWidth= -((-width)>>1);
+    int y;
+    const int chromWidth= -((-width)>>1);
 
     for (y=0; y<height; y++) {
         RENAME(extract_even)(src, ydst, width);
@@ -2559,13 +2506,14 @@ static void RENAME(yuyvtoyuv422)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, co
             ::: "memory"
         );
 }
+#endif /* !COMPILE_TEMPLATE_AMD3DNOW */
 
 static void RENAME(uyvytoyuv420)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, const uint8_t *src,
-                                 long width, long height,
-                                 long lumStride, long chromStride, long srcStride)
+                                 int width, int height,
+                                 int lumStride, int chromStride, int srcStride)
 {
-    long y;
-    const long chromWidth= -((-width)>>1);
+    int y;
+    const int chromWidth= -((-width)>>1);
 
     for (y=0; y<height; y++) {
         RENAME(extract_even)(src+1, ydst, width);
@@ -2585,12 +2533,13 @@ static void RENAME(uyvytoyuv420)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, co
         );
 }
 
+#if !COMPILE_TEMPLATE_AMD3DNOW
 static void RENAME(uyvytoyuv422)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, const uint8_t *src,
-                                 long width, long height,
-                                 long lumStride, long chromStride, long srcStride)
+                                 int width, int height,
+                                 int lumStride, int chromStride, int srcStride)
 {
-    long y;
-    const long chromWidth= -((-width)>>1);
+    int y;
+    const int chromWidth= -((-width)>>1);
 
     for (y=0; y<height; y++) {
         RENAME(extract_even)(src+1, ydst, width);
@@ -2607,9 +2556,13 @@ static void RENAME(uyvytoyuv422)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, co
             ::: "memory"
         );
 }
+#endif /* !COMPILE_TEMPLATE_AMD3DNOW */
+#endif /* !COMPILE_TEMPLATE_SSE2 */
 
 static inline void RENAME(rgb2rgb_init)(void)
 {
+#if !COMPILE_TEMPLATE_SSE2
+#if !COMPILE_TEMPLATE_AMD3DNOW
     rgb15to16          = RENAME(rgb15to16);
     rgb15tobgr24       = RENAME(rgb15tobgr24);
     rgb15to32          = RENAME(rgb15to32);
@@ -2633,14 +2586,22 @@ static inline void RENAME(rgb2rgb_init)(void)
     yuv422ptoyuy2      = RENAME(yuv422ptoyuy2);
     yuv422ptouyvy      = RENAME(yuv422ptouyvy);
     yuy2toyv12         = RENAME(yuy2toyv12);
-    planar2x           = RENAME(planar2x);
-    rgb24toyv12        = RENAME(rgb24toyv12);
-    interleaveBytes    = RENAME(interleaveBytes);
     vu9_to_vu12        = RENAME(vu9_to_vu12);
     yvu9_to_yuy2       = RENAME(yvu9_to_yuy2);
-
-    uyvytoyuv420       = RENAME(uyvytoyuv420);
     uyvytoyuv422       = RENAME(uyvytoyuv422);
-    yuyvtoyuv420       = RENAME(yuyvtoyuv420);
     yuyvtoyuv422       = RENAME(yuyvtoyuv422);
+#endif /* !COMPILE_TEMPLATE_SSE2 */
+
+#if COMPILE_TEMPLATE_MMX2 || COMPILE_TEMPLATE_AMD3DNOW
+    planar2x           = RENAME(planar2x);
+#endif /* COMPILE_TEMPLATE_MMX2 || COMPILE_TEMPLATE_AMD3DNOW */
+    rgb24toyv12        = RENAME(rgb24toyv12);
+
+    yuyvtoyuv420       = RENAME(yuyvtoyuv420);
+    uyvytoyuv420       = RENAME(uyvytoyuv420);
+#endif /* COMPILE_TEMPLATE_SSE2 */
+
+#if !COMPILE_TEMPLATE_AMD3DNOW
+    interleaveBytes    = RENAME(interleaveBytes);
+#endif /* !COMPILE_TEMPLATE_AMD3DNOW */
 }

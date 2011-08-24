@@ -40,7 +40,7 @@ char MPLAYER_CSSDIR[512];
 
 /* definitions needed by included libraries */
 #define HAVE_INTTYPES_H 1
-/* libmpeg2 + FFmpeg */
+/* libmpeg2 */
 
 /* libdvdcss */
 #define HAVE_ERRNO_H 1
@@ -63,12 +63,13 @@ char MPLAYER_CSSDIR[512];
 #undef HAVE_ALSA_ASOUNDLIB_H
 #define HAVE_ALTIVEC_H 0
 #define HAVE_MALLOC_H 1
-#undef HAVE_SYS_MMAN_H
+#define HAVE_SYS_MMAN_H 0
 #define MAP_FAILED ((void *) -1)
 #undef HAVE_SOUNDCARD_H
 #undef HAVE_SYS_ASOUNDLIB_H
 #undef HAVE_SYS_SOUNDCARD_H
 #undef HAVE_SYS_SYSINFO_H
+
 #undef HAVE_TERMIOS_H
 #undef HAVE_SYS_TERMIOS_H
 #define HAVE_WINSOCK2_H 0
@@ -85,10 +86,9 @@ char MPLAYER_CSSDIR[512];
 #undef HAVE_POSIX_SELECT
 #define HAVE_AUDIO_SELECT 1
 #define HAVE_SETENV 1
-#undef HAVE_SETMODE
+#define HAVE_SETMODE 0
 #undef HAVE_SHM
 #define HAVE_STRSEP 1
-#define HAVE_SWAB 1
 
 
 #undef HAVE_TERMCAP
@@ -109,7 +109,6 @@ char MPLAYER_CSSDIR[512];
 
 
 #define CONFIG_MEMALIGN_HACK 0
-#define NAMED_ASM_ARGS 1
 #undef CONFIG_PRIORITY
 
 
@@ -168,11 +167,11 @@ char MPLAYER_CSSDIR[512];
 #define HAVE_FAST_CMOV 0
 #define HAVE_CMOV 0
 #define HAVE_FAST_CLZ 1
-#define HAVE_PLD 0
 #define HAVE_ARMV5TE 0
 #define HAVE_ARMV6 0
 #define HAVE_ARMV6T2 0
 #define HAVE_ARMVFP 0
+#define HAVE_VFPV3 0
 #define HAVE_NEON 0
 #define HAVE_IWMMXT 0
 #define HAVE_MMI 0
@@ -373,7 +372,7 @@ char MPLAYER_CSSDIR[512];
 #undef CONFIG_XVR100
 #undef CONFIG_TGA
 #undef CONFIG_V4L2_DECODER
-#undef CONFIG_VDPAU
+#define CONFIG_VDPAU 0
 #undef CONFIG_VESA
 #undef CONFIG_VIDIX
 #undef CONFIG_VIDIX_DRV_CYBERBLADE
@@ -409,6 +408,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_FFMPEG 1
 #define CONFIG_FFMPEG_A 1
 
+
 #define CONFIG_DECODERS 1
 #define CONFIG_ENCODERS 0
 #define CONFIG_DEMUXERS 1
@@ -442,16 +442,17 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_PIC 0
 #define HAVE_POLL_H 0
 #define HAVE_POSIX_MEMALIGN 0
-#undef HAVE_PTHREADS
+#define HAVE_PTHREADS 0
 #define HAVE_ROUND 1
 #define HAVE_ROUNDF 1
-#define HAVE_TEN_OPERANDS 0
 #define HAVE_THREADS 0
+#define HAVE_TRUNC 1
 #define HAVE_TRUNCF 1
 #define HAVE_XFORM_ASM 0
 #define HAVE_XMM_CLOBBERS 0
 
 
+#define CONFIG_AUDIO_FLOAT 0
 #define CONFIG_FASTDIV 1
 #define CONFIG_FFSERVER 0
 #define CONFIG_GPL 1
@@ -464,10 +465,12 @@ char MPLAYER_CSSDIR[512];
 
 #define HAVE_ALIGNED_STACK 0
 #define HAVE_ATTRIBUTE_PACKED 1
+#define HAVE_AVX 0
 #define HAVE_GETHRTIME 0
 #define HAVE_INLINE_ASM 0
 #define HAVE_ISATTY 0
 #define HAVE_LDBRX 0
+#define HAVE_MAPVIEWOFFILE 0
 #define HAVE_PPC4XX 0
 #define HAVE_STRERROR_R 0
 #define HAVE_SYMVER_ASM_LABEL 0
@@ -478,7 +481,6 @@ char MPLAYER_CSSDIR[512];
 
 /* Some FFmpeg codecs depend on these. Enable them unconditionally for now. */
 #define CONFIG_AANDCT 1
-#define CONFIG_AC3DSP 1
 #define CONFIG_DCT 1
 #define CONFIG_DWT 1
 #define CONFIG_FFT 1
@@ -489,7 +491,6 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_LPC 1
 #define CONFIG_MDCT 1
 #define CONFIG_RDFT 1
-#define CONFIG_SINEWIN 1
 
 /* Use these registers in FFmpeg x86 inline asm. No proper detection yet. */
 #ifndef MP_DEBUG
@@ -498,10 +499,14 @@ char MPLAYER_CSSDIR[512];
 #define HAVE_EBP_AVAILABLE 0
 #endif
 
-#define LIBAV_CONFIGURATION "--enable-gpl --enable-postproc"
-#define LIBAV_LICENSE "GPL version 2 or later"
+#define FFMPEG_CONFIGURATION "--enable-gpl --enable-postproc"
+#define FFMPEG_LICENSE "GPL version 2 or later"
+
+#define LIBAV_CONFIGURATION FFMPEG_CONFIGURATION
+#define LIBAV_LICENSE FFMPEG_LICENSE
 
 /* External libraries used through FFmpeg. */
+#define CONFIG_CRYSTALHD 0
 #define CONFIG_LIBFAAC 0
 #define CONFIG_LIBDIRAC 0
 #define CONFIG_LIBGSM 0
@@ -552,6 +557,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_FFV1_DECODER 1
 #define CONFIG_FFVHUFF_DECODER 1
 #define CONFIG_FLASHSV_DECODER 1
+#define CONFIG_FLASHSV2_DECODER 1
 #define CONFIG_FLIC_DECODER 1
 #define CONFIG_FLV_DECODER 1
 #define CONFIG_FOURXM_DECODER 1
@@ -621,6 +627,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_RV20_DECODER 1
 #define CONFIG_RV30_DECODER 1
 #define CONFIG_RV40_DECODER 1
+#define CONFIG_S302M_DECODER 1
 #define CONFIG_SGI_DECODER 1
 #define CONFIG_SMACKER_DECODER 1
 #define CONFIG_SMC_DECODER 1
@@ -802,6 +809,8 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_ASV2_ENCODER 0
 #define CONFIG_BMP_ENCODER 0
 #define CONFIG_DNXHD_ENCODER 0
+#define CONFIG_DPX_ENCODER 0
+#define CONFIG_EAC3_ENCODER 0
 #define CONFIG_DVVIDEO_ENCODER 0
 #define CONFIG_FFV1_ENCODER 0
 #define CONFIG_FFVHUFF_ENCODER 0
@@ -925,6 +934,8 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_MPEGAUDIO_PARSER 1
 #define CONFIG_MPEGVIDEO_PARSER 1
 #define CONFIG_PNM_PARSER 1
+#define CONFIG_RV30_PARSER 1
+#define CONFIG_RV40_PARSER 1
 #define CONFIG_VC1_PARSER 1
 #define CONFIG_VP3_PARSER 1
 #define CONFIG_VP8_PARSER 1
@@ -1074,6 +1085,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_WTV_DEMUXER 1
 #define CONFIG_WV_DEMUXER 1
 #define CONFIG_XA_DEMUXER 1
+#define CONFIG_XMV_DEMUXER 1
 #define CONFIG_XWMA_DEMUXER 1
 #define CONFIG_YOP_DEMUXER 1
 #define CONFIG_YUV4MPEGPIPE_DEMUXER 1
@@ -1182,6 +1194,7 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_LIBNUT_MUXER 0
 #define CONFIG_APPLEHTTP_PROTOCOL 0
 #define CONFIG_CONCAT_PROTOCOL 0
+#define CONFIG_CRYPTO_PROTOCOL 0
 #define CONFIG_FILE_PROTOCOL 0
 #define CONFIG_GOPHER_PROTOCOL 0
 #define CONFIG_HTTP_PROTOCOL 0

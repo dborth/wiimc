@@ -30,6 +30,7 @@
  */
 
 #include "libavutil/intreadwrite.h"
+#include "libavutil/dict.h"
 #include "avformat.h"
 
 #define ID_8SVX       MKTAG('8','S','V','X')
@@ -106,7 +107,7 @@ static int get_metadata(AVFormatContext *s,
         return AVERROR(EIO);
     }
     buf[data_size] = 0;
-    av_metadata_set2(&s->metadata, tag, buf, AV_METADATA_DONT_STRDUP_VAL);
+    av_dict_set(&s->metadata, tag, buf, AV_DICT_DONT_STRDUP_VAL);
     return 0;
 }
 
@@ -315,10 +316,10 @@ static int iff_read_packet(AVFormatContext *s,
 }
 
 AVInputFormat ff_iff_demuxer = {
-    "IFF",
-    NULL_IF_CONFIG_SMALL("IFF format"),
-    sizeof(IffDemuxContext),
-    iff_probe,
-    iff_read_header,
-    iff_read_packet,
+    .name           = "IFF",
+    .long_name      = NULL_IF_CONFIG_SMALL("IFF format"),
+    .priv_data_size = sizeof(IffDemuxContext),
+    .read_probe     = iff_probe,
+    .read_header    = iff_read_header,
+    .read_packet    = iff_read_packet,
 };

@@ -90,7 +90,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (CYUV, cyuv);
     REGISTER_DECODER (DFA, dfa);
     REGISTER_ENCDEC  (DNXHD, dnxhd);
-    REGISTER_DECODER (DPX, dpx);
+    REGISTER_ENCDEC  (DPX, dpx);
     REGISTER_DECODER (DSICINVIDEO, dsicinvideo);
     REGISTER_ENCDEC  (DVVIDEO, dvvideo);
     REGISTER_DECODER (DXA, dxa);
@@ -106,6 +106,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (FFV1, ffv1);
     REGISTER_ENCDEC  (FFVHUFF, ffvhuff);
     REGISTER_ENCDEC  (FLASHSV, flashsv);
+    REGISTER_DECODER (FLASHSV2, flashsv2);
     REGISTER_DECODER (FLIC, flic);
     REGISTER_ENCDEC  (FLV, flv);
     REGISTER_DECODER (FOURXM, fourxm);
@@ -147,7 +148,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (MPEGVIDEO, mpegvideo);
     REGISTER_DECODER (MPEG_VDPAU, mpeg_vdpau);
     REGISTER_DECODER (MPEG1_VDPAU, mpeg1_vdpau);
-    REGISTER_ENCDEC  (MSMPEG4V1, msmpeg4v1);
+    REGISTER_DECODER (MSMPEG4V1, msmpeg4v1);
     REGISTER_ENCDEC  (MSMPEG4V2, msmpeg4v2);
     REGISTER_ENCDEC  (MSMPEG4V3, msmpeg4v3);
     REGISTER_DECODER (MSRLE, msrle);
@@ -177,6 +178,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (RV20, rv20);
     REGISTER_DECODER (RV30, rv30);
     REGISTER_DECODER (RV40, rv40);
+    REGISTER_DECODER (S302M, s302m);
     REGISTER_ENCDEC  (SGI, sgi);
     REGISTER_DECODER (SMACKER, smacker);
     REGISTER_DECODER (SMC, smc);
@@ -240,7 +242,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (COOK, cook);
     REGISTER_DECODER (DCA, dca);
     REGISTER_DECODER (DSICINAUDIO, dsicinaudio);
-    REGISTER_DECODER (EAC3, eac3);
+    REGISTER_ENCDEC  (EAC3, eac3);
     REGISTER_ENCDEC  (FLAC, flac);
     REGISTER_DECODER (GSM, gsm);
     REGISTER_DECODER (GSM_MS, gsm_ms);
@@ -394,6 +396,8 @@ void avcodec_register_all(void)
     REGISTER_PARSER  (MPEGAUDIO, mpegaudio);
     REGISTER_PARSER  (MPEGVIDEO, mpegvideo);
     REGISTER_PARSER  (PNM, pnm);
+    REGISTER_PARSER  (RV30, rv30);
+    REGISTER_PARSER  (RV40, rv40);
     REGISTER_PARSER  (VC1, vc1);
     REGISTER_PARSER  (VP3, vp3);
     REGISTER_PARSER  (VP8, vp8);

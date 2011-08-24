@@ -81,6 +81,7 @@ typedef enum
 	AUDIO_AAC	= mmioFOURCC('M', 'P', '4', 'A'),
 	AUDIO_AAC_LATM	= mmioFOURCC('M', 'P', '4', 'L'),
 	AUDIO_TRUEHD	= mmioFOURCC('T', 'R', 'H', 'D'),
+	AUDIO_S302M     = mmioFOURCC('B', 'S', 'S', 'D'),
 	SPU_DVD		= 0x3000000,
 	SPU_DVB		= 0x3000001,
 	SPU_TELETEXT	= 0x3000002,
@@ -261,6 +262,7 @@ static int IS_AUDIO(es_stream_type_t type)
 	case AUDIO_AAC_LATM:
 	case AUDIO_DTS:
 	case AUDIO_TRUEHD:
+	case AUDIO_S302M:
 		return 1;
 	}
 	return 0;
@@ -659,7 +661,7 @@ static int a52_check(char *buf, int len)
 
 static off_t ts_detect_streams(demuxer_t *demuxer, tsdemux_init_t *param)
 {
-	int video_found = 0, audio_found = 0, sub_found = 0, i, num_packets = 0, req_apid, req_vpid, req_spid;
+	int video_found = 0, audio_found = 0, i, num_packets = 0, req_apid, req_vpid, req_spid;
 	int is_audio, is_video, is_sub, has_tables;
 	int32_t p, chosen_pid = 0;
 	off_t pos=0, ret = 0, init_pos, end_pos;
@@ -826,7 +828,6 @@ static off_t ts_detect_streams(demuxer_t *demuxer, tsdemux_init_t *param)
 				{
 					param->stype = es.type;
 					param->spid = es.pid;
-					sub_found = 1;
 				}
 			}
 
@@ -894,12 +895,14 @@ static off_t ts_detect_streams(demuxer_t *demuxer, tsdemux_init_t *param)
 		mp_msg(MSGT_DEMUXER, MSGL_INFO, "AUDIO AAC LATM(pid=%d)", param->apid);
 	else if(param->atype == AUDIO_TRUEHD)
 		mp_msg(MSGT_DEMUXER, MSGL_INFO, "AUDIO TRUEHD(pid=%d)", param->apid);
+	else if(param->atype == AUDIO_S302M)
+		mp_msg(MSGT_DEMUXER, MSGL_INFO, "AUDIO S302M(pid=%d)", param->apid);
 	else
 	{
 		audio_found = 0;
 		param->atype = UNKNOWN;
 		//WE DIDN'T MATCH ANY AUDIO STREAM, SO WE FORCE THE DEMUXER TO IGNORE AUDIO
-		mp_msg(MSGT_DEMUXER, MSGL_INFO, "NO AUDIO! ");
+		mp_msg(MSGT_DEMUXER, MSGL_INFO, "NO AUDIO! (try increasing -tsprobe)");
 	}
 
 	if(IS_SUB(param->stype))
@@ -2354,6 +2357,10 @@ static int parse_descriptors(struct pmt_es_t *es, uint8_t *ptr)
 				else if(d[0] == 'd' && d[1] == 'r' && d[2] == 'a' && d[3] == 'c')
 				{
 					es->type = VIDEO_DIRAC;
+				}
+				else if(d[0] == 'B' && d[1] == 'S' && d[2] == 'S' && d[3] == 'D')
+				{
+					es->type = AUDIO_S302M;
 				}
 				else
 					es->type = UNKNOWN;

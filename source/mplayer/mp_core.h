@@ -42,6 +42,7 @@
 #define INITIALIZED_DEMUXER 512
 #define INITIALIZED_ACODEC  1024
 #define INITIALIZED_VCODEC  2048
+#define INITIALIZED_SUBS    4096
 #define INITIALIZED_ALL     0xFFFF
 
 
@@ -94,8 +95,6 @@ typedef struct MPContext {
     int startup_decode_retry;
     // how long until we need to display the "current" frame
     float time_frame;
-    // flag to indicate that we've found a correctly timed video frame PTS
-    int framestep_found;
 
     // AV sync: the next frame should be shown when the audio out has this
     // much (in seconds) buffered data left. Increased when more data is
@@ -147,12 +146,10 @@ extern int file_filter;
 // These appear in options list
 extern float playback_speed;
 extern int fixed_vo;
-extern int forced_subs_only;
 
 
 void uninit_player(unsigned int mask);
 void reinit_audio_chain(void);
-void init_vo_spudec(void);
 double playing_audio_pts(sh_audio_t *sh_audio, demux_stream_t *d_audio,
 			 const ao_functions_t *audio_out);
 void exit_player(enum exit_reason how);

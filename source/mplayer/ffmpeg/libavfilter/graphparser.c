@@ -83,8 +83,8 @@ static char *parse_link_name(const char **buf, AVClass *log_ctx)
  * Create an instance of a filter, initialize and insert it in the
  * filtergraph in *ctx.
  *
+ * @param filt_ctx put here a filter context in case of successful creation and configuration, NULL otherwise.
  * @param ctx the filtergraph context
- * @param put here a filter context in case of successful creation and configuration, NULL otherwise.
  * @param index an index which is supposed to be unique for each filter instance added to the filtergraph
  * @param filt_name the name of the filter to create
  * @param args the arguments provided to the filter during its initialization
@@ -121,7 +121,7 @@ static int create_filter(AVFilterContext **filt_ctx, AVFilterGraph *ctx, int ind
         return ret;
     }
 
-    if (!strcmp(filt_name, "scale") && !strstr(args, "flags")) {
+    if (!strcmp(filt_name, "scale") && args && !strstr(args, "flags")) {
         snprintf(tmp_args, sizeof(tmp_args), "%s:%s",
                  args, ctx->scale_sws_opts);
         args = tmp_args;
@@ -141,6 +141,8 @@ static int create_filter(AVFilterContext **filt_ctx, AVFilterGraph *ctx, int ind
  * corresponding filter instance which is added to graph with
  * create_filter().
  *
+ * @param filt_ctx Pointer that is set to the created and configured filter
+ *                 context on success, set to NULL on failure.
  * @param filt_ctx put here a pointer to the created filter context on
  * success, NULL otherwise
  * @param buf pointer to the buffer to parse, *buf will be updated to

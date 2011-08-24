@@ -95,7 +95,7 @@ static int draw_frame(uint8_t *src[])
 
 static int inline query_format(uint32_t format)
 {
-	if (mp_get_chroma_shift(format, NULL, NULL))	// Accept any planar YUV format.
+	if (mp_get_chroma_shift(format, NULL, NULL, NULL))	// Accept any planar YUV format.
 		return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW | VFCAP_OSD | VFCAP_HWSCALE_UP | VFCAP_HWSCALE_DOWN | VFCAP_ACCEPT_STRIDE | VOCAP_NOSLICES;
 	else return VO_FALSE;
 }
@@ -134,7 +134,7 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	vo_screenwidth = image_width;
 	
 	int xs, ys;
-	mp_get_chroma_shift(format, &xs, &ys);
+	mp_get_chroma_shift(format, &xs, &ys, NULL);
 	chroma_width=image_width >> xs;
 	chroma_height=image_height >> ys;
 	GX_AllocTextureMemory(image_width, image_height, chroma_width, chroma_height);
@@ -185,7 +185,7 @@ static int preinit(const char *arg)
 	return 0;
 }
 
-static int control(uint32_t request, void *data, ...)
+static int control(uint32_t request, void *data)
 {
 	switch (request)
 	{

@@ -259,10 +259,10 @@ static int decode_frame(AVCodecContext * avctx, void *data, int *data_size, AVPa
 
     if (header & KMVC_KEYFRAME) {
         ctx->pic.key_frame = 1;
-        ctx->pic.pict_type = FF_I_TYPE;
+        ctx->pic.pict_type = AV_PICTURE_TYPE_I;
     } else {
         ctx->pic.key_frame = 0;
-        ctx->pic.pict_type = FF_P_TYPE;
+        ctx->pic.pict_type = AV_PICTURE_TYPE_P;
     }
 
     if (header & KMVC_PALETTE) {
@@ -398,14 +398,13 @@ static av_cold int decode_end(AVCodecContext * avctx)
 }
 
 AVCodec ff_kmvc_decoder = {
-    "kmvc",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_KMVC,
-    sizeof(KmvcContext),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "kmvc",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_KMVC,
+    .priv_data_size = sizeof(KmvcContext),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Karl Morton's video codec"),
 };

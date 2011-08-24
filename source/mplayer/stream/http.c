@@ -711,7 +711,7 @@ http_debug_hdr( HTTP_header_t *http_hdr ) {
 	mp_msg(MSGT_NETWORK,MSGL_V,"method:             [%s]\n", http_hdr->method );
 	mp_msg(MSGT_NETWORK,MSGL_V,"status code:        [%d]\n", http_hdr->status_code );
 	mp_msg(MSGT_NETWORK,MSGL_V,"reason phrase:      [%s]\n", http_hdr->reason_phrase );
-	mp_msg(MSGT_NETWORK,MSGL_V,"body size:          [%zd]\n", http_hdr->body_size );
+	mp_msg(MSGT_NETWORK,MSGL_V,"body size:          [%zu]\n", http_hdr->body_size );
 
 	mp_msg(MSGT_NETWORK,MSGL_V,"Fields:\n");
 	field = http_hdr->first_field;
@@ -732,7 +732,7 @@ static void print_icy_metadata(HTTP_header_t *http_hdr) {
 		snprintf(streamname, 128, "%s", field_data);
 		streamname_changed = 1;
 #endif
-		}
+    }
 	if( (field_data = http_get_field(http_hdr, "icy-genre")) != NULL )
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Genre  : %s\n", field_data);
 	if( (field_data = http_get_field(http_hdr, "icy-url")) != NULL ) {
@@ -742,7 +742,7 @@ static void print_icy_metadata(HTTP_header_t *http_hdr) {
     	snprintf(streamurl, 128, "%s", field_data);
     	streamurl_changed = 1;
 #endif
-		}
+    }
 	if( (field_data = http_get_field(http_hdr, "icy-pub")) != NULL )
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Public : %s\n", atoi(field_data)?"yes":"no");
 	if( (field_data = http_get_field(http_hdr, "icy-br")) != NULL )

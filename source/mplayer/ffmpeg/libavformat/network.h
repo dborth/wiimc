@@ -21,7 +21,10 @@
 #ifndef AVFORMAT_NETWORK_H
 #define AVFORMAT_NETWORK_H
 
+#include <errno.h>
+
 #include "config.h"
+#include "libavutil/error.h"
 #include "os_support.h"
 
 #if HAVE_WINSOCK2_H
@@ -33,7 +36,8 @@
 #define ECONNREFUSED    WSAECONNREFUSED
 #define EINPROGRESS     WSAEINPROGRESS
 
-static inline int ff_neterrno() {
+static inline int ff_neterrno(void)
+{
     int err = WSAGetLastError();
     switch (err) {
     case WSAEWOULDBLOCK:
@@ -85,7 +89,7 @@ static inline int ff_network_wait_fd(int fd, int write)
     struct pollfd p = { .fd = fd, .events = ev, .revents = 0 };
     int ret;
     ret = poll(&p, 1, 100);
-    return ret < 0 ? ff_neterrno() : p.revents & ev ? 0 : AVERROR(EAGAIN);
+    return ret < 0 ? ff_neterrno() : p.revents & (ev | POLLERR | POLLHUP) ? 0 : AVERROR(EAGAIN);
 }
 #endif
 static inline void ff_network_close(void)

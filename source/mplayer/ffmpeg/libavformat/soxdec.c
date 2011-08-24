@@ -23,13 +23,15 @@
  */
 
 /**
- * SoX native format demuxer
  * @file
+ * SoX native format demuxer
  * @author Daniel Verkamp
- * @sa http://wiki.multimedia.cx/index.php?title=SoX_native_intermediate_format
+ * @see http://wiki.multimedia.cx/index.php?title=SoX_native_intermediate_format
  */
 
 #include "libavutil/intreadwrite.h"
+#include "libavutil/intfloat_readwrite.h"
+#include "libavutil/dict.h"
 #include "avformat.h"
 #include "pcm.h"
 #include "sox.h"
@@ -101,8 +103,8 @@ static int sox_read_header(AVFormatContext *s,
         }
         comment[comment_size] = 0;
 
-        av_metadata_set2(&s->metadata, "comment", comment,
-                               AV_METADATA_DONT_STRDUP_VAL);
+        av_dict_set(&s->metadata, "comment", comment,
+                               AV_DICT_DONT_STRDUP_VAL);
     }
 
     avio_skip(pb, header_size - SOX_FIXED_HDR - comment_size);
@@ -141,12 +143,10 @@ static int sox_read_packet(AVFormatContext *s,
 }
 
 AVInputFormat ff_sox_demuxer = {
-    "sox",
-    NULL_IF_CONFIG_SMALL("SoX native format"),
-    0,
-    sox_probe,
-    sox_read_header,
-    sox_read_packet,
-    NULL,
-    pcm_read_seek,
+    .name           = "sox",
+    .long_name      = NULL_IF_CONFIG_SMALL("SoX native format"),
+    .read_probe     = sox_probe,
+    .read_header    = sox_read_header,
+    .read_packet    = sox_read_packet,
+    .read_seek      = pcm_read_seek,
 };

@@ -66,6 +66,7 @@ library:
     @tab Used in Z and Z95 games.
 @item Brute Force & Ignorance   @tab   @tab X
     @tab Used in the game Flash Traffic: City of Angels.
+@item BWF                       @tab X @tab X
 @item Interplay C93             @tab   @tab X
     @tab Used in the game Cyberia from Interplay.
 @item Delphine Software International CIN @tab   @tab X
@@ -90,13 +91,13 @@ library:
 @item Electronic Arts cdata  @tab    @tab X
 @item Electronic Arts Multimedia  @tab    @tab X
     @tab Used in various EA games; files have extensions like WVE and UV2.
-@item FFM (FFserver live feed)  @tab X @tab X
+@item FFM (AVserver live feed)  @tab X @tab X
 @item Flash (SWF)               @tab X @tab X
 @item Flash 9 (AVM2)            @tab X @tab X
     @tab Only embedded audio is decoded.
 @item FLI/FLC/FLX animation     @tab   @tab X
     @tab .fli/.flc files
-@item Flash Video (FLV)         @tab   @tab X
+@item Flash Video (FLV)         @tab X @tab X
     @tab Macromedia Flash video files
 @item framecrc testing format   @tab X @tab
 @item FunCom ISS                @tab   @tab X
@@ -258,6 +259,8 @@ library:
     @tab Multimedia format used in Westwood Studios games.
 @item Westwood Studios VQA      @tab   @tab X
     @tab Multimedia format used in Westwood Studios games.
+@item XMV                       @tab   @tab X
+    @tab Microsoft video container used in Xbox games.
 @item xWMA                      @tab   @tab X
     @tab Microsoft audio container used by XAudio 2.
 @item YUV4MPEG pipe             @tab X @tab X
@@ -268,7 +271,7 @@ library:
 
 @section Image Formats
 
-FFmpeg can read and write images for each frame of a video sequence. The
+Libav can read and write images for each frame of a video sequence. The
 following image formats are supported:
 
 @multitable @columnfractions .4 .1 .1 .4
@@ -279,7 +282,7 @@ following image formats are supported:
     @tab Only uncompressed GIFs are generated.
 @item BMP          @tab X @tab X
     @tab Microsoft BMP image
-@item DPX          @tab   @tab X
+@item DPX          @tab X @tab X
     @tab Digital Picture Exchange
 @item JPEG         @tab X @tab X
     @tab Progressive JPEG is not supported.
@@ -400,6 +403,7 @@ following image formats are supported:
     @tab experimental lossless codec (fourcc: FFV1)
 @item Flash Screen Video v1  @tab  X  @tab  X
     @tab fourcc: FSV1
+@item Flash Screen Video v2  @tab     @tab  X
 @item Flash Video (FLV)      @tab  X  @tab  X
     @tab Sorenson H.263 used in Flash
 @item Fraps                  @tab     @tab  X
@@ -614,7 +618,7 @@ following image formats are supported:
     @tab Used in Origin's Wing Commander IV AVI files.
 @item DSP Group TrueSpeech   @tab     @tab  X
 @item DV audio               @tab     @tab  X
-@item Enhanced AC-3          @tab     @tab  X
+@item Enhanced AC-3          @tab  X  @tab  X
 @item FLAC (Free Lossless Audio Codec)  @tab  X  @tab  IX
 @item GSM                    @tab  E  @tab  X
     @tab encoding supported through external library libgsm
@@ -673,6 +677,7 @@ following image formats are supported:
 @item Sierra VMD audio       @tab     @tab  X
     @tab Used in Sierra VMD files.
 @item Smacker audio          @tab     @tab  X
+@item SMPTE 302M AES3 audio  @tab     @tab  X
 @item Speex                  @tab     @tab  E
     @tab supported through external library libspeex
 @item True Audio (TTA)       @tab     @tab  X
@@ -753,12 +758,6 @@ performance on systems without hardware floating point support).
 
 Using a cross-compiler is preferred for various reasons.
 
-@subsection DJGPP
-
-Libav cannot be compiled because of broken system headers, add
-@code{--extra-cflags=-U__STRICT_ANSI__} to the configure options as a
-workaround.
-
 @section OS/2
 
 For information about compiling Libav on OS/2 see
@@ -783,14 +782,6 @@ to configure.
 
 BSD make will not build Libav, you need to install and use GNU Make
 (@file{gmake}).
-
-@subsubsection FreeBSD
-
-FreeBSD will not compile out-of-the-box due to broken system headers.
-Passing @code{--extra-cflags=-D__BSD_VISIBLE} to configure will work
-around the problem. This may have unexpected sideeffects, so use it at
-your own risk. If you care about FreeBSD, please make an attempt at
-getting the system headers fixed.
 
 @subsection (Open)Solaris
 
@@ -838,18 +829,6 @@ are listed below:
 Libav automatically passes @code{-fno-common} to the compiler to work around
 a GCC bug (see @url{http://gcc.gnu.org/bugzilla/show_bug.cgi?id=37216}).
 
-Within the MSYS shell, configure and make with:
-
-@example
-./configure --enable-memalign-hack
-make
-make install
-@end example
-
-This will install @file{ffmpeg.exe} along with many other development files
-to @file{/usr/local}. You may specify another install path using the
-@code{--prefix} option in @file{configure}.
-
 Notes:
 
 @itemize
@@ -860,8 +839,8 @@ speed up is close to non-existent for normal one-off builds and is only
 noticeable when running make for a second time (for example in
 @code{make install}).
 
-@item In order to compile FFplay, you must have the MinGW development library
-of SDL. Get it from @url{http://www.libsdl.org}.
+@item In order to compile AVplay, you must have the MinGW development library
+of @uref{http://www.libsdl.org/, SDL}.
 Edit the @file{bin/sdl-config} script so that it points to the correct prefix
 where SDL was installed. Verify that @file{sdl-config} can be launched from
 the MSYS command line.
@@ -948,33 +927,10 @@ Libav, so you must add this line before @code{#include}ing libav*:
 
 This is how to create DLL and LIB files that are compatible with MSVC++:
 
-@enumerate
-
-@item Add a call to @file{vcvars32.bat} (which sets up the environment
-variables for the Visual C++ tools) as the first line of @file{msys.bat}.
-The standard location for @file{vcvars32.bat} is
-@file{C:\Program Files\Microsoft Visual Studio 8\VC\bin\vcvars32.bat},
-and the standard location for @file{msys.bat} is @file{C:\msys\1.0\msys.bat}.
-If this corresponds to your setup, add the following line as the first line
-of @file{msys.bat}:
+Within the MSYS shell, build Libav with
 
 @example
-call "C:\Program Files\Microsoft Visual Studio 8\VC\bin\vcvars32.bat"
-@end example
-
-Alternatively, you may start the @file{Visual Studio 2005 Command Prompt},
-and run @file{c:\msys\1.0\msys.bat} from there.
-
-@item Within the MSYS shell, run @code{lib.exe}. If you get a help message
-from @file{Microsoft (R) Library Manager}, this means your environment
-variables are set up correctly, the @file{Microsoft (R) Library Manager}
-is on the path and will be used by Libav to create
-MSVC++-compatible import libraries.
-
-@item Build Libav with
-
-@example
-./configure --enable-shared --enable-memalign-hack
+./configure --enable-shared
 make
 make install
 @end example
@@ -982,7 +938,8 @@ make install
 Your install path (@file{/usr/local/} by default) should now have the
 necessary DLL and LIB files under the @file{bin} directory.
 
-@end enumerate
+Alternatively, build the libraries with a cross compiler, according to
+the instructions below in @ref{Cross compilation for Windows with Linux}.
 
 To use those files with MSVC++, do the same as you would do with
 the static libraries, as described above. But in Step 4,
@@ -995,10 +952,7 @@ libraries (@file{libxxx.a} files) you should add the MSVC import libraries
 libraries (@file{libxxx.dll.a} files), as these will give you undefined
 reference errors. There should be no need for @file{libmingwex.a},
 @file{libgcc.a}, and @file{wsock32.lib}, nor any other external library
-statically linked into the DLLs. The @file{bin} directory contains a bunch
-of DLL files, but the ones that are actually used to run your application
-are the ones with a major version number in their filenames
-(i.e. @file{avcodec-51.dll}).
+statically linked into the DLLs.
 
 Libav headers do not declare global data for Windows DLLs through the usual
 dllexport/dllimport interface. Such data will be exported properly while
@@ -1011,10 +965,41 @@ extern __declspec(dllimport) const AVPixFmtDescriptor av_pix_fmt_descriptors[];
 
 Note that using import libraries created by dlltool requires
 the linker optimization option to be set to
-"References: Keep Unreferenced Data (/OPT:NOREF)", otherwise
+"References: Keep Unreferenced Data (@code{/OPT:NOREF})", otherwise
 the resulting binaries will fail during runtime. This isn't
 required when using import libraries generated by lib.exe.
+This issue is reported upstream at
+@url{http://sourceware.org/bugzilla/show_bug.cgi?id=12633}.
 
+To create import libraries that work with the @code{/OPT:REF} option
+(which is enabled by default in Release mode), follow these steps:
+
+@enumerate
+
+@item Open @file{Visual Studio 2005 Command Prompt}.
+
+Alternatively, in a normal command line prompt, call @file{vcvars32.bat}
+which sets up the environment variables for the Visual C++ tools
+(the standard location for this file is
+@file{C:\Program Files\Microsoft Visual Studio 8\VC\bin\vcvars32.bat}).
+
+@item Enter the @file{bin} directory where the created LIB and DLL files
+are stored.
+
+@item Generate new import libraries with @file{lib.exe}:
+
+@example
+lib /machine:i386 /def:..\lib\avcodec-53.def  /out:avcodec.lib
+lib /machine:i386 /def:..\lib\avdevice-53.def /out:avdevice.lib
+lib /machine:i386 /def:..\lib\avfilter-2.def  /out:avfilter.lib
+lib /machine:i386 /def:..\lib\avformat-53.def /out:avformat.lib
+lib /machine:i386 /def:..\lib\avutil-51.def   /out:avutil.lib
+lib /machine:i386 /def:..\lib\swscale-2.def   /out:swscale.lib
+@end example
+
+@end enumerate
+
+@anchor{Cross compilation for Windows with Linux}
 @subsection Cross compilation for Windows with Linux
 
 You must use the MinGW cross compilation tools available at
@@ -1027,8 +1012,7 @@ Then configure Libav with the following options:
 (you can change the cross-prefix according to the prefix chosen for the
 MinGW tools).
 
-Then you can easily test Libav with Wine
-(@url{http://www.winehq.com/}).
+Then you can easily test Libav with @uref{http://www.winehq.com/, Wine}.
 
 @subsection Compilation under Cygwin
 
@@ -1049,7 +1033,7 @@ diffutils
 Then run
 
 @example
-./configure --enable-static --disable-shared
+./configure
 @end example
 
 to make a static build.
@@ -1067,8 +1051,8 @@ If you want to build Libav with additional libraries, download Cygwin
 libogg-devel, libvorbis-devel
 @end example
 
-These library packages are only available from Cygwin Ports
-(@url{http://sourceware.org/cygwinports/}) :
+These library packages are only available from
+@uref{http://sourceware.org/cygwinports/, Cygwin Ports}:
 
 @example
 yasm, libSDL-devel, libdirac-devel, libfaac-devel, libgsm-devel,
@@ -1096,12 +1080,12 @@ and add some special flags to your configure invocation.
 
 For a static build run
 @example
-./configure --target-os=mingw32 --enable-memalign-hack --enable-static --disable-shared --extra-cflags=-mno-cygwin --extra-libs=-mno-cygwin
+./configure --target-os=mingw32 --extra-cflags=-mno-cygwin --extra-libs=-mno-cygwin
 @end example
 
 and for a build with shared libraries
 @example
-./configure --target-os=mingw32 --enable-memalign-hack --enable-shared --disable-static --extra-cflags=-mno-cygwin --extra-libs=-mno-cygwin
+./configure --target-os=mingw32 --enable-shared --disable-static --extra-cflags=-mno-cygwin --extra-libs=-mno-cygwin
 @end example
 
 @bye

@@ -22,13 +22,19 @@
 #include <string.h>
 
 #include "font.h"
-#include "gui/interface.h"
 #include "gui/util/cut.h"
+#include "gui/util/mem.h"
 #include "gui/util/string.h"
 #include "skin.h"
 
 #include "libavutil/avstring.h"
 #include "mp_msg.h"
+
+#define MAX_FONTS 25
+
+#define fntAlignLeft   0
+#define fntAlignCenter 1
+#define fntAlignRight  2
 
 static bmpFont *Fonts[MAX_FONTS];
 
@@ -67,7 +73,7 @@ void fntFreeFont(void)
     for (i = 0; i < MAX_FONTS; i++) {
         if (Fonts[i]) {
             bpFree(&Fonts[i]->Bitmap);
-            gfree((void **)&Fonts[i]);
+            nfree(Fonts[i]);
         }
     }
 }
@@ -91,7 +97,7 @@ int fntRead(char *path, char *fname)
     f = fopen(buf, "rt");
 
     if (!f) {
-        gfree((void **)&Fonts[id]);
+        nfree(Fonts[id]);
         return -3;
     }
 
@@ -152,7 +158,7 @@ int fntRead(char *path, char *fname)
 
             if (skinBPRead(buf, &Fonts[id]->Bitmap) != 0) {
                 bpFree(&Fonts[id]->Bitmap);
-                gfree((void **)&Fonts[id]);
+                nfree(Fonts[id]);
                 fclose(f);
                 return -4;
             }
@@ -264,7 +270,7 @@ static int fntTextHeight(int id, char *str)
     return max;
 }
 
-txSample *fntRender(wItem *item, int px, char *txt)
+guiImage *fntRender(wItem *item, int px, char *txt)
 {
     unsigned char *u;
     unsigned int i;
@@ -295,7 +301,7 @@ txSample *fntRender(wItem *item, int px, char *txt)
         if (!item->Bitmap.ImageSize)
             return NULL;
 
-        item->Bitmap.BPP   = 32;
+        item->Bitmap.Bpp   = 32;
         item->Bitmap.Image = malloc(item->Bitmap.ImageSize);
 
         if (!item->Bitmap.Image)
@@ -306,7 +312,7 @@ txSample *fntRender(wItem *item, int px, char *txt)
     ibuf = (uint32_t *)Fonts[id]->Bitmap.Image;
 
     for (i = 0; i < item->Bitmap.ImageSize / 4; i++)
-        obuf[i] = TRANSPARENT;
+        obuf[i] = GUI_TRANSPARENT;
 
     if (tw <= iw) {
         switch (item->align) {

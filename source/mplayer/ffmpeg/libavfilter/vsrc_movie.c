@@ -57,12 +57,12 @@ typedef struct {
 #define OFFSET(x) offsetof(MovieContext, x)
 
 static const AVOption movie_options[]= {
-{"format_name",  "set format name",         OFFSET(format_name),  FF_OPT_TYPE_STRING, 0,  CHAR_MIN, CHAR_MAX },
-{"f",            "set format name",         OFFSET(format_name),  FF_OPT_TYPE_STRING, 0,  CHAR_MIN, CHAR_MAX },
-{"stream_index", "set stream index",        OFFSET(stream_index), FF_OPT_TYPE_INT,   -1,  -1,       INT_MAX  },
-{"si",           "set stream index",        OFFSET(stream_index), FF_OPT_TYPE_INT,   -1,  -1,       INT_MAX  },
-{"seek_point",   "set seekpoint (seconds)", OFFSET(seek_point_d), FF_OPT_TYPE_DOUBLE, 0,  0,        (INT64_MAX-1) / 1000000 },
-{"sp",           "set seekpoint (seconds)", OFFSET(seek_point_d), FF_OPT_TYPE_DOUBLE, 0,  0,        (INT64_MAX-1) / 1000000 },
+{"format_name",  "set format name",         OFFSET(format_name),  FF_OPT_TYPE_STRING, {.str =  0},  CHAR_MIN, CHAR_MAX },
+{"f",            "set format name",         OFFSET(format_name),  FF_OPT_TYPE_STRING, {.str =  0},  CHAR_MIN, CHAR_MAX },
+{"stream_index", "set stream index",        OFFSET(stream_index), FF_OPT_TYPE_INT,    {.dbl = -1},  -1,       INT_MAX  },
+{"si",           "set stream index",        OFFSET(stream_index), FF_OPT_TYPE_INT,    {.dbl = -1},  -1,       INT_MAX  },
+{"seek_point",   "set seekpoint (seconds)", OFFSET(seek_point_d), FF_OPT_TYPE_DOUBLE, {.dbl =  0},  0,        (INT64_MAX-1) / 1000000 },
+{"sp",           "set seekpoint (seconds)", OFFSET(seek_point_d), FF_OPT_TYPE_DOUBLE, {.dbl =  0},  0,        (INT64_MAX-1) / 1000000 },
 {NULL},
 };
 
@@ -91,12 +91,12 @@ static int movie_init(AVFilterContext *ctx)
     iformat = movie->format_name ? av_find_input_format(movie->format_name) : NULL;
 
     movie->format_ctx = NULL;
-    if ((ret = av_open_input_file(&movie->format_ctx, movie->file_name, iformat, 0, NULL)) < 0) {
+    if ((ret = avformat_open_input(&movie->format_ctx, movie->file_name, iformat, NULL)) < 0) {
         av_log(ctx, AV_LOG_ERROR,
-               "Failed to av_open_input_file '%s'\n", movie->file_name);
+               "Failed to avformat_open_input '%s'\n", movie->file_name);
         return ret;
     }
-    if ((ret = av_find_stream_info(movie->format_ctx)) < 0)
+    if ((ret = avformat_find_stream_info(movie->format_ctx, NULL)) < 0)
         av_log(ctx, AV_LOG_WARNING, "Failed to find stream info\n");
 
     // if seeking requested, we execute it
@@ -139,7 +139,7 @@ static int movie_init(AVFilterContext *ctx)
         return AVERROR(EINVAL);
     }
 
-    if ((ret = avcodec_open(movie->codec_ctx, codec)) < 0) {
+    if ((ret = avcodec_open2(movie->codec_ctx, codec, NULL)) < 0) {
         av_log(ctx, AV_LOG_ERROR, "Failed to open codec\n");
         return ret;
     }
@@ -152,7 +152,7 @@ static int movie_init(AVFilterContext *ctx)
     movie->w = movie->codec_ctx->width;
     movie->h = movie->codec_ctx->height;
 
-    av_log(ctx, AV_LOG_INFO, "seek_point:%lld format_name:%s file_name:%s stream_index:%d\n",
+    av_log(ctx, AV_LOG_INFO, "seek_point:%"PRIi64" format_name:%s file_name:%s stream_index:%d\n",
            movie->seek_point, movie->format_name, movie->file_name,
            movie->stream_index);
 
@@ -252,6 +252,8 @@ static int movie_get_frame(AVFilterLink *outlink)
                     st->sample_aspect_ratio : movie->codec_ctx->sample_aspect_ratio;
                 movie->picref->video->interlaced      = movie->frame->interlaced_frame;
                 movie->picref->video->top_field_first = movie->frame->top_field_first;
+                movie->picref->video->key_frame       = movie->frame->key_frame;
+                movie->picref->video->pict_type       = movie->frame->pict_type;
                 av_dlog(outlink->src,
                         "movie_get_frame(): file:'%s' pts:%"PRId64" time:%lf pos:%"PRId64" aspect:%d/%d\n",
                         movie->file_name, movie->picref->pts,
@@ -290,6 +292,8 @@ static int request_frame(AVFilterLink *outlink)
     avfilter_start_frame(outlink, outpicref);
     avfilter_draw_slice(outlink, 0, outlink->h, 1);
     avfilter_end_frame(outlink);
+    avfilter_unref_buffer(movie->picref);
+    movie->picref = NULL;
 
     return 0;
 }

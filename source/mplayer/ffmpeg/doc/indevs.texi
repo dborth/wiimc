@@ -199,10 +199,10 @@ tools.
 @example
 # Grab and show the input of a video4linux device, frame rate is set
 # to the default of 25/1.
-ffplay -s 320x240 -f video4linux /dev/video0
+avplay -s 320x240 -f video4linux /dev/video0
 
 # Grab and show the input of a video4linux2 device, autoadjust size.
-ffplay -f video4linux2 /dev/video0
+avplay -f video4linux2 /dev/video0
 
 # Grab and record the input of a video4linux2 device, autoadjust size,
 # frame rate value defaults to 0/0 so it is read from the video4linux2
@@ -248,7 +248,46 @@ For example to grab from @file{:0.0} using @file{ffmpeg}:
 ffmpeg -f x11grab -r 25 -s cif -i :0.0 out.mpg
 
 # Grab at position 10,20.
-ffmpeg -f x11grab -25 -s cif -i :0.0+10,20 out.mpg
+ffmpeg -f x11grab -r 25 -s cif -i :0.0+10,20 out.mpg
+@end example
+
+@subsection @var{follow_mouse} AVOption
+
+The syntax is:
+@example
+-follow_mouse centered|@var{PIXELS}
+@end example
+
+When it is specified with "centered", the grabbing region follows the mouse
+pointer and keeps the pointer at the center of region; otherwise, the region
+follows only when the mouse pointer reaches within @var{PIXELS} (greater than
+zero) to the edge of region.
+
+For example:
+@example
+ffmpeg -f x11grab -follow_mouse centered -r 25 -s cif -i :0.0 out.mpg
+
+# Follows only when the mouse pointer reaches within 100 pixels to edge
+ffmpeg -f x11grab -follow_mouse 100 -r 25 -s cif -i :0.0 out.mpg
+@end example
+
+@subsection @var{show_region} AVOption
+
+The syntax is:
+@example
+-show_region 1
+@end example
+
+If @var{show_region} AVOption is specified with @var{1}, then the grabbing
+region will be indicated on screen. With this option, it's easy to know what is
+being grabbed if only a portion of the screen is grabbed.
+
+For example:
+@example
+ffmpeg -f x11grab -show_region 1 -r 25 -s cif -i :0.0+10,20 out.mpg
+
+# With follow_mouse
+ffmpeg -f x11grab -follow_mouse centered -show_region 1  -r 25 -s cif -i :0.0 out.mpg
 @end example
 
 @c man end INPUT DEVICES

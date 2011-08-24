@@ -1316,7 +1316,7 @@ static void vp3_draw_horiz_band(Vp3DecodeContext *s, int y)
     int h, cy;
     int offset[4];
 
-    if (HAVE_THREADS && s->avctx->active_thread_type&FF_THREAD_FRAME) {
+    if (HAVE_PTHREADS && s->avctx->active_thread_type&FF_THREAD_FRAME) {
         int y_flipped = s->flipped_image ? s->avctx->height-y : y;
 
         // At the end of the frame, report INT_MAX instead of the height of the frame.
@@ -1400,7 +1400,7 @@ static void render_slice(Vp3DecodeContext *s, int slice)
         int fragment_width    = s->fragment_width[!!plane];
         int fragment_height   = s->fragment_height[!!plane];
         int fragment_start    = s->fragment_start[plane];
-        int do_await          = !plane && HAVE_THREADS && (s->avctx->active_thread_type&FF_THREAD_FRAME);
+        int do_await          = !plane && HAVE_PTHREADS && (s->avctx->active_thread_type&FF_THREAD_FRAME);
 
         if (!s->flipped_image) stride = -stride;
         if (CONFIG_GRAY && plane && (s->avctx->flags & CODEC_FLAG_GRAY))
@@ -1876,7 +1876,7 @@ static int vp3_decode_frame(AVCodecContext *avctx,
         return buf_size;
 
     s->current_frame.reference = 3;
-    s->current_frame.pict_type = s->keyframe ? FF_I_TYPE : FF_P_TYPE;
+    s->current_frame.pict_type = s->keyframe ? AV_PICTURE_TYPE_I : AV_PICTURE_TYPE_P;
     if (ff_thread_get_buffer(avctx, &s->current_frame) < 0) {
         av_log(s->avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         goto error;
@@ -1908,7 +1908,7 @@ static int vp3_decode_frame(AVCodecContext *avctx,
             av_log(s->avctx, AV_LOG_WARNING, "vp3: first frame not a keyframe\n");
 
             s->golden_frame.reference = 3;
-            s->golden_frame.pict_type = FF_I_TYPE;
+            s->golden_frame.pict_type = AV_PICTURE_TYPE_I;
             if (ff_thread_get_buffer(avctx, &s->golden_frame) < 0) {
                 av_log(s->avctx, AV_LOG_ERROR, "get_buffer() failed\n");
                 goto error;
@@ -1965,7 +1965,7 @@ static int vp3_decode_frame(AVCodecContext *avctx,
     *data_size=sizeof(AVFrame);
     *(AVFrame*)data= s->current_frame;
 
-    if (!HAVE_THREADS || !(s->avctx->active_thread_type&FF_THREAD_FRAME))
+    if (!HAVE_PTHREADS || !(s->avctx->active_thread_type&FF_THREAD_FRAME))
         update_frames(avctx);
 
     return buf_size;
@@ -1973,7 +1973,7 @@ static int vp3_decode_frame(AVCodecContext *avctx,
 error:
     ff_thread_report_progress(&s->current_frame, INT_MAX, 0);
 
-    if (!HAVE_THREADS || !(s->avctx->active_thread_type&FF_THREAD_FRAME))
+    if (!HAVE_PTHREADS || !(s->avctx->active_thread_type&FF_THREAD_FRAME))
         avctx->release_buffer(avctx, &s->current_frame);
 
     return -1;
@@ -2321,33 +2321,51 @@ static av_cold int theora_decode_init(AVCodecContext *avctx)
     return vp3_decode_init(avctx);
 }
 
+static void vp3_decode_flush(AVCodecContext *avctx)
+{
+    Vp3DecodeContext *s = avctx->priv_data;
+
+    if (s->golden_frame.data[0]) {
+        if (s->golden_frame.data[0] == s->last_frame.data[0])
+            memset(&s->last_frame, 0, sizeof(AVFrame));
+        if (s->current_frame.data[0] == s->golden_frame.data[0])
+            memset(&s->current_frame, 0, sizeof(AVFrame));
+        ff_thread_release_buffer(avctx, &s->golden_frame);
+    }
+    if (s->last_frame.data[0]) {
+        if (s->current_frame.data[0] == s->last_frame.data[0])
+            memset(&s->current_frame, 0, sizeof(AVFrame));
+        ff_thread_release_buffer(avctx, &s->last_frame);
+    }
+    if (s->current_frame.data[0])
+        ff_thread_release_buffer(avctx, &s->current_frame);
+}
+
 AVCodec ff_theora_decoder = {
-    "theora",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_THEORA,
-    sizeof(Vp3DecodeContext),
-    theora_decode_init,
-    NULL,
-    vp3_decode_end,
-    vp3_decode_frame,
-    CODEC_CAP_DR1 | CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_FRAME_THREADS,
-    NULL,
+    .name           = "theora",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_THEORA,
+    .priv_data_size = sizeof(Vp3DecodeContext),
+    .init           = theora_decode_init,
+    .close          = vp3_decode_end,
+    .decode         = vp3_decode_frame,
+    .capabilities   = CODEC_CAP_DR1 | CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_FRAME_THREADS,
+    .flush = vp3_decode_flush,
     .long_name = NULL_IF_CONFIG_SMALL("Theora"),
     .update_thread_context = ONLY_IF_THREADS_ENABLED(vp3_update_thread_context)
 };
 #endif
 
 AVCodec ff_vp3_decoder = {
-    "vp3",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_VP3,
-    sizeof(Vp3DecodeContext),
-    vp3_decode_init,
-    NULL,
-    vp3_decode_end,
-    vp3_decode_frame,
-    CODEC_CAP_DR1 | CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_FRAME_THREADS,
-    NULL,
+    .name           = "vp3",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_VP3,
+    .priv_data_size = sizeof(Vp3DecodeContext),
+    .init           = vp3_decode_init,
+    .close          = vp3_decode_end,
+    .decode         = vp3_decode_frame,
+    .capabilities   = CODEC_CAP_DR1 | CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_FRAME_THREADS,
+    .flush = vp3_decode_flush,
     .long_name = NULL_IF_CONFIG_SMALL("On2 VP3"),
     .update_thread_context = ONLY_IF_THREADS_ENABLED(vp3_update_thread_context)
 };

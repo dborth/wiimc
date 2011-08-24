@@ -29,11 +29,10 @@
 #include "avcodec.h"
 #include "get_bits.h"
 #include "dsputil.h"
-#include "mpegaudio.h"
+#include "mpegaudiodsp.h"
 #include "libavutil/audioconvert.h"
 
 #include "mpc.h"
-#include "mpcdata.h"
 #include "mpc8data.h"
 #include "mpc8huff.h"
 
@@ -120,6 +119,7 @@ static av_cold int mpc8_decode_init(AVCodecContext * avctx)
     memset(c->oldDSCF, 0, sizeof(c->oldDSCF));
     av_lfg_init(&c->rnd, 0xDEADBEEF);
     dsputil_init(&c->dsp, avctx);
+    ff_mpadsp_init(&c->mpadsp);
 
     ff_mpc_init();
 
@@ -406,13 +406,11 @@ static int mpc8_decode_frame(AVCodecContext * avctx,
 }
 
 AVCodec ff_mpc8_decoder = {
-    "mpc8",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_MUSEPACK8,
-    sizeof(MPCContext),
-    mpc8_decode_init,
-    NULL,
-    NULL,
-    mpc8_decode_frame,
+    .name           = "mpc8",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_MUSEPACK8,
+    .priv_data_size = sizeof(MPCContext),
+    .init           = mpc8_decode_init,
+    .decode         = mpc8_decode_frame,
     .long_name = NULL_IF_CONFIG_SMALL("Musepack SV8"),
 };

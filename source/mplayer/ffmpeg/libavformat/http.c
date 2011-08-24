@@ -54,11 +54,14 @@ typedef struct {
 
 #define OFFSET(x) offsetof(HTTPContext, x)
 static const AVOption options[] = {
-{"chunksize", "use chunked transfer-encoding for posts, -1 disables it, 0 enables it", OFFSET(chunksize), FF_OPT_TYPE_INT64, 0, -1, 0 }, /* Default to 0, for chunked POSTs */
+{"chunksize", "use chunked transfer-encoding for posts, -1 disables it, 0 enables it", OFFSET(chunksize), FF_OPT_TYPE_INT64, {.dbl = 0}, -1, 0 }, /* Default to 0, for chunked POSTs */
 {NULL}
 };
 static const AVClass httpcontext_class = {
-    "HTTP", av_default_item_name, options, LIBAVUTIL_VERSION_INT
+    .class_name     = "HTTP",
+    .item_name      = av_default_item_name,
+    .option         = options,
+    .version        = LIBAVUTIL_VERSION_INT,
 };
 
 static int http_connect(URLContext *h, const char *path, const char *hoststr,
@@ -70,7 +73,7 @@ void ff_http_set_headers(URLContext *h, const char *headers)
     int len = strlen(headers);
 
     if (len && strcmp("\r\n", headers + len - 2))
-        av_log(NULL, AV_LOG_ERROR, "No trailing CRLF found in HTTP header.\n");
+        av_log(h, AV_LOG_ERROR, "No trailing CRLF found in HTTP header.\n");
 
     av_strlcpy(s->headers, headers, sizeof(s->headers));
 }
@@ -124,7 +127,7 @@ static int http_open_cnx(URLContext *h)
         port = 80;
 
     ff_url_join(buf, sizeof(buf), "tcp", NULL, hostname, port, NULL);
-    err = ffurl_open(&hd, buf, AVIO_RDWR);
+    err = ffurl_open(&hd, buf, AVIO_FLAG_READ_WRITE);
     if (err < 0)
         goto fail;
 
@@ -232,7 +235,7 @@ static int process_line(URLContext *h, char *line, int line_count,
          * don't abort until all headers have been parsed. */
         if (s->http_code >= 400 && s->http_code < 600 && s->http_code != 401) {
             end += strspn(end, SPACE_CHARS);
-            av_log(NULL, AV_LOG_WARNING, "HTTP error %d %s\n",
+            av_log(h, AV_LOG_WARNING, "HTTP error %d %s\n",
                    s->http_code, end);
             return -1;
         }
@@ -296,7 +299,7 @@ static int http_connect(URLContext *h, const char *path, const char *hoststr,
 
 
     /* send http header */
-    post = h->flags & AVIO_WRONLY;
+    post = h->flags & AVIO_FLAG_WRITE;
     authstr = ff_http_auth_create_response(&s->auth_state, auth, path,
                                         post ? "POST" : "GET");
 
@@ -451,7 +454,7 @@ static int http_close(URLContext *h)
     HTTPContext *s = h->priv_data;
 
     /* signal end of chunked encoding if used */
-    if ((h->flags & AVIO_WRONLY) && s->chunksize != -1) {
+    if ((h->flags & AVIO_FLAG_WRITE) && s->chunksize != -1) {
         ret = ffurl_write(s->hd, footer, sizeof(footer) - 1);
         ret = ret > 0 ? 0 : ret;
     }

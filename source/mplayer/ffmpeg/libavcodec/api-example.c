@@ -20,8 +20,9 @@
 
 /**
  * @file
- * avcodec API use example.
+ * libavcodec API use example.
  *
+ * @example libavcodec/api-example.c
  * Note that this library only handles codecs (mpeg, mpeg4, etc...),
  * not file formats (avi, vob, etc...). See library 'libavformat' for the
  * format handling
@@ -64,7 +65,7 @@ static void audio_encode_example(const char *filename)
         exit(1);
     }
 
-    c= avcodec_alloc_context();
+    c = avcodec_alloc_context3(codec);
 
     /* put sample parameters */
     c->bit_rate = 64000;
@@ -134,7 +135,7 @@ static void audio_decode_example(const char *outfilename, const char *filename)
         exit(1);
     }
 
-    c= avcodec_alloc_context();
+    c = avcodec_alloc_context3(codec);
 
     /* open it */
     if (avcodec_open(c, codec) < 0) {
@@ -215,7 +216,7 @@ static void video_encode_example(const char *filename)
         exit(1);
     }
 
-    c= avcodec_alloc_context();
+    c = avcodec_alloc_context3(codec);
     picture= avcodec_alloc_frame();
 
     /* put sample parameters */
@@ -346,7 +347,7 @@ static void video_decode_example(const char *outfilename, const char *filename)
         exit(1);
     }
 
-    c= avcodec_alloc_context();
+    c = avcodec_alloc_context3(codec);
     picture= avcodec_alloc_frame();
 
     if(codec->capabilities&CODEC_CAP_TRUNCATED)

@@ -20,6 +20,7 @@
  */
 
 #include "libavutil/intfloat_readwrite.h"
+#include "libavutil/dict.h"
 #include "avformat.h"
 #include "pcm.h"
 #include "aiff.h"
@@ -79,7 +80,7 @@ static void get_meta(AVFormatContext *s, const char *key, int size)
         return;
 
     str[res] = 0;
-    av_metadata_set2(&s->metadata, key, str, AV_METADATA_DONT_STRDUP_VAL);
+    av_dict_set(&s->metadata, key, str, AV_DICT_DONT_STRDUP_VAL);
 }
 
 /* Returns the number of sound data frames or negative on error */
@@ -312,13 +313,12 @@ static int aiff_read_packet(AVFormatContext *s,
 }
 
 AVInputFormat ff_aiff_demuxer = {
-    "aiff",
-    NULL_IF_CONFIG_SMALL("Audio IFF"),
-    sizeof(AIFFInputContext),
-    aiff_probe,
-    aiff_read_header,
-    aiff_read_packet,
-    NULL,
-    pcm_read_seek,
+    .name           = "aiff",
+    .long_name      = NULL_IF_CONFIG_SMALL("Audio IFF"),
+    .priv_data_size = sizeof(AIFFInputContext),
+    .read_probe     = aiff_probe,
+    .read_header    = aiff_read_header,
+    .read_packet    = aiff_read_packet,
+    .read_seek      = pcm_read_seek,
     .codec_tag= (const AVCodecTag* const []){ff_codec_aiff_tags, 0},
 };

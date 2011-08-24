@@ -295,11 +295,11 @@ static int qtrle_encode_frame(AVCodecContext *avctx, uint8_t *buf, int buf_size,
 
     if (avctx->gop_size == 0 || (s->avctx->frame_number % avctx->gop_size) == 0) {
         /* I-Frame */
-        p->pict_type = FF_I_TYPE;
+        p->pict_type = AV_PICTURE_TYPE_I;
         p->key_frame = 1;
     } else {
         /* P-Frame */
-        p->pict_type = FF_P_TYPE;
+        p->pict_type = AV_PICTURE_TYPE_P;
         p->key_frame = 0;
     }
 
@@ -322,13 +322,13 @@ static av_cold int qtrle_encode_end(AVCodecContext *avctx)
 }
 
 AVCodec ff_qtrle_encoder = {
-    "qtrle",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_QTRLE,
-    sizeof(QtrleEncContext),
-    qtrle_encode_init,
-    qtrle_encode_frame,
-    qtrle_encode_end,
+    .name           = "qtrle",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_QTRLE,
+    .priv_data_size = sizeof(QtrleEncContext),
+    .init           = qtrle_encode_init,
+    .encode         = qtrle_encode_frame,
+    .close          = qtrle_encode_end,
     .pix_fmts = (const enum PixelFormat[]){PIX_FMT_RGB24, PIX_FMT_RGB555BE, PIX_FMT_ARGB, PIX_FMT_NONE},
     .long_name = NULL_IF_CONFIG_SMALL("QuickTime Animation (RLE) video"),
 };

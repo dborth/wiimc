@@ -16,6 +16,7 @@ cmp=${6:-diff}
 ref=${7:-"${base}/ref/fate/${test}"}
 fuzz=$8
 threads=${9:-1}
+thread_type=${10:-3}
 
 outdir="tests/data/fate"
 outfile="${outdir}/${test}"
@@ -48,37 +49,34 @@ run(){
     $target_exec $target_path/"$@"
 }
 
-ffmpeg(){
-    run ffmpeg -v 0 -threads $threads "$@"
+avconv(){
+    run avconv -v 0 -threads $threads -thread_type $thread_type "$@"
 }
 
 framecrc(){
-    ffmpeg "$@" -f framecrc -
+    avconv "$@" -f framecrc -
 }
 
 framemd5(){
-    ffmpeg "$@" -f framemd5 -
+    avconv "$@" -f framemd5 -
 }
 
 crc(){
-    ffmpeg "$@" -f crc -
+    avconv "$@" -f crc -
 }
 
 md5(){
-    ffmpeg "$@" md5:
+    avconv "$@" md5:
 }
 
 pcm(){
-    ffmpeg "$@" -vn -f s16le -
+    avconv "$@" -vn -f s16le -
 }
 
 regtest(){
     t="${test#$2-}"
     ref=${base}/ref/$2/$t
-    cleanfiles="$cleanfiles $outfile $errfile"
-    outfile=tests/data/regression/$2/$t
-    errfile=tests/data/$t.$2.err
-    ${base}/${1}-regression.sh $t $2 $3 "$target_exec" "$target_path" "$threads"
+    ${base}/${1}-regression.sh $t $2 $3 "$target_exec" "$target_path" "$threads" "$thread_type"
 }
 
 codectest(){
@@ -106,7 +104,7 @@ seektest(){
                  file=$(echo tests/data/$d/$file)
                  ;;
     esac
-    $target_exec $target_path/tests/seek_test $target_path/$file
+    $target_exec $target_path/libavformat/seek-test $target_path/$file
 }
 
 mkdir -p "$outdir"
@@ -125,6 +123,7 @@ if test -e "$ref"; then
         diff)   diff -u -w "$ref" "$outfile"            >$cmpfile ;;
         oneoff) oneoff     "$ref" "$outfile" "$fuzz"    >$cmpfile ;;
         stddev) stddev     "$ref" "$outfile" "$fuzz"    >$cmpfile ;;
+        null)   cat               "$outfile"            >$cmpfile ;;
     esac
     cmperr=$?
     test $err = 0 && err=$cmperr

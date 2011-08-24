@@ -107,7 +107,7 @@ static int sunrast_decode_frame(AVCodecContext *avctx, void *data,
         return -1;
     }
 
-    p->pict_type = FF_I_TYPE;
+    p->pict_type = AV_PICTURE_TYPE_I;
 
     if (depth != 8 && maplength) {
         av_log(avctx, AV_LOG_WARNING, "useless colormap found or file is corrupted, trying to recover\n");
@@ -185,15 +185,13 @@ static av_cold int sunrast_end(AVCodecContext *avctx) {
 }
 
 AVCodec ff_sunrast_decoder = {
-    "sunrast",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_SUNRAST,
-    sizeof(SUNRASTContext),
-    sunrast_init,
-    NULL,
-    sunrast_end,
-    sunrast_decode_frame,
-    CODEC_CAP_DR1,
-    NULL,
+    .name           = "sunrast",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_SUNRAST,
+    .priv_data_size = sizeof(SUNRASTContext),
+    .init           = sunrast_init,
+    .close          = sunrast_end,
+    .decode         = sunrast_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Sun Rasterfile image"),
 };

@@ -170,6 +170,18 @@ static av_always_inline av_const int32_t av_clipl_int32_c(int64_t a)
 }
 
 /**
+ * Clip a signed integer to an unsigned power of two range.
+ * @param  a value to clip
+ * @param  p bit position to clip at
+ * @return clipped value
+ */
+static av_always_inline av_const unsigned av_clip_uintp2_c(int a, int p)
+{
+    if (a & ~((1<<p) - 1)) return -a >> 31 & ((1<<p) - 1);
+    else                   return  a;
+}
+
+/**
  * Clip a float value into the amin-amax range.
  * @param a value to clip
  * @param amin minimum value of the clip range
@@ -256,16 +268,16 @@ static av_always_inline av_const int av_popcount_c(uint32_t x)
         }\
     }\
 
-/*!
- * \def PUT_UTF8(val, tmp, PUT_BYTE)
+/**
+ * @def PUT_UTF8(val, tmp, PUT_BYTE)
  * Convert a 32-bit Unicode character to its UTF-8 encoded form (up to 4 bytes long).
- * \param val is an input-only argument and should be of type uint32_t. It holds
+ * @param val is an input-only argument and should be of type uint32_t. It holds
  * a UCS-4 encoded Unicode character that is to be converted to UTF-8. If
  * val is given as a function it is executed only once.
- * \param tmp is a temporary variable and should be of type uint8_t. It
+ * @param tmp is a temporary variable and should be of type uint8_t. It
  * represents an intermediate value during conversion that is to be
  * output by PUT_BYTE.
- * \param PUT_BYTE writes the converted UTF-8 bytes to any proper destination.
+ * @param PUT_BYTE writes the converted UTF-8 bytes to any proper destination.
  * It could be a function or a statement, and uses tmp as the input byte.
  * For example, PUT_BYTE could be "*output++ = tmp;" PUT_BYTE will be
  * executed up to 4 times for values in the valid UTF-8 range and up to
@@ -292,16 +304,16 @@ static av_always_inline av_const int av_popcount_c(uint32_t x)
         }\
     }
 
-/*!
- * \def PUT_UTF16(val, tmp, PUT_16BIT)
+/**
+ * @def PUT_UTF16(val, tmp, PUT_16BIT)
  * Convert a 32-bit Unicode character to its UTF-16 encoded form (2 or 4 bytes).
- * \param val is an input-only argument and should be of type uint32_t. It holds
+ * @param val is an input-only argument and should be of type uint32_t. It holds
  * a UCS-4 encoded Unicode character that is to be converted to UTF-16. If
  * val is given as a function it is executed only once.
- * \param tmp is a temporary variable and should be of type uint16_t. It
+ * @param tmp is a temporary variable and should be of type uint16_t. It
  * represents an intermediate value during conversion that is to be
  * output by PUT_16BIT.
- * \param PUT_16BIT writes the converted UTF-16 data to any proper destination
+ * @param PUT_16BIT writes the converted UTF-16 data to any proper destination
  * in desired endianness. It could be a function or a statement, and uses tmp
  * as the input byte.  For example, PUT_BYTE could be "*output++ = tmp;"
  * PUT_BYTE will be executed 1 or 2 times depending on input character.
@@ -361,6 +373,9 @@ static av_always_inline av_const int av_popcount_c(uint32_t x)
 #endif
 #ifndef av_clipl_int32
 #   define av_clipl_int32   av_clipl_int32_c
+#endif
+#ifndef av_clip_uintp2
+#   define av_clip_uintp2   av_clip_uintp2_c
 #endif
 #ifndef av_clipf
 #   define av_clipf         av_clipf_c

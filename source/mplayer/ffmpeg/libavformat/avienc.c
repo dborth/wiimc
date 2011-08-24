@@ -23,6 +23,7 @@
 #include "avio_internal.h"
 #include "riff.h"
 #include "libavutil/intreadwrite.h"
+#include "libavutil/dict.h"
 
 /*
  * TODO:
@@ -157,7 +158,7 @@ static int avi_write_header(AVFormatContext *s)
     int bitrate, n, i, nb_frames, au_byterate, au_ssize, au_scale;
     AVCodecContext *stream, *video_enc;
     int64_t list1, list2, strh, strf;
-    AVMetadataTag *t = NULL;
+    AVDictionaryEntry *t = NULL;
 
     if (s->nb_streams > AVI_MAX_STREAM_COUNT) {
         av_log(s, AV_LOG_ERROR, "AVI does not support >%d streams\n",
@@ -297,7 +298,7 @@ static int avi_write_header(AVFormatContext *s)
             return -1;
         }
         ff_end_tag(pb, strf);
-        if ((t = av_metadata_get(s->streams[i]->metadata, "title", NULL, 0))) {
+        if ((t = av_dict_get(s->streams[i]->metadata, "title", NULL, 0))) {
             avi_write_info_tag(s->pb, "strn", t->value);
             t = NULL;
         }
@@ -379,7 +380,7 @@ static int avi_write_header(AVFormatContext *s)
     ffio_wfourcc(pb, "INFO");
     ff_metadata_conv(&s->metadata, ff_avi_metadata_conv, NULL);
     for (i = 0; *ff_avi_tags[i]; i++) {
-        if ((t = av_metadata_get(s->metadata, ff_avi_tags[i], NULL, AV_METADATA_MATCH_CASE)))
+        if ((t = av_dict_get(s->metadata, ff_avi_tags[i], NULL, AV_DICT_MATCH_CASE)))
             avi_write_info_tag(s->pb, t->key, t->value);
     }
     ff_end_tag(pb, list2);
@@ -638,16 +639,16 @@ static int avi_write_trailer(AVFormatContext *s)
 }
 
 AVOutputFormat ff_avi_muxer = {
-    "avi",
-    NULL_IF_CONFIG_SMALL("AVI format"),
-    "video/x-msvideo",
-    "avi",
-    sizeof(AVIContext),
-    CODEC_ID_MP2,
-    CODEC_ID_MPEG4,
-    avi_write_header,
-    avi_write_packet,
-    avi_write_trailer,
+    .name              = "avi",
+    .long_name         = NULL_IF_CONFIG_SMALL("AVI format"),
+    .mime_type         = "video/x-msvideo",
+    .extensions        = "avi",
+    .priv_data_size    = sizeof(AVIContext),
+    .audio_codec       = CODEC_ID_MP2,
+    .video_codec       = CODEC_ID_MPEG4,
+    .write_header      = avi_write_header,
+    .write_packet      = avi_write_packet,
+    .write_trailer     = avi_write_trailer,
     .codec_tag= (const AVCodecTag* const []){ff_codec_bmp_tags, ff_codec_wav_tags, 0},
     .flags= AVFMT_VARIABLE_FPS,
 };

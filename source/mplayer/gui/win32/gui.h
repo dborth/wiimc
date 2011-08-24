@@ -98,12 +98,15 @@ struct gui_t
 #define     wsMovable       2
 #define     wsSizeable      4
 
-gui_t *create_gui(char *skindir, char *skinName, void (*playercontrol)(int event));
+gui_t *create_gui(char *skindir, void (*playercontrol)(int event));
 int destroy_window(gui_t *gui);
 int create_window(gui_t *gui, char *skindir);
-int create_subwindow(gui_t *gui, char *skindir);
+int create_subwindow(gui_t *gui);
 int parse_filename(char *file, play_tree_t *playtree, m_config_t *mconfig, int clear);
 void capitalize(char *filename);
+
+void renderinfobox(skin_t *skin, window_priv_t *priv);
+void renderwidget(skin_t *skin, image *dest, widget *item, int state);
 
 /* Dialogs */
 void display_playlistwindow(gui_t *gui);

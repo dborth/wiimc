@@ -25,14 +25,12 @@
  * @author Adam Thayer (krevnik@comcast.net)
  */
 
-/* needed for mkstemp() */
-#define _XOPEN_SOURCE 600
-
 #include <xvid.h>
 #include <unistd.h>
 #include "avcodec.h"
 #include "libavutil/cpu.h"
 #include "libavutil/intreadwrite.h"
+#include "libavutil/mathematics.h"
 #include "libxvid_internal.h"
 #if !HAVE_MKSTEMP
 #include <fcntl.h>
@@ -450,9 +448,9 @@ static int xvid_encode_frame(AVCodecContext *avctx,
     xvid_enc_frame.vol_flags = x->vol_flags;
     xvid_enc_frame.motion = x->me_flags;
     xvid_enc_frame.type =
-        picture->pict_type == FF_I_TYPE ? XVID_TYPE_IVOP :
-        picture->pict_type == FF_P_TYPE ? XVID_TYPE_PVOP :
-        picture->pict_type == FF_B_TYPE ? XVID_TYPE_BVOP :
+        picture->pict_type == AV_PICTURE_TYPE_I ? XVID_TYPE_IVOP :
+        picture->pict_type == AV_PICTURE_TYPE_P ? XVID_TYPE_PVOP :
+        picture->pict_type == AV_PICTURE_TYPE_B ? XVID_TYPE_BVOP :
                                           XVID_TYPE_AUTO;
 
     /* Pixel aspect ratio setting */
@@ -493,13 +491,13 @@ static int xvid_encode_frame(AVCodecContext *avctx,
     if( 0 <= xerr ) {
         p->quality = xvid_enc_stats.quant * FF_QP2LAMBDA;
         if( xvid_enc_stats.type == XVID_TYPE_PVOP )
-            p->pict_type = FF_P_TYPE;
+            p->pict_type = AV_PICTURE_TYPE_P;
         else if( xvid_enc_stats.type == XVID_TYPE_BVOP )
-            p->pict_type = FF_B_TYPE;
+            p->pict_type = AV_PICTURE_TYPE_B;
         else if( xvid_enc_stats.type == XVID_TYPE_SVOP )
-            p->pict_type = FF_S_TYPE;
+            p->pict_type = AV_PICTURE_TYPE_S;
         else
-            p->pict_type = FF_I_TYPE;
+            p->pict_type = AV_PICTURE_TYPE_I;
         if( xvid_enc_frame.out_flags & XVID_KEYFRAME ) {
             p->key_frame = 1;
             if( x->quicktime_format )
@@ -751,7 +749,7 @@ static int xvid_ff_2pass_before(struct xvid_context *ref,
 static int xvid_ff_2pass_after(struct xvid_context *ref,
                                 xvid_plg_data_t *param) {
     char *log = ref->twopassbuffer;
-    char *frame_types = " ipbs";
+    const char *frame_types = " ipbs";
     char frame_type;
 
     /* Quick bounds check */
@@ -811,13 +809,13 @@ int xvid_ff_2pass(void *ref, int cmd, void *p1, void *p2) {
  * Xvid codec definition for libavcodec.
  */
 AVCodec ff_libxvid_encoder = {
-    "libxvid",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_MPEG4,
-    sizeof(struct xvid_context),
-    xvid_encode_init,
-    xvid_encode_frame,
-    xvid_encode_close,
+    .name           = "libxvid",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_MPEG4,
+    .priv_data_size = sizeof(struct xvid_context),
+    .init           = xvid_encode_init,
+    .encode         = xvid_encode_frame,
+    .close          = xvid_encode_close,
     .pix_fmts= (const enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_NONE},
     .long_name= NULL_IF_CONFIG_SMALL("libxvidcore MPEG-4 part 2"),
 };

@@ -145,7 +145,7 @@ typedef struct {
     uint8_t  table_idx;                               ///< index in sf_offsets for the scale factor reference block
     float*   coeffs;                                  ///< pointer to the subframe decode buffer
     uint16_t num_vec_coeffs;                          ///< number of vector coded coefficients
-    DECLARE_ALIGNED(16, float, out)[WMAPRO_BLOCK_MAX_SIZE + WMAPRO_BLOCK_MAX_SIZE / 2]; ///< output buffer
+    DECLARE_ALIGNED(32, float, out)[WMAPRO_BLOCK_MAX_SIZE + WMAPRO_BLOCK_MAX_SIZE / 2]; ///< output buffer
 } WMAProChannelCtx;
 
 /**
@@ -170,7 +170,7 @@ typedef struct WMAProDecodeCtx {
                       FF_INPUT_BUFFER_PADDING_SIZE];///< compressed frame data
     PutBitContext    pb;                            ///< context for filling the frame_data buffer
     FFTContext       mdct_ctx[WMAPRO_BLOCK_SIZES];  ///< MDCT context per block size
-    DECLARE_ALIGNED(16, float, tmp)[WMAPRO_BLOCK_MAX_SIZE]; ///< IMDCT output buffer
+    DECLARE_ALIGNED(32, float, tmp)[WMAPRO_BLOCK_MAX_SIZE]; ///< IMDCT output buffer
     float*           windows[WMAPRO_BLOCK_SIZES];   ///< windows for the different block sizes
 
     /* frame size dependent frame information (set during initialization) */
@@ -1320,7 +1320,7 @@ static int decode_frame(WMAProDecodeCtx *s)
     /** no idea what these are for, might be the number of samples
         that need to be skipped at the beginning or end of a stream */
     if (get_bits1(gb)) {
-        int skip;
+        int av_unused skip;
 
         /** usually true for the first frame */
         if (get_bits1(gb)) {
@@ -1605,14 +1605,13 @@ static void flush(AVCodecContext *avctx)
  *@brief wmapro decoder
  */
 AVCodec ff_wmapro_decoder = {
-    "wmapro",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_WMAPRO,
-    sizeof(WMAProDecodeCtx),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_packet,
+    .name           = "wmapro",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_WMAPRO,
+    .priv_data_size = sizeof(WMAProDecodeCtx),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_packet,
     .capabilities = CODEC_CAP_SUBFRAMES,
     .flush= flush,
     .long_name = NULL_IF_CONFIG_SMALL("Windows Media Audio 9 Professional"),

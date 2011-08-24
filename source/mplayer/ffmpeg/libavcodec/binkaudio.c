@@ -55,7 +55,7 @@ typedef struct {
     int num_bands;
     unsigned int *bands;
     float root;
-    DECLARE_ALIGNED(16, FFTSample, coeffs)[BINK_BLOCK_MAX_SIZE];
+    DECLARE_ALIGNED(32, FFTSample, coeffs)[BINK_BLOCK_MAX_SIZE];
     DECLARE_ALIGNED(16, short, previous)[BINK_BLOCK_MAX_SIZE / 16];  ///< coeffs from previous audio block
     float *coeffs_ptr[MAX_CHANNELS]; ///< pointers to the coeffs arrays for float_to_int16_interleave
     union {
@@ -90,7 +90,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
         return -1;
     }
 
-    s->version_b = avctx->codec_tag == MKTAG('B','I','K','b');
+    s->version_b = avctx->extradata && avctx->extradata[3] == 'b';
 
     if (avctx->codec->id == CODEC_ID_BINKAUDIO_RDFT) {
         // audio is already interleaved for the RDFT format variant
@@ -292,25 +292,23 @@ static int decode_frame(AVCodecContext *avctx,
 }
 
 AVCodec ff_binkaudio_rdft_decoder = {
-    "binkaudio_rdft",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_BINKAUDIO_RDFT,
-    sizeof(BinkAudioContext),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_frame,
+    .name           = "binkaudio_rdft",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_BINKAUDIO_RDFT,
+    .priv_data_size = sizeof(BinkAudioContext),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
     .long_name = NULL_IF_CONFIG_SMALL("Bink Audio (RDFT)")
 };
 
 AVCodec ff_binkaudio_dct_decoder = {
-    "binkaudio_dct",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_BINKAUDIO_DCT,
-    sizeof(BinkAudioContext),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_frame,
+    .name           = "binkaudio_dct",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_BINKAUDIO_DCT,
+    .priv_data_size = sizeof(BinkAudioContext),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
     .long_name = NULL_IF_CONFIG_SMALL("Bink Audio (DCT)")
 };

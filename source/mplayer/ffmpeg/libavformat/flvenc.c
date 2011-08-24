@@ -18,11 +18,14 @@
  * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#include "libavutil/intfloat_readwrite.h"
 #include "avformat.h"
 #include "flv.h"
 #include "internal.h"
 #include "avc.h"
 #include "metadata.h"
+#include "libavutil/dict.h"
 
 #undef NDEBUG
 #include <assert.h>
@@ -176,8 +179,8 @@ static int flv_write_header(AVFormatContext *s)
     AVCodecContext *audio_enc = NULL, *video_enc = NULL;
     int i;
     double framerate = 0.0;
-    int metadata_size_pos, data_size;
-    AVMetadataTag *tag = NULL;
+    int64_t metadata_size_pos, data_size;
+    AVDictionaryEntry *tag = NULL;
 
     for(i=0; i<s->nb_streams; i++){
         AVCodecContext *enc = s->streams[i]->codec;
@@ -274,7 +277,7 @@ static int flv_write_header(AVFormatContext *s)
         put_amf_double(pb, audio_enc->codec_tag);
     }
 
-    while ((tag = av_metadata_get(s->metadata, "", tag, AV_METADATA_IGNORE_SUFFIX))) {
+    while ((tag = av_dict_get(s->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
         put_amf_string(pb, tag->key);
         avio_w8(pb, AMF_DATA_TYPE_STRING);
         put_amf_string(pb, tag->value);
@@ -434,24 +437,24 @@ static int flv_write_packet(AVFormatContext *s, AVPacket *pkt)
 
     av_free(data);
 
-    return 0;
+    return pb->error;
 }
 
 AVOutputFormat ff_flv_muxer = {
-    "flv",
-    NULL_IF_CONFIG_SMALL("FLV format"),
-    "video/x-flv",
-    "flv",
-    sizeof(FLVContext),
+    .name           = "flv",
+    .long_name      = NULL_IF_CONFIG_SMALL("FLV format"),
+    .mime_type      = "video/x-flv",
+    .extensions     = "flv",
+    .priv_data_size = sizeof(FLVContext),
 #if CONFIG_LIBMP3LAME
-    CODEC_ID_MP3,
+    .audio_codec    = CODEC_ID_MP3,
 #else // CONFIG_LIBMP3LAME
-    CODEC_ID_ADPCM_SWF,
+    .audio_codec    = CODEC_ID_ADPCM_SWF,
 #endif // CONFIG_LIBMP3LAME
-    CODEC_ID_FLV1,
-    flv_write_header,
-    flv_write_packet,
-    flv_write_trailer,
+    .video_codec    = CODEC_ID_FLV1,
+    .write_header   = flv_write_header,
+    .write_packet   = flv_write_packet,
+    .write_trailer  = flv_write_trailer,
     .codec_tag= (const AVCodecTag* const []){flv_video_codec_ids, flv_audio_codec_ids, 0},
     .flags= AVFMT_GLOBALHEADER | AVFMT_VARIABLE_FPS,
 };

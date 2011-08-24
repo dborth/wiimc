@@ -52,7 +52,7 @@ static int sap_read_close(AVFormatContext *s)
 {
     struct SAPState *sap = s->priv_data;
     if (sap->sdp_ctx)
-        av_close_input_stream(sap->sdp_ctx);
+        av_close_input_file(sap->sdp_ctx);
     if (sap->ann_fd)
         ffurl_close(sap->ann_fd);
     av_freep(&sap->sdp);
@@ -85,7 +85,7 @@ static int sap_read_header(AVFormatContext *s,
 
     ff_url_join(url, sizeof(url), "udp", NULL, host, port, "?localport=%d",
                 port);
-    ret = ffurl_open(&sap->ann_fd, url, AVIO_RDONLY);
+    ret = ffurl_open(&sap->ann_fd, url, AVIO_FLAG_READ);
     if (ret)
         goto fail;
 
@@ -156,9 +156,8 @@ static int sap_read_header(AVFormatContext *s,
         goto fail;
     }
     sap->sdp_ctx->max_delay = s->max_delay;
-    ap->prealloced_context = 1;
-    ret = av_open_input_stream(&sap->sdp_ctx, &sap->sdp_pb, "temp.sdp",
-                               infmt, ap);
+    sap->sdp_ctx->pb        = &sap->sdp_pb;
+    ret = avformat_open_input(&sap->sdp_ctx, "temp.sdp", infmt, NULL);
     if (ret < 0)
         goto fail;
     if (sap->sdp_ctx->ctx_flags & AVFMTCTX_NOHEADER)
@@ -225,13 +224,13 @@ static int sap_fetch_packet(AVFormatContext *s, AVPacket *pkt)
 }
 
 AVInputFormat ff_sap_demuxer = {
-    "sap",
-    NULL_IF_CONFIG_SMALL("SAP input format"),
-    sizeof(struct SAPState),
-    sap_probe,
-    sap_read_header,
-    sap_fetch_packet,
-    sap_read_close,
+    .name           = "sap",
+    .long_name      = NULL_IF_CONFIG_SMALL("SAP input format"),
+    .priv_data_size = sizeof(struct SAPState),
+    .read_probe     = sap_probe,
+    .read_header    = sap_read_header,
+    .read_packet    = sap_fetch_packet,
+    .read_close     = sap_read_close,
     .flags = AVFMT_NOFILE,
 };
 

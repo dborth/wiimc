@@ -19,17 +19,18 @@
 #ifndef MPLAYER_GUI_CFG_H
 #define MPLAYER_GUI_CFG_H
 
-#include "config.h"
+#include "m_config.h"
+#include "m_option.h"
+
+extern m_config_t *gui_conf;
 
 extern int gtkCacheOn;
 extern int gtkCacheSize;
 
-extern int gtkVfLAVC;
 extern int gtkVfPP;
+extern int gtkVfLAVC;
 
-#ifdef CONFIG_DXR3
 extern char *gtkDXR3Device;
-#endif
 
 extern int gtkAutoSyncOn;
 extern int gtkAutoSync;
@@ -39,25 +40,17 @@ extern int gtkAOSurround;
 extern int gtkAOExtraStereo;
 extern float gtkAOExtraStereoMul;
 
-#ifdef CONFIG_ALSA
 extern char *gtkAOALSAMixer;
 extern char *gtkAOALSAMixerChannel;
 extern char *gtkAOALSADevice;
-#endif
 
-#ifdef CONFIG_OSS_AUDIO
 extern char *gtkAOOSSMixer;
 extern char *gtkAOOSSMixerChannel;
 extern char *gtkAOOSSDevice;
-#endif
 
-#ifdef CONFIG_ESD
 extern char *gtkAOESDDevice;
-#endif
 
-#ifdef CONFIG_SDL
 extern char *gtkAOSDLDriver;
-#endif
 
 extern int gtkEnableAudioEqualizer;
 extern char *gtkEquChannel1;
@@ -66,11 +59,11 @@ extern char *gtkEquChannel3;
 extern char *gtkEquChannel4;
 extern char *gtkEquChannel5;
 extern char *gtkEquChannel6;
+extern float gtkEquChannels[6][10];
 
 extern int gtkSubDumpMPSub;
 extern int gtkSubDumpSrt;
 
-#ifdef CONFIG_ASS
 typedef struct {
     int enabled;
     int use_margins;
@@ -79,7 +72,6 @@ typedef struct {
 } gtkASS_t;
 
 extern gtkASS_t gtkASS;
-#endif
 
 extern int gtkEnablePlayBar;
 extern int gtkLoadFullscreen;
@@ -91,6 +83,13 @@ extern int gui_main_pos_y;
 extern int gui_sub_pos_x;
 extern int gui_sub_pos_y;
 
+extern int guiWinID;
+
+extern char *skinName;
+
+extern char *fsHistory[5];
+
+int cfg_gui_include(m_option_t *conf, const char *filename);
 int cfg_read(void);
 int cfg_write(void);
 

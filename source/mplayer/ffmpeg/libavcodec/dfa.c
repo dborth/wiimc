@@ -62,12 +62,14 @@ static int decode_tsw1(uint8_t *frame, int width, int height,
     const uint8_t *frame_start = frame;
     const uint8_t *frame_end   = frame + width * height;
     int mask = 0x10000, bitbuf = 0;
-    int v, offset, count, segments;
+    int v, count, segments;
+    unsigned offset;
 
     segments = bytestream_get_le32(&src);
-    frame   += bytestream_get_le32(&src);
-    if (frame < frame_start || frame > frame_end)
+    offset   = bytestream_get_le32(&src);
+    if (frame_end - frame <= offset)
         return -1;
+    frame += offset;
     while (segments--) {
         if (mask == 0x10000) {
             if (src >= src_end)
@@ -184,16 +186,15 @@ static int decode_dds1(uint8_t *frame, int width, int height,
 static int decode_bdlt(uint8_t *frame, int width, int height,
                        const uint8_t *src, const uint8_t *src_end)
 {
-    const uint8_t *frame_end = frame + width * height;
     uint8_t *line_ptr;
     int count, lines, segments;
 
     count = bytestream_get_le16(&src);
-    if (count >= height || width * count < 0)
+    if (count >= height)
         return -1;
     frame += width * count;
     lines = bytestream_get_le16(&src);
-    if (frame + lines * width > frame_end || src >= src_end)
+    if (count + lines > height || src >= src_end)
         return -1;
 
     while (lines--) {
@@ -203,17 +204,17 @@ static int decode_bdlt(uint8_t *frame, int width, int height,
         while (segments--) {
             if (src_end - src < 3)
                 return -1;
-            line_ptr += *src++;
-            if (line_ptr >= frame)
+            if (frame - line_ptr <= *src)
                 return -1;
+            line_ptr += *src++;
             count = (int8_t)*src++;
             if (count >= 0) {
-                if (line_ptr + count > frame || src_end - src < count)
+                if (frame - line_ptr < count || src_end - src < count)
                     return -1;
                 bytestream_get_buffer(&src, line_ptr, count);
             } else {
                 count = -count;
-                if (line_ptr + count > frame || src >= src_end)
+                if (frame - line_ptr < count || src >= src_end)
                     return -1;
                 memset(line_ptr, *src++, count);
             }
@@ -232,15 +233,16 @@ static int decode_wdlt(uint8_t *frame, int width, int height,
     int count, i, v, lines, segments;
 
     lines = bytestream_get_le16(&src);
-    if (frame + lines * width > frame_end || src >= src_end)
+    if (lines > height || src >= src_end)
         return -1;
 
     while (lines--) {
         segments = bytestream_get_le16(&src);
         while ((segments & 0xC000) == 0xC000) {
-            frame    -= (int16_t)segments * width;
-            if (frame >= frame_end)
+            unsigned delta = -((int16_t)segments * width);
+            if (frame_end - frame <= delta)
                 return -1;
+            frame    += delta;
             segments = bytestream_get_le16(&src);
         }
         if (segments & 0x8000) {
@@ -252,18 +254,18 @@ static int decode_wdlt(uint8_t *frame, int width, int height,
         while (segments--) {
             if (src_end - src < 2)
                 return -1;
-            line_ptr += *src++;
-            if (line_ptr >= frame)
+            if (frame - line_ptr <= *src)
                 return -1;
+            line_ptr += *src++;
             count = (int8_t)*src++;
             if (count >= 0) {
-                if (line_ptr + count*2 > frame || src_end - src < count*2)
+                if (frame - line_ptr < count*2 || src_end - src < count*2)
                     return -1;
                 bytestream_get_buffer(&src, line_ptr, count*2);
                 line_ptr += count * 2;
             } else {
                 count = -count;
-                if (line_ptr + count*2 > frame || src_end - src < 2)
+                if (frame - line_ptr < count*2 || src_end - src < 2)
                     return -1;
                 v = bytestream_get_le16(&src);
                 for (i = 0; i < count; i++)
@@ -382,14 +384,13 @@ static av_cold int dfa_decode_end(AVCodecContext *avctx)
 }
 
 AVCodec ff_dfa_decoder = {
-    "dfa",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_DFA,
-    sizeof(DfaContext),
-    dfa_decode_init,
-    NULL,
-    dfa_decode_end,
-    dfa_decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "dfa",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_DFA,
+    .priv_data_size = sizeof(DfaContext),
+    .init           = dfa_decode_init,
+    .close          = dfa_decode_end,
+    .decode         = dfa_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Chronomaster DFA"),
 };

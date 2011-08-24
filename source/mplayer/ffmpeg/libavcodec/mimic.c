@@ -352,7 +352,7 @@ static int mimic_decode_frame(AVCodecContext *avctx, void *data,
     }
 
     ctx->buf_ptrs[ctx->cur_index].reference = 1;
-    ctx->buf_ptrs[ctx->cur_index].pict_type = is_pframe ? FF_P_TYPE:FF_I_TYPE;
+    ctx->buf_ptrs[ctx->cur_index].pict_type = is_pframe ? AV_PICTURE_TYPE_P:AV_PICTURE_TYPE_I;
     if(ff_thread_get_buffer(avctx, &ctx->buf_ptrs[ctx->cur_index])) {
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;
@@ -416,15 +416,14 @@ static av_cold int mimic_decode_end(AVCodecContext *avctx)
 }
 
 AVCodec ff_mimic_decoder = {
-    "mimic",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_MIMIC,
-    sizeof(MimicContext),
-    mimic_decode_init,
-    NULL,
-    mimic_decode_end,
-    mimic_decode_frame,
-    CODEC_CAP_DR1 | CODEC_CAP_FRAME_THREADS,
+    .name           = "mimic",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_MIMIC,
+    .priv_data_size = sizeof(MimicContext),
+    .init           = mimic_decode_init,
+    .close          = mimic_decode_end,
+    .decode         = mimic_decode_frame,
+    .capabilities   = CODEC_CAP_DR1 | CODEC_CAP_FRAME_THREADS,
     .long_name = NULL_IF_CONFIG_SMALL("Mimic"),
     .update_thread_context = ONLY_IF_THREADS_ENABLED(mimic_decode_update_thread_context)
 };

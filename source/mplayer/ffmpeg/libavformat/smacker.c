@@ -233,7 +233,6 @@ static int smacker_read_packet(AVFormatContext *s, AVPacket *pkt)
     int i;
     int frame_size = 0;
     int palchange = 0;
-    int pos;
 
     if (s->pb->eof_reached || smk->cur_frame >= smk->frames)
         return AVERROR_EOF;
@@ -244,7 +243,6 @@ static int smacker_read_packet(AVFormatContext *s, AVPacket *pkt)
         frame_size = smk->frm_size[smk->cur_frame] & (~3);
         flags = smk->frm_flags[smk->cur_frame];
         /* handle palette change event */
-        pos = avio_tell(s->pb);
         if(flags & SMACKER_PAL){
             int size, sz, t, off, j, pos;
             uint8_t *pal = smk->pal;
@@ -342,11 +340,11 @@ static int smacker_read_close(AVFormatContext *s)
 }
 
 AVInputFormat ff_smacker_demuxer = {
-    "smk",
-    NULL_IF_CONFIG_SMALL("Smacker video"),
-    sizeof(SmackerContext),
-    smacker_probe,
-    smacker_read_header,
-    smacker_read_packet,
-    smacker_read_close,
+    .name           = "smk",
+    .long_name      = NULL_IF_CONFIG_SMALL("Smacker video"),
+    .priv_data_size = sizeof(SmackerContext),
+    .read_probe     = smacker_probe,
+    .read_header    = smacker_read_header,
+    .read_packet    = smacker_read_packet,
+    .read_close     = smacker_read_close,
 };

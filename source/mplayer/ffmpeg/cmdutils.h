@@ -19,11 +19,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef FFMPEG_CMDUTILS_H
-#define FFMPEG_CMDUTILS_H
+#ifndef LIBAV_CMDUTILS_H
+#define LIBAV_CMDUTILS_H
 
-#include <inttypes.h>
+#include <stdint.h>
+
 #include "libavcodec/avcodec.h"
+#include "libavfilter/avfilter.h"
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
 
@@ -37,10 +39,10 @@ extern const char program_name[];
  */
 extern const int program_birth_year;
 
-extern const char **opt_names;
 extern AVCodecContext *avcodec_opts[AVMEDIA_TYPE_NB];
 extern AVFormatContext *avformat_opts;
 extern struct SwsContext *sws_opts;
+extern AVDictionary *format_opts, *codec_opts;
 
 /**
  * Initialize the cmdutils option system, in particular
@@ -119,15 +121,14 @@ typedef struct {
 #define OPT_INT    0x0080
 #define OPT_FLOAT  0x0100
 #define OPT_SUBTITLE 0x0200
-#define OPT_FUNC2  0x0400
-#define OPT_INT64  0x0800
-#define OPT_EXIT   0x1000
+#define OPT_INT64  0x0400
+#define OPT_EXIT   0x0800
+#define OPT_DATA   0x1000
      union {
-        void (*func_arg)(const char *); //FIXME passing error code as int return would be nicer then exit() in the func
         int *int_arg;
         char **str_arg;
         float *float_arg;
-        int (*func2_arg)(const char *, const char *);
+        int (*func_arg)(const char *, const char *);
         int64_t *int64_arg;
     } u;
     const char *help;
@@ -147,7 +148,41 @@ void show_help_options(const OptionDef *options, const char *msg, int mask, int 
 void parse_options(int argc, char **argv, const OptionDef *options,
                    void (* parse_arg_function)(const char*));
 
-void set_context_opts(void *ctx, void *opts_ctx, int flags, AVCodec *codec);
+/**
+ * Check if the given stream matches a stream specifier.
+ *
+ * @param s  Corresponding format context.
+ * @param st Stream from s to be checked.
+ * @param spec A stream specifier of the [v|a|s|d]:[<stream index>] form.
+ *
+ * @return 1 if the stream matches, 0 if it doesn't, <0 on error
+ */
+int check_stream_specifier(AVFormatContext *s, AVStream *st, const char *spec);
+
+/**
+ * Filter out options for given codec.
+ *
+ * Create a new options dictionary containing only the options from
+ * opts which apply to the codec with ID codec_id.
+ *
+ * @param s Corresponding format context.
+ * @param st A stream from s for which the options should be filtered.
+ * @return a pointer to the created dictionary
+ */
+AVDictionary *filter_codec_opts(AVDictionary *opts, enum CodecID codec_id, AVFormatContext *s, AVStream *st);
+
+/**
+ * Setup AVCodecContext options for avformat_find_stream_info().
+ *
+ * Create an array of dictionaries, one dictionary for each stream
+ * contained in s.
+ * Each dictionary will contain the options from codec_opts which can
+ * be applied to the corresponding stream codec context.
+ *
+ * @return pointer to the created array of dictionaries, NULL if it
+ * cannot be created
+ */
+AVDictionary **setup_find_stream_info_opts(AVFormatContext *s, AVDictionary *codec_opts);
 
 /**
  * Print an error message to stderr, indicating filename and a human
@@ -159,8 +194,6 @@ void set_context_opts(void *ctx, void *opts_ctx, int flags, AVCodec *codec);
  * @see av_strerror()
  */
 void print_error(const char *filename, int err);
-
-void list_fmts(void (*get_fmt_string)(char *buf, int buf_size, int fmt), int nb_fmts);
 
 /**
  * Print the program banner to stderr. The banner contents depend on the
@@ -279,9 +312,6 @@ int64_t guess_correct_pts(PtsCorrectionContext *ctx, int64_t pts, int64_t dts);
 FILE *get_preset_file(char *filename, size_t filename_size,
                       const char *preset_name, int is_path, const char *codec_name);
 
-#if CONFIG_AVFILTER
-#include "libavfilter/avfilter.h"
-
 typedef struct {
     enum PixelFormat pix_fmt;
 } FFSinkContext;
@@ -297,6 +327,4 @@ extern AVFilter ffsink;
 int get_filtered_video_frame(AVFilterContext *sink, AVFrame *frame,
                              AVFilterBufferRef **picref, AVRational *pts_tb);
 
-#endif /* CONFIG_AVFILTER */
-
-#endif /* FFMPEG_CMDUTILS_H */
+#endif /* LIBAV_CMDUTILS_H */

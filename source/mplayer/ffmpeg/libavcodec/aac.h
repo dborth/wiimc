@@ -130,6 +130,7 @@ typedef struct {
 #define SCALE_MAX_POS   255    ///< scalefactor index maximum value
 #define SCALE_MAX_DIFF   60    ///< maximum scalefactor difference allowed by standard
 #define SCALE_DIFF_ZERO  60    ///< codebook index corresponding to zero scalefactor indices difference
+#define POW_SF2_ZERO    200    ///< ff_aac_pow2sf_tab index corresponding to pow(2, 0);
 
 /**
  * Long Term Prediction
@@ -223,10 +224,10 @@ typedef struct {
     float sf[120];                                  ///< scalefactors
     int sf_idx[128];                                ///< scalefactor indices (used by encoder)
     uint8_t zeroes[128];                            ///< band is not coded (used by encoder)
-    DECLARE_ALIGNED(16, float,   coeffs)[1024];     ///< coefficients for IMDCT
-    DECLARE_ALIGNED(16, float,   saved)[1024];      ///< overlap
-    DECLARE_ALIGNED(16, float,   ret)[2048];        ///< PCM output
-    DECLARE_ALIGNED(16, int16_t, ltp_state)[3072];  ///< time signal for LTP
+    DECLARE_ALIGNED(32, float,   coeffs)[1024];     ///< coefficients for IMDCT
+    DECLARE_ALIGNED(32, float,   saved)[1024];      ///< overlap
+    DECLARE_ALIGNED(32, float,   ret)[2048];        ///< PCM output
+    DECLARE_ALIGNED(16, float,   ltp_state)[3072];  ///< time signal for LTP
     PredictorState predictor_state[MAX_PREDICTORS];
 } SingleChannelElement;
 
@@ -257,7 +258,7 @@ typedef struct {
     DynamicRangeControl che_drc;
 
     /**
-     * @defgroup elements Channel element related data.
+     * @name Channel element related data
      * @{
      */
     enum ChannelPosition che_pos[4][MAX_ELEM_ID]; /**< channel element channel mapping with the
@@ -269,14 +270,15 @@ typedef struct {
     /** @} */
 
     /**
-     * @defgroup temporary aligned temporary buffers (We do not want to have these on the stack.)
+     * @name temporary aligned temporary buffers
+     * (We do not want to have these on the stack.)
      * @{
      */
-    DECLARE_ALIGNED(16, float, buf_mdct)[1024];
+    DECLARE_ALIGNED(32, float, buf_mdct)[1024];
     /** @} */
 
     /**
-     * @defgroup tables   Computed / set up during initialization.
+     * @name Computed / set up during initialization
      * @{
      */
     FFTContext mdct;
@@ -288,15 +290,13 @@ typedef struct {
     /** @} */
 
     /**
-     * @defgroup output   Members used for output interleaving.
+     * @name Members used for output interleaving
      * @{
      */
     float *output_data[MAX_CHANNELS];                 ///< Points to each element's 'ret' buffer (PCM output).
-    float sf_scale;                                   ///< Pre-scale for correct IMDCT and dsp.float_to_int16.
-    int sf_offset;                                    ///< offset into pow2sf_tab as appropriate for dsp.float_to_int16
     /** @} */
 
-    DECLARE_ALIGNED(16, float, temp)[128];
+    DECLARE_ALIGNED(32, float, temp)[128];
 
     enum OCStatus output_configured;
 } AACContext;

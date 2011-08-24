@@ -21,7 +21,10 @@
 
 #include "gui/util/bitmap.h"
 
-int skinBPRead(char *fname, txSample *bf);
+extern char *skinDirInHome;
+extern char *skinMPlayerDir;
+
+int skinBPRead(char *fname, guiImage *bf);
 int skinRead(char *dname);
 
 #endif /* MPLAYER_GUI_SKIN_H */

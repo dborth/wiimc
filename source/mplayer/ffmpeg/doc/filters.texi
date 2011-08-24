@@ -353,6 +353,140 @@ drawbox
 drawbox=10:20:200:60:red@@0.5"
 @end example
 
+@section drawtext
+
+Draw text string or text from specified file on top of video using the
+libfreetype library.
+
+To enable compilation of this filter you need to configure FFmpeg with
+@code{--enable-libfreetype}.
+
+The filter also recognizes strftime() sequences in the provided text
+and expands them accordingly. Check the documentation of strftime().
+
+The filter accepts parameters as a list of @var{key}=@var{value} pairs,
+separated by ":".
+
+The description of the accepted parameters follows.
+
+@table @option
+
+@item fontfile
+The font file to be used for drawing text. Path must be included.
+This parameter is mandatory.
+
+@item text
+The text string to be drawn. The text must be a sequence of UTF-8
+encoded characters.
+This parameter is mandatory if no file is specified with the parameter
+@var{textfile}.
+
+@item textfile
+A text file containing text to be drawn. The text must be a sequence
+of UTF-8 encoded characters.
+
+This parameter is mandatory if no text string is specified with the
+parameter @var{text}.
+
+If both text and textfile are specified, an error is thrown.
+
+@item x, y
+The offsets where text will be drawn within the video frame.
+Relative to the top/left border of the output image.
+
+The default value of @var{x} and @var{y} is 0.
+
+@item fontsize
+The font size to be used for drawing text.
+The default value of @var{fontsize} is 16.
+
+@item fontcolor
+The color to be used for drawing fonts.
+Either a string (e.g. "red") or in 0xRRGGBB[AA] format
+(e.g. "0xff000033"), possibly followed by an alpha specifier.
+The default value of @var{fontcolor} is "black".
+
+@item boxcolor
+The color to be used for drawing box around text.
+Either a string (e.g. "yellow") or in 0xRRGGBB[AA] format
+(e.g. "0xff00ff"), possibly followed by an alpha specifier.
+The default value of @var{boxcolor} is "white".
+
+@item box
+Used to draw a box around text using background color.
+Value should be either 1 (enable) or 0 (disable).
+The default value of @var{box} is 0.
+
+@item shadowx, shadowy
+The x and y offsets for the text shadow position with respect to the
+position of the text. They can be either positive or negative
+values. Default value for both is "0".
+
+@item shadowcolor
+The color to be used for drawing a shadow behind the drawn text.  It
+can be a color name (e.g. "yellow") or a string in the 0xRRGGBB[AA]
+form (e.g. "0xff00ff"), possibly followed by an alpha specifier.
+The default value of @var{shadowcolor} is "black".
+
+@item ft_load_flags
+Flags to be used for loading the fonts.
+
+The flags map the corresponding flags supported by libfreetype, and are
+a combination of the following values:
+@table @var
+@item default
+@item no_scale
+@item no_hinting
+@item render
+@item no_bitmap
+@item vertical_layout
+@item force_autohint
+@item crop_bitmap
+@item pedantic
+@item ignore_global_advance_width
+@item no_recurse
+@item ignore_transform
+@item monochrome
+@item linear_design
+@item no_autohint
+@item end table
+@end table
+
+Default value is "render".
+
+For more information consult the documentation for the FT_LOAD_*
+libfreetype flags.
+
+@item tabsize
+The size in number of spaces to use for rendering the tab.
+Default value is 4.
+@end table
+
+For example the command:
+@example
+drawtext="fontfile=/usr/share/fonts/truetype/freefont/FreeSerif.ttf: text='Test Text'"
+@end example
+
+will draw "Test Text" with font FreeSerif, using the default values
+for the optional parameters.
+
+The command:
+@example
+drawtext="fontfile=/usr/share/fonts/truetype/freefont/FreeSerif.ttf: text='Test Text':\
+          x=100: y=50: fontsize=24: fontcolor=yellow@@0.2: box=1: boxcolor=red@@0.2"
+@end example
+
+will draw 'Test Text' with font FreeSerif of size 24 at position x=100
+and y=50 (counting from the top-left corner of the screen), text is
+yellow with a red box around it. Both the text and the box have an
+opacity of 20%.
+
+Note that the double quotes are not necessary if spaces are not used
+within the parameter list.
+
+For more information about libfreetype, check:
+@url{http://www.freetype.org/}.
+
 @section fade
 
 Apply fade-in/out effect to input video.
@@ -384,6 +518,39 @@ fade=in:0:25, fade=out:975:25
 
 # make first 5 frames black, then fade in from frame 5-24
 fade=in:5:20
+@end example
+
+@section fieldorder
+
+Transform the field order of the input video.
+
+It accepts one parameter which specifies the required field order that
+the input interlaced video will be transformed to. The parameter can
+assume one of the following values:
+
+@table @option
+@item 0 or bff
+output bottom field first
+@item 1 or tff
+output top field first
+@end table
+
+Default value is "tff".
+
+Transformation is achieved by shifting the picture content up or down
+by one line, and filling the remaining line with appropriate picture content.
+This method is consistent with most broadcast field order converters.
+
+If the input video is not flagged as being interlaced, or it is already
+flagged as being of the required output field order then this filter does
+not alter the incoming video.
+
+This filter is very useful when converting to or from PAL DV material,
+which is bottom field first.
+
+For example:
+@example
+./ffmpeg -i in.vob -vf "fieldorder=bff" out.dv
 @end example
 
 @section fifo
@@ -629,8 +796,7 @@ Erode an image by using a specific structuring element.
 This filter corresponds to the libopencv function @code{cvErode}.
 
 The filter accepts the parameters: @var{struct_el}:@var{nb_iterations},
-with the same meaning and use of those of the dilate filter
-(@pxref{dilate}).
+with the same syntax and semantics as the @ref{dilate} filter.
 
 @subsection smooth
 
@@ -720,6 +886,39 @@ given coordinates @var{x}, @var{y}.
 It accepts the following parameters:
 @var{width}:@var{height}:@var{x}:@var{y}:@var{color}.
 
+The parameters @var{width}, @var{height}, @var{x}, and @var{y} are
+expressions containing the following constants:
+
+@table @option
+@item E, PI, PHI
+the corresponding mathematical approximated values for e
+(euler number), pi (greek PI), phi (golden ratio)
+
+@item in_w, in_h
+the input video width and heigth
+
+@item iw, ih
+same as @var{in_w} and @var{in_h}
+
+@item out_w, out_h
+the output width and heigth, that is the size of the padded area as
+specified by the @var{width} and @var{height} expressions
+
+@item ow, oh
+same as @var{out_w} and @var{out_h}
+
+@item x, y
+x and y offsets as specified by the @var{x} and @var{y}
+expressions, or NAN if not yet specified
+
+@item a
+input display aspect ratio, same as @var{iw} / @var{ih}
+
+@item hsub, vsub
+horizontal and vertical chroma subsample values. For example for the
+pixel format "yuv422p" @var{hsub} is 2 and @var{vsub} is 1.
+@end table
+
 Follows the description of the accepted parameters.
 
 @table @option
@@ -729,12 +928,18 @@ Specify the size of the output image with the paddings added. If the
 value for @var{width} or @var{height} is 0, the corresponding input size
 is used for the output.
 
+The @var{width} expression can reference the value set by the
+@var{height} expression, and viceversa.
+
 The default value of @var{width} and @var{height} is 0.
 
 @item x, y
 
 Specify the offsets where to place the input image in the padded area
 with respect to the top/left border of the output image.
+
+The @var{x} expression can reference the value set by the @var{y}
+expression, and viceversa.
 
 The default value of @var{x} and @var{y} is 0.
 
@@ -747,13 +952,29 @@ The default value of @var{color} is "black".
 
 @end table
 
-For example:
+Some examples follow:
 
 @example
 # Add paddings with color "violet" to the input video. Output video
 # size is 640x480, the top-left corner of the input video is placed at
 # column 0, row 40.
 pad=640:480:0:40:violet
+
+# pad the input to get an output with dimensions increased bt 3/2,
+# and put the input video at the center of the padded area
+pad="3/2*iw:3/2*ih:(ow-iw)/2:(oh-ih)/2"
+
+# pad the input to get a squared output with size equal to the maximum
+# value between the input width and height, and put the input video at
+# the center of the padded area
+pad="max(iw\,ih):ow:(ow-iw)/2:(oh-ih)/2"
+
+# pad the input to get a final w/h ratio of 16:9
+pad="ih*16/9:ih:(ow-iw)/2:(oh-ih)/2"
+
+# double output size and put the input video in the bottom-right
+# corner of the output padded area
+pad="2*iw:2*ih:ow-iw:oh-ih"
 @end example
 
 @section pixdesctest
@@ -772,13 +993,33 @@ can be used to test the monowhite pixel format descriptor definition.
 
 Scale the input video to @var{width}:@var{height} and/or convert the image format.
 
-For example the command:
+The parameters @var{width} and @var{height} are expressions containing
+the following constants:
 
-@example
-./ffmpeg -i in.avi -vf "scale=200:100" out.avi
-@end example
+@table @option
+@item E, PI, PHI
+the corresponding mathematical approximated values for e
+(euler number), pi (greek PI), phi (golden ratio)
 
-will scale the input video to a size of 200x100.
+@item in_w, in_h
+the input width and heigth
+
+@item iw, ih
+same as @var{in_w} and @var{in_h}
+
+@item out_w, out_h
+the output (cropped) width and heigth
+
+@item ow, oh
+same as @var{out_w} and @var{out_h}
+
+@item a
+input display aspect ratio, same as @var{iw} / @var{ih}
+
+@item hsub, vsub
+horizontal and vertical chroma subsample values. For example for the
+pixel format "yuv422p" @var{hsub} is 2 and @var{vsub} is 1.
+@end table
 
 If the input image format is different from the format requested by
 the next filter, the scale filter will convert the input to the
@@ -792,6 +1033,36 @@ use, for the respective output size, a value that maintains the aspect
 ratio of the input image.
 
 The default value of @var{width} and @var{height} is 0.
+
+Some examples follow:
+@example
+# scale the input video to a size of 200x100.
+scale=200:100
+
+# scale the input to 2x
+scale=2*iw:2*ih
+# the above is the same as
+scale=2*in_w:2*in_h
+
+# scale the input to half size
+scale=iw/2:ih/2
+
+# increase the width, and set the height to the same size
+scale=3/2*iw:ow
+
+# seek for Greek harmony
+scale=iw:1/PHI*iw
+scale=ih*PHI:ih
+
+# increase the height, and set the width to 3/2 of the height
+scale=3/2*oh:3/5*ih
+
+# increase the size, but make the size a multiple of the chroma
+scale="trunc(3/2*iw/hsub)*hsub:trunc(3/2*ih/vsub)*vsub"
+
+# increase the width to a maximum of 500 pixels, keep the same input aspect ratio
+scale='min(500\, iw*3/2):-1'
+@end example
 
 @anchor{setdar}
 @section setdar
@@ -821,7 +1092,7 @@ setdar=16:9
 setdar=1.77777
 @end example
 
-See also the "setsar" filter documentation (@pxref{setsar}).
+See also the @ref{setsar} filter documentation.
 
 @section setpts
 
@@ -1107,7 +1378,7 @@ This source is mainly intended for a programmatic use, in particular
 through the interface defined in @file{libavfilter/vsrc_buffer.h}.
 
 It accepts the following parameters:
-@var{width}:@var{height}:@var{pix_fmt_string}:@var{timebase_num}:@var{timebase_den}
+@var{width}:@var{height}:@var{pix_fmt_string}:@var{timebase_num}:@var{timebase_den}:@var{sample_aspect_ratio_num}:@var{sample_aspect_ratio.den}
 
 All the parameters need to be explicitely defined.
 
@@ -1126,15 +1397,20 @@ name.
 @item timebase_num, timebase_den
 Specify numerator and denomitor of the timebase assumed by the
 timestamps of the buffered frames.
+
+@item sample_aspect_ratio.num, sample_aspect_ratio.den
+Specify numerator and denominator of the sample aspect ratio assumed
+by the video frames.
 @end table
 
 For example:
 @example
-buffer=320:240:yuv410p:1:24
+buffer=320:240:yuv410p:1:24:1:1
 @end example
 
 will instruct the source to accept video frames with size 320x240 and
-with format "yuv410p" and assuming 1/24 as the timestamps timebase.
+with format "yuv410p", assuming 1/24 as the timestamps timebase and
+square pixels (1:1 sample aspect ratio).
 Since the pixel format with name "yuv410p" corresponds to the number 6
 (check the enum PixelFormat definition in @file{libavutil/pixfmt.h}),
 this example corresponds to:
@@ -1270,8 +1546,7 @@ form @var{width}x@var{height} or a frame size abbreviation.
 the form @var{num}/@var{den} or a frame rate abbreviation.
 @var{src_name} is the name to the frei0r source to load. For more
 information regarding frei0r and how to set the parameters read the
-section "frei0r" (@pxref{frei0r}) in the description of the video
-filters.
+section @ref{frei0r} in the description of the video filters.
 
 Some examples follow:
 @example

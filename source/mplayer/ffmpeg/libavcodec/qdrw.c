@@ -54,7 +54,7 @@ static int decode_frame(AVCodecContext *avctx,
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;
     }
-    p->pict_type= FF_I_TYPE;
+    p->pict_type= AV_PICTURE_TYPE_I;
     p->key_frame= 1;
 
     outdata = a->pic.data[0];
@@ -151,14 +151,13 @@ static av_cold int decode_end(AVCodecContext *avctx){
 }
 
 AVCodec ff_qdraw_decoder = {
-    "qdraw",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_QDRAW,
-    sizeof(QdrawContext),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "qdraw",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_QDRAW,
+    .priv_data_size = sizeof(QdrawContext),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Apple QuickDraw"),
 };

@@ -19,9 +19,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#ifndef AVFILTER_VSRC_BUFFER_H
+#define AVFILTER_VSRC_BUFFER_H
+
+/**
+ * @file
+ * memory buffer source API for video
+ */
+
 #include "libavcodec/avcodec.h" /* AVFrame */
 #include "avfilter.h"
 
 int av_vsrc_buffer_add_frame(AVFilterContext *buffer_filter, AVFrame *frame,
                              int64_t pts, AVRational pixel_aspect);
 
+#endif /* AVFILTER_VSRC_BUFFER_H */

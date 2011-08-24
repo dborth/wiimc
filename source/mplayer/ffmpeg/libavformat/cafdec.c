@@ -29,6 +29,8 @@
 #include "riff.h"
 #include "isom.h"
 #include "libavutil/intreadwrite.h"
+#include "libavutil/intfloat_readwrite.h"
+#include "libavutil/dict.h"
 #include "caf.h"
 
 typedef struct {
@@ -187,7 +189,7 @@ static void read_info_chunk(AVFormatContext *s, int64_t size)
         char value[1024];
         avio_get_str(pb, INT_MAX, key,   sizeof(key));
         avio_get_str(pb, INT_MAX, value, sizeof(value));
-        av_metadata_set2(&s->metadata, key, value, 0);
+        av_dict_set(&s->metadata, key, value, 0);
     }
 }
 
@@ -382,13 +384,12 @@ static int read_seek(AVFormatContext *s, int stream_index,
 }
 
 AVInputFormat ff_caf_demuxer = {
-    "caf",
-    NULL_IF_CONFIG_SMALL("Apple Core Audio Format"),
-    sizeof(CaffContext),
-    probe,
-    read_header,
-    read_packet,
-    NULL,
-    read_seek,
+    .name           = "caf",
+    .long_name      = NULL_IF_CONFIG_SMALL("Apple Core Audio Format"),
+    .priv_data_size = sizeof(CaffContext),
+    .read_probe     = probe,
+    .read_header    = read_header,
+    .read_packet    = read_packet,
+    .read_seek      = read_seek,
     .codec_tag = (const AVCodecTag*[]){ff_codec_caf_tags, 0},
 };

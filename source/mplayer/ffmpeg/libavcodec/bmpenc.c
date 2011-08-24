@@ -74,7 +74,7 @@ static int bmp_encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_s
     uint8_t *ptr;
     unsigned char* buf0 = buf;
     *p = *pict;
-    p->pict_type= FF_I_TYPE;
+    p->pict_type= AV_PICTURE_TYPE_I;
     p->key_frame= 1;
     switch (avctx->pix_fmt) {
     case PIX_FMT_RGB565:
@@ -150,13 +150,12 @@ static int bmp_encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_s
 }
 
 AVCodec ff_bmp_encoder = {
-    "bmp",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_BMP,
-    sizeof(BMPContext),
-    bmp_encode_init,
-    bmp_encode_frame,
-    NULL, //encode_end,
+    .name           = "bmp",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_BMP,
+    .priv_data_size = sizeof(BMPContext),
+    .init           = bmp_encode_init,
+    .encode         = bmp_encode_frame,
     .pix_fmts = (const enum PixelFormat[]){
         PIX_FMT_BGR24,
         PIX_FMT_RGB555, PIX_FMT_RGB565,

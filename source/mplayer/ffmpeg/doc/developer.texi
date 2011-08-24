@@ -17,7 +17,7 @@
 decoding). Look at @file{libavcodec/apiexample.c} to see how to use it.
 
 @item libavformat is the library containing the file format handling (mux and
-demux code for several formats). Look at @file{ffplay.c} to use it in a
+demux code for several formats). Look at @file{avplay.c} to use it in a
 player. See @file{libavformat/output-example.c} to use it to generate
 audio or video streams.
 
@@ -31,14 +31,16 @@ only the public api is used.
 
 You can use Libav in your commercial program, but you must abide to the
 license, LGPL or GPL depending on the specific features used, please refer
-to @url{http://libav.org/legal.html} for a quick checklist and to
-@url{http://git.libav.org/?p=libav.git;a=blob;f=COPYING.GPLv2},
-@url{http://git.libav.org/?p=libav.git;a=blob;f=COPYING.GPLv3},
-@url{http://git.libav.org/?p=libav.git;a=blob;f=COPYING.LGPLv2.1},
-@url{http://git.libav.org/?p=libav.git;a=blob;f=COPYING.LGPLv3} for the
-exact text of the licenses.
+to @uref{http://libav.org/legal.html, our legal page} for a quick checklist and to
+the following links for the exact text of each license:
+@uref{http://git.libav.org/?p=libav.git;a=blob;f=COPYING.GPLv2, GPL version 2},
+@uref{http://git.libav.org/?p=libav.git;a=blob;f=COPYING.GPLv3, GPL version 3},
+@uref{http://git.libav.org/?p=libav.git;a=blob;f=COPYING.LGPLv2.1, LGPL version 2.1},
+@uref{http://git.libav.org/?p=libav.git;a=blob;f=COPYING.LGPLv3, LGPL version 3}.
 Any modification to the source code can be suggested for inclusion.
-The best way to proceed is to send your patches to the Libav mailing list.
+The best way to proceed is to send your patches to the
+@uref{https://lists.libav.org/mailman/listinfo/libav-devel, libav-devel}
+mailing list.
 
 @anchor{Coding Rules}
 @section Coding Rules
@@ -60,10 +62,8 @@ These features are supported by all compilers we care about, so we will not
 accept patches to remove their use unless they absolutely do not impair
 clarity and performance.
 
-All code must compile with GCC 2.95 and GCC 3.3. Currently, Libav also
-compiles with several other compilers, such as the Compaq ccc compiler
-or Sun Studio 9, and we would like to keep it that way unless it would
-be exceedingly involved. To ensure compatibility, please do not use any
+All code must compile with recent versions of GCC and a number of other
+currently supported compilers. To ensure compatibility, please do not use
 additional C99 features or GCC extensions. Especially watch out for:
 @itemize @bullet
 @item
@@ -92,7 +92,7 @@ above them explaining what the function does, even if it is just one sentence.
 All structures and their member variables should be documented, too.
 @example
 /**
- * @@file mpeg.c
+ * @@file
  * MPEG codec.
  * @@author ...
  */
@@ -179,7 +179,10 @@ should also be avoided if they don't make the code easier to understand.
    When applying patches that have been discussed (at length) on the mailing
    list, reference the thread in the log message.
 @item
-    Subscribe to the libav-devel and libav-commits mailing list.
+    Subscribe to the
+    @uref{https://lists.libav.org/mailman/listinfo/libav-devel, libav-devel} and
+    @uref{https://lists.libav.org/mailman/listinfo/libav-commits, libav-commits}
+    mailing lists.
     Bugs and possible improvements or general questions regarding commits
     are discussed on libav-devel. We expect you to react if problems with
     your code are uncovered.
@@ -224,7 +227,7 @@ Note, some rules were borrowed from the MPlayer project.
 
 @section Submitting patches
 
-First, read the (@pxref{Coding Rules}) above if you did not yet, in particular
+First, read the @ref{Coding Rules} above if you did not yet, in particular
 the rules regarding patch submission.
 
 As stated already, please do not submit a patch which contains several
@@ -238,13 +241,14 @@ for us and greatly increases your chances of getting your patch applied.
 Use the patcheck tool of Libav to check your patch.
 The tool is located in the tools directory.
 
-Run the @pxref{Regression Tests} before submitting a patch in order to verify
+Run the @ref{Regression Tests} before submitting a patch in order to verify
 it does not cause unexpected problems.
 
 Patches should be posted as base64 encoded attachments (or any other
 encoding which ensures that the patch will not be trashed during
-transmission) to the libav-devel mailing list, see
-@url{https://lists.libav.org/mailman/listinfo/libav-devel}
+transmission) to the
+@uref{https://lists.libav.org/mailman/listinfo/libav-devel, libav-devel}
+mailing list.
 
 It also helps quite a bit if you tell us what the patch does (for example
 'replaces lrint by lrintf'), and why (for example '*BSD isn't C99 compliant
@@ -299,21 +303,26 @@ send a reminder by email. Your patch should eventually be dealt with.
     configure?
 @item
     Did you @code{git add} the appropriate files before committing?
+@item
+    Did you make sure it compiles standalone, i.e. with
+    @code{configure --disable-everything --enable-decoder=foo}
+    (or @code{--enable-demuxer} or whatever your component is)?
 @end enumerate
+
 
 @section patch submission checklist
 
 @enumerate
 @item
-    Do the regression tests pass with the patch applied?
+    Does @code{make fate} pass with the patch applied?
 @item
     Does @code{make checkheaders} pass with the patch applied?
 @item
     Is the patch against latest Libav git master branch?
 @item
-    Are you subscribed to libav-devel?
-    (@url{https://lists.libav.org/mailman/listinfo/libav-devel}
-     the list is subscribers)
+    Are you subscribed to the
+    @uref{https://lists.libav.org/mailman/listinfo/libav-devel, libav-devel}
+    mailing list? (Only list subscribers are allowed to post.)
 @item
     Have you checked that the changes are minimal, so that the same cannot be
     achieved with a smaller patch and/or simpler final code?
@@ -367,7 +376,9 @@ send a reminder by email. Your patch should eventually be dealt with.
 
 @section Patch review process
 
-All patches posted to libav-devel will be reviewed, unless they contain a
+All patches posted to the
+@uref{https://lists.libav.org/mailman/listinfo/libav-devel, libav-devel}
+mailing list will be reviewed, unless they contain a
 clear note that the patch is not for the git master branch.
 Reviews and comments will be posted as replies to the patch on the
 mailing list. The patch submitter then has to take care of every comment,

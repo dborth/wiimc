@@ -30,8 +30,6 @@
 #include "libavutil/colorspace.h"
 #include "libavutil/imgutils.h"
 
-//#define DEBUG_PACKET_CONTENTS
-
 #define RGBA(r,g,b,a) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
 
 enum SegmentType {
@@ -200,7 +198,7 @@ static int parse_picture_segment(AVCodecContext *avctx,
 
     /* Make sure the bitmap is not too large */
     if (avctx->width < width || avctx->height < height) {
-        av_log(avctx, AV_LOG_ERROR, "Bitmap dimensions larger then video.\n");
+        av_log(avctx, AV_LOG_ERROR, "Bitmap dimensions larger than video.\n");
         return -1;
     }
 
@@ -246,8 +244,8 @@ static void parse_palette_segment(AVCodecContext *avctx,
     while (buf < buf_end) {
         color_id  = bytestream_get_byte(&buf);
         y         = bytestream_get_byte(&buf);
-        cb        = bytestream_get_byte(&buf);
         cr        = bytestream_get_byte(&buf);
+        cb        = bytestream_get_byte(&buf);
         alpha     = bytestream_get_byte(&buf);
 
         YUV_TO_RGB1(cb, cr);
@@ -404,21 +402,18 @@ static int decode(AVCodecContext *avctx, void *data, int *data_size,
     const uint8_t *buf_end;
     uint8_t       segment_type;
     int           segment_length;
-
-#ifdef DEBUG_PACKET_CONTENTS
     int i;
 
-    av_log(avctx, AV_LOG_INFO, "PGS sub packet:\n");
+    av_dlog(avctx, "PGS sub packet:\n");
 
     for (i = 0; i < buf_size; i++) {
-        av_log(avctx, AV_LOG_INFO, "%02x ", buf[i]);
+        av_dlog(avctx, "%02x ", buf[i]);
         if (i % 16 == 15)
-            av_log(avctx, AV_LOG_INFO, "\n");
+            av_dlog(avctx, "\n");
     }
 
     if (i & 15)
-        av_log(avctx, AV_LOG_INFO, "\n");
-#endif
+        av_dlog(avctx, "\n");
 
     *data_size = 0;
 
@@ -474,13 +469,12 @@ static int decode(AVCodecContext *avctx, void *data, int *data_size,
 }
 
 AVCodec ff_pgssub_decoder = {
-    "pgssub",
-    AVMEDIA_TYPE_SUBTITLE,
-    CODEC_ID_HDMV_PGS_SUBTITLE,
-    sizeof(PGSSubContext),
-    init_decoder,
-    NULL,
-    close_decoder,
-    decode,
+    .name           = "pgssub",
+    .type           = AVMEDIA_TYPE_SUBTITLE,
+    .id             = CODEC_ID_HDMV_PGS_SUBTITLE,
+    .priv_data_size = sizeof(PGSSubContext),
+    .init           = init_decoder,
+    .close          = close_decoder,
+    .decode         = decode,
     .long_name = NULL_IF_CONFIG_SMALL("HDMV Presentation Graphic Stream subtitles"),
 };

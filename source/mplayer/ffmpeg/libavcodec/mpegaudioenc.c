@@ -27,8 +27,9 @@
 #include "avcodec.h"
 #include "put_bits.h"
 
-#undef  CONFIG_MPEGAUDIO_HP
-#define CONFIG_MPEGAUDIO_HP 0
+#define FRAC_BITS   15   /* fractional bits for sb_samples and dct */
+#define WFRAC_BITS  14   /* fractional bits for window */
+
 #include "mpegaudio.h"
 
 /* currently, cannot change these constants (need to modify
@@ -314,8 +315,6 @@ static void filter(MpegAudioContext *s, int ch, const short *samples, int incr)
     int tmp1[32];
     int *out;
 
-    //    print_pow1(samples, 1152);
-
     offset = s->samples_offset[ch];
     out = &s->sb_samples[ch][0][0][0];
     for(j=0;j<36;j++) {
@@ -359,8 +358,6 @@ static void filter(MpegAudioContext *s, int ch, const short *samples, int incr)
         }
     }
     s->samples_offset[ch] = offset;
-
-    //    print_pow(s->sb_samples, 1152);
 }
 
 static void compute_scale_factors(unsigned char scale_code[SBLIMIT],
@@ -399,10 +396,8 @@ static void compute_scale_factors(unsigned char scale_code[SBLIMIT],
                 index = 62; /* value 63 is not allowed */
             }
 
-#if 0
-            printf("%2d:%d in=%x %x %d\n",
-                   j, i, vmax, scale_factor_table[index], index);
-#endif
+            av_dlog(NULL, "%2d:%d in=%x %x %d\n",
+                    j, i, vmax, scale_factor_table[index], index);
             /* store the scale factor */
             assert(index >=0 && index <= 63);
             sf[i] = index;
@@ -470,10 +465,8 @@ static void compute_scale_factors(unsigned char scale_code[SBLIMIT],
             code = 0;           /* kill warning */
         }
 
-#if 0
-        printf("%d: %2d %2d %2d %d %d -> %d\n", j,
-               sf[0], sf[1], sf[2], d1, d2, code);
-#endif
+        av_dlog(NULL, "%d: %2d %2d %2d %d %d -> %d\n", j,
+                sf[0], sf[1], sf[2], d1, d2, code);
         scale_code[j] = code;
         sf += 3;
     }
@@ -547,13 +540,11 @@ static void compute_bit_allocation(MpegAudioContext *s,
                 }
             }
         }
-#if 0
-        printf("current=%d max=%d max_sb=%d alloc=%d\n",
-               current_frame_size, max_frame_size, max_sb,
-               bit_alloc[max_sb]);
-#endif
         if (max_sb < 0)
             break;
+        av_dlog(NULL, "current=%d max=%d max_sb=%d max_ch=%d alloc=%d\n",
+                current_frame_size, max_frame_size, max_sb, max_ch,
+                bit_alloc[max_ch][max_sb]);
 
         /* find alloc table entry (XXX: not optimal, should use
            pointer table) */
@@ -591,13 +582,6 @@ static void compute_bit_allocation(MpegAudioContext *s,
     }
     *padding = max_frame_size - current_frame_size;
     assert(*padding >= 0);
-
-#if 0
-    for(i=0;i<s->sblimit;i++) {
-        printf("%d ", bit_alloc[i]);
-    }
-    printf("\n");
-#endif
 }
 
 /*
@@ -719,15 +703,7 @@ static void encode_frame(MpegAudioContext *s,
                             /* group the 3 values to save bits */
                             put_bits(p, -bits,
                                      q[0] + steps * (q[1] + steps * q[2]));
-#if 0
-                            printf("%d: gr1 %d\n",
-                                   i, q[0] + steps * (q[1] + steps * q[2]));
-#endif
                         } else {
-#if 0
-                            printf("%d: gr3 %d %d %d\n",
-                                   i, q[0], q[1], q[2]);
-#endif
                             put_bits(p, bits, q[0]);
                             put_bits(p, bits, q[1]);
                             put_bits(p, bits, q[2]);
@@ -784,17 +760,14 @@ static av_cold int MPA_encode_close(AVCodecContext *avctx)
 }
 
 AVCodec ff_mp2_encoder = {
-    "mp2",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_MP2,
-    sizeof(MpegAudioContext),
-    MPA_encode_init,
-    MPA_encode_frame,
-    MPA_encode_close,
-    NULL,
+    .name           = "mp2",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_MP2,
+    .priv_data_size = sizeof(MpegAudioContext),
+    .init           = MPA_encode_init,
+    .encode         = MPA_encode_frame,
+    .close          = MPA_encode_close,
     .sample_fmts = (const enum AVSampleFormat[]){AV_SAMPLE_FMT_S16,AV_SAMPLE_FMT_NONE},
     .supported_samplerates= (const int[]){44100, 48000,  32000, 22050, 24000, 16000, 0},
     .long_name = NULL_IF_CONFIG_SMALL("MP2 (MPEG audio layer 2)"),
 };
-
-#undef FIX

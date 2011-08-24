@@ -16,6 +16,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "string.h"
 
 char *strlower(char *in)
@@ -91,4 +95,64 @@ char *decomment(char *in)
     }
 
     return in;
+}
+
+char *gstrchr(const char *str, int c)
+{
+    if (!str)
+        return NULL;
+
+    return strchr(str, c);
+}
+
+int gstrcmp(const char *a, const char *b)
+{
+    if (!a && !b)
+        return 0;
+    if (!a || !b)
+        return -1;
+
+    return strcmp(a, b);
+}
+
+int gstrcasecmp(const char *a, const char *b)
+{
+    if (!a && !b)
+        return 0;
+    if (!a || !b)
+        return -1;
+
+    return strcasecmp(a, b);
+}
+
+int gstrncmp(const char *a, const char *b, int n)
+{
+    if (!a && !b)
+        return 0;
+    if (!a || !b)
+        return -1;
+
+    return strncmp(a, b, n);
+}
+
+char *gstrdup(const char *str)
+{
+    if (!str)
+        return NULL;
+
+    return strdup(str);
+}
+
+void setdup(char **old, const char *str)
+{
+    free(*old);
+    *old = gstrdup(str);
+}
+
+void setddup(char **old, const char *dir, const char *name)
+{
+    free(*old);
+    *old = malloc(strlen(dir) + strlen(name) + 2);
+    if (*old)
+        sprintf(*old, "%s/%s", dir, name);
 }

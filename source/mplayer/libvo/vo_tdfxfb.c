@@ -99,7 +99,8 @@ static volatile voodoo_io_reg *reg_IO;
 static volatile voodoo_2d_reg *reg_2d;
 static voodoo_yuv_reg *reg_YUV;
 static struct YUV_plane *YUV;
-static void (*alpha_func)(), (*alpha_func_double)();
+static void (*alpha_func)(int, int, unsigned char*, unsigned char*, int, unsigned char*, int),
+    (*alpha_func_double)(int, int, unsigned char*, unsigned char*, int, unsigned char*, int);
 
 static int preinit(const char *arg)
 {
@@ -496,7 +497,7 @@ static uint32_t get_image(mp_image_t *mpi)
 	return VO_TRUE;
 }
 
-static int control(uint32_t request, void *data, ...)
+static int control(uint32_t request, void *data)
 {
 	switch(request) {
 	case VOCTRL_GET_IMAGE:

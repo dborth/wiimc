@@ -21,6 +21,7 @@
 
 #include "libavcodec/bytestream.h"
 #include "libavutil/avstring.h"
+#include "libavutil/intfloat_readwrite.h"
 #include "avformat.h"
 
 #include "rtmppkt.h"
@@ -233,9 +234,11 @@ int ff_rtmp_packet_write(URLContext *h, RTMPPacket *pkt,
 int ff_rtmp_packet_create(RTMPPacket *pkt, int channel_id, RTMPPacketType type,
                           int timestamp, int size)
 {
-    pkt->data = av_malloc(size);
-    if (!pkt->data)
-        return AVERROR(ENOMEM);
+    if (size) {
+        pkt->data = av_malloc(size);
+        if (!pkt->data)
+            return AVERROR(ENOMEM);
+    }
     pkt->data_size  = size;
     pkt->channel_id = channel_id;
     pkt->type       = type;

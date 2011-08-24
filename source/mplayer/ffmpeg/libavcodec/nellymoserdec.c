@@ -47,7 +47,7 @@
 
 typedef struct NellyMoserDecodeContext {
     AVCodecContext* avctx;
-    DECLARE_ALIGNED(16, float,float_buf)[NELLY_SAMPLES];
+    DECLARE_ALIGNED(32, float, float_buf)[NELLY_SAMPLES];
     float           state[128];
     AVLFG           random_state;
     GetBitContext   gb;
@@ -55,7 +55,7 @@ typedef struct NellyMoserDecodeContext {
     DSPContext      dsp;
     FFTContext      imdct_ctx;
     FmtConvertContext fmt_conv;
-    DECLARE_ALIGNED(16, float,imdct_out)[NELLY_BUF_LEN * 2];
+    DECLARE_ALIGNED(32, float, imdct_out)[NELLY_BUF_LEN * 2];
 } NellyMoserDecodeContext;
 
 static void overlap_and_window(NellyMoserDecodeContext *s, float *state, float *audio, float *a_in)
@@ -194,14 +194,13 @@ static av_cold int decode_end(AVCodecContext * avctx) {
 }
 
 AVCodec ff_nellymoser_decoder = {
-    "nellymoser",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_NELLYMOSER,
-    sizeof(NellyMoserDecodeContext),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_tag,
+    .name           = "nellymoser",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_NELLYMOSER,
+    .priv_data_size = sizeof(NellyMoserDecodeContext),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_tag,
     .long_name = NULL_IF_CONFIG_SMALL("Nellymoser Asao"),
 };
 

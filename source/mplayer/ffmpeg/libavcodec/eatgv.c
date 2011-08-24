@@ -300,7 +300,7 @@ static int tgv_decode_frame(AVCodecContext *avctx,
 
     if(chunk_type==kVGT_TAG) {
         s->frame.key_frame = 1;
-        s->frame.pict_type = FF_I_TYPE;
+        s->frame.pict_type = AV_PICTURE_TYPE_I;
         if (unpack(buf, buf_end, s->frame.data[0], s->avctx->width, s->avctx->height)<0) {
             av_log(avctx, AV_LOG_WARNING, "truncated intra frame\n");
             return -1;
@@ -311,7 +311,7 @@ static int tgv_decode_frame(AVCodecContext *avctx,
             return buf_size;
         }
         s->frame.key_frame = 0;
-        s->frame.pict_type = FF_P_TYPE;
+        s->frame.pict_type = AV_PICTURE_TYPE_P;
         if (tgv_decode_inter(s, buf, buf_end)<0) {
             av_log(avctx, AV_LOG_WARNING, "truncated inter frame\n");
             return -1;
@@ -335,13 +335,12 @@ static av_cold int tgv_decode_end(AVCodecContext *avctx)
 }
 
 AVCodec ff_eatgv_decoder = {
-    "eatgv",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_TGV,
-    sizeof(TgvContext),
-    tgv_decode_init,
-    NULL,
-    tgv_decode_end,
-    tgv_decode_frame,
+    .name           = "eatgv",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_TGV,
+    .priv_data_size = sizeof(TgvContext),
+    .init           = tgv_decode_init,
+    .close          = tgv_decode_end,
+    .decode         = tgv_decode_frame,
     .long_name = NULL_IF_CONFIG_SMALL("Electronic Arts TGV video"),
 };

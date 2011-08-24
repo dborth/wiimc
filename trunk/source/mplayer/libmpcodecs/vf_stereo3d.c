@@ -52,10 +52,14 @@ typedef enum stereo_code {
     MONO_R,             //mono output for debugging (right eye only)
     SIDE_BY_SIDE_LR,    //side by side parallel (left eye left, right eye right)
     SIDE_BY_SIDE_RL,    //side by side crosseye (right eye left, left eye right)
+    SIDE_BY_SIDE_2_LR,  //side by side parallel with half width resolution
+    SIDE_BY_SIDE_2_RL,  //side by side crosseye with half width resolution
     ABOVE_BELOW_LR,     //above-below (left eye above, right eye below)
     ABOVE_BELOW_RL,     //above-below (right eye above, left eye below)
     ABOVE_BELOW_2_LR,   //above-below with half height resolution
     ABOVE_BELOW_2_RL,   //above-below with half height resolution
+    INTERLEAVE_ROWS_LR, //row-interleave (left eye has top row)
+    INTERLEAVE_ROWS_RL, //row-interleave (right eye has top row)
     STEREO_CODE_COUNT   //no value set - TODO: needs autodetection
 } stereo_code;
 
@@ -109,6 +113,7 @@ struct vf_priv_s {
     int ana_matrix[3][6];
     unsigned int width;
     unsigned int height;
+    unsigned int row_step;
 } const vf_priv_default = {
   {SIDE_BY_SIDE_LR},
   {ANAGLYPH_RC_DUBOIS}
@@ -135,6 +140,7 @@ static int config(struct vf_instance *vf, int width, int height, int d_width,
     //default input values
     vf->priv->width             = width;
     vf->priv->height            = height;
+    vf->priv->row_step          = 1;
     vf->priv->in.width          = width;
     vf->priv->in.height         = height;
     vf->priv->in.off_left       = 0;
@@ -144,10 +150,14 @@ static int config(struct vf_instance *vf, int width, int height, int d_width,
 
     //check input format
     switch (vf->priv->in.fmt) {
+    case SIDE_BY_SIDE_2_LR:
+        d_width                *= 2;
     case SIDE_BY_SIDE_LR:
         vf->priv->width         = width / 2;
         vf->priv->in.off_right  = vf->priv->width * 3;
         break;
+    case SIDE_BY_SIDE_2_RL:
+        d_width                *= 2;
     case SIDE_BY_SIDE_RL:
         vf->priv->width         = width / 2;
         vf->priv->in.off_left   = vf->priv->width * 3;
@@ -193,10 +203,14 @@ static int config(struct vf_instance *vf, int width, int height, int d_width,
         memcpy(vf->priv->ana_matrix, ana_coeff[vf->priv->out.fmt],
                sizeof(vf->priv->ana_matrix));
         break;
+    case SIDE_BY_SIDE_2_LR:
+        d_width                /= 2;
     case SIDE_BY_SIDE_LR:
         vf->priv->out.width     = vf->priv->width * 2;
         vf->priv->out.off_right = vf->priv->width * 3;
         break;
+    case SIDE_BY_SIDE_2_RL:
+        d_width                /= 2;
     case SIDE_BY_SIDE_RL:
         vf->priv->out.width     = vf->priv->width * 2;
         vf->priv->out.off_left  = vf->priv->width * 3;
@@ -212,6 +226,18 @@ static int config(struct vf_instance *vf, int width, int height, int d_width,
     case ABOVE_BELOW_RL:
         vf->priv->out.height    = vf->priv->height * 2;
         vf->priv->out.row_left  = vf->priv->height;
+        break;
+    case INTERLEAVE_ROWS_LR:
+        vf->priv->row_step      = 2;
+        vf->priv->height        = vf->priv->height / 2;
+        vf->priv->out.off_right = vf->priv->width * 3;
+        vf->priv->in.off_right += vf->priv->in.width * 3;
+        break;
+    case INTERLEAVE_ROWS_RL:
+        vf->priv->row_step      = 2;
+        vf->priv->height        = vf->priv->height / 2;
+        vf->priv->out.off_left  = vf->priv->width * 3;
+        vf->priv->in.off_left  += vf->priv->in.width * 3;
         break;
     case MONO_R:
         //same as MONO_L only needs switching of input offsets
@@ -258,22 +284,28 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
         switch (vf->priv->out.fmt) {
         case SIDE_BY_SIDE_LR:
         case SIDE_BY_SIDE_RL:
+        case SIDE_BY_SIDE_2_LR:
+        case SIDE_BY_SIDE_2_RL:
         case ABOVE_BELOW_LR:
         case ABOVE_BELOW_RL:
         case ABOVE_BELOW_2_LR:
         case ABOVE_BELOW_2_RL:
-            memcpy_pic(dmpi->planes[0] + out_off_left,
+        case INTERLEAVE_ROWS_LR:
+        case INTERLEAVE_ROWS_RL:
+            memcpy_pic2(dmpi->planes[0] + out_off_left,
                        mpi->planes[0] + in_off_left,
                        3 * vf->priv->width,
                        vf->priv->height,
-                       dmpi->stride[0],
-                       mpi->stride[0]);
-            memcpy_pic(dmpi->planes[0] + out_off_right,
+                       dmpi->stride[0] * vf->priv->row_step,
+                       mpi->stride[0] * vf->priv->row_step,
+                       vf->priv->row_step != 1);
+            memcpy_pic2(dmpi->planes[0] + out_off_right,
                        mpi->planes[0] + in_off_right,
                        3 * vf->priv->width,
                        vf->priv->height,
-                       dmpi->stride[0],
-                       mpi->stride[0]);
+                       dmpi->stride[0] * vf->priv->row_step,
+                       mpi->stride[0] * vf->priv->row_step,
+                       vf->priv->row_step != 1);
             break;
         case MONO_L:
         case MONO_R:
@@ -294,13 +326,13 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
         case ANAGLYPH_YB_GRAY:
         case ANAGLYPH_YB_HALF:
         case ANAGLYPH_YB_COLOR: {
-            int x,y,il,ir,o;
+            int i,x,y,il,ir,o;
             unsigned char *source     = mpi->planes[0];
             unsigned char *dest       = dmpi->planes[0];
             unsigned int   out_width  = vf->priv->out.width;
             int           *ana_matrix[3];
 
-            for(int i = 0; i < 3; i++)
+            for(i = 0; i < 3; i++)
                 ana_matrix[i] = vf->priv->ana_matrix[i];
 
             for (y = 0; y < vf->priv->out.height; y++) {
@@ -387,6 +419,10 @@ static const struct format_preset {
     {"side_by_side_left_first",          SIDE_BY_SIDE_LR},
     {"sbsr",                             SIDE_BY_SIDE_RL},
     {"side_by_side_right_first",         SIDE_BY_SIDE_RL},
+    {"sbs2l",                              SIDE_BY_SIDE_2_LR},
+    {"side_by_side_half_width_left_first", SIDE_BY_SIDE_2_LR},
+    {"sbs2r",                              SIDE_BY_SIDE_2_RL},
+    {"side_by_side_half_width_right_first",SIDE_BY_SIDE_2_RL},
     {"abl",                              ABOVE_BELOW_LR},
     {"above_below_left_first",           ABOVE_BELOW_LR},
     {"abr",                              ABOVE_BELOW_RL},
@@ -395,6 +431,10 @@ static const struct format_preset {
     {"above_below_half_height_left_first", ABOVE_BELOW_2_LR},
     {"ab2r",                               ABOVE_BELOW_2_RL},
     {"above_below_half_height_right_first",ABOVE_BELOW_2_RL},
+    {"irl",                                INTERLEAVE_ROWS_LR},
+    {"interleave_rows_left_first",         INTERLEAVE_ROWS_LR},
+    {"irr",                                INTERLEAVE_ROWS_RL},
+    {"interleave_rows_right_first",        INTERLEAVE_ROWS_RL},
     { NULL, 0}
 };
 

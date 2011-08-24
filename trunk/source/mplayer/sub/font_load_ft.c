@@ -139,7 +139,7 @@ static void paste_bitmap(unsigned char *bbuffer, FT_Bitmap *bitmap, int x, int y
 
 
 static int check_font(font_desc_t *desc, float ppem, int padding, int pic_idx,
-		      int charset_size, FT_ULong *charset, FT_ULong *charcodes,
+		      int charset_size, const FT_ULong *charset, const FT_ULong *charcodes,
 		      int unicode) {
     FT_Error	error;
     FT_Face face = desc->faces[pic_idx];
@@ -620,7 +620,7 @@ void render_one_glyph(font_desc_t *desc, int c)
 
 
 static int prepare_font(font_desc_t *desc, FT_Face face, float ppem, int pic_idx,
-			int charset_size, FT_ULong *charset, FT_ULong *charcodes, int unicode,
+			int charset_size, const FT_ULong *charset, const FT_ULong *charcodes, int unicode,
 			double thickness, double radius)
 {
     int i, err;
@@ -909,11 +909,11 @@ static int load_sub_face(const char *name, int face_index, FT_Face *face)
     if (name) err = FT_New_Face(library, name, face_index, face);
 
     if (err) {
-#ifndef GEKKO    
+#ifndef GEKKO 
 	char *font_file = get_path("subfont.ttf");
 	err = FT_New_Face(library, font_file, 0, face);
 	free(font_file);
-#endif	
+#endif
 	if (err) {
 #ifdef GEKKO
 		char cad[100];

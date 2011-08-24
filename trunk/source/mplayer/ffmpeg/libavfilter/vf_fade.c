@@ -101,7 +101,7 @@ static void draw_slice(AVFilterLink *inlink, int y, int h, int slice_dir)
     uint8_t *p;
     int i, j, plane;
 
-    if (fade->factor < 65536) {
+    if (fade->factor < UINT16_MAX) {
         /* luma or rgb plane */
         for (i = 0; i < h; i++) {
             p = outpic->data[0] + (y+i) * outpic->linesize[0];
@@ -114,7 +114,7 @@ static void draw_slice(AVFilterLink *inlink, int y, int h, int slice_dir)
             }
         }
 
-        if (outpic->data[0] && outpic->data[1]) {
+        if (outpic->data[1] && outpic->data[2]) {
             /* chroma planes */
             for (plane = 1; plane < 3; plane++) {
                 for (i = 0; i < h; i++) {

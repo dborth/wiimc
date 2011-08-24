@@ -78,7 +78,6 @@ play_tree_parser_get_line(play_tree_parser_t* p) {
 
   assert(p->buffer_end < p->buffer_size);
   assert(!p->buffer[p->buffer_end]);
-
   while(1) {
 
     if(resize) {
@@ -335,8 +334,14 @@ parse_pls(play_tree_parser_t* p) {
       num = pls_read_entry(line+6,&entries,&max_entry,&v);
       if(num < 0)
 	mp_msg(MSGT_PLAYTREE,MSGL_ERR,"No value in entry %s\n",line);
-      else
-	entries[num-1].length = strdup(v);
+      else {
+        char *end;
+        long val = strtol(v, &end, 10);
+        if (*end || (val <= 0 && val != -1))
+          mp_msg(MSGT_PLAYTREE,MSGL_ERR,"Invalid length value in entry %s\n",line);
+        else if (val > 0)
+          entries[num-1].length = strdup(v);
+      }
     } else
       mp_msg(MSGT_PLAYTREE,MSGL_WARN,"Unknown entry type %s\n",line);
     line = play_tree_parser_get_line(p);
@@ -353,6 +358,8 @@ parse_pls(play_tree_parser_t* p) {
 	  if(entries[num].title != NULL && entries[num].title[0] != 0) play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, entries[num].title);
 #endif
       play_tree_add_file(entry,entries[num].file);
+      if (entries[num].length)
+        play_tree_set_param(entry, "endpos", entries[num].length);
       free(entries[num].file);
       if(list)
 	play_tree_append_entry(last_entry,entry);
@@ -704,7 +711,7 @@ parse_textplain(play_tree_parser_t* p) {
   play_tree_parser_stop_keeping(p);
 
   while((line = play_tree_parser_get_line(p)) != NULL) {
-	strstrip(line);
+    strstrip(line);
 #ifdef GEKKO
 	linenum++;
 	linelen = strlen(line);

@@ -217,7 +217,7 @@ void dsputil_init_paired(DSPContext *c, AVCodecContext *avctx)
 	c->put_pixels_clamped = put_pixels_clamped_paired;
 	c->put_signed_pixels_clamped = put_signed_pixels_clamped_paired;
 	c->add_pixels_clamped = add_pixels_clamped_paired;
-	c->scale_block = scale_block_paired;
+	//c->scale_block = scale_block_paired;
 	
 	if (CONFIG_VORBIS_DECODER)
 		c->vorbis_inverse_coupling = vorbis_inverse_coupling_paired;

@@ -301,7 +301,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
     }
 
     c->pic.key_frame = 0;
-    c->pic.pict_type = FF_P_TYPE;
+    c->pic.pict_type = AV_PICTURE_TYPE_P;
 
     //restore screen after cursor
     if(c->screendta) {
@@ -374,7 +374,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
             break;
         case MAGIC_WMVi: // ServerInitialization struct
             c->pic.key_frame = 1;
-            c->pic.pict_type = FF_I_TYPE;
+            c->pic.pict_type = AV_PICTURE_TYPE_I;
             depth = *src++;
             if(depth != c->bpp) {
                 av_log(avctx, AV_LOG_INFO, "Depth mismatch. Container %i bpp, Frame data: %i bpp\n", c->bpp, depth);
@@ -509,15 +509,14 @@ static av_cold int decode_end(AVCodecContext *avctx)
 }
 
 AVCodec ff_vmnc_decoder = {
-    "vmnc",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_VMNC,
-    sizeof(VmncContext),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "vmnc",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_VMNC,
+    .priv_data_size = sizeof(VmncContext),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("VMware Screen Codec / VMware Video"),
 };
 

@@ -20,6 +20,7 @@
  */
 
 #include "libavutil/crc.h"
+#include "libavutil/mathematics.h"
 #include "libavutil/random_seed.h"
 #include "libavcodec/xiph.h"
 #include "libavcodec/bytestream.h"
@@ -221,7 +222,7 @@ static int ogg_buffer_data(AVFormatContext *s, AVStream *st,
 }
 
 static uint8_t *ogg_write_vorbiscomment(int offset, int bitexact,
-                                        int *header_len, AVMetadata **m, int framing_bit)
+                                        int *header_len, AVDictionary **m, int framing_bit)
 {
     const char *vendor = bitexact ? "ffmpeg" : LIBAVFORMAT_IDENT;
     int size;
@@ -247,7 +248,7 @@ static uint8_t *ogg_write_vorbiscomment(int offset, int bitexact,
 
 static int ogg_build_flac_headers(AVCodecContext *avctx,
                                   OGGStreamContext *oggstream, int bitexact,
-                                  AVMetadata **m)
+                                  AVDictionary **m)
 {
     enum FLACExtradataFormat format;
     uint8_t *streaminfo;
@@ -287,7 +288,7 @@ static int ogg_build_flac_headers(AVCodecContext *avctx,
 
 static int ogg_build_speex_headers(AVCodecContext *avctx,
                                    OGGStreamContext *oggstream, int bitexact,
-                                   AVMetadata **m)
+                                   AVDictionary **m)
 {
     uint8_t *p;
 
@@ -504,14 +505,14 @@ static int ogg_write_trailer(AVFormatContext *s)
 }
 
 AVOutputFormat ff_ogg_muxer = {
-    "ogg",
-    NULL_IF_CONFIG_SMALL("Ogg"),
-    "application/ogg",
-    "ogg,ogv,spx",
-    sizeof(OGGContext),
-    CODEC_ID_FLAC,
-    CODEC_ID_THEORA,
-    ogg_write_header,
-    ogg_write_packet,
-    ogg_write_trailer,
+    .name              = "ogg",
+    .long_name         = NULL_IF_CONFIG_SMALL("Ogg"),
+    .mime_type         = "application/ogg",
+    .extensions        = "ogg,ogv,spx",
+    .priv_data_size    = sizeof(OGGContext),
+    .audio_codec       = CODEC_ID_FLAC,
+    .video_codec       = CODEC_ID_THEORA,
+    .write_header      = ogg_write_header,
+    .write_packet      = ogg_write_packet,
+    .write_trailer     = ogg_write_trailer,
 };

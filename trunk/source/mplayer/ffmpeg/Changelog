@@ -3,6 +3,71 @@ releases are sorted from youngest to oldest.
 
 
 version <next>:
+- BWF muxer
+- Flash Screen Video 2 decoder
+- ffplay/ffprobe/ffserver renamed to avplay/avprobe/avserver
+- ffmpeg deprecated, added avconv, which is almost the same for now, except
+for a few incompatible changes in the options, which will hopefully make them
+easier to use. The changes are:
+    * -newvideo/-newaudio/-newsubtitle are gone, because they were redundant and
+      worked in a nonstandard way. -map is sufficient to add streams to output
+      files.
+    * -map now has slightly different and more powerful syntax.
+        + it's possible to specify stream type. E.g. -map 0:a:2 means 'third
+          audio stream'.
+        + omitting the stream index now maps all the streams of the given
+          type, not just the first. E.g. -map 0:s maps all the subtitle streams.
+        + colons (':') are used to separate file index/stream type/stream
+          index. Comma (',') is used to separate the sync stream. This is done
+          for consistency with other options.
+        + since -map can now match multiple streams, negative mappings were
+          introduced. Negative mappings disable some streams from an already
+          defined map. E.g. '-map 0 -map -0:a:1' means 'map everything except
+          for the second audio stream'.
+    * -vcodec/-acodec/-scodec are replaced by -c (or -codec), which
+      allows to precisely specify target stream(s) consistently with other
+      options. E.g. '-c:v libx264' sets the codec for all video streams,
+      '-c:a:0 libvorbis' sets the codec for the first audio stream and '-c
+      copy' copies all the streams.
+    * It is now possible to precisely specify which stream should an AVOption
+      apply to. See the manual for detailed explanation.
+    * -map_chapters now takes only an input file index and applies to the next
+      output file. This is consistent with how all the other options work.
+    * -map_metadata now takes only an input metadata specifier and applies to
+      the next output file. Output metadata specifier is now part of the option
+      name, similarly to the AVOptions/map/codec feature above.
+    * Presets in avconv are disabled, because only libx264 used them and
+      presets for libx264 can now be specified using a private option
+      '-preset <presetname>'.
+    * -intra option was removed, it's equivalent to -g 0.
+- XMV demuxer
+
+
+version 0.7:
+
+- E-AC-3 audio encoder
+- ac3enc: add channel coupling support
+- floating-point sample format support for (E-)AC-3, DCA, AAC, Vorbis decoders
+- H.264/MPEG frame-level multithreading
+- av_metadata_* functions renamed to av_dict_* and moved to libavutil
+- 4:4:4 H.264 decoding support
+- 10-bit H.264 optimizations for x86
+- bump libswscale for recently reported ABI break
+
+
+version 0.7_beta2:
+
+- VP8 frame-level multithreading
+- NEON optimizations for VP8
+- removed a lot of deprecated API cruft
+- FFT and IMDCT optimizations for AVX (Sandy Bridge) processors
+- DPX image encoder
+- SMPTE 302M AES3 audio decoder
+- ffmpeg no longer quits after the 'q' key is pressed; use 'ctrl+c' instead
+- 9bit and 10bit per sample support in the H.264 decoder
+
+
+version 0.7_beta1:
 
 - WebM support in Matroska de/muxer
 - low overhead Ogg muxing
@@ -22,7 +87,6 @@ version <next>:
 - RTP depacketization of QDM2
 - ANSI/ASCII art playback system
 - Lego Mindstorms RSO de/muxer
-- libavcore added
 - SubRip subtitle file muxer and demuxer
 - Chinese AVS encoding via libxavs
 - ffprobe -show_packets option added
@@ -52,10 +116,10 @@ version <next>:
 - demuxer for receiving raw rtp:// URLs without an SDP description
 - single stream LATM/LOAS decoder
 - setpts filter added
-- Win64 support for optimized asm functions
+- Win64 support for optimized x86 assembly functions
 - MJPEG/AVI1 to JPEG/JFIF bitstream filter
 - ASS subtitle encoder and decoder
-- IEC 61937 encapsulation for E-AC3, TrueHD, DTS-HD (for HDMI passthrough)
+- IEC 61937 encapsulation for E-AC-3, TrueHD, DTS-HD (for HDMI passthrough)
 - overlay filter added
 - rename aspect filter to setdar, and pixelaspect to setsar
 - IEC 61937 demuxer
@@ -86,6 +150,7 @@ version <next>:
 - AAC encoding via libvo-aacenc
 - AMR-WB encoding via libvo-amrwbenc
 - xWMA demuxer
+- fieldorder video filter added
 
 
 version 0.6:

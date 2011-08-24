@@ -17,13 +17,15 @@
  */
 
 #include "app.h"
-
-#include "interface.h"
 #include "skin/font.h"
 
 #include "libavutil/common.h"
 
-guiItems appMPlayer;
+guiItems guiApp = {
+    .IndexOfMainItems    = -1,
+    .IndexOfPlaybarItems = -1,
+    .IndexOfMenuItems    = -1
+};
 
 static const evName evNames[] = {
     { evNone,              "evNone"              },
@@ -84,40 +86,33 @@ static void appClearItem(wItem *item)
     memset(item, 0, sizeof(*item));
 }
 
-void appInitStruct(void)
-{
-    appMPlayer.IndexOfMainItems = -1;
-    appMPlayer.IndexOfBarItems  = -1;
-    appMPlayer.IndexOfMenuItems = -1;
-
-    appMPlayer.sub.x = -1;   // NOTE TO MYSELF: is this really necessary?
-    appMPlayer.sub.y = -1;   // NOTE TO MYSELF: is this really necessary?
-}
-
 void appFreeStruct(void)
 {
     int i;
 
-    appClearItem(&appMPlayer.main);
-    appMPlayer.mainDecoration = 0;
+    appClearItem(&guiApp.main);
+    guiApp.mainDecoration = 0;
 
-    appClearItem(&appMPlayer.sub);
+    appClearItem(&guiApp.sub);
 
-    appClearItem(&appMPlayer.bar);
-    appMPlayer.barIsPresent = 0;
+    appClearItem(&guiApp.playbar);
+    guiApp.playbarIsPresent = 0;
 
-    appClearItem(&appMPlayer.menu);
-    appClearItem(&appMPlayer.menuSelected);
-    appMPlayer.menuIsPresent = 0;
+    appClearItem(&guiApp.menu);
+    appClearItem(&guiApp.menuSelected);
+    guiApp.menuIsPresent = 0;
 
-    for (i = 0; i <= appMPlayer.IndexOfMainItems; i++)
-        appClearItem(&appMPlayer.mainItems[i]);
-    for (i = 0; i <= appMPlayer.IndexOfBarItems; i++)
-        appClearItem(&appMPlayer.barItems[i]);
-    for (i = 0; i <= appMPlayer.IndexOfMenuItems; i++)
-        appClearItem(&appMPlayer.menuItems[i]);
+    for (i = 0; i <= guiApp.IndexOfMainItems; i++)
+        appClearItem(&guiApp.mainItems[i]);
+    for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++)
+        appClearItem(&guiApp.playbarItems[i]);
+    for (i = 0; i <= guiApp.IndexOfMenuItems; i++)
+        appClearItem(&guiApp.menuItems[i]);
 
-    appInitStruct();
+    guiApp.IndexOfMainItems    = -1;
+    guiApp.IndexOfPlaybarItems = -1;
+    guiApp.IndexOfMenuItems    = -1;
+
     fntFreeFont();
 }
 
@@ -136,11 +131,11 @@ void btnModify(int event, float state)
 {
     int i;
 
-    for (i = 0; i <= appMPlayer.IndexOfMainItems; i++) {
-        if (appMPlayer.mainItems[i].message == event) {
-            switch (appMPlayer.mainItems[i].type) {
+    for (i = 0; i <= guiApp.IndexOfMainItems; i++) {
+        if (guiApp.mainItems[i].message == event) {
+            switch (guiApp.mainItems[i].type) {
             case itButton:
-                appMPlayer.mainItems[i].pressed = (int)state;
+                guiApp.mainItems[i].pressed = (int)state;
                 break;
 
             case itPotmeter:
@@ -150,17 +145,17 @@ void btnModify(int event, float state)
                     state = 0.0f;
                 if (state > 100.0f)
                     state = 100.0f;
-                appMPlayer.mainItems[i].value = state;
+                guiApp.mainItems[i].value = state;
                 break;
             }
         }
     }
 
-    for (i = 0; i <= appMPlayer.IndexOfBarItems; i++) {
-        if (appMPlayer.barItems[i].message == event) {
-            switch (appMPlayer.barItems[i].type) {
+    for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++) {
+        if (guiApp.playbarItems[i].message == event) {
+            switch (guiApp.playbarItems[i].type) {
             case itButton:
-                appMPlayer.barItems[i].pressed = (int)state;
+                guiApp.playbarItems[i].pressed = (int)state;
                 break;
 
             case itPotmeter:
@@ -170,7 +165,7 @@ void btnModify(int event, float state)
                     state = 0.0f;
                 if (state > 100.0f)
                     state = 100.0f;
-                appMPlayer.barItems[i].value = state;
+                guiApp.playbarItems[i].value = state;
                 break;
             }
         }
@@ -181,11 +176,11 @@ void btnSet(int event, int set)
 {
     int i;
 
-    for (i = 0; i <= appMPlayer.IndexOfMainItems; i++)
-        if (appMPlayer.mainItems[i].message == event)
-            appMPlayer.mainItems[i].pressed = set;
+    for (i = 0; i <= guiApp.IndexOfMainItems; i++)
+        if (guiApp.mainItems[i].message == event)
+            guiApp.mainItems[i].pressed = set;
 
-    for (i = 0; i <= appMPlayer.IndexOfBarItems; i++)
-        if (appMPlayer.barItems[i].message == event)
-            appMPlayer.barItems[i].pressed = set;
+    for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++)
+        if (guiApp.playbarItems[i].message == event)
+            guiApp.playbarItems[i].pressed = set;
 }

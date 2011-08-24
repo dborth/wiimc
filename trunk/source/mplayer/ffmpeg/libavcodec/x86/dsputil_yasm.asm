@@ -16,10 +16,11 @@
 ;*
 ;* You should have received a copy of the GNU Lesser General Public
 ;* License along with Libav; if not, write to the Free Software
-;* 51, Inc., Foundation Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 ;******************************************************************************
 
 %include "x86inc.asm"
+%include "x86util.asm"
 
 SECTION_RODATA
 pb_f: times 16 db 15
@@ -30,7 +31,7 @@ pb_zz11zz55zz99zzdd: db -1,-1,1,1,-1,-1,5,5,-1,-1,9,9,-1,-1,13,13
 pb_revwords: db 14, 15, 12, 13, 10, 11, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1
 pd_16384: times 4 dd 16384
 
-section .text align=16
+SECTION_TEXT
 
 %macro SCALARPRODUCT 1
 ; int scalarproduct_int16(int16_t *v1, int16_t *v2, int order, int shift)
@@ -1047,4 +1048,86 @@ SLOW_RIGHT_EXTEND %1
 emu_edge sse
 %ifdef ARCH_X86_32
 emu_edge mmx
+%endif
+
+;-----------------------------------------------------------------------------
+; void ff_vector_clip_int32(int32_t *dst, const int32_t *src, int32_t min,
+;                           int32_t max, unsigned int len)
+;-----------------------------------------------------------------------------
+
+%macro SPLATD_MMX 1
+    punpckldq  %1, %1
+%endmacro
+
+%macro SPLATD_SSE2 1
+    pshufd  %1, %1, 0
+%endmacro
+
+%macro VECTOR_CLIP_INT32 4
+cglobal vector_clip_int32_%1, 5,5,%2, dst, src, min, max, len
+%ifidn %1, sse2
+    cvtsi2ss  m4, minm
+    cvtsi2ss  m5, maxm
+%else
+    movd      m4, minm
+    movd      m5, maxm
+%endif
+    SPLATD    m4
+    SPLATD    m5
+.loop:
+%assign %%i 1
+%rep %3
+    mova      m0,  [srcq+mmsize*0*%%i]
+    mova      m1,  [srcq+mmsize*1*%%i]
+    mova      m2,  [srcq+mmsize*2*%%i]
+    mova      m3,  [srcq+mmsize*3*%%i]
+%if %4
+    mova      m7,  [srcq+mmsize*4*%%i]
+    mova      m8,  [srcq+mmsize*5*%%i]
+    mova      m9,  [srcq+mmsize*6*%%i]
+    mova      m10, [srcq+mmsize*7*%%i]
+%endif
+    CLIPD  m0,  m4, m5, m6
+    CLIPD  m1,  m4, m5, m6
+    CLIPD  m2,  m4, m5, m6
+    CLIPD  m3,  m4, m5, m6
+%if %4
+    CLIPD  m7,  m4, m5, m6
+    CLIPD  m8,  m4, m5, m6
+    CLIPD  m9,  m4, m5, m6
+    CLIPD  m10, m4, m5, m6
+%endif
+    mova  [dstq+mmsize*0*%%i], m0
+    mova  [dstq+mmsize*1*%%i], m1
+    mova  [dstq+mmsize*2*%%i], m2
+    mova  [dstq+mmsize*3*%%i], m3
+%if %4
+    mova  [dstq+mmsize*4*%%i], m7
+    mova  [dstq+mmsize*5*%%i], m8
+    mova  [dstq+mmsize*6*%%i], m9
+    mova  [dstq+mmsize*7*%%i], m10
+%endif
+%assign %%i %%i+1
+%endrep
+    add     srcq, mmsize*4*(%3+%4)
+    add     dstq, mmsize*4*(%3+%4)
+    sub     lend, mmsize*(%3+%4)
+    jg .loop
+    REP_RET
+%endmacro
+
+INIT_MMX
+%define SPLATD SPLATD_MMX
+%define CLIPD CLIPD_MMX
+VECTOR_CLIP_INT32 mmx, 0, 1, 0
+INIT_XMM
+%define SPLATD SPLATD_SSE2
+VECTOR_CLIP_INT32 sse2_int, 6, 1, 0
+%define CLIPD CLIPD_SSE2
+VECTOR_CLIP_INT32 sse2, 6, 2, 0
+%define CLIPD CLIPD_SSE41
+%ifdef m8
+VECTOR_CLIP_INT32 sse41, 11, 1, 1
+%else
+VECTOR_CLIP_INT32 sse41, 6, 1, 0
 %endif

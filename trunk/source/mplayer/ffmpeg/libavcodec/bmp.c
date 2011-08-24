@@ -200,7 +200,7 @@ static int bmp_decode_frame(AVCodecContext *avctx,
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;
     }
-    p->pict_type = FF_I_TYPE;
+    p->pict_type = AV_PICTURE_TYPE_I;
     p->key_frame = 1;
 
     buf = buf0 + hsize;
@@ -336,14 +336,13 @@ static av_cold int bmp_decode_end(AVCodecContext *avctx)
 }
 
 AVCodec ff_bmp_decoder = {
-    "bmp",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_BMP,
-    sizeof(BMPContext),
-    bmp_decode_init,
-    NULL,
-    bmp_decode_end,
-    bmp_decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "bmp",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_BMP,
+    .priv_data_size = sizeof(BMPContext),
+    .init           = bmp_decode_init,
+    .close          = bmp_decode_end,
+    .decode         = bmp_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("BMP image"),
 };

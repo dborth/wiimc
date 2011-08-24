@@ -22,8 +22,8 @@
 /**
  * @file
  * @brief RTP support for the SV3V (SVQ3) payload
- * (http://wiki.multimedia.cx/index.php?title=Sorenson_Video_3#Packetization)
  * @author Ronald S. Bultje <rbultje@ronald.bitfreak.net>
+ * @see http://wiki.multimedia.cx/index.php?title=Sorenson_Video_3#Packetization
  */
 
 #include <string.h>
@@ -128,7 +128,7 @@ RTPDynamicProtocolHandler ff_svq3_dynamic_handler = {
     .enc_name         = "X-SV3V-ES",
     .codec_type       = AVMEDIA_TYPE_VIDEO,
     .codec_id         = CODEC_ID_NONE,      // see if (config_packet) above
-    .open             = svq3_extradata_new,
-    .close            = svq3_extradata_free,
+    .alloc            = svq3_extradata_new,
+    .free             = svq3_extradata_free,
     .parse_packet     = svq3_parse_packet,
 };

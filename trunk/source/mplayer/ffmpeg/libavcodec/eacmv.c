@@ -180,10 +180,10 @@ static int cmv_decode_frame(AVCodecContext *avctx,
     if ((buf[0]&1)) {  // subtype
         cmv_decode_inter(s, buf+2, buf_end);
         s->frame.key_frame = 0;
-        s->frame.pict_type = FF_P_TYPE;
+        s->frame.pict_type = AV_PICTURE_TYPE_P;
     }else{
         s->frame.key_frame = 1;
-        s->frame.pict_type = FF_I_TYPE;
+        s->frame.pict_type = AV_PICTURE_TYPE_I;
         cmv_decode_intra(s, buf+2, buf_end);
     }
 
@@ -206,14 +206,13 @@ static av_cold int cmv_decode_end(AVCodecContext *avctx){
 }
 
 AVCodec ff_eacmv_decoder = {
-    "eacmv",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_CMV,
-    sizeof(CmvContext),
-    cmv_decode_init,
-    NULL,
-    cmv_decode_end,
-    cmv_decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "eacmv",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_CMV,
+    .priv_data_size = sizeof(CmvContext),
+    .init           = cmv_decode_init,
+    .close          = cmv_decode_end,
+    .decode         = cmv_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Electronic Arts CMV video"),
 };

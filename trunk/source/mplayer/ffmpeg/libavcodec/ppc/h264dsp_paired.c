@@ -1061,7 +1061,7 @@ static void ff_h264_idct8_add4_paired(uint8_t *dst, const int *block_offset, DCT
 		if (nnz) {
 			if (nnz == 1 && block[i*16])
 				ff_h264_idct8_dc_add_paired(dst + block_offset[i], block + i*16, stride);
-			else ff_h264_idct8_add_c(dst + block_offset[i], block + i*16, stride);
+			else ff_h264_idct8_add_8_c(dst + block_offset[i], block + i*16, stride);
 		}
 	}
 }
@@ -1208,7 +1208,7 @@ void dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 	c->avg_h264_chroma_pixels_tab[1] = avg_h264_chroma_mc4_paired;
 }
 
-void ff_h264dsp_init_ppc(H264DSPContext *c)
+void ff_h264dsp_init_ppc(H264DSPContext *c, const int bit_depth)
 {
 	c->h264_idct_add = ff_h264_idct_add_paired;
 	c->h264_idct_add8 = ff_h264_idct_add8_paired;

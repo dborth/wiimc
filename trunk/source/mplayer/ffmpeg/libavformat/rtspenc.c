@@ -33,8 +33,22 @@
 #include "libavutil/intreadwrite.h"
 #include "libavutil/avstring.h"
 #include "url.h"
+#include "libavutil/opt.h"
+#include "rtpenc.h"
 
 #define SDP_MAX_SIZE 16384
+
+static const AVOption options[] = {
+    FF_RTP_FLAG_OPTS(RTSPState, rtp_muxer_flags),
+    { NULL },
+};
+
+static const AVClass rtsp_muxer_class = {
+    .class_name = "RTSP muxer",
+    .item_name  = av_default_item_name,
+    .option     = options,
+    .version    = LIBAVUTIL_VERSION_INT,
+};
 
 int ff_rtsp_setup_output_streams(AVFormatContext *s, const char *addr)
 {
@@ -227,16 +241,15 @@ static int rtsp_write_close(AVFormatContext *s)
 }
 
 AVOutputFormat ff_rtsp_muxer = {
-    "rtsp",
-    NULL_IF_CONFIG_SMALL("RTSP output format"),
-    NULL,
-    NULL,
-    sizeof(RTSPState),
-    CODEC_ID_AAC,
-    CODEC_ID_MPEG4,
-    rtsp_write_header,
-    rtsp_write_packet,
-    rtsp_write_close,
+    .name              = "rtsp",
+    .long_name         = NULL_IF_CONFIG_SMALL("RTSP output format"),
+    .priv_data_size    = sizeof(RTSPState),
+    .audio_codec       = CODEC_ID_AAC,
+    .video_codec       = CODEC_ID_MPEG4,
+    .write_header      = rtsp_write_header,
+    .write_packet      = rtsp_write_packet,
+    .write_trailer     = rtsp_write_close,
     .flags = AVFMT_NOFILE | AVFMT_GLOBALHEADER,
+    .priv_class = &rtsp_muxer_class,
 };
 

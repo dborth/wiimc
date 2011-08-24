@@ -34,8 +34,8 @@ static void yuv_a_to_rgba(const uint8_t *ycbcr, const uint8_t *alpha, uint32_t *
 
     for (i = num_values; i > 0; i--) {
         y = *ycbcr++;
-        cb = *ycbcr++;
         cr = *ycbcr++;
+        cb = *ycbcr++;
         YUV_TO_RGB1_CCIR(cb, cr);
         YUV_TO_RGB2_CCIR(r, g, b, y);
         *rgba++ = (*alpha++ << 24) | (r << 16) | (g << 8) | b;
@@ -487,13 +487,9 @@ static int dvdsub_decode(AVCodecContext *avctx,
 }
 
 AVCodec ff_dvdsub_decoder = {
-    "dvdsub",
-    AVMEDIA_TYPE_SUBTITLE,
-    CODEC_ID_DVD_SUBTITLE,
-    0,
-    NULL,
-    NULL,
-    NULL,
-    dvdsub_decode,
+    .name           = "dvdsub",
+    .type           = AVMEDIA_TYPE_SUBTITLE,
+    .id             = CODEC_ID_DVD_SUBTITLE,
+    .decode         = dvdsub_decode,
     .long_name = NULL_IF_CONFIG_SMALL("DVD subtitles"),
 };

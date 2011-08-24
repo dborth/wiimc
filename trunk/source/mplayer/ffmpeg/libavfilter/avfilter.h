@@ -23,10 +23,13 @@
 #define AVFILTER_AVFILTER_H
 
 #include "libavutil/avutil.h"
+#include "libavutil/log.h"
 #include "libavutil/samplefmt.h"
+#include "libavutil/pixfmt.h"
+#include "libavutil/rational.h"
 
-#define LIBAVFILTER_VERSION_MAJOR  1
-#define LIBAVFILTER_VERSION_MINOR 76
+#define LIBAVFILTER_VERSION_MAJOR  2
+#define LIBAVFILTER_VERSION_MINOR  4
 #define LIBAVFILTER_VERSION_MICRO  0
 
 #define LIBAVFILTER_VERSION_INT AV_VERSION_INT(LIBAVFILTER_VERSION_MAJOR, \
@@ -115,6 +118,8 @@ typedef struct AVFilterBufferRefVideoProps {
     AVRational pixel_aspect;    ///< pixel aspect ratio
     int interlaced;             ///< is frame interlaced
     int top_field_first;        ///< field order
+    enum AVPictureType pict_type; ///< picture type of the frame
+    int key_frame;              ///< 1 -> keyframe, 0-> not
 } AVFilterBufferRefVideoProps;
 
 /**
@@ -857,4 +862,4 @@ static inline void avfilter_insert_outpad(AVFilterContext *f, unsigned index,
                         &f->output_pads, &f->outputs, p);
 }
 
-#endif  /* AVFILTER_AVFILTER_H */
+#endif /* AVFILTER_AVFILTER_H */

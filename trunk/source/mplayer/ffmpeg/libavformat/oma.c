@@ -80,6 +80,8 @@ static int oma_read_header(AVFormatContext *s,
 
     ff_id3v2_read(s, ID3v2_EA3_MAGIC);
     ret = avio_read(s->pb, buf, EA3_HEADER_SIZE);
+    if (ret < EA3_HEADER_SIZE)
+        return -1;
 
     if (memcmp(buf, ((const uint8_t[]){'E', 'A', '3'}),3) || buf[4] != 0 || buf[5] != EA3_HEADER_SIZE) {
         av_log(s, AV_LOG_ERROR, "Couldn't find the EA3 header !\n");
@@ -107,7 +109,8 @@ static int oma_read_header(AVFormatContext *s,
         case OMA_CODECID_ATRAC3:
             samplerate = srate_tab[(codec_params >> 13) & 7]*100;
             if (samplerate != 44100)
-                av_log(s, AV_LOG_ERROR, "Unsupported sample rate, send sample file to developers: %d\n", samplerate);
+                av_log_ask_for_sample(s, "Unsupported sample rate: %d\n",
+                                      samplerate);
 
             framesize = (codec_params & 0x3FF) * 8;
             jsflag = (codec_params >> 17) & 1; /* get stereo coding mode, 1 for joint-stereo */
@@ -146,7 +149,6 @@ static int oma_read_header(AVFormatContext *s,
         default:
             av_log(s, AV_LOG_ERROR, "Unsupported codec %d!\n",buf[32]);
             return -1;
-            break;
     }
 
     st->codec->block_align = framesize;
@@ -190,14 +192,12 @@ static int oma_read_probe(AVProbeData *p)
 
 
 AVInputFormat ff_oma_demuxer = {
-    "oma",
-    NULL_IF_CONFIG_SMALL("Sony OpenMG audio"),
-    0,
-    oma_read_probe,
-    oma_read_header,
-    oma_read_packet,
-    0,
-    pcm_read_seek,
+    .name           = "oma",
+    .long_name      = NULL_IF_CONFIG_SMALL("Sony OpenMG audio"),
+    .read_probe     = oma_read_probe,
+    .read_header    = oma_read_header,
+    .read_packet    = oma_read_packet,
+    .read_seek      = pcm_read_seek,
     .flags= AVFMT_GENERIC_INDEX,
     .extensions = "oma,aa3",
     .codec_tag= (const AVCodecTag* const []){codec_oma_tags, 0},

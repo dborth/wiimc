@@ -27,11 +27,6 @@
 #define UTF8LENGTH 4     // length of an UTF-8 encoding according to RFC 3629
 
 #define MAX_FONT_NAME 128
-#define MAX_FONTS 25
-
-#define fntAlignLeft   0
-#define fntAlignCenter 1
-#define fntAlignRight  2
 
 typedef struct {
     int x, y;     // location
@@ -41,14 +36,14 @@ typedef struct {
 typedef struct {
     fntChar Fnt[ASCII_CHRS + EXTRA_CHRS];
     unsigned char nonASCIIidx[EXTRA_CHRS][UTF8LENGTH];
-    txSample Bitmap;
+    guiImage Bitmap;
     char name[MAX_FONT_NAME];
 } bmpFont;
 
 int fntFindID(char *name);
 void fntFreeFont(void);
 int fntRead(char *path, char *fname);
-txSample *fntRender(wItem *item, int px, char *txt);
+guiImage *fntRender(wItem *item, int px, char *txt);
 int fntTextWidth(int id, char *str);
 
 #endif /* MPLAYER_GUI_FONT_H */

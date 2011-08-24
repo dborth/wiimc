@@ -21,6 +21,8 @@
 
 #include "avformat.h"
 #include "libavutil/intreadwrite.h"
+#include "libavutil/dict.h"
+#include "libavutil/mathematics.h"
 
 typedef struct VqfContext {
     int frame_bit_len;
@@ -56,7 +58,7 @@ static void add_metadata(AVFormatContext *s, const char *tag,
         return;
     avio_read(s->pb, buf, len);
     buf[len] = 0;
-    av_metadata_set2(&s->metadata, tag, buf, AV_METADATA_DONT_STRDUP_VAL);
+    av_dict_set(&s->metadata, tag, buf, AV_DICT_DONT_STRDUP_VAL);
 }
 
 static int vqf_read_header(AVFormatContext *s, AVFormatParameters *ap)
@@ -248,13 +250,12 @@ static int vqf_read_seek(AVFormatContext *s,
 }
 
 AVInputFormat ff_vqf_demuxer = {
-    "vqf",
-    NULL_IF_CONFIG_SMALL("Nippon Telegraph and Telephone Corporation (NTT) TwinVQ"),
-    sizeof(VqfContext),
-    vqf_probe,
-    vqf_read_header,
-    vqf_read_packet,
-    NULL,
-    vqf_read_seek,
+    .name           = "vqf",
+    .long_name      = NULL_IF_CONFIG_SMALL("Nippon Telegraph and Telephone Corporation (NTT) TwinVQ"),
+    .priv_data_size = sizeof(VqfContext),
+    .read_probe     = vqf_probe,
+    .read_header    = vqf_read_header,
+    .read_packet    = vqf_read_packet,
+    .read_seek      = vqf_read_seek,
     .extensions = "vqf",
 };

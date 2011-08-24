@@ -30,6 +30,8 @@
  * add sane pulse detection
  ***********************************/
 
+#include "libavutil/libm.h" // brought forward to work around cygwin header breakage
+
 #include <float.h>
 #include "avcodec.h"
 #include "put_bits.h"
@@ -107,8 +109,8 @@ static av_always_inline float quantize_and_encode_band_cost_template(
                                 int *bits, int BT_ZERO, int BT_UNSIGNED,
                                 int BT_PAIR, int BT_ESC)
 {
-    const float IQ = ff_aac_pow2sf_tab[200 + scale_idx - SCALE_ONE_POS + SCALE_DIV_512];
-    const float  Q = ff_aac_pow2sf_tab[200 - scale_idx + SCALE_ONE_POS - SCALE_DIV_512];
+    const float IQ = ff_aac_pow2sf_tab[POW_SF2_ZERO + scale_idx - SCALE_ONE_POS + SCALE_DIV_512];
+    const float  Q = ff_aac_pow2sf_tab[POW_SF2_ZERO - scale_idx + SCALE_ONE_POS - SCALE_DIV_512];
     const float CLIPPED_ESCAPE = 165140.0f*IQ;
     int i, j;
     float cost = 0;
@@ -279,7 +281,7 @@ static float find_max_val(int group_len, int swb_size, const float *scaled) {
 }
 
 static int find_min_book(float maxval, int sf) {
-    float Q = ff_aac_pow2sf_tab[200 - sf + SCALE_ONE_POS - SCALE_DIV_512];
+    float Q = ff_aac_pow2sf_tab[POW_SF2_ZERO - sf + SCALE_ONE_POS - SCALE_DIV_512];
     float Q34 = sqrtf(Q * sqrtf(Q));
     int qmaxval, cb;
     qmaxval = maxval * Q34 + 0.4054f;
@@ -309,7 +311,7 @@ static void encode_window_bands_info(AACEncContext *s, SingleChannelElement *sce
                                      int win, int group_len, const float lambda)
 {
     BandCodingPath path[120][12];
-    int w, swb, cb, start, start2, size;
+    int w, swb, cb, start, size;
     int i, j;
     const int max_sfb  = sce->ics.max_sfb;
     const int run_bits = sce->ics.num_windows == 1 ? 5 : 3;
@@ -327,7 +329,6 @@ static void encode_window_bands_info(AACEncContext *s, SingleChannelElement *sce
         path[0][cb].run      = 0;
     }
     for (swb = 0; swb < max_sfb; swb++) {
-        start2 = start;
         size = sce->ics.swb_sizes[swb];
         if (sce->zeroes[win*16 + swb]) {
             for (cb = 0; cb < 12; cb++) {
@@ -344,7 +345,7 @@ static void encode_window_bands_info(AACEncContext *s, SingleChannelElement *sce
                 float cost_stay_here, cost_get_here;
                 float rd = 0.0f;
                 for (w = 0; w < group_len; w++) {
-                    FFPsyBand *band = &s->psy.psy_bands[s->cur_channel*PSY_MAX_BANDS+(win+w)*16+swb];
+                    FFPsyBand *band = &s->psy.ch[s->cur_channel].psy_bands[(win+w)*16+swb];
                     rd += quantize_band_cost(s, sce->coeffs + start + w*128,
                                              s->scoefs + start + w*128, size,
                                              sce->sf_idx[(win+w)*16+swb], cb,
@@ -411,7 +412,7 @@ static void codebook_trellis_rate(AACEncContext *s, SingleChannelElement *sce,
                                   int win, int group_len, const float lambda)
 {
     BandCodingPath path[120][12];
-    int w, swb, cb, start, start2, size;
+    int w, swb, cb, start, size;
     int i, j;
     const int max_sfb  = sce->ics.max_sfb;
     const int run_bits = sce->ics.num_windows == 1 ? 5 : 3;
@@ -429,13 +430,28 @@ static void codebook_trellis_rate(AACEncContext *s, SingleChannelElement *sce,
         path[0][cb].run      = 0;
     }
     for (swb = 0; swb < max_sfb; swb++) {
-        start2 = start;
         size = sce->ics.swb_sizes[swb];
         if (sce->zeroes[win*16 + swb]) {
-            for (cb = 0; cb < 12; cb++) {
-                path[swb+1][cb].prev_idx = cb;
-                path[swb+1][cb].cost     = path[swb][cb].cost;
-                path[swb+1][cb].run      = path[swb][cb].run + 1;
+            float cost_stay_here = path[swb][0].cost;
+            float cost_get_here  = next_minrd + run_bits + 4;
+            if (   run_value_bits[sce->ics.num_windows == 8][path[swb][0].run]
+                != run_value_bits[sce->ics.num_windows == 8][path[swb][0].run+1])
+                cost_stay_here += run_bits;
+            if (cost_get_here < cost_stay_here) {
+                path[swb+1][0].prev_idx = next_mincb;
+                path[swb+1][0].cost     = cost_get_here;
+                path[swb+1][0].run      = 1;
+            } else {
+                path[swb+1][0].prev_idx = 0;
+                path[swb+1][0].cost     = cost_stay_here;
+                path[swb+1][0].run      = path[swb][0].run + 1;
+            }
+            next_minrd = path[swb+1][0].cost;
+            next_mincb = 0;
+            for (cb = 1; cb < 12; cb++) {
+                path[swb+1][cb].cost = 61450;
+                path[swb+1][cb].prev_idx = -1;
+                path[swb+1][cb].run = 0;
             }
         } else {
             float minrd = next_minrd;
@@ -609,7 +625,7 @@ static void search_for_quantizers_anmr(AVCodecContext *avctx, AACEncContext *s,
             qmin = INT_MAX;
             qmax = 0.0f;
             for (w2 = 0; w2 < sce->ics.group_len[w]; w2++) {
-                FFPsyBand *band = &s->psy.psy_bands[s->cur_channel*PSY_MAX_BANDS+(w+w2)*16+g];
+                FFPsyBand *band = &s->psy.ch[s->cur_channel].psy_bands[(w+w2)*16+g];
                 if (band->energy <= band->threshold || band->threshold == 0.0f) {
                     sce->zeroes[(w+w2)*16+g] = 1;
                     continue;
@@ -638,7 +654,7 @@ static void search_for_quantizers_anmr(AVCodecContext *avctx, AACEncContext *s,
                     float dist = 0;
                     int cb = find_min_book(maxval, sce->sf_idx[w*16+g]);
                     for (w2 = 0; w2 < sce->ics.group_len[w]; w2++) {
-                        FFPsyBand *band = &s->psy.psy_bands[s->cur_channel*PSY_MAX_BANDS+(w+w2)*16+g];
+                        FFPsyBand *band = &s->psy.ch[s->cur_channel].psy_bands[(w+w2)*16+g];
                         dist += quantize_band_cost(s, coefs + w2*128, s->scoefs + start + w2*128, sce->ics.swb_sizes[g],
                                                    q + q0, cb, lambda / band->threshold, INFINITY, NULL);
                     }
@@ -711,7 +727,7 @@ static void search_for_quantizers_twoloop(AVCodecContext *avctx,
             int nz = 0;
             float uplim = 0.0f;
             for (w2 = 0; w2 < sce->ics.group_len[w]; w2++) {
-                FFPsyBand *band = &s->psy.psy_bands[s->cur_channel*PSY_MAX_BANDS+(w+w2)*16+g];
+                FFPsyBand *band = &s->psy.ch[s->cur_channel].psy_bands[(w+w2)*16+g];
                 uplim += band->threshold;
                 if (band->energy <= band->threshold || band->threshold == 0.0f) {
                     sce->zeroes[(w+w2)*16+g] = 1;
@@ -954,7 +970,7 @@ static void search_for_quantizers_faac(AVCodecContext *avctx, AACEncContext *s,
                     dist -= b;
                 }
                 dist *= 1.0f / 512.0f / lambda;
-                quant_max = quant(maxq[w*16+g], ff_aac_pow2sf_tab[200 - scf + SCALE_ONE_POS - SCALE_DIV_512]);
+                quant_max = quant(maxq[w*16+g], ff_aac_pow2sf_tab[POW_SF2_ZERO - scf + SCALE_ONE_POS - SCALE_DIV_512]);
                 if (quant_max >= 8191) { // too much, return to the previous quantizer
                     sce->sf_idx[w*16+g] = prev_scf;
                     break;
@@ -1004,15 +1020,14 @@ static void search_for_quantizers_fast(AVCodecContext *avctx, AACEncContext *s,
                                        SingleChannelElement *sce,
                                        const float lambda)
 {
-    int start = 0, i, w, w2, g;
+    int i, w, w2, g;
     int minq = 255;
 
     memset(sce->sf_idx, 0, sizeof(sce->sf_idx));
     for (w = 0; w < sce->ics.num_windows; w += sce->ics.group_len[w]) {
-        start = w*128;
         for (g = 0; g < sce->ics.num_swb; g++) {
             for (w2 = 0; w2 < sce->ics.group_len[w]; w2++) {
-                FFPsyBand *band = &s->psy.psy_bands[s->cur_channel*PSY_MAX_BANDS+(w+w2)*16+g];
+                FFPsyBand *band = &s->psy.ch[s->cur_channel].psy_bands[(w+w2)*16+g];
                 if (band->energy <= band->threshold) {
                     sce->sf_idx[(w+w2)*16+g] = 218;
                     sce->zeroes[(w+w2)*16+g] = 1;
@@ -1050,8 +1065,8 @@ static void search_for_ms(AACEncContext *s, ChannelElement *cpe,
             if (!cpe->ch[0].zeroes[w*16+g] && !cpe->ch[1].zeroes[w*16+g]) {
                 float dist1 = 0.0f, dist2 = 0.0f;
                 for (w2 = 0; w2 < sce0->ics.group_len[w]; w2++) {
-                    FFPsyBand *band0 = &s->psy.psy_bands[(s->cur_channel+0)*PSY_MAX_BANDS+(w+w2)*16+g];
-                    FFPsyBand *band1 = &s->psy.psy_bands[(s->cur_channel+1)*PSY_MAX_BANDS+(w+w2)*16+g];
+                    FFPsyBand *band0 = &s->psy.ch[s->cur_channel+0].psy_bands[(w+w2)*16+g];
+                    FFPsyBand *band1 = &s->psy.ch[s->cur_channel+1].psy_bands[(w+w2)*16+g];
                     float minthr = FFMIN(band0->threshold, band1->threshold);
                     float maxthr = FFMAX(band0->threshold, band1->threshold);
                     for (i = 0; i < sce0->ics.swb_sizes[g]; i++) {

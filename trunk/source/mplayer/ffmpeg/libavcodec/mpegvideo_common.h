@@ -255,8 +255,8 @@ if(s->quarter_sample)
 #endif
 
     v_edge_pos = s->v_edge_pos >> field_based;
-    linesize   = s->current_picture.linesize[0] << field_based;
-    uvlinesize = s->current_picture.linesize[1] << field_based;
+    linesize   = s->current_picture.f.linesize[0] << field_based;
+    uvlinesize = s->current_picture.f.linesize[1] << field_based;
 
     dxy = ((motion_y & 1) << 1) | (motion_x & 1);
     src_x = s->mb_x* 16               + (motion_x >> 1);
@@ -649,7 +649,7 @@ static av_always_inline void MPV_motion_internal(MpegEncContext *s,
 
     prefetch_motion(s, ref_picture, dir);
 
-    if(!is_mpeg12 && s->obmc && s->pict_type != FF_B_TYPE){
+    if(!is_mpeg12 && s->obmc && s->pict_type != AV_PICTURE_TYPE_B){
         int16_t mv_cache[4][4][2];
         const int xy= s->mb_x + s->mb_y*s->mb_stride;
         const int mot_stride= s->b8_stride;
@@ -657,30 +657,30 @@ static av_always_inline void MPV_motion_internal(MpegEncContext *s,
 
         assert(!s->mb_skipped);
 
-        memcpy(mv_cache[1][1], s->current_picture.motion_val[0][mot_xy           ], sizeof(int16_t)*4);
-        memcpy(mv_cache[2][1], s->current_picture.motion_val[0][mot_xy+mot_stride], sizeof(int16_t)*4);
-        memcpy(mv_cache[3][1], s->current_picture.motion_val[0][mot_xy+mot_stride], sizeof(int16_t)*4);
+        memcpy(mv_cache[1][1], s->current_picture.f.motion_val[0][mot_xy             ], sizeof(int16_t) * 4);
+        memcpy(mv_cache[2][1], s->current_picture.f.motion_val[0][mot_xy + mot_stride], sizeof(int16_t) * 4);
+        memcpy(mv_cache[3][1], s->current_picture.f.motion_val[0][mot_xy + mot_stride], sizeof(int16_t) * 4);
 
-        if(mb_y==0 || IS_INTRA(s->current_picture.mb_type[xy-s->mb_stride])){
+        if (mb_y == 0 || IS_INTRA(s->current_picture.f.mb_type[xy - s->mb_stride])) {
             memcpy(mv_cache[0][1], mv_cache[1][1], sizeof(int16_t)*4);
         }else{
-            memcpy(mv_cache[0][1], s->current_picture.motion_val[0][mot_xy-mot_stride], sizeof(int16_t)*4);
+            memcpy(mv_cache[0][1], s->current_picture.f.motion_val[0][mot_xy - mot_stride], sizeof(int16_t) * 4);
         }
 
-        if(mb_x==0 || IS_INTRA(s->current_picture.mb_type[xy-1])){
+        if (mb_x == 0 || IS_INTRA(s->current_picture.f.mb_type[xy - 1])) {
             AV_COPY32(mv_cache[1][0], mv_cache[1][1]);
             AV_COPY32(mv_cache[2][0], mv_cache[2][1]);
         }else{
-            AV_COPY32(mv_cache[1][0], s->current_picture.motion_val[0][mot_xy-1]);
-            AV_COPY32(mv_cache[2][0], s->current_picture.motion_val[0][mot_xy-1+mot_stride]);
+            AV_COPY32(mv_cache[1][0], s->current_picture.f.motion_val[0][mot_xy - 1]);
+            AV_COPY32(mv_cache[2][0], s->current_picture.f.motion_val[0][mot_xy - 1 + mot_stride]);
         }
 
-        if(mb_x+1>=s->mb_width || IS_INTRA(s->current_picture.mb_type[xy+1])){
+        if (mb_x + 1 >= s->mb_width || IS_INTRA(s->current_picture.f.mb_type[xy + 1])) {
             AV_COPY32(mv_cache[1][3], mv_cache[1][2]);
             AV_COPY32(mv_cache[2][3], mv_cache[2][2]);
         }else{
-            AV_COPY32(mv_cache[1][3], s->current_picture.motion_val[0][mot_xy+2]);
-            AV_COPY32(mv_cache[2][3], s->current_picture.motion_val[0][mot_xy+2+mot_stride]);
+            AV_COPY32(mv_cache[1][3], s->current_picture.f.motion_val[0][mot_xy + 2]);
+            AV_COPY32(mv_cache[2][3], s->current_picture.f.motion_val[0][mot_xy + 2 + mot_stride]);
         }
 
         mx = 0;
@@ -816,8 +816,8 @@ static av_always_inline void MPV_motion_internal(MpegEncContext *s,
                             s->mv[dir][1][0], s->mv[dir][1][1], 8, mb_y);
             }
         } else {
-            if(s->picture_structure != s->field_select[dir][0] + 1 && s->pict_type != FF_B_TYPE && !s->first_field){
-                ref_picture= s->current_picture_ptr->data;
+            if(s->picture_structure != s->field_select[dir][0] + 1 && s->pict_type != AV_PICTURE_TYPE_B && !s->first_field){
+                ref_picture = s->current_picture_ptr->f.data;
             }
 
             mpeg_motion(s, dest_y, dest_cb, dest_cr,
@@ -831,10 +831,10 @@ static av_always_inline void MPV_motion_internal(MpegEncContext *s,
             uint8_t ** ref2picture;
 
             if(s->picture_structure == s->field_select[dir][i] + 1
-               || s->pict_type == FF_B_TYPE || s->first_field){
+               || s->pict_type == AV_PICTURE_TYPE_B || s->first_field){
                 ref2picture= ref_picture;
             }else{
-                ref2picture= s->current_picture_ptr->data;
+                ref2picture = s->current_picture_ptr->f.data;
             }
 
             mpeg_motion(s, dest_y, dest_cb, dest_cr,
@@ -871,7 +871,7 @@ static av_always_inline void MPV_motion_internal(MpegEncContext *s,
 
                 //opposite parity is always in the same frame if this is second field
                 if(!s->first_field){
-                    ref_picture = s->current_picture_ptr->data;
+                    ref_picture = s->current_picture_ptr->f.data;
                 }
             }
         }

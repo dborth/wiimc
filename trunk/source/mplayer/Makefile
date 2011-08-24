@@ -59,7 +59,8 @@ SRCS_COMMON-$(DVDREAD_INTERNAL)      += libdvdread4/bitreader.c \
 
 SRCS_COMMON-$(FAAD)                  += libmpcodecs/ad_faad.c
 SRCS_COMMON-$(FASTMEMCPY)            += libvo/aclib.c
-SRCS_COMMON-$(FFMPEG)                += av_opts.c                   \
+SRCS_COMMON-$(FFMPEG)                += av_helpers.c                \
+                                        av_opts.c                   \
                                         libaf/af_lavcresample.c     \
                                         libmpcodecs/ad_ffmpeg.c     \
                                         libmpcodecs/vd_ffmpeg.c     \
@@ -182,7 +183,6 @@ SRCS_COMMON-$(NEED_MMAP)             += osdep/mmap-os2.c
 SRCS_COMMON-$(NEED_SETENV)           += osdep/setenv.c
 SRCS_COMMON-$(NEED_SHMEM)            += osdep/shmem.c
 SRCS_COMMON-$(NEED_STRSEP)           += osdep/strsep.c
-SRCS_COMMON-$(NEED_SWAB)             += osdep/swab.c
 SRCS_COMMON-$(NEED_VSSCANF)          += osdep/vsscanf.c
 SRCS_COMMON-$(NETWORKING)            += stream/stream_netstream.c \
                                         stream/asf_mmst_streaming.c \
@@ -517,31 +517,32 @@ SRCS_MPLAYER-$(GL_SDL)       += libvo/sdl_common.c
 SRCS_MPLAYER-$(GL_WIN32)     += libvo/w32_common.c
 SRCS_MPLAYER-$(GL_X11)       += libvo/x11_common.c
 SRCS_MPLAYER-$(MATRIXVIEW)   += libvo/vo_matrixview.c libvo/matrixview.c
-SRCS_MPLAYER-$(GUI)          += gui/util/bitmap.c
+SRCS_MPLAYER-$(GUI)          += gui/util/bitmap.c \
+                                gui/util/list.c \
+                                gui/util/string.c
 SRCS_MPLAYER-$(GUI_GTK)      += gui/app.c \
                                 gui/cfg.c \
                                 gui/interface.c \
-                                gui/mplayer/gui_common.c \
-                                gui/mplayer/menu.c \
-                                gui/mplayer/mw.c \
-                                gui/mplayer/pb.c \
-                                gui/mplayer/play.c \
-                                gui/mplayer/sw.c \
-                                gui/mplayer/widgets.c \
-                                gui/mplayer/gtk/about.c \
-                                gui/mplayer/gtk/eq.c \
-                                gui/mplayer/gtk/fs.c \
-                                gui/mplayer/gtk/gtk_common.c \
-                                gui/mplayer/gtk/gtk_menu.c \
-                                gui/mplayer/gtk/gtk_url.c \
-                                gui/mplayer/gtk/mb.c \
-                                gui/mplayer/gtk/opts.c \
-                                gui/mplayer/gtk/pl.c \
-                                gui/mplayer/gtk/sb.c \
                                 gui/skin/font.c \
                                 gui/skin/skin.c \
+                                gui/ui/actions.c \
+                                gui/ui/gtk/about.c \
+                                gui/ui/gtk/equalizer.c \
+                                gui/ui/gtk/fileselect.c \
+                                gui/ui/gtk/menu.c \
+                                gui/ui/gtk/msgbox.c \
+                                gui/ui/gtk/playlist.c \
+                                gui/ui/gtk/preferences.c \
+                                gui/ui/gtk/skinbrowser.c \
+                                gui/ui/gtk/tools.c \
+                                gui/ui/gtk/url.c \
+                                gui/ui/main.c \
+                                gui/ui/menu.c \
+                                gui/ui/playbar.c \
+                                gui/ui/render.c \
+                                gui/ui/sub.c \
+                                gui/ui/widgets.c \
                                 gui/util/cut.c \
-                                gui/util/string.c \
                                 gui/wm/ws.c \
                                 gui/wm/wsxdnd.c \
 
@@ -575,6 +576,7 @@ SRCS_MPLAYER-$(LIBMENU_DVBIN) += libmenu/menu_dvbin.c
 SRCS_MPLAYER-$(LIRC)          += input/lirc.c
 SRCS_MPLAYER-$(MD5SUM)        += libvo/vo_md5sum.c
 SRCS_MPLAYER-$(MGA)           += libvo/vo_mga.c
+SRCS_MPLAYER-$(MNG)           += libvo/vo_mng.c
 SRCS_MPLAYER-$(NAS)           += libao2/ao_nas.c
 SRCS_MPLAYER-$(NETWORKING)    += udp_sync.c
 SRCS_MPLAYER-$(OPENAL)        += libao2/ao_openal.c
@@ -688,13 +690,13 @@ SRCS_MENCODER = mencoder.c \
                 libmpdemux/muxer_rawvideo.c \
                 $(SRCS_MENCODER-yes)
 
+# (linking) order matters for these libraries
+FFMPEGPARTS = libpostproc libswscale libavformat libavcodec libavutil
+FFMPEGLIBS  = $(foreach part, $(FFMPEGPARTS), ffmpeg/$(part)/$(part).a)
+FFMPEGFILES = $(foreach part, $(FFMPEGPARTS), $(wildcard $(addprefix ffmpeg/$(part)/,*.[chS] /*/*.[chS] /*/*.asm)))
 
-COMMON_LIBS-$(FFMPEG_A) += ffmpeg/libavformat/libavformat.a \
-                           ffmpeg/libavcodec/libavcodec.a   \
-                           ffmpeg/libavutil/libavutil.a     \
-                           ffmpeg/libpostproc/libpostproc.a \
-                           ffmpeg/libswscale/libswscale.a
-COMMON_LIBS += $(COMMON_LIBS-yes)
+COMMON_LIBS-$(FFMPEG_A)           += $(FFMPEGLIBS)
+COMMON_LIBS                       += $(COMMON_LIBS-yes)
 
 OBJS_COMMON    += $(addsuffix .o, $(basename $(SRCS_COMMON)))
 OBJS_MENCODER  += $(addsuffix .o, $(basename $(SRCS_MENCODER)))
@@ -715,53 +717,24 @@ INSTALL_TARGETS-$(MENCODER) += install-mencoder install-mencoder-man
 INSTALL_TARGETS-$(MPLAYER)  += install-mplayer  install-mplayer-man
 
 DIRS =  . \
-        ffmpeg/libavcodec \
-        ffmpeg/libavcodec/alpha \
-        ffmpeg/libavcodec/arm \
-        ffmpeg/libavcodec/bfin \
-        ffmpeg/libavcodec/mlib \
-        ffmpeg/libavcodec/ppc \
-        ffmpeg/libavcodec/sh4 \
-        ffmpeg/libavcodec/sparc \
-        ffmpeg/libavcodec/x86 \
-        ffmpeg/libavformat \
-        ffmpeg/libavutil \
-        ffmpeg/libavutil/arm \
-        ffmpeg/libavutil/bfin \
-        ffmpeg/libavutil/ppc \
-        ffmpeg/libavutil/sh4 \
-        ffmpeg/libavutil/tomi \
-        ffmpeg/libavutil/x86 \
-        ffmpeg/libpostproc \
-        ffmpeg/libswscale \
-        ffmpeg/libswscale/bfin \
-        ffmpeg/libswscale/mlib \
-        ffmpeg/libswscale/ppc \
-        ffmpeg/libswscale/sparc \
-        ffmpeg/libswscale/x86 \
         gui \
-        gui/mplayer \
-        gui/mplayer/gtk \
         gui/skin \
-        gui/wm \
+        gui/ui \
+        gui/ui/gtk \
+        gui/util \
         gui/win32 \
+        gui/wm \
         input \
         libaf \
         libao2 \
-        libass \
-        libdvdcss \
-        libdvdnav \
-        libdvdnav/vm \
-        libdvdread4 \
         libmenu \
         libmpcodecs \
         libmpcodecs/native \
         libmpdemux \
-        libmpeg2 \
         libvo \
         loader \
-        loader/dshow \
         loader/dmo \
+        loader/dshow \
         loader/wine \
         mp3lib \
         osdep \
@@ -770,25 +743,23 @@ DIRS =  . \
         stream/librtsp \
         stream/realrtsp \
         sub \
-        tremor \
         TOOLS \
         vidix \
+
+ALL_DIRS = $(DIRS) \
+        libass \
+        libdvdcss \
+        libdvdnav \
+        libdvdnav/vm \
+        libdvdread4 \
+        libmpeg2 \
+        tremor \
 
 ALLHEADERS = $(foreach dir,$(DIRS),$(wildcard $(dir)/*.h))
 
 ADDSUFFIXES     = $(foreach suf,$(1),$(addsuffix $(suf),$(2)))
-ADD_ALL_DIRS    = $(call ADDSUFFIXES,$(1),$(DIRS))
+ADD_ALL_DIRS    = $(call ADDSUFFIXES,$(1),$(ALL_DIRS))
 ADD_ALL_EXESUFS = $(1) $(call ADDSUFFIXES,$(EXESUFS_ALL),$(1))
-
-FFMPEGPARTS = libavcodec \
-              libavformat \
-              libavutil \
-              libpostproc \
-              libswscale \
-
-FFMPEGLIBS  = $(foreach part, $(FFMPEGPARTS), ffmpeg/$(part)/$(part).a)
-FFMPEGFILES = $(foreach part, $(FFMPEGPARTS), $(wildcard ffmpeg/$(part)/*.[chS] ffmpeg/$(part)/*/*.[chS]))
-
 
 
 ###### generic rules #######
@@ -817,8 +788,7 @@ all: $(MPLAYERWIILIB) $(COMMON_LIBS)
 #	$(WINDRES) -I. $< $@
 
 $(FFMPEGLIBS): $(FFMPEGFILES) config.h
-	$(MAKE) -C $(@D)
-	touch $@
+	$(MAKE) -C ffmpeg $(@:ffmpeg/%=%)
 
 mencoder$(EXESUF): $(MENCODER_DEPS)
 mencoder$(EXESUF): EXTRALIBS += $(EXTRALIBS_MENCODER)
@@ -833,6 +803,12 @@ mencoder$(EXESUF) mplayer$(EXESUF):
 #codecs.conf.h: codec-cfg$(EXESUF) etc/codecs.conf
 #	./$^ > $@
 
+#checksums: $(MPLAYER_DEPS) $(MENCODER_DEPS) mplayer$(EXESUF) mencoder$(EXESUF)
+#	md5sum $^ > checksums
+
+#check_checksums: $(MPLAYER_DEPS) $(MENCODER_DEPS) mplayer$(EXESUF) mencoder$(EXESUF)
+#	md5sum -c checksums
+
 # ./configure must be rerun if it changed
 #config.mak: configure
 #	@echo "############################################################"
@@ -843,10 +819,7 @@ help_mp.h: help/help_mp-en.h $(HELP_FILE)
 	help/help_create.sh $(HELP_FILE) $(CHARSET)
 
 # rebuild version.h each time the working copy is updated
-ifeq ($(wildcard .svn/entries),.svn/entries)
-version.h: .svn/entries
-endif
-version.h: version.sh
+version.h: version.sh $(wildcard .svn/entries .git/logs/HEAD)
 	./$< `$(CC) -dumpversion`
 
 %$(EXESUF): %.c
@@ -911,7 +884,7 @@ install-%: %$(EXESUF) install-dirs
 install-gui: install-mplayer
 	-ln -sf mplayer$(EXESUF) $(BINDIR)/gmplayer$(EXESUF)
 	$(INSTALL) -d $(DATADIR)/skins $(prefix)/share/pixmaps $(prefix)/share/applications
-	$(INSTALL) -m 644 etc/mplayer.xpm $(prefix)/share/pixmaps/
+	$(INSTALL) -m 644 etc/mplayer.png $(prefix)/share/pixmaps/
 	$(INSTALL) -m 644 etc/mplayer.desktop $(prefix)/share/applications/
 
 install-gui-man:      $(foreach lang,$(MAN_LANGS),install-gui-man-$(lang))
@@ -952,22 +925,23 @@ uninstall:
 	rm -f $(BINDIR)/mplayer$(EXESUF) $(BINDIR)/gmplayer$(EXESUF)
 	rm -f $(BINDIR)/mencoder$(EXESUF)
 	rm -f $(MANDIR)/man1/mencoder.1 $(MANDIR)/man1/mplayer.1
-	rm -f $(prefix)/share/pixmaps/mplayer.xpm
+	rm -f $(prefix)/share/pixmaps/mplayer.png
 	rm -f $(prefix)/share/applications/mplayer.desktop
 	rm -f $(MANDIR)/man1/mplayer.1 $(MANDIR)/man1/mencoder.1
 	rm -f $(foreach lang,$(MAN_LANGS),$(foreach man,mplayer.1 mencoder.1,$(MANDIR)/$(lang)/man1/$(man)))
 
 clean:
+	$(MAKE) -C ffmpeg $@
 	-rm -f $(call ADD_ALL_DIRS,/*.o /*.a /*.ho /*~)
 	-rm -f $(call ADD_ALL_EXESUFS,mplayer mencoder)
 
 distclean: clean testsclean toolsclean driversclean dhahelperclean
+	$(MAKE) -C ffmpeg $@
 	-rm -rf DOCS/tech/doxygen
 	-rm -f $(call ADD_ALL_DIRS,/*.d)
 	-rm -f config.* codecs.conf.h help_mp.h version.h TAGS tags
 	-rm -f $(VIDIX_PCI_FILES)
 	-rm -f $(call ADD_ALL_EXESUFS,codec-cfg cpuinfo)
-	-rm -f ffmpeg/libavutil/avconfig.h ffmpeg/config.*
 
 doxygen:
 	doxygen DOCS/tech/Doxyfile
@@ -987,7 +961,7 @@ TEST_OBJS = mp_msg.o mp_fifo.o osdep/$(GETCH) osdep/$(TIMER) -ltermcap -lm
 codec-cfg-test$(EXESUF): codec-cfg.c codecs.conf.h help_mp.h $(TEST_OBJS)
 	$(CC) -I. -Iffmpeg -DTESTING -o $@ $^
 
-codecs2html$(EXESUF): codec-cfg.c help_mp.h $(TEST_OBJS)
+codecs2html$(EXESUF): codec-cfg.c help_mp.h
 	$(CC) -I. -Iffmpeg -DCODECS2HTML -o $@ $^
 
 libvo/aspecttest$(EXESUF): libvo/aspect.o libvo/geometry.o $(TEST_OBJS)
@@ -1001,7 +975,7 @@ mp3lib/test$(EXESUF) mp3lib/test2$(EXESUF): $(SRCS_MP3LIB:.c=.o) libvo/aclib.o c
 
 TESTS = codecs2html codec-cfg-test libvo/aspecttest mp3lib/test mp3lib/test2
 
-ifdef ARCH_X86
+ifdef ARCH_X86_32
 TESTS += loader/qtx/list loader/qtx/qtxload
 endif
 
@@ -1031,9 +1005,8 @@ toolsclean:
 
 TOOLS/bmovl-test$(EXESUF): -lSDL_image
 
-TOOLS/subrip$(EXESUF): sub/vobsub.o sub/spudec.o sub/unrar_exec.o \
-    libvo/aclib.o ffmpeg/libswscale/libswscale.a ffmpeg/libavutil/libavutil.a \
-    $(TEST_OBJS)
+TOOLS/subrip$(EXESUF): path.o sub/vobsub.o sub/spudec.o sub/unrar_exec.o \
+    ffmpeg/libswscale/libswscale.a ffmpeg/libavutil/libavutil.a $(TEST_OBJS)
 
 TOOLS/vfw2menc$(EXESUF): -lwinmm -lole32
 
@@ -1073,7 +1046,7 @@ drivers/radeon_vid.o drivers/rage128_vid.o: CFLAGS += -fomit-frame-pointer -fno-
 
 install-drivers: $(DRIVER_OBJS)
 	-mkdir -p $(MODULES_DIR)
-	install -m 644 $(KERNEL_OBJS) $(MODULES_DIR)
+	$(INSTALL) -m 644 $(KERNEL_OBJS) $(MODULES_DIR)
 	depmod -a
 	-mknod /dev/mga_vid    c 178 0
 	-mknod /dev/tdfx_vid   c 178 0
@@ -1083,14 +1056,14 @@ install-drivers: $(DRIVER_OBJS)
 driversclean:
 	-rm -f $(DRIVER_OBJS) drivers/*~
 
-DHAHELPER_DEPS_FILES = vidix/dhahelper/dhahelper.d vidix/dhahelper/test.d vidix/dhahelperwin/dhahelper.d vidix/dhahelperwin/dhasetup.d
+DHAHELPER_DEP_FILES = vidix/dhahelper/dhahelper.d vidix/dhahelper/test.d vidix/dhahelperwin/dhahelper.d vidix/dhahelperwin/dhasetup.d
 dhahelper: vidix/dhahelper/dhahelper.o vidix/dhahelper/test
 
 vidix/dhahelper/dhahelper.o vidix/dhahelper/test: CFLAGS = $(KERNEL_CFLAGS)
 
 install-dhahelper: vidix/dhahelper/dhahelper.o
 	-mkdir -p $(MODULES_DIR)
-	install -m 644 $< $(MODULES_DIR)
+	$(INSTALL) -m 644 $< $(MODULES_DIR)
 	depmod -a
 	-mknod /dev/dhahelper c 180 0
 
@@ -1122,10 +1095,10 @@ dhahelperclean:
 
 
 
--include $(DEP_FILES) $(DRIVER_DEP_FILES) $(TESTS_DEP_FILES) $(TOOLS_DEP_FILES) $(DHAHELPER_DEPS_FILES)
+-include $(DEP_FILES) $(DRIVER_DEP_FILES) $(TESTS_DEP_FILES) $(TOOLS_DEP_FILES) $(DHAHELPER_DEP_FILES)
 
 .PHONY: all doxygen *install* *tools drivers dhahelper*
-.PHONY: checkheaders *clean tests
+.PHONY: checkheaders *clean tests check_checksums
 
 # Disable suffix rules.  Most of the builtin rules are suffix rules,
 # so this saves some time on slow systems.

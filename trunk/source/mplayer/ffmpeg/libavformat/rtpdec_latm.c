@@ -108,8 +108,7 @@ static int parse_fmtp_config(AVStream *st, char *value)
     int len = ff_hex_to_data(NULL, value), i, ret = 0;
     GetBitContext gb;
     uint8_t *config;
-    int audio_mux_version, same_time_framing, num_sub_frames,
-        num_programs, num_layers;
+    int audio_mux_version, same_time_framing, num_programs, num_layers;
 
     /* Pad this buffer, too, to avoid out of bounds reads with get_bits below */
     config = av_mallocz(len + FF_INPUT_BUFFER_PADDING_SIZE);
@@ -119,7 +118,7 @@ static int parse_fmtp_config(AVStream *st, char *value)
     init_get_bits(&gb, config, len*8);
     audio_mux_version = get_bits(&gb, 1);
     same_time_framing = get_bits(&gb, 1);
-    num_sub_frames    = get_bits(&gb, 6);
+    skip_bits(&gb, 6); /* num_sub_frames */
     num_programs      = get_bits(&gb, 4);
     num_layers        = get_bits(&gb, 3);
     if (audio_mux_version != 0 || same_time_framing != 1 || num_programs != 0 ||
@@ -181,7 +180,7 @@ RTPDynamicProtocolHandler ff_mp4a_latm_dynamic_handler = {
     .codec_type         = AVMEDIA_TYPE_AUDIO,
     .codec_id           = CODEC_ID_AAC,
     .parse_sdp_a_line   = latm_parse_sdp_line,
-    .open               = latm_new_context,
-    .close              = latm_free_context,
+    .alloc              = latm_new_context,
+    .free               = latm_free_context,
     .parse_packet       = latm_parse_packet
 };

@@ -22,11 +22,25 @@
 #include "avformat.h"
 #include "mpegts.h"
 #include "internal.h"
+#include "libavutil/mathematics.h"
 #include "libavutil/random_seed.h"
+#include "libavutil/opt.h"
 
 #include "rtpenc.h"
 
 //#define DEBUG
+
+static const AVOption options[] = {
+    FF_RTP_FLAG_OPTS(RTPMuxContext, flags),
+    { NULL },
+};
+
+static const AVClass rtp_muxer_class = {
+    .class_name = "RTP muxer",
+    .item_name  = av_default_item_name,
+    .option     = options,
+    .version    = LIBAVUTIL_VERSION_INT,
+};
 
 #define RTCP_SR_SIZE 28
 
@@ -404,7 +418,10 @@ static int rtp_write_packet(AVFormatContext *s1, AVPacket *pkt)
         ff_rtp_send_mpegvideo(s1, pkt->data, size);
         break;
     case CODEC_ID_AAC:
-        ff_rtp_send_aac(s1, pkt->data, size);
+        if (s->flags & FF_RTP_FLAG_MP4A_LATM)
+            ff_rtp_send_latm(s1, pkt->data, size);
+        else
+            ff_rtp_send_aac(s1, pkt->data, size);
         break;
     case CODEC_ID_AMR_NB:
     case CODEC_ID_AMR_WB:
@@ -445,14 +462,13 @@ static int rtp_write_trailer(AVFormatContext *s1)
 }
 
 AVOutputFormat ff_rtp_muxer = {
-    "rtp",
-    NULL_IF_CONFIG_SMALL("RTP output format"),
-    NULL,
-    NULL,
-    sizeof(RTPMuxContext),
-    CODEC_ID_PCM_MULAW,
-    CODEC_ID_NONE,
-    rtp_write_header,
-    rtp_write_packet,
-    rtp_write_trailer,
+    .name              = "rtp",
+    .long_name         = NULL_IF_CONFIG_SMALL("RTP output format"),
+    .priv_data_size    = sizeof(RTPMuxContext),
+    .audio_codec       = CODEC_ID_PCM_MULAW,
+    .video_codec       = CODEC_ID_NONE,
+    .write_header      = rtp_write_header,
+    .write_packet      = rtp_write_packet,
+    .write_trailer     = rtp_write_trailer,
+    .priv_class = &rtp_muxer_class,
 };

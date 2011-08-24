@@ -30,6 +30,7 @@
 
 #include "avcodec.h"
 #include "libavutil/base64.h"
+#include "libavutil/mathematics.h"
 
 /**
  * Portion of struct vpx_codec_cx_pkt from vpx_encoder.h.
@@ -311,6 +312,7 @@ static av_cold int vp8_init(AVCodecContext *avctx)
     codecctl_int(avctx, VP8E_SET_CPUUSED,           cpuused);
     codecctl_int(avctx, VP8E_SET_NOISE_SENSITIVITY, avctx->noise_reduction);
     codecctl_int(avctx, VP8E_SET_TOKEN_PARTITIONS,  av_log2(avctx->slices));
+    codecctl_int(avctx, VP8E_SET_STATIC_THRESHOLD,  avctx->mb_threshold);
 
     //provide dummy value to initialize wrapper, values will be updated each _encode()
     vpx_img_wrap(&ctx->rawimg, VPX_IMG_FMT_I420, avctx->width, avctx->height, 1,
@@ -353,9 +355,9 @@ static int storeframe(AVCodecContext *avctx, struct FrameListData *cx_frame,
         coded_frame->key_frame = !!(cx_frame->flags & VPX_FRAME_IS_KEY);
 
         if (coded_frame->key_frame)
-            coded_frame->pict_type = FF_I_TYPE;
+            coded_frame->pict_type = AV_PICTURE_TYPE_I;
         else
-            coded_frame->pict_type = FF_P_TYPE;
+            coded_frame->pict_type = AV_PICTURE_TYPE_P;
     } else {
         av_log(avctx, AV_LOG_ERROR,
                "Compressed frame larger than storage provided! (%zu/%d)\n",
@@ -495,15 +497,14 @@ static int vp8_encode(AVCodecContext *avctx, uint8_t *buf, int buf_size,
 }
 
 AVCodec ff_libvpx_encoder = {
-    "libvpx",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_VP8,
-    sizeof(VP8Context),
-    vp8_init,
-    vp8_encode,
-    vp8_free,
-    NULL,
-    CODEC_CAP_DELAY,
+    .name           = "libvpx",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_VP8,
+    .priv_data_size = sizeof(VP8Context),
+    .init           = vp8_init,
+    .encode         = vp8_encode,
+    .close          = vp8_free,
+    .capabilities   = CODEC_CAP_DELAY,
     .pix_fmts = (const enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_NONE},
     .long_name = NULL_IF_CONFIG_SMALL("libvpx VP8"),
 };

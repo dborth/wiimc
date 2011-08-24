@@ -19,9 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/* needed for gethostname() */
-#define _XOPEN_SOURCE 600
-
+#include "libavutil/mathematics.h"
 #include "libavcodec/get_bits.h"
 #include "avformat.h"
 #include "mpegts.h"
@@ -220,22 +218,6 @@ static int rtp_valid_packet_in_sequence(RTPStatistics *s, uint16_t seq)
     return 1;
 }
 
-#if 0
-/**
-* This function is currently unused; without a valid local ntp time, I don't see how we could calculate the
-* difference between the arrival and sent timestamp.  As a result, the jitter and transit statistics values
-* never change.  I left this in in case someone else can see a way. (rdm)
-*/
-static void rtcp_update_jitter(RTPStatistics *s, uint32_t sent_timestamp, uint32_t arrival_timestamp)
-{
-    uint32_t transit= arrival_timestamp - sent_timestamp;
-    int d;
-    s->transit= transit;
-    d= FFABS(transit - s->transit);
-    s->jitter += d - ((s->jitter + 8)>>4);
-}
-#endif
-
 int rtp_check_and_send_back_rr(RTPDemuxContext *s, int count)
 {
     AVIOContext *pb;
@@ -324,7 +306,7 @@ int rtp_check_and_send_back_rr(RTPDemuxContext *s, int count)
     avio_flush(pb);
     len = avio_close_dyn_buf(pb, &buf);
     if ((len > 0) && buf) {
-        int result;
+        int av_unused result;
         av_dlog(s->ic, "sending %d bytes of RR\n", len);
         result= ffurl_write(s->rtp_ctx, buf, len);
         av_dlog(s->ic, "result from ffurl_write: %d\n", result);

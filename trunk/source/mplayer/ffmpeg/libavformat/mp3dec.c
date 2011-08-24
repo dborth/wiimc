@@ -21,6 +21,8 @@
 
 #include "libavutil/avstring.h"
 #include "libavutil/intreadwrite.h"
+#include "libavutil/dict.h"
+#include "libavutil/mathematics.h"
 #include "avformat.h"
 #include "id3v2.h"
 #include "id3v1.h"
@@ -149,7 +151,7 @@ static int mp3_read_header(AVFormatContext *s,
 
     off = avio_tell(s->pb);
 
-    if (!av_metadata_get(s->metadata, "", NULL, AV_METADATA_IGNORE_SUFFIX))
+    if (!av_dict_get(s->metadata, "", NULL, AV_DICT_IGNORE_SUFFIX))
         ff_id3v1_read(s);
 
     if (mp3_parse_vbr_tags(s, st, off) < 0)
@@ -186,12 +188,11 @@ static int mp3_read_packet(AVFormatContext *s, AVPacket *pkt)
 }
 
 AVInputFormat ff_mp3_demuxer = {
-    "mp3",
-    NULL_IF_CONFIG_SMALL("MPEG audio layer 2/3"),
-    0,
-    mp3_read_probe,
-    mp3_read_header,
-    mp3_read_packet,
+    .name           = "mp3",
+    .long_name      = NULL_IF_CONFIG_SMALL("MPEG audio layer 2/3"),
+    .read_probe     = mp3_read_probe,
+    .read_header    = mp3_read_header,
+    .read_packet    = mp3_read_packet,
     .flags= AVFMT_GENERIC_INDEX,
     .extensions = "mp2,mp3,m2a", /* XXX: use probe */
 };

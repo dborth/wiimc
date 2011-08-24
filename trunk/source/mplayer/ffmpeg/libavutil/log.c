@@ -26,13 +26,11 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+#include "avstring.h"
 #include "avutil.h"
 #include "log.h"
 
-#if LIBAVUTIL_VERSION_MAJOR > 50
-static
-#endif
-int av_log_level = AV_LOG_INFO;
+static int av_log_level = AV_LOG_INFO;
 static int flags;
 
 #if defined(_WIN32) && !defined(__MINGW32CE__)
@@ -86,7 +84,8 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
 {
     static int print_prefix=1;
     static int count;
-    static char line[1024], prev[1024];
+    static char prev[1024];
+    char line[1024];
     static int is_atty;
     AVClass* avc= ptr ? *(AVClass**)ptr : NULL;
     if(level>av_log_level)
@@ -94,7 +93,7 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
     line[0]=0;
 #undef fprintf
     if(print_prefix && avc) {
-        if(avc->version >= (50<<16 | 15<<8 | 3) && avc->parent_log_context_offset){
+        if (avc->parent_log_context_offset) {
             AVClass** parent= *(AVClass***)(((uint8_t*)ptr) + avc->parent_log_context_offset);
             if(parent && *parent){
                 snprintf(line, sizeof(line), "[%s @ %p] ", (*parent)->item_name(parent), parent);
@@ -105,13 +104,13 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
 
     vsnprintf(line + strlen(line), sizeof(line) - strlen(line), fmt, vl);
 
-    print_prefix= line[strlen(line)-1] == '\n';
+    print_prefix = strlen(line) && line[strlen(line)-1] == '\n';
 
 #if HAVE_ISATTY
     if(!is_atty) is_atty= isatty(2) ? 1 : -1;
 #endif
 
-    if(print_prefix && (flags & AV_LOG_SKIP_REPEATED) && !strcmp(line, prev)){
+    if(print_prefix && (flags & AV_LOG_SKIP_REPEATED) && !strncmp(line, prev, sizeof line)){
         count++;
         if(is_atty==1)
             fprintf(stderr, "    Last message repeated %d times\r", count);
@@ -122,7 +121,7 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
         count=0;
     }
     colored_fputs(av_clip(level>>3, 0, 6), line);
-    strcpy(prev, line);
+    av_strlcpy(prev, line, sizeof line);
 }
 
 static void (*av_log_callback)(void*, int, const char*, va_list) = av_log_default_callback;

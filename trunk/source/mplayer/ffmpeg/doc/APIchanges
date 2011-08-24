@@ -1,16 +1,98 @@
-Never assume the API of libav* to be stable unless at least 1 week has passed since
-the last major version increase.
+Never assume the API of libav* to be stable unless at least 1 month has passed
+since the last major version increase.
+
 The last version increases were:
-libavcodec:  ?
-libavdevice: ?
-libavfilter: 2009-10-18
-libavformat: ?
-libpostproc: ?
-libswscale:  ?
-libavutil:   2009-03-08
+libavcodec:  2011-04-18
+libavdevice: 2011-04-18
+libavfilter: 2011-04-18
+libavformat: 2011-04-18
+libpostproc: 2011-04-18
+libswscale:  2011-06-20
+libavutil:   2011-04-18
 
 
 API changes, most recent first:
+
+2011-08-xx - xxxxxxx - lavf 53.4.0
+  Add avformat_query_codec().
+
+2011-08-xx - xxxxxxx - lavc 53.8.0
+  Add avcodec_get_type().
+
+2011-08-06 - 2f63440 - lavf 53.4.0
+  Add error_recognition to AVFormatContext.
+
+2011-08-02 - 9d39cbf - lavc 53.7.1
+  Add AV_PKT_FLAG_CORRUPT AVPacket flag.
+
+2011-07-10 - a67c061 - lavf 53.3.0
+  Add avformat_find_stream_info(), deprecate av_find_stream_info().
+
+2011-07-10 - 0b950fe - lavc 53.6.0
+  Add avcodec_open2(), deprecate avcodec_open().
+
+2011-06-23 - 67e9ae1 - lavu 51.8.0 - attributes.h
+  Add av_printf_format().
+
+2011-06-16 - 05e84c9, 25de595 - lavf 53.2.0 - avformat.h
+  Add avformat_open_input and avformat_write_header().
+  Deprecate av_open_input_stream, av_open_input_file,
+  AVFormatParameters and av_write_header.
+
+2011-06-16 - 7e83e1c, dc59ec5 - lavu 51.7.0 - opt.h
+  Add av_opt_set_dict() and av_opt_find().
+  Deprecate av_find_opt().
+  Add AV_DICT_APPEND flag.
+
+2011-06-10 - cb7c11c - lavu 51.6.0 - opt.h
+  Add av_opt_flag_is_set().
+
+2011-06-08 - d9f80ea - lavu 51.5.0 - AVMetadata
+  Move AVMetadata from lavf to lavu and rename it to
+  AVDictionary -- new installed header dict.h.
+  All av_metadata_* functions renamed to av_dict_*.
+
+2011-06-07 - a6703fa - lavu 51.4.0 - av_get_bytes_per_sample()
+  Add av_get_bytes_per_sample() in libavutil/samplefmt.h.
+  Deprecate av_get_bits_per_sample_fmt().
+
+2011-06-05 - b39b062 - lavu 51.3.0 - opt.h
+  Add av_opt_free convenience function.
+
+2011-05-28 - 0420bd7 - lavu 51.2.0 - pixdesc.h
+  Add av_get_pix_fmt_name() in libavutil/pixdesc.h, and deprecate
+  avcodec_get_pix_fmt_name() in libavcodec/avcodec.h in its favor.
+
+2011-05-25 - 30315a8 - lavf 53.1.0 - avformat.h
+  Add fps_probe_size to AVFormatContext.
+
+2011-05-18 - 64150ff - lavc 53.4.0 - AVCodecContext.request_sample_fmt
+  Add request_sample_fmt field to AVCodecContext.
+
+2011-05-10 - 188dea1 - lavc 53.3.0 - avcodec.h
+  Deprecate AVLPCType and the following fields in
+  AVCodecContext: lpc_coeff_precision, prediction_order_method,
+  min_partition_order, max_partition_order, lpc_type, lpc_passes.
+  Corresponding FLAC encoder options should be used instead.
+
+2011-04-26 - bebe72f - lavu 51.1.0 - avutil.h
+  Add AVPictureType enum and av_get_picture_type_char(), deprecate
+  FF_*_TYPE defines and av_get_pict_type_char() defined in
+  libavcodec/avcodec.h.
+
+2011-04-26 - 10d3940 - lavfi 2.3.0 - avfilter.h
+  Add pict_type and key_frame fields to AVFilterBufferRefVideo.
+
+2011-04-26 - 7a11c82 - lavfi 2.2.0 - vsrc_buffer
+  Add sample_aspect_ratio fields to vsrc_buffer arguments
+
+2011-04-21 - 94f7451 - lavc 53.1.0 - avcodec.h
+  Add CODEC_CAP_SLICE_THREADS for codecs supporting sliced threading.
+
+2011-04-15 - lavc 52.120.0 - avcodec.h
+  AVPacket structure got additional members for passing side information:
+    4de339e introduce side information for AVPacket
+    2d8591c make containers pass palette change in AVPacket
 
 2011-04-12 - lavf 52.107.0 - avio.h
   Avio cleanup, part II - deprecate the entire URLContext API:

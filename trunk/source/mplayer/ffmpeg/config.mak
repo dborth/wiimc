@@ -1,1 +1,1 @@
-include ../../config.mak
+include ../config.mak

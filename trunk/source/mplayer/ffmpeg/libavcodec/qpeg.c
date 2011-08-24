@@ -259,12 +259,9 @@ static int decode_frame(AVCodecContext *avctx,
     int delta;
     const uint8_t *pal = av_packet_get_side_data(avpkt, AV_PKT_DATA_PALETTE, NULL);
 
-    if(p->data[0])
-        avctx->release_buffer(avctx, p);
-
-    p->reference= 0;
-    if(avctx->get_buffer(avctx, p) < 0){
-        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+    p->reference = 3;
+    if (avctx->reget_buffer(avctx, p) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "reget_buffer() failed\n");
         return -1;
     }
     outdata = a->pic.data[0];
@@ -310,14 +307,13 @@ static av_cold int decode_end(AVCodecContext *avctx){
 }
 
 AVCodec ff_qpeg_decoder = {
-    "qpeg",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_QPEG,
-    sizeof(QpegContext),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "qpeg",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_QPEG,
+    .priv_data_size = sizeof(QpegContext),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Q-team QPEG"),
 };

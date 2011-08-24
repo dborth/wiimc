@@ -1,5 +1,5 @@
 /*
- * FFM (ffserver live feed) demuxer
+ * FFM (avserver live feed) demuxer
  * Copyright (c) 2001 Fabrice Bellard
  *
  * This file is part of Libav.
@@ -20,9 +20,10 @@
  */
 
 #include "libavutil/intreadwrite.h"
+#include "libavutil/intfloat_readwrite.h"
 #include "avformat.h"
 #include "ffm.h"
-#if CONFIG_FFSERVER
+#if CONFIG_AVSERVER
 #include <unistd.h>
 
 int64_t ffm_read_write_index(int fd)
@@ -54,7 +55,7 @@ void ffm_set_write_index(AVFormatContext *s, int64_t pos, int64_t file_size)
     ffm->write_index = pos;
     ffm->file_size = file_size;
 }
-#endif // CONFIG_FFSERVER
+#endif // CONFIG_AVSERVER
 
 static int ffm_is_avail_data(AVFormatContext *s, int size)
 {
@@ -163,8 +164,6 @@ static int ffm_read_data(AVFormatContext *s,
     return size1 - size;
 }
 
-//#define DEBUG_SEEK
-
 /* ensure that acutal seeking happens between FFM_PACKET_SIZE
    and file_size - FFM_PACKET_SIZE */
 static void ffm_seek1(AVFormatContext *s, int64_t pos1)
@@ -175,9 +174,7 @@ static void ffm_seek1(AVFormatContext *s, int64_t pos1)
 
     pos = FFMIN(pos1, ffm->file_size - FFM_PACKET_SIZE);
     pos = FFMAX(pos, FFM_PACKET_SIZE);
-#ifdef DEBUG_SEEK
-    av_log(s, AV_LOG_DEBUG, "seek to %"PRIx64" -> %"PRIx64"\n", pos1, pos);
-#endif
+    av_dlog(s, "seek to %"PRIx64" -> %"PRIx64"\n", pos1, pos);
     avio_seek(pb, pos, SEEK_SET);
 }
 
@@ -189,9 +186,7 @@ static int64_t get_dts(AVFormatContext *s, int64_t pos)
     ffm_seek1(s, pos);
     avio_skip(pb, 4);
     dts = avio_rb64(pb);
-#ifdef DEBUG_SEEK
-    av_log(s, AV_LOG_DEBUG, "dts=%0.6f\n", dts / 1000000.0);
-#endif
+    av_dlog(s, "dts=%0.6f\n", dts / 1000000.0);
     return dts;
 }
 
@@ -306,7 +301,6 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
         codec->codec_id = avio_rb32(pb);
         codec->codec_type = avio_r8(pb); /* codec_type */
         codec->bit_rate = avio_rb32(pb);
-        st->quality = avio_rb32(pb);
         codec->flags = avio_rb32(pb);
         codec->flags2 = avio_rb32(pb);
         codec->debug = avio_rb32(pb);
@@ -417,9 +411,6 @@ static int ffm_read_packet(AVFormatContext *s, AVPacket *pkt)
         if (ffm->header[1] & FLAG_DTS)
             if (ffm_read_data(s, ffm->header+16, 4, 1) != 4)
                 return -1;
-#if 0
-        av_hexdump_log(s, AV_LOG_DEBUG, ffm->header, FRAME_HEADER_SIZE);
-#endif
         ffm->read_state = READ_DATA;
         /* fall thru */
     case READ_DATA:
@@ -468,9 +459,7 @@ static int ffm_seek(AVFormatContext *s, int stream_index, int64_t wanted_pts, in
     int64_t pts_min, pts_max, pts;
     double pos1;
 
-#ifdef DEBUG_SEEK
-    av_log(s, AV_LOG_DEBUG, "wanted_pts=%0.6f\n", wanted_pts / 1000000.0);
-#endif
+    av_dlog(s, "wanted_pts=%0.6f\n", wanted_pts / 1000000.0);
     /* find the position using linear interpolation (better than
        dichotomy in typical cases) */
     pos_min = FFM_PACKET_SIZE;
@@ -520,12 +509,12 @@ static int ffm_probe(AVProbeData *p)
 }
 
 AVInputFormat ff_ffm_demuxer = {
-    "ffm",
-    NULL_IF_CONFIG_SMALL("FFM (FFserver live feed) format"),
-    sizeof(FFMContext),
-    ffm_probe,
-    ffm_read_header,
-    ffm_read_packet,
-    ffm_close,
-    ffm_seek,
+    .name           = "ffm",
+    .long_name      = NULL_IF_CONFIG_SMALL("FFM (AVserver live feed) format"),
+    .priv_data_size = sizeof(FFMContext),
+    .read_probe     = ffm_probe,
+    .read_header    = ffm_read_header,
+    .read_packet    = ffm_read_packet,
+    .read_close     = ffm_close,
+    .read_seek      = ffm_seek,
 };

@@ -1,7 +1,4 @@
 /*
- * AVOptions
- * copyright (c) 2005 Michael Niedermayer <michaelni@gmx.at>
- *
  * This file is part of Libav.
  *
  * Libav is free software; you can redistribute it and/or
@@ -19,37 +16,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+/**
+ * @file
+ * This header is provided for compatibility only and will be removed
+ * on next major bump
+ */
+
 #ifndef AVCODEC_OPT_H
 #define AVCODEC_OPT_H
 
-/**
- * @file
- * AVOptions
- */
+#include "libavcodec/version.h"
 
-#include "libavutil/rational.h"
-#include "avcodec.h"
+#if FF_API_OPT_H
 #include "libavutil/opt.h"
-
-#if FF_API_SET_STRING_OLD
-/**
- * @see av_set_string2()
- */
-attribute_deprecated const AVOption *av_set_string(void *obj, const char *name, const char *val);
-
-/**
- * @return a pointer to the AVOption corresponding to the field set or
- * NULL if no matching AVOption exists, or if the value val is not
- * valid
- * @see av_set_string3()
- */
-attribute_deprecated const AVOption *av_set_string2(void *obj, const char *name, const char *val, int alloc);
-#endif
-#if FF_API_OPT_SHOW
-/**
- * @deprecated Use av_opt_show2() instead.
- */
-attribute_deprecated int av_opt_show(void *obj, void *av_log_obj);
 #endif
 
 #endif /* AVCODEC_OPT_H */

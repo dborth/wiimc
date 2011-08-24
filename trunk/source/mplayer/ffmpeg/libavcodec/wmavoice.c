@@ -128,9 +128,7 @@ static const struct frame_type_desc {
  */
 typedef struct {
     /**
-     * @defgroup struct_global Global values
-     * Global values, specified in the stream header / extradata or used
-     * all over.
+     * @name Global values specified in the stream header / extradata or used all over.
      * @{
      */
     GetBitContext gb;             ///< packet bitreader. During decoder init,
@@ -182,8 +180,9 @@ typedef struct {
 
     /**
      * @}
-     * @defgroup struct_packet Packet values
-     * Packet values, specified in the packet header or related to a packet.
+     *
+     * @name Packet values specified in the packet header or related to a packet.
+     *
      * A packet is considered to be a single unit of data provided to this
      * decoder by the demuxer.
      * @{
@@ -213,7 +212,8 @@ typedef struct {
 
     /**
      * @}
-     * @defgroup struct_frame Frame and superframe values
+     *
+     * @name Frame and superframe values
      * Superframe and frame data - these can change from frame to frame,
      * although some of them do in that case serve as a cache / history for
      * the next frame or superframe.
@@ -256,7 +256,9 @@ typedef struct {
     float synth_history[MAX_LSPS]; ///< see #excitation_history
     /**
      * @}
-     * @defgroup post_filter Postfilter values
+     *
+     * @name Postfilter values
+     *
      * Variables used for postfilter implementation, mostly history for
      * smoothing and so on, and context variables for FFT/iFFT.
      * @{
@@ -275,11 +277,11 @@ typedef struct {
                                   ///< by postfilter
     float denoise_filter_cache[MAX_FRAMESIZE];
     int   denoise_filter_cache_size; ///< samples in #denoise_filter_cache
-    DECLARE_ALIGNED(16, float, tilted_lpcs_pf)[0x80];
+    DECLARE_ALIGNED(32, float, tilted_lpcs_pf)[0x80];
                                   ///< aligned buffer for LPC tilting
-    DECLARE_ALIGNED(16, float, denoise_coeffs_pf)[0x80];
+    DECLARE_ALIGNED(32, float, denoise_coeffs_pf)[0x80];
                                   ///< aligned buffer for denoise coefficients
-    DECLARE_ALIGNED(16, float, synth_filter_out_buf)[0x80 + MAX_LSPS_ALIGN16];
+    DECLARE_ALIGNED(32, float, synth_filter_out_buf)[0x80 + MAX_LSPS_ALIGN16];
                                   ///< aligned buffer for postfilter speech
                                   ///< synthesis
     /**
@@ -315,7 +317,7 @@ static av_cold int decode_vbmtree(GetBitContext *gb, int8_t vbm_tree[25])
     };
     int cntr[8], n, res;
 
-    memset(vbm_tree, 0xff, sizeof(vbm_tree));
+    memset(vbm_tree, 0xff, sizeof(vbm_tree[0]) * 25);
     memset(cntr,     0,    sizeof(cntr));
     for (n = 0; n < 17; n++) {
         res = get_bits(gb, 3);
@@ -432,7 +434,7 @@ static av_cold int wmavoice_decode_init(AVCodecContext *ctx)
 }
 
 /**
- * @defgroup postfilter Postfilter functions
+ * @name Postfilter functions
  * Postfilter functions (gain control, wiener denoise filter, DC filter,
  * kalman smoothening, plus surrounding code to wrap it)
  * @{
@@ -825,7 +827,7 @@ static void dequant_lsps(double *lsps, int num,
 }
 
 /**
- * @defgroup lsp_dequant LSP dequantization routines
+ * @name LSP dequantization routines
  * LSP dequantization routines, for 10/16LSPs and independent/residual coding.
  * @note we assume enough bits are available, caller should check.
  * lsp10i() consumes 24 bits; lsp10r() consumes an additional 24 bits;
@@ -969,7 +971,7 @@ static void dequant_lsp16r(GetBitContext *gb,
 
 /**
  * @}
- * @defgroup aw Pitch-adaptive window coding functions
+ * @name Pitch-adaptive window coding functions
  * The next few functions are for pitch-adaptive window coding.
  * @{
  */
@@ -2020,15 +2022,14 @@ static av_cold void wmavoice_flush(AVCodecContext *ctx)
 }
 
 AVCodec ff_wmavoice_decoder = {
-    "wmavoice",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_WMAVOICE,
-    sizeof(WMAVoiceContext),
-    wmavoice_decode_init,
-    NULL,
-    wmavoice_decode_end,
-    wmavoice_decode_packet,
-    CODEC_CAP_SUBFRAMES,
+    .name           = "wmavoice",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_WMAVOICE,
+    .priv_data_size = sizeof(WMAVoiceContext),
+    .init           = wmavoice_decode_init,
+    .close          = wmavoice_decode_end,
+    .decode         = wmavoice_decode_packet,
+    .capabilities   = CODEC_CAP_SUBFRAMES,
     .flush     = wmavoice_flush,
     .long_name = NULL_IF_CONFIG_SMALL("Windows Media Audio Voice"),
 };

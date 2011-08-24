@@ -21,6 +21,7 @@
 
 #include "libavutil/audioconvert.h"
 #include "libavutil/intreadwrite.h"
+#include "libavutil/dict.h"
 #include "avformat.h"
 #include "apetag.h"
 #include "id3v1.h"
@@ -109,6 +110,9 @@ static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int appen
         size = wc->blksize;
     }
     wc->flags = AV_RL32(wc->extra + 4);
+    // blocks with zero samples don't contain actual audio information and should be ignored
+    if (!AV_RN32(wc->extra))
+        return 0;
     //parse flags
     bpp = ((wc->flags & 3) + 1) << 3;
     chan = 1 + !(wc->flags & WV_MONO);
@@ -206,8 +210,14 @@ static int wv_read_header(AVFormatContext *s,
     AVStream *st;
 
     wc->block_parsed = 0;
-    if(wv_read_block_header(s, pb, 0) < 0)
-        return -1;
+    for(;;){
+        if(wv_read_block_header(s, pb, 0) < 0)
+            return -1;
+        if(!AV_RN32(wc->extra))
+            avio_skip(pb, wc->blksize - 24);
+        else
+            break;
+    }
 
     /* now we are ready: build format streams */
     st = av_new_stream(s, 0);
@@ -226,7 +236,7 @@ static int wv_read_header(AVFormatContext *s,
     if(s->pb->seekable) {
         int64_t cur = avio_tell(s->pb);
         ff_ape_parse_tag(s);
-        if(!av_metadata_get(s->metadata, "", NULL, AV_METADATA_IGNORE_SUFFIX))
+        if(!av_dict_get(s->metadata, "", NULL, AV_DICT_IGNORE_SUFFIX))
             ff_id3v1_read(s);
         avio_seek(s->pb, cur, SEEK_SET);
     }
@@ -341,12 +351,11 @@ static int wv_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp,
 }
 
 AVInputFormat ff_wv_demuxer = {
-    "wv",
-    NULL_IF_CONFIG_SMALL("WavPack"),
-    sizeof(WVContext),
-    wv_probe,
-    wv_read_header,
-    wv_read_packet,
-    NULL,
-    wv_read_seek,
+    .name           = "wv",
+    .long_name      = NULL_IF_CONFIG_SMALL("WavPack"),
+    .priv_data_size = sizeof(WVContext),
+    .read_probe     = wv_probe,
+    .read_header    = wv_read_header,
+    .read_packet    = wv_read_packet,
+    .read_seek      = wv_read_seek,
 };

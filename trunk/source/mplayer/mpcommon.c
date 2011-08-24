@@ -21,6 +21,12 @@
 #endif
 #include <stdlib.h>
 #include "stream/stream.h"
+#ifdef CONFIG_DVDREAD
+#include "stream/stream_dvd.h"
+#endif
+#ifdef CONFIG_DVDNAV
+#include "stream/stream_dvdnav.h"
+#endif
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/stheader.h"
 #include "codec-cfg.h"
@@ -34,6 +40,7 @@
 #include "cpudetect.h"
 #include "help_mp.h"
 #include "mp_msg.h"
+#include "parser-cfg.h"
 #include "sub/spudec.h"
 #include "version.h"
 #include "sub/vobsub.h"
@@ -52,6 +59,8 @@ ASS_Track* ass_track = 0; // current track to render
 
 sub_data* subdata = NULL;
 subtitle* vo_sub_last = NULL;
+char *spudec_ifo;
+int forced_subs_only;
 
 const char *mencoder_version = "MEncoder " VERSION;
 const char *mplayer_version  = "MPlayer "  VERSION;
@@ -69,9 +78,9 @@ void print_version(const char* name)
            gCpuCaps.has3DNow, gCpuCaps.has3DNowExt,
            gCpuCaps.hasSSE, gCpuCaps.hasSSE2, gCpuCaps.hasSSSE3);
 #if CONFIG_RUNTIME_CPUDETECT
-    mp_msg(MSGT_CPLAYER,MSGL_V, MSGTR_CompiledWithRuntimeDetection);
+    mp_msg(MSGT_CPLAYER, MSGL_V, "Compiled with runtime CPU detection.\n");
 #else
-    mp_msg(MSGT_CPLAYER,MSGL_V, MSGTR_CompiledWithCPUExtensions);
+    mp_msg(MSGT_CPLAYER, MSGL_V, "Compiled for x86 CPU with extensions:");
 if (HAVE_MMX)
     mp_msg(MSGT_CPLAYER,MSGL_V," MMX");
 if (HAVE_MMX2)
@@ -91,6 +100,55 @@ if (HAVE_CMOV)
     mp_msg(MSGT_CPLAYER,MSGL_V,"\n");
 #endif /* CONFIG_RUNTIME_CPUDETECT */
 #endif /* ARCH_X86 */
+}
+
+void init_vo_spudec(struct stream *stream, struct sh_video *sh_video, struct sh_sub *sh_sub)
+{
+    unsigned width, height;
+    spudec_free(vo_spudec);
+    vo_spudec = NULL;
+
+    // we currently can't work without video stream
+    if (!sh_video)
+        return;
+
+    if (spudec_ifo) {
+        unsigned int palette[16];
+        current_module = "spudec_init_vobsub";
+        if (vobsub_parse_ifo(NULL, spudec_ifo, palette, &width, &height, 1, -1, NULL) >= 0)
+            vo_spudec = spudec_new_scaled(palette, width, height, NULL, 0);
+    }
+
+    width  = sh_video->disp_w;
+    height = sh_video->disp_h;
+
+#ifdef CONFIG_DVDREAD
+    if (vo_spudec == NULL && stream->type == STREAMTYPE_DVD) {
+        current_module = "spudec_init_dvdread";
+        vo_spudec      = spudec_new_scaled(((dvd_priv_t *)(stream->priv))->cur_pgc->palette,
+                                           width, height,
+                                           NULL, 0);
+    }
+#endif
+
+#ifdef CONFIG_DVDNAV
+    if (vo_spudec == NULL && stream->type == STREAMTYPE_DVDNAV) {
+        unsigned int *palette = mp_dvdnav_get_spu_clut(stream);
+        current_module = "spudec_init_dvdnav";
+        vo_spudec      = spudec_new_scaled(palette, width, height, NULL, 0);
+    }
+#endif
+
+    if (vo_spudec == NULL) {
+        current_module = "spudec_init_normal";
+        vo_spudec      = spudec_new_scaled(NULL, width, height,
+                                           sh_sub ? sh_sub->extradata : NULL,
+                                           sh_sub ? sh_sub->extradata_len : 0);
+        spudec_set_font_factor(vo_spudec, font_factor);
+    }
+
+    if (vo_spudec)
+        spudec_set_forced_subs_only(vo_spudec, forced_subs_only);
 }
 
 static int is_text_sub(int type)
@@ -272,6 +330,7 @@ void update_subtitles(sh_video_t *sh_video, double refpts, demux_stream_t *d_dvd
                     len -= p - packet;
                     packet = p;
                 }
+                if (endpts == MP_NOPTS_VALUE) endpts = subpts + 4;
                 sub_add_text(&subs, packet, len, endpts, 1);
                 set_osd_subtitle(&subs);
             }
@@ -349,6 +408,19 @@ static void noconfig_all(void)
 #endif /* CONFIG_GUI */
 }
 
+m_config_t *mconfig;
+
+int cfg_inc_verbose(m_option_t *conf)
+{
+    ++verbose;
+    return 0;
+}
+
+int cfg_include(m_option_t *conf, const char *filename)
+{
+    return m_config_parse_config_file(mconfig, filename);
+}
+
 const m_option_t noconfig_opts[] = {
     {"all", noconfig_all, CONF_TYPE_FUNC, CONF_GLOBAL|CONF_NOCFG|CONF_PRE_PARSE, 0, 0, NULL},
     {"system", &disable_system_conf, CONF_TYPE_FLAG, CONF_GLOBAL|CONF_NOCFG|CONF_PRE_PARSE, 0, 1, NULL},
@@ -421,7 +493,7 @@ int common_init(void)
                     free(conf_path);
                     return 0;
                 }
-                mp_msg(MSGT_CPLAYER,MSGL_V,MSGTR_BuiltinCodecsConf);
+                mp_msg(MSGT_CPLAYER, MSGL_V, "Using built-in default codecs.conf.\n");
             }
         }
         free(conf_path);

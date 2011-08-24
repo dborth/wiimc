@@ -201,7 +201,6 @@ static inline int tm2_read_header(TM2Context *ctx, const uint8_t *buf)
 {
     uint32_t magic;
     const uint8_t *obuf;
-    int length;
 
     obuf = buf;
 
@@ -212,19 +211,6 @@ static inline int tm2_read_header(TM2Context *ctx, const uint8_t *buf)
 /*      av_log (ctx->avctx, AV_LOG_ERROR, "TM2 old header: not implemented (yet)\n"); */
         return 40;
     } else if(magic == 0x00000101) { /* new header */
-        int w, h, size, flags, xr, yr;
-
-        length = AV_RL32(buf);
-        buf += 4;
-
-        init_get_bits(&ctx->gb, buf, 32 * 8);
-        size = get_bits_long(&ctx->gb, 31);
-        h = get_bits(&ctx->gb, 15);
-        w = get_bits(&ctx->gb, 15);
-        flags = get_bits_long(&ctx->gb, 31);
-        yr = get_bits(&ctx->gb, 9);
-        xr = get_bits(&ctx->gb, 9);
-
         return 40;
     } else {
         av_log (ctx->avctx, AV_LOG_ERROR, "Not a TM2 header: 0x%08X\n", magic);
@@ -807,9 +793,9 @@ static int decode_frame(AVCodecContext *avctx,
     }
     p->key_frame = tm2_decode_blocks(l, p);
     if(p->key_frame)
-        p->pict_type = FF_I_TYPE;
+        p->pict_type = AV_PICTURE_TYPE_I;
     else
-        p->pict_type = FF_P_TYPE;
+        p->pict_type = AV_PICTURE_TYPE_P;
 
     l->cur = !l->cur;
     *data_size = sizeof(AVFrame);
@@ -878,14 +864,13 @@ static av_cold int decode_end(AVCodecContext *avctx){
 }
 
 AVCodec ff_truemotion2_decoder = {
-    "truemotion2",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_TRUEMOTION2,
-    sizeof(TM2Context),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "truemotion2",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_TRUEMOTION2,
+    .priv_data_size = sizeof(TM2Context),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Duck TrueMotion 2.0"),
 };

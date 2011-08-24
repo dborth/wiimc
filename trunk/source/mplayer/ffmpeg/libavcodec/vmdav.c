@@ -199,7 +199,6 @@ static void vmd_decode(VmdVideoContext *s)
 
     int frame_x, frame_y;
     int frame_width, frame_height;
-    int dp_size;
 
     frame_x = AV_RL16(&s->buf[6]);
     frame_y = AV_RL16(&s->buf[8]);
@@ -247,7 +246,6 @@ static void vmd_decode(VmdVideoContext *s)
         }
 
         dp = &s->frame.data[0][frame_y * s->frame.linesize[0] + frame_x];
-        dp_size = s->frame.linesize[0] * s->avctx->height;
         pp = &s->prev_frame.data[0][frame_y * s->prev_frame.linesize[0] + frame_x];
         switch (meth) {
         case 1:
@@ -449,7 +447,7 @@ static av_cold int vmdaudio_decode_init(AVCodecContext *avctx)
         avctx->sample_fmt = AV_SAMPLE_FMT_S16;
     else
         avctx->sample_fmt = AV_SAMPLE_FMT_U8;
-    s->out_bps = av_get_bits_per_sample_fmt(avctx->sample_fmt) >> 3;
+    s->out_bps = av_get_bytes_per_sample(avctx->sample_fmt);
 
     av_log(avctx, AV_LOG_DEBUG, "%d channels, %d bits/sample, "
            "block align = %d, sample rate = %d\n",
@@ -546,26 +544,23 @@ static int vmdaudio_decode_frame(AVCodecContext *avctx,
  */
 
 AVCodec ff_vmdvideo_decoder = {
-    "vmdvideo",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_VMDVIDEO,
-    sizeof(VmdVideoContext),
-    vmdvideo_decode_init,
-    NULL,
-    vmdvideo_decode_end,
-    vmdvideo_decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "vmdvideo",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_VMDVIDEO,
+    .priv_data_size = sizeof(VmdVideoContext),
+    .init           = vmdvideo_decode_init,
+    .close          = vmdvideo_decode_end,
+    .decode         = vmdvideo_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Sierra VMD video"),
 };
 
 AVCodec ff_vmdaudio_decoder = {
-    "vmdaudio",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_VMDAUDIO,
-    sizeof(VmdAudioContext),
-    vmdaudio_decode_init,
-    NULL,
-    NULL,
-    vmdaudio_decode_frame,
+    .name           = "vmdaudio",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_VMDAUDIO,
+    .priv_data_size = sizeof(VmdAudioContext),
+    .init           = vmdaudio_decode_init,
+    .decode         = vmdaudio_decode_frame,
     .long_name = NULL_IF_CONFIG_SMALL("Sierra VMD audio"),
 };

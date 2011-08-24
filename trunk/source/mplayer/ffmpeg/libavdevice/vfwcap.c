@@ -20,10 +20,11 @@
  */
 
 #include "libavformat/avformat.h"
+#include "libavutil/log.h"
+#include "libavutil/opt.h"
+#include "libavutil/parseutils.h"
 #include <windows.h>
 #include <vfw.h>
-
-//#define DEBUG_VFW
 
 /* Defines for VFW missing from MinGW.
  * Remove this when MinGW incorporates them. */
@@ -34,12 +35,15 @@
 /* End of missing MinGW defines */
 
 struct vfw_ctx {
+    const AVClass *class;
     HWND hwnd;
     HANDLE mutex;
     HANDLE event;
     AVPacketList *pktl;
     unsigned int curbufsize;
     unsigned int frame_num;
+    char *video_size;       /**< A string describing video size, set by a private option. */
+    char *framerate;        /**< Set by a private option. */
 };
 
 static enum PixelFormat vfw_pixfmt(DWORD biCompression, WORD biBitCount)
@@ -116,7 +120,7 @@ static void dump_captureparms(AVFormatContext *s, CAPTUREPARMS *cparms)
 
 static void dump_videohdr(AVFormatContext *s, VIDEOHDR *vhdr)
 {
-#ifdef DEBUG_VFW
+#ifdef DEBUG
     av_log(s, AV_LOG_DEBUG, "VIDEOHDR\n");
     dstruct(s, vhdr, lpData, "p");
     dstruct(s, vhdr, dwBufferLength, "lu");
@@ -244,9 +248,8 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
     CAPTUREPARMS cparms;
     DWORD biCompression;
     WORD biBitCount;
-    int width;
-    int height;
     int ret;
+    AVRational framerate_q;
 
     if (!strcmp(s->filename, "list")) {
         for (devnum = 0; devnum <= 9; devnum++) {
@@ -261,11 +264,6 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 av_log(s, AV_LOG_INFO, " %s\n", driver_ver);
             }
         }
-        return AVERROR(EIO);
-    }
-
-    if(!ap->time_base.den) {
-        av_log(s, AV_LOG_ERROR, "A time base must be specified.\n");
         return AVERROR(EIO);
     }
 
@@ -318,10 +316,14 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     dump_bih(s, &bi->bmiHeader);
 
-    width  = ap->width  ? ap->width  : bi->bmiHeader.biWidth ;
-    height = ap->height ? ap->height : bi->bmiHeader.biHeight;
-    bi->bmiHeader.biWidth  = width ;
-    bi->bmiHeader.biHeight = height;
+
+    if (ctx->video_size) {
+        ret = av_parse_video_size(&bi->bmiHeader.biWidth, &bi->bmiHeader.biHeight, ctx->video_size);
+        if (ret < 0) {
+            av_log(s, AV_LOG_ERROR, "Couldn't parse video size.\n");
+            goto fail_bi;
+        }
+    }
 
     if (0) {
         /* For testing yet unsupported compressions
@@ -356,7 +358,7 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     cparms.fYield = 1; // Spawn a background thread
     cparms.dwRequestMicroSecPerFrame =
-                               (ap->time_base.num*1000000) / ap->time_base.den;
+                               (framerate_q.den*1000000) / framerate_q.num;
     cparms.fAbortLeftMouse = 0;
     cparms.fAbortRightMouse = 0;
     cparms.fCaptureAudio = 0;
@@ -368,10 +370,10 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
         goto fail_io;
 
     codec = st->codec;
-    codec->time_base = ap->time_base;
+    codec->time_base = (AVRational){framerate_q.den, framerate_q.num};
     codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    codec->width = width;
-    codec->height = height;
+    codec->width  = bi->bmiHeader.biWidth;
+    codec->height = bi->bmiHeader.biHeight;
     codec->pix_fmt = vfw_pixfmt(biCompression, biBitCount);
     if(codec->pix_fmt == PIX_FMT_NONE) {
         codec->codec_id = vfw_codecid(biCompression);
@@ -452,6 +454,21 @@ static int vfw_read_packet(AVFormatContext *s, AVPacket *pkt)
     return pkt->size;
 }
 
+#define OFFSET(x) offsetof(struct vfw_ctx, x)
+#define DEC AV_OPT_FLAG_DECODING_PARAM
+static const AVOption options[] = {
+    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), FF_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
+    { "framerate", "", OFFSET(framerate), FF_OPT_TYPE_STRING, {.str = "ntsc"}, 0, 0, DEC },
+    { NULL },
+};
+
+static const AVClass vfw_class = {
+    .class_name = "VFW indev",
+    .item_name  = av_default_item_name,
+    .option     = options,
+    .version    = LIBAVUTIL_VERSION_INT,
+};
+
 AVInputFormat ff_vfwcap_demuxer = {
     "vfwcap",
     NULL_IF_CONFIG_SMALL("VFW video capture"),
@@ -461,4 +478,5 @@ AVInputFormat ff_vfwcap_demuxer = {
     vfw_read_packet,
     vfw_read_close,
     .flags = AVFMT_NOFILE,
+    .priv_class = &vfw_class,
 };

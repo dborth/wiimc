@@ -283,7 +283,12 @@ inline static int stream_read(stream_t *s,char* mem,int total){
   return total;
 }
 #endif
-unsigned char* stream_read_line(stream_t *s,unsigned char* mem, int max, int utf16);
+
+uint8_t *stream_read_until(stream_t *s, uint8_t *mem, int max, uint8_t term, int utf16);
+inline static uint8_t *stream_read_line(stream_t *s, uint8_t *mem, int max, int utf16)
+{
+  return stream_read_until(s, mem, max, '\n', utf16);
+}
 
 inline static int stream_eof(stream_t *s){
   return s->eof;
@@ -298,7 +303,8 @@ inline static int stream_seek(stream_t *s,off_t pos){
   mp_dbg(MSGT_DEMUX, MSGL_DBG3, "seek to 0x%qX\n",(long long)pos);
 
   if (pos < 0) {
-    mp_msg(MSGT_DEMUX, MSGL_ERR, "Invalid seek to negative position!\n");
+    mp_msg(MSGT_DEMUX, MSGL_ERR, "Invalid seek to negative position %llx!\n",
+           (long long)pos);
     pos = 0;
   }
   if(pos<s->pos){

@@ -360,8 +360,6 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
 
     if(buf_size <= 769)
         return 0;
-    if(smk->pic.data[0])
-            avctx->release_buffer(avctx, &smk->pic);
 
     smk->pic.reference = 1;
     smk->pic.buffer_hints = FF_BUFFER_HINTS_VALID | FF_BUFFER_HINTS_PRESERVE | FF_BUFFER_HINTS_REUSABLE;
@@ -375,9 +373,9 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
     smk->pic.palette_has_changed = buf[0] & 1;
     smk->pic.key_frame = !!(buf[0] & 2);
     if(smk->pic.key_frame)
-        smk->pic.pict_type = FF_I_TYPE;
+        smk->pic.pict_type = AV_PICTURE_TYPE_I;
     else
-        smk->pic.pict_type = FF_P_TYPE;
+        smk->pic.pict_type = AV_PICTURE_TYPE_P;
 
     buf++;
     for(i = 0; i < 256; i++)
@@ -688,27 +686,23 @@ static int smka_decode_frame(AVCodecContext *avctx, void *data, int *data_size, 
 }
 
 AVCodec ff_smacker_decoder = {
-    "smackvid",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_SMACKVIDEO,
-    sizeof(SmackVContext),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "smackvid",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_SMACKVIDEO,
+    .priv_data_size = sizeof(SmackVContext),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Smacker video"),
 };
 
 AVCodec ff_smackaud_decoder = {
-    "smackaud",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_SMACKAUDIO,
-    0,
-    smka_decode_init,
-    NULL,
-    NULL,
-    smka_decode_frame,
+    .name           = "smackaud",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_SMACKAUDIO,
+    .init           = smka_decode_init,
+    .decode         = smka_decode_frame,
     .long_name = NULL_IF_CONFIG_SMALL("Smacker audio"),
 };
 

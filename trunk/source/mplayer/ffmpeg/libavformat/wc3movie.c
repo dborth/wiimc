@@ -28,6 +28,7 @@
  */
 
 #include "libavutil/intreadwrite.h"
+#include "libavutil/dict.h"
 #include "avformat.h"
 
 #define FORM_TAG MKTAG('F', 'O', 'R', 'M')
@@ -130,8 +131,8 @@ static int wc3_read_header(AVFormatContext *s,
             if ((ret = avio_read(pb, buffer, size)) != size)
                 return AVERROR(EIO);
             buffer[size] = 0;
-            av_metadata_set2(&s->metadata, "title", buffer,
-                                   AV_METADATA_DONT_STRDUP_VAL);
+            av_dict_set(&s->metadata, "title", buffer,
+                                   AV_DICT_DONT_STRDUP_VAL);
             break;
 
         case SIZE_TAG:
@@ -151,7 +152,6 @@ static int wc3_read_header(AVFormatContext *s,
                 (uint8_t)fourcc_tag, (uint8_t)(fourcc_tag >> 8), (uint8_t)(fourcc_tag >> 16), (uint8_t)(fourcc_tag >> 24),
                 (uint8_t)fourcc_tag, (uint8_t)(fourcc_tag >> 8), (uint8_t)(fourcc_tag >> 16), (uint8_t)(fourcc_tag >> 24));
             return AVERROR_INVALIDDATA;
-            break;
         }
 
         fourcc_tag = avio_rl32(pb);
@@ -292,11 +292,11 @@ static int wc3_read_close(AVFormatContext *s)
 }
 
 AVInputFormat ff_wc3_demuxer = {
-    "wc3movie",
-    NULL_IF_CONFIG_SMALL("Wing Commander III movie format"),
-    sizeof(Wc3DemuxContext),
-    wc3_probe,
-    wc3_read_header,
-    wc3_read_packet,
-    wc3_read_close,
+    .name           = "wc3movie",
+    .long_name      = NULL_IF_CONFIG_SMALL("Wing Commander III movie format"),
+    .priv_data_size = sizeof(Wc3DemuxContext),
+    .read_probe     = wc3_probe,
+    .read_header    = wc3_read_header,
+    .read_packet    = wc3_read_packet,
+    .read_close     = wc3_read_close,
 };

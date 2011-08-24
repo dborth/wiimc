@@ -148,7 +148,7 @@ static int decode_frame(AVCodecContext *avctx,
         return -1;
     }
     memset(s->frame.data[0], 0, s->height * s->frame.linesize[0]);
-    s->frame.pict_type           = FF_I_TYPE;
+    s->frame.pict_type           = AV_PICTURE_TYPE_I;
     s->frame.palette_has_changed = 1;
 
     palette = (uint32_t*)s->frame.data[1];
@@ -238,14 +238,12 @@ static av_cold int decode_end(AVCodecContext *avctx)
 }
 
 AVCodec ff_pictor_decoder = {
-    "pictor",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_PICTOR,
-    sizeof(PicContext),
-    NULL,
-    NULL,
-    decode_end,
-    decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "pictor",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_PICTOR,
+    .priv_data_size = sizeof(PicContext),
+    .close          = decode_end,
+    .decode         = decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Pictor/PC Paint"),
 };

@@ -97,7 +97,7 @@ found:
     return i-(state&5);
 }
 
-/*!
+/**
  * Parse NAL units of found picture and decode some basic information.
  *
  * @param s parser context.
@@ -117,7 +117,7 @@ static inline int parse_nal_units(AVCodecParserContext *s,
     const uint8_t *ptr;
 
     /* set some sane default values */
-    s->pict_type = FF_I_TYPE;
+    s->pict_type = AV_PICTURE_TYPE_I;
     s->key_frame = 0;
 
     h->s.avctx= avctx;
@@ -270,21 +270,22 @@ static int h264_parse(AVCodecParserContext *s,
             assert(pc->last_index + next >= 0 );
             ff_h264_find_frame_end(h, &pc->buffer[pc->last_index + next], -next); //update state
         }
+    }
 
-        parse_nal_units(s, avctx, buf, buf_size);
+    parse_nal_units(s, avctx, buf, buf_size);
 
-        if (h->sei_cpb_removal_delay >= 0) {
-            s->dts_sync_point    = h->sei_buffering_period_present;
-            s->dts_ref_dts_delta = h->sei_cpb_removal_delay;
-            s->pts_dts_delta     = h->sei_dpb_output_delay;
-        } else {
-            s->dts_sync_point    = INT_MIN;
-            s->dts_ref_dts_delta = INT_MIN;
-            s->pts_dts_delta     = INT_MIN;
-        }
-        if (s->flags & PARSER_FLAG_ONCE) {
-            s->flags &= PARSER_FLAG_COMPLETE_FRAMES;
-        }
+    if (h->sei_cpb_removal_delay >= 0) {
+        s->dts_sync_point    = h->sei_buffering_period_present;
+        s->dts_ref_dts_delta = h->sei_cpb_removal_delay;
+        s->pts_dts_delta     = h->sei_dpb_output_delay;
+    } else {
+        s->dts_sync_point    = INT_MIN;
+        s->dts_ref_dts_delta = INT_MIN;
+        s->pts_dts_delta     = INT_MIN;
+    }
+
+    if (s->flags & PARSER_FLAG_ONCE) {
+        s->flags &= PARSER_FLAG_COMPLETE_FRAMES;
     }
 
     *poutbuf = buf;

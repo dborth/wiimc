@@ -23,6 +23,7 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "libavutil/mathematics.h"
 #include "avcodec.h"
@@ -461,7 +462,7 @@ static void decode_frame(SiprContext *ctx, SiprParameters *params,
         memcpy(ctx->postfilter_syn5k0, ctx->postfilter_syn5k0 + frame_size,
                LP_FILTER_ORDER*sizeof(float));
     }
-    memcpy(ctx->excitation, excitation - PITCH_DELAY_MAX - L_INTERPOL,
+    memmove(ctx->excitation, excitation - PITCH_DELAY_MAX - L_INTERPOL,
            (PITCH_DELAY_MAX + L_INTERPOL) * sizeof(float));
 
     ff_acelp_apply_order_2_transfer_function(out_data, synth,
@@ -494,8 +495,6 @@ static av_cold int sipr_decoder_init(AVCodecContext * avctx)
         ctx->energy_history[i] = -14;
 
     avctx->sample_fmt = AV_SAMPLE_FMT_FLT;
-
-    dsputil_init(&ctx->dsp, avctx);
 
     return 0;
 }
@@ -550,13 +549,11 @@ static int sipr_decode_frame(AVCodecContext *avctx, void *datap,
 }
 
 AVCodec ff_sipr_decoder = {
-    "sipr",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_SIPR,
-    sizeof(SiprContext),
-    sipr_decoder_init,
-    NULL,
-    NULL,
-    sipr_decode_frame,
+    .name           = "sipr",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_SIPR,
+    .priv_data_size = sizeof(SiprContext),
+    .init           = sipr_decoder_init,
+    .decode         = sipr_decode_frame,
     .long_name = NULL_IF_CONFIG_SMALL("RealAudio SIPR / ACELP.NET"),
 };

@@ -262,7 +262,7 @@ static unsigned long long read_mpeg_timestamp(stream_t *s,int c){
     return 0; // invalid pts
   }
   pts=(((uint64_t)((c>>1)&7))<<30)|((d>>1)<<15)|(e>>1);
-  mp_dbg(MSGT_DEMUX,MSGL_DBG3," pts {%"PRIu64"}",pts);
+  mp_dbg(MSGT_DEMUX,MSGL_DBG3," pts {%llu}",pts);
   return pts;
 }
 
@@ -730,7 +730,7 @@ static int demux_mpg_probe(demuxer_t *demuxer) {
           if(demuxer->synced==2)
             mp_msg(MSGT_DEMUXER,MSGL_ERR,"MPEG: " MSGTR_MissingVideoStreamBug);
           else
-            mp_msg(MSGT_DEMUXER,MSGL_V,MSGTR_NotSystemStream);
+            mp_msg(MSGT_DEMUXER, MSGL_V, "Not MPEG System Stream format... (maybe Transport Stream?)\n");
         }
   }
   //FIXME this shouldn't be necessary

@@ -71,7 +71,7 @@ static av_cold int pcm_encode_close(AVCodecContext *avctx)
  * @param offset Sample value offset
  */
 #define ENCODE(type, endian, src, dst, n, shift, offset) \
-    samples_##type = (type*)src; \
+    samples_##type = (const type*) src; \
     for(;n>0;n--) { \
         register type v = (*samples_##type++ >> shift) + offset; \
         bytestream_put_##endian(&dst, v); \
@@ -440,7 +440,6 @@ static int pcm_decode_frame(AVCodecContext *avctx,
         default:
             av_log(avctx, AV_LOG_ERROR, "PCM DVD unsupported sample depth\n");
             return -1;
-            break;
         }
         samples = (short *) dst_int32_t;
         break;

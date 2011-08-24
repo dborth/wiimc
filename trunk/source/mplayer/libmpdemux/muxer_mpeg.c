@@ -1436,7 +1436,7 @@ static void update_scr(muxer_t *muxer)
 			muxer->sysrate = (muxer->sysrate * 11) / 10;	//raise by 10%
 			d = (double) priv->packet_size / (double)muxer->sysrate;
 			priv->delta_scr = (uint64_t) (d * 27000000.0f);
-			mp_msg(MSGT_MUXER, MSGL_INFO, "\r\nBUFFER UNDEFLOW at stream %d, raising muxrate to %d kb/s, delta_scr: %"PRIu64"\r\n", i, muxer->sysrate/125, priv->delta_scr);
+			mp_msg(MSGT_MUXER, MSGL_INFO, "\r\nBUFFER UNDERFLOW at stream %d, raising muxrate to %d kb/s, delta_scr: %"PRIu64"\r\n", i, muxer->sysrate/125, priv->delta_scr);
 			spriv->track_bufsize = 0;
 		}
 
@@ -1653,7 +1653,7 @@ static size_t parse_mpeg12_video(muxer_stream_t *s, muxer_priv_t *priv, muxer_he
 	mp_msg(MSGT_MUXER, MSGL_DBG2,"parse_mpeg12_video, len=%u\n", (uint32_t) len);
 	if(s->buffer[0] != 0 || s->buffer[1] != 0 || s->buffer[2] != 1 || len<6)
 	{
-		mp_msg(MSGT_MUXER, MSGL_ERR,"Unknown video format, possibly non-MPEG1/2 stream, len=%zd!\n", len);
+		mp_msg(MSGT_MUXER, MSGL_ERR,"Unknown video format, possibly non-MPEG1/2 stream, len=%zu!\n", len);
 		return 0;
 	}
 
@@ -1777,7 +1777,7 @@ static size_t parse_mpeg12_video(muxer_stream_t *s, muxer_priv_t *priv, muxer_he
 	ret = add_frame(spriv, spriv->delta_pts, s->buffer, len, pt, spriv->last_dts, spriv->last_pts);
 	if(ret < 0)
 	{
-		mp_msg(MSGT_MUXER, MSGL_FATAL, "\r\nPARSE_MPEG12: add_frames(%zd) failed, exit\r\n", len);
+		mp_msg(MSGT_MUXER, MSGL_FATAL, "\r\nPARSE_MPEG12: add_frames(%zu) failed, exit\r\n", len);
 		return 0;
 	}
 	mp_msg(MSGT_MUXER, MSGL_DBG2, "\r\nVIDEO FRAME, PT: %C, tr: %d, diff: %d, dts: %.3f, pts: %.3f, pdt: %u, gop_reset: %d\r\n",
@@ -1866,7 +1866,7 @@ static size_t parse_mpeg4_video(muxer_stream_t *s, muxer_priv_t *priv, muxer_hea
 	mp_msg(MSGT_MUXER, MSGL_DBG2,"parse_mpeg4_video, len=%u\n", (uint32_t) len);
 	if(len<6)
 	{
-		mp_msg(MSGT_MUXER, MSGL_ERR,"Frame too short: %zd, exit!\n", len);
+		mp_msg(MSGT_MUXER, MSGL_ERR,"Frame too short: %zu, exit!\n", len);
 		return 0;
 	}
 
@@ -1923,7 +1923,7 @@ static size_t parse_mpeg4_video(muxer_stream_t *s, muxer_priv_t *priv, muxer_hea
 	ret = add_frame(vpriv, delta_pts, s->buffer, len, pt, vpriv->last_dts, vpriv->last_pts);
 	if(ret < 0)
 	{
-		mp_msg(MSGT_MUXER, MSGL_FATAL, "\r\nPARSE_MPEG4: add_frames(%zd) failed, exit\r\n", len);
+		mp_msg(MSGT_MUXER, MSGL_FATAL, "\r\nPARSE_MPEG4: add_frames(%zu) failed, exit\r\n", len);
 		return 0;
 	}
 
@@ -2355,7 +2355,7 @@ static void mpegfile_write_chunk(muxer_stream_t *s,size_t len,unsigned int flags
 			tmp = realloc(s->b_buffer, len  + s->b_buffer_len);
 			if(!tmp)
 			{
-				mp_msg(MSGT_MUXER, MSGL_FATAL, "\nFATAL! couldn't realloc %zd bytes\n", len  + s->b_buffer_len);
+				mp_msg(MSGT_MUXER, MSGL_FATAL, "\nFATAL! couldn't realloc %zu bytes\n", len  + s->b_buffer_len);
 				return;
 			}
 			s->b_buffer = tmp;

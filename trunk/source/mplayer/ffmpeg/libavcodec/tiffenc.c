@@ -20,10 +20,11 @@
  */
 
 /**
- * TIFF image encoder
  * @file
+ * TIFF image encoder
  * @author Bartlomiej Wolowiec
  */
+
 #include "avcodec.h"
 #if CONFIG_ZLIB
 #include <zlib.h>
@@ -221,7 +222,7 @@ static int encode_frame(AVCodecContext * avctx, unsigned char *buf,
     s->buf_size = buf_size;
 
     *p = *pict;
-    p->pict_type = FF_I_TYPE;
+    p->pict_type = AV_PICTURE_TYPE_I;
     p->key_frame = 1;
     avctx->coded_frame= &s->picture;
 
@@ -443,16 +444,11 @@ fail:
 }
 
 AVCodec ff_tiff_encoder = {
-    "tiff",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_TIFF,
-    sizeof(TiffEncoderContext),
-    NULL,
-    encode_frame,
-    NULL,
-    NULL,
-    0,
-    NULL,
+    .name           = "tiff",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_TIFF,
+    .priv_data_size = sizeof(TiffEncoderContext),
+    .encode         = encode_frame,
     .pix_fmts =
         (const enum PixelFormat[]) {PIX_FMT_RGB24, PIX_FMT_PAL8, PIX_FMT_GRAY8,
                               PIX_FMT_MONOBLACK, PIX_FMT_MONOWHITE,

@@ -46,6 +46,7 @@
 //#define DEBUG
 
 #include "libavutil/aes.h"
+#include "libavutil/mathematics.h"
 #include "libavcodec/bytestream.h"
 #include "avformat.h"
 #include "mxf.h"
@@ -309,7 +310,7 @@ static int mxf_read_packet(AVFormatContext *s, AVPacket *pkt)
         if (klv_read_packet(&klv, s->pb) < 0)
             return -1;
         PRINT_KEY(s, "read packet", klv.key);
-        av_dlog(s, "size %lld offset %#llx\n", klv.length, klv.offset);
+        av_dlog(s, "size %"PRIu64" offset %#"PRIx64"\n", klv.length, klv.offset);
         if (IS_KLV_KEY(klv.key, mxf_encrypted_triplet_key)) {
             int res = mxf_decrypt_triplet(s, pkt, &klv);
             if (res < 0) {
@@ -522,8 +523,8 @@ static int mxf_read_index_table_segment(void *arg, AVIOContext *pb, int tag, int
     case 0x3F06: av_dlog(NULL, "IndexSID %d\n", avio_rb32(pb)); break;
     case 0x3F07: av_dlog(NULL, "BodySID %d\n", avio_rb32(pb)); break;
     case 0x3F0B: av_dlog(NULL, "IndexEditRate %d/%d\n", avio_rb32(pb), avio_rb32(pb)); break;
-    case 0x3F0C: av_dlog(NULL, "IndexStartPosition %lld\n", avio_rb64(pb)); break;
-    case 0x3F0D: av_dlog(NULL, "IndexDuration %lld\n", avio_rb64(pb)); break;
+    case 0x3F0C: av_dlog(NULL, "IndexStartPosition %"PRIu64"\n", avio_rb64(pb)); break;
+    case 0x3F0D: av_dlog(NULL, "IndexDuration %"PRIu64"\n", avio_rb64(pb)); break;
     }
     return 0;
 }
@@ -599,7 +600,7 @@ static int mxf_read_generic_descriptor(void *arg, AVIOContext *pb, int tag, int 
     default:
         /* Private uid used by SONY C0023S01.mxf */
         if (IS_KLV_KEY(uid, mxf_sony_mpeg4_extradata)) {
-            descriptor->extradata = av_malloc(size);
+            descriptor->extradata = av_malloc(size + FF_INPUT_BUFFER_PADDING_SIZE);
             if (!descriptor->extradata)
                 return -1;
             descriptor->extradata_size = size;
@@ -920,7 +921,7 @@ static int mxf_read_header(AVFormatContext *s, AVFormatParameters *ap)
         if (klv_read_packet(&klv, s->pb) < 0)
             return -1;
         PRINT_KEY(s, "read header", klv.key);
-        av_dlog(s, "size %lld offset %#llx\n", klv.length, klv.offset);
+        av_dlog(s, "size %"PRIu64" offset %#"PRIx64"\n", klv.length, klv.offset);
         if (IS_KLV_KEY(klv.key, mxf_encrypted_triplet_key) ||
             IS_KLV_KEY(klv.key, mxf_essence_element_key)) {
             /* FIXME avoid seek */
@@ -1015,12 +1016,12 @@ static int mxf_read_seek(AVFormatContext *s, int stream_index, int64_t sample_ti
 }
 
 AVInputFormat ff_mxf_demuxer = {
-    "mxf",
-    NULL_IF_CONFIG_SMALL("Material eXchange Format"),
-    sizeof(MXFContext),
-    mxf_probe,
-    mxf_read_header,
-    mxf_read_packet,
-    mxf_read_close,
-    mxf_read_seek,
+    .name           = "mxf",
+    .long_name      = NULL_IF_CONFIG_SMALL("Material eXchange Format"),
+    .priv_data_size = sizeof(MXFContext),
+    .read_probe     = mxf_probe,
+    .read_header    = mxf_read_header,
+    .read_packet    = mxf_read_packet,
+    .read_close     = mxf_read_close,
+    .read_seek      = mxf_read_seek,
 };

@@ -28,6 +28,7 @@
  */
 
 #include "libavutil/intreadwrite.h"
+#include "libavutil/intfloat_readwrite.h"
 #include "avformat.h"
 
 #define     RIFF_TAG MKTAG('R', 'I', 'F', 'F')
@@ -246,7 +247,7 @@ static int fourxm_read_packet(AVFormatContext *s,
     FourxmDemuxContext *fourxm = s->priv_data;
     AVIOContext *pb = s->pb;
     unsigned int fourcc_tag;
-    unsigned int size, out_size;
+    unsigned int size;
     int ret = 0;
     unsigned int track_number;
     int packet_read = 0;
@@ -295,7 +296,7 @@ static int fourxm_read_packet(AVFormatContext *s,
 
         case snd__TAG:
             track_number = avio_rl32(pb);
-            out_size= avio_rl32(pb);
+            avio_skip(pb, 4);
             size-=8;
 
             if (track_number < fourxm->track_count && fourxm->tracks[track_number].channels>0) {
@@ -344,11 +345,11 @@ static int fourxm_read_close(AVFormatContext *s)
 }
 
 AVInputFormat ff_fourxm_demuxer = {
-    "4xm",
-    NULL_IF_CONFIG_SMALL("4X Technologies format"),
-    sizeof(FourxmDemuxContext),
-    fourxm_probe,
-    fourxm_read_header,
-    fourxm_read_packet,
-    fourxm_read_close,
+    .name           = "4xm",
+    .long_name      = NULL_IF_CONFIG_SMALL("4X Technologies format"),
+    .priv_data_size = sizeof(FourxmDemuxContext),
+    .read_probe     = fourxm_probe,
+    .read_header    = fourxm_read_header,
+    .read_packet    = fourxm_read_packet,
+    .read_close     = fourxm_read_close,
 };

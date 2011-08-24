@@ -98,7 +98,7 @@ static int RENAME(dct_quantize)(MpegEncContext *s,
     x86_reg last_non_zero_p1;
     int level=0, q; //=0 is because gcc says uninitialized ...
     const uint16_t *qmat, *bias;
-    DECLARE_ALIGNED(16, int16_t, temp_block)[64];
+    LOCAL_ALIGNED_16(int16_t, temp_block, [64]);
 
     assert((7&(int)(&temp_block[0])) == 0); //did gcc align it correctly?
 
@@ -116,22 +116,11 @@ static int RENAME(dct_quantize)(MpegEncContext *s,
             q = s->c_dc_scale;
         /* note: block[0] is assumed to be positive */
         if (!s->h263_aic) {
-#if 1
         __asm__ volatile (
                 "mul %%ecx                \n\t"
                 : "=d" (level), "=a"(dummy)
                 : "a" ((block[0]>>2) + q), "c" (ff_inverse[q<<1])
         );
-#else
-        __asm__ volatile (
-                "xorl %%edx, %%edx        \n\t"
-                "divw %%cx                \n\t"
-                "movzwl %%ax, %%eax       \n\t"
-                : "=a" (level)
-                : "a" ((block[0]>>2) + q), "c" (q<<1)
-                : "%edx"
-        );
-#endif
         } else
             /* For AIC we skip quant/dequant of INTRADC */
             level = (block[0] + 4)>>3;

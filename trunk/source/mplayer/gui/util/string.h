@@ -20,6 +20,13 @@
 #define MPLAYER_GUI_STRING_H
 
 char *decomment(char *in);
+int gstrcasecmp(const char *a, const char *b);
+char *gstrchr(const char *str, int c);
+int gstrcmp(const char *a, const char *b);
+char *gstrdup(const char *str);
+int gstrncmp(const char *a, const char *b, int n);
+void setddup(char **old, const char *dir, const char *name);
+void setdup(char **old, const char *str);
 char *strlower(char *in);
 char *strswap(char *in, char from, char to);
 char *trim(char *in);

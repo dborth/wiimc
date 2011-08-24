@@ -58,10 +58,12 @@ AVCodecParserContext *av_parser_init(int codec_id)
     if (!s)
         return NULL;
     s->parser = parser;
-    s->priv_data = av_mallocz(parser->priv_data_size);
-    if (!s->priv_data) {
-        av_free(s);
-        return NULL;
+    if (parser->priv_data_size) {
+        s->priv_data = av_mallocz(parser->priv_data_size);
+        if (!s->priv_data) {
+            av_free(s);
+            return NULL;
+        }
     }
     if (parser->parser_init) {
         ret = parser->parser_init(s);
@@ -72,7 +74,7 @@ AVCodecParserContext *av_parser_init(int codec_id)
         }
     }
     s->fetch_timestamp=1;
-    s->pict_type = FF_I_TYPE;
+    s->pict_type = AV_PICTURE_TYPE_I;
     s->key_frame = -1;
     s->convergence_duration = 0;
     s->dts_sync_point       = INT_MIN;
@@ -104,43 +106,6 @@ void ff_fetch_timestamp(AVCodecParserContext *s, int off, int remove){
         }
     }
 }
-
-#if LIBAVCODEC_VERSION_MAJOR < 53
-/**
- *
- * @param buf           input
- * @param buf_size      input length, to signal EOF, this should be 0 (so that the last frame can be output)
- * @param pts           input presentation timestamp
- * @param dts           input decoding timestamp
- * @param poutbuf       will contain a pointer to the first byte of the output frame
- * @param poutbuf_size  will contain the length of the output frame
- * @return the number of bytes of the input bitstream used
- *
- * Example:
- * @code
- *   while(in_len){
- *       len = av_parser_parse(myparser, AVCodecContext, &data, &size,
- *                                       in_data, in_len,
- *                                       pts, dts);
- *       in_data += len;
- *       in_len  -= len;
- *
- *       if(size)
- *          decode_frame(data, size);
- *   }
- * @endcode
- *
- * @deprecated Use av_parser_parse2() instead.
- */
-int av_parser_parse(AVCodecParserContext *s,
-                    AVCodecContext *avctx,
-                    uint8_t **poutbuf, int *poutbuf_size,
-                    const uint8_t *buf, int buf_size,
-                    int64_t pts, int64_t dts)
-{
-    return av_parser_parse2(s, avctx, poutbuf, poutbuf_size, buf, buf_size, pts, dts, AV_NOPTS_VALUE);
-}
-#endif
 
 int av_parser_parse2(AVCodecParserContext *s,
                      AVCodecContext *avctx,
@@ -223,7 +188,7 @@ int av_parser_change(AVCodecParserContext *s,
     *poutbuf_size= buf_size;
     if(avctx->extradata){
         if(  (keyframe && (avctx->flags2 & CODEC_FLAG2_LOCAL_HEADER))
-            /*||(s->pict_type != FF_I_TYPE && (s->flags & PARSER_FLAG_DUMP_EXTRADATA_AT_NOKEY))*/
+            /*||(s->pict_type != AV_PICTURE_TYPE_I && (s->flags & PARSER_FLAG_DUMP_EXTRADATA_AT_NOKEY))*/
             /*||(? && (s->flags & PARSER_FLAG_DUMP_EXTRADATA_AT_BEGIN)*/){
             int size= buf_size + avctx->extradata_size;
             *poutbuf_size= size;
@@ -256,12 +221,11 @@ void av_parser_close(AVCodecParserContext *s)
  */
 int ff_combine_frame(ParseContext *pc, int next, const uint8_t **buf, int *buf_size)
 {
-#if 0
     if(pc->overread){
-        printf("overread %d, state:%X next:%d index:%d o_index:%d\n", pc->overread, pc->state, next, pc->index, pc->overread_index);
-        printf("%X %X %X %X\n", (*buf)[0], (*buf)[1],(*buf)[2],(*buf)[3]);
+        av_dlog(pc, "overread %d, state:%X next:%d index:%d o_index:%d\n",
+                pc->overread, pc->state, next, pc->index, pc->overread_index);
+        av_dlog(pc, "%X %X %X %X\n", (*buf)[0], (*buf)[1], (*buf)[2], (*buf)[3]);
     }
-#endif
 
     /* Copy overread bytes from last frame into buffer. */
     for(; pc->overread>0; pc->overread--){
@@ -309,12 +273,11 @@ int ff_combine_frame(ParseContext *pc, int next, const uint8_t **buf, int *buf_s
         pc->overread++;
     }
 
-#if 0
     if(pc->overread){
-        printf("overread %d, state:%X next:%d index:%d o_index:%d\n", pc->overread, pc->state, next, pc->index, pc->overread_index);
-        printf("%X %X %X %X\n", (*buf)[0], (*buf)[1],(*buf)[2],(*buf)[3]);
+        av_dlog(pc, "overread %d, state:%X next:%d index:%d o_index:%d\n",
+                pc->overread, pc->state, next, pc->index, pc->overread_index);
+        av_dlog(pc, "%X %X %X %X\n", (*buf)[0], (*buf)[1],(*buf)[2],(*buf)[3]);
     }
-#endif
 
     return 0;
 }

@@ -19,6 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavutil/mathematics.h"
 #include "libavcodec/avcodec.h"
 #include "avformat.h"
 #include "avio_internal.h"
@@ -33,6 +34,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_H264,         MKTAG('X', '2', '6', '4') },
     { CODEC_ID_H264,         MKTAG('x', '2', '6', '4') },
     { CODEC_ID_H264,         MKTAG('a', 'v', 'c', '1') },
+    { CODEC_ID_H264,         MKTAG('D', 'A', 'V', 'C') },
     { CODEC_ID_H264,         MKTAG('V', 'S', 'S', 'H') },
     { CODEC_ID_H263,         MKTAG('H', '2', '6', '3') },
     { CODEC_ID_H263,         MKTAG('X', '2', '6', '3') },
@@ -40,6 +42,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_H263,         MKTAG('L', '2', '6', '3') },
     { CODEC_ID_H263,         MKTAG('V', 'X', '1', 'K') },
     { CODEC_ID_H263,         MKTAG('Z', 'y', 'G', 'o') },
+    { CODEC_ID_H263,         MKTAG('M', '2', '6', '3') },
     { CODEC_ID_H263P,        MKTAG('H', '2', '6', '3') },
     { CODEC_ID_H263I,        MKTAG('I', '2', '6', '3') }, /* intel h263 */
     { CODEC_ID_H261,         MKTAG('H', '2', '6', '1') },
@@ -83,6 +86,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_MPEG4,        MKTAG('U', 'L', 'D', 'X') },
     { CODEC_ID_MPEG4,        MKTAG('G', 'E', 'O', 'V') },
     { CODEC_ID_MPEG4,        MKTAG('S', 'I', 'P', 'P') }, /* Samsung SHR-6040 */
+    { CODEC_ID_MPEG4,        MKTAG('X', 'V', 'I', 'X') },
     { CODEC_ID_MSMPEG4V3,    MKTAG('M', 'P', '4', '3') },
     { CODEC_ID_MSMPEG4V3,    MKTAG('D', 'I', 'V', '3') },
     { CODEC_ID_MSMPEG4V3,    MKTAG('M', 'P', 'G', '3') },
@@ -107,6 +111,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_DVVIDEO,      MKTAG('d', 'v', '5', '0') },
     { CODEC_ID_DVVIDEO,      MKTAG('c', 'd', 'v', 'c') }, /* Canopus DV */
     { CODEC_ID_DVVIDEO,      MKTAG('C', 'D', 'V', 'H') }, /* Canopus DV */
+    { CODEC_ID_DVVIDEO,      MKTAG('C', 'D', 'V', '5') }, /* Canopus DV */
     { CODEC_ID_DVVIDEO,      MKTAG('d', 'v', 'c', ' ') },
     { CODEC_ID_DVVIDEO,      MKTAG('d', 'v', 'c', 's') },
     { CODEC_ID_DVVIDEO,      MKTAG('d', 'v', 'h', '1') },
@@ -126,6 +131,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_MPEG2VIDEO,   MKTAG('s', 'l', 'i', 'f') },
     { CODEC_ID_MPEG2VIDEO,   MKTAG('E', 'M', '2', 'V') },
     { CODEC_ID_MPEG2VIDEO,   MKTAG('M', '7', '0', '1') }, /* Matrox MPEG2 intra-only */
+    { CODEC_ID_MPEG2VIDEO,   MKTAG('m', 'p', 'g', 'v') },
     { CODEC_ID_MJPEG,        MKTAG('M', 'J', 'P', 'G') },
     { CODEC_ID_MJPEG,        MKTAG('L', 'J', 'P', 'G') },
     { CODEC_ID_MJPEG,        MKTAG('d', 'm', 'b', '1') },
@@ -148,6 +154,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_MJPEG,        MKTAG('A', 'V', 'I', '2') },
     { CODEC_ID_MJPEG,        MKTAG('M', 'T', 'S', 'J') },
     { CODEC_ID_MJPEG,        MKTAG('Z', 'J', 'P', 'G') }, /* Paradigm Matrix M-JPEG Codec */
+    { CODEC_ID_MJPEG,        MKTAG('M', 'M', 'J', 'P') },
     { CODEC_ID_HUFFYUV,      MKTAG('H', 'F', 'Y', 'U') },
     { CODEC_ID_FFVHUFF,      MKTAG('F', 'F', 'V', 'H') },
     { CODEC_ID_CYUV,         MKTAG('C', 'Y', 'U', 'V') },
@@ -180,6 +187,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_RAWVIDEO,     MKTAG('Y', '4', '2', 'B') },
     { CODEC_ID_RAWVIDEO,     MKTAG('Y', 'U', 'V', '9') },
     { CODEC_ID_RAWVIDEO,     MKTAG('Y', 'V', 'U', '9') },
+    { CODEC_ID_RAWVIDEO,     MKTAG('a', 'u', 'v', '2') },
     { CODEC_ID_FRWU,         MKTAG('F', 'R', 'W', 'U') },
     { CODEC_ID_R10K,         MKTAG('R', '1', '0', 'k') },
     { CODEC_ID_R210,         MKTAG('r', '2', '1', '0') },
@@ -244,6 +252,7 @@ const AVCodecTag ff_codec_bmp_tags[] = {
     { CODEC_ID_ZMBV,         MKTAG('Z', 'M', 'B', 'V') },
     { CODEC_ID_KMVC,         MKTAG('K', 'M', 'V', 'C') },
     { CODEC_ID_CAVS,         MKTAG('C', 'A', 'V', 'S') },
+    { CODEC_ID_JPEG2000,     MKTAG('m', 'j', 'p', '2') },
     { CODEC_ID_JPEG2000,     MKTAG('M', 'J', '2', 'C') },
     { CODEC_ID_VMNC,         MKTAG('V', 'M', 'n', 'c') },
     { CODEC_ID_TARGA,        MKTAG('t', 'g', 'a', ' ') },
@@ -509,6 +518,7 @@ int ff_get_wav_header(AVIOContext *pb, AVCodecContext *codec, int size)
         }
         codec->extradata_size = cbSize;
         if (cbSize > 0) {
+            av_free(codec->extradata);
             codec->extradata = av_mallocz(codec->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE);
             if (!codec->extradata)
                 return AVERROR(ENOMEM);
@@ -578,6 +588,7 @@ void ff_parse_specific_params(AVCodecContext *stream, int *au_rate, int *au_ssiz
         *au_scale=stream->frame_size;
         *au_rate= stream->sample_rate;
     }else if(stream->codec_type == AVMEDIA_TYPE_VIDEO ||
+             stream->codec_type == AVMEDIA_TYPE_DATA ||
              stream->codec_type == AVMEDIA_TYPE_SUBTITLE){
         *au_scale= stream->time_base.num;
         *au_rate = stream->time_base.den;

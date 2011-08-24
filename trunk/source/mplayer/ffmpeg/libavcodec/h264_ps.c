@@ -57,11 +57,32 @@ static const AVRational pixel_aspect[17]={
  {2, 1},
 };
 
-const uint8_t ff_h264_chroma_qp[52]={
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,
-   12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,
-   28,29,29,30,31,32,32,33,34,34,35,35,36,36,37,37,
-   37,38,38,38,39,39,39,39
+#define QP(qP,depth) ( (qP)+6*((depth)-8) )
+
+#define CHROMA_QP_TABLE_END(d) \
+     QP(0,d),  QP(1,d),  QP(2,d),  QP(3,d),  QP(4,d),  QP(5,d),\
+     QP(6,d),  QP(7,d),  QP(8,d),  QP(9,d), QP(10,d), QP(11,d),\
+    QP(12,d), QP(13,d), QP(14,d), QP(15,d), QP(16,d), QP(17,d),\
+    QP(18,d), QP(19,d), QP(20,d), QP(21,d), QP(22,d), QP(23,d),\
+    QP(24,d), QP(25,d), QP(26,d), QP(27,d), QP(28,d), QP(29,d),\
+    QP(29,d), QP(30,d), QP(31,d), QP(32,d), QP(32,d), QP(33,d),\
+    QP(34,d), QP(34,d), QP(35,d), QP(35,d), QP(36,d), QP(36,d),\
+    QP(37,d), QP(37,d), QP(37,d), QP(38,d), QP(38,d), QP(38,d),\
+    QP(39,d), QP(39,d), QP(39,d), QP(39,d)
+
+const uint8_t ff_h264_chroma_qp[3][QP_MAX_NUM+1] = {
+    {
+        CHROMA_QP_TABLE_END(8)
+    },
+    {
+        0, 1, 2, 3, 4, 5,
+        CHROMA_QP_TABLE_END(9)
+    },
+    {
+        0, 1, 2, 3,  4,  5,
+        6, 7, 8, 9, 10, 11,
+        CHROMA_QP_TABLE_END(10)
+    },
 };
 
 static const uint8_t default_scaling4[2][16]={
@@ -248,7 +269,7 @@ static void decode_scaling_matrices(H264Context *h, SPS *sps, PPS *pps, int is_s
         fallback_sps ? sps->scaling_matrix4[0] : default_scaling4[0],
         fallback_sps ? sps->scaling_matrix4[3] : default_scaling4[1],
         fallback_sps ? sps->scaling_matrix8[0] : default_scaling8[0],
-        fallback_sps ? sps->scaling_matrix8[1] : default_scaling8[1]
+        fallback_sps ? sps->scaling_matrix8[3] : default_scaling8[1]
     };
     if(get_bits1(&s->gb)){
         sps->scaling_matrix_present |= is_sps;
@@ -260,7 +281,15 @@ static void decode_scaling_matrices(H264Context *h, SPS *sps, PPS *pps, int is_s
         decode_scaling_list(h,scaling_matrix4[5],16,default_scaling4[1],scaling_matrix4[4]); // Inter, Cb
         if(is_sps || pps->transform_8x8_mode){
             decode_scaling_list(h,scaling_matrix8[0],64,default_scaling8[0],fallback[2]);  // Intra, Y
-            decode_scaling_list(h,scaling_matrix8[1],64,default_scaling8[1],fallback[3]);  // Inter, Y
+            if(sps->chroma_format_idc == 3){
+                decode_scaling_list(h,scaling_matrix8[1],64,default_scaling8[0],scaling_matrix8[0]);  // Intra, Cr
+                decode_scaling_list(h,scaling_matrix8[2],64,default_scaling8[0],scaling_matrix8[1]);  // Intra, Cb
+            }
+            decode_scaling_list(h,scaling_matrix8[3],64,default_scaling8[1],fallback[3]);  // Inter, Y
+            if(sps->chroma_format_idc == 3){
+                decode_scaling_list(h,scaling_matrix8[4],64,default_scaling8[1],scaling_matrix8[3]);  // Inter, Cr
+                decode_scaling_list(h,scaling_matrix8[5],64,default_scaling8[1],scaling_matrix8[4]);  // Inter, Cb
+            }
         }
     }
 }
@@ -367,6 +396,7 @@ int ff_h264_decode_seq_parameter_set(H264Context *h){
 #endif
     sps->crop= get_bits1(&s->gb);
     if(sps->crop){
+        int crop_limit = sps->chroma_format_idc == 3 ? 16 : 8;
         sps->crop_left  = get_ue_golomb(&s->gb);
         sps->crop_right = get_ue_golomb(&s->gb);
         sps->crop_top   = get_ue_golomb(&s->gb);
@@ -374,7 +404,7 @@ int ff_h264_decode_seq_parameter_set(H264Context *h){
         if(sps->crop_left || sps->crop_top){
             av_log(h->s.avctx, AV_LOG_ERROR, "insane cropping not completely supported, this could look slightly wrong ...\n");
         }
-        if(sps->crop_right >= 8 || sps->crop_bottom >= 8){
+        if(sps->crop_right >= crop_limit || sps->crop_bottom >= crop_limit){
             av_log(h->s.avctx, AV_LOG_ERROR, "brainfart cropping not supported, this could look slightly wrong ...\n");
         }
     }else{
@@ -419,17 +449,19 @@ fail:
 }
 
 static void
-build_qp_table(PPS *pps, int t, int index)
+build_qp_table(PPS *pps, int t, int index, const int depth)
 {
     int i;
-    for(i = 0; i < 52; i++)
-        pps->chroma_qp_table[t][i] = ff_h264_chroma_qp[av_clip(i + index, 0, 51)];
+    const int max_qp = 51 + 6*(depth-8);
+    for(i = 0; i < max_qp+1; i++)
+        pps->chroma_qp_table[t][i] = ff_h264_chroma_qp[depth-8][av_clip(i + index, 0, max_qp)];
 }
 
 int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length){
     MpegEncContext * const s = &h->s;
     unsigned int pps_id= get_ue_golomb(&s->gb);
     PPS *pps;
+    const int qp_bd_offset = 6*(h->sps.bit_depth_luma-8);
 
     if(pps_id >= MAX_PPS_COUNT) {
         av_log(h->s.avctx, AV_LOG_ERROR, "pps_id (%d) out of range\n", pps_id);
@@ -494,8 +526,8 @@ int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length){
 
     pps->weighted_pred= get_bits1(&s->gb);
     pps->weighted_bipred_idc= get_bits(&s->gb, 2);
-    pps->init_qp= get_se_golomb(&s->gb) + 26;
-    pps->init_qs= get_se_golomb(&s->gb) + 26;
+    pps->init_qp= get_se_golomb(&s->gb) + 26 + qp_bd_offset;
+    pps->init_qs= get_se_golomb(&s->gb) + 26 + qp_bd_offset;
     pps->chroma_qp_index_offset[0]= get_se_golomb(&s->gb);
     pps->deblocking_filter_parameters_present= get_bits1(&s->gb);
     pps->constrained_intra_pred= get_bits1(&s->gb);
@@ -514,8 +546,8 @@ int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length){
         pps->chroma_qp_index_offset[1]= pps->chroma_qp_index_offset[0];
     }
 
-    build_qp_table(pps, 0, pps->chroma_qp_index_offset[0]);
-    build_qp_table(pps, 1, pps->chroma_qp_index_offset[1]);
+    build_qp_table(pps, 0, pps->chroma_qp_index_offset[0], h->sps.bit_depth_luma);
+    build_qp_table(pps, 1, pps->chroma_qp_index_offset[1], h->sps.bit_depth_luma);
     if(pps->chroma_qp_index_offset[0] != pps->chroma_qp_index_offset[1])
         pps->chroma_qp_diff= 1;
 

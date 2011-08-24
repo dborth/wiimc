@@ -1450,7 +1450,7 @@ static int decode_frame(AVCodecContext *avctx,
 
     // check for size of decoded data
     size = ctx->cur_frame_length * avctx->channels *
-           (av_get_bits_per_sample_fmt(avctx->sample_fmt) >> 3);
+           av_get_bytes_per_sample(avctx->sample_fmt);
 
     if (size > *data_size) {
         av_log(avctx, AV_LOG_ERROR, "Decoded data exceeds buffer size.\n");
@@ -1714,7 +1714,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
         ctx->crc_buffer = av_malloc(sizeof(*ctx->crc_buffer) *
                                     ctx->cur_frame_length *
                                     avctx->channels *
-                                    (av_get_bits_per_sample_fmt(avctx->sample_fmt) >> 3));
+                                    av_get_bytes_per_sample(avctx->sample_fmt));
         if (!ctx->crc_buffer) {
             av_log(avctx, AV_LOG_ERROR, "Allocating buffer memory failed.\n");
             decode_end(avctx);
@@ -1739,14 +1739,13 @@ static av_cold void flush(AVCodecContext *avctx)
 
 
 AVCodec ff_als_decoder = {
-    "als",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_MP4ALS,
-    sizeof(ALSDecContext),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_frame,
+    .name           = "als",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_MP4ALS,
+    .priv_data_size = sizeof(ALSDecContext),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
     .flush = flush,
     .capabilities = CODEC_CAP_SUBFRAMES,
     .long_name = NULL_IF_CONFIG_SMALL("MPEG-4 Audio Lossless Coding (ALS)"),

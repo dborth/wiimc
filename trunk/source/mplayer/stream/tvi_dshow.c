@@ -506,7 +506,9 @@ static DEFINE_GUID(MEDIATYPE_VBI,   0xf72a76e1, 0xeb0a, 0x11d0, 0xac, 0xe4, 0x00
 *  Methods, called only from this file
 *---------------------------------------------------------------------------------------*/
 
-void set_buffer_preference(int nDiv,WAVEFORMATEX* pWF,IPin* pOutPin,IPin* pInPin){
+static void set_buffer_preference(int nDiv, WAVEFORMATEX *pWF,
+                                  IPin *pOutPin, IPin *pInPin)
+{
     ALLOCATOR_PROPERTIES prop;
     IAMBufferNegotiation* pBN;
     HRESULT hr;
@@ -595,9 +597,10 @@ static long STDCALL CSampleGrabberCB_Release(ISampleGrabberCB * This)
 }
 
 
-HRESULT STDCALL CSampleGrabberCB_BufferCB(ISampleGrabberCB * This,
-					  double SampleTime,
-					  BYTE * pBuffer, long lBufferLen)
+static HRESULT STDCALL CSampleGrabberCB_BufferCB(ISampleGrabberCB *This,
+                                                 double SampleTime,
+                                                 BYTE *pBuffer,
+                                                 long lBufferLen)
 {
     CSampleGrabberCB *this = (CSampleGrabberCB *) This;
     grabber_ringbuffer_t *rb = this->pbuf;
@@ -629,9 +632,9 @@ HRESULT STDCALL CSampleGrabberCB_BufferCB(ISampleGrabberCB * This,
 }
 
 /// wrapper. directshow does the same when BufferCB callback is requested
-HRESULT STDCALL CSampleGrabberCB_SampleCB(ISampleGrabberCB * This,
-					  double SampleTime,
-					  LPMEDIASAMPLE pSample)
+static HRESULT STDCALL CSampleGrabberCB_SampleCB(ISampleGrabberCB *This,
+                                                 double SampleTime,
+                                                 LPMEDIASAMPLE pSample)
 {
     char* buf;
     long len;
@@ -1089,7 +1092,7 @@ static HRESULT set_nearest_freq(priv_t * priv, long lFreq)
             mp_msg(MSGT_TV, MSGL_ERR, MSGTR_TVI_DS_UnableExtractFreqTable);
             return E_FAIL;
         };
-        mp_msg(MSGT_TV, MSGL_V, MSGTR_TVI_DS_FreqTableLoaded, tunerInput == TunerInputAntenna ? "broadcast" : "cable",
+        mp_msg(MSGT_TV, MSGL_V, "tvi_dshow: loaded system (%s) frequency table for country id=%d (channels:%d).\n", tunerInput == TunerInputAntenna ? "broadcast" : "cable",
             chanlist2country(priv->tv_param->chanlist), priv->freq_table_len);
     }
 
@@ -1140,7 +1143,7 @@ static int set_frequency(priv_t * priv, long lFreq)
     if (priv->direct_setfreq_call) {	//using direct call to set frequency
 	hr = set_frequency_direct(priv->pTVTuner, lFreq);
 	if (FAILED(hr)) {
-	    mp_msg(MSGT_TV, MSGL_V, MSGTR_TVI_DS_DirectSetFreqFailed);
+	    mp_msg(MSGT_TV, MSGL_V, "tvi_dshow: Unable to set frequency directly. OS built-in channels table will be used.\n");
 	    priv->direct_setfreq_call = 0;
 	}
     }
@@ -1249,7 +1252,7 @@ static void get_capabilities(priv_t * priv)
     mp_msg(MSGT_TV, MSGL_DBG4, "tvi_dshow: get_capabilities called\n");
     if (priv->pTVTuner) {
 
-	mp_msg(MSGT_TV, MSGL_V, MSGTR_TVI_DS_SupportedNorms);
+	mp_msg(MSGT_TV, MSGL_V, "tvi_dshow: supported norms:");
 	hr = OLE_CALL_ARGS(priv->pTVTuner, get_AvailableTVFormats,
 		       &lAvailableFormats);
 	if (FAILED(hr))
@@ -1273,7 +1276,7 @@ static void get_capabilities(priv_t * priv)
 	tv_available_inputs = malloc(sizeof(long) * lInputPins);
 	tv_available_inputs_count = 0;
 
-	mp_msg(MSGT_TV, MSGL_V, MSGTR_TVI_DS_AvailableVideoInputs);
+	mp_msg(MSGT_TV, MSGL_V, "tvi_dshow: available video inputs:");
 	for (i = 0; i < lInputPins; i++) {
 	    OLE_CALL_ARGS(priv->pCrossbar, get_CrossbarPinInfo, 1, i,
 		      &lRelated, &lPhysicalType);
@@ -1294,7 +1297,7 @@ static void get_capabilities(priv_t * priv)
 	hr = OLE_CALL_ARGS(priv->chains[1]->pCaptureFilter, EnumPins, &pEnum);
 	if (FAILED(hr))
 	    return;
-	mp_msg(MSGT_TV, MSGL_V, MSGTR_TVI_DS_AvailableAudioInputs);
+	mp_msg(MSGT_TV, MSGL_V, "tvi_dshow: available audio inputs:");
 	i = 0;
 	while (OLE_CALL_ARGS(pEnum, Next, 1, &pPin, NULL) == S_OK) {
 	    memset(&pi, 0, sizeof(pi));
@@ -1316,7 +1319,7 @@ static void get_capabilities(priv_t * priv)
                         else
 			    OLE_CALL_ARGS(pIAMixer, put_MixLevel, 1.0);
 #endif
-			mp_msg(MSGT_TV, MSGL_V, MSGTR_TVI_DS_InputSelected);
+			mp_msg(MSGT_TV, MSGL_V, "(selected)");
 		    } else {
 			OLE_CALL_ARGS(pIAMixer, put_Enable, FALSE);
 #if 0
@@ -1989,7 +1992,7 @@ static IBaseFilter *find_capture_device(int index, REFCLSID category)
 	if(get_device_name(pM, tmp, DEVICE_NAME_MAX_LEN)!=TVI_CONTROL_TRUE)
 	    mp_msg(MSGT_TV, MSGL_ERR, MSGTR_TVI_DS_UnableGetDeviceName, i);
         else
-	    mp_msg(MSGT_TV, MSGL_V, MSGTR_TVI_DS_DeviceName, i, tmp);
+	    mp_msg(MSGT_TV, MSGL_V, "tvi_dshow: Device #%d: %s\n", i, tmp);
 	if (index != -1 && i == index) {
 	    mp_msg(MSGT_TV, MSGL_INFO, MSGTR_TVI_DS_UsingDevice, index, tmp);
 	    hr = OLE_CALL_ARGS(pM, BindToObject, 0, 0, &IID_IBaseFilter,(void *) &pFilter);
@@ -2801,7 +2804,9 @@ static int init(priv_t * priv)
         hr = init_chain_common(priv->pBuilder, priv->chains[1]);
         if(FAILED(hr))
         {
-            mp_msg(MSGT_TV, MSGL_V, "tvi_dshow: Unable to initialize audio chain (Error:0x%x). Audio disabled\n", (unsigned long)hr);
+            mp_msg(MSGT_TV, MSGL_V,
+                   "tvi_dshow: Unable to initialize audio chain (Error:0x%lx). Audio disabled\n",
+                   (unsigned long)hr);
             priv->chains[1]->arpmt=calloc(1, sizeof(AM_MEDIA_TYPE*));
             priv->chains[1]->arStreamCaps=calloc(1, sizeof(void*));
         }
@@ -2815,7 +2820,9 @@ static int init(priv_t * priv)
         hr = init_chain_common(priv->pBuilder, priv->chains[2]);
         if(FAILED(hr))
         {
-            mp_msg(MSGT_TV, MSGL_V, "tvi_dshow: Unable to initialize VBI chain (Error:0x%x). Teletext disabled\n", (unsigned long)hr);
+            mp_msg(MSGT_TV, MSGL_V,
+                   "tvi_dshow: Unable to initialize VBI chain (Error:0x%lx). Teletext disabled\n",
+                   (unsigned long)hr);
             priv->chains[2]->arpmt=calloc(1, sizeof(AM_MEDIA_TYPE*));
             priv->chains[2]->arStreamCaps=calloc(1, sizeof(void*));
         }

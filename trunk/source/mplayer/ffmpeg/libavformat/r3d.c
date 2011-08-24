@@ -22,6 +22,8 @@
 //#define DEBUG
 
 #include "libavutil/intreadwrite.h"
+#include "libavutil/dict.h"
+#include "libavutil/mathematics.h"
 #include "avformat.h"
 
 typedef struct {
@@ -43,7 +45,7 @@ static int read_atom(AVFormatContext *s, Atom *atom)
     if (atom->size < 8)
         return -1;
     atom->tag = avio_rl32(s->pb);
-    av_dlog(s, "atom %d %.4s offset %#llx\n",
+    av_dlog(s, "atom %u %.4s offset %#"PRIx64"\n",
             atom->size, (char*)&atom->tag, atom->offset);
     return atom->size;
 }
@@ -52,7 +54,8 @@ static int r3d_read_red1(AVFormatContext *s)
 {
     AVStream *st = av_new_stream(s, 0);
     char filename[258];
-    int tmp, tmp2;
+    int tmp;
+    int av_unused tmp2;
 
     if (!st)
         return AVERROR(ENOMEM);
@@ -97,7 +100,7 @@ static int r3d_read_red1(AVFormatContext *s)
 
     avio_read(s->pb, filename, 257);
     filename[sizeof(filename)-1] = 0;
-    av_metadata_set2(&st->metadata, "filename", filename, 0);
+    av_dict_set(&st->metadata, "filename", filename, 0);
 
     av_dlog(s, "filename %s\n", filename);
     av_dlog(s, "resolution %dx%d\n", st->codec->width, st->codec->height);
@@ -131,7 +134,7 @@ static int r3d_read_rdvo(AVFormatContext *s, Atom *atom)
     if (st->codec->time_base.den)
         st->duration = (uint64_t)r3d->video_offsets_count*
             st->time_base.den*st->codec->time_base.num/st->codec->time_base.den;
-    av_dlog(s, "duration %lld\n", st->duration);
+    av_dlog(s, "duration %"PRId64"\n", st->duration);
 
     return 0;
 }
@@ -139,7 +142,7 @@ static int r3d_read_rdvo(AVFormatContext *s, Atom *atom)
 static void r3d_read_reos(AVFormatContext *s)
 {
     R3DContext *r3d = s->priv_data;
-    int tmp;
+    int av_unused tmp;
 
     r3d->rdvo_offset = avio_rb32(s->pb);
     avio_rb32(s->pb); // rdvs offset
@@ -176,7 +179,7 @@ static int r3d_read_header(AVFormatContext *s, AVFormatParameters *ap)
     }
 
     s->data_offset = avio_tell(s->pb);
-    av_dlog(s, "data offset %#llx\n", s->data_offset);
+    av_dlog(s, "data offset %#"PRIx64"\n", s->data_offset);
     if (!s->pb->seekable)
         return 0;
     // find REOB/REOF/REOS to load index
@@ -209,7 +212,8 @@ static int r3d_read_header(AVFormatContext *s, AVFormatParameters *ap)
 static int r3d_read_redv(AVFormatContext *s, AVPacket *pkt, Atom *atom)
 {
     AVStream *st = s->streams[0];
-    int tmp, tmp2;
+    int tmp;
+    int av_unused tmp2;
     uint64_t pos = avio_tell(s->pb);
     unsigned dts;
     int ret;
@@ -255,7 +259,7 @@ static int r3d_read_redv(AVFormatContext *s, AVPacket *pkt, Atom *atom)
     if (st->codec->time_base.den)
         pkt->duration = (uint64_t)st->time_base.den*
             st->codec->time_base.num/st->codec->time_base.den;
-    av_dlog(s, "pkt dts %lld duration %d\n", pkt->dts, pkt->duration);
+    av_dlog(s, "pkt dts %"PRId64" duration %d\n", pkt->dts, pkt->duration);
 
     return 0;
 }
@@ -263,7 +267,8 @@ static int r3d_read_redv(AVFormatContext *s, AVPacket *pkt, Atom *atom)
 static int r3d_read_reda(AVFormatContext *s, AVPacket *pkt, Atom *atom)
 {
     AVStream *st = s->streams[1];
-    int tmp, tmp2, samples, size;
+    int av_unused tmp, tmp2;
+    int samples, size;
     uint64_t pos = avio_tell(s->pb);
     unsigned dts;
     int ret;
@@ -299,7 +304,7 @@ static int r3d_read_reda(AVFormatContext *s, AVPacket *pkt, Atom *atom)
     pkt->stream_index = 1;
     pkt->dts = dts;
     pkt->duration = av_rescale(samples, st->time_base.den, st->codec->sample_rate);
-    av_dlog(s, "pkt dts %lld duration %d samples %d sample rate %d\n",
+    av_dlog(s, "pkt dts %"PRId64" duration %d samples %d sample rate %d\n",
             pkt->dts, pkt->duration, samples, st->codec->sample_rate);
 
     return 0;
@@ -356,7 +361,8 @@ static int r3d_seek(AVFormatContext *s, int stream_index, int64_t sample_time, i
 
     frame_num = sample_time*st->codec->time_base.den/
         ((int64_t)st->codec->time_base.num*st->time_base.den);
-    av_dlog(s, "seek frame num %d timestamp %lld\n", frame_num, sample_time);
+    av_dlog(s, "seek frame num %d timestamp %"PRId64"\n",
+            frame_num, sample_time);
 
     if (frame_num < r3d->video_offsets_count) {
         avio_seek(s->pb, r3d->video_offsets_count, SEEK_SET);
@@ -378,12 +384,12 @@ static int r3d_close(AVFormatContext *s)
 }
 
 AVInputFormat ff_r3d_demuxer = {
-    "r3d",
-    NULL_IF_CONFIG_SMALL("REDCODE R3D format"),
-    sizeof(R3DContext),
-    r3d_probe,
-    r3d_read_header,
-    r3d_read_packet,
-    r3d_close,
-    r3d_seek,
+    .name           = "r3d",
+    .long_name      = NULL_IF_CONFIG_SMALL("REDCODE R3D format"),
+    .priv_data_size = sizeof(R3DContext),
+    .read_probe     = r3d_probe,
+    .read_header    = r3d_read_header,
+    .read_packet    = r3d_read_packet,
+    .read_close     = r3d_close,
+    .read_seek      = r3d_seek,
 };

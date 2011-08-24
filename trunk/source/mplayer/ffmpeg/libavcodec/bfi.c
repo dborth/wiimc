@@ -23,7 +23,7 @@
  * @file
  * @brief Brute Force & Ignorance (.bfi) video decoder
  * @author Sisir Koppaka ( sisir.koppaka at gmail dot com )
- * @sa http://wiki.multimedia.cx/index.php?title=BFI
+ * @see http://wiki.multimedia.cx/index.php?title=BFI
  */
 
 #include "libavutil/common.h"
@@ -68,7 +68,7 @@ static int bfi_decode_frame(AVCodecContext * avctx, void *data,
 
     /* Set frame parameters and palette, if necessary */
     if (!avctx->frame_number) {
-        bfi->frame.pict_type = FF_I_TYPE;
+        bfi->frame.pict_type = AV_PICTURE_TYPE_I;
         bfi->frame.key_frame = 1;
         /* Setting the palette */
         if(avctx->extradata_size>768) {
@@ -87,7 +87,7 @@ static int bfi_decode_frame(AVCodecContext * avctx, void *data,
         }
         bfi->frame.palette_has_changed = 1;
     } else {
-        bfi->frame.pict_type = FF_P_TYPE;
+        bfi->frame.pict_type = AV_PICTURE_TYPE_P;
         bfi->frame.key_frame = 0;
     }
 

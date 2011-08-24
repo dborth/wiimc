@@ -200,7 +200,7 @@ static void mpeg1_encode_sequence_header(MpegEncContext *s)
 
         if(aspect_ratio==0.0) aspect_ratio= 1.0; //pixel aspect 1:1 (VGA)
 
-        if (s->current_picture.key_frame) {
+        if (s->current_picture.f.key_frame) {
             AVRational framerate= ff_frame_rate_tab[s->frame_rate_index];
 
             /* mpeg1 header repeated every gop */
@@ -287,9 +287,9 @@ static void mpeg1_encode_sequence_header(MpegEncContext *s)
             /* time code : we must convert from the real frame rate to a
                fake mpeg frame rate in case of low frame rate */
             fps = (framerate.num + framerate.den/2)/ framerate.den;
-            time_code = s->current_picture_ptr->coded_picture_number + s->avctx->timecode_frame_start;
+            time_code = s->current_picture_ptr->f.coded_picture_number + s->avctx->timecode_frame_start;
 
-            s->gop_picture_number = s->current_picture_ptr->coded_picture_number;
+            s->gop_picture_number = s->current_picture_ptr->f.coded_picture_number;
             if (s->avctx->flags2 & CODEC_FLAG2_DROP_FRAME_TIMECODE) {
                 /* only works for NTSC 29.97 */
                 int d = time_code / 17982;
@@ -354,7 +354,7 @@ void mpeg1_encode_picture_header(MpegEncContext *s, int picture_number)
     put_bits(&s->pb, 16, 0xFFFF); /* vbv_delay */
 
     // RAL: Forward f_code also needed for B frames
-    if (s->pict_type == FF_P_TYPE || s->pict_type == FF_B_TYPE) {
+    if (s->pict_type == AV_PICTURE_TYPE_P || s->pict_type == AV_PICTURE_TYPE_B) {
         put_bits(&s->pb, 1, 0); /* half pel coordinates */
         if(s->codec_id == CODEC_ID_MPEG1VIDEO)
             put_bits(&s->pb, 3, s->f_code); /* forward_f_code */
@@ -363,7 +363,7 @@ void mpeg1_encode_picture_header(MpegEncContext *s, int picture_number)
     }
 
     // RAL: Backward f_code necessary for B frames
-    if (s->pict_type == FF_B_TYPE) {
+    if (s->pict_type == AV_PICTURE_TYPE_B) {
         put_bits(&s->pb, 1, 0); /* half pel coordinates */
         if(s->codec_id == CODEC_ID_MPEG1VIDEO)
             put_bits(&s->pb, 3, s->b_code); /* backward_f_code */
@@ -377,13 +377,13 @@ void mpeg1_encode_picture_header(MpegEncContext *s, int picture_number)
     if(s->codec_id == CODEC_ID_MPEG2VIDEO){
         put_header(s, EXT_START_CODE);
         put_bits(&s->pb, 4, 8); //pic ext
-        if (s->pict_type == FF_P_TYPE || s->pict_type == FF_B_TYPE) {
+        if (s->pict_type == AV_PICTURE_TYPE_P || s->pict_type == AV_PICTURE_TYPE_B) {
             put_bits(&s->pb, 4, s->f_code);
             put_bits(&s->pb, 4, s->f_code);
         }else{
             put_bits(&s->pb, 8, 255);
         }
-        if (s->pict_type == FF_B_TYPE) {
+        if (s->pict_type == AV_PICTURE_TYPE_B) {
             put_bits(&s->pb, 4, s->b_code);
             put_bits(&s->pb, 4, s->b_code);
         }else{
@@ -396,7 +396,7 @@ void mpeg1_encode_picture_header(MpegEncContext *s, int picture_number)
         if (s->progressive_sequence) {
             put_bits(&s->pb, 1, 0); /* no repeat */
         } else {
-            put_bits(&s->pb, 1, s->current_picture_ptr->top_field_first);
+            put_bits(&s->pb, 1, s->current_picture_ptr->f.top_field_first);
         }
         /* XXX: optimize the generation of this flag with entropy
            measures */
@@ -456,15 +456,15 @@ static av_always_inline void mpeg1_encode_mb_internal(MpegEncContext *s,
 
     if (cbp == 0 && !first_mb && s->mv_type == MV_TYPE_16X16 &&
         (mb_x != s->mb_width - 1 || (mb_y != s->mb_height - 1 && s->codec_id == CODEC_ID_MPEG1VIDEO)) &&
-        ((s->pict_type == FF_P_TYPE && (motion_x | motion_y) == 0) ||
-        (s->pict_type == FF_B_TYPE && s->mv_dir == s->last_mv_dir && (((s->mv_dir & MV_DIR_FORWARD) ? ((s->mv[0][0][0] - s->last_mv[0][0][0])|(s->mv[0][0][1] - s->last_mv[0][0][1])) : 0) |
+        ((s->pict_type == AV_PICTURE_TYPE_P && (motion_x | motion_y) == 0) ||
+        (s->pict_type == AV_PICTURE_TYPE_B && s->mv_dir == s->last_mv_dir && (((s->mv_dir & MV_DIR_FORWARD) ? ((s->mv[0][0][0] - s->last_mv[0][0][0])|(s->mv[0][0][1] - s->last_mv[0][0][1])) : 0) |
         ((s->mv_dir & MV_DIR_BACKWARD) ? ((s->mv[1][0][0] - s->last_mv[1][0][0])|(s->mv[1][0][1] - s->last_mv[1][0][1])) : 0)) == 0))) {
         s->mb_skip_run++;
         s->qscale -= s->dquant;
         s->skip_count++;
         s->misc_bits++;
         s->last_bits++;
-        if(s->pict_type == FF_P_TYPE){
+        if(s->pict_type == AV_PICTURE_TYPE_P){
             s->last_mv[0][1][0]= s->last_mv[0][0][0]=
             s->last_mv[0][1][1]= s->last_mv[0][0][1]= 0;
         }
@@ -476,7 +476,7 @@ static av_always_inline void mpeg1_encode_mb_internal(MpegEncContext *s,
             encode_mb_skip_run(s, s->mb_skip_run);
         }
 
-        if (s->pict_type == FF_I_TYPE) {
+        if (s->pict_type == AV_PICTURE_TYPE_I) {
             if(s->dquant && cbp){
                 put_mb_modes(s, 2, 1, 0, 0); /* macroblock_type : macroblock_quant = 1 */
                 put_qscale(s);
@@ -497,7 +497,7 @@ static av_always_inline void mpeg1_encode_mb_internal(MpegEncContext *s,
             s->misc_bits+= get_bits_diff(s);
             s->i_count++;
             memset(s->last_mv, 0, sizeof(s->last_mv));
-        } else if (s->pict_type == FF_P_TYPE) {
+        } else if (s->pict_type == AV_PICTURE_TYPE_P) {
             if(s->mv_type == MV_TYPE_16X16){
                 if (cbp != 0) {
                     if ((motion_x|motion_y) == 0) {
@@ -761,10 +761,9 @@ void ff_mpeg1_encode_init(MpegEncContext *s)
 
                 if(mv==0) len= ff_mpeg12_mbMotionVectorTable[0][1];
                 else{
-                    int val, bit_size, range, code;
+                    int val, bit_size, code;
 
                     bit_size = f_code - 1;
-                    range = 1 << bit_size;
 
                     val=mv;
                     if (val < 0)
@@ -888,10 +887,6 @@ static void mpeg1_encode_block(MpegEncContext *s,
         j = s->intra_scantable.permutated[i];
         level = block[j];
     next_coef:
-#if 0
-        if (level != 0)
-            av_dlog(s->avctx, "level[%d]=%d\n", i, level);
-#endif
         /* encode using VLC */
         if (level != 0) {
             run = i - last_non_zero - 1;
@@ -931,29 +926,29 @@ static void mpeg1_encode_block(MpegEncContext *s,
 }
 
 AVCodec ff_mpeg1video_encoder = {
-    "mpeg1video",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_MPEG1VIDEO,
-    sizeof(MpegEncContext),
-    encode_init,
-    MPV_encode_picture,
-    MPV_encode_end,
+    .name           = "mpeg1video",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_MPEG1VIDEO,
+    .priv_data_size = sizeof(MpegEncContext),
+    .init           = encode_init,
+    .encode         = MPV_encode_picture,
+    .close          = MPV_encode_end,
     .supported_framerates= ff_frame_rate_tab+1,
     .pix_fmts= (const enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_NONE},
-    .capabilities= CODEC_CAP_DELAY,
+    .capabilities= CODEC_CAP_DELAY | CODEC_CAP_SLICE_THREADS,
     .long_name= NULL_IF_CONFIG_SMALL("MPEG-1 video"),
 };
 
 AVCodec ff_mpeg2video_encoder = {
-    "mpeg2video",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_MPEG2VIDEO,
-    sizeof(MpegEncContext),
-    encode_init,
-    MPV_encode_picture,
-    MPV_encode_end,
+    .name           = "mpeg2video",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_MPEG2VIDEO,
+    .priv_data_size = sizeof(MpegEncContext),
+    .init           = encode_init,
+    .encode         = MPV_encode_picture,
+    .close          = MPV_encode_end,
     .supported_framerates= ff_frame_rate_tab+1,
     .pix_fmts= (const enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_YUV422P, PIX_FMT_NONE},
-    .capabilities= CODEC_CAP_DELAY,
+    .capabilities= CODEC_CAP_DELAY | CODEC_CAP_SLICE_THREADS,
     .long_name= NULL_IF_CONFIG_SMALL("MPEG-2 video"),
 };

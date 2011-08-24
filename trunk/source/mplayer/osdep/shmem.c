@@ -31,10 +31,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/uio.h>
-#ifdef HAVE_SYS_MMAN_H
+#if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
-#elif defined(__BEOS__)
-#include <mman.h>
 #endif
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -60,7 +58,7 @@ static int shmem_type=0;
 void* shmem_alloc(int size){
 #ifdef GEKKO
 return malloc(size);
-#endif
+#else
 void* p;
 static int devzero = -1;
 while(1){
@@ -111,15 +109,14 @@ while(1){
   }
   ++shmem_type;
 }
+#endif
 }
 
 void shmem_free(void* p,int size){
 #ifdef GEKKO
 free(p);
-p=NULL;
-return;
-#endif
-
+p = NULL;
+#else
   switch(shmem_type){
     case 0:
     case 1:
@@ -138,4 +135,5 @@ return;
 #endif
       break;
   }
+#endif
 }

@@ -23,7 +23,7 @@
  * @file
  * @brief RTP support for the VP8 payload
  * @author Josh Allmann <joshua.allmann@gmail.com>
- * ( http://www.webmproject.org/code/specs/rtp/ )
+ * @see http://www.webmproject.org/code/specs/rtp/
  */
 
 #include "libavcodec/bytestream.h"
@@ -148,7 +148,7 @@ RTPDynamicProtocolHandler ff_vp8_dynamic_handler = {
     .enc_name       = "VP8",
     .codec_type     = AVMEDIA_TYPE_VIDEO,
     .codec_id       = CODEC_ID_VP8,
-    .open           = vp8_new_context,
-    .close          = vp8_free_context,
+    .alloc          = vp8_new_context,
+    .free           = vp8_free_context,
     .parse_packet   = vp8_handle_packet,
 };

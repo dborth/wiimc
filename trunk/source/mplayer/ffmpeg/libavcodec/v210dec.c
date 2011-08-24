@@ -63,7 +63,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size,
     y = (uint16_t*)pic->data[0];
     u = (uint16_t*)pic->data[1];
     v = (uint16_t*)pic->data[2];
-    pic->pict_type = FF_I_TYPE;
+    pic->pict_type = AV_PICTURE_TYPE_I;
     pic->key_frame = 1;
 
 #define READ_PIXELS(a, b, c)         \
@@ -121,14 +121,12 @@ static av_cold int decode_close(AVCodecContext *avctx)
 }
 
 AVCodec ff_v210_decoder = {
-    "v210",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_V210,
-    0,
-    decode_init,
-    NULL,
-    decode_close,
-    decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "v210",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_V210,
+    .init           = decode_init,
+    .close          = decode_close,
+    .decode         = decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Uncompressed 4:2:2 10-bit"),
 };

@@ -23,6 +23,11 @@
 
 #include "config.h"
 
+#ifdef CONFIG_FRIBIDI
+#include <fribidi/fribidi.h>
+int do_fribid_log2vis(int charset, const char *in, FriBidiChar *logical, FriBidiChar *visual, int flip_commas);
+#endif
+
 extern int suboverlap_enabled;
 extern int sub_no_text_pp;  // disable text post-processing
 extern int sub_match_fuzziness;
@@ -45,6 +50,7 @@ extern char *sub_cp;
 #define SUB_SUBRIP09 11
 #define SUB_JACOSUB  12
 #define SUB_MPL2     13
+#define SUB_GOOGLE   14
 
 #define MAX_SUBTITLE_FILES 128
 
@@ -86,17 +92,15 @@ extern int fribidi_flip_commas;
 typedef void (*open_sub_func)(char *, float, int);
 typedef int (*open_vob_func)(const char *, const char * const, int, void *);
 
-sub_data* sub_read_file (char *filename, float pts);
+sub_data* sub_read_file (const char *filename, float pts);
 subtitle* subcp_recode (subtitle *sub);
 // enca_fd is the file enca uses to determine the codepage.
 // setting to NULL disables enca.
 struct stream;
 void subcp_open (struct stream *st); /* for demux_ogg.c */
 void subcp_close (void); /* for demux_ogg.c */
-#ifdef CONFIG_ENCA
 const char* guess_buffer_cp(unsigned char* buffer, int buflen, const char *preferred_language, const char *fallback);
 const char* guess_cp(struct stream *st, const char *preferred_language, const char *fallback);
-#endif
 void load_subtitles(const char *fname, float fps, open_sub_func add_f);
 void load_vob_subtitle(const char *fname, const char * const spudec_ifo, void **spu, open_vob_func add_f);
 void list_sub_file(sub_data* subd);

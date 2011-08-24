@@ -19,6 +19,7 @@
 #include "mp_msg.h"
 #include "libavutil/avutil.h"
 #include "libmpcodecs/img_format.h"
+#include "libavutil/pixfmt.h"
 #include "libavutil/samplefmt.h"
 #include "libaf/af_format.h"
 #include "fmt-conversion.h"
@@ -76,8 +77,14 @@ static const struct {
 
     {IMGFMT_420P16_LE,  PIX_FMT_YUV420P16LE},
     {IMGFMT_420P16_BE,  PIX_FMT_YUV420P16BE},
+    {IMGFMT_420P10_LE,  PIX_FMT_YUV420P10LE},
+    {IMGFMT_420P10_BE,  PIX_FMT_YUV420P10BE},
+    {IMGFMT_420P9_LE,   PIX_FMT_YUV420P9LE},
+    {IMGFMT_420P9_BE,   PIX_FMT_YUV420P9BE},
     {IMGFMT_422P16_LE,  PIX_FMT_YUV422P16LE},
     {IMGFMT_422P16_BE,  PIX_FMT_YUV422P16BE},
+    {IMGFMT_422P10_LE,  PIX_FMT_YUV422P10LE},
+    {IMGFMT_422P10_BE,  PIX_FMT_YUV422P10BE},
     {IMGFMT_444P16_LE,  PIX_FMT_YUV444P16LE},
     {IMGFMT_444P16_BE,  PIX_FMT_YUV444P16BE},
 

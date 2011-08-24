@@ -19,7 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-/* $Id: vo_zr.c 32624 2010-11-14 09:12:34Z cboesch $ */
+/* $Id: vo_zr.c 33928 2011-07-27 13:40:00Z diego $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,13 +106,13 @@ typedef struct {
 
 static zr_info_t zr_info[ZR_MAX_DEVICES] = {
 	{1, 1, 1, -1, -1, 2, {0, 0, 0, 0, 0}, NULL, 0, VIDEO_MODE_AUTO, NULL, 0, 0, 0, 0, 0,
-	0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+         0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, {0}, {0}, {0}, {{0}}, 0, 0},
 	{1, 1, 1, -1, -1, 2, {0, 0, 0, 0, 0}, NULL, 0, VIDEO_MODE_AUTO, NULL, 0, 0, 0, 0, 0,
-	0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+         0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, {0}, {0}, {0}, {{0}}, 0, 0},
 	{1, 1, 1, -1, -1, 2, {0, 0, 0, 0, 0}, NULL, 0, VIDEO_MODE_AUTO, NULL, 0, 0, 0, 0, 0,
-	0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+         0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, {0}, {0}, {0}, {{0}}, 0, 0},
 	{1, 1, 1, -1, -1, 2, {0, 0, 0, 0, 0}, NULL, 0, VIDEO_MODE_AUTO, NULL, 0, 0, 0, 0, 0,
-	0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+         0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, {0}, {0}, {0}, {{0}}, 0, 0}};
 
 
 
@@ -831,7 +831,7 @@ static int preinit(const char *arg)
     return 0;
 }
 
-static int control(uint32_t request, void *data, ...)
+static int control(uint32_t request, void *data)
 {
   switch (request) {
   case VOCTRL_QUERY_FORMAT:

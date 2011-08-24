@@ -321,16 +321,16 @@ typedef struct {
 
     /* Subband samples history (for ADPCM) */
     float subband_samples_hist[DCA_PRIM_CHANNELS_MAX][DCA_SUBBANDS][4];
-    DECLARE_ALIGNED(16, float, subband_fir_hist)[DCA_PRIM_CHANNELS_MAX][512];
-    DECLARE_ALIGNED(16, float, subband_fir_noidea)[DCA_PRIM_CHANNELS_MAX][32];
+    DECLARE_ALIGNED(32, float, subband_fir_hist)[DCA_PRIM_CHANNELS_MAX][512];
+    DECLARE_ALIGNED(32, float, subband_fir_noidea)[DCA_PRIM_CHANNELS_MAX][32];
     int hist_index[DCA_PRIM_CHANNELS_MAX];
-    DECLARE_ALIGNED(16, float, raXin)[32];
+    DECLARE_ALIGNED(32, float, raXin)[32];
 
     int output;                 ///< type of output
     float scale_bias;           ///< output scale
 
-    DECLARE_ALIGNED(16, float, subband_samples)[DCA_BLOCKS_MAX][DCA_PRIM_CHANNELS_MAX][DCA_SUBBANDS][8];
-    DECLARE_ALIGNED(16, float, samples)[(DCA_PRIM_CHANNELS_MAX+1)*256];
+    DECLARE_ALIGNED(32, float, subband_samples)[DCA_BLOCKS_MAX][DCA_PRIM_CHANNELS_MAX][DCA_SUBBANDS][8];
+    DECLARE_ALIGNED(32, float, samples)[(DCA_PRIM_CHANNELS_MAX+1)*256];
     const float *samples_chanptr[DCA_PRIM_CHANNELS_MAX+1];
 
     uint8_t dca_buffer[DCA_MAX_FRAME_SIZE + DCA_MAX_EXSS_HEADER_SIZE + DCA_BUFFER_PADDING_SIZE];
@@ -1316,7 +1316,7 @@ static int dca_convert_bitstream(const uint8_t * src, int src_size, uint8_t * ds
     PutBitContext pb;
 
     if ((unsigned)src_size > (unsigned)max_size) {
-//        av_log(NULL, AV_LOG_ERROR, "Input frame size larger then DCA_MAX_FRAME_SIZE!\n");
+//        av_log(NULL, AV_LOG_ERROR, "Input frame size larger than DCA_MAX_FRAME_SIZE!\n");
 //        return -1;
         src_size = max_size;
     }
@@ -1535,8 +1535,6 @@ static void dca_exss_parse_header(DCAContext *s)
 {
     int ss_index;
     int blownup;
-    int header_size;
-    int hd_size;
     int num_audiop = 1;
     int num_assets = 1;
     int active_ss_mask[8];
@@ -1549,8 +1547,8 @@ static void dca_exss_parse_header(DCAContext *s)
     ss_index = get_bits(&s->gb, 2);
 
     blownup = get_bits1(&s->gb);
-    header_size = get_bits(&s->gb, 8 + 4 * blownup) + 1;
-    hd_size = get_bits_long(&s->gb, 16 + 4 * blownup) + 1;
+    skip_bits(&s->gb, 8 + 4 * blownup); // header_size
+    skip_bits(&s->gb, 16 + 4 * blownup); // hd_size
 
     s->static_fields = get_bits1(&s->gb);
     if (s->static_fields) {
@@ -1626,7 +1624,9 @@ static int dca_decode_frame(AVCodecContext * avctx,
     int lfe_samples;
     int num_core_channels = 0;
     int i;
-    int16_t *samples = data;
+    float   *samples_flt = data;
+    int16_t *samples_s16 = data;
+    int out_size;
     DCAContext *s = avctx->priv_data;
     int channels;
     int core_ss_end;
@@ -1650,6 +1650,7 @@ static int dca_decode_frame(AVCodecContext * avctx,
     //set AVCodec values with parsed data
     avctx->sample_rate = s->sample_rate;
     avctx->bit_rate = s->bit_rate;
+    avctx->frame_size = s->sample_blocks * 32;
 
     s->profile = FF_PROFILE_DTS;
 
@@ -1798,7 +1799,7 @@ static int dca_decode_frame(AVCodecContext * avctx,
 
 
     /* There is nothing that prevents a dts frame to change channel configuration
-       but FFmpeg doesn't support that so only set the channels if it is previously
+       but Libav doesn't support that so only set the channels if it is previously
        unset. Ideally during the first probe for channels the crc should be checked
        and only set avctx->channels when the crc is ok. Right now the decoder could
        set the channels based on a broken first frame.*/
@@ -1812,9 +1813,11 @@ static int dca_decode_frame(AVCodecContext * avctx,
         return -1;
     }
 
-    if (*data_size < (s->sample_blocks / 8) * 256 * sizeof(int16_t) * channels)
+    out_size = 256 / 8 * s->sample_blocks * channels *
+               av_get_bytes_per_sample(avctx->sample_fmt);
+    if (*data_size < out_size)
         return -1;
-    *data_size = 256 / 8 * s->sample_blocks * sizeof(int16_t) * channels;
+    *data_size = out_size;
 
     /* filter to get final output */
     for (i = 0; i < (s->sample_blocks / 8); i++) {
@@ -1833,8 +1836,16 @@ static int dca_decode_frame(AVCodecContext * avctx,
             }
         }
 
-        s->fmt_conv.float_to_int16_interleave(samples, s->samples_chanptr, 256, channels);
-        samples += 256 * channels;
+        if (avctx->sample_fmt == AV_SAMPLE_FMT_FLT) {
+            s->fmt_conv.float_interleave(samples_flt, s->samples_chanptr, 256,
+                                         channels);
+            samples_flt += 256 * channels;
+        } else {
+            s->fmt_conv.float_to_int16_interleave(samples_s16,
+                                                  s->samples_chanptr, 256,
+                                                  channels);
+            samples_s16 += 256 * channels;
+        }
     }
 
     /* update lfe history */
@@ -1870,9 +1881,14 @@ static av_cold int dca_decode_init(AVCodecContext * avctx)
 
     for (i = 0; i < DCA_PRIM_CHANNELS_MAX+1; i++)
         s->samples_chanptr[i] = s->samples + i * 256;
-    avctx->sample_fmt = AV_SAMPLE_FMT_S16;
 
-    s->scale_bias = 1.0;
+    if (avctx->request_sample_fmt == AV_SAMPLE_FMT_FLT) {
+        avctx->sample_fmt = AV_SAMPLE_FMT_FLT;
+        s->scale_bias = 1.0 / 32768.0;
+    } else {
+        avctx->sample_fmt = AV_SAMPLE_FMT_S16;
+        s->scale_bias = 1.0;
+    }
 
     /* allow downmixing to stereo */
     if (avctx->channels > 0 && avctx->request_channels < avctx->channels &&
@@ -1909,5 +1925,8 @@ AVCodec ff_dca_decoder = {
     .close = dca_decode_end,
     .long_name = NULL_IF_CONFIG_SMALL("DCA (DTS Coherent Acoustics)"),
     .capabilities = CODEC_CAP_CHANNEL_CONF,
+    .sample_fmts = (const enum AVSampleFormat[]) {
+        AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_NONE
+    },
     .profiles = NULL_IF_CONFIG_SMALL(profiles),
 };

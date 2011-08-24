@@ -36,7 +36,7 @@
 #include <sys/io.h>
 
 #include "config.h"
-#ifdef HAVE_SYS_MMAN_H
+#if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
 #include "mp_msg.h"
@@ -69,7 +69,7 @@ static uint32_t in_width, in_height, in_format, in_depth, in_s3_format,
   screenwidth, screenheight, screendepth, screenstride,
   vidwidth, vidheight, vidx, vidy, page, offset, sreg;
 static char *inpage, *inpage0, *smem = NULL;
-static void (*alpha_func)();
+static void (*alpha_func)(int, int, unsigned char*, unsigned char*, int, unsigned char*, int);
 
 static void clear_screen(void);
 
@@ -529,7 +529,7 @@ static uint32_t get_image(mp_image_t *mpi)
   return VO_TRUE;
 }
 
-static int control(uint32_t request, void *data, ...)
+static int control(uint32_t request, void *data)
 {
   switch(request) {
   case VOCTRL_GET_IMAGE:

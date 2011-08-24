@@ -17,6 +17,7 @@
  */
 
 #include "file.h"
+#include "log.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -47,7 +48,6 @@ int av_file_map(const char *filename, uint8_t **bufptr, size_t *size,
     av_unused void *ptr;
     off_t off_size;
     char errbuf[128];
-    size_t max_size = HAVE_MMAP ? SIZE_MAX : FF_INTERNAL_MEM_TYPE_MAX_VALUE;
     *bufptr = NULL;
 
     if (fd < 0) {
@@ -66,7 +66,7 @@ int av_file_map(const char *filename, uint8_t **bufptr, size_t *size,
     }
 
     off_size = st.st_size;
-    if (off_size > max_size) {
+    if (off_size > SIZE_MAX) {
         av_log(&file_log_ctx, AV_LOG_ERROR,
                "File size for file '%s' is too big\n", filename);
         close(fd);
@@ -76,7 +76,7 @@ int av_file_map(const char *filename, uint8_t **bufptr, size_t *size,
 
 #if HAVE_MMAP
     ptr = mmap(NULL, *size, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0);
-    if ((int)(ptr) == -1) {
+    if (ptr == MAP_FAILED) {
         err = AVERROR(errno);
         av_strerror(err, errbuf, sizeof(errbuf));
         av_log(&file_log_ctx, AV_LOG_ERROR, "Error occurred in mmap(): %s\n", errbuf);

@@ -20,7 +20,9 @@
  */
 
 #include "libavutil/intreadwrite.h"
+#include "libavutil/mathematics.h"
 #include "libavutil/tree.h"
+#include "libavutil/dict.h"
 #include "libavcodec/mpegaudiodata.h"
 #include "nut.h"
 #include "internal.h"
@@ -175,7 +177,6 @@ static void build_frame_code(AVFormatContext *s){
         }
 
         key_frame= intra_only;
-#if 1
         if(is_audio){
             int frame_bytes= codec->frame_size*(int64_t)codec->bit_rate / (8*codec->sample_rate);
             int pts;
@@ -199,7 +200,6 @@ static void build_frame_code(AVFormatContext *s){
             ft->pts_delta=1;
             start2++;
         }
-#endif
 
         if(codec->has_b_frames){
             pred_count=5;
@@ -432,7 +432,7 @@ static int add_info(AVIOContext *bc, const char *type, const char *value){
 
 static int write_globalinfo(NUTContext *nut, AVIOContext *bc){
     AVFormatContext *s= nut->avf;
-    AVMetadataTag *t = NULL;
+    AVDictionaryEntry *t = NULL;
     AVIOContext *dyn_bc;
     uint8_t *dyn_buf=NULL;
     int count=0, dyn_size;
@@ -440,7 +440,7 @@ static int write_globalinfo(NUTContext *nut, AVIOContext *bc){
     if(ret < 0)
         return ret;
 
-    while ((t = av_metadata_get(s->metadata, "", t, AV_METADATA_IGNORE_SUFFIX)))
+    while ((t = av_dict_get(s->metadata, "", t, AV_DICT_IGNORE_SUFFIX)))
         count += add_info(dyn_bc, t->key, t->value);
 
     ff_put_v(bc, 0); //stream_if_plus1
@@ -491,7 +491,7 @@ static int write_chapter(NUTContext *nut, AVIOContext *bc, int id)
 {
     AVIOContext *dyn_bc;
     uint8_t *dyn_buf = NULL;
-    AVMetadataTag *t = NULL;
+    AVDictionaryEntry *t = NULL;
     AVChapter *ch    = nut->avf->chapters[id];
     int ret, dyn_size, count = 0;
 
@@ -504,7 +504,7 @@ static int write_chapter(NUTContext *nut, AVIOContext *bc, int id)
     put_tt(nut, nut->chapter[id].time_base, bc, ch->start); // chapter_start
     ff_put_v(bc, ch->end - ch->start);                      // chapter_len
 
-    while ((t = av_metadata_get(ch->metadata, "", t, AV_METADATA_IGNORE_SUFFIX)))
+    while ((t = av_dict_get(ch->metadata, "", t, AV_DICT_IGNORE_SUFFIX)))
         count += add_info(dyn_bc, t->key, t->value);
 
     ff_put_v(bc, count);
@@ -586,9 +586,16 @@ static int write_header(AVFormatContext *s){
     nut->avf= s;
 
     nut->stream   = av_mallocz(sizeof(StreamContext)*s->nb_streams);
-    nut->chapter  = av_mallocz(sizeof(ChapterContext)*s->nb_chapters);
+    if (s->nb_chapters)
+        nut->chapter  = av_mallocz(sizeof(ChapterContext)*s->nb_chapters);
     nut->time_base= av_mallocz(sizeof(AVRational   )*(s->nb_streams +
                                                       s->nb_chapters));
+    if (!nut->stream || (s->nb_chapters && !nut->chapter) || !nut->time_base) {
+        av_freep(&nut->stream);
+        av_freep(&nut->chapter);
+        av_freep(&nut->time_base);
+        return AVERROR(ENOMEM);
+    }
 
     for(i=0; i<s->nb_streams; i++){
         AVStream *st= s->streams[i];
@@ -854,22 +861,22 @@ static int write_trailer(AVFormatContext *s){
 }
 
 AVOutputFormat ff_nut_muxer = {
-    "nut",
-    NULL_IF_CONFIG_SMALL("NUT format"),
-    "video/x-nut",
-    "nut",
-    sizeof(NUTContext),
+    .name           = "nut",
+    .long_name      = NULL_IF_CONFIG_SMALL("NUT format"),
+    .mime_type      = "video/x-nut",
+    .extensions     = "nut",
+    .priv_data_size = sizeof(NUTContext),
 #if   CONFIG_LIBVORBIS
-    CODEC_ID_VORBIS,
+    .audio_codec    = CODEC_ID_VORBIS,
 #elif CONFIG_LIBMP3LAME
-    CODEC_ID_MP3,
+    .audio_codec    = CODEC_ID_MP3,
 #else
-    CODEC_ID_MP2,
+    .audio_codec    = CODEC_ID_MP2,
 #endif
-    CODEC_ID_MPEG4,
-    write_header,
-    write_packet,
-    write_trailer,
+    .video_codec    = CODEC_ID_MPEG4,
+    .write_header   = write_header,
+    .write_packet   = write_packet,
+    .write_trailer  = write_trailer,
     .flags = AVFMT_GLOBALHEADER | AVFMT_VARIABLE_FPS,
     .codec_tag = (const AVCodecTag * const []){ ff_codec_bmp_tags, ff_nut_video_tags, ff_codec_wav_tags, ff_nut_subtitle_tags, 0 },
 };

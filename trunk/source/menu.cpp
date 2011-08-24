@@ -15,7 +15,6 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <map>
-#include <pcrecpp.h>
 #include <libexif/exif-data.h>
 #include <wiiuse/wpad.h>
 #include <di/di.h>
@@ -2039,7 +2038,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	}
 
 	buffer[size-1] = 0;
-	char *str = strstr(buffer, "flashvars");
+	char *str = strstr(buffer, "url_encoded_fmt_stream_map=");
 
 	if(str == NULL)
 	{
@@ -2049,29 +2048,51 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	if(size-(str-buffer) > 16384)
 		str[16384] = 0; // truncate string
+		
+	int fmt, chosenFormat = 0;
+	char *strstart = str;
+	char *urlc, *urlcend, *fmtc, *fmtcend, *fmtcend2;
+	char format[5];
 
-	pcrecpp::RE re("(\\d+)%7C(http.*?)(%2C|&|%7C%7C)");
-	std::map<std::string, std::string> links;
-	std::string format, link;
-	pcrecpp::StringPiece input(str);
-
-	while (re.FindAndConsume(&input, &format, &link))
-		links[format] = link;
-
-	int chosenFormat = 0;
-
-	for(std::map<std::string,std::string>::iterator link=links.begin(); link!=links.end(); ++link)
+	while(chosenFormat != WiiSettings.youtubeFormat && str-strstart < 16384)
 	{
-		int fmt = atoi((*link).first.c_str());
-
-		if(fmt != 5 && fmt != 18 && fmt != 34)
-			continue;
+		urlc = strstr(str, "url%3D");
+		
+		if(!urlc)
+			break;
+		
+		urlcend = strstr(urlc, "%26quality"); // get new url from url%3D to %26quality = http....
 	
-		if(fmt == WiiSettings.youtubeFormat || (fmt < WiiSettings.youtubeFormat && fmt > chosenFormat))
+		if(!urlcend || urlcend-urlc-6 < 1 || urlcend-urlc-6 >= MAXPATHLEN)
+			break;
+
+		fmtc = strstr(urlcend, "%26itag%3D");
+		
+		if(!fmtc)
+			break;
+		
+		fmtcend = strstr(fmtc, "%2C");
+		fmtcend2 = strstr(fmtc, "&amp;"); // get format code from %26itag%3D to &2C or &amp; = nn
+		
+		if(!fmtcend || !fmtcend2 || fmtcend-fmtc-10 < 1 || fmtcend-fmtc-10 >= 5)
+			break;
+
+		if (fmtcend2 < fmtcend)
+			fmtcend = fmtcend2;
+		
+		snprintf(format, fmtcend-fmtc-10+1, "%s", fmtc+10);
+		fmt = atoi(format);
+		
+		if((fmt == 5 || fmt == 18 || fmt == 34) && fmt <= WiiSettings.youtubeFormat && fmt > chosenFormat)
 		{
+			snprintf(newurl, urlcend-urlc-6+1, "%s", urlc+6);
+			url_unescape_string(newurl, newurl); // remove 3 levels of url codes ie: %252526 = %2526
+			url_unescape_string(newurl, newurl); // %2526 = %26
+			url_unescape_string(newurl, newurl); // %26 = &
 			chosenFormat = fmt;
-			url_unescape_string(newurl, (*link).second.c_str());
 		}
+
+		str = fmtcend + 3; // move to next url
 	}
 	
 	mem2_free(buffer, MEM2_OTHER);

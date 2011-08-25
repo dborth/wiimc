@@ -355,7 +355,7 @@ msgstr "DVD töltése..."
 msgid "No disc inserted!"
 msgstr "Nincs lemez!"
 
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "Nem értelmezhető DVD."
 
 msgid "Up One Level"

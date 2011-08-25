@@ -966,6 +966,13 @@ static bool MountDVD(bool silent)
 			ErrorPrompt("WiiMC does not have DVD access - AHBPROT is not enabled.");
 		return false;
 	}
+	
+	if(!DI_CheckDVDSupport())
+	{
+		if(!silent)
+			ErrorPrompt("DVD playback is not supported on this Wii.");
+		return false;
+	}
 
 	SuspendDeviceThread();
 
@@ -986,7 +993,7 @@ static bool MountDVD(bool silent)
 			if(silent)
 				break;
 			
-			retry = ErrorPromptRetry("Invalid DVD.");
+			retry = ErrorPromptRetry("Unsupported DVD.");
 		}
 		else
 		{

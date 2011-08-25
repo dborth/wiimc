@@ -355,7 +355,7 @@ msgstr "DVD ஏற்றப்படுகிறது..."
 msgid "No disc inserted!"
 msgstr "DVD வட்டு சொருகப்படவில்லை!"
 
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "ஏற்றுக்கொள்ள தகாத DVD"
 
 msgid "Up One Level"

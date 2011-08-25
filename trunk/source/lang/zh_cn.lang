@@ -355,7 +355,7 @@ msgstr "读取DVD..."
 msgid "No disc inserted!"
 msgstr "没有放入DVD光盘!"
 
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "无效的DVD光盘。"
 
 msgid "Up One Level"

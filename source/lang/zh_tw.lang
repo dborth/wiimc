@@ -355,7 +355,7 @@ msgstr "載入DVD中..."
 msgid "No disc inserted!"
 msgstr "沒有插入DVD光碟！"
 
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "無效的DVD光碟。"
 
 msgid "Up One Level"

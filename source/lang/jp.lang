@@ -355,7 +355,7 @@ msgstr "ＤＶＤを読み込み中…"
 msgid "No disc inserted!"
 msgstr "ディスクが挿入されていません！"
 
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "無効なＤＶＤです"
 
 msgid "Up One Level"

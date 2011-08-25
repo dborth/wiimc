@@ -355,7 +355,7 @@ msgstr "Wczytywanie DVD..."
 msgid "No disc inserted!"
 msgstr "Nie wsadzono dysku!"
 
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "Niepoprawne DVD."
 
 msgid "Up One Level"

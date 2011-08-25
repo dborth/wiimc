@@ -355,7 +355,7 @@ msgstr "DVD로딩중..."
 msgid "No disc inserted!"
 msgstr "삽입된 디스크 없음!"
  
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "유효하지 않은 DVD."
  
 msgid "Up One Level"

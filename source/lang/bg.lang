@@ -356,7 +356,7 @@ msgstr "Зареждане на DVD..."
 msgid "No disc inserted!"
 msgstr "Не е поставен диск!"
 
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "Невалиден DVD."
 
 msgid "Up One Level"

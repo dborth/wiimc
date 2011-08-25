@@ -355,7 +355,7 @@ msgstr "Indlæser DVD..."
 msgid "No disc inserted!"
 msgstr "Ingen indsat disk!"
 
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "Ugyldig DVD."
 
 msgid "Up One Level"

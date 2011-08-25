@@ -355,7 +355,7 @@ msgstr "Načítavanie DVD..."
 msgid "No disc inserted!"
 msgstr "Žiadny vložený disk!"
 
-msgid "Invalid DVD."
+msgid "Unsupported DVD."
 msgstr "Neplatné DVD."
 
 msgid "Up One Level"

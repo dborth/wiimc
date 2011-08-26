@@ -3694,18 +3694,22 @@ static void MenuBrowsePictures()
 		if(devicesChanged)
 		{
 			devicesChanged = false;
+			SuspendPictureThread();
 			fileBrowser.SetState(STATE_DISABLED);
 
 			if(!BrowserChangeFolder(true, true))
 				goto done;
 
 			fileBrowser.ResetState();
+			loadPictures = 1; // trigger picture thread
+			ResumePictureThread();
 		}
 
 		// up one level
 		if(upOneLevelBtn.GetState() == STATE_CLICKED)
 		{
 			upOneLevelBtn.ResetState();
+			SuspendPictureThread();
 			fileBrowser.SetState(STATE_DISABLED);
 			browser.selIndex = browser.first;
 
@@ -3713,6 +3717,8 @@ static void MenuBrowsePictures()
 				goto done;
 
 			fileBrowser.ResetState();
+			loadPictures = 1; // trigger picture thread
+			ResumePictureThread();
 		}
 		
 		// update progress bar

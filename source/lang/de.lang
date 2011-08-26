@@ -356,7 +356,7 @@ msgid "No disc inserted!"
 msgstr "Keine Disc eingelegt!"
 
 msgid "Unsupported DVD."
-msgstr "Ungültige DVD."
+msgstr "Nicht unterstützte DVD."
 
 msgid "Up One Level"
 msgstr "Eine Ebene nach oben"
@@ -672,3 +672,6 @@ msgstr "Inaktivitätsabschaltung"
 
 msgid "Invalid subtitle delay."
 msgstr "Ungültige Untertitelverzögerung."
+
+msgid "DVD playback is not supported on this Wii."
+msgstr "Diese Wii unterstützt keine DVD Wiedergabe."

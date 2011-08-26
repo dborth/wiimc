@@ -6,6 +6,16 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.1.9 - August 26, 2011]
+
+* Synced to MPlayer r34002
+* New YouTube scraping code (thanks jhb50!)
+* Fixed problem with some subtitles not appearing
+* Added support for subtitles over FTP
+* Added chunk support in HTTP protocol
+* Added Bulgarian translation
+* Other minor bug fixes
+
 [1.1.8 - May 17, 2011]
 
 * Synced to MPlayer r33269

@@ -1211,7 +1211,7 @@ void dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 void ff_h264dsp_init_ppc(H264DSPContext *c, const int bit_depth)
 {
 	c->h264_idct_add = ff_h264_idct_add_paired;
-	c->h264_idct_add8 = ff_h264_idct_add8_paired;
+	//c->h264_idct_add8 = ff_h264_idct_add8_paired;
 	c->h264_idct_add16 = ff_h264_idct_add16_paired;
 	c->h264_idct_add16intra = ff_h264_idct_add16intra_paired;
 	c->h264_idct_dc_add = ff_h264_idct_dc_add_paired;

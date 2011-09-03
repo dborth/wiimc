@@ -392,11 +392,6 @@ void ShowPreferences( void )
  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( CBLoadFullscreen ),gtkLoadFullscreen );
  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( CBSaveWinPos ),gui_save_pos );
  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( CBShowVideoWindow ),gtkShowVideoWindow );
- if ( !gtkShowVideoWindow )
-  {
-   gtk_widget_set_sensitive( CBLoadFullscreen,FALSE );
-   gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( CBLoadFullscreen ),0 );
-  }
  gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( CBStopXScreenSaver ),stop_xscreensaver );
  gtk_adjustment_set_value( HSPPQualityadj,auto_quality );
 
@@ -727,18 +722,12 @@ static void prToggled( GtkToggleButton * togglebutton,gpointer user_data )
 //	if ( guiInfo.Playing ) gtkMessageBox( GTK_MB_WARNING,"Please remember, this function need restart the playing." );
 //	break;
    case 3:
-	if ( gtk_toggle_button_get_active( GTK_TOGGLE_BUTTON( CBShowVideoWindow ) ) ) gtk_widget_set_sensitive( CBLoadFullscreen,TRUE );
-	 else
-	  {
-	   gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( CBLoadFullscreen ),0 );
-	   gtk_widget_set_sensitive( CBLoadFullscreen,FALSE );
-	  }
 	if ( gtk_toggle_button_get_active( GTK_TOGGLE_BUTTON( CBShowVideoWindow ) ) )
 	 {
 	  window=wsShowWindow;
 	  gtkActive( Preferences );
 	 } else window=wsHideWindow;
-
+	// NOTE TO MYSELF: doesn't work with a fullscreen window
 	if ( !guiInfo.Playing ) wsVisibleWindow( &guiApp.subWindow,window );
 	break;
    case 4:

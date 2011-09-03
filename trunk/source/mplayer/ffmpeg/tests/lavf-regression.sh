@@ -44,7 +44,7 @@ do_audio_only()
 }
 
 if [ -n "$do_avi" ] ; then
-do_lavf avi
+do_lavf avi "-acodec mp2"
 fi
 
 if [ -n "$do_asf" ] ; then
@@ -87,7 +87,7 @@ do_lavf flv -an
 fi
 
 if [ -n "$do_mov" ] ; then
-do_lavf mov "-acodec pcm_alaw"
+do_lavf mov "-acodec pcm_alaw -c:v mpeg4"
 fi
 
 if [ -n "$do_dv_fmt" ] ; then
@@ -103,7 +103,7 @@ do_lavf nut "-acodec mp2"
 fi
 
 if [ -n "$do_mkv" ] ; then
-do_lavf mkv
+do_lavf mkv "-c:a mp2 -c:v mpeg4"
 fi
 
 

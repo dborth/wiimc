@@ -141,11 +141,12 @@ static int vo_x11_get_fs_type(int supported);
 /*
  * Sends the EWMH fullscreen state event.
  *
+ * win:    id of the window to which the event shall be sent
  * action: could be one of _NET_WM_STATE_REMOVE -- remove state
  *                         _NET_WM_STATE_ADD    -- add state
  *                         _NET_WM_STATE_TOGGLE -- toggle
  */
-void vo_x11_ewmh_fullscreen(int action)
+void vo_x11_ewmh_fullscreen(Window win, int action)
 {
     assert(action == _NET_WM_STATE_REMOVE ||
            action == _NET_WM_STATE_ADD || action == _NET_WM_STATE_TOGGLE);
@@ -159,7 +160,7 @@ void vo_x11_ewmh_fullscreen(int action)
         xev.xclient.serial = 0;
         xev.xclient.send_event = True;
         xev.xclient.message_type = XA_NET_WM_STATE;
-        xev.xclient.window = vo_window;
+        xev.xclient.window = win;
         xev.xclient.format = 32;
         xev.xclient.data.l[0] = action;
         xev.xclient.data.l[1] = XA_NET_WM_STATE_FULLSCREEN;
@@ -729,12 +730,18 @@ void vo_x11_classhint(Display * display, Window window, const char *name)
 {
     XClassHint wmClass;
     pid_t pid = getpid();
+    long prop = pid & 0x7FFFFFFF;
 
     wmClass.res_name = vo_winname ? vo_winname : name;
     wmClass.res_class = "MPlayer";
     XSetClassHint(display, window, &wmClass);
+
+    /* PID sizes other than 32-bit are not handled by the EWMH spec */
+    if ((pid_t)prop != pid)
+        return;
+
     XChangeProperty(display, window, XA_NET_WM_PID, XA_CARDINAL, 32,
-                    PropModeReplace, (unsigned char *) &pid, 1);
+                    PropModeReplace, (unsigned char *)&prop, 1);
 }
 
 Window vo_window = None;
@@ -1363,12 +1370,12 @@ void vo_x11_fullscreen(void)
 
     if (vo_fs)
     {
-        vo_x11_ewmh_fullscreen(_NET_WM_STATE_REMOVE);   // removes fullscreen state if wm supports EWMH
+        vo_x11_ewmh_fullscreen(vo_window, _NET_WM_STATE_REMOVE);   // removes fullscreen state if wm supports EWMH
         vo_fs = VO_FALSE;
     } else
     {
         // win->fs
-        vo_x11_ewmh_fullscreen(_NET_WM_STATE_ADD);      // sends fullscreen state to be added if wm supports EWMH
+        vo_x11_ewmh_fullscreen(vo_window, _NET_WM_STATE_ADD);      // sends fullscreen state to be added if wm supports EWMH
 
         vo_fs = VO_TRUE;
         if ( ! (vo_fs_type & vo_wm_FULLSCREEN) ) // not needed with EWMH fs

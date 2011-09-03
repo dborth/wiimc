@@ -57,9 +57,8 @@
 #endif
 
 guiInterface_t guiInfo = {
-    .VideoWindow = True,
-    .StreamType  = STREAMTYPE_DUMMY,
-    .Balance     = 50.0f
+    .StreamType = STREAMTYPE_DUMMY,
+    .Balance    = 50.0f
 };
 
 static int initialized;
@@ -164,6 +163,8 @@ void guiInit(void)
     wsCreateImage(&guiApp.subWindow, guiApp.sub.Bitmap.Width, guiApp.sub.Bitmap.Height);
     wsXDNDMakeAwareness(&guiApp.subWindow);
 
+    WinID = guiApp.subWindow.WindowID;
+
     uiMenuInit();
     uiPlaybarInit();
 
@@ -206,31 +207,9 @@ void guiInit(void)
 
     wsVisibleWindow(&guiApp.mainWindow, wsShowWindow);
 
-#if 0
-    wsVisibleWindow(&guiApp.subWindow, wsShowWindow);
-    {
-        XEvent xev;
-
-        do
-            XNextEvent(wsDisplay, &xev);
-        while (xev.type != MapNotify || xev.xmap.event != guiApp.subWindow.WindowID);
-
-        guiApp.subWindow.Mapped = wsMapped;
-    }
-
-    if (!fullscreen)
-        fullscreen = gtkLoadFullscreen;
-
-    if (fullscreen) {
-        uiFullScreen();
-        btnModify(evFullScreen, btnPressed);
-    }
-#else
-    if (!fullscreen)
-        fullscreen = gtkLoadFullscreen;
-
     if (gtkShowVideoWindow) {
         wsVisibleWindow(&guiApp.subWindow, wsShowWindow);
+
         {
             XEvent xev;
 
@@ -239,31 +218,16 @@ void guiInit(void)
             while (xev.type != MapNotify || xev.xmap.event != guiApp.subWindow.WindowID);
 
             guiApp.subWindow.Mapped = wsMapped;
+            guiInfo.VideoWindow     = True;
         }
 
-        if (fullscreen) {
+        if (gtkLoadFullscreen)
             uiFullScreen();
-            btnModify(evFullScreen, btnPressed);
-        }
-    } else {
-        if (fullscreen) {
-            wsVisibleWindow(&guiApp.subWindow, wsShowWindow);
-            {
-                XEvent xev;
+    } else
+        wsSetBackgroundRGB(&guiApp.subWindow, 0, 0, 0);
 
-                do
-                    XNextEvent(wsDisplay, &xev);
-                while (xev.type != MapNotify || xev.xmap.event != guiApp.subWindow.WindowID);
-
-                guiApp.subWindow.Mapped = wsMapped;
-            }
-            guiInfo.Playing = GUI_PAUSE; // because of !gtkShowVideoWindow...
-            uiFullScreen();          // ...guiInfo.Playing is required
-            wsVisibleWindow(&guiApp.subWindow, wsHideWindow);
-            btnModify(evFullScreen, btnPressed);
-        }
-    }
-#endif
+    if (gtkLoadFullscreen)
+        btnModify(evFullScreen, btnPressed);
 
     guiInfo.Playing = GUI_STOP;
 
@@ -288,8 +252,8 @@ void guiDone(void)
         if (gui_save_pos) {
             gui_main_pos_x = guiApp.mainWindow.X;
             gui_main_pos_y = guiApp.mainWindow.Y;
-            gui_sub_pos_x  = guiApp.subWindow.X;
-            gui_sub_pos_y  = guiApp.subWindow.Y;
+            gui_sub_pos_x  = guiApp.sub.x;
+            gui_sub_pos_y  = guiApp.sub.y;
         }
 
 #ifdef CONFIG_ASS
@@ -727,7 +691,20 @@ int gui(int what, void *data)
             }
         }
 
-        wsVisibleWindow(&guiApp.subWindow, (guiInfo.VideoWindow ? wsShowWindow : wsHideWindow));
+        // These must be done here (in the last call from MPlayer before
+        // playback starts) and not in GUI_SETUP_VIDEO_WINDOW, because...
+
+        // ...without video there will be no call to GUI_SETUP_VIDEO_WINDOW
+        if (!guiInfo.VideoWindow) {
+            wsVisibleWindow(&guiApp.subWindow, wsHideWindow);
+            btnModify(evFullScreen, gtkLoadFullscreen ? btnPressed : btnReleased);
+        }
+
+        // ...option variable fullscreen determines whether MPlayer will handle
+        //    the window given by WinID as fullscreen window (and will do aspect
+        //    scaling then) or not - quite rubbish
+        fullscreen = gtkLoadFullscreen;
+
         break;
 
     case GUI_SET_MIXER:
@@ -758,18 +735,25 @@ int gui(int what, void *data)
 
     case GUI_SETUP_VIDEO_WINDOW:
 
-        if (!guiApp.subWindow.isFullScreen) {
-            wsResizeWindow(&guiApp.subWindow, vo_dwidth, vo_dheight);
-            wsMoveWindow(&guiApp.subWindow, True, guiApp.sub.x, guiApp.sub.y);
-        }
-
         guiInfo.VideoWidth  = vo_dwidth;
         guiInfo.VideoHeight = vo_dheight;
 
-        if (guiWinID >= 0)
-            wsMoveWindow(&guiApp.mainWindow, False, 0, vo_dheight);
+        if (!guiApp.subWindow.isFullScreen || !guiApp.subWindow.Mapped) {
+            if (!guiApp.subWindow.isFullScreen)
+                wsResizeWindow(&guiApp.subWindow, guiInfo.VideoWidth, guiInfo.VideoHeight);
 
-        WinID = guiApp.subWindow.WindowID;
+            wsMoveWindow(&guiApp.subWindow, True, guiApp.sub.x, guiApp.sub.y);
+
+            if (!guiApp.subWindow.Mapped)
+                wsVisibleWindow(&guiApp.subWindow, wsShowWindow);
+        }
+
+        if (gtkLoadFullscreen ^ guiApp.subWindow.isFullScreen)
+            uiEventHandling(evFullScreen, 0);
+
+        if (guiWinID >= 0)
+            wsMoveWindow(&guiApp.mainWindow, False, 0, guiInfo.VideoHeight);
+
         break;
 
     case GUI_HANDLE_X_EVENT:
@@ -799,7 +783,6 @@ int gui(int what, void *data)
             guiInfo.ElapsedTime   = 0;
             guiInfo.Position      = 0;
             guiInfo.AudioChannels = 0;
-            guiInfo.VideoWindow   = True;
 
 #ifdef CONFIG_DVDREAD
             guiInfo.Track   = 1;
@@ -807,13 +790,30 @@ int gui(int what, void *data)
             guiInfo.Angle   = 1;
 #endif
 
-            if (!guiApp.subWindow.isFullScreen && gtkShowVideoWindow) {
-                wsResizeWindow(&guiApp.subWindow, guiApp.sub.width, guiApp.sub.height);
-                wsMoveWindow(&guiApp.subWindow, True, guiApp.sub.x, guiApp.sub.y);
-            } else
+            if (gtkShowVideoWindow) {
+                guiInfo.VideoWindow = True;
+                guiInfo.VideoWidth  = guiApp.sub.width;
+                guiInfo.VideoHeight = guiApp.sub.height;
+
+                if (!guiApp.subWindow.isFullScreen) {
+                    wsResizeWindow(&guiApp.subWindow, guiInfo.VideoWidth, guiInfo.VideoHeight);
+                    wsMoveWindow(&guiApp.subWindow, True, guiApp.sub.x, guiApp.sub.y);
+                }
+
+                if (!guiApp.subWindow.Mapped)
+                    wsVisibleWindow(&guiApp.subWindow, wsShowWindow);
+
+                if (gtkLoadFullscreen ^ guiApp.subWindow.isFullScreen)
+                    uiEventHandling(evFullScreen, 0);
+            } else {
                 wsVisibleWindow(&guiApp.subWindow, wsHideWindow);
+                guiInfo.VideoWindow = False;
+                btnModify(evFullScreen, gtkLoadFullscreen ? btnPressed : btnReleased);
+            }
 
             gui(GUI_SET_STATE, (void *)GUI_STOP);
+
+            wsHandleEvents();
             uiSubRender = 1;
             wsSetBackgroundRGB(&guiApp.subWindow, guiApp.sub.R, guiApp.sub.G, guiApp.sub.B);
             wsClearWindow(guiApp.subWindow);

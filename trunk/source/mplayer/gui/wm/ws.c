@@ -890,7 +890,7 @@ void wsFullScreen(wsTWindow *win)
     int decoration = 0;
 
     if (win->isFullScreen) {
-        vo_x11_ewmh_fullscreen(_NET_WM_STATE_REMOVE); // removes fullscreen state if wm supports EWMH
+        vo_x11_ewmh_fullscreen(win->WindowID, _NET_WM_STATE_REMOVE); // removes fullscreen state if wm supports EWMH
 
         if (!(vo_fs_type & vo_wm_FULLSCREEN)) { // shouldn't be needed with EWMH fs
             win->X      = win->OldX;
@@ -900,42 +900,44 @@ void wsFullScreen(wsTWindow *win)
             decoration  = win->Decorations;
         }
 
+        win->isFullScreen = False;
+
 #ifdef ENABLE_DPMS
         wsScreenSaverOn(wsDisplay);
 #endif
-
-        win->isFullScreen = False;
     } else {
+        vo_x11_ewmh_fullscreen(win->WindowID, _NET_WM_STATE_ADD); // adds fullscreen state if wm supports EWMH
+
         if (!(vo_fs_type & vo_wm_FULLSCREEN)) { // shouldn't be needed with EWMH fs
             win->OldX      = win->X;
             win->OldY      = win->Y;
             win->OldWidth  = win->Width;
             win->OldHeight = win->Height;
-            vo_dx           = win->X;
-            vo_dy           = win->Y;
-            vo_dwidth       = win->Width;
-            vo_dheight      = win->Height;
-            vo_screenwidth  = wsMaxX;
-            vo_screenheight = wsMaxY;
-            xinerama_x      = wsOrgX;
-            xinerama_y      = wsOrgY;
-            update_xinerama_info();
-            wsMaxX      = vo_screenwidth;
-            wsMaxY      = vo_screenheight;
-            wsOrgX      = xinerama_x;
-            wsOrgY      = xinerama_y;
-            win->X      = wsOrgX;
-            win->Y      = wsOrgY;
-            win->Width  = wsMaxX;
-            win->Height = wsMaxY;
         }
 
+        vo_dx           = win->X;
+        vo_dy           = win->Y;
+        vo_dwidth       = win->Width;
+        vo_dheight      = win->Height;
+        vo_screenwidth  = wsMaxX;
+        vo_screenheight = wsMaxY;
+        xinerama_x      = wsOrgX;
+        xinerama_y      = wsOrgY;
+        update_xinerama_info();
+        wsMaxX      = vo_screenwidth;
+        wsMaxY      = vo_screenheight;
+        wsOrgX      = xinerama_x;
+        wsOrgY      = xinerama_y;
+        win->X      = wsOrgX;
+        win->Y      = wsOrgY;
+        win->Width  = wsMaxX;
+        win->Height = wsMaxY;
+
         win->isFullScreen = True;
+
 #ifdef ENABLE_DPMS
         wsScreenSaverOff(wsDisplay);
 #endif
-
-        vo_x11_ewmh_fullscreen(_NET_WM_STATE_ADD); // adds fullscreen state if wm supports EWMH
     }
 
     if (!(vo_fs_type & vo_wm_FULLSCREEN)) { // shouldn't be needed with EWMH fs
@@ -1123,7 +1125,6 @@ void wsResizeWindow(wsTWindow *win, int sx, int sy)
 
     XSetWMNormalHints(wsDisplay, win->WindowID, &win->SizeHint);
     XResizeWindow(wsDisplay, win->WindowID, sx, sy);
-    XMapRaised(wsDisplay, win->WindowID);
 
     if (win->ReSize)
         win->ReSize(win->X, win->Y, win->Width, win->Height);
@@ -1326,6 +1327,8 @@ void wsVisibleWindow(wsTWindow *win, int show)
     switch (show) {
     case wsShowWindow:
         XMapRaised(wsDisplay, win->WindowID);
+        if (vo_fs_type & vo_wm_FULLSCREEN)
+            win->isFullScreen = False;
         break;
 
     case wsHideWindow:
@@ -1536,7 +1539,7 @@ void wsSetIcon(Display *dsp, Window win, guiIcon_t *icon)
 {
     XWMHints *wm;
     Atom iconatom;
-    CARD32 data[2];
+    long data[2];
 
     if (icon->normal) {
         wm = XGetWMHints(dsp, win);

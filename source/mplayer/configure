@@ -1465,8 +1465,7 @@ if test -z "$_target" ; then
   case "$(uname -m 2>&1)" in
       x86_64|amd64|i[3-9]86*|x86|x86pc|k5|k6|k6_2|k6_3|k6-2|k6-3|pentium*|athlon*|i586_i686|i586-i686) host_arch=i386 ;;
       ia64) host_arch=ia64 ;;
-      macppc|ppc|Power*) host_arch=ppc ;;
-      ppc64) host_arch=ppc64 ;;
+      macppc|ppc|ppc64|Power*) host_arch=ppc ;;
       alpha) host_arch=alpha ;;
       sparc) host_arch=sparc ;;
       sparc64) host_arch=sparc64 ;;
@@ -1612,7 +1611,7 @@ if test "$(basename $_cc)" = "icc" || test "$(basename $_cc)" = "ecc"; then
       cc_version="v. ?.??, bad"
       cc_fail=yes
       ;;
-    10.1|11.0|11.1)
+    10.1|11.1|12.0)
       cc_version="$cc_version, ok"
       ;;
     *)
@@ -1667,14 +1666,19 @@ echocheck "working compiler"
 cflag_check "" || die "Compiler is not functioning correctly. Check your installation and custom CFLAGS $CFLAGS ."
 echo "yes"
 
-if test -z "$_target" && x86 ; then
+if test -z "$_target" ; then
   cat > $TMPC << EOF
 int main(void) {
     int test[(int)sizeof(char *)-7];
     return 0;
 }
 EOF
+if x86 ; then
   cc_check && host_arch=x86_64 || host_arch=i386
+fi
+if ppc ; then
+  cc_check && host_arch=ppc64 || host_arch=ppc
+fi
 fi
 
 echo "Detected operating system: $system_name"
@@ -2234,7 +2238,7 @@ case "$host_arch" in
     def_local_aligned_16='#define HAVE_LOCAL_ALIGNED_16 1'
     iproc='ppc'
 
-    if test "$host_arch" = "ppc64" -o "$host_arch" = "powerpc64" ; then
+    if test "$host_arch" = "ppc64" ; then
       subarch='ppc64'
       def_fast_64bit='#define HAVE_FAST_64BIT 1'
     fi
@@ -6037,8 +6041,6 @@ echores "$_ass"
 
 
 echocheck "fribidi with charsets"
-inc_tmp=""
-ld_tmp=""
 if test "$_fribidi" = auto ; then
     cat > $TMPC << EOF
 #include <stdlib.h>
@@ -6052,20 +6054,18 @@ int main(void) {
 }
 EOF
     _fribidi=no
-    inc_tmp=""
-    ld_tmp="-lfribidi"
-    cc_check $inc_tmp $ld_tmp && _fribidi=yes
+    cc_check -lfribidi && _fribidi=yes && extra_ldflags="$extra_ldflags -lfribidi"
     if $_pkg_config --exists fribidi > /dev/null 2>&1 &&
        test "$_fribidi" = no ; then
         inc_tmp="$($_pkg_config --cflags fribidi)"
         ld_tmp="$($_pkg_config --libs fribidi)"
-        cc_check $inc_tmp $ld_tmp && _fribidi=yes
+        cc_check $inc_tmp $ld_tmp && _fribidi=yes &&
+            extra_cflags="$extra_cflags $inc_tmp" &&
+            extra_ldflags="$extra_ldflags $ld_tmp"
     fi
 fi
 if test "$_fribidi" = yes ; then
     def_fribidi='#define CONFIG_FRIBIDI 1'
-    extra_cflags="$extra_cflags $inc_tmp"
-    extra_ldflags="$extra_ldflags $ld_tmp"
 else
     def_fribidi='#undef CONFIG_FRIBIDI'
 fi
@@ -6761,10 +6761,10 @@ if test "$_librtmp" = auto  && test "$networking" = yes ; then
     _librtmp=yes && extra_ldflags="$extra_ldflags -lrtmp"
   if test "$_librtmp" != yes && $_pkg_config --exists librtmp ; then
     inc_tmp=$($_pkg_config --cflags librtmp)
-	ld_tmp=$($_pkg_config --libs librtmp)
-	cc_check $inc_tmp $ld_tmp && _librtmp=yes &&
-	  extra_ldflags="$extra_ldflags $ld_tmp" &&
-	  extra_cflags="$extra_cflags $inc_tmp"
+    ld_tmp=$($_pkg_config --libs librtmp)
+    cc_check $inc_tmp $ld_tmp && _librtmp=yes &&
+      extra_ldflags="$extra_ldflags $ld_tmp" &&
+      extra_cflags="$extra_cflags $inc_tmp"
   fi
 fi
 if test "$_librtmp" = yes && test "$networking" = yes; then

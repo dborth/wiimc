@@ -68,7 +68,7 @@ specified for the inputs.
 @chapter Stream selection
 @c man begin STREAM SELECTION
 
-By default av tries to pick the "best" stream of each type present in input
+By default avconv tries to pick the "best" stream of each type present in input
 files and add them to each output file. For video, this means the highest
 resolution, for audio the highest channel count. For subtitle it's simply the
 first subtitle stream.
@@ -134,13 +134,16 @@ to the duration specified in seconds.
 Set the file size limit.
 
 @item -ss @var{position}
-Seek to given time position in seconds.
-@code{hh:mm:ss[.xxx]} syntax is also supported.
+When used as an input option (before @code{-i}), seeks in this input file to
+@var{position}. When used as an output option (before an output filename),
+decodes but discards input until the timestamps reach @var{position}. This is
+slower, but more accurate.
+
+@var{position} may be either in seconds or in @code{hh:mm:ss[.xxx]} form.
 
 @item -itsoffset @var{offset}
 Set the input time offset in seconds.
 @code{[-]hh:mm:ss[.xxx]} syntax is also supported.
-This option affects all the input files that follow it.
 The offset is added to the timestamps of the input files.
 Specifying a positive offset means that the corresponding
 streams are delayed by 'offset' seconds.
@@ -271,20 +274,6 @@ form @var{num}:@var{den}, where @var{num} and @var{den} are the
 numerator and denominator of the aspect ratio. For example "4:3",
 "16:9", "1.3333", and "1.7777" are valid argument values.
 
-@item -croptop @var{size}
-@item -cropbottom @var{size}
-@item -cropleft @var{size}
-@item -cropright @var{size}
-All the crop options have been removed. Use -vf
-crop=width:height:x:y instead.
-
-@item -padtop @var{size}
-@item -padbottom @var{size}
-@item -padleft @var{size}
-@item -padright @var{size}
-@item -padcolor @var{hex_color}
-All the pad options have been removed. Use -vf
-pad=width:height:x:y:color instead.
 @item -vn
 Disable video recording.
 @item -bt @var{tolerance}
@@ -683,7 +672,7 @@ It disables matching streams from already created mappings.
 
 For example, to map ALL streams from the first input file to output
 @example
-av -i INPUT -map 0 output
+avconv -i INPUT -map 0 output
 @end example
 
 For example, if you have two audio streams in the first input file,

@@ -242,7 +242,7 @@ static void vc1_loop_filter_iblk(VC1Context *v, int pq)
     }
     v->vc1dsp.vc1_v_loop_filter16(s->dest[0] + 8*s->linesize, s->linesize, pq);
 
-    if (s->mb_y == s->mb_height-1) {
+    if (s->mb_y == s->end_mb_y-1) {
         if (s->mb_x) {
             v->vc1dsp.vc1_h_loop_filter16(s->dest[0], s->linesize, pq);
             v->vc1dsp.vc1_h_loop_filter8(s->dest[1], s->uvlinesize, pq);
@@ -294,7 +294,7 @@ static void vc1_loop_filter_iblk_delayed(VC1Context *v, int pq)
             v->vc1dsp.vc1_v_loop_filter16(s->dest[0] - 8 * s->linesize, s->linesize, pq);
         }
 
-        if (s->mb_y == s->mb_height) {
+        if (s->mb_y == s->end_mb_y) {
             if (s->mb_x) {
                 if (s->mb_x >= 2)
                     v->vc1dsp.vc1_h_loop_filter16(s->dest[0] - 16 * s->linesize - 16, s->linesize, pq);
@@ -2329,7 +2329,7 @@ static av_always_inline void vc1_apply_p_v_loop_filter(VC1Context *v, int block_
     } else {
         dst      = s->dest[0] + (block_num & 1) * 8 + ((block_num & 2) * 4 - 8) * linesize;
     }
-    if (s->mb_y != s->mb_height || block_num < 2) {
+    if (s->mb_y != s->end_mb_y || block_num < 2) {
         int16_t (*mv)[2];
         int mv_stride;
 
@@ -3019,7 +3019,7 @@ static void vc1_decode_i_blocks_adv(VC1Context *v)
         s->mb_x = 0;
         ff_init_block_index(s);
         memset(&s->coded_block[s->block_index[0]-s->b8_stride], 0,
-               s->b8_stride * sizeof(*s->coded_block));
+               (1 + s->b8_stride) * sizeof(*s->coded_block));
     }
     for(; s->mb_y < s->end_mb_y; s->mb_y++) {
         s->mb_x = 0;
@@ -3095,7 +3095,7 @@ static void vc1_decode_i_blocks_adv(VC1Context *v)
         if(v->s.loop_filter) vc1_loop_filter_iblk_delayed(v, v->pq);
     }
     if (v->s.loop_filter)
-        ff_draw_horiz_band(s, (s->mb_height-1)*16, 16);
+        ff_draw_horiz_band(s, (s->end_mb_y-1)*16, 16);
     ff_er_add_slice(s, 0, s->start_mb_y, s->mb_width - 1, s->end_mb_y - 1, (AC_END|DC_END|MV_END));
 }
 
@@ -3218,7 +3218,7 @@ static void vc1_decode_b_blocks(VC1Context *v)
         s->first_slice_line = 0;
     }
     if (v->s.loop_filter)
-        ff_draw_horiz_band(s, (s->mb_height-1)*16, 16);
+        ff_draw_horiz_band(s, (s->end_mb_y-1)*16, 16);
     ff_er_add_slice(s, 0, s->start_mb_y, s->mb_width - 1, s->end_mb_y - 1, (AC_END|DC_END|MV_END));
 }
 
@@ -3226,9 +3226,9 @@ static void vc1_decode_skip_blocks(VC1Context *v)
 {
     MpegEncContext *s = &v->s;
 
-    ff_er_add_slice(s, 0, 0, s->mb_width - 1, s->mb_height - 1, (AC_END|DC_END|MV_END));
+    ff_er_add_slice(s, 0, s->start_mb_y, s->mb_width - 1, s->end_mb_y - 1, (AC_END|DC_END|MV_END));
     s->first_slice_line = 1;
-    for(s->mb_y = 0; s->mb_y < s->mb_height; s->mb_y++) {
+    for(s->mb_y = s->start_mb_y; s->mb_y < s->end_mb_y; s->mb_y++) {
         s->mb_x = 0;
         ff_init_block_index(s);
         ff_update_block_index(s);
@@ -3278,114 +3278,329 @@ static void vc1_decode_blocks(VC1Context *v)
     }
 }
 
-static inline float get_float_val(GetBitContext* gb)
+#if CONFIG_WMV3IMAGE_DECODER || CONFIG_VC1IMAGE_DECODER
+
+typedef struct {
+    /**
+     * Transform coefficients for both sprites in 16.16 fixed point format,
+     * in the order they appear in the bitstream:
+     *  x scale
+     *  rotation 1 (unused)
+     *  x offset
+     *  rotation 2 (unused)
+     *  y scale
+     *  y offset
+     *  alpha
+     */
+    int coefs[2][7];
+
+    int effect_type, effect_flag;
+    int effect_pcount1, effect_pcount2;   ///< amount of effect parameters stored in effect_params
+    int effect_params1[15], effect_params2[10]; ///< effect parameters in 16.16 fixed point format
+} SpriteData;
+
+static inline int get_fp_val(GetBitContext* gb)
 {
-    return (float)get_bits_long(gb, 30) / (1<<15) - (1<<14);
+    return (get_bits_long(gb, 30) - (1<<29)) << 1;
 }
 
-static void vc1_sprite_parse_transform(VC1Context *v, GetBitContext* gb, float c[7])
+static void vc1_sprite_parse_transform(GetBitContext* gb, int c[7])
 {
-    c[1] = c[3] = 0.0f;
+    c[1] = c[3] = 0;
 
     switch (get_bits(gb, 2)) {
     case 0:
-        c[0] = 1.0f;
-        c[2] = get_float_val(gb);
-        c[4] = 1.0f;
+        c[0] = 1<<16;
+        c[2] = get_fp_val(gb);
+        c[4] = 1<<16;
         break;
     case 1:
-        c[0] = c[4] = get_float_val(gb);
-        c[2] = get_float_val(gb);
+        c[0] = c[4] = get_fp_val(gb);
+        c[2] = get_fp_val(gb);
         break;
     case 2:
-        c[0] = get_float_val(gb);
-        c[2] = get_float_val(gb);
-        c[4] = get_float_val(gb);
+        c[0] = get_fp_val(gb);
+        c[2] = get_fp_val(gb);
+        c[4] = get_fp_val(gb);
         break;
     case 3:
-        av_log_ask_for_sample(v->s.avctx, NULL);
-        c[0] = get_float_val(gb);
-        c[1] = get_float_val(gb);
-        c[2] = get_float_val(gb);
-        c[3] = get_float_val(gb);
-        c[4] = get_float_val(gb);
+        c[0] = get_fp_val(gb);
+        c[1] = get_fp_val(gb);
+        c[2] = get_fp_val(gb);
+        c[3] = get_fp_val(gb);
+        c[4] = get_fp_val(gb);
         break;
     }
-    c[5] = get_float_val(gb);
+    c[5] = get_fp_val(gb);
     if (get_bits1(gb))
-        c[6] = get_float_val(gb);
+        c[6] = get_fp_val(gb);
     else
-        c[6] = 1.0f;
+        c[6] = 1<<16;
 }
 
-static void vc1_parse_sprites(VC1Context *v, GetBitContext* gb)
+static void vc1_parse_sprites(VC1Context *v, GetBitContext* gb, SpriteData* sd)
 {
-    int effect_type, effect_flag, effect_pcount1, effect_pcount2, i;
-    float effect_params1[14], effect_params2[10];
+    AVCodecContext *avctx = v->s.avctx;
+    int sprite, i;
 
-    float coefs[2][7];
-    vc1_sprite_parse_transform(v, gb, coefs[0]);
-    av_log(v->s.avctx, AV_LOG_DEBUG, "S1:");
-    for (i = 0; i < 7; i++)
-        av_log(v->s.avctx, AV_LOG_DEBUG, " %.3f", coefs[0][i]);
-    av_log(v->s.avctx, AV_LOG_DEBUG, "\n");
-
-    if (v->two_sprites) {
-        vc1_sprite_parse_transform(v, gb, coefs[1]);
-        av_log(v->s.avctx, AV_LOG_DEBUG, "S2:");
+    for (sprite = 0; sprite <= v->two_sprites; sprite++) {
+        vc1_sprite_parse_transform(gb, sd->coefs[sprite]);
+        if (sd->coefs[sprite][1] || sd->coefs[sprite][3])
+            av_log_ask_for_sample(avctx, "Rotation coefficients are not zero");
+        av_log(avctx, AV_LOG_DEBUG, sprite ? "S2:" : "S1:");
         for (i = 0; i < 7; i++)
-            av_log(v->s.avctx, AV_LOG_DEBUG, " %.3f", coefs[1][i]);
-        av_log(v->s.avctx, AV_LOG_DEBUG, "\n");
+            av_log(avctx, AV_LOG_DEBUG, " %d.%.3d",
+                   sd->coefs[sprite][i] / (1<<16),
+                   (abs(sd->coefs[sprite][i]) & 0xFFFF) * 1000 / (1<<16));
+        av_log(avctx, AV_LOG_DEBUG, "\n");
     }
+
     skip_bits(gb, 2);
-    if (effect_type = get_bits_long(gb, 30)){
-        switch (effect_pcount1 = get_bits(gb, 4)) {
-        case 2:
-            effect_params1[0] = get_float_val(gb);
-            effect_params1[1] = get_float_val(gb);
-            break;
+    if (sd->effect_type = get_bits_long(gb, 30)) {
+        switch (sd->effect_pcount1 = get_bits(gb, 4)) {
         case 7:
-            vc1_sprite_parse_transform(v, gb, effect_params1);
+            vc1_sprite_parse_transform(gb, sd->effect_params1);
             break;
         case 14:
-            vc1_sprite_parse_transform(v, gb, effect_params1);
-            vc1_sprite_parse_transform(v, gb, &effect_params1[7]);
+            vc1_sprite_parse_transform(gb, sd->effect_params1);
+            vc1_sprite_parse_transform(gb, sd->effect_params1 + 7);
             break;
         default:
-            av_log_ask_for_sample(v->s.avctx, NULL);
-            return;
+            for (i = 0; i < sd->effect_pcount1; i++)
+                sd->effect_params1[i] = get_fp_val(gb);
         }
-        if (effect_type != 13 || effect_params1[0] != coefs[0][6]) {
+        if (sd->effect_type != 13 || sd->effect_params1[0] != sd->coefs[0][6]) {
             // effect 13 is simple alpha blending and matches the opacity above
-            av_log(v->s.avctx, AV_LOG_DEBUG, "Effect: %d; params: ", effect_type);
-            for (i = 0; i < effect_pcount1; i++)
-                av_log(v->s.avctx, AV_LOG_DEBUG, " %.3f", effect_params1[i]);
-            av_log(v->s.avctx, AV_LOG_DEBUG, "\n");
+            av_log(avctx, AV_LOG_DEBUG, "Effect: %d; params: ", sd->effect_type);
+            for (i = 0; i < sd->effect_pcount1; i++)
+                av_log(avctx, AV_LOG_DEBUG, " %d.%.2d",
+                       sd->effect_params1[i] / (1<<16),
+                       (abs(sd->effect_params1[i]) & 0xFFFF) * 1000 / (1<<16));
+            av_log(avctx, AV_LOG_DEBUG, "\n");
         }
 
-        effect_pcount2 = get_bits(gb, 16);
-        if (effect_pcount2 > 10) {
-            av_log(v->s.avctx, AV_LOG_ERROR, "Too many effect parameters\n");
+        sd->effect_pcount2 = get_bits(gb, 16);
+        if (sd->effect_pcount2 > 10) {
+            av_log(avctx, AV_LOG_ERROR, "Too many effect parameters\n");
             return;
-        } else if (effect_pcount2) {
-            i = 0;
-            av_log(v->s.avctx, AV_LOG_DEBUG, "Effect params 2: ");
-            while (i < effect_pcount2){
-                effect_params2[i] = get_float_val(gb);
-                av_log(v->s.avctx, AV_LOG_DEBUG, " %.3f", effect_params2[i]);
-                i++;
+        } else if (sd->effect_pcount2) {
+            i = -1;
+            av_log(avctx, AV_LOG_DEBUG, "Effect params 2: ");
+            while (++i < sd->effect_pcount2){
+                sd->effect_params2[i] = get_fp_val(gb);
+                av_log(avctx, AV_LOG_DEBUG, " %d.%.2d",
+                       sd->effect_params2[i] / (1<<16),
+                       (abs(sd->effect_params2[i]) & 0xFFFF) * 1000 / (1<<16));
             }
-            av_log(v->s.avctx, AV_LOG_DEBUG, "\n");
+            av_log(avctx, AV_LOG_DEBUG, "\n");
         }
     }
-    if (effect_flag = get_bits1(gb))
-        av_log(v->s.avctx, AV_LOG_DEBUG, "Effect flag set\n");
+    if (sd->effect_flag = get_bits1(gb))
+        av_log(avctx, AV_LOG_DEBUG, "Effect flag set\n");
 
     if (get_bits_count(gb) >= gb->size_in_bits +
-       (v->s.avctx->codec_id == CODEC_ID_WMV3 ? 64 : 0))
-        av_log(v->s.avctx, AV_LOG_ERROR, "Buffer overrun\n");
+       (avctx->codec_id == CODEC_ID_WMV3IMAGE ? 64 : 0))
+        av_log(avctx, AV_LOG_ERROR, "Buffer overrun\n");
     if (get_bits_count(gb) < gb->size_in_bits - 8)
-        av_log(v->s.avctx, AV_LOG_WARNING, "Buffer not fully read\n");
+        av_log(avctx, AV_LOG_WARNING, "Buffer not fully read\n");
+}
+
+static void vc1_draw_sprites(VC1Context *v, SpriteData* sd)
+{
+    int i, plane, row, sprite;
+    int sr_cache[2][2] = { { -1, -1 }, { -1, -1 } };
+    uint8_t* src_h[2][2];
+    int xoff[2], xadv[2], yoff[2], yadv[2], alpha;
+    int ysub[2];
+    MpegEncContext *s = &v->s;
+
+    for (i = 0; i < 2; i++) {
+        xoff[i] = av_clip(sd->coefs[i][2], 0, v->sprite_width-1 << 16);
+        xadv[i] = sd->coefs[i][0];
+        if (xadv[i] != 1<<16 || (v->sprite_width<<16) - (v->output_width<<16) - xoff[i])
+            xadv[i] = av_clip(xadv[i], 0, ((v->sprite_width<<16) - xoff[i] - 1) / v->output_width);
+
+        yoff[i] = av_clip(sd->coefs[i][5], 0, v->sprite_height-1 << 16);
+        yadv[i] = av_clip(sd->coefs[i][4], 0, ((v->sprite_height<<16) - yoff[i]) / v->output_height);
+    }
+    alpha = av_clip(sd->coefs[1][6], 0, (1<<16) - 1);
+
+    for (plane = 0; plane < (s->flags&CODEC_FLAG_GRAY ? 1 : 3); plane++) {
+        int width = v->output_width>>!!plane;
+
+        for (row = 0; row < v->output_height>>!!plane; row++) {
+            uint8_t *dst = v->sprite_output_frame.data[plane] +
+                           v->sprite_output_frame.linesize[plane] * row;
+
+            for (sprite = 0; sprite <= v->two_sprites; sprite++) {
+                uint8_t *iplane = s->current_picture.f.data[plane];
+                int      iline  = s->current_picture.f.linesize[plane];
+                int      ycoord = yoff[sprite] + yadv[sprite]*row;
+                int      yline  = ycoord>>16;
+                ysub[sprite] = ycoord&0xFFFF;
+                if (sprite) {
+                    iplane = s->last_picture.f.data[plane];
+                    iline  = s->last_picture.f.linesize[plane];
+                }
+                if (!(xoff[sprite]&0xFFFF) && xadv[sprite] == 1<<16) {
+                        src_h[sprite][0] = iplane+(xoff[sprite]>>16)+ yline   *iline;
+                    if (ysub[sprite])
+                        src_h[sprite][1] = iplane+(xoff[sprite]>>16)+(yline+1)*iline;
+                } else {
+                    if (sr_cache[sprite][0] != yline) {
+                        if (sr_cache[sprite][1] == yline) {
+                            FFSWAP(uint8_t*, v->sr_rows[sprite][0], v->sr_rows[sprite][1]);
+                            FFSWAP(int,        sr_cache[sprite][0],   sr_cache[sprite][1]);
+                        } else {
+                            v->vc1dsp.sprite_h(v->sr_rows[sprite][0], iplane+yline*iline, xoff[sprite], xadv[sprite], width);
+                            sr_cache[sprite][0] = yline;
+                        }
+                    }
+                    if (ysub[sprite] && sr_cache[sprite][1] != yline + 1) {
+                        v->vc1dsp.sprite_h(v->sr_rows[sprite][1], iplane+(yline+1)*iline, xoff[sprite], xadv[sprite], width);
+                        sr_cache[sprite][1] = yline + 1;
+                    }
+                    src_h[sprite][0] = v->sr_rows[sprite][0];
+                    src_h[sprite][1] = v->sr_rows[sprite][1];
+                }
+            }
+
+            if (!v->two_sprites) {
+                if (ysub[0]) {
+                    v->vc1dsp.sprite_v_single(dst, src_h[0][0], src_h[0][1], ysub[0], width);
+                } else {
+                    memcpy(dst, src_h[0][0], width);
+                }
+            } else {
+                if (ysub[0] && ysub[1]) {
+                    v->vc1dsp.sprite_v_double_twoscale(dst, src_h[0][0], src_h[0][1], ysub[0],
+                                                       src_h[1][0], src_h[1][1], ysub[1], alpha, width);
+                } else if (ysub[0]) {
+                    v->vc1dsp.sprite_v_double_onescale(dst, src_h[0][0], src_h[0][1], ysub[0],
+                                                       src_h[1][0], alpha, width);
+                } else if (ysub[1]) {
+                    v->vc1dsp.sprite_v_double_onescale(dst, src_h[1][0], src_h[1][1], ysub[1],
+                                                       src_h[0][0], (1<<16)-1-alpha, width);
+                } else {
+                    v->vc1dsp.sprite_v_double_noscale(dst, src_h[0][0], src_h[1][0], alpha, width);
+                }
+            }
+        }
+
+        if (!plane) {
+            for (i = 0; i < 2; i++) {
+                xoff[i] >>= 1;
+                yoff[i] >>= 1;
+            }
+        }
+
+    }
+}
+
+
+static int vc1_decode_sprites(VC1Context *v, GetBitContext* gb)
+{
+    MpegEncContext *s = &v->s;
+    AVCodecContext *avctx = s->avctx;
+    SpriteData sd;
+
+    vc1_parse_sprites(v, gb, &sd);
+
+    if (!s->current_picture.f.data[0]) {
+        av_log(avctx, AV_LOG_ERROR, "Got no sprites\n");
+        return -1;
+    }
+
+    if (v->two_sprites && (!s->last_picture_ptr || !s->last_picture.f.data[0])) {
+        av_log(avctx, AV_LOG_WARNING, "Need two sprites, only got one\n");
+        v->two_sprites = 0;
+    }
+
+    if (v->sprite_output_frame.data[0])
+        avctx->release_buffer(avctx, &v->sprite_output_frame);
+
+    v->sprite_output_frame.buffer_hints = FF_BUFFER_HINTS_VALID;
+    v->sprite_output_frame.reference = 0;
+    if (avctx->get_buffer(avctx, &v->sprite_output_frame) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return -1;
+    }
+
+    vc1_draw_sprites(v, &sd);
+
+    return 0;
+}
+
+static void vc1_sprite_flush(AVCodecContext *avctx)
+{
+    VC1Context *v = avctx->priv_data;
+    MpegEncContext *s = &v->s;
+    AVFrame *f = &s->current_picture.f;
+    int plane, i;
+
+    /* Windows Media Image codecs have a convergence interval of two keyframes.
+       Since we can't enforce it, clear to black the missing sprite. This is
+       wrong but it looks better than doing nothing. */
+
+    if (f->data[0])
+        for (plane = 0; plane < (s->flags&CODEC_FLAG_GRAY ? 1 : 3); plane++)
+            for (i = 0; i < v->sprite_height>>!!plane; i++)
+                memset(f->data[plane]+i*f->linesize[plane],
+                       plane ? 128 : 0, f->linesize[plane]);
+}
+
+#endif
+
+static av_cold int vc1_decode_init_alloc_tables(VC1Context *v)
+{
+    MpegEncContext *s = &v->s;
+    int i;
+
+    /* Allocate mb bitplanes */
+    v->mv_type_mb_plane = av_malloc(s->mb_stride * s->mb_height);
+    v->direct_mb_plane = av_malloc(s->mb_stride * s->mb_height);
+    v->acpred_plane = av_malloc(s->mb_stride * s->mb_height);
+    v->over_flags_plane = av_malloc(s->mb_stride * s->mb_height);
+
+    v->n_allocated_blks = s->mb_width + 2;
+    v->block = av_malloc(sizeof(*v->block) * v->n_allocated_blks);
+    v->cbp_base = av_malloc(sizeof(v->cbp_base[0]) * 2 * s->mb_stride);
+    v->cbp = v->cbp_base + s->mb_stride;
+    v->ttblk_base = av_malloc(sizeof(v->ttblk_base[0]) * 2 * s->mb_stride);
+    v->ttblk = v->ttblk_base + s->mb_stride;
+    v->is_intra_base = av_malloc(sizeof(v->is_intra_base[0]) * 2 * s->mb_stride);
+    v->is_intra = v->is_intra_base + s->mb_stride;
+    v->luma_mv_base = av_malloc(sizeof(v->luma_mv_base[0]) * 2 * s->mb_stride);
+    v->luma_mv = v->luma_mv_base + s->mb_stride;
+
+    /* allocate block type info in that way so it could be used with s->block_index[] */
+    v->mb_type_base = av_malloc(s->b8_stride * (s->mb_height * 2 + 1) + s->mb_stride * (s->mb_height + 1) * 2);
+    v->mb_type[0] = v->mb_type_base + s->b8_stride + 1;
+    v->mb_type[1] = v->mb_type_base + s->b8_stride * (s->mb_height * 2 + 1) + s->mb_stride + 1;
+    v->mb_type[2] = v->mb_type[1] + s->mb_stride * (s->mb_height + 1);
+
+    /* Init coded blocks info */
+    if (v->profile == PROFILE_ADVANCED)
+    {
+//        if (alloc_bitplane(&v->over_flags_plane, s->mb_width, s->mb_height) < 0)
+//            return -1;
+//        if (alloc_bitplane(&v->ac_pred_plane, s->mb_width, s->mb_height) < 0)
+//            return -1;
+    }
+
+    ff_intrax8_common_init(&v->x8,s);
+
+    if (s->avctx->codec_id == CODEC_ID_WMV3IMAGE || s->avctx->codec_id == CODEC_ID_VC1IMAGE) {
+        for (i = 0; i < 4; i++)
+            if (!(v->sr_rows[i>>1][i%2] = av_malloc(v->output_width))) return -1;
+    }
+
+    if (!v->mv_type_mb_plane || !v->direct_mb_plane || !v->acpred_plane || !v->over_flags_plane ||
+        !v->block || !v->cbp_base || !v->ttblk_base || !v->is_intra_base || !v->luma_mv_base ||
+        !v->mb_type_base)
+            return -1;
+
+    return 0;
 }
 
 /** Initialize a VC1/WMV3 decoder
@@ -3397,7 +3612,11 @@ static av_cold int vc1_decode_init(AVCodecContext *avctx)
     VC1Context *v = avctx->priv_data;
     MpegEncContext *s = &v->s;
     GetBitContext gb;
-    int i, cur_width, cur_height;
+    int i;
+
+    /* save the container output size for WMImage */
+    v->output_width  = avctx->width;
+    v->output_height = avctx->height;
 
     if (!avctx->extradata_size || !avctx->extradata) return -1;
     if (!(avctx->flags & CODEC_FLAG_GRAY))
@@ -3413,14 +3632,10 @@ static av_cold int vc1_decode_init(AVCodecContext *avctx)
         avctx->idct_algo=FF_IDCT_WMV2;
     }
 
-    if(ff_msmpeg4_decode_init(avctx) < 0)
-        return -1;
     if (vc1_init_common(v) < 0) return -1;
     ff_vc1dsp_init(&v->vc1dsp);
 
-    cur_width = avctx->coded_width = avctx->width;
-    cur_height = avctx->coded_height = avctx->height;
-    if (avctx->codec_id == CODEC_ID_WMV3)
+    if (avctx->codec_id == CODEC_ID_WMV3 || avctx->codec_id == CODEC_ID_WMV3IMAGE)
     {
         int count = 0;
 
@@ -3490,25 +3705,12 @@ static av_cold int vc1_decode_init(AVCodecContext *avctx)
         }
         v->res_sprite = (avctx->codec_tag == MKTAG('W','V','P','2'));
     }
-    // Sequence header information may not have been parsed
-    // yet when ff_msmpeg4_decode_init was called the fist time
-    // above.  If sequence information changes, we need to call
-    // it again.
-    if (cur_width != avctx->width ||
-        cur_height != avctx->height) {
-        MPV_common_end(s);
-        if(ff_msmpeg4_decode_init(avctx) < 0)
-            return -1;
-        avctx->coded_width = avctx->width;
-        avctx->coded_height = avctx->height;
-    }
 
     avctx->profile = v->profile;
     if (v->profile == PROFILE_ADVANCED)
         avctx->level = v->level;
 
     avctx->has_b_frames= !!(avctx->max_b_frames);
-    s->low_delay = !avctx->has_b_frames;
 
     s->mb_width = (avctx->coded_width+15)>>4;
     s->mb_height = (avctx->coded_height+15)>>4;
@@ -3529,39 +3731,49 @@ static av_cold int vc1_decode_init(AVCodecContext *avctx)
         v->top_blk_sh  = 0;
     }
 
-    /* Allocate mb bitplanes */
-    v->mv_type_mb_plane = av_malloc(s->mb_stride * s->mb_height);
-    v->direct_mb_plane = av_malloc(s->mb_stride * s->mb_height);
-    v->acpred_plane = av_malloc(s->mb_stride * s->mb_height);
-    v->over_flags_plane = av_malloc(s->mb_stride * s->mb_height);
+    if (avctx->codec_id == CODEC_ID_WMV3IMAGE || avctx->codec_id == CODEC_ID_VC1IMAGE) {
+        v->sprite_width  = avctx->coded_width;
+        v->sprite_height = avctx->coded_height;
 
-    v->n_allocated_blks = s->mb_width + 2;
-    v->block = av_malloc(sizeof(*v->block) * v->n_allocated_blks);
-    v->cbp_base = av_malloc(sizeof(v->cbp_base[0]) * 2 * s->mb_stride);
-    v->cbp = v->cbp_base + s->mb_stride;
-    v->ttblk_base = av_malloc(sizeof(v->ttblk_base[0]) * 2 * s->mb_stride);
-    v->ttblk = v->ttblk_base + s->mb_stride;
-    v->is_intra_base = av_malloc(sizeof(v->is_intra_base[0]) * 2 * s->mb_stride);
-    v->is_intra = v->is_intra_base + s->mb_stride;
-    v->luma_mv_base = av_malloc(sizeof(v->luma_mv_base[0]) * 2 * s->mb_stride);
-    v->luma_mv = v->luma_mv_base + s->mb_stride;
+        avctx->coded_width  = avctx->width  = v->output_width;
+        avctx->coded_height = avctx->height = v->output_height;
 
-    /* allocate block type info in that way so it could be used with s->block_index[] */
-    v->mb_type_base = av_malloc(s->b8_stride * (s->mb_height * 2 + 1) + s->mb_stride * (s->mb_height + 1) * 2);
-    v->mb_type[0] = v->mb_type_base + s->b8_stride + 1;
-    v->mb_type[1] = v->mb_type_base + s->b8_stride * (s->mb_height * 2 + 1) + s->mb_stride + 1;
-    v->mb_type[2] = v->mb_type[1] + s->mb_stride * (s->mb_height + 1);
-
-    /* Init coded blocks info */
-    if (v->profile == PROFILE_ADVANCED)
-    {
-//        if (alloc_bitplane(&v->over_flags_plane, s->mb_width, s->mb_height) < 0)
-//            return -1;
-//        if (alloc_bitplane(&v->ac_pred_plane, s->mb_width, s->mb_height) < 0)
-//            return -1;
+        // prevent 16.16 overflows
+        if (v->sprite_width  > 1<<14 ||
+            v->sprite_height > 1<<14 ||
+            v->output_width  > 1<<14 ||
+            v->output_height > 1<<14) return -1;
     }
+    return 0;
+}
 
-    ff_intrax8_common_init(&v->x8,s);
+/** Close a VC1/WMV3 decoder
+ * @warning Initial try at using MpegEncContext stuff
+ */
+static av_cold int vc1_decode_end(AVCodecContext *avctx)
+{
+    VC1Context *v = avctx->priv_data;
+    int i;
+
+    if ((avctx->codec_id == CODEC_ID_WMV3IMAGE || avctx->codec_id == CODEC_ID_VC1IMAGE)
+        && v->sprite_output_frame.data[0])
+        avctx->release_buffer(avctx, &v->sprite_output_frame);
+    for (i = 0; i < 4; i++)
+        av_freep(&v->sr_rows[i>>1][i%2]);
+    av_freep(&v->hrd_rate);
+    av_freep(&v->hrd_buffer);
+    MPV_common_end(&v->s);
+    av_freep(&v->mv_type_mb_plane);
+    av_freep(&v->direct_mb_plane);
+    av_freep(&v->acpred_plane);
+    av_freep(&v->over_flags_plane);
+    av_freep(&v->mb_type_base);
+    av_freep(&v->block);
+    av_freep(&v->cbp_base);
+    av_freep(&v->ttblk_base);
+    av_freep(&v->is_intra_base); // FIXME use v->mb_type[]
+    av_freep(&v->luma_mv_base);
+    ff_intrax8_common_end(&v->x8);
     return 0;
 }
 
@@ -3599,13 +3811,6 @@ static int vc1_decode_frame(AVCodecContext *avctx,
         return 0;
     }
 
-    /* We need to set current_picture_ptr before reading the header,
-     * otherwise we cannot store anything in there. */
-    if (s->current_picture_ptr == NULL || s->current_picture_ptr->f.data[0]) {
-        int i= ff_find_unused_picture(s, 0);
-        s->current_picture_ptr= &s->picture[i];
-    }
-
     if (s->avctx->codec->capabilities&CODEC_CAP_HWACCEL_VDPAU){
         if (v->profile < PROFILE_ADVANCED)
             avctx->pix_fmt = PIX_FMT_VDPAU_WMV3;
@@ -3614,7 +3819,7 @@ static int vc1_decode_frame(AVCodecContext *avctx,
     }
 
     //for advanced profile we may need to parse and unescape data
-    if (avctx->codec_id == CODEC_ID_VC1) {
+    if (avctx->codec_id == CODEC_ID_VC1 || avctx->codec_id == CODEC_ID_VC1IMAGE) {
         int buf_size2 = 0;
         buf2 = av_mallocz(buf_size + FF_INPUT_BUFFER_PADDING_SIZE);
 
@@ -3679,8 +3884,44 @@ static int vc1_decode_frame(AVCodecContext *avctx,
     if (v->res_sprite) {
         v->new_sprite = !get_bits1(&s->gb);
         v->two_sprites = get_bits1(&s->gb);
-        if (!v->new_sprite)
-            goto end;
+        /* res_sprite means a Windows Media Image stream, CODEC_ID_*IMAGE means
+           we're using the sprite compositor. These are intentionally kept separate
+           so you can get the raw sprites by using the wmv3 decoder for WMVP or
+           the vc1 one for WVP2 */
+        if (avctx->codec_id == CODEC_ID_WMV3IMAGE || avctx->codec_id == CODEC_ID_VC1IMAGE) {
+            if (v->new_sprite) {
+                // switch AVCodecContext parameters to those of the sprites
+                avctx->width  = avctx->coded_width  = v->sprite_width;
+                avctx->height = avctx->coded_height = v->sprite_height;
+            } else {
+                goto image;
+            }
+        }
+    }
+
+    if (s->context_initialized &&
+        (s->width  != avctx->coded_width ||
+         s->height != avctx->coded_height)) {
+        vc1_decode_end(avctx);
+    }
+
+    if (!s->context_initialized) {
+        if (ff_msmpeg4_decode_init(avctx) < 0 || vc1_decode_init_alloc_tables(v) < 0)
+            return -1;
+
+        s->low_delay = !avctx->has_b_frames || v->res_sprite;
+
+        if (v->profile == PROFILE_ADVANCED) {
+            s->h_edge_pos = avctx->coded_width;
+            s->v_edge_pos = avctx->coded_height;
+        }
+    }
+
+    /* We need to set current_picture_ptr before reading the header,
+     * otherwise we cannot store anything in there. */
+    if (s->current_picture_ptr == NULL || s->current_picture_ptr->f.data[0]) {
+        int i= ff_find_unused_picture(s, 0);
+        s->current_picture_ptr= &s->picture[i];
     }
 
     // do parse frame header
@@ -3694,8 +3935,22 @@ static int vc1_decode_frame(AVCodecContext *avctx,
         }
     }
 
-    if (v->res_sprite && s->pict_type!=AV_PICTURE_TYPE_I) {
-        av_log(v->s.avctx, AV_LOG_WARNING, "Sprite decoder: expected I-frame\n");
+    if ((avctx->codec_id == CODEC_ID_WMV3IMAGE || avctx->codec_id == CODEC_ID_VC1IMAGE)
+        && s->pict_type!=AV_PICTURE_TYPE_I) {
+        av_log(v->s.avctx, AV_LOG_ERROR, "Sprite decoder: expected I-frame\n");
+        goto err;
+    }
+
+    // process pulldown flags
+    s->current_picture_ptr->f.repeat_pict = 0;
+    // Pulldown flags are only valid when 'broadcast' has been set.
+    // So ticks_per_frame will be 2
+    if (v->rff){
+        // repeat field
+        s->current_picture_ptr->f.repeat_pict = 1;
+    }else if (v->rptfrm){
+        // repeat frames
+        s->current_picture_ptr->f.repeat_pict = v->rptfrm * 2;
     }
 
     // for skipping the frame
@@ -3758,6 +4013,19 @@ static int vc1_decode_frame(AVCodecContext *avctx,
 
 assert(s->current_picture.f.pict_type == s->current_picture_ptr->f.pict_type);
 assert(s->current_picture.f.pict_type == s->pict_type);
+
+    if (avctx->codec_id == CODEC_ID_WMV3IMAGE || avctx->codec_id == CODEC_ID_VC1IMAGE) {
+image:
+        avctx->width  = avctx->coded_width  = v->output_width;
+        avctx->height = avctx->coded_height = v->output_height;
+        if (avctx->skip_frame >= AVDISCARD_NONREF) goto end;
+#if CONFIG_WMV3IMAGE_DECODER || CONFIG_VC1IMAGE_DECODER
+        if (vc1_decode_sprites(v, &s->gb)) goto err;
+#endif
+        *pict = v->sprite_output_frame;
+        *data_size = sizeof(AVFrame);
+    } else {
+
     if (s->pict_type == AV_PICTURE_TYPE_B || s->low_delay) {
         *pict= *(AVFrame*)s->current_picture_ptr;
     } else if (s->last_picture_ptr != NULL) {
@@ -3769,9 +4037,9 @@ assert(s->current_picture.f.pict_type == s->pict_type);
         ff_print_debug_info(s, pict);
     }
 
+    }
+
 end:
-    if (v->res_sprite)
-        vc1_parse_sprites(v, &s->gb);
     av_free(buf2);
     for (i = 0; i < n_slices; i++)
         av_free(slices[i].buf);
@@ -3786,30 +4054,6 @@ err:
     return -1;
 }
 
-
-/** Close a VC1/WMV3 decoder
- * @warning Initial try at using MpegEncContext stuff
- */
-static av_cold int vc1_decode_end(AVCodecContext *avctx)
-{
-    VC1Context *v = avctx->priv_data;
-
-    av_freep(&v->hrd_rate);
-    av_freep(&v->hrd_buffer);
-    MPV_common_end(&v->s);
-    av_freep(&v->mv_type_mb_plane);
-    av_freep(&v->direct_mb_plane);
-    av_freep(&v->acpred_plane);
-    av_freep(&v->over_flags_plane);
-    av_freep(&v->mb_type_base);
-    av_freep(&v->block);
-    av_freep(&v->cbp_base);
-    av_freep(&v->ttblk_base);
-    av_freep(&v->is_intra_base); // FIXME use v->mb_type[]
-    av_freep(&v->luma_mv_base);
-    ff_intrax8_common_end(&v->x8);
-    return 0;
-}
 
 static const AVProfile profiles[] = {
     { FF_PROFILE_VC1_SIMPLE,   "Simple"   },
@@ -3878,5 +4122,37 @@ AVCodec ff_vc1_vdpau_decoder = {
     .long_name = NULL_IF_CONFIG_SMALL("SMPTE VC-1 VDPAU"),
     .pix_fmts = (const enum PixelFormat[]){PIX_FMT_VDPAU_VC1, PIX_FMT_NONE},
     .profiles = NULL_IF_CONFIG_SMALL(profiles)
+};
+#endif
+
+#if CONFIG_WMV3IMAGE_DECODER
+AVCodec ff_wmv3image_decoder = {
+    .name           = "wmv3image",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_WMV3IMAGE,
+    .priv_data_size = sizeof(VC1Context),
+    .init           = vc1_decode_init,
+    .close          = vc1_decode_end,
+    .decode         = vc1_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
+    .flush          = vc1_sprite_flush,
+    .long_name      = NULL_IF_CONFIG_SMALL("Windows Media Video 9 Image"),
+    .pix_fmts       = ff_pixfmt_list_420
+};
+#endif
+
+#if CONFIG_VC1IMAGE_DECODER
+AVCodec ff_vc1image_decoder = {
+    .name           = "vc1image",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_VC1IMAGE,
+    .priv_data_size = sizeof(VC1Context),
+    .init           = vc1_decode_init,
+    .close          = vc1_decode_end,
+    .decode         = vc1_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
+    .flush          = vc1_sprite_flush,
+    .long_name      = NULL_IF_CONFIG_SMALL("Windows Media Video 9 Image v2"),
+    .pix_fmts       = ff_pixfmt_list_420
 };
 #endif

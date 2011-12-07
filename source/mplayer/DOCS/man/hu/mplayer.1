@@ -150,7 +150,7 @@ tivo://host/[lista|llist|fsid]
 .\" Leírás
 .\" --------------------------------------------------------------------------
 .
-.SH LEÍRÁS
+.SH LE�?R�?S
 .B mplayer
 egy film lejátszó Linuxra (fut számos más platformon és CPU architektúrán is,
 lásd a dokumentációt).
@@ -203,7 +203,7 @@ A gyors kezdéshez példákat ezen man oldal végén találhatsz.
 .\" interaktív vezérlés
 .\" --------------------------------------------------------------------------
 .
-.SH "INTERAKTÍV VEZÉRLÉS"
+.SH "INTERAKT�?V VEZÉRLÉS"
 Az MPlayernek egy teljesen személyre szabható, parancs-vezérelt irányító rétege
 van, aminek a segítségével vezérelhető billentyűzettel, egérrel, joystickkal,
 vagy távirányítóval (LIRC-cel).
@@ -458,7 +458,7 @@ Hangerő csökkentése/\:növelése.
 .\" Használat
 .\" --------------------------------------------------------------------------
 .
-.SH "HASZNÁLAT"
+.SH "HASZN�?LAT"
 Minden 'flag' opciónak van egy 'noflag' párja, pl.\& a \-fs opcióé a \-nofs.
 .PP
 Ha egy opciónak (csak XXX) jelölése van, csak az XXX-szel együtt használva,
@@ -472,7 +472,7 @@ Formátuma az alábbi:
 .br
 %n%n_hosszusagu_karakterlanc
 .br
-.I PÉLDÁK:
+.I PÉLD�?K:
 .br
 mplayer \-ao pcm:file=%10%C:test.wav test.avi
 .br
@@ -485,7 +485,7 @@ mplayer \-ao pcm:file=%`expr length "$NAME"`%"$NAME" test.avi
 .\" Konfigurációs fájlok
 .\" --------------------------------------------------------------------------
 .
-.SH "KONFIGURÁCIÓS FÁJLOK"
+.SH "KONFIGUR�?CIÓS F�?JLOK"
 Ezen opciók mindegyike beleírható a konfigurációs fájlokba, amit az
 MPlayer/MEncoder minden indításkor beolvas.
 A rendszerszintű konfigurációs fájl az 'mplayer.conf', a konfigurációs
@@ -517,7 +517,7 @@ Ezért az MPlayer először megpróbálja betölteni az mplayer.conf-ot az
 lejátszandó fájlt tartalmazó könyvtárból, majd megpróbál betölteni bármilyen fájl
 specifikus konfigurációt.
 .PP
-.I PÉLDA AZ MPLAYER KONFIGURÁCIÓS FÁJLJÁRA:
+.I PÉLDA AZ MPLAYER KONFIGUR�?CIÓS F�?JLJ�?RA:
 .sp 1
 .nf
 # Matrox vezérlő használata alapértelmezésként.
@@ -531,7 +531,7 @@ mf=type=png:fps=25
 vf=eq2=1.0:\-0.8
 .fi
 .PP
-.I "PÉLDA A MENCODER KONFIGURÁCIÓS FÁJLJÁRA:"
+.I "PÉLDA A MENCODER KONFIGUR�?CIÓS F�?JLJ�?RA:"
 .sp 1
 .nf
 # Az MEncoder kimenetének alapértelmezett fájlneve.
@@ -615,7 +615,7 @@ lavcopts=mbd=2:trell=yes:v4mv=yes
 .\" Opciók
 .\" --------------------------------------------------------------------------
 .
-.SH "ÁLTALÁNOS OPCIÓK"
+.SH "�?LTAL�?NOS OPCIÓK"
 .
 .TP
 .B \-codecpath <könyvtár>
@@ -723,7 +723,7 @@ felhasználói konfigurációs fájl
 Hatására a konzoli kimeneti sorok kevésbé lesznek beszédesek;
 alaphelyzetben megakadályozza, hogy a státuszsor
 (pl.\& A:   0.7 V:   0.6 A-V:  0.068 ...) megjelenjen.
-Általában lassú vagy hibás terminálokon hasznos, amik nem kezelik
+�?ltalában lassú vagy hibás terminálokon hasznos, amik nem kezelik
 megfelelően a kocsi visszát (pl.\& \\r).
 .
 .TP
@@ -768,12 +768,12 @@ Növeli a beszédességet egy szinttel minden parancssorban található
 .
 .
 .
-.SH "LEJÁTSZÓ OPCIÓK (CSAK MPLAYER)"
+.SH "LEJ�?TSZÓ OPCIÓK (CSAK MPLAYER)"
 .
 .TP
 .B \-autoq <minőség> (használd a \-vf [s]pp mellett)
 Dinamikusan változtatja a postprocessing értékét a maradék CPU idő
-függvényében. A megadott szám lesz a maximálisan használandó érték. Általában
+függvényében. A megadott szám lesz a maximálisan használandó érték. �?ltalában
 célravezető nagy számok beírása.
 Ezen opció használatához elengedhetetlen a \-vf [s]pp opció paraméterek nélküli
 használata.
@@ -821,8 +821,8 @@ Csak a cvidix, fbdev, svga, vesa, winvidix, xmga, xvidix, xover, xv
 meghajtók támogatják.
 .
 .TP
-.B \-correct\-pts (KÍSÉRLETI)
-Átváltja az MPlayert egy kísérleti módba, melyben a videó kockák időbélyege
+.B \-correct\-pts (K�?SÉRLETI)
+�?tváltja az MPlayert egy kísérleti módba, melyben a videó kockák időbélyege
 másképp lesz kiszámítva és támogatottak lesznek azok a szűrők, melyek új kockákat
 szúrnak be vagy a meglévőek időbélyegét módosítják.
 A sokkal pontosabb időbélyegek láthatóak például a fejezetváltásokhoz
@@ -957,7 +957,7 @@ A TOOLS/\:midentify.sh wrapper script eltünteti a maradék kimenetet, és
 .TP
 .B \-idle (lásd még \-slave)
 Az MPlayer tétlen állapotban fog várakozni a kilépés helyett, ha nincs lejátszandó fájl.
-Általában szolga módban hasznos, ahol az MPlayer bemeneti parancsokkal vezérelhető.
+�?ltalában szolga módban hasznos, ahol az MPlayer bemeneti parancsokkal vezérelhető.
 .TP
 .B \-input <parancsok>
 Ez az opció használható az input rendszer bizonyos paramétereinek
@@ -1467,7 +1467,7 @@ kapcsolót adsz meg a parancssorban, csak az utolsó fog működni.
 .
 .TP
 .B \-dvbin <opciók> (csak DVB)
-Átadja a következő paramétereket a DVB modulnak, így felülírhatók az
+�?tadja a következő paramétereket a DVB modulnak, így felülírhatók az
 alapértelmezett beállítások:
 .sp 1
 .PD 0
@@ -1503,7 +1503,7 @@ A 100-nál kisebb értékek az 1350KB/s többszörösét jelentik, pl.\& \-dvd\-
 10800KB/s-et választ ki.
 .br
 .I MEGJEGYZÉS:
-Írási joggal kell rendelkezned a DVD eszközre a sebesség megváltoztatásához.
+�?rási joggal kell rendelkezned a DVD eszközre a sebesség megváltoztatásához.
 .
 .TP
 .B \-dvdangle <szög ID> (csak DVD)
@@ -2776,7 +2776,7 @@ A -1-es érték (alapértelmezett) nem változtat a hangerőn.
 .
 .
 .
-.SH "AUDIÓ KIMENETI VEZÉRLŐK (CSAK MPLAYER)"
+.SH "AUDIÓ KIMENETI VEZÉRL�?K (CSAK MPLAYER)"
 Az audió kimeneti vezérlők interfészek a különböző audió kimeneti berendezésekhez.
 A szintaxis:
 .
@@ -2817,10 +2817,6 @@ Az S/PDIF-en keresztüli hwac3 kimenethez használj egy "iec958" vagy "spdif"
 eszközt, feltéve, hogy tényleg tudod, hogyan kell jól beállítani.
 .RE
 .PD 1
-.
-.TP
-.B "alsa5\ \ "
-ALSA 0.5 audió kimeneti meghajtó
 .
 .TP
 .B "oss\ \ \ \ "
@@ -3435,7 +3431,7 @@ esetben a Xinerama információk teljesen figyelmen kívül maradnak), a \-1
 teljes képernyős lejátszás azon a képernyőn, amelyiken az ablak épp van.
 A kezdeti pozíció a \-geometry opcióval állítható be a megadott képernyőhöz
 relatívan.
-Általában a "\-fstype \-fullscreen" vagy "\-fstype none" opciókkal együtt
+�?ltalában a "\-fstype \-fullscreen" vagy "\-fstype none" opciókkal együtt
 működik.
 Ez az opció nem alkalmas csak a kezdő képernyő beállítására (mert
 a megadott képernyőn mindig teljes képernyősen jelenik meg), jelenleg
@@ -3508,7 +3504,7 @@ a TV képernyő bal felső sarkától (alapértelmezett: középre igazított).
 .
 .
 .
-.SH "VIDEÓ KIMENETI VEZÉRLŐK (CSAK MPLAYER)"
+.SH "VIDEÓ KIMENETI VEZÉRL�?K (CSAK MPLAYER)"
 A videó kimeneti vezérlők interfészek a különböző videó kimeneti berendezésekhez.
 A szintaxis:
 .
@@ -3630,7 +3626,7 @@ ha telecine-s tartalmat nézel, de gyors videó hardver kell hozzá a nagy felbo
 Csak mozgás adaptív időbeli deinterlace mellett működik.
 .IPs colorspace
 Kiválasztja a színteret a YUV-RGB konverzióhoz.
-Általában a BT.601 használatos a szabvány felbontású (SD) tartalomhoz és
+�?ltalában a BT.601 használatos a szabvány felbontású (SD) tartalomhoz és
 a BT.709 a nagy felbontású (HD) tartalomhoz.
 A hibás színtér használata kicsit alul vagy túl telített képet és
 elcsúszott színeket okoz.
@@ -3747,7 +3743,7 @@ Ugyan az, mint a vidix-nél.
 .
 .TP
 .B "cvidix\ "
-Általános és platform független VIDIX frontend, akár szöveges konzolon
+�?ltalános és platform független VIDIX frontend, akár szöveges konzolon
 is futhat nVidia kártyákkal.
 .PD 0
 .RSs
@@ -4187,7 +4183,7 @@ Az elérhető alopciók listáját és azok leírását megkaphatod egy
 .I MEGJEGYZÉS:
 A vezérlő nem kezeli jól a \-aspect opciót.
 .br
-.I TANÁCS:
+.I TAN�?CS:
 Valószínűleg meg kell adnod a \-monitorpixelaspect opciót.
 Próbáld ezt: 'mplayer \-vo aa \-monitorpixelaspect 0.5'.
 .
@@ -4614,7 +4610,7 @@ mplayer video.nut \-vf format=bgr15 \-vo tga
 .
 .
 .
-.SH "DEKÓDOLÓ/SZŰRŐ OPCIÓK"
+.SH "DEKÓDOLÓ/SZŰR�? OPCIÓK"
 .
 .TP
 .B \-ac <[\-|+]codec1,[\-|+]codec2,...[,]>
@@ -5098,7 +5094,7 @@ Az XAnim codec-et próbálja először.
 .
 .TP
 .B \-x <x> (lásd még \-zoom) (csak MPlayer)
-Átméretezi a képet <x> szélességűre (ha a szoftveres/\:hardveres méretezés elérhető).
+�?tméretezi a képet <x> szélességűre (ha a szoftveres/\:hardveres méretezés elérhető).
 Letiltja a képarány számításokat.
 .
 .TP
@@ -5162,7 +5158,7 @@ méretezést teljesítménybeli indokok miatt.
 .
 .
 .
-.SH "AUDIÓ SZŰRŐK"
+.SH "AUDIÓ SZŰR�?K"
 Az audió szűrők az audió folyam tulajdonságait engedik megváltoztatni.
 A szintaxis:
 .
@@ -5288,7 +5284,7 @@ Nyers AC-3 folyamot ad, ha ez nulla vagy nincs beállítva,
 a kimenet S/PDIF-en lesz áteresztve, ha a <tospdif> nem nulla.
 .IPs <bitráta>
 A kódolt AC-3 folyam bitrátája.
-Állítsd be 384-re vagy 384000-re a 384kbit-hez.
+�?llítsd be 384-re vagy 384000-re a 384kbit-hez.
 Érvényes értékek: 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256,
                   320, 384, 448, 512, 576, 640
 Az alapértelmezett bitráta a bemeneti csatornák számától függ:
@@ -5827,7 +5823,7 @@ A tempót a sebességgel szinkronban módosítja (alapértelmezett).
 .IPs pitch
 Megfordítja a szűrő hatását.
 Módosítja a hangmagasságot a tempó módosítása nélkül.
-Írd be a \'[ speed_mult 0.9438743126816935\' és \'] speed_mult 1.059463094352953\'
+�?rd be a \'[ speed_mult 0.9438743126816935\' és \'] speed_mult 1.059463094352953\'
 az input.conf-odba a zenei félhangokhoz.
 .I FIGYELMEZTETÉS:
 Elveszti a szinkronizációt a videóval.
@@ -5869,7 +5865,7 @@ A hangerő dB-ben kerül kiírásra és kompatibilis az audió hangerő szűrőv
 .
 .
 .
-.SH "VIDEÓ SZŰRŐK"
+.SH "VIDEÓ SZŰR�?K"
 A videó szűrők segítségével a videó folyamot és annak tulajdonságait módosíthatod.
 A szintaxis:
 .
@@ -6044,7 +6040,7 @@ A 4\-7 közötti értékekre a forgatás csak akkor történik meg, ha a film ge
 .
 .TP
 .B scale[=w:h[:interlaced[:chr_drop[:par[:par2[:presize[:noup[:arnd]]]]]]]]
-Átméretezi a képet szoftveres méretezővel (lassú) és végrehajt egy YUV<\->RGB
+�?tméretezi a képet szoftveres méretezővel (lassú) és végrehajt egy YUV<\->RGB
 színtér konverziót (lásd még \-sws).
 .RSs
 .IPs <w>,<h>
@@ -6726,7 +6722,7 @@ ennek ellenkezőjére.
 Csak a MEncoder-rel használható.
 A softskip a képkocka kihagyás (eldobás) lépését a szűrő lánc elejéről egy
 tetszőleges pontra halasztja a szűrő láncban.
-Így az olyan szűrők, melyek működéséhez az összes képkocka kell (inverz
+�?gy az olyan szűrők, melyek működéséhez az összes képkocka kell (inverz
 telecine, ideiglenes zajcsökkentés, stb.) hibátlanul fognak működni.
 Azon szűrők után kell elhelyezni, melyeknek az összes képkockára szükségük
 van és az összes CPU igényes szűrő elé kell tenni.
@@ -7219,7 +7215,7 @@ Csak a páros kockák kerülnek a kimenetre, a páratlanok el lesznek dobva; a m
 Minden kockát teljes magasságúvá növel, de a váltakozó sorok feketék lesznek;
 a frameráta változatlan.
 .IPs 4
-Átlapolja a páros kockák páros sorait a páratlan kockák páratlan soraival.
+�?tlapolja a páros kockák páros sorait a páratlan kockák páratlan soraival.
 Változatlan magasság mellett a frameráta feleződik.
 .RE
 .PD 1
@@ -7566,7 +7562,7 @@ Az fd opció utasítja a szűrőt, hogy a kért tizedelést mindig végezze el (
 .B screenshot
 Megengedi képernyőmentések készítését a filmből szolga módú
 parancsokkal, melyek billentyű lenyomásokhoz köthetőek.
-Lásd a szolga mód dokumentációját és az INTERAKTÍV VEZÉRLÉS
+Lásd a szolga mód dokumentációját és az INTERAKT�?V VEZÉRLÉS
 fejezetet a részletekért.
 'shotNNNN.png' nevű fájlok fognak létrejönni a munkakönyvtárban,
 az első szabad szám felhasználásával \- egy fájl sem lesz felülírva.
@@ -7669,7 +7665,7 @@ együttes használata kiszabadíthatja a szellemet a palackból.
 .RE
 .
 .
-.SH "ÁLTALÁNOS KÓDOLÁSI OPCIÓK (CSAK MENCODER)"
+.SH "�?LTAL�?NOS KÓDOL�?SI OPCIÓK (CSAK MENCODER)"
 .
 .TP
 .B \-audio\-delay <bármilyen lebegőpontos szám>
@@ -7727,7 +7723,7 @@ Az AVI AVI OpenDML vprp fejlécben tárolt képarány felülbírálása.
 Segítségével '\-ovc copy' mellett is megváltoztatható a képarány.
 .
 .TP
-.B \-frameno\-file <fájlnév> (NEM AJÁNLOTT)
+.B \-frameno\-file <fájlnév> (NEM AJ�?NLOTT)
 Megadja a képkocka leképezéseket tartalmazó audió fájl nevét, ami a
 speciális, három lépéses kódolási mód első (csak audió) lépésében jön létre.
 .br
@@ -7742,7 +7738,7 @@ verziókban el lesz távolítva.
 Egy sokkal precízebb, de sokkal lassabb módszer területek kihagyására.
 A kihagyásra jelölt területek nem kerülnek átlépésre, helyette minden
 képkocka dekódolva lesz, de csak a szükséges képkockák lesznek elkódolva.
-Így nem kulcs kocka határon is lehet kezdeni a kihagyást.
+�?gy nem kulcs kocka határon is lehet kezdeni a kihagyást.
 .br
 .I MEGJEGYZÉS:
 A helyes működése nem garantálható '\-ovc copy' mellett.
@@ -7896,7 +7892,7 @@ A kimeneti fájlokban lévő feliratok indexének megadása (alapértelmezett: 0
 .
 .
 .
-.SH "CODEC SPECIFIKUS KÓDOLÁSI OPCIÓK (CSAK MENCODER)"
+.SH "CODEC SPECIFIKUS KÓDOL�?SI OPCIÓK (CSAK MENCODER)"
 A codec specifikus kódolási paramétereket a következő szintaxissal adhatod meg:
 .
 .TP
@@ -8027,7 +8023,7 @@ ABR enkódolás, átlaga a megadott bitráta
 .RE
 .sp 1
 .RS
-.I PÉLDÁK:
+.I PÉLD�?K:
 .RE
 .PD 0
 .RSs
@@ -8096,7 +8092,7 @@ objektum típus komplexitása
 .PD 0
 .RSs
 .IPs 1
-FŐ (alapértelmezett)
+F�? (alapértelmezett)
 .IPs 2
 ALACSONY
 .IPs 3
@@ -8545,7 +8541,7 @@ második lépés
 n. lépés (második és a következő lépés egy N-lépéses kódolásban)
 .RE
 .RS
-Íme a működése és a használata:
+�?me a működése és a használata:
 .br
 Az első lépés (vpass=1) megírja a statisztika fájlt.
 Ajánlott néhány CPU-éhes opció letiltása, mint ahogy a "turbo" mód is csinálja.
@@ -8701,7 +8697,7 @@ különben
 normális ratecontrol (nem köti meg a következő P-kocka kvantálót) és
 q= \-q * v{b|i}_qfactor + v{b|i}_qoffset
 .br
-.I TANÁCS:
+.I TAN�?CS:
 Konstans kvantálási kódoláshoz különböző kvantálókkal az I/P- és B-kockákhoz
 használhatod ezt:
 lmin= <ip_quant>:lmax= <ip_quant>:vb_qfactor= <b_quant/\:ip_quant>.
@@ -8900,7 +8896,7 @@ Az MV & DC a legfontosabbak, elvesztésükkel sokkal rosszabb lesz a kinézet, m
 az AC és az 1. & 2. partíció elvesztésekor.
 (MV & DC) sokkal kisebbek, mint a 3. partíció (AC), ami azt jelenti, hogy a hibák
 sokkal többször fogják érinteni az AC partíciót, mint az MV & DC partíciókat.
-Így a kép jobban fog kinézni partícionálással, mint anélkül, de partícionálás
+�?gy a kép jobban fog kinézni partícionálással, mint anélkül, de partícionálás
 nélkül a hiba egyformán rontja az AC/\:DC/\:MV-t.
 .RE
 .
@@ -9064,7 +9060,7 @@ Képzelj el egy füves képet (aminek általában nagy a térbeli komplexitása)
 egy kék eget és egy házat; a scplx_mask növelni fogja a fű makroblokkjainak
 kvantálóit, így csökkentve a minőségét, hogy több bit jusson az égre és a házra.
 .br
-.I TANÁCS:
+.I TAN�?CS:
 Vágj le teljesen minden fekete határt, mivel azok csökkentik a makroblokkok
 minőségét (ez scplx_mask nélkül is érvényes).
 .PD 0
@@ -9109,11 +9105,11 @@ megfelelő átlag megmaradjon.
 .
 .TP
 .B "ildct\ \ "
-Átlapolt DCT használata.
+�?tlapolt DCT használata.
 .
 .TP
 .B "ilme\ \ \ "
-Átlapolt mozgás becslés (kölcsönösen kizárják egymást a qpel-lel).
+�?tlapolt mozgás becslés (kölcsönösen kizárják egymást a qpel-lel).
 .
 .TP
 .B "alt\ \ \ \ "
@@ -9223,7 +9219,7 @@ adaptív Huffman táblák
 .B "qpel\ \ \ "
 Quarter pel mozgás kompenzáció (kölcsönösen kizárják egymást az ilme-vel).
 .br
-.I TANÁCS:
+.I TAN�?CS:
 Ez csak a nagy bitrátájú kódolásoknál tűnik hasznosnak.
 .
 .TP
@@ -9482,7 +9478,7 @@ H.263 stílusú kvantáló alapértelmezése: \-64)
 A H.263 MMX kvantáló nem tudja kezelni a pozitív ferdeséget (add meg a vfdct=1 vagy 2-őt),
 az MPEG MMX kvantáló nem tudja kezelni a negatív ferdeséget (add meg a vfdct=1 vagy 2-őt).
 .br
-.I TANÁCS:
+.I TAN�?CS:
 Egy pozitívabb ferdeség (\-32 \- \-16 a \-64 helyett) látszólag növeli a PSNR-t.
 .
 .TP
@@ -9911,7 +9907,7 @@ Ez az opció megmondja az Xvid-nek, hogy zárja le az összes GOP-ot
 (Group Of Pictures, Képek Csoportja, melyeket két I-kocka határol), ami által
 a GOP-ok függetlenek lesznek egymástól. Ez magában foglalja azt, hogy a GOP
 utolsó kockája vagy egy P-kocka vagy egy N-kocka, de nem B-kocka.
-Általában jó ötlet bekapcsolni ezt az opciót (alapértelmezett: be).
+�?ltalában jó ötlet bekapcsolni ezt az opciót (alapértelmezett: be).
 .
 .TP
 .B (no)packed
@@ -10069,7 +10065,7 @@ DXN HDTV profil
 .RS
 .I MEGJEGYZÉS:
 Ezeket a profilokat a megfelelő \-ffourcc mellett ajánlott használni.
-Általában a DX50 a használatos, mivel néhány lejátszó nem ismeri fel az
+�?ltalában a DX50 a használatos, mivel néhány lejátszó nem ismeri fel az
 Xvid-et, de a legtöbb felismeri a DivX-et.
 .RE
 .
@@ -10104,7 +10100,7 @@ Megengedi a felhasználónak, hogy saját pixel méretarányt adjon meg a par_wi
 .PD 1
 .RS
 .I MEGJEGYZÉS:
-Általában a méret és az autoaspect beállítása elegendő.
+�?ltalában a méret és az autoaspect beállítása elegendő.
 .RE
 .
 .TP
@@ -10209,7 +10205,7 @@ második lépés (két lépéses kódoláskor)
 n. lépés (második vagy harmadik lépés egy három lépéses kódoláskor)
 .RE
 .RS
-Íme, hogyan működik és hogyan kell használni:
+�?me, hogyan működik és hogyan kell használni:
 .br
 Az első lépés (pass=1) összegyűjti a videó statisztikáit és kiírja egy fájlba.
 Javasolt pár CPU-igényes opció letiltása, kivéve azokat, amik alapértelmezében
@@ -10391,7 +10387,7 @@ A nagyobb b_bias több B-kockát eredményez (alapértelmezett: 0).
 A B-kockák felhasználását engedélyezi más kockák becsléséhez.
 Például vegyünk 3 egymás utáni B-kockát: I0 B1 B2 B3 P4.
 Ezen opció nélkül a B-kockák ugyan azt a mintát követik, mint az
-MPEG-[124]-ben. Így I0 P4 B1 B2 B3 sorrendben lesznek elkódolva
+MPEG-[124]-ben. �?gy I0 P4 B1 B2 B3 sorrendben lesznek elkódolva
 és az összes B-kocka az I0-ból és a P4-ből lesz megállapítva.
 Ezzel az opcióval I0 P4 B2 B1 B3 sorrendben lesznek elkódolva.
 A B2 ugyan az, mint fent, de a B1 az I0-ból és a B2-ből lesz
@@ -11051,7 +11047,7 @@ A codec beállításokat tartalmazó fájl neve (pl.\& firstpass.mcf), melyet a 
 .
 Az MPEG muxer 5 különböző típusú folyamot tud előállítani, mindegyiknek megvannak
 a maguk ésszerű paraméterei, amiket a felhasználó módosíthat.
-Általában ha MPEG fájlok készítésekor tanácsos letiltani a
+�?ltalában ha MPEG fájlok készítésekor tanácsos letiltani a
 MEncoder frame-kihagyó kódját (lásd \-noskip, \-mc csakúgy, mint a
 harddup és softskip videó szűrőket).
 .PP
@@ -11309,7 +11305,7 @@ időbélyeg (DTS) között bármelyik jelenlévő folyamnál
 .\" környezeti változók
 .\" --------------------------------------------------------------------------
 .
-.SH KÖRNYEZETI VÁLTOZÓK
+.SH KÖRNYEZETI V�?LTOZÓK
 .
 Számos környezeti változó van, amivel szabályozható az MPlayer és
 a MEncoder működése.
@@ -11431,7 +11427,7 @@ vagy [unix]:<példányszám>.
 A NAS alap portja 8000, a <példányszám> ehhez adódik hozzá.
 .sp 1
 .RS
-.I PÉLDÁK:
+.I PÉLD�?K:
 .RE
 .PD 0
 .RSs
@@ -11550,7 +11546,7 @@ FIXME: Ezt még dokumentálni kell.
 .\" Fájlok
 .\" --------------------------------------------------------------------------
 .
-.SH FÁJLOK
+.SH F�?JLOK
 .
 .TP
 /usr/\:local/\:etc/\:mplayer/\:mplayer.conf
@@ -11603,7 +11599,7 @@ alábbi sorrendben keresi a felirat fájlokat:
 .\" Példák
 .\" --------------------------------------------------------------------------
 .
-.SH PÉLDÁK AZ MPLAYER HASZNÁLATÁRA
+.SH PÉLD�?K AZ MPLAYER HASZN�?LAT�?RA
 .
 .PP
 .B Blu\-ray lejátszás gyors indítása:
@@ -11736,7 +11732,7 @@ mplayer \-vf geq='128+(p(X\\,Y)\-128)*(0.5\-gt(mod(X/SW\\,128)\\,64))*(0.5\-gt(m
 .fi
 .
 .
-.SH PÉLDÁK A MENCODER HASZNÁLATÁRA
+.SH PÉLD�?K A MENCODER HASZN�?LAT�?RA
 .
 .PP
 .B A 2. DVD műsor elkódolása, csak a kiválasztott fejezetekkel:
@@ -11803,8 +11799,8 @@ leírja, hogyan készíthetsz hasznos hibajelentést.
 .
 .
 .
-.SH SZERZŐK
-Az MPlayert eredetileg Gereöffy Árpád írta.
+.SH SZERZ�?K
+Az MPlayert eredetileg Gereöffy �?rpád írta.
 Lásd az AUTHORS fájlt a többi közreműködő listájához.
 .PP
 MPlayer (C) 2000\-2009 Az MPlayer Csapat

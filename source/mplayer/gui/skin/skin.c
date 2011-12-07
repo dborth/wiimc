@@ -16,6 +16,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+/**
+ * @file
+ * @brief Skin parser
+ */
+
 #include <stdio.h>
 #include <string.h>
 
@@ -51,6 +56,12 @@ static wItem *currWin;
 static int *currWinItemIdx;
 static wItem *currWinItems;
 
+/**
+ * @brief Display a skin error message.
+ *
+ * @param format format string
+ * @param ... arguments
+ */
 static void skin_error(const char *format, ...)
 {
     char p[512];
@@ -63,6 +74,13 @@ static void skin_error(const char *format, ...)
     gmp_msg(MSGT_GPLAYER, MSGL_ERR, MSGTR_SKIN_ERRORMESSAGE, linenumber, p);
 }
 
+/**
+ * @brief Check whether a @a section definition has started.
+ *
+ * @param item name of the item to be put in a message in case of an error
+ *
+ * @return 1 (ok) or 0 (error)
+ */
 static int section_item(char *item)
 {
     if (!skin) {
@@ -73,6 +91,13 @@ static int section_item(char *item)
     return 1;
 }
 
+/**
+ * @brief Check whether a @a window definition has started.
+ *
+ * @param item name of the item to be put in a message in case of an error
+ *
+ * @return 1 (ok) or 0 (error)
+ */
 static int window_item(char *item)
 {
     if (!currWinName[0]) {
@@ -83,6 +108,13 @@ static int window_item(char *item)
     return 1;
 }
 
+/**
+ * @brief Check whether a specific @a window definition has started.
+ *
+ * @param name name of the window to be checked
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int in_window(char *name)
 {
     if (strcmp(currWinName, name) == 0) {
@@ -93,9 +125,17 @@ static int in_window(char *name)
     return 0;
 }
 
-int skinBPRead(char *fname, guiImage *bf)
+/**
+ * @brief Read a skin @a image file.
+ *
+ * @param fname filename (with path)
+ * @param img pointer suitable to store the image data
+ *
+ * @return return code of #bpRead()
+ */
+int skinImageRead(char *fname, guiImage *img)
 {
-    int i = bpRead(fname, bf);
+    int i = bpRead(fname, img);
 
     switch (i) {
     case -1:
@@ -118,6 +158,11 @@ int skinBPRead(char *fname, guiImage *bf)
     return i;
 }
 
+/**
+ * @brief Get next free item in current @a window.
+ *
+ * @return pointer to next free item (ok) or NULL (error)
+ */
 static wItem *next_item(void)
 {
     wItem *item = NULL;
@@ -131,7 +176,15 @@ static wItem *next_item(void)
     return item;
 }
 
-// section=movieplayer
+/**
+ * @brief Parse a @a section definition.
+ *
+ *        Syntax: section=movieplayer
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_section(char *in)
 {
     if (skin) {
@@ -146,17 +199,26 @@ static int item_section(char *in)
         return 1;
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]  section: %s\n", in);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]  section: %s\n", in);
 
     return 0;
 }
 
-// end
+/**
+ * @brief Parse an @a end definition.
+ *
+ *        Syntax: end
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_end(char *in)
 {
     char *space, *name;
 
-#ifdef MP_DEBUG
+    (void)in;
+
     if (currWinName[0]) {
         space = " ";
         name  = currWinName;
@@ -164,14 +226,11 @@ static int item_end(char *in)
         space = "";
         name  = "section";
     }
-#endif
-
-    (void)in;
 
     if (!section_item("end"))
         return 1;
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]  %send (%s)\n", space, name);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]  %send (%s)\n", space, name);
 
     if (currWinName[0]) {
         currWinName[0] = 0;
@@ -184,7 +243,15 @@ static int item_end(char *in)
     return 0;
 }
 
-// window=main|sub|playbar|menu
+/**
+ * @brief Parse a @a window definition.
+ *
+ *        Syntax: window=main|sub|playbar|menu
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_window(char *in)
 {
     if (!section_item("window"))
@@ -220,12 +287,20 @@ static int item_window(char *in)
 
     av_strlcpy(currWinName, in, sizeof(currWinName));
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]   window: %s\n", currWinName);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]   window: %s\n", currWinName);
 
     return 0;
 }
 
-// base=image,x,y[,width,height]
+/**
+ * @brief Parse a @a base definition.
+ *
+ *        Syntax: base=image,x,y[,width,height]
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_base(char *in)
 {
     unsigned char fname[256];
@@ -247,7 +322,7 @@ static int item_base(char *in)
     w = cutItemToInt(in, ',', 3);
     h = cutItemToInt(in, ',', 4);
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    image: %s", fname);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    image: %s", fname);
 
     currWin->type = itBase;
 
@@ -255,15 +330,15 @@ static int item_base(char *in)
         currWin->x = x;
         currWin->y = y;
 
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, " %d,%d", x, y);
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, " %d,%d", x, y);
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "\n");
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "\n");
 
     av_strlcpy(file, path, sizeof(file));
     av_strlcat(file, fname, sizeof(file));
 
-    if (skinBPRead(file, &currWin->Bitmap) != 0)
+    if (skinImageRead(file, &currWin->Bitmap) != 0)
         return 1;
 
     currWin->width  = currWin->Bitmap.Width;
@@ -276,7 +351,7 @@ static int item_base(char *in)
         }
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     bitmap: %dx%d\n", currWin->width, currWin->height);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     bitmap: %dx%d\n", currWin->width, currWin->height);
 
     if (!is_sub) {
 #ifdef CONFIG_XSHAPE
@@ -284,7 +359,7 @@ static int item_base(char *in)
             skin_error(MSGTR_SKIN_NotEnoughMemory);
             return 1;
         }
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     mask: %lux%lu\n", currWin->Mask.Width, currWin->Mask.Height);
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     mask: %lux%lu\n", currWin->Mask.Width, currWin->Mask.Height);
 #else
         currWin->Mask.Image = NULL;
 #endif
@@ -298,7 +373,15 @@ static int item_base(char *in)
     return 0;
 }
 
-// background=R,G,B
+/**
+ * @brief Parse a @a background definition.
+ *
+ *        Syntax: background=R,G,B
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_background(char *in)
 {
     if (!window_item("background"))
@@ -315,12 +398,20 @@ static int item_background(char *in)
     currWin->G = cutItemToInt(in, ',', 1);
     currWin->B = cutItemToInt(in, ',', 2);
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    background color: #%02x%02x%02x\n", currWin->R, currWin->G, currWin->B);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    background color: #%02x%02x%02x\n", currWin->R, currWin->G, currWin->B);
 
     return 0;
 }
 
-// button=image,x,y,width,height,message
+/**
+ * @brief Parse a @a button definition.
+ *
+ *        Syntax: button=image,x,y,width,height,message
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_button(char *in)
 {
     unsigned char fname[256];
@@ -351,9 +442,9 @@ static int item_button(char *in)
         return 1;
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    button image: %s %d,%d\n", fname, x, y);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     message: %s (#%d)\n", msg, message);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     size: %dx%d\n", w, h);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    button image: %s %d,%d\n", fname, x, y);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     message: %s (#%d)\n", msg, message);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     size: %dx%d\n", w, h);
 
     item = next_item();
 
@@ -377,16 +468,24 @@ static int item_button(char *in)
         av_strlcpy(file, path, sizeof(file));
         av_strlcat(file, fname, sizeof(file));
 
-        if (skinBPRead(file, &item->Bitmap) != 0)
+        if (skinImageRead(file, &item->Bitmap) != 0)
             return 1;
 
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     (bitmap: %lux%lu)\n", item->Bitmap.Width, item->Bitmap.Height);
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     (bitmap: %lux%lu)\n", item->Bitmap.Width, item->Bitmap.Height);
     }
 
     return 0;
 }
 
-// selected=image
+/**
+ * @brief Parse a @a selected definition.
+ *
+ *        Syntax: selected=image
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_selected(char *in)
 {
     unsigned char file[512];
@@ -402,7 +501,7 @@ static int item_selected(char *in)
     if (in_window("playbar"))
         return 1;
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    image selected: %s\n", in);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    image selected: %s\n", in);
 
     currItem       = &skin->menuSelected;
     currItem->type = itBase;
@@ -410,18 +509,26 @@ static int item_selected(char *in)
     av_strlcpy(file, path, sizeof(file));
     av_strlcat(file, in, sizeof(file));
 
-    if (skinBPRead(file, &currItem->Bitmap) != 0)
+    if (skinImageRead(file, &currItem->Bitmap) != 0)
         return 1;
 
     currItem->width  = currItem->Bitmap.Width;
     currItem->height = currItem->Bitmap.Height;
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     bitmap: %dx%d\n", currItem->width, currItem->height);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     bitmap: %dx%d\n", currItem->width, currItem->height);
 
     return 0;
 }
 
-// menu=x,y,width,height,message
+/**
+ * @brief Parse a @a menu definition.
+ *
+ *        Syntax: menu=x,y,width,height,message
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_menu(char *in)
 {
     int x, y, w, h, message;
@@ -463,15 +570,23 @@ static int item_menu(char *in)
     item->height  = h;
     item->message = message;
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    item #%d: %d,%d %dx%d\n", *currWinItemIdx, x, y, w, h);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     message: %s (#%d)\n", msg, message);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    item #%d: %d,%d %dx%d\n", *currWinItemIdx, x, y, w, h);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     message: %s (#%d)\n", msg, message);
 
     item->Bitmap.Image = NULL;
 
     return 0;
 }
 
-// hpotmeter=button,bwidth,bheight,phases,numphases,default,x,y,width,height,message
+/**
+ * @brief Parse a @a hpotmeter definition.
+ *
+ *        Syntax: hpotmeter=button,bwidth,bheight,phases,numphases,default,x,y,width,height,message
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_hpotmeter(char *in)
 {
     unsigned char pfname[256];
@@ -507,10 +622,10 @@ static int item_hpotmeter(char *in)
         return 1;
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    h/v potmeter image: %s %d,%d %dx%d\n", phfname, x, y, w, h);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     button image: %s %dx%d\n", pfname, pwidth, pheight);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     numphases: %d, default: %d%%\n", ph, d);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     message: %s (#%d)\n", buf, message);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    h/v potmeter image: %s %d,%d %dx%d\n", phfname, x, y, w, h);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     button image: %s %dx%d\n", pfname, pwidth, pheight);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     numphases: %d, default: %d%%\n", ph, d);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     message: %s (#%d)\n", buf, message);
 
     item = next_item();
 
@@ -535,10 +650,10 @@ static int item_hpotmeter(char *in)
         av_strlcpy(buf, path, sizeof(buf));
         av_strlcat(buf, phfname, sizeof(buf));
 
-        if (skinBPRead(buf, &item->Bitmap) != 0)
+        if (skinImageRead(buf, &item->Bitmap) != 0)
             return 1;
 
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     (potmeter bitmap: %lux%lu)\n", item->Bitmap.Width, item->Bitmap.Height);
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     (potmeter bitmap: %lux%lu)\n", item->Bitmap.Width, item->Bitmap.Height);
     }
 
     item->Mask.Image = NULL;
@@ -547,16 +662,24 @@ static int item_hpotmeter(char *in)
         av_strlcpy(buf, path, sizeof(buf));
         av_strlcat(buf, pfname, sizeof(buf));
 
-        if (skinBPRead(buf, &item->Mask) != 0)
+        if (skinImageRead(buf, &item->Mask) != 0)
             return 1;
 
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     (button bitmap: %lux%lu)\n", item->Mask.Width, item->Mask.Height);
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     (button bitmap: %lux%lu)\n", item->Mask.Width, item->Mask.Height);
     }
 
     return 0;
 }
 
-// vpotmeter=button,bwidth,bheight,phases,numphases,default,x,y,width,height,message
+/**
+ * @brief Parse a @a vpotmeter definition.
+ *
+ *        Syntax: vpotmeter=button,bwidth,bheight,phases,numphases,default,x,y,width,height,message
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_vpotmeter(char *in)
 {
     int r;
@@ -572,7 +695,15 @@ static int item_vpotmeter(char *in)
     return r;
 }
 
-// potmeter=phases,numphases,default,x,y,width,height,message
+/**
+ * @brief Parse a @a potmeter definition.
+ *
+ *        Syntax: potmeter=phases,numphases,default,x,y,width,height,message
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_potmeter(char *in)
 {
     unsigned char phfname[256];
@@ -604,9 +735,9 @@ static int item_potmeter(char *in)
         return 1;
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    potmeter image: %s %d,%d %dx%d\n", phfname, x, y, w, h);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     numphases: %d, default: %d%%\n", ph, d);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     message: %s (#%d)\n", buf, message);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    potmeter image: %s %d,%d %dx%d\n", phfname, x, y, w, h);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     numphases: %d, default: %d%%\n", ph, d);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     message: %s (#%d)\n", buf, message);
 
     item = next_item();
 
@@ -628,16 +759,24 @@ static int item_potmeter(char *in)
         av_strlcpy(buf, path, sizeof(buf));
         av_strlcat(buf, phfname, sizeof(buf));
 
-        if (skinBPRead(buf, &item->Bitmap) != 0)
+        if (skinImageRead(buf, &item->Bitmap) != 0)
             return 1;
 
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     (bitmap: %lux%lu)\n", item->Bitmap.Width, item->Bitmap.Height);
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     (bitmap: %lux%lu)\n", item->Bitmap.Width, item->Bitmap.Height);
     }
 
     return 0;
 }
 
-// font=fontfile
+/**
+ * @brief Parse a @a font definition.
+ *
+ *        Syntax: font=fontfile
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_font(char *in)
 {
     char fnt[256];
@@ -670,12 +809,20 @@ static int item_font(char *in)
         return 1;
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    font: %s (#%d)\n", fnt, fntFindID(fnt));
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    font: %s (#%d)\n", fnt, fntFindID(fnt));
 
     return 0;
 }
 
-// slabel=x,y,fontfile,"text"
+/**
+ * @brief Parse a @a slabel definition.
+ *
+ *        Syntax: slabel=x,y,fontfile,"text"
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_slabel(char *in)
 {
     int x, y, id;
@@ -697,8 +844,8 @@ static int item_slabel(char *in)
     cutItem(in, txt, ',', 3);
     cutItem(txt, txt, '"', 1);
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    slabel: \"%s\"\n", txt);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     pos: %d,%d\n", x, y);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    slabel: \"%s\"\n", txt);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     pos: %d,%d\n", x, y);
 
     id = fntFindID(fnt);
 
@@ -707,7 +854,7 @@ static int item_slabel(char *in)
         return 1;
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     font: %s (#%d)\n", fnt, id);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     font: %s (#%d)\n", fnt, id);
 
     item = next_item();
 
@@ -730,7 +877,15 @@ static int item_slabel(char *in)
     return 0;
 }
 
-// dlabel=x,y,width,align,fontfile,"text"
+/**
+ * @brief Parse a @a dlabel definition.
+ *
+ *        Syntax: dlabel=x,y,width,align,fontfile,"text"
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_dlabel(char *in)
 {
     int x, y, w, a, id;
@@ -754,9 +909,9 @@ static int item_dlabel(char *in)
     cutItem(in, txt, ',', 5);
     cutItem(txt, txt, '"', 1);
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    dlabel: \"%s\"\n", txt);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     pos: %d,%d\n", x, y);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     width: %d, align: %d\n", w, a);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    dlabel: \"%s\"\n", txt);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     pos: %d,%d\n", x, y);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     width: %d, align: %d\n", w, a);
 
     id = fntFindID(fnt);
 
@@ -765,7 +920,7 @@ static int item_dlabel(char *in)
         return 1;
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     font: %s (#%d)\n", fnt, id);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]     font: %s (#%d)\n", fnt, id);
 
     item = next_item();
 
@@ -789,7 +944,15 @@ static int item_dlabel(char *in)
     return 0;
 }
 
-// decoration=enable|disable
+/**
+ * @brief Parse a @a decoration definition.
+ *
+ *        Syntax: decoration=enable|disable
+ *
+ * @param in definition to be analyzed
+ *
+ * @return 0 (ok) or 1 (error)
+ */
 static int item_decoration(char *in)
 {
     if (!window_item("decoration"))
@@ -811,11 +974,14 @@ static int item_decoration(char *in)
 
     skin->mainDecoration = (strcmp(in, "enable") == 0);
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    decoration: %s\n", in);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin]    decoration: %s\n", in);
 
     return 0;
 }
 
+/**
+ * @brief Parsing functions responsible for skin item definitions.
+ */
 static _item skinItem[] = {
     { "background", item_background },
     { "base",       item_base       },
@@ -834,6 +1000,16 @@ static _item skinItem[] = {
     { "window",     item_window     }
 };
 
+/**
+ * @brief Build the skin file path for a skin name.
+ *
+ * @param dir skins directory
+ * @param sname name of the skin
+ *
+ * @return skin file path
+ *
+ * @note As a side effect, variable #path gets set to the skin path.
+ */
 static char *setname(char *dir, char *sname)
 {
     static char skinfname[512];
@@ -848,6 +1024,13 @@ static char *setname(char *dir, char *sname)
     return skinfname;
 }
 
+/**
+ * @brief Read and parse a skin.
+ *
+ * @param sname name of the skin
+ *
+ * @return 0 (ok), -1 (skin file not found or not readable) or -2 (parsing error)
+ */
 int skinRead(char *sname)
 {
     char *skinfname;
@@ -868,7 +1051,7 @@ int skinRead(char *sname)
         }
     }
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[skin] configuration file: %s\n", skinfname);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[skin] configuration file: %s\n", skinfname);
 
     appFreeStruct();
 

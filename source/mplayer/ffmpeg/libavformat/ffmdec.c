@@ -290,7 +290,7 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
     for(i=0;i<nb_streams;i++) {
         char rc_eq_buf[128];
 
-        st = av_new_stream(s, 0);
+        st = avformat_new_stream(s, NULL);
         if (!st)
             goto fail;
 
@@ -344,7 +344,6 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
             codec->thread_count = avio_r8(pb);
             codec->coder_type = avio_rb32(pb);
             codec->me_cmp = avio_rb32(pb);
-            codec->partitions = avio_rb32(pb);
             codec->me_subpel_quality = avio_rb32(pb);
             codec->me_range = avio_rb32(pb);
             codec->keyint_min = avio_rb32(pb);
@@ -354,7 +353,6 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
             codec->qblur = av_int2dbl(avio_rb64(pb));
             codec->max_qdiff = avio_rb32(pb);
             codec->refs = avio_rb32(pb);
-            codec->directpred = avio_rb32(pb);
             break;
         case AVMEDIA_TYPE_AUDIO:
             codec->sample_rate = avio_rb32(pb);

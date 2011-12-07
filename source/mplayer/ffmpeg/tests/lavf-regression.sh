@@ -14,7 +14,7 @@ eval do_$test=y
 do_lavf()
 {
     file=${outfile}lavf.$1
-    do_avconv $file $DEC_OPTS -f image2 -vcodec pgmyuv -i $raw_src $DEC_OPTS -ar 44100 -f s16le -i $pcm_src $ENC_OPTS -b:a 64k -t 1 -qscale 10 $2
+    do_avconv $file $DEC_OPTS -f image2 -vcodec pgmyuv -i $raw_src $DEC_OPTS -ar 44100 -f s16le -i $pcm_src $ENC_OPTS -b:a 64k -t 1 -qscale:v 10 $2
     do_avconv_crc $file $DEC_OPTS -i $target_path/$file $3
 }
 
@@ -227,8 +227,8 @@ conversions="yuv420p yuv422p yuv444p yuyv422 yuv410p yuv411p yuvj420p \
              monob yuv440p yuvj440p"
 for pix_fmt in $conversions ; do
     file=${outfile}${pix_fmt}.yuv
-    run_avconv $DEC_OPTS -r 1 -t 1 -f image2 -vcodec pgmyuv -i $raw_src \
-               $ENC_OPTS -f rawvideo -s 352x288 -pix_fmt $pix_fmt $target_path/$raw_dst
+    run_avconv $DEC_OPTS -r 1 -f image2 -vcodec pgmyuv -i $raw_src \
+               $ENC_OPTS -f rawvideo -t 1 -s 352x288 -pix_fmt $pix_fmt $target_path/$raw_dst
     do_avconv $file $DEC_OPTS -f rawvideo -s 352x288 -pix_fmt $pix_fmt -i $target_path/$raw_dst \
                     $ENC_OPTS -f rawvideo -s 352x288 -pix_fmt yuv444p
 done

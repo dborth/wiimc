@@ -70,6 +70,7 @@ typedef struct {
     int ip_count;
     int b_count;
     AVRational last_sample_aspect_ratio;
+    int palette_sent;
 } vd_ffmpeg_ctx;
 
 #include "m_option.h"
@@ -90,6 +91,9 @@ static int lavc_param_vstats=0;
 static int lavc_param_idct_algo=0;
 static int lavc_param_debug=0;
 static int lavc_param_vismv=0;
+#ifdef CODEC_FLAG2_SHOW_ALL
+static int lavc_param_wait_keyframe=0;
+#endif
 static int lavc_param_skip_top=0;
 static int lavc_param_skip_bottom=0;
 static int lavc_param_fast=0;
@@ -118,6 +122,9 @@ const m_option_t lavc_decode_opts_conf[]={
     {"vstats"        , &lavc_param_vstats               , CONF_TYPE_FLAG    , 0, 0, 1, NULL},
     {"debug"         , &lavc_param_debug                , CONF_TYPE_INT     , CONF_RANGE, 0, 9999999, NULL},
     {"vismv"         , &lavc_param_vismv                , CONF_TYPE_INT     , CONF_RANGE, 0, 9999999, NULL},
+#ifdef CODEC_FLAG2_SHOW_ALL
+    {"wait_keyframe" , &lavc_param_wait_keyframe        , CONF_TYPE_FLAG    , 0, 0, CODEC_FLAG_PART, NULL},
+#endif
     {"st"            , &lavc_param_skip_top             , CONF_TYPE_INT     , CONF_RANGE, 0, 999, NULL},
     {"sb"            , &lavc_param_skip_bottom          , CONF_TYPE_INT     , CONF_RANGE, 0, 999, NULL},
     {"fast"          , &lavc_param_fast                 , CONF_TYPE_FLAG    , 0, 0, CODEC_FLAG2_FAST, NULL},
@@ -234,7 +241,7 @@ static int init(sh_video_t *sh){
     if(use_slices && (lavc_codec->capabilities&CODEC_CAP_DRAW_HORIZ_BAND) && !do_vis_debug)
         ctx->do_slices=1;
 
-    if(lavc_codec->capabilities&CODEC_CAP_DR1 && !do_vis_debug && lavc_codec->id != CODEC_ID_H264 && lavc_codec->id != CODEC_ID_INTERPLAY_VIDEO && lavc_codec->id != CODEC_ID_ROQ && lavc_codec->id != CODEC_ID_VP8 && lavc_codec->id != CODEC_ID_LAGARITH)
+    if(lavc_codec->capabilities&CODEC_CAP_DR1 && !do_vis_debug && lavc_codec->id != CODEC_ID_H264 && lavc_codec->id != CODEC_ID_INTERPLAY_VIDEO && lavc_codec->id != CODEC_ID_VP8 && lavc_codec->id != CODEC_ID_LAGARITH)
         ctx->do_dr1=1;
     ctx->b_age= ctx->ip_age[0]= ctx->ip_age[1]= 256*256*256*64;
     ctx->ip_count= ctx->b_count= 0;
@@ -260,6 +267,9 @@ static int init(sh_video_t *sh){
     avctx->workaround_bugs= lavc_param_workaround_bugs;
     avctx->error_recognition= lavc_param_error_resilience;
     if(lavc_param_gray) avctx->flags|= CODEC_FLAG_GRAY;
+#ifdef CODEC_FLAG2_SHOW_ALL
+    if(!lavc_param_wait_keyframe) avctx->flags2 |= CODEC_FLAG2_SHOW_ALL;
+#endif
     avctx->flags2|= lavc_param_fast;
     avctx->codec_tag= sh->format;
     avctx->stream_codec_tag= sh->video.fccHandler;
@@ -364,19 +374,6 @@ static int init(sh_video_t *sh){
         memcpy(avctx->extradata, sh->bih+1, avctx->extradata_size);
         break;
     }
-    /* Pass palette to codec */
-    if (sh->bih && (sh->bih->biBitCount <= 8)) {
-        avctx->palctrl = av_mallocz(sizeof(AVPaletteControl));
-        avctx->palctrl->palette_changed = 1;
-        if (sh->bih->biSize-sizeof(*sh->bih))
-            /* Palette size in biSize */
-            memcpy(avctx->palctrl->palette, sh->bih+1,
-                   FFMIN(sh->bih->biSize-sizeof(*sh->bih), AVPALETTE_SIZE));
-        else
-            /* Palette size in biClrUsed */
-            memcpy(avctx->palctrl->palette, sh->bih+1,
-                   FFMIN(sh->bih->biClrUsed * 4, AVPALETTE_SIZE));
-        }
 
     if(sh->bih)
         avctx->bits_per_coded_sample= sh->bih->biBitCount;
@@ -534,8 +531,8 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
     int type= MP_IMGTYPE_IPB;
     int width= avctx->width;
     int height= avctx->height;
-    // special case to handle reget_buffer without buffer hints
-    if (pic->opaque && pic->data[0] && !pic->buffer_hints)
+    // special case to handle reget_buffer
+    if (pic->opaque && pic->data[0] && (!pic->buffer_hints || pic->buffer_hints & FF_BUFFER_HINTS_REUSABLE))
         return 0;
     avcodec_align_dimensions(avctx, &width, &height);
 //printf("get_buffer %d %d %d\n", pic->reference, ctx->ip_count, ctx->b_count);
@@ -545,17 +542,15 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
         type = MP_IMGTYPE_TEMP;
         if (pic->buffer_hints & FF_BUFFER_HINTS_READABLE)
             flags |= MP_IMGFLAG_READABLE;
-        if (pic->buffer_hints & FF_BUFFER_HINTS_PRESERVE) {
-            type = MP_IMGTYPE_STATIC;
-            flags |= MP_IMGFLAG_PRESERVE;
-        }
-        if (pic->buffer_hints & FF_BUFFER_HINTS_REUSABLE) {
-            type = MP_IMGTYPE_STATIC;
+        if (pic->buffer_hints & FF_BUFFER_HINTS_PRESERVE ||
+            pic->buffer_hints & FF_BUFFER_HINTS_REUSABLE) {
+            ctx->ip_count++;
+            type = MP_IMGTYPE_IP;
             flags |= MP_IMGFLAG_PRESERVE;
         }
         flags|=(avctx->skip_idct<=AVDISCARD_DEFAULT && avctx->skip_frame<=AVDISCARD_DEFAULT && ctx->do_slices) ?
                  MP_IMGFLAG_DRAW_CALLBACK:0;
-        mp_msg(MSGT_DECVIDEO, MSGL_DBG2, type == MP_IMGTYPE_STATIC ? "using STATIC\n" : "using TEMP\n");
+        mp_msg(MSGT_DECVIDEO, MSGL_DBG2, type == MP_IMGTYPE_IP ? "using IP\n" : "using TEMP\n");
     } else {
         if(!pic->reference){
             ctx->b_count++;
@@ -565,6 +560,11 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
             ctx->ip_count++;
             flags|= MP_IMGFLAG_PRESERVE|MP_IMGFLAG_READABLE
                       | (ctx->do_slices ? MP_IMGFLAG_DRAW_CALLBACK : 0);
+        }
+        if(avctx->has_b_frames || ctx->b_count){
+            type= MP_IMGTYPE_IPB;
+        }else{
+            type= MP_IMGTYPE_IP;
         }
     }
 
@@ -580,7 +580,7 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
     if (IMGFMT_IS_HWACCEL(ctx->best_csp)) {
         type =  MP_IMGTYPE_NUMBERED | (0xffff << 16);
     } else
-    if (!pic->buffer_hints) {
+    if (type == MP_IMGTYPE_IP || type == MP_IMGTYPE_IPB) {
         if(ctx->b_count>1 || ctx->ip_count>2){
             mp_msg(MSGT_DECVIDEO, MSGL_WARN, MSGTR_MPCODECS_DRIFailure);
 
@@ -596,11 +596,6 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
             return avctx->get_buffer(avctx, pic);
         }
 
-        if(avctx->has_b_frames || ctx->b_count){
-            type= MP_IMGTYPE_IPB;
-        }else{
-            type= MP_IMGTYPE_IP;
-        }
         mp_msg(MSGT_DECVIDEO, MSGL_DBG2, type== MP_IMGTYPE_IPB ? "using IPB\n" : "using IP\n");
     }
 
@@ -714,9 +709,6 @@ static void release_buffer(struct AVCodecContext *avctx, AVFrame *pic){
     }
 
     if (mpi) {
-        // Palette support: free palette buffer allocated in get_buffer
-        if (mpi->bpp == 8)
-            av_freep(&mpi->planes[1]);
         // release mpi (in case MPI_IMGTYPE_NUMBERED is used, e.g. for VDPAU)
         mpi->usage_count--;
     }
@@ -791,7 +783,24 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
     pkt.size = len;
     // HACK: make PNGs decode normally instead of as CorePNG delta frames
     pkt.flags = AV_PKT_FLAG_KEY;
+    if (!ctx->palette_sent && sh->bih && sh->bih->biBitCount <= 8) {
+        /* Pass palette to codec */
+        unsigned palsize = sh->bih->biSize - sizeof(*sh->bih);
+        if (palsize == 0) {
+            /* Palette size in biClrUsed */
+            palsize = sh->bih->biClrUsed * 4;
+        }
+        // if still 0, we simply have no palette in extradata.
+        if (palsize) {
+            uint8_t *pal = av_packet_new_side_data(&pkt, AV_PKT_DATA_PALETTE, AVPALETTE_SIZE);
+            memcpy(pal, sh->bih+1, FFMIN(palsize, AVPALETTE_SIZE));
+        }
+        ctx->palette_sent = 1;
+    }
     ret = avcodec_decode_video2(avctx, pic, &got_picture, &pkt);
+    pkt.data = NULL;
+    pkt.size = 0;
+    av_destruct_packet(&pkt);
 
     dr1= ctx->do_dr1;
     if(ret<0) mp_msg(MSGT_DECVIDEO, MSGL_WARN, "Error while decoding frame!\n");

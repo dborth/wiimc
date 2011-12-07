@@ -37,7 +37,7 @@
 #define DNX10BIT_QMAT_SHIFT 18 // The largest value that will not lead to overflow for 10bit samples.
 
 static const AVOption options[]={
-    {"nitris_compat", "encode with Avid Nitris compatibility", offsetof(DNXHDEncContext, nitris_compat), FF_OPT_TYPE_INT, {.dbl = 0}, 0, 1, VE},
+    {"nitris_compat", "encode with Avid Nitris compatibility", offsetof(DNXHDEncContext, nitris_compat), AV_OPT_TYPE_INT, {.dbl = 0}, 0, 1, VE},
 {NULL}
 };
 static const AVClass class = { "dnxhd", av_default_item_name, options, LIBAVUTIL_VERSION_INT };
@@ -623,7 +623,7 @@ static int dnxhd_mb_var_thread(AVCodecContext *avctx, void *arg, int jobnr, int 
         for (mb_x = 0; mb_x < ctx->m.mb_width; ++mb_x, pix += 16) {
             unsigned mb  = mb_y * ctx->m.mb_width + mb_x;
             int sum = ctx->m.dsp.pix_sum(pix, ctx->m.linesize);
-            int varc = (ctx->m.dsp.pix_norm1(pix, ctx->m.linesize) - (((unsigned)(sum*sum))>>8)+128)>>8;
+            int varc = (ctx->m.dsp.pix_norm1(pix, ctx->m.linesize) - (((unsigned)sum*sum)>>8)+128)>>8;
             ctx->mb_cmp[mb].value = varc;
             ctx->mb_cmp[mb].mb = mb;
         }

@@ -56,6 +56,11 @@ static const char *unit_hertz_str           = "Hz"   ;
 static const char *unit_byte_str            = "byte" ;
 static const char *unit_bit_per_second_str  = "bit/s";
 
+void exit_program(int ret)
+{
+    exit(ret);
+}
+
 static char *value_string(char *buf, int buf_size, double val, const char *unit)
 {
     if (unit == unit_second_str && use_value_sexagesimal_format) {
@@ -341,7 +346,7 @@ static int opt_format(const char *opt, const char *arg)
     return 0;
 }
 
-static void opt_input_file(const char *arg)
+static void opt_input_file(void *optctx, const char *arg)
 {
     if (input_filename) {
         fprintf(stderr, "Argument '%s' provided as input filename, but '%s' was already specified.\n",
@@ -359,8 +364,7 @@ static void show_help(void)
     show_usage();
     show_help_options(options, "Main options:\n", 0, 0);
     printf("\n");
-    av_opt_show2(avformat_opts, NULL,
-                 AV_OPT_FLAG_DECODING_PARAM, 0);
+    show_help_children(avformat_get_class(), AV_OPT_FLAG_DECODING_PARAM);
 }
 
 static void opt_pretty(void)
@@ -393,16 +397,16 @@ int main(int argc, char **argv)
 {
     int ret;
 
+    parse_loglevel(argc, argv, options);
     av_register_all();
+    avformat_network_init();
     init_opts();
 #if CONFIG_AVDEVICE
     avdevice_register_all();
 #endif
 
-    avformat_opts = avformat_alloc_context();
-
     show_banner();
-    parse_options(argc, argv, options, opt_input_file);
+    parse_options(NULL, argc, argv, options, opt_input_file);
 
     if (!input_filename) {
         show_usage();
@@ -413,7 +417,7 @@ int main(int argc, char **argv)
 
     ret = probe_file(input_filename);
 
-    av_free(avformat_opts);
+    avformat_network_deinit();
 
     return ret;
 }

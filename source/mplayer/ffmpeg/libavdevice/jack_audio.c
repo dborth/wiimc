@@ -29,7 +29,7 @@
 #include "libavutil/opt.h"
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
-#include "libavformat/timefilter.h"
+#include "timefilter.h"
 
 /**
  * Size of the internal FIFO buffers as a number of audio packets
@@ -229,7 +229,7 @@ static int audio_read_header(AVFormatContext *context, AVFormatParameters *param
     if ((test = start_jack(context)))
         return test;
 
-    stream = av_new_stream(context, 0);
+    stream = avformat_new_stream(context, NULL);
     if (!stream) {
         stop_jack(self);
         return AVERROR(ENOMEM);
@@ -314,7 +314,7 @@ static int audio_read_close(AVFormatContext *context)
 
 #define OFFSET(x) offsetof(JackData, x)
 static const AVOption options[] = {
-    { "channels", "Number of audio channels.", OFFSET(nports), FF_OPT_TYPE_INT, { 2 }, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "channels", "Number of audio channels.", OFFSET(nports), AV_OPT_TYPE_INT, { 2 }, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
     { NULL },
 };
 
@@ -326,13 +326,12 @@ static const AVClass jack_indev_class = {
 };
 
 AVInputFormat ff_jack_demuxer = {
-    "jack",
-    NULL_IF_CONFIG_SMALL("JACK Audio Connection Kit"),
-    sizeof(JackData),
-    NULL,
-    audio_read_header,
-    audio_read_packet,
-    audio_read_close,
-    .flags = AVFMT_NOFILE,
-    .priv_class = &jack_indev_class,
+    .name           = "jack",
+    .long_name      = NULL_IF_CONFIG_SMALL("JACK Audio Connection Kit"),
+    .priv_data_size = sizeof(JackData),
+    .read_header    = audio_read_header,
+    .read_packet    = audio_read_packet,
+    .read_close     = audio_read_close,
+    .flags          = AVFMT_NOFILE,
+    .priv_class     = &jack_indev_class,
 };

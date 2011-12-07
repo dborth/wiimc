@@ -41,7 +41,7 @@ static int flac_write_block_padding(AVIOContext *pb, unsigned int n_padding_byte
 static int flac_write_block_comment(AVIOContext *pb, AVDictionary **m,
                                     int last_block, int bitexact)
 {
-    const char *vendor = bitexact ? "ffmpeg" : LIBAVFORMAT_IDENT;
+    const char *vendor = bitexact ? "Libav" : LIBAVFORMAT_IDENT;
     unsigned int len, count;
     uint8_t *p, *p0;
 
@@ -94,7 +94,7 @@ static int flac_write_trailer(struct AVFormatContext *s)
     enum FLACExtradataFormat format;
     int64_t file_size;
 
-    if (!ff_flac_is_extradata_valid(s->streams[0]->codec, &format, &streaminfo))
+    if (!avpriv_flac_is_extradata_valid(s->streams[0]->codec, &format, &streaminfo))
         return -1;
 
     if (pb->seekable) {

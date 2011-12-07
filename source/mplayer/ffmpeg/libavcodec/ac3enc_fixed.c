@@ -29,6 +29,7 @@
 #define CONFIG_FFT_FLOAT 0
 #undef CONFIG_AC3ENC_FLOAT
 #include "ac3enc.h"
+#include "eac3enc.h"
 
 #define AC3ENC_TYPE AC3ENC_TYPE_AC3_FIXED
 #include "ac3enc_opts_template.c"
@@ -40,6 +41,8 @@ static const AVClass ac3enc_class = { "Fixed-Point AC-3 Encoder", av_default_ite
 
 /**
  * Finalize MDCT and free allocated memory.
+ *
+ * @param s  AC-3 encoder private context
  */
 av_cold void AC3_NAME(mdct_end)(AC3EncodeContext *s)
 {
@@ -49,7 +52,9 @@ av_cold void AC3_NAME(mdct_end)(AC3EncodeContext *s)
 
 /**
  * Initialize MDCT tables.
- * @param nbits log2(MDCT size)
+ *
+ * @param s  AC-3 encoder private context
+ * @return   0 on success, negative error code on failure
  */
 av_cold int AC3_NAME(mdct_init)(AC3EncodeContext *s)
 {
@@ -59,7 +64,7 @@ av_cold int AC3_NAME(mdct_init)(AC3EncodeContext *s)
 }
 
 
-/**
+/*
  * Apply KBD window to input samples prior to MDCT.
  */
 static void apply_window(DSPContext *dsp, int16_t *output, const int16_t *input,
@@ -69,11 +74,9 @@ static void apply_window(DSPContext *dsp, int16_t *output, const int16_t *input,
 }
 
 
-/**
+/*
  * Normalize the input samples to use the maximum available precision.
  * This assumes signed 16-bit input samples.
- *
- * @return exponent shift
  */
 static int normalize_samples(AC3EncodeContext *s)
 {
@@ -86,7 +89,7 @@ static int normalize_samples(AC3EncodeContext *s)
 }
 
 
-/**
+/*
  * Scale MDCT coefficients to 25-bit signed fixed-point.
  */
 static void scale_coefficients(AC3EncodeContext *s)
@@ -103,12 +106,28 @@ static void scale_coefficients(AC3EncodeContext *s)
 }
 
 
-/**
+/*
  * Clip MDCT coefficients to allowable range.
  */
 static void clip_coefficients(DSPContext *dsp, int32_t *coef, unsigned int len)
 {
     dsp->vector_clip_int32(coef, coef, COEF_MIN, COEF_MAX, len);
+}
+
+
+/*
+ * Calculate a single coupling coordinate.
+ */
+static CoefType calc_cpl_coord(CoefSumType energy_ch, CoefSumType energy_cpl)
+{
+    if (energy_cpl <= COEF_MAX) {
+        return 1048576;
+    } else {
+        uint64_t coord   = energy_ch / (energy_cpl >> 24);
+        uint32_t coord32 = FFMIN(coord, 1073741824);
+        coord32          = ff_sqrt(coord32) << 9;
+        return FFMIN(coord32, COEF_MAX);
+    }
 }
 
 

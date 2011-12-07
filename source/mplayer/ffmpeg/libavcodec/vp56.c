@@ -401,6 +401,8 @@ static void vp56_decode_mb(VP56Context *s, int row, int col, int is_alpha)
 
     frame_current = s->framep[VP56_FRAME_CURRENT];
     frame_ref = s->framep[ref_frame];
+    if (mb_type != VP56_MB_INTRA && !frame_ref->data[0])
+        return;
 
     ab = 6*is_alpha;
     b_max = 6 - 2*is_alpha;
@@ -465,6 +467,7 @@ static int vp56_size_changed(AVCodecContext *avctx)
     s->mb_height = (avctx->coded_height+15) / 16;
 
     if (s->mb_width > 1000 || s->mb_height > 1000) {
+        avcodec_set_dimensions(avctx, 0, 0);
         av_log(avctx, AV_LOG_ERROR, "picture too big\n");
         return -1;
     }
@@ -513,6 +516,18 @@ int ff_vp56_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
         if (!res)
             return -1;
 
+        if (res == 2) {
+            int i;
+            for (i = 0; i < 4; i++) {
+                if (s->frames[i].data[0])
+                    avctx->release_buffer(avctx, &s->frames[i]);
+            }
+            if (is_alpha) {
+                avcodec_set_dimensions(avctx, 0, 0);
+                return -1;
+            }
+        }
+
         if (!is_alpha) {
             p->reference = 1;
             if (avctx->get_buffer(avctx, p) < 0) {
@@ -539,7 +554,8 @@ int ff_vp56_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
             s->mb_type = VP56_MB_INTER_NOVEC_PF;
         }
 
-        s->parse_coeff_models(s);
+        if (s->parse_coeff_models(s))
+            goto next;
 
         memset(s->prev_dc, 0, sizeof(s->prev_dc));
         s->prev_dc[1][VP56_FRAME_CURRENT] = 128;
@@ -603,6 +619,7 @@ int ff_vp56_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
             }
         }
 
+    next:
         if (p->key_frame || golden_frame) {
             if (s->framep[VP56_FRAME_GOLDEN]->data[0] &&
                 s->framep[VP56_FRAME_GOLDEN] != s->framep[VP56_FRAME_GOLDEN2])

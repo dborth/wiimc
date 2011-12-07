@@ -163,10 +163,14 @@ static int avs_read_packet(AVFormatContext * s, AVPacket * pkt)
             sub_type = avio_r8(s->pb);
             type = avio_r8(s->pb);
             size = avio_rl16(s->pb);
+            if (size < 4)
+                return AVERROR_INVALIDDATA;
             avs->remaining_frame_size -= size;
 
             switch (type) {
             case AVS_PALETTE:
+                if (size - 4 > sizeof(palette))
+                    return AVERROR_INVALIDDATA;
                 ret = avio_read(s->pb, palette, size - 4);
                 if (ret < size - 4)
                     return AVERROR(EIO);
@@ -175,7 +179,7 @@ static int avs_read_packet(AVFormatContext * s, AVPacket * pkt)
 
             case AVS_VIDEO:
                 if (!avs->st_video) {
-                    avs->st_video = av_new_stream(s, AVS_VIDEO);
+                    avs->st_video = avformat_new_stream(s, NULL);
                     if (avs->st_video == NULL)
                         return AVERROR(ENOMEM);
                     avs->st_video->codec->codec_type = AVMEDIA_TYPE_VIDEO;
@@ -192,7 +196,7 @@ static int avs_read_packet(AVFormatContext * s, AVPacket * pkt)
 
             case AVS_AUDIO:
                 if (!avs->st_audio) {
-                    avs->st_audio = av_new_stream(s, AVS_AUDIO);
+                    avs->st_audio = avformat_new_stream(s, NULL);
                     if (avs->st_audio == NULL)
                         return AVERROR(ENOMEM);
                     avs->st_audio->codec->codec_type = AVMEDIA_TYPE_AUDIO;

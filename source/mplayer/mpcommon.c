@@ -43,6 +43,7 @@
 #include "parser-cfg.h"
 #include "sub/spudec.h"
 #include "version.h"
+#include "sub/ass_mp.h"
 #include "sub/vobsub.h"
 #include "sub/av_sub.h"
 #include "libmpcodecs/dec_teletext.h"
@@ -53,7 +54,6 @@
 double sub_last_pts = -303;
 
 #ifdef CONFIG_ASS
-#include "sub/ass_mp.h"
 ASS_Track* ass_track = 0; // current track to render
 #endif
 
@@ -418,7 +418,7 @@ int cfg_inc_verbose(m_option_t *conf)
 
 int cfg_include(m_option_t *conf, const char *filename)
 {
-    return m_config_parse_config_file(mconfig, filename);
+    return m_config_parse_config_file(mconfig, filename, 0);
 }
 
 const m_option_t noconfig_opts[] = {

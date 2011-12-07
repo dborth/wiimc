@@ -350,8 +350,8 @@ static int open_input(struct variant *var)
             snprintf(url, sizeof(url), "crypto:%s", seg->url);
         if ((ret = ffurl_alloc(&var->input, url, AVIO_FLAG_READ)) < 0)
             return ret;
-        av_set_string3(var->input->priv_data, "key", key, 0, NULL);
-        av_set_string3(var->input->priv_data, "iv", iv, 0, NULL);
+        av_opt_set(var->input->priv_data, "key", key, 0);
+        av_opt_set(var->input->priv_data, "iv", iv, 0);
         if ((ret = ffurl_connect(var->input)) < 0) {
             ffurl_close(var->input);
             var->input = NULL;
@@ -505,11 +505,12 @@ static int applehttp_read_header(AVFormatContext *s, AVFormatParameters *ap)
         snprintf(bitrate_str, sizeof(bitrate_str), "%d", v->bandwidth);
         /* Create new AVStreams for each stream in this variant */
         for (j = 0; j < v->ctx->nb_streams; j++) {
-            AVStream *st = av_new_stream(s, i);
+            AVStream *st = avformat_new_stream(s, NULL);
             if (!st) {
                 ret = AVERROR(ENOMEM);
                 goto fail;
             }
+            st->id = i;
             avcodec_copy_context(st->codec, v->ctx->streams[j]->codec);
             if (v->bandwidth)
                 av_dict_set(&st->metadata, "variant_bitrate", bitrate_str,

@@ -84,7 +84,7 @@ static int qcp_read_header(AVFormatContext *s, AVFormatParameters *ap)
 {
     AVIOContext *pb = s->pb;
     QCPContext    *c  = s->priv_data;
-    AVStream      *st = av_new_stream(s, 0);
+    AVStream      *st = avformat_new_stream(s, NULL);
     uint8_t       buf[16];
     int           i, nb_rates;
 
@@ -92,8 +92,7 @@ static int qcp_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR(ENOMEM);
 
     avio_rb32(pb);                    // "RIFF"
-    s->file_size = avio_rl32(pb) + 8;
-    avio_skip(pb, 8 + 4 + 1 + 1);    // "QLCMfmt " + chunk-size + major-version + minor-version
+    avio_skip(pb, 4 + 8 + 4 + 1 + 1);    // filesize + "QLCMfmt " + chunk-size + major-version + minor-version
 
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->channels   = 1;

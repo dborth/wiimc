@@ -49,7 +49,7 @@ static const char help_text[]=
 " z ou x          ajusta o atraso da legenda de +/- 0.1 segundo\n"
 " r ou t          posição da legenda para cima/baixo, veja também -vf expand\n"
 "\n"
-"* VEJA A PÁGINA DO MANUAL PARA DETALHES, FUTURAS (AVANÇADAS) OPÇÕES E TECLAS *\n"
+"* VEJA A P�?GINA DO MANUAL PARA DETALHES, FUTURAS (AVANÇADAS) OPÇÕES E TECLAS *\n"
 "\n";
 
 // ========================= MPlayer messages ===========================
@@ -403,7 +403,7 @@ static const char help_text[]=
 #define MSGTR_MENU_AudioLanguages "Idiomas do audio"
 #define MSGTR_MENU_SubtitleLanguages "Idiomas da legenda"
 #define MSGTR_MENU_SkinBrowser "Skins"
-#define MSGTR_MENU_Exit "Sair..."
+#define MSGTR_MENU_Exit "Sair"
 #define MSGTR_MENU_Mute "Mudo"
 #define MSGTR_MENU_Original "Original"
 #define MSGTR_MENU_AspectRatio "Aspecto"
@@ -436,7 +436,7 @@ static const char help_text[]=
 #define MSGTR_PLAYLIST_Path "Caminho"
 #define MSGTR_PLAYLIST_Selected "Arquivos selecionados"
 #define MSGTR_PLAYLIST_Files "Arquivos"
-#define MSGTR_PLAYLIST_DirectoryTree "Árvore de diretórios"
+#define MSGTR_PLAYLIST_DirectoryTree "�?rvore de diretórios"
 
 // --- preferences
 #define MSGTR_PREFERENCES_SubtitleOSD "Legenda & OSD"
@@ -490,7 +490,7 @@ static const char help_text[]=
 #define MSGTR_PREFERENCES_FontEncoding5 "Esperanto, Galego, Maltês, Turco (ISO-8859-3)"
 #define MSGTR_PREFERENCES_FontEncoding6 "Caracteres Bálticos Antigos (ISO-8859-4)"
 #define MSGTR_PREFERENCES_FontEncoding7 "Cirílico (ISO-8859-5)"
-#define MSGTR_PREFERENCES_FontEncoding8 "Árabe (ISO-8859-6)"
+#define MSGTR_PREFERENCES_FontEncoding8 "�?rabe (ISO-8859-6)"
 #define MSGTR_PREFERENCES_FontEncoding9 "Grego Moderno (ISO-8859-7)"
 #define MSGTR_PREFERENCES_FontEncoding10 "Turco (ISO-8859-9)"
 #define MSGTR_PREFERENCES_FontEncoding11 "Báltico (ISO-8859-13)"

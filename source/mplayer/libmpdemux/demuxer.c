@@ -44,11 +44,7 @@
 #include "libmpcodecs/dec_audio.h"
 #include "libmpcodecs/dec_video.h"
 #include "libmpcodecs/dec_teletext.h"
-
-#ifdef CONFIG_ASS
-#include "libass/ass.h"
 #include "sub/ass_mp.h"
-#endif
 
 #ifdef CONFIG_FFMPEG
 #include "libavcodec/avcodec.h"
@@ -477,9 +473,11 @@ static void allocate_parser(AVCodecContext **avctx, AVCodecParserContext **parse
     init_avcodec();
 
     switch (format) {
+    case 0x1600:
     case MKTAG('M', 'P', '4', 'A'):
         codec_id = CODEC_ID_AAC;
         break;
+    case 0x1602:
     case MKTAG('M', 'P', '4', 'L'):
         codec_id = CODEC_ID_AAC_LATM;
         break;
@@ -495,10 +493,15 @@ static void allocate_parser(AVCodecContext **avctx, AVCodecParserContext **parse
         //codec_id = CODEC_ID_DNET;
         break;
     case MKTAG('E', 'A', 'C', '3'):
+    case MKTAG('e', 'c', '-', '3'):
         codec_id = CODEC_ID_EAC3;
         break;
     case 0x2001:
     case 0x86:
+    case MKTAG('D', 'T', 'S', ' '):
+    case MKTAG('d', 't', 's', ' '):
+    case MKTAG('d', 't', 's', 'b'):
+    case MKTAG('d', 't', 's', 'c'):
         codec_id = CODEC_ID_DTS;
         break;
     case MKTAG('f', 'L', 'a', 'C'):

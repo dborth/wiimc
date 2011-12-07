@@ -1,5 +1,5 @@
 /*
- * Unbuffered io for ffmpeg system
+ * unbuffered I/O
  * Copyright (c) 2001 Fabrice Bellard
  *
  * This file is part of Libav.
@@ -335,8 +335,11 @@ int ffurl_close(URLContext *h)
 #if CONFIG_NETWORK
     ff_network_close();
 #endif
-    if (h->prot->priv_data_size)
+    if (h->prot->priv_data_size) {
+        if (h->prot->priv_data_class)
+            av_opt_free(h->priv_data);
         av_free(h->priv_data);
+    }
     av_free(h);
     return ret;
 }

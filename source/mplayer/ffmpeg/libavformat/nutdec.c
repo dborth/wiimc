@@ -20,7 +20,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <strings.h>
 #include "libavutil/avstring.h"
 #include "libavutil/bswap.h"
 #include "libavutil/dict.h"
@@ -288,7 +287,7 @@ static int decode_main_header(NUTContext *nut){
 
     nut->stream = av_mallocz(sizeof(StreamContext)*stream_count);
     for(i=0; i<stream_count; i++){
-        av_new_stream(s, i);
+        avformat_new_stream(s, NULL);
     }
 
     return 0;
@@ -416,7 +415,7 @@ static int decode_info_header(NUTContext *nut){
 
     if(chapter_id && !stream_id_plus1){
         int64_t start= chapter_start / nut->time_base_count;
-        chapter= ff_new_chapter(s, chapter_id,
+        chapter= avpriv_new_chapter(s, chapter_id,
                                 nut->time_base[chapter_start % nut->time_base_count],
                                 start, start + chapter_len, NULL);
         metadata = &chapter->metadata;
@@ -459,8 +458,8 @@ static int decode_info_header(NUTContext *nut){
                 set_disposition_bits(s, str_value, stream_id_plus1 - 1);
                 continue;
             }
-            if(metadata && strcasecmp(name,"Uses")
-               && strcasecmp(name,"Depends") && strcasecmp(name,"Replaces"))
+            if(metadata && av_strcasecmp(name,"Uses")
+               && av_strcasecmp(name,"Depends") && av_strcasecmp(name,"Replaces"))
                 av_dict_set(metadata, name, str_value, 0);
         }
     }
@@ -874,16 +873,16 @@ static int read_seek(AVFormatContext *s, int stream_index, int64_t pts, int flag
                      (void **) next_node);
         av_log(s, AV_LOG_DEBUG, "%"PRIu64"-%"PRIu64" %"PRId64"-%"PRId64"\n", next_node[0]->pos, next_node[1]->pos,
                                                     next_node[0]->ts , next_node[1]->ts);
-        pos= av_gen_search(s, -1, dummy.ts, next_node[0]->pos, next_node[1]->pos, next_node[1]->pos,
-                                            next_node[0]->ts , next_node[1]->ts, AVSEEK_FLAG_BACKWARD, &ts, nut_read_timestamp);
+        pos = ff_gen_search(s, -1, dummy.ts, next_node[0]->pos, next_node[1]->pos, next_node[1]->pos,
+                                             next_node[0]->ts , next_node[1]->ts, AVSEEK_FLAG_BACKWARD, &ts, nut_read_timestamp);
 
         if(!(flags & AVSEEK_FLAG_BACKWARD)){
             dummy.pos= pos+16;
             next_node[1]= &nopts_sp;
             av_tree_find(nut->syncpoints, &dummy, (void *) ff_nut_sp_pos_cmp,
                          (void **) next_node);
-            pos2= av_gen_search(s, -2, dummy.pos, next_node[0]->pos     , next_node[1]->pos, next_node[1]->pos,
-                                                next_node[0]->back_ptr, next_node[1]->back_ptr, flags, &ts, nut_read_timestamp);
+            pos2 = ff_gen_search(s, -2, dummy.pos, next_node[0]->pos     , next_node[1]->pos, next_node[1]->pos,
+                                                   next_node[0]->back_ptr, next_node[1]->back_ptr, flags, &ts, nut_read_timestamp);
             if(pos2>=0)
                 pos= pos2;
             //FIXME dir but I think it does not matter

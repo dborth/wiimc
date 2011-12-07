@@ -194,18 +194,6 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
         st->codec->codec_id   = ff_codec_get_id(ff_rm_codec_tags,
                                                 st->codec->codec_tag);
 
-        switch (ast->deint_id) {
-        case DEINT_ID_GENR:
-        case DEINT_ID_INT0:
-        case DEINT_ID_INT4:
-        case DEINT_ID_SIPR:
-        case DEINT_ID_VBRS:
-        case DEINT_ID_VBRF:
-            break;
-        default:
-            av_log(NULL,0,"Unknown interleaver %X\n", ast->deint_id);
-            return AVERROR_INVALIDDATA;
-        }
         switch (st->codec->codec_id) {
         case CODEC_ID_AC3:
             st->need_parsing = AVSTREAM_PARSE_FULL;
@@ -214,13 +202,6 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
             st->codec->extradata_size= 0;
             ast->audio_framesize = st->codec->block_align;
             st->codec->block_align = coded_framesize;
-
-            if(ast->audio_framesize >= UINT_MAX / sub_packet_h){
-                av_log(s, AV_LOG_ERROR, "ast->audio_framesize * sub_packet_h too large\n");
-                return -1;
-            }
-
-            av_new_packet(&ast->pkt, ast->audio_framesize * sub_packet_h);
             break;
         case CODEC_ID_COOK:
         case CODEC_ID_ATRAC3:
@@ -251,13 +232,6 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
             }
             if ((ret = rm_read_extradata(pb, st->codec, codecdata_length)) < 0)
                 return ret;
-
-            if(ast->audio_framesize >= UINT_MAX / sub_packet_h){
-                av_log(s, AV_LOG_ERROR, "rm->audio_framesize * sub_packet_h too large\n");
-                return -1;
-            }
-
-            av_new_packet(&ast->pkt, ast->audio_framesize * sub_packet_h);
             break;
         case CODEC_ID_AAC:
             avio_rb16(pb); avio_r8(pb);
@@ -277,6 +251,37 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
         default:
             av_strlcpy(st->codec->codec_name, buf, sizeof(st->codec->codec_name));
         }
+        if (ast->deint_id == DEINT_ID_INT4 ||
+            ast->deint_id == DEINT_ID_GENR ||
+            ast->deint_id == DEINT_ID_SIPR) {
+            if (st->codec->block_align <= 0 ||
+                ast->audio_framesize * sub_packet_h > (unsigned)INT_MAX ||
+                ast->audio_framesize * sub_packet_h < st->codec->block_align)
+                return AVERROR_INVALIDDATA;
+            if (av_new_packet(&ast->pkt, ast->audio_framesize * sub_packet_h) < 0)
+                return AVERROR(ENOMEM);
+        }
+        switch (ast->deint_id) {
+        case DEINT_ID_INT4:
+            if (ast->coded_framesize > ast->audio_framesize ||
+                ast->coded_framesize * sub_packet_h > (2 + (sub_packet_h & 1)) * ast->audio_framesize)
+                return AVERROR_INVALIDDATA;
+            break;
+        case DEINT_ID_GENR:
+            if (ast->sub_packet_size <= 0 ||
+                ast->sub_packet_size > ast->audio_framesize)
+                return AVERROR_INVALIDDATA;
+            break;
+        case DEINT_ID_SIPR:
+        case DEINT_ID_INT0:
+        case DEINT_ID_VBRS:
+        case DEINT_ID_VBRF:
+            break;
+        default:
+            av_log(NULL,0,"Unknown interleaver %X\n", ast->deint_id);
+            return AVERROR_INVALIDDATA;
+        }
+
         if (read_all) {
             avio_r8(pb);
             avio_r8(pb);
@@ -391,7 +396,7 @@ static int rm_read_header_old(AVFormatContext *s)
     AVStream *st;
 
     rm->old_format = 1;
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return -1;
     st->priv_data = ff_rm_alloc_rmstream();
@@ -457,7 +462,7 @@ static int rm_read_header(AVFormatContext *s, AVFormatParameters *ap)
             rm_read_metadata(s, 1);
             break;
         case MKTAG('M', 'D', 'P', 'R'):
-            st = av_new_stream(s, 0);
+            st = avformat_new_stream(s, NULL);
             if (!st)
                 return AVERROR(ENOMEM);
             st->id = avio_rb16(pb);
@@ -813,7 +818,8 @@ ff_rm_retrieve_cache (AVFormatContext *s, AVIOContext *pb,
 
     assert (rm->audio_pkt_cnt > 0);
 
-    if (st->codec->codec_id == CODEC_ID_AAC)
+    if (ast->deint_id == DEINT_ID_VBRF ||
+        ast->deint_id == DEINT_ID_VBRS)
         av_get_packet(pb, pkt, ast->sub_packet_lengths[ast->sub_packet_cnt - rm->audio_pkt_cnt]);
     else {
         av_new_packet(pkt, st->codec->block_align);
@@ -966,4 +972,5 @@ AVInputFormat ff_rdt_demuxer = {
     .long_name      = NULL_IF_CONFIG_SMALL("RDT demuxer"),
     .priv_data_size = sizeof(RMDemuxContext),
     .read_close     = rm_read_close,
+    .flags          = AVFMT_NOFILE,
 };

@@ -209,7 +209,7 @@ static int audio_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     AVStream *st;
     int ret;
 
-    st = av_new_stream(s1, 0);
+    st = avformat_new_stream(s1, NULL);
     if (!st) {
         return AVERROR(ENOMEM);
     }
@@ -282,8 +282,8 @@ static int audio_read_close(AVFormatContext *s1)
 
 #if CONFIG_OSS_INDEV
 static const AVOption options[] = {
-    { "sample_rate", "", offsetof(AudioData, sample_rate), FF_OPT_TYPE_INT, {.dbl = 48000}, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
-    { "channels",    "", offsetof(AudioData, channels),    FF_OPT_TYPE_INT, {.dbl = 2},     1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "sample_rate", "", offsetof(AudioData, sample_rate), AV_OPT_TYPE_INT, {.dbl = 48000}, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "channels",    "", offsetof(AudioData, channels),    AV_OPT_TYPE_INT, {.dbl = 2},     1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
     { NULL },
 };
 
@@ -295,33 +295,30 @@ static const AVClass oss_demuxer_class = {
 };
 
 AVInputFormat ff_oss_demuxer = {
-    "oss",
-    NULL_IF_CONFIG_SMALL("Open Sound System capture"),
-    sizeof(AudioData),
-    NULL,
-    audio_read_header,
-    audio_read_packet,
-    audio_read_close,
-    .flags = AVFMT_NOFILE,
-    .priv_class = &oss_demuxer_class,
+    .name           = "oss",
+    .long_name      = NULL_IF_CONFIG_SMALL("Open Sound System capture"),
+    .priv_data_size = sizeof(AudioData),
+    .read_header    = audio_read_header,
+    .read_packet    = audio_read_packet,
+    .read_close     = audio_read_close,
+    .flags          = AVFMT_NOFILE,
+    .priv_class     = &oss_demuxer_class,
 };
 #endif
 
 #if CONFIG_OSS_OUTDEV
 AVOutputFormat ff_oss_muxer = {
-    "oss",
-    NULL_IF_CONFIG_SMALL("Open Sound System playback"),
-    "",
-    "",
-    sizeof(AudioData),
+    .name           = "oss",
+    .long_name      = NULL_IF_CONFIG_SMALL("Open Sound System playback"),
+    .priv_data_size = sizeof(AudioData),
     /* XXX: we make the assumption that the soundcard accepts this format */
     /* XXX: find better solution with "preinit" method, needed also in
        other formats */
-    AV_NE(CODEC_ID_PCM_S16BE, CODEC_ID_PCM_S16LE),
-    CODEC_ID_NONE,
-    audio_write_header,
-    audio_write_packet,
-    audio_write_trailer,
-    .flags = AVFMT_NOFILE,
+    .audio_codec    = AV_NE(CODEC_ID_PCM_S16BE, CODEC_ID_PCM_S16LE),
+    .video_codec    = CODEC_ID_NONE,
+    .write_header   = audio_write_header,
+    .write_packet   = audio_write_packet,
+    .write_trailer  = audio_write_trailer,
+    .flags          = AVFMT_NOFILE,
 };
 #endif

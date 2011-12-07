@@ -20,9 +20,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "osdep/strsep.h"
 #include "libmpcodecs/dec_audio.h"
-
+#include "mp_msg.h"
 #include "af.h"
 
 // Static list of filters
@@ -663,5 +664,9 @@ void af_help (void) {
 
 void af_fix_parameters(af_data_t *data)
 {
+    if (data->nch < 0 || data->nch > AF_NCH) {
+      mp_msg(MSGT_AFILTER, MSGL_ERR, "Invalid number of channels %i, assuming 2.\n", data->nch);
+      data->nch = 2;
+    }
     data->bps = af_fmt2bits(data->format)/8;
 }

@@ -61,6 +61,8 @@ const AVCodecTag ff_mp4_obj_type[] = {
     { CODEC_ID_VORBIS    , 0xDD }, /* non standard, gpac uses it */
     { CODEC_ID_DVD_SUBTITLE, 0xE0 }, /* non standard, see unsupported-embedded-subs-2.mp4 */
     { CODEC_ID_QCELP     , 0xE1 },
+    { CODEC_ID_MPEG4SYSTEMS, 0x01 },
+    { CODEC_ID_MPEG4SYSTEMS, 0x02 },
     { CODEC_ID_NONE      ,    0 },
 };
 
@@ -204,6 +206,8 @@ const AVCodecTag codec_movvideo_tags[] = {
 
     { CODEC_ID_DIRAC, MKTAG('d', 'r', 'a', 'c') },
     { CODEC_ID_DNXHD, MKTAG('A', 'V', 'd', 'n') }, /* AVID DNxHD */
+    { CODEC_ID_FLV1,  MKTAG('H', '2', '6', '3') }, /* Flash Media Server */
+    { CODEC_ID_MSMPEG4V3, MKTAG('3', 'I', 'V', 'D') }, /* 3ivx DivX Doctor */
     { CODEC_ID_RAWVIDEO, MKTAG('A', 'V', '1', 'x') }, /* AVID 1:1x */
     { CODEC_ID_RAWVIDEO, MKTAG('A', 'V', 'u', 'p') },
     { CODEC_ID_SGI,   MKTAG('s', 'g', 'i', ' ') }, /* SGI  */
@@ -259,6 +263,7 @@ const AVCodecTag codec_movaudio_tags[] = {
     { CODEC_ID_AMR_WB, MKTAG('s', 'a', 'w', 'b') }, /* AMR-WB 3gp */
 
     { CODEC_ID_GSM,  MKTAG('a', 'g', 's', 'm') },
+    { CODEC_ID_NELLYMOSER, MKTAG('n', 'm', 'o', 's') }, /* Flash Media Server */
     { CODEC_ID_ALAC, MKTAG('a', 'l', 'a', 'c') }, /* Apple Lossless */
 
     { CODEC_ID_QCELP, MKTAG('Q','c','l','p') },
@@ -270,6 +275,8 @@ const AVCodecTag codec_movaudio_tags[] = {
 
     { CODEC_ID_DVAUDIO, MKTAG('v', 'd', 'v', 'a') },
     { CODEC_ID_DVAUDIO, MKTAG('d', 'v', 'c', 'a') },
+
+    { CODEC_ID_SPEEX, MKTAG('s','p','e','x') }, /* Flash Media Server */
 
     { CODEC_ID_WMAV2, MKTAG('W', 'M', 'A', '2') },
 
@@ -418,7 +425,7 @@ int ff_mp4_read_dec_config_descr(AVFormatContext *fc, AVStream *st, AVIOContext 
     len = ff_mp4_read_descr(fc, pb, &tag);
     if (tag == MP4DecSpecificDescrTag) {
         av_dlog(fc, "Specific MPEG4 header len=%d\n", len);
-        if((uint64_t)len > (1<<30))
+        if (!len || (uint64_t)len > (1<<30))
             return -1;
         av_free(st->codec->extradata);
         st->codec->extradata = av_mallocz(len + FF_INPUT_BUFFER_PADDING_SIZE);
@@ -428,11 +435,11 @@ int ff_mp4_read_dec_config_descr(AVFormatContext *fc, AVStream *st, AVIOContext 
         st->codec->extradata_size = len;
         if (st->codec->codec_id == CODEC_ID_AAC) {
             MPEG4AudioConfig cfg;
-            ff_mpeg4audio_get_config(&cfg, st->codec->extradata,
+            avpriv_mpeg4audio_get_config(&cfg, st->codec->extradata,
                                      st->codec->extradata_size);
             st->codec->channels = cfg.channels;
             if (cfg.object_type == 29 && cfg.sampling_index < 3) // old mp3on4
-                st->codec->sample_rate = ff_mpa_freq_tab[cfg.sampling_index];
+                st->codec->sample_rate = avpriv_mpa_freq_tab[cfg.sampling_index];
             else if (cfg.ext_sample_rate)
                 st->codec->sample_rate = cfg.ext_sample_rate;
             else

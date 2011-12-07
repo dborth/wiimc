@@ -183,6 +183,66 @@ threshold, and defaults to 98.
 @var{threshold} is the threshold below which a pixel value is
 considered black, and defaults to 32.
 
+@section boxblur
+
+Apply boxblur algorithm to the input video.
+
+This filter accepts the parameters:
+@var{luma_power}:@var{luma_radius}:@var{chroma_radius}:@var{chroma_power}:@var{alpha_radius}:@var{alpha_power}
+
+Chroma and alpha parameters are optional, if not specified they default
+to the corresponding values set for @var{luma_radius} and
+@var{luma_power}.
+
+@var{luma_radius}, @var{chroma_radius}, and @var{alpha_radius} represent
+the radius in pixels of the box used for blurring the corresponding
+input plane. They are expressions, and can contain the following
+constants:
+@table @option
+@item w, h
+the input width and heigth in pixels
+
+@item cw, ch
+the input chroma image width and height in pixels
+
+@item hsub, vsub
+horizontal and vertical chroma subsample values. For example for the
+pixel format "yuv422p" @var{hsub} is 2 and @var{vsub} is 1.
+@end table
+
+The radius must be a non-negative number, and must not be greater than
+the value of the expression @code{min(w,h)/2} for the luma and alpha planes,
+and of @code{min(cw,ch)/2} for the chroma planes.
+
+@var{luma_power}, @var{chroma_power}, and @var{alpha_power} represent
+how many times the boxblur filter is applied to the corresponding
+plane.
+
+Some examples follow:
+
+@itemize
+
+@item
+Apply a boxblur filter with luma, chroma, and alpha radius
+set to 2:
+@example
+boxblur=2:1
+@end example
+
+@item
+Set luma radius to 2, alpha and chroma radius to 0
+@example
+boxblur=2:1:0:0:0:0
+@end example
+
+@item
+Set luma and chroma radius to a fraction of the video dimension
+@example
+boxblur=min(h\,w)/10:1:min(cw\,ch)/10:1
+@end example
+
+@end itemize
+
 @section copy
 
 Copy the input source unchanged to the output. Mainly useful for
@@ -204,13 +264,13 @@ the computed values for @var{x} and @var{y}. They are evaluated for
 each new frame.
 
 @item in_w, in_h
-the input width and heigth
+the input width and height
 
 @item iw, ih
 same as @var{in_w} and @var{in_h}
 
 @item out_w, out_h
-the output (cropped) width and heigth
+the output (cropped) width and height
 
 @item ow, oh
 same as @var{out_w} and @var{out_h}
@@ -320,6 +380,58 @@ This can be useful when channel logos distort the video area. 0
 indicates never reset and return the largest area encountered during
 playback.
 @end table
+
+@section delogo
+
+Suppress a TV station logo by a simple interpolation of the surrounding
+pixels. Just set a rectangle covering the logo and watch it disappear
+(and sometimes something even uglier appear - your mileage may vary).
+
+The filter accepts parameters as a string of the form
+"@var{x}:@var{y}:@var{w}:@var{h}:@var{band}", or as a list of
+@var{key}=@var{value} pairs, separated by ":".
+
+The description of the accepted parameters follows.
+
+@table @option
+
+@item x, y
+Specify the top left corner coordinates of the logo. They must be
+specified.
+
+@item w, h
+Specify the width and height of the logo to clear. They must be
+specified.
+
+@item band, t
+Specify the thickness of the fuzzy edge of the rectangle (added to
+@var{w} and @var{h}). The default value is 4.
+
+@item show
+When set to 1, a green rectangle is drawn on the screen to simplify
+finding the right @var{x}, @var{y}, @var{w}, @var{h} parameters, and
+@var{band} is set to 4. The default value is 0.
+
+@end table
+
+Some examples follow.
+
+@itemize
+
+@item
+Set a rectangle covering the area with top left corner coordinates 0,0
+and size 100x77, setting a band of size 10:
+@example
+delogo=0:0:100:77:10
+@end example
+
+@item
+As the previous example, but use named options:
+@example
+delogo=x=0:y=0:w=100:h=77:band=10
+@end example
+
+@end itemize
 
 @section drawbox
 
@@ -701,7 +813,124 @@ a float number which specifies chroma temporal strength, defaults to
 @var{luma_tmp}*@var{chroma_spatial}/@var{luma_spatial}
 @end table
 
-@section noformat
+@section lut, lutrgb, lutyuv
+
+Compute a look-up table for binding each pixel component input value
+to an output value, and apply it to input video.
+
+@var{lutyuv} applies a lookup table to a YUV input video, @var{lutrgb}
+to an RGB input video.
+
+These filters accept in input a ":"-separated list of options, which
+specify the expressions used for computing the lookup table for the
+corresponding pixel component values.
+
+The @var{lut} filter requires either YUV or RGB pixel formats in
+input, and accepts the options:
+@table @option
+@var{c0} (first  pixel component)
+@var{c1} (second pixel component)
+@var{c2} (third  pixel component)
+@var{c3} (fourth pixel component, corresponds to the alpha component)
+@end table
+
+The exact component associated to each option depends on the format in
+input.
+
+The @var{lutrgb} filter requires RGB pixel formats in input, and
+accepts the options:
+@table @option
+@var{r} (red component)
+@var{g} (green component)
+@var{b} (blue component)
+@var{a} (alpha component)
+@end table
+
+The @var{lutyuv} filter requires YUV pixel formats in input, and
+accepts the options:
+@table @option
+@var{y} (Y/luminance component)
+@var{u} (U/Cb component)
+@var{v} (V/Cr component)
+@var{a} (alpha component)
+@end table
+
+The expressions can contain the following constants and functions:
+
+@table @option
+@item E, PI, PHI
+the corresponding mathematical approximated values for e
+(euler number), pi (greek PI), PHI (golden ratio)
+
+@item w, h
+the input width and heigth
+
+@item val
+input value for the pixel component
+
+@item clipval
+the input value clipped in the @var{minval}-@var{maxval} range
+
+@item maxval
+maximum value for the pixel component
+
+@item minval
+minimum value for the pixel component
+
+@item negval
+the negated value for the pixel component value clipped in the
+@var{minval}-@var{maxval} range , it corresponds to the expression
+"maxval-clipval+minval"
+
+@item clip(val)
+the computed value in @var{val} clipped in the
+@var{minval}-@var{maxval} range
+
+@item gammaval(gamma)
+the computed gamma correction value of the pixel component value
+clipped in the @var{minval}-@var{maxval} range, corresponds to the
+expression
+"pow((clipval-minval)/(maxval-minval)\,@var{gamma})*(maxval-minval)+minval"
+
+@end table
+
+All expressions default to "val".
+
+Some examples follow:
+@example
+# negate input video
+lutrgb="r=maxval+minval-val:g=maxval+minval-val:b=maxval+minval-val"
+lutyuv="y=maxval+minval-val:u=maxval+minval-val:v=maxval+minval-val"
+
+# the above is the same as
+lutrgb="r=negval:g=negval:b=negval"
+lutyuv="y=negval:u=negval:v=negval"
+
+# negate luminance
+lutyuv=negval
+
+# remove chroma components, turns the video into a graytone image
+lutyuv="u=128:v=128"
+
+# apply a luma burning effect
+lutyuv="y=2*val"
+
+# remove green and blue components
+lutrgb="g=0:b=0"
+
+# set a constant alpha channel value on input
+format=rgba,lutrgb=a="maxval-minval/2"
+
+# correct luminance gamma by a 0.5 factor
+lutyuv=y=gammaval(0.5)
+@end example
+
+@section negate
+
+Negate input video.
+
+This filter accepts an integer in input, if non-zero it negates the
+alpha component (if available). The default value in input is 0.
 
 Force libavfilter not to use any of the specified pixel formats for the
 input to the next filter.
@@ -895,13 +1124,13 @@ the corresponding mathematical approximated values for e
 (euler number), pi (greek PI), phi (golden ratio)
 
 @item in_w, in_h
-the input video width and heigth
+the input video width and height
 
 @item iw, ih
 same as @var{in_w} and @var{in_h}
 
 @item out_w, out_h
-the output width and heigth, that is the size of the padded area as
+the output width and height, that is the size of the padded area as
 specified by the @var{width} and @var{height} expressions
 
 @item ow, oh
@@ -1002,19 +1231,22 @@ the corresponding mathematical approximated values for e
 (euler number), pi (greek PI), phi (golden ratio)
 
 @item in_w, in_h
-the input width and heigth
+the input width and height
 
 @item iw, ih
 same as @var{in_w} and @var{in_h}
 
 @item out_w, out_h
-the output (cropped) width and heigth
+the output (cropped) width and height
 
 @item ow, oh
 same as @var{out_w} and @var{out_h}
 
-@item a
+@item dar, a
 input display aspect ratio, same as @var{iw} / @var{ih}
+
+@item sar
+input sample aspect ratio
 
 @item hsub, vsub
 horizontal and vertical chroma subsample values. For example for the
@@ -1062,6 +1294,122 @@ scale="trunc(3/2*iw/hsub)*hsub:trunc(3/2*ih/vsub)*vsub"
 
 # increase the width to a maximum of 500 pixels, keep the same input aspect ratio
 scale='min(500\, iw*3/2):-1'
+@end example
+
+@section select
+Select frames to pass in output.
+
+It accepts in input an expression, which is evaluated for each input
+frame. If the expression is evaluated to a non-zero value, the frame
+is selected and passed to the output, otherwise it is discarded.
+
+The expression can contain the following constants:
+
+@table @option
+@item PI
+Greek PI
+
+@item PHI
+golden ratio
+
+@item E
+Euler number
+
+@item n
+the sequential number of the filtered frame, starting from 0
+
+@item selected_n
+the sequential number of the selected frame, starting from 0
+
+@item prev_selected_n
+the sequential number of the last selected frame, NAN if undefined
+
+@item TB
+timebase of the input timestamps
+
+@item pts
+the PTS (Presentation TimeStamp) of the filtered video frame,
+expressed in @var{TB} units, NAN if undefined
+
+@item t
+the PTS (Presentation TimeStamp) of the filtered video frame,
+expressed in seconds, NAN if undefined
+
+@item prev_pts
+the PTS of the previously filtered video frame, NAN if undefined
+
+@item prev_selected_pts
+the PTS of the last previously filtered video frame, NAN if undefined
+
+@item prev_selected_t
+the PTS of the last previously selected video frame, NAN if undefined
+
+@item start_pts
+the PTS of the first video frame in the video, NAN if undefined
+
+@item start_t
+the time of the first video frame in the video, NAN if undefined
+
+@item pict_type
+the type of the filtered frame, can assume one of the following
+values:
+@table @option
+@item I
+@item P
+@item B
+@item S
+@item SI
+@item SP
+@item BI
+@end table
+
+@item interlace_type
+the frame interlace type, can assume one of the following values:
+@table @option
+@item PROGRESSIVE
+the frame is progressive (not interlaced)
+@item TOPFIRST
+the frame is top-field-first
+@item BOTTOMFIRST
+the frame is bottom-field-first
+@end table
+
+@item key
+1 if the filtered frame is a key-frame, 0 otherwise
+
+@item pos
+the position in the file of the filtered frame, -1 if the information
+is not available (e.g. for synthetic video)
+@end table
+
+The default value of the select expression is "1".
+
+Some examples follow:
+
+@example
+# select all frames in input
+select
+
+# the above is the same as:
+select=1
+
+# skip all frames:
+select=0
+
+# select only I-frames
+select='eq(pict_type\,I)'
+
+# select one frame every 100
+select='not(mod(n\,100))'
+
+# select only frames contained in the 10-20 time interval
+select='gte(t\,10)*lte(t\,20)'
+
+# select only I frames contained in the 10-20 time interval
+select='gte(t\,10)*lte(t\,20)*eq(pict_type\,I)'
+
+# select frames with a minimum distance of 10 seconds
+select='isnan(prev_selected_t)+gte(t-prev_selected_t\,10)'
 @end example
 
 @anchor{setdar}
@@ -1210,6 +1558,65 @@ settb=2*intb
 settb=AVTB
 @end example
 
+@section showinfo
+
+Show a line containing various information for each input video frame.
+The input video is not modified.
+
+The shown line contains a sequence of key/value pairs of the form
+@var{key}:@var{value}.
+
+A description of each shown parameter follows:
+
+@table @option
+@item n
+sequential number of the input frame, starting from 0
+
+@item pts
+Presentation TimeStamp of the input frame, expressed as a number of
+time base units. The time base unit depends on the filter input pad.
+
+@item pts_time
+Presentation TimeStamp of the input frame, expressed as a number of
+seconds
+
+@item pos
+position of the frame in the input stream, -1 if this information in
+unavailable and/or meanigless (for example in case of synthetic video)
+
+@item fmt
+pixel format name
+
+@item sar
+sample aspect ratio of the input frame, expressed in the form
+@var{num}/@var{den}
+
+@item s
+size of the input frame, expressed in the form
+@var{width}x@var{height}
+
+@item i
+interlaced mode ("P" for "progressive", "T" for top field first, "B"
+for bottom field first)
+
+@item iskey
+1 if the frame is a key frame, 0 otherwise
+
+@item type
+picture type of the input frame ("I" for an I-frame, "P" for a
+P-frame, "B" for a B-frame, "?" for unknown type).
+Check also the documentation of the @code{AVPictureType} enum and of
+the @code{av_get_picture_type_char} function defined in
+@file{libavutil/avutil.h}.
+
+@item checksum
+Adler-32 checksum of all the planes of the input frame
+
+@item plane_checksum
+Adler-32 checksum of each plane of the input frame, expressed in the form
+"[@var{c0} @var{c1} @var{c2} @var{c3}]"
+@end table
+
 @section slicify
 
 Pass the images of input video on to next video filter as multiple
@@ -1275,7 +1682,7 @@ It accepts the following parameters:
 
 Negative values for the amount will blur the input video, while positive
 values will sharpen. All parameters are optional and default to the
-equivalent of the string '5:5:1.0:0:0:0.0'.
+equivalent of the string '5:5:1.0:5:5:0.0'.
 
 @table @option
 
@@ -1293,11 +1700,11 @@ and 5.0, default value is 1.0.
 
 @item chroma_msize_x
 Set the chroma matrix horizontal size. It can be an integer between 3
-and 13, default value is 0.
+and 13, default value is 5.
 
 @item chroma_msize_y
 Set the chroma matrix vertical size. It can be an integer between 3
-and 13, default value is 0.
+and 13, default value is 5.
 
 @item luma_amount
 Set the chroma effect strength. It can be a float number between -2.0
@@ -1329,7 +1736,7 @@ Flip the input video vertically.
 Deinterlace the input video ("yadif" means "yet another deinterlacing
 filter").
 
-It accepts the optional parameters: @var{mode}:@var{parity}.
+It accepts the optional parameters: @var{mode}:@var{parity}:@var{auto}.
 
 @var{mode} specifies the interlacing mode to adopt, accepts one of the
 following values:
@@ -1352,9 +1759,9 @@ interlaced video, accepts one of the following values:
 
 @table @option
 @item 0
-assume bottom field first
-@item 1
 assume top field first
+@item 1
+assume bottom field first
 @item -1
 enable automatic detection
 @end table
@@ -1362,6 +1769,18 @@ enable automatic detection
 Default value is -1.
 If interlacing is unknown or decoder does not export this information,
 top field first will be assumed.
+
+@var{auto] specifies if deinterlacer should trust the interlaced flag
+and only deinterlace frames marked as interlaced
+
+@table @option
+@item 0
+deinterlace all frames
+@item 1
+only deinterlace frames marked as interlaced
+@end table
+
+Default value is 0.
 
 @c man end VIDEO FILTERS
 
@@ -1436,7 +1855,7 @@ alpha specifier. The default value is "black".
 
 @item frame_size
 Specify the size of the sourced video, it may be a string of the form
-@var{width}x@var{heigth}, or the name of a size abbreviation. The
+@var{width}x@var{height}, or the name of a size abbreviation. The
 default value is "320x240".
 
 @item frame_rate
@@ -1554,6 +1973,56 @@ Some examples follow:
 # which is overlayed on the overlay filter main input
 frei0r_src=200x200:10:partik0l=1234 [overlay]; [in][overlay] overlay
 @end example
+
+@section rgbtestsrc, testsrc
+
+The @code{rgbtestsrc} source generates an RGB test pattern useful for
+detecting RGB vs BGR issues. You should see a red, green and blue
+stripe from top to bottom.
+
+The @code{testsrc} source generates a test video pattern, showing a
+color pattern, a scrolling gradient and a timestamp. This is mainly
+intended for testing purposes.
+
+Both sources accept an optional sequence of @var{key}=@var{value} pairs,
+separated by ":". The description of the accepted options follows.
+
+@table @option
+
+@item size, s
+Specify the size of the sourced video, it may be a string of the form
+@var{width}x@var{heigth}, or the name of a size abbreviation. The
+default value is "320x240".
+
+@item rate, r
+Specify the frame rate of the sourced video, as the number of frames
+generated per second. It has to be a string in the format
+@var{frame_rate_num}/@var{frame_rate_den}, an integer number, a float
+number or a valid video frame rate abbreviation. The default value is
+"25".
+
+@item sar
+Set the sample aspect ratio of the sourced video.
+
+@item duration
+Set the video duration of the sourced video. The accepted syntax is:
+@example
+[-]HH[:MM[:SS[.m...]]]
+[-]S+[.m...]
+@end example
+See also the function @code{av_parse_time()}.
+
+If not specified, or the expressed duration is negative, the video is
+supposed to be generated forever.
+@end table
+
+For example the following:
+@example
+testsrc=duration=5.3:size=qcif:rate=10
+@end example
+
+will generate a video with a duration of 5.3 seconds, with size
+176x144 and a framerate of 10 frames per second.
 
 @c man end VIDEO SOURCES
 

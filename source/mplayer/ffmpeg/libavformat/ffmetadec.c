@@ -75,7 +75,7 @@ static AVChapter *read_chapter(AVFormatContext *s)
         end = AV_NOPTS_VALUE;
     }
 
-    return ff_new_chapter(s, s->nb_chapters, tb, start, end, NULL);
+    return avpriv_new_chapter(s, s->nb_chapters, tb, start, end, NULL);
 }
 
 static uint8_t *unescape(uint8_t *buf, int size)
@@ -132,7 +132,7 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
         get_line(s->pb, line, sizeof(line));
 
         if (!memcmp(line, ID_STREAM, strlen(ID_STREAM))) {
-            AVStream *st = av_new_stream(s, 0);
+            AVStream *st = avformat_new_stream(s, NULL);
 
             if (!st)
                 return -1;

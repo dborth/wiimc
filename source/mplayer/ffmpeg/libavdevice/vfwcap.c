@@ -295,7 +295,7 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     SetWindowLongPtr(ctx->hwnd, GWLP_USERDATA, (LONG_PTR) s);
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if(!st) {
         vfw_read_close(s);
         return AVERROR(ENOMEM);
@@ -457,8 +457,8 @@ static int vfw_read_packet(AVFormatContext *s, AVPacket *pkt)
 #define OFFSET(x) offsetof(struct vfw_ctx, x)
 #define DEC AV_OPT_FLAG_DECODING_PARAM
 static const AVOption options[] = {
-    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), FF_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
-    { "framerate", "", OFFSET(framerate), FF_OPT_TYPE_STRING, {.str = "ntsc"}, 0, 0, DEC },
+    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
+    { "framerate", "", OFFSET(framerate), AV_OPT_TYPE_STRING, {.str = "ntsc"}, 0, 0, DEC },
     { NULL },
 };
 
@@ -470,13 +470,12 @@ static const AVClass vfw_class = {
 };
 
 AVInputFormat ff_vfwcap_demuxer = {
-    "vfwcap",
-    NULL_IF_CONFIG_SMALL("VFW video capture"),
-    sizeof(struct vfw_ctx),
-    NULL,
-    vfw_read_header,
-    vfw_read_packet,
-    vfw_read_close,
-    .flags = AVFMT_NOFILE,
-    .priv_class = &vfw_class,
+    .name           = "vfwcap",
+    .long_name      = NULL_IF_CONFIG_SMALL("VfW video capture"),
+    .priv_data_size = sizeof(struct vfw_ctx),
+    .read_header    = vfw_read_header,
+    .read_packet    = vfw_read_packet,
+    .read_close     = vfw_read_close,
+    .flags          = AVFMT_NOFILE,
+    .priv_class     = &vfw_class,
 };

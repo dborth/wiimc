@@ -208,7 +208,7 @@ static void pred8x8_tm_vp8_paired(uint8_t *src, int stride)
 	}
 }
 
-void ff_h264_pred_init_ppc(H264PredContext *h, int codec_id, const int bit_depth)
+void ff_h264_pred_init_ppc(H264PredContext *h, int codec_id, const int bit_depth, const int chroma_format_idc)
 {
 	if (codec_id == CODEC_ID_VP8) {
 		h->pred4x4[TM_VP8_PRED] = pred4x4_tm_vp8_paired;

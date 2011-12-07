@@ -138,11 +138,11 @@ int ff_mlp_read_major_sync(void *log, MLPHeaderInfo *mh, GetBitContext *gb)
     checksum = ff_mlp_checksum16(gb->buffer, 26);
     if (checksum != AV_RL16(gb->buffer+26)) {
         av_log(log, AV_LOG_ERROR, "major sync info header checksum error\n");
-        return -1;
+        return AVERROR_INVALIDDATA;
     }
 
     if (get_bits_long(gb, 24) != 0xf8726f) /* Sync words */
-        return -1;
+        return AVERROR_INVALIDDATA;
 
     mh->stream_type = get_bits(gb, 8);
 
@@ -173,7 +173,7 @@ int ff_mlp_read_major_sync(void *log, MLPHeaderInfo *mh, GetBitContext *gb)
 
         mh->channels_thd_stream2 = get_bits(gb, 13);
     } else
-        return -1;
+        return AVERROR_INVALIDDATA;
 
     mh->access_unit_size = 40 << (ratebits & 7);
     mh->access_unit_size_pow2 = 64 << (ratebits & 7);
@@ -345,9 +345,9 @@ lost_sync:
 }
 
 AVCodecParser ff_mlp_parser = {
-    { CODEC_ID_MLP, CODEC_ID_TRUEHD },
-    sizeof(MLPParseContext),
-    mlp_init,
-    mlp_parse,
-    ff_parse_close,
+    .codec_ids      = { CODEC_ID_MLP, CODEC_ID_TRUEHD },
+    .priv_data_size = sizeof(MLPParseContext),
+    .parser_init    = mlp_init,
+    .parser_parse   = mlp_parse,
+    .parser_close   = ff_parse_close,
 };

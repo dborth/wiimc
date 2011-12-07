@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include "oggdec.h"
 #include "avformat.h"
+#include "internal.h"
 #include "vorbiscomment.h"
 
 #define MAX_PAGE_SIZE 65307
@@ -45,6 +46,7 @@ static const struct ogg_codec * const ogg_codecs[] = {
     &ff_vorbis_codec,
     &ff_theora_codec,
     &ff_flac_codec,
+    &ff_celt_codec,
     &ff_old_dirac_codec,
     &ff_old_flac_codec,
     &ff_ogm_video_codec,
@@ -92,14 +94,24 @@ static int ogg_restore(AVFormatContext *s, int discard)
     ogg->state = ost->next;
 
     if (!discard){
+        struct ogg_stream *old_streams = ogg->streams;
+
         for (i = 0; i < ogg->nstreams; i++)
             av_free (ogg->streams[i].buf);
 
         avio_seek (bc, ost->pos, SEEK_SET);
         ogg->curidx = ost->curidx;
         ogg->nstreams = ost->nstreams;
-        memcpy(ogg->streams, ost->streams,
-               ost->nstreams * sizeof(*ogg->streams));
+        ogg->streams = av_realloc (ogg->streams,
+                                   ogg->nstreams * sizeof (*ogg->streams));
+
+        if (ogg->streams) {
+            memcpy(ogg->streams, ost->streams,
+                   ost->nstreams * sizeof(*ogg->streams));
+        } else {
+            av_free(old_streams);
+            ogg->nstreams = 0;
+        }
     }
 
     av_free (ost);
@@ -161,10 +173,11 @@ static int ogg_new_stream(AVFormatContext *s, uint32_t serial, int new_avstream)
     os->header = -1;
 
     if (new_avstream) {
-        st = av_new_stream(s, idx);
+        st = avformat_new_stream(s, NULL);
         if (!st)
             return AVERROR(ENOMEM);
 
+        st->id = idx;
         av_set_pts_info(st, 64, 1, 1000000);
     }
 
@@ -625,7 +638,7 @@ static int ogg_read_seek(AVFormatContext *s, int stream_index,
         && !(flags & AVSEEK_FLAG_ANY))
         os->keyframe_seek = 1;
 
-    ret = av_seek_frame_binary(s, stream_index, timestamp, flags);
+    ret = ff_seek_frame_binary(s, stream_index, timestamp, flags);
     os = ogg->streams + stream_index;
     if (ret < 0)
         os->keyframe_seek = 0;

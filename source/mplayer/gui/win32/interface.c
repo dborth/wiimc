@@ -23,7 +23,7 @@
 
 #include <windows.h>
 
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) || defined(__WINE__)
 #define _beginthreadex CreateThread
 #else
 #include <process.h>
@@ -304,7 +304,7 @@ void uiNext(void)
             if(mygui->playlist->current == (mygui->playlist->trackcount - 1))
                 return;
             uiSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)++]->filename,
-                           STREAMTYPE_STREAM);
+                           STREAMTYPE_FILE);
             break;
     }
     mygui->startplay(mygui);
@@ -326,11 +326,49 @@ void uiPrev(void)
             if(mygui->playlist->current == 0)
                 return;
             uiSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)--]->filename,
-                           STREAMTYPE_STREAM);
+                           STREAMTYPE_FILE);
             break;
     }
     mygui->startplay(mygui);
 }
+
+#ifdef __WINE__
+/**
+ * @brief Convert a Windows style path to a file name into an Unix style one.
+ *
+ * @param filename pointer to the file path to be converted
+ *
+ * @return pointer to the converted file path
+ */
+static char *unix_name (char *filename)
+{
+    static char *unix_filename;
+    LPSTR (*CDECL wine_get_unix_file_name_ptr)(LPCWSTR);
+    int wchar_conv;
+
+    if (*filename && (filename[1] == ':'))
+    {
+        wine_get_unix_file_name_ptr = (void *) GetProcAddress(GetModuleHandleA("KERNEL32"), "wine_get_unix_file_name");
+        wchar_conv = MultiByteToWideChar(CP_UNIXCP, 0, filename, -1, NULL, 0);
+
+        if (wine_get_unix_file_name_ptr && wchar_conv)
+        {
+            WCHAR *ntpath;
+            char *unix_name;
+
+            ntpath = HeapAlloc(GetProcessHeap(), 0, sizeof(*ntpath) * (wchar_conv + 1));
+            MultiByteToWideChar(CP_UNIXCP, 0, filename, -1, ntpath, wchar_conv);
+            unix_name = wine_get_unix_file_name_ptr(ntpath);
+            setdup(&unix_filename, unix_name);
+            filename = unix_filename;
+            HeapFree(GetProcessHeap(), 0, unix_name);
+            HeapFree(GetProcessHeap(), 0, ntpath);
+        }
+    }
+
+    return filename;
+}
+#endif
 
 void uiSetFileName(char *dir, char *name, int type)
 {
@@ -340,7 +378,17 @@ void uiSetFileName(char *dir, char *name, int type)
     else
         setddup(&guiInfo.Filename, dir, name);
 
+    filename = guiInfo.Filename;
+#ifdef __WINE__
+    // When the GUI receives the files to be played in guiPlaylistInitialize()
+    // and guiPlaylistAdd(), it calls import_file_into_gui() where the call of
+    // Wine's GetFullPathName() converts each file name into the Windows style
+    // (C:\path\to\file), which needs to be reconverted for MPlayer, so that
+    // it will find the filename in the Linux filesystem.
+    filename = unix_name(filename);
+#endif
     guiInfo.StreamType = type;
+
     nfree(guiInfo.AudioFilename);
     nfree(guiInfo.SubtitleFilename);
 }
@@ -446,11 +494,34 @@ int gui(int what, void *data)
     {
         case GUI_PREPARE:
         {
-            gui(GUI_SET_FILE, 0);
+            audio_id = -1;
+            video_id = -1;
+            dvdsub_id = -1;
+            vobsub_id = -1;
+            stream_cache_size = -1;
+            autosync = 0;
+            dvd_title = 0;
+            force_fps = 0;
+            if(!mygui->playlist->tracks) return 0;
+            uiSetFileName(NULL, mygui->playlist->tracks[mygui->playlist->current]->filename, STREAMTYPE_FILE);
+            guiInfo.Track = mygui->playlist->current + 1;
+            guiInfo.VideoWindow = 1;
+            if(gtkAONorm) greplace(&af_cfg.list, "volnorm", "volnorm");
+            if(gtkAOExtraStereo)
+            {
+                char *name = malloc(12 + 20 + 1);
+                snprintf(name, 12 + 20, "extrastereo=%f", gtkAOExtraStereoMul);
+                name[12 + 20] = 0;
+                greplace(&af_cfg.list, "extrastereo", name);
+                free(name);
+            }
+            if(gtkCacheOn) stream_cache_size = gtkCacheSize;
+            if(gtkAutoSyncOn) autosync = gtkAutoSync;
             guiInfo.NewPlay = 0;
             switch(guiInfo.StreamType)
             {
-                case STREAMTYPE_PLAYLIST:
+                case STREAMTYPE_FILE:
+                case STREAMTYPE_STREAM:
                     break;
 #ifdef CONFIG_DVDREAD
                 case STREAMTYPE_DVD:
@@ -460,24 +531,17 @@ int gui(int what, void *data)
                     dvd_chapter = guiInfo.Chapter;
                     dvd_angle = guiInfo.Angle;
                     sprintf(tmp,"dvd://%d", guiInfo.Track);
-                    setdup(&guiInfo.Filename, tmp);
+                    uiSetFileName(NULL, tmp, STREAMTYPE_DVD);
                     break;
                 }
 #endif
             }
-            if(guiInfo.Filename)
-                filename = strdup(guiInfo.Filename);
-            else if(filename)
-                strcpy(guiInfo.Filename, filename);
             break;
         }
         case GUI_SET_AUDIO:
         {
-            guiInfo.VideoWindow = (data && !guiInfo.sh_video);
-            // NOTE: This type doesn't mean (and never meant) that we have
-            // *just* audio, so there probably should be a check before
-            // hiding (see gui/interface.c).
-            if(IsWindowVisible(mygui->subwindow))
+            if (data && !guiInfo.sh_video) guiInfo.VideoWindow = 0;
+            if(IsWindowVisible(mygui->subwindow) && !guiInfo.VideoWindow)
                 ShowWindow(mygui->subwindow, SW_HIDE);
             break;
         }
@@ -594,32 +658,6 @@ int gui(int what, void *data)
             }
             break;
         }
-        case GUI_SET_FILE:
-        {
-            audio_id = -1;
-            video_id = -1;
-            dvdsub_id = -1;
-            vobsub_id = -1;
-            stream_cache_size = -1;
-            autosync = 0;
-            dvd_title = 0;
-            force_fps = 0;
-            if(!mygui->playlist->tracks) return 0;
-            filename = guiInfo.Filename = mygui->playlist->tracks[mygui->playlist->current]->filename;
-            guiInfo.Track = mygui->playlist->current + 1;
-            if(gtkAONorm) greplace(&af_cfg.list, "volnorm", "volnorm");
-            if(gtkAOExtraStereo)
-            {
-                char *name = malloc(12 + 20 + 1);
-                snprintf(name, 12 + 20, "extrastereo=%f", gtkAOExtraStereoMul);
-                name[12 + 20] = 0;
-                greplace(&af_cfg.list, "extrastereo", name);
-                free(name);
-            }
-            if(gtkCacheOn) stream_cache_size = gtkCacheSize;
-            if(gtkAutoSyncOn) autosync = gtkAutoSync;
-            break;
-        }
         case GUI_HANDLE_EVENTS:
           break;
         case GUI_SET_MIXER:
@@ -657,7 +695,7 @@ int gui(int what, void *data)
 
               uiGotoTheNext = 1;
               guiInfo.NewPlay = GUI_FILE_NEW;
-              uiSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)++]->filename, STREAMTYPE_STREAM);
+              uiSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)++]->filename, STREAMTYPE_FILE);
               //sprintf(guiInfo.Filename, mygui->playlist->tracks[(mygui->playlist->current)++]->filename);
           }
 
@@ -745,8 +783,11 @@ int guiPlaylistInitialize(play_tree_t *my_playtree, m_config_t *config, int enqu
     if (result)
     {
         mygui->playlist->current = 0;
-        filename = mygui->playlist->tracks[0]->filename;
+        uiSetFileName(NULL, mygui->playlist->tracks[0]->filename, STREAMTYPE_FILE);
     }
+
+    if (enqueue) filename = NULL;
+
     return result;
 }
 
@@ -766,17 +807,7 @@ int guiPlaylistAdd(play_tree_t *my_playtree, m_config_t *config)
                 result = 1;
         pt_iter_destroy(&my_pt_iter);
     }
-    filename = NULL;
     return result;
-}
-
-static inline void gtkMessageBox(int type, const char *str)
-{
-    if (type & GTK_MB_FATAL)
-        MessageBox(NULL, str, "MPlayer GUI for Windows Error", MB_OK | MB_ICONERROR);
-
-    fprintf(stderr, "[GUI] MessageBox: %s\n", str);
-    fflush(stderr);
 }
 
 static int update_subwindow(void)

@@ -131,4 +131,36 @@ char *av_d2str(double d);
  */
 char *av_get_token(const char **buf, const char *term);
 
+/**
+ * Locale independent conversion of ASCII characters to upper case.
+ */
+static inline int av_toupper(int c)
+{
+    if (c >= 'a' && c <= 'z')
+        c ^= 0x20;
+    return c;
+}
+
+/**
+ * Locale independent conversion of ASCII characters to lower case.
+ */
+static inline int av_tolower(int c)
+{
+    if (c >= 'A' && c <= 'Z')
+        c ^= 0x20;
+    return c;
+}
+
+/*
+ * Locale independent case-insensitive compare.
+ * Note: This means only ASCII-range characters are case-insensitive
+ */
+int av_strcasecmp(const char *a, const char *b);
+
+/**
+ * Locale independent case-insensitive compare.
+ * Note: This means only ASCII-range characters are case-insensitive
+ */
+int av_strncasecmp(const char *a, const char *b, size_t n);
+
 #endif /* AVUTIL_AVSTRING_H */

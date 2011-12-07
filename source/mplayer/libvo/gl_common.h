@@ -28,8 +28,6 @@
 #include <stdint.h>
 
 #include "config.h"
-#include "mp_msg.h"
-
 #include "video_out.h"
 #include "csputils.h"
 
@@ -461,7 +459,6 @@ extern void (GLAPIENTRY *mpglDeleteTextures)(GLsizei, const GLuint *);
 extern void (GLAPIENTRY *mpglTexEnvf)(GLenum, GLenum, GLfloat);
 extern void (GLAPIENTRY *mpglTexEnvi)(GLenum, GLenum, GLint);
 extern void (GLAPIENTRY *mpglColor4ub)(GLubyte, GLubyte, GLubyte, GLubyte);
-extern void (GLAPIENTRY *mpglColor3f)(GLfloat, GLfloat, GLfloat);
 extern void (GLAPIENTRY *mpglColor4f)(GLfloat, GLfloat, GLfloat, GLfloat);
 extern void (GLAPIENTRY *mpglClearColor)(GLclampf, GLclampf, GLclampf, GLclampf);
 extern void (GLAPIENTRY *mpglClearDepth)(GLclampd);

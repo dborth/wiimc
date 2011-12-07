@@ -61,7 +61,7 @@ static int read_desc_chunk(AVFormatContext *s)
     int flags;
 
     /* new audio stream */
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
 
@@ -286,8 +286,6 @@ static int read_header(AVFormatContext *s,
                                 "block size or frame size are variable.\n");
         return AVERROR_INVALIDDATA;
     }
-    s->file_size = avio_size(pb);
-    s->file_size = FFMAX(0, s->file_size);
 
     av_set_pts_info(st, 64, 1, st->codec->sample_rate);
     st->start_time = 0;

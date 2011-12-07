@@ -108,7 +108,7 @@ void ff_simple_idct248_put(uint8_t *dest, int line_size, DCTELEM *block)
 
     /* IDCT8 on each line */
     for(i=0; i<8; i++) {
-        idctRowCondDC_8(block + i*8);
+        idctRowCondDC_8(block + i*8, 0);
     }
 
     /* IDCT4 and store */
@@ -183,7 +183,7 @@ void ff_simple_idct84_add(uint8_t *dest, int line_size, DCTELEM *block)
 
     /* IDCT8 on each line */
     for(i=0; i<4; i++) {
-        idctRowCondDC_8(block + i*8);
+        idctRowCondDC_8(block + i*8, 0);
     }
 
     /* IDCT4 and store */
@@ -220,4 +220,18 @@ void ff_simple_idct44_add(uint8_t *dest, int line_size, DCTELEM *block)
     for(i=0; i<4; i++){
         idct4col_add(dest + i, line_size, block + i);
     }
+}
+
+void ff_prores_idct(DCTELEM *block, const int16_t *qmat)
+{
+    int i;
+
+    for (i = 0; i < 64; i++)
+        block[i] *= qmat[i];
+
+    for (i = 0; i < 8; i++)
+        idctRowCondDC_10(block + i*8, 2);
+
+    for (i = 0; i < 8; i++)
+        idctSparseCol_10(block + i);
 }

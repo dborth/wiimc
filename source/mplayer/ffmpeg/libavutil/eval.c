@@ -123,6 +123,7 @@ struct AVExpr {
         e_mod, e_max, e_min, e_eq, e_gt, e_gte,
         e_pow, e_mul, e_div, e_add,
         e_last, e_st, e_while, e_floor, e_ceil, e_trunc,
+        e_sqrt, e_not,
     } type;
     double value; // is sign in other types
     union {
@@ -149,6 +150,8 @@ static double eval_expr(Parser *p, AVExpr *e)
         case e_floor:  return e->value * floor(eval_expr(p, e->param[0]));
         case e_ceil :  return e->value * ceil (eval_expr(p, e->param[0]));
         case e_trunc:  return e->value * trunc(eval_expr(p, e->param[0]));
+        case e_sqrt:   return e->value * sqrt (eval_expr(p, e->param[0]));
+        case e_not:    return e->value * eval_expr(p, e->param[0]) == 0;
         case e_while: {
             double d = NAN;
             while (eval_expr(p, e->param[0]))
@@ -283,6 +286,8 @@ static int parse_primary(AVExpr **e, Parser *p)
     else if (strmatch(next, "floor" )) d->type = e_floor;
     else if (strmatch(next, "ceil"  )) d->type = e_ceil;
     else if (strmatch(next, "trunc" )) d->type = e_trunc;
+    else if (strmatch(next, "sqrt"  )) d->type = e_sqrt;
+    else if (strmatch(next, "not"   )) d->type = e_not;
     else {
         for (i=0; p->func1_names && p->func1_names[i]; i++) {
             if (strmatch(next, p->func1_names[i])) {
@@ -450,6 +455,8 @@ static int verify_expr(AVExpr *e)
         case e_floor:
         case e_ceil:
         case e_trunc:
+        case e_sqrt:
+        case e_not:
             return verify_expr(e->param[0]);
         default: return verify_expr(e->param[0]) && verify_expr(e->param[1]);
     }
@@ -600,6 +607,11 @@ int main(int argc, char **argv)
         "trunc(-123.123)",
         "ceil(123.123)",
         "ceil(-123.123)",
+        "sqrt(1764)",
+        "isnan(sqrt(-1))",
+        "not(1)",
+        "not(NAN)",
+        "not(0)",
         NULL
     };
 

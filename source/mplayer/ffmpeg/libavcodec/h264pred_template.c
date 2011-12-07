@@ -121,28 +121,28 @@ static void FUNCC(pred4x4_129_dc)(uint8_t *_src, const uint8_t *topright, int _s
 
 
 #define LOAD_TOP_RIGHT_EDGE\
-    const int av_unused t4= topright[0];\
-    const int av_unused t5= topright[1];\
-    const int av_unused t6= topright[2];\
-    const int av_unused t7= topright[3];\
+    const unsigned av_unused t4 = topright[0];\
+    const unsigned av_unused t5 = topright[1];\
+    const unsigned av_unused t6 = topright[2];\
+    const unsigned av_unused t7 = topright[3];\
 
 #define LOAD_DOWN_LEFT_EDGE\
-    const int av_unused l4= src[-1+4*stride];\
-    const int av_unused l5= src[-1+5*stride];\
-    const int av_unused l6= src[-1+6*stride];\
-    const int av_unused l7= src[-1+7*stride];\
+    const unsigned av_unused l4 = src[-1+4*stride];\
+    const unsigned av_unused l5 = src[-1+5*stride];\
+    const unsigned av_unused l6 = src[-1+6*stride];\
+    const unsigned av_unused l7 = src[-1+7*stride];\
 
 #define LOAD_LEFT_EDGE\
-    const int av_unused l0= src[-1+0*stride];\
-    const int av_unused l1= src[-1+1*stride];\
-    const int av_unused l2= src[-1+2*stride];\
-    const int av_unused l3= src[-1+3*stride];\
+    const unsigned av_unused l0 = src[-1+0*stride];\
+    const unsigned av_unused l1 = src[-1+1*stride];\
+    const unsigned av_unused l2 = src[-1+2*stride];\
+    const unsigned av_unused l3 = src[-1+3*stride];\
 
 #define LOAD_TOP_EDGE\
-    const int av_unused t0= src[ 0-1*stride];\
-    const int av_unused t1= src[ 1-1*stride];\
-    const int av_unused t2= src[ 2-1*stride];\
-    const int av_unused t3= src[ 3-1*stride];\
+    const unsigned av_unused t0 = src[ 0-1*stride];\
+    const unsigned av_unused t1 = src[ 1-1*stride];\
+    const unsigned av_unused t2 = src[ 2-1*stride];\
+    const unsigned av_unused t3 = src[ 3-1*stride];\
 
 static void FUNCC(pred4x4_down_right)(uint8_t *_src, const uint8_t *topright, int _stride){
     pixel *src = (pixel*)_src;
@@ -454,12 +454,36 @@ static void FUNCC(pred8x8_vertical)(uint8_t *_src, int _stride){
     }
 }
 
+static void FUNCC(pred8x16_vertical)(uint8_t *_src, int _stride){
+    int i;
+    pixel *src = (pixel*)_src;
+    int stride = _stride>>(sizeof(pixel)-1);
+    const pixel4 a= AV_RN4PA(((pixel4*)(src-stride))+0);
+    const pixel4 b= AV_RN4PA(((pixel4*)(src-stride))+1);
+
+    for(i=0; i<16; i++){
+        AV_WN4PA(((pixel4*)(src+i*stride))+0, a);
+        AV_WN4PA(((pixel4*)(src+i*stride))+1, b);
+    }
+}
+
 static void FUNCC(pred8x8_horizontal)(uint8_t *_src, int stride){
     int i;
     pixel *src = (pixel*)_src;
     stride /= sizeof(pixel);
 
     for(i=0; i<8; i++){
+        const pixel4 a = PIXEL_SPLAT_X4(src[-1+i*stride]);
+        AV_WN4PA(((pixel4*)(src+i*stride))+0, a);
+        AV_WN4PA(((pixel4*)(src+i*stride))+1, a);
+    }
+}
+
+static void FUNCC(pred8x16_horizontal)(uint8_t *_src, int stride){
+    int i;
+    pixel *src = (pixel*)_src;
+    stride >>= sizeof(pixel)-1;
+    for(i=0; i<16; i++){
         const pixel4 a = PIXEL_SPLAT_X4(src[-1+i*stride]);
         AV_WN4PA(((pixel4*)(src+i*stride))+0, a);
         AV_WN4PA(((pixel4*)(src+i*stride))+1, a);
@@ -481,6 +505,11 @@ static void FUNCC(pred8x8_##n##_dc)(uint8_t *_src, int stride){\
 PRED8x8_X(127, (1<<(BIT_DEPTH-1))-1);
 PRED8x8_X(128, (1<<(BIT_DEPTH-1))+0);
 PRED8x8_X(129, (1<<(BIT_DEPTH-1))+1);
+
+static void FUNCC(pred8x16_128_dc)(uint8_t *_src, int stride){
+    FUNCC(pred8x8_128_dc)(_src, stride);
+    FUNCC(pred8x8_128_dc)(_src+8*stride, stride);
+}
 
 static void FUNCC(pred8x8_left_dc)(uint8_t *_src, int stride){
     int i;
@@ -507,6 +536,11 @@ static void FUNCC(pred8x8_left_dc)(uint8_t *_src, int stride){
     }
 }
 
+static void FUNCC(pred8x16_left_dc)(uint8_t *_src, int stride){
+    FUNCC(pred8x8_left_dc)(_src, stride);
+    FUNCC(pred8x8_left_dc)(_src+8*stride, stride);
+}
+
 static void FUNCC(pred8x8_top_dc)(uint8_t *_src, int stride){
     int i;
     int dc0, dc1;
@@ -527,6 +561,27 @@ static void FUNCC(pred8x8_top_dc)(uint8_t *_src, int stride){
         AV_WN4PA(((pixel4*)(src+i*stride))+1, dc1splat);
     }
     for(i=4; i<8; i++){
+        AV_WN4PA(((pixel4*)(src+i*stride))+0, dc0splat);
+        AV_WN4PA(((pixel4*)(src+i*stride))+1, dc1splat);
+    }
+}
+
+static void FUNCC(pred8x16_top_dc)(uint8_t *_src, int stride){
+    int i;
+    int dc0, dc1;
+    pixel4 dc0splat, dc1splat;
+    pixel *src = (pixel*)_src;
+    stride >>= sizeof(pixel)-1;
+
+    dc0=dc1=0;
+    for(i=0;i<4; i++){
+        dc0+= src[i-stride];
+        dc1+= src[4+i-stride];
+    }
+    dc0splat = PIXEL_SPLAT_X4((dc0 + 2)>>2);
+    dc1splat = PIXEL_SPLAT_X4((dc1 + 2)>>2);
+
+    for(i=0; i<16; i++){
         AV_WN4PA(((pixel4*)(src+i*stride))+0, dc0splat);
         AV_WN4PA(((pixel4*)(src+i*stride))+1, dc1splat);
     }
@@ -560,14 +615,65 @@ static void FUNCC(pred8x8_dc)(uint8_t *_src, int stride){
     }
 }
 
-//the following 4 function should not be optimized!
+static void FUNCC(pred8x16_dc)(uint8_t *_src, int stride){
+    int i;
+    int dc0, dc1, dc2, dc3, dc4;
+    pixel4 dc0splat, dc1splat, dc2splat, dc3splat, dc4splat, dc5splat, dc6splat, dc7splat;
+    pixel *src = (pixel*)_src;
+    stride >>= sizeof(pixel)-1;
+
+    dc0=dc1=dc2=dc3=dc4=0;
+    for(i=0;i<4; i++){
+        dc0+= src[-1+i*stride] + src[i-stride];
+        dc1+= src[4+i-stride];
+        dc2+= src[-1+(i+4)*stride];
+        dc3+= src[-1+(i+8)*stride];
+        dc4+= src[-1+(i+12)*stride];
+    }
+    dc0splat = PIXEL_SPLAT_X4((dc0 + 4)>>3);
+    dc1splat = PIXEL_SPLAT_X4((dc1 + 2)>>2);
+    dc2splat = PIXEL_SPLAT_X4((dc2 + 2)>>2);
+    dc3splat = PIXEL_SPLAT_X4((dc1 + dc2 + 4)>>3);
+    dc4splat = PIXEL_SPLAT_X4((dc3 + 2)>>2);
+    dc5splat = PIXEL_SPLAT_X4((dc1 + dc3 + 4)>>3);
+    dc6splat = PIXEL_SPLAT_X4((dc4 + 2)>>2);
+    dc7splat = PIXEL_SPLAT_X4((dc1 + dc4 + 4)>>3);
+
+    for(i=0; i<4; i++){
+        AV_WN4PA(((pixel4*)(src+i*stride))+0, dc0splat);
+        AV_WN4PA(((pixel4*)(src+i*stride))+1, dc1splat);
+    }
+    for(i=4; i<8; i++){
+        AV_WN4PA(((pixel4*)(src+i*stride))+0, dc2splat);
+        AV_WN4PA(((pixel4*)(src+i*stride))+1, dc3splat);
+    }
+    for(i=8; i<12; i++){
+        AV_WN4PA(((pixel4*)(src+i*stride))+0, dc4splat);
+        AV_WN4PA(((pixel4*)(src+i*stride))+1, dc5splat);
+    }
+    for(i=12; i<16; i++){
+        AV_WN4PA(((pixel4*)(src+i*stride))+0, dc6splat);
+        AV_WN4PA(((pixel4*)(src+i*stride))+1, dc7splat);
+    }
+}
+
 static void FUNC(pred8x8_mad_cow_dc_l0t)(uint8_t *src, int stride){
     FUNCC(pred8x8_top_dc)(src, stride);
     FUNCC(pred4x4_dc)(src, NULL, stride);
 }
 
+static void FUNC(pred8x16_mad_cow_dc_l0t)(uint8_t *src, int stride){
+    FUNCC(pred8x16_top_dc)(src, stride);
+    FUNCC(pred4x4_dc)(src, NULL, stride);
+}
+
 static void FUNC(pred8x8_mad_cow_dc_0lt)(uint8_t *src, int stride){
     FUNCC(pred8x8_dc)(src, stride);
+    FUNCC(pred4x4_top_dc)(src, NULL, stride);
+}
+
+static void FUNC(pred8x16_mad_cow_dc_0lt)(uint8_t *src, int stride){
+    FUNCC(pred8x16_dc)(src, stride);
     FUNCC(pred4x4_top_dc)(src, NULL, stride);
 }
 
@@ -577,8 +683,20 @@ static void FUNC(pred8x8_mad_cow_dc_l00)(uint8_t *src, int stride){
     FUNCC(pred4x4_128_dc)(src + 4*stride + 4*sizeof(pixel), NULL, stride);
 }
 
+static void FUNC(pred8x16_mad_cow_dc_l00)(uint8_t *src, int stride){
+    FUNCC(pred8x16_left_dc)(src, stride);
+    FUNCC(pred4x4_128_dc)(src + 4*stride                  , NULL, stride);
+    FUNCC(pred4x4_128_dc)(src + 4*stride + 4*sizeof(pixel), NULL, stride);
+}
+
 static void FUNC(pred8x8_mad_cow_dc_0l0)(uint8_t *src, int stride){
     FUNCC(pred8x8_left_dc)(src, stride);
+    FUNCC(pred4x4_128_dc)(src                  , NULL, stride);
+    FUNCC(pred4x4_128_dc)(src + 4*sizeof(pixel), NULL, stride);
+}
+
+static void FUNC(pred8x16_mad_cow_dc_0l0)(uint8_t *src, int stride){
+    FUNCC(pred8x16_left_dc)(src, stride);
     FUNCC(pred4x4_128_dc)(src                  , NULL, stride);
     FUNCC(pred4x4_128_dc)(src + 4*sizeof(pixel), NULL, stride);
 }
@@ -604,6 +722,47 @@ static void FUNCC(pred8x8_plane)(uint8_t *_src, int _stride){
 
   a = 16*(src1[0] + src2[8]+1) - 3*(V+H);
   for(j=8; j>0; --j) {
+    int b = a;
+    a += V;
+    src[0] = CLIP((b    ) >> 5);
+    src[1] = CLIP((b+  H) >> 5);
+    src[2] = CLIP((b+2*H) >> 5);
+    src[3] = CLIP((b+3*H) >> 5);
+    src[4] = CLIP((b+4*H) >> 5);
+    src[5] = CLIP((b+5*H) >> 5);
+    src[6] = CLIP((b+6*H) >> 5);
+    src[7] = CLIP((b+7*H) >> 5);
+    src += stride;
+  }
+}
+
+static void FUNCC(pred8x16_plane)(uint8_t *_src, int _stride){
+  int j, k;
+  int a;
+  INIT_CLIP
+  pixel *src = (pixel*)_src;
+  int stride = _stride>>(sizeof(pixel)-1);
+  const pixel * const src0 = src +3-stride;
+  const pixel *       src1 = src +8*stride-1;
+  const pixel *       src2 = src1-2*stride;    // == src+6*stride-1;
+  int H = src0[1] - src0[-1];
+  int V = src1[0] - src2[ 0];
+
+  for (k = 2; k <= 4; ++k) {
+      src1 += stride; src2 -= stride;
+      H += k*(src0[k] - src0[-k]);
+      V += k*(src1[0] - src2[ 0]);
+  }
+  for (; k <= 8; ++k) {
+      src1 += stride; src2 -= stride;
+      V += k*(src1[0] - src2[0]);
+  }
+
+  H = (17*H+16) >> 5;
+  V = (5*V+32) >> 6;
+
+  a = 16*(src1[0] + src2[8] + 1) - 7*V - 3*H;
+  for(j=16; j>0; --j) {
     int b = a;
     a += V;
     src[0] = CLIP((b    ) >> 5);
@@ -988,8 +1147,24 @@ static void FUNCC(pred8x8_vertical_add)(uint8_t *pix, const int *block_offset, c
         FUNCC(pred4x4_vertical_add)(pix + block_offset[i], block + i*16*sizeof(pixel), stride);
 }
 
+static void FUNCC(pred8x16_vertical_add)(uint8_t *pix, const int *block_offset, const DCTELEM *block, int stride){
+    int i;
+    for(i=0; i<4; i++)
+        FUNCC(pred4x4_vertical_add)(pix + block_offset[i], block + i*16*sizeof(pixel), stride);
+    for(i=4; i<8; i++)
+        FUNCC(pred4x4_vertical_add)(pix + block_offset[i+4], block + i*16*sizeof(pixel), stride);
+}
+
 static void FUNCC(pred8x8_horizontal_add)(uint8_t *pix, const int *block_offset, const DCTELEM *block, int stride){
     int i;
     for(i=0; i<4; i++)
         FUNCC(pred4x4_horizontal_add)(pix + block_offset[i], block + i*16*sizeof(pixel), stride);
+}
+
+static void FUNCC(pred8x16_horizontal_add)(uint8_t *pix, const int *block_offset, const DCTELEM *block, int stride){
+    int i;
+    for(i=0; i<4; i++)
+        FUNCC(pred4x4_horizontal_add)(pix + block_offset[i], block + i*16*sizeof(pixel), stride);
+    for(i=4; i<8; i++)
+        FUNCC(pred4x4_horizontal_add)(pix + block_offset[i+4], block + i*16*sizeof(pixel), stride);
 }

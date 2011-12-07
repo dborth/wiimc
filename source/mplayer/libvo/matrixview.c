@@ -50,8 +50,8 @@ static const uint8_t flare[4][4] = {
 #define MAX_TEXT_Y 0x4000
 static int text_x = 0;
 static int text_y = 0;
-#define _text_x text_x/2
-#define _text_y text_y/2
+#define _text_x (text_x/2)
+#define _text_y (text_y/2)
 
 // Scene position
 #define Z_Off -128.0f
@@ -297,6 +297,13 @@ void matrixview_init(int w, int h)
     // Allow adjusting of texture color via glColor
     mpglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
+    mpglEnable(GL_BLEND);
+    mpglEnable(GL_TEXTURE_2D);
+
+    mpglDisable(GL_LIGHTING);
+    mpglBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    mpglDisable(GL_DEPTH_TEST);
+
     matrixview_reshape(w, h);
 }
 
@@ -310,23 +317,14 @@ void matrixview_reshape(int w, int h)
     mpglFrustum(-_text_x, _text_x, -_text_y, _text_y, -Z_Off - Z_Depth, -Z_Off);
 
     mpglMatrixMode(GL_MODELVIEW);
+    mpglLoadIdentity();
+    mpglTranslated(0.0f, 0.0f, Z_Off);
 }
 
 
 void matrixview_draw(int w, int h, double currentTime, float frameTime,
                      uint8_t *data)
 {
-    mpglEnable(GL_BLEND);
-    mpglEnable(GL_TEXTURE_2D);
-
-    mpglDisable(GL_LIGHTING);
-    mpglBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    mpglDisable(GL_DEPTH_TEST);
-
-    mpglMatrixMode(GL_MODELVIEW);
-    mpglLoadIdentity();
-    mpglTranslated(0.0f, 0.0f, Z_Off);
-
     // Clear the color and depth buffers.
     mpglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -342,9 +340,6 @@ void matrixview_draw(int w, int h, double currentTime, float frameTime,
     mpglBindTexture(GL_TEXTURE_2D, 0);
 
     make_change(currentTime);
-
-    mpglLoadIdentity();
-    mpglMatrixMode(GL_PROJECTION);
 }
 
 void matrixview_contrast_set(float contrast)

@@ -160,21 +160,9 @@ PCM/MP3/VBR MP3.
 </para></listitem>
 </itemizedlist>
 
-<!-- FIXME: the license should be in bookinfo -->
 <para>
 <application>MPlayer</application> e <application>MEncoder</application>
 possono esser distribuiti nei termini della GNU General Public License Version 2.
 </para>
 
 </chapter>
-
-&install.xml;
-
-&usage.xml;
-&video.xml;
-&ports.xml;
-&mencoder.xml;
-&encoding-guide.xml;
-&faq.xml;
-&bugreports.xml;
-&skin.xml;

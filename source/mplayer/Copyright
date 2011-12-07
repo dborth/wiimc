@@ -1,4 +1,4 @@
-MPlayer was originally written by Árpád Gereöffy and has been extended and
+MPlayer was originally written by �?rpád Gereöffy and has been extended and
 worked on by many more since then, see the AUTHORS file for an (incomplete)
 list. MPlayer as a whole is copyrighted by the MPlayer team. Individual
 copyright notices can be found in file headers.
@@ -15,7 +15,7 @@ license details are listed below:
 Name:       FFmpeg
 Version:    Subversion HEAD
 URL:        http://www.ffmpeg.org
-Directory:  libavcodec, libavformat, libavutil, libpostproc
+Directory:  ffmpeg
 Copyright:  Many, see individual files for copyright notices.
 License:    GNU Lesser General Public License, some parts GNU General Public
             License, GNU General Public License when combined

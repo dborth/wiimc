@@ -209,7 +209,7 @@ static const char help_text[]=
 #define MSGTR_OSDSpeed "Velocidad: x %6.2f"
 #define MSGTR_OSDosd "OSD: %s"
 #define MSGTR_OSDChapter "Capítulo: (%d) %s"
-#define MSGTR_OSDAngle "Ángulo: %d/%d"
+#define MSGTR_OSDAngle "�?ngulo: %d/%d"
 
 // property values
 #define MSGTR_Enabled "habilitado"
@@ -619,7 +619,7 @@ static const char help_text[]=
 #define MSGTR_MENU_PlayList MSGTR_PlayList
 #define MSGTR_MENU_SkinBrowser "Navegador de skins"
 #define MSGTR_MENU_Preferences MSGTR_Preferences
-#define MSGTR_MENU_Exit "Salir..."
+#define MSGTR_MENU_Exit "Salir"
 #define MSGTR_MENU_Mute "Mudo"
 #define MSGTR_MENU_Original "Original"
 #define MSGTR_MENU_AspectRatio "Relación de aspecto"
@@ -653,7 +653,7 @@ static const char help_text[]=
 #define MSGTR_PLAYLIST_Path "Ubicación"
 #define MSGTR_PLAYLIST_Selected "Archivos seleccionados"
 #define MSGTR_PLAYLIST_Files "Archivos"
-#define MSGTR_PLAYLIST_DirectoryTree "Árbol de directorios"
+#define MSGTR_PLAYLIST_DirectoryTree "�?rbol de directorios"
 
 // --- preferences
 #define MSGTR_PREFERENCES_Audio MSGTR_EQU_Audio
@@ -718,7 +718,7 @@ static const char help_text[]=
 #define MSGTR_PREFERENCES_FontEncoding5 "Esperanto, Gallego, Maltés, Turco (ISO-8859-3)"
 #define MSGTR_PREFERENCES_FontEncoding6 "Báltico (ISO-8859-4)"
 #define MSGTR_PREFERENCES_FontEncoding7 "Cirílico (ISO-8859-5)"
-#define MSGTR_PREFERENCES_FontEncoding8 "Árabe (ISO-8859-6)"
+#define MSGTR_PREFERENCES_FontEncoding8 "�?rabe (ISO-8859-6)"
 #define MSGTR_PREFERENCES_FontEncoding9 "Griego moderno (ISO-8859-7)"
 #define MSGTR_PREFERENCES_FontEncoding10 "Turco (ISO-8859-9)"
 #define MSGTR_PREFERENCES_FontEncoding11 "Báltico (ISO-8859-13)"
@@ -1189,33 +1189,8 @@ static const char help_text[]=
 #define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  Su controlador de audio no soporta select()  ***\nRecompile MPlayer con #undef HAVE_AUDIO_SELECT en config.h !\n\n"
 #define MSGTR_AO_SUN_CantReopenReset "[AO SUN]\nError fatal: *** IMPOSIBLE RE-ABRIR / RESETEAR DISPOSITIVO DE AUDIO (%s) ***\n"
 
-// ao_alsa5.c
-#define MSGTR_AO_ALSA5_InitInfo "[AO ALSA5] alsa-init: formato solicitado: %d Hz, %d canales, %s\n"
-#define MSGTR_AO_ALSA5_SoundCardNotFound "[AO ALSA5] alsa-init: No se encontró tarjeta de sonido alguna.\n"
-#define MSGTR_AO_ALSA5_InvalidFormatReq "[AO ALSA5] alsa-init: formato inválido (%s) solicitado - deshabilitando salida.\n"
-#define MSGTR_AO_ALSA5_PlayBackError "[AO ALSA5] alsa-init: Fallo en playback open: %s\n"
-#define MSGTR_AO_ALSA5_PcmInfoError "[AO ALSA5] alsa-init: Error en pcm info: %s\n"
-#define MSGTR_AO_ALSA5_SoundcardsFound "[AO ALSA5] alsa-init: %d tarjeta(s) de sonido encontrada(s), using: %s\n"
-#define MSGTR_AO_ALSA5_PcmChanInfoError "[AO ALSA5] alsa-init: Error en la información del canal PCM: %s\n"
-#define MSGTR_AO_ALSA5_CantSetParms "[AO ALSA5] alsa-init: Error configurando parámetros: %s\n"
-#define MSGTR_AO_ALSA5_CantSetChan "[AO ALSA5] alsa-init: Error configurando canal: %s\n"
-#define MSGTR_AO_ALSA5_ChanPrepareError "[AO ALSA5] alsa-init: Error preparando canal: %s\n"
-#define MSGTR_AO_ALSA5_DrainError "[AO ALSA5] alsa-uninit: Error de 'playback drain': %s\n"
-#define MSGTR_AO_ALSA5_FlushError "[AO ALSA5] alsa-uninit: Error de 'playback flush': %s\n"
-#define MSGTR_AO_ALSA5_PcmCloseError "[AO ALSA5] alsa-uninit: Error cerrando pcm: %s\n"
-#define MSGTR_AO_ALSA5_ResetDrainError "[AO ALSA5] alsa-reset: Error de 'playback drain': %s\n"
-#define MSGTR_AO_ALSA5_ResetFlushError "[AO ALSA5] alsa-reset: Error de 'playback flush': %s\n"
-#define MSGTR_AO_ALSA5_ResetChanPrepareError "[AO ALSA5] alsa-reset: Error preparando canal: %s\n"
-#define MSGTR_AO_ALSA5_PauseDrainError "[AO ALSA5] alsa-pause: Error de 'playback drain': %s\n"
-#define MSGTR_AO_ALSA5_PauseFlushError "[AO ALSA5] alsa-pause: Error de 'playback flush': %s\n"
-#define MSGTR_AO_ALSA5_ResumePrepareError "[AO ALSA5] alsa-resume: Error preparando canal: %s\n"
-#define MSGTR_AO_ALSA5_Underrun "[AO ALSA5] alsa-play: alsa underrun, reseteando stream.\n"
-#define MSGTR_AO_ALSA5_PlaybackPrepareError "[AO ALSA5] alsa-play: Error preparando playback: %s\n"
-#define MSGTR_AO_ALSA5_WriteErrorAfterReset "[AO ALSA5] alsa-play: Error de escritura despues de resetear: %s - me rindo!.\n"
-#define MSGTR_AO_ALSA5_OutPutError "[AO ALSA5] alsa-play: Error de salida: %s\n"
-
 // ao_alsa.c
-#define MSGTR_AO_ALSA_InvalidMixerIndexDefaultingToZero "[AO_ALSA] Índice del mezclador inválido. Usando 0.\n"
+#define MSGTR_AO_ALSA_InvalidMixerIndexDefaultingToZero "[AO_ALSA] �?ndice del mezclador inválido. Usando 0.\n"
 #define MSGTR_AO_ALSA_MixerOpenError "[AO_ALSA] Mezclador, error abriendo: %s\n"
 #define MSGTR_AO_ALSA_MixerAttachError "[AO_ALSA] Mezclador, adjunto %s error: %s\n"
 #define MSGTR_AO_ALSA_MixerRegisterError "[AO_ALSA] Mezclador, error de registro: %s\n"
@@ -1560,12 +1535,12 @@ static const char help_text[]=
 // url.c
 #define MSGTR_MPDEMUX_URL_StringAlreadyEscaped "Al parecer el string ya ha sido escapado en url_scape %c%c1%c2\n"
 
-// ai_alsa1x.c
-#define MSGTR_MPDEMUX_AIALSA1X_CannotSetSamplerate "No puedo setear el samplerate.\n"
-#define MSGTR_MPDEMUX_AIALSA1X_CannotSetBufferTime "No puedo setear el tiempo del buffer.\n"
-#define MSGTR_MPDEMUX_AIALSA1X_CannotSetPeriodTime "No puedo setear el tiempo del periodo.\n"
+// ai_alsa.c
+#define MSGTR_MPDEMUX_AIALSA_CannotSetSamplerate "No puedo setear el samplerate.\n"
+#define MSGTR_MPDEMUX_AIALSA_CannotSetBufferTime "No puedo setear el tiempo del buffer.\n"
+#define MSGTR_MPDEMUX_AIALSA_CannotSetPeriodTime "No puedo setear el tiempo del periodo.\n"
 
-// ai_alsa1x.c / ai_alsa.c
+// ai_alsa.c
 #define MSGTR_MPDEMUX_AIALSA_PcmBrokenConfig "Configuración erronea para este PCM: no hay configuraciones disponibles.\n"
 #define MSGTR_MPDEMUX_AIALSA_UnavailableAccessType "Tipo de acceso no disponible.\n"
 #define MSGTR_MPDEMUX_AIALSA_UnavailableSampleFmt "Formato de muestreo no disponible.\n"

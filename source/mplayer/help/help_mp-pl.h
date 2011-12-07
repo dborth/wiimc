@@ -585,13 +585,13 @@ static const char help_text[]=
 #define MSGTR_CantOpenCodec "Nie mogłem otworzyć kodeka.\n"
 #define MSGTR_CantCloseCodec "Nie mogłem zamknąć kodeka.\n"
 
-#define MSGTR_MissingDLLcodec "BŁĄD: Nie mogę otworzyć wymaganego kodeka DirectShow %s.\n"
+#define MSGTR_MissingDLLcodec "B�?ĄD: Nie mogę otworzyć wymaganego kodeka DirectShow %s.\n"
 #define MSGTR_ACMiniterror "Nie mogę wczytać/zainicjować kodeka audio Win32/ACM (brak pliku DLL ?).\n"
 #define MSGTR_MissingLAVCcodec "Nie mogę odnaleźć kodeka '%s' w libavcodec...\n"
 
-#define MSGTR_MpegNoSequHdr "MPEG: BŁĄD KRYTYCZNY: Wykryłem koniec pliku podczas poszukiwania nagłówka sekwencji.\n"
-#define MSGTR_CannotReadMpegSequHdr "BŁĄD KRYTYCZNY: Nie mogę czytać nagłówka sekwencji.\n"
-#define MSGTR_CannotReadMpegSequHdrEx "BŁĄD KRYTYCZNY: Nie mogę czytać rozszerzenia nagłówka sekwencji.\n"
+#define MSGTR_MpegNoSequHdr "MPEG: B�?ĄD KRYTYCZNY: Wykryłem koniec pliku podczas poszukiwania nagłówka sekwencji.\n"
+#define MSGTR_CannotReadMpegSequHdr "B�?ĄD KRYTYCZNY: Nie mogę czytać nagłówka sekwencji.\n"
+#define MSGTR_CannotReadMpegSequHdrEx "B�?ĄD KRYTYCZNY: Nie mogę czytać rozszerzenia nagłówka sekwencji.\n"
 #define MSGTR_BadMpegSequHdr "MPEG: zły nagłówek sekwencji\n"
 #define MSGTR_BadMpegSequHdrEx "MPEG: złe rozszerzenie nagłówka sekwencji\n"
 
@@ -734,7 +734,7 @@ static const char help_text[]=
 #define MSGTR_MENU_PlayList MSGTR_PlayList
 #define MSGTR_MENU_SkinBrowser "Przeglądarka skórek"
 #define MSGTR_MENU_Preferences MSGTR_Preferences
-#define MSGTR_MENU_Exit "Wyjście..."
+#define MSGTR_MENU_Exit "Wyjście"
 #define MSGTR_MENU_Mute "Wycisz"
 #define MSGTR_MENU_Original "Oryginalnie"
 #define MSGTR_MENU_AspectRatio "Format"
@@ -1006,7 +1006,7 @@ static const char help_text[]=
 #define MSGTR_AO_OSS_CantSet "[AO OSS] Nie mogę ustawić urządzenia audio %s na wyjście %s, próbuję %s...\n"
 #define MSGTR_AO_OSS_CantSetChans "[AO OSS] audio_setup: Nie udało się ustawić urządzenia audio na %d kanałów.\n"
 #define MSGTR_AO_OSS_CantUseGetospace "[AO OSS] audio_setup: Sterownik nie obsługuje SNDCTL_DSP_GETOSPACE :-(\n"
-#define MSGTR_AO_OSS_CantUseSelect "[AO OSS]\n   ***  Twój sterownik dźwięku NIE OBSŁUGUJE select()  ***\n Przekompiluj MPlayera z opcją #undef HAVE_AUDIO_SELECT w config.h !\n\n"
+#define MSGTR_AO_OSS_CantUseSelect "[AO OSS]\n   ***  Twój sterownik dźwięku NIE OBS�?UGUJE select()  ***\n Przekompiluj MPlayera z opcją #undef HAVE_AUDIO_SELECT w config.h !\n\n"
 #define MSGTR_AO_OSS_CantReopen "[AO OSS]\nBłąd krytyczny: *** Nie mogę otworzyć ponownie/zresetowac urządzenia audio *** %s\n"
 #define MSGTR_AO_OSS_UnknownUnsupportedFormat "[AO OSS] Nieznany/nieobsługiwany format OSS: %x.\n"
 
@@ -1064,33 +1064,8 @@ static const char help_text[]=
 #define MSGTR_AO_SUN_RtscSetinfoFailed "[AO SUN] rtsc: SETINFO nie powiodło się.\n"
 #define MSGTR_AO_SUN_CantOpenAudioDev "[AO SUN] Nie mogę otworzyć urządzenia audio %s, %s  -> brak dźwięku.\n"
 #define MSGTR_AO_SUN_UnsupSampleRate "[AO SUN] audio_setup: Twoja karta nie obsługuje %d kanałów, %s, częstotliwości próbkowania %d Hz.\n"
-#define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  Twój sterownik dźwięku NIE OBSŁUGUJE select()  ***\nPrzekompiluj MPlayer z opcją #undef HAVE_AUDIO_SELECT w config.h !\n\n"
+#define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  Twój sterownik dźwięku NIE OBS�?UGUJE select()  ***\nPrzekompiluj MPlayer z opcją #undef HAVE_AUDIO_SELECT w config.h !\n\n"
 #define MSGTR_AO_SUN_CantReopenReset "[AO SUN]\nFatal error: *** Nie mogę otworzyć ponownie/zresetować urządzenia audio (%s) ***\n"
-
-// ao_alsa5.c
-#define MSGTR_AO_ALSA5_InitInfo "[AO ALSA5] alsa-init: żądany format: %d Hz, %d kanały, %s\n"
-#define MSGTR_AO_ALSA5_SoundCardNotFound "[AO ALSA5] alsa-init: nie znaleziono żadnych kart dźwiękowych.\n"
-#define MSGTR_AO_ALSA5_InvalidFormatReq "[AO ALSA5] alsa-init: żądanie niewłaściwego formatu (%s)a - wyjście wyłączone.\n"
-#define MSGTR_AO_ALSA5_PlayBackError "[AO ALSA5] alsa-init: błąd odtwarzania: %s\n"
-#define MSGTR_AO_ALSA5_PcmInfoError "[AO ALSA5] alsa-init: bład PCM info: %s\n"
-#define MSGTR_AO_ALSA5_SoundcardsFound "[AO ALSA5] alsa-init: znalazłem %d kart dźwiękowych, używam: %s\n"
-#define MSGTR_AO_ALSA5_PcmChanInfoError "[AO ALSA5] alsa-init: błąd PCM channel info: %s\n"
-#define MSGTR_AO_ALSA5_CantSetParms "[AO ALSA5] alsa-init: błąd ustawiania paremetrów: %s\n"
-#define MSGTR_AO_ALSA5_CantSetChan "[AO ALSA5] alsa-init: błąd ustawiania kanału: %s\n"
-#define MSGTR_AO_ALSA5_ChanPrepareError "[AO ALSA5] alsa-init: błąd przygotowywania kanału: %s\n"
-#define MSGTR_AO_ALSA5_DrainError "[AO ALSA5] alsa-uninit: błąd odsączania odtwarzania: %s\n"
-#define MSGTR_AO_ALSA5_FlushError "[AO ALSA5] alsa-uninit: błąd czyszczenia odtwarzania: %s\n"
-#define MSGTR_AO_ALSA5_PcmCloseError "[AO ALSA5] alsa-uninit: błąd zamykania PCM: %s\n"
-#define MSGTR_AO_ALSA5_ResetDrainError "[AO ALSA5] alsa-reset: błąd odsączania odtwarzania: %s\n"
-#define MSGTR_AO_ALSA5_ResetFlushError "[AO ALSA5] alsa-reset: błąd czyszczenia odtwarzania: %s\n"
-#define MSGTR_AO_ALSA5_ResetChanPrepareError "[AO ALSA5] alsa-reset: błąd przygotowywania kanału: %s\n"
-#define MSGTR_AO_ALSA5_PauseDrainError "[AO ALSA5] alsa-pause: błąd odsączania odtwarzania: %s\n"
-#define MSGTR_AO_ALSA5_PauseFlushError "[AO ALSA5] alsa-pause: błąd czyszczenia odtwarzania: %s\n"
-#define MSGTR_AO_ALSA5_ResumePrepareError "[AO ALSA5] alsa-resume: błąd przygotowywania kanału: %s\n"
-#define MSGTR_AO_ALSA5_Underrun "[AO ALSA5] alsa-play: błąd alsa, resetuję strumień.\n"
-#define MSGTR_AO_ALSA5_PlaybackPrepareError "[AO ALSA5] alsa-play: błąd przygotowywania do odtwarzania: %s\n"
-#define MSGTR_AO_ALSA5_WriteErrorAfterReset "[AO ALSA5] alsa-play: błąd zapisu po resecie: %s - przestaję.\n"
-#define MSGTR_AO_ALSA5_OutPutError "[AO ALSA5] alsa-play: błąd wyjścia: %s\n"
 
 // ao_plugin.c
 
@@ -1163,15 +1138,15 @@ static const char help_text[]=
 
 // url.c
 
-#define MSGTR_MPDEMUX_URL_StringAlreadyEscaped "Łancuch wydaje się być już zakodowany w url_escape %c%c1%c2\n"
+#define MSGTR_MPDEMUX_URL_StringAlreadyEscaped "�?ancuch wydaje się być już zakodowany w url_escape %c%c1%c2\n"
 
-// ai_alsa1x.c
+// ai_alsa.c
 
-#define MSGTR_MPDEMUX_AIALSA1X_CannotSetSamplerate "Nie mogę ustawić częstotliwości próbkowania.\n"
-#define MSGTR_MPDEMUX_AIALSA1X_CannotSetBufferTime "Nie moge ustawić czasu bufora.\n"
-#define MSGTR_MPDEMUX_AIALSA1X_CannotSetPeriodTime "Nie mogę ustawić czasu okresu.\n"
+#define MSGTR_MPDEMUX_AIALSA_CannotSetSamplerate "Nie mogę ustawić częstotliwości próbkowania.\n"
+#define MSGTR_MPDEMUX_AIALSA_CannotSetBufferTime "Nie moge ustawić czasu bufora.\n"
+#define MSGTR_MPDEMUX_AIALSA_CannotSetPeriodTime "Nie mogę ustawić czasu okresu.\n"
 
-// ai_alsa1x.c / ai_alsa.c
+// ai_alsa.c
 
 #define MSGTR_MPDEMUX_AIALSA_PcmBrokenConfig "Błędna konfiguracja tego PCM: brak dostępnych konfiguracji.\n"
 #define MSGTR_MPDEMUX_AIALSA_UnavailableAccessType "Niedostępny tryb dostępu.\n"
@@ -1200,7 +1175,7 @@ static const char help_text[]=
 
 // asfheader.c
 
-#define MSGTR_MPDEMUX_ASFHDR_HeaderSizeOver1MB "BŁĄD KRYTYCZNY: rozmiar nagłowka jest większy niż 1 MB (%d)!\nProszę skontaktuj się z autorami MPlayera i wyślij ten plik.\n"
+#define MSGTR_MPDEMUX_ASFHDR_HeaderSizeOver1MB "B�?ĄD KRYTYCZNY: rozmiar nagłowka jest większy niż 1 MB (%d)!\nProszę skontaktuj się z autorami MPlayera i wyślij ten plik.\n"
 #define MSGTR_MPDEMUX_ASFHDR_HeaderMallocFailed "Nie moge zaalokować %d bajtów na nagłówek.\n"
 #define MSGTR_MPDEMUX_ASFHDR_EOFWhileReadingHeader "Koniec pliku podczas odczytywania nagłówka ASF, zepsuty/niepełny plik?\n"
 #define MSGTR_MPDEMUX_ASFHDR_DVRWantsLibavformat "DVR prawdopodobnie zadziała tylko z libavformat, spróbuj -demuxer 35 jeśli napotykasz problemy\n"
@@ -1341,7 +1316,7 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_NW_UnknownAF "Nieznana rodzina adresów %d\n"
 #define MSGTR_MPDEMUX_NW_ResolvingHostForAF "Zamieniam %s na %s...\n"
 #define MSGTR_MPDEMUX_NW_CantResolv "Nie mogłem zamienić nazwy dla  %s: %s\n"
-#define MSGTR_MPDEMUX_NW_ConnectingToServer "Łączę z serwerem %s[%s]: %d...\n"
+#define MSGTR_MPDEMUX_NW_ConnectingToServer "�?ączę z serwerem %s[%s]: %d...\n"
 #define MSGTR_MPDEMUX_NW_CantConnect2Server "Błąd połączenia do serwera z %s\n"
 #define MSGTR_MPDEMUX_NW_SelectFailed "Wybieranie nie powiodło się.\n"
 #define MSGTR_MPDEMUX_NW_ConnTimeout "połączenie zerwane\n"

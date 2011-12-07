@@ -57,7 +57,7 @@ static int spdif_get_offset_and_codec(AVFormatContext *s,
         break;
     case IEC61937_MPEG2_AAC:
         init_get_bits(&gbc, buf, AAC_ADTS_HEADER_SIZE * 8);
-        if (ff_aac_parse_header(&gbc, &aac_hdr)) {
+        if (avpriv_aac_parse_header(&gbc, &aac_hdr)) {
             if (s) /* be silent during a probe */
                 av_log(s, AV_LOG_ERROR, "Invalid AAC packet in IEC 61937\n");
             return AVERROR_INVALIDDATA;
@@ -205,7 +205,7 @@ static int spdif_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     if (!s->nb_streams) {
         /* first packet, create a stream */
-        AVStream *st = av_new_stream(s, 0);
+        AVStream *st = avformat_new_stream(s, NULL);
         if (!st) {
             av_free_packet(pkt);
             return AVERROR(ENOMEM);

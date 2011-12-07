@@ -140,6 +140,18 @@ static int parse_keyframes_index(AVFormatContext *s, AVIOContext *ioc, AVStream 
     int64_t *filepositions = NULL;
     int ret = AVERROR(ENOSYS);
     int64_t initial_pos = avio_tell(ioc);
+    AVDictionaryEntry *creator = av_dict_get(s->metadata, "metadatacreator",
+                                             NULL, 0);
+
+    if (creator && !strcmp(creator->value, "MEGA")) {
+        /* Files with this metadatacreator tag seem to have filepositions
+         * pointing at the 4 trailer bytes of the previous packet,
+         * which isn't the norm (nor what we expect here, nor what
+         * jwplayer + lighttpd expect, nor what flvtool2 produces).
+         * Just ignore the index in this case, instead of risking trying
+         * to adjust it to something that might or might not work. */
+        return 0;
+    }
 
     while (avio_tell(ioc) < max_pos - 2 && amf_get_string(ioc, str_val, sizeof(str_val)) > 0) {
         int64_t* current_array;
@@ -149,6 +161,9 @@ static int parse_keyframes_index(AVFormatContext *s, AVIOContext *ioc, AVStream 
             break;
 
         arraylen = avio_rb32(ioc);
+        if (arraylen >> 28)
+            break;
+
         /*
          * Expect only 'times' or 'filepositions' sub-arrays in other case refuse to use such metadata
          * for indexing
@@ -184,8 +199,8 @@ static int parse_keyframes_index(AVFormatContext *s, AVIOContext *ioc, AVStream 
         }
     }
 
-    if (timeslen == fileposlen)
-         for(i = 0; i < arraylen; i++)
+    if (!ret && timeslen == fileposlen)
+         for (i = 0; i < fileposlen; i++)
              av_add_index_entry(vstream, filepositions[i], times[i]*1000, 0, 0, AVINDEX_KEYFRAME);
     else
         av_log(s, AV_LOG_WARNING, "Invalid keyframes object, skipping.\n");
@@ -224,8 +239,9 @@ static int amf_parse_object(AVFormatContext *s, AVStream *astream, AVStream *vst
         case AMF_DATA_TYPE_OBJECT: {
             unsigned int keylen;
 
-            if (key && !strcmp(KEYFRAMES_TAG, key) && depth == 1)
-                if (parse_keyframes_index(s, ioc, vstream, max_pos) < 0)
+            if ((vstream || astream) && key && !strcmp(KEYFRAMES_TAG, key) && depth == 1)
+                if (parse_keyframes_index(s, ioc, vstream ? vstream : astream,
+                                          max_pos) < 0)
                     return -1;
 
             while(avio_tell(ioc) < max_pos - 2 && (keylen = avio_rb16(ioc))) {
@@ -272,17 +288,35 @@ static int amf_parse_object(AVFormatContext *s, AVStream *astream, AVStream *vst
         acodec = astream ? astream->codec : NULL;
         vcodec = vstream ? vstream->codec : NULL;
 
+        if (amf_type == AMF_DATA_TYPE_NUMBER) {
+            if (!strcmp(key, "duration"))
+                s->duration = num_val * AV_TIME_BASE;
+            else if (!strcmp(key, "videodatarate") && vcodec && 0 <= (int)(num_val * 1024.0))
+                vcodec->bit_rate = num_val * 1024.0;
+            else if (!strcmp(key, "audiodatarate") && acodec && 0 <= (int)(num_val * 1024.0))
+                acodec->bit_rate = num_val * 1024.0;
+        }
+
+        if (!strcmp(key, "duration")        ||
+            !strcmp(key, "filesize")        ||
+            !strcmp(key, "width")           ||
+            !strcmp(key, "height")          ||
+            !strcmp(key, "videodatarate")   ||
+            !strcmp(key, "framerate")       ||
+            !strcmp(key, "videocodecid")    ||
+            !strcmp(key, "audiodatarate")   ||
+            !strcmp(key, "audiosamplerate") ||
+            !strcmp(key, "audiosamplesize") ||
+            !strcmp(key, "stereo")          ||
+            !strcmp(key, "audiocodecid"))
+            return 0;
+
         if(amf_type == AMF_DATA_TYPE_BOOL) {
             av_strlcpy(str_val, num_val > 0 ? "true" : "false", sizeof(str_val));
             av_dict_set(&s->metadata, key, str_val, 0);
         } else if(amf_type == AMF_DATA_TYPE_NUMBER) {
             snprintf(str_val, sizeof(str_val), "%.f", num_val);
             av_dict_set(&s->metadata, key, str_val, 0);
-            if(!strcmp(key, "duration")) s->duration = num_val * AV_TIME_BASE;
-            else if(!strcmp(key, "videodatarate") && vcodec && 0 <= (int)(num_val * 1024.0))
-                vcodec->bit_rate = num_val * 1024.0;
-            else if(!strcmp(key, "audiodatarate") && acodec && 0 <= (int)(num_val * 1024.0))
-                acodec->bit_rate = num_val * 1024.0;
         } else if (amf_type == AMF_DATA_TYPE_STRING)
             av_dict_set(&s->metadata, key, str_val, 0);
     }
@@ -321,9 +355,10 @@ static int flv_read_metabody(AVFormatContext *s, int64_t next_pos) {
 }
 
 static AVStream *create_stream(AVFormatContext *s, int is_audio){
-    AVStream *st = av_new_stream(s, is_audio);
+    AVStream *st = avformat_new_stream(s, NULL);
     if (!st)
         return NULL;
+    st->id = is_audio;
     st->codec->codec_type = is_audio ? AVMEDIA_TYPE_AUDIO : AVMEDIA_TYPE_VIDEO;
     av_set_pts_info(st, 32, 1, 1000); /* 32 bit pts in ms */
     return st;
@@ -497,7 +532,7 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
                 return ret;
             if (st->codec->codec_id == CODEC_ID_AAC) {
                 MPEG4AudioConfig cfg;
-                ff_mpeg4audio_get_config(&cfg, st->codec->extradata,
+                avpriv_mpeg4audio_get_config(&cfg, st->codec->extradata,
                                          st->codec->extradata_size);
                 st->codec->channels = cfg.channels;
                 if (cfg.ext_sample_rate)

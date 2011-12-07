@@ -33,9 +33,9 @@
 #include "libavutil/random_seed.h"
 #include "libavutil/lfg.h"
 #include "libavutil/dict.h"
+#include "libavutil/avstring.h"
 #include "libavcodec/xiph.h"
 #include "libavcodec/mpeg4audio.h"
-#include <strings.h>
 
 typedef struct ebml_master {
     int64_t         pos;                ///< absolute offset in the file where the master's elements start
@@ -91,6 +91,8 @@ typedef struct MatroskaMuxContext {
 
     unsigned int    audio_buffer_size;
     AVPacket        cur_audio_pkt;
+
+    int have_attachments;
 } MatroskaMuxContext;
 
 
@@ -315,9 +317,12 @@ static int64_t mkv_write_seekhead(AVIOContext *pb, mkv_seekhead *seekhead)
 
     currentpos = avio_tell(pb);
 
-    if (seekhead->reserved_size > 0)
-        if (avio_seek(pb, seekhead->filepos, SEEK_SET) < 0)
-            return -1;
+    if (seekhead->reserved_size > 0) {
+        if (avio_seek(pb, seekhead->filepos, SEEK_SET) < 0) {
+            currentpos = -1;
+            goto fail;
+        }
+    }
 
     metaseek = start_ebml_master(pb, MATROSKA_ID_SEEKHEAD, seekhead->reserved_size);
     for (i = 0; i < seekhead->num_entries; i++) {
@@ -341,6 +346,7 @@ static int64_t mkv_write_seekhead(AVIOContext *pb, mkv_seekhead *seekhead)
 
         currentpos = seekhead->filepos;
     }
+fail:
     av_free(seekhead->entries);
     av_free(seekhead);
 
@@ -421,7 +427,7 @@ static int put_xiph_codecpriv(AVFormatContext *s, AVIOContext *pb, AVCodecContex
     else
         first_header_size = 42;
 
-    if (ff_split_xiph_headers(codec->extradata, codec->extradata_size,
+    if (avpriv_split_xiph_headers(codec->extradata, codec->extradata_size,
                               first_header_size, header_start, header_len) < 0) {
         av_log(s, AV_LOG_ERROR, "Extradata corrupt.\n");
         return -1;
@@ -441,7 +447,7 @@ static void get_aac_sample_rates(AVFormatContext *s, AVCodecContext *codec, int 
 {
     MPEG4AudioConfig mp4ac;
 
-    if (ff_mpeg4audio_get_config(&mp4ac, codec->extradata, codec->extradata_size) < 0) {
+    if (avpriv_mpeg4audio_get_config(&mp4ac, codec->extradata, codec->extradata_size) < 0) {
         av_log(s, AV_LOG_WARNING, "Error parsing AAC extradata, unable to determine samplerate.\n");
         return;
     }
@@ -527,6 +533,11 @@ static int mkv_write_tracks(AVFormatContext *s)
         int sample_rate = codec->sample_rate;
         int output_sample_rate = 0;
         AVDictionaryEntry *tag;
+
+        if (codec->codec_type == AVMEDIA_TYPE_ATTACHMENT) {
+            mkv->have_attachments = 1;
+            continue;
+        }
 
         if (!bit_depth)
             bit_depth = av_get_bytes_per_sample(codec->sample_fmt) << 3;
@@ -753,7 +764,7 @@ static int mkv_write_tag(AVFormatContext *s, AVDictionary *m, unsigned int eleme
     end_ebml_master(s->pb, targets);
 
     while ((t = av_dict_get(m, "", t, AV_DICT_IGNORE_SUFFIX)))
-        if (strcasecmp(t->key, "title"))
+        if (av_strcasecmp(t->key, "title"))
             mkv_write_simpletag(s->pb, t);
 
     end_ebml_master(s->pb, tag);
@@ -794,6 +805,68 @@ static int mkv_write_tags(AVFormatContext *s)
 
     if (tags.pos)
         end_ebml_master(s->pb, tags);
+    return 0;
+}
+
+static int mkv_write_attachments(AVFormatContext *s)
+{
+    MatroskaMuxContext *mkv = s->priv_data;
+    AVIOContext *pb = s->pb;
+    ebml_master attachments;
+    AVLFG c;
+    int i, ret;
+
+    if (!mkv->have_attachments)
+        return 0;
+
+    av_lfg_init(&c, av_get_random_seed());
+
+    ret = mkv_add_seekhead_entry(mkv->main_seekhead, MATROSKA_ID_ATTACHMENTS, avio_tell(pb));
+    if (ret < 0) return ret;
+
+    attachments = start_ebml_master(pb, MATROSKA_ID_ATTACHMENTS, 0);
+
+    for (i = 0; i < s->nb_streams; i++) {
+        AVStream *st = s->streams[i];
+        ebml_master attached_file;
+        AVDictionaryEntry *t;
+        const char *mimetype = NULL;
+
+        if (st->codec->codec_type != AVMEDIA_TYPE_ATTACHMENT)
+            continue;
+
+        attached_file = start_ebml_master(pb, MATROSKA_ID_ATTACHEDFILE, 0);
+
+        if (t = av_dict_get(st->metadata, "title", NULL, 0))
+            put_ebml_string(pb, MATROSKA_ID_FILEDESC, t->value);
+        if (!(t = av_dict_get(st->metadata, "filename", NULL, 0))) {
+            av_log(s, AV_LOG_ERROR, "Attachment stream %d has no filename tag.\n", i);
+            return AVERROR(EINVAL);
+        }
+        put_ebml_string(pb, MATROSKA_ID_FILENAME, t->value);
+        if (t = av_dict_get(st->metadata, "mimetype", NULL, 0))
+            mimetype = t->value;
+        else if (st->codec->codec_id != CODEC_ID_NONE ) {
+            int i;
+            for (i = 0; ff_mkv_mime_tags[i].id != CODEC_ID_NONE; i++)
+                if (ff_mkv_mime_tags[i].id == st->codec->codec_id) {
+                    mimetype = ff_mkv_mime_tags[i].str;
+                    break;
+                }
+        }
+        if (!mimetype) {
+            av_log(s, AV_LOG_ERROR, "Attachment stream %d has no mimetype tag and "
+                                    "it cannot be deduced from the codec id.\n", i);
+            return AVERROR(EINVAL);
+        }
+
+        put_ebml_string(pb, MATROSKA_ID_FILEMIMETYPE, mimetype);
+        put_ebml_binary(pb, MATROSKA_ID_FILEDATA, st->codec->extradata, st->codec->extradata_size);
+        put_ebml_uint(pb, MATROSKA_ID_FILEUID, av_lfg_get(&c));
+        end_ebml_master(pb, attached_file);
+    }
+    end_ebml_master(pb, attachments);
+
     return 0;
 }
 
@@ -869,6 +942,9 @@ static int mkv_write_header(AVFormatContext *s)
         if (ret < 0) return ret;
 
         ret = mkv_write_tags(s);
+        if (ret < 0) return ret;
+
+        ret = mkv_write_attachments(s);
         if (ret < 0) return ret;
     }
 

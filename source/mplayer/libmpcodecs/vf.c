@@ -42,83 +42,84 @@
 #include "libvo/fastmemcpy.h"
 #include "libavutil/mem.h"
 
-extern const vf_info_t vf_info_vo;
-extern const vf_info_t vf_info_rectangle;
-extern const vf_info_t vf_info_bmovl;
-extern const vf_info_t vf_info_crop;
-extern const vf_info_t vf_info_expand;
-extern const vf_info_t vf_info_pp;
-extern const vf_info_t vf_info_scale;
-extern const vf_info_t vf_info_format;
-extern const vf_info_t vf_info_noformat;
-extern const vf_info_t vf_info_flip;
-extern const vf_info_t vf_info_rotate;
-extern const vf_info_t vf_info_mirror;
-extern const vf_info_t vf_info_palette;
-extern const vf_info_t vf_info_lavc;
-extern const vf_info_t vf_info_zrmjpeg;
-extern const vf_info_t vf_info_dvbscale;
-extern const vf_info_t vf_info_cropdetect;
-extern const vf_info_t vf_info_test;
-extern const vf_info_t vf_info_noise;
-extern const vf_info_t vf_info_yvu9;
-extern const vf_info_t vf_info_lavcdeint;
-extern const vf_info_t vf_info_eq;
-extern const vf_info_t vf_info_eq2;
-extern const vf_info_t vf_info_gradfun;
-extern const vf_info_t vf_info_halfpack;
-extern const vf_info_t vf_info_dint;
 extern const vf_info_t vf_info_1bpp;
 extern const vf_info_t vf_info_2xsai;
-extern const vf_info_t vf_info_unsharp;
-extern const vf_info_t vf_info_swapuv;
-extern const vf_info_t vf_info_il;
-extern const vf_info_t vf_info_fil;
-extern const vf_info_t vf_info_boxblur;
-extern const vf_info_t vf_info_sab;
-extern const vf_info_t vf_info_smartblur;
-extern const vf_info_t vf_info_perspective;
-extern const vf_info_t vf_info_down3dright;
-extern const vf_info_t vf_info_field;
-extern const vf_info_t vf_info_denoise3d;
-extern const vf_info_t vf_info_hqdn3d;
-extern const vf_info_t vf_info_detc;
-extern const vf_info_t vf_info_telecine;
-extern const vf_info_t vf_info_tinterlace;
-extern const vf_info_t vf_info_tfields;
-extern const vf_info_t vf_info_ivtc;
-extern const vf_info_t vf_info_ilpack;
-extern const vf_info_t vf_info_dsize;
-extern const vf_info_t vf_info_decimate;
-extern const vf_info_t vf_info_softpulldown;
-extern const vf_info_t vf_info_pullup;
-extern const vf_info_t vf_info_filmdint;
-extern const vf_info_t vf_info_framestep;
-extern const vf_info_t vf_info_tile;
-extern const vf_info_t vf_info_delogo;
-extern const vf_info_t vf_info_remove_logo;
-extern const vf_info_t vf_info_hue;
-extern const vf_info_t vf_info_spp;
-extern const vf_info_t vf_info_uspp;
-extern const vf_info_t vf_info_fspp;
-extern const vf_info_t vf_info_pp7;
-extern const vf_info_t vf_info_yuvcsp;
-extern const vf_info_t vf_info_kerndeint;
-extern const vf_info_t vf_info_rgbtest;
-extern const vf_info_t vf_info_qp;
-extern const vf_info_t vf_info_phase;
-extern const vf_info_t vf_info_divtc;
-extern const vf_info_t vf_info_harddup;
-extern const vf_info_t vf_info_softskip;
-extern const vf_info_t vf_info_screenshot;
 extern const vf_info_t vf_info_ass;
-extern const vf_info_t vf_info_mcdeint;
-extern const vf_info_t vf_info_yadif;
 extern const vf_info_t vf_info_blackframe;
-extern const vf_info_t vf_info_geq;
-extern const vf_info_t vf_info_ow;
+extern const vf_info_t vf_info_bmovl;
+extern const vf_info_t vf_info_boxblur;
+extern const vf_info_t vf_info_crop;
+extern const vf_info_t vf_info_cropdetect;
+extern const vf_info_t vf_info_decimate;
+extern const vf_info_t vf_info_delogo;
+extern const vf_info_t vf_info_denoise3d;
+extern const vf_info_t vf_info_detc;
+extern const vf_info_t vf_info_dint;
+extern const vf_info_t vf_info_divtc;
+extern const vf_info_t vf_info_down3dright;
+extern const vf_info_t vf_info_dsize;
+extern const vf_info_t vf_info_dvbscale;
+extern const vf_info_t vf_info_eq2;
+extern const vf_info_t vf_info_eq;
+extern const vf_info_t vf_info_expand;
+extern const vf_info_t vf_info_field;
+extern const vf_info_t vf_info_fil;
+extern const vf_info_t vf_info_filmdint;
 extern const vf_info_t vf_info_fixpts;
+extern const vf_info_t vf_info_flip;
+extern const vf_info_t vf_info_format;
+extern const vf_info_t vf_info_framestep;
+extern const vf_info_t vf_info_fspp;
+extern const vf_info_t vf_info_geq;
+extern const vf_info_t vf_info_gradfun;
+extern const vf_info_t vf_info_halfpack;
+extern const vf_info_t vf_info_harddup;
+extern const vf_info_t vf_info_hqdn3d;
+extern const vf_info_t vf_info_hue;
+extern const vf_info_t vf_info_il;
+extern const vf_info_t vf_info_ilpack;
+extern const vf_info_t vf_info_ivtc;
+extern const vf_info_t vf_info_kerndeint;
+extern const vf_info_t vf_info_lavc;
+extern const vf_info_t vf_info_lavcdeint;
+extern const vf_info_t vf_info_lavfi;
+extern const vf_info_t vf_info_mcdeint;
+extern const vf_info_t vf_info_mirror;
+extern const vf_info_t vf_info_noformat;
+extern const vf_info_t vf_info_noise;
+extern const vf_info_t vf_info_ow;
+extern const vf_info_t vf_info_palette;
+extern const vf_info_t vf_info_perspective;
+extern const vf_info_t vf_info_phase;
+extern const vf_info_t vf_info_pp7;
+extern const vf_info_t vf_info_pp;
+extern const vf_info_t vf_info_pullup;
+extern const vf_info_t vf_info_qp;
+extern const vf_info_t vf_info_rectangle;
+extern const vf_info_t vf_info_remove_logo;
+extern const vf_info_t vf_info_rgbtest;
+extern const vf_info_t vf_info_rotate;
+extern const vf_info_t vf_info_sab;
+extern const vf_info_t vf_info_scale;
+extern const vf_info_t vf_info_screenshot;
+extern const vf_info_t vf_info_smartblur;
+extern const vf_info_t vf_info_softpulldown;
+extern const vf_info_t vf_info_softskip;
+extern const vf_info_t vf_info_spp;
 extern const vf_info_t vf_info_stereo3d;
+extern const vf_info_t vf_info_swapuv;
+extern const vf_info_t vf_info_telecine;
+extern const vf_info_t vf_info_test;
+extern const vf_info_t vf_info_tfields;
+extern const vf_info_t vf_info_tile;
+extern const vf_info_t vf_info_tinterlace;
+extern const vf_info_t vf_info_unsharp;
+extern const vf_info_t vf_info_uspp;
+extern const vf_info_t vf_info_vo;
+extern const vf_info_t vf_info_yadif;
+extern const vf_info_t vf_info_yuvcsp;
+extern const vf_info_t vf_info_yvu9;
+extern const vf_info_t vf_info_zrmjpeg;
 
 // list of available filters:
 static const vf_info_t* const filter_list[]={
@@ -142,6 +143,9 @@ static const vf_info_t* const filter_list[]={
     &vf_info_pp,
     &vf_info_lavc,
     &vf_info_lavcdeint,
+#ifdef CONFIG_VF_LAVFI
+    &vf_info_lavfi,
+#endif
     &vf_info_screenshot,
     &vf_info_geq,
 #endif
@@ -334,6 +338,7 @@ mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype,
     break;
   }
   if(mpi){
+    int missing_palette = !(mpi->flags & MP_IMGFLAG_RGB_PALETTE) && (mp_imgflag & MP_IMGFLAG_RGB_PALETTE);
     mpi->type=mp_imgtype;
     mpi->w=vf->w; mpi->h=vf->h;
     // keep buffer allocation status & color flags only:
@@ -342,12 +347,14 @@ mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype,
     // accept restrictions, draw_slice and palette flags only:
     mpi->flags|=mp_imgflag&(MP_IMGFLAGMASK_RESTRICTIONS|MP_IMGFLAG_DRAW_CALLBACK|MP_IMGFLAG_RGB_PALETTE);
     if(!vf->draw_slice) mpi->flags&=~MP_IMGFLAG_DRAW_CALLBACK;
-    if(mpi->width!=w2 || mpi->height!=h){
+    if(mpi->width!=w2 || mpi->height!=h || missing_palette){
 //      printf("vf.c: MPI parameters changed!  %dx%d -> %dx%d   \n", mpi->width,mpi->height,w2,h);
         if(mpi->flags&MP_IMGFLAG_ALLOCATED){
-            if(mpi->width<w2 || mpi->height<h){
+            if(mpi->width<w2 || mpi->height<h || missing_palette){
                 // need to re-allocate buffer memory:
-                av_free(mpi->planes[0]);
+                av_freep(&mpi->planes[0]);
+                if (mpi->flags & MP_IMGFLAG_RGB_PALETTE)
+                    av_freep(&mpi->planes[1]);
                 mpi->flags&=~MP_IMGFLAG_ALLOCATED;
                 mp_msg(MSGT_VFILTER,MSGL_V,"vf.c: have to REALLOCATE buffer memory :(\n");
             }

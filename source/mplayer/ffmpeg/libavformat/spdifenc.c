@@ -86,10 +86,10 @@ typedef struct IEC61937Context {
 } IEC61937Context;
 
 static const AVOption options[] = {
-{ "spdif_flags", "IEC 61937 encapsulation flags", offsetof(IEC61937Context, spdif_flags), FF_OPT_TYPE_FLAGS, {.dbl = 0}, 0, INT_MAX, AV_OPT_FLAG_ENCODING_PARAM, "spdif_flags" },
-{ "be", "output in big-endian format (for use as s16be)", 0, FF_OPT_TYPE_CONST, {.dbl = SPDIF_FLAG_BIGENDIAN},  0, INT_MAX, AV_OPT_FLAG_ENCODING_PARAM, "spdif_flags" },
-{ "dtshd_rate", "mux complete DTS frames in HD mode at the specified IEC958 rate (in Hz, default 0=disabled)", offsetof(IEC61937Context, dtshd_rate), FF_OPT_TYPE_INT, {.dbl = 0}, 0, 768000, AV_OPT_FLAG_ENCODING_PARAM },
-{ "dtshd_fallback_time", "min secs to strip HD for after an overflow (-1: till the end, default 60)", offsetof(IEC61937Context, dtshd_fallback), FF_OPT_TYPE_INT, {.dbl = 60}, -1, INT_MAX, AV_OPT_FLAG_ENCODING_PARAM },
+{ "spdif_flags", "IEC 61937 encapsulation flags", offsetof(IEC61937Context, spdif_flags), AV_OPT_TYPE_FLAGS, {.dbl = 0}, 0, INT_MAX, AV_OPT_FLAG_ENCODING_PARAM, "spdif_flags" },
+{ "be", "output in big-endian format (for use as s16be)", 0, AV_OPT_TYPE_CONST, {.dbl = SPDIF_FLAG_BIGENDIAN},  0, INT_MAX, AV_OPT_FLAG_ENCODING_PARAM, "spdif_flags" },
+{ "dtshd_rate", "mux complete DTS frames in HD mode at the specified IEC958 rate (in Hz, default 0=disabled)", offsetof(IEC61937Context, dtshd_rate), AV_OPT_TYPE_INT, {.dbl = 0}, 0, 768000, AV_OPT_FLAG_ENCODING_PARAM },
+{ "dtshd_fallback_time", "min secs to strip HD for after an overflow (-1: till the end, default 60)", offsetof(IEC61937Context, dtshd_fallback), AV_OPT_TYPE_INT, {.dbl = 60}, -1, INT_MAX, AV_OPT_FLAG_ENCODING_PARAM },
 { NULL },
 };
 
@@ -349,7 +349,7 @@ static int spdif_header_aac(AVFormatContext *s, AVPacket *pkt)
     int ret;
 
     init_get_bits(&gbc, pkt->data, AAC_ADTS_HEADER_SIZE * 8);
-    ret = ff_aac_parse_header(&gbc, &hdr);
+    ret = avpriv_aac_parse_header(&gbc, &hdr);
     if (ret < 0) {
         av_log(s, AV_LOG_ERROR, "Wrong AAC file format\n");
         return AVERROR_INVALIDDATA;

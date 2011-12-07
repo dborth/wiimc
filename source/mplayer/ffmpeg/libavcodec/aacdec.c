@@ -184,9 +184,11 @@ static av_cold int che_configure(AACContext *ac,
                                  int type, int id, int *channels)
 {
     if (che_pos[type][id]) {
-        if (!ac->che[type][id] && !(ac->che[type][id] = av_mallocz(sizeof(ChannelElement))))
-            return AVERROR(ENOMEM);
-        ff_aac_sbr_ctx_init(ac, &ac->che[type][id]->sbr);
+        if (!ac->che[type][id]) {
+            if (!(ac->che[type][id] = av_mallocz(sizeof(ChannelElement))))
+                return AVERROR(ENOMEM);
+            ff_aac_sbr_ctx_init(ac, &ac->che[type][id]->sbr);
+        }
         if (type != TYPE_CCE) {
             ac->output_data[(*channels)++] = ac->che[type][id]->ch[0].ret;
             if (type == TYPE_CPE ||
@@ -470,7 +472,7 @@ static int decode_audio_specific_config(AACContext *ac,
 
     init_get_bits(&gb, data, data_size * 8);
 
-    if ((i = ff_mpeg4audio_get_config(m4ac, data, data_size)) < 0)
+    if ((i = avpriv_mpeg4audio_get_config(m4ac, data, data_size)) < 0)
         return -1;
     if (m4ac->sampling_index > 12) {
         av_log(avctx, AV_LOG_ERROR, "invalid sampling rate index %d\n", m4ac->sampling_index);
@@ -594,7 +596,7 @@ static av_cold int aac_decode_init(AVCodecContext *avctx)
             int ret = set_default_channel_config(avctx, new_che_pos, ac->m4ac.chan_config);
             if (!ret)
                 output_configure(ac, ac->che_pos, new_che_pos, ac->m4ac.chan_config, OC_GLOBAL_HDR);
-            else if (avctx->error_recognition >= FF_ER_EXPLODE)
+            else if (avctx->err_recognition & AV_EF_EXPLODE)
                 return AVERROR_INVALIDDATA;
         }
     }
@@ -1129,7 +1131,7 @@ static int decode_spectrum_and_dequant(AACContext *ac, float coef[1024],
                             GET_VLC(code, re, gb, vlc_tab, 8, 2);
                             cb_idx = cb_vector_idx[code];
                             nnz = cb_idx >> 8 & 15;
-                            bits = SHOW_UBITS(re, gb, nnz) << (32-nnz);
+                            bits = nnz ? GET_CACHE(re, gb) : 0;
                             LAST_SKIP_BITS(re, gb, nnz);
                             cf = VMUL4S(cf, vq, cb_idx, bits, sf + idx);
                         } while (len -= 4);
@@ -1169,7 +1171,7 @@ static int decode_spectrum_and_dequant(AACContext *ac, float coef[1024],
                             GET_VLC(code, re, gb, vlc_tab, 8, 2);
                             cb_idx = cb_vector_idx[code];
                             nnz = cb_idx >> 8 & 15;
-                            sign = SHOW_UBITS(re, gb, nnz) << (cb_idx >> 12);
+                            sign = nnz ? SHOW_UBITS(re, gb, nnz) << (cb_idx >> 12) : 0;
                             LAST_SKIP_BITS(re, gb, nnz);
                             cf = VMUL2S(cf, vq, cb_idx, sign, sf + idx);
                         } while (len -= 2);
@@ -2075,9 +2077,9 @@ static int parse_adts_frame_header(AACContext *ac, GetBitContext *gb)
     int size;
     AACADTSHeaderInfo hdr_info;
 
-    size = ff_aac_parse_header(gb, &hdr_info);
+    size = avpriv_aac_parse_header(gb, &hdr_info);
     if (size > 0) {
-        if (ac->output_configured != OC_LOCKED && hdr_info.chan_config) {
+        if (hdr_info.chan_config) {
             enum ChannelPosition new_che_pos[4][MAX_ELEM_ID];
             memset(new_che_pos, 0, 4 * MAX_ELEM_ID * sizeof(new_che_pos[0][0]));
             ac->m4ac.chan_config = hdr_info.chan_config;
@@ -2485,9 +2487,6 @@ static int latm_decode_frame(AVCodecContext *avctx, void *out, int *out_size,
     int                 muxlength, err;
     GetBitContext       gb;
 
-    if (avpkt->size == 0)
-        return 0;
-
     init_get_bits(&gb, avpkt->data, avpkt->size * 8);
 
     // check for LOAS sync word
@@ -2507,8 +2506,9 @@ static int latm_decode_frame(AVCodecContext *avctx, void *out, int *out_size,
             *out_size = 0;
             return avpkt->size;
         } else {
-            aac_decode_close(avctx);
-            if ((err = aac_decode_init(avctx)) < 0)
+            if ((err = decode_audio_specific_config(
+                    &latmctx->aac_ctx, avctx, &latmctx->aac_ctx.m4ac,
+                    avctx->extradata, avctx->extradata_size)) < 0)
                 return err;
             latmctx->initialized = 1;
         }
@@ -2530,15 +2530,10 @@ static int latm_decode_frame(AVCodecContext *avctx, void *out, int *out_size,
 av_cold static int latm_decode_init(AVCodecContext *avctx)
 {
     struct LATMContext *latmctx = avctx->priv_data;
-    int ret;
+    int ret = aac_decode_init(avctx);
 
-    ret = aac_decode_init(avctx);
-
-    if (avctx->extradata_size > 0) {
+    if (avctx->extradata_size > 0)
         latmctx->initialized = !ret;
-    } else {
-        latmctx->initialized = 0;
-    }
 
     return ret;
 }

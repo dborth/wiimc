@@ -103,6 +103,7 @@ typedef struct VideoPicture {
     SDL_Overlay *bmp;
     int width, height; /* source height & width */
     int allocated;
+    int reallocate;
     enum PixelFormat pix_fmt;
 
 #if CONFIG_AVFILTER
@@ -277,6 +278,11 @@ static AVPacket flush_pkt;
 #define FF_QUIT_EVENT    (SDL_USEREVENT + 2)
 
 static SDL_Surface *screen;
+
+void exit_program(int ret)
+{
+    exit(ret);
+}
 
 static int packet_queue_put(PacketQueue *q, AVPacket *pkt);
 
@@ -899,11 +905,11 @@ static int video_open(VideoState *is){
        && is->height== screen->h && screen->h == h)
         return 0;
 
-#ifndef __APPLE__
-    screen = SDL_SetVideoMode(w, h, 0, flags);
-#else
-    /* setting bits_per_pixel = 0 or 32 causes blank video on OS X */
+#if defined(__APPLE__) && !SDL_VERSION_ATLEAST(1, 2, 14)
+    /* setting bits_per_pixel = 0 or 32 causes blank video on OS X and older SDL */
     screen = SDL_SetVideoMode(w, h, 24, flags);
+#else
+    screen = SDL_SetVideoMode(w, h, 0, flags);
 #endif
     if (!screen) {
         fprintf(stderr, "SDL: could not set video mode - exiting\n");
@@ -1253,6 +1259,7 @@ static void do_exit(void)
 #if CONFIG_AVFILTER
     avfilter_uninit();
 #endif
+    avformat_network_deinit();
     if (show_status)
         printf("\n");
     SDL_Quit();
@@ -1334,7 +1341,7 @@ static int queue_picture(VideoState *is, AVFrame *src_frame, double pts, int64_t
     vp = &is->pictq[is->pictq_windex];
 
     /* alloc or resize hardware picture buffer */
-    if (!vp->bmp ||
+    if (!vp->bmp || vp->reallocate ||
 #if CONFIG_AVFILTER
         vp->width  != is->out_video_filter->inputs[0]->w ||
         vp->height != is->out_video_filter->inputs[0]->h) {
@@ -1344,7 +1351,8 @@ static int queue_picture(VideoState *is, AVFrame *src_frame, double pts, int64_t
 #endif
         SDL_Event event;
 
-        vp->allocated = 0;
+        vp->allocated  = 0;
+        vp->reallocate = 0;
 
         /* the allocation must be done in the main thread to avoid
            locking problems */
@@ -2003,10 +2011,15 @@ static int audio_decode_frame(VideoState *is, double *pts_ptr)
     AVCodecContext *dec= is->audio_st->codec;
     int n, len1, data_size;
     double pts;
+    int new_packet = 0;
+    int flush_complete = 0;
 
     for(;;) {
         /* NOTE: the audio packet can contain several frames */
-        while (pkt_temp->size > 0) {
+        while (pkt_temp->size > 0 || (!pkt_temp->data && new_packet)) {
+            if (flush_complete)
+                break;
+            new_packet = 0;
             data_size = sizeof(is->audio_buf1);
             len1 = avcodec_decode_audio3(dec,
                                         (int16_t *)is->audio_buf1, &data_size,
@@ -2019,8 +2032,13 @@ static int audio_decode_frame(VideoState *is, double *pts_ptr)
 
             pkt_temp->data += len1;
             pkt_temp->size -= len1;
-            if (data_size <= 0)
+
+            if (data_size <= 0) {
+                /* stop sending empty packets if the decoder is finished */
+                if (!pkt_temp->data && dec->codec->capabilities & CODEC_CAP_DELAY)
+                    flush_complete = 1;
                 continue;
+            }
 
             if (dec->sample_fmt != is->audio_src_fmt) {
                 if (is->reformat_ctx)
@@ -2081,12 +2099,11 @@ static int audio_decode_frame(VideoState *is, double *pts_ptr)
         }
 
         /* read next packet */
-        if (packet_queue_get(&is->audioq, pkt, 1) < 0)
+        if ((new_packet = packet_queue_get(&is->audioq, pkt, 1)) < 0)
             return -1;
-        if(pkt->data == flush_pkt.data){
+
+        if (pkt->data == flush_pkt.data)
             avcodec_flush_buffers(dec);
-            continue;
-        }
 
         pkt_temp->data = pkt->data;
         pkt_temp->size = pkt->size;
@@ -2254,9 +2271,17 @@ static void stream_component_close(VideoState *is, int stream_index)
         SDL_CloseAudio();
 
         packet_queue_end(&is->audioq);
+        av_free_packet(&is->audio_pkt);
         if (is->reformat_ctx)
             av_audio_convert_free(is->reformat_ctx);
         is->reformat_ctx = NULL;
+
+        if (is->rdft) {
+            av_rdft_end(is->rdft);
+            av_freep(&is->rdft_data);
+            is->rdft = NULL;
+            is->rdft_bits = 0;
+        }
         break;
     case AVMEDIA_TYPE_VIDEO:
         packet_queue_abort(&is->videoq);
@@ -2503,6 +2528,14 @@ static int decode_thread(void *arg)
                 pkt->stream_index= is->video_stream;
                 packet_queue_put(&is->videoq, pkt);
             }
+            if (is->audio_stream >= 0 &&
+                is->audio_st->codec->codec->capabilities & CODEC_CAP_DELAY) {
+                av_init_packet(pkt);
+                pkt->data = NULL;
+                pkt->size = 0;
+                pkt->stream_index = is->audio_stream;
+                packet_queue_put(&is->audioq, pkt);
+            }
             SDL_Delay(10);
             if(is->audioq.size + is->videoq.size + is->subtitleq.size ==0){
                 if(loop!=1 && (!loop || --loop)){
@@ -2653,6 +2686,12 @@ static void stream_cycle_channel(VideoState *is, int codec_type)
 static void toggle_full_screen(void)
 {
     is_full_screen = !is_full_screen;
+#if defined(__APPLE__) && SDL_VERSION_ATLEAST(1, 2, 14)
+    /* OSX needs to empty the picture_queue */
+    for (int i = 0; i < VIDEO_PICTURE_QUEUE_SIZE; i++) {
+        cur_stream->pictq[i].reallocate = 1;
+    }
+#endif
     video_open(cur_stream);
 }
 
@@ -2961,7 +3000,7 @@ static const OptionDef options[] = {
 #endif
     { "rdftspeed", OPT_INT | HAS_ARG| OPT_AUDIO | OPT_EXPERT, {(void*)&rdftspeed}, "rdft speed", "msecs" },
     { "default", HAS_ARG | OPT_AUDIO | OPT_VIDEO | OPT_EXPERT, {(void*)opt_default}, "generic catch all option", "" },
-    { "i", 0, {NULL}, "ffmpeg compatibility dummy option", ""},
+    { "i", 0, {NULL}, "avconv compatibility dummy option", ""},
     { NULL, },
 };
 
@@ -2981,15 +3020,10 @@ static void show_help(void)
     show_help_options(options, "\nAdvanced options:\n",
                       OPT_EXPERT, OPT_EXPERT);
     printf("\n");
-    av_opt_show2(avcodec_opts[0], NULL,
-                 AV_OPT_FLAG_DECODING_PARAM, 0);
-    printf("\n");
-    av_opt_show2(avformat_opts, NULL,
-                 AV_OPT_FLAG_DECODING_PARAM, 0);
+    show_help_children(avcodec_get_class(), AV_OPT_FLAG_DECODING_PARAM);
+    show_help_children(avformat_get_class(), AV_OPT_FLAG_DECODING_PARAM);
 #if !CONFIG_AVFILTER
-    printf("\n");
-    av_opt_show2(sws_opts, NULL,
-                 AV_OPT_FLAG_ENCODING_PARAM, 0);
+    show_help_children(sws_get_class(), AV_OPT_FLAG_ENCODING_PARAM);
 #endif
     printf("\nWhile playing:\n"
            "q, ESC              quit\n"
@@ -3006,7 +3040,7 @@ static void show_help(void)
            );
 }
 
-static void opt_input_file(const char *filename)
+static void opt_input_file(void *optctx, const char *filename)
 {
     if (input_filename) {
         fprintf(stderr, "Argument '%s' provided as input filename, but '%s' was already specified.\n",
@@ -3024,6 +3058,7 @@ int main(int argc, char **argv)
     int flags;
 
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
+    parse_loglevel(argc, argv, options);
 
     /* register all codecs, demux and protocols */
     avcodec_register_all();
@@ -3034,12 +3069,13 @@ int main(int argc, char **argv)
     avfilter_register_all();
 #endif
     av_register_all();
+    avformat_network_init();
 
     init_opts();
 
     show_banner();
 
-    parse_options(argc, argv, options, opt_input_file);
+    parse_options(NULL, argc, argv, options, opt_input_file);
 
     if (!input_filename) {
         show_usage();

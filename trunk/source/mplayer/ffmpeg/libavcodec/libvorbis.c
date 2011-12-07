@@ -56,7 +56,7 @@ typedef struct OggVorbisContext {
 } OggVorbisContext ;
 
 static const AVOption options[]={
-{"iblock", "Sets the impulse block bias", offsetof(OggVorbisContext, iblock), FF_OPT_TYPE_DOUBLE, {.dbl = 0}, -15, 0, AV_OPT_FLAG_AUDIO_PARAM|AV_OPT_FLAG_ENCODING_PARAM},
+{"iblock", "Sets the impulse block bias", offsetof(OggVorbisContext, iblock), AV_OPT_TYPE_DOUBLE, {.dbl = 0}, -15, 0, AV_OPT_FLAG_AUDIO_PARAM|AV_OPT_FLAG_ENCODING_PARAM},
 {NULL}
 };
 static const AVClass class = { "libvorbis", av_default_item_name, options, LIBAVUTIL_VERSION_INT };
@@ -245,15 +245,15 @@ static av_cold int oggvorbis_encode_close(AVCodecContext *avccontext) {
 
 
 AVCodec ff_libvorbis_encoder = {
-    "libvorbis",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_VORBIS,
-    sizeof(OggVorbisContext),
-    oggvorbis_encode_init,
-    oggvorbis_encode_frame,
-    oggvorbis_encode_close,
-    .capabilities= CODEC_CAP_DELAY,
-    .sample_fmts = (const enum AVSampleFormat[]){AV_SAMPLE_FMT_S16,AV_SAMPLE_FMT_NONE},
-    .long_name= NULL_IF_CONFIG_SMALL("libvorbis Vorbis"),
-    .priv_class= &class,
-} ;
+    .name           = "libvorbis",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_VORBIS,
+    .priv_data_size = sizeof(OggVorbisContext),
+    .init           = oggvorbis_encode_init,
+    .encode         = oggvorbis_encode_frame,
+    .close          = oggvorbis_encode_close,
+    .capabilities   = CODEC_CAP_DELAY,
+    .sample_fmts    = (const enum AVSampleFormat[]){AV_SAMPLE_FMT_S16,AV_SAMPLE_FMT_NONE},
+    .long_name      = NULL_IF_CONFIG_SMALL("libvorbis Vorbis"),
+    .priv_class     = &class,
+};

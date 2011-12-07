@@ -171,82 +171,6 @@ static av_cold void rv34_init_tables(void)
 
 /** @} */ // vlc group
 
-
-/**
- * @name RV30/40 inverse transform functions
- * @{
- */
-
-static av_always_inline void rv34_row_transform(int temp[16], DCTELEM *block)
-{
-    int i;
-
-    for(i = 0; i < 4; i++){
-        const int z0 = 13*(block[i+8*0] +    block[i+8*2]);
-        const int z1 = 13*(block[i+8*0] -    block[i+8*2]);
-        const int z2 =  7* block[i+8*1] - 17*block[i+8*3];
-        const int z3 = 17* block[i+8*1] +  7*block[i+8*3];
-
-        temp[4*i+0] = z0 + z3;
-        temp[4*i+1] = z1 + z2;
-        temp[4*i+2] = z1 - z2;
-        temp[4*i+3] = z0 - z3;
-    }
-}
-
-/**
- * Real Video 3.0/4.0 inverse transform
- * Code is almost the same as in SVQ3, only scaling is different.
- */
-static void rv34_inv_transform(DCTELEM *block){
-    int temp[16];
-    int i;
-
-    rv34_row_transform(temp, block);
-
-    for(i = 0; i < 4; i++){
-        const int z0 = 13*(temp[4*0+i] +    temp[4*2+i]) + 0x200;
-        const int z1 = 13*(temp[4*0+i] -    temp[4*2+i]) + 0x200;
-        const int z2 =  7* temp[4*1+i] - 17*temp[4*3+i];
-        const int z3 = 17* temp[4*1+i] +  7*temp[4*3+i];
-
-        block[i*8+0] = (z0 + z3) >> 10;
-        block[i*8+1] = (z1 + z2) >> 10;
-        block[i*8+2] = (z1 - z2) >> 10;
-        block[i*8+3] = (z0 - z3) >> 10;
-    }
-
-}
-
-/**
- * RealVideo 3.0/4.0 inverse transform for DC block
- *
- * Code is almost the same as rv34_inv_transform()
- * but final coefficients are multiplied by 1.5 and have no rounding.
- */
-static void rv34_inv_transform_noround(DCTELEM *block){
-    int temp[16];
-    int i;
-
-    rv34_row_transform(temp, block);
-
-    for(i = 0; i < 4; i++){
-        const int z0 = 13*(temp[4*0+i] +    temp[4*2+i]);
-        const int z1 = 13*(temp[4*0+i] -    temp[4*2+i]);
-        const int z2 =  7* temp[4*1+i] - 17*temp[4*3+i];
-        const int z3 = 17* temp[4*1+i] +  7*temp[4*3+i];
-
-        block[i*8+0] = ((z0 + z3) * 3) >> 11;
-        block[i*8+1] = ((z1 + z2) * 3) >> 11;
-        block[i*8+2] = ((z1 - z2) * 3) >> 11;
-        block[i*8+3] = ((z0 - z3) * 3) >> 11;
-    }
-
-}
-
-/** @} */ // transform
-
-
 /**
  * @name RV30/40 4x4 block decoding functions
  * @{
@@ -1226,7 +1150,7 @@ static int rv34_decode_macroblock(RV34DecContext *r, int8_t *intra_types)
         memset(block16, 0, sizeof(block16));
         rv34_decode_block(block16, gb, r->cur_vlcs, 3, 0);
         rv34_dequant4x4_16x16(block16, rv34_qscale_tab[luma_dc_quant],rv34_qscale_tab[s->qscale]);
-        rv34_inv_transform_noround(block16);
+        r->rdsp.rv34_inv_transform_tab[1](block16);
     }
 
     for(i = 0; i < 16; i++, cbp >>= 1){
@@ -1238,7 +1162,7 @@ static int rv34_decode_macroblock(RV34DecContext *r, int8_t *intra_types)
         rv34_dequant4x4(s->block[blknum] + blkoff, rv34_qscale_tab[s->qscale],rv34_qscale_tab[s->qscale]);
         if(r->is16) //FIXME: optimize
             s->block[blknum][blkoff] = block16[(i & 3) | ((i & 0xC) << 1)];
-        rv34_inv_transform(s->block[blknum] + blkoff);
+        r->rdsp.rv34_inv_transform_tab[0](s->block[blknum] + blkoff);
     }
     if(r->block_type == RV34_MB_P_MIX16x16)
         r->cur_vlcs = choose_vlc_set(r->si.quant, r->si.vlc_set, 1);
@@ -1248,7 +1172,7 @@ static int rv34_decode_macroblock(RV34DecContext *r, int8_t *intra_types)
         blkoff = ((i & 1) << 2) + ((i & 2) << 4);
         rv34_decode_block(s->block[blknum] + blkoff, gb, r->cur_vlcs, r->chroma_vlc, 1);
         rv34_dequant4x4(s->block[blknum] + blkoff, rv34_qscale_tab[rv34_chroma_quant[1][s->qscale]],rv34_qscale_tab[rv34_chroma_quant[0][s->qscale]]);
-        rv34_inv_transform(s->block[blknum] + blkoff);
+        r->rdsp.rv34_inv_transform_tab[0](s->block[blknum] + blkoff);
     }
     if (IS_INTRA(s->current_picture_ptr->f.mb_type[mb_pos]))
         rv34_output_macroblock(r, intra_types, cbp2, r->is16);
@@ -1303,15 +1227,15 @@ static int rv34_decode_slice(RV34DecContext *r, int end, const uint8_t* buf, int
             r->cbp_luma   = av_realloc(r->cbp_luma,   r->s.mb_stride * r->s.mb_height * sizeof(*r->cbp_luma));
             r->cbp_chroma = av_realloc(r->cbp_chroma, r->s.mb_stride * r->s.mb_height * sizeof(*r->cbp_chroma));
             r->deblock_coefs = av_realloc(r->deblock_coefs, r->s.mb_stride * r->s.mb_height * sizeof(*r->deblock_coefs));
+            av_freep(&r->tmp_b_block_base);
         }
         s->pict_type = r->si.type ? r->si.type : AV_PICTURE_TYPE_I;
         if(MPV_frame_start(s, s->avctx) < 0)
             return -1;
         ff_er_frame_start(s);
-        if (!r->tmp_b_block_base || s->width != r->si.width || s->height != r->si.height) {
+        if (!r->tmp_b_block_base) {
             int i;
 
-            av_free(r->tmp_b_block_base); //realloc() doesn't guarantee alignment
             r->tmp_b_block_base = av_malloc(s->linesize * 48);
             for (i = 0; i < 2; i++)
                 r->tmp_b_block_y[i] = r->tmp_b_block_base + i * 16 * s->linesize;
@@ -1336,6 +1260,13 @@ static int rv34_decode_slice(RV34DecContext *r, int end, const uint8_t* buf, int
             }
         }
         s->mb_x = s->mb_y = 0;
+    } else {
+        int slice_type = r->si.type ? r->si.type : AV_PICTURE_TYPE_I;
+
+        if (slice_type != s->pict_type) {
+            av_log(s->avctx, AV_LOG_ERROR, "Slice type mismatch\n");
+            return AVERROR_INVALIDDATA;
+        }
     }
 
     r->si.end = end;
@@ -1412,7 +1343,7 @@ av_cold int ff_rv34_decode_init(AVCodecContext *avctx)
     if (MPV_common_init(s) < 0)
         return -1;
 
-    ff_h264_pred_init(&r->h, CODEC_ID_RV40, 8);
+    ff_h264_pred_init(&r->h, CODEC_ID_RV40, 8, 1);
 
 #if CONFIG_RV30_DECODER
     if (avctx->codec_id == CODEC_ID_RV30)
@@ -1476,15 +1407,17 @@ int ff_rv34_decode_frame(AVCodecContext *avctx,
         slice_count = (*buf++) + 1;
         slices_hdr = buf + 4;
         buf += 8 * slice_count;
+        buf_size -= 1 + 8 * slice_count;
     }else
         slice_count = avctx->slice_count;
 
     //parse first slice header to check whether this frame can be decoded
-    if(get_slice_offset(avctx, slices_hdr, 0) > buf_size){
-        av_log(avctx, AV_LOG_ERROR, "Slice offset is greater than frame size\n");
+    if(get_slice_offset(avctx, slices_hdr, 0) < 0 ||
+       get_slice_offset(avctx, slices_hdr, 0) > buf_size){
+        av_log(avctx, AV_LOG_ERROR, "Slice offset is invalid\n");
         return -1;
     }
-    init_get_bits(&s->gb, buf+get_slice_offset(avctx, slices_hdr, 0), buf_size-get_slice_offset(avctx, slices_hdr, 0));
+    init_get_bits(&s->gb, buf+get_slice_offset(avctx, slices_hdr, 0), (buf_size-get_slice_offset(avctx, slices_hdr, 0))*8);
     if(r->parse_slice_header(r, &r->s.gb, &si) < 0 || si.start){
         av_log(avctx, AV_LOG_ERROR, "First slice header is incorrect\n");
         return -1;
@@ -1494,7 +1427,7 @@ int ff_rv34_decode_frame(AVCodecContext *avctx,
     if(   (avctx->skip_frame >= AVDISCARD_NONREF && si.type==AV_PICTURE_TYPE_B)
        || (avctx->skip_frame >= AVDISCARD_NONKEY && si.type!=AV_PICTURE_TYPE_I)
        ||  avctx->skip_frame >= AVDISCARD_ALL)
-        return buf_size;
+        return avpkt->size;
 
     for(i = 0; i < slice_count; i++){
         int offset = get_slice_offset(avctx, slices_hdr, i);
@@ -1504,13 +1437,18 @@ int ff_rv34_decode_frame(AVCodecContext *avctx,
         else
             size = get_slice_offset(avctx, slices_hdr, i+1) - offset;
 
-        if(offset > buf_size){
-            av_log(avctx, AV_LOG_ERROR, "Slice offset is greater than frame size\n");
+        if(offset < 0 || offset > buf_size){
+            av_log(avctx, AV_LOG_ERROR, "Slice offset is invalid\n");
             break;
         }
 
         r->si.end = s->mb_width * s->mb_height;
         if(i+1 < slice_count){
+            if (get_slice_offset(avctx, slices_hdr, i+1) < 0 ||
+                get_slice_offset(avctx, slices_hdr, i+1) > buf_size) {
+                av_log(avctx, AV_LOG_ERROR, "Slice offset is invalid\n");
+                break;
+            }
             init_get_bits(&s->gb, buf+get_slice_offset(avctx, slices_hdr, i+1), (buf_size-get_slice_offset(avctx, slices_hdr, i+1))*8);
             if(r->parse_slice_header(r, &r->s.gb, &si) < 0){
                 if(i+2 < slice_count)
@@ -1520,13 +1458,17 @@ int ff_rv34_decode_frame(AVCodecContext *avctx,
             }else
                 r->si.end = si.start;
         }
+        if (size < 0 || size > buf_size - offset) {
+            av_log(avctx, AV_LOG_ERROR, "Slice size is invalid\n");
+            break;
+        }
         last = rv34_decode_slice(r, r->si.end, buf + offset, size);
         s->mb_num_left = r->s.mb_x + r->s.mb_y*r->s.mb_width - r->si.start;
         if(last)
             break;
     }
 
-    if(last){
+    if(last && s->current_picture_ptr){
         if(r->loop_filter)
             r->loop_filter(r, s->mb_height - 1);
         ff_er_frame_end(s);
@@ -1543,7 +1485,7 @@ int ff_rv34_decode_frame(AVCodecContext *avctx,
         }
         s->current_picture_ptr = NULL; //so we can detect if frame_end wasnt called (find some nicer solution...)
     }
-    return buf_size;
+    return avpkt->size;
 }
 
 av_cold int ff_rv34_decode_end(AVCodecContext *avctx)

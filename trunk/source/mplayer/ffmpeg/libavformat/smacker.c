@@ -31,11 +31,11 @@
 #define SMACKER_FLAG_RING_FRAME 0x01
 
 enum SAudFlags {
-    SMK_AUD_PACKED  = 0x80000000,
-    SMK_AUD_16BITS  = 0x20000000,
-    SMK_AUD_STEREO  = 0x10000000,
-    SMK_AUD_BINKAUD = 0x08000000,
-    SMK_AUD_USEDCT  = 0x04000000
+    SMK_AUD_PACKED  = 0x80,
+    SMK_AUD_16BITS  = 0x20,
+    SMK_AUD_STEREO  = 0x10,
+    SMK_AUD_BINKAUD = 0x08,
+    SMK_AUD_USEDCT  = 0x04
 };
 
 typedef struct SmackerContext {
@@ -48,6 +48,7 @@ typedef struct SmackerContext {
     uint32_t audio[7];
     uint32_t treesize;
     uint32_t mmap_size, mclr_size, full_size, type_size;
+    uint8_t  aflags[7];
     uint32_t rates[7];
     uint32_t pad;
     /* frame info */
@@ -129,8 +130,10 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
     smk->mclr_size = avio_rl32(pb);
     smk->full_size = avio_rl32(pb);
     smk->type_size = avio_rl32(pb);
-    for(i = 0; i < 7; i++)
-        smk->rates[i] = avio_rl32(pb);
+    for(i = 0; i < 7; i++) {
+        smk->rates[i]  = avio_rl24(pb);
+        smk->aflags[i] = avio_r8(pb);
+    }
     smk->pad = avio_rl32(pb);
     /* setup data */
     if(smk->frames > 0xFFFFFF) {
@@ -151,7 +154,7 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
     }
 
     /* init video codec */
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return -1;
     smk->videoindex = st->index;
@@ -173,23 +176,23 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
     /* handle possible audio streams */
     for(i = 0; i < 7; i++) {
         smk->indexes[i] = -1;
-        if(smk->rates[i] & 0xFFFFFF){
-            ast[i] = av_new_stream(s, 0);
+        if (smk->rates[i]) {
+            ast[i] = avformat_new_stream(s, NULL);
             smk->indexes[i] = ast[i]->index;
             ast[i]->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-            if (smk->rates[i] & SMK_AUD_BINKAUD) {
+            if (smk->aflags[i] & SMK_AUD_BINKAUD) {
                 ast[i]->codec->codec_id = CODEC_ID_BINKAUDIO_RDFT;
-            } else if (smk->rates[i] & SMK_AUD_USEDCT) {
+            } else if (smk->aflags[i] & SMK_AUD_USEDCT) {
                 ast[i]->codec->codec_id = CODEC_ID_BINKAUDIO_DCT;
-            } else if (smk->rates[i] & SMK_AUD_PACKED){
+            } else if (smk->aflags[i] & SMK_AUD_PACKED){
                 ast[i]->codec->codec_id = CODEC_ID_SMACKAUDIO;
                 ast[i]->codec->codec_tag = MKTAG('S', 'M', 'K', 'A');
             } else {
                 ast[i]->codec->codec_id = CODEC_ID_PCM_U8;
             }
-            ast[i]->codec->channels = (smk->rates[i] & SMK_AUD_STEREO) ? 2 : 1;
-            ast[i]->codec->sample_rate = smk->rates[i] & 0xFFFFFF;
-            ast[i]->codec->bits_per_coded_sample = (smk->rates[i] & SMK_AUD_16BITS) ? 16 : 8;
+            ast[i]->codec->channels = (smk->aflags[i] & SMK_AUD_STEREO) ? 2 : 1;
+            ast[i]->codec->sample_rate = smk->rates[i];
+            ast[i]->codec->bits_per_coded_sample = (smk->aflags[i] & SMK_AUD_16BITS) ? 16 : 8;
             if(ast[i]->codec->bits_per_coded_sample == 16 && ast[i]->codec->codec_id == CODEC_ID_PCM_U8)
                 ast[i]->codec->codec_id = CODEC_ID_PCM_S16LE;
             av_set_pts_info(ast[i], 64, 1, ast[i]->codec->sample_rate
@@ -286,11 +289,16 @@ static int smacker_read_packet(AVFormatContext *s, AVPacket *pkt)
         for(i = 0; i < 7; i++) {
             if(flags & 1) {
                 int size;
+                uint8_t *tmpbuf;
+
                 size = avio_rl32(s->pb) - 4;
                 frame_size -= size;
                 frame_size -= 4;
                 smk->curstream++;
-                smk->bufs[smk->curstream] = av_realloc(smk->bufs[smk->curstream], size);
+                tmpbuf = av_realloc(smk->bufs[smk->curstream], size);
+                if (!tmpbuf)
+                    return AVERROR(ENOMEM);
+                smk->bufs[smk->curstream] = tmpbuf;
                 smk->buf_sizes[smk->curstream] = size;
                 ret = avio_read(s->pb, smk->bufs[smk->curstream], size);
                 if(ret != size)
@@ -299,7 +307,9 @@ static int smacker_read_packet(AVFormatContext *s, AVPacket *pkt)
             }
             flags >>= 1;
         }
-        if (av_new_packet(pkt, frame_size + 768))
+        if (frame_size < 0)
+            return AVERROR_INVALIDDATA;
+        if (av_new_packet(pkt, frame_size + 769))
             return AVERROR(ENOMEM);
         if(smk->frm_size[smk->cur_frame] & 1)
             palchange |= 2;

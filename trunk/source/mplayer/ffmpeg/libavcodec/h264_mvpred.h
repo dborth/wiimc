@@ -510,7 +510,7 @@ static void fill_decode_caches(H264Context *h, int mb_type){
     if(top_type){
         nnz = h->non_zero_count[top_xy];
         AV_COPY32(&nnz_cache[4+8* 0], &nnz[4*3]);
-        if(CHROMA444){
+        if(!s->chroma_y_shift){
             AV_COPY32(&nnz_cache[4+8* 5], &nnz[4* 7]);
             AV_COPY32(&nnz_cache[4+8*10], &nnz[4*11]);
         }else{
@@ -534,6 +534,11 @@ static void fill_decode_caches(H264Context *h, int mb_type){
                 nnz_cache[3+8* 7 + 2*8*i]= nnz[left_block[8+1+2*i]+4*4];
                 nnz_cache[3+8*11 + 2*8*i]= nnz[left_block[8+0+2*i]+8*4];
                 nnz_cache[3+8*12 + 2*8*i]= nnz[left_block[8+1+2*i]+8*4];
+            }else if(CHROMA422) {
+                nnz_cache[3+8* 6 + 2*8*i]= nnz[left_block[8+0+2*i]-2+4*4];
+                nnz_cache[3+8* 7 + 2*8*i]= nnz[left_block[8+1+2*i]-2+4*4];
+                nnz_cache[3+8*11 + 2*8*i]= nnz[left_block[8+0+2*i]-2+8*4];
+                nnz_cache[3+8*12 + 2*8*i]= nnz[left_block[8+1+2*i]-2+8*4];
             }else{
                 nnz_cache[3+8* 6 +   8*i]= nnz[left_block[8+4+2*i]];
                 nnz_cache[3+8*11 +   8*i]= nnz[left_block[8+5+2*i]];
@@ -588,7 +593,7 @@ static void fill_decode_caches(H264Context *h, int mb_type){
                 ref_cache[3 - 1*8]= ref[4*top_xy + 3];
             }else{
                 AV_ZERO128(mv_cache[0 - 1*8]);
-                AV_WN32A(&ref_cache[0 - 1*8], ((top_type ? LIST_NOT_USED : PART_NOT_AVAILABLE)&0xFF)*0x01010101);
+                AV_WN32A(&ref_cache[0 - 1*8], ((top_type ? LIST_NOT_USED : PART_NOT_AVAILABLE)&0xFF)*0x01010101u);
             }
 
             if(mb_type & (MB_TYPE_16x8|MB_TYPE_8x8)){

@@ -104,8 +104,8 @@ void guiInit(void)
     skinDirInHome  = get_path("skins");
     skinMPlayerDir = MPLAYER_DATADIR "/skins";
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[interface] skin directory #1: %s\n", skinDirInHome);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[interface] skin directory #2: %s\n", skinMPlayerDir);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[interface] skin directory #1: %s\n", skinDirInHome);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[interface] skin directory #2: %s\n", skinMPlayerDir);
 
     if (!skinName)
         skinName = strdup("default");
@@ -175,9 +175,9 @@ void guiInit(void)
     wsSetShape(&guiApp.mainWindow, guiApp.main.Mask.Image);
     wsXDNDMakeAwareness(&guiApp.mainWindow);
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[interface] screen depth: %d\n", wsDepthOnScreen);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[interface] mainWindow ID: 0x%x\n", (int)guiApp.mainWindow.WindowID);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[interface] subWindow ID: 0x%x\n", (int)guiApp.subWindow.WindowID);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[interface] screen depth: %d\n", wsDepthOnScreen);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[interface] mainWindow ID: 0x%x\n", (int)guiApp.mainWindow.WindowID);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[interface] subWindow ID: 0x%x\n", (int)guiApp.subWindow.WindowID);
 
     guiApp.mainWindow.ReDraw       = (void *)uiMainDraw;
     guiApp.mainWindow.MouseHandler = uiMainMouseHandle;
@@ -227,14 +227,16 @@ void guiInit(void)
         wsSetBackgroundRGB(&guiApp.subWindow, 0, 0, 0);
 
     if (gtkLoadFullscreen)
-        btnModify(evFullScreen, btnPressed);
+        btnSet(evFullScreen, btnPressed);
 
     guiInfo.Playing = GUI_STOP;
 
     uiSubRender = 1;
 
-    if (plCurrent && !filename)
+    if (plCurrent && !filename) {
         uiSetFileName(plCurrent->path, plCurrent->name, STREAMTYPE_FILE);
+        filename = NULL; // don't start playing
+    }
 
     if (subdata)
         setdup(&guiInfo.SubtitleFilename, subdata->filename);
@@ -321,6 +323,7 @@ int gui(int what, void *data)
     dvd_priv_t *dvd;
 #endif
     plItem *next;
+    int state;
 
     if (guiInfo.mpcontext)
         mixer = mpctx_get_mixer(guiInfo.mpcontext);
@@ -344,35 +347,16 @@ int gui(int what, void *data)
         uiState();
         break;
 
-    case GUI_SET_FILE:
-
-// if ( guiInfo.Playing == 1 && guiInfo.NewPlay == GUI_FILE_NEW )
-        if (guiInfo.NewPlay == GUI_FILE_NEW) {
-            dvd_title = 0;
-            audio_id  = -1;
-            video_id  = -1;
-            dvdsub_id = -1;
-            vobsub_id = -1;
-
-            stream_cache_size = -1;
-            autosync  = 0;
-            force_fps = 0;
-        }
-
-        guiInfo.sh_video = NULL;
-        wsPostRedisplay(&guiApp.subWindow);
-
-        break;
-
     case GUI_HANDLE_EVENTS:
         if (!guiInfo.Playing || !guiInfo.VideoWindow)
             wsHandleEvents();
+        wsAutohideCursor();
         gtkEventHandling();
         break;
 
     case GUI_RUN_COMMAND:
 
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[interface] GUI_RUN_COMMAND: %d\n", (int)data);
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[interface] GUI_RUN_COMMAND: %d\n", (int)data);
 
         switch ((int)data) {
         case MP_CMD_VO_FULLSCREEN:
@@ -400,10 +384,23 @@ int gui(int what, void *data)
 
     case GUI_PREPARE:
 
-        gui(GUI_SET_FILE, 0);
+        wsVisibleMouse(&guiApp.subWindow, wsHideMouseCursor);
+
+        if (guiInfo.NewPlay == GUI_FILE_NEW) {
+            dvd_title = 0;
+            audio_id  = -1;
+            video_id  = -1;
+            dvdsub_id = -1;
+            vobsub_id = -1;
+
+            stream_cache_size = -1;
+            autosync  = 0;
+            force_fps = 0;
+        }
 
         switch (guiInfo.StreamType) {
-        case STREAMTYPE_PLAYLIST:
+        case STREAMTYPE_FILE:
+        case STREAMTYPE_STREAM:
             break;
 
 #ifdef CONFIG_VCD
@@ -412,7 +409,7 @@ int gui(int what, void *data)
             char tmp[512];
 
             sprintf(tmp, "vcd://%d", guiInfo.Track);
-            setdup(&guiInfo.Filename, tmp);
+            uiSetFileName(NULL, tmp, STREAMTYPE_VCD);
         }
         break;
 #endif
@@ -423,7 +420,7 @@ int gui(int what, void *data)
             char tmp[512];
 
             sprintf(tmp, "dvd://%d", guiInfo.Track);
-            setdup(&guiInfo.Filename, tmp);
+            uiSetFileName(NULL, tmp, STREAMTYPE_DVD);
         }
 
             dvd_chapter = guiInfo.Chapter;
@@ -431,14 +428,6 @@ int gui(int what, void *data)
 
             break;
 #endif
-        }
-
-// if ( guiInfo.StreamType != STREAMTYPE_PLAYLIST ) // Does not make problems anymore!
-        {
-            if (guiInfo.Filename)
-                filename = gstrdup(guiInfo.Filename);
-            else if (filename)
-                setdup(&guiInfo.Filename, filename);
         }
 
         // video opts
@@ -615,6 +604,13 @@ int gui(int what, void *data)
         guiInfo.StreamType = stream->type;
 
         switch (guiInfo.StreamType) {
+#ifdef CONFIG_VCD
+        case STREAMTYPE_VCD:
+            guiInfo.Tracks = 0;
+            stream_control(stream, STREAM_CTRL_GET_NUM_CHAPTERS, &guiInfo.Tracks);
+            break;
+#endif
+
 #ifdef CONFIG_DVDREAD
         case STREAMTYPE_DVD:
             dvd = stream->priv;
@@ -628,13 +624,6 @@ int gui(int what, void *data)
             guiInfo.Track   = dvd_title + 1;
             guiInfo.Chapter = dvd_chapter + 1;
             guiInfo.Angle   = dvd_angle + 1;
-            break;
-#endif
-
-#ifdef CONFIG_VCD
-        case STREAMTYPE_VCD:
-            guiInfo.Tracks = 0;
-            stream_control(stream, STREAM_CTRL_GET_NUM_CHAPTERS, &guiInfo.Tracks);
             break;
 #endif
 
@@ -654,10 +643,14 @@ int gui(int what, void *data)
 
         guiInfo.sh_video = data;
 
-        if (guiInfo.StreamType == STREAMTYPE_STREAM)
-            btnSet(evSetMoviePosition, btnDisabled);
-        else
-            btnSet(evSetMoviePosition, btnReleased);
+        state = (guiInfo.StreamType == STREAMTYPE_STREAM ? btnDisabled : btnReleased);
+        btnSet(evForward10sec, state);
+        btnSet(evBackward10sec, state);
+        btnSet(evForward1min, state);
+        btnSet(evBackward1min, state);
+        btnSet(evForward10min, state);
+        btnSet(evBackward10min, state);
+        btnSet(evSetMoviePosition, state);
 
 #ifdef CONFIG_DXR3
         if (video_driver_list && !gstrcmp(video_driver_list[0], "dxr3") && (((demuxer_t *)mpctx_get_demuxer(guiInfo.mpcontext))->file_format != DEMUXER_TYPE_MPEG_PS) && !gtkVfLAVC) {
@@ -697,7 +690,7 @@ int gui(int what, void *data)
         // ...without video there will be no call to GUI_SETUP_VIDEO_WINDOW
         if (!guiInfo.VideoWindow) {
             wsVisibleWindow(&guiApp.subWindow, wsHideWindow);
-            btnModify(evFullScreen, gtkLoadFullscreen ? btnPressed : btnReleased);
+            btnSet(evFullScreen, (gtkLoadFullscreen ? btnPressed : btnReleased));
         }
 
         // ...option variable fullscreen determines whether MPlayer will handle
@@ -742,7 +735,7 @@ int gui(int what, void *data)
             if (!guiApp.subWindow.isFullScreen)
                 wsResizeWindow(&guiApp.subWindow, guiInfo.VideoWidth, guiInfo.VideoHeight);
 
-            wsMoveWindow(&guiApp.subWindow, True, guiApp.sub.x, guiApp.sub.y);
+            wsMoveWindow(&guiApp.subWindow, False, guiApp.sub.x, guiApp.sub.y);
 
             if (!guiApp.subWindow.Mapped)
                 wsVisibleWindow(&guiApp.subWindow, wsShowWindow);
@@ -752,7 +745,7 @@ int gui(int what, void *data)
             uiEventHandling(evFullScreen, 0);
 
         if (guiWinID >= 0)
-            wsMoveWindow(&guiApp.mainWindow, False, 0, guiInfo.VideoHeight);
+            wsMoveWindow(&guiApp.mainWindow, True, 0, guiInfo.VideoHeight);
 
         break;
 
@@ -763,6 +756,10 @@ int gui(int what, void *data)
 
     case GUI_END_FILE:
 
+        uiEventHandling(evRedraw, 1);
+
+        guiInfo.sh_video = NULL;
+
         if (!uiGotoTheNext && guiInfo.Playing) {
             uiGotoTheNext = 1;
             break;
@@ -770,15 +767,14 @@ int gui(int what, void *data)
 
         if (guiInfo.Playing && (next = listSet(gtkGetNextPlItem, NULL)) && (plLastPlayed != next)) {
             plLastPlayed = next;
-            setddup(&guiInfo.Filename, next->path, next->name);
-            guiInfo.StreamType = STREAMTYPE_FILE;
-            guiInfo.NewPlay    = GUI_FILE_NEW;
-            nfree(guiInfo.AudioFilename);
-            nfree(guiInfo.SubtitleFilename);
+            uiSetFileName(next->path, next->name, STREAMTYPE_FILE);
+            guiInfo.NewPlay = GUI_FILE_NEW;
             guiInfo.Track++;
         } else {
             if (guiInfo.NewPlay == GUI_FILE_NEW)
                 break;
+
+            filename = NULL;
 
             guiInfo.ElapsedTime   = 0;
             guiInfo.Position      = 0;
@@ -797,7 +793,7 @@ int gui(int what, void *data)
 
                 if (!guiApp.subWindow.isFullScreen) {
                     wsResizeWindow(&guiApp.subWindow, guiInfo.VideoWidth, guiInfo.VideoHeight);
-                    wsMoveWindow(&guiApp.subWindow, True, guiApp.sub.x, guiApp.sub.y);
+                    wsMoveWindow(&guiApp.subWindow, False, guiApp.sub.x, guiApp.sub.y);
                 }
 
                 if (!guiApp.subWindow.Mapped)
@@ -808,7 +804,7 @@ int gui(int what, void *data)
             } else {
                 wsVisibleWindow(&guiApp.subWindow, wsHideWindow);
                 guiInfo.VideoWindow = False;
-                btnModify(evFullScreen, gtkLoadFullscreen ? btnPressed : btnReleased);
+                btnSet(evFullScreen, (gtkLoadFullscreen ? btnPressed : btnReleased));
             }
 
             gui(GUI_SET_STATE, (void *)GUI_STOP);
@@ -818,6 +814,7 @@ int gui(int what, void *data)
             wsSetBackgroundRGB(&guiApp.subWindow, guiApp.sub.R, guiApp.sub.G, guiApp.sub.B);
             wsClearWindow(guiApp.subWindow);
             wsPostRedisplay(&guiApp.subWindow);
+            wsVisibleMouse(&guiApp.subWindow, wsShowMouseCursor);
         }
 
         break;
@@ -840,7 +837,7 @@ static int import_file_into_gui(char *temp, int insert)
     else
         pathname[strlen(pathname) - strlen(filename)] = 0;
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[interface] playtree, add: %s/%s\n", pathname, filename);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[interface] playtree, add: %s/%s\n", pathname, filename);
 
     item = calloc(1, sizeof(plItem));
 
@@ -880,18 +877,16 @@ int guiPlaylistInitialize(play_tree_t *my_playtree, m_config_t *config, int enqu
     uiCurr();   // update filename
     uiGotoTheNext = 1;
 
-    if (!enqueue)
-        filename = guiInfo.Filename;             // Backward compatibility; if file is specified on commandline,
-                                                 // gmplayer does directly start in Play-Mode.
-    else
-        filename = NULL;
+    if (enqueue)
+        filename = NULL;            // don't start playing
 
     return result;
 }
 
 // This function imports and inserts an playtree, that is created "on the fly",
 // for example by parsing some MOV-Reference-File; or by loading an playlist
-// with "File Open".
+// with "File Open". (The latter, actually, isn't allowed in MPlayer and thus
+// not working which is why this function won't get called for that reason.)
 // The file which contained the playlist is thereby replaced with it's contents.
 int guiPlaylistAdd(play_tree_t *my_playtree, m_config_t *config)
 {
@@ -919,7 +914,6 @@ int guiPlaylistAdd(play_tree_t *my_playtree, m_config_t *config)
         listSet(gtkDelCurrPlItem, NULL);
 
     uiCurr();   // update filename
-    filename = NULL;
 
     return result;
 }

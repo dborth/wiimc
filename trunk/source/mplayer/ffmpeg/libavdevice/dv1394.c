@@ -28,7 +28,6 @@
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <time.h>
-#include <strings.h>
 
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
@@ -86,7 +85,7 @@ static int dv1394_read_header(AVFormatContext * context, AVFormatParameters * ap
 {
     struct dv1394_data *dv = context->priv_data;
 
-    dv->dv_demux = dv_init_demux(context);
+    dv->dv_demux = avpriv_dv_init_demux(context);
     if (!dv->dv_demux)
         goto failed;
 
@@ -124,7 +123,7 @@ static int dv1394_read_packet(AVFormatContext *context, AVPacket *pkt)
     struct dv1394_data *dv = context->priv_data;
     int size;
 
-    size = dv_get_packet(dv->dv_demux, pkt);
+    size = avpriv_dv_get_packet(dv->dv_demux, pkt);
     if (size > 0)
         return size;
 
@@ -186,7 +185,7 @@ restart_poll:
     av_dlog(context, "index %d, avail %d, done %d\n", dv->index, dv->avail,
             dv->done);
 
-    size = dv_produce_packet(dv->dv_demux, pkt,
+    size = avpriv_dv_produce_packet(dv->dv_demux, pkt,
                              dv->ring + (dv->index * DV1394_PAL_FRAME_SIZE),
                              DV1394_PAL_FRAME_SIZE);
     dv->index = (dv->index + 1) % DV1394_RING_FRAMES;
@@ -214,10 +213,10 @@ static int dv1394_close(AVFormatContext * context)
 }
 
 static const AVOption options[] = {
-    { "standard", "", offsetof(struct dv1394_data, format), FF_OPT_TYPE_INT, {.dbl = DV1394_NTSC}, DV1394_PAL, DV1394_NTSC, AV_OPT_FLAG_DECODING_PARAM, "standard" },
-    { "PAL",      "", 0, FF_OPT_TYPE_CONST, {.dbl = DV1394_PAL},   0, 0, AV_OPT_FLAG_DECODING_PARAM, "standard" },
-    { "NTSC",     "", 0, FF_OPT_TYPE_CONST, {.dbl = DV1394_NTSC},  0, 0, AV_OPT_FLAG_DECODING_PARAM, "standard" },
-    { "channel",  "", offsetof(struct dv1394_data, channel), FF_OPT_TYPE_INT, {.dbl = DV1394_DEFAULT_CHANNEL}, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "standard", "", offsetof(struct dv1394_data, format), AV_OPT_TYPE_INT, {.dbl = DV1394_NTSC}, DV1394_PAL, DV1394_NTSC, AV_OPT_FLAG_DECODING_PARAM, "standard" },
+    { "PAL",      "", 0, AV_OPT_TYPE_CONST, {.dbl = DV1394_PAL},   0, 0, AV_OPT_FLAG_DECODING_PARAM, "standard" },
+    { "NTSC",     "", 0, AV_OPT_TYPE_CONST, {.dbl = DV1394_NTSC},  0, 0, AV_OPT_FLAG_DECODING_PARAM, "standard" },
+    { "channel",  "", offsetof(struct dv1394_data, channel), AV_OPT_TYPE_INT, {.dbl = DV1394_DEFAULT_CHANNEL}, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
     { NULL },
 };
 

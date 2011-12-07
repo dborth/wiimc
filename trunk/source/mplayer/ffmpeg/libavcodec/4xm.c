@@ -277,7 +277,7 @@ static void init_mv(FourXContext *f){
     }
 #endif
 
-static inline void mcdc(uint16_t *dst, uint16_t *src, int log2w, int h, int stride, int scale, int dc){
+static inline void mcdc(uint16_t *dst, uint16_t *src, int log2w, int h, int stride, int scale, unsigned dc){
    int i;
    dc*= 0x10001;
 
@@ -399,6 +399,7 @@ static int decode_p_frame(FourXContext *f, const uint8_t *buf, int length){
     if (!f->bitstream_buffer)
         return AVERROR(ENOMEM);
     f->dsp.bswap_buf(f->bitstream_buffer, (const uint32_t*)(buf + extra), bitstream_size/4);
+    memset((uint8_t*)f->bitstream_buffer + bitstream_size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
     init_get_bits(&f->gb, f->bitstream_buffer, 8*bitstream_size);
 
     f->wordstream= (const uint16_t*)(buf + extra + bitstream_size);
@@ -601,9 +602,10 @@ static const uint8_t *read_huffman_tables(FourXContext *f, const uint8_t * const
         len_tab[j]= len;
     }
 
-    init_vlc(&f->pre_vlc, ACDC_VLC_BITS, 257,
-             len_tab , 1, 1,
-             bits_tab, 4, 4, 0);
+    if (init_vlc(&f->pre_vlc, ACDC_VLC_BITS, 257,
+                 len_tab , 1, 1,
+                 bits_tab, 4, 4, 0))
+        return NULL;
 
     return ptr;
 }
@@ -679,6 +681,7 @@ static int decode_i_frame(FourXContext *f, const uint8_t *buf, int length){
     if (!f->bitstream_buffer)
         return AVERROR(ENOMEM);
     f->dsp.bswap_buf(f->bitstream_buffer, (const uint32_t*)prestream, prestream_size/4);
+    memset((uint8_t*)f->bitstream_buffer + prestream_size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
     init_get_bits(&f->pre_gb, f->bitstream_buffer, 8*prestream_size);
 
     f->last_dc= 0*128*8*8;

@@ -81,9 +81,10 @@ static int get_sindex(AVFormatContext *s, int id, int format) {
     i = ff_find_stream_index(s, id);
     if (i >= 0)
         return i;
-    st = av_new_stream(s, id);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
+    st->id = id;
     switch (format) {
         case 3:
         case 4:
@@ -184,9 +185,9 @@ static void gxf_material_tags(AVIOContext *pb, int *len, struct gxf_stream_info 
  * @return fps as AVRational, or 0 / 0 if unknown
  */
 static AVRational fps_tag2avr(int32_t fps) {
-    extern const AVRational ff_frame_rate_tab[];
+    extern const AVRational avpriv_frame_rate_tab[];
     if (fps < 1 || fps > 9) fps = 9;
-    return ff_frame_rate_tab[9 - fps]; // values have opposite order
+    return avpriv_frame_rate_tab[9 - fps]; // values have opposite order
 }
 
 /**

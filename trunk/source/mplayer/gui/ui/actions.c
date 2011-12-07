@@ -96,11 +96,11 @@ void uiPause(void)
 void uiState(void)
 {
     if (guiInfo.Playing == GUI_STOP || guiInfo.Playing == GUI_PAUSE) {
-        btnModify(evPlaySwitchToPause, btnReleased);
-        btnModify(evPauseSwitchToPlay, btnDisabled);
+        btnSet(evPlaySwitchToPause, btnReleased);
+        btnSet(evPauseSwitchToPlay, btnDisabled);
     } else {
-        btnModify(evPlaySwitchToPause, btnDisabled);
-        btnModify(evPauseSwitchToPlay, btnReleased);
+        btnSet(evPlaySwitchToPause, btnDisabled);
+        btnSet(evPauseSwitchToPlay, btnReleased);
     }
 }
 
@@ -112,9 +112,6 @@ void uiRelSeek(float sec)
 
 void uiAbsSeek(float percent)
 {
-    if (guiInfo.StreamType == STREAMTYPE_STREAM)
-        return;
-
     rel_seek_secs = percent / 100.0;
     abs_seek_pos  = 3;
 }
@@ -160,7 +157,7 @@ void uiChangeSkin(char *name)
 
     if (!guiApp.subWindow.isFullScreen && !guiInfo.Playing) {
         wsResizeWindow(&guiApp.subWindow, guiApp.sub.width, guiApp.sub.height);
-        wsMoveWindow(&guiApp.subWindow, True, guiApp.sub.x, guiApp.sub.y);
+        wsMoveWindow(&guiApp.subWindow, False, guiApp.sub.x, guiApp.sub.y);
     }
 
     if (guiApp.sub.Bitmap.Image)
@@ -213,7 +210,7 @@ void uiChangeSkin(char *name)
     btnModify(evSetVolume, guiInfo.Volume);
     btnModify(evSetBalance, guiInfo.Balance);
     btnModify(evSetMoviePosition, guiInfo.Position);
-    btnModify(evFullScreen, guiApp.subWindow.isFullScreen ? btnPressed : btnReleased);
+    btnSet(evFullScreen, (guiApp.subWindow.isFullScreen ? btnPressed : btnReleased));
 
     wsSetLayer(wsDisplay, guiApp.mainWindow.WindowID, guiApp.subWindow.isFullScreen);
     wsSetLayer(wsDisplay, guiApp.menuWindow.WindowID, guiApp.subWindow.isFullScreen);
@@ -229,7 +226,9 @@ void uiSetFileName(char *dir, char *name, int type)
     else
         setddup(&guiInfo.Filename, dir, name);
 
+    filename = guiInfo.Filename;
     guiInfo.StreamType = type;
+
     nfree(guiInfo.AudioFilename);
     nfree(guiInfo.SubtitleFilename);
 }
@@ -243,13 +242,13 @@ void uiCurr(void)
         return;
 
     switch (guiInfo.StreamType) {
-#ifdef CONFIG_DVDREAD
-    case STREAMTYPE_DVD:
+#ifdef CONFIG_VCD
+    case STREAMTYPE_VCD:
         break;
 #endif
 
-#ifdef CONFIG_VCD
-    case STREAMTYPE_VCD:
+#ifdef CONFIG_DVDREAD
+    case STREAMTYPE_DVD:
         break;
 #endif
 
@@ -282,6 +281,15 @@ void uiPrev(void)
         return;
 
     switch (guiInfo.StreamType) {
+#ifdef CONFIG_VCD
+    case STREAMTYPE_VCD:
+        if (--guiInfo.Track == 1) {
+            guiInfo.Track = 2;
+            stop = 1;
+        }
+        break;
+#endif
+
 #ifdef CONFIG_DVDREAD
     case STREAMTYPE_DVD:
 
@@ -294,15 +302,6 @@ void uiPrev(void)
             }
         }
 
-        break;
-#endif
-
-#ifdef CONFIG_VCD
-    case STREAMTYPE_VCD:
-        if (--guiInfo.Track == 1) {
-            guiInfo.Track = 2;
-            stop = 1;
-        }
         break;
 #endif
 
@@ -336,6 +335,17 @@ void uiNext(void)
         return;
 
     switch (guiInfo.StreamType) {
+#ifdef CONFIG_VCD
+    case STREAMTYPE_VCD:
+
+        if (++guiInfo.Track >= guiInfo.Tracks) {
+            stop = (guiInfo.Track > guiInfo.Tracks);
+            guiInfo.Track = FFMAX(2, guiInfo.Tracks);
+        }
+
+        break;
+#endif
+
 #ifdef CONFIG_DVDREAD
     case STREAMTYPE_DVD:
 
@@ -346,17 +356,6 @@ void uiNext(void)
                 guiInfo.Track = guiInfo.Tracks;
                 stop = 1;
             }
-        }
-
-        break;
-#endif
-
-#ifdef CONFIG_VCD
-    case STREAMTYPE_VCD:
-
-        if (++guiInfo.Track >= guiInfo.Tracks) {
-            stop = (guiInfo.Track > guiInfo.Tracks);
-            guiInfo.Track = FFMAX(2, guiInfo.Tracks);
         }
 
         break;

@@ -222,7 +222,7 @@ static int mpc8_read_header(AVFormatContext *s, AVFormatParameters *ap)
     c->samples = ffio_read_varlen(pb);
     ffio_read_varlen(pb); //silence samples at the beginning
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -264,7 +264,7 @@ static int mpc8_read_packet(AVFormatContext *s, AVPacket *pkt)
             return AVERROR(EIO);
         mpc8_handle_chunk(s, tag, pos, size);
     }
-    return 0;
+    return AVERROR_EOF;
 }
 
 static int mpc8_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp, int flags)

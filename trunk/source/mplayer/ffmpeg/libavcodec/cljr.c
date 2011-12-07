@@ -67,7 +67,7 @@ static int decode_frame(AVCodecContext *avctx,
     p->pict_type= AV_PICTURE_TYPE_I;
     p->key_frame= 1;
 
-    init_get_bits(&a->gb, buf, buf_size);
+    init_get_bits(&a->gb, buf, buf_size * 8);
 
     for(y=0; y<avctx->height; y++){
         uint8_t *luma= &a->picture.data[0][ y*a->picture.linesize[0] ];
@@ -105,7 +105,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
 
     emms_c();
 
-    align_put_bits(&a->pb);
+    avpriv_align_put_bits(&a->pb);
     while(get_bit_count(&a->pb)&31)
         put_bits(&a->pb, 8, 0);
 

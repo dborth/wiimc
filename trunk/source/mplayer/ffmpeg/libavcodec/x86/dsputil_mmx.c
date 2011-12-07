@@ -64,6 +64,8 @@ DECLARE_ALIGNED(16, const xmm_reg,  ff_pw_64 ) = {0x0040004000400040ULL, 0x00400
 DECLARE_ALIGNED(8,  const uint64_t, ff_pw_96 ) = 0x0060006000600060ULL;
 DECLARE_ALIGNED(8,  const uint64_t, ff_pw_128) = 0x0080008000800080ULL;
 DECLARE_ALIGNED(8,  const uint64_t, ff_pw_255) = 0x00ff00ff00ff00ffULL;
+DECLARE_ALIGNED(16, const xmm_reg,  ff_pw_512) = {0x0200020002000200ULL, 0x0200020002000200ULL};
+DECLARE_ALIGNED(16, const xmm_reg,  ff_pw_1019)= {0x03FB03FB03FB03FBULL, 0x03FB03FB03FB03FBULL};
 
 DECLARE_ALIGNED(16, const xmm_reg,  ff_pb_0  ) = {0x0000000000000000ULL, 0x0000000000000000ULL};
 DECLARE_ALIGNED(16, const xmm_reg,  ff_pb_1  ) = {0x0101010101010101ULL, 0x0101010101010101ULL};
@@ -2417,10 +2419,15 @@ void ff_vector_clip_int32_mmx     (int32_t *dst, const int32_t *src, int32_t min
                                    int32_t max, unsigned int len);
 void ff_vector_clip_int32_sse2    (int32_t *dst, const int32_t *src, int32_t min,
                                    int32_t max, unsigned int len);
-void ff_vector_clip_int32_sse2_int(int32_t *dst, const int32_t *src, int32_t min,
+void ff_vector_clip_int32_int_sse2(int32_t *dst, const int32_t *src, int32_t min,
                                    int32_t max, unsigned int len);
-void ff_vector_clip_int32_sse41   (int32_t *dst, const int32_t *src, int32_t min,
+void ff_vector_clip_int32_sse4    (int32_t *dst, const int32_t *src, int32_t min,
                                    int32_t max, unsigned int len);
+
+extern void ff_butterflies_float_interleave_sse(float *dst, const float *src0,
+                                                const float *src1, int len);
+extern void ff_butterflies_float_interleave_avx(float *dst, const float *src0,
+                                                const float *src1, int len);
 
 void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
 {
@@ -2762,18 +2769,18 @@ void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
         }
         if(mm_flags & AV_CPU_FLAG_SSE2){
             if (!high_bit_depth) {
-            H264_QPEL_FUNCS(0, 1, sse2);
-            H264_QPEL_FUNCS(0, 2, sse2);
-            H264_QPEL_FUNCS(0, 3, sse2);
-            H264_QPEL_FUNCS(1, 1, sse2);
-            H264_QPEL_FUNCS(1, 2, sse2);
-            H264_QPEL_FUNCS(1, 3, sse2);
-            H264_QPEL_FUNCS(2, 1, sse2);
-            H264_QPEL_FUNCS(2, 2, sse2);
-            H264_QPEL_FUNCS(2, 3, sse2);
-            H264_QPEL_FUNCS(3, 1, sse2);
-            H264_QPEL_FUNCS(3, 2, sse2);
-            H264_QPEL_FUNCS(3, 3, sse2);
+                H264_QPEL_FUNCS(0, 1, sse2);
+                H264_QPEL_FUNCS(0, 2, sse2);
+                H264_QPEL_FUNCS(0, 3, sse2);
+                H264_QPEL_FUNCS(1, 1, sse2);
+                H264_QPEL_FUNCS(1, 2, sse2);
+                H264_QPEL_FUNCS(1, 3, sse2);
+                H264_QPEL_FUNCS(2, 1, sse2);
+                H264_QPEL_FUNCS(2, 2, sse2);
+                H264_QPEL_FUNCS(2, 3, sse2);
+                H264_QPEL_FUNCS(3, 1, sse2);
+                H264_QPEL_FUNCS(3, 2, sse2);
+                H264_QPEL_FUNCS(3, 3, sse2);
             }
 #if HAVE_YASM
 #define H264_QPEL_FUNCS_10(x, y, CPU)\
@@ -2866,6 +2873,7 @@ void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
             c->vector_clipf = vector_clipf_sse;
 #if HAVE_YASM
             c->scalarproduct_float = ff_scalarproduct_float_sse;
+            c->butterflies_float_interleave = ff_butterflies_float_interleave_sse;
 #endif
         }
         if (HAVE_AMD3DNOW && (mm_flags & AV_CPU_FLAG_3DNOW))
@@ -2875,7 +2883,7 @@ void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
             c->scalarproduct_int16 = ff_scalarproduct_int16_sse2;
             c->scalarproduct_and_madd_int16 = ff_scalarproduct_and_madd_int16_sse2;
             if (mm_flags & AV_CPU_FLAG_ATOM) {
-                c->vector_clip_int32 = ff_vector_clip_int32_sse2_int;
+                c->vector_clip_int32 = ff_vector_clip_int32_int_sse2;
             } else {
                 c->vector_clip_int32 = ff_vector_clip_int32_sse2;
             }
@@ -2907,7 +2915,7 @@ void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
 
         if (mm_flags & AV_CPU_FLAG_SSE4 && HAVE_SSE) {
 #if HAVE_YASM
-            c->vector_clip_int32 = ff_vector_clip_int32_sse41;
+            c->vector_clip_int32 = ff_vector_clip_int32_sse4;
 #endif
         }
 
@@ -2923,6 +2931,7 @@ void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
                 c->put_h264_chroma_pixels_tab[0]= ff_put_h264_chroma_mc8_10_avx;
                 c->avg_h264_chroma_pixels_tab[0]= ff_avg_h264_chroma_mc8_10_avx;
             }
+            c->butterflies_float_interleave = ff_butterflies_float_interleave_avx;
         }
 #endif
     }

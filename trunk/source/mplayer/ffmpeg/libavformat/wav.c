@@ -194,7 +194,7 @@ static int wav_write_trailer(AVFormatContext *s)
 #define OFFSET(x) offsetof(WAVContext, x)
 #define ENC AV_OPT_FLAG_ENCODING_PARAM
 static const AVOption options[] = {
-    { "write_bext", "Write BEXT chunk.", OFFSET(write_bext), FF_OPT_TYPE_INT, { 0 }, 0, 1, ENC },
+    { "write_bext", "Write BEXT chunk.", OFFSET(write_bext), AV_OPT_TYPE_INT, { 0 }, 0, 1, ENC },
     { NULL },
 };
 
@@ -273,7 +273,7 @@ static int wav_parse_fmt_tag(AVFormatContext *s, int64_t size, AVStream **st)
     int ret;
 
     /* parse fmt header */
-    *st = av_new_stream(s, 0);
+    *st = avformat_new_stream(s, NULL);
     if (!*st)
         return AVERROR(ENOMEM);
 
@@ -636,7 +636,7 @@ static int w64_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return -1;
     }
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
 

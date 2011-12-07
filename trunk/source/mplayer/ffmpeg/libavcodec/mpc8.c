@@ -241,9 +241,15 @@ static int mpc8_decode_frame(AVCodecContext * avctx,
     GetBitContext gb2, *gb = &gb2;
     int i, j, k, ch, cnt, res, t;
     Band *bands = c->bands;
-    int off;
+    int off, out_size;
     int maxband, keyframe;
     int last[2];
+
+    out_size = MPC_FRAME_SIZE * 2 * avctx->channels;
+    if (*data_size < out_size) {
+        av_log(avctx, AV_LOG_ERROR, "Output buffer is too small\n");
+        return AVERROR(EINVAL);
+    }
 
     keyframe = c->cur_frame == 0;
 
@@ -260,6 +266,8 @@ static int mpc8_decode_frame(AVCodecContext * avctx,
         maxband = c->last_max_band + get_vlc2(gb, band_vlc.table, MPC8_BANDS_BITS, 2);
         if(maxband > 32) maxband -= 33;
     }
+    if(maxband > c->maxbands)
+        return AVERROR_INVALIDDATA;
     c->last_max_band = maxband;
 
     /* read subband indexes */
@@ -400,7 +408,7 @@ static int mpc8_decode_frame(AVCodecContext * avctx,
     c->last_bits_used = get_bits_count(gb);
     if(c->cur_frame >= c->frames)
         c->cur_frame = 0;
-    *data_size =  MPC_FRAME_SIZE * 2 * avctx->channels;
+    *data_size =  out_size;
 
     return c->cur_frame ? c->last_bits_used >> 3 : buf_size;
 }

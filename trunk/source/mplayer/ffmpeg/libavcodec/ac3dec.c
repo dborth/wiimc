@@ -38,9 +38,6 @@
 #include "ac3dec_data.h"
 #include "kbdwin.h"
 
-/** Large enough for maximum possible frame size when the specification limit is ignored */
-#define AC3_FRAME_BUFFER_SIZE 32768
-
 /**
  * table for ungrouping 3 values in 7 bits.
  * used for exponents and bap=2 mantissas
@@ -179,6 +176,11 @@ static av_cold int ac3_decode_init(AVCodecContext *avctx)
     AC3DecodeContext *s = avctx->priv_data;
     s->avctx = avctx;
 
+#if FF_API_DRC_SCALE
+    if (avctx->drc_scale)
+        s->drc_scale = avctx->drc_scale;
+#endif
+
     ff_ac3_common_init();
     ac3_tables_init();
     ff_mdct_init(&s->imdct_256, 8, 1, 1.0);
@@ -205,11 +207,6 @@ static av_cold int ac3_decode_init(AVCodecContext *avctx)
         avctx->channels = avctx->request_channels;
     }
     s->downmixed = 1;
-
-    /* allocate context input buffer */
-        s->input_buffer = av_mallocz(AC3_FRAME_BUFFER_SIZE + FF_INPUT_BUFFER_PADDING_SIZE);
-        if (!s->input_buffer)
-            return AVERROR(ENOMEM);
 
     return 0;
 }
@@ -264,7 +261,7 @@ static int parse_frame_header(AC3DecodeContext *s)
     AC3HeaderInfo hdr;
     int err;
 
-    err = ff_ac3_parse_header(&s->gbc, &hdr);
+    err = avpriv_ac3_parse_header(&s->gbc, &hdr);
     if(err)
         return err;
 
@@ -508,9 +505,9 @@ static void ac3_decode_transform_coeffs_ch(AC3DecodeContext *s, int ch_index, ma
                 mantissa = b5_mantissas[get_bits(gbc, 4)];
                 break;
             default: /* 6 to 15 */
-                mantissa = get_bits(gbc, quantization_tab[bap]);
                 /* Shift mantissa and sign-extend it. */
-                mantissa = (mantissa << (32-quantization_tab[bap]))>>8;
+                mantissa = get_sbits(gbc, quantization_tab[bap]);
+                mantissa <<= 24 - quantization_tab[bap];
                 break;
         }
         coeffs[freq] = mantissa >> exps[freq];
@@ -796,7 +793,7 @@ static int decode_audio_block(AC3DecodeContext *s, int blk)
     do {
         if(get_bits1(gbc)) {
             s->dynamic_range[i] = ((dynamic_range_tab[get_bits(gbc, 8)]-1.0) *
-                                  s->avctx->drc_scale)+1.0;
+                                  s->drc_scale)+1.0;
         } else if(blk == 0) {
             s->dynamic_range[i] = 1.0f;
         }
@@ -1360,7 +1357,7 @@ static int ac3_decode_frame(AVCodecContext * avctx, void *data, int *data_size,
         if (s->frame_size > buf_size) {
             av_log(avctx, AV_LOG_ERROR, "incomplete frame\n");
             err = AAC_AC3_PARSE_ERROR_FRAME_SIZE;
-        } else if (avctx->error_recognition >= FF_ER_CAREFUL) {
+        } else if (avctx->err_recognition & AV_EF_CRCCHECK) {
             /* check for crc mismatch */
             if (av_crc(av_crc_get_table(AV_CRC_16_ANSI), 0, &buf[2], s->frame_size-2)) {
                 av_log(avctx, AV_LOG_ERROR, "frame CRC mismatch\n");
@@ -1436,20 +1433,18 @@ static av_cold int ac3_decode_end(AVCodecContext *avctx)
     ff_mdct_end(&s->imdct_512);
     ff_mdct_end(&s->imdct_256);
 
-    av_freep(&s->input_buffer);
-
     return 0;
 }
 
 #define OFFSET(x) offsetof(AC3DecodeContext, x)
 #define PAR (AV_OPT_FLAG_DECODING_PARAM | AV_OPT_FLAG_AUDIO_PARAM)
 static const AVOption options[] = {
-    { "drc_scale", "percentage of dynamic range compression to apply", OFFSET(drc_scale), FF_OPT_TYPE_FLOAT, {1.0}, 0.0, 1.0, PAR },
+    { "drc_scale", "percentage of dynamic range compression to apply", OFFSET(drc_scale), AV_OPT_TYPE_FLOAT, {1.0}, 0.0, 1.0, PAR },
     { NULL},
 };
 
 static const AVClass ac3_decoder_class = {
-    .class_name = "(E-)AC3 decoder",
+    .class_name = "AC3 decoder",
     .item_name  = av_default_item_name,
     .option     = options,
     .version    = LIBAVUTIL_VERSION_INT,
@@ -1471,6 +1466,12 @@ AVCodec ff_ac3_decoder = {
 };
 
 #if CONFIG_EAC3_DECODER
+static const AVClass eac3_decoder_class = {
+    .class_name = "E-AC3 decoder",
+    .item_name  = av_default_item_name,
+    .option     = options,
+    .version    = LIBAVUTIL_VERSION_INT,
+};
 AVCodec ff_eac3_decoder = {
     .name = "eac3",
     .type = AVMEDIA_TYPE_AUDIO,
@@ -1483,6 +1484,6 @@ AVCodec ff_eac3_decoder = {
     .sample_fmts = (const enum AVSampleFormat[]) {
         AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_NONE
     },
-    .priv_class = &ac3_decoder_class,
+    .priv_class = &eac3_decoder_class,
 };
 #endif

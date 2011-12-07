@@ -1531,7 +1531,7 @@ eoi_parser:
                         break;
                     }
                     if (ff_mjpeg_decode_sos(s, NULL, NULL) < 0 &&
-                        avctx->error_recognition >= FF_ER_EXPLODE)
+                        (avctx->err_recognition & AV_EF_EXPLODE))
                       return AVERROR_INVALIDDATA;
                     /* buggy avid puts EOI every 10-20th frame */
                     /* if restart period is over process EOI */
@@ -1605,7 +1605,7 @@ av_cold int ff_mjpeg_decode_end(AVCodecContext *avctx)
 #define OFFSET(x) offsetof(MJpegDecodeContext, x)
 #define VD AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM
 static const AVOption options[] = {
-    { "extern_huff",        "Use external huffman table.",  OFFSET(extern_huff), FF_OPT_TYPE_INT, { 0 }, 0, 1, VD },
+    { "extern_huff",        "Use external huffman table.",  OFFSET(extern_huff), AV_OPT_TYPE_INT, { 0 }, 0, 1, VD },
     { NULL },
 };
 

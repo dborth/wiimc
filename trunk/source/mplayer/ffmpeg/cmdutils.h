@@ -108,6 +108,17 @@ double parse_number_or_die(const char *context, const char *numstr, int type, do
  */
 int64_t parse_time_or_die(const char *context, const char *timestr, int is_duration);
 
+typedef struct SpecifierOpt {
+    char *specifier;    /**< stream/chapter/program/... specifier */
+    union {
+        uint8_t *str;
+        int        i;
+        int64_t  i64;
+        float      f;
+        double   dbl;
+    } u;
+} SpecifierOpt;
+
 typedef struct {
     const char *name;
     int flags;
@@ -124,12 +135,18 @@ typedef struct {
 #define OPT_INT64  0x0400
 #define OPT_EXIT   0x0800
 #define OPT_DATA   0x1000
+#define OPT_FUNC2  0x2000
+#define OPT_OFFSET 0x4000       /* option is specified as an offset in a passed optctx */
+#define OPT_SPEC   0x8000       /* option is to be stored in an array of SpecifierOpt.
+                                   Implies OPT_OFFSET. Next element after the offset is
+                                   an int containing element count in the array. */
+#define OPT_TIME  0x10000
+#define OPT_DOUBLE 0x20000
      union {
-        int *int_arg;
-        char **str_arg;
-        float *float_arg;
+        void *dst_ptr;
         int (*func_arg)(const char *, const char *);
-        int64_t *int64_arg;
+        int (*func2_arg)(void *, const char *, const char *);
+        size_t off;
     } u;
     const char *help;
     const char *argname;
@@ -138,15 +155,35 @@ typedef struct {
 void show_help_options(const OptionDef *options, const char *msg, int mask, int value);
 
 /**
+ * Show help for all options with given flags in class and all its
+ * children.
+ */
+void show_help_children(const AVClass *class, int flags);
+
+/**
  * Parse the command line arguments.
+ *
+ * @param optctx an opaque options context
  * @param options Array with the definitions required to interpret every
  * option of the form: -option_name [argument]
  * @param parse_arg_function Name of the function called to process every
  * argument without a leading option name flag. NULL if such arguments do
  * not have to be processed.
  */
-void parse_options(int argc, char **argv, const OptionDef *options,
-                   void (* parse_arg_function)(const char*));
+void parse_options(void *optctx, int argc, char **argv, const OptionDef *options,
+                   void (* parse_arg_function)(void *optctx, const char*));
+
+/**
+ * Parse one given option.
+ *
+ * @return on success 1 if arg was consumed, 0 otherwise; negative number on error
+ */
+int parse_option(void *optctx, const char *opt, const char *arg, const OptionDef *options);
+
+/**
+ * Find the '-loglevel' option in the commandline args and apply it.
+ */
+void parse_loglevel(int argc, char **argv, const OptionDef *options);
 
 /**
  * Check if the given stream matches a stream specifier.
@@ -252,6 +289,12 @@ void show_protocols(void);
 void show_pix_fmts(void);
 
 /**
+ * Print a listing containing all the sample formats supported by the
+ * program.
+ */
+int show_sample_fmts(const char *opt, const char *arg);
+
+/**
  * Return a positive value if a line read from standard input
  * starts with [yY], otherwise return 0.
  */
@@ -266,7 +309,7 @@ int read_yesno(void);
  * @return 0 in case of success, a negative value corresponding to an
  * AVERROR error code in case of failure.
  */
-int read_file(const char *filename, char **bufptr, size_t *size);
+int cmdutils_read_file(const char *filename, char **bufptr, size_t *size);
 
 typedef struct {
     int64_t num_faulty_pts; /// Number of incorrect PTS values so far
@@ -297,7 +340,7 @@ int64_t guess_correct_pts(PtsCorrectionContext *ctx, int64_t pts, int64_t dts);
  *
  * If is_path is non-zero, look for the file in the path preset_name.
  * Otherwise search for a file named arg.ffpreset in the directories
- * $FFMPEG_DATADIR (if set), $HOME/.ffmpeg, and in the datadir defined
+ * $AVCONV_DATADIR (if set), $HOME/.avconv, and in the datadir defined
  * at configuration time, in that order. If no such file is found and
  * codec_name is defined, then search for a file named
  * codec_name-preset_name.ffpreset in the above-mentioned directories.
@@ -326,5 +369,21 @@ extern AVFilter ffsink;
  */
 int get_filtered_video_frame(AVFilterContext *sink, AVFrame *frame,
                              AVFilterBufferRef **picref, AVRational *pts_tb);
+
+/**
+ * Do all the necessary cleanup and abort.
+ * This function is implemented in the avtools, not cmdutils.
+ */
+void exit_program(int ret);
+
+/**
+ * Realloc array to hold new_size elements of elem_size.
+ * Calls exit_program() on failure.
+ *
+ * @param elem_size size in bytes of each element
+ * @param size new element count will be written here
+ * @return reallocated array
+ */
+void *grow_array(void *array, int elem_size, int *size, int new_size);
 
 #endif /* LIBAV_CMDUTILS_H */

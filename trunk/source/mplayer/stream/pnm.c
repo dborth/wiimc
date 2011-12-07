@@ -46,7 +46,7 @@
 #endif
 
 #include "libavutil/intreadwrite.h"
-
+#include "mp_msg.h"
 #include "stream.h"
 #include "libmpdemux/demuxer.h"
 #include "help_mp.h"

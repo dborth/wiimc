@@ -40,7 +40,7 @@ static int txd_probe(AVProbeData * pd) {
 static int txd_read_header(AVFormatContext *s, AVFormatParameters *ap) {
     AVStream *st;
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
     st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
@@ -90,12 +90,10 @@ next_chunk:
     return 0;
 }
 
-AVInputFormat ff_txd_demuxer =
-{
-    "txd",
-    NULL_IF_CONFIG_SMALL("Renderware TeXture Dictionary"),
-    0,
-    txd_probe,
-    txd_read_header,
-    txd_read_packet,
+AVInputFormat ff_txd_demuxer = {
+    .name        = "txd",
+    .long_name   = NULL_IF_CONFIG_SMALL("Renderware TeXture Dictionary"),
+    .read_probe  = txd_probe,
+    .read_header = txd_read_header,
+    .read_packet = txd_read_packet,
 };

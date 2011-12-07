@@ -71,7 +71,7 @@ struct m_config;
 /// end denper's changes
 #endif
 
-/// \defgroup Playtree
+/// \defgroup playtree Playtree
 ///@{
 
 typedef struct play_tree play_tree_t;

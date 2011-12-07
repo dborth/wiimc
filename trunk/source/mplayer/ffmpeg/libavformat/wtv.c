@@ -33,7 +33,6 @@
 #include "riff.h"
 #include "asf.h"
 #include "mpegts.h"
-#include <strings.h>
 
 /* Macros for formating GUIDs */
 #define PRI_GUID \
@@ -481,7 +480,7 @@ static void get_attachment(AVFormatContext *s, AVIOContext *pb, int length)
     if (!filesize)
         goto done;
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         goto done;
     av_dict_set(&st->metadata, "title", description, 0);
@@ -626,9 +625,10 @@ static AVStream * new_stream(AVFormatContext *s, AVStream *st, int sid, int code
         WtvStream *wst = av_mallocz(sizeof(WtvStream));
         if (!wst)
             return NULL;
-        st = av_new_stream(s, sid);
+        st = avformat_new_stream(s, NULL);
         if (!st)
             return NULL;
+        st->id = sid;
         st->priv_data = wst;
     }
     st->codec->codec_type = codec_type;
@@ -836,7 +836,7 @@ static int parse_chunks(AVFormatContext *s, int mode, int64_t seekts, int *len_p
                 buf_size = FFMIN(len - consumed, sizeof(buf));
                 avio_read(pb, buf, buf_size);
                 consumed += buf_size;
-                ff_parse_mpeg2_descriptor(s, st, 0, &pbuf, buf + buf_size, 0, 0, 0, 0);
+                ff_parse_mpeg2_descriptor(s, st, 0, &pbuf, buf + buf_size, NULL, 0, 0, NULL);
             }
         } else if (!ff_guidcmp(g, EVENTID_AudioTypeSpanningEvent)) {
             int stream_index = ff_find_stream_index(s, sid);

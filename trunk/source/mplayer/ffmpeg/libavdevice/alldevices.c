@@ -45,6 +45,7 @@ void avdevice_register_all(void)
     REGISTER_INDEV    (FBDEV, fbdev);
     REGISTER_INDEV    (JACK, jack);
     REGISTER_INOUTDEV (OSS, oss);
+    REGISTER_INDEV    (PULSE, pulse);
     REGISTER_INOUTDEV (SNDIO, sndio);
     REGISTER_INDEV    (V4L2, v4l2);
 #if FF_API_V4L
@@ -54,5 +55,6 @@ void avdevice_register_all(void)
     REGISTER_INDEV    (X11_GRAB_DEVICE, x11_grab_device);
 
     /* external libraries */
+    REGISTER_INDEV    (LIBCDIO, libcdio);
     REGISTER_INDEV    (LIBDC1394, libdc1394);
 }

@@ -196,7 +196,7 @@ static int aiff_read_header(AVFormatContext *s,
 
     filesize -= 4;
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
 
@@ -268,9 +268,6 @@ static int aiff_read_header(AVFormatContext *s,
 
 got_sound:
     /* Now positioned, get the sound data start and end */
-    if (st->nb_frames)
-        s->file_size = st->nb_frames * st->codec->block_align;
-
     av_set_pts_info(st, 64, 1, st->codec->sample_rate);
     st->start_time = 0;
     st->duration = st->codec->frame_size ?

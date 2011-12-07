@@ -28,8 +28,6 @@
 #include "libavutil/common.h"
 #include "x11_common.h"
 
-#ifdef X11_FULLSCREEN
-
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
@@ -89,7 +87,7 @@ int fs_layer = WIN_LAYER_ABOVE_DOCK;
 static int orig_layer = 0;
 static int old_gravity = NorthWestGravity;
 
-int stop_xscreensaver = 0;
+int stop_xscreensaver = 1;
 
 static int dpms_disabled = 0;
 
@@ -178,7 +176,7 @@ void vo_x11_ewmh_fullscreen(Window win, int action)
     }
 }
 
-void vo_hidecursor(Display * disp, Window win)
+static void vo_hidecursor(Display * disp, Window win)
 {
     Cursor no_ptr;
     Pixmap bm_no;
@@ -186,8 +184,8 @@ void vo_hidecursor(Display * disp, Window win)
     Colormap colormap;
     static char bm_no_data[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    if (WinID == 0)
-        return;                 // do not hide if playing on the root window
+    if (WinID >= 0)
+        return;        // do not hide if attached to an existing window
 
     colormap = DefaultColormap(disp, DefaultScreen(disp));
     if ( !XAllocNamedColor(disp, colormap, "black", &black, &dummy) )
@@ -203,10 +201,10 @@ void vo_hidecursor(Display * disp, Window win)
     XFreeColors(disp,colormap,&black.pixel,1,0);
 }
 
-void vo_showcursor(Display * disp, Window win)
+static void vo_showcursor(Display * disp, Window win)
 {
-    if (WinID == 0)
-        return;
+    if (WinID >= 0)
+        return;        // do not show if attached to an existing window
     XDefineCursor(disp, win, 0);
 }
 
@@ -1523,7 +1521,7 @@ void saver_off(Display * mDisplay)
 {
     int nothing;
 
-    if (screensaver_off)
+    if (!stop_xscreensaver || screensaver_off)
         return;
     screensaver_off = 1;
     if (xss_suspend(True))
@@ -1687,8 +1685,6 @@ void vo_vm_close(void)
     }
 }
 #endif
-
-#endif                          /* X11_FULLSCREEN */
 
 
 /*

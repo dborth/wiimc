@@ -1208,7 +1208,7 @@ void dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 	c->avg_h264_chroma_pixels_tab[1] = avg_h264_chroma_mc4_paired;
 }
 
-void ff_h264dsp_init_ppc(H264DSPContext *c, const int bit_depth)
+void ff_h264dsp_init_ppc(H264DSPContext *c, const int bit_depth, const int chroma_format_idc)
 {
 	c->h264_idct_add = ff_h264_idct_add_paired;
 	//c->h264_idct_add8 = ff_h264_idct_add8_paired;

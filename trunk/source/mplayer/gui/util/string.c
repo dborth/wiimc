@@ -21,7 +21,22 @@
 #include <string.h>
 
 #include "string.h"
+#include "gui/interface.h"
 
+#include "config.h"
+#include "help_mp.h"
+#include "libavutil/avstring.h"
+#include "stream/stream.h"
+
+/**
+ * @brief Convert a string to lower case.
+ *
+ * @param string to be converted
+ *
+ * @return converted string
+ *
+ * @note Only characters from A to Z will be converted and this is an in-place conversion.
+ */
 char *strlower(char *in)
 {
     char *p = in;
@@ -36,6 +51,17 @@ char *strlower(char *in)
     return in;
 }
 
+/**
+ * @brief Swap characters in a string.
+ *
+ * @param in string to be processed
+ * @param from character to be swapped
+ * @param to character to swap in
+ *
+ * @return processed string
+ *
+ * @note All occurrences will be swapped and this is an in-place processing.
+ */
 char *strswap(char *in, char from, char to)
 {
     char *p = in;
@@ -50,6 +76,16 @@ char *strswap(char *in, char from, char to)
     return in;
 }
 
+/**
+ * @brief Remove all space characters from a string,
+ *        but leave text enclosed in quotation marks untouched.
+ *
+ * @param in string to be processed
+ *
+ * @return processed string
+ *
+ * @note This is an in-place processing.
+ */
 char *trim(char *in)
 {
     char *src, *dest;
@@ -72,6 +108,19 @@ char *trim(char *in)
     return in;
 }
 
+/**
+ * @brief Remove a comment from a string,
+ *        but leave text enclosed in quotation marks untouched.
+ *
+ *        A comment starts either with a semicolon anywhere in the string
+ *        or with a number sign character at the very beginning.
+ *
+ * @param in string to be processed
+ *
+ * @return string without comment
+ *
+ * @note This is an in-place processing, i.e. @a in will be shortened.
+ */
 char *decomment(char *in)
 {
     char *p;
@@ -135,6 +184,16 @@ int gstrncmp(const char *a, const char *b, int n)
     return strncmp(a, b, n);
 }
 
+/**
+ * @brief Duplicate a string.
+ *
+ *        If @a str is NULL, it returns NULL.
+ *        The string is duplicated by calling strdup().
+ *
+ * @param str string to be duplicated
+ *
+ * @return duplicated string (newly allocated)
+ */
 char *gstrdup(const char *str)
 {
     if (!str)
@@ -143,16 +202,122 @@ char *gstrdup(const char *str)
     return strdup(str);
 }
 
+/**
+ * @brief Assign a duplicated string.
+ *
+ *        The string is duplicated by calling #gstrdup().
+ *
+ * @note @a *old is freed prior to the assignment.
+ *
+ * @param old pointer to a variable suitable to store the new pointer
+ * @param str string to be duplicated
+ */
 void setdup(char **old, const char *str)
 {
     free(*old);
     *old = gstrdup(str);
 }
 
+/**
+ * @brief Assign a newly allocated string
+ *        containing the path created from a directory and a filename.
+ *
+ * @note @a *old is freed prior to the assignment.
+ *
+ * @param old pointer to a variable suitable to store the new pointer
+ * @param dir directory
+ * @param name filename
+ */
 void setddup(char **old, const char *dir, const char *name)
 {
     free(*old);
     *old = malloc(strlen(dir) + strlen(name) + 2);
     if (*old)
         sprintf(*old, "%s/%s", dir, name);
+}
+
+/**
+ * @brief Convert #guiInfo member Filename.
+ *
+ * @param how 0 (cut file path and extension),
+ *            1 (additionally, convert lower case) or
+ *            2 (additionally, convert upper case)
+ * @param fname pointer to a buffer to receive the converted Filename
+ * @param maxlen size of @a fname buffer
+ *
+ * @return pointer to @a fname buffer
+ */
+char *TranslateFilename(int how, char *fname, size_t maxlen)
+{
+    char *p;
+    size_t len;
+
+    switch (guiInfo.StreamType) {
+    case STREAMTYPE_FILE:
+        if (guiInfo.Filename && *guiInfo.Filename) {
+            p = strrchr(guiInfo.Filename,
+#if HAVE_DOS_PATHS
+                        '\\');
+#else
+                        '/');
+#endif
+
+            if (p)
+                av_strlcpy(fname, p + 1, maxlen);
+            else
+                av_strlcpy(fname, guiInfo.Filename, maxlen);
+
+            len = strlen(fname);
+
+            if (len > 3 && fname[len - 3] == '.')
+                fname[len - 3] = 0;
+            else if (len > 4 && fname[len - 4] == '.')
+                fname[len - 4] = 0;
+            else if (len > 5 && fname[len - 5] == '.')
+                fname[len - 5] = 0;
+        } else
+            av_strlcpy(fname, MSGTR_NoFileLoaded, maxlen);
+        break;
+
+    case STREAMTYPE_STREAM:
+        av_strlcpy(fname, guiInfo.Filename, maxlen);
+        break;
+
+#ifdef CONFIG_VCD
+    case STREAMTYPE_VCD:
+        snprintf(fname, maxlen, MSGTR_Title, guiInfo.Track - 1);
+        break;
+#endif
+
+#ifdef CONFIG_DVDREAD
+    case STREAMTYPE_DVD:
+        if (guiInfo.Chapter)
+            snprintf(fname, maxlen, MSGTR_Chapter, guiInfo.Chapter);
+        else
+            av_strlcat(fname, MSGTR_NoChapter, maxlen);
+        break;
+#endif
+
+    default:
+        av_strlcpy(fname, MSGTR_NoMediaOpened, maxlen);
+        break;
+    }
+
+    if (how) {
+        p = fname;
+
+        while (*p) {
+            char t = 0;
+
+            if (how == 1 && *p >= 'A' && *p <= 'Z')
+                t = 32;
+            if (how == 2 && *p >= 'a' && *p <= 'z')
+                t = -32;
+
+            *p = *p + t;
+            p++;
+        }
+    }
+
+    return fname;
 }

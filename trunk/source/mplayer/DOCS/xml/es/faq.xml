@@ -1044,8 +1044,11 @@ DMA para el aparato DVD con la heramienta <command>hdparm</command> (definido en
 </qandaentry>
 </qandadiv>
 
+<!-- ********** -->
+
 <qandadiv id="faq-features">
 <title>Solicitando prestaciones</title>
+
 <qandaentry>
 <question><para>
 Si <application>MPlayer</application> esta pausado e intento buscar o

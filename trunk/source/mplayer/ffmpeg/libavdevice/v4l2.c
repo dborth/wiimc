@@ -42,12 +42,12 @@
 #include <linux/videodev2.h>
 #endif
 #include <time.h>
-#include <strings.h>
 #include "libavutil/imgutils.h"
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
 #include "libavutil/parseutils.h"
 #include "libavutil/pixdesc.h"
+#include "libavutil/avstring.h"
 
 static const int desired_video_buffers = 256;
 
@@ -493,7 +493,7 @@ static int v4l2_set_parameters(AVFormatContext *s1, AVFormatParameters *ap)
                 return AVERROR(EIO);
             }
 
-            if (!strcasecmp(standard.name, s->standard)) {
+            if (!av_strcasecmp(standard.name, s->standard)) {
                 break;
             }
         }
@@ -580,7 +580,7 @@ static int v4l2_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     enum CodecID codec_id;
     enum PixelFormat pix_fmt = PIX_FMT_NONE;
 
-    st = av_new_stream(s1, 0);
+    st = avformat_new_stream(s1, NULL);
     if (!st) {
         res = AVERROR(ENOMEM);
         goto out;
@@ -709,11 +709,11 @@ static int v4l2_read_close(AVFormatContext *s1)
 #define OFFSET(x) offsetof(struct video_data, x)
 #define DEC AV_OPT_FLAG_DECODING_PARAM
 static const AVOption options[] = {
-    { "standard", "", offsetof(struct video_data, standard), FF_OPT_TYPE_STRING, {.str = NULL }, 0, 0, AV_OPT_FLAG_DECODING_PARAM },
-    { "channel",  "", offsetof(struct video_data, channel),  FF_OPT_TYPE_INT,    {.dbl = 0 }, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
-    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), FF_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
-    { "pixel_format", "", OFFSET(pixel_format), FF_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
-    { "framerate", "", OFFSET(framerate), FF_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
+    { "standard", "", offsetof(struct video_data, standard), AV_OPT_TYPE_STRING, {.str = NULL }, 0, 0, AV_OPT_FLAG_DECODING_PARAM },
+    { "channel",  "", offsetof(struct video_data, channel),  AV_OPT_TYPE_INT,    {.dbl = 0 }, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
+    { "pixel_format", "", OFFSET(pixel_format), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
+    { "framerate", "", OFFSET(framerate), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
     { NULL },
 };
 
@@ -725,13 +725,12 @@ static const AVClass v4l2_class = {
 };
 
 AVInputFormat ff_v4l2_demuxer = {
-    "video4linux2",
-    NULL_IF_CONFIG_SMALL("Video4Linux2 device grab"),
-    sizeof(struct video_data),
-    NULL,
-    v4l2_read_header,
-    v4l2_read_packet,
-    v4l2_read_close,
-    .flags = AVFMT_NOFILE,
-    .priv_class = &v4l2_class,
+    .name           = "video4linux2",
+    .long_name      = NULL_IF_CONFIG_SMALL("Video4Linux2 device grab"),
+    .priv_data_size = sizeof(struct video_data),
+    .read_header    = v4l2_read_header,
+    .read_packet    = v4l2_read_packet,
+    .read_close     = v4l2_read_close,
+    .flags          = AVFMT_NOFILE,
+    .priv_class     = &v4l2_class,
 };

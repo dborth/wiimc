@@ -133,5 +133,20 @@ Evaluating 'ceil(123.123)'
 Evaluating 'ceil(-123.123)'
 'ceil(-123.123)' -> -123.000000
 
+Evaluating 'sqrt(1764)'
+'sqrt(1764)' -> 42.000000
+
+Evaluating 'isnan(sqrt(-1))'
+'isnan(sqrt(-1))' -> 1.000000
+
+Evaluating 'not(1)'
+'not(1)' -> 0.000000
+
+Evaluating 'not(NAN)'
+'not(NAN)' -> 0.000000
+
+Evaluating 'not(0)'
+'not(0)' -> 1.000000
+
 12.700000 == 12.7
 0.931323 == 0.931322575

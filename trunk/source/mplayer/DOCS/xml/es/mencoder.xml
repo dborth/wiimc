@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- synced with 1.19 -->
 <chapter id="mencoder">
-<title>Codificando con <application>MEncoder</application></title>
+<title>CodificaciÃ³n bÃ¡sica con <application>MEncoder</application></title>
 
 <para>
 Para una lista completa de las opciones de <application>MEncoder</application>

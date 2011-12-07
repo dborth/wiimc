@@ -46,6 +46,7 @@
 #include "help_mp.h"
 #include "mplayer.h"
 #include "mpbswap.h"
+#include "osdep/timer.h"
 #include "ws.h"
 #include "wsxdnd.h"
 
@@ -65,7 +66,10 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#undef ENABLE_DPMS
+#define MOUSEHIDE_DELAY 1000   // in milliseconds
+
+static wsTWindow *mouse_win;
+static unsigned int mouse_time;
 
 typedef struct {
     unsigned long flags;
@@ -203,6 +207,42 @@ static int wsErrorHandler(Display *dpy, XErrorEvent *Event)
     return 0;
 }
 
+/**
+ * @brief Update screen width, screen height and screen origin x and y
+ *        from xinerama information.
+ *
+ *        Set wsOrgX, wsOrgY, wsMaxX and wsMaxY as well as
+ *        win->X, win->Y, win->Width and win->Height.
+ *
+ * @param win pointer to a ws window structure or NULL
+ */
+static void wsUpdateXineramaInfo(wsTWindow *win)
+{
+    if (win) {
+        vo_dx      = win->X;
+        vo_dy      = win->Y;
+        vo_dwidth  = win->Width;
+        vo_dheight = win->Height;
+    }
+
+    vo_screenwidth  = wsMaxX;
+    vo_screenheight = wsMaxY;
+
+    update_xinerama_info();
+
+    wsMaxX = vo_screenwidth;
+    wsMaxY = vo_screenheight;
+    wsOrgX = xinerama_x;
+    wsOrgY = xinerama_y;
+
+    if (win) {
+        win->X      = wsOrgX;
+        win->Y      = wsOrgY;
+        win->Width  = wsMaxX;
+        win->Height = wsMaxY;
+    }
+}
+
 void wsXInit(Display *mDisplay)
 {
     int eventbase;
@@ -225,7 +265,7 @@ void wsXInit(Display *mDisplay)
             wsUseXShm = 0;
         }
 
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws] display name: %s => %s display.\n", dispname, localdisp ? "local" : "REMOTE");
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws] display name: %s => %s display.\n", dispname, localdisp ? "local" : "REMOTE");
 
         if (!localdisp)
             mp_msg(MSGT_GPLAYER, MSGL_INFO, MSGTR_WS_RemoteDisplay);
@@ -270,35 +310,28 @@ void wsXInit(Display *mDisplay)
         if (!wsMaxY)
             wsMaxY = DisplayHeight(wsDisplay, wsScreen);
     }
-    vo_screenwidth  = wsMaxX;
-    vo_screenheight = wsMaxY;
-    xinerama_x      = wsOrgX;
-    xinerama_y      = wsOrgY;
-    update_xinerama_info();
-    wsMaxX = vo_screenwidth;
-    wsMaxY = vo_screenheight;
-    wsOrgX = xinerama_x;
-    wsOrgY = xinerama_y;
+
+    wsUpdateXineramaInfo(NULL);
 
     wsGetDepthOnScreen();
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws] Screen depth: %d\n", wsDepthOnScreen);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  size: %dx%d\n", wsMaxX, wsMaxY);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws] Screen depth: %d\n", wsDepthOnScreen);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  size: %dx%d\n", wsMaxX, wsMaxY);
 
 #ifdef CONFIG_XINERAMA
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  origin: +%d+%d\n", wsOrgX, wsOrgY);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  origin: +%d+%d\n", wsOrgX, wsOrgY);
 #endif
 
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  red mask: 0x%x\n", wsRedMask);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  green mask: 0x%x\n", wsGreenMask);
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  blue mask: 0x%x\n", wsBlueMask);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  red mask: 0x%x\n", wsRedMask);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  green mask: 0x%x\n", wsGreenMask);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws]  blue mask: 0x%x\n", wsBlueMask);
 
 #ifdef MP_DEBUG
     if (wsUseXShm) {
         int minor, major, shp;
 
         XShmQueryVersion(wsDisplay, &major, &minor, &shp);
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws] XShm version is %d.%d\n", major, minor);
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws] XShm version is %d.%d\n", major, minor);
     }
 
 #ifdef CONFIG_XSHAPE
@@ -306,7 +339,7 @@ void wsXInit(Display *mDisplay)
         int minor, major;
 
         XShapeQueryVersion(wsDisplay, &major, &minor);
-        mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws] XShape version is %d.%d\n", major, minor);
+        mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws] XShape version is %d.%d\n", major, minor);
     }
 #endif
 #endif
@@ -348,6 +381,46 @@ void wsXInit(Display *mDisplay)
     }
 }
 
+/**
+ * @brief Calculate and store the x and y position for a window.
+ *
+ * @param win pointer to a ws window structure
+ * @param x x position of the window (real/absolute or mock)
+ * @param y y position of the window (real/absolute or mock)
+ * @param width width of the area to place the window in
+ * @param height height of the area to place the window in
+ */
+static void wsWindowPosition(wsTWindow *win, int x, int y, int width, int height)
+{
+    switch (x) {
+    case -1:
+        win->X = wsOrgX + (wsMaxX - width) / 2;
+        break;
+
+    case -2:
+        win->X = wsOrgX + wsMaxX - width;
+        break;
+
+    default:
+        win->X = x;
+        break;
+    }
+
+    switch (y) {
+    case -1:
+        win->Y = wsOrgY + (wsMaxY - height) / 2;
+        break;
+
+    case -2:
+        win->Y = wsOrgY + wsMaxY - height;
+        break;
+
+    default:
+        win->Y = y;
+        break;
+    }
+}
+
 // ----------------------------------------------------------------------------------------------
 //   Create window.
 //     X,Y   : window position
@@ -373,34 +446,7 @@ void wsCreateWindow(wsTWindow *win, int X, int Y, int wX, int hY, int bW, int cV
 
     wsHGC = DefaultGC(wsDisplay, wsScreen);
 
-// The window position and size.
-    switch (X) {
-    case -1:
-        win->X = (wsMaxX / 2) - (wX / 2) + wsOrgX;
-        break;
-
-    case -2:
-        win->X = wsMaxX - wX - 1 + wsOrgX;
-        break;
-
-    default:
-        win->X = X;
-        break;
-    }
-
-    switch (Y) {
-    case -1:
-        win->Y = (wsMaxY / 2) - (hY / 2) + wsOrgY;
-        break;
-
-    case -2:
-        win->Y = wsMaxY - hY - 1 + wsOrgY;
-        break;
-
-    default:
-        win->Y = Y;
-        break;
-    }
+    wsWindowPosition(win, X, Y, wX, hY);
 
     win->Width     = wX;
     win->Height    = hY;
@@ -564,7 +610,7 @@ void wsCreateWindow(wsTWindow *win, int X, int Y, int wX, int hY, int bW, int cV
     win->Idle         = NULL;
     win->MouseHandler = NULL;
     win->KeyHandler   = NULL;
-    mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[ws] window is created. ( %s ).\n", label);
+    mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[ws] window is created. ( %s ).\n", label);
 }
 
 void wsDestroyWindow(wsTWindow *win)
@@ -594,6 +640,17 @@ void wsDestroyWindow(wsTWindow *win)
     win->Mapped       = 0;
     win->Rolled       = 0;
 #endif
+}
+
+/**
+ * @brief Handle automatic hiding of the cursor.
+ */
+void wsAutohideCursor(void)
+{
+    if (mouse_win && (GetTimerMS() - mouse_time >= MOUSEHIDE_DELAY)) {
+        wsVisibleMouse(mouse_win, wsHideMouseCursor);
+        mouse_win = NULL;
+    }
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -799,14 +856,29 @@ keypressed:
                 }
             }
         }
+        if (wsWindowList[l]->wsCursor != None) {
+            wsVisibleMouse(wsWindowList[l], wsShowMouseCursor);
+            mouse_win  = wsWindowList[l];
+            mouse_time = GetTimerMS();
+        }
         goto buttonreleased;
 
     case ButtonRelease:
         i = Event->xbutton.button + 128;
+        if (wsWindowList[l]->wsCursor != None) {
+            wsVisibleMouse(wsWindowList[l], wsShowMouseCursor);
+            mouse_win  = wsWindowList[l];
+            mouse_time = GetTimerMS();
+        }
         goto buttonreleased;
 
     case ButtonPress:
         i = Event->xbutton.button;
+        if (wsWindowList[l]->wsCursor != None) {
+            wsVisibleMouse(wsWindowList[l], wsShowMouseCursor);
+            mouse_win  = wsWindowList[l];
+            mouse_time = GetTimerMS();
+        }
         goto buttonreleased;
 
     case EnterNotify:
@@ -882,81 +954,62 @@ void wsSetLayer(Display *wsDisplay, Window win, int layer)
     vo_x11_setlayer(wsDisplay, win, layer);
 }
 
-// ----------------------------------------------------------------------------------------------
-//    Switch to fullscreen.
-// ----------------------------------------------------------------------------------------------
+/**
+ * @brief Switch window fullscreen state.
+ *
+ *        Switch normal window to fullscreen and fullscreen window to normal.
+ *
+ * @param win pointer to a ws window structure
+ */
 void wsFullScreen(wsTWindow *win)
 {
-    int decoration = 0;
-
     if (win->isFullScreen) {
-        vo_x11_ewmh_fullscreen(win->WindowID, _NET_WM_STATE_REMOVE); // removes fullscreen state if wm supports EWMH
-
-        if (!(vo_fs_type & vo_wm_FULLSCREEN)) { // shouldn't be needed with EWMH fs
+        if (vo_fs_type & vo_wm_FULLSCREEN)
+            /* window manager supports EWMH */
+            vo_x11_ewmh_fullscreen(win->WindowID, _NET_WM_STATE_REMOVE);
+        else {
             win->X      = win->OldX;
             win->Y      = win->OldY;
             win->Width  = win->OldWidth;
             win->Height = win->OldHeight;
-            decoration  = win->Decorations;
         }
 
         win->isFullScreen = False;
-
-#ifdef ENABLE_DPMS
-        wsScreenSaverOn(wsDisplay);
-#endif
     } else {
-        vo_x11_ewmh_fullscreen(win->WindowID, _NET_WM_STATE_ADD); // adds fullscreen state if wm supports EWMH
-
-        if (!(vo_fs_type & vo_wm_FULLSCREEN)) { // shouldn't be needed with EWMH fs
+        if (vo_fs_type & vo_wm_FULLSCREEN)
+            /* window manager supports EWMH */
+            vo_x11_ewmh_fullscreen(win->WindowID, _NET_WM_STATE_ADD);
+        else {
             win->OldX      = win->X;
             win->OldY      = win->Y;
             win->OldWidth  = win->Width;
             win->OldHeight = win->Height;
         }
 
-        vo_dx           = win->X;
-        vo_dy           = win->Y;
-        vo_dwidth       = win->Width;
-        vo_dheight      = win->Height;
-        vo_screenwidth  = wsMaxX;
-        vo_screenheight = wsMaxY;
-        xinerama_x      = wsOrgX;
-        xinerama_y      = wsOrgY;
-        update_xinerama_info();
-        wsMaxX      = vo_screenwidth;
-        wsMaxY      = vo_screenheight;
-        wsOrgX      = xinerama_x;
-        wsOrgY      = xinerama_y;
-        win->X      = wsOrgX;
-        win->Y      = wsOrgY;
-        win->Width  = wsMaxX;
-        win->Height = wsMaxY;
-
         win->isFullScreen = True;
 
-#ifdef ENABLE_DPMS
-        wsScreenSaverOff(wsDisplay);
-#endif
+        wsUpdateXineramaInfo(win);
     }
 
-    if (!(vo_fs_type & vo_wm_FULLSCREEN)) { // shouldn't be needed with EWMH fs
-        vo_x11_decoration(wsDisplay, win->WindowID, decoration);
-        vo_x11_sizehint(win->X, win->Y, win->Width, win->Height, 0);
-        vo_x11_setlayer(wsDisplay, win->WindowID, win->isFullScreen);
-
-        if ((!(win->isFullScreen)) & vo_ontop)
-            vo_x11_setlayer(wsDisplay, win->WindowID, 1);
-
-        XMoveResizeWindow(wsDisplay, win->WindowID, win->X, win->Y, win->Width, win->Height);
-    }
-
+    /* unknown window manager and obsolete option -fsmode used */
     if (vo_wm_type == 0 && !(vo_fsmode & 16)) {
+        XUnmapWindow(wsDisplay, win->WindowID); // required for MWM
         XWithdrawWindow(wsDisplay, win->WindowID, wsScreen);
     }
 
-    XMapRaised(wsDisplay, win->WindowID);
-    XRaiseWindow(wsDisplay, win->WindowID);
+    /* restore window if window manager doesn't support EWMH */
+    if (!(vo_fs_type & vo_wm_FULLSCREEN)) {
+        wsWindowDecoration(win, win->Decorations && !win->isFullScreen);
+        vo_x11_sizehint(win->X, win->Y, win->Width, win->Height, 0);
+        wsSetLayer(wsDisplay, win->WindowID, win->isFullScreen);
+        XMoveResizeWindow(wsDisplay, win->WindowID, win->X, win->Y, win->Width, win->Height);
+    }
+
+    /* some window managers lose ontop after fullscreen */
+    if (!win->isFullScreen & vo_ontop)
+        wsSetLayer(wsDisplay, win->WindowID, vo_ontop);
+
+    wsRaiseWindowTop(wsDisplay, win->WindowID);
     XFlush(wsDisplay);
 }
 
@@ -1043,40 +1096,13 @@ void wsPutImage(wsTWindow *win)
 // ----------------------------------------------------------------------------------------------
 //    Move window to x, y.
 // ----------------------------------------------------------------------------------------------
-void wsMoveWindow(wsTWindow *win, int b, int x, int y)
+void wsMoveWindow(wsTWindow *win, Bool abs, int x, int y)
 {
-    if (b) {
-        switch (x) {
-        case -1:
-            win->X = (wsMaxX / 2) - (win->Width / 2) + wsOrgX;
-            break;
-
-        case -2:
-            win->X = wsMaxX - win->Width + wsOrgX;
-            break;
-
-        default:
-            win->X = x;
-            break;
-        }
-
-        switch (y) {
-        case -1:
-            win->Y = (wsMaxY / 2) - (win->Height / 2) + wsOrgY;
-            break;
-
-        case -2:
-            win->Y = wsMaxY - win->Height + wsOrgY;
-            break;
-
-        default:
-            win->Y = y;
-            break;
-        }
-    } else {
+    if (abs) {
         win->X = x;
         win->Y = y;
-    }
+    } else
+        wsWindowPosition(win, x, y, win->Width, win->Height);
 
     win->SizeHint.flags       = PPosition | PWinGravity;
     win->SizeHint.x           = win->X;
@@ -1088,6 +1114,41 @@ void wsMoveWindow(wsTWindow *win, int b, int x, int y)
 
     if (win->ReSize)
         win->ReSize(win->X, win->Y, win->Width, win->Height);
+}
+
+/**
+ * @brief Move the window to the x and y position, but if it no longer fits
+ *        into the screen, reposition it towards the upper left.
+ *
+ * @param win pointer to a ws window structure
+ * @param abs flag whether the position is real/absolute (True) or mock (False)
+ * @param x x position of the window (real/absolute or mock)
+ * @param y y position of the window (real/absolute or mock)
+ */
+void wsMoveWindowWithin(wsTWindow *win, Bool abs, int x, int y)
+{
+    Bool fitting = True;
+
+    wsMoveWindow(win, abs, x, y);
+
+    if (win->X + win->Width + 1 > wsMaxX) {
+        fitting = False;
+        win->X  = wsMaxX - win->Width;
+
+        if (win->X < 0)
+            win->X = 0;
+    }
+
+    if (win->Y + win->Height + 1 > wsMaxY) {
+        fitting = False;
+        win->Y  = wsMaxY - win->Height;
+
+        if (win->Y < 0)
+            win->Y = 0;
+    }
+
+    if (!fitting)
+        wsMoveWindow(win, True, win->X, win->Y);
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -1128,6 +1189,9 @@ void wsResizeWindow(wsTWindow *win, int sx, int sy)
 
     if (win->ReSize)
         win->ReSize(win->X, win->Y, win->Width, win->Height);
+
+    if (vo_wm_type == 0)
+        XMapWindow(wsDisplay, win->WindowID);
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -1138,15 +1202,16 @@ void wsIconify(wsTWindow win)
     XIconifyWindow(wsDisplay, win.WindowID, 0);
 }
 
-// ----------------------------------------------------------------------------------------------
-//    Move top the window.
-// ----------------------------------------------------------------------------------------------
-void wsMoveTopWindow(Display *wsDisplay, Window win)
+/**
+ * @brief Map a window and raise it to the top.
+ *
+ * @param dpy display
+ * @param win window
+ */
+void wsRaiseWindowTop(Display *dpy, Window win)
 {
-// XUnmapWindow( wsDisplay,win );
-// XMapWindow( wsDisplay,win );
-    XMapRaised(wsDisplay, win);
-    XRaiseWindow(wsDisplay, win);
+    XMapRaised(dpy, win);
+    XRaiseWindow(dpy, win);
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -1451,73 +1516,6 @@ void wsSetMousePosition(wsTWindow *win, int x, int y)
     XWarpPointer(wsDisplay, wsRootWin, win->WindowID, 0, 0, 0, 0, x, y);
 }
 
-#ifdef ENABLE_DPMS
-static int dpms_disabled = 0;
-static int timeout_save  = 0;
-
-void wsScreenSaverOn(Display *mDisplay)
-{
-    int nothing;
-
-#ifdef CONFIG_XDPMS
-
-    if (dpms_disabled) {
-        if (DPMSQueryExtension(mDisplay, &nothing, &nothing)) {
-            if (!DPMSEnable(mDisplay))
-                mp_msg(MSGT_GPLAYER, MSGL_ERR, MSGTR_WS_DpmsUnavailable);                     // restoring power saving settings
-            else {
-                // DPMS does not seem to be enabled unless we call DPMSInfo
-                BOOL onoff;
-                CARD16 state;
-                DPMSInfo(mDisplay, &state, &onoff);
-
-                if (onoff)
-                    mp_msg(MSGT_GPLAYER, MSGL_V, "Successfully enabled DPMS.\n");
-                else
-                    mp_msg(MSGT_GPLAYER, MSGL_STATUS, MSGTR_WS_DpmsNotEnabled);
-            }
-        }
-    }
-
-#endif
-
-    if (timeout_save) {
-        int dummy, interval, prefer_blank, allow_exp;
-        XGetScreenSaver(mDisplay, &dummy, &interval, &prefer_blank, &allow_exp);
-        XSetScreenSaver(mDisplay, timeout_save, interval, prefer_blank, allow_exp);
-        XGetScreenSaver(mDisplay, &timeout_save, &interval, &prefer_blank, &allow_exp);
-    }
-}
-
-void wsScreenSaverOff(Display *mDisplay)
-{
-    int interval, prefer_blank, allow_exp, nothing;
-
-#ifdef CONFIG_XDPMS
-
-    if (DPMSQueryExtension(mDisplay, &nothing, &nothing)) {
-        BOOL onoff;
-        CARD16 state;
-        DPMSInfo(mDisplay, &state, &onoff);
-
-        if (onoff) {
-            Status stat;
-            mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "Disabling DPMS.\n");
-            dpms_disabled = 1;
-            stat = DPMSDisable(mDisplay); // monitor powersave off
-            mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "stat: %d.\n", stat);
-        }
-    }
-
-#endif
-    XGetScreenSaver(mDisplay, &timeout_save, &interval, &prefer_blank, &allow_exp);
-
-    if (timeout_save)
-        XSetScreenSaver(mDisplay, 0, interval, prefer_blank, allow_exp);              // turning off screensaver
-}
-
-#endif
-
 void wsSetShape(wsTWindow *win, char *data)
 {
 #ifdef CONFIG_XSHAPE
@@ -1535,14 +1533,24 @@ void wsSetShape(wsTWindow *win, char *data)
 #endif
 }
 
-void wsSetIcon(Display *dsp, Window win, guiIcon_t *icon)
+/**
+ * @brief Set differently sized icons to a window.
+ *
+ *        This function sets the X icon hint as well as
+ *        the properties KWM_WIN_ICON and _NET_WM_ICON.
+ *
+ * @param dpy display
+ * @param win window
+ * @param icon pointer to the icons
+ */
+void wsSetIcon(Display *dpy, Window win, guiIcon_t *icon)
 {
     XWMHints *wm;
     Atom iconatom;
     long data[2];
 
     if (icon->normal) {
-        wm = XGetWMHints(dsp, win);
+        wm = XGetWMHints(dpy, win);
 
         if (!wm)
             wm = XAllocWMHints();
@@ -1551,20 +1559,20 @@ void wsSetIcon(Display *dsp, Window win, guiIcon_t *icon)
         wm->icon_mask   = icon->normal_mask;
         wm->flags      |= IconPixmapHint | IconMaskHint;
 
-        XSetWMHints(dsp, win, wm);
+        XSetWMHints(dpy, win, wm);
         XFree(wm);
     }
 
     if (icon->small || icon->normal) {
-        iconatom = XInternAtom(dsp, "KWM_WIN_ICON", False);
+        iconatom = XInternAtom(dpy, "KWM_WIN_ICON", False);
         data[0]  = (icon->small ? icon->small : icon->normal);
         data[1]  = (icon->small ? icon->small_mask : icon->normal_mask);
 
-        XChangeProperty(dsp, win, iconatom, iconatom, 32, PropModeReplace, (unsigned char *)data, 2);
+        XChangeProperty(dpy, win, iconatom, iconatom, 32, PropModeReplace, (unsigned char *)data, 2);
     }
 
     if (icon->collection) {
-        iconatom = XInternAtom(dsp, "_NET_WM_ICON", False);
-        XChangeProperty(dsp, win, iconatom, XA_CARDINAL, 32, PropModeReplace, (unsigned char *)icon->collection, icon->collection_size);
+        iconatom = XInternAtom(dpy, "_NET_WM_ICON", False);
+        XChangeProperty(dpy, win, iconatom, XA_CARDINAL, 32, PropModeReplace, (unsigned char *)icon->collection, icon->collection_size);
     }
 }

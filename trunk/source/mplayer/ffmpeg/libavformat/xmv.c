@@ -150,7 +150,7 @@ static int xmv_read_header(AVFormatContext *s,
 
     /* Video track */
 
-    vst = av_new_stream(s, 0);
+    vst = avformat_new_stream(s, NULL);
     if (!vst)
         return AVERROR(ENOMEM);
 
@@ -211,7 +211,7 @@ static int xmv_read_header(AVFormatContext *s,
             av_log(s, AV_LOG_WARNING, "Unsupported 5.1 ADPCM audio stream "
                                       "(0x%04X)\n", track->flags);
 
-        ast = av_new_stream(s, audio_track);
+        ast = avformat_new_stream(s, NULL);
         if (!ast)
             return AVERROR(ENOMEM);
 

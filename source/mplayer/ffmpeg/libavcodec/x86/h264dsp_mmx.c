@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2004-2005 Michael Niedermayer, Loren Merritt
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -419,7 +419,7 @@ void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth, const int chrom
                 c->biweight_h264_pixels_tab[0]= ff_h264_biweight_16_ssse3;
                 c->biweight_h264_pixels_tab[1]= ff_h264_biweight_8_ssse3;
             }
-            if (mm_flags&AV_CPU_FLAG_AVX) {
+            if (HAVE_AVX && mm_flags&AV_CPU_FLAG_AVX) {
 #if HAVE_ALIGNED_STACK
                 c->h264_v_loop_filter_luma = ff_deblock_v_luma_8_avx;
                 c->h264_h_loop_filter_luma = ff_deblock_h_luma_8_avx;

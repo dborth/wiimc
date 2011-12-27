@@ -2,20 +2,20 @@
  * QDesign Music 2 (QDM2) payload for RTP
  * Copyright (c) 2010 Ronald S. Bultje
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -52,8 +52,8 @@ struct PayloadContext {
 };
 
 /**
- * Parses configuration (basically the codec-specific extradata) from
- * a RTP config subpacket (starts with 0xff).
+ * Parse configuration (basically the codec-specific extradata) from
+ * an RTP config subpacket (starts with 0xff).
  *
  * Layout of the config subpacket (in bytes):
  * 1: 0xFF          <- config ID
@@ -128,7 +128,7 @@ static int qdm2_parse_config(PayloadContext *qdm, AVStream *st,
 }
 
 /**
- * Parses a single subpacket. We store this subpacket in an intermediate
+ * Parse a single subpacket. We store this subpacket in an intermediate
  * buffer (position depends on the ID (byte[0]). When called, at least
  * 4 bytes are available for reading (see qdm2_parse_packet()).
  *
@@ -179,7 +179,7 @@ static int qdm2_parse_subpacket(PayloadContext *qdm, AVStream *st,
 }
 
 /**
- * Adds a superblock header around a set of subpackets.
+ * Add a superblock header around a set of subpackets.
  *
  * @return <0 on error, else 0.
  */

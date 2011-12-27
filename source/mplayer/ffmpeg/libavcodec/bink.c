@@ -3,20 +3,20 @@
  * Copyright (c) 2009 Konstantin Shishkov
  * Copyright (C) 2011 Peter Ross <pross@xvid.org>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -27,7 +27,7 @@
 #include "binkdsp.h"
 #include "mathops.h"
 
-#define ALT_BITSTREAM_READER_LE
+#define BITSTREAM_READER_LE
 #include "get_bits.h"
 
 #define BINK_FLAG_ALPHA 0x00100000
@@ -595,7 +595,7 @@ static int read_dct_coeffs(GetBitContext *gb, int32_t block[64], const uint8_t *
 {
     int coef_list[128];
     int mode_list[128];
-    int i, t, mask, bits, ccoef, mode, sign;
+    int i, t, bits, ccoef, mode, sign;
     int list_start = 64, list_end = 64, list_pos;
     int coef_count = 0;
     int coef_idx[64];
@@ -609,8 +609,7 @@ static int read_dct_coeffs(GetBitContext *gb, int32_t block[64], const uint8_t *
     coef_list[list_end] = 2;  mode_list[list_end++] = 3;
     coef_list[list_end] = 3;  mode_list[list_end++] = 3;
 
-    bits = get_bits(gb, 4) - 1;
-    for (mask = 1 << bits; bits >= 0; mask >>= 1, bits--) {
+    for (bits = get_bits(gb, 4) - 1; bits >= 0; bits--) {
         list_pos = list_start;
         while (list_pos < list_end) {
             if (!(mode_list[list_pos] | coef_list[list_pos]) || !get_bits1(gb)) {
@@ -636,7 +635,7 @@ static int read_dct_coeffs(GetBitContext *gb, int32_t block[64], const uint8_t *
                         if (!bits) {
                             t = 1 - (get_bits1(gb) << 1);
                         } else {
-                            t = get_bits(gb, bits) | mask;
+                            t = get_bits(gb, bits) | 1 << bits;
                             sign = -get_bits1(gb);
                             t = (t ^ sign) - sign;
                         }
@@ -657,7 +656,7 @@ static int read_dct_coeffs(GetBitContext *gb, int32_t block[64], const uint8_t *
                 if (!bits) {
                     t = 1 - (get_bits1(gb) << 1);
                 } else {
-                    t = get_bits(gb, bits) | mask;
+                    t = get_bits(gb, bits) | 1 << bits;
                     sign = -get_bits1(gb);
                     t = (t ^ sign) - sign;
                 }

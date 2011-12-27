@@ -2,20 +2,20 @@
  * Constants for DV codec
  * Copyright (c) 2002 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -275,7 +275,9 @@ enum dv_pack_type {
 #define DV_MAX_BPM 8
 
 const DVprofile* avpriv_dv_frame_profile(const DVprofile *sys,
-                                         const uint8_t* frame, unsigned buf_size);
+                                  const uint8_t* frame, unsigned buf_size);
+const DVprofile* avpriv_dv_frame_profile2(AVCodecContext* codec, const DVprofile *sys,
+                                  const uint8_t* frame, unsigned buf_size);
 const DVprofile* avpriv_dv_codec_profile(AVCodecContext* codec);
 
 static inline int dv_write_dif_id(enum dv_section_type t, uint8_t chan_num,

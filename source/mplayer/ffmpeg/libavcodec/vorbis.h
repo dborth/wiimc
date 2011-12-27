@@ -1,20 +1,20 @@
 /*
  * copyright (c) 2006 Oded Shimon <ods15@ods15.dyndns.org>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -27,7 +27,7 @@ extern const float ff_vorbis_floor1_inverse_db_table[256];
 extern const float * const ff_vorbis_vwin[8];
 extern const uint8_t ff_vorbis_channel_layout_offsets[8][8];
 extern const uint8_t ff_vorbis_encoding_channel_layout_offsets[8][8];
-extern const int64_t ff_vorbis_channel_layouts[9];
+extern const uint64_t ff_vorbis_channel_layouts[9];
 
 typedef struct {
     uint16_t x;

@@ -3,26 +3,26 @@
  * Port copyright (c) 2010 Daniel G. Taylor <dan@programmer-art.org>
  * Relicensed to the LGPL with permission from Remi Guyomarch.
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /**
  * @file
- * blur / sharpen filter, ported to Libav from MPlayer
+ * blur / sharpen filter, ported to FFmpeg from MPlayer
  * libmpcodecs/unsharp.c.
  *
  * This code is based on:
@@ -73,7 +73,7 @@ static void apply_unsharp(      uint8_t *dst, int dst_stride,
 
     int32_t res;
     int x, y, z;
-    const uint8_t *src2;
+    const uint8_t *src2 = NULL;  //silence a warning
 
     if (!fp->amount) {
         if (dst_stride == src_stride)
@@ -103,8 +103,8 @@ static void apply_unsharp(      uint8_t *dst, int dst_stride,
                 tmp1 = sc[z + 1][x + fp->steps_x] + tmp2; sc[z + 1][x + fp->steps_x] = tmp2;
             }
             if (x >= fp->steps_x && y >= fp->steps_y) {
-                uint8_t* srx = src - fp->steps_y * src_stride + x - fp->steps_x;
-                uint8_t* dsx = dst - fp->steps_y * dst_stride + x - fp->steps_x;
+                const uint8_t *srx = src - fp->steps_y * src_stride + x - fp->steps_x;
+                uint8_t       *dsx = dst - fp->steps_y * dst_stride + x - fp->steps_x;
 
                 res = (int32_t)*srx + ((((int32_t) * srx - (int32_t)((tmp1 + fp->halfscale) >> fp->scalebits)) * fp->amount) >> 16);
                 *dsx = av_clip_uint8(res);
@@ -162,7 +162,7 @@ static int query_formats(AVFilterContext *ctx)
         PIX_FMT_YUVJ444P, PIX_FMT_YUVJ440P, PIX_FMT_NONE
     };
 
-    avfilter_set_common_formats(ctx, avfilter_make_format_list(pix_fmts));
+    avfilter_set_common_pixel_formats(ctx, avfilter_make_format_list(pix_fmts));
 
     return 0;
 }
@@ -242,7 +242,7 @@ AVFilter avfilter_vf_unsharp = {
     .uninit = uninit,
     .query_formats = query_formats,
 
-    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .draw_slice       = draw_slice,
                                     .end_frame        = end_frame,
@@ -250,7 +250,7 @@ AVFilter avfilter_vf_unsharp = {
                                     .min_perms        = AV_PERM_READ, },
                                   { .name = NULL}},
 
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO, },
                                   { .name = NULL}},
 };

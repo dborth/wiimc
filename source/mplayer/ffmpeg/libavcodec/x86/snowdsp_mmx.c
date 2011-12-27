@@ -2,20 +2,20 @@
  * MMX and SSE2 optimized snow DSP utils
  * Copyright (c) 2005-2006 Robert Edele <yartrebo@earthlink.net>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -675,14 +675,14 @@ static void ff_snow_vertical_compose97i_mmx(IDWTELEM *b0, IDWTELEM *b1, IDWTELEM
 
 #define snow_inner_add_yblock_sse2_end_8\
              "sal $1, %%"REG_c"              \n\t"\
-             "add $"PTR_SIZE"*2, %1          \n\t"\
+             "add"OPSIZE" $"PTR_SIZE"*2, %1  \n\t"\
              snow_inner_add_yblock_sse2_end_common1\
              "sar $1, %%"REG_c"              \n\t"\
              "sub $2, %2                     \n\t"\
              snow_inner_add_yblock_sse2_end_common2
 
 #define snow_inner_add_yblock_sse2_end_16\
-             "add $"PTR_SIZE"*1, %1          \n\t"\
+             "add"OPSIZE" $"PTR_SIZE"*1, %1  \n\t"\
              snow_inner_add_yblock_sse2_end_common1\
              "dec %2                         \n\t"\
              snow_inner_add_yblock_sse2_end_common2

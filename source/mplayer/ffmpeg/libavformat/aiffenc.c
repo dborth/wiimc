@@ -2,27 +2,29 @@
  * AIFF/AIFF-C muxer
  * Copyright (c) 2006  Patrick Guimond
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/intfloat_readwrite.h"
+#include "libavutil/intfloat.h"
 #include "avformat.h"
+#include "internal.h"
 #include "aiff.h"
 #include "avio_internal.h"
+#include "isom.h"
 
 typedef struct {
     int64_t form;
@@ -35,7 +37,7 @@ static int aiff_write_header(AVFormatContext *s)
     AIFFOutputContext *aiff = s->priv_data;
     AVIOContext *pb = s->pb;
     AVCodecContext *enc = s->streams[0]->codec;
-    AVExtFloat sample_rate;
+    uint64_t sample_rate;
     int aifc = 0;
 
     /* First verify if format is ok */
@@ -62,6 +64,12 @@ static int aiff_write_header(AVFormatContext *s)
         avio_wb32(pb, 0xA2805140);
     }
 
+    if (enc->channels > 2 && enc->channel_layout) {
+        ffio_wfourcc(pb, "CHAN");
+        avio_wb32(pb, 12);
+        ff_mov_write_chan(pb, enc->channel_layout);
+    }
+
     /* Common chunk */
     ffio_wfourcc(pb, "COMM");
     avio_wb32(pb, aifc ? 24 : 18); /* size */
@@ -81,8 +89,9 @@ static int aiff_write_header(AVFormatContext *s)
 
     avio_wb16(pb, enc->bits_per_coded_sample); /* Sample size */
 
-    sample_rate = av_dbl2ext((double)enc->sample_rate);
-    avio_write(pb, (uint8_t*)&sample_rate, sizeof(sample_rate));
+    sample_rate = av_double2int(enc->sample_rate);
+    avio_wb16(pb, (sample_rate >> 52) + (16383 - 1023));
+    avio_wb64(pb, UINT64_C(1) << 63 | sample_rate << 11);
 
     if (aifc) {
         avio_wl32(pb, enc->codec_tag);
@@ -96,7 +105,7 @@ static int aiff_write_header(AVFormatContext *s)
     avio_wb32(pb, 0);                    /* Data offset */
     avio_wb32(pb, 0);                    /* Block-size (block align) */
 
-    av_set_pts_info(s->streams[0], 64, 1, s->streams[0]->codec->sample_rate);
+    avpriv_set_pts_info(s->streams[0], 64, 1, s->streams[0]->codec->sample_rate);
 
     /* Data is starting here */
     avio_flush(pb);

@@ -2,20 +2,20 @@
  * DPX (.dpx) image encoder
  * Copyright (c) 2011 Peter Ross <pross@xvid.org>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -73,8 +73,7 @@ do { \
     else               AV_WL32(p, value); \
 } while(0)
 
-static void encode_rgb48_10bit(AVCodecContext *avctx, const AVPicture *pic,
-                               uint8_t *dst)
+static void encode_rgb48_10bit(AVCodecContext *avctx, const AVPicture *pic, uint8_t *dst)
 {
     DPXContext *s = avctx->priv_data;
     const uint8_t *src = pic->data[0];
@@ -99,8 +98,7 @@ static void encode_rgb48_10bit(AVCodecContext *avctx, const AVPicture *pic,
     }
 }
 
-static int encode_frame(AVCodecContext *avctx, unsigned char *buf,
-                        int buf_size, void *data)
+static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size, void *data)
 {
     DPXContext *s = avctx->priv_data;
     int size;
@@ -135,7 +133,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf,
     write32(buf + 1628, avctx->sample_aspect_ratio.num);
     write32(buf + 1632, avctx->sample_aspect_ratio.den);
 
-    switch (s->bits_per_component) {
+    switch(s->bits_per_component) {
     case 8:
     case 16:
         size = avpicture_layout(data, avctx->pix_fmt,

@@ -1,20 +1,20 @@
 /*
  * copyright (c) 2002 Mark Hills <mark@pogo.org.uk>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -95,6 +95,35 @@ static av_cold int oggvorbis_init_encoder(vorbis_info *vi, AVCodecContext *avcco
 
     if(context->iblock){
         vorbis_encode_ctl(vi, OV_ECTL_IBLOCK_SET, &context->iblock);
+    }
+
+    if (avccontext->channels == 3 &&
+            avccontext->channel_layout != (AV_CH_LAYOUT_STEREO|AV_CH_FRONT_CENTER) ||
+        avccontext->channels == 4 &&
+            avccontext->channel_layout != AV_CH_LAYOUT_2_2 &&
+            avccontext->channel_layout != AV_CH_LAYOUT_QUAD ||
+        avccontext->channels == 5 &&
+            avccontext->channel_layout != AV_CH_LAYOUT_5POINT0 &&
+            avccontext->channel_layout != AV_CH_LAYOUT_5POINT0_BACK ||
+        avccontext->channels == 6 &&
+            avccontext->channel_layout != AV_CH_LAYOUT_5POINT1 &&
+            avccontext->channel_layout != AV_CH_LAYOUT_5POINT1_BACK ||
+        avccontext->channels == 7 &&
+            avccontext->channel_layout != (AV_CH_LAYOUT_5POINT1|AV_CH_BACK_CENTER) ||
+        avccontext->channels == 8 &&
+            avccontext->channel_layout != AV_CH_LAYOUT_7POINT1) {
+        if (avccontext->channel_layout) {
+            char name[32];
+            av_get_channel_layout_string(name, sizeof(name), avccontext->channels,
+                                         avccontext->channel_layout);
+            av_log(avccontext, AV_LOG_ERROR, "%s not supported by Vorbis: "
+                                             "output stream will have incorrect "
+                                             "channel layout.\n", name);
+        } else {
+            av_log(avccontext, AV_LOG_WARNING, "No channel layout specified. The encoder "
+                                               "will use Vorbis channel layout for "
+                                               "%d channels.\n", avccontext->channels);
+        }
     }
 
     return vorbis_encode_setup_init(vi);

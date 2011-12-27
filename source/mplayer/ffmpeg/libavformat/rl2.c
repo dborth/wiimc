@@ -2,20 +2,20 @@
  * RL2 Format Demuxer
  * Copyright (c) 2008 Sascha Sommer (saschasommer@freenet.de)
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -35,6 +35,7 @@
 #include "libavutil/intreadwrite.h"
 #include "libavutil/mathematics.h"
 #include "avformat.h"
+#include "internal.h"
 
 #define EXTRADATA1_SIZE (6 + 256 * 3) ///< video base, clr, palette
 
@@ -137,6 +138,9 @@ static av_cold int rl2_read_header(AVFormatContext *s,
 
     /** setup audio stream if present */
     if(sound_rate){
+        if(channels <= 0)
+            return AVERROR_INVALIDDATA;
+
         pts_num = def_sound_size;
         pts_den = rate;
 
@@ -153,10 +157,10 @@ static av_cold int rl2_read_header(AVFormatContext *s,
             st->codec->bits_per_coded_sample;
         st->codec->block_align = st->codec->channels *
             st->codec->bits_per_coded_sample / 8;
-        av_set_pts_info(st,32,1,rate);
+        avpriv_set_pts_info(st,32,1,rate);
     }
 
-    av_set_pts_info(s->streams[0], 32, pts_num, pts_den);
+    avpriv_set_pts_info(s->streams[0], 32, pts_num, pts_den);
 
     chunk_size =   av_malloc(frame_count * sizeof(uint32_t));
     audio_size =   av_malloc(frame_count * sizeof(uint32_t));

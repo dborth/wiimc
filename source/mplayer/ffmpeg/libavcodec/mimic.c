@@ -2,20 +2,20 @@
  * Copyright (C) 2005  Ole André Vadla Ravnås <oleavr@gmail.com>
  * Copyright (C) 2008  Ramiro Polla
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include "avcodec.h"
+#include "internal.h"
 #include "get_bits.h"
 #include "bytestream.h"
 #include "dsputil.h"
@@ -209,7 +210,7 @@ static int vlc_decode_block(MimicContext *ctx, int num_coeffs, int qscale)
 
         value = get_bits(&ctx->gb, num_bits);
 
-        /* Libav's IDCT behaves somewhat different from the original code, so
+        /* FFmpeg's IDCT behaves somewhat different from the original code, so
          * a factor of 4 was added to the input */
 
         coeff = vlcdec_lookup[num_bits][value];
@@ -351,7 +352,7 @@ static int mimic_decode_frame(AVCodecContext *avctx, void *data,
         return -1;
     }
 
-    ctx->buf_ptrs[ctx->cur_index].reference = 1;
+    ctx->buf_ptrs[ctx->cur_index].reference = 3;
     ctx->buf_ptrs[ctx->cur_index].pict_type = is_pframe ? AV_PICTURE_TYPE_P:AV_PICTURE_TYPE_I;
     if(ff_thread_get_buffer(avctx, &ctx->buf_ptrs[ctx->cur_index])) {
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
@@ -405,7 +406,8 @@ static av_cold int mimic_decode_end(AVCodecContext *avctx)
 
     av_free(ctx->swap_buf);
 
-    if(avctx->is_copy) return 0;
+    if (avctx->internal->is_copy)
+        return 0;
 
     for(i = 0; i < 16; i++)
         if(ctx->buf_ptrs[i].data[0])

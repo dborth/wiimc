@@ -2,20 +2,20 @@
  * FLAC audio encoder
  * Copyright (c) 2006  Justin Ruggles <justin.ruggles@gmail.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -438,6 +438,28 @@ static av_cold int flac_encode_init(AVCodecContext *avctx)
     avctx->coded_frame = avcodec_alloc_frame();
     if (!avctx->coded_frame)
         return AVERROR(ENOMEM);
+
+    if (channels == 3 &&
+            avctx->channel_layout != (AV_CH_LAYOUT_STEREO|AV_CH_FRONT_CENTER) ||
+        channels == 4 &&
+            avctx->channel_layout != AV_CH_LAYOUT_2_2 &&
+            avctx->channel_layout != AV_CH_LAYOUT_QUAD ||
+        channels == 5 &&
+            avctx->channel_layout != AV_CH_LAYOUT_5POINT0 &&
+            avctx->channel_layout != AV_CH_LAYOUT_5POINT0_BACK ||
+        channels == 6 &&
+            avctx->channel_layout != AV_CH_LAYOUT_5POINT1 &&
+            avctx->channel_layout != AV_CH_LAYOUT_5POINT1_BACK) {
+        if (avctx->channel_layout) {
+            av_log(avctx, AV_LOG_ERROR, "Channel layout not supported by Flac, "
+                                             "output stream will have incorrect "
+                                             "channel layout.\n");
+        } else {
+            av_log(avctx, AV_LOG_WARNING, "No channel layout specified. The encoder "
+                                               "will use Flac channel layout for "
+                                               "%d channels.\n", channels);
+        }
+    }
 
     ret = ff_lpc_init(&s->lpc_ctx, avctx->frame_size,
                       s->options.max_prediction_order, FF_LPC_TYPE_LEVINSON);
@@ -1364,7 +1386,7 @@ AVCodec ff_flac_encoder = {
     .init           = flac_encode_init,
     .encode         = flac_encode_frame,
     .close          = flac_encode_close,
-    .capabilities = CODEC_CAP_SMALL_LAST_FRAME | CODEC_CAP_DELAY,
+    .capabilities = CODEC_CAP_SMALL_LAST_FRAME | CODEC_CAP_DELAY | CODEC_CAP_LOSSLESS,
     .sample_fmts = (const enum AVSampleFormat[]){AV_SAMPLE_FMT_S16,AV_SAMPLE_FMT_NONE},
     .long_name = NULL_IF_CONFIG_SMALL("FLAC (Free Lossless Audio Codec)"),
     .priv_class = &flac_encoder_class,

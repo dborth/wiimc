@@ -1,22 +1,29 @@
 /*
- * ID3v2 header parser
  * Copyright (c) 2003 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
+/**
+ * @file
+ * ID3v2 header parser
+ *
+ * Specifications available at:
+ * http://id3.org/Developer_Information
  */
 
 #include "id3v2.h"
@@ -142,7 +149,7 @@ static void free_geobtag(void *obj)
  * @param maxread Pointer to maximum number of characters to read from the
  * AVIOContext. After execution the value is decremented by the number of bytes
  * actually read.
- * @returns 0 if no error occured, dst is uninitialized on error
+ * @returns 0 if no error occurred, dst is uninitialized on error
  */
 static int decode_str(AVFormatContext *s, AVIOContext *pb, int encoding,
                       uint8_t **dst, int *maxread)
@@ -402,7 +409,7 @@ static const ID3v2EMFunc *get_extra_meta_func(const char *tag, int isv34)
 {
     int i = 0;
     while (id3v2_extra_meta_funcs[i].tag3) {
-        if (!memcmp(tag,
+        if (tag && !memcmp(tag,
                     (isv34 ? id3v2_extra_meta_funcs[i].tag4 :
                              id3v2_extra_meta_funcs[i].tag3),
                     (isv34 ? 4 : 3)))
@@ -414,7 +421,8 @@ static const ID3v2EMFunc *get_extra_meta_func(const char *tag, int isv34)
 
 static void ff_id3v2_parse(AVFormatContext *s, int len, uint8_t version, uint8_t flags, ID3v2ExtraMeta **extra_meta)
 {
-    int isv34, tlen, unsync;
+    int isv34, unsync;
+    unsigned tlen;
     char tag[5];
     int64_t next, end = avio_tell(s->pb) + len;
     int taghdrlen;
@@ -448,8 +456,22 @@ static void ff_id3v2_parse(AVFormatContext *s, int len, uint8_t version, uint8_t
 
     unsync = flags & 0x80;
 
-    if (isv34 && flags & 0x40) /* Extended header present, just skip over it */
-        avio_skip(s->pb, get_size(s->pb, 4));
+    /* Extended header present, just skip over it */
+    if (isv34 && flags & 0x40) {
+        int size = get_size(s->pb, 4);
+        if (size < 6) {
+            reason = "extended header too short.";
+            goto error;
+        }
+        len -= size;
+        if (len < 0) {
+            reason = "extended header too long.";
+            goto error;
+        }
+        /* already seeked past size, skip the reset */
+        size -= 4;
+        avio_skip(s->pb, size);
+    }
 
     while (len >= taghdrlen) {
         unsigned int tflags = 0;
@@ -469,11 +491,13 @@ static void ff_id3v2_parse(AVFormatContext *s, int len, uint8_t version, uint8_t
             tag[3] = 0;
             tlen = avio_rb24(s->pb);
         }
-        if (tlen < 0 || tlen > len - taghdrlen) {
-            av_log(s, AV_LOG_WARNING, "Invalid size in frame %s, skipping the rest of tag.\n", tag);
+        if (tlen > (1<<28))
             break;
-        }
         len -= taghdrlen + tlen;
+
+        if (len < 0)
+            break;
+
         next = avio_tell(s->pb) + tlen;
 
         if (!tlen) {
@@ -483,6 +507,8 @@ static void ff_id3v2_parse(AVFormatContext *s, int len, uint8_t version, uint8_t
         }
 
         if (tflags & ID3v2_FLAG_DATALEN) {
+            if (tlen < 4)
+                break;
             avio_rb32(s->pb);
             tlen -= 4;
         }

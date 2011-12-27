@@ -2,20 +2,20 @@
  * Electronic Arts TGV Video Decoder
  * Copyright (c) 2007-2008 Peter Ross
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
@@ -29,7 +29,7 @@
  */
 
 #include "avcodec.h"
-#define ALT_BITSTREAM_READER_LE
+#define BITSTREAM_READER_LE
 #include "get_bits.h"
 #include "libavutil/lzo.h"
 #include "libavutil/imgutils.h"
@@ -55,6 +55,8 @@ static av_cold int tgv_decode_init(AVCodecContext *avctx){
     s->avctx = avctx;
     avctx->time_base = (AVRational){1, 15};
     avctx->pix_fmt = PIX_FMT_PAL8;
+    avcodec_get_frame_defaults(&s->frame);
+    avcodec_get_frame_defaults(&s->last_frame);
     return 0;
 }
 
@@ -72,7 +74,7 @@ static int unpack(const uint8_t *src, const uint8_t *src_end, unsigned char *dst
     else
         src += 2;
 
-    if (src+3>src_end)
+    if (src_end - src < 3)
         return -1;
     size = AV_RB24(src);
     src += 3;
@@ -136,7 +138,7 @@ static int unpack(const uint8_t *src, const uint8_t *src_end, unsigned char *dst
  * @return 0 on success, -1 on critical buffer underflow
  */
 static int tgv_decode_inter(TgvContext * s, const uint8_t *buf, const uint8_t *buf_end){
-    unsigned char *frame0_end = s->last_frame.data[0] + s->avctx->width*s->last_frame.linesize[0];
+    unsigned last_frame_size = s->avctx->height*s->last_frame.linesize[0];
     int num_mvs;
     int num_blocks_raw;
     int num_blocks_packed;
@@ -146,7 +148,7 @@ static int tgv_decode_inter(TgvContext * s, const uint8_t *buf, const uint8_t *b
     int mvbits;
     const unsigned char *blocks_raw;
 
-    if(buf+12>buf_end)
+    if(buf_end - buf < 12)
         return -1;
 
     num_mvs           = AV_RL16(&buf[0]);
@@ -155,7 +157,7 @@ static int tgv_decode_inter(TgvContext * s, const uint8_t *buf, const uint8_t *b
     vector_bits       = AV_RL16(&buf[6]);
     buf += 12;
 
-    /* allocate codebook buffers as neccessary */
+    /* allocate codebook buffers as necessary */
     if (num_mvs > s->num_mvs) {
         s->mv_codebook = av_realloc(s->mv_codebook, num_mvs*2*sizeof(int));
         s->num_mvs = num_mvs;
@@ -169,7 +171,7 @@ static int tgv_decode_inter(TgvContext * s, const uint8_t *buf, const uint8_t *b
     /* read motion vectors */
     mvbits = (num_mvs*2*10+31) & ~31;
 
-    if (buf+(mvbits>>3)+16*num_blocks_raw+8*num_blocks_packed>buf_end)
+    if (buf_end - buf < (mvbits>>3)+16*num_blocks_raw+8*num_blocks_packed)
         return -1;
 
     init_get_bits(&gb, buf, mvbits);
@@ -205,12 +207,14 @@ static int tgv_decode_inter(TgvContext * s, const uint8_t *buf, const uint8_t *b
         int src_stride;
 
         if (vector < num_mvs) {
-            src = s->last_frame.data[0] +
-                  (y*4 + s->mv_codebook[vector][1])*s->last_frame.linesize[0] +
-                   x*4 + s->mv_codebook[vector][0];
+            unsigned offset =
+                (y*4 + s->mv_codebook[vector][1])*s->last_frame.linesize[0] +
+                 x*4 + s->mv_codebook[vector][0];
+
             src_stride = s->last_frame.linesize[0];
-            if (src+3*src_stride+3>=frame0_end)
+            if (offset >= last_frame_size - (3*src_stride+3))
                 continue;
+            src = s->last_frame.data[0] + offset;
         }else{
             int offset = vector - num_mvs;
             if (offset<num_blocks_raw)
@@ -250,12 +254,15 @@ static int tgv_decode_frame(AVCodecContext *avctx,
     const uint8_t *buf_end = buf + buf_size;
     int chunk_type;
 
+    if (buf_end - buf < EA_PREAMBLE_SIZE)
+        return AVERROR_INVALIDDATA;
+
     chunk_type = AV_RL32(&buf[0]);
     buf += EA_PREAMBLE_SIZE;
 
     if (chunk_type==kVGT_TAG) {
         int pal_count, i;
-        if(buf+12>buf_end) {
+        if(buf_end - buf < 12) {
             av_log(avctx, AV_LOG_WARNING, "truncated header\n");
             return -1;
         }
@@ -270,8 +277,8 @@ static int tgv_decode_frame(AVCodecContext *avctx,
 
         pal_count = AV_RL16(&buf[6]);
         buf += 12;
-        for(i=0; i<pal_count && i<AVPALETTE_COUNT && buf+2<buf_end; i++) {
-            s->palette[i] = AV_RB24(buf);
+        for(i=0; i<pal_count && i<AVPALETTE_COUNT && buf_end - buf >= 3; i++) {
+            s->palette[i] = 0xFF << 24 | AV_RB24(buf);
             buf += 3;
         }
     }
@@ -282,11 +289,11 @@ static int tgv_decode_frame(AVCodecContext *avctx,
     /* shuffle */
     FFSWAP(AVFrame, s->frame, s->last_frame);
     if (!s->frame.data[0]) {
-        s->frame.reference = 1;
+        s->frame.reference = 3;
         s->frame.buffer_hints = FF_BUFFER_HINTS_VALID;
         s->frame.linesize[0] = s->width;
 
-        /* allocate additional 12 bytes to accomodate av_memcpy_backptr() OUTBUF_PADDED optimisation */
+        /* allocate additional 12 bytes to accommodate av_memcpy_backptr() OUTBUF_PADDED optimisation */
         s->frame.data[0] = av_malloc(s->width*s->height + 12);
         if (!s->frame.data[0])
             return AVERROR(ENOMEM);

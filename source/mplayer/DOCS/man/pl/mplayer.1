@@ -48,7 +48,7 @@ mencoder \- enkoder (koder) filmów
 .\" Składnia
 .\" --------------------------------------------------------------------------
 .
-.SH SK�?ADNIA
+.SH SKŁADNIA
 .na
 .nh
 .B mplayer
@@ -384,7 +384,7 @@ Ma on następujący format:
 .br
 %n%ciąg_znaków_długości_n
 .br
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .br
 mplayer \-ao pcm:file=%10%C:test.wav test.avi
 .PP
@@ -404,7 +404,7 @@ Opcje działające bez wartości mogą być włączone przez ustawienie "yes", "
 "true" i wyłączone przez przypisanie im "no", "0", lub "false".
 Również podopcje mogą być określane w ten sposób.
 .PP
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .nf
 # Używa sterownika Matrox jako domyślnego.
 vo=xmga
@@ -719,7 +719,7 @@ Załaduje skórkę z podanego jako parametr katalogu znajdującego się pod
 domyślnymi katalogami skórek, /usr/\:local/\:share/\:mplayer/\:skins/
 i ~/.mplayer/skins/.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-skin fittyfene"
@@ -785,7 +785,7 @@ trzyliterowych ISO 639\-2, a OGM korzysta z dowolnego identyfikatora.
 MPlayer wyświetli dostępne języki,
 jeśli jest uruchomiony w trybie gatatliwym (\-v).
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "mplayer dvd://1 \-alang pl,en"
@@ -1205,7 +1205,7 @@ Domyślne jest szybkie przepróbkowywanie, które może zniekształcić dźwięk
 .B \-ss <czas> (zobacz także \-sb)
 Przeskakuje do podanego czasu.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-ss 56"
@@ -1289,7 +1289,7 @@ Nie działa z parametrem frequency.
 .I INFORMACJA:
 Numer kanału będzie pozycją na liście kanałów, licząc od 1.
 .br
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 tv://1, tv://TV1, tv_set_channel 1, tv_set_channel TV1
 .IPs [brightness|contrast|hue|saturation]=<\-100\-100>
 Ustawia korekcję obrazu na karcie.
@@ -1453,7 +1453,7 @@ Szuka czcionek OSD/\:SUB w innym katalogu (domyślny dla zwykłych czcionek:
 Z FreeType, ta opcja ustala ścieżkę do zbioru czcionki tekstowej.
 Z fontconfig, ta opcja podaje nazwę czcionki wg fontconfig.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 \-font ~/\:.mplayer/\:arial-14/\:font.desc
@@ -1523,7 +1523,7 @@ trzyliterowych ISO 639\-2, a OGM korzysta z dowolnego identyfikatora.
 MPlayer wyświetli dostępne języki,
 jeśli jest uruchomiony w trybie gatatliwym (\-v).
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "mplayer dvd://1 \-slang pl,en"
@@ -1648,7 +1648,7 @@ Jak dotąd niespotykane na DVD z innych regionów.
 Jeśli Twój system obsługuje iconv(3), możesz użyć tej opcji by ustalić stronę
 kodową napisów.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 \-subcp latin2
@@ -1666,7 +1666,7 @@ pod kątem dostępnych języków.
 Powrotna strona kodowa określa jaką stronę stosować,
 jesli autodetekcja zawiedzie.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-subcp enca:cs:latin2"
@@ -1773,7 +1773,7 @@ Określa ID napisów VOBsub.
 .SH "OPCJE WYJŚCIA AUDIO (TYLKO MPLAYER)"
 .
 .TP
-.B \-abs <wartość> (tylko \-ao oss) (PRZESTARZA�?E)
+.B \-abs <wartość> (tylko \-ao oss) (PRZESTARZAŁE)
 Zmienia wykrytą wielkość bufora sterownika audio/\:karty.
 .
 .TP
@@ -1839,7 +1839,7 @@ Podopcje są opcjonalne i przeważnie mogą być pominięte.
 .I INFORMACJA:
 Opcja \-vo help pokaże listę wkompilowanych sterowników wyjścia audio.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-ao alsa,oss,"
@@ -1911,7 +1911,7 @@ przekazuje dźwięk przez JACK (Jack Audio Connection Kit)
 .PD 0
 .RSs
 .IPs port=<nazwa>
-�?ączy się z portami o podanej nazwie (domyślnie: porty fizyczne).
+Łączy się z portami o podanej nazwie (domyślnie: porty fizyczne).
 .IPs name=<nazwa klienta>
 Nazwa klienta przekazywana do JACK (domyślnie: MPlayer [<PID>]).
 Przydatne, jeśli chcesz by pewne połączenia były nawiązywane automatycznie.
@@ -2021,7 +2021,7 @@ Nie wszystkie sterowniki wyjścia video to obsługują.
 Podaje nazwę komputera i numer wyświetlacza serwera X, na którym chcesz
 wyświetlać.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 \-display xtest.localdomain:0
@@ -2135,7 +2135,7 @@ Odtwarzanie pełnoekranowe (film w centrum i czarne obramowanie wokół niego).
 Nie wszystkie sterowniki wyjścia video to obsługują.
 .
 .TP
-.B \-fsmode\-dontuse <0\-31> (PRZESTARZA�?E, używaj opcji \-fs)
+.B \-fsmode\-dontuse <0\-31> (PRZESTARZAŁE, używaj opcji \-fs)
 Wypróbuj tę opcję, jeżeli masz problemy z trybem pełnoekranowym.
 .
 .TP
@@ -2171,7 +2171,7 @@ Używa zalecenia _NETWM_STATE_STAYS_ON_TOP jeśli jest to możliwe.
 .REss
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .PD 0
 .RSs
@@ -2198,7 +2198,7 @@ liczone względem lewego górnego rogu tego okna a nie ekranu.
 Ta opcja jest obsługiwana tylko przez sterowniki wyjścia video x11, xmga, xv,
 xvmc, xvidix, gl, gl2, directx i tdfxfb.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs 50:40
@@ -2240,7 +2240,7 @@ Określa zakres częstotliwości pionowej monitora.
 .B \-monitoraspect <stosunek> (zobacz także \-aspect)
 Ustawia proporcje Twojego monitora lub ekranu TV.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 \-monitoraspect 4:3  lub 1.3333
@@ -2412,7 +2412,7 @@ Podopcje są dodatkowe i przeważnie mogą być pominięte.
 .I INFORMACJA:
 Opcja \-vo help pokaże listę wkompilowanych sterowników wyjścia video.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-vo xmga,xv,"
@@ -3089,7 +3089,7 @@ Nazwa zbioru wyjściowego (domyślnie: ./out.gif).
 Musisz podać ilość ramek na sekundę przed nazwą zbioru, albo stanie się ona
 częścią nazwy.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .PD 0
 .RSs
@@ -3177,7 +3177,7 @@ obrazów bez zewnętrznej biblioteki.
 Obsługuje format BGR[A], z 15, 24 i 32 bpp.
 Można wymusić konkretny format filtrem video format.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .PD 0
 .RSs
@@ -3201,7 +3201,7 @@ również niewymienione na niej kodeki.
 .I INFORMACJA:
 Możesz pobrać listę dostępnych kodeków poprzez \-ac help.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-ac mp3acm"
@@ -3265,7 +3265,7 @@ Powraca do domyślnego, jeżeli żaden z podanych kodeków nie będzie działał
 .I INFORMACJA:
 Możesz pobrać listę dostępnych rodzin kodeków poprzez \-afm help.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-afm ffmpeg"
@@ -3280,7 +3280,7 @@ Próbuje najpierw kodeki Win32.
 Zmienia proporcje filmu, w przypadku gdy nie ma ich w odtwarzanym pliku lub są
 podane nieprawidłowe.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 \-aspect 4:3  lub \-aspect 1.3333
@@ -3301,7 +3301,7 @@ Odwraca obraz do góry nogami.
 .B \-lavdopts <opcja1:opcja2:...> (KOD DEBUGOWY)
 Określa parametry dekodowania z libavcodec.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 \-lavdopts bug=1
@@ -3500,7 +3500,7 @@ Użyteczne do testów wydajności.
 Nie koduje/\:odtwarza video.
 .
 .TP
-.B \-oldpp <jakość> (tylko OpenDivX) (PRZESTARZA�?E)
+.B \-oldpp <jakość> (tylko OpenDivX) (PRZESTARZAŁE)
 Używa kodu postprocessingu z OpenDivX zamiast wbudowanego.
 Zastąpiony przez \-pp, wewnętrzny postprocessing daje lepszą jakość i jest
 szybszy.
@@ -3523,7 +3523,7 @@ Pokazuje streszczenie dostępnych filtrów postprocesu i sposób ich użycia.
 .B \-ssf <tryb>
 Określa parametry dla skalowania programowego.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 \-vf scale \-ssf lgb=3.0
@@ -3612,7 +3612,7 @@ również niewymienione na niej kodeki.
 .I INFORMACJA:
 Możesz pobrać listę dostępnych kodeków poprzez \-vc help.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-vc divx"
@@ -3635,7 +3635,7 @@ Powraca do domyślnych, jeśli żadna z podanych rodzin kodeków nie działa.
 .I INFORMACJA:
 Możesz pobrać listę dostępnych rodzin kodeków poprzez \-vfm help.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-vfm ffmpeg,dshow,vfw"
@@ -3770,7 +3770,7 @@ zmiennoprzecinkowych (filterbank and integer processing)
 .RE
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .PD 0
 .RSs
@@ -3872,7 +3872,7 @@ Liczby rzeczywiste określające przyrost w dB dla każdego pasma częstotliwoś
 .RE
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .RSs
 .IPs "mplayer \-af equalizer=11:11:10:5:0:\-12:0:5:12:12 media.avi"
@@ -3902,7 +3902,7 @@ kanał.
 .RE
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .RSs
 .IPs "mplayer \-af channels=4:4:0:1:1:0:2:2:3:3 media.avi"
@@ -3974,7 +3974,7 @@ Metoda ta powoduje przekłamania i powinna być użyta tylko w ostateczności.
 .RE
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .RSs
 .IPs "mplayer \-af volume=10.1:0 media.avi"
@@ -4008,7 +4008,7 @@ jest 0.
 .RE
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .RSs
 .IPs "mplayer \-af pan=1:0.5:0.5 media.avi"
@@ -4045,7 +4045,7 @@ Zauważ, że liczbą kanałów zwiększy się do <kan>, jeżeli zajdzie taka pot
 .RE
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .RSs
 .IPs "mplayer \-af sub=100:4 \-channels 5 media.avi"
@@ -4088,7 +4088,7 @@ Domyślna wartość dla d to 20ms.
 .RE
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .RSs
 .IPs "mplayer \-af surround=15 \-channels 4 media.avi"
@@ -4125,7 +4125,7 @@ Oblicz żądane opóźnienia w ms jako d[i] = 1000*s[i]/342; i = 1...5.
 .PD 0
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .RSs
 .IPs "mplayer \-af delay=10.5:10.5:0:0:7:0 media.avi"
@@ -4159,7 +4159,7 @@ ilość próbek na kanał (domyślnie: 512)
 .RE
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .RSs
 .IPs "mplayer \-af export=/tmp/mplayer-af_export:1024 media.avi"
@@ -4200,7 +4200,7 @@ Ustawia użwaną metodę.
 .
 .TP
 .B ladspa=plik:etykieta[:opcje...]
-�?aduje wtyczkę LADSPA (Linux Audio Developer's Simple Plugin API).
+Ładuje wtyczkę LADSPA (Linux Audio Developer's Simple Plugin API).
 Filtr ten może mieć wiele instancji, więc można używać kilku wtyczek LADSPA
 jednocześnie.
 .PD 0
@@ -4249,7 +4249,7 @@ Składnia jest następująca:
 Ustawia listę filtrów video i ich opcji.
 .
 .TP
-.B \-vop <...,filtr3[=parametr1:parametr2:...],filtr2,filtr1> (PRZESTARZA�?E)
+.B \-vop <...,filtr3[=parametr1:parametr2:...],filtr2,filtr1> (PRZESTARZAŁE)
 Ustawia listę filtrów video do zastosowania w
 .B odwrotnej
 kolejności.
@@ -4354,7 +4354,7 @@ Może być użyty do umieszczenia napisów/\:OSD w otrzymanym czarnym pasku.
 Szerokość i wysokość po poszerzeniu (domyślnie: oryginalna szerokość, wysokość).
 Ujemne wartości traktowane są jak zmiany oryginalnej wielkości
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IP expand=0:\-50:0:0
@@ -4373,7 +4373,7 @@ wyświetlanie OSD/\:napisów
 .IPs "<a>\ \ "
 Rozszerza tak, by pasowało do proporcji, a nie rozdzielczości (domyślnie: 0).
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IP expand=800::::3/4
@@ -4514,7 +4514,7 @@ wyświetlania.
 filmu.
 .REss
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IP dsize=800:\-2
@@ -4539,7 +4539,7 @@ rozdzielczości.
 rozdzielczości.
 .REss
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IP dsize=800:600:0
@@ -4736,7 +4736,7 @@ kombinacja filtrów wysokiej jakości (ha:a:128:7,va:a,dr:a)
 .RE
 .RS
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .PD 0
 .RSs
@@ -4848,7 +4848,7 @@ Kontroluje proporcje, wyliczane przez wzór DVB_HEIGHT*ASPECTRATIO
 .RE
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .PD 0
 .RSs
@@ -4900,7 +4900,7 @@ Wersja filtra denoise3d z wysoką precyzją/\:jakością.
 Parametry i sposób użycia są takie same.
 .
 .TP
-.B eq[=jasność:kontrast] (PRZESTARZA�?E)
+.B eq[=jasność:kontrast] (PRZESTARZAŁE)
 Programowy korektor z interaktywnym sterowaniem, zupełnie jak korektor
 sprzętowy, dla kart/\:sterowników które nie obsługują sprzętowego sterowania
 jasnością i kontrastem.
@@ -5061,7 +5061,7 @@ Jaka część obrazu musi zostać uznana za z przeplotem żeby usunąć klatkę
 .PD 1
 .
 .TP
-.B lavcdeint (PRZESTARZA�?E)
+.B lavcdeint (PRZESTARZAŁE)
 filtr usuwający przeplot z FFmpeg, to samo co \-vf pp=fd
 .
 .TP
@@ -5159,7 +5159,7 @@ kombinacją filtrów.
 .IPs d
 Rozdziela obraz, umieszczając półobrazy obok siebie)
 .IPs i
-�?ączy obraz
+Łączy obraz
 .RE
 .PD 1
 .
@@ -5709,7 +5709,7 @@ drukowane.
 .
 .TP
 .B tile=xkawalki:ykawalki:wyjście:start:delta
-�?ączy szereg obrazów w jeden większy.
+Łączy szereg obrazów w jeden większy.
 Jeżeli ominiesz parametr lub podasz wartość mniejszą niż 0, domyślna
 wartość będzie użyta.
 Możesz również przestać podawać opcje w każdej chwili (... \-vf tile=10:5 ...).
@@ -5836,7 +5836,7 @@ Zatrzymuje kodowanie w podanym czasie lub pozycji bajtu.
 Pozycja bajtu nie będzie dokładna, ponieważ może się on tylko
 zatrzymać granicy ramki.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-endpos 56"
@@ -5852,7 +5852,7 @@ Koduje tylko 100 MB.
 .B \-fafmttag <format>
 Można używać do wymuszenia znacznika formatu audio pliku wyjściowego.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-fafmttag 0x55"
@@ -5864,7 +5864,7 @@ Da plik wyjściowy zawierający 0x55 (mp3) jako znacznik formatu audio.
 .B \-ffourcc <fourcc>
 Można używać do wymuszenia fourcc video pliku wyjściowego.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-ffourcc div3"
@@ -5954,7 +5954,7 @@ Koduje podanym kodekiem audio (brak wartości domyślnej).
 .I INFORMACJA:
 Użyj \-oac help, aby otrzymać listę dostępnych kodeków.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-oac copy"
@@ -5975,7 +5975,7 @@ Koduje do wybranego formatu (domyślnie: AVI).
 .I INFORMACJA:
 Użyj \-of help, aby otrzymać listę dostępnych formatów.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-of avi"
@@ -6005,7 +6005,7 @@ Koduje z podanym kodekiem video (brak domyślnej wartości).
 .I INFORMACJA:
 Użyj \-ovc help, aby otrzymać listę dostępnych kodeków.
 .sp 1
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs "\-ovc copy"
@@ -6255,7 +6255,7 @@ kodowanie ABR z uśrednioną wartością podanego bitrate
 .RE
 .sp 1
 .RS
-.I PRZYK�?ADY:
+.I PRZYKŁADY:
 .RE
 .PD 0
 .RSs
@@ -6361,7 +6361,7 @@ mógł później zremuksować strumienia audio.
 Wiele z opcji libavcodec (w skrócie lavc) jest skąpo udokumentowanych.
 Szczegółowe informacje znajdziesz w źródłach.
 .PP
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .PD 0
 .RSs
 .IPs vcodec=msmpeg4:vbitrate=1800:vhq:keyint=250
@@ -7699,7 +7699,7 @@ wartość=<0.01\-2.00> oznacza poprawkę jakości w %.
 .PD 1
 .sp 1
 .RS
-.I PRZYK�?AD:
+.I PRZYKŁAD:
 .RE
 .PD 0
 .RSs
@@ -8980,7 +8980,7 @@ napisów w następującej kolejności:
 .\" Przykłady
 .\" --------------------------------------------------------------------------
 .
-.SH PRZYK�?ADY UŻYCIA MPLAYERA
+.SH PRZYKŁADY UŻYCIA MPLAYERA
 .
 .TP
 .B Szybki start odtwarzania DVD:
@@ -9051,7 +9051,7 @@ mplayer \-rawaudio on:format=0xff \-af pan=6:.32:.39:.06:.17:-.17:.33:.32:.06:.3
 Może będziesz chciał się trochę pobawić wartościami filtru pan (np. pomnożyć
 przez jakaś liczbę), aby zwiększyć głośność albo uniknąć trzasków.
 .
-.SH PRZYK�?ADY UŻYCIA MENCODERA
+.SH PRZYKŁADY UŻYCIA MENCODERA
 .
 .TP
 .B Kodowanie tytułu #2 DVD, tylko wybrane rozdziały:
@@ -9093,7 +9093,7 @@ rar p test-SVCD.rar | mencoder \-ovc lavc \-lavcopts vcodec=mpeg4:vbitrate=800 \
 .\" Błędy, autorzy, standardowa adnotacja
 .\" --------------------------------------------------------------------------
 .
-.SH B�?ĘDY
+.SH BŁĘDY
 Nie panikuj.
 Jeśli jakiś znajdziesz, zgłoś go nam, ale przedtem upewnij się, że przeczytałeś
 całą dokumentację.
@@ -9117,7 +9117,7 @@ zaś maile odnośnie tłumaczenia na listę MPlayer-translations.
 .
 .
 .
-.SH "OD T�?UMACZY"
+.SH "OD TŁUMACZY"
 Strona przetłumaczona przez Wacława Schillera <torinthiel@wp.pl> i
 Macieja Pasztę <paszczi@go2.pl>.
 W tłumaczeniu wykorzystano fragmenty pracy

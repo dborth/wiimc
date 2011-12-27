@@ -2,20 +2,20 @@
  * DVB subtitle encoding
  * Copyright (c) 2005 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avcodec.h"
@@ -194,6 +194,61 @@ static void dvb_encode_rle4(uint8_t **pq,
     *pq = q;
 }
 
+static void dvb_encode_rle8(uint8_t **pq,
+                            const uint8_t *bitmap, int linesize,
+                            int w, int h)
+{
+    uint8_t *q;
+    int x, y, len, x1, f, color;
+
+    q = *pq;
+
+    for (y = 0; y < h; y++) {
+        *q++ = 0x12;
+
+        x = 0;
+        f = 0;
+        while (x < w) {
+            x1 = x;
+            color = bitmap[x1++];
+            while (x1 < w && bitmap[x1] == color)
+                x1++;
+            len = x1 - x;
+            if (len == 1 && color) {
+                // 00000001 to 11111111           1 pixel in colour x
+                *q++ = color;
+            } else {
+                if (color == 0x00) {
+                    // 00000000 0LLLLLLL          L pixels (1-127) in colour 0 (L > 0)
+                    len = FFMIN(len, 127);
+                    *q++ = 0x00;
+                    *q++ = len;
+                } else if (len > 2) {
+                    // 00000000 1LLLLLLL CCCCCCCC L pixels (3-127) in colour C (L > 2)
+                    len = FFMIN(len, 127);
+                    *q++ = 0x00;
+                    *q++ = 0x80+len;
+                    *q++ = color;
+                }
+                else if (len == 2) {
+                    *q++ = color;
+                    *q++ = color;
+                } else {
+                    *q++ = color;
+                    len = 1;
+                }
+            }
+            x += len;
+        }
+        /* end of line */
+        // 00000000 00000000 end of 8-bit/pixel_code_string
+        *q++ = 0x00;
+        *q++ = 0x00;
+        bitmap += linesize;
+    }
+    *pq = q;
+}
+
 static int encode_dvb_subtitles(DVBSubtitleContext *s,
                                 uint8_t *outbuf, AVSubtitle *h)
 {
@@ -245,10 +300,15 @@ static int encode_dvb_subtitles(DVBSubtitleContext *s,
             } else if (h->rects[clut_id]->nb_colors <= 16) {
                 /* 4 bpp, standard encoding */
                 bpp_index = 1;
+            } else if (h->rects[clut_id]->nb_colors <= 256) {
+                /* 8 bpp, standard encoding */
+                bpp_index = 2;
             } else {
                 return -1;
             }
 
+
+            /* CLUT segment */
             *q++ = 0x0f; /* sync byte */
             *q++ = 0x12; /* CLUT definition segment */
             bytestream_put_be16(&q, page_id);
@@ -321,18 +381,25 @@ static int encode_dvb_subtitles(DVBSubtitleContext *s,
     if (!s->hide_state) {
 
         for (object_id = 0; object_id < h->num_rects; object_id++) {
-            /* Object Data segment */
+            void (*dvb_encode_rle)(uint8_t **pq,
+                                    const uint8_t *bitmap, int linesize,
+                                    int w, int h);
 
+            /* bpp_index maths */
             if (h->rects[object_id]->nb_colors <= 4) {
                 /* 2 bpp, some decoders do not support it correctly */
-                bpp_index = 0;
+                dvb_encode_rle = dvb_encode_rle2;
             } else if (h->rects[object_id]->nb_colors <= 16) {
                 /* 4 bpp, standard encoding */
-                bpp_index = 1;
+                dvb_encode_rle = dvb_encode_rle4;
+            } else if (h->rects[object_id]->nb_colors <= 256) {
+                /* 8 bpp, standard encoding */
+                dvb_encode_rle = dvb_encode_rle8;
             } else {
                 return -1;
             }
 
+            /* Object Data segment */
             *q++ = 0x0f; /* sync byte */
             *q++ = 0x13;
             bytestream_put_be16(&q, page_id);
@@ -345,18 +412,11 @@ static int encode_dvb_subtitles(DVBSubtitleContext *s,
                                                                        non_modifying_color_flag */
             {
                 uint8_t *ptop_field_len, *pbottom_field_len, *top_ptr, *bottom_ptr;
-                void (*dvb_encode_rle)(uint8_t **pq,
-                                        const uint8_t *bitmap, int linesize,
-                                        int w, int h);
+
                 ptop_field_len = q;
                 q += 2;
                 pbottom_field_len = q;
                 q += 2;
-
-                if (bpp_index == 0)
-                    dvb_encode_rle = dvb_encode_rle2;
-                else
-                    dvb_encode_rle = dvb_encode_rle4;
 
                 top_ptr = q;
                 dvb_encode_rle(&q, h->rects[object_id]->pict.data[0], h->rects[object_id]->w * 2,

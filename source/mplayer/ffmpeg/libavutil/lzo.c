@@ -2,33 +2,33 @@
  * LZO 1x decompression
  * Copyright (c) 2006 Reimar Doeffinger
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "avutil.h"
 #include "common.h"
-//! Avoid e.g. MPlayers fast_memcpy, it slows things down here.
+/// Avoid e.g. MPlayers fast_memcpy, it slows things down here.
 #undef memcpy
 #include <string.h>
 #include "lzo.h"
 
-//! Define if we may write up to 12 bytes beyond the output buffer.
+/// Define if we may write up to 12 bytes beyond the output buffer.
 #define OUTBUF_PADDED 1
-//! Define if we may read up to 8 bytes beyond the input buffer.
+/// Define if we may read up to 8 bytes beyond the input buffer.
 #define INBUF_PADDED 1
 typedef struct LZOContext {
     const uint8_t *in, *in_end;
@@ -137,7 +137,7 @@ static inline void memcpy_backptr(uint8_t *dst, int back, int cnt) {
     const uint8_t *src = &dst[-back];
     if (back == 1) {
         memset(dst, *src, cnt);
-    } else {
+    } else if(back>0) {
 #ifdef OUTBUF_PADDED
         COPY2(dst, src);
         COPY2(dst + 2, src + 2);
@@ -175,11 +175,11 @@ int av_lzo1x_decode(void *out, int *outlen, const void *in, int *inlen) {
     int state= 0;
     int x;
     LZOContext c;
-    if (!*outlen || !*inlen) {
+    if (*outlen <= 0 || *inlen <= 0) {
         int res = 0;
-        if (!*outlen)
+        if (*outlen <= 0)
             res |= AV_LZO_OUTPUT_FULL;
-        if (!*inlen)
+        if (*inlen <= 0)
             res |= AV_LZO_INPUT_DEPLETED;
         return res;
     }

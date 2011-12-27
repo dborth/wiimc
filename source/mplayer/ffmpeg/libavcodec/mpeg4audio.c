@@ -3,20 +3,20 @@
  * Copyright (c) 2008 Baptiste Coudurier <baptiste.coudurier@free.fr>
  * Copyright (c) 2009 Alex Converse <alex.converse@gmail.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -76,12 +76,16 @@ static inline int get_sample_rate(GetBitContext *gb, int *index)
         avpriv_mpeg4audio_sample_rates[*index];
 }
 
-int avpriv_mpeg4audio_get_config(MPEG4AudioConfig *c, const uint8_t *buf, int buf_size)
+int avpriv_mpeg4audio_get_config(MPEG4AudioConfig *c, const uint8_t *buf,
+                                 int bit_size, int sync_extension)
 {
     GetBitContext gb;
     int specific_config_bitindex;
 
-    init_get_bits(&gb, buf, buf_size*8);
+    if(bit_size<=0)
+        return AVERROR_INVALIDDATA;
+
+    init_get_bits(&gb, buf, bit_size);
     c->object_type = get_object_type(&gb);
     c->sample_rate = get_sample_rate(&gb, &c->sampling_index);
     c->chan_config = get_bits(&gb, 4);
@@ -117,7 +121,7 @@ int avpriv_mpeg4audio_get_config(MPEG4AudioConfig *c, const uint8_t *buf, int bu
             return -1;
     }
 
-    if (c->ext_object_type != AOT_SBR) {
+    if (c->ext_object_type != AOT_SBR && sync_extension) {
         while (get_bits_left(&gb) > 15) {
             if (show_bits(&gb, 11) == 0x2b7) { // sync extension
                 get_bits(&gb, 11);

@@ -2,20 +2,20 @@
  * Beam Software VB decoder
  * Copyright (c) 2007 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -73,7 +73,7 @@ static void vb_decode_palette(VBDecContext *c, int data_size)
         return;
     }
     for(i = start; i <= start + size; i++)
-        c->pal[i] = bytestream_get_be24(&c->stream);
+        c->pal[i] = 0xFF << 24 | bytestream_get_be24(&c->stream);
 }
 
 static inline int check_pixel(uint8_t *buf, uint8_t *start, uint8_t *end)
@@ -205,7 +205,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
 
     if(c->pic.data[0])
         avctx->release_buffer(avctx, &c->pic);
-    c->pic.reference = 1;
+    c->pic.reference = 3;
     if(avctx->get_buffer(avctx, &c->pic) < 0){
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;
@@ -221,10 +221,14 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
         offset = i + j * avctx->width;
         rest -= 4;
     }
+    if(rest < 0){
+        av_log(avctx, AV_LOG_ERROR, "not enough data\n");
+        return -1;
+    }
     if(flags & VB_HAS_VIDEO){
         size = bytestream_get_le32(&c->stream);
-        if(size > rest){
-            av_log(avctx, AV_LOG_ERROR, "Frame size is too big\n");
+        if(size > rest || size<4){
+            av_log(avctx, AV_LOG_ERROR, "Frame size invalid\n");
             return -1;
         }
         vb_decode_framedata(c, c->stream, size, offset);
@@ -268,6 +272,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
 
     c->avctx = avctx;
     avctx->pix_fmt = PIX_FMT_PAL8;
+    avcodec_get_frame_defaults(&c->pic);
 
     c->frame      = av_mallocz(avctx->width * avctx->height);
     c->prev_frame = av_mallocz(avctx->width * avctx->height);

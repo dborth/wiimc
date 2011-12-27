@@ -1,29 +1,30 @@
 /*
  * Copyright (c) 2009 Michael Niedermayer
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "avformat.h"
+#include "internal.h"
 
 
 static int probe(AVProbeData *p)
 {
-    // the single file i have starts with that, i dont know if others do too
+    // the single file I have starts with that, I do not know if others do, too
     if(   p->buf[0] == 1
        && p->buf[1] == 1
        && p->buf[2] == 3
@@ -47,7 +48,7 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
     st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codec->codec_id = CODEC_ID_MPEG4;
     st->need_parsing = AVSTREAM_PARSE_FULL;
-    av_set_pts_info(st, 64, 1, 90000);
+    avpriv_set_pts_info(st, 64, 1, 90000);
 
     return 0;
 

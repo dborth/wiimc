@@ -16,20 +16,20 @@
  * Many thanks to Dan Dennedy <dan@dennedy.org> for providing wealth
  * of DV technical info.
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -37,7 +37,7 @@
  * @file
  * DV codec.
  */
-#define ALT_BITSTREAM_READER
+
 #include "libavutil/pixdesc.h"
 #include "avcodec.h"
 #include "dsputil.h"
@@ -364,7 +364,7 @@ typedef struct BlockInfo {
     uint8_t pos; /* position in block */
     void (*idct_put)(uint8_t *dest, int line_size, DCTELEM *block);
     uint8_t partial_bit_count;
-    uint16_t partial_bit_buffer;
+    uint32_t partial_bit_buffer;
     int shift_offset;
 } BlockInfo;
 
@@ -392,8 +392,7 @@ static void dv_decode_ac(GetBitContext *gb, BlockInfo *mb, DCTELEM *block)
 
     /* if we must parse a partial VLC, we do it here */
     if (partial_bit_count > 0) {
-        re_cache = ((unsigned)re_cache >> partial_bit_count) |
-                   (mb->partial_bit_buffer << (sizeof(re_cache) * 8 - partial_bit_count));
+        re_cache = re_cache >> partial_bit_count | mb->partial_bit_buffer;
         re_index -= partial_bit_count;
         mb->partial_bit_count = 0;
     }
@@ -416,7 +415,7 @@ static void dv_decode_ac(GetBitContext *gb, BlockInfo *mb, DCTELEM *block)
         if (re_index + vlc_len > last_index) {
             /* should be < 16 bits otherwise a codeword could have been parsed */
             mb->partial_bit_count = last_index - re_index;
-            mb->partial_bit_buffer = NEG_USR32(re_cache, mb->partial_bit_count);
+            mb->partial_bit_buffer = re_cache & ~(-1u >> mb->partial_bit_count);
             re_index = last_index;
             break;
         }
@@ -775,7 +774,7 @@ static av_always_inline int dv_init_enc_block(EncBlockInfo* bi, uint8_t *data, i
        method suggested in SMPTE 314M Table 22, and an improved
        method. The SMPTE method is very conservative; it assigns class
        3 (i.e. severe quantization) to any block where the largest AC
-       component is greater than 36. Libav's DV encoder tracks AC bit
+       component is greater than 36. FFmpeg's DV encoder tracks AC bit
        consumption precisely, so there is no need to bias most blocks
        towards strongly lossy compression. Instead, we assign class 2
        to most blocks, and use class 3 only when strictly necessary
@@ -783,7 +782,7 @@ static av_always_inline int dv_init_enc_block(EncBlockInfo* bi, uint8_t *data, i
 
 #if 0 /* SMPTE spec method */
     static const int classes[] = {12, 24, 36, 0xffff};
-#else /* improved Libav method */
+#else /* improved FFmpeg method */
     static const int classes[] = {-1, -1, 255, 0xffff};
 #endif
     int max  = classes[0];
@@ -1072,7 +1071,7 @@ static int dvvideo_decode_frame(AVCodecContext *avctx,
     const uint8_t* vsc_pack;
     int apt, is16_9;
 
-    s->sys = avpriv_dv_frame_profile(s->sys, buf, buf_size);
+    s->sys = avpriv_dv_frame_profile2(avctx, s->sys, buf, buf_size);
     if (!s->sys || buf_size < s->sys->frame_size || dv_init_dynamic_tables(s->sys)) {
         av_log(avctx, AV_LOG_ERROR, "could not find dv frame profile\n");
         return -1; /* NOTE: we only accept several full frames */
@@ -1081,6 +1080,7 @@ static int dvvideo_decode_frame(AVCodecContext *avctx,
     if (s->picture.data[0])
         avctx->release_buffer(avctx, &s->picture);
 
+    avcodec_get_frame_defaults(&s->picture);
     s->picture.reference = 0;
     s->picture.key_frame = 1;
     s->picture.pict_type = AV_PICTURE_TYPE_I;
@@ -1108,7 +1108,7 @@ static int dvvideo_decode_frame(AVCodecContext *avctx,
     vsc_pack = buf + 80*5 + 48 + 5;
     if ( *vsc_pack == dv_video_control ) {
         apt = buf[4] & 0x07;
-        is16_9 = (vsc_pack && ((vsc_pack[2] & 0x07) == 0x02 || (!apt && (vsc_pack[2] & 0x07) == 0x07)));
+        is16_9 = (vsc_pack[2] & 0x07) == 0x02 || (!apt && (vsc_pack[2] & 0x07) == 0x07);
         avctx->sample_aspect_ratio = s->sys->sar[is16_9];
     }
 

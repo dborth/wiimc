@@ -3,20 +3,20 @@
  * Copyright (c) 2008 Vitor Sessak
  * Copyright (c) 2007 Bobby Bingham
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -99,7 +99,7 @@ static int create_filter(AVFilterContext **filt_ctx, AVFilterGraph *ctx, int ind
     char tmp_args[256];
     int ret;
 
-    snprintf(inst_name, sizeof(inst_name), "Parsed filter %d %s", index, filt_name);
+    snprintf(inst_name, sizeof(inst_name), "Parsed_%s_%d", filt_name, index);
 
     filt = avfilter_get_by_name(filt_name);
 
@@ -170,13 +170,18 @@ static int parse_filter(AVFilterContext **filt_ctx, const char **buf, AVFilterGr
     return ret;
 }
 
-static void free_inout(AVFilterInOut *head)
+AVFilterInOut *avfilter_inout_alloc(void)
 {
-    while (head) {
-        AVFilterInOut *next = head->next;
-        av_free(head->name);
-        av_free(head);
-        head = next;
+    return av_mallocz(sizeof(AVFilterInOut));
+}
+
+void avfilter_inout_free(AVFilterInOut **inout)
+{
+    while (*inout) {
+        AVFilterInOut *next = (*inout)->next;
+        av_freep(&(*inout)->name);
+        av_freep(inout);
+        *inout = next;
     }
 }
 
@@ -330,13 +335,15 @@ static int parse_outputs(const char **buf, AVFilterInOut **curr_inputs,
 }
 
 int avfilter_graph_parse(AVFilterGraph *graph, const char *filters,
-                         AVFilterInOut *open_inputs,
-                         AVFilterInOut *open_outputs, void *log_ctx)
+                         AVFilterInOut **open_inputs_ptr, AVFilterInOut **open_outputs_ptr,
+                         void *log_ctx)
 {
-    int index = 0, ret;
+    int index = 0, ret = 0;
     char chr = 0;
 
     AVFilterInOut *curr_inputs = NULL;
+    AVFilterInOut *open_inputs  = open_inputs_ptr  ? *open_inputs_ptr  : NULL;
+    AVFilterInOut *open_outputs = open_outputs_ptr ? *open_outputs_ptr : NULL;
 
     do {
         AVFilterContext *filter;
@@ -344,24 +351,24 @@ int avfilter_graph_parse(AVFilterGraph *graph, const char *filters,
         filters += strspn(filters, WHITESPACES);
 
         if ((ret = parse_inputs(&filters, &curr_inputs, &open_outputs, log_ctx)) < 0)
-            goto fail;
+            goto end;
 
         if ((ret = parse_filter(&filter, &filters, graph, index, log_ctx)) < 0)
-            goto fail;
+            goto end;
 
         if (filter->input_count == 1 && !curr_inputs && !index) {
-            /* First input can be omitted if it is "[in]" */
+            /* First input pad, assume it is "[in]" if not specified */
             const char *tmp = "[in]";
             if ((ret = parse_inputs(&tmp, &curr_inputs, &open_outputs, log_ctx)) < 0)
-                goto fail;
+                goto end;
         }
 
         if ((ret = link_filter_inouts(filter, &curr_inputs, &open_inputs, log_ctx)) < 0)
-            goto fail;
+            goto end;
 
         if ((ret = parse_outputs(&filters, &curr_inputs, &open_inputs, &open_outputs,
                                  log_ctx)) < 0)
-            goto fail;
+            goto end;
 
         filters += strspn(filters, WHITESPACES);
         chr = *filters++;
@@ -371,7 +378,7 @@ int avfilter_graph_parse(AVFilterGraph *graph, const char *filters,
                    "Invalid filterchain containing an unlabelled output pad: \"%s\"\n",
                    filterchain);
             ret = AVERROR(EINVAL);
-            goto fail;
+            goto end;
         }
         index++;
     } while (chr == ',' || chr == ';');
@@ -381,25 +388,29 @@ int avfilter_graph_parse(AVFilterGraph *graph, const char *filters,
                "Unable to parse graph description substring: \"%s\"\n",
                filters - 1);
         ret = AVERROR(EINVAL);
-        goto fail;
+        goto end;
     }
 
-    if (open_inputs && !strcmp(open_inputs->name, "out") && curr_inputs) {
-        /* Last output can be omitted if it is "[out]" */
+    if (curr_inputs) {
+        /* Last output pad, assume it is "[out]" if not specified */
         const char *tmp = "[out]";
         if ((ret = parse_outputs(&tmp, &curr_inputs, &open_inputs, &open_outputs,
                                  log_ctx)) < 0)
-            goto fail;
+            goto end;
     }
 
-    return 0;
+end:
+    /* clear open_in/outputs only if not passed as parameters */
+    if (open_inputs_ptr) *open_inputs_ptr = open_inputs;
+    else avfilter_inout_free(&open_inputs);
+    if (open_outputs_ptr) *open_outputs_ptr = open_outputs;
+    else avfilter_inout_free(&open_outputs);
+    avfilter_inout_free(&curr_inputs);
 
- fail:
-    for (; graph->filter_count > 0; graph->filter_count--)
-        avfilter_free(graph->filters[graph->filter_count - 1]);
-    av_freep(&graph->filters);
-    free_inout(open_inputs);
-    free_inout(open_outputs);
-    free_inout(curr_inputs);
+    if (ret < 0) {
+        for (; graph->filter_count > 0; graph->filter_count--)
+            avfilter_free(graph->filters[graph->filter_count - 1]);
+        av_freep(&graph->filters);
+    }
     return ret;
 }

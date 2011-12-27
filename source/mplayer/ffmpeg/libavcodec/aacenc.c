@@ -2,20 +2,20 @@
  * AAC encoder
  * Copyright (C) 2008 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -135,6 +135,15 @@ static const uint8_t aac_chan_configs[6][5] = {
  {4, TYPE_SCE, TYPE_CPE, TYPE_CPE, TYPE_LFE}, // 6 channels - front center + stereo + back stereo + LFE
 };
 
+static const uint8_t channel_maps[][AAC_MAX_CHANNELS] = {
+    { 0 },
+    { 0, 1 },
+    { 2, 0, 1 },
+    { 2, 0, 1, 3 },
+    { 2, 0, 1, 3, 4 },
+    { 2, 0, 1, 4, 5, 3 },
+};
+
 /**
  * Make AAC audio config object.
  * @see 1.6.2.1 "Syntax - AudioSpecificConfig"
@@ -215,7 +224,7 @@ static av_cold int aac_encode_init(AVCodecContext *avctx)
         grouping[i] = s->chan_map[i + 1] == TYPE_CPE;
     ff_psy_init(&s->psy, avctx, 2, sizes, lengths, s->chan_map[0], grouping);
     s->psypp = ff_psy_preprocess_init(avctx);
-    s->coder = &ff_aac_coders[2];
+    s->coder = &ff_aac_coders[s->options.aac_coder];
 
     s->lambda = avctx->global_quality ? avctx->global_quality : 120;
 
@@ -502,15 +511,24 @@ static int aac_encode_frame(AVCodecContext *avctx,
         return 0;
     if (data) {
         if (!s->psypp) {
-            memcpy(s->samples + 1024 * avctx->channels, data,
-                   1024 * avctx->channels * sizeof(s->samples[0]));
+            if (avctx->channels <= 2) {
+                memcpy(s->samples + 1024 * avctx->channels, data,
+                       1024 * avctx->channels * sizeof(s->samples[0]));
+            } else {
+                for (i = 0; i < 1024; i++)
+                    for (ch = 0; ch < avctx->channels; ch++)
+                        s->samples[(i + 1024) * avctx->channels + ch] =
+                            ((int16_t*)data)[i * avctx->channels +
+                                             channel_maps[avctx->channels-1][ch]];
+            }
         } else {
             start_ch = 0;
             samples2 = s->samples + 1024 * avctx->channels;
             for (i = 0; i < s->chan_map[0]; i++) {
                 tag = s->chan_map[i+1];
                 chans = tag == TYPE_CPE ? 2 : 1;
-                ff_psy_preprocess(s->psypp, (uint16_t*)data + start_ch,
+                ff_psy_preprocess(s->psypp,
+                                  (uint16_t*)data + channel_maps[avctx->channels-1][start_ch],
                                   samples2 + start_ch, start_ch, chans);
                 start_ch += chans;
             }
@@ -672,6 +690,7 @@ static const AVOption aacenc_options[] = {
         {"auto",     "Selected by the Encoder", 0, AV_OPT_TYPE_CONST, {.dbl = -1 }, INT_MIN, INT_MAX, AACENC_FLAGS, "stereo_mode"},
         {"ms_off",   "Disable Mid/Side coding", 0, AV_OPT_TYPE_CONST, {.dbl =  0 }, INT_MIN, INT_MAX, AACENC_FLAGS, "stereo_mode"},
         {"ms_force", "Force Mid/Side for the whole frame if possible", 0, AV_OPT_TYPE_CONST, {.dbl =  1 }, INT_MIN, INT_MAX, AACENC_FLAGS, "stereo_mode"},
+    {"aac_coder", "", offsetof(AACEncContext, options.aac_coder), AV_OPT_TYPE_INT, {.dbl = 2}, 0, AAC_CODER_NB-1, AACENC_FLAGS},
     {NULL}
 };
 

@@ -2,20 +2,20 @@
  * American Laser Games MM Video Decoder
  * Copyright (c) 2006,2008 Peter Ross
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -58,7 +58,8 @@ static av_cold int mm_decode_init(AVCodecContext *avctx)
 
     avctx->pix_fmt = PIX_FMT_PAL8;
 
-    s->frame.reference = 1;
+    avcodec_get_frame_defaults(&s->frame);
+    s->frame.reference = 3;
 
     return 0;
 }
@@ -68,7 +69,7 @@ static void mm_decode_pal(MmContext *s, const uint8_t *buf, const uint8_t *buf_e
     int i;
     buf += 4;
     for (i=0; i<128 && buf+2<buf_end; i++) {
-        s->palette[i] = AV_RB24(buf);
+        s->palette[i] = 0xFF << 24 | AV_RB24(buf);
         s->palette[i+128] = s->palette[i]<<2;
         buf += 3;
     }

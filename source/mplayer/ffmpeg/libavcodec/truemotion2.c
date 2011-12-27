@@ -2,20 +2,20 @@
  * Duck/ON2 TrueMotion 2 Decoder
  * Copyright (c) 2005 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -64,7 +64,7 @@ typedef struct TM2Context{
 * Huffman codes for each of streams
 */
 typedef struct TM2Codes{
-    VLC vlc; ///< table for Libav bitstream reader
+    VLC vlc; ///< table for FFmpeg bitstream reader
     int bits;
     int *recode; ///< table for converting from code indexes to values
     int length;
@@ -286,6 +286,8 @@ static int tm2_read_stream(TM2Context *ctx, const uint8_t *buf, int stream_id, i
     buf += 4; cur += 4;
     buf += 4; cur += 4; /* unused by decoder */
 
+    if(skip < cur)
+        return -1;
     init_get_bits(&ctx->gb, buf, (skip - cur) * 8);
     if(tm2_build_huff_table(ctx, &codes) == -1)
         return -1;
@@ -767,7 +769,7 @@ static int decode_frame(AVCodecContext *avctx,
         av_log(avctx, AV_LOG_ERROR, "Cannot allocate temporary buffer\n");
         return -1;
     }
-    p->reference = 1;
+    p->reference = 3;
     p->buffer_hints = FF_BUFFER_HINTS_VALID | FF_BUFFER_HINTS_PRESERVE | FF_BUFFER_HINTS_REUSABLE;
     if(avctx->reget_buffer(avctx, p) < 0){
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
@@ -817,6 +819,7 @@ static av_cold int decode_init(AVCodecContext *avctx){
     l->avctx = avctx;
     l->pic.data[0]=NULL;
     avctx->pix_fmt = PIX_FMT_BGR24;
+    avcodec_get_frame_defaults(&l->pic);
 
     dsputil_init(&l->dsp, avctx);
 

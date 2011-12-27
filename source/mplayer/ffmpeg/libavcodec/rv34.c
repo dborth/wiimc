@@ -2,20 +2,20 @@
  * RV30/40 decoder common data
  * Copyright (c) 2007 Mike Melanson, Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -286,20 +286,6 @@ static inline void rv34_decode_block(DCTELEM *dst, GetBitContext *gb, RV34VLC *r
         decode_subblock(dst + 8*2+2, code, 0, gb, &rvlc->coefficient);
     }
 
-}
-
-/**
- * Dequantize ordinary 4x4 block.
- * @todo optimize
- */
-static inline void rv34_dequant4x4(DCTELEM *block, int Qdc, int Q)
-{
-    int i, j;
-
-    block[0] = (block[0] * Qdc + 8) >> 4;
-    for(i = 0; i < 4; i++)
-        for(j = !i; j < 4; j++)
-            block[j + i*8] = (block[j + i*8] * Q + 8) >> 4;
 }
 
 /**
@@ -933,7 +919,7 @@ static void rv34_pred_4x4_block(RV34DecContext *r, uint8_t *dst, int stride, int
         if(itype == VERT_LEFT_PRED) itype = VERT_LEFT_PRED_RV40_NODOWN;
     }
     if(!right && up){
-        topleft = dst[-stride + 3] * 0x01010101;
+        topleft = dst[-stride + 3] * 0x01010101u;
         prev = (uint8_t*)&topleft;
     }
     r->h.pred4x4[itype](dst, prev, stride);
@@ -1112,7 +1098,7 @@ static int rv34_decode_macroblock(RV34DecContext *r, int8_t *intra_types)
     GetBitContext *gb = &s->gb;
     int cbp, cbp2;
     int i, blknum, blkoff;
-    DCTELEM block16[64];
+    LOCAL_ALIGNED_16(DCTELEM, block16, [64]);
     int luma_dc_quant;
     int dist;
     int mb_pos = s->mb_x + s->mb_y * s->mb_stride;
@@ -1147,7 +1133,7 @@ static int rv34_decode_macroblock(RV34DecContext *r, int8_t *intra_types)
 
     luma_dc_quant = r->block_type == RV34_MB_P_MIX16x16 ? r->luma_dc_quant_p[s->qscale] : r->luma_dc_quant_i[s->qscale];
     if(r->is16){
-        memset(block16, 0, sizeof(block16));
+        memset(block16, 0, 64 * sizeof(*block16));
         rv34_decode_block(block16, gb, r->cur_vlcs, 3, 0);
         rv34_dequant4x4_16x16(block16, rv34_qscale_tab[luma_dc_quant],rv34_qscale_tab[s->qscale]);
         r->rdsp.rv34_inv_transform_tab[1](block16);
@@ -1159,7 +1145,7 @@ static int rv34_decode_macroblock(RV34DecContext *r, int8_t *intra_types)
         blkoff = ((i & 1) << 2) + ((i & 4) << 3);
         if(cbp & 1)
             rv34_decode_block(s->block[blknum] + blkoff, gb, r->cur_vlcs, r->luma_vlc, 0);
-        rv34_dequant4x4(s->block[blknum] + blkoff, rv34_qscale_tab[s->qscale],rv34_qscale_tab[s->qscale]);
+        r->rdsp.rv34_dequant4x4(s->block[blknum] + blkoff, rv34_qscale_tab[s->qscale],rv34_qscale_tab[s->qscale]);
         if(r->is16) //FIXME: optimize
             s->block[blknum][blkoff] = block16[(i & 3) | ((i & 0xC) << 1)];
         r->rdsp.rv34_inv_transform_tab[0](s->block[blknum] + blkoff);
@@ -1171,7 +1157,7 @@ static int rv34_decode_macroblock(RV34DecContext *r, int8_t *intra_types)
         blknum = ((i & 4) >> 2) + 4;
         blkoff = ((i & 1) << 2) + ((i & 2) << 4);
         rv34_decode_block(s->block[blknum] + blkoff, gb, r->cur_vlcs, r->chroma_vlc, 1);
-        rv34_dequant4x4(s->block[blknum] + blkoff, rv34_qscale_tab[rv34_chroma_quant[1][s->qscale]],rv34_qscale_tab[rv34_chroma_quant[0][s->qscale]]);
+        r->rdsp.rv34_dequant4x4(s->block[blknum] + blkoff, rv34_qscale_tab[rv34_chroma_quant[1][s->qscale]],rv34_qscale_tab[rv34_chroma_quant[0][s->qscale]]);
         r->rdsp.rv34_inv_transform_tab[0](s->block[blknum] + blkoff);
     }
     if (IS_INTRA(s->current_picture_ptr->f.mb_type[mb_pos]))
@@ -1267,6 +1253,10 @@ static int rv34_decode_slice(RV34DecContext *r, int end, const uint8_t* buf, int
             av_log(s->avctx, AV_LOG_ERROR, "Slice type mismatch\n");
             return AVERROR_INVALIDDATA;
         }
+        if (s->width != r->si.width || s->height != r->si.height) {
+            av_log(s->avctx, AV_LOG_ERROR, "Size mismatch\n");
+            return AVERROR_INVALIDDATA;
+        }
     }
 
     r->si.end = end;
@@ -1292,7 +1282,7 @@ static int rv34_decode_slice(RV34DecContext *r, int end, const uint8_t* buf, int
         s->dsp.clear_blocks(s->block[0]);
 
         if(rv34_decode_macroblock(r, r->intra_types + s->mb_x * 4 + 4) < 0){
-            ff_er_add_slice(s, s->resync_mb_x, s->resync_mb_y, s->mb_x-1, s->mb_y, AC_ERROR|DC_ERROR|MV_ERROR);
+            ff_er_add_slice(s, s->resync_mb_x, s->resync_mb_y, s->mb_x-1, s->mb_y, ER_MB_ERROR);
             return -1;
         }
         if (++s->mb_x == s->mb_width) {
@@ -1310,7 +1300,7 @@ static int rv34_decode_slice(RV34DecContext *r, int end, const uint8_t* buf, int
             s->first_slice_line=0;
         s->mb_num_left--;
     }
-    ff_er_add_slice(s, s->resync_mb_x, s->resync_mb_y, s->mb_x-1, s->mb_y, AC_END|DC_END|MV_END);
+    ff_er_add_slice(s, s->resync_mb_x, s->resync_mb_y, s->mb_x-1, s->mb_y, ER_MB_END);
 
     return s->mb_y == s->mb_height;
 }

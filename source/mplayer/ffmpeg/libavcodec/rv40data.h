@@ -2,20 +2,20 @@
  * RealVideo 4 decoder
  * copyright (c) 2007 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -68,20 +68,6 @@ static const uint8_t rv40_luma_dc_quant[2][32] = {
  * @name Coefficients used by the RV40 loop filter
  * @{
  */
-/**
- * dither values for deblocking filter - left/top values
- */
-static const uint8_t rv40_dither_l[16] = {
-    0x40, 0x50, 0x20, 0x60, 0x30, 0x50, 0x40, 0x30,
-    0x50, 0x40, 0x50, 0x30, 0x60, 0x20, 0x50, 0x40
-};
-/**
- * dither values for deblocking filter - right/bottom values
- */
-static const uint8_t rv40_dither_r[16] = {
-    0x40, 0x30, 0x60, 0x20, 0x50, 0x30, 0x30, 0x40,
-    0x40, 0x40, 0x50, 0x30, 0x20, 0x60, 0x30, 0x40
-};
 
 /** alpha parameter for RV40 loop filter - almost the same as in JVT-A003r1 */
 static const uint8_t rv40_alpha_tab[32] = {

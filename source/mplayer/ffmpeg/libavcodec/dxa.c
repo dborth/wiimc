@@ -2,20 +2,20 @@
  * Feeble Files/ScummVM DXA decoder
  * Copyright (c) 2007 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -209,7 +209,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
             r = *buf++;
             g = *buf++;
             b = *buf++;
-            c->pal[i] = (r << 16) | (g << 8) | b;
+            c->pal[i] = 0xFF << 24 | r << 16 | g << 8 | b;
         }
         pc = 1;
         buf_size -= 768+4;
@@ -294,6 +294,9 @@ static av_cold int decode_init(AVCodecContext *avctx)
 
     c->avctx = avctx;
     avctx->pix_fmt = PIX_FMT_PAL8;
+
+    avcodec_get_frame_defaults(&c->pic);
+    avcodec_get_frame_defaults(&c->prev);
 
     c->dsize = avctx->width * avctx->height * 2;
     if((c->decomp_buf = av_malloc(c->dsize)) == NULL) {

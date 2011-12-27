@@ -2,20 +2,20 @@
  * nut muxer
  * Copyright (c) 2004-2007 Michael Niedermayer
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -177,6 +177,7 @@ static void build_frame_code(AVFormatContext *s){
         }
 
         key_frame= intra_only;
+#if 1
         if(is_audio){
             int frame_bytes= codec->frame_size*(int64_t)codec->bit_rate / (8*codec->sample_rate);
             int pts;
@@ -200,6 +201,7 @@ static void build_frame_code(AVFormatContext *s){
             ft->pts_delta=1;
             start2++;
         }
+#endif
 
         if(codec->has_b_frames){
             pred_count=5;
@@ -586,11 +588,10 @@ static int nut_write_header(AVFormatContext *s){
     nut->avf= s;
 
     nut->stream   = av_mallocz(sizeof(StreamContext)*s->nb_streams);
-    if (s->nb_chapters)
-        nut->chapter  = av_mallocz(sizeof(ChapterContext)*s->nb_chapters);
+    nut->chapter  = av_mallocz(sizeof(ChapterContext)*s->nb_chapters);
     nut->time_base= av_mallocz(sizeof(AVRational   )*(s->nb_streams +
                                                       s->nb_chapters));
-    if (!nut->stream || (s->nb_chapters && !nut->chapter) || !nut->time_base) {
+    if (!nut->stream || !nut->chapter || !nut->time_base) {
         av_freep(&nut->stream);
         av_freep(&nut->chapter);
         av_freep(&nut->time_base);
@@ -603,7 +604,7 @@ static int nut_write_header(AVFormatContext *s){
         AVRational time_base;
         ff_parse_specific_params(st->codec, &time_base.den, &ssize, &time_base.num);
 
-        av_set_pts_info(st, 64, time_base.num, time_base.den);
+        avpriv_set_pts_info(st, 64, time_base.num, time_base.den);
 
         for(j=0; j<nut->time_base_count; j++){
             if(!memcmp(&time_base, &nut->time_base[j], sizeof(AVRational))){

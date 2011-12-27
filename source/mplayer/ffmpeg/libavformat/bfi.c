@@ -2,20 +2,20 @@
  * Brute Force & Ignorance (BFI) demuxer
  * Copyright (c) 2008 Sisir Koppaka
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -28,6 +28,7 @@
 
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
+#include "internal.h"
 
 typedef struct BFIContext {
     int nframes;
@@ -86,7 +87,7 @@ static int bfi_read_header(AVFormatContext * s, AVFormatParameters * ap)
     astream->codec->sample_rate = avio_rl32(pb);
 
     /* Set up the video codec... */
-    av_set_pts_info(vstream, 32, 1, fps);
+    avpriv_set_pts_info(vstream, 32, 1, fps);
     vstream->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     vstream->codec->codec_id   = CODEC_ID_BFI;
     vstream->codec->pix_fmt    = PIX_FMT_PAL8;
@@ -99,7 +100,7 @@ static int bfi_read_header(AVFormatContext * s, AVFormatParameters * ap)
     astream->codec->bit_rate        =
         astream->codec->sample_rate * astream->codec->bits_per_coded_sample;
     avio_seek(pb, chunk_header - 3, SEEK_SET);
-    av_set_pts_info(astream, 64, 1, astream->codec->sample_rate);
+    avpriv_set_pts_info(astream, 64, 1, astream->codec->sample_rate);
     return 0;
 }
 
@@ -109,7 +110,7 @@ static int bfi_read_packet(AVFormatContext * s, AVPacket * pkt)
     BFIContext *bfi = s->priv_data;
     AVIOContext *pb = s->pb;
     int ret, audio_offset, video_offset, chunk_size, audio_size = 0;
-    if (bfi->nframes == 0 || pb->eof_reached) {
+    if (bfi->nframes == 0 || url_feof(pb)) {
         return AVERROR(EIO);
     }
 
@@ -117,7 +118,7 @@ static int bfi_read_packet(AVFormatContext * s, AVPacket * pkt)
     if (!bfi->avflag) {
         uint32_t state = 0;
         while(state != MKTAG('S','A','V','I')){
-            if (pb->eof_reached)
+            if (url_feof(pb))
                 return AVERROR(EIO);
             state = 256*state + avio_r8(pb);
         }

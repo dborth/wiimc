@@ -2,25 +2,25 @@
  * Various utilities for command line tools
  * copyright (c) 2003 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef LIBAV_CMDUTILS_H
-#define LIBAV_CMDUTILS_H
+#ifndef FFMPEG_CMDUTILS_H
+#define FFMPEG_CMDUTILS_H
 
 #include <stdint.h>
 
@@ -28,6 +28,10 @@
 #include "libavfilter/avfilter.h"
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
+
+#ifdef __MINGW32__
+#undef main /* We don't want SDL to override our main() */
+#endif
 
 /**
  * program name, defined by the program for show_version().
@@ -57,7 +61,7 @@ void uninit_opts(void);
 
 /**
  * Trivial log callback.
- * Only suitable for show_help and similar since it lacks prefix handling.
+ * Only suitable for opt_help and similar since it lacks prefix handling.
  */
 void log_callback_help(void* ptr, int level, const char* fmt, va_list vl);
 
@@ -72,6 +76,12 @@ int opt_default(const char *opt, const char *arg);
  */
 int opt_loglevel(const char *opt, const char *arg);
 
+int opt_report(const char *opt);
+
+int opt_max_alloc(const char *opt, const char *arg);
+
+int opt_codec_debug(const char *opt, const char *arg);
+
 /**
  * Limit the execution time.
  */
@@ -83,7 +93,7 @@ int opt_timelimit(const char *opt, const char *arg);
  * parsed or the corresponding value is invalid.
  *
  * @param context the context of the value to be set (e.g. the
- * corresponding commandline option name)
+ * corresponding command line option name)
  * @param numstr the string to be parsed
  * @param type the type (OPT_INT64 or OPT_FLOAT) as which the
  * string should be parsed
@@ -98,7 +108,7 @@ double parse_number_or_die(const char *context, const char *numstr, int type, do
  * the string cannot be correctly parsed.
  *
  * @param context the context of the value to be set (e.g. the
- * corresponding commandline option name)
+ * corresponding command line option name)
  * @param timestr the string to be parsed
  * @param is_duration a flag which tells how to interpret timestr, if
  * not zero timestr is interpreted as a duration, otherwise as a
@@ -181,7 +191,7 @@ void parse_options(void *optctx, int argc, char **argv, const OptionDef *options
 int parse_option(void *optctx, const char *opt, const char *arg, const OptionDef *options);
 
 /**
- * Find the '-loglevel' option in the commandline args and apply it.
+ * Find the '-loglevel' option in the command line args and apply it.
  */
 void parse_loglevel(int argc, char **argv, const OptionDef *options);
 
@@ -190,7 +200,7 @@ void parse_loglevel(int argc, char **argv, const OptionDef *options);
  *
  * @param s  Corresponding format context.
  * @param st Stream from s to be checked.
- * @param spec A stream specifier of the [v|a|s|d]:[<stream index>] form.
+ * @param spec A stream specifier of the [v|a|s|d]:[\<stream index\>] form.
  *
  * @return 1 if the stream matches, 0 if it doesn't, <0 on error
  */
@@ -206,7 +216,7 @@ int check_stream_specifier(AVFormatContext *s, AVStream *st, const char *spec);
  * @param st A stream from s for which the options should be filtered.
  * @return a pointer to the created dictionary
  */
-AVDictionary *filter_codec_opts(AVDictionary *opts, enum CodecID codec_id, AVFormatContext *s, AVStream *st);
+AVDictionary *filter_codec_opts(AVDictionary *opts, AVCodec *codec, AVFormatContext *s, AVStream *st);
 
 /**
  * Setup AVCodecContext options for avformat_find_stream_info().
@@ -237,56 +247,64 @@ void print_error(const char *filename, int err);
  * current version of the repository and of the libav* libraries used by
  * the program.
  */
-void show_banner(void);
+void show_banner(int argc, char **argv, const OptionDef *options);
 
 /**
  * Print the version of the program to stdout. The version message
  * depends on the current versions of the repository and of the libav*
  * libraries.
+ * This option processing function does not utilize the arguments.
  */
-void show_version(void);
+int opt_version(const char *opt, const char *arg);
 
 /**
  * Print the license of the program to stdout. The license depends on
  * the license of the libraries compiled into the program.
+ * This option processing function does not utilize the arguments.
  */
-void show_license(void);
+int opt_license(const char *opt, const char *arg);
 
 /**
  * Print a listing containing all the formats supported by the
  * program.
+ * This option processing function does not utilize the arguments.
  */
-void show_formats(void);
+int opt_formats(const char *opt, const char *arg);
 
 /**
  * Print a listing containing all the codecs supported by the
  * program.
+ * This option processing function does not utilize the arguments.
  */
-void show_codecs(void);
+int opt_codecs(const char *opt, const char *arg);
 
 /**
  * Print a listing containing all the filters supported by the
  * program.
+ * This option processing function does not utilize the arguments.
  */
-void show_filters(void);
+int opt_filters(const char *opt, const char *arg);
 
 /**
  * Print a listing containing all the bit stream filters supported by the
  * program.
+ * This option processing function does not utilize the arguments.
  */
-void show_bsfs(void);
+int opt_bsfs(const char *opt, const char *arg);
 
 /**
  * Print a listing containing all the protocols supported by the
  * program.
+ * This option processing function does not utilize the arguments.
  */
-void show_protocols(void);
+int opt_protocols(const char *opt, const char *arg);
 
 /**
  * Print a listing containing all the pixel formats supported by the
  * program.
+ * This option processing function does not utilize the arguments.
  */
-void show_pix_fmts(void);
+int opt_pix_fmts(const char *opt, const char *arg);
 
 /**
  * Print a listing containing all the sample formats supported by the
@@ -311,37 +329,14 @@ int read_yesno(void);
  */
 int cmdutils_read_file(const char *filename, char **bufptr, size_t *size);
 
-typedef struct {
-    int64_t num_faulty_pts; /// Number of incorrect PTS values so far
-    int64_t num_faulty_dts; /// Number of incorrect DTS values so far
-    int64_t last_pts;       /// PTS of the last frame
-    int64_t last_dts;       /// DTS of the last frame
-} PtsCorrectionContext;
-
-/**
- * Reset the state of the PtsCorrectionContext.
- */
-void init_pts_correction(PtsCorrectionContext *ctx);
-
-/**
- * Attempt to guess proper monotonic timestamps for decoded video frames
- * which might have incorrect times. Input timestamps may wrap around, in
- * which case the output will as well.
- *
- * @param pts the pts field of the decoded AVPacket, as passed through
- * AVCodecContext.reordered_opaque
- * @param dts the dts field of the decoded AVPacket
- * @return one of the input values, may be AV_NOPTS_VALUE
- */
-int64_t guess_correct_pts(PtsCorrectionContext *ctx, int64_t pts, int64_t dts);
-
 /**
  * Get a file corresponding to a preset file.
  *
  * If is_path is non-zero, look for the file in the path preset_name.
  * Otherwise search for a file named arg.ffpreset in the directories
- * $AVCONV_DATADIR (if set), $HOME/.avconv, and in the datadir defined
- * at configuration time, in that order. If no such file is found and
+ * $FFMPEG_DATADIR (if set), $HOME/.ffmpeg, and in the datadir defined
+ * at configuration time or in a "ffpresets" folder along the executable
+ * on win32, in that order. If no such file is found and
  * codec_name is defined, then search for a file named
  * codec_name-preset_name.ffpreset in the above-mentioned directories.
  *
@@ -354,21 +349,6 @@ int64_t guess_correct_pts(PtsCorrectionContext *ctx, int64_t pts, int64_t dts);
  */
 FILE *get_preset_file(char *filename, size_t filename_size,
                       const char *preset_name, int is_path, const char *codec_name);
-
-typedef struct {
-    enum PixelFormat pix_fmt;
-} FFSinkContext;
-
-extern AVFilter ffsink;
-
-/**
- * Extract a frame from sink.
- *
- * @return a negative error in case of failure, 1 if one frame has
- * been extracted successfully.
- */
-int get_filtered_video_frame(AVFilterContext *sink, AVFrame *frame,
-                             AVFilterBufferRef **picref, AVRational *pts_tb);
 
 /**
  * Do all the necessary cleanup and abort.
@@ -386,4 +366,4 @@ void exit_program(int ret);
  */
 void *grow_array(void *array, int elem_size, int *size, int new_size);
 
-#endif /* LIBAV_CMDUTILS_H */
+#endif /* CMDUTILS_H */

@@ -2,20 +2,20 @@
  * default memory allocator for libavutil
  * Copyright (c) 2002 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -23,6 +23,8 @@
  * @file
  * default memory allocator for libavutil
  */
+
+#define _XOPEN_SOURCE 600
 
 #include "config.h"
 
@@ -57,9 +59,17 @@ void  free(void *ptr);
 
 #endif /* MALLOC_PREFIX */
 
+#define ALIGN (HAVE_AVX ? 32 : 16)
+
 /* You can redefine av_malloc and av_free in your project to use your
    memory allocator. You do not need to suppress this file because the
    linker will do it automatically. */
+
+static size_t max_alloc_size= INT_MAX;
+
+void av_max_alloc(size_t max){
+    max_alloc_size = max;
+}
 
 void *av_malloc(size_t size)
 {
@@ -69,21 +79,22 @@ void *av_malloc(size_t size)
 #endif
 
     /* let's disallow possible ambiguous cases */
-    if(size > (INT_MAX-32) )
+    if (size > (max_alloc_size-32))
         return NULL;
 
 #if CONFIG_MEMALIGN_HACK
-    ptr = malloc(size+32);
+    ptr = malloc(size+ALIGN);
     if(!ptr)
         return ptr;
-    diff= ((-(long)ptr - 1)&31) + 1;
+    diff= ((-(long)ptr - 1)&(ALIGN-1)) + 1;
     ptr = (char*)ptr + diff;
     ((char*)ptr)[-1]= diff;
 #elif HAVE_POSIX_MEMALIGN
-    if (posix_memalign(&ptr,32,size))
+    if (size) //OS X on SDK 10.6 has a broken posix_memalign implementation
+    if (posix_memalign(&ptr,ALIGN,size))
         ptr = NULL;
 #elif HAVE_MEMALIGN
-    ptr = memalign(32,size);
+    ptr = memalign(ALIGN,size);
     /* Why 64?
        Indeed, we should align it:
          on 4 for 386
@@ -111,6 +122,8 @@ void *av_malloc(size_t size)
 #else
     ptr = malloc(size);
 #endif
+    if(!ptr && !size)
+        ptr= av_malloc(1);
     return ptr;
 }
 
@@ -121,17 +134,34 @@ void *av_realloc(void *ptr, size_t size)
 #endif
 
     /* let's disallow possible ambiguous cases */
-    if(size > (INT_MAX-16) )
+    if (size > (max_alloc_size-32))
         return NULL;
 
 #if CONFIG_MEMALIGN_HACK
     //FIXME this isn't aligned correctly, though it probably isn't needed
     if(!ptr) return av_malloc(size);
     diff= ((char*)ptr)[-1];
-    return (char*)realloc((char*)ptr - diff, size + diff) + diff;
+    ptr= realloc((char*)ptr - diff, size + diff);
+    if(ptr) ptr = (char*)ptr + diff;
+    return ptr;
 #else
-    return realloc(ptr, size);
+    return realloc(ptr, size + !size);
 #endif
+}
+
+void *av_realloc_f(void *ptr, size_t nelem, size_t elsize)
+{
+    size_t size;
+    void *r;
+
+    if (av_size_mult(elsize, nelem, &size)) {
+        av_free(ptr);
+        return NULL;
+    }
+    r = av_realloc(ptr, size);
+    if (!r && size)
+        av_free(ptr);
+    return r;
 }
 
 void av_free(void *ptr)
@@ -159,6 +189,13 @@ void *av_mallocz(size_t size)
     return ptr;
 }
 
+void *av_calloc(size_t nmemb, size_t size)
+{
+    if (size <= 0 || nmemb >= INT_MAX / size)
+        return NULL;
+    return av_mallocz(nmemb * size);
+}
+
 char *av_strdup(const char *s)
 {
     char *ptr= NULL;
@@ -171,3 +208,23 @@ char *av_strdup(const char *s)
     return ptr;
 }
 
+/* add one element to a dynamic array */
+void av_dynarray_add(void *tab_ptr, int *nb_ptr, void *elem)
+{
+    /* see similar ffmpeg.c:grow_array() */
+    int nb, nb_alloc;
+    intptr_t *tab;
+
+    nb = *nb_ptr;
+    tab = *(intptr_t**)tab_ptr;
+    if ((nb & (nb - 1)) == 0) {
+        if (nb == 0)
+            nb_alloc = 1;
+        else
+            nb_alloc = nb * 2;
+        tab = av_realloc(tab, nb_alloc * sizeof(intptr_t));
+        *(intptr_t**)tab_ptr = tab;
+    }
+    tab[nb++] = (intptr_t)elem;
+    *nb_ptr = nb;
+}

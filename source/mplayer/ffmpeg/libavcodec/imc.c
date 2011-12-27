@@ -4,20 +4,20 @@
  * Copyright (c) 2006 Benjamin Larsson
  * Copyright (c) 2006 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -35,7 +35,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#define ALT_BITSTREAM_READER
 #include "avcodec.h"
 #include "get_bits.h"
 #include "dsputil.h"
@@ -51,6 +50,8 @@
 #define COEFFS 256
 
 typedef struct {
+    AVFrame frame;
+
     float old_floor[BANDS];
     float flcoeffs1[BANDS];
     float flcoeffs2[BANDS];
@@ -168,6 +169,10 @@ static av_cold int imc_decode_init(AVCodecContext * avctx)
     dsputil_init(&q->dsp, avctx);
     avctx->sample_fmt = AV_SAMPLE_FMT_FLT;
     avctx->channel_layout = AV_CH_LAYOUT_MONO;
+
+    avcodec_get_frame_defaults(&q->frame);
+    avctx->coded_frame = &q->frame;
+
     return 0;
 }
 
@@ -649,9 +654,8 @@ static int imc_get_coeffs (IMCContext* q) {
     return 0;
 }
 
-static int imc_decode_frame(AVCodecContext * avctx,
-                            void *data, int *data_size,
-                            AVPacket *avpkt)
+static int imc_decode_frame(AVCodecContext * avctx, void *data,
+                            int *got_frame_ptr, AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
@@ -659,7 +663,7 @@ static int imc_decode_frame(AVCodecContext * avctx,
     IMCContext *q = avctx->priv_data;
 
     int stream_format_code;
-    int imc_hdr, i, j, out_size, ret;
+    int imc_hdr, i, j, ret;
     int flag;
     int bits, summer;
     int counter, bitscount;
@@ -670,15 +674,16 @@ static int imc_decode_frame(AVCodecContext * avctx,
         return AVERROR_INVALIDDATA;
     }
 
-    out_size = COEFFS * av_get_bytes_per_sample(avctx->sample_fmt);
-    if (*data_size < out_size) {
-        av_log(avctx, AV_LOG_ERROR, "Output buffer is too small\n");
-        return AVERROR(EINVAL);
+    /* get output buffer */
+    q->frame.nb_samples = COEFFS;
+    if ((ret = avctx->get_buffer(avctx, &q->frame)) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return ret;
     }
+    q->out_samples = (float *)q->frame.data[0];
 
     q->dsp.bswap16_buf(buf16, (const uint16_t*)buf, IMC_BLOCK_SIZE / 2);
 
-    q->out_samples = data;
     init_get_bits(&q->gb, (const uint8_t*)buf16, IMC_BLOCK_SIZE * 8);
 
     /* Check the frame header */
@@ -823,7 +828,8 @@ static int imc_decode_frame(AVCodecContext * avctx,
 
     imc_imdct256(q);
 
-    *data_size = out_size;
+    *got_frame_ptr   = 1;
+    *(AVFrame *)data = q->frame;
 
     return IMC_BLOCK_SIZE;
 }
@@ -834,6 +840,7 @@ static av_cold int imc_decode_close(AVCodecContext * avctx)
     IMCContext *q = avctx->priv_data;
 
     ff_fft_end(&q->fft);
+
     return 0;
 }
 
@@ -846,5 +853,6 @@ AVCodec ff_imc_decoder = {
     .init = imc_decode_init,
     .close = imc_decode_close,
     .decode = imc_decode_frame,
+    .capabilities = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("IMC (Intel Music Coder)"),
 };

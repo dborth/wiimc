@@ -4,20 +4,20 @@
  * Copyright (c) 2007 Wolfram Gloger
  * Copyright (c) 2010 Michele Orrù
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -50,7 +50,6 @@ static av_cold int concat_close(URLContext *h)
         err |= ffurl_close(nodes[i].uc);
 
     av_freep(&data->nodes);
-    av_freep(&h->priv_data);
 
     return err < 0 ? -1 : 0;
 }
@@ -62,15 +61,10 @@ static av_cold int concat_open(URLContext *h, const char *uri, int flags)
     int64_t size;
     size_t  len, i;
     URLContext *uc;
-    struct concat_data  *data;
+    struct concat_data  *data = h->priv_data;
     struct concat_nodes *nodes;
 
     av_strstart(uri, "concat:", &uri);
-
-    /* creating data */
-    if (!(data = av_mallocz(sizeof(*data))))
-        return AVERROR(ENOMEM);
-    h->priv_data = data;
 
     for (i = 0, len = 1; uri[i]; i++)
         if (uri[i] == *AV_CAT_SEPARATOR)
@@ -81,7 +75,6 @@ static av_cold int concat_open(URLContext *h, const char *uri, int flags)
             }
 
     if (!(nodes = av_malloc(sizeof(*nodes) * len))) {
-        av_freep(&h->priv_data);
         return AVERROR(ENOMEM);
     } else
         data->nodes = nodes;
@@ -101,7 +94,8 @@ static av_cold int concat_open(URLContext *h, const char *uri, int flags)
         uri += len + strspn(uri+len, AV_CAT_SEPARATOR);
 
         /* creating URLContext */
-        if ((err = ffurl_open(&uc, node_uri, flags)) < 0)
+        if ((err = ffurl_open(&uc, node_uri, flags,
+                              &h->interrupt_callback, NULL)) < 0)
             break;
 
         /* creating size */
@@ -190,9 +184,10 @@ static int64_t concat_seek(URLContext *h, int64_t pos, int whence)
 }
 
 URLProtocol ff_concat_protocol = {
-    .name      = "concat",
-    .url_open  = concat_open,
-    .url_read  = concat_read,
-    .url_seek  = concat_seek,
-    .url_close = concat_close,
+    .name           = "concat",
+    .url_open       = concat_open,
+    .url_read       = concat_read,
+    .url_seek       = concat_seek,
+    .url_close      = concat_close,
+    .priv_data_size = sizeof(struct concat_data),
 };

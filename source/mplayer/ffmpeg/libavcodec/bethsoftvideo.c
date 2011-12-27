@@ -2,20 +2,20 @@
  * Bethesda VID video decoder
  * Copyright (C) 2007 Nicholas Tung
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -39,21 +39,28 @@ typedef struct BethsoftvidContext {
 static av_cold int bethsoftvid_decode_init(AVCodecContext *avctx)
 {
     BethsoftvidContext *vid = avctx->priv_data;
-    vid->frame.reference = 1;
+    avcodec_get_frame_defaults(&vid->frame);
+    vid->frame.reference = 3;
     vid->frame.buffer_hints = FF_BUFFER_HINTS_VALID |
         FF_BUFFER_HINTS_PRESERVE | FF_BUFFER_HINTS_REUSABLE;
     avctx->pix_fmt = PIX_FMT_PAL8;
     return 0;
 }
 
-static void set_palette(AVFrame * frame, const uint8_t * palette_buffer)
+static int set_palette(AVFrame * frame, const uint8_t * palette_buffer, int buf_size)
 {
     uint32_t * palette = (uint32_t *)frame->data[1];
     int a;
+
+    if (buf_size < 256*3)
+        return AVERROR_INVALIDDATA;
+
     for(a = 0; a < 256; a++){
-        palette[a] = AV_RB24(&palette_buffer[a * 3]) * 4;
+        palette[a] = 0xFF << 24 | AV_RB24(&palette_buffer[a * 3]) * 4;
+        palette[a] |= palette[a] >> 6 & 0x30303;
     }
     frame->palette_has_changed = 1;
+    return 256*3;
 }
 
 static int bethsoftvid_decode_frame(AVCodecContext *avctx,
@@ -80,8 +87,7 @@ static int bethsoftvid_decode_frame(AVCodecContext *avctx,
 
     switch(block_type = *buf++){
         case PALETTE_BLOCK:
-            set_palette(&vid->frame, buf);
-            return 0;
+            return set_palette(&vid->frame, buf, buf_size);
         case VIDEO_YOFF_P_FRAME:
             yoffset = bytestream_get_le16(&buf);
             if(yoffset >= avctx->height)

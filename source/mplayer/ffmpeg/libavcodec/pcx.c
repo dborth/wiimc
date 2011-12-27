@@ -5,20 +5,20 @@
  * This decoder does not support CGA palettes. I am unable to find samples
  * and Netpbm cannot generate them.
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -71,7 +71,7 @@ static void pcx_palette(const uint8_t **src, uint32_t *dst, unsigned int pallen)
     unsigned int i;
 
     for (i=0; i<pallen; i++)
-        *dst++ = bytestream_get_be24(src);
+        *dst++ = 0xFF000000 | bytestream_get_be24(src);
     if (pallen < 256)
         memset(dst, 0, (256 - pallen) * sizeof(*dst));
 }
@@ -224,6 +224,9 @@ static int pcx_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
 
     if (nplanes == 1 && bits_per_pixel == 8) {
         pcx_palette(&buf, (uint32_t *) p->data[1], 256);
+    } else if (bits_per_pixel * nplanes == 1) {
+        AV_WN32A(p->data[1]  , 0xFF000000);
+        AV_WN32A(p->data[1]+4, 0xFFFFFFFF);
     } else if (bits_per_pixel < 8) {
         const uint8_t *palette = bufstart+16;
         pcx_palette(&palette, (uint32_t *) p->data[1], 16);

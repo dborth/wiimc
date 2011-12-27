@@ -2,20 +2,20 @@
  * Constants for DV codec
  * Copyright (c) 2002 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -25,6 +25,7 @@
  */
 
 #include "libavutil/rational.h"
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 #include "dvdata.h"
 
@@ -245,19 +246,24 @@ static const DVprofile dv_profiles[] = {
     }
 };
 
-const DVprofile* avpriv_dv_frame_profile(const DVprofile *sys,
+const DVprofile* avpriv_dv_frame_profile2(AVCodecContext* codec, const DVprofile *sys,
                                   const uint8_t* frame, unsigned buf_size)
 {
-   int i;
+   int i, dsf, stype;
 
-   int dsf = (frame[3] & 0x80) >> 7;
+   if(buf_size < DV_PROFILE_BYTES)
+       return NULL;
 
-   int stype = frame[80*5 + 48 + 3] & 0x1f;
+   dsf = (frame[3] & 0x80) >> 7;
+   stype = frame[80*5 + 48 + 3] & 0x1f;
 
    /* 576i50 25Mbps 4:1:1 is a special case */
    if (dsf == 1 && stype == 0 && frame[4] & 0x07 /* the APT field */) {
        return &dv_profiles[2];
    }
+
+   if(codec && codec->codec_tag==AV_RL32("dvsd") &&  codec->width==720 && codec->height==576)
+       return &dv_profiles[1];
 
    for (i=0; i<FF_ARRAY_ELEMS(dv_profiles); i++)
        if (dsf == dv_profiles[i].dsf && stype == dv_profiles[i].video_stype)
@@ -268,6 +274,12 @@ const DVprofile* avpriv_dv_frame_profile(const DVprofile *sys,
        return sys;
 
    return NULL;
+}
+
+const DVprofile* avpriv_dv_frame_profile(const DVprofile *sys,
+                                  const uint8_t* frame, unsigned buf_size)
+{
+    return avpriv_dv_frame_profile2(NULL, sys, frame, buf_size);
 }
 
 const DVprofile* avpriv_dv_codec_profile(AVCodecContext* codec)

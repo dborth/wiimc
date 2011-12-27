@@ -2,26 +2,27 @@
  * Targa (.tga) image decoder
  * Copyright (c) 2006 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavutil/intreadwrite.h"
 #include "libavutil/imgutils.h"
 #include "avcodec.h"
+#include "bytestream.h"
 #include "targa.h"
 
 typedef struct TargaContext {
@@ -108,21 +109,26 @@ static int decode_frame(AVCodecContext *avctx,
     AVFrame * const p= (AVFrame*)&s->picture;
     uint8_t *dst;
     int stride;
-    int idlen, compr, y, w, h, bpp, flags;
+    int idlen, pal, compr, y, w, h, bpp, flags;
     int first_clr, colors, csize;
 
     /* parse image header */
     CHECK_BUFFER_SIZE(buf, buf_end, 18, "header");
     idlen = *buf++;
-    buf++; /* pal */
+    pal = *buf++;
     compr = *buf++;
-    first_clr = AV_RL16(buf); buf += 2;
-    colors = AV_RL16(buf); buf += 2;
+    first_clr = bytestream_get_le16(&buf);
+    colors = bytestream_get_le16(&buf);
     csize = *buf++;
+    if (!pal && (first_clr || colors || csize)) {
+        av_log(avctx, AV_LOG_WARNING, "File without colormap has colormap information set.\n");
+        // specification says we should ignore those value in this case
+        first_clr = colors = csize = 0;
+    }
     buf += 2; /* x */
-    y = AV_RL16(buf); buf += 2;
-    w = AV_RL16(buf); buf += 2;
-    h = AV_RL16(buf); buf += 2;
+    y = bytestream_get_le16(&buf);
+    w = bytestream_get_le16(&buf);
+    h = bytestream_get_le16(&buf);
     bpp = *buf++;
     flags = *buf++;
     //skip identifier if any
@@ -186,13 +192,10 @@ static int decode_frame(AVCodecContext *avctx,
         if(avctx->pix_fmt != PIX_FMT_PAL8)//should not occur but skip palette anyway
             buf += pal_size;
         else{
-            int r, g, b, t;
+            int t;
             int32_t *pal = ((int32_t*)p->data[1]) + first_clr;
             for(t = 0; t < colors; t++){
-                r = *buf++;
-                g = *buf++;
-                b = *buf++;
-                *pal++ = (b << 16) | (g << 8) | r;
+                *pal++ = (0xff<<24) | bytestream_get_le24(&buf);
             }
             p->palette_has_changed = 1;
         }
@@ -225,6 +228,29 @@ static int decode_frame(AVCodecContext *avctx,
 
                 dst += stride;
                 buf += img_size;
+            }
+        }
+    }
+    if(flags & 0x10){ // right-to-left, needs horizontal flip
+        int x;
+        for(y = 0; y < s->height; y++){
+            void *line = &p->data[0][y * p->linesize[0]];
+            for(x = 0; x < s->width >> 1; x++){
+                switch(s->bpp){
+                case 32:
+                    FFSWAP(uint32_t, ((uint32_t *)line)[x], ((uint32_t *)line)[s->width - x - 1]);
+                    break;
+                case 24:
+                    FFSWAP(uint8_t, ((uint8_t *)line)[3 * x    ], ((uint8_t *)line)[3 * s->width - 3 * x - 3]);
+                    FFSWAP(uint8_t, ((uint8_t *)line)[3 * x + 1], ((uint8_t *)line)[3 * s->width - 3 * x - 2]);
+                    FFSWAP(uint8_t, ((uint8_t *)line)[3 * x + 2], ((uint8_t *)line)[3 * s->width - 3 * x - 1]);
+                    break;
+                case 16:
+                    FFSWAP(uint16_t, ((uint16_t *)line)[x], ((uint16_t *)line)[s->width - x - 1]);
+                    break;
+                case 8:
+                    FFSWAP(uint8_t, ((uint8_t *)line)[x], ((uint8_t *)line)[s->width - x - 1]);
+                }
             }
         }
     }

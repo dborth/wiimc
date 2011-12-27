@@ -2,20 +2,20 @@
  * Sega FILM Format (CPK) Demuxer
  * Copyright (c) 2003 The ffmpeg Project
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -29,11 +29,14 @@
 
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
+#include "internal.h"
+#include "avio_internal.h"
 
 #define FILM_TAG MKBETAG('F', 'I', 'L', 'M')
 #define FDSC_TAG MKBETAG('F', 'D', 'S', 'C')
 #define STAB_TAG MKBETAG('S', 'T', 'A', 'B')
 #define CVID_TAG MKBETAG('c', 'v', 'i', 'd')
+#define RAW_TAG  MKBETAG('r', 'a', 'w', ' ')
 
 typedef struct {
   int stream;
@@ -129,8 +132,11 @@ static int film_read_header(AVFormatContext *s,
 
     if (AV_RB32(&scratch[8]) == CVID_TAG) {
         film->video_type = CODEC_ID_CINEPAK;
-    } else
+    } else if (AV_RB32(&scratch[8]) == RAW_TAG) {
+        film->video_type = CODEC_ID_RAWVIDEO;
+    } else {
         film->video_type = CODEC_ID_NONE;
+    }
 
     /* initialize the decoder streams */
     if (film->video_type) {
@@ -143,6 +149,15 @@ static int film_read_header(AVFormatContext *s,
         st->codec->codec_tag = 0;  /* no fourcc */
         st->codec->width = AV_RB32(&scratch[16]);
         st->codec->height = AV_RB32(&scratch[12]);
+
+        if (film->video_type == CODEC_ID_RAWVIDEO) {
+            if (scratch[20] == 24) {
+                st->codec->pix_fmt = PIX_FMT_RGB24;
+            } else {
+                av_log(s, AV_LOG_ERROR, "raw video is using unhandled %dbpp\n", scratch[20]);
+                return -1;
+            }
+        }
     }
 
     if (film->audio_type) {
@@ -159,6 +174,7 @@ static int film_read_header(AVFormatContext *s,
         if (film->audio_type == CODEC_ID_ADPCM_ADX) {
             st->codec->bits_per_coded_sample = 18 * 8 / 32;
             st->codec->block_align = st->codec->channels * 18;
+            st->need_parsing = AVSTREAM_PARSE_FULL;
         } else {
             st->codec->bits_per_coded_sample = film->audio_bits;
             st->codec->block_align = st->codec->channels *
@@ -183,7 +199,7 @@ static int film_read_header(AVFormatContext *s,
         return AVERROR(ENOMEM);
 
     for(i=0; i<s->nb_streams; i++)
-        av_set_pts_info(s->streams[i], 33, 1, film->base_clock);
+        avpriv_set_pts_info(s->streams[i], 33, 1, film->base_clock);
 
     audio_frame_counter = 0;
     for (i = 0; i < film->sample_count; i++) {
@@ -249,6 +265,8 @@ static int film_read_packet(AVFormatContext *s,
         (film->audio_type != CODEC_ID_ADPCM_ADX)) {
         /* stereo PCM needs to be interleaved */
 
+        if (ffio_limit(pb, sample->sample_size) != sample->sample_size)
+            return AVERROR(EIO);
         if (av_new_packet(pkt, sample->sample_size))
             return AVERROR(ENOMEM);
 

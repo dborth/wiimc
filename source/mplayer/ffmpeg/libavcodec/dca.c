@@ -5,20 +5,20 @@
  * Copyright (C) 2006 Benjamin Larsson
  * Copyright (C) 2007 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -128,7 +128,7 @@ static const int dca_ext_audio_descr_mask[] = {
  * All 2 channel configurations -> AV_CH_LAYOUT_STEREO
  */
 
-static const int64_t dca_core_channel_layout[] = {
+static const uint64_t dca_core_channel_layout[] = {
     AV_CH_FRONT_CENTER,                                                      ///< 1, A
     AV_CH_LAYOUT_STEREO,                                                     ///< 2, A + B (dual mono)
     AV_CH_LAYOUT_STEREO,                                                     ///< 2, L + R (stereo)
@@ -261,6 +261,7 @@ static av_always_inline int get_bitalloc(GetBitContext *gb, BitAlloc *ba, int id
 
 typedef struct {
     AVCodecContext *avctx;
+    AVFrame frame;
     /* Frame header */
     int frame_type;             ///< type of the current frame
     int samples_deficit;        ///< deficit sample count
@@ -293,7 +294,6 @@ typedef struct {
 
     /* Primary audio coding header */
     int subframes;              ///< number of subframes
-    int is_channels_set;        ///< check for if the channel number is already set
     int total_channels;         ///< number of channels including extensions
     int prim_channels;          ///< number of primary audio channels
     int subband_activity[DCA_PRIM_CHANNELS_MAX];    ///< subband activity count
@@ -520,7 +520,7 @@ static int dca_parse_frame_header(DCAContext * s)
     init_get_bits(&s->gb, s->dca_buffer, s->dca_buffer_size * 8);
 
     /* Sync code */
-    get_bits(&s->gb, 32);
+    skip_bits_long(&s->gb, 32);
 
     /* Frame header */
     s->frame_type        = get_bits(&s->gb, 1);
@@ -1038,6 +1038,7 @@ static void dca_downmix(float *samples, int srcfmt,
 }
 
 
+#ifndef decode_blockcodes
 /* Very compact version of the block code decoder that does not use table
  * look-up but is slightly slower */
 static int decode_blockcode(int code, int levels, int *values)
@@ -1051,13 +1052,15 @@ static int decode_blockcode(int code, int levels, int *values)
         code = div;
     }
 
-    if (code == 0)
-        return 0;
-    else {
-        av_log(NULL, AV_LOG_ERROR, "ERROR: block code look-up failed\n");
-        return AVERROR_INVALIDDATA;
-    }
+    return code;
 }
+
+static int decode_blockcodes(int code1, int code2, int levels, int *values)
+{
+    return decode_blockcode(code1, levels, values) |
+           decode_blockcode(code2, levels, values + 4);
+}
+#endif
 
 static const uint8_t abits_sizes[7] = { 7, 10, 12, 13, 15, 17, 19 };
 static const uint8_t abits_levels[7] = { 3, 5, 7, 9, 13, 17, 25 };
@@ -1125,16 +1128,20 @@ static int dca_subsubframe(DCAContext * s, int base_channel, int block_index)
                 if (abits >= 11 || !dca_smpl_bitalloc[abits].vlc[sel].table){
                     if (abits <= 7){
                         /* Block code */
-                        int block_code1, block_code2, size, levels;
+                        int block_code1, block_code2, size, levels, err;
 
                         size = abits_sizes[abits-1];
                         levels = abits_levels[abits-1];
 
                         block_code1 = get_bits(&s->gb, size);
-                        /* FIXME Should test return value */
-                        decode_blockcode(block_code1, levels, block);
                         block_code2 = get_bits(&s->gb, size);
-                        decode_blockcode(block_code2, levels, &block[4]);
+                        err = decode_blockcodes(block_code1, block_code2,
+                                                levels, block);
+                        if (err) {
+                            av_log(s->avctx, AV_LOG_ERROR,
+                                   "ERROR: block code look-up failed\n");
+                            return AVERROR_INVALIDDATA;
+                        }
                     }else{
                         /* no coding */
                         for (m = 0; m < 8; m++)
@@ -1251,7 +1258,7 @@ static int dca_subframe_footer(DCAContext * s, int base_channel)
     /* presumably optional information only appears in the core? */
     if (!base_channel) {
         if (s->timestamp)
-            get_bits(&s->gb, 32);
+            skip_bits_long(&s->gb, 32);
 
         if (s->aux_data)
             aux_data_count = get_bits(&s->gb, 6);
@@ -1628,9 +1635,8 @@ static void dca_exss_parse_header(DCAContext *s)
  * Main frame decoding function
  * FIXME add arguments
  */
-static int dca_decode_frame(AVCodecContext * avctx,
-                            void *data, int *data_size,
-                            AVPacket *avpkt)
+static int dca_decode_frame(AVCodecContext *avctx, void *data,
+                            int *got_frame_ptr, AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
@@ -1638,9 +1644,8 @@ static int dca_decode_frame(AVCodecContext * avctx,
     int lfe_samples;
     int num_core_channels = 0;
     int i, ret;
-    float   *samples_flt = data;
-    int16_t *samples_s16 = data;
-    int out_size;
+    float   *samples_flt;
+    int16_t *samples_s16;
     DCAContext *s = avctx->priv_data;
     int channels;
     int core_ss_end;
@@ -1811,32 +1816,29 @@ static int dca_decode_frame(AVCodecContext * avctx,
             s->output = DCA_STEREO;
             avctx->channel_layout = AV_CH_LAYOUT_STEREO;
         }
+        else if (avctx->request_channel_layout & AV_CH_LAYOUT_NATIVE) {
+            static const int8_t dca_channel_order_native[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+            s->channel_order_tab = dca_channel_order_native;
+        }
     } else {
         av_log(avctx, AV_LOG_ERROR, "Non standard configuration %d !\n",s->amode);
         return AVERROR_INVALIDDATA;
     }
 
-
-    /* There is nothing that prevents a dts frame to change channel configuration
-       but Libav doesn't support that so only set the channels if it is previously
-       unset. Ideally during the first probe for channels the crc should be checked
-       and only set avctx->channels when the crc is ok. Right now the decoder could
-       set the channels based on a broken first frame.*/
-    if (s->is_channels_set == 0) {
-        s->is_channels_set = 1;
+    if (avctx->channels != channels) {
+        if (avctx->channels)
+            av_log(avctx, AV_LOG_INFO, "Number of channels changed in DCA decoder (%d -> %d)\n", avctx->channels, channels);
         avctx->channels = channels;
     }
-    if (avctx->channels != channels) {
-        av_log(avctx, AV_LOG_ERROR, "DCA decoder does not support number of "
-               "channels changing in stream. Skipping frame.\n");
-        return AVERROR_PATCHWELCOME;
-    }
 
-    out_size = 256 / 8 * s->sample_blocks * channels *
-               av_get_bytes_per_sample(avctx->sample_fmt);
-    if (*data_size < out_size)
-        return AVERROR(EINVAL);
-    *data_size = out_size;
+    /* get output buffer */
+    s->frame.nb_samples = 256 * (s->sample_blocks / 8);
+    if ((ret = avctx->get_buffer(avctx, &s->frame)) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return ret;
+    }
+    samples_flt = (float   *)s->frame.data[0];
+    samples_s16 = (int16_t *)s->frame.data[0];
 
     /* filter to get final output */
     for (i = 0; i < (s->sample_blocks / 8); i++) {
@@ -1869,6 +1871,9 @@ static int dca_decode_frame(AVCodecContext * avctx,
     for (i = 0; i < 2 * s->lfe * 4; i++) {
         s->lfe_data[i] = s->lfe_data[i + lfe_samples];
     }
+
+    *got_frame_ptr   = 1;
+    *(AVFrame *)data = s->frame;
 
     return buf_size;
 }
@@ -1912,6 +1917,9 @@ static av_cold int dca_decode_init(AVCodecContext * avctx)
         avctx->channels = avctx->request_channels;
     }
 
+    avcodec_get_frame_defaults(&s->frame);
+    avctx->coded_frame = &s->frame;
+
     return 0;
 }
 
@@ -1940,7 +1948,7 @@ AVCodec ff_dca_decoder = {
     .decode = dca_decode_frame,
     .close = dca_decode_end,
     .long_name = NULL_IF_CONFIG_SMALL("DCA (DTS Coherent Acoustics)"),
-    .capabilities = CODEC_CAP_CHANNEL_CONF,
+    .capabilities = CODEC_CAP_CHANNEL_CONF | CODEC_CAP_DR1,
     .sample_fmts = (const enum AVSampleFormat[]) {
         AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_NONE
     },

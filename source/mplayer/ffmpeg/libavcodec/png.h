@@ -2,20 +2,20 @@
  * PNG image format
  * Copyright (c) 2003 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -23,6 +23,9 @@
 #define AVCODEC_PNG_H
 
 #include <stdint.h>
+#include <zlib.h>
+
+#include "avcodec.h"
 
 #define PNG_COLOR_MASK_PALETTE    1
 #define PNG_COLOR_MASK_COLOR      2
@@ -68,5 +71,42 @@ int ff_png_get_nb_channels(int color_type);
 int ff_png_pass_row_size(int pass, int bits_per_pixel, int width);
 
 void ff_add_png_paeth_prediction(uint8_t *dst, uint8_t *src, uint8_t *top, int w, int bpp);
+
+typedef struct PNGDecContext {
+    const uint8_t *bytestream;
+    const uint8_t *bytestream_start;
+    const uint8_t *bytestream_end;
+    AVFrame picture1, picture2;
+    AVFrame *current_picture, *last_picture;
+
+    int state;
+    int width, height;
+    int bit_depth;
+    int color_type;
+    int compression_type;
+    int interlace_type;
+    int filter_type;
+    int channels;
+    int bits_per_pixel;
+    int bpp;
+
+    uint8_t *image_buf;
+    int image_linesize;
+    uint32_t palette[256];
+    uint8_t *crow_buf;
+    uint8_t *last_row;
+    uint8_t *tmp_row;
+    int pass;
+    int crow_size; /* compressed row size (include filter type) */
+    int row_size; /* decompressed row size */
+    int pass_row_size; /* decompress row size of the current pass */
+    int y;
+    z_stream zstream;
+
+    void (*add_bytes_l2)(uint8_t *dst, uint8_t *src1, uint8_t *src2, int w);
+    void (*add_paeth_prediction)(uint8_t *dst, uint8_t *src, uint8_t *top, int w, int bpp);
+} PNGDecContext;
+
+void ff_png_init_mmx(PNGDecContext *s);
 
 #endif /* AVCODEC_PNG_H */

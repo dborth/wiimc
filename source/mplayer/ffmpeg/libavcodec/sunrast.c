@@ -2,20 +2,20 @@
  * Sun Rasterfile (.sun/.ras/im{1,8,24}/.sunras) image decoder
  * Copyright (c) 2007, 2008 Ivo van Poorten
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -70,11 +70,7 @@ static int sunrast_decode_frame(AVCodecContext *avctx, void *data,
     maplength = AV_RB32(buf+28);
     buf      += 32;
 
-    if (type == RT_FORMAT_TIFF || type == RT_FORMAT_IFF) {
-        av_log(avctx, AV_LOG_ERROR, "unsupported (compression) type\n");
-        return -1;
-    }
-    if (type < RT_OLD || type > RT_FORMAT_IFF) {
+    if (type > RT_FORMAT_IFF) {
         av_log(avctx, AV_LOG_ERROR, "invalid (compression) type\n");
         return -1;
     }
@@ -87,6 +83,10 @@ static int sunrast_decode_frame(AVCodecContext *avctx, void *data,
         return -1;
     }
 
+    if (type == RT_FORMAT_TIFF || type == RT_FORMAT_IFF) {
+        av_log(avctx, AV_LOG_ERROR, "unsupported (compression) type\n");
+        return -1;
+    }
 
     switch (depth) {
         case 1:
@@ -135,7 +135,7 @@ static int sunrast_decode_frame(AVCodecContext *avctx, void *data,
 
         ptr = p->data[1];
         for (x=0; x<len; x++, ptr+=4)
-            *(uint32_t *)ptr = (buf[x]<<16) + (buf[len+x]<<8) + buf[len+len+x];
+            *(uint32_t *)ptr = (0xFF<<24) + (buf[x]<<16) + (buf[len+x]<<8) + buf[len+len+x];
     }
 
     buf += maplength;

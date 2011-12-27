@@ -3,20 +3,20 @@
  * (c)1997-99 by H. Dietz and R. Fisher
  * Converted to C and improved by Fabrice Bellard.
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -74,7 +74,10 @@ int ff_get_cpu_flags_x86(void)
         return 0; /* CPUID not supported */
 #endif
 
-    cpuid(0, max_std_level, vendor.i[0], vendor.i[2], vendor.i[1]);
+    cpuid(0, max_std_level, ebx, ecx, edx);
+    vendor.i[0] = ebx;
+    vendor.i[1] = edx;
+    vendor.i[2] = ecx;
 
     if(max_std_level >= 1){
         cpuid(1, eax, ebx, ecx, std_caps);

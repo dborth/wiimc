@@ -2,20 +2,20 @@
  * Copyright (c) 2002 Michael Niedermayer <michaelni@gmx.at>
  * Copyright (c) 2011 Stefano Sabatini
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or modify
+ * FFmpeg is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
- * with Libav; if not, write to the Free Software Foundation, Inc.,
+ * with FFmpeg; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
@@ -30,7 +30,7 @@
 #include "libavutil/pixdesc.h"
 #include "avfilter.h"
 
-static const char *var_names[] = {
+static const char * const var_names[] = {
     "w",
     "h",
     "cw",
@@ -129,39 +129,34 @@ static int query_formats(AVFilterContext *ctx)
         PIX_FMT_NONE
     };
 
-    avfilter_set_common_formats(ctx, avfilter_make_format_list(pix_fmts));
+    avfilter_set_common_pixel_formats(ctx, avfilter_make_format_list(pix_fmts));
     return 0;
 }
 
 static int config_input(AVFilterLink *inlink)
 {
-    const AVPixFmtDescriptor *desc = &av_pix_fmt_descriptors[inlink->format];
-    AVFilterContext    *ctx = inlink->dst;
+    AVFilterContext *ctx = inlink->dst;
     BoxBlurContext *boxblur = ctx->priv;
+    const AVPixFmtDescriptor *desc = &av_pix_fmt_descriptors[inlink->format];
     int w = inlink->w, h = inlink->h;
     int cw, ch;
     double var_values[VARS_NB], res;
     char *expr;
     int ret;
 
-    av_freep(&boxblur->temp[0]);
-    av_freep(&boxblur->temp[1]);
-    if (!(boxblur->temp[0] = av_malloc(FFMAX(w, h))))
-       return AVERROR(ENOMEM);
-    if (!(boxblur->temp[1] = av_malloc(FFMAX(w, h)))) {
-        av_freep(&boxblur->temp[0]);
+    if (!(boxblur->temp[0] = av_malloc(FFMAX(w, h))) ||
+        !(boxblur->temp[1] = av_malloc(FFMAX(w, h))))
         return AVERROR(ENOMEM);
-    }
 
     boxblur->hsub = desc->log2_chroma_w;
     boxblur->vsub = desc->log2_chroma_h;
 
-    var_values[VAR_W]       = inlink->w;
-    var_values[VAR_H]       = inlink->h;
+    var_values[VAR_W]  = inlink->w;
+    var_values[VAR_H]  = inlink->h;
     var_values[VAR_CW] = cw = w>>boxblur->hsub;
     var_values[VAR_CH] = ch = h>>boxblur->vsub;
-    var_values[VAR_HSUB]    = 1<<boxblur->hsub;
-    var_values[VAR_VSUB]    = 1<<boxblur->vsub;
+    var_values[VAR_HSUB] = 1<<boxblur->hsub;
+    var_values[VAR_VSUB] = 1<<boxblur->vsub;
 
 #define EVAL_RADIUS_EXPR(comp)                                          \
     expr = boxblur->comp##_radius_expr;                                 \
@@ -177,7 +172,7 @@ static int config_input(AVFilterLink *inlink)
     EVAL_RADIUS_EXPR(chroma);
     EVAL_RADIUS_EXPR(alpha);
 
-    av_log(ctx, AV_LOG_DEBUG,
+    av_log(ctx, AV_LOG_INFO,
            "luma_radius:%d luma_power:%d "
            "chroma_radius:%d chroma_power:%d "
            "alpha_radius:%d alpha_power:%d "
@@ -227,9 +222,9 @@ static inline void blur(uint8_t *dst, int dst_step, const uint8_t *src, int src_
      * and subtracting 1 input pixel.
      * The following code adopts this faster variant.
      */
+    int x, sum = 0;
     const int length = radius*2 + 1;
     const int inv = ((1<<16) + length/2)/length;
-    int x, sum = 0;
 
     for (x = 0; x < radius; x++)
         sum += src[x*src_step]<<1;
@@ -303,7 +298,9 @@ static void vblur(uint8_t *dst, int dst_linesize, const uint8_t *src, int src_li
                    h, radius, power, temp);
 }
 
-static void draw_slice(AVFilterLink *inlink, int y0, int h0, int slice_dir)
+static void null_draw_slice(AVFilterLink *inlink, int y, int h, int slice_dir) { }
+
+static void end_frame(AVFilterLink *inlink)
 {
     AVFilterContext *ctx = inlink->dst;
     BoxBlurContext *boxblur = ctx->priv;
@@ -311,9 +308,9 @@ static void draw_slice(AVFilterLink *inlink, int y0, int h0, int slice_dir)
     AVFilterBufferRef *inpicref  = inlink ->cur_buf;
     AVFilterBufferRef *outpicref = outlink->out_buf;
     int plane;
-    int cw = inlink->w >> boxblur->hsub, ch = h0 >> boxblur->vsub;
+    int cw = inlink->w >> boxblur->hsub, ch = inlink->h >> boxblur->vsub;
     int w[4] = { inlink->w, cw, cw, inlink->w };
-    int h[4] = { h0, ch, ch, h0 };
+    int h[4] = { inlink->h, ch, ch, inlink->h };
 
     for (plane = 0; inpicref->data[plane] && plane < 4; plane++)
         hblur(outpicref->data[plane], outpicref->linesize[plane],
@@ -327,7 +324,8 @@ static void draw_slice(AVFilterLink *inlink, int y0, int h0, int slice_dir)
               w[plane], h[plane], boxblur->radius[plane], boxblur->power[plane],
               boxblur->temp);
 
-    avfilter_draw_slice(outlink, y0, h0, slice_dir);
+    avfilter_draw_slice(outlink, 0, inlink->h, 1);
+    avfilter_default_end_frame(inlink);
 }
 
 AVFilter avfilter_vf_boxblur = {
@@ -338,13 +336,14 @@ AVFilter avfilter_vf_boxblur = {
     .uninit        = uninit,
     .query_formats = query_formats,
 
-    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .config_props     = config_input,
-                                    .draw_slice       = draw_slice,
+                                    .draw_slice       = null_draw_slice,
+                                    .end_frame        = end_frame,
                                     .min_perms        = AV_PERM_READ },
                                   { .name = NULL}},
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO, },
                                   { .name = NULL}},
 };

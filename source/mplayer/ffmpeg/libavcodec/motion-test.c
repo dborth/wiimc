@@ -1,20 +1,20 @@
 /*
  * (c) 2001 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -33,14 +33,13 @@
 #include "dsputil.h"
 #include "libavutil/lfg.h"
 
-#undef exit
 #undef printf
 
 #define WIDTH 64
 #define HEIGHT 64
 
-uint8_t img1[WIDTH * HEIGHT];
-uint8_t img2[WIDTH * HEIGHT];
+static uint8_t img1[WIDTH * HEIGHT];
+static uint8_t img2[WIDTH * HEIGHT];
 
 static void fill_random(uint8_t *tab, int size)
 {
@@ -61,7 +60,6 @@ static void help(void)
 {
     printf("motion-test [-h]\n"
            "test motion implementations\n");
-    exit(1);
 }
 
 static int64_t gettime(void)
@@ -138,11 +136,11 @@ int main(int argc, char **argv)
         switch(c) {
         case 'h':
             help();
-            break;
+            return 1;
         }
     }
 
-    printf("Libav motion test\n");
+    printf("ffmpeg motion test\n");
 
     ctx = avcodec_alloc_context3(NULL);
     ctx->dsp_mask = AV_CPU_FLAG_FORCE;

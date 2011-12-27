@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2006 Ryan Martell. (rdm4@martellventures.com)
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -22,6 +22,13 @@
 #define AVUTIL_BASE64_H
 
 #include <stdint.h>
+
+/**
+ * @defgroup lavu_base64 Base64
+ * @ingroup lavu_crypto
+ * @{
+ */
+
 
 /**
  * Decode a base64-encoded string.
@@ -50,5 +57,9 @@ char *av_base64_encode(char *out, int out_size, const uint8_t *in, int in_size);
  * Calculate the output size needed to base64-encode x bytes.
  */
 #define AV_BASE64_SIZE(x)  (((x)+2) / 3 * 4 + 1)
+
+ /**
+  * @}
+  */
 
 #endif /* AVUTIL_BASE64_H */

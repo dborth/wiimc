@@ -1,29 +1,52 @@
 /*
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef AVDEVICE_AVDEVICE_H
 #define AVDEVICE_AVDEVICE_H
 
+/**
+ * @file
+ * @ingroup lavd
+ * Main libavdevice API header
+ */
+
+/**
+ * @defgroup lavd Special devices muxing/demuxing library
+ * @{
+ * Libavdevice is a complementary library to @ref libavf "libavformat". It
+ * provides various "special" platform-specific muxers and demuxers, e.g. for
+ * grabbing devices, audio capture and playback etc. As a consequence, the
+ * (de)muxers in libavdevice are of the AVFMT_NOFILE type (they use their own
+ * I/O functions). The filename passed to avformat_open_input() often does not
+ * refer to an actually existing file, but has some special device-specific
+ * meaning - e.g. for the x11grab device it is the display name.
+ *
+ * To use libavdevice, simply call avdevice_register_all() to register all
+ * compiled muxers and demuxers. They all use standard libavformat API.
+ * @}
+ */
+
 #include "libavutil/avutil.h"
+#include "libavformat/avformat.h"
 
 #define LIBAVDEVICE_VERSION_MAJOR 53
-#define LIBAVDEVICE_VERSION_MINOR  2
-#define LIBAVDEVICE_VERSION_MICRO  0
+#define LIBAVDEVICE_VERSION_MINOR  4
+#define LIBAVDEVICE_VERSION_MICRO 100
 
 #define LIBAVDEVICE_VERSION_INT AV_VERSION_INT(LIBAVDEVICE_VERSION_MAJOR, \
                                                LIBAVDEVICE_VERSION_MINOR, \

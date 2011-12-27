@@ -2,20 +2,20 @@
  * H.26L/H.264/AVC/JVT/14496-10/... reference picture handling
  * Copyright (c) 2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -25,6 +25,7 @@
  * @author Michael Niedermayer <michaelni@gmx.at>
  */
 
+#include "libavutil/avassert.h"
 #include "internal.h"
 #include "dsputil.h"
 #include "avcodec.h"
@@ -300,7 +301,7 @@ int ff_h264_decode_ref_pic_list_reordering(H264Context *h){
 
 void ff_h264_fill_mbaff_ref_list(H264Context *h){
     int list, i, j;
-    for(list=0; list<2; list++){ //FIXME try list_count
+    for(list=0; list<h->list_count; list++){
         for(i=0; i<h->ref_count[list]; i++){
             Picture *frame = &h->ref_list[list][i];
             Picture *field = &h->ref_list[list][16+2*i];
@@ -478,10 +479,9 @@ static void print_long_term(H264Context *h) {
 
 void ff_generate_sliding_window_mmcos(H264Context *h) {
     MpegEncContext * const s = &h->s;
-    assert(h->long_ref_count + h->short_ref_count <= h->sps.ref_frame_count);
 
     h->mmco_index= 0;
-    if(h->short_ref_count && h->long_ref_count + h->short_ref_count == h->sps.ref_frame_count &&
+    if(h->short_ref_count && h->long_ref_count + h->short_ref_count >= h->sps.ref_frame_count &&
             !(FIELD_PICTURE && !s->first_field && s->current_picture_ptr->f.reference)) {
         h->mmco[0].opcode= MMCO_SHORT2UNUSED;
         h->mmco[0].short_pic_num= h->short_ref[ h->short_ref_count - 1 ]->frame_num;
@@ -582,14 +582,12 @@ int ff_h264_execute_ref_pic_marking(H264Context *h, MMCO *mmco, int mmco_count){
             for(j = 0; j < 16; j++) {
                 remove_long(h, j, 0);
             }
-            s->current_picture_ptr->poc=
-            s->current_picture_ptr->field_poc[0]=
-            s->current_picture_ptr->field_poc[1]=
-            h->poc_lsb=
-            h->poc_msb=
             h->frame_num=
             s->current_picture_ptr->frame_num= 0;
+            h->mmco_reset = 1;
             s->current_picture_ptr->mmco_reset=1;
+            for (j = 0; j < MAX_DELAYED_PIC_COUNT; j++)
+                h->last_pocs[j] = INT_MIN;
             break;
         default: assert(0);
         }
@@ -627,8 +625,7 @@ int ff_h264_execute_ref_pic_marking(H264Context *h, MMCO *mmco, int mmco_count){
         }
     }
 
-    if (h->long_ref_count + h->short_ref_count -
-            (h->short_ref[0] == s->current_picture_ptr) > h->sps.ref_frame_count){
+    if (h->long_ref_count + h->short_ref_count > FFMAX(h->sps.ref_frame_count, 1)){
 
         /* We have too many reference frames, probably due to corrupted
          * stream. Need to discard one frame. Prevents overrun of the
@@ -655,6 +652,12 @@ int ff_h264_execute_ref_pic_marking(H264Context *h, MMCO *mmco, int mmco_count){
 
     print_short_term(h);
     print_long_term(h);
+
+    if(err >= 0 && h->long_ref_count==0 && h->short_ref_count<=2 && h->pps.ref_count[0]<=1 && s->current_picture_ptr->f.pict_type == AV_PICTURE_TYPE_I){
+        h->sync |= 1;
+        s->current_picture_ptr->sync |= h->sync;
+    }
+
     return (h->s.avctx->err_recognition & AV_EF_EXPLODE) ? err : 0;
 }
 

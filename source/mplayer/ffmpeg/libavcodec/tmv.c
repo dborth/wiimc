@@ -2,20 +2,20 @@
  * 8088flex TMV video decoder
  * Copyright (c) 2009 Daniel Verkamp <daniel at drv.nu>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -82,6 +82,14 @@ static int tmv_decode_frame(AVCodecContext *avctx, void *data,
     return avpkt->size;
 }
 
+static av_cold int tmv_decode_init(AVCodecContext *avctx)
+{
+    TMVContext *tmv = avctx->priv_data;
+    avctx->pix_fmt = PIX_FMT_PAL8;
+    avcodec_get_frame_defaults(&tmv->pic);
+    return 0;
+}
+
 static av_cold int tmv_decode_close(AVCodecContext *avctx)
 {
     TMVContext *tmv = avctx->priv_data;
@@ -97,6 +105,7 @@ AVCodec ff_tmv_decoder = {
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = CODEC_ID_TMV,
     .priv_data_size = sizeof(TMVContext),
+    .init           = tmv_decode_init,
     .close          = tmv_decode_close,
     .decode         = tmv_decode_frame,
     .capabilities   = CODEC_CAP_DR1,

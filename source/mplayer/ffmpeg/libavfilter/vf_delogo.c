@@ -2,20 +2,20 @@
  * Copyright (c) 2002 Jindrich Makovicka <makovick@gmail.com>
  * Copyright (c) 2011 Stefano Sabatini
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or modify
+ * FFmpeg is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
- * with Libav; if not, write to the Free Software Foundation, Inc.,
+ * with FFmpeg; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
@@ -86,18 +86,22 @@ static void apply_delogo(uint8_t *dst, int dst_linesize,
         for (x = logo_x1+1,
              xdst = dst+logo_x1+1,
              xsrc = src+logo_x1+1; x < logo_x2-1; x++, xdst++, xsrc++) {
-            interp = (topleft[src_linesize*(y-logo_y  -yclipt)]   +
-                      topleft[src_linesize*(y-logo_y-1-yclipt)]   +
-                      topleft[src_linesize*(y-logo_y+1-yclipt)])  * (logo_w-(x-logo_x))/logo_w
-                   + (topright[src_linesize*(y-logo_y-yclipt)]    +
-                      topright[src_linesize*(y-logo_y-1-yclipt)]  +
-                      topright[src_linesize*(y-logo_y+1-yclipt)]) * (x-logo_x)/logo_w
-                   + (topleft[x-logo_x-xclipl]                    +
-                      topleft[x-logo_x-1-xclipl]                  +
-                      topleft[x-logo_x+1-xclipl])                 * (logo_h-(y-logo_y))/logo_h
-                   + (botleft[x-logo_x-xclipl]                    +
-                      botleft[x-logo_x-1-xclipl]                  +
-                      botleft[x-logo_x+1-xclipl])                 * (y-logo_y)/logo_h;
+            interp =
+                (topleft[src_linesize*(y-logo_y  -yclipt)]   +
+                 topleft[src_linesize*(y-logo_y-1-yclipt)]   +
+                 topleft[src_linesize*(y-logo_y+1-yclipt)])  * (logo_w-(x-logo_x))/logo_w
+                +
+                (topright[src_linesize*(y-logo_y-yclipt)]    +
+                 topright[src_linesize*(y-logo_y-1-yclipt)]  +
+                 topright[src_linesize*(y-logo_y+1-yclipt)]) * (x-logo_x)/logo_w
+                +
+                (topleft[x-logo_x-xclipl]    +
+                 topleft[x-logo_x-1-xclipl]  +
+                 topleft[x-logo_x+1-xclipl]) * (logo_h-(y-logo_y))/logo_h
+                +
+                (botleft[x-logo_x-xclipl]    +
+                 botleft[x-logo_x-1-xclipl]  +
+                 botleft[x-logo_x+1-xclipl]) * (y-logo_y)/logo_h;
             interp /= 6;
 
             if (y >= logo_y+band && y < logo_y+logo_h-band &&
@@ -134,13 +138,13 @@ typedef struct {
 #define OFFSET(x) offsetof(DelogoContext, x)
 
 static const AVOption delogo_options[]= {
-    {"x",    "set logo x position",       OFFSET(x),    FF_OPT_TYPE_INT, {-1}, -1, INT_MAX },
-    {"y",    "set logo y position",       OFFSET(y),    FF_OPT_TYPE_INT, {-1}, -1, INT_MAX },
-    {"w",    "set logo width",            OFFSET(w),    FF_OPT_TYPE_INT, {-1}, -1, INT_MAX },
-    {"h",    "set logo height",           OFFSET(h),    FF_OPT_TYPE_INT, {-1}, -1, INT_MAX },
-    {"band", "set delogo area band size", OFFSET(band), FF_OPT_TYPE_INT, { 4}, -1, INT_MAX },
-    {"t",    "set delogo area band size", OFFSET(band), FF_OPT_TYPE_INT, { 4}, -1, INT_MAX },
-    {"show", "show delogo area",          OFFSET(show), FF_OPT_TYPE_INT, { 0},  0, 1       },
+    {"x",    "set logo x position",       OFFSET(x),    AV_OPT_TYPE_INT, {.dbl=-1}, -1, INT_MAX },
+    {"y",    "set logo y position",       OFFSET(y),    AV_OPT_TYPE_INT, {.dbl=-1}, -1, INT_MAX },
+    {"w",    "set logo width",            OFFSET(w),    AV_OPT_TYPE_INT, {.dbl=-1}, -1, INT_MAX },
+    {"h",    "set logo height",           OFFSET(h),    AV_OPT_TYPE_INT, {.dbl=-1}, -1, INT_MAX },
+    {"band", "set delogo area band size", OFFSET(band), AV_OPT_TYPE_INT, {.dbl= 4}, -1, INT_MAX },
+    {"t",    "set delogo area band size", OFFSET(band), AV_OPT_TYPE_INT, {.dbl= 4}, -1, INT_MAX },
+    {"show", "show delogo area",          OFFSET(show), AV_OPT_TYPE_INT, {.dbl= 0},  0, 1       },
     {NULL},
 };
 
@@ -164,7 +168,7 @@ static int query_formats(AVFilterContext *ctx)
         PIX_FMT_NONE
     };
 
-    avfilter_set_common_formats(ctx, avfilter_make_format_list(pix_fmts));
+    avfilter_set_common_pixel_formats(ctx, avfilter_make_format_list(pix_fmts));
     return 0;
 }
 
@@ -200,7 +204,7 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
     if (delogo->show)
         delogo->band = 4;
 
-    av_log(ctx, AV_LOG_DEBUG, "x:%d y:%d, w:%d h:%d band:%d show:%d\n",
+    av_log(ctx, AV_LOG_INFO, "x:%d y:%d, w:%d h:%d band:%d show:%d\n",
            delogo->x, delogo->y, delogo->w, delogo->h, delogo->band, delogo->show);
 
     delogo->w += delogo->band*2;
@@ -269,7 +273,7 @@ AVFilter avfilter_vf_delogo = {
     .init          = init,
     .query_formats = query_formats,
 
-    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .get_video_buffer = avfilter_null_get_video_buffer,
                                     .start_frame      = start_frame,
@@ -278,7 +282,7 @@ AVFilter avfilter_vf_delogo = {
                                     .min_perms        = AV_PERM_WRITE | AV_PERM_READ,
                                     .rej_perms        = AV_PERM_PRESERVE },
                                   { .name = NULL}},
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO, },
                                   { .name = NULL}},
 };

@@ -2,20 +2,20 @@
  * RTP packetization for H.264 (RFC3984)
  * Copyright (c) 2008 Luca Abeni
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -28,6 +28,21 @@
 #include "avformat.h"
 #include "avc.h"
 #include "rtpenc.h"
+
+static const uint8_t *avc_mp4_find_startcode(const uint8_t *start, const uint8_t *end, int nal_length_size)
+{
+    int res = 0;
+
+    if (end - start < nal_length_size)
+        return NULL;
+    while (nal_length_size--)
+        res = (res << 8) | *start++;
+
+    if (start + res > end || res < 0 || start + res < start)
+        return NULL;
+
+    return start + res;
+}
 
 static void nal_send(AVFormatContext *s1, const uint8_t *buf, int size, int last)
 {
@@ -62,17 +77,27 @@ static void nal_send(AVFormatContext *s1, const uint8_t *buf, int size, int last
 
 void ff_rtp_send_h264(AVFormatContext *s1, const uint8_t *buf1, int size)
 {
-    const uint8_t *r;
+    const uint8_t *r, *end = buf1 + size;
     RTPMuxContext *s = s1->priv_data;
 
     s->timestamp = s->cur_timestamp;
-    r = ff_avc_find_startcode(buf1, buf1 + size);
-    while (r < buf1 + size) {
+    if (s->nal_length_size)
+        r = avc_mp4_find_startcode(buf1, end, s->nal_length_size) ? buf1 : end;
+    else
+        r = ff_avc_find_startcode(buf1, end);
+    while (r < end) {
         const uint8_t *r1;
 
-        while(!*(r++));
-        r1 = ff_avc_find_startcode(r, buf1 + size);
-        nal_send(s1, r, r1 - r, (r1 == buf1 + size));
+        if (s->nal_length_size) {
+            r1 = avc_mp4_find_startcode(r, end, s->nal_length_size);
+            if (!r1)
+                r1 = end;
+            r += s->nal_length_size;
+        } else {
+            while (!*(r++));
+            r1 = ff_avc_find_startcode(r, end);
+        }
+        nal_send(s1, r, r1 - r, r1 == end);
         r = r1;
     }
 }

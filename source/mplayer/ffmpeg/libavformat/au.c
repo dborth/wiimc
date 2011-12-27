@@ -2,20 +2,20 @@
  * AU muxer and demuxer
  * Copyright (c) 2001 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -28,6 +28,7 @@
  */
 
 #include "avformat.h"
+#include "internal.h"
 #include "avio_internal.h"
 #include "pcm.h"
 #include "riff.h"
@@ -120,7 +121,7 @@ static int au_probe(AVProbeData *p)
 static int au_read_header(AVFormatContext *s,
                           AVFormatParameters *ap)
 {
-    int size;
+    int size, bps, data_size = 0;
     unsigned int tag;
     AVIOContext *pb = s->pb;
     unsigned int id, channels, rate;
@@ -132,7 +133,12 @@ static int au_read_header(AVFormatContext *s,
     if (tag != MKTAG('.', 's', 'n', 'd'))
         return -1;
     size = avio_rb32(pb); /* header size */
-    avio_rb32(pb); /* data size */
+    data_size = avio_rb32(pb); /* data size in bytes */
+
+    if (data_size < 0 && data_size != AU_UNKNOWN_SIZE) {
+        av_log(s, AV_LOG_ERROR, "Invalid negative data size '%d' found\n", data_size);
+        return AVERROR_INVALIDDATA;
+    }
 
     id = avio_rb32(pb);
     rate = avio_rb32(pb);
@@ -140,7 +146,7 @@ static int au_read_header(AVFormatContext *s,
 
     codec = ff_codec_get_id(codec_au_tags, id);
 
-    if (!av_get_bits_per_sample(codec)) {
+    if (!(bps = av_get_bits_per_sample(codec))) {
         av_log_ask_for_sample(s, "could not determine bits per sample\n");
         return AVERROR_INVALIDDATA;
     }
@@ -159,7 +165,9 @@ static int au_read_header(AVFormatContext *s,
     st->codec->codec_id = codec;
     st->codec->channels = channels;
     st->codec->sample_rate = rate;
-    av_set_pts_info(st, 64, 1, rate);
+    if (data_size != AU_UNKNOWN_SIZE)
+    st->duration = (((int64_t)data_size)<<3) / (st->codec->channels * bps);
+    avpriv_set_pts_info(st, 64, 1, rate);
     return 0;
 }
 

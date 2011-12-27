@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2008 Alexander Strange <astrange@ithinksw.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -31,17 +31,20 @@
 #include "avcodec.h"
 
 /**
- * Waits for decoding threads to finish and resets internal
- * state. Called by avcodec_flush_buffers().
+ * Wait for decoding threads to finish and reset internal state.
+ * Called by avcodec_flush_buffers().
  *
  * @param avctx The context.
  */
 void ff_thread_flush(AVCodecContext *avctx);
 
 /**
- * Submits a new frame to a decoding thread.
+ * Submit a new frame to a decoding thread.
  * Returns the next available frame in picture. *got_picture_ptr
  * will be 0 if none is available.
+ * The return value on success is the size of the consumed packet for
+ * compatiblity with avcodec_decode_video2(). This means the decoder
+ * has to consume the full packet.
  *
  * Parameters are the same as avcodec_decode_video2().
  */
@@ -59,8 +62,7 @@ int ff_thread_decode_frame(AVCodecContext *avctx, AVFrame *picture,
 void ff_thread_finish_setup(AVCodecContext *avctx);
 
 /**
- * Notifies later decoding threads when part of their reference picture
- * is ready.
+ * Notify later decoding threads when part of their reference picture is ready.
  * Call this when some part of the picture is finished decoding.
  * Later calls with lower values of progress have no effect.
  *
@@ -72,7 +74,7 @@ void ff_thread_finish_setup(AVCodecContext *avctx);
 void ff_thread_report_progress(AVFrame *f, int progress, int field);
 
 /**
- * Waits for earlier decoding threads to finish reference pictures
+ * Wait for earlier decoding threads to finish reference pictures.
  * Call this before accessing some part of a picture, with a given
  * value for progress, and it will return after the responsible decoding
  * thread calls ff_thread_report_progress() with the same or

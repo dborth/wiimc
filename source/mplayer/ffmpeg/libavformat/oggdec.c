@@ -2,10 +2,9 @@
  * Ogg bitstream support
  * Luca Barbato <lu_zero@gentoo.org>
  * Based on tcvp implementation
- *
  */
 
-/**
+/*
     Copyright (C) 2005  Michael Ahlberg, Måns Rullgård
 
     Permission is hereby granted, free of charge, to any person
@@ -27,8 +26,7 @@
     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
     DEALINGS IN THE SOFTWARE.
-**/
-
+ */
 
 #include <stdio.h>
 #include "oggdec.h"
@@ -178,7 +176,7 @@ static int ogg_new_stream(AVFormatContext *s, uint32_t serial, int new_avstream)
             return AVERROR(ENOMEM);
 
         st->id = idx;
-        av_set_pts_info(st, 64, 1, 1000000);
+        avpriv_set_pts_info(st, 64, 1, 1000000);
     }
 
     return idx;
@@ -226,7 +224,7 @@ static int ogg_read_page(AVFormatContext *s, int *str)
             break;
 
         c = avio_r8(bc);
-        if (bc->eof_reached)
+        if (url_feof(bc))
             return AVERROR_EOF;
         sync[sp++ & 3] = c;
     }while (i++ < MAX_PAGE_SIZE);
@@ -374,8 +372,6 @@ static int ogg_packet(AVFormatContext *s, int *str, int *dstart, int *dsize,
         }
     }while (!complete);
 
-    av_dlog(s, "ogg_packet: idx %i, frame size %i, start %i\n",
-            idx, os->psize, os->pstart);
 
     if (os->granule == -1)
         av_log(s, AV_LOG_WARNING, "Page at %"PRId64" is missing granule\n", os->page_pos);
@@ -425,6 +421,8 @@ static int ogg_packet(AVFormatContext *s, int *str, int *dstart, int *dsize,
             *fpos = os->sync_pos;
         os->pstart += os->psize;
         os->psize = 0;
+        if(os->pstart == os->bufpos)
+            os->bufpos = os->pstart = 0;
         os->sync_pos = os->page_pos;
     }
 
@@ -464,6 +462,7 @@ static int ogg_get_length(AVFormatContext *s)
     struct ogg *ogg = s->priv_data;
     int i;
     int64_t size, end;
+    int streams_left=0;
 
     if(!s->pb->seekable)
         return 0;
@@ -485,11 +484,35 @@ static int ogg_get_length(AVFormatContext *s)
             ogg->streams[i].codec) {
             s->streams[i]->duration =
                 ogg_gptopts (s, i, ogg->streams[i].granule, NULL);
-            if (s->streams[i]->start_time != AV_NOPTS_VALUE)
+            if (s->streams[i]->start_time != AV_NOPTS_VALUE){
                 s->streams[i]->duration -= s->streams[i]->start_time;
+                streams_left-= (ogg->streams[i].got_start==-1);
+                ogg->streams[i].got_start= 1;
+            }else if(!ogg->streams[i].got_start){
+                ogg->streams[i].got_start= -1;
+                streams_left++;
+            }
         }
     }
 
+    ogg_restore (s, 0);
+
+    ogg_save (s);
+    avio_seek (s->pb, 0, SEEK_SET);
+    while (!ogg_read_page (s, &i)){
+        if (ogg->streams[i].granule != -1 && ogg->streams[i].granule != 0 &&
+            ogg->streams[i].codec) {
+            if(s->streams[i]->duration && s->streams[i]->start_time == AV_NOPTS_VALUE && !ogg->streams[i].got_start){
+                int64_t start= ogg_gptopts (s, i, ogg->streams[i].granule, NULL);
+                if(av_rescale_q(start, s->streams[i]->time_base, AV_TIME_BASE_Q) > AV_TIME_BASE)
+                    s->streams[i]->duration -= start;
+                ogg->streams[i].got_start= 1;
+                streams_left--;
+            }
+            if(streams_left<=0)
+                break;
+        }
+    }
     ogg_restore (s, 0);
 
     return 0;

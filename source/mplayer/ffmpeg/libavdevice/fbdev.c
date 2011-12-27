@@ -3,20 +3,20 @@
  * Copyright (c) 2009 Giliard B. de Freitas <giliarde@gmail.com>
  * Copyright (C) 2002 Gunnar Monell <gmo@linux.nu>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -42,7 +42,8 @@
 #include "libavutil/opt.h"
 #include "libavutil/parseutils.h"
 #include "libavutil/pixdesc.h"
-#include "libavformat/avformat.h"
+#include "avdevice.h"
+#include "libavformat/internal.h"
 
 struct rgb_pixfmt_map_entry {
     int bits_per_pixel;
@@ -50,7 +51,7 @@ struct rgb_pixfmt_map_entry {
     enum PixelFormat pixfmt;
 };
 
-static struct rgb_pixfmt_map_entry rgb_pixfmt_map[] = {
+static const struct rgb_pixfmt_map_entry rgb_pixfmt_map[] = {
     // bpp, red_offset,  green_offset, blue_offset, alpha_offset, pixfmt
     {  32,       0,           8,          16,           24,   PIX_FMT_RGBA  },
     {  32,      16,           8,           0,           24,   PIX_FMT_BGRA  },
@@ -65,7 +66,7 @@ static enum PixelFormat get_pixfmt_from_fb_varinfo(struct fb_var_screeninfo *var
     int i;
 
     for (i = 0; i < FF_ARRAY_ELEMS(rgb_pixfmt_map); i++) {
-        struct rgb_pixfmt_map_entry *entry = &rgb_pixfmt_map[i];
+        const struct rgb_pixfmt_map_entry *entry = &rgb_pixfmt_map[i];
         if (entry->bits_per_pixel == varinfo->bits_per_pixel &&
             entry->red_offset     == varinfo->red.offset     &&
             entry->green_offset   == varinfo->green.offset   &&
@@ -110,7 +111,7 @@ av_cold static int fbdev_read_header(AVFormatContext *avctx,
 
     if (!(st = avformat_new_stream(avctx, NULL)))
         return AVERROR(ENOMEM);
-    av_set_pts_info(st, 64, 1, 1000000); /* 64 bits pts in microseconds */
+    avpriv_set_pts_info(st, 64, 1, 1000000); /* 64 bits pts in microseconds */
 
     /* NONBLOCK is ignored by the fbdev driver, only set for consistency */
     if (avctx->flags & AVFMT_FLAG_NONBLOCK)
@@ -193,20 +194,22 @@ static int fbdev_read_packet(AVFormatContext *avctx, AVPacket *pkt)
         fbdev->time_frame = av_gettime();
 
     /* wait based on the frame rate */
-    curtime = av_gettime();
-    delay = fbdev->time_frame - curtime;
-    av_dlog(avctx,
-            "time_frame:%"PRId64" curtime:%"PRId64" delay:%"PRId64"\n",
-            fbdev->time_frame, curtime, delay);
-    if (delay > 0) {
+    while (1) {
+        curtime = av_gettime();
+        delay = fbdev->time_frame - curtime;
+        av_dlog(avctx,
+                "time_frame:%"PRId64" curtime:%"PRId64" delay:%"PRId64"\n",
+                fbdev->time_frame, curtime, delay);
+        if (delay <= 0) {
+            fbdev->time_frame += INT64_C(1000000) / av_q2d(fbdev->framerate_q);
+            break;
+        }
         if (avctx->flags & AVFMT_FLAG_NONBLOCK)
             return AVERROR(EAGAIN);
         ts.tv_sec  =  delay / 1000000;
         ts.tv_nsec = (delay % 1000000) * 1000;
         while (nanosleep(&ts, &ts) < 0 && errno == EINTR);
     }
-    /* compute the time of the next frame */
-    fbdev->time_frame += INT64_C(1000000) / av_q2d(fbdev->framerate_q);
 
     if ((ret = av_new_packet(pkt, fbdev->frame_size)) < 0)
         return ret;
@@ -223,7 +226,6 @@ static int fbdev_read_packet(AVFormatContext *avctx, AVPacket *pkt)
                         fbdev->varinfo.yoffset * fbdev->fixinfo.line_length;
     pout = pkt->data;
 
-    // TODO it'd be nice if the lines were aligned
     for (i = 0; i < fbdev->height; i++) {
         memcpy(pout, pin, fbdev->frame_linesize);
         pin  += fbdev->fixinfo.line_length;

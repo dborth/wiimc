@@ -2,20 +2,20 @@
  * Dirac decoder support via Schroedinger libraries
  * Copyright (c) 2008 BBC, Anuradha Suraparaju <asuraparaju at gmail dot com >
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -118,7 +118,7 @@ static SchroBuffer *FindNextSchroParseUnit(SchroParseUnitContext *parse_ctx)
 }
 
 /**
-* Returns Libav chroma format.
+* Returns FFmpeg chroma format.
 */
 static enum PixelFormat get_chroma_format(SchroChromaFormat schro_pix_fmt)
 {
@@ -169,7 +169,7 @@ static void libschroedinger_handle_first_access_unit(AVCodecContext *avccontext)
 
     p_schro_params->format = schro_decoder_get_video_format(decoder);
 
-    /* Tell Libav about sequence details. */
+    /* Tell FFmpeg about sequence details. */
     if (av_image_check_size(p_schro_params->format->width, p_schro_params->format->height,
                             0, avccontext) < 0) {
         av_log(avccontext, AV_LOG_ERROR, "invalid dimensions (%dx%d)\n",

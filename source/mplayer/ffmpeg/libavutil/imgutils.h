@@ -1,18 +1,18 @@
 /*
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -22,6 +22,9 @@
 /**
  * @file
  * misc image utilities
+ *
+ * @addtogroup lavu_picture
+ * @{
  */
 
 #include "avutil.h"
@@ -126,5 +129,10 @@ void av_image_copy(uint8_t *dst_data[4], int dst_linesizes[4],
 int av_image_check_size(unsigned int w, unsigned int h, int log_offset, void *log_ctx);
 
 int ff_set_systematic_pal2(uint32_t pal[256], enum PixelFormat pix_fmt);
+
+/**
+ * @}
+ */
+
 
 #endif /* AVUTIL_IMGUTILS_H */

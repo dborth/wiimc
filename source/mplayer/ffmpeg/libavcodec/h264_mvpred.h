@@ -2,20 +2,20 @@
  * H.26L/H.264/AVC/JVT/14496-10/... motion vector predicion
  * Copyright (c) 2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -86,7 +86,7 @@ static av_always_inline int fetch_diagonal_mv(H264Context *h, const int16_t **C,
 }
 
 /**
- * gets the predicted MV.
+ * Get the predicted MV.
  * @param n the block index
  * @param part_width the width of the partition (4, 8,16) -> (1, 2, 4)
  * @param mx the x component of the predicted motion vector
@@ -142,7 +142,7 @@ static av_always_inline void pred_motion(H264Context * const h, int n, int part_
 }
 
 /**
- * gets the directionally predicted 16x8 MV.
+ * Get the directionally predicted 16x8 MV.
  * @param n the block index
  * @param mx the x component of the predicted motion vector
  * @param my the y component of the predicted motion vector
@@ -177,7 +177,7 @@ static av_always_inline void pred_16x8_motion(H264Context * const h, int n, int 
 }
 
 /**
- * gets the directionally predicted 8x16 MV.
+ * Get the directionally predicted 8x16 MV.
  * @param n the block index
  * @param mx the x component of the predicted motion vector
  * @param my the y component of the predicted motion vector
@@ -633,7 +633,7 @@ static void fill_decode_caches(H264Context *h, int mb_type){
                 AV_ZERO32(mv_cache[4 - 1*8]);
                 ref_cache[4 - 1*8]= topright_type ? LIST_NOT_USED : PART_NOT_AVAILABLE;
             }
-            if(ref_cache[4 - 1*8] < 0){
+            if(ref_cache[2 - 1*8] < 0 || ref_cache[4 - 1*8] < 0){
                 if(USES_LIST(topleft_type, list)){
                     const int b_xy = h->mb2b_xy[topleft_xy] + 3 + b_stride + (h->topleft_partition & 2*b_stride);
                     const int b8_xy= 4*topleft_xy + 1 + (h->topleft_partition & 2);

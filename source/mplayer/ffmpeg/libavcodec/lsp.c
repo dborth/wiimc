@@ -4,20 +4,20 @@
  * Copyright (c) 2007 Reynaldo H. Verdejo Pinochet (QCELP decoder)
  * Copyright (c) 2008 Vladimir Voroshilov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -75,7 +75,7 @@ void ff_acelp_lsf2lspd(double *lsp, const float *lsf, int lp_order)
 
 /**
  * @brief decodes polynomial coefficients from LSP
- * @param f [out] decoded polynomial coefficients (-0x20000000 <= (3.22) <= 0x1fffffff)
+ * @param[out] f decoded polynomial coefficients (-0x20000000 <= (3.22) <= 0x1fffffff)
  * @param lsp LSP coefficients (-0x8000 <= (0.15) <= 0x7fff)
  */
 static void lsp2poly(int* f, const int16_t* lsp, int lp_half_order)
@@ -150,7 +150,11 @@ void ff_acelp_lp_decode(int16_t* lp_1st, int16_t* lp_2nd, const int16_t* lsp_2nd
 
     /* LSP values for first subframe (3.2.5 of G.729, Equation 24)*/
     for(i=0; i<lp_order; i++)
+#ifdef G729_BITEXACT
+        lsp_1st[i] = (lsp_2nd[i] >> 1) + (lsp_prev[i] >> 1);
+#else
         lsp_1st[i] = (lsp_2nd[i] + lsp_prev[i]) >> 1;
+#endif
 
     ff_acelp_lsp2lpc(lp_1st, lsp_1st, lp_order >> 1);
 

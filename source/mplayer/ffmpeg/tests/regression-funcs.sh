@@ -10,6 +10,7 @@ raw_src_dir=$3
 target_exec=$4
 target_path=$5
 threads=${6:-1}
+tool=$8
 
 datadir="./tests/data"
 target_datadir="${target_path}/${datadir}"
@@ -18,7 +19,7 @@ this="$test.$test_ref"
 outfile="$datadir/$test_ref/"
 
 # various files
-avconv="$target_exec ${target_path}/avconv"
+avconv="$target_exec ${target_path}/${tool}"
 tiny_psnr="tests/tiny_psnr"
 raw_src="${target_path}/$raw_src_dir/%02d.pgm"
 raw_dst="$datadir/$this.out.yuv"
@@ -102,6 +103,12 @@ do_video_encoding()
 {
     file=${outfile}$1
     do_avconv $file $DEC_OPTS -f image2 -vcodec pgmyuv -i $raw_src $ENC_OPTS $2
+}
+
+do_video_encoding_nomd5()
+{
+    file=${outfile}$1
+    do_avconv_nomd5 $file $DEC_OPTS -f image2 -vcodec pgmyuv -i $raw_src $ENC_OPTS $2
 }
 
 do_audio_encoding()

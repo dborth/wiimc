@@ -2,20 +2,20 @@
  * RAW AC-3 and E-AC-3 demuxer
  * Copyright (c) 2007 Justin Ruggles <justin.ruggles@gmail.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -40,6 +40,8 @@ static int ac3_eac3_probe(AVProbeData *p, enum CodecID expected_codec_id)
         buf2 = buf;
 
         for(frames = 0; buf2 < end; frames++) {
+            if(!memcmp(buf2, "\x1\x10\0\0\0\0\0\0", 8))
+                buf2+=16;
             init_get_bits(&gbc, buf2, 54);
             if(avpriv_ac3_parse_header(&gbc, &hdr) < 0)
                 break;
@@ -58,7 +60,7 @@ static int ac3_eac3_probe(AVProbeData *p, enum CodecID expected_codec_id)
     // keep this in sync with mp3 probe, both need to avoid
     // issues with MPEG-files!
     if   (first_frames>=4) return AVPROBE_SCORE_MAX/2+1;
-    else if(max_frames>500)return AVPROBE_SCORE_MAX/2;
+    else if(max_frames>200)return AVPROBE_SCORE_MAX/2;
     else if(max_frames>=4) return AVPROBE_SCORE_MAX/4;
     else if(max_frames>=1) return 1;
     else                   return 0;

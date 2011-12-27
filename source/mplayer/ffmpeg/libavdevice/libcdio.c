@@ -37,6 +37,7 @@
 #undef free
 
 typedef struct CDIOContext {
+    const AVClass       *class;
     cdrom_drive_t       *drive;
     cdrom_paranoia_t *paranoia;
     int32_t last_sector;
@@ -92,7 +93,7 @@ static av_cold int read_header(AVFormatContext *ctx, AVFormatParameters *ap)
         st->duration           = s->drive->audio_last_sector - s->drive->audio_first_sector;
     else if (s->drive->tracks)
         st->duration = s->drive->disc_toc[s->drive->tracks].dwStartSector;
-    av_set_pts_info(st, 64, CDIO_CD_FRAMESIZE_RAW, 2*st->codec->channels*st->codec->sample_rate);
+    avpriv_set_pts_info(st, 64, CDIO_CD_FRAMESIZE_RAW, 2*st->codec->channels*st->codec->sample_rate);
 
     for (i = 0; i < s->drive->tracks; i++) {
         char title[16];

@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2003 Michael Niedermayer <michaelni@gmx.at>
+ * Copyright (C) 2003-2011 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -104,6 +104,7 @@ static int doTest(uint8_t *ref[4], int refStride[4], int w, int h,
 
         av_image_fill_linesizes(srcStride, srcFormat, srcW);
         for (p = 0; p < 4; p++) {
+            srcStride[p] = FFALIGN(srcStride[p], 16);
             if (srcStride[p])
                 src[p] = av_mallocz(srcStride[p]*srcH+16);
             if (srcStride[p] && !src[p]) {
@@ -139,6 +140,7 @@ static int doTest(uint8_t *ref[4], int refStride[4], int w, int h,
          * allocated with av_malloc). */
         /* An extra 16 bytes is being allocated because some scalers may write
          * out of bounds. */
+        dstStride[i] = FFALIGN(dstStride[i], 16);
         if (dstStride[i])
             dst[i]= av_mallocz(dstStride[i]*dstH+16);
         if (dstStride[i] && !dst[i]) {
@@ -178,6 +180,7 @@ static int doTest(uint8_t *ref[4], int refStride[4], int w, int h,
         ssdA = r->ssdA;
     } else {
         for (i=0; i<4; i++) {
+            refStride[i] = FFALIGN(refStride[i], 16);
             if (refStride[i])
                 out[i]= av_mallocz(refStride[i]*h);
             if (refStride[i] && !out[i]) {

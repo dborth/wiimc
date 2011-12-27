@@ -19,6 +19,10 @@ LIBAVFORMAT_$MAJOR {
                 parse_date;
                 dump_format;
                 url_*;
+                ff_timefilter_destroy;
+                ff_timefilter_new;
+                ff_timefilter_update;
+                ff_timefilter_reset;
                 get_*;
                 put_*;
                 udp_set_remote_url;

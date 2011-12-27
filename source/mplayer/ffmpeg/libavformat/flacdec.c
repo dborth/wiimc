@@ -2,28 +2,30 @@
  * Raw FLAC demuxer
  * Copyright (c) 2001 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavcodec/flac.h"
 #include "avformat.h"
+#include "internal.h"
 #include "rawdec.h"
 #include "oggdec.h"
 #include "vorbiscomment.h"
+#include "libavcodec/bytestream.h"
 
 static int flac_read_header(AVFormatContext *s,
                              AVFormatParameters *ap)
@@ -46,13 +48,14 @@ static int flac_read_header(AVFormatContext *s,
     }
 
     /* process metadata blocks */
-    while (!s->pb->eof_reached && !metadata_last) {
+    while (!url_feof(s->pb) && !metadata_last) {
         avio_read(s->pb, header, 4);
         avpriv_flac_parse_block_header(header, &metadata_last, &metadata_type,
                                    &metadata_size);
         switch (metadata_type) {
         /* allocate and read metadata block for supported types */
         case FLAC_METADATA_TYPE_STREAMINFO:
+        case FLAC_METADATA_TYPE_CUESHEET:
         case FLAC_METADATA_TYPE_VORBIS_COMMENT:
             buffer = av_mallocz(metadata_size + FF_INPUT_BUFFER_PADDING_SIZE);
             if (!buffer) {
@@ -91,9 +94,33 @@ static int flac_read_header(AVFormatContext *s,
 
             /* set time base and duration */
             if (si.samplerate > 0) {
-                av_set_pts_info(st, 64, 1, si.samplerate);
+                avpriv_set_pts_info(st, 64, 1, si.samplerate);
                 if (si.samples > 0)
                     st->duration = si.samples;
+            }
+        } else if (metadata_type == FLAC_METADATA_TYPE_CUESHEET) {
+            uint8_t isrc[13];
+            uint64_t start;
+            const uint8_t *offset;
+            int i, chapters, track, ti;
+            if (metadata_size < 431)
+                return AVERROR_INVALIDDATA;
+            offset = buffer + 395;
+            chapters = bytestream_get_byte(&offset) - 1;
+            if (chapters <= 0)
+                return AVERROR_INVALIDDATA;
+            for (i = 0; i < chapters; i++) {
+                if (offset + 36 - buffer > metadata_size)
+                    return AVERROR_INVALIDDATA;
+                start = bytestream_get_be64(&offset);
+                track = bytestream_get_byte(&offset);
+                bytestream_get_buffer(&offset, isrc, 12);
+                isrc[12] = 0;
+                offset += 14;
+                ti = bytestream_get_byte(&offset);
+                if (ti <= 0) return AVERROR_INVALIDDATA;
+                offset += ti * 12;
+                avpriv_new_chapter(s, track, st->time_base, start, AV_NOPTS_VALUE, isrc);
             }
         } else {
             /* STREAMINFO must be the first block */

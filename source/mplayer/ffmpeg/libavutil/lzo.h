@@ -2,39 +2,46 @@
  * LZO 1x decompression
  * copyright (c) 2006 Reimar Doeffinger
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifndef AVUTIL_LZO_H
 #define AVUTIL_LZO_H
 
+/**
+ * @defgroup lavu_lzo LZO
+ * @ingroup lavu_crypto
+ *
+ * @{
+ */
+
 #include <stdint.h>
 
 /** @name Error flags returned by av_lzo1x_decode
-  * \{ */
-//! end of the input buffer reached before decoding finished
+  * @{ */
+/// end of the input buffer reached before decoding finished
 #define AV_LZO_INPUT_DEPLETED 1
-//! decoded data did not fit into output buffer
+/// decoded data did not fit into output buffer
 #define AV_LZO_OUTPUT_FULL 2
-//! a reference to previously decoded data was wrong
+/// a reference to previously decoded data was wrong
 #define AV_LZO_INVALID_BACKPTR 4
-//! a non-specific error in the compressed bitstream
+/// a non-specific error in the compressed bitstream
 #define AV_LZO_ERROR 8
-/** \} */
+/** @} */
 
 #define AV_LZO_INPUT_PADDING 8
 #define AV_LZO_OUTPUT_PADDING 12
@@ -62,5 +69,9 @@ int av_lzo1x_decode(void *out, int *outlen, const void *in, int *inlen);
  * thus creating a repeating pattern with a period length of back.
  */
 void av_memcpy_backptr(uint8_t *dst, int back, int cnt);
+
+/**
+ * @}
+ */
 
 #endif /* AVUTIL_LZO_H */

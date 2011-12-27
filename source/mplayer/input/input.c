@@ -208,6 +208,8 @@ static const mp_cmd_t mp_cmds[] = {
   { MP_CMD_AF_CLR, "af_clr", 0, { {-1,{0}} } },
   { MP_CMD_AF_CMDLINE, "af_cmdline", 2, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
 
+  { MP_CMD_GUI, "gui", 1, { {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
+
   { 0, NULL, 0, {} }
 };
 
@@ -376,6 +378,9 @@ static const mp_key_name_t key_names[] = {
 // The second is the command
 
 static const mp_cmd_bind_t def_cmd_binds[] = {
+
+  // Ignore modifiers by default
+  { { KEY_CTRL, 0 }, "ignore" },
 
   { {  MOUSE_BTN3, 0 }, "seek 10" },
   { {  MOUSE_BTN4, 0 }, "seek -10" },
@@ -1456,7 +1461,7 @@ mp_input_get_key_name(int key) {
       return key_names[i].name;
   }
 
-  if(isascii(key)) {
+  if(isprint(key)) {
     snprintf(key_str,12,"%c",(char)key);
     return key_str;
   }

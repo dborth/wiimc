@@ -2,20 +2,20 @@
  * MACE decoder
  * Copyright (c) 2002 Laszlo Torok <torokl@alpha.dfmk.hu>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -153,6 +153,7 @@ typedef struct ChannelData {
 } ChannelData;
 
 typedef struct MACEContext {
+    AVFrame frame;
     ChannelData chd[2];
 } MACEContext;
 
@@ -228,30 +229,35 @@ static void chomp6(ChannelData *chd, int16_t *output, uint8_t val,
 
 static av_cold int mace_decode_init(AVCodecContext * avctx)
 {
+    MACEContext *ctx = avctx->priv_data;
+
     if (avctx->channels > 2)
         return -1;
     avctx->sample_fmt = AV_SAMPLE_FMT_S16;
+
+    avcodec_get_frame_defaults(&ctx->frame);
+    avctx->coded_frame = &ctx->frame;
+
     return 0;
 }
 
-static int mace_decode_frame(AVCodecContext *avctx,
-                              void *data, int *data_size,
-                              AVPacket *avpkt)
+static int mace_decode_frame(AVCodecContext *avctx, void *data,
+                             int *got_frame_ptr, AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
-    int16_t *samples = data;
+    int16_t *samples;
     MACEContext *ctx = avctx->priv_data;
-    int i, j, k, l;
-    int out_size;
+    int i, j, k, l, ret;
     int is_mace3 = (avctx->codec_id == CODEC_ID_MACE3);
 
-    out_size = 3 * (buf_size << (1 - is_mace3)) *
-               av_get_bytes_per_sample(avctx->sample_fmt);
-    if (*data_size < out_size) {
-        av_log(avctx, AV_LOG_ERROR, "Output buffer is too small\n");
-        return AVERROR(EINVAL);
+    /* get output buffer */
+    ctx->frame.nb_samples = 3 * (buf_size << (1 - is_mace3)) / avctx->channels;
+    if ((ret = avctx->get_buffer(avctx, &ctx->frame)) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return ret;
     }
+    samples = (int16_t *)ctx->frame.data[0];
 
     for(i = 0; i < avctx->channels; i++) {
         int16_t *output = samples + i;
@@ -277,7 +283,8 @@ static int mace_decode_frame(AVCodecContext *avctx,
             }
     }
 
-    *data_size = out_size;
+    *got_frame_ptr   = 1;
+    *(AVFrame *)data = ctx->frame;
 
     return buf_size;
 }
@@ -289,6 +296,7 @@ AVCodec ff_mace3_decoder = {
     .priv_data_size = sizeof(MACEContext),
     .init           = mace_decode_init,
     .decode         = mace_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("MACE (Macintosh Audio Compression/Expansion) 3:1"),
 };
 
@@ -299,6 +307,7 @@ AVCodec ff_mace6_decoder = {
     .priv_data_size = sizeof(MACEContext),
     .init           = mace_decode_init,
     .decode         = mace_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("MACE (Macintosh Audio Compression/Expansion) 6:1"),
 };
 

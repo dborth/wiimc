@@ -99,7 +99,6 @@ static const char help_text[]=
 #define MSGTR_Playing "Spelar %s.\n"
 #define MSGTR_NoSound "Audio: inget ljud\n"
 #define MSGTR_FPSforced "FPS forcerad att vara %5.3f  (ftime: %5.3f).\n"
-    "För att få bäst prestanda, omkompilera med '--disable-runtime-cpudetection'.\n"
 #define MSGTR_AvailableVideoOutputDrivers "Tillgängliga video-ut-drivrutiner:\n"
 #define MSGTR_AvailableAudioOutputDrivers "Tillgängliga audio-ut-drivrutiner:\n"
 #define MSGTR_AvailableAudioCodecs "Tillgängliga audiocodec:\n"
@@ -876,6 +875,7 @@ static const char help_text[]=
 
 // ao_sun.c
 #define MSGTR_AO_SUN_RtscSetinfoFailed "[AO SUN] rtsc: SETINFO misslyckades.\n"
+#define MSGTR_AO_SUN_RtscWriteFailed "[AO SUN] rtsc: skrivning misslyckades."
 #define MSGTR_AO_SUN_CantOpenAudioDev "[AO SUN] Kan inte öppna audioenhet %s, %s  -> inget ljud.\n"
 #define MSGTR_AO_SUN_UnsupSampleRate "[AO SUN] audio_setup: ditt kort hanterar inte %d kanaler, %s, %d Hz samplerate.\n" // FIXME samplerate
 #define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  Din ljudkortsenhet hanterar inte select()  ***\nKompilera om med '#undef HAVE_AUDIO_SELECT' i config.h !\n\n"

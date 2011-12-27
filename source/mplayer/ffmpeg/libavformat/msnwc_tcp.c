@@ -1,25 +1,26 @@
 /*
  * Copyright (C) 2008  Ramiro Polla
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavcodec/bytestream.h"
 #include "avformat.h"
+#include "internal.h"
 
 #define HEADER_SIZE         24
 
@@ -84,13 +85,13 @@ static int msnwc_tcp_read_header(AVFormatContext *ctx, AVFormatParameters *ap)
     codec->codec_id = CODEC_ID_MIMIC;
     codec->codec_tag = MKTAG('M', 'L', '2', '0');
 
-    av_set_pts_info(st, 32, 1, 1000);
+    avpriv_set_pts_info(st, 32, 1, 1000);
 
     /* Some files start with "connected\r\n\r\n".
      * So skip until we find the first byte of struct size */
-    while(avio_r8(pb) != HEADER_SIZE && !pb->eof_reached);
+    while(avio_r8(pb) != HEADER_SIZE && !url_feof(pb));
 
-    if(pb->eof_reached) {
+    if(url_feof(pb)) {
         av_log(ctx, AV_LOG_ERROR, "Could not find valid start.");
         return -1;
     }

@@ -355,7 +355,7 @@ msgstr "Cargando DVD..."
 msgid "No disc inserted!"
 msgstr "¡Ningún disco insertado!"
 
-msgid "Unsupported DVD."
+msgid "Invalid DVD."
 msgstr "DVD no válido."
 
 msgid "Up One Level"
@@ -668,3 +668,9 @@ msgstr "Retardo del Salvapantallas"
 
 msgid "Inactivity Shutdown"
 msgstr "Cierre por Inactividad"
+
+msgid "Invalid subtitle delay."
+msgstr "No válido el retardo de subtítulos."
+
+msgid "DVD playback is not supported on this Wii."
+msgstr "La reproducción de DVD no es compatible con esta Wii."

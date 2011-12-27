@@ -1,18 +1,22 @@
-/*
- * This file is part of Libav.
+/**
+ * @file
+ * Vorbis I decoder
+ * @author Denes Balatoni  ( dbalatoni programozo hu )
  *
- * Libav is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -25,7 +29,7 @@
 #include <inttypes.h>
 #include <math.h>
 
-#define ALT_BITSTREAM_READER_LE
+#define BITSTREAM_READER_LE
 #include "avcodec.h"
 #include "get_bits.h"
 #include "dsputil.h"
@@ -121,6 +125,7 @@ typedef struct {
 
 typedef struct vorbis_context_s {
     AVCodecContext *avccontext;
+    AVFrame frame;
     GetBitContext gb;
     DSPContext dsp;
     FmtConvertContext fmt_conv;
@@ -1033,6 +1038,9 @@ static av_cold int vorbis_decode_init(AVCodecContext *avccontext)
     avccontext->sample_rate = vc->audio_samplerate;
     avccontext->frame_size  = FFMIN(vc->blocksize[0], vc->blocksize[1]) >> 2;
 
+    avcodec_get_frame_defaults(&vc->frame);
+    avccontext->coded_frame = &vc->frame;
+
     return 0;
 }
 
@@ -1156,7 +1164,7 @@ static int vorbis_floor1_decode(vorbis_context *vc,
     uint16_t floor1_Y[258];
     uint16_t floor1_Y_final[258];
     int floor1_flag[258];
-    unsigned class, cdim, cbits, csub, cval, offset, i, j;
+    unsigned partition_class, cdim, cbits, csub, cval, offset, i, j;
     int book, adx, ady, dy, off, predicted, err;
 
 
@@ -1172,20 +1180,20 @@ static int vorbis_floor1_decode(vorbis_context *vc,
 
     offset = 2;
     for (i = 0; i < vf->partitions; ++i) {
-        class = vf->partition_class[i];
-        cdim   = vf->class_dimensions[class];
-        cbits  = vf->class_subclasses[class];
+        partition_class = vf->partition_class[i];
+        cdim   = vf->class_dimensions[partition_class];
+        cbits  = vf->class_subclasses[partition_class];
         csub = (1 << cbits) - 1;
         cval = 0;
 
         av_dlog(NULL, "Cbits %u\n", cbits);
 
         if (cbits) // this reads all subclasses for this partition's class
-            cval = get_vlc2(gb, vc->codebooks[vf->class_masterbook[class]].vlc.table,
-                            vc->codebooks[vf->class_masterbook[class]].nb_bits, 3);
+            cval = get_vlc2(gb, vc->codebooks[vf->class_masterbook[partition_class]].vlc.table,
+                            vc->codebooks[vf->class_masterbook[partition_class]].nb_bits, 3);
 
         for (j = 0; j < cdim; ++j) {
-            book = vf->subclass_books[class][cval & csub];
+            book = vf->subclass_books[partition_class][cval & csub];
 
             av_dlog(NULL, "book %d Cbits %u cval %u  bits:%d\n",
                     book, cbits, cval, get_bits_count(gb));
@@ -1605,16 +1613,15 @@ static int vorbis_parse_audio_packet(vorbis_context *vc)
 
 // Return the decoded audio packet through the standard api
 
-static int vorbis_decode_frame(AVCodecContext *avccontext,
-                               void *data, int *data_size,
-                               AVPacket *avpkt)
+static int vorbis_decode_frame(AVCodecContext *avccontext, void *data,
+                               int *got_frame_ptr, AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data;
     int buf_size       = avpkt->size;
     vorbis_context *vc = avccontext->priv_data;
     GetBitContext *gb = &(vc->gb);
     const float *channel_ptrs[255];
-    int i, len, out_size;
+    int i, len, ret;
 
     av_dlog(NULL, "packet length %d \n", buf_size);
 
@@ -1625,18 +1632,18 @@ static int vorbis_decode_frame(AVCodecContext *avccontext,
 
     if (!vc->first_frame) {
         vc->first_frame = 1;
-        *data_size = 0;
+        *got_frame_ptr = 0;
         return buf_size;
     }
 
     av_dlog(NULL, "parsed %d bytes %d bits, returned %d samples (*ch*bits) \n",
             get_bits_count(gb) / 8, get_bits_count(gb) % 8, len);
 
-    out_size = len * vc->audio_channels *
-               av_get_bytes_per_sample(avccontext->sample_fmt);
-    if (*data_size < out_size) {
-        av_log(avccontext, AV_LOG_ERROR, "output buffer is too small\n");
-        return AVERROR(EINVAL);
+    /* get output buffer */
+    vc->frame.nb_samples = len;
+    if ((ret = avccontext->get_buffer(avccontext, &vc->frame)) < 0) {
+        av_log(avccontext, AV_LOG_ERROR, "get_buffer() failed\n");
+        return ret;
     }
 
     if (vc->audio_channels > 8) {
@@ -1649,12 +1656,15 @@ static int vorbis_decode_frame(AVCodecContext *avccontext,
     }
 
     if (avccontext->sample_fmt == AV_SAMPLE_FMT_FLT)
-        vc->fmt_conv.float_interleave(data, channel_ptrs, len, vc->audio_channels);
+        vc->fmt_conv.float_interleave((float *)vc->frame.data[0], channel_ptrs,
+                                      len, vc->audio_channels);
     else
-        vc->fmt_conv.float_to_int16_interleave(data, channel_ptrs, len,
+        vc->fmt_conv.float_to_int16_interleave((int16_t *)vc->frame.data[0],
+                                               channel_ptrs, len,
                                                vc->audio_channels);
 
-    *data_size = out_size;
+    *got_frame_ptr   = 1;
+    *(AVFrame *)data = vc->frame;
 
     return buf_size;
 }
@@ -1678,6 +1688,7 @@ AVCodec ff_vorbis_decoder = {
     .init           = vorbis_decode_init,
     .close          = vorbis_decode_close,
     .decode         = vorbis_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Vorbis"),
     .channel_layouts = ff_vorbis_channel_layouts,
     .sample_fmts = (const enum AVSampleFormat[]) {

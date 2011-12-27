@@ -2,20 +2,20 @@
  * MPEG1/2 demuxer
  * Copyright (c) 2000, 2001, 2002 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -74,6 +74,7 @@ static int mpegps_probe(AVProbeData *p)
             // and audio streams
             else if((code & 0xe0) == AUDIO_ID &&  pes) {audio++; i+=len;}
             else if(code == PRIVATE_STREAM_1  &&  pes) {priv1++; i+=len;}
+            else if(code == 0x1fd             &&  pes) vid++; //VC1
 
             else if((code & 0xf0) == VIDEO_ID && !pes) invalid++;
             else if((code & 0xe0) == AUDIO_ID && !pes) invalid++;
@@ -81,7 +82,7 @@ static int mpegps_probe(AVProbeData *p)
         }
     }
 
-    if(vid+audio > invalid)     /* invalid VDR files nd short PES streams */
+    if(vid+audio > invalid+1)     /* invalid VDR files nd short PES streams */
         score= AVPROBE_SCORE_MAX/4;
 
 //av_log(NULL, AV_LOG_ERROR, "%d %d %d %d %d %d len:%d\n", sys, priv1, pspack,vid, audio, invalid, p->buf_size);
@@ -110,6 +111,7 @@ static int mpegps_read_header(AVFormatContext *s,
     MpegDemuxContext *m = s->priv_data;
     const char *sofdec = "Sofdec";
     int v, i = 0;
+    int64_t last_pos = avio_tell(s->pb);
 
     m->header_state = 0xff;
     s->ctx_flags |= AVFMTCTX_NOHEADER;
@@ -117,11 +119,13 @@ static int mpegps_read_header(AVFormatContext *s,
     m->sofdec = -1;
     do {
         v = avio_r8(s->pb);
-        m->header_state = m->header_state << 8 | v;
         m->sofdec++;
     } while (v == sofdec[i] && i++ < 6);
 
     m->sofdec = (m->sofdec == 6) ? 1 : 0;
+
+    if (!m->sofdec)
+       avio_seek(s->pb, last_pos, SEEK_SET);
 
     /* no need to do more */
     return 0;
@@ -146,7 +150,7 @@ static int find_next_start_code(AVIOContext *pb, int *size_ptr,
     state = *header_state;
     n = *size_ptr;
     while (n > 0) {
-        if (pb->eof_reached)
+        if (url_feof(pb))
             break;
         v = avio_r8(pb);
         n--;
@@ -256,7 +260,7 @@ static int mpegps_read_pes_header(AVFormatContext *s,
         last_sync = avio_tell(s->pb);
     //printf("startcode=%x pos=0x%"PRIx64"\n", startcode, avio_tell(s->pb));
     if (startcode < 0){
-        if(s->pb->eof_reached)
+        if(url_feof(s->pb))
             return AVERROR_EOF;
         //FIXME we should remember header_state
         return AVERROR(EAGAIN);
@@ -424,6 +428,7 @@ static int mpegps_read_packet(AVFormatContext *s,
     MpegDemuxContext *m = s->priv_data;
     AVStream *st;
     int len, startcode, i, es_type, ret;
+    int request_probe= 0;
     enum CodecID codec_id = CODEC_ID_NONE;
     enum AVMediaType type;
     int64_t pts, dts, dummy_pos; //dummy_pos is needed for the index building to work
@@ -482,7 +487,7 @@ static int mpegps_read_packet(AVFormatContext *s,
         if(!memcmp(buf, avs_seqh, 4) && (buf[6] != 0 || buf[7] != 1))
             codec_id = CODEC_ID_CAVS;
         else
-            codec_id = CODEC_ID_PROBE;
+            request_probe= 1;
         type = AVMEDIA_TYPE_VIDEO;
     } else if (startcode >= 0x1c0 && startcode <= 0x1df) {
         type = AVMEDIA_TYPE_AUDIO;
@@ -538,6 +543,7 @@ static int mpegps_read_packet(AVFormatContext *s,
     st->id = startcode;
     st->codec->codec_type = type;
     st->codec->codec_id = codec_id;
+    st->request_probe     = request_probe;
     if (codec_id != CODEC_ID_PCM_S16BE)
         st->need_parsing = AVSTREAM_PARSE_FULL;
  found:
@@ -614,7 +620,6 @@ AVInputFormat ff_mpegps_demuxer = {
     .read_probe     = mpegps_probe,
     .read_header    = mpegps_read_header,
     .read_packet    = mpegps_read_packet,
-    .read_seek      = NULL, //mpegps_read_seek,
     .read_timestamp = mpegps_read_dts,
     .flags = AVFMT_SHOW_IDS|AVFMT_TS_DISCONT,
 };

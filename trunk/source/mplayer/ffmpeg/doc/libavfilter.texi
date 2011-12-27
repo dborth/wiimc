@@ -11,11 +11,11 @@
 
 @chapter Introduction
 
-Libavfilter is the filtering API of Libav. It is the substitute of the
+Libavfilter is the filtering API of FFmpeg. It is the substitute of the
 now deprecated 'vhooks' and started as a Google Summer of Code project.
 
-But note that there may still be serious bugs in the code and its API
-and ABI should not be considered stable yet!
+Audio filtering integration into the main FFmpeg repository is a work in
+progress, so audio API and ABI should not be considered stable yet.
 
 @chapter Tutorial
 
@@ -36,14 +36,14 @@ and the vflip filter before merging it back with the other stream by
 overlaying it on top. You can use the following command to achieve this:
 
 @example
-./avconv -i input -vf "[in] split [T1], fifo, [T2] overlay=0:H/2 [out]; [T1] fifo, crop=iw:ih/2:0:ih/2, vflip [T2]" output
+ffmpeg -i input -vf "[in] split [T1], fifo, [T2] overlay=0:H/2 [out]; [T1] fifo, crop=iw:ih/2:0:ih/2, vflip [T2]" output
 @end example
 
 The result will be that in output the top half of the video is mirrored
 onto the bottom half.
 
 Video filters are loaded using the @var{-vf} option passed to
-avconv or to avplay. Filters in the same linear chain are separated by
+ffmpeg or to ffplay. Filters in the same linear chain are separated by
 commas. In our example, @var{split, fifo, overlay} are in one linear
 chain, and @var{fifo, crop, vflip} are in another. The points where
 the linear chains join are labeled by names enclosed in square
@@ -61,7 +61,7 @@ not have video output.
 
 @chapter graph2dot
 
-The @file{graph2dot} program included in the Libav @file{tools}
+The @file{graph2dot} program included in the FFmpeg @file{tools}
 directory can be used to parse a filter graph description and issue a
 corresponding textual representation in the dot language.
 

@@ -2,20 +2,20 @@
  * Bitmap Brothers JV demuxer
  * Copyright (c) 2005, 2011 Peter Ross <pross@xvid.org>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -27,6 +27,7 @@
 
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
+#include "internal.h"
 
 #define JV_PREAMBLE_SIZE 5
 
@@ -81,7 +82,7 @@ static int read_header(AVFormatContext *s,
     vst->codec->height      = avio_rl16(pb);
     vst->nb_frames          =
     ast->nb_index_entries   = avio_rl16(pb);
-    av_set_pts_info(vst, 64, avio_rl16(pb), 1000);
+    avpriv_set_pts_info(vst, 64, avio_rl16(pb), 1000);
 
     avio_skip(pb, 4);
 
@@ -90,7 +91,7 @@ static int read_header(AVFormatContext *s,
     ast->codec->codec_tag   = 0; /* no fourcc */
     ast->codec->sample_rate = avio_rl16(pb);
     ast->codec->channels    = 1;
-    av_set_pts_info(ast, 64, 1, ast->codec->sample_rate);
+    avpriv_set_pts_info(ast, 64, 1, ast->codec->sample_rate);
 
     avio_skip(pb, 10);
 
@@ -139,7 +140,7 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
     AVIOContext *pb = s->pb;
     AVStream *ast = s->streams[0];
 
-    while (!s->pb->eof_reached && jv->pts < ast->nb_index_entries) {
+    while (!url_feof(s->pb) && jv->pts < ast->nb_index_entries) {
         const AVIndexEntry *e   = ast->index_entries + jv->pts;
         const JVFrame      *jvf = jv->frames + jv->pts;
 
@@ -207,10 +208,11 @@ static int read_seek(AVFormatContext *s, int stream_index,
 
     if (i < 0 || i >= ast->nb_index_entries)
         return 0;
+    if (avio_seek(s->pb, ast->index_entries[i].pos, SEEK_SET) < 0)
+        return -1;
 
     jv->state = JV_AUDIO;
     jv->pts   = i;
-    avio_seek(s->pb, ast->index_entries[i].pos, SEEK_SET);
     return 0;
 }
 

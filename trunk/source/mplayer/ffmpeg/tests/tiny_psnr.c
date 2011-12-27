@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -51,6 +51,21 @@ uint64_t exp16_table[21]={
  195360063,
  582360139072LL,
 };
+
+#if 0
+// 16.16 fixpoint exp()
+static unsigned int exp16(unsigned int a){
+    int i;
+    int out= 1<<16;
+
+    for(i=19;i>=0;i--){
+        if(a&(1<<i))
+            out= (out*exp16_table[i] + (1<<15))>>16;
+    }
+
+    return out;
+}
+#endif
 
 // 16.16 fixpoint log()
 static int64_t log16(uint64_t a){

@@ -3,20 +3,20 @@
  * Copyright (c) 2009 Samalyse
  * Author: Olivier Guilyardi <olivier samalyse com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -29,7 +29,9 @@
 #include "libavutil/opt.h"
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
+#include "libavformat/internal.h"
 #include "timefilter.h"
+#include "avdevice.h"
 
 /**
  * Size of the internal FIFO buffers as a number of audio packets
@@ -244,7 +246,7 @@ static int audio_read_header(AVFormatContext *context, AVFormatParameters *param
     stream->codec->sample_rate  = self->sample_rate;
     stream->codec->channels     = self->nports;
 
-    av_set_pts_info(stream, 64, 1, 1000000);  /* 64 bits pts in us */
+    avpriv_set_pts_info(stream, 64, 1, 1000000);  /* 64 bits pts in us */
     return 0;
 }
 
@@ -270,7 +272,7 @@ static int audio_read_packet(AVFormatContext *context, AVPacket *pkt)
         }
     }
 
-    /* Wait for a packet comming back from process_callback(), if one isn't available yet */
+    /* Wait for a packet coming back from process_callback(), if one isn't available yet */
     timeout.tv_sec = av_gettime() / 1000000 + 2;
     if (sem_timedwait(&self->packet_count, &timeout)) {
         if (errno == ETIMEDOUT) {

@@ -3,20 +3,20 @@
  * Copyright (c) 2002-2004 Michael Niedermayer <michaelni@gmx.at>
  * Copyright (c) 2004 Maarten Daniels
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -97,7 +97,7 @@ static av_cold int h261_decode_init(AVCodecContext *avctx){
 }
 
 /**
- * decodes the group of blocks header or slice header.
+ * Decode the group of blocks header or slice header.
  * @return <0 if an error occurred
  */
 static int h261_decode_gob_header(H261Context *h){
@@ -136,7 +136,7 @@ static int h261_decode_gob_header(H261Context *h){
 
     if(s->qscale==0) {
         av_log(s->avctx, AV_LOG_ERROR, "qscale has forbidden 0 value\n");
-        if (s->avctx->err_recognition & AV_EF_BITSTREAM)
+        if (s->avctx->err_recognition & (AV_EF_BITSTREAM | AV_EF_COMPLIANT))
             return -1;
     }
 
@@ -150,7 +150,7 @@ static int h261_decode_gob_header(H261Context *h){
 }
 
 /**
- * decodes the group of blocks / video packet header.
+ * Decode the group of blocks / video packet header.
  * @return <0 if no resync found
  */
 static int ff_h261_resync(H261Context *h){
@@ -191,7 +191,7 @@ static int ff_h261_resync(H261Context *h){
 }
 
 /**
- * decodes skipped macroblocks
+ * Decode skipped macroblocks.
  * @return 0
  */
 static int h261_decode_mb_skipped(H261Context *h, int mba1, int mba2 )
@@ -355,7 +355,7 @@ intra:
 }
 
 /**
- * decodes a macroblock
+ * Decode a macroblock.
  * @return <0 if an error occurred
  */
 static int h261_decode_block(H261Context * h, DCTELEM * block,
@@ -437,7 +437,7 @@ static int h261_decode_block(H261Context * h, DCTELEM * block,
 }
 
 /**
- * decodes the H261 picture header.
+ * Decode the H.261 picture header.
  * @return <0 if no startcode found
  */
 static int h261_decode_picture_header(H261Context *h){
@@ -572,6 +572,8 @@ retry:
     //we need to set current_picture_ptr before reading the header, otherwise we cannot store anyting im there
     if (s->current_picture_ptr == NULL || s->current_picture_ptr->f.data[0]) {
         int i= ff_find_unused_picture(s, 0);
+        if (i < 0)
+            return i;
         s->current_picture_ptr= &s->picture[i];
     }
 

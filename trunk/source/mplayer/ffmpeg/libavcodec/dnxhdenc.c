@@ -6,20 +6,20 @@
  * VC-3 encoder funded by the British Broadcasting Corporation
  * 10 bit support added by MirriAd Ltd, Joseph Artsimovich <joseph@mirriad.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -77,7 +77,7 @@ static int dnxhd_10bit_dct_quantize(MpegEncContext *ctx, DCTELEM *block,
                                     int n, int qscale, int *overflow)
 {
     const uint8_t *scantable= ctx->intra_scantable.scantable;
-    const int *qmat = ctx->q_intra_matrix[qscale];
+    const int *qmat = n<4 ? ctx->q_intra_matrix[qscale] : ctx->q_chroma_intra_matrix[qscale];
     int last_non_zero = 0;
     int i;
 
@@ -122,9 +122,9 @@ static int dnxhd_init_vlc(DNXHDEncContext *ctx)
                 alevel -= offset<<6;
             }
             for (j = 0; j < 257; j++) {
-                if (ctx->cid_table->ac_level[j] == alevel &&
-                    (!offset || (ctx->cid_table->ac_index_flag[j] && offset)) &&
-                    (!run    || (ctx->cid_table->ac_run_flag  [j] && run))) {
+                if (ctx->cid_table->ac_level[j] >> 1 == alevel &&
+                    (!offset || (ctx->cid_table->ac_flags[j] & 1) && offset) &&
+                    (!run    || (ctx->cid_table->ac_flags[j] & 2) && run)) {
                     assert(!ctx->vlc_codes[index]);
                     if (alevel) {
                         ctx->vlc_codes[index] = (ctx->cid_table->ac_codes[j]<<1)|(sign&1);
@@ -207,6 +207,11 @@ static int dnxhd_init_qmat(DNXHDEncContext *ctx, int lbias, int cbias)
             }
         }
     }
+
+    ctx->m.q_chroma_intra_matrix16 = ctx->qmatrix_c16;
+    ctx->m.q_chroma_intra_matrix   = ctx->qmatrix_c;
+    ctx->m.q_intra_matrix16        = ctx->qmatrix_l16;
+    ctx->m.q_intra_matrix          = ctx->qmatrix_l;
 
     return 0;
  fail:
@@ -497,15 +502,8 @@ static av_always_inline void dnxhd_get_blocks(DNXHDEncContext *ctx, int mb_x, in
 
 static av_always_inline int dnxhd_switch_matrix(DNXHDEncContext *ctx, int i)
 {
-    if (i&2) {
-        ctx->m.q_intra_matrix16 = ctx->qmatrix_c16;
-        ctx->m.q_intra_matrix   = ctx->qmatrix_c;
-        return 1 + (i&1);
-    } else {
-        ctx->m.q_intra_matrix16 = ctx->qmatrix_l16;
-        ctx->m.q_intra_matrix   = ctx->qmatrix_l;
-        return 0;
-    }
+    const static uint8_t component[8]={0,0,1,2,0,0,1,2};
+    return component[i];
 }
 
 static int dnxhd_calc_bits_thread(AVCodecContext *avctx, void *arg, int jobnr, int threadnr)
@@ -535,7 +533,7 @@ static int dnxhd_calc_bits_thread(AVCodecContext *avctx, void *arg, int jobnr, i
             int n = dnxhd_switch_matrix(ctx, i);
 
             memcpy(block, src_block, 64*sizeof(*block));
-            last_index = ctx->m.dct_quantize(&ctx->m, block, i, qscale, &overflow);
+            last_index = ctx->m.dct_quantize(&ctx->m, block, 4&(2*i), qscale, &overflow);
             ac_bits += dnxhd_calc_ac_bits(ctx, block, last_index);
 
             diff = block[0] - ctx->m.last_dc[n];
@@ -582,7 +580,7 @@ static int dnxhd_encode_thread(AVCodecContext *avctx, void *arg, int jobnr, int 
             DCTELEM *block = ctx->blocks[i];
             int last_index, overflow;
             int n = dnxhd_switch_matrix(ctx, i);
-            last_index = ctx->m.dct_quantize(&ctx->m, block, i, qscale, &overflow);
+            last_index = ctx->m.dct_quantize(&ctx->m, block, 4&(2*i), qscale, &overflow);
             //START_TIMER;
             dnxhd_encode_block(ctx, block, last_index, n);
             //STOP_TIMER("encode_block");
@@ -682,7 +680,8 @@ static int dnxhd_encode_rdo(AVCodecContext *avctx, DNXHDEncContext *ctx)
                 int qscale = 1;
                 int mb = y*ctx->m.mb_width+x;
                 for (q = 1; q < avctx->qmax; q++) {
-                    unsigned score = ctx->mb_rc[q][mb].bits*lambda+(ctx->mb_rc[q][mb].ssd<<LAMBDA_FRAC_BITS);
+                    unsigned score = ctx->mb_rc[q][mb].bits*lambda+
+                        ((unsigned)ctx->mb_rc[q][mb].ssd<<LAMBDA_FRAC_BITS);
                     if (score < min) {
                         min = score;
                         qscale = q;
@@ -709,7 +708,7 @@ static int dnxhd_encode_rdo(AVCodecContext *avctx, DNXHDEncContext *ctx)
                 lambda = (lambda+last_higher)>>1;
             else
                 lambda -= down_step;
-            down_step *= 5; // XXX tune ?
+            down_step = FFMIN((int64_t)down_step*5, INT_MAX);
             up_step = 1<<LAMBDA_FRAC_BITS;
             lambda = FFMAX(1, lambda);
             if (lambda == last_lower)

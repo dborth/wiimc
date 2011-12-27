@@ -2,20 +2,20 @@
  * Interface to libmp3lame for mp3 encoding
  * Copyright (c) 2002 Lennert Buytenhek <buytenh@gnu.org>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -38,6 +38,10 @@ typedef struct Mp3AudioContext {
     int stereo;
     uint8_t buffer[BUFFER_SIZE];
     int buffer_index;
+    struct {
+        int *left;
+        int *right;
+    } s32_data;
     int reservoir;
 } Mp3AudioContext;
 
@@ -45,8 +49,11 @@ static av_cold int MP3lame_encode_init(AVCodecContext *avctx)
 {
     Mp3AudioContext *s = avctx->priv_data;
 
-    if (avctx->channels > 2)
-        return -1;
+    if (avctx->channels > 2) {
+        av_log(avctx, AV_LOG_ERROR,
+               "Invalid number of channels %d, must be <= 2\n", avctx->channels);
+        return AVERROR(EINVAL);
+    }
 
     s->stereo = avctx->channels > 1 ? 1 : 0;
 
@@ -77,8 +84,25 @@ static av_cold int MP3lame_encode_init(AVCodecContext *avctx)
 
     avctx->frame_size = lame_get_framesize(s->gfp);
 
-    avctx->coded_frame= avcodec_alloc_frame();
+    if(!(avctx->coded_frame= avcodec_alloc_frame())) {
+        lame_close(s->gfp);
+
+        return AVERROR(ENOMEM);
+    }
     avctx->coded_frame->key_frame= 1;
+
+    if(AV_SAMPLE_FMT_S32 == avctx->sample_fmt && s->stereo) {
+        int nelem = 2 * avctx->frame_size;
+
+        if(! (s->s32_data.left = av_malloc(nelem * sizeof(int)))) {
+            av_freep(&avctx->coded_frame);
+            lame_close(s->gfp);
+
+            return AVERROR(ENOMEM);
+        }
+
+        s->s32_data.right = s->s32_data.left + avctx->frame_size;
+    }
 
     return 0;
 
@@ -154,7 +178,45 @@ static int MP3lame_encode_frame(AVCodecContext *avctx,
 
     /* lame 3.91 dies on '1-channel interleaved' data */
 
-    if(data){
+    if(!data){
+        lame_result= lame_encode_flush(
+                s->gfp,
+                s->buffer + s->buffer_index,
+                BUFFER_SIZE - s->buffer_index
+                );
+#if 2147483647 == INT_MAX
+    }else if(AV_SAMPLE_FMT_S32 == avctx->sample_fmt){
+        if (s->stereo) {
+            int32_t *rp = data;
+            int32_t *mp = rp + 2*avctx->frame_size;
+            int *wpl = s->s32_data.left;
+            int *wpr = s->s32_data.right;
+
+            while (rp < mp) {
+                *wpl++ = *rp++;
+                *wpr++ = *rp++;
+            }
+
+            lame_result = lame_encode_buffer_int(
+                s->gfp,
+                s->s32_data.left,
+                s->s32_data.right,
+                avctx->frame_size,
+                s->buffer + s->buffer_index,
+                BUFFER_SIZE - s->buffer_index
+                );
+        } else {
+            lame_result = lame_encode_buffer_int(
+                s->gfp,
+                data,
+                data,
+                avctx->frame_size,
+                s->buffer + s->buffer_index,
+                BUFFER_SIZE - s->buffer_index
+                );
+        }
+#endif
+    }else{
         if (s->stereo) {
             lame_result = lame_encode_buffer_interleaved(
                 s->gfp,
@@ -173,12 +235,6 @@ static int MP3lame_encode_frame(AVCodecContext *avctx,
                 BUFFER_SIZE - s->buffer_index
                 );
         }
-    }else{
-        lame_result= lame_encode_flush(
-                s->gfp,
-                s->buffer + s->buffer_index,
-                BUFFER_SIZE - s->buffer_index
-                );
     }
 
     if(lame_result < 0){
@@ -214,6 +270,7 @@ static av_cold int MP3lame_encode_close(AVCodecContext *avctx)
 {
     Mp3AudioContext *s = avctx->priv_data;
 
+    av_freep(&s->s32_data.left);
     av_freep(&avctx->coded_frame);
 
     lame_close(s->gfp);
@@ -243,7 +300,11 @@ AVCodec ff_libmp3lame_encoder = {
     .encode         = MP3lame_encode_frame,
     .close          = MP3lame_encode_close,
     .capabilities= CODEC_CAP_DELAY,
-    .sample_fmts = (const enum AVSampleFormat[]){AV_SAMPLE_FMT_S16,AV_SAMPLE_FMT_NONE},
+    .sample_fmts = (const enum AVSampleFormat[]){AV_SAMPLE_FMT_S16,
+#if 2147483647 == INT_MAX
+    AV_SAMPLE_FMT_S32,
+#endif
+    AV_SAMPLE_FMT_NONE},
     .supported_samplerates= sSampleRates,
     .long_name= NULL_IF_CONFIG_SMALL("libmp3lame MP3 (MPEG audio layer 3)"),
     .priv_class     = &libmp3lame_class,

@@ -1,20 +1,20 @@
 /*
  * copyright (c) 2001 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #ifndef AVFORMAT_AVIO_H
@@ -22,18 +22,36 @@
 
 /**
  * @file
+ * @ingroup lavf_io
  * Buffered I/O operations
  */
 
 #include <stdint.h>
 
 #include "libavutil/common.h"
+#include "libavutil/dict.h"
 #include "libavutil/log.h"
 
 #include "libavformat/version.h"
 
 
 #define AVIO_SEEKABLE_NORMAL 0x0001 /**< Seeking works like for a local file */
+
+/**
+ * Callback for checking whether to abort blocking functions.
+ * AVERROR_EXIT is returned in this case by the interrupted
+ * function. During blocking operations, callback is called with
+ * opaque as parameter. If the callback returns 1, the
+ * blocking operation will be aborted.
+ *
+ * No members can be added to this struct without a major bump, if
+ * new elements have been added after this struct in AVFormatContext
+ * or AVIOContext.
+ */
+typedef struct {
+    int (*callback)(void*);
+    void *opaque;
+} AVIOInterruptCB;
 
 /**
  * Bytestream IO Context.
@@ -48,6 +66,21 @@
  *       function pointers specified in avio_alloc_context()
  */
 typedef struct {
+#if !FF_API_OLD_AVIO
+    /**
+     * A class for private options.
+     *
+     * If this AVIOContext is created by avio_open2(), av_class is set and
+     * passes the options down to protocols.
+     *
+     * If this AVIOContext is manually allocated, then av_class may be set by
+     * the caller.
+     *
+     * warning -- this field can be NULL, be sure to not pass this AVIOContext
+     * to any av_opt_* functions in that case.
+     */
+    AVClass *av_class;
+#endif
     unsigned char *buffer;  /**< Start of the buffer. */
     int buffer_size;        /**< Maximum buffer size */
     unsigned char *buf_ptr; /**< Current position in the buffer */
@@ -87,6 +120,12 @@ typedef struct {
      * A combination of AVIO_SEEKABLE_ flags or 0 when the stream is not seekable.
      */
     int seekable;
+
+    /**
+     * max filesize, used to limit allocations
+     * This field is internal to libavformat and access from outside is not allowed.
+     */
+     int64_t maxsize;
 } AVIOContext;
 
 /* unbuffered I/O */
@@ -109,6 +148,7 @@ typedef struct URLContext {
     void *priv_data;
     char *filename; /**< specified URL */
     int is_connected;
+    AVIOInterruptCB interrupt_callback;
 } URLContext;
 
 #define URL_PROTOCOL_FLAG_NESTED_SCHEME 1 /*< The protocol name can be the first part of a nested protocol scheme */
@@ -178,6 +218,7 @@ extern URLInterruptCB *url_interrupt_cb;
  * @defgroup old_url_funcs Old url_* functions
  * The following functions are deprecated. Use the buffered API based on #AVIOContext instead.
  * @{
+ * @ingroup lavf_io
  */
 attribute_deprecated int url_open_protocol (URLContext **puc, struct URLProtocol *up,
                                             const char *url, int flags);
@@ -197,12 +238,13 @@ attribute_deprecated int av_url_read_pause(URLContext *h, int pause);
 attribute_deprecated int64_t av_url_read_seek(URLContext *h, int stream_index,
                                               int64_t timestamp, int flags);
 attribute_deprecated void url_set_interrupt_cb(int (*interrupt_cb)(void));
+
 /**
- * If protocol is NULL, returns the first registered protocol,
- * if protocol is non-NULL, returns the next registered protocol after protocol,
- * or NULL if protocol is the last one.
+ * returns the next registered protocol after the given protocol (the first if
+ * NULL is given), or NULL if protocol is the last one.
  */
-attribute_deprecated URLProtocol *av_protocol_next(URLProtocol *p);
+URLProtocol *av_protocol_next(URLProtocol *p);
+
 /**
  * Register the URLProtocol protocol.
  *
@@ -237,6 +279,7 @@ attribute_deprecated AVIOContext *av_alloc_put_byte(
  * @defgroup old_avio_funcs Old put_/get_*() functions
  * The following functions are deprecated. Use the "avio_"-prefixed functions instead.
  * @{
+ * @ingroup lavf_io
  */
 attribute_deprecated int          get_buffer(AVIOContext *s, unsigned char *buf, int size);
 attribute_deprecated int          get_partial_buffer(AVIOContext *s, unsigned char *buf, int size);
@@ -274,6 +317,7 @@ attribute_deprecated int64_t av_url_read_fseek (AVIOContext *h,    int stream_in
  * @defgroup old_url_f_funcs Old url_f* functions
  * The following functions are deprecated, use the "avio_"-prefixed functions instead.
  * @{
+ * @ingroup lavf_io
  */
 attribute_deprecated int url_fopen( AVIOContext **s, const char *url, int flags);
 attribute_deprecated int url_fclose(AVIOContext *s);
@@ -294,10 +338,6 @@ attribute_deprecated int url_fdopen(AVIOContext **s, URLContext *h);
  * @}
  */
 
-/**
- * @deprecated use AVIOContext.eof_reached
- */
-attribute_deprecated int url_feof(AVIOContext *s);
 attribute_deprecated int url_ferror(AVIOContext *s);
 
 attribute_deprecated int udp_set_remote_url(URLContext *h, const char *uri);
@@ -356,13 +396,17 @@ attribute_deprecated int url_exist(const char *url);
  */
 int avio_check(const char *url, int flags);
 
+#if FF_API_OLD_INTERRUPT_CB
 /**
  * The callback is called in blocking functions to test regulary if
  * asynchronous interruption is needed. AVERROR_EXIT is returned
  * in this case by the interrupted function. 'NULL' means no interrupt
  * callback is given.
+ * @deprecated Use interrupt_callback in AVFormatContext/avio_open2
+ *             instead.
  */
-void avio_set_interrupt_cb(int (*interrupt_cb)(void));
+attribute_deprecated void avio_set_interrupt_cb(int (*interrupt_cb)(void));
+#endif
 
 /**
  * Allocate and initialize an AVIOContext for buffered I/O. It must be later
@@ -438,10 +482,7 @@ int64_t avio_seek(AVIOContext *s, int64_t offset, int whence);
  * Skip given number of bytes forward
  * @return new position or AVERROR.
  */
-static av_always_inline int64_t avio_skip(AVIOContext *s, int64_t offset)
-{
-    return avio_seek(s, offset, SEEK_CUR);
-}
+int64_t avio_skip(AVIOContext *s, int64_t offset);
 
 /**
  * ftell() equivalent for AVIOContext.
@@ -457,6 +498,12 @@ static av_always_inline int64_t avio_tell(AVIOContext *s)
  * @return filesize or AVERROR
  */
 int64_t avio_size(AVIOContext *s);
+
+/**
+ * feof() equivalent for AVIOContext.
+ * @return non zero if and only if end of file
+ */
+int url_feof(AVIOContext *s);
 
 /** @warning currently size is limited */
 int avio_printf(AVIOContext *s, const char *fmt, ...) av_printf_format(2, 3);
@@ -557,6 +604,26 @@ int avio_get_str16be(AVIOContext *pb, int maxlen, char *buf, int buflen);
 int avio_open(AVIOContext **s, const char *url, int flags);
 
 /**
+ * Create and initialize a AVIOContext for accessing the
+ * resource indicated by url.
+ * @note When the resource indicated by url has been opened in
+ * read+write mode, the AVIOContext can be used only for writing.
+ *
+ * @param s Used to return the pointer to the created AVIOContext.
+ * In case of failure the pointed to value is set to NULL.
+ * @param flags flags which control how the resource indicated by url
+ * is to be opened
+ * @param int_cb an interrupt callback to be used at the protocols level
+ * @param options  A dictionary filled with protocol-private options. On return
+ * this parameter will be destroyed and replaced with a dict containing options
+ * that were not found. May be NULL.
+ * @return 0 in case of success, a negative value corresponding to an
+ * AVERROR code in case of failure
+ */
+int avio_open2(AVIOContext **s, const char *url, int flags,
+               const AVIOInterruptCB *int_cb, AVDictionary **options);
+
+/**
  * Close the resource accessed by the AVIOContext s and free it.
  * This function can only be used if s was opened by avio_open().
  *
@@ -585,6 +652,7 @@ int avio_close_dyn_buf(AVIOContext *s, uint8_t **pbuffer);
 
 /**
  * Iterate through names of available protocols.
+ * @note it is recommanded to use av_protocol_next() instead of this
  *
  * @param opaque A private pointer representing current protocol.
  *        It must be a pointer to NULL on first iteration and will
@@ -610,13 +678,13 @@ int     avio_pause(AVIOContext *h, int pause);
  *        If stream_index is (-1) the timestamp should be in AV_TIME_BASE
  *        units from the beginning of the presentation.
  *        If a stream_index >= 0 is used and the protocol does not support
- *        seeking based on component streams, the call will fail with ENOTSUP.
+ *        seeking based on component streams, the call will fail.
  * @param timestamp timestamp in AVStream.time_base units
  *        or if there is no stream specified then in AV_TIME_BASE units.
  * @param flags Optional combination of AVSEEK_FLAG_BACKWARD, AVSEEK_FLAG_BYTE
  *        and AVSEEK_FLAG_ANY. The protocol may silently ignore
  *        AVSEEK_FLAG_BACKWARD and AVSEEK_FLAG_ANY, but AVSEEK_FLAG_BYTE will
- *        fail with ENOTSUP if used and not supported.
+ *        fail if used and not supported.
  * @return >= 0 on success
  * @see AVInputFormat::read_seek
  */

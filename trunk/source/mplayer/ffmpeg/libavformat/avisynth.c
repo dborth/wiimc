@@ -2,24 +2,25 @@
  * AVISynth support
  * Copyright (c) 2006 DivX, Inc.
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "avformat.h"
+#include "internal.h"
 #include "riff.h"
 
 #include <windows.h>
@@ -124,6 +125,14 @@ static int avisynth_read_header(AVFormatContext *s, AVFormatParameters *ap)
                   st->codec->bit_rate = (uint64_t)stream->info.dwSampleSize * (uint64_t)stream->info.dwRate * 8 / (uint64_t)stream->info.dwScale;
                   st->codec->codec_tag = imgfmt.bmiHeader.biCompression;
                   st->codec->codec_id = ff_codec_get_id(ff_codec_bmp_tags, imgfmt.bmiHeader.biCompression);
+                  if (st->codec->codec_id == CODEC_ID_RAWVIDEO && imgfmt.bmiHeader.biCompression== BI_RGB) {
+                    st->codec->extradata = av_malloc(9 + FF_INPUT_BUFFER_PADDING_SIZE);
+                    if (st->codec->extradata) {
+                      st->codec->extradata_size = 9;
+                      memcpy(st->codec->extradata, "BottomUp", 9);
+                    }
+                  }
+
 
                   st->duration = stream->info.dwLength;
                 }
@@ -137,7 +146,7 @@ static int avisynth_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
               st->codec->stream_codec_tag = stream->info.fccHandler;
 
-              av_set_pts_info(st, 64, info.dwScale, info.dwRate);
+              avpriv_set_pts_info(st, 64, info.dwScale, info.dwRate);
               st->start_time = stream->info.dwStart;
             }
         }
@@ -167,7 +176,6 @@ static int avisynth_read_packet(AVFormatContext *s, AVPacket *pkt)
 
   res = AVIStreamRead(stream->handle, stream->read, stream->chunck_samples, pkt->data, stream->chunck_size, &read_size, NULL);
 
-  pkt->pts = stream->read;
   pkt->size = read_size;
 
   stream->read += stream->chunck_samples;

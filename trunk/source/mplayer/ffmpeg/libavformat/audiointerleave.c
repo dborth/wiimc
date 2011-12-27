@@ -3,20 +3,20 @@
  *
  * Copyright (c) 2009 Baptiste Coudurier <baptiste dot coudurier at gmail dot com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -113,10 +113,13 @@ int ff_audio_rechunk_interleave(AVFormatContext *s, AVPacket *out, AVPacket *pkt
             }
             av_fifo_generic_write(aic->fifo, pkt->data, pkt->size, NULL);
         } else {
+            int ret;
             // rewrite pts and dts to be decoded time line position
             pkt->pts = pkt->dts = aic->dts;
             aic->dts += pkt->duration;
-            ff_interleave_add_packet(s, pkt, compare_ts);
+            ret = ff_interleave_add_packet(s, pkt, compare_ts);
+            if (ret < 0)
+                return ret;
         }
         pkt = NULL;
     }
@@ -125,8 +128,12 @@ int ff_audio_rechunk_interleave(AVFormatContext *s, AVPacket *out, AVPacket *pkt
         AVStream *st = s->streams[i];
         if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
             AVPacket new_pkt;
-            while (ff_interleave_new_audio_packet(s, &new_pkt, i, flush))
-                ff_interleave_add_packet(s, &new_pkt, compare_ts);
+            int ret;
+            while (ff_interleave_new_audio_packet(s, &new_pkt, i, flush)) {
+                ret = ff_interleave_add_packet(s, &new_pkt, compare_ts);
+                if (ret < 0)
+                    return ret;
+            }
         }
     }
 

@@ -5,20 +5,20 @@
  * Copyright (c) 2001 Juan J. Sierralta P
  * Copyright (c) 2002-2004 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -26,6 +26,8 @@
  * @file
  * h263 decoder.
  */
+
+#define UNCHECKED_BITSTREAM_READER 1
 
 //#define DEBUG
 #include <limits.h>
@@ -148,7 +150,7 @@ int ff_h263_decode_mba(MpegEncContext *s)
 }
 
 /**
- * decodes the group of blocks header or slice header.
+ * Decode the group of blocks header or slice header.
  * @return <0 if an error occurred
  */
 static int h263_decode_gob_header(MpegEncContext *s)
@@ -203,7 +205,7 @@ static int h263_decode_gob_header(MpegEncContext *s)
 }
 
 /**
- * finds the next resync_marker
+ * Find the next resync_marker.
  * @param p pointer to buffer to scan
  * @param end pointer to the end of the buffer
  * @return pointer to the next resync_marker, or end if none was found
@@ -224,7 +226,7 @@ const uint8_t *ff_h263_find_resync_marker(const uint8_t *restrict p, const uint8
 }
 
 /**
- * decodes the group of blocks / video packet header.
+ * Decode the group of blocks / video packet header.
  * @return bit position of the resync_marker, or <0 if none was found
  */
 int ff_h263_resync(MpegEncContext *s){
@@ -306,7 +308,7 @@ int h263_decode_motion(MpegEncContext * s, int pred, int f_code)
 }
 
 
-/* Decodes RVLC of H.263+ UMV */
+/* Decode RVLC of H.263+ UMV */
 static int h263p_decode_umotion(MpegEncContext * s, int pred)
 {
    int code = 0, sign;
@@ -484,7 +486,7 @@ static int h263_decode_block(MpegEncContext * s, DCTELEM * block,
             level = get_bits(&s->gb, 8);
             if((level&0x7F) == 0){
                 av_log(s->avctx, AV_LOG_ERROR, "illegal dc %d at %d %d\n", level, s->mb_x, s->mb_y);
-                if(s->error_recognition >= FF_ER_COMPLIANT)
+                if(s->err_recognition & (AV_EF_BITSTREAM|AV_EF_COMPLIANT))
                     return -1;
             }
             if (level == 255)

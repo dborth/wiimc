@@ -3,20 +3,20 @@
  * Copyright (c) 2011 Konstantin Shishkov
  * based on work by Vladimir "VAG" Gneushev
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -339,7 +339,7 @@ static int dfa_decode_frame(AVCodecContext *avctx,
             tmp_buf = buf;
             for (i = 0; i < pal_elems; i++) {
                 s->pal[i] = bytestream_get_be24(&tmp_buf) << 2;
-                s->pal[i] |= (s->pal[i] >> 6) & 0x333;
+                s->pal[i] |= 0xFF << 24 | (s->pal[i] >> 6) & 0x30303;
             }
             s->pic.palette_has_changed = 1;
         } else if (chunk_type <= 9) {

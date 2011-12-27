@@ -2,20 +2,20 @@
  * Linux video grab interface
  * Copyright (c) 2000,2001 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -29,7 +29,7 @@
 #include "libavutil/imgutils.h"
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
-#include "libavformat/avformat.h"
+#include "libavformat/internal.h"
 #include "libavcodec/dsputil.h"
 #include <unistd.h>
 #include <fcntl.h>
@@ -39,6 +39,7 @@
 #define _LINUX_TIME_H 1
 #include <linux/videodev.h>
 #include <time.h>
+#include "avdevice.h"
 
 typedef struct {
     AVClass *class;
@@ -100,7 +101,7 @@ static int grab_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     st = avformat_new_stream(s1, NULL);
     if (!st)
         return AVERROR(ENOMEM);
-    av_set_pts_info(st, 64, 1, 1000000); /* 64 bits pts in us */
+    avpriv_set_pts_info(st, 64, 1, 1000000); /* 64 bits pts in us */
 
     video_fd = open(s1->filename, O_RDWR);
     if (video_fd < 0) {
@@ -353,7 +354,7 @@ static const AVClass v4l_class = {
 };
 
 AVInputFormat ff_v4l_demuxer = {
-    .name           = "video4linux",
+    .name           = "video4linux,v4l",
     .long_name      = NULL_IF_CONFIG_SMALL("Video4Linux device grab"),
     .priv_data_size = sizeof(VideoData),
     .read_header    = grab_read_header,

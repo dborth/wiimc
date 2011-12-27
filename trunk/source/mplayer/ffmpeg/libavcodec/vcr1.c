@@ -2,20 +2,20 @@
  * ATI VCR1 codec
  * Copyright (c) 2003 Michael Niedermayer
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -114,8 +114,6 @@ static int decode_frame(AVCodecContext *avctx,
     *picture= *(AVFrame*)&a->picture;
     *data_size = sizeof(AVPicture);
 
-    emms_c();
-
     return buf_size;
 }
 
@@ -129,8 +127,6 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
     *p = *pict;
     p->pict_type= AV_PICTURE_TYPE_I;
     p->key_frame= 1;
-
-    emms_c();
 
     avpriv_align_put_bits(&a->pb);
     while(get_bit_count(&a->pb)&31)
@@ -146,6 +142,7 @@ static av_cold void common_init(AVCodecContext *avctx){
     VCR1Context * const a = avctx->priv_data;
 
     avctx->coded_frame= (AVFrame*)&a->picture;
+    avcodec_get_frame_defaults(&a->picture);
     a->avctx= avctx;
 }
 

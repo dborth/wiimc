@@ -2,20 +2,20 @@
  * LOCO codec
  * Copyright (c) 2005 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -123,6 +123,9 @@ static int loco_decode_plane(LOCOContext *l, uint8_t *data, int width, int heigh
     int val;
     int i, j;
 
+    if(buf_size<=0)
+        return -1;
+
     init_get_bits(&rc.gb, buf, buf_size*8);
     rc.save = 0;
     rc.run = 0;
@@ -225,7 +228,7 @@ static int decode_frame(AVCodecContext *avctx,
     *data_size = sizeof(AVFrame);
     *(AVFrame*)data = l->pic;
 
-    return buf_size;
+    return buf_size < 0 ? -1 : buf_size;
 }
 
 static av_cold int decode_init(AVCodecContext *avctx){
@@ -271,6 +274,8 @@ static av_cold int decode_init(AVCodecContext *avctx){
     }
     if(avctx->debug & FF_DEBUG_PICT_INFO)
         av_log(avctx, AV_LOG_INFO, "lossy:%i, version:%i, mode: %i\n", l->lossy, version, l->mode);
+
+    avcodec_get_frame_defaults(&l->pic);
 
     return 0;
 }

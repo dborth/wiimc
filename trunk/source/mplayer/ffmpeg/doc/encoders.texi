@@ -1,10 +1,10 @@
 @chapter Encoders
 @c man begin ENCODERS
 
-Encoders are configured elements in Libav which allow the encoding of
+Encoders are configured elements in FFmpeg which allow the encoding of
 multimedia streams.
 
-When you configure your Libav build, all the supported native encoders
+When you configure your FFmpeg build, all the supported native encoders
 are enabled by default. Encoders requiring an external library must be enabled
 manually via the corresponding @code{--enable-lib} option. You can list all
 available encoders using the configure option @code{--list-encoders}.
@@ -369,7 +369,7 @@ is highly recommended that it be left as enabled except for testing purposes.
 
 @end table
 
-@subheading Floating-Point-Only AC-3 Encoding Options
+@subsection Floating-Point-Only AC-3 Encoding Options
 
 These options are only valid for the floating-point encoder and do not exist
 for the fixed-point encoder due to the corresponding features not being
@@ -413,3 +413,176 @@ Selected by Encoder (default)
 @end table
 
 @c man end AUDIO ENCODERS
+
+@chapter Video Encoders
+@c man begin VIDEO ENCODERS
+
+A description of some of the currently available video encoders
+follows.
+
+@section libvpx
+
+VP8 format supported through libvpx.
+
+Requires the presence of the libvpx headers and library during configuration.
+You need to explicitly configure the build with @code{--enable-libvpx}.
+
+@subsection Options
+
+Mapping from FFmpeg to libvpx options with conversion notes in parentheses.
+
+@table @option
+
+@item threads
+g_threads
+
+@item profile
+g_profile
+
+@item vb
+rc_target_bitrate
+
+@item g
+kf_max_dist
+
+@item keyint_min
+kf_min_dist
+
+@item qmin
+rc_min_quantizer
+
+@item qmax
+rc_max_quantizer
+
+@item bufsize, vb
+rc_buf_sz
+@code{(bufsize * 1000 / vb)}
+
+rc_buf_optimal_sz
+@code{(bufsize * 1000 / vb * 5 / 6)}
+
+@item rc_init_occupancy, vb
+rc_buf_initial_sz
+@code{(rc_init_occupancy * 1000 / vb)}
+
+@item rc_buffer_aggressivity
+rc_undershoot_pct
+
+@item skip_threshold
+rc_dropframe_thresh
+
+@item qcomp
+rc_2pass_vbr_bias_pct
+
+@item maxrate, vb
+rc_2pass_vbr_maxsection_pct
+@code{(maxrate * 100 / vb)}
+
+@item minrate, vb
+rc_2pass_vbr_minsection_pct
+@code{(minrate * 100 / vb)}
+
+@item minrate, maxrate, vb
+@code{VPX_CBR}
+@code{(minrate == maxrate == vb)}
+
+@item crf
+@code{VPX_CQ}, @code{VP8E_SET_CQ_LEVEL}
+
+@item quality
+@table @option
+@item @var{best}
+@code{VPX_DL_BEST_QUALITY}
+@item @var{good}
+@code{VPX_DL_GOOD_QUALITY}
+@item @var{realtime}
+@code{VPX_DL_REALTIME}
+@end table
+
+@item speed
+@code{VP8E_SET_CPUUSED}
+
+@item nr
+@code{VP8E_SET_NOISE_SENSITIVITY}
+
+@item mb_threshold
+@code{VP8E_SET_STATIC_THRESHOLD}
+
+@item slices
+@code{VP8E_SET_TOKEN_PARTITIONS}
+
+@item Alternate reference frame related
+@table @option
+@item vp8flags altref
+@code{VP8E_SET_ENABLEAUTOALTREF}
+@item @var{arnr_max_frames}
+@code{VP8E_SET_ARNR_MAXFRAMES}
+@item @var{arnr_type}
+@code{VP8E_SET_ARNR_TYPE}
+@item @var{arnr_strength}
+@code{VP8E_SET_ARNR_STRENGTH}
+@item @var{rc_lookahead}
+g_lag_in_frames
+@end table
+
+@item vp8flags error_resilient
+g_error_resilient
+
+@end table
+
+For more information about libvpx see:
+@url{http://www.webmproject.org/}
+
+@section libx264
+
+H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 format supported through
+libx264.
+
+Requires the presence of the libx264 headers and library during
+configuration. You need to explicitly configure the build with
+@code{--enable-libx264}.
+
+@subsection Options
+
+@table @option
+
+@item preset @var{preset_name}
+Set the encoding preset.
+
+@item tune @var{tune_name}
+Tune the encoding params.
+
+@item fastfirstpass @var{bool}
+Use fast settings when encoding first pass, default value is 1.
+
+@item profile @var{profile_name}
+Set profile restrictions.
+
+@item level @var{level}
+Specify level (as defined by Annex A).
+Deprecated in favor of @var{x264opts}.
+
+@item passlogfile @var{filename}
+Specify filename for 2 pass stats.
+Deprecated in favor of @var{x264opts} (see @var{stats} libx264 option).
+
+@item wpredp @var{wpred_type}
+Specify Weighted prediction for P-frames.
+Deprecated in favor of @var{x264opts} (see @var{weightp} libx264 option).
+
+@item x264opts @var{options}
+Allow to set any x264 option, see x264 --fullhelp for a list.
+
+@var{options} is a list of @var{key}=@var{value} couples separated by
+":".
+@end table
+
+For example to specify libx264 encoding options with @file{ffmpeg}:
+@example
+ffmpeg -i foo.mpg -vcodec libx264 -x264opts keyint=123:min-keyint=20 -an out.mkv
+@end example
+
+For more information about libx264 and the supported options see:
+@url{http://www.videolan.org/developers/x264.html}
+
+@c man end VIDEO ENCODERS

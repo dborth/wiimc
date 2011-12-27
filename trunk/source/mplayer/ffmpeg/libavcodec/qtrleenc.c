@@ -5,20 +5,20 @@
  *
  * This file is based on flashsvenc.c.
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -39,6 +39,7 @@ typedef struct QtrleEncContext {
     int pixel_size;
     AVPicture previous_frame;
     unsigned int max_buf_size;
+    int logical_width;
     /**
      * This array will contain at ith position the value of the best RLE code
      * if the line started at pixel i
@@ -67,8 +68,13 @@ static av_cold int qtrle_encode_init(AVCodecContext *avctx)
         return -1;
     }
     s->avctx=avctx;
+    s->logical_width=avctx->width;
 
     switch (avctx->pix_fmt) {
+    case PIX_FMT_GRAY8:
+        s->logical_width = avctx->width / 4;
+        s->pixel_size = 4;
+        break;
     case PIX_FMT_RGB555BE:
         s->pixel_size = 2;
         break;
@@ -82,11 +88,11 @@ static av_cold int qtrle_encode_init(AVCodecContext *avctx)
         av_log(avctx, AV_LOG_ERROR, "Unsupported colorspace.\n");
         break;
     }
-    avctx->bits_per_coded_sample = s->pixel_size*8;
+    avctx->bits_per_coded_sample = avctx->pix_fmt == PIX_FMT_GRAY8 ? 40 : s->pixel_size*8;
 
-    s->rlecode_table = av_mallocz(s->avctx->width);
-    s->skip_table    = av_mallocz(s->avctx->width);
-    s->length_table  = av_mallocz((s->avctx->width + 1)*sizeof(int));
+    s->rlecode_table = av_mallocz(s->logical_width);
+    s->skip_table    = av_mallocz(s->logical_width);
+    s->length_table  = av_mallocz((s->logical_width + 1)*sizeof(int));
     if (!s->skip_table || !s->length_table || !s->rlecode_table) {
         av_log(avctx, AV_LOG_ERROR, "Error allocating memory.\n");
         return -1;
@@ -96,10 +102,10 @@ static av_cold int qtrle_encode_init(AVCodecContext *avctx)
         return -1;
     }
 
-    s->max_buf_size = s->avctx->width*s->avctx->height*s->pixel_size /* image base material */
-                      + 15                                           /* header + footer */
-                      + s->avctx->height*2                           /* skip code+rle end */
-                      + s->avctx->width/MAX_RLE_BULK + 1             /* rle codes */;
+    s->max_buf_size = s->logical_width*s->avctx->height*s->pixel_size /* image base material */
+                      + 15                                            /* header + footer */
+                      + s->avctx->height*2                            /* skip code+rle end */
+                      + s->logical_width/MAX_RLE_BULK + 1             /* rle codes */;
     avctx->coded_frame = &s->frame;
     return 0;
 }
@@ -109,7 +115,7 @@ static av_cold int qtrle_encode_init(AVCodecContext *avctx)
  */
 static void qtrle_encode_line(QtrleEncContext *s, AVFrame *p, int line, uint8_t **buf)
 {
-    int width=s->avctx->width;
+    int width=s->logical_width;
     int i;
     signed char rlecode;
 
@@ -224,12 +230,28 @@ static void qtrle_encode_line(QtrleEncContext *s, AVFrame *p, int line, uint8_t 
         }
         else if (rlecode > 0) {
             /* bulk copy */
-            bytestream_put_buffer(buf, this_line + i*s->pixel_size, rlecode*s->pixel_size);
+            if (s->avctx->pix_fmt == PIX_FMT_GRAY8) {
+                int j;
+                // QT grayscale colorspace has 0=white and 255=black, we will
+                // ignore the palette that is included in the AVFrame because
+                // PIX_FMT_GRAY8 has defined color mapping
+                for (j = 0; j < rlecode*s->pixel_size; ++j)
+                    bytestream_put_byte(buf, *(this_line + i*s->pixel_size + j) ^ 0xff);
+            } else {
+                bytestream_put_buffer(buf, this_line + i*s->pixel_size, rlecode*s->pixel_size);
+            }
             i += rlecode;
         }
         else {
             /* repeat the bits */
-            bytestream_put_buffer(buf, this_line + i*s->pixel_size, s->pixel_size);
+            if (s->avctx->pix_fmt == PIX_FMT_GRAY8) {
+                int j;
+                // QT grayscale colorspace has 0=white and 255=black, ...
+                for (j = 0; j < s->pixel_size; ++j)
+                    bytestream_put_byte(buf, *(this_line + i*s->pixel_size + j) ^ 0xff);
+            } else {
+                bytestream_put_buffer(buf, this_line + i*s->pixel_size, s->pixel_size);
+            }
             i -= rlecode;
         }
     }
@@ -245,7 +267,7 @@ static int encode_frame(QtrleEncContext *s, AVFrame *p, uint8_t *buf)
     uint8_t *orig_buf = buf;
 
     if (!s->frame.key_frame) {
-        unsigned line_size = s->avctx->width * s->pixel_size;
+        unsigned line_size = s->logical_width * s->pixel_size;
         for (start_line = 0; start_line < s->avctx->height; start_line++)
             if (memcmp(p->data[0] + start_line*p->linesize[0],
                        s->previous_frame.data[0] + start_line*s->previous_frame.linesize[0],
@@ -329,6 +351,6 @@ AVCodec ff_qtrle_encoder = {
     .init           = qtrle_encode_init,
     .encode         = qtrle_encode_frame,
     .close          = qtrle_encode_end,
-    .pix_fmts = (const enum PixelFormat[]){PIX_FMT_RGB24, PIX_FMT_RGB555BE, PIX_FMT_ARGB, PIX_FMT_NONE},
+    .pix_fmts = (const enum PixelFormat[]){PIX_FMT_RGB24, PIX_FMT_RGB555BE, PIX_FMT_ARGB, PIX_FMT_GRAY8, PIX_FMT_NONE},
     .long_name = NULL_IF_CONFIG_SMALL("QuickTime Animation (RLE) video"),
 };

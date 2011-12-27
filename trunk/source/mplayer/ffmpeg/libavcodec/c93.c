@@ -2,20 +2,20 @@
  * Interplay C93 video decoder
  * Copyright (c) 2007 Anssi Hannula <anssi.hannula@gmail.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -47,6 +47,10 @@ typedef enum {
 
 static av_cold int decode_init(AVCodecContext *avctx)
 {
+    C93DecoderContext * const c93 = avctx->priv_data;
+
+    avcodec_get_frame_defaults(&c93->pictures[0]);
+    avcodec_get_frame_defaults(&c93->pictures[1]);
     avctx->pix_fmt = PIX_FMT_PAL8;
     return 0;
 }
@@ -126,7 +130,7 @@ static int decode_frame(AVCodecContext *avctx, void *data,
 
     c93->currentpic ^= 1;
 
-    newpic->reference = 1;
+    newpic->reference = 3;
     newpic->buffer_hints = FF_BUFFER_HINTS_VALID | FF_BUFFER_HINTS_PRESERVE |
                          FF_BUFFER_HINTS_REUSABLE | FF_BUFFER_HINTS_READABLE;
     if (avctx->reget_buffer(avctx, newpic)) {
@@ -148,7 +152,7 @@ static int decode_frame(AVCodecContext *avctx, void *data,
         uint32_t *palette = (uint32_t *) newpic->data[1];
         const uint8_t *palbuf = buf + buf_size - 768 - 1;
         for (i = 0; i < 256; i++) {
-            palette[i] = bytestream_get_be24(&palbuf);
+            palette[i] = 0xFF << 24 | bytestream_get_be24(&palbuf);
         }
     } else {
         if (oldpic->data[1])

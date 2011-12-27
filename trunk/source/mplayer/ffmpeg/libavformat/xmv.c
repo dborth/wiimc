@@ -3,20 +3,20 @@
  * Copyright (c) 2011 Sven Hesse <drmccoy@drmccoy.de>
  * Copyright (c) 2011 Matthew Hoops <clone2727@gmail.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -30,82 +30,80 @@
 #include "libavutil/intreadwrite.h"
 
 #include "avformat.h"
+#include "internal.h"
 #include "riff.h"
 
+/** The min size of an XMV header. */
 #define XMV_MIN_HEADER_SIZE 36
 
+/** Audio flag: ADPCM'd 5.1 stream, front left / right channels */
 #define XMV_AUDIO_ADPCM51_FRONTLEFTRIGHT 1
+/** Audio flag: ADPCM'd 5.1 stream, front center / low frequency channels */
 #define XMV_AUDIO_ADPCM51_FRONTCENTERLOW 2
+/** Audio flag: ADPCM'd 5.1 stream, rear left / right channels */
 #define XMV_AUDIO_ADPCM51_REARLEFTRIGHT  4
 
+/** Audio flag: Any of the ADPCM'd 5.1 stream flags. */
 #define XMV_AUDIO_ADPCM51 (XMV_AUDIO_ADPCM51_FRONTLEFTRIGHT | \
                            XMV_AUDIO_ADPCM51_FRONTCENTERLOW | \
                            XMV_AUDIO_ADPCM51_REARLEFTRIGHT)
 
-typedef struct XMVAudioTrack {
-    uint16_t compression;
-    uint16_t channels;
-    uint32_t sample_rate;
-    uint16_t bits_per_sample;
-    uint32_t bit_rate;
-    uint16_t flags;
-    uint16_t block_align;
-    uint16_t block_samples;
-
-    enum CodecID codec_id;
-} XMVAudioTrack;
-
+/** A video packet with an XMV file. */
 typedef struct XMVVideoPacket {
-    /* The decoder stream index for this video packet. */
-    int stream_index;
+    int stream_index; ///< The decoder stream index for this video packet.
 
-    uint32_t data_size;
-    uint32_t data_offset;
+    uint32_t data_size;   ///< The size of the remaining video data.
+    uint64_t data_offset; ///< The offset of the video data within the file.
 
-    uint32_t current_frame;
-    uint32_t frame_count;
+    uint32_t current_frame; ///< The current frame within this video packet.
+    uint32_t frame_count;   ///< The amount of frames within this video packet.
 
-    /* Does the video packet contain extra data? */
-    int has_extradata;
+    int     has_extradata; ///< Does the video packet contain extra data?
+    uint8_t extradata[4];  ///< The extra data
 
-    /* Extra data */
-    uint8_t extradata[4];
-
-    int64_t last_pts;
-    int64_t pts;
+    int64_t last_pts; ///< PTS of the last video frame.
+    int64_t pts;      ///< PTS of the most current video frame.
 } XMVVideoPacket;
 
+/** An audio packet with an XMV file. */
 typedef struct XMVAudioPacket {
-    /* The decoder stream index for this audio packet. */
-    int stream_index;
+    int stream_index; ///< The decoder stream index for this audio packet.
 
-    /* The audio track this packet encodes. */
-    XMVAudioTrack *track;
+    /* Stream format properties. */
+    uint16_t compression;     ///< The type of compression.
+    uint16_t channels;        ///< Number of channels.
+    uint32_t sample_rate;     ///< Sampling rate.
+    uint16_t bits_per_sample; ///< Bits per compressed sample.
+    uint32_t bit_rate;        ///< Bits of compressed data per second.
+    uint16_t flags;           ///< Flags
+    uint16_t block_align;     ///< Bytes per compressed block.
+    uint16_t block_samples;   ///< Decompressed samples per compressed block.
 
-    uint32_t data_size;
-    uint32_t data_offset;
+    enum CodecID codec_id; ///< The codec ID of the compression scheme.
 
-    uint32_t frame_size;
+    uint32_t data_size;   ///< The size of the remaining audio data.
+    uint64_t data_offset; ///< The offset of the audio data within the file.
 
-    uint32_t block_count;
+    uint32_t frame_size; ///< Number of bytes to put into an audio frame.
+
+    uint64_t block_count; ///< Running counter of decompressed audio block.
 } XMVAudioPacket;
 
+/** Context for demuxing an XMV file. */
 typedef struct XMVDemuxContext {
-    uint16_t audio_track_count;
+    uint16_t audio_track_count; ///< Number of audio track in this file.
 
-    XMVAudioTrack *audio_tracks;
+    uint32_t this_packet_size; ///< Size of the current packet.
+    uint32_t next_packet_size; ///< Size of the next packet.
 
-    uint32_t this_packet_size;
-    uint32_t next_packet_size;
+    uint64_t this_packet_offset; ///< Offset of the current packet.
+    uint64_t next_packet_offset; ///< Offset of the next packet.
 
-    uint32_t this_packet_offset;
-    uint32_t next_packet_offset;
+    uint16_t current_stream; ///< The index of the stream currently handling.
+    uint16_t stream_count;   ///< The number of streams in this file.
 
-    uint16_t current_stream;
-    uint16_t stream_count;
-
-    XMVVideoPacket  video;
-    XMVAudioPacket *audio;
+    XMVVideoPacket  video; ///< The video packet contained in each packet.
+    XMVAudioPacket *audio; ///< The audio packets contained in each packet.
 } XMVDemuxContext;
 
 static int xmv_probe(AVProbeData *p)
@@ -154,7 +152,7 @@ static int xmv_read_header(AVFormatContext *s,
     if (!vst)
         return AVERROR(ENOMEM);
 
-    av_set_pts_info(vst, 32, 1, 1000);
+    avpriv_set_pts_info(vst, 32, 1, 1000);
 
     vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     vst->codec->codec_id   = CODEC_ID_WMV2;
@@ -172,34 +170,28 @@ static int xmv_read_header(AVFormatContext *s,
 
     avio_skip(pb, 2); /* Unknown (padding?) */
 
-    xmv->audio_tracks = av_malloc(xmv->audio_track_count * sizeof(XMVAudioTrack));
-    if (!xmv->audio_tracks)
-        return AVERROR(ENOMEM);
-
     xmv->audio = av_malloc(xmv->audio_track_count * sizeof(XMVAudioPacket));
     if (!xmv->audio)
         return AVERROR(ENOMEM);
 
     for (audio_track = 0; audio_track < xmv->audio_track_count; audio_track++) {
-        XMVAudioTrack  *track  = &xmv->audio_tracks[audio_track];
-        XMVAudioPacket *packet = &xmv->audio       [audio_track];
+        XMVAudioPacket *packet = &xmv->audio[audio_track];
         AVStream *ast = NULL;
 
-        track->compression     = avio_rl16(pb);
-        track->channels        = avio_rl16(pb);
-        track->sample_rate     = avio_rl32(pb);
-        track->bits_per_sample = avio_rl16(pb);
-        track->flags           = avio_rl16(pb);
+        packet->compression     = avio_rl16(pb);
+        packet->channels        = avio_rl16(pb);
+        packet->sample_rate     = avio_rl32(pb);
+        packet->bits_per_sample = avio_rl16(pb);
+        packet->flags           = avio_rl16(pb);
 
-        track->bit_rate      = track->bits_per_sample *
-                               track->sample_rate *
-                               track->channels;
-        track->block_align   = 36 * track->channels;
-        track->block_samples = 64;
-        track->codec_id      = ff_wav_codec_get_id(track->compression,
-                                                   track->bits_per_sample);
+        packet->bit_rate      = packet->bits_per_sample *
+                                packet->sample_rate *
+                                packet->channels;
+        packet->block_align   = 36 * packet->channels;
+        packet->block_samples = 64;
+        packet->codec_id      = ff_wav_codec_get_id(packet->compression,
+                                                    packet->bits_per_sample);
 
-        packet->track        = track;
         packet->stream_index = -1;
 
         packet->frame_size  = 0;
@@ -207,24 +199,24 @@ static int xmv_read_header(AVFormatContext *s,
 
         /* TODO: ADPCM'd 5.1 sound is encoded in three separate streams.
          *       Those need to be interleaved to a proper 5.1 stream. */
-        if (track->flags & XMV_AUDIO_ADPCM51)
+        if (packet->flags & XMV_AUDIO_ADPCM51)
             av_log(s, AV_LOG_WARNING, "Unsupported 5.1 ADPCM audio stream "
-                                      "(0x%04X)\n", track->flags);
+                                      "(0x%04X)\n", packet->flags);
 
         ast = avformat_new_stream(s, NULL);
         if (!ast)
             return AVERROR(ENOMEM);
 
         ast->codec->codec_type            = AVMEDIA_TYPE_AUDIO;
-        ast->codec->codec_id              = track->codec_id;
-        ast->codec->codec_tag             = track->compression;
-        ast->codec->channels              = track->channels;
-        ast->codec->sample_rate           = track->sample_rate;
-        ast->codec->bits_per_coded_sample = track->bits_per_sample;
-        ast->codec->bit_rate              = track->bit_rate;
-        ast->codec->block_align           = 36 * track->channels;
+        ast->codec->codec_id              = packet->codec_id;
+        ast->codec->codec_tag             = packet->compression;
+        ast->codec->channels              = packet->channels;
+        ast->codec->sample_rate           = packet->sample_rate;
+        ast->codec->bits_per_coded_sample = packet->bits_per_sample;
+        ast->codec->bit_rate              = packet->bit_rate;
+        ast->codec->block_align           = 36 * packet->channels;
 
-        av_set_pts_info(ast, 32, track->block_samples, track->sample_rate);
+        avpriv_set_pts_info(ast, 32, packet->block_samples, packet->sample_rate);
 
         packet->stream_index = ast->index;
 
@@ -232,7 +224,7 @@ static int xmv_read_header(AVFormatContext *s,
     }
 
 
-    /** Initialize the packet context */
+    /* Initialize the packet context */
 
     xmv->next_packet_offset = avio_tell(pb);
     xmv->next_packet_size   = this_packet_size - xmv->next_packet_offset;
@@ -277,7 +269,7 @@ static int xmv_process_packet_header(AVFormatContext *s)
 
     uint8_t  data[8];
     uint16_t audio_track;
-    uint32_t data_offset;
+    uint64_t data_offset;
 
     /* Next packet size */
     xmv->next_packet_size = avio_rl32(pb);
@@ -328,9 +320,9 @@ static int xmv_process_packet_header(AVFormatContext *s)
              */
             packet->data_size = xmv->audio[audio_track - 1].data_size;
 
-        /** Carve up the audio data in frame_count slices */
+        /* Carve up the audio data in frame_count slices */
         packet->frame_size  = packet->data_size  / xmv->video.frame_count;
-        packet->frame_size -= packet->frame_size % packet->track->block_align;
+        packet->frame_size -= packet->frame_size % packet->block_align;
     }
 
     /* Packet data offsets */
@@ -434,7 +426,7 @@ static int xmv_fetch_audio_packet(AVFormatContext *s,
 
     /* Calculate the PTS */
 
-    block_count = data_size / audio->track->block_align;
+    block_count = data_size / audio->block_align;
 
     pkt->duration = block_count;
     pkt->pts      = audio->block_count;
@@ -459,7 +451,7 @@ static int xmv_fetch_video_packet(AVFormatContext *s,
     int result;
     uint32_t frame_header;
     uint32_t frame_size, frame_timestamp;
-    uint32_t i;
+    uint8_t *data, *end;
 
     /* Seek to it */
     if (avio_seek(pb, video->data_offset, SEEK_SET) != video->data_offset)
@@ -474,17 +466,17 @@ static int xmv_fetch_video_packet(AVFormatContext *s,
     if ((frame_size + 4) > video->data_size)
         return AVERROR(EIO);
 
-    /* Create the packet */
-    result = av_new_packet(pkt, frame_size);
-    if (result)
+    /* Get the packet data */
+    result = av_get_packet(pb, pkt, frame_size);
+    if (result != frame_size)
         return result;
 
     /* Contrary to normal WMV2 video, the bit stream in XMV's
      * WMV2 is little-endian.
      * TODO: This manual swap is of course suboptimal.
      */
-    for (i = 0; i < frame_size; i += 4)
-        AV_WB32(pkt->data + i, avio_rl32(pb));
+    for (data = pkt->data, end = pkt->data + frame_size; data < end; data += 4)
+        AV_WB32(data, AV_RL32(data));
 
     pkt->stream_index = video->stream_index;
 
@@ -551,7 +543,6 @@ static int xmv_read_close(AVFormatContext *s)
     XMVDemuxContext *xmv = s->priv_data;
 
     av_free(xmv->audio);
-    av_free(xmv->audio_tracks);
 
     return 0;
 }

@@ -1,9 +1,9 @@
 /*
  * X11 video grab interface
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav integration:
+ * FFmpeg integration:
  * Copyright (C) 2006 Clemens Fruhwirth <clemens@endorphin.org>
  *                    Edouard Gomez <ed.gomez@free.fr>
  *
@@ -14,29 +14,30 @@
  * Copyright (C) 1997-1998 Rasca, Berlin
  *               2003-2004 Karl H. Beckers, Frankfurt
  *
- * Libav is free software; you can redistribute it and/or modify
+ * FFmpeg is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Libav; if not, write to the Free Software
+ * along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /**
  * @file
- * X11 frame device demuxer by Clemens Fruhwirth <clemens@endorphin.org>
- * and Edouard Gomez <ed.gomez@free.fr>.
+ * X11 frame device demuxer
+ * @author Clemens Fruhwirth <clemens@endorphin.org>
+ * @author Edouard Gomez <ed.gomez@free.fr>
  */
 
 #include "config.h"
-#include "libavformat/avformat.h"
+#include "libavformat/internal.h"
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
 #include "libavutil/parseutils.h"
@@ -50,6 +51,7 @@
 #include <X11/extensions/shape.h>
 #include <X11/extensions/XShm.h>
 #include <X11/extensions/Xfixes.h>
+#include "avdevice.h"
 
 /**
  * X11 Device Demuxer context
@@ -163,12 +165,12 @@ x11grab_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     int y_off = 0;
     int screen;
     int use_shm;
-    char *param, *offset;
+    char *dpyname, *offset;
     int ret = 0;
     AVRational framerate;
 
-    param = av_strdup(s1->filename);
-    offset = strchr(param, '+');
+    dpyname = av_strdup(s1->filename);
+    offset = strchr(dpyname, '+');
     if (offset) {
         sscanf(offset, "%d,%d", &x_off, &y_off);
         x11grab->draw_mouse = !strstr(offset, "nomouse");
@@ -184,9 +186,10 @@ x11grab_read_header(AVFormatContext *s1, AVFormatParameters *ap)
         goto out;
     }
     av_log(s1, AV_LOG_INFO, "device: %s -> display: %s x: %d y: %d width: %d height: %d\n",
-           s1->filename, param, x_off, y_off, x11grab->width, x11grab->height);
+           s1->filename, dpyname, x_off, y_off, x11grab->width, x11grab->height);
 
-    dpy = XOpenDisplay(param);
+    dpy = XOpenDisplay(dpyname);
+    av_freep(&dpyname);
     if(!dpy) {
         av_log(s1, AV_LOG_ERROR, "Could not open X display.\n");
         ret = AVERROR(EIO);
@@ -198,7 +201,7 @@ x11grab_read_header(AVFormatContext *s1, AVFormatParameters *ap)
         ret = AVERROR(ENOMEM);
         goto out;
     }
-    av_set_pts_info(st, 64, 1, 1000000); /* 64 bits pts in us */
+    avpriv_set_pts_info(st, 64, 1, 1000000); /* 64 bits pts in us */
 
     screen = DefaultScreen(dpy);
 
@@ -217,7 +220,7 @@ x11grab_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     }
 
     use_shm = XShmQueryExtension(dpy);
-    av_log(s1, AV_LOG_INFO, "shared memory extension %s found\n", use_shm ? "" : "not");
+    av_log(s1, AV_LOG_INFO, "shared memory extension%s found\n", use_shm ? "" : " not");
 
     if(use_shm) {
         int scr = XDefaultScreen(dpy);
@@ -536,6 +539,8 @@ x11grab_read_packet(AVFormatContext *s1, AVPacket *pkt)
             av_log (s1, AV_LOG_INFO, "XGetZPixmap() failed\n");
         }
     }
+    if (image->bits_per_pixel == 32)
+        XAddPixel(image, 0xFF000000);
 
     if (s->draw_mouse) {
         paint_mouse_pointer(image, s);

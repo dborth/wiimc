@@ -2,20 +2,20 @@
  * FLAC (Free Lossless Audio Codec) decoder
  * Copyright (c) 2003 Alex Beregszaszi
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -49,6 +49,7 @@ typedef struct FLACContext {
     FLACSTREAMINFO
 
     AVCodecContext *avctx;                  ///< parent AVCodecContext
+    AVFrame frame;
     GetBitContext gb;                       ///< GetBitContext initialized to start at the current frame
 
     int blocksize;                          ///< number of samples in the current frame
@@ -115,6 +116,9 @@ static av_cold int flac_decode_init(AVCodecContext *avctx)
         avctx->sample_fmt = AV_SAMPLE_FMT_S16;
     allocate_buffers(s);
     s->got_streaminfo = 1;
+
+    avcodec_get_frame_defaults(&s->frame);
+    avctx->coded_frame = &s->frame;
 
     return 0;
 }
@@ -542,20 +546,18 @@ static int decode_frame(FLACContext *s)
     return 0;
 }
 
-static int flac_decode_frame(AVCodecContext *avctx,
-                            void *data, int *data_size,
-                            AVPacket *avpkt)
+static int flac_decode_frame(AVCodecContext *avctx, void *data,
+                             int *got_frame_ptr, AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
     FLACContext *s = avctx->priv_data;
     int i, j = 0, bytes_read = 0;
-    int16_t *samples_16 = data;
-    int32_t *samples_32 = data;
-    int alloc_data_size= *data_size;
-    int output_size;
+    int16_t *samples_16;
+    int32_t *samples_32;
+    int ret;
 
-    *data_size=0;
+    *got_frame_ptr = 0;
 
     if (s->max_framesize == 0) {
         s->max_framesize =
@@ -586,15 +588,14 @@ static int flac_decode_frame(AVCodecContext *avctx,
     }
     bytes_read = (get_bits_count(&s->gb)+7)/8;
 
-    /* check if allocated data size is large enough for output */
-    output_size = s->blocksize * s->channels *
-                  av_get_bytes_per_sample(avctx->sample_fmt);
-    if (output_size > alloc_data_size) {
-        av_log(s->avctx, AV_LOG_ERROR, "output data size is larger than "
-                                       "allocated data size\n");
-        return -1;
+    /* get output buffer */
+    s->frame.nb_samples = s->blocksize;
+    if ((ret = avctx->get_buffer(avctx, &s->frame)) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return ret;
     }
-    *data_size = output_size;
+    samples_16 = (int16_t *)s->frame.data[0];
+    samples_32 = (int32_t *)s->frame.data[0];
 
 #define DECORRELATE(left, right)\
             assert(s->channels == 2);\
@@ -639,6 +640,9 @@ static int flac_decode_frame(AVCodecContext *avctx,
                buf_size - bytes_read, buf_size);
     }
 
+    *got_frame_ptr   = 1;
+    *(AVFrame *)data = s->frame;
+
     return bytes_read;
 }
 
@@ -662,5 +666,6 @@ AVCodec ff_flac_decoder = {
     .init           = flac_decode_init,
     .close          = flac_decode_close,
     .decode         = flac_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name= NULL_IF_CONFIG_SMALL("FLAC (Free Lossless Audio Codec)"),
 };

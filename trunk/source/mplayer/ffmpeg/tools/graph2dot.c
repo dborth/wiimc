@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2008-2010 Stefano Sabatini
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -75,9 +75,10 @@ static void print_digraph(FILE *outfile, AVFilterGraph *graph)
                 } else if (link->type == AVMEDIA_TYPE_AUDIO) {
                     char buf[255];
                     av_get_channel_layout_string(buf, sizeof(buf), -1, link->channel_layout);
-                    fprintf(outfile, " [ label= \"fmt:%s sr:%"PRId64" cl:%s\" ]",
+                    fprintf(outfile, " [ label= \"fmt:%s sr:%"PRId64" cl:%s tb:%d/%d\" ]",
                             av_get_sample_fmt_name(link->format),
-                            link->sample_rate, buf);
+                            link->sample_rate, buf,
+                            link->time_base.num, link->time_base.den);
                 }
                 fprintf(outfile, ";\n");
             }

@@ -2,20 +2,20 @@
  * Interface to xvidcore for mpeg4 encoding
  * Copyright (c) 2004 Adam Thayer <krevnik@comcast.net>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -28,13 +28,11 @@
 #include <xvid.h>
 #include <unistd.h>
 #include "avcodec.h"
+#include "libavutil/file.h"
 #include "libavutil/cpu.h"
 #include "libavutil/intreadwrite.h"
 #include "libavutil/mathematics.h"
 #include "libxvid_internal.h"
-#if !HAVE_MKSTEMP
-#include <fcntl.h>
-#endif
 
 /**
  * Buffer management macros.
@@ -77,42 +75,6 @@ int xvid_strip_vol_header(AVCodecContext *avctx, unsigned char *frame, unsigned 
 int xvid_ff_2pass(void *ref, int opt, void *p1, void *p2);
 void xvid_correct_framerate(AVCodecContext *avctx);
 
-/* Wrapper to work around the lack of mkstemp() on mingw.
- * Also, tries to create file in /tmp first, if possible.
- * *prefix can be a character constant; *filename will be allocated internally.
- * @return file descriptor of opened file (or -1 on error)
- * and opened file name in **filename. */
-int ff_tempfile(const char *prefix, char **filename) {
-    int fd=-1;
-#if !HAVE_MKSTEMP
-    *filename = tempnam(".", prefix);
-#else
-    size_t len = strlen(prefix) + 12; /* room for "/tmp/" and "XXXXXX\0" */
-    *filename = av_malloc(len);
-#endif
-    /* -----common section-----*/
-    if (*filename == NULL) {
-        av_log(NULL, AV_LOG_ERROR, "ff_tempfile: Cannot allocate file name\n");
-        return -1;
-    }
-#if !HAVE_MKSTEMP
-    fd = open(*filename, O_RDWR | O_BINARY | O_CREAT, 0444);
-#else
-    snprintf(*filename, len, "/tmp/%sXXXXXX", prefix);
-    fd = mkstemp(*filename);
-    if (fd < 0) {
-        snprintf(*filename, len, "./%sXXXXXX", prefix);
-        fd = mkstemp(*filename);
-    }
-#endif
-    /* -----common section-----*/
-    if (fd < 0) {
-        av_log(NULL, AV_LOG_ERROR, "ff_tempfile: Cannot open temporary file %s\n", *filename);
-        return -1;
-    }
-    return fd; /* success */
-}
-
 #if CONFIG_LIBXVID_ENCODER
 
 /**
@@ -137,7 +99,7 @@ static av_cold int xvid_encode_init(AVCodecContext *avctx)  {
     xvid_enc_create_t xvid_enc_create;
     xvid_enc_plugin_t plugins[7];
 
-    /* Bring in VOP flags from avconv command-line */
+    /* Bring in VOP flags from ffmpeg command-line */
     x->vop_flags = XVID_VOP_HALFPEL; /* Bare minimum quality */
     if( xvid_flags & CODEC_FLAG_4MV )
         x->vop_flags |= XVID_VOP_INTER4V; /* Level 3 */
@@ -191,7 +153,7 @@ static av_cold int xvid_encode_init(AVCodecContext *avctx)  {
            break;
     }
 
-    /* Bring in VOL flags from avconv command-line */
+    /* Bring in VOL flags from ffmpeg command-line */
     x->vol_flags = 0;
     if( xvid_flags & CODEC_FLAG_GMC ) {
         x->vol_flags |= XVID_VOL_GMC;
@@ -270,7 +232,7 @@ static av_cold int xvid_encode_init(AVCodecContext *avctx)  {
         rc2pass2.version = XVID_VERSION;
         rc2pass2.bitrate = avctx->bit_rate;
 
-        fd = ff_tempfile("xvidff.", &(x->twopassfile));
+        fd = av_tempfile("xvidff.", &(x->twopassfile), 0, avctx);
         if( fd == -1 ) {
             av_log(avctx, AV_LOG_ERROR,
                 "Xvid: Cannot write 2-pass pipe\n");
@@ -454,8 +416,8 @@ static int xvid_encode_frame(AVCodecContext *avctx,
                                           XVID_TYPE_AUTO;
 
     /* Pixel aspect ratio setting */
-    if (avctx->sample_aspect_ratio.num < 1 || avctx->sample_aspect_ratio.num > 255 ||
-        avctx->sample_aspect_ratio.den < 1 || avctx->sample_aspect_ratio.den > 255) {
+    if (avctx->sample_aspect_ratio.num < 0 || avctx->sample_aspect_ratio.num > 255 ||
+        avctx->sample_aspect_ratio.den < 0 || avctx->sample_aspect_ratio.den > 255) {
         av_log(avctx, AV_LOG_ERROR, "Invalid pixel aspect ratio %i/%i\n",
                avctx->sample_aspect_ratio.num, avctx->sample_aspect_ratio.den);
         return -1;
@@ -529,6 +491,7 @@ static av_cold int xvid_encode_close(AVCodecContext *avctx) {
     if( x->twopassbuffer != NULL ) {
         av_free(x->twopassbuffer);
         av_free(x->old_twopassbuffer);
+        avctx->stats_out = NULL;
     }
     av_free(x->twopassfile);
     av_free(x->intra_matrix);
@@ -669,7 +632,7 @@ static int xvid_ff_2pass_create(xvid_plg_create_t * param,
     /* This is because we can safely prevent a buffer overflow */
     log[0] = 0;
     snprintf(log, BUFFER_REMAINING(log),
-        "# avconv 2-pass log file, using xvid codec\n");
+        "# ffmpeg 2-pass log file, using xvid codec\n");
     snprintf(BUFFER_CAT(log), BUFFER_REMAINING(log),
         "# Do not modify. libxvidcore version: %d.%d.%d\n\n",
         XVID_VERSION_MAJOR(XVID_VERSION),

@@ -1,21 +1,21 @@
 /*
- * Xiph CELT / Opus parser for Ogg
+ * Xiph CELT parser for Ogg
  * Copyright (c) 2011 Nicolas George
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -23,6 +23,7 @@
 
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
+#include "internal.h"
 #include "oggdec.h"
 
 struct oggcelt_private {
@@ -61,18 +62,18 @@ static int celt_header(AVFormatContext *s, int idx)
         overlap          = AV_RL32(p + 48);
         /* unused bytes per packet field skipped */
         extra_headers    = AV_RL32(p + 56);
-        av_free(os->private);
-        av_free(st->codec->extradata);
         st->codec->codec_type     = AVMEDIA_TYPE_AUDIO;
         st->codec->codec_id       = CODEC_ID_CELT;
         st->codec->sample_rate    = sample_rate;
         st->codec->channels       = nb_channels;
         st->codec->frame_size     = frame_size;
+        av_free(st->codec->extradata);
         st->codec->extradata      = extradata;
         st->codec->extradata_size = 2 * sizeof(uint32_t);
         if (sample_rate)
-            av_set_pts_info(st, 64, 1, sample_rate);
+            avpriv_set_pts_info(st, 64, 1, sample_rate);
         priv->extra_headers_left  = 1 + extra_headers;
+        av_free(os->private);
         os->private = priv;
         AV_WL32(extradata + 0, overlap);
         AV_WL32(extradata + 4, version);

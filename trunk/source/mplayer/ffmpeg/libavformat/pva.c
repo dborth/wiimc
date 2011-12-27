@@ -2,24 +2,25 @@
  * TechnoTrend PVA (.pva) demuxer
  * Copyright (c) 2007, 2008 Ivo van Poorten
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "avformat.h"
+#include "internal.h"
 #include "mpeg.h"
 
 #define PVA_MAX_PAYLOAD_LENGTH  0x17f8
@@ -31,13 +32,26 @@ typedef struct {
     int continue_pes;
 } PVAContext;
 
+static int pva_check(uint8_t *p) {
+    int length = AV_RB16(p + 6);
+    if (AV_RB16(p) != PVA_MAGIC || !p[2] || p[2] > 2 || p[4] != 0x55 ||
+        (p[5] & 0xe0) || length > PVA_MAX_PAYLOAD_LENGTH)
+        return -1;
+    return length + 8;
+}
+
 static int pva_probe(AVProbeData * pd) {
     unsigned char *buf = pd->buf;
+    int len = pva_check(buf);
 
-    if (AV_RB16(buf) == PVA_MAGIC && buf[2] && buf[2] < 3 && buf[4] == 0x55)
+    if (len < 0)
+        return 0;
+
+    if (pd->buf_size >= len + 8 &&
+        pva_check(buf + len) >= 0)
         return AVPROBE_SCORE_MAX / 2;
 
-    return 0;
+    return AVPROBE_SCORE_MAX / 4;
 }
 
 static int pva_read_header(AVFormatContext *s, AVFormatParameters *ap) {
@@ -48,7 +62,7 @@ static int pva_read_header(AVFormatContext *s, AVFormatParameters *ap) {
     st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codec->codec_id   = CODEC_ID_MPEG2VIDEO;
     st->need_parsing      = AVSTREAM_PARSE_FULL;
-    av_set_pts_info(st, 32, 1, 90000);
+    avpriv_set_pts_info(st, 32, 1, 90000);
     av_add_index_entry(st, 0, 0, 0, 0, AVINDEX_KEYFRAME);
 
     if (!(st = avformat_new_stream(s, NULL)))
@@ -56,7 +70,7 @@ static int pva_read_header(AVFormatContext *s, AVFormatParameters *ap) {
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id   = CODEC_ID_MP2;
     st->need_parsing      = AVSTREAM_PARSE_FULL;
-    av_set_pts_info(st, 33, 1, 90000);
+    avpriv_set_pts_info(st, 33, 1, 90000);
     av_add_index_entry(st, 0, 0, 0, 0, AVINDEX_KEYFRAME);
 
     /* the parameters will be extracted from the compressed bitstream */

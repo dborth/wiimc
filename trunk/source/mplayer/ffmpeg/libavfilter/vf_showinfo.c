@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2011 Stefano Sabatini
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -61,11 +61,11 @@ static void end_frame(AVFilterLink *inlink)
     av_log(ctx, AV_LOG_INFO,
            "n:%d pts:%"PRId64" pts_time:%f pos:%"PRId64" "
            "fmt:%s sar:%d/%d s:%dx%d i:%c iskey:%d type:%c "
-           "checksum:%u plane_checksum:[%u %u %u %u]\n",
+           "checksum:%08X plane_checksum:[%08X %08X %08X %08X]\n",
            showinfo->frame,
-           picref->pts, picref->pts * av_q2d(inlink->time_base), picref->pos,
+           picref->pts, picref ->pts * av_q2d(inlink->time_base), picref->pos,
            av_pix_fmt_descriptors[picref->format].name,
-           picref->video->pixel_aspect.num, picref->video->pixel_aspect.den,
+           picref->video->sample_aspect_ratio.num, picref->video->sample_aspect_ratio.den,
            picref->video->w, picref->video->h,
            !picref->video->interlaced     ? 'P' :         /* Progressive  */
            picref->video->top_field_first ? 'T' : 'B',    /* Top / Bottom */
@@ -84,7 +84,7 @@ AVFilter avfilter_vf_showinfo = {
     .priv_size = sizeof(ShowInfoContext),
     .init      = init,
 
-    .inputs    = (AVFilterPad[]) {{ .name = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .get_video_buffer = avfilter_null_get_video_buffer,
                                     .start_frame      = avfilter_null_start_frame,
@@ -92,7 +92,7 @@ AVFilter avfilter_vf_showinfo = {
                                     .min_perms        = AV_PERM_READ, },
                                   { .name = NULL}},
 
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO },
                                   { .name = NULL}},
 };

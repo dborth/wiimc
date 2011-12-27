@@ -3,20 +3,20 @@
  * Copyright (c) 2004-2006 Michael Niedermayer
  * Copyright (c) 2003 Alex Beregszaszi
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -119,7 +119,7 @@ static uint64_t find_any_startcode(AVIOContext *bc, int64_t pos){
     if(pos >= 0)
         avio_seek(bc, pos, SEEK_SET); //note, this may fail if the stream is not seekable, but that should not matter, as in this case we simply start where we currently are
 
-    while(!bc->eof_reached){
+    while(!url_feof(bc)){
         state= (state<<8) | avio_r8(bc);
         if((state>>56) != 'N')
             continue;
@@ -374,7 +374,7 @@ static int decode_stream_header(NUTContext *nut){
         return -1;
     }
     stc->time_base= &nut->time_base[stc->time_base_id];
-    av_set_pts_info(s->streams[stream_id], 63, stc->time_base->num, stc->time_base->den);
+    avpriv_set_pts_info(s->streams[stream_id], 63, stc->time_base->num, stc->time_base->den);
     return 0;
 }
 
@@ -786,7 +786,7 @@ static int nut_read_packet(AVFormatContext *s, AVPacket *pkt)
             pos-=8;
         }else{
             frame_code = avio_r8(bc);
-            if(bc->eof_reached)
+            if(url_feof(bc))
                 return -1;
             if(frame_code == 'N'){
                 tmp= frame_code;

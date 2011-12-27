@@ -3,20 +3,20 @@
  * Copyright (c) 2007 Luca Abeni ( lucabe72 email it )
  * Copyright (c) 2007 Benoit Fouet ( benoit fouet free fr )
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -38,8 +38,9 @@
  */
 
 #include <alsa/asoundlib.h>
-#include "libavformat/avformat.h"
 
+#include "libavformat/internal.h"
+#include "avdevice.h"
 #include "alsa-audio.h"
 
 static av_cold int audio_write_header(AVFormatContext *s1)
@@ -61,6 +62,7 @@ static av_cold int audio_write_header(AVFormatContext *s1)
                st->codec->sample_rate, sample_rate);
         goto fail;
     }
+    avpriv_set_pts_info(st, 64, 1, sample_rate);
 
     return res;
 
@@ -101,6 +103,17 @@ static int audio_write_packet(AVFormatContext *s1, AVPacket *pkt)
     return 0;
 }
 
+static void
+audio_get_output_timestamp(AVFormatContext *s1, int stream,
+    int64_t *dts, int64_t *wall)
+{
+    AlsaData *s  = s1->priv_data;
+    snd_pcm_sframes_t delay = 0;
+    *wall = av_gettime();
+    snd_pcm_delay(s->h, &delay);
+    *dts = s1->streams[0]->cur_dts - delay;
+}
+
 AVOutputFormat ff_alsa_muxer = {
     .name           = "alsa",
     .long_name      = NULL_IF_CONFIG_SMALL("ALSA audio output"),
@@ -110,5 +123,6 @@ AVOutputFormat ff_alsa_muxer = {
     .write_header   = audio_write_header,
     .write_packet   = audio_write_packet,
     .write_trailer  = ff_alsa_close,
+    .get_output_timestamp = audio_get_output_timestamp,
     .flags          = AVFMT_NOFILE,
 };

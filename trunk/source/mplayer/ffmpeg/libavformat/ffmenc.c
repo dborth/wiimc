@@ -1,27 +1,28 @@
 /*
- * FFM (avserver live feed) muxer
+ * FFM (ffserver live feed) muxer
  * Copyright (c) 2001 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavutil/intreadwrite.h"
-#include "libavutil/intfloat_readwrite.h"
+#include "libavutil/intfloat.h"
 #include "avformat.h"
+#include "internal.h"
 #include "ffm.h"
 
 static void flush_packet(AVFormatContext *s)
@@ -107,7 +108,7 @@ static int ffm_write_header(AVFormatContext *s)
     /* list of streams */
     for(i=0;i<s->nb_streams;i++) {
         st = s->streams[i];
-        av_set_pts_info(st, 64, 1, 1000000);
+        avpriv_set_pts_info(st, 64, 1, 1000000);
 
         codec = st->codec;
         /* generic info */
@@ -136,10 +137,10 @@ static int ffm_write_header(AVFormatContext *s)
             avio_wb32(pb, codec->rc_max_rate);
             avio_wb32(pb, codec->rc_min_rate);
             avio_wb32(pb, codec->rc_buffer_size);
-            avio_wb64(pb, av_dbl2int(codec->i_quant_factor));
-            avio_wb64(pb, av_dbl2int(codec->b_quant_factor));
-            avio_wb64(pb, av_dbl2int(codec->i_quant_offset));
-            avio_wb64(pb, av_dbl2int(codec->b_quant_offset));
+            avio_wb64(pb, av_double2int(codec->i_quant_factor));
+            avio_wb64(pb, av_double2int(codec->b_quant_factor));
+            avio_wb64(pb, av_double2int(codec->i_quant_offset));
+            avio_wb64(pb, av_double2int(codec->b_quant_offset));
             avio_wb32(pb, codec->dct_algo);
             avio_wb32(pb, codec->strict_std_compliance);
             avio_wb32(pb, codec->max_b_frames);
@@ -151,20 +152,22 @@ static int ffm_write_header(AVFormatContext *s)
             avio_wb32(pb, codec->mb_decision);
             avio_wb32(pb, codec->nsse_weight);
             avio_wb32(pb, codec->frame_skip_cmp);
-            avio_wb64(pb, av_dbl2int(codec->rc_buffer_aggressivity));
+            avio_wb64(pb, av_double2int(codec->rc_buffer_aggressivity));
             avio_wb32(pb, codec->codec_tag);
             avio_w8(pb, codec->thread_count);
             avio_wb32(pb, codec->coder_type);
             avio_wb32(pb, codec->me_cmp);
+            avio_wb32(pb, codec->partitions);
             avio_wb32(pb, codec->me_subpel_quality);
             avio_wb32(pb, codec->me_range);
             avio_wb32(pb, codec->keyint_min);
             avio_wb32(pb, codec->scenechange_threshold);
             avio_wb32(pb, codec->b_frame_strategy);
-            avio_wb64(pb, av_dbl2int(codec->qcompress));
-            avio_wb64(pb, av_dbl2int(codec->qblur));
+            avio_wb64(pb, av_double2int(codec->qcompress));
+            avio_wb64(pb, av_double2int(codec->qblur));
             avio_wb32(pb, codec->max_qdiff);
             avio_wb32(pb, codec->refs);
+            avio_wb32(pb, codec->directpred);
             break;
         case AVMEDIA_TYPE_AUDIO:
             avio_wb32(pb, codec->sample_rate);
@@ -240,7 +243,7 @@ static int ffm_write_trailer(AVFormatContext *s)
 
 AVOutputFormat ff_ffm_muxer = {
     .name              = "ffm",
-    .long_name         = NULL_IF_CONFIG_SMALL("FFM (AVserver live feed) format"),
+    .long_name         = NULL_IF_CONFIG_SMALL("FFM (FFserver live feed) format"),
     .mime_type         = "",
     .extensions        = "ffm",
     .priv_data_size    = sizeof(FFMContext),

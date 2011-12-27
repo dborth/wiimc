@@ -2,29 +2,29 @@
  * Electronic Arts Madcow Video Decoder
  * Copyright (c) 2007-2009 Peter Ross
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 /**
  * @file
  * Electronic Arts Madcow Video Decoder
- * by Peter Ross <pross@xvid.org>
+ * @author Peter Ross <pross@xvid.org>
  *
- * Technical details here:
+ * @see technical details at
  * http://wiki.multimedia.cx/index.php?title=Electronic_Arts_MAD
  */
 
@@ -85,15 +85,21 @@ static inline void comp_block(MadContext *t, int mb_x, int mb_y,
 {
     MpegEncContext *s = &t->s;
     if (j < 4) {
+        unsigned offset = (mb_y*16 + ((j&2)<<2) + mv_y)*t->last_frame.linesize[0] + mb_x*16 + ((j&1)<<3) + mv_x;
+        if (offset >= (s->height - 7) * t->last_frame.linesize[0] - 7)
+            return;
         comp(t->frame.data[0] + (mb_y*16 + ((j&2)<<2))*t->frame.linesize[0] + mb_x*16 + ((j&1)<<3),
              t->frame.linesize[0],
-             t->last_frame.data[0] + (mb_y*16 + ((j&2)<<2) + mv_y)*t->last_frame.linesize[0] + mb_x*16 + ((j&1)<<3) + mv_x,
+             t->last_frame.data[0] + offset,
              t->last_frame.linesize[0], add);
     } else if (!(s->avctx->flags & CODEC_FLAG_GRAY)) {
         int index = j - 3;
+        unsigned offset = (mb_y * 8 + (mv_y/2))*t->last_frame.linesize[index] + mb_x * 8 + (mv_x/2);
+        if (offset >= (s->height/2 - 7) * t->last_frame.linesize[index] - 7)
+            return;
         comp(t->frame.data[index] + (mb_y*8)*t->frame.linesize[index] + mb_x * 8,
              t->frame.linesize[index],
-             t->last_frame.data[index] + (mb_y * 8 + (mv_y/2))*t->last_frame.linesize[index] + mb_x * 8 + (mv_x/2),
+             t->last_frame.data[index] + offset,
              t->last_frame.linesize[index], add);
     }
 }
@@ -113,7 +119,7 @@ static inline void idct_put(MadContext *t, DCTELEM *block, int mb_x, int mb_y, i
     }
 }
 
-static inline void decode_block_intra(MadContext * t, DCTELEM * block)
+static inline int decode_block_intra(MadContext * t, DCTELEM * block)
 {
     MpegEncContext *s = &t->s;
     int level, i, j, run;
@@ -164,13 +170,14 @@ static inline void decode_block_intra(MadContext * t, DCTELEM * block)
             }
             if (i > 63) {
                 av_log(s->avctx, AV_LOG_ERROR, "ac-tex damaged at %d %d\n", s->mb_x, s->mb_y);
-                return;
+                return -1;
             }
 
             block[j] = level;
         }
         CLOSE_READER(re, &s->gb);
     }
+    return 0;
 }
 
 static int decode_motion(GetBitContext *gb)
@@ -184,7 +191,7 @@ static int decode_motion(GetBitContext *gb)
     return value;
 }
 
-static void decode_mb(MadContext *t, int inter)
+static int decode_mb(MadContext *t, int inter)
 {
     MpegEncContext *s = &t->s;
     int mv_map = 0;
@@ -205,13 +212,16 @@ static void decode_mb(MadContext *t, int inter)
     for (j=0; j<6; j++) {
         if (mv_map & (1<<j)) {  // mv_x and mv_y are guarded by mv_map
             int add = 2*decode_motion(&s->gb);
-            comp_block(t, s->mb_x, s->mb_y, j, mv_x, mv_y, add);
+            if (t->last_frame.data[0])
+                comp_block(t, s->mb_x, s->mb_y, j, mv_x, mv_y, add);
         } else {
             s->dsp.clear_block(t->block);
-            decode_block_intra(t, t->block);
+            if(decode_block_intra(t, t->block) < 0)
+                return -1;
             idct_put(t, t->block, s->mb_x, s->mb_y, j);
         }
     }
+    return 0;
 }
 
 static void calc_intra_matrix(MadContext *t, int qscale)
@@ -261,14 +271,18 @@ static int decode_frame(AVCodecContext *avctx,
     buf += 16;
 
     if (avctx->width != s->width || avctx->height != s->height) {
+        if((s->width * s->height)/2048*7 > buf_end-buf)
+            return -1;
         if (av_image_check_size(s->width, s->height, 0, avctx) < 0)
             return -1;
         avcodec_set_dimensions(avctx, s->width, s->height);
         if (t->frame.data[0])
             avctx->release_buffer(avctx, &t->frame);
+        if (t->last_frame.data[0])
+            avctx->release_buffer(avctx, &t->last_frame);
     }
 
-    t->frame.reference = 1;
+    t->frame.reference = 3;
     if (!t->frame.data[0]) {
         if (avctx->get_buffer(avctx, &t->frame) < 0) {
             av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
@@ -280,11 +294,13 @@ static int decode_frame(AVCodecContext *avctx,
     if (!t->bitstream_buf)
         return AVERROR(ENOMEM);
     bswap16_buf(t->bitstream_buf, (const uint16_t*)buf, (buf_end-buf)/2);
+    memset((uint8_t*)t->bitstream_buf + (buf_end-buf), 0, FF_INPUT_BUFFER_PADDING_SIZE);
     init_get_bits(&s->gb, t->bitstream_buf, 8*(buf_end-buf));
 
     for (s->mb_y=0; s->mb_y < (avctx->height+15)/16; s->mb_y++)
         for (s->mb_x=0; s->mb_x < (avctx->width +15)/16; s->mb_x++)
-            decode_mb(t, inter);
+            if(decode_mb(t, inter) < 0)
+                return -1;
 
     *data_size = sizeof(AVFrame);
     *(AVFrame*)data = t->frame;

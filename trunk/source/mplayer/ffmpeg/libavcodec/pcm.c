@@ -2,20 +2,20 @@
  * PCM codecs
  * Copyright (c) 2001 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -192,6 +192,7 @@ static int pcm_encode_frame(AVCodecContext *avctx,
 }
 
 typedef struct PCMDecode {
+    AVFrame frame;
     short table[256];
 } PCMDecode;
 
@@ -223,6 +224,9 @@ static av_cold int pcm_decode_init(AVCodecContext * avctx)
     if (avctx->sample_fmt == AV_SAMPLE_FMT_S32)
         avctx->bits_per_raw_sample = av_get_bits_per_sample(avctx->codec->id);
 
+    avcodec_get_frame_defaults(&s->frame);
+    avctx->coded_frame = &s->frame;
+
     return 0;
 }
 
@@ -243,33 +247,36 @@ static av_cold int pcm_decode_init(AVCodecContext * avctx)
         dst += size / 8; \
     }
 
-static int pcm_decode_frame(AVCodecContext *avctx,
-                            void *data, int *data_size,
-                            AVPacket *avpkt)
+static int pcm_decode_frame(AVCodecContext *avctx, void *data,
+                            int *got_frame_ptr, AVPacket *avpkt)
 {
     const uint8_t *src = avpkt->data;
     int buf_size = avpkt->size;
     PCMDecode *s = avctx->priv_data;
-    int sample_size, c, n, out_size;
+    int sample_size, c, n, ret, samples_per_block;
     uint8_t *samples;
     int32_t *dst_int32_t;
-
-    samples = data;
 
     sample_size = av_get_bits_per_sample(avctx->codec_id)/8;
 
     /* av_get_bits_per_sample returns 0 for CODEC_ID_PCM_DVD */
+    samples_per_block = 1;
     if (CODEC_ID_PCM_DVD == avctx->codec_id) {
         if (avctx->bits_per_coded_sample != 20 &&
             avctx->bits_per_coded_sample != 24) {
-            av_log(avctx, AV_LOG_ERROR, "PCM DVD unsupported sample depth\n");
+            av_log(avctx, AV_LOG_ERROR,
+                   "PCM DVD unsupported sample depth %i\n",
+                   avctx->bits_per_coded_sample);
             return AVERROR(EINVAL);
         }
         /* 2 samples are interleaved per block in PCM_DVD */
+        samples_per_block = 2;
         sample_size = avctx->bits_per_coded_sample * 2 / 8;
-    } else if (avctx->codec_id == CODEC_ID_PCM_LXF)
+    } else if (avctx->codec_id == CODEC_ID_PCM_LXF) {
         /* we process 40-bit blocks per channel for LXF */
+        samples_per_block = 2;
         sample_size = 5;
+    }
 
     if (sample_size == 0) {
         av_log(avctx, AV_LOG_ERROR, "Invalid sample_size\n");
@@ -288,14 +295,13 @@ static int pcm_decode_frame(AVCodecContext *avctx,
 
     n = buf_size/sample_size;
 
-    out_size = n * av_get_bytes_per_sample(avctx->sample_fmt);
-    if (avctx->codec_id == CODEC_ID_PCM_DVD ||
-        avctx->codec_id == CODEC_ID_PCM_LXF)
-        out_size *= 2;
-    if (*data_size < out_size) {
-        av_log(avctx, AV_LOG_ERROR, "output buffer too small\n");
-        return AVERROR(EINVAL);
+    /* get output buffer */
+    s->frame.nb_samples = n * samples_per_block / avctx->channels;
+    if ((ret = avctx->get_buffer(avctx, &s->frame)) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return ret;
     }
+    samples = s->frame.data[0];
 
     switch(avctx->codec->id) {
     case CODEC_ID_PCM_U32LE:
@@ -382,7 +388,6 @@ static int pcm_decode_frame(AVCodecContext *avctx,
 #endif /* HAVE_BIGENDIAN */
     case CODEC_ID_PCM_U8:
         memcpy(samples, src, n*sample_size);
-        samples += n * sample_size;
         break;
     case CODEC_ID_PCM_ZORK:
         for (; n > 0; n--) {
@@ -402,7 +407,7 @@ static int pcm_decode_frame(AVCodecContext *avctx,
     case CODEC_ID_PCM_DVD:
     {
         const uint8_t *src8;
-        dst_int32_t = data;
+        dst_int32_t = (int32_t *)s->frame.data[0];
         n /= avctx->channels;
         switch (avctx->bits_per_coded_sample) {
         case 20:
@@ -428,14 +433,13 @@ static int pcm_decode_frame(AVCodecContext *avctx,
             }
             break;
         }
-        samples = (uint8_t *) dst_int32_t;
         break;
     }
     case CODEC_ID_PCM_LXF:
     {
         int i;
         const uint8_t *src8;
-        dst_int32_t = data;
+        dst_int32_t = (int32_t *)s->frame.data[0];
         n /= avctx->channels;
         //unpack and de-planerize
         for (i = 0; i < n; i++) {
@@ -451,13 +455,15 @@ static int pcm_decode_frame(AVCodecContext *avctx,
                                  ((src8[2] & 0xF0) << 8) | (src8[4] << 4) | (src8[3] >> 4);
             }
         }
-        samples = (uint8_t *) dst_int32_t;
         break;
     }
     default:
         return -1;
     }
-    *data_size = out_size;
+
+    *got_frame_ptr   = 1;
+    *(AVFrame *)data = s->frame;
+
     return buf_size;
 }
 
@@ -486,6 +492,7 @@ AVCodec ff_ ## name_ ## _decoder = {            \
     .priv_data_size = sizeof(PCMDecode),        \
     .init           = pcm_decode_init,          \
     .decode         = pcm_decode_frame,         \
+    .capabilities   = CODEC_CAP_DR1,            \
     .sample_fmts = (const enum AVSampleFormat[]){sample_fmt_,AV_SAMPLE_FMT_NONE}, \
     .long_name = NULL_IF_CONFIG_SMALL(long_name_), \
 }

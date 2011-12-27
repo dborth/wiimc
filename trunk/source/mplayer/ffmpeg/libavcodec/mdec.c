@@ -4,20 +4,20 @@
  *
  * based upon code from Sebastian Jedruszkiewicz <elf@frogger.rules.pl>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -219,6 +219,7 @@ static av_cold void mdec_common_init(AVCodecContext *avctx){
     a->mb_width   = (avctx->coded_width  + 15) / 16;
     a->mb_height  = (avctx->coded_height + 15) / 16;
 
+    avcodec_get_frame_defaults(&a->picture);
     avctx->coded_frame= &a->picture;
     a->avctx= avctx;
 }
@@ -244,13 +245,14 @@ static av_cold int decode_init_thread_copy(AVCodecContext *avctx){
     MDECContext * const a = avctx->priv_data;
     AVFrame *p = (AVFrame*)&a->picture;
 
-    avctx->coded_frame = p;
+    avctx->coded_frame= p;
     a->avctx= avctx;
 
-    p->qscale_table = av_mallocz( a->mb_width);
+    p->qscale_table= av_mallocz(a->mb_width);
 
     return 0;
 }
+
 
 static av_cold int decode_end(AVCodecContext *avctx){
     MDECContext * const a = avctx->priv_data;

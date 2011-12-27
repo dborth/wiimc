@@ -3,20 +3,20 @@
  *
  * copyright (C) 2004 Marc Hoffman <marc.hoffman@analog.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -95,6 +95,7 @@ adjustment.
 #include "libswscale/swscale.h"
 #include "libswscale/swscale_internal.h"
 #include "libavutil/cpu.h"
+#include "libavutil/pixdesc.h"
 #include "yuv2rgb_altivec.h"
 
 #undef PROFILE_THE_BEAST
@@ -298,7 +299,7 @@ static int altivec_##name (SwsContext *c,                               \
     vector signed short R1,G1,B1;                                       \
     vector unsigned char R,G,B;                                         \
                                                                         \
-    vector unsigned char *y1ivP, *y2ivP, *uivP, *vivP;                  \
+    const vector unsigned char *y1ivP, *y2ivP, *uivP, *vivP;            \
     vector unsigned char align_perm;                                    \
                                                                         \
     vector signed short                                                 \
@@ -335,10 +336,10 @@ static int altivec_##name (SwsContext *c,                               \
                                                                         \
         for (j=0;j<w/16;j++) {                                          \
                                                                         \
-            y1ivP = (vector unsigned char *)y1i;                        \
-            y2ivP = (vector unsigned char *)y2i;                        \
-            uivP  = (vector unsigned char *)ui;                         \
-            vivP  = (vector unsigned char *)vi;                         \
+            y1ivP = (const vector unsigned char *)y1i;                  \
+            y2ivP = (const vector unsigned char *)y2i;                  \
+            uivP  = (const vector unsigned char *)ui;                   \
+            vivP  = (const vector unsigned char *)vi;                   \
                                                                         \
             align_perm = vec_lvsl (0, y1i);                             \
             y0 = (vector unsigned char)                                 \
@@ -720,7 +721,7 @@ ff_yuv2packedX_altivec(SwsContext *c, const int16_t *lumFilter,
                 static int printed_error_message;
                 if (!printed_error_message) {
                     av_log(c, AV_LOG_ERROR, "altivec_yuv2packedX doesn't support %s output\n",
-                           sws_format_name(c->dstFormat));
+                           av_get_pix_fmt_name(c->dstFormat));
                     printed_error_message=1;
                 }
                 return;
@@ -795,7 +796,7 @@ ff_yuv2packedX_altivec(SwsContext *c, const int16_t *lumFilter,
         default:
             /* Unreachable, I think. */
             av_log(c, AV_LOG_ERROR, "altivec_yuv2packedX doesn't support %s output\n",
-                   sws_format_name(c->dstFormat));
+                   av_get_pix_fmt_name(c->dstFormat));
             return;
         }
 

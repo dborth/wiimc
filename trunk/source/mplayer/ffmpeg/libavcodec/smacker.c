@@ -2,20 +2,20 @@
  * Smacker decoder
  * Copyright (c) 2006 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -35,7 +35,7 @@
 #include "libavutil/audioconvert.h"
 #include "mathops.h"
 
-#define ALT_BITSTREAM_READER_LE
+#define BITSTREAM_READER_LE
 #include "get_bits.h"
 #include "bytestream.h"
 
@@ -171,7 +171,7 @@ static int smacker_decode_bigtree(GetBitContext *gb, HuffContext *hc, DBCtx *ctx
 }
 
 /**
- * Store large tree as Libav's vlc codes
+ * Store large tree as FFmpeg's vlc codes
  */
 static int smacker_decode_header_tree(SmackVContext *smk, GetBitContext *gb, int **recodes, int *last, int size)
 {
@@ -368,7 +368,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
     if(buf_size <= 769)
         return 0;
 
-    smk->pic.reference = 1;
+    smk->pic.reference = 3;
     smk->pic.buffer_hints = FF_BUFFER_HINTS_VALID | FF_BUFFER_HINTS_PRESERVE | FF_BUFFER_HINTS_REUSABLE;
     if(avctx->reget_buffer(avctx, &smk->pic) < 0){
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
@@ -386,7 +386,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
 
     buf++;
     for(i = 0; i < 256; i++)
-        *pal++ = bytestream_get_be24(&buf);
+        *pal++ = 0xFF << 24 | bytestream_get_be24(&buf);
     buf_size -= 769;
 
     last_reset(smk->mmap_tbl, smk->mmap_last);
@@ -522,6 +522,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
 
     avctx->pix_fmt = PIX_FMT_PAL8;
 
+    avcodec_get_frame_defaults(&c->pic);
 
     /* decode huffman trees from extradata */
     if(avctx->extradata_size < 16){
@@ -558,31 +559,43 @@ static av_cold int decode_end(AVCodecContext *avctx)
 }
 
 
+typedef struct SmackerAudioContext {
+    AVFrame frame;
+} SmackerAudioContext;
+
 static av_cold int smka_decode_init(AVCodecContext *avctx)
 {
+    SmackerAudioContext *s = avctx->priv_data;
+
     if (avctx->channels < 1 || avctx->channels > 2) {
         av_log(avctx, AV_LOG_ERROR, "invalid number of channels\n");
         return AVERROR(EINVAL);
     }
     avctx->channel_layout = (avctx->channels==2) ? AV_CH_LAYOUT_STEREO : AV_CH_LAYOUT_MONO;
     avctx->sample_fmt = avctx->bits_per_coded_sample == 8 ? AV_SAMPLE_FMT_U8 : AV_SAMPLE_FMT_S16;
+
+    avcodec_get_frame_defaults(&s->frame);
+    avctx->coded_frame = &s->frame;
+
     return 0;
 }
 
 /**
  * Decode Smacker audio data
  */
-static int smka_decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPacket *avpkt)
+static int smka_decode_frame(AVCodecContext *avctx, void *data,
+                             int *got_frame_ptr, AVPacket *avpkt)
 {
+    SmackerAudioContext *s = avctx->priv_data;
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
     GetBitContext gb;
     HuffContext h[4];
     VLC vlc[4];
-    int16_t *samples = data;
-    uint8_t *samples8 = data;
+    int16_t *samples;
+    uint8_t *samples8;
     int val;
-    int i, res;
+    int i, res, ret;
     int unp_size;
     int bits, stereo;
     int pred[2] = {0, 0};
@@ -598,15 +611,11 @@ static int smka_decode_frame(AVCodecContext *avctx, void *data, int *data_size, 
 
     if(!get_bits1(&gb)){
         av_log(avctx, AV_LOG_INFO, "Sound: no data\n");
-        *data_size = 0;
+        *got_frame_ptr = 0;
         return 1;
     }
     stereo = get_bits1(&gb);
     bits = get_bits1(&gb);
-    if (unp_size & 0xC0000000 || unp_size > *data_size) {
-        av_log(avctx, AV_LOG_ERROR, "Frame is too large to fit in buffer\n");
-        return -1;
-    }
     if (stereo ^ (avctx->channels != 1)) {
         av_log(avctx, AV_LOG_ERROR, "channels mismatch\n");
         return AVERROR(EINVAL);
@@ -615,6 +624,15 @@ static int smka_decode_frame(AVCodecContext *avctx, void *data, int *data_size, 
         av_log(avctx, AV_LOG_ERROR, "sample format mismatch\n");
         return AVERROR(EINVAL);
     }
+
+    /* get output buffer */
+    s->frame.nb_samples = unp_size / (avctx->channels * (bits + 1));
+    if ((ret = avctx->get_buffer(avctx, &s->frame)) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return ret;
+    }
+    samples  = (int16_t *)s->frame.data[0];
+    samples8 =            s->frame.data[0];
 
     memset(vlc, 0, sizeof(VLC) * 4);
     memset(h, 0, sizeof(HuffContext) * 4);
@@ -645,6 +663,8 @@ static int smka_decode_frame(AVCodecContext *avctx, void *data, int *data_size, 
         for(i = 0; i <= stereo; i++)
             *samples++ = pred[i];
         for(; i < unp_size / 2; i++) {
+            if(get_bits_left(&gb)<0)
+                return -1;
             if(i & stereo) {
                 if(vlc[2].table)
                     res = get_vlc2(&gb, vlc[2].table, SMKTREE_BITS, 3);
@@ -679,6 +699,8 @@ static int smka_decode_frame(AVCodecContext *avctx, void *data, int *data_size, 
         for(i = 0; i <= stereo; i++)
             *samples8++ = pred[i];
         for(; i < unp_size; i++) {
+            if(get_bits_left(&gb)<0)
+                return -1;
             if(i & stereo){
                 if(vlc[1].table)
                     res = get_vlc2(&gb, vlc[1].table, SMKTREE_BITS, 3);
@@ -705,7 +727,9 @@ static int smka_decode_frame(AVCodecContext *avctx, void *data, int *data_size, 
         av_free(h[i].values);
     }
 
-    *data_size = unp_size;
+    *got_frame_ptr   = 1;
+    *(AVFrame *)data = s->frame;
+
     return buf_size;
 }
 
@@ -725,8 +749,10 @@ AVCodec ff_smackaud_decoder = {
     .name           = "smackaud",
     .type           = AVMEDIA_TYPE_AUDIO,
     .id             = CODEC_ID_SMACKAUDIO,
+    .priv_data_size = sizeof(SmackerAudioContext),
     .init           = smka_decode_init,
     .decode         = smka_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("Smacker audio"),
 };
 

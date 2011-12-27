@@ -2,20 +2,20 @@
  * H.264 MP4 to Annex B byte stream format filter
  * Copyright (c) 2007 Benoit Fouet <benoit.fouet@free.fr>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -87,11 +87,7 @@ static int h264_mp4toannexb_filter(AVBitStreamFilterContext *bsfc,
         /* retrieve sps and pps unit(s) */
         unit_nb = *extradata++ & 0x1f; /* number of sps unit(s) */
         if (!unit_nb) {
-            unit_nb = *extradata++; /* number of pps unit(s) */
-            sps_done++;
-
-            if (unit_nb)
-                pps_seen = 1;
+            goto pps;
         } else {
             sps_seen = 1;
         }
@@ -115,7 +111,7 @@ static int h264_mp4toannexb_filter(AVBitStreamFilterContext *bsfc,
             memcpy(out+total_size-unit_size-4, nalu_header, 4);
             memcpy(out+total_size-unit_size,   extradata+2, unit_size);
             extradata += 2+unit_size;
-
+pps:
             if (!unit_nb && !sps_done++) {
                 unit_nb = *extradata++; /* number of pps unit(s) */
                 if (unit_nb)

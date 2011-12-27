@@ -1,33 +1,43 @@
 /*
  * copyright (c) 2006 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /**
  * @file
  * A tree container.
- * Insertion, removal, finding equal, largest which is smaller than and
- * smallest which is larger than, all have O(log n) worst case complexity.
  * @author Michael Niedermayer <michaelni@gmx.at>
  */
 
 #ifndef AVUTIL_TREE_H
 #define AVUTIL_TREE_H
+
+/**
+ * @addtogroup lavu_tree AVTree
+ * @ingroup lavu_data
+ *
+ * Low complexity tree container
+ *
+ * Insertion, removal, finding equal, largest which is smaller than and
+ * smallest which is larger than, all have O(log n) worst case complexity.
+ * @{
+ */
+
 
 struct AVTreeNode;
 extern const int av_tree_node_size;
@@ -91,5 +101,8 @@ void av_tree_destroy(struct AVTreeNode *t);
  */
 void av_tree_enumerate(struct AVTreeNode *t, void *opaque, int (*cmp)(void *opaque, void *elem), int (*enu)(void *opaque, void *elem));
 
+/**
+ * @}
+ */
 
 #endif /* AVUTIL_TREE_H */

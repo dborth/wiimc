@@ -2,9 +2,9 @@
  * RTP Packetization of MPEG-4 Audio (RFC 3016)
  * Copyright (c) 2011 Juan Carlos Rodriguez <ing.juancarlosrodriguez@hotmail.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.

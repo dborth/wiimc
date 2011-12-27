@@ -2,20 +2,20 @@
  * Interface to libfaac for aac encoding
  * Copyright (c) 2002 Gildas Bazin <gbazin@netcourrier.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -30,6 +30,13 @@
 typedef struct FaacAudioContext {
     faacEncHandle faac_handle;
 } FaacAudioContext;
+
+static const int channel_maps[][6] = {
+    { 2, 0, 1 },          //< C L R
+    { 2, 0, 1, 3 },       //< C L R Cs
+    { 2, 0, 1, 3, 4 },    //< C L R Ls Rs
+    { 2, 0, 1, 4, 5, 3 }, //< C L R Ls Rs LFE
+};
 
 static av_cold int Faac_encode_init(AVCodecContext *avctx)
 {
@@ -86,6 +93,9 @@ static av_cold int Faac_encode_init(AVCodecContext *avctx)
     }
     faac_cfg->outputFormat = 1;
     faac_cfg->inputFormat = FAAC_INPUT_16BIT;
+    if (avctx->channels > 2)
+        memcpy(faac_cfg->channel_map, channel_maps[avctx->channels-3],
+               avctx->channels * sizeof(int));
 
     avctx->frame_size = samples_input / avctx->channels;
 

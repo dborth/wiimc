@@ -3,20 +3,20 @@
  *
  * Copyright (C) 2007 Marc Hoffman <marc.hoffman@analog.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 /*
@@ -32,15 +32,15 @@ Performance     :
 
 
 -----------------------------------------------------------
-Libav conformance testing results
+FFMPEG conformance testing results
 -----------------------------------------------------------
 
 dct-test: modified with the following
             dct_error("BFINidct", 1, ff_bfin_idct, idct, test);
 produces the following output
 
-libavcodec> ./dct-test -i
-Libav DCT/IDCT test
+root:/u/ffmpeg/bhead/libavcodec> ./dct-test -i
+ffmpeg DCT/IDCT test
 
     8    15    -2    21    24    17     0    10
     2   -10    -5    -5    -3     7   -14    -3

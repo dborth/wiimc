@@ -31,6 +31,8 @@ static const struct AVCodecTag mp_wav_tags[] = {
     { CODEC_ID_ADPCM_ADX,         MKTAG('S', 'a', 'd', 'x')},
     { CODEC_ID_ADPCM_EA,          MKTAG('A', 'D', 'E', 'A')},
     { CODEC_ID_ADPCM_EA_MAXIS_XA, MKTAG('A', 'D', 'X', 'A')},
+    { CODEC_ID_ADPCM_IMA_EA_EACS, MKTAG('E', 'A', 'C', 'S')},
+    { CODEC_ID_ADPCM_IMA_ISS,     MKTAG('A', 'I', 'S', 'S')},
     { CODEC_ID_ADPCM_IMA_WS,      MKTAG('A', 'I', 'W', 'S')},
     { CODEC_ID_ADPCM_THP,         MKTAG('T', 'H', 'P', 'A')},
     { CODEC_ID_ADPCM_XA,          MKTAG('P', 'S', 'X', 'A')},
@@ -41,6 +43,7 @@ static const struct AVCodecTag mp_wav_tags[] = {
     { CODEC_ID_COOK,              MKTAG('c', 'o', 'o', 'k')},
     { CODEC_ID_DSICINAUDIO,       MKTAG('D', 'C', 'I', 'A')},
     { CODEC_ID_EAC3,              MKTAG('E', 'A', 'C', '3')},
+    { CODEC_ID_FFWAVESYNTH,       MKTAG('F', 'F', 'W', 'S')},
     { CODEC_ID_G723_1,            MKTAG('7', '2', '3', '1')},
     { CODEC_ID_INTERPLAY_DPCM,    MKTAG('I', 'N', 'P', 'A')},
     { CODEC_ID_MLP,               MKTAG('M', 'L', 'P', ' ')},
@@ -50,6 +53,7 @@ static const struct AVCodecTag mp_wav_tags[] = {
     { CODEC_ID_MUSEPACK8,         MKTAG('M', 'P', 'C', '8')},
     { CODEC_ID_NELLYMOSER,        MKTAG('n', 'm', 'o', 's')},
     { CODEC_ID_PCM_LXF,           MKTAG('P', 'L', 'X', 'F')},
+    { CODEC_ID_PCM_S16LE_PLANAR,  MKTAG('1', '6', 'P', 'L')},
     { CODEC_ID_QCELP,             MKTAG('Q', 'c', 'l', 'p')},
     { CODEC_ID_QDM2,              MKTAG('Q', 'D', 'M', '2')},
     { CODEC_ID_RA_144,            MKTAG('1', '4', '_', '4')},
@@ -59,6 +63,7 @@ static const struct AVCodecTag mp_wav_tags[] = {
     { CODEC_ID_SPEEX,             MKTAG('s', 'p', 'x', ' ')},
     { CODEC_ID_TTA,               MKTAG('T', 'T', 'A', '1')},
     { CODEC_ID_TWINVQ,            MKTAG('T', 'W', 'I', '2')},
+    { CODEC_ID_VMDAUDIO,          MKTAG('V', 'M', 'D', 'A')},
     { CODEC_ID_WAVPACK,           MKTAG('W', 'V', 'P', 'K')},
     { CODEC_ID_WESTWOOD_SND1,     MKTAG('S', 'N', 'D', '1')},
     { CODEC_ID_XAN_DPCM,          MKTAG('A', 'x', 'a', 'n')},
@@ -74,10 +79,13 @@ static const struct AVCodecTag mp_codecid_override_tags[] = {
     { CODEC_ID_AAC,               MKTAG('M', 'P', '4', 'A')},
     { CODEC_ID_AAC_LATM,          MKTAG('M', 'P', '4', 'L')},
     { CODEC_ID_AC3,               0x2000},
+    { CODEC_ID_ADPCM_IMA_EA_SEAD, MKTAG('S', 'E', 'A', 'D')},
     { CODEC_ID_ADPCM_IMA_AMV,     MKTAG('A', 'M', 'V', 'A')},
     { CODEC_ID_DTS,               0x2001},
     { CODEC_ID_DVVIDEO,           MKTAG('d', 'v', 's', 'd')},
     { CODEC_ID_EAC3,              MKTAG('E', 'A', 'C', '3')},
+    { CODEC_ID_ESCAPE124,         MKTAG('E', '1', '2', '4')},
+    { CODEC_ID_ESCAPE130,         MKTAG('E', '1', '3', '0')},
     { CODEC_ID_FLV1,              MKTAG('F', 'L', 'V', '1')},
     { CODEC_ID_G729,              MKTAG('G', '7', '2', '9')},
     { CODEC_ID_H264,              MKTAG('H', '2', '6', '4')},
@@ -120,7 +128,9 @@ static const struct AVCodecTag mp_bmp_tags[] = {
     { CODEC_ID_IDCIN,             MKTAG('I', 'D', 'C', 'I')},
     { CODEC_ID_INTERPLAY_VIDEO,   MKTAG('I', 'N', 'P', 'V')},
     { CODEC_ID_JV,                MKTAG('F', 'F', 'J', 'V')},
+    { CODEC_ID_MAD,               MKTAG('M', 'A', 'D', 'k')},
     { CODEC_ID_MDEC,              MKTAG('M', 'D', 'E', 'C')},
+    { CODEC_ID_MMVIDEO,           MKTAG('M', 'M', 'V', ' ')},
     { CODEC_ID_MOTIONPIXELS,      MKTAG('M', 'V', 'I', '1')},
     { CODEC_ID_MXPEG,             MKTAG('M', 'X', 'P', 'G')},
     { CODEC_ID_NUV,               MKTAG('N', 'U', 'V', '1')},
@@ -131,6 +141,7 @@ static const struct AVCodecTag mp_bmp_tags[] = {
     { CODEC_ID_RV30,              MKTAG('R', 'V', '3', '0')},
     { CODEC_ID_RV40,              MKTAG('R', 'V', '4', '0')},
     { CODEC_ID_SVQ3,              MKTAG('S', 'V', 'Q', '3')},
+    { CODEC_ID_TMV,               MKTAG('t', 'm', 'v', '8')},
     { CODEC_ID_TGV,               MKTAG('f', 'V', 'G', 'T')},
     { CODEC_ID_THP,               MKTAG('T', 'H', 'P', 'V')},
     { CODEC_ID_TIERTEXSEQVIDEO,   MKTAG('T', 'S', 'E', 'Q')},
@@ -146,7 +157,16 @@ static const struct AVCodecTag * const mp_bmp_taglists[] = {mp_bmp_tags, 0};
 
 enum CodecID mp_tag2codec_id(uint32_t tag, int audio)
 {
-    return av_codec_get_id(audio ? mp_wav_taglists : mp_bmp_taglists, tag);
+    AVOutputFormat *avi_format;
+    enum CodecID id = av_codec_get_id(audio ? mp_wav_taglists : mp_bmp_taglists, tag);
+    if (id != CODEC_ID_NONE)
+        return id;
+    avi_format = av_guess_format("avi", NULL, NULL);
+    if (!avi_format) {
+        mp_msg(MSGT_DEMUXER, MSGL_FATAL, "MPlayer cannot work properly without AVI muxer in libavformat!\n");
+        return 0;
+    }
+    return av_codec_get_id(avi_format->codec_tag, tag);
 }
 
 uint32_t mp_codec_id2tag(enum CodecID codec_id, uint32_t old_tag, int audio)

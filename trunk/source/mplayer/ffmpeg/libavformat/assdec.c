@@ -2,20 +2,20 @@
  * SSA/ASS demuxer
  * Copyright (c) 2008 Michael Niedermayer
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -86,14 +86,14 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
     st = avformat_new_stream(s, NULL);
     if (!st)
         return -1;
-    av_set_pts_info(st, 64, 1, 100);
+    avpriv_set_pts_info(st, 64, 1, 100);
     st->codec->codec_type = AVMEDIA_TYPE_SUBTITLE;
     st->codec->codec_id= CODEC_ID_SSA;
 
     header_remaining= INT_MAX;
     dst[0] = &st->codec->extradata;
     dst[1] = &ass->event_buffer;
-    while(!pb->eof_reached){
+    while(!url_feof(pb)){
         uint8_t line[MAX_LINESIZE];
 
         len = ff_get_line(pb, line, sizeof(line));

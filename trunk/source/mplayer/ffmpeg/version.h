@@ -1,1 +1,1 @@
-#define LIBAV_VERSION "0.7"
+#define FFMPEG_VERSION "0.9.0.git"

@@ -2,20 +2,20 @@
  * Real Audio 1.0 (14.4K) encoder
  * Copyright (c) 2010 Francesco Lavra <francescolavra@interfree.it>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -477,7 +477,10 @@ static int ra144_encode_frame(AVCodecContext *avctx, uint8_t *frame,
          * The filter is unstable: use the coefficients of the previous frame.
          */
         ff_int_to_int16(block_coefs[NBLOCKS - 1], ractx->lpc_coef[1]);
-        ff_eval_refl(lpc_refl, block_coefs[NBLOCKS - 1], avctx);
+        if (ff_eval_refl(lpc_refl, block_coefs[NBLOCKS - 1], avctx)) {
+            /* the filter is still unstable. set reflection coeffs to zero. */
+            memset(lpc_refl, 0, sizeof(lpc_refl));
+        }
     }
     init_put_bits(&pb, frame, buf_size);
     for (i = 0; i < LPC_ORDER; i++) {

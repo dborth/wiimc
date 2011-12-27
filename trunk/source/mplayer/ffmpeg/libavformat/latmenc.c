@@ -25,6 +25,7 @@
 #include "libavcodec/mpeg4audio.h"
 #include "libavutil/opt.h"
 #include "avformat.h"
+#include "rawenc.h"
 
 typedef struct {
     AVClass *av_class;
@@ -54,7 +55,7 @@ static int latm_decode_extradata(LATMContext *ctx, uint8_t *buf, int size)
     MPEG4AudioConfig m4ac;
 
     init_get_bits(&gb, buf, size * 8);
-    ctx->off = avpriv_mpeg4audio_get_config(&m4ac, buf, size);
+    ctx->off = avpriv_mpeg4audio_get_config(&m4ac, buf, size * 8, 1);
     if (ctx->off < 0)
         return ctx->off;
     skip_bits_long(&gb, ctx->off);
@@ -75,6 +76,9 @@ static int latm_write_header(AVFormatContext *s)
 {
     LATMContext *ctx = s->priv_data;
     AVCodecContext *avctx = s->streams[0]->codec;
+
+    if (avctx->codec_id == CODEC_ID_AAC_LATM)
+        return 0;
 
     if (avctx->extradata_size > 0 &&
         latm_decode_extradata(ctx, avctx->extradata, avctx->extradata_size) < 0)
@@ -136,6 +140,9 @@ static int latm_write_packet(AVFormatContext *s, AVPacket *pkt)
     uint8_t loas_header[] = "\x56\xe0\x00";
     uint8_t *buf;
 
+    if (s->streams[0]->codec->codec_id == CODEC_ID_AAC_LATM)
+        return ff_raw_write_packet(s, pkt);
+
     if (pkt->size > 2 && pkt->data[0] == 0xff && (pkt->data[1] >> 4) == 0xf) {
         av_log(s, AV_LOG_ERROR, "ADTS header detected - ADTS will not be incorrectly muxed into LATM\n");
         return AVERROR_INVALIDDATA;
@@ -181,7 +188,7 @@ AVOutputFormat ff_latm_muxer = {
     .name           = "latm",
     .long_name      = NULL_IF_CONFIG_SMALL("LOAS/LATM"),
     .mime_type      = "audio/MP4A-LATM",
-    .extensions     = "latm",
+    .extensions     = "latm,loas",
     .priv_data_size = sizeof(LATMContext),
     .audio_codec    = CODEC_ID_AAC,
     .video_codec    = CODEC_ID_NONE,

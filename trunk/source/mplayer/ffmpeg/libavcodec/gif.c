@@ -4,20 +4,20 @@
  * Copyright (c) 2002 Francois Revol
  * Copyright (c) 2006 Baptiste Coudurier
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -62,7 +62,7 @@ static int gif_image_write_header(AVCodecContext *avctx,
                                   uint8_t **bytestream, uint32_t *palette)
 {
     int i;
-    unsigned int v;
+    unsigned int v, smallest_alpha = 0xFF, alpha_component = 0;
 
     bytestream_put_buffer(bytestream, "GIF", 3);
     bytestream_put_buffer(bytestream, "89a", 3);
@@ -77,6 +77,20 @@ static int gif_image_write_header(AVCodecContext *avctx,
     for(i=0;i<256;i++) {
         v = palette[i];
         bytestream_put_be24(bytestream, v);
+        if (v >> 24 < smallest_alpha) {
+            smallest_alpha = v >> 24;
+            alpha_component = i;
+        }
+    }
+
+    if (smallest_alpha < 128) {
+        bytestream_put_byte(bytestream, 0x21); /* Extension Introducer */
+        bytestream_put_byte(bytestream, 0xf9); /* Graphic Control Label */
+        bytestream_put_byte(bytestream, 0x04); /* block length */
+        bytestream_put_byte(bytestream, 0x01); /* Transparent Color Flag */
+        bytestream_put_le16(bytestream, 0x00); /* no delay */
+        bytestream_put_byte(bytestream, alpha_component);
+        bytestream_put_byte(bytestream, 0x00);
     }
 
     return 0;

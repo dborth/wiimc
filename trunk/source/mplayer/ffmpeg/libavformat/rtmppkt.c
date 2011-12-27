@@ -2,26 +2,26 @@
  * RTMP input format
  * Copyright (c) 2009 Kostya Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavcodec/bytestream.h"
 #include "libavutil/avstring.h"
-#include "libavutil/intfloat_readwrite.h"
+#include "libavutil/intfloat.h"
 #include "avformat.h"
 
 #include "rtmppkt.h"
@@ -37,7 +37,7 @@ void ff_amf_write_bool(uint8_t **dst, int val)
 void ff_amf_write_number(uint8_t **dst, double val)
 {
     bytestream_put_byte(dst, AMF_DATA_TYPE_NUMBER);
-    bytestream_put_be64(dst, av_dbl2int(val));
+    bytestream_put_be64(dst, av_double2int(val));
 }
 
 void ff_amf_write_string(uint8_t **dst, const char *str)
@@ -318,7 +318,7 @@ int ff_amf_get_field_value(const uint8_t *data, const uint8_t *data_end,
         if (size == namelen && !memcmp(data-size, name, namelen)) {
             switch (*data++) {
             case AMF_DATA_TYPE_NUMBER:
-                snprintf(dst, dst_size, "%g", av_int2dbl(AV_RB64(data)));
+                snprintf(dst, dst_size, "%g", av_int2double(AV_RB64(data)));
                 break;
             case AMF_DATA_TYPE_BOOL:
                 snprintf(dst, dst_size, "%s", *data ? "true" : "false");
@@ -370,7 +370,7 @@ static void ff_amf_tag_contents(void *ctx, const uint8_t *data, const uint8_t *d
         return;
     switch (*data++) {
     case AMF_DATA_TYPE_NUMBER:
-        av_log(ctx, AV_LOG_DEBUG, " number %g\n", av_int2dbl(AV_RB64(data)));
+        av_log(ctx, AV_LOG_DEBUG, " number %g\n", av_int2double(AV_RB64(data)));
         return;
     case AMF_DATA_TYPE_BOOL:
         av_log(ctx, AV_LOG_DEBUG, " bool %d\n", *data);

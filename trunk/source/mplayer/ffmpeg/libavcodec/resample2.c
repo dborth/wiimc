@@ -2,20 +2,20 @@
  * audio resampling
  * Copyright (c) 2004 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -90,7 +90,7 @@ static double bessel(double x){
 }
 
 /**
- * builds a polyphase filterbank.
+ * Build a polyphase filterbank.
  * @param factor resampling factor
  * @param scale wanted sum of coefficients for each filter
  * @param type 0->cubic, 1->blackman nuttall windowed sinc, 2..16->kaiser windowed sinc beta=2..16
@@ -207,8 +207,10 @@ AVResampleContext *av_resample_init(int out_rate, int in_rate, int filter_size, 
     memcpy(&c->filter_bank[c->filter_length*phase_count+1], c->filter_bank, (c->filter_length-1)*sizeof(FELEM));
     c->filter_bank[c->filter_length*phase_count]= c->filter_bank[c->filter_length - 1];
 
-    c->src_incr= out_rate;
-    c->ideal_dst_incr= c->dst_incr= in_rate * phase_count;
+    if(!av_reduce(&c->src_incr, &c->dst_incr, out_rate, in_rate * (int64_t)phase_count, INT32_MAX/2))
+        goto error;
+    c->ideal_dst_incr= c->dst_incr;
+
     c->index= -phase_count*((c->filter_length-1)/2);
 
     return c;
@@ -246,10 +248,9 @@ int av_resample(AVResampleContext *c, short *dst, short *src, int *consumed, int
             dst[dst_index] = src[index2>>32];
             index2 += incr;
         }
-        frac += dst_index * dst_incr_frac;
         index += dst_index * dst_incr;
-        index += frac / c->src_incr;
-        frac %= c->src_incr;
+        index += (frac + dst_index * (int64_t)dst_incr_frac) / c->src_incr;
+        frac   = (frac + dst_index * (int64_t)dst_incr_frac) % c->src_incr;
   }else{
     for(dst_index=0; dst_index < dst_size; dst_index++){
         FELEM *filter= c->filter_bank + c->filter_length*(index & c->phase_mask);

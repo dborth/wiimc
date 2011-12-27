@@ -3,20 +3,20 @@
  *
  * Copyright (c) 2009 Reimar Döffinger <Reimar.Doeffinger@gmx.de>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -58,7 +58,7 @@ void write_##type##_2d_array(const void *arg, int len, int len2)\
 /**
  * @name Predefined functions for printing tables
  *
- * \{
+ * @{
  */
 void write_int8_t_array     (const int8_t   *, int);
 void write_uint8_t_array    (const uint8_t  *, int);
@@ -69,7 +69,7 @@ void write_int8_t_2d_array  (const void *, int, int);
 void write_uint8_t_2d_array (const void *, int, int);
 void write_uint32_t_2d_array(const void *, int, int);
 void write_float_2d_array   (const void *, int, int);
-/** \} */ // end of printfuncs group
+/** @} */ // end of printfuncs group
 
 #define WRITE_ARRAY(prefix, type, name)                 \
     do {                                                \

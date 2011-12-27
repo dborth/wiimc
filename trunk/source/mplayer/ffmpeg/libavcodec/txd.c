@@ -4,25 +4,26 @@
  *
  * See also: http://wiki.multimedia.cx/index.php?title=TXD
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavutil/intreadwrite.h"
 #include "libavutil/imgutils.h"
+#include "bytestream.h"
 #include "avcodec.h"
 #include "s3tc.h"
 
@@ -42,6 +43,7 @@ static av_cold int txd_init(AVCodecContext *avctx) {
 static int txd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
                             AVPacket *avpkt) {
     const uint8_t *buf = avpkt->data;
+    const uint8_t *buf_end = avpkt->data + avpkt->size;
     TXDContext * const s = avctx->priv_data;
     AVFrame *picture = data;
     AVFrame * const p = &s->picture;
@@ -52,6 +54,8 @@ static int txd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
     const uint32_t *palette = (const uint32_t *)(cur + 88);
     uint32_t *pal;
 
+    if (buf_end - cur < 92)
+        return AVERROR_INVALIDDATA;
     version         = AV_RL32(cur);
     d3d_format      = AV_RL32(cur+76);
     w               = AV_RL16(cur+80);
@@ -69,6 +73,8 @@ static int txd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
 
     if (depth == 8) {
         avctx->pix_fmt = PIX_FMT_PAL8;
+        if (buf_end - cur < 1024)
+            return AVERROR_INVALIDDATA;
         cur += 1024;
     } else if (depth == 16 || depth == 32)
         avctx->pix_fmt = PIX_FMT_RGB32;
@@ -100,6 +106,8 @@ static int txd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
             v = AV_RB32(palette+y);
             pal[y] = (v>>8) + (v<<24);
         }
+        if (buf_end - cur < w * h)
+            return AVERROR_INVALIDDATA;
         for (y=0; y<h; y++) {
             memcpy(ptr, cur, w);
             ptr += stride;
@@ -108,11 +116,16 @@ static int txd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
     } else if (depth == 16) {
         switch (d3d_format) {
         case 0:
-            if (!flags&1) goto unsupported;
+            if (!(flags & 1))
+                goto unsupported;
         case FF_S3TC_DXT1:
+            if (buf_end - cur < (w/4) * (h/4) * 8)
+                return AVERROR_INVALIDDATA;
             ff_decode_dxt1(cur, ptr, w, h, stride);
             break;
         case FF_S3TC_DXT3:
+            if (buf_end - cur < (w/4) * (h/4) * 16)
+                return AVERROR_INVALIDDATA;
             ff_decode_dxt3(cur, ptr, w, h, stride);
             break;
         default:
@@ -122,6 +135,8 @@ static int txd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
         switch (d3d_format) {
         case 0x15:
         case 0x16:
+            if (buf_end - cur < h * w * 4)
+                return AVERROR_INVALIDDATA;
             for (y=0; y<h; y++) {
                 memcpy(ptr, cur, w*4);
                 ptr += stride;
@@ -133,8 +148,12 @@ static int txd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
         }
     }
 
-    for (; mipmap_count > 1; mipmap_count--)
-        cur += AV_RL32(cur) + 4;
+    for (; mipmap_count > 1 && buf_end - cur >= 4; mipmap_count--) {
+        uint32_t length = bytestream_get_le32(&cur);
+        if (buf_end - cur < length)
+            break;
+        cur += length;
+    }
 
     *picture   = s->picture;
     *data_size = sizeof(AVPicture);

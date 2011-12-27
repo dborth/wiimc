@@ -3,20 +3,20 @@
  * Copyright (c) 2007 Luca Abeni ( lucabe72 email it )
  * Copyright (c) 2007 Benoit Fouet ( benoit fouet free fr )
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -29,7 +29,7 @@
  */
 
 #include <alsa/asoundlib.h>
-#include "libavformat/avformat.h"
+#include "avdevice.h"
 #include "libavutil/avassert.h"
 #include "libavutil/audioconvert.h"
 
@@ -143,7 +143,7 @@ switch(format) {\
     case FORMAT_F32: s->reorder_func = alsa_reorder_f32_out_ ##layout;   break;\
 }
 
-static av_cold int find_reorder_func(AlsaData *s, int codec_id, int64_t layout, int out)
+static av_cold int find_reorder_func(AlsaData *s, int codec_id, uint64_t layout, int out)
 {
     int format;
 
@@ -194,7 +194,7 @@ av_cold int ff_alsa_open(AVFormatContext *ctx, snd_pcm_stream_t mode,
     snd_pcm_t *h;
     snd_pcm_hw_params_t *hw_params;
     snd_pcm_uframes_t buffer_size, period_size;
-    int64_t layout = ctx->streams[0]->codec->channel_layout;
+    uint64_t layout = ctx->streams[0]->codec->channel_layout;
 
     if (ctx->filename[0] == 0) audio_device = "default";
     else                       audio_device = ctx->filename;
@@ -320,6 +320,8 @@ av_cold int ff_alsa_close(AVFormatContext *s1)
     AlsaData *s = s1->priv_data;
 
     av_freep(&s->reorder_buf);
+    if (CONFIG_ALSA_INDEV)
+        ff_timefilter_destroy(s->timefilter);
     snd_pcm_close(s->h);
     return 0;
 }

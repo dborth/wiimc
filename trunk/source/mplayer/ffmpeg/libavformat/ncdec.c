@@ -3,25 +3,26 @@
  * Copyright (c) 2009  Nicolas Martin (martinic at iro dot umontreal dot ca)
  *                     Edouard Auvinet
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
+#include "internal.h"
 
 #define NC_VIDEO_FLAG 0x1A5
 
@@ -54,7 +55,7 @@ static int nc_read_header(AVFormatContext *s, AVFormatParameters *ap)
     st->codec->codec_id   = CODEC_ID_MPEG4;
     st->need_parsing      = AVSTREAM_PARSE_FULL;
 
-    av_set_pts_info(st, 64, 1, 100);
+    avpriv_set_pts_info(st, 64, 1, 100);
 
     return 0;
 }
@@ -66,7 +67,7 @@ static int nc_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     uint32_t state=-1;
     while (state != NC_VIDEO_FLAG) {
-        if (s->pb->eof_reached)
+        if (url_feof(s->pb))
             return AVERROR(EIO);
         state = (state<<8) + avio_r8(s->pb);
     }

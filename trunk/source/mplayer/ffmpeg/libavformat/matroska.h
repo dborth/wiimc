@@ -2,20 +2,20 @@
  * Matroska constants
  * Copyright (c) 2003-2004 The ffmpeg Project
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -77,8 +77,13 @@
 #define MATROSKA_ID_TRACKNUMBER 0xD7
 #define MATROSKA_ID_TRACKUID   0x73C5
 #define MATROSKA_ID_TRACKTYPE  0x83
-#define MATROSKA_ID_TRACKAUDIO 0xE1
-#define MATROSKA_ID_TRACKVIDEO 0xE0
+#define MATROSKA_ID_TRACKVIDEO     0xE0
+#define MATROSKA_ID_TRACKAUDIO     0xE1
+#define MATROSKA_ID_TRACKOPERATION 0xE2
+#define MATROSKA_ID_TRACKCOMBINEPLANES 0xE3
+#define MATROSKA_ID_TRACKPLANE         0xE4
+#define MATROSKA_ID_TRACKPLANEUID      0xE5
+#define MATROSKA_ID_TRACKPLANETYPE     0xE6
 #define MATROSKA_ID_CODECID    0x86
 #define MATROSKA_ID_CODECPRIVATE 0x63A2
 #define MATROSKA_ID_CODECNAME  0x258688
@@ -253,8 +258,13 @@ typedef struct CodecMime{
 /* max. depth in the EBML tree structure */
 #define EBML_MAX_DEPTH 16
 
+#define MATROSKA_VIDEO_STEREO_MODE_COUNT  15
+#define MATROSKA_VIDEO_STEREO_PLANE_COUNT  3
+
 extern const CodecTags ff_mkv_codec_tags[];
 extern const CodecMime ff_mkv_mime_tags[];
 extern const AVMetadataConv ff_mkv_metadata_conv[];
+extern const char * const matroska_video_stereo_mode[MATROSKA_VIDEO_STEREO_MODE_COUNT];
+extern const char * const matroska_video_stereo_plane[MATROSKA_VIDEO_STEREO_PLANE_COUNT];
 
 #endif /* AVFORMAT_MATROSKA_H */

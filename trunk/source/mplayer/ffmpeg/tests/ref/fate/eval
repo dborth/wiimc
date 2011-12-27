@@ -148,5 +148,17 @@ Evaluating 'not(NAN)'
 Evaluating 'not(0)'
 'not(0)' -> 1.000000
 
+Evaluating 'pow(0,1.23)'
+'pow(0,1.23)' -> 0.000000
+
+Evaluating 'pow(PI,1.23)'
+'pow(PI,1.23)' -> 4.087844
+
+Evaluating 'PI^1.23'
+'PI^1.23' -> 4.087844
+
+Evaluating 'pow(-1,1.23)'
+'pow(-1,1.23)' -> nan
+
 12.700000 == 12.7
 0.931323 == 0.931322575

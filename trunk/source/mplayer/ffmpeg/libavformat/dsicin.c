@@ -2,20 +2,20 @@
  * Delphine Software International CIN File Demuxer
  * Copyright (c) 2006 Gregory Montoir (cyx@users.sourceforge.net)
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -26,6 +26,8 @@
 
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
+#include "internal.h"
+#include "avio_internal.h"
 
 
 typedef struct CinFileHeader {
@@ -111,7 +113,7 @@ static int cin_read_header(AVFormatContext *s, AVFormatParameters *ap)
     if (!st)
         return AVERROR(ENOMEM);
 
-    av_set_pts_info(st, 32, 1, 12);
+    avpriv_set_pts_info(st, 32, 1, 12);
     cin->video_stream_index = st->index;
     st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codec->codec_id = CODEC_ID_DSICINVIDEO;
@@ -124,7 +126,7 @@ static int cin_read_header(AVFormatContext *s, AVFormatParameters *ap)
     if (!st)
         return AVERROR(ENOMEM);
 
-    av_set_pts_info(st, 32, 1, 22050);
+    avpriv_set_pts_info(st, 32, 1, 22050);
     cin->audio_stream_index = st->index;
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id = CODEC_ID_DSICINAUDIO;
@@ -146,7 +148,7 @@ static int cin_read_frame_header(CinDemuxContext *cin, AVIOContext *pb) {
     hdr->video_frame_size = avio_rl32(pb);
     hdr->audio_frame_size = avio_rl32(pb);
 
-    if (pb->eof_reached || pb->error)
+    if (url_feof(pb) || pb->error)
         return AVERROR(EIO);
 
     if (avio_rl32(pb) != 0xAA55AA55)
@@ -177,6 +179,8 @@ static int cin_read_packet(AVFormatContext *s, AVPacket *pkt)
 
         /* palette and video packet */
         pkt_size = (palette_type + 3) * hdr->pal_colors_count + hdr->video_frame_size;
+
+        pkt_size = ffio_limit(pb, pkt_size);
 
         ret = av_new_packet(pkt, 4 + pkt_size);
         if (ret < 0)

@@ -550,22 +550,23 @@ void vo_uninit(void)
 #include "osdep/keycodes.h"
 #include "wskeys.h"
 
-#ifdef XF86XK_AudioPause
 static const struct mp_keymap keysym_map[] = {
+#ifdef XF86XK_AudioPause
     {XF86XK_MenuKB, KEY_MENU},
     {XF86XK_AudioPlay, KEY_PLAY}, {XF86XK_AudioPause, KEY_PAUSE}, {XF86XK_AudioStop, KEY_STOP},
     {XF86XK_AudioPrev, KEY_PREV}, {XF86XK_AudioNext, KEY_NEXT},
     {XF86XK_AudioMute, KEY_MUTE}, {XF86XK_AudioLowerVolume, KEY_VOLUME_DOWN}, {XF86XK_AudioRaiseVolume, KEY_VOLUME_UP},
+#endif
     {0, 0}
 };
 
-static void vo_x11_putkey_ext(int keysym)
+static int vo_x11_putkey_ext(int keysym)
 {
     int mpkey = lookup_keymap_table(keysym_map, keysym);
     if (mpkey)
         mplayer_put_key(mpkey);
+    return mpkey != 0;
 }
-#endif
 
 static const struct mp_keymap keymap[] = {
     // special keys
@@ -811,6 +812,7 @@ int vo_x11_check_events(Display * mydisplay)
     char buf[100];
     KeySym keySym;
     static XComposeStatus stat;
+    static int ctrl_state;
 
     if (vo_mouse_autohide && mouse_waiting_hide &&
                                  (GetTimerMS() - mouse_timer >= 1000)) {
@@ -843,6 +845,7 @@ int vo_x11_check_events(Display * mydisplay)
                 ret |= check_resize();
                 break;
             case KeyPress:
+            case KeyRelease:
                 {
                     int key;
 
@@ -852,13 +855,28 @@ int vo_x11_check_events(Display * mydisplay)
 
                     XLookupString(&Event.xkey, buf, sizeof(buf), &keySym,
                                   &stat);
-#ifdef XF86XK_AudioPause
-                    vo_x11_putkey_ext(keySym);
-#endif
                     key =
                         ((keySym & 0xff00) !=
                          0 ? ((keySym & 0x00ff) + 256) : (keySym));
-                    vo_x11_putkey(key);
+                    if (key == wsLeftCtrl || key == wsRightCtrl) {
+                        ctrl_state = Event.type == KeyPress;
+                        mplayer_put_key(KEY_CTRL |
+                            (ctrl_state ? MP_KEY_DOWN : 0));
+                    } else if (Event.type == KeyRelease) {
+                        break;
+                    }
+                    // Attempt to fix if somehow our state got out of
+                    // sync with reality.
+                    // This usually happens when a shortcut involving CTRL
+                    // was used to switch to a different window/workspace.
+                    if (ctrl_state != !!(Event.xkey.state & 4)) {
+                        ctrl_state = !!(Event.xkey.state & 4);
+                        mplayer_put_key(KEY_CTRL |
+                            (ctrl_state ? MP_KEY_DOWN : 0));
+                    }
+                    if (!vo_x11_putkey_ext(keySym)) {
+                        vo_x11_putkey(key);
+                    }
                     ret |= VO_EVENT_KEYPRESS;
                 }
                 break;
@@ -1073,6 +1091,8 @@ void vo_x11_create_vo_window(XVisualInfo *vis, int x, int y,
                              Colormap col_map,
                              const char *classname, const char *title)
 {
+  if (vo_wintitle)
+    title = vo_wintitle;
   if (WinID >= 0) {
     vo_fs = flags & VOFLAG_FULLSCREEN;
     vo_window = WinID ? (Window)WinID : mRootWin;
@@ -1095,7 +1115,7 @@ void vo_x11_create_vo_window(XVisualInfo *vis, int x, int y,
       // if it relies on events being forwarded to the parent of WinID.
       // It also is consistent with the w32_common.c code.
       vo_x11_selectinput_witherr(mDisplay, vo_window,
-          StructureNotifyMask | KeyPressMask | PointerMotionMask |
+          StructureNotifyMask | KeyPressMask | KeyReleaseMask | PointerMotionMask |
           ButtonPressMask | ButtonReleaseMask | ExposureMask);
 
     vo_x11_update_geometry();
@@ -1111,12 +1131,12 @@ void vo_x11_create_vo_window(XVisualInfo *vis, int x, int y,
   }
   if (flags & VOFLAG_HIDDEN)
     goto final;
+  XStoreName(mDisplay, vo_window, title);
   if (window_state & VOFLAG_HIDDEN) {
     XSizeHints hint;
     XEvent xev;
     window_state &= ~VOFLAG_HIDDEN;
     vo_x11_classhint(mDisplay, vo_window, classname);
-    XStoreName(mDisplay, vo_window, title);
     vo_hidecursor(mDisplay, vo_window);
     XSelectInput(mDisplay, vo_window, StructureNotifyMask);
     hint.x = x; hint.y = y;
@@ -1136,7 +1156,7 @@ void vo_x11_create_vo_window(XVisualInfo *vis, int x, int y,
     XSelectInput(mDisplay, vo_window, NoEventMask);
     XSync(mDisplay, False);
     vo_x11_selectinput_witherr(mDisplay, vo_window,
-          StructureNotifyMask | KeyPressMask | PointerMotionMask |
+          StructureNotifyMask | KeyPressMask | KeyReleaseMask | PointerMotionMask |
           ButtonPressMask | ButtonReleaseMask | ExposureMask);
   }
   if (vo_ontop) vo_x11_setlayer(mDisplay, vo_window, vo_ontop);
@@ -1345,8 +1365,6 @@ int vo_x11_update_geometry(void) {
     if (w <= INT_MAX && h <= INT_MAX) { vo_dwidth = w; vo_dheight = h; }
     XTranslateCoordinates(mDisplay, vo_window, mRootWin, 0, 0, &vo_dx, &vo_dy,
                           &dummy_win);
-    if (vo_wintitle)
-        XStoreName(mDisplay, vo_window, vo_wintitle);
 
     return depth <= INT_MAX ? depth : 0;
 }

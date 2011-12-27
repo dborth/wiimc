@@ -1,32 +1,42 @@
 /*
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /**
  * @file
  * Public dictionary API.
+ * @deprecated
+ *  AVDictionary is provided for compatibility with libav. It is both in
+ *  implementation as well as API inefficient. It does not scale and is
+ *  extremely slow with large dictionaries.
+ *  It is recommended that new code uses our tree container from tree.c/h
+ *  where applicable, which uses AVL trees to achieve O(log n) performance.
  */
 
 #ifndef AVUTIL_DICT_H
 #define AVUTIL_DICT_H
 
 /**
- * @defgroup dict_api Public Dictionary API
+ * @addtogroup lavu_dict AVDictionary
+ * @ingroup lavu_data
+ *
+ * @brief Simple key:value store
+ *
  * @{
  * Dictionaries are used for storing key:value pairs. To create
  * an AVDictionary, simply pass an address of a NULL pointer to
@@ -52,7 +62,6 @@
  * av_dict_free(&d);
  * @endcode
  *
- * @}
  */
 
 #define AV_DICT_MATCH_CASE      1
@@ -110,5 +119,9 @@ void av_dict_copy(AVDictionary **dst, AVDictionary *src, int flags);
  * and all keys and values.
  */
 void av_dict_free(AVDictionary **m);
+
+/**
+ * @}
+ */
 
 #endif // AVUTIL_DICT_H

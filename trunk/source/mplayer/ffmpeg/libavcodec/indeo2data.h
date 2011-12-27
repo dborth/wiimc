@@ -2,20 +2,20 @@
  * Intel Indeo 2 codec
  * copyright (c) 2005 Konstantin Shishkov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -26,7 +26,7 @@
 
 #define IR2_CODES 143
 static const uint16_t ir2_codes[IR2_CODES][2] = {
-#ifdef ALT_BITSTREAM_READER_LE
+#ifdef BITSTREAM_READER_LE
 {0x0000,  3}, {0x0004,  3}, {0x0006,  3}, {0x0001,  5},
 {0x0009,  5}, {0x0019,  5}, {0x000D,  5}, {0x001D,  5},
 {0x0023,  6}, {0x0013,  6}, {0x0033,  6}, {0x000B,  6},

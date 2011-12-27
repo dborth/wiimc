@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2010 Mans Rullgard <mans@mansr.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -72,8 +72,10 @@ static void ff_h264dsp_init_neon(H264DSPContext *c, const int bit_depth, const i
     if (bit_depth == 8) {
     c->h264_v_loop_filter_luma   = ff_h264_v_loop_filter_luma_neon;
     c->h264_h_loop_filter_luma   = ff_h264_h_loop_filter_luma_neon;
+    if(chroma_format_idc == 1){
     c->h264_v_loop_filter_chroma = ff_h264_v_loop_filter_chroma_neon;
     c->h264_h_loop_filter_chroma = ff_h264_h_loop_filter_chroma_neon;
+    }
 
     c->weight_h264_pixels_tab[0] = ff_weight_h264_pixels_16_neon;
     c->weight_h264_pixels_tab[1] = ff_weight_h264_pixels_8_neon;

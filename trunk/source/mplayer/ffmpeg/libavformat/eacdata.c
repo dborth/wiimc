@@ -2,20 +2,20 @@
  * Electronic Arts .cdata file Demuxer
  * Copyright (c) 2007 Peter Ross
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -29,6 +29,7 @@
  */
 
 #include "avformat.h"
+#include "internal.h"
 
 typedef struct {
   unsigned int channels;
@@ -39,7 +40,7 @@ static int cdata_probe(AVProbeData *p)
 {
     const uint8_t *b = p->buf;
 
-    if (b[0] == 0x04 && (b[1] == 0x00 || b[1] == 0x04 || b[1] == 0x0C))
+    if (b[0] == 0x04 && (b[1] == 0x00 || b[1] == 0x04 || b[1] == 0x0C || b[1] == 0x14))
         return AVPROBE_SCORE_MAX/8;
     return 0;
 }
@@ -50,19 +51,21 @@ static int cdata_read_header(AVFormatContext *s, AVFormatParameters *ap)
     AVIOContext *pb = s->pb;
     unsigned int sample_rate, header;
     AVStream *st;
+    int64_t channel_layout = 0;
 
     header = avio_rb16(pb);
     switch (header) {
         case 0x0400: cdata->channels = 1; break;
         case 0x0404: cdata->channels = 2; break;
-        case 0x040C: cdata->channels = 4; break;
+        case 0x040C: cdata->channels = 4; channel_layout = AV_CH_LAYOUT_QUAD;         break;
+        case 0x0414: cdata->channels = 6; channel_layout = AV_CH_LAYOUT_5POINT1_BACK; break;
         default:
             av_log(s, AV_LOG_INFO, "unknown header 0x%04x\n", header);
             return -1;
     };
 
     sample_rate = avio_rb16(pb);
-    avio_skip(pb, 12);
+    avio_skip(pb, (avio_r8(pb) & 0x20) ? 15 : 11);
 
     st = avformat_new_stream(s, NULL);
     if (!st)
@@ -71,8 +74,10 @@ static int cdata_read_header(AVFormatContext *s, AVFormatParameters *ap)
     st->codec->codec_tag = 0; /* no fourcc */
     st->codec->codec_id = CODEC_ID_ADPCM_EA_XAS;
     st->codec->channels = cdata->channels;
+    st->codec->channel_layout = channel_layout;
     st->codec->sample_rate = sample_rate;
-    av_set_pts_info(st, 64, 1, sample_rate);
+    st->codec->sample_fmt = AV_SAMPLE_FMT_S16;
+    avpriv_set_pts_info(st, 64, 1, sample_rate);
 
     cdata->audio_pts = 0;
     return 0;

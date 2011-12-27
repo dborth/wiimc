@@ -2,20 +2,20 @@
  * SVQ1 Encoder
  * Copyright (C) 2004 Mike Melanson <melanson@pcisys.net>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -113,10 +113,6 @@ static void svq1_write_header(SVQ1Context *s, int frame_type)
 #define QUALITY_THRESHOLD 100
 #define THRESHOLD_MULTIPLIER 0.6
 
-#if HAVE_ALTIVEC
-#undef vector
-#endif
-
 static int encode_block(SVQ1Context *s, uint8_t *src, uint8_t *ref, uint8_t *decoded, int stride, int level, int threshold, int lambda, int intra){
     int count, y, x, i, j, split, best_mean, best_score, best_count;
     int best_vector[6];
@@ -160,7 +156,7 @@ static int encode_block(SVQ1Context *s, uint8_t *src, uint8_t *ref, uint8_t *dec
     }
 
     best_count=0;
-    best_score -= ((block_sum[0]*block_sum[0])>>(level+3));
+    best_score -= (int)(((unsigned)block_sum[0]*block_sum[0])>>(level+3));
     best_mean= (block_sum[0] + (size>>1)) >> (level+3);
 
     if(level<4){
@@ -567,6 +563,10 @@ static av_cold int svq1_encode_end(AVCodecContext *avctx)
         av_freep(&s->motion_val8[i]);
         av_freep(&s->motion_val16[i]);
     }
+    if(s->current_picture.data[0])
+        avctx->release_buffer(avctx, &s->current_picture);
+    if(s->last_picture.data[0])
+        avctx->release_buffer(avctx, &s->last_picture);
 
     return 0;
 }

@@ -1,18 +1,18 @@
 /*
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -96,7 +96,7 @@ int av_parse_video_size(int *width_ptr, int *height_ptr, const char *str)
 {
     int i;
     int n = FF_ARRAY_ELEMS(video_size_abbrs);
-    char *p;
+    const char *p;
     int width = 0, height = 0;
 
     for (i = 0; i < n; i++) {
@@ -108,10 +108,10 @@ int av_parse_video_size(int *width_ptr, int *height_ptr, const char *str)
     }
     if (i == n) {
         p = str;
-        width = strtol(p, &p, 10);
+        width = strtol(p, (void*)&p, 10);
         if (*p)
             p++;
-        height = strtol(p, &p, 10);
+        height = strtol(p, (void*)&p, 10);
     }
     if (width <= 0 || height <= 0)
         return AVERROR(EINVAL);
@@ -148,7 +148,7 @@ typedef struct {
     uint8_t     rgb_color[3];    ///< RGB values for the color
 } ColorEntry;
 
-static ColorEntry color_table[] = {
+static const ColorEntry color_table[] = {
     { "AliceBlue",            { 0xF0, 0xF8, 0xFF } },
     { "AntiqueWhite",         { 0xFA, 0xEB, 0xD7 } },
     { "Aqua",                 { 0x00, 0xFF, 0xFF } },
@@ -400,6 +400,16 @@ static int date_get_num(const char **pp,
     return val;
 }
 
+/**
+ * Parse the input string p according to the format string fmt and
+ * store its results in the structure dt.
+ * This implementation supports only a subset of the formats supported
+ * by the standard strptime().
+ *
+ * @return a pointer to the first character not processed in this
+ * function call, or NULL in case the function fails to match all of
+ * the fmt string and therefore an error occurred
+ */
 static const char *small_strptime(const char *p, const char *fmt, struct tm *dt)
 {
     int c, val;
@@ -461,7 +471,7 @@ static const char *small_strptime(const char *p, const char *fmt, struct tm *dt)
     }
 }
 
-static time_t mktimegm(struct tm *tm)
+time_t av_timegm(struct tm *tm)
 {
     time_t t;
 
@@ -560,7 +570,7 @@ int av_parse_time(int64_t *timeval, const char *timestr, int duration)
         q = small_strptime(p, time_fmt[0], &dt);
         if (!q) {
             /* parse timestr as S+ */
-            dt.tm_sec = strtol(p, (char **)&q, 10);
+            dt.tm_sec = strtol(p, (void *)&q, 10);
             if (q == p) {
                 /* the parsing didn't succeed */
                 *timeval = INT64_MIN;
@@ -582,7 +592,7 @@ int av_parse_time(int64_t *timeval, const char *timestr, int duration)
     } else {
         dt.tm_isdst = -1;       /* unknown */
         if (is_utc) {
-            t = mktimegm(&dt);
+            t = av_timegm(&dt);
         } else {
             t = mktime(&dt);
         }

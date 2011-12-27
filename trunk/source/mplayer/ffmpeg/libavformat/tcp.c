@@ -2,20 +2,20 @@
  * TCP protocol
  * Copyright (c) 2002 Fabrice Bellard
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -39,13 +39,13 @@ static int tcp_open(URLContext *h, const char *uri, int flags)
 {
     struct addrinfo hints, *ai, *cur_ai;
     int port, fd = -1;
-    TCPContext *s = NULL;
+    TCPContext *s = h->priv_data;
     int listen_socket = 0;
     const char *p;
     char buf[256];
     int ret;
     socklen_t optlen;
-    int timeout = 100;
+    int timeout = 50;
     char hostname[1024],proto[1024],path[1024];
     char portstr[10];
 
@@ -105,7 +105,7 @@ static int tcp_open(URLContext *h, const char *uri, int flags)
         struct pollfd p = {fd, POLLOUT, 0};
         ret = ff_neterrno();
         if (ret == AVERROR(EINTR)) {
-            if (url_interrupt_cb()) {
+            if (ff_check_interrupt(&h->interrupt_callback)) {
                 ret = AVERROR_EXIT;
                 goto fail1;
             }
@@ -117,7 +117,7 @@ static int tcp_open(URLContext *h, const char *uri, int flags)
 
         /* wait until we are connected or until abort */
         while(timeout--) {
-            if (url_interrupt_cb()) {
+            if (ff_check_interrupt(&h->interrupt_callback)) {
                 ret = AVERROR_EXIT;
                 goto fail1;
             }
@@ -140,12 +140,6 @@ static int tcp_open(URLContext *h, const char *uri, int flags)
             goto fail;
         }
     }
-    s = av_malloc(sizeof(TCPContext));
-    if (!s) {
-        freeaddrinfo(ai);
-        return AVERROR(ENOMEM);
-    }
-    h->priv_data = s;
     h->is_streamed = 1;
     s->fd = fd;
     freeaddrinfo(ai);
@@ -198,7 +192,6 @@ static int tcp_close(URLContext *h)
 {
     TCPContext *s = h->priv_data;
     closesocket(s->fd);
-    av_free(s);
     return 0;
 }
 
@@ -215,4 +208,5 @@ URLProtocol ff_tcp_protocol = {
     .url_write           = tcp_write,
     .url_close           = tcp_close,
     .url_get_file_handle = tcp_get_file_handle,
+    .priv_data_size      = sizeof(TCPContext),
 };

@@ -2,26 +2,27 @@
  * MxPEG clip file demuxer
  * Copyright (c) 2010 Anatoly Nenashev
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavutil/intreadwrite.h"
 #include "libavcodec/mjpeg.h"
 #include "avformat.h"
+#include "internal.h"
 #include "avio.h"
 
 #define DEFAULT_PACKET_SIZE 1024
@@ -47,7 +48,7 @@ static int mxg_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR(ENOMEM);
     video_st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     video_st->codec->codec_id = CODEC_ID_MXPEG;
-    av_set_pts_info(video_st, 64, 1, 1000000);
+    avpriv_set_pts_info(video_st, 64, 1, 1000000);
 
     audio_st = avformat_new_stream(s, NULL);
     if (!audio_st)
@@ -58,7 +59,7 @@ static int mxg_read_header(AVFormatContext *s, AVFormatParameters *ap)
     audio_st->codec->sample_rate = 8000;
     audio_st->codec->bits_per_coded_sample = 8;
     audio_st->codec->block_align = 1;
-    av_set_pts_info(audio_st, 64, 1, 1000000);
+    avpriv_set_pts_info(audio_st, 64, 1, 1000000);
 
     mxg->soi_ptr = mxg->buffer_ptr = mxg->buffer = 0;
     mxg->buffer_size = 0;
@@ -130,7 +131,7 @@ static int mxg_read_packet(AVFormatContext *s, AVPacket *pkt)
     uint8_t *startmarker_ptr, *end, *search_end, marker;
     MXGContext *mxg = s->priv_data;
 
-    while (!s->pb->eof_reached && !s->pb->error){
+    while (!url_feof(s->pb) && !s->pb->error){
         if (mxg->cache_size <= OVERREAD_SIZE) {
             /* update internal buffer */
             ret = mxg_update_cache(s, DEFAULT_PACKET_SIZE + OVERREAD_SIZE);

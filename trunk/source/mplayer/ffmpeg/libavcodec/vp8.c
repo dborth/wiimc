@@ -5,25 +5,26 @@
  * Copyright (C) 2010 Ronald S. Bultje
  * Copyright (C) 2010 Jason Garrett-Glaser
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavutil/imgutils.h"
 #include "avcodec.h"
+#include "internal.h"
 #include "vp8.h"
 #include "vp8data.h"
 #include "rectangle.h"
@@ -50,8 +51,7 @@ static int vp8_alloc_frame(VP8Context *s, AVFrame *f)
     int ret;
     if ((ret = ff_thread_get_buffer(s->avctx, f)) < 0)
         return ret;
-    if (s->num_maps_to_be_freed) {
-        assert(!s->maps_are_invalid);
+    if (s->num_maps_to_be_freed && !s->maps_are_invalid) {
         f->ref_index[0] = s->segmentation_maps[--s->num_maps_to_be_freed];
     } else if (!(f->ref_index[0] = av_mallocz(s->mb_width * s->mb_height))) {
         ff_thread_release_buffer(s->avctx, f);
@@ -88,7 +88,7 @@ static void vp8_decode_flush_impl(AVCodecContext *avctx,
     VP8Context *s = avctx->priv_data;
     int i;
 
-    if (!avctx->is_copy) {
+    if (!avctx->internal->is_copy) {
         for (i = 0; i < 5; i++)
             if (s->frames[i].data[0])
                 vp8_release_frame(s, &s->frames[i], prefer_delayed_free, can_direct_free);
@@ -639,9 +639,10 @@ void decode_mb_mode(VP8Context *s, VP8Macroblock *mb, int mb_x, int mb_y, uint8_
 {
     VP56RangeCoder *c = &s->c;
 
-    if (s->segmentation.update_map)
-        *segment = vp8_rac_get_tree(c, vp8_segmentid_tree, s->prob->segmentid);
-    else
+    if (s->segmentation.update_map) {
+        int bit  = vp56_rac_get_prob(c, s->prob->segmentid[0]);
+        *segment = vp56_rac_get_prob(c, s->prob->segmentid[1+bit]) + 2*bit;
+    } else
         *segment = ref ? *ref : *segment;
     s->segment = *segment;
 
@@ -1566,12 +1567,14 @@ static int vp8_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
     VP8Context *s = avctx->priv_data;
     int ret, mb_x, mb_y, i, y, referenced;
     enum AVDiscard skip_thresh;
-    AVFrame *av_uninit(curframe), *prev_frame = s->framep[VP56_FRAME_CURRENT];
+    AVFrame *av_uninit(curframe), *prev_frame;
 
     release_queued_segmaps(s, 0);
 
     if ((ret = decode_frame_header(s, avpkt->data, avpkt->size)) < 0)
         return ret;
+
+    prev_frame = s->framep[VP56_FRAME_CURRENT];
 
     referenced = s->update_last || s->update_golden == VP56_FRAME_CURRENT
                                 || s->update_altref == VP56_FRAME_CURRENT;
@@ -1813,6 +1816,7 @@ static int vp8_decode_update_thread_context(AVCodecContext *dst, const AVCodecCo
     if (s->macroblocks_base &&
         (s_src->mb_width != s->mb_width || s_src->mb_height != s->mb_height)) {
         free_buffers(s);
+        s->maps_are_invalid = 1;
     }
 
     s->prob[0] = s_src->prob[!s_src->update_probabilities];

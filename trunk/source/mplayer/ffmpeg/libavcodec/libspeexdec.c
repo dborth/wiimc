@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2008 David Conrad
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -25,6 +25,7 @@
 #include "avcodec.h"
 
 typedef struct {
+    AVFrame frame;
     SpeexBits bits;
     SpeexStereoState stereo;
     void *dec_state;
@@ -89,26 +90,29 @@ static av_cold int libspeex_decode_init(AVCodecContext *avctx)
         s->stereo = (SpeexStereoState)SPEEX_STEREO_STATE_INIT;
         speex_decoder_ctl(s->dec_state, SPEEX_SET_HANDLER, &callback);
     }
+
+    avcodec_get_frame_defaults(&s->frame);
+    avctx->coded_frame = &s->frame;
+
     return 0;
 }
 
-static int libspeex_decode_frame(AVCodecContext *avctx,
-                                 void *data, int *data_size,
-                                 AVPacket *avpkt)
+static int libspeex_decode_frame(AVCodecContext *avctx, void *data,
+                                 int *got_frame_ptr, AVPacket *avpkt)
 {
     uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
     LibSpeexContext *s = avctx->priv_data;
-    int16_t *output = data;
-    int out_size, ret, consumed = 0;
+    int16_t *output;
+    int ret, consumed = 0;
 
-    /* check output buffer size */
-    out_size = s->frame_size * avctx->channels *
-               av_get_bytes_per_sample(avctx->sample_fmt);
-    if (*data_size < out_size) {
-        av_log(avctx, AV_LOG_ERROR, "Output buffer is too small\n");
-        return AVERROR(EINVAL);
+    /* get output buffer */
+    s->frame.nb_samples = s->frame_size;
+    if ((ret = avctx->get_buffer(avctx, &s->frame)) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return ret;
     }
+    output = (int16_t *)s->frame.data[0];
 
     /* if there is not enough data left for the smallest possible frame,
        reset the libspeex buffer using the current packet, otherwise ignore
@@ -116,7 +120,7 @@ static int libspeex_decode_frame(AVCodecContext *avctx,
     if (speex_bits_remaining(&s->bits) < 43) {
         /* check for flush packet */
         if (!buf || !buf_size) {
-            *data_size = 0;
+            *got_frame_ptr = 0;
             return buf_size;
         }
         /* set new buffer */
@@ -133,7 +137,9 @@ static int libspeex_decode_frame(AVCodecContext *avctx,
     if (avctx->channels == 2)
         speex_decode_stereo_int(output, s->frame_size, &s->stereo);
 
-    *data_size = out_size;
+    *got_frame_ptr   = 1;
+    *(AVFrame *)data = s->frame;
+
     return consumed;
 }
 
@@ -163,6 +169,6 @@ AVCodec ff_libspeex_decoder = {
     .close          = libspeex_decode_close,
     .decode         = libspeex_decode_frame,
     .flush          = libspeex_decode_flush,
-    .capabilities   = CODEC_CAP_SUBFRAMES | CODEC_CAP_DELAY,
+    .capabilities   = CODEC_CAP_SUBFRAMES | CODEC_CAP_DELAY | CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("libspeex Speex"),
 };

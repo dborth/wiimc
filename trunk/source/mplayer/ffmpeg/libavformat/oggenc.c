@@ -2,24 +2,25 @@
  * Ogg muxer
  * Copyright (c) 2007 Baptiste Coudurier <baptiste dot coudurier at free dot fr>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavutil/crc.h"
+#include "libavutil/opt.h"
 #include "libavutil/mathematics.h"
 #include "libavutil/random_seed.h"
 #include "libavcodec/xiph.h"
@@ -63,8 +64,25 @@ typedef struct OGGPageList {
 } OGGPageList;
 
 typedef struct {
+    const AVClass *class;
     OGGPageList *page_list;
+    int pref_size; ///< preferred page size (0 => fill all segments)
 } OGGContext;
+
+
+static const AVOption options[] = {
+    { "oggpagesize", "Set preferred Ogg page size.",
+      offsetof(OGGContext, pref_size), AV_OPT_TYPE_INT, {.dbl = 0}, 0, MAX_PAGE_SIZE, AV_OPT_FLAG_ENCODING_PARAM},
+    { NULL },
+};
+
+static const AVClass ogg_muxer_class = {
+    "Ogg muxer",
+    av_default_item_name,
+    options,
+    LIBAVUTIL_VERSION_INT,
+};
+
 
 static void ogg_update_checksum(AVFormatContext *s, AVIOContext *pb, int64_t crc_offset)
 {
@@ -175,6 +193,7 @@ static int ogg_buffer_data(AVFormatContext *s, AVStream *st,
                            uint8_t *data, unsigned size, int64_t granule)
 {
     OGGStreamContext *oggstream = st->priv_data;
+    OGGContext *ogg = s->priv_data;
     int total_segments = size / 255 + 1;
     uint8_t *p = data;
     int i, segments, len, flush = 0;
@@ -210,8 +229,9 @@ static int ogg_buffer_data(AVFormatContext *s, AVStream *st,
         if (i == total_segments)
             page->granule = granule;
 
-        if (page->segments_count == 255) {
-            ogg_buffer_page(s, oggstream);
+        if(page->segments_count == 255 ||
+           (ogg->pref_size > 0 && page->size >= ogg->pref_size)) {
+           ogg_buffer_page(s, oggstream);
         }
     }
 
@@ -224,7 +244,7 @@ static int ogg_buffer_data(AVFormatContext *s, AVStream *st,
 static uint8_t *ogg_write_vorbiscomment(int offset, int bitexact,
                                         int *header_len, AVDictionary **m, int framing_bit)
 {
-    const char *vendor = bitexact ? "Libav" : LIBAVFORMAT_IDENT;
+    const char *vendor = bitexact ? "ffmpeg" : LIBAVFORMAT_IDENT;
     int size;
     uint8_t *p, *p0;
     unsigned int count;
@@ -323,9 +343,9 @@ static int ogg_write_header(AVFormatContext *s)
         unsigned serial_num = i;
 
         if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO)
-            av_set_pts_info(st, 64, 1, st->codec->sample_rate);
+            avpriv_set_pts_info(st, 64, 1, st->codec->sample_rate);
         else if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO)
-            av_set_pts_info(st, 64, st->codec->time_base.num, st->codec->time_base.den);
+            avpriv_set_pts_info(st, 64, st->codec->time_base.num, st->codec->time_base.den);
         if (st->codec->codec_id != CODEC_ID_VORBIS &&
             st->codec->codec_id != CODEC_ID_THEORA &&
             st->codec->codec_id != CODEC_ID_SPEEX  &&
@@ -496,9 +516,11 @@ static int ogg_write_trailer(AVFormatContext *s)
         OGGStreamContext *oggstream = st->priv_data;
         if (st->codec->codec_id == CODEC_ID_FLAC ||
             st->codec->codec_id == CODEC_ID_SPEEX) {
-            av_free(oggstream->header[0]);
-            av_free(oggstream->header[1]);
+            av_freep(&oggstream->header[0]);
+            av_freep(&oggstream->header[1]);
         }
+        else
+            av_freep(&oggstream->header[1]);
         av_freep(&st->priv_data);
     }
     return 0;
@@ -515,4 +537,5 @@ AVOutputFormat ff_ogg_muxer = {
     .write_header      = ogg_write_header,
     .write_packet      = ogg_write_packet,
     .write_trailer     = ogg_write_trailer,
+    .priv_class = &ogg_muxer_class,
 };

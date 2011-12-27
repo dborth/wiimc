@@ -2,20 +2,20 @@
  * R3D REDCODE demuxer
  * Copyright (c) 2008 Baptiste Coudurier <baptiste dot coudurier at gmail dot com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -25,6 +25,7 @@
 #include "libavutil/dict.h"
 #include "libavutil/mathematics.h"
 #include "avformat.h"
+#include "internal.h"
 
 typedef struct {
     unsigned video_offsets_count;
@@ -70,7 +71,7 @@ static int r3d_read_red1(AVFormatContext *s)
     av_dlog(s, "unknown1 %d\n", tmp);
 
     tmp = avio_rb32(s->pb);
-    av_set_pts_info(st, 32, 1, tmp);
+    avpriv_set_pts_info(st, 32, 1, tmp);
 
     tmp = avio_rb32(s->pb); // filenum
     av_dlog(s, "filenum %d\n", tmp);
@@ -95,7 +96,7 @@ static int r3d_read_red1(AVFormatContext *s)
         ast->codec->codec_type = AVMEDIA_TYPE_AUDIO;
         ast->codec->codec_id = CODEC_ID_PCM_S32BE;
         ast->codec->channels = tmp;
-        av_set_pts_info(ast, 32, 1, st->time_base.den);
+        avpriv_set_pts_info(ast, 32, 1, st->time_base.den);
     }
 
     avio_read(s->pb, filename, 257);
@@ -365,7 +366,8 @@ static int r3d_seek(AVFormatContext *s, int stream_index, int64_t sample_time, i
             frame_num, sample_time);
 
     if (frame_num < r3d->video_offsets_count) {
-        avio_seek(s->pb, r3d->video_offsets_count, SEEK_SET);
+        if (avio_seek(s->pb, r3d->video_offsets_count, SEEK_SET) < 0)
+            return -1;
     } else {
         av_log(s, AV_LOG_ERROR, "could not seek to frame %d\n", frame_num);
         return -1;

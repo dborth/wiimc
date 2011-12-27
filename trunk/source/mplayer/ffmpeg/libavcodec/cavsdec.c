@@ -2,20 +2,20 @@
  * Chinese AVS video (AVS1-P2, JiZhun profile) decoder.
  * Copyright (c) 2006  Stefan Gehrer <stefan.gehrer@gmx.de>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -115,7 +115,8 @@ static inline int get_ue_code(GetBitContext *gb, int order) {
 static int decode_residual_block(AVSContext *h, GetBitContext *gb,
                                  const struct dec_2dvlc *r, int esc_golomb_order,
                                  int qp, uint8_t *dst, int stride) {
-    int i, level_code, esc_code, level, run, mask;
+    int i, esc_code, level, mask;
+    unsigned int level_code, run;
     DCTELEM level_buf[65];
     uint8_t run_buf[65];
     DCTELEM *block = h->block;
@@ -124,20 +125,20 @@ static int decode_residual_block(AVSContext *h, GetBitContext *gb,
         level_code = get_ue_code(gb,r->golomb_order);
         if(level_code >= ESCAPE_CODE) {
             run = ((level_code - ESCAPE_CODE) >> 1) + 1;
+            if(run > 64)
+                return -1;
             esc_code = get_ue_code(gb,esc_golomb_order);
             level = esc_code + (run > r->max_run ? 1 : r->level_add[run]);
             while(level > r->inc_limit)
                 r++;
             mask = -(level_code & 1);
             level = (level^mask) - mask;
-        } else if (level_code >= 0) {
+        } else {
             level = r->rltab[level_code][0];
             if(!level) //end of block signal
                 break;
             run   = r->rltab[level_code][1];
             r += r->rltab[level_code][2];
-        } else {
-            break;
         }
         level_buf[i] = level;
         run_buf[i] = run;
@@ -165,7 +166,7 @@ static inline int decode_residual_inter(AVSContext *h) {
 
     /* get coded block pattern */
     int cbp= get_ue_golomb(&h->s.gb);
-    if(cbp > 63){
+    if(cbp > 63U){
         av_log(h->s.avctx, AV_LOG_ERROR, "illegal inter cbp\n");
         return -1;
     }
@@ -225,7 +226,7 @@ static int decode_mb_i(AVSContext *h, int cbp_code) {
     /* get coded block pattern */
     if(h->pic_type == AV_PICTURE_TYPE_I)
         cbp_code = get_ue_golomb(gb);
-    if(cbp_code > 63){
+    if(cbp_code > 63U){
         av_log(h->s.avctx, AV_LOG_ERROR, "illegal intra cbp\n");
         return -1;
     }

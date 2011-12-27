@@ -1653,7 +1653,8 @@ static void update_osd_msg(void)
             int percentage = -1;
             char percentage_text[10];
             char fractions_text[4];
-            int pts = demuxer_get_current_time(mpctx->demuxer);
+            double pts = demuxer_get_current_time(mpctx->demuxer);
+            int pts_seconds = pts;
 
             if (mpctx->osd_show_percentage)
                 percentage = demuxer_get_percent_pos(mpctx->demuxer);
@@ -1666,8 +1667,7 @@ static void update_osd_msg(void)
             if (osd_fractions == 1) {
                 // print fractions as sub-second timestamp
                 snprintf(fractions_text, sizeof(fractions_text), ".%02d",
-                         (int)((mpctx->sh_video->pts - pts) * 100 + 0.5)
-                         % 100);
+                         (int)((pts - pts_seconds) * 100) % 100);
             } else if (osd_fractions == 2) {
                 // print fractions by estimating the frame count within the
                 // second
@@ -1678,7 +1678,7 @@ static void update_osd_msg(void)
                 // we add 0.2 and cut off at the decimal point, which proved
                 // as good heuristic
                 snprintf(fractions_text, sizeof(fractions_text), ".%02d",
-                         (int)((mpctx->sh_video->pts - pts) *
+                         (int)((pts - pts_seconds) *
                                mpctx->sh_video->fps + 0.2));
             } else {
                 // do not print fractions
@@ -1688,13 +1688,13 @@ static void update_osd_msg(void)
             if (osd_level == 3)
                 snprintf(osd_text_timer, 63,
                          "%c %02d:%02d:%02d%s / %02d:%02d:%02d%s",
-                         mpctx->osd_function, pts / 3600, (pts / 60) % 60, pts % 60,
+                         mpctx->osd_function, pts_seconds / 3600, (pts_seconds / 60) % 60, pts_seconds % 60,
                          fractions_text, len / 3600, (len / 60) % 60, len % 60,
                          percentage_text);
             else
                 snprintf(osd_text_timer, 63, "%c %02d:%02d:%02d%s%s",
-                         mpctx->osd_function, pts / 3600, (pts / 60) % 60,
-                         pts % 60, fractions_text, percentage_text);
+                         mpctx->osd_function, pts_seconds / 3600, (pts_seconds / 60) % 60,
+                         pts_seconds % 60, fractions_text, percentage_text);
         } else
             osd_text_timer[0] = 0;
 
@@ -3314,22 +3314,25 @@ dvd_angle=1;
 #endif
 
     // =================== GUI idle loop (STOP state) ===========================
-    #ifdef CONFIG_GUI
-        if (use_gui) {
-            mpctx->file_format = DEMUXER_TYPE_UNKNOWN;
-            while (guiInfo.Playing != GUI_PLAY) {
-                mp_cmd_t *cmd;
-                usec_sleep(20000);
-                gui(GUI_HANDLE_EVENTS, 0);
-                gui(GUI_REDRAW, 0);
-                if ((cmd = mp_input_get_cmd(0, 0, 0)) != NULL) {
+#ifdef CONFIG_GUI
+    if (use_gui) {
+        mpctx->file_format = DEMUXER_TYPE_UNKNOWN;
+        while (guiInfo.Playing != GUI_PLAY) {
+            mp_cmd_t *cmd;
+            usec_sleep(20000);
+            gui(GUI_HANDLE_EVENTS, 0);
+            gui(GUI_REDRAW, 0);
+            if ((cmd = mp_input_get_cmd(0, 0, 0)) != NULL) {
+                if (cmd->id == MP_CMD_GUI)
+                    gui(GUI_RUN_MESSAGE, cmd->args[0].v.s);
+                else
                     gui(GUI_RUN_COMMAND, (void *)cmd->id);
-                    mp_cmd_free(cmd);
-                }
+                mp_cmd_free(cmd);
             }
-            gui(GUI_PREPARE, 0);
         }
-    #endif /* CONFIG_GUI */
+        gui(GUI_PREPARE, 0);
+    }
+#endif /* CONFIG_GUI */
 
     while (player_idle_mode && !filename) {
         play_tree_t *entry = NULL;

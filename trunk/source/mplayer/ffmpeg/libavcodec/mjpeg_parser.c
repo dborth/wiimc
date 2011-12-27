@@ -4,20 +4,20 @@
  * Copyright (c) 2003 Alex Beregszaszi
  * Copyright (c) 2003-2004 Michael Niedermayer
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -28,27 +28,44 @@
 
 #include "parser.h"
 
+typedef struct MJPEGParserContext{
+    ParseContext pc;
+    int size;
+}MJPEGParserContext;
 
 /**
- * finds the end of the current frame in the bitstream.
+ * Find the end of the current frame in the bitstream.
  * @return the position of the first byte of the next frame, or -1
  */
-static int find_frame_end(ParseContext *pc, const uint8_t *buf, int buf_size){
+static int find_frame_end(MJPEGParserContext *m, const uint8_t *buf, int buf_size){
+    ParseContext *pc= &m->pc;
     int vop_found, i;
-    uint16_t state;
+    uint32_t state;
 
     vop_found= pc->frame_start_found;
     state= pc->state;
 
     i=0;
     if(!vop_found){
-        for(i=0; i<buf_size; i++){
+        for(i=0; i<buf_size;){
             state= (state<<8) | buf[i];
-            if(state == 0xFFD8){
-                i++;
-                vop_found=1;
-                break;
+            if(state>=0xFFC00000 && state<=0xFFFEFFFF){
+                if(state>=0xFFD80000 && state<=0xFFD8FFFF){
+                    i++;
+                    vop_found=1;
+                    break;
+                }else if(state<0xFFD00000 || state>0xFFD9FFFF){
+                    m->size= (state&0xFFFF)-1;
+                }
             }
+            if(m->size>0){
+                int size= FFMIN(buf_size-i, m->size);
+                i+=size;
+                m->size-=size;
+                state=0;
+                continue;
+            }else
+                i++;
         }
     }
 
@@ -56,13 +73,25 @@ static int find_frame_end(ParseContext *pc, const uint8_t *buf, int buf_size){
         /* EOF considered as end of frame */
         if (buf_size == 0)
             return 0;
-        for(; i<buf_size; i++){
+        for(; i<buf_size;){
             state= (state<<8) | buf[i];
-            if(state == 0xFFD8){
-                pc->frame_start_found=0;
-                pc->state=0;
-                return i-1;
+            if(state>=0xFFC00000 && state<=0xFFFEFFFF){
+                if(state>=0xFFD80000 && state<=0xFFD8FFFF){
+                    pc->frame_start_found=0;
+                    pc->state=0;
+                    return i-3;
+                } else if(state<0xFFD00000 || state>0xFFD9FFFF){
+                    m->size= (state&0xFFFF)-1;
+                }
             }
+            if(m->size>0){
+                int size= FFMIN(buf_size-i, m->size);
+                i+=size;
+                m->size-=size;
+                state=0;
+                continue;
+            }else
+                i++;
         }
     }
     pc->frame_start_found= vop_found;
@@ -75,13 +104,14 @@ static int jpeg_parse(AVCodecParserContext *s,
                       const uint8_t **poutbuf, int *poutbuf_size,
                       const uint8_t *buf, int buf_size)
 {
-    ParseContext *pc = s->priv_data;
+    MJPEGParserContext *m = s->priv_data;
+    ParseContext *pc = &m->pc;
     int next;
 
     if(s->flags & PARSER_FLAG_COMPLETE_FRAMES){
         next= buf_size;
     }else{
-        next= find_frame_end(pc, buf, buf_size);
+        next= find_frame_end(m, buf, buf_size);
 
         if (ff_combine_frame(pc, next, &buf, &buf_size) < 0) {
             *poutbuf = NULL;
@@ -98,7 +128,7 @@ static int jpeg_parse(AVCodecParserContext *s,
 
 AVCodecParser ff_mjpeg_parser = {
     .codec_ids      = { CODEC_ID_MJPEG },
-    .priv_data_size = sizeof(ParseContext),
+    .priv_data_size = sizeof(MJPEGParserContext),
     .parser_parse   = jpeg_parse,
     .parser_close   = ff_parse_close,
 };

@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2010 Stefano Sabatini
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -30,19 +30,13 @@
 #include "avfilter.h"
 #include "internal.h"
 
-static const char *var_names[] = {
-    "E",
-    "PHI",
-    "PI",
+static const char * const var_names[] = {
     "AVTB",   /* default timebase 1/AV_TIME_BASE */
     "intb",   /* input timebase */
     NULL
 };
 
 enum var_name {
-    VAR_E,
-    VAR_PHI,
-    VAR_PI,
     VAR_AVTB,
     VAR_INTB,
     VAR_VARS_NB
@@ -73,9 +67,6 @@ static int config_output_props(AVFilterLink *outlink)
     int ret;
     double res;
 
-    settb->var_values[VAR_E]    = M_E;
-    settb->var_values[VAR_PHI]  = M_PHI;
-    settb->var_values[VAR_PI]   = M_PI;
     settb->var_values[VAR_AVTB] = av_q2d(AV_TIME_BASE_Q);
     settb->var_values[VAR_INTB] = av_q2d(inlink->time_base);
 
@@ -128,14 +119,14 @@ AVFilter avfilter_vf_settb = {
 
     .priv_size = sizeof(SetTBContext),
 
-    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .get_video_buffer = avfilter_null_get_video_buffer,
                                     .start_frame      = start_frame,
                                     .end_frame        = avfilter_null_end_frame },
                                   { .name = NULL }},
 
-    .outputs   = (AVFilterPad[]) {{ .name            = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name      = "default",
                                     .type            = AVMEDIA_TYPE_VIDEO,
                                     .config_props    = config_output_props, },
                                   { .name = NULL}},

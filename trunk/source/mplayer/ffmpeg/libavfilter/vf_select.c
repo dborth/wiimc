@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2011 Stefano Sabatini
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -25,14 +25,9 @@
 
 #include "libavutil/eval.h"
 #include "libavutil/fifo.h"
-#include "libavutil/mathematics.h"
 #include "avfilter.h"
 
-static const char *var_names[] = {
-    "E",                 ///< Euler number
-    "PHI",               ///< golden ratio
-    "PI",                ///< greek pi
-
+static const char * const var_names[] = {
     "TB",                ///< timebase
 
     "pts",               ///< original pts in the file of the frame
@@ -70,10 +65,6 @@ static const char *var_names[] = {
 };
 
 enum var_name {
-    VAR_E,
-    VAR_PHI,
-    VAR_PI,
-
     VAR_TB,
 
     VAR_PTS,
@@ -147,10 +138,6 @@ static int config_input(AVFilterLink *inlink)
 {
     SelectContext *select = inlink->dst->priv;
 
-    select->var_values[VAR_E]   = M_E;
-    select->var_values[VAR_PHI] = M_PHI;
-    select->var_values[VAR_PI]  = M_PI;
-
     select->var_values[VAR_N]          = 0.0;
     select->var_values[VAR_SELECTED_N] = 0.0;
 
@@ -170,7 +157,7 @@ static int config_input(AVFilterLink *inlink)
 
     select->var_values[VAR_INTERLACE_TYPE_P] = INTERLACE_TYPE_P;
     select->var_values[VAR_INTERLACE_TYPE_T] = INTERLACE_TYPE_T;
-    select->var_values[VAR_INTERLACE_TYPE_B] = INTERLACE_TYPE_B;;
+    select->var_values[VAR_INTERLACE_TYPE_B] = INTERLACE_TYPE_B;
 
     return 0;
 }
@@ -337,7 +324,7 @@ AVFilter avfilter_vf_select = {
 
     .priv_size = sizeof(SelectContext),
 
-    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .get_video_buffer = avfilter_null_get_video_buffer,
                                     .config_props     = config_input,
@@ -345,7 +332,7 @@ AVFilter avfilter_vf_select = {
                                     .draw_slice       = draw_slice,
                                     .end_frame        = end_frame },
                                   { .name = NULL }},
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .poll_frame       = poll_frame,
                                     .request_frame    = request_frame, },

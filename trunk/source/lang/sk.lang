@@ -672,3 +672,6 @@ msgstr "Vypnutie pri nečinnosti"
 
 msgid "Invalid subtitle delay."
 msgstr "Neplatné oneskorenia titulkov."
+
+msgid "DVD playback is not supported on this Wii."
+msgstr "Na tomto Wii nie je podporované prehrávanie DVD."

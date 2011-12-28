@@ -156,9 +156,10 @@ static s32 tcp_connect(char *host, const u16 port)
 	do 
 	{
 		res = net_connect(s,(struct sockaddr*) &sa, sizeof (sa));
-		if(ticks_to_secs(gettime())-t1 > TCP_CONNECT_TIMEOUT*1000) break; 
+		if(ticks_to_secs(gettime())-t1 > TCP_CONNECT_TIMEOUT) break; 
 		usleep(500);
 	} while(res != -EISCONN);
+
 	if(res != -EISCONN)
 	{		
 		net_close(s);

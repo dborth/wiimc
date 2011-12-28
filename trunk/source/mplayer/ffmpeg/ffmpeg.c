@@ -1,5 +1,4 @@
 /*
- * ffmpeg main
  * Copyright (c) 2000-2003 Fabrice Bellard
  *
  * This file is part of FFmpeg.
@@ -17,6 +16,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
+/**
+ * @file
+ * multimedia converter based on the FFmpeg libraries
  */
 
 #include "config.h"
@@ -207,6 +211,7 @@ typedef struct InputStream {
 
     /* a pool of free buffers for decoded data */
     FrameBuffer *buffer_pool;
+    int dr1;
 } InputStream;
 
 typedef struct InputFile {
@@ -546,6 +551,7 @@ static int codec_get_buffer(AVCodecContext *s, AVFrame *frame)
     if (buf->w != s->width || buf->h != s->height || buf->pix_fmt != s->pix_fmt) {
         av_freep(&buf->base[0]);
         av_free(buf);
+        ist->dr1 = 0;
         if ((ret = alloc_buffer(ist, &buf)) < 0)
             return ret;
     }
@@ -570,6 +576,9 @@ static void codec_release_buffer(AVCodecContext *s, AVFrame *frame)
     InputStream *ist = s->opaque;
     FrameBuffer *buf = frame->opaque;
     int i;
+
+    if(frame->type!=FF_BUFFER_TYPE_USER)
+        return avcodec_default_release_buffer(s, frame);
 
     for (i = 0; i < FF_ARRAY_ELEMS(frame->data); i++)
         frame->data[i] = NULL;
@@ -2049,7 +2058,22 @@ static int transcode_video(InputStream *ist, AVPacket *pkt, int *got_output, int
             if (!frame_sample_aspect->num)
                 *frame_sample_aspect = ist->st->sample_aspect_ratio;
             decoded_frame->pts = ist->pts;
+            if (ist->dr1 && decoded_frame->type==FF_BUFFER_TYPE_USER) {
+                FrameBuffer      *buf = decoded_frame->opaque;
+                AVFilterBufferRef *fb = avfilter_get_video_buffer_ref_from_arrays(
+                                            decoded_frame->data, decoded_frame->linesize,
+                                            AV_PERM_READ | AV_PERM_PRESERVE,
+                                            ist->st->codec->width, ist->st->codec->height,
+                                            ist->st->codec->pix_fmt);
 
+                avfilter_copy_frame_props(fb, decoded_frame);
+                fb->pts                 = ist->pts;
+                fb->buf->priv           = buf;
+                fb->buf->free           = filter_release_buffer;
+
+                buf->refcount++;
+                av_buffersrc_buffer(ost->input_video_filter, fb);
+            } else
             if((av_vsrc_buffer_add_frame(ost->input_video_filter, decoded_frame, AV_VSRC_BUF_FLAG_OVERWRITE)) < 0){
                 av_log(0, AV_LOG_FATAL, "Failed to inject frame into filter network\n");
                 exit_program(1);
@@ -2275,6 +2299,14 @@ static int init_input_stream(int ist_index, OutputStream *output_streams, int nb
                     avcodec_get_name(ist->st->codec->codec_id), ist->file_index, ist->st->index);
             return AVERROR(EINVAL);
         }
+
+        ist->dr1 = codec->capabilities & CODEC_CAP_DR1;
+        if (codec->type == AVMEDIA_TYPE_VIDEO && ist->dr1) {
+            ist->st->codec->get_buffer     = codec_get_buffer;
+            ist->st->codec->release_buffer = codec_release_buffer;
+            ist->st->codec->opaque         = ist;
+        }
+
         if (avcodec_open2(ist->st->codec, codec, &ist->opts) < 0) {
             snprintf(error, error_len, "Error while opening decoder for input stream #%d:%d",
                     ist->file_index, ist->st->index);

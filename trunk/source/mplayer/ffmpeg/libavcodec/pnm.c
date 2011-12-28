@@ -93,7 +93,9 @@ int ff_pnm_decode_header(AVCodecContext *avctx, PNMContext * const s)
             } else if (!strcmp(buf1, "MAXVAL")) {
                 pnm_get(s, buf1, sizeof(buf1));
                 maxval = strtol(buf1, NULL, 10);
-            } else if (!strcmp(buf1, "TUPLETYPE")) {
+            } else if (!strcmp(buf1, "TUPLTYPE") ||
+            // FFmpeg used to write invalid files
+                       !strcmp(buf1, "TUPLETYPE")) {
                 pnm_get(s, tuple_type, sizeof(tuple_type));
             } else if (!strcmp(buf1, "ENDHDR")) {
                 break;
@@ -107,6 +109,7 @@ int ff_pnm_decode_header(AVCodecContext *avctx, PNMContext * const s)
 
         avctx->width  = w;
         avctx->height = h;
+        s->maxval     = maxval;
         if (depth == 1) {
             if (maxval == 1)
                 avctx->pix_fmt = PIX_FMT_MONOWHITE;

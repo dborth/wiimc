@@ -8,6 +8,9 @@ version next:
 - OpenMG Audio muxer
 - SMJPEG demuxer
 - dv: add timecode to metadata
+- thumbnail video filter
+- XML output in ffprobe
+- asplit audio filter
 
 
 version 0.9:

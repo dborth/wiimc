@@ -4891,6 +4891,11 @@ bool wiiIsPaused()
 	return false;
 }
 
+bool wiiIsPlaying()
+{
+	return playing_file;
+}
+
 void wiiMute()
 {
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );

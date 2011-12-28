@@ -2159,19 +2159,7 @@ static void MenuBrowse(int menu)
 	backBtn.SetIcon(&backBtnArrow);
 	backBtn.SetTrigger(trigA);
 
-	int paused = wiiIsPaused(); // for audiobar Play/Pause button
-
-	if(paused)
-	{
-		audiobarPauseImg->SetImage(actionbarPlay);
-		audiobarPauseTip->SetText("Play");
-	}
-	else
-	{
-		audiobarPauseImg->SetImage(actionbarPause);
-		audiobarPauseTip->SetText("Pause");
-	}
-
+	int play = -1;
 	int pagesize = 11;
 	char origname[1024]; // store original filename when performing searches
 
@@ -2683,18 +2671,22 @@ static void MenuBrowse(int menu)
 			}
 		}
 
-		if(paused != wiiIsPaused())
+		if(!wiiIsPlaying() || wiiIsPaused() || !wiiAudioOnly())
 		{
-			paused = !paused;
-			if(paused)
+			if(play != 1)
 			{
 				audiobarPauseImg->SetImage(actionbarPlay);
 				audiobarPauseTip->SetText("Play");
+				play = 1;
 			}
-			else
+		}
+		else
+		{
+			if(play != 0)
 			{
 				audiobarPauseImg->SetImage(actionbarPause);
 				audiobarPauseTip->SetText("Pause");
+				play = 0;
 			}
 		}
 

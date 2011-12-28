@@ -396,9 +396,10 @@ extern "C" bool FindNextFile(bool load)
 		}
 
 		if(browserMusic.selIndex == NULL)
+		{
 			browserMusic.selIndex = browserMusic.first;
-
-		if(WiiSettings.playOrder == PLAY_CONTINUOUS)
+		}
+		else if(WiiSettings.playOrder == PLAY_CONTINUOUS)
 		{
 			browserMusic.selIndex = browserMusic.selIndex->next;
 

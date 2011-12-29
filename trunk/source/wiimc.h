@@ -58,6 +58,7 @@ void wiiLoadFile(char *filename, char *partitionlabel);
 void wiiGotoGui();
 void wiiPause();
 bool wiiIsPaused();
+bool wiiIsPlaying();
 void wiiMute();
 void wiiSetSeekBackward(int sec);
 void wiiSetSeekForward(int sec);

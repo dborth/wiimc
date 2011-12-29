@@ -90,6 +90,7 @@ static int _httoi(const char *value)
 		s++;
 		firsttime = false;
 	}
+
 	return result;
 }
 
@@ -447,11 +448,8 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 				if(content_length > 0)
 				{
 					if(sizeread+content_length > maxsize) 
-					{
-						content_length=maxsize-sizeread-1;
-						sizeread += tcp_read(s, (u8 *)buffer+sizeread, content_length);
 						break;
-					}
+
 					ret = tcp_read(s, (u8 *)buffer+sizeread, content_length);
 					if(ret<=0) break;
 					sizeread += ret;
@@ -462,8 +460,8 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 					free(line);
 					net_close(s);
 					return sizeread;
-				}				
-			} while(content_length > 0);			
+				}
+			} while(content_length > 0);
 			content_length = sizeread;
 		}
 		else 

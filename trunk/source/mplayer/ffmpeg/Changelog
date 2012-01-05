@@ -6,11 +6,19 @@ version next:
 - v410 Quicktime Uncompressed 4:4:4 10-bit encoder and decoder
 - SBaGen (SBG) binaural beats script demuxer
 - OpenMG Audio muxer
-- SMJPEG demuxer
 - dv: add timecode to metadata
 - thumbnail video filter
 - XML output in ffprobe
 - asplit audio filter
+- tinterlace video filter
+- astreamsync audio filter
+- amerge audio filter
+- Automatic thread count based on detection number of (available) CPU cores
+- y41p Brooktree Uncompressed 4:1:1 12-bit encoder and decoder
+- ffprobe -show_error option
+- Avid 1:1 10-bit RGB Packer decoder
+- v308 Quicktime Uncompressed 4:4:4 encoder and decoder
+- yuv4 libquicktime packed 4:2:0 encoder and decoder
 
 
 version 0.9:
@@ -137,7 +145,7 @@ easier to use. The changes are:
 - pan audio filter
 - IFF Amiga Continuous Bitmap (ACBM) decoder
 - ass filter
-- CRI ADX audio format demuxer
+- CRI ADX audio format muxer and demuxer
 - Playstation Portable PMP format demuxer
 - Microsoft Windows ICO demuxer
 - life source
@@ -147,6 +155,8 @@ easier to use. The changes are:
 - Dxtory capture format decoder
 - cellauto source
 - Simple segmenting muxer
+- Indeo 4 decoder
+- SMJPEG demuxer
 
 
 version 0.8:

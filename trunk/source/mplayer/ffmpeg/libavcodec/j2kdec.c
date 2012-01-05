@@ -274,7 +274,7 @@ static int get_siz(J2kDecoderContext *s)
     if ((ret = s->avctx->get_buffer(s->avctx, &s->picture)) < 0)
         return ret;
 
-    s->picture.pict_type = FF_I_TYPE;
+    s->picture.pict_type = AV_PICTURE_TYPE_I;
     s->picture.key_frame = 1;
 
     return 0;
@@ -921,7 +921,7 @@ static int decode_codestream(J2kDecoderContext *s)
 
         marker = bytestream_get_be16(&s->buf);
         if(s->avctx->debug & FF_DEBUG_STARTCODE)
-            av_log(s->avctx, AV_LOG_DEBUG, "marker 0x%.4X at pos 0x%x\n", marker, s->buf - s->buf_start - 4);
+            av_log(s->avctx, AV_LOG_DEBUG, "marker 0x%.4X at pos 0x%tx\n", marker, s->buf - s->buf_start - 4);
         oldbuf = s->buf;
 
         if (marker == J2K_SOD){
@@ -1068,16 +1068,15 @@ static av_cold int decode_end(AVCodecContext *avctx)
 }
 
 AVCodec ff_jpeg2000_decoder = {
-    "j2k",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_JPEG2000,
-    sizeof(J2kDecoderContext),
-    j2kdec_init,
-    NULL,
-    decode_end,
-    decode_frame,
+    .name           = "j2k",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_JPEG2000,
+    .priv_data_size = sizeof(J2kDecoderContext),
+    .init           = j2kdec_init,
+    .close          = decode_end,
+    .decode         = decode_frame,
     .capabilities = CODEC_CAP_EXPERIMENTAL,
     .long_name = NULL_IF_CONFIG_SMALL("JPEG 2000"),
     .pix_fmts =
-        (enum PixelFormat[]) {PIX_FMT_GRAY8, PIX_FMT_RGB24, -1}
+        (enum PixelFormat[]) {PIX_FMT_GRAY8, PIX_FMT_RGB24, PIX_FMT_NONE}
 };

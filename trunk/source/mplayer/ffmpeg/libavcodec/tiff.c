@@ -106,36 +106,39 @@ static void av_always_inline horizontal_fill(unsigned int bpp, uint8_t* dst,
                                              int usePtr, const uint8_t *src,
                                              uint8_t c, int width, int offset)
 {
-    int i;
-
-    if (bpp == 2) {
-        for (i = 0; i < width; i++) {
-            dst[(i+offset)*4+0] = (usePtr ? src[i] : c) >> 6;
-            dst[(i+offset)*4+1] = (usePtr ? src[i] : c) >> 4 & 0x3;
-            dst[(i+offset)*4+2] = (usePtr ? src[i] : c) >> 2 & 0x3;
-            dst[(i+offset)*4+3] = (usePtr ? src[i] : c) & 0x3;
+    switch (bpp) {
+    case 1:
+        while (--width >= 0) {
+            dst[(width+offset)*8+7] = (usePtr ? src[width] : c)      & 0x1;
+            dst[(width+offset)*8+6] = (usePtr ? src[width] : c) >> 1 & 0x1;
+            dst[(width+offset)*8+5] = (usePtr ? src[width] : c) >> 2 & 0x1;
+            dst[(width+offset)*8+4] = (usePtr ? src[width] : c) >> 3 & 0x1;
+            dst[(width+offset)*8+3] = (usePtr ? src[width] : c) >> 4 & 0x1;
+            dst[(width+offset)*8+2] = (usePtr ? src[width] : c) >> 5 & 0x1;
+            dst[(width+offset)*8+1] = (usePtr ? src[width] : c) >> 6 & 0x1;
+            dst[(width+offset)*8+0] = (usePtr ? src[width] : c) >> 7;
         }
-    } else if (bpp == 4) {
-        for (i = 0; i < width; i++) {
-            dst[(i+offset)*2+0] = (usePtr ? src[i] : c) >> 4;
-            dst[(i+offset)*2+1] = (usePtr ? src[i] : c) & 0xF;
+        break;
+    case 2:
+        while (--width >= 0) {
+            dst[(width+offset)*4+3] = (usePtr ? src[width] : c) & 0x3;
+            dst[(width+offset)*4+2] = (usePtr ? src[width] : c) >> 2 & 0x3;
+            dst[(width+offset)*4+1] = (usePtr ? src[width] : c) >> 4 & 0x3;
+            dst[(width+offset)*4+0] = (usePtr ? src[width] : c) >> 6;
         }
-    } else {
+        break;
+    case 4:
+        while (--width >= 0) {
+            dst[(width+offset)*2+1] = (usePtr ? src[width] : c) & 0xF;
+            dst[(width+offset)*2+0] = (usePtr ? src[width] : c) >> 4;
+        }
+        break;
+    default:
         if (usePtr) {
             memcpy(dst + offset, src, width);
         } else {
             memset(dst + offset, c, width);
         }
-    }
-}
-
-static void av_always_inline split_nibbles(uint8_t *dst, const uint8_t *src,
-                                           int width)
-{
-    while (--width >= 0) {
-        // src == dst for LZW
-        dst[width * 2 + 1] = src[width] & 0xF;
-        dst[width * 2 + 0] = src[width] >> 4;
     }
 }
 
@@ -158,8 +161,8 @@ static int tiff_unpack_strip(TiffContext *s, uint8_t* dst, int stride, const uin
         }
         src = zbuf;
         for(line = 0; line < lines; line++){
-            if(s->bpp == 4){
-                split_nibbles(dst, src, width);
+            if(s->bpp < 8 && s->avctx->pix_fmt == PIX_FMT_PAL8){
+                horizontal_fill(s->bpp, dst, 1, src, 0, width, 0);
             }else{
                 memcpy(dst, src, width);
             }
@@ -203,6 +206,11 @@ static int tiff_unpack_strip(TiffContext *s, uint8_t* dst, int stride, const uin
             ret = ff_ccitt_unpack(s->avctx, src2, size, dst, lines, stride, s->compr, s->fax_opts);
             break;
         }
+        if (s->bpp < 8 && s->avctx->pix_fmt == PIX_FMT_PAL8)
+            for (line = 0; line < lines; line++) {
+                horizontal_fill(s->bpp, dst, 1, dst, 0, width, 0);
+                dst += stride;
+            }
         av_free(src2);
         return ret;
     }
@@ -216,7 +224,8 @@ static int tiff_unpack_strip(TiffContext *s, uint8_t* dst, int stride, const uin
             if (ssrc + size - src < width)
                 return AVERROR_INVALIDDATA;
             if (!s->fill_order) {
-                horizontal_fill(s->bpp, dst, 1, src, 0, width, 0);
+                horizontal_fill(s->bpp * (s->avctx->pix_fmt == PIX_FMT_PAL8),
+                                dst, 1, src, 0, width, 0);
             } else {
                 int i;
                 for (i = 0; i < width; i++)
@@ -233,7 +242,8 @@ static int tiff_unpack_strip(TiffContext *s, uint8_t* dst, int stride, const uin
                         av_log(s->avctx, AV_LOG_ERROR, "Copy went out of bounds\n");
                         return -1;
                     }
-                    horizontal_fill(s->bpp, dst, 1, src, 0, code, pixels);
+                    horizontal_fill(s->bpp * (s->avctx->pix_fmt == PIX_FMT_PAL8),
+                                    dst, 1, src, 0, code, pixels);
                     src += code;
                     pixels += code;
                 }else if(code != -128){ // -127..-1
@@ -243,7 +253,8 @@ static int tiff_unpack_strip(TiffContext *s, uint8_t* dst, int stride, const uin
                         return -1;
                     }
                     c = *src++;
-                    horizontal_fill(s->bpp, dst, 0, NULL, c, code, pixels);
+                    horizontal_fill(s->bpp * (s->avctx->pix_fmt == PIX_FMT_PAL8),
+                                    dst, 0, NULL, c, code, pixels);
                     pixels += code;
                 }
             }
@@ -254,8 +265,8 @@ static int tiff_unpack_strip(TiffContext *s, uint8_t* dst, int stride, const uin
                 av_log(s->avctx, AV_LOG_ERROR, "Decoded only %i bytes of %i\n", pixels, width);
                 return -1;
             }
-            if(s->bpp == 4)
-                split_nibbles(dst, dst, width);
+            if (s->bpp < 8 && s->avctx->pix_fmt == PIX_FMT_PAL8)
+                horizontal_fill(s->bpp, dst, 1, dst, 0, width, 0);
             break;
         }
         dst += stride;
@@ -270,8 +281,10 @@ static int init_image(TiffContext *s)
 
     switch (s->bpp * 10 + s->bppcount) {
     case 11:
-        s->avctx->pix_fmt = PIX_FMT_MONOBLACK;
-        break;
+        if (!s->palette_is_set) {
+            s->avctx->pix_fmt = PIX_FMT_MONOBLACK;
+            break;
+        }
     case 21:
     case 41:
     case 81:

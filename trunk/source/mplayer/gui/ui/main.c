@@ -162,6 +162,14 @@ void uiEventHandling( int msg,float param )
         mp_property_do("sub",M_PROPERTY_SET,&iparam,guiInfo.mpcontext);
 	break;
 
+#ifdef CONFIG_CDDA
+   case ivSetCDTrack:
+        guiInfo.Track=iparam;
+   case evPlayCD:
+ 	guiInfoMediumClear ( CLEAR_ALL );
+	guiInfo.StreamType=STREAMTYPE_CDDA;
+	goto play;
+#endif
 #ifdef CONFIG_VCD
    case ivSetVCDTrack:
         guiInfo.Track=iparam;
@@ -190,7 +198,7 @@ play:
 	 {
 	  plItem * next = listSet( gtkGetCurrPlItem,NULL );
 	  plLastPlayed=next;
-	  uiSetFileName( next->path,next->name,STREAMTYPE_FILE );
+	  uiSetFileName( next->path,next->name,SAME_STREAMTYPE );
 	 }
 
         switch ( guiInfo.StreamType )
@@ -202,11 +210,20 @@ play:
 	         guiInfo.Track=1;
 	       guiInfo.NewPlay=GUI_FILE_NEW;
 	       break;
+#ifdef CONFIG_CDDA
+          case STREAMTYPE_CDDA:
+	       guiInfoMediumClear( CLEAR_ALL - CLEAR_VCD - CLEAR_FILE );
+	       if ( guiInfo.Playing != GUI_PAUSE )
+	        {
+		 if ( !guiInfo.Track )
+                   guiInfo.Track=1;
+                 guiInfo.NewPlay=GUI_FILE_SAME;
+		}
+	       break;
+#endif
 #ifdef CONFIG_VCD
           case STREAMTYPE_VCD:
 	       guiInfoMediumClear( CLEAR_ALL - CLEAR_VCD - CLEAR_FILE );
-	       if ( !cdrom_device ) cdrom_device=gstrdup( DEFAULT_CDROM_DEVICE );
-	       uiSetFileName( NULL,cdrom_device,STREAMTYPE_VCD );
 	       if ( guiInfo.Playing != GUI_PAUSE )
 	        {
 		 if ( !guiInfo.Track )
@@ -218,8 +235,6 @@ play:
 #ifdef CONFIG_DVDREAD
           case STREAMTYPE_DVD:
 	       guiInfoMediumClear( CLEAR_ALL - CLEAR_DVD - CLEAR_FILE );
-	       if ( !dvd_device ) dvd_device=gstrdup( DEFAULT_DVD_DEVICE );
-	       uiSetFileName( NULL,dvd_device,STREAMTYPE_DVD );
 	       if ( guiInfo.Playing != GUI_PAUSE )
 	        {
                  guiInfo.NewPlay=GUI_FILE_SAME;

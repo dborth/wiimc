@@ -37,6 +37,7 @@
 const char program_name[] = "ffprobe";
 const int program_birth_year = 2007;
 
+static int do_show_error   = 0;
 static int do_show_format  = 0;
 static int do_show_packets = 0;
 static int do_show_streams = 0;
@@ -1305,7 +1306,6 @@ static void show_format(WriterContext *w, AVFormatContext *fmt_ctx)
 {
     char val_str[128];
     int64_t size = avio_size(fmt_ctx->pb);
-    struct print_buf pbuf = {.s = NULL};
 
     print_section_header("format");
     print_str("filename",         fmt_ctx->filename);
@@ -1320,8 +1320,23 @@ static void show_format(WriterContext *w, AVFormatContext *fmt_ctx)
     else                       print_str_opt("bit_rate", "N/A");
     show_tags(fmt_ctx->metadata);
     print_section_footer("format");
-    av_free(pbuf.s);
     fflush(stdout);
+}
+
+static void show_error(WriterContext *w, int err)
+{
+    char errbuf[128];
+    const char *errbuf_ptr = errbuf;
+
+    if (av_strerror(err, errbuf, sizeof(errbuf)) < 0)
+        errbuf_ptr = strerror(AVUNERROR(err));
+
+    writer_print_chapter_header(w, "error");
+    print_section_header("error");
+    print_int("code", err);
+    print_str("string", errbuf_ptr);
+    print_section_footer("error");
+    writer_print_chapter_footer(w, "error");
 }
 
 static int open_input_file(AVFormatContext **fmt_ctx_ptr, const char *filename)
@@ -1354,11 +1369,11 @@ static int open_input_file(AVFormatContext **fmt_ctx_ptr, const char *filename)
         AVCodec *codec;
 
         if (!(codec = avcodec_find_decoder(stream->codec->codec_id))) {
-            fprintf(stderr, "Unsupported codec with id %d for input stream %d\n",
-                    stream->codec->codec_id, stream->index);
+            av_log(NULL, AV_LOG_ERROR, "Unsupported codec with id %d for input stream %d\n",
+                   stream->codec->codec_id, stream->index);
         } else if (avcodec_open2(stream->codec, codec, NULL) < 0) {
-            fprintf(stderr, "Error while opening codec for input stream %d\n",
-                    stream->index);
+            av_log(NULL, AV_LOG_ERROR, "Error while opening codec for input stream %d\n",
+                   stream->index);
         }
     }
 
@@ -1399,16 +1414,18 @@ static int probe_file(const char *filename)
 
     if ((ret = writer_open(&wctx, w, w_args, NULL)) < 0)
         goto end;
-    if ((ret = open_input_file(&fmt_ctx, filename)))
-        goto end;
 
     writer_print_header(wctx);
-    PRINT_CHAPTER(packets);
-    PRINT_CHAPTER(streams);
-    PRINT_CHAPTER(format);
+    ret = open_input_file(&fmt_ctx, filename);
+    if (ret >= 0) {
+        PRINT_CHAPTER(packets);
+        PRINT_CHAPTER(streams);
+        PRINT_CHAPTER(format);
+        avformat_close_input(&fmt_ctx);
+    } else if (do_show_error) {
+        show_error(wctx, ret);
+    }
     writer_print_footer(wctx);
-
-    avformat_close_input(&fmt_ctx);
     writer_close(&wctx);
 
 end:
@@ -1428,7 +1445,7 @@ static int opt_format(const char *opt, const char *arg)
 {
     iformat = av_find_input_format(arg);
     if (!iformat) {
-        fprintf(stderr, "Unknown input format: %s\n", arg);
+        av_log(NULL, AV_LOG_ERROR, "Unknown input format: %s\n", arg);
         return AVERROR(EINVAL);
     }
     return 0;
@@ -1437,8 +1454,8 @@ static int opt_format(const char *opt, const char *arg)
 static void opt_input_file(void *optctx, const char *arg)
 {
     if (input_filename) {
-        fprintf(stderr, "Argument '%s' provided as input filename, but '%s' was already specified.\n",
-                arg, input_filename);
+        av_log(NULL, AV_LOG_ERROR, "Argument '%s' provided as input filename, but '%s' was already specified.\n",
+               arg, input_filename);
         exit(1);
     }
     if (!strcmp(arg, "-"))
@@ -1480,6 +1497,7 @@ static const OptionDef options[] = {
       "prettify the format of displayed values, make it more human readable" },
     { "print_format", OPT_STRING | HAS_ARG, {(void*)&print_format},
       "set the output printing format (available formats are: default, compact, csv, json, xml)", "format" },
+    { "show_error",   OPT_BOOL, {(void*)&do_show_error} ,  "show probing error" },
     { "show_format",  OPT_BOOL, {(void*)&do_show_format} , "show format/container info" },
     { "show_packets", OPT_BOOL, {(void*)&do_show_packets}, "show packets info" },
     { "show_streams", OPT_BOOL, {(void*)&do_show_streams}, "show streams info" },
@@ -1507,8 +1525,8 @@ int main(int argc, char **argv)
 
     if (!input_filename) {
         show_usage();
-        fprintf(stderr, "You have to specify one input file.\n");
-        fprintf(stderr, "Use -h to get full help or, even better, run 'man %s'.\n", program_name);
+        av_log(NULL, AV_LOG_ERROR, "You have to specify one input file.\n");
+        av_log(NULL, AV_LOG_ERROR, "Use -h to get full help or, even better, run 'man %s'.\n", program_name);
         exit(1);
     }
 

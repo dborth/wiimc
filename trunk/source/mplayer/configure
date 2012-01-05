@@ -5767,24 +5767,8 @@ fi
 echores "$_libdvdcss_internal"
 
 
-echocheck "cdparanoia"
-if test "$_cdparanoia" = auto ; then
-    _cdparanoia=no
-    for inc_tmp in "" "-I/usr/include/cdda" "-I/usr/local/include/cdda" ; do
-      statement_check_broken cdda_interface.h cdda_paranoia.h 'paranoia_cachemodel_size(NULL, 0)' $inc_tmp -lcdda_interface -lcdda_paranoia &&
-        _cdparanoia=yes && extra_cflags="$extra_cflags $inc_tmp" && break
-    done
-fi
-if test "$_cdparanoia" = yes ; then
-    _cdda='yes'
-    extra_ldflags="$extra_ldflags -lcdda_interface -lcdda_paranoia"
-    openbsd && extra_ldflags="$extra_ldflags -lutil"
-fi
-echores "$_cdparanoia"
-
-
 echocheck "libcdio"
-if test "$_libcdio" = auto && test "$_cdparanoia" = no ; then
+if test "$_libcdio" = auto ; then
         cat > $TMPC << EOF
 #include <stdio.h>
 #include <cdio/version.h>
@@ -5809,19 +5793,35 @@ EOF
         extra_ldflags="$extra_ldflags $ld_tmp" && extra_cflags="$extra_cflags $inc_tmp"
     fi
 fi
-if test "$_libcdio" = yes && test "$_cdparanoia" = no ; then
+if test "$_libcdio" = yes ; then
     _cdda='yes'
+    _cdparanoia=no
     def_libcdio='#define CONFIG_LIBCDIO 1'
     def_havelibcdio='yes'
 else
     _libcdio=no
-    if test "$_cdparanoia" = yes ; then
-       res_comment="using cdparanoia"
-    fi
     def_libcdio='#undef CONFIG_LIBCDIO'
     def_havelibcdio='no'
 fi
 echores "$_libcdio"
+
+echocheck "cdparanoia"
+if test "$_cdparanoia" = auto ; then
+    _cdparanoia=no
+    for inc_tmp in "" "-I/usr/include/cdda" "-I/usr/local/include/cdda" ; do
+      statement_check_broken cdda_interface.h cdda_paranoia.h 'paranoia_cachemodel_size(NULL, 0)' $inc_tmp -lcdda_interface -lcdda_paranoia &&
+        _cdparanoia=yes && extra_cflags="$extra_cflags $inc_tmp" && break
+    done
+fi
+if test "$_cdparanoia" = yes ; then
+    _cdda='yes'
+    extra_ldflags="$extra_ldflags -lcdda_interface -lcdda_paranoia"
+    openbsd && extra_ldflags="$extra_ldflags -lutil"
+elif test "$_libcdio" = yes ; then
+    res_comment='using libcdio'
+fi
+echores "$_cdparanoia"
+
 
 if test "$_cdda" = yes ; then
     test $_cddb = auto && test $networking = yes && _cddb=yes
@@ -6233,57 +6233,15 @@ echores "$_libgsm"
 echocheck "OggTheora support"
 if test "$_theora" = auto ; then
   _theora=no
-    cat > $TMPC << EOF
-#include <theora/theora.h>
-#include <string.h>
-int main(void) {
-  /* Theora is in flux, make sure that all interface routines and datatypes
-   * exist and work the way we expect it, so we don't break MPlayer. */
-  ogg_packet op;
-  theora_comment tc;
-  theora_info inf;
-  theora_state st;
-  yuv_buffer yuv;
-  int r;
-  double t;
-
-  theora_info_init(&inf);
-  theora_comment_init(&tc);
-
-  return 0;
-
-  /* we don't want to execute this kind of nonsense; just for making sure
-   * that compilation works... */
-  memset(&op, 0, sizeof(op));
-  r = theora_decode_header(&inf, &tc, &op);
-  r = theora_decode_init(&st, &inf);
-  t = theora_granule_time(&st, op.granulepos);
-  r = theora_decode_packetin(&st, &op);
-  r = theora_decode_YUVout(&st, &yuv);
-  theora_clear(&st);
-
-  return 0;
-}
-EOF
-  ld_theora=$($_pkg_config --silence-errors --libs theora)
-  inc_theora=$($_pkg_config --silence-errors --cflags theora)
-  cc_check $inc_theora $ld_theora && extra_ldflags="$extra_ldflags $ld_theora" &&
-    extra_cflags="$extra_cflags $inc_theora" && _theora=yes
+  ld_theora="-ltheoradec -logg"
+  statement_check theora/theoradec.h 'theora_info_init(NULL)' $ld_theora &&
+    extra_ldflags="$extra_ldflags $ld_theora" && _theora=yes
   if test _theora = no; then
-    ld_theora="-ltheora -logg"
-    cc_check $ld_theora && extra_ldflags="$extra_ldflags $ld_theora" && _theora=yes
-  fi
-  if test "$_theora" = no && test "$_tremor_internal" = yes; then
-    ld_theora=$($_pkg_config --silence-errors --libs theora)
-    inc_theora=$($_pkg_config --silence-errors --cflags theora)
-    cc_check tremor/bitwise.c $inc_theora $ld_theora &&
+    ld_theora=$($_pkg_config --silence-errors --libs theoradec)
+    inc_theora=$($_pkg_config --silence-errors --cflags theoradec)
+    statement_check theora/theoradec.h 'theora_info_init(NULL)' $inc_theora $ld_theora &&
       extra_ldflags="$extra_ldflags $ld_theora" &&
       extra_cflags="$extra_cflags $inc_theora" && _theora=yes
-    if test _theora = no; then
-      ld_theora="-ltheora -logg"
-      cc_check tremor/bitwise.c $ld_theora &&
-        extra_ldflags="$extra_ldflags $ld_theora" && _theora=yes
-    fi
   fi
 fi
 if test "$_theora" = yes ; then
@@ -6291,7 +6249,7 @@ if test "$_theora" = yes ; then
   codecmodules="libtheora $codecmodules"
   # when --enable-theora is forced, we'd better provide a probably sane
   # $ld_theora than nothing
-  test -z "$ld_theora" && extra_ldflags="$extra_ldflags -ltheora -logg"
+  test -z "$ld_theora" && extra_ldflags="$extra_ldflags -ltheoradec -logg"
 else
   def_theora='#undef CONFIG_OGGTHEORA'
   nocodecmodules="libtheora $nocodecmodules"

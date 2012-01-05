@@ -279,7 +279,7 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
         return -1;
     }
 
-    if(s->v_max==1 && s->h_max==1 && s->lossless==1) s->rgb=1;
+    if(s->v_max==1 && s->h_max==1 && s->lossless==1 && nb_components==3) s->rgb=1;
 
     /* if different size, realloc/alloc picture */
     /* XXX: also check h_count and v_count */
@@ -343,7 +343,10 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
         s->yuv442 = 1;
         break;
     case 0x11000000:
-        s->avctx->pix_fmt = PIX_FMT_GRAY8;
+        if(s->bits <= 8)
+            s->avctx->pix_fmt = PIX_FMT_GRAY8;
+        else
+            s->avctx->pix_fmt = PIX_FMT_GRAY16;
         break;
     case 0x12111100:
     case 0x22211100:
@@ -649,7 +652,7 @@ static int decode_block_refinement(MJpegDecodeContext *s, DCTELEM *block, uint8_
 #undef REFINE_BIT
 #undef ZERO_RUN
 
-static int ljpeg_decode_rgb_scan(MJpegDecodeContext *s, int predictor, int point_transform){
+static int ljpeg_decode_rgb_scan(MJpegDecodeContext *s, int nb_components, int predictor, int point_transform){
     int i, mb_x, mb_y;
     uint16_t (*buffer)[4];
     int left[3], top[3], topleft[3];
@@ -660,7 +663,7 @@ static int ljpeg_decode_rgb_scan(MJpegDecodeContext *s, int predictor, int point
     buffer= s->ljpeg_buffer;
 
     for(i=0; i<3; i++){
-        buffer[0][i]= 1 << (s->bits + point_transform - 1);
+        buffer[0][i]= 1 << (s->bits - 1);
     }
     for(mb_y = 0; mb_y < s->mb_height; mb_y++) {
         const int modified_predictor= mb_y ? predictor : 1;
@@ -676,7 +679,7 @@ static int ljpeg_decode_rgb_scan(MJpegDecodeContext *s, int predictor, int point
             if (s->restart_interval && !s->restart_count)
                 s->restart_count = s->restart_interval;
 
-            for(i=0;i<3;i++) {
+            for(i=0;i<nb_components;i++) {
                 int pred, dc;
 
                 topleft[i]= top[i];
@@ -711,10 +714,11 @@ static int ljpeg_decode_rgb_scan(MJpegDecodeContext *s, int predictor, int point
                 ptr[3*mb_x+2] = buffer[mb_x][2] + ptr[3*mb_x+1];
             }
         }else{
-            for(mb_x = 0; mb_x < s->mb_width; mb_x++) {
-                ptr[3*mb_x+0] = buffer[mb_x][2];
-                ptr[3*mb_x+1] = buffer[mb_x][1];
-                ptr[3*mb_x+2] = buffer[mb_x][0];
+            for(i=0;i<nb_components;i++) {
+                int c= s->comp_index[i];
+                for(mb_x = 0; mb_x < s->mb_width; mb_x++) {
+                    ptr[3*mb_x+2-c] = buffer[mb_x][i];
+                }
             }
         }
     }
@@ -723,7 +727,12 @@ static int ljpeg_decode_rgb_scan(MJpegDecodeContext *s, int predictor, int point
 
 static int ljpeg_decode_yuv_scan(MJpegDecodeContext *s, int predictor, int point_transform){
     int i, mb_x, mb_y;
-    const int nb_components=3;
+    const int nb_components=s->nb_components;
+    int bits= (s->bits+7)&~7;
+
+    point_transform += bits - s->bits;
+
+    av_assert0(nb_components==1 || nb_components==3);
 
     for(mb_y = 0; mb_y < s->mb_height; mb_y++) {
         for(mb_x = 0; mb_x < s->mb_width; mb_x++) {
@@ -733,6 +742,7 @@ static int ljpeg_decode_yuv_scan(MJpegDecodeContext *s, int predictor, int point
             if(mb_x==0 || mb_y==0 || s->interlaced){
                 for(i=0;i<nb_components;i++) {
                     uint8_t *ptr;
+                    uint16_t *ptr16;
                     int n, h, v, x, y, c, j, linesize;
                     n = s->nb_blocks[i];
                     c = s->comp_index[i];
@@ -742,13 +752,19 @@ static int ljpeg_decode_yuv_scan(MJpegDecodeContext *s, int predictor, int point
                     y = 0;
                     linesize= s->linesize[c];
 
+                    if(bits>8) linesize /= 2;
+
                     for(j=0; j<n; j++) {
                         int pred, dc;
 
+                        dc = mjpeg_decode_dc(s, s->dc_index[i]);
+                        if(dc == 0xFFFF)
+                            return -1;
+                        if(bits<=8){
                         ptr = s->picture.data[c] + (linesize * (v * mb_y + y)) + (h * mb_x + x); //FIXME optimize this crap
                         if(y==0 && mb_y==0){
                             if(x==0 && mb_x==0){
-                                pred= 128 << point_transform;
+                                pred= 1 << (bits - 1);
                             }else{
                                 pred= ptr[-1];
                             }
@@ -762,11 +778,27 @@ static int ljpeg_decode_yuv_scan(MJpegDecodeContext *s, int predictor, int point
 
                         if (s->interlaced && s->bottom_field)
                             ptr += linesize >> 1;
-                        dc = mjpeg_decode_dc(s, s->dc_index[i]);
-                        if(dc == 0xFFFF)
-                            return -1;
                         *ptr= pred + (dc << point_transform);
+                        }else{
+                            ptr16 = s->picture.data[c] + 2*(linesize * (v * mb_y + y)) + 2*(h * mb_x + x); //FIXME optimize this crap
+                            if(y==0 && mb_y==0){
+                                if(x==0 && mb_x==0){
+                                    pred= 1 << (bits - 1);
+                                }else{
+                                    pred= ptr16[-1];
+                                }
+                            }else{
+                                if(x==0 && mb_x==0){
+                                    pred= ptr16[-linesize];
+                                }else{
+                                    PREDICT(pred, ptr16[-linesize-1], ptr16[-linesize], ptr16[-1], predictor);
+                                }
+                            }
 
+                            if (s->interlaced && s->bottom_field)
+                                ptr16 += linesize >> 1;
+                            *ptr16= pred + (dc << point_transform);
+                        }
                         if (++x == h) {
                             x = 0;
                             y++;
@@ -776,6 +808,7 @@ static int ljpeg_decode_yuv_scan(MJpegDecodeContext *s, int predictor, int point
             }else{
                 for(i=0;i<nb_components;i++) {
                     uint8_t *ptr;
+                    uint16_t *ptr16;
                     int n, h, v, x, y, c, j, linesize, dc;
                     n = s->nb_blocks[i];
                     c = s->comp_index[i];
@@ -785,16 +818,25 @@ static int ljpeg_decode_yuv_scan(MJpegDecodeContext *s, int predictor, int point
                     y = 0;
                     linesize= s->linesize[c];
 
+                    if(bits>8) linesize /= 2;
+
                     for(j=0; j<n; j++) {
                         int pred;
-
-                        ptr = s->picture.data[c] + (linesize * (v * mb_y + y)) + (h * mb_x + x); //FIXME optimize this crap
-                        PREDICT(pred, ptr[-linesize-1], ptr[-linesize], ptr[-1], predictor);
 
                         dc = mjpeg_decode_dc(s, s->dc_index[i]);
                         if(dc == 0xFFFF)
                             return -1;
+                        if(bits<=8){
+                        ptr = s->picture.data[c] + (linesize * (v * mb_y + y)) + (h * mb_x + x); //FIXME optimize this crap
+                        PREDICT(pred, ptr[-linesize-1], ptr[-linesize], ptr[-1], predictor);
+
                         *ptr= pred + (dc << point_transform);
+                        }else{
+                            ptr16 = s->picture.data[c] + 2*(linesize * (v * mb_y + y)) + 2*(h * mb_x + x); //FIXME optimize this crap
+                            PREDICT(pred, ptr16[-linesize-1], ptr16[-linesize], ptr16[-1], predictor);
+
+                            *ptr16= pred + (dc << point_transform);
+                        }
                         if (++x == h) {
                             x = 0;
                             y++;
@@ -1031,7 +1073,7 @@ int ff_mjpeg_decode_sos(MJpegDecodeContext *s,
         if (s->dc_index[i] <  0 || s->ac_index[i] < 0 ||
             s->dc_index[i] >= 4 || s->ac_index[i] >= 4)
             goto out_of_range;
-        if (!s->vlcs[0][s->dc_index[i]].table || !s->vlcs[1][s->ac_index[i]].table)
+        if (!s->vlcs[0][s->dc_index[i]].table || !(s->progressive ? s->vlcs[2][s->ac_index[0]].table : s->vlcs[1][s->ac_index[i]].table))
             goto out_of_range;
     }
 
@@ -1080,7 +1122,7 @@ int ff_mjpeg_decode_sos(MJpegDecodeContext *s,
                 return -1;
         }else{
             if(s->rgb){
-                if(ljpeg_decode_rgb_scan(s, predictor, point_transform) < 0)
+                if(ljpeg_decode_rgb_scan(s, nb_components, predictor, point_transform) < 0)
                     return -1;
             }else{
                 if(ljpeg_decode_yuv_scan(s, predictor, point_transform) < 0)

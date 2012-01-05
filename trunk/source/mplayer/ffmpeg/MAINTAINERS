@@ -46,7 +46,7 @@ Miscellaneous Areas
 documentation                           Mike Melanson
 website                                 Robert Swain, Lou Logan
 build system (configure,Makefiles)      Diego Biurrun, Mans Rullgard
-project server                          Árpád Gereöffy, Michael Niedermayer, Reimar Döffinger
+project server                          �?rpád Gereöffy, Michael Niedermayer, Reimar Döffinger
 mailinglists                            Michael Niedermayer, Baptiste Coudurier, Lou Logan
 presets                                 Robert Swain
 metadata subsystem                      Aurelien Jacobs
@@ -385,10 +385,6 @@ x86                                     Michael Niedermayer
 Releases
 ========
 
-0.5                                     *Deprecated/Unmaintained*
-0.6                                     *Deprecated/Unmaintained*
-0.7                                     Michael Niedermayer
-0.8                                     Michael Niedermayer
 0.9                                     Michael Niedermayer
 
 

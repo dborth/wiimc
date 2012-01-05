@@ -841,7 +841,7 @@ static LRESULT CALLBACK EventProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
             char device[MAX_PATH];
             char searchpath[MAX_PATH];
             char searchpath2[MAX_PATH];
-#ifdef CONFIG_LIBCDIO
+#ifdef CONFIG_CDDA
             char searchpath3[MAX_PATH];
 #endif
             int len, pos = 0, cdromdrive = 0;
@@ -863,14 +863,14 @@ static LRESULT CALLBACK EventProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
                     mp_msg(MSGT_GPLAYER, MSGL_V, "[GUI] checking %s for CD/VCD/SVCD/DVDs\n", device + pos);
                     sprintf(searchpath, "%sVIDEO_TS", device + pos);
                     sprintf(searchpath2, "%sMpegav", device + pos);
-#ifdef CONFIG_LIBCDIO
+#ifdef CONFIG_CDDA
                     sprintf(searchpath3, "%sTrack01.cda", device + pos);
 #endif
                     if(GetFileAttributes(searchpath) != INVALID_FILE_ATTRIBUTES)
                         flags |= MF_ENABLED;
                     else if(GetFileAttributes(searchpath2) != INVALID_FILE_ATTRIBUTES)
                         flags |= MF_ENABLED;
-#ifdef CONFIG_LIBCDIO
+#ifdef CONFIG_CDDA
                     else if(GetFileAttributes(searchpath3) != INVALID_FILE_ATTRIBUTES)
                         flags |= MF_ENABLED;
 #endif
@@ -1045,14 +1045,13 @@ static LRESULT CALLBACK EventProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 #ifdef CONFIG_DVDREAD
                                 free(dvd_device);
                                 dvd_device = strdup(device + pos);
-                                dvd_title = dvd_chapter = dvd_angle = 1;
                                 handlemsg(hWnd, evPlayDVD);
 #endif
                             }
                             sprintf(searchpath, "%sTrack01.cda", device + pos);
                             if(GetFileAttributes(searchpath) != INVALID_FILE_ATTRIBUTES)
                             {
-#ifdef CONFIG_LIBCDIO
+#ifdef CONFIG_CDDA
                                 free(cdrom_device);
                                 cdrom_device = strdup(device + pos);
                                 /* mplayer doesn't seem to like the trailing \ after the device name */
@@ -1248,7 +1247,7 @@ static void create_submenu(gui_t *gui)
     AppendMenu(gui->submenu, MF_STRING | MF_POPUP, (UINT_PTR) gui->subtitlemenu, acp(MSGTR_MENU_Subtitles));
     AppendMenu(gui->submenu, MF_STRING | MF_POPUP, (UINT_PTR) gui->dvdmenu, acp(MSGTR_MENU_DVD));
 #ifdef CONFIG_DVDREAD
-    AppendMenu(gui->dvdmenu, MF_STRING | MF_GRAYED, ID_CHAPTERSEL, acp(MSGTR_SelectChapter));
+    AppendMenu(gui->dvdmenu, MF_STRING | MF_GRAYED, ID_CHAPTERSEL, acp(MSGTR_SelectTitleChapter));
 #endif
     AppendMenu(gui->subtitlemenu, MF_STRING, IDSUB_TOGGLE, acp(MSGTR_MENU_SubtitlesOnOff));
     AppendMenu(gui->subtitlemenu, MF_STRING, IDSUB_CYCLE, acp(MSGTR_MENU_SubtitleLanguages));

@@ -2093,7 +2093,7 @@ static int parse_adts_frame_header(AACContext *ac, GetBitContext *gb)
 
     size = avpriv_aac_parse_header(gb, &hdr_info);
     if (size > 0) {
-        if (hdr_info.chan_config && (hdr_info.chan_config!=ac->m4ac.chan_config || ac->m4ac.sample_rate!=hdr_info.sample_rate)) {
+        if (hdr_info.chan_config) {
             enum ChannelPosition new_che_pos[4][MAX_ELEM_ID];
             memset(new_che_pos, 0, 4 * MAX_ELEM_ID * sizeof(new_che_pos[0][0]));
             ac->m4ac.chan_config = hdr_info.chan_config;
@@ -2201,10 +2201,11 @@ static int aac_decode_frame_int(AVCodecContext *avctx, void *data,
             if ((err = decode_pce(avctx, &ac->m4ac, new_che_pos, gb)))
                 break;
             if (ac->output_configured > OC_TRIAL_PCE)
-                av_log(avctx, AV_LOG_ERROR,
-                       "Not evaluating a further program_config_element as this construct is dubious at best.\n");
-            else
-                err = output_configure(ac, ac->che_pos, new_che_pos, 0, OC_TRIAL_PCE);
+                av_log(avctx, AV_LOG_INFO,
+                       "Evaluating a further program_config_element.\n");
+            err = output_configure(ac, ac->che_pos, new_che_pos, 0, OC_TRIAL_PCE);
+            if (!err)
+                ac->m4ac.chan_config = 0;
             break;
         }
 

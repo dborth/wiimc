@@ -94,6 +94,11 @@ For example for printing the output in JSON format, specify:
 For more details on the available output printing formats, see the
 Writers section below.
 
+@item -show_error
+Show information about the error found when trying to probe the input.
+
+The error information is printed within a section with name "ERROR".
+
 @item -show_format
 Show information about the container format of the input multimedia
 stream.
@@ -130,7 +135,7 @@ Read @var{input_file}.
 @chapter Writers
 @c man begin WRITERS
 
-A writer defines the output format adopted by @file{ffprobe}, and will be
+A writer defines the output format adopted by @command{ffprobe}, and will be
 used for printing all the parts of the output.
 
 A writer may accept one or more arguments, which specify the options to

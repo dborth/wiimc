@@ -274,7 +274,7 @@ int ffio_limit(AVIOContext *s, int size)
         if(remaining < size){
             int64_t newsize= avio_size(s);
             if(!s->maxsize || s->maxsize<newsize)
-                s->maxsize= newsize;
+                s->maxsize= newsize - !newsize;
             remaining= s->maxsize - avio_tell(s);
             remaining= FFMAX(remaining, 0);
         }
@@ -633,9 +633,6 @@ static int init_input(AVFormatContext *s, const char *filename, AVDictionary **o
 {
     int ret;
     AVProbeData pd = {filename, NULL, 0};
-
-    if(s->iformat && !strlen(filename))
-        return 0;
 
     if (s->pb) {
         s->flags |= AVFMT_FLAG_CUSTOM_IO;
@@ -2235,7 +2232,7 @@ static int has_decode_delay_been_guessed(AVStream *st)
 static int try_decode_frame(AVStream *st, AVPacket *avpkt, AVDictionary **options)
 {
     AVCodec *codec;
-    int got_picture, ret = 0;
+    int got_picture = 1, ret = 0;
     AVFrame picture;
     AVPacket pkt = *avpkt;
 
@@ -2248,7 +2245,8 @@ static int try_decode_frame(AVStream *st, AVPacket *avpkt, AVDictionary **option
             return ret;
     }
 
-    while (pkt.size > 0 && ret >= 0 &&
+    while ((pkt.size > 0 || (!pkt.data && got_picture)) &&
+           ret >= 0 &&
            (!has_codec_parameters(st->codec)  ||
            !has_decode_delay_been_guessed(st) ||
            (!st->codec_info_nb_frames && st->codec->codec->capabilities & CODEC_CAP_CHANNEL_CONF))) {
@@ -2272,6 +2270,8 @@ static int try_decode_frame(AVStream *st, AVPacket *avpkt, AVDictionary **option
             pkt.size -= ret;
         }
     }
+    if(!pkt.data && !got_picture)
+        return -1;
     return ret;
 }
 
@@ -2401,11 +2401,6 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
         assert(!st->codec->codec);
         codec = avcodec_find_decoder(st->codec->codec_id);
 
-        /* this function doesn't flush the decoders, so force thread count
-         * to 1 to fix behavior when thread count > number of frames in the file */
-        if (options)
-            av_dict_set(&options[i], "threads", 0, 0);
-
         /* Ensure that subtitle_header is properly set. */
         if (st->codec->codec_type == AVMEDIA_TYPE_SUBTITLE
             && codec && !st->codec->codec)
@@ -2480,10 +2475,22 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
             continue;
 
         if (ret < 0) {
-            /* EOF or error */
+            /* EOF or error*/
+            AVPacket empty_pkt = { 0 };
+            int err;
+            av_init_packet(&empty_pkt);
+
             ret = -1; /* we could not have all the codec parameters before EOF */
             for(i=0;i<ic->nb_streams;i++) {
                 st = ic->streams[i];
+
+                /* flush the decoders */
+                while ((err = try_decode_frame(st, &empty_pkt,
+                                               (options && i < orig_nb_streams) ?
+                                                &options[i] : NULL)) >= 0)
+                    if (has_codec_parameters(st->codec))
+                        break;
+
                 if (!has_codec_parameters(st->codec)){
                     char buf[256];
                     avcodec_string(buf, sizeof(buf), st->codec, 0);
@@ -2503,8 +2510,13 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
 
         st = ic->streams[pkt->stream_index];
         if (st->codec_info_nb_frames>1) {
-            int64_t t;
-            if (st->time_base.den > 0 && (t=av_rescale_q(st->info->codec_info_duration, st->time_base, AV_TIME_BASE_Q)) >= ic->max_analyze_duration) {
+            int64_t t=0;
+            if (st->time_base.den > 0)
+                t = av_rescale_q(st->info->codec_info_duration, st->time_base, AV_TIME_BASE_Q);
+            if (st->avg_frame_rate.num > 0)
+                t = FFMAX(t, av_rescale_q(st->codec_info_nb_frames, (AVRational){st->avg_frame_rate.den, st->avg_frame_rate.num}, AV_TIME_BASE_Q));
+
+            if (t >= ic->max_analyze_duration) {
                 av_log(ic, AV_LOG_WARNING, "max_analyze_duration %d reached at %"PRId64"\n", ic->max_analyze_duration, t);
                 break;
             }
@@ -2556,7 +2568,7 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
            least one frame of codec data, this makes sure the codec initializes
            the channel configuration and does not only trust the values from the container.
         */
-        try_decode_frame(st, pkt, (options && i < orig_nb_streams )? &options[i] : NULL);
+        try_decode_frame(st, pkt, (options && i < orig_nb_streams ) ? &options[i] : NULL);
 
         st->codec_info_nb_frames++;
         count++;
@@ -2677,8 +2689,11 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
 #endif
 
  find_stream_info_err:
-    for (i=0; i < ic->nb_streams; i++)
+    for (i=0; i < ic->nb_streams; i++) {
+        if (ic->streams[i]->codec)
+            ic->streams[i]->codec->thread_count = 0;
         av_freep(&ic->streams[i]->info);
+    }
     return ret;
 }
 

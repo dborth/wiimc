@@ -255,10 +255,14 @@ enum CodecID {
     CODEC_ID_VBLE,
     CODEC_ID_DXTORY,
     CODEC_ID_V410,
+    CODEC_ID_Y41P       = MKBETAG('Y','4','1','P'),
     CODEC_ID_UTVIDEO = 0x800,
     CODEC_ID_ESCAPE130  = MKBETAG('E','1','3','0'),
+    CODEC_ID_AVRP       = MKBETAG('A','V','R','P'),
 
     CODEC_ID_G2M        = MKBETAG( 0 ,'G','2','M'),
+    CODEC_ID_V308       = MKBETAG('V','3','0','8'),
+    CODEC_ID_YUV4       = MKBETAG('Y','U','V','4'),
 
     /* various PCM "codecs" */
     CODEC_ID_FIRST_AUDIO = 0x10000,     ///< A dummy id pointing at the start of audio codecs
@@ -795,6 +799,10 @@ typedef struct RcOverride{
  * Codec supports changed parameters at any point.
  */
 #define CODEC_CAP_PARAM_CHANGE     0x4000
+/**
+ * Codec supports avctx->thread_count == 0 (auto).
+ */
+#define CODEC_CAP_AUTO_THREADS     0x8000
 /**
  * Codec is lossless.
  */

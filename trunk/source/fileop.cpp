@@ -475,7 +475,7 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum)
 				part[device][*devnum].name[0] = 0;
 			break;
 		case T_EXT2:
-			if(!ext2Mount(mount, disc, sector, 2, 128, EXT2_FLAG_64BITS | EXT2_FLAG_JOURNAL_DEV_OK))
+			if(!ext2Mount(mount, disc, sector, 2, 128, EXT2_FLAG_DEFAULT))
 				return;
 
 			name = (char *)ext2GetVolumeName(mount);

@@ -6,7 +6,7 @@ version next:
 - v410 Quicktime Uncompressed 4:4:4 10-bit encoder and decoder
 - SBaGen (SBG) binaural beats script demuxer
 - OpenMG Audio muxer
-- dv: add timecode to metadata
+- Timecode extraction in DV and MOV
 - thumbnail video filter
 - XML output in ffprobe
 - asplit audio filter
@@ -19,6 +19,9 @@ version next:
 - Avid 1:1 10-bit RGB Packer decoder
 - v308 Quicktime Uncompressed 4:4:4 encoder and decoder
 - yuv4 libquicktime packed 4:2:0 encoder and decoder
+- ffprobe -show_frames option
+- silencedetect audio filter
+- ffprobe -show_program_version, -show_library_versions, -show_versions options
 
 
 version 0.9:

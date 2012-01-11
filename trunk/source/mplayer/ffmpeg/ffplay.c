@@ -27,6 +27,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <limits.h>
+#include <signal.h>
 #include "libavutil/avstring.h"
 #include "libavutil/colorspace.h"
 #include "libavutil/mathematics.h"
@@ -923,6 +924,11 @@ static void do_exit(VideoState *is)
     SDL_Quit();
     av_log(NULL, AV_LOG_QUIET, "%s", "");
     exit(0);
+}
+
+static void sigterm_handler(int sig)
+{
+    exit(123);
 }
 
 static int video_open(VideoState *is, int force_set_video_mode)
@@ -2221,6 +2227,8 @@ static int stream_component_open(VideoState *is, int stream_index)
     AVDictionary *opts;
     AVDictionaryEntry *t = NULL;
     int64_t wanted_channel_layout = 0;
+    int wanted_nb_channels;
+    const char *env;
 
     if (stream_index < 0 || stream_index >= ic->nb_streams)
         return -1;
@@ -2257,8 +2265,19 @@ static int stream_component_open(VideoState *is, int stream_index)
         avctx->flags |= CODEC_FLAG_EMU_EDGE;
 
     if (avctx->codec_type == AVMEDIA_TYPE_AUDIO) {
-        wanted_channel_layout = (avctx->channel_layout && avctx->channels == av_get_channel_layout_nb_channels(avctx->channels)) ? avctx->channel_layout : av_get_default_channel_layout(avctx->channels);
-        wanted_channel_layout &= ~AV_CH_LAYOUT_STEREO_DOWNMIX;
+        env = SDL_getenv("SDL_AUDIO_CHANNELS");
+        if (env)
+            wanted_channel_layout = av_get_default_channel_layout(SDL_atoi(env));
+        if (!wanted_channel_layout) {
+            wanted_channel_layout = (avctx->channel_layout && avctx->channels == av_get_channel_layout_nb_channels(avctx->channel_layout)) ? avctx->channel_layout : av_get_default_channel_layout(avctx->channels);
+            wanted_channel_layout &= ~AV_CH_LAYOUT_STEREO_DOWNMIX;
+            wanted_nb_channels = av_get_channel_layout_nb_channels(wanted_channel_layout);
+            /* SDL only supports 1, 2, 4 or 6 channels at the moment, so we have to make sure not to request anything else. */
+            while (wanted_nb_channels > 0 && (wanted_nb_channels == 3 || wanted_nb_channels == 5 || wanted_nb_channels > 6)) {
+                wanted_nb_channels--;
+                wanted_channel_layout = av_get_default_channel_layout(wanted_nb_channels);
+            }
+        }
         wanted_spec.channels = av_get_channel_layout_nb_channels(wanted_channel_layout);
         wanted_spec.freq = avctx->sample_rate;
         if (wanted_spec.freq <= 0 || wanted_spec.channels <= 0) {
@@ -3092,9 +3111,9 @@ static const OptionDef options[] = {
 
 static void show_usage(void)
 {
-    printf("Simple media player\n");
-    printf("usage: %s [options] input_file\n", program_name);
-    printf("\n");
+    av_log(NULL, AV_LOG_INFO, "Simple media player\n");
+    av_log(NULL, AV_LOG_INFO, "usage: %s [options] input_file\n", program_name);
+    av_log(NULL, AV_LOG_INFO, "\n");
 }
 
 static int opt_help(const char *opt, const char *arg)
@@ -3168,6 +3187,9 @@ int main(int argc, char **argv)
     avformat_network_init();
 
     init_opts();
+
+    signal(SIGINT , sigterm_handler); /* Interrupt (ANSI).    */
+    signal(SIGTERM, sigterm_handler); /* Termination (ANSI).  */
 
     show_banner(argc, argv, options);
 

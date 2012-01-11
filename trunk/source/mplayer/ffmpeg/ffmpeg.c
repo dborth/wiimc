@@ -1020,9 +1020,9 @@ static void do_audio_out(AVFormatContext *s, OutputStream *ost,
                          InputStream *ist, AVFrame *decoded_frame)
 {
     uint8_t *buftmp;
-    int64_t audio_out_size, audio_buf_size;
+    int64_t audio_out_size, audio_buf_size, size_out;
 
-    int size_out, frame_bytes, ret, resample_changed;
+    int frame_bytes, ret, resample_changed;
     AVCodecContext *enc = ost->st->codec;
     AVCodecContext *dec = ist->st->codec;
     int osize = av_get_bytes_per_sample(enc->sample_fmt);
@@ -1096,8 +1096,14 @@ need_realloc:
                 av_opt_set_int(ost->swr, "icl", av_get_default_channel_layout(ost->audio_channels_mapped), 0);
                 av_opt_set_int(ost->swr, "uch", ost->audio_channels_mapped, 0);
             }
-            av_opt_set_int(ost->swr, "ich", dec->channels, 0);
-            av_opt_set_int(ost->swr, "och", enc->channels, 0);
+            if (av_opt_set_int(ost->swr, "ich", dec->channels, 0) < 0) {
+                av_log(NULL, AV_LOG_FATAL, "Unsupported number of input channels\n");
+                exit_program(1);
+            }
+            if (av_opt_set_int(ost->swr, "och", enc->channels, 0) < 0) {
+                av_log(NULL, AV_LOG_FATAL, "Unsupported number of output channels\n");
+                exit_program(1);
+            }
             if(audio_sync_method>1) av_opt_set_int(ost->swr, "flags", SWR_FLAG_RESAMPLE, 0);
             if(ost->swr && swr_init(ost->swr) < 0){
                 av_log(NULL, AV_LOG_FATAL, "swr_init() failed\n");
@@ -1154,7 +1160,7 @@ need_realloc:
                 av_log(NULL, AV_LOG_VERBOSE, "compensating audio timestamp drift:%f compensation:%d in:%d\n",
                        delta, comp, enc->sample_rate);
 //                fprintf(stderr, "drift:%f len:%d opts:%"PRId64" ipts:%"PRId64" fifo:%d\n", delta, -1, ost->sync_opts, (int64_t)(get_sync_ipts(ost) * enc->sample_rate), av_fifo_size(ost->fifo)/(ost->st->codec->channels * 2));
-                swr_compensate(ost->swr, comp, enc->sample_rate);
+                swr_set_compensation(ost->swr, comp, enc->sample_rate);
             }
         }
     } else
@@ -4587,9 +4593,9 @@ static int opt_audio_qscale(OptionsContext *o, const char *opt, const char *arg)
 
 static void show_usage(void)
 {
-    printf("Hyper fast Audio and Video encoder\n");
-    printf("usage: %s [options] [[infile options] -i infile]... {[outfile options] outfile}...\n", program_name);
-    printf("\n");
+    av_log(NULL, AV_LOG_INFO, "Hyper fast Audio and Video encoder\n");
+    av_log(NULL, AV_LOG_INFO, "usage: %s [options] [[infile options] -i infile]... {[outfile options] outfile}...\n", program_name);
+    av_log(NULL, AV_LOG_INFO, "\n");
 }
 
 static int opt_help(const char *opt, const char *arg)

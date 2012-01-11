@@ -207,12 +207,12 @@ static void demux_ogg_add_sub(ogg_stream_t *os, ogg_packet *pack)
             duration  |= (unsigned char)packet[i];
         }
         if (hdrlen > 0 && duration > 0) {
-            float pts;
+            double pts;
 
             if (pack->granulepos == -1)
                 pack->granulepos = os->lastpos + os->lastsize;
-            pts    = (float)pack->granulepos / (float)os->samplerate;
-            endpts = 1.0 + pts + (float)duration / 1000.0;
+            pts    = (double)pack->granulepos / (double)os->samplerate;
+            endpts = 1.0 + pts + (double)duration / 1000.0;
         }
         sub_clear_text(&ogg_sub, MP_NOPTS_VALUE);
         sub_add_text(&ogg_sub, &packet[lcv], pack->bytes - lcv, endpts, 1);
@@ -262,7 +262,7 @@ static int demux_ogg_get_page_stream(ogg_demuxer_t *ogg_d,
 }
 
 static unsigned char *demux_ogg_read_packet(ogg_stream_t *os, ogg_packet *pack,
-                                            float *pts, int *flags,
+                                            double *pts, int *flags,
                                             int samplesize)
 {
     unsigned char *data = pack->packet;
@@ -289,7 +289,7 @@ static unsigned char *demux_ogg_read_packet(ogg_stream_t *os, ogg_packet *pack,
             } else
                 *flags = 1;
             if (vi)
-                *pts = pack->granulepos / (float)vi->rate;
+                *pts = pack->granulepos / (double)vi->rate;
             os->lastsize = blocksize;
             os->lastpos  = pack->granulepos;
         }
@@ -484,7 +484,7 @@ static int demux_ogg_add_packet(demux_stream_t *ds, ogg_stream_t *os,
     demuxer_t *d = ds->demuxer;
     demux_packet_t *dp;
     unsigned char *data;
-    float pts = 0;
+    double pts = 0;
     int flags = 0;
     int samplesize = 1;
 
@@ -613,7 +613,7 @@ static void demux_ogg_scan_stream(demuxer_t *demuxer)
         }
         p = 0;
         while (ogg_stream_packetout(oss, &op) == 1) {
-            float pts;
+            double pts;
             int flags;
 
             demux_ogg_read_packet(os, &op, &pts, &flags, samplesize);
@@ -1417,14 +1417,14 @@ static void demux_ogg_seek(demuxer_t *demuxer, float rel_seek_secs,
     ogg_stream_t *os;
     demux_stream_t *ds;
     ogg_packet op;
-    float rate;
+    double rate;
     int i, sp, first, precision = 1, do_seek = 1;
     vorbis_info *vi = NULL;
     int64_t gp = 0, old_gp;
     off_t pos, old_pos;
     int np;
     int is_gp_valid;
-    float pts;
+    double pts;
     int is_keyframe;
     int samplesize = 1;
     ogg_int64_t granulepos_orig;
@@ -1436,7 +1436,7 @@ static void demux_ogg_seek(demuxer_t *demuxer, float rel_seek_secs,
         ds         = demuxer->audio;
         os         = &ogg_d->subs[ds->id];
         vi         = &(os->vi);
-        rate       = (float)vi->rate;
+        rate       = vi->rate;
         samplesize = ((sh_audio_t*)ds->sh)->samplesize;
     }
 
@@ -1625,7 +1625,7 @@ static int demux_ogg_control(demuxer_t *demuxer, int cmd, void *arg)
 {
     ogg_demuxer_t *ogg_d = demuxer->priv;
     ogg_stream_t *os;
-    float rate;
+    double rate;
 
     if (demuxer->video->id >= 0) {
         os = &ogg_d->subs[demuxer->video->id];

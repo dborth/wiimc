@@ -179,6 +179,24 @@ void uiEventHandling( int msg,float param )
 	goto play;
 #endif
 #ifdef CONFIG_DVDREAD
+   case ivSetDVDSubtitle:
+        dvdsub_id=iparam;
+        goto play_dvd_2;
+        break;
+   case ivSetDVDAudio:
+        audio_id=iparam;
+        goto play_dvd_2;
+        break;
+   case ivSetDVDChapter:
+        guiInfo.Chapter=iparam;
+        goto play_dvd_2;
+        break;
+   case ivSetDVDTitle:
+        guiInfo.Track=iparam;
+        guiInfo.Chapter=1;
+        guiInfo.Angle=1;
+        goto play_dvd_2;
+        break;
    case evPlayDVD:
         guiInfo.Track=1;
         guiInfo.Chapter=1;
@@ -244,26 +262,6 @@ play:
          }
         uiPlay();
         break;
-#ifdef CONFIG_DVDREAD
-   case ivSetDVDSubtitle:
-        dvdsub_id=iparam;
-        goto play_dvd_2;
-        break;
-   case ivSetDVDAudio:
-        audio_id=iparam;
-        goto play_dvd_2;
-        break;
-   case ivSetDVDChapter:
-        guiInfo.Chapter=iparam;
-        goto play_dvd_2;
-        break;
-   case ivSetDVDTitle:
-        guiInfo.Track=iparam;
-	guiInfo.Chapter=1;
-	guiInfo.Angle=1;
-        goto play_dvd_2;
-        break;
-#endif
 
    case evPause:
    case evPauseSwitchToPlay:
@@ -423,14 +421,12 @@ set_volume:
 	wsPostRedisplay( &guiApp.playbarWindow );
         break;
 // --- system events
-#ifdef MP_DEBUG
    case evNone:
-        mp_msg( MSGT_GPLAYER,MSGL_STATUS,"[mw] event none received.\n" );
+        mp_msg( MSGT_GPLAYER,MSGL_DBG2,"[main] uiEventHandling: evNone\n" );
         break;
    default:
-        mp_msg( MSGT_GPLAYER,MSGL_STATUS,"[mw] unknown event received ( %d,%.2f ).\n",msg,param );
+        mp_msg( MSGT_GPLAYER,MSGL_DBG2,"[main] uiEventHandling: unknown event %d, param %.2f\n", msg, param );
         break;
-#endif
   }
 }
 

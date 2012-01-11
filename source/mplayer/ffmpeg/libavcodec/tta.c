@@ -326,7 +326,7 @@ static int tta_decode_frame(AVCodecContext *avctx, void *data,
 
     // decode directly to output buffer for 24-bit sample format
     if (s->bps == 3)
-        s->decode_buffer = data;
+        s->decode_buffer = s->frame.data[0];
 
     // init per channel states
     for (i = 0; i < s->channels; i++) {
@@ -438,8 +438,6 @@ static int tta_decode_frame(AVCodecContext *avctx, void *data,
                 s->decode_buffer = NULL;
                 break;
             }
-            default:
-                av_log(s->avctx, AV_LOG_ERROR, "Error, only 16bit samples supported!\n");
         }
 
     *got_frame_ptr   = 1;

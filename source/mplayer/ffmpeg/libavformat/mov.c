@@ -36,6 +36,7 @@
 #include "riff.h"
 #include "isom.h"
 #include "libavcodec/get_bits.h"
+#include "libavcodec/timecode.h"
 #include "id3v1.h"
 #include "mov_chan.h"
 
@@ -575,7 +576,8 @@ static int mov_read_chan(MOVContext *c, AVIOContext *pb, MOVAtom atom)
 {
     AVStream *st;
     uint8_t version;
-    uint32_t flags, layout_tag, bitmap, num_descr;
+    uint32_t flags, layout_tag, bitmap, num_descr, label_mask;
+    int i;
 
     if (c->fc->nb_streams < 1)
         return 0;
@@ -597,9 +599,7 @@ static int mov_read_chan(MOVContext *c, AVIOContext *pb, MOVAtom atom)
     av_dlog(c->fc, "chan: size=%" PRId64 " version=%u flags=%u layout=%u bitmap=%u num_descr=%u\n",
             atom.size, version, flags, layout_tag, bitmap, num_descr);
 
-#if 0
-    /* TODO: use the channel descriptions if the layout tag is 0 */
-    int i;
+    label_mask = 0;
     for (i = 0; i < num_descr; i++) {
         uint32_t label, cflags;
         float coords[3];
@@ -608,10 +608,19 @@ static int mov_read_chan(MOVContext *c, AVIOContext *pb, MOVAtom atom)
         AV_WN32(&coords[0], avio_rl32(pb)); // mCoordinates[0]
         AV_WN32(&coords[1], avio_rl32(pb)); // mCoordinates[1]
         AV_WN32(&coords[2], avio_rl32(pb)); // mCoordinates[2]
+        if (layout_tag == 0) {
+            uint32_t mask_incr = ff_mov_get_channel_label(label);
+            if (mask_incr == 0) {
+                label_mask = 0;
+                break;
+            }
+            label_mask |= mask_incr;
+        }
     }
-#endif
-
-    st->codec->channel_layout = ff_mov_get_channel_layout(layout_tag, bitmap);
+    if (layout_tag == 0)
+        st->codec->channel_layout = label_mask;
+    else
+        st->codec->channel_layout = ff_mov_get_channel_layout(layout_tag, bitmap);
 
     return 0;
 }
@@ -1372,9 +1381,9 @@ int ff_mov_read_stsd_entries(MOVContext *c, AVIOContext *pb, int entries)
                 val = avio_rb32(pb); /* flags */
                 if (val & 1)
                     st->codec->flags2 |= CODEC_FLAG2_DROP_FRAME_TIMECODE;
-                avio_rb32(pb);
-                avio_rb32(pb);
-                st->codec->time_base.den = avio_r8(pb);
+                avio_rb32(pb); /* time scale */
+                avio_rb32(pb); /* frame duration */
+                st->codec->time_base.den = avio_r8(pb); /* number of frame */
                 st->codec->time_base.num = 1;
             }
             /* other codec type, just skip (rtp, mp4s, ...) */
@@ -2615,6 +2624,46 @@ finish:
     avio_seek(sc->pb, cur_pos, SEEK_SET);
 }
 
+static int parse_timecode_in_framenum_format(AVFormatContext *s, AVStream *st,
+                                             uint32_t value)
+{
+    char buf[16];
+    struct ff_timecode tc = {
+        .drop  = st->codec->flags2 & CODEC_FLAG2_DROP_FRAME_TIMECODE,
+        .rate  = (AVRational){st->codec->time_base.den,
+                              st->codec->time_base.num},
+    };
+
+    if (avpriv_check_timecode_rate(s, tc.rate, tc.drop) < 0)
+        return AVERROR(EINVAL);
+    av_dict_set(&st->metadata, "timecode",
+                avpriv_timecode_to_string(buf, &tc, value), 0);
+    return 0;
+}
+
+static int mov_read_timecode_track(AVFormatContext *s, AVStream *st)
+{
+    MOVStreamContext *sc = st->priv_data;
+    int64_t cur_pos = avio_tell(sc->pb);
+    uint32_t value;
+
+    if (!st->nb_index_entries)
+        return -1;
+
+    avio_seek(sc->pb, st->index_entries->pos, SEEK_SET);
+    value = avio_rb32(s->pb);
+
+    /* Assume Counter flag is set to 1 in tmcd track (even though it is likely
+     * not the case) and thus assume "frame number format" instead of QT one.
+     * No sample with tmcd track can be found with a QT timecode at the moment,
+     * despite what the tmcd track "suggests" (Counter flag set to 0 means QT
+     * format). */
+    parse_timecode_in_framenum_format(s, st, value);
+
+    avio_seek(sc->pb, cur_pos, SEEK_SET);
+    return 0;
+}
+
 static int mov_read_header(AVFormatContext *s, AVFormatParameters *ap)
 {
     MOVContext *mov = s->priv_data;
@@ -2640,8 +2689,14 @@ static int mov_read_header(AVFormatContext *s, AVFormatParameters *ap)
     }
     av_dlog(mov->fc, "on_parse_exit_offset=%"PRId64"\n", avio_tell(pb));
 
-    if (pb->seekable && mov->chapter_track > 0)
-        mov_read_chapters(s);
+    if (pb->seekable) {
+        int i;
+        if (mov->chapter_track > 0)
+            mov_read_chapters(s);
+        for (i = 0; i < s->nb_streams; i++)
+            if (s->streams[i]->codec->codec_tag == AV_RL32("tmcd"))
+                mov_read_timecode_track(s, s->streams[i]);
+    }
 
     return 0;
 }

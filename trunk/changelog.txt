@@ -6,6 +6,15 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.2.1 - January 14, 2012]
+
+* Synced to MPlayer r34540 and ffmpeg a9bd29e15e8d
+* Fixed HTTP bugs that made YouTube unstable
+* Added thumbnails for YouTube
+* Improved video resizing granularity (thanks eric!)
+* Translation updates
+* Other minor bug fixes
+
 [1.2.0 - September 4, 2011]
 
 * Synced to MPlayer r34053 and libav 5938e0218543

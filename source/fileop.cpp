@@ -1415,14 +1415,20 @@ void GetExt(char *file, char *ext)
 	file_ext++;
 	int i = 0;
 
-	while(i < 6 && file_ext[i] != '?' && file_ext[i] != 0)
+	while(i < 6 && file_ext[i] != 0)
 	{
+		if(!isalnum(file_ext[i]))
+		{
+			ext[0] = 0;
+			return;
+		}
+		
 		ext[i] = file_ext[i];
 		i++;
 	}
 
 	// extension is too long
-	if(i == 6 && file_ext[i] != '?' && file_ext[i] != 0)
+	if(i == 6 && file_ext[i] != 0)
 	{
 		ext[0] = 0;
 		return;

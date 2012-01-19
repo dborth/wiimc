@@ -302,6 +302,9 @@ static int init_image(TiffContext *s)
     case 483:
         s->avctx->pix_fmt = s->le ? PIX_FMT_RGB48LE : PIX_FMT_RGB48BE;
         break;
+    case 644:
+        s->avctx->pix_fmt = s->le ? PIX_FMT_RGBA64LE : PIX_FMT_RGBA64BE;
+        break;
     default:
         av_log(s->avctx, AV_LOG_ERROR,
                "This format is not supported (bpp=%d, bppcount=%d)\n",
@@ -485,6 +488,13 @@ static int tiff_decode_tag(TiffContext *s, const uint8_t *start, const uint8_t *
             return -1;
         }
         break;
+    case TIFF_TILE_BYTE_COUNTS:
+    case TIFF_TILE_LENGTH:
+    case TIFF_TILE_OFFSETS:
+    case TIFF_TILE_WIDTH:
+        av_log(s->avctx, AV_LOG_ERROR, "Tiled images are not supported\n");
+        return AVERROR_PATCHWELCOME;
+        break;
     case TIFF_PREDICTOR:
         s->predictor = value;
         break;
@@ -640,13 +650,15 @@ static int decode_frame(AVCodecContext *avctx,
         dst = p->data[0];
         soff = s->bpp >> 3;
         ssize = s->width * soff;
-        if (s->avctx->pix_fmt == PIX_FMT_RGB48LE) {
+        if (s->avctx->pix_fmt == PIX_FMT_RGB48LE ||
+            s->avctx->pix_fmt == PIX_FMT_RGBA64LE) {
             for (i = 0; i < s->height; i++) {
                 for (j = soff; j < ssize; j += 2)
                     AV_WL16(dst + j, AV_RL16(dst + j) + AV_RL16(dst + j - soff));
                 dst += stride;
             }
-        } else if (s->avctx->pix_fmt == PIX_FMT_RGB48BE) {
+        } else if (s->avctx->pix_fmt == PIX_FMT_RGB48BE ||
+                   s->avctx->pix_fmt == PIX_FMT_RGBA64BE) {
             for (i = 0; i < s->height; i++) {
                 for (j = soff; j < ssize; j += 2)
                     AV_WB16(dst + j, AV_RB16(dst + j) + AV_RB16(dst + j - soff));

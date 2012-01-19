@@ -287,6 +287,8 @@ static void wtvfile_close(AVIOContext *pb)
 {
     WtvFile *wf = pb->opaque;
     av_free(wf->sectors);
+    av_freep(&pb->opaque);
+    av_freep(&pb->buffer);
     av_free(pb);
 }
 
@@ -1022,6 +1024,7 @@ static int read_seek(AVFormatContext *s, int stream_index,
 static int read_close(AVFormatContext *s)
 {
     WtvContext *wtv = s->priv_data;
+    av_freep(&wtv->index_entries);
     wtvfile_close(wtv->pb);
     return 0;
 }

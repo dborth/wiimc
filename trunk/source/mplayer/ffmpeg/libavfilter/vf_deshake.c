@@ -67,6 +67,11 @@ enum SearchMethod {
 };
 
 typedef struct {
+    int x;             ///< Horizontal shift
+    int y;             ///< Vertical shift
+} IntMotionVector;
+
+typedef struct {
     double x;             ///< Horizontal shift
     double y;             ///< Vertical shift
 } MotionVector;
@@ -129,7 +134,7 @@ static double clean_mean(double *values, int count)
  */
 static void find_block_motion(DeshakeContext *deshake, uint8_t *src1,
                               uint8_t *src2, int cx, int cy, int stride,
-                              MotionVector *mv)
+                              IntMotionVector *mv)
 {
     int x, y;
     int diff;
@@ -222,7 +227,7 @@ static int block_contrast(uint8_t *src, int x, int y, int stride, int blocksize)
 /**
  * Find the rotation for a given block.
  */
-static double block_angle(int x, int y, int cx, int cy, MotionVector *shift)
+static double block_angle(int x, int y, int cx, int cy, IntMotionVector *shift)
 {
     double a1, a2, diff;
 
@@ -247,15 +252,13 @@ static void find_motion(DeshakeContext *deshake, uint8_t *src1, uint8_t *src2,
                         int width, int height, int stride, Transform *t)
 {
     int x, y;
-    MotionVector mv = {0, 0};
+    IntMotionVector mv = {0, 0};
     int counts[128][128];
     int count_max_value = 0;
     int contrast;
 
     int pos;
     double *angles = av_malloc(sizeof(*angles) * width * height / (16 * deshake->blocksize));
-    double totalangles = 0;
-
     int center_x = 0, center_y = 0;
     double p_x, p_y;
 
@@ -278,7 +281,7 @@ static void find_motion(DeshakeContext *deshake, uint8_t *src1, uint8_t *src2,
                 //av_log(NULL, AV_LOG_ERROR, "%d\n", contrast);
                 find_block_motion(deshake, src1, src2, x, y, stride, &mv);
                 if (mv.x != -1 && mv.y != -1) {
-                    counts[(int)(mv.x + deshake->rx)][(int)(mv.y + deshake->ry)] += 1;
+                    counts[mv.x + deshake->rx][mv.y + deshake->ry] += 1;
                     if (x > deshake->rx && y > deshake->ry)
                         angles[pos++] = block_angle(x, y, 0, 0, &mv);
 
@@ -293,13 +296,6 @@ static void find_motion(DeshakeContext *deshake, uint8_t *src1, uint8_t *src2,
 
     center_x /= pos;
     center_y /= pos;
-
-    for (x = 0; x < pos; x++) {
-        totalangles += angles[x];
-    }
-
-    //av_log(NULL, AV_LOG_ERROR, "Angle: %lf\n", totalangles / (pos - 1));
-    t->angle = totalangles / (pos - 1);
 
     t->angle = clean_mean(angles, pos);
     if (t->angle < 0.001)
@@ -428,11 +424,10 @@ static void end_frame(AVFilterLink *link)
     DeshakeContext *deshake = link->dst->priv;
     AVFilterBufferRef *in  = link->cur_buf;
     AVFilterBufferRef *out = link->dst->outputs[0]->out_buf;
-    Transform t;
+    Transform t = {{0},0}, orig = {{0},0};
     float matrix[9];
     float alpha = 2.0 / deshake->refcount;
     char tmp[256];
-    Transform orig;
 
     if (deshake->cx < 0 || deshake->cy < 0 || deshake->cw < 0 || deshake->ch < 0) {
         // Find the most likely global motion for the current frame

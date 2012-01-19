@@ -77,7 +77,7 @@ void av_noreturn exit_program(int ret)
 }
 
 struct unit_value {
-    union { double d; int i; } val;
+    union { double d; long long int i; } val;
     const char *unit;
 };
 
@@ -104,29 +104,30 @@ static char *value_string(char *buf, int buf_size, struct unit_value uv)
         snprintf(buf, buf_size, "%d:%02d:%09.6f", hours, mins, secs);
     } else if (use_value_prefix) {
         const char *prefix_string;
-        int index, l;
+        long long int index;
+        int l;
 
         if (uv.unit == unit_byte_str && use_byte_value_binary_prefix) {
-            index = (int) (log(vald)/log(2)) / 10;
-            index = av_clip(index, 0, FF_ARRAY_ELEMS(binary_unit_prefixes) -1);
-            vald /= pow(2, index*10);
+            index = (long long int) (log(vald)/log(2)) / 10;
+            index = av_clip(index, 0, FF_ARRAY_ELEMS(binary_unit_prefixes) - 1);
+            vald /= pow(2, index * 10);
             prefix_string = binary_unit_prefixes[index];
         } else {
-            index = (int) (log10(vald)) / 3;
-            index = av_clip(index, 0, FF_ARRAY_ELEMS(decimal_unit_prefixes) -1);
-            vald /= pow(10, index*3);
+            index = (long long int) (log10(vald)) / 3;
+            index = av_clip(index, 0, FF_ARRAY_ELEMS(decimal_unit_prefixes) - 1);
+            vald /= pow(10, index * 3);
             prefix_string = decimal_unit_prefixes[index];
         }
 
-        if (show_float || vald != (int)vald) l = snprintf(buf, buf_size, "%.3f", vald);
-        else                                 l = snprintf(buf, buf_size, "%d",   (int)vald);
+        if (show_float || vald != (long long int)vald) l = snprintf(buf, buf_size, "%.3f", vald);
+        else                                           l = snprintf(buf, buf_size, "%lld", (long long int)vald);
         snprintf(buf+l, buf_size-l, "%s%s%s", prefix_string || show_value_unit ? " " : "",
                  prefix_string, show_value_unit ? uv.unit : "");
     } else {
         int l;
 
         if (show_float) l = snprintf(buf, buf_size, "%.3f", vald);
-        else            l = snprintf(buf, buf_size, "%d",   (int)vald);
+        else            l = snprintf(buf, buf_size, "%lld", (long long int)vald);
         snprintf(buf+l, buf_size-l, "%s%s", show_value_unit ? " " : "",
                  show_value_unit ? uv.unit : "");
     }
@@ -1290,26 +1291,10 @@ static void show_frame(WriterContext *w, AVFrame *frame, AVStream *stream)
     const char *s;
 
     print_section_header("frame");
-    print_str("media_type",             "video");
-    print_int("width",                  frame->width);
-    print_int("height",                 frame->height);
-    s = av_get_pix_fmt_name(frame->format);
-    if (s) print_str    ("pix_fmt", s);
-    else   print_str_opt("pix_fmt", "unknown");
-    if (frame->sample_aspect_ratio.num) {
-        print_fmt("sample_aspect_ratio", "%d:%d",
-                  frame->sample_aspect_ratio.num,
-                  frame->sample_aspect_ratio.den);
-    } else {
-        print_str_opt("sample_aspect_ratio", "N/A");
-    }
-    print_fmt("pict_type",              "%c", av_get_picture_type_char(frame->pict_type));
-    print_int("coded_picture_number",   frame->coded_picture_number);
-    print_int("display_picture_number", frame->display_picture_number);
-    print_int("interlaced_frame",       frame->interlaced_frame);
-    print_int("top_field_first",        frame->top_field_first);
-    print_int("repeat_pict",            frame->repeat_pict);
-    print_int("reference",              frame->reference);
+
+    s = av_get_media_type_string(stream->codec->codec_type);
+    if (s) print_str    ("media_type", s);
+    else   print_str_opt("media_type", "unknown");
     print_int("key_frame",              frame->key_frame);
     print_ts  ("pkt_pts",               frame->pkt_pts);
     print_time("pkt_pts_time",          frame->pkt_pts, &stream->time_base);
@@ -1317,40 +1302,89 @@ static void show_frame(WriterContext *w, AVFrame *frame, AVStream *stream)
     print_time("pkt_dts_time",          frame->pkt_dts, &stream->time_base);
     if (frame->pkt_pos != -1) print_fmt    ("pkt_pos", "%"PRId64, frame->pkt_pos);
     else                      print_str_opt("pkt_pos", "N/A");
+
+    switch (stream->codec->codec_type) {
+    case AVMEDIA_TYPE_VIDEO:
+        print_int("width",                  frame->width);
+        print_int("height",                 frame->height);
+        s = av_get_pix_fmt_name(frame->format);
+        if (s) print_str    ("pix_fmt", s);
+        else   print_str_opt("pix_fmt", "unknown");
+        if (frame->sample_aspect_ratio.num) {
+            print_fmt("sample_aspect_ratio", "%d:%d",
+                      frame->sample_aspect_ratio.num,
+                      frame->sample_aspect_ratio.den);
+        } else {
+            print_str_opt("sample_aspect_ratio", "N/A");
+        }
+        print_fmt("pict_type",              "%c", av_get_picture_type_char(frame->pict_type));
+        print_int("coded_picture_number",   frame->coded_picture_number);
+        print_int("display_picture_number", frame->display_picture_number);
+        print_int("interlaced_frame",       frame->interlaced_frame);
+        print_int("top_field_first",        frame->top_field_first);
+        print_int("repeat_pict",            frame->repeat_pict);
+        print_int("reference",              frame->reference);
+        break;
+
+    case AVMEDIA_TYPE_AUDIO:
+        s = av_get_sample_fmt_name(frame->format);
+        if (s) print_str    ("sample_fmt", s);
+        else   print_str_opt("sample_fmt", "unknown");
+        print_int("nb_samples",         frame->nb_samples);
+        break;
+    }
+
     print_section_footer("frame");
 
     av_free(pbuf.s);
     fflush(stdout);
 }
 
-static av_always_inline int get_video_frame(AVFormatContext *fmt_ctx,
-                                            AVFrame *frame, AVPacket *pkt)
+static av_always_inline int get_decoded_frame(AVFormatContext *fmt_ctx,
+                                              AVFrame *frame, int *got_frame,
+                                              AVPacket *pkt)
 {
     AVCodecContext *dec_ctx = fmt_ctx->streams[pkt->stream_index]->codec;
-    int got_picture = 0;
+    int ret = 0;
 
-    if (dec_ctx->codec_id   != CODEC_ID_NONE &&
-        dec_ctx->codec_type == AVMEDIA_TYPE_VIDEO)
-        avcodec_decode_video2(dec_ctx, frame, &got_picture, pkt);
-    return got_picture;
+    *got_frame = 0;
+    switch (dec_ctx->codec_type) {
+    case AVMEDIA_TYPE_VIDEO:
+        ret = avcodec_decode_video2(dec_ctx, frame, got_frame, pkt);
+        break;
+
+    case AVMEDIA_TYPE_AUDIO:
+        ret = avcodec_decode_audio4(dec_ctx, frame, got_frame, pkt);
+        break;
+    }
+
+    return ret;
 }
 
 static void show_packets(WriterContext *w, AVFormatContext *fmt_ctx)
 {
-    AVPacket pkt;
+    AVPacket pkt, pkt1;
     AVFrame frame;
-    int i = 0;
+    int i = 0, ret, got_frame;
 
     av_init_packet(&pkt);
 
     while (!av_read_frame(fmt_ctx, &pkt)) {
         if (do_show_packets)
             show_packet(w, fmt_ctx, &pkt, i++);
-        if (do_show_frames &&
-            get_video_frame(fmt_ctx, &frame, &pkt)) {
-            show_frame(w, &frame, fmt_ctx->streams[pkt.stream_index]);
-            av_destruct_packet(&pkt);
+        if (do_show_frames) {
+            pkt1 = pkt;
+            while (1) {
+                avcodec_get_frame_defaults(&frame);
+                ret = get_decoded_frame(fmt_ctx, &frame, &got_frame, &pkt1);
+                if (ret < 0 || !got_frame)
+                    break;
+                show_frame(w, &frame, fmt_ctx->streams[pkt.stream_index]);
+                pkt1.data += ret;
+                pkt1.size -= ret;
+            }
         }
+        av_free_packet(&pkt);
     }
     av_init_packet(&pkt);
     pkt.data = NULL;
@@ -1358,7 +1392,7 @@ static void show_packets(WriterContext *w, AVFormatContext *fmt_ctx)
     //Flush remaining frames that are cached in the decoder
     for (i = 0; i < fmt_ctx->nb_streams; i++) {
         pkt.stream_index = i;
-        while (get_video_frame(fmt_ctx, &frame, &pkt))
+        while (get_decoded_frame(fmt_ctx, &frame, &got_frame, &pkt) >= 0 && got_frame)
             show_frame(w, &frame, fmt_ctx->streams[pkt.stream_index]);
     }
 }
@@ -1483,7 +1517,7 @@ static void show_streams(WriterContext *w, AVFormatContext *fmt_ctx)
 static void show_format(WriterContext *w, AVFormatContext *fmt_ctx)
 {
     char val_str[128];
-    int64_t size = avio_size(fmt_ctx->pb);
+    int64_t size = fmt_ctx->pb ? avio_size(fmt_ctx->pb) : -1;
 
     print_section_header("format");
     print_str("filename",         fmt_ctx->filename);
@@ -1523,7 +1557,8 @@ static int open_input_file(AVFormatContext **fmt_ctx_ptr, const char *filename)
     AVFormatContext *fmt_ctx = NULL;
     AVDictionaryEntry *t;
 
-    if ((err = avformat_open_input(&fmt_ctx, filename, iformat, &format_opts)) < 0) {
+    if ((err = avformat_open_input(&fmt_ctx, filename,
+                                   iformat, &format_opts)) < 0) {
         print_error(filename, err);
         return err;
     }
@@ -1547,8 +1582,9 @@ static int open_input_file(AVFormatContext **fmt_ctx_ptr, const char *filename)
         AVCodec *codec;
 
         if (!(codec = avcodec_find_decoder(stream->codec->codec_id))) {
-            av_log(NULL, AV_LOG_ERROR, "Unsupported codec with id %d for input stream %d\n",
-                   stream->codec->codec_id, stream->index);
+            av_log(NULL, AV_LOG_ERROR,
+                    "Unsupported codec with id %d for input stream %d\n",
+                    stream->codec->codec_id, stream->index);
         } else if (avcodec_open2(stream->codec, codec, NULL) < 0) {
             av_log(NULL, AV_LOG_ERROR, "Error while opening codec for input stream %d\n",
                    stream->index);
@@ -1666,8 +1702,9 @@ static int opt_format(const char *opt, const char *arg)
 static void opt_input_file(void *optctx, const char *arg)
 {
     if (input_filename) {
-        av_log(NULL, AV_LOG_ERROR, "Argument '%s' provided as input filename, but '%s' was already specified.\n",
-               arg, input_filename);
+        av_log(NULL, AV_LOG_ERROR,
+                "Argument '%s' provided as input filename, but '%s' was already specified.\n",
+                arg, input_filename);
         exit(1);
     }
     if (!strcmp(arg, "-"))
@@ -1739,6 +1776,7 @@ int main(int argc, char **argv)
     char *w_name = NULL, *w_args = NULL;
     int ret;
 
+    av_log_set_flags(AV_LOG_SKIP_REPEATED);
     parse_loglevel(argc, argv, options);
     av_register_all();
     avformat_network_init();

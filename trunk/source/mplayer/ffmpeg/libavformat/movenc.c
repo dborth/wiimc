@@ -1036,6 +1036,7 @@ static int mov_write_dref_tag(AVIOContext *pb)
     avio_wb32(pb, 1); /* entry count */
 
     avio_wb32(pb, 0xc); /* size */
+    //FIXME add the alis and rsrc atom
     ffio_wfourcc(pb, "url ");
     avio_wb32(pb, 1); /* version & flags */
 
@@ -1829,32 +1830,32 @@ static int mov_write_udta_tag(AVIOContext *pb, MOVMuxContext *mov,
     if(ret < 0)
         return ret;
 
-        if (mov->mode & MODE_3GP) {
-            mov_write_3gp_udta_tag(pb_buf, s, "perf", "artist");
-            mov_write_3gp_udta_tag(pb_buf, s, "titl", "title");
-            mov_write_3gp_udta_tag(pb_buf, s, "auth", "author");
-            mov_write_3gp_udta_tag(pb_buf, s, "gnre", "genre");
-            mov_write_3gp_udta_tag(pb_buf, s, "dscp", "comment");
-            mov_write_3gp_udta_tag(pb_buf, s, "albm", "album");
-            mov_write_3gp_udta_tag(pb_buf, s, "cprt", "copyright");
-            mov_write_3gp_udta_tag(pb_buf, s, "yrrc", "date");
-        } else if (mov->mode == MODE_MOV) { // the title field breaks gtkpod with mp4 and my suspicion is that stuff is not valid in mp4
-            mov_write_string_metadata(s, pb_buf, "\251ART", "artist"     , 0);
-            mov_write_string_metadata(s, pb_buf, "\251nam", "title"      , 0);
-            mov_write_string_metadata(s, pb_buf, "\251aut", "author"     , 0);
-            mov_write_string_metadata(s, pb_buf, "\251alb", "album"      , 0);
-            mov_write_string_metadata(s, pb_buf, "\251day", "date"       , 0);
-            mov_write_string_metadata(s, pb_buf, "\251swr", "encoder"    , 0);
-            mov_write_string_metadata(s, pb_buf, "\251des", "comment"    , 0);
-            mov_write_string_metadata(s, pb_buf, "\251gen", "genre"      , 0);
-            mov_write_string_metadata(s, pb_buf, "\251cpy", "copyright"  , 0);
-        } else {
-            /* iTunes meta data */
-            mov_write_meta_tag(pb_buf, mov, s);
-        }
+    if (mov->mode & MODE_3GP) {
+        mov_write_3gp_udta_tag(pb_buf, s, "perf", "artist");
+        mov_write_3gp_udta_tag(pb_buf, s, "titl", "title");
+        mov_write_3gp_udta_tag(pb_buf, s, "auth", "author");
+        mov_write_3gp_udta_tag(pb_buf, s, "gnre", "genre");
+        mov_write_3gp_udta_tag(pb_buf, s, "dscp", "comment");
+        mov_write_3gp_udta_tag(pb_buf, s, "albm", "album");
+        mov_write_3gp_udta_tag(pb_buf, s, "cprt", "copyright");
+        mov_write_3gp_udta_tag(pb_buf, s, "yrrc", "date");
+    } else if (mov->mode == MODE_MOV) { // the title field breaks gtkpod with mp4 and my suspicion is that stuff is not valid in mp4
+        mov_write_string_metadata(s, pb_buf, "\251ART", "artist"     , 0);
+        mov_write_string_metadata(s, pb_buf, "\251nam", "title"      , 0);
+        mov_write_string_metadata(s, pb_buf, "\251aut", "author"     , 0);
+        mov_write_string_metadata(s, pb_buf, "\251alb", "album"      , 0);
+        mov_write_string_metadata(s, pb_buf, "\251day", "date"       , 0);
+        mov_write_string_metadata(s, pb_buf, "\251swr", "encoder"    , 0);
+        mov_write_string_metadata(s, pb_buf, "\251des", "comment"    , 0);
+        mov_write_string_metadata(s, pb_buf, "\251gen", "genre"      , 0);
+        mov_write_string_metadata(s, pb_buf, "\251cpy", "copyright"  , 0);
+    } else {
+        /* iTunes meta data */
+        mov_write_meta_tag(pb_buf, mov, s);
+    }
 
-        if (s->nb_chapters)
-            mov_write_chpl_tag(pb_buf, s);
+    if (s->nb_chapters)
+        mov_write_chpl_tag(pb_buf, s);
 
     if ((size = avio_close_dyn_buf(pb_buf, &buf)) > 0) {
         avio_wb32(pb, size+8);
@@ -2570,7 +2571,8 @@ static int mov_write_header(AVFormatContext *s)
 #endif
     if (t = av_dict_get(s->metadata, "creation_time", NULL, 0))
         mov->time = ff_iso8601_to_unix_time(t->value);
-    mov->time += 0x7C25B080; //1970 based -> 1904 based
+    if (mov->time)
+        mov->time += 0x7C25B080; // 1970 based -> 1904 based
 
     if (mov->chapter_track)
         mov_create_chapter_track(s, mov->chapter_track);

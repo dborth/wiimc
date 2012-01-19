@@ -324,13 +324,14 @@ static int cache_execute_control(cache_vars_t *s) {
   double double_res;
   unsigned uint_res;
   int needs_flush = 0;
-  static u64 last;
-  u64 now;
+  static unsigned last;
+  int quit = s->control == -2;
+  uint64_t old_pos = s->stream->pos;
+  int old_eof = s->stream->eof;
 #ifdef GEKKO
   if(!s || !s->stream)
 	  return 0;
 #endif
-  int quit = s->control == -2;
   if (quit || !s->stream->control) {
     s->stream_time_length = 0;
     s->stream_time_pos = MP_NOPTS_VALUE;
@@ -338,15 +339,13 @@ static int cache_execute_control(cache_vars_t *s) {
     s->control = -1;
     return !quit;
   }
-
-  now = GetTimerMS();
-  if (now - last > 99) {
-	double len, pos;
-	if (s->stream->control(s->stream, STREAM_CTRL_GET_TIME_LENGTH, &len) == STREAM_OK)
-	  s->stream_time_length = len;
-	else
-	  s->stream_time_length = 0;
-	if (s->stream->control(s->stream, STREAM_CTRL_GET_CURRENT_TIME, &pos) == STREAM_OK)
+  if (GetTimerMS() - last > 99) {
+    double len, pos;
+    if (s->stream->control(s->stream, STREAM_CTRL_GET_TIME_LENGTH, &len) == STREAM_OK)
+      s->stream_time_length = len;
+    else
+      s->stream_time_length = 0;
+    if (s->stream->control(s->stream, STREAM_CTRL_GET_CURRENT_TIME, &pos) == STREAM_OK)
       s->stream_time_pos = pos;
     else
       s->stream_time_pos = MP_NOPTS_VALUE;
@@ -357,9 +356,8 @@ static int cache_execute_control(cache_vars_t *s) {
       return 0;
     }
 #endif
-	last = now;
+    last = GetTimerMS();
   }
-
   if (s->control == -1) return 1;
   switch (s->control) {
     case STREAM_CTRL_SEEK_TO_TIME:
@@ -385,11 +383,13 @@ static int cache_execute_control(cache_vars_t *s) {
       s->control_res = STREAM_UNSUPPORTED;
       break;
   }
-  if (needs_flush) {
+  if (s->control_res == STREAM_OK && needs_flush) {
     s->read_filepos = s->stream->pos;
     s->eof = s->stream->eof;
     cache_flush(s);
-  }
+  } else if (needs_flush &&
+             (old_pos != s->stream->pos || old_eof != s->stream->eof))
+    mp_msg(MSGT_STREAM, MSGL_ERR, "STREAM_CTRL changed stream pos but returned error, this is not allowed!\n");
   s->control = -1;
   return 1;
 }
@@ -699,8 +699,9 @@ int cache_stream_seek_long(stream_t *stream,off_t pos){
 }
 
 int cache_do_control(stream_t *stream, int cmd, void *arg) {
-  cache_vars_t* s = stream->cache_data;
+  int sleep_count = 0;
   int pos_change = 0;
+  cache_vars_t* s = stream->cache_data;
   switch (cmd) {
     case STREAM_CTRL_SEEK_TO_TIME:
       s->control_double_arg = *(double *)arg;
@@ -733,14 +734,20 @@ int cache_do_control(stream_t *stream, int cmd, void *arg) {
   }
   while (s->control != -1)
 	usec_sleep(CONTROL_SLEEP_TIME);
-  // to avoid unnecessary differences with non-cache behaviour,
-  // do this also on failure.
+
+  if (s->control_res != STREAM_OK)
+    return s->control_res;
+  // We cannot do this on failure, since this would cause the
+  // stream position to jump when e.g. STREAM_CTRL_SEEK_TO_TIME
+  // is unsupported - but in that case we need the old value
+  // to do the fallback seek.
+  // This unfortunately can lead to slightly different behaviour
+  // with and without cache if the protocol changes pos even
+  // when an error happened.
   if (pos_change) {
     stream->pos = s->read_filepos;
     stream->eof = s->eof;
   }
-  if (s->control_res != STREAM_OK)
-    return s->control_res;
   switch (cmd) {
     case STREAM_CTRL_GET_TIME_LENGTH:
     case STREAM_CTRL_GET_CURRENT_TIME:

@@ -184,18 +184,16 @@ static char * ao_driver[3];
 static char * vo_driver[3];
 static int    old_video_driver = 0;
 
-#ifdef CONFIG_DXR3
  void ShowDXR3Config( void );
  void HideDXR3Config( void );
-#endif
  void ShowAudioConfig( void );
  void HideAudioConfig( void );
 
-static gboolean prHScaler( GtkWidget * widget,GdkEventMotion  * event,gpointer user_data );
+static gboolean prHScaler( GtkWidget * widget,GdkEvent * event,gpointer user_data );
 static void prToggled( GtkToggleButton * togglebutton,gpointer user_data );
 static void prCListRow( GtkCList * clist,gint row,gint column,GdkEvent * event,gpointer user_data );
 #if defined(CONFIG_FREETYPE) || defined(CONFIG_ICONV)
-static void prEntry( GtkContainer * container,gpointer user_data );
+static void prEntry( GtkEditable * editable,gpointer user_data );
 #endif
 
 void ShowPreferences( void )
@@ -491,7 +489,7 @@ static void HidePreferences( void )
 }
 
 #if defined(CONFIG_FREETYPE) || defined(CONFIG_ICONV)
-static void prEntry( GtkContainer * container,gpointer user_data )
+static void prEntry( GtkEditable * editable,gpointer user_data )
 {
  const char * comment;
  int    i;
@@ -663,7 +661,7 @@ static void prButton( GtkButton * button, gpointer user_data )
   }
 }
 
-static gboolean prHScaler( GtkWidget * widget,GdkEventMotion  * event,gpointer user_data )
+static gboolean prHScaler( GtkWidget * widget,GdkEvent * event,gpointer user_data )
 {
  switch ( (int)user_data )
   {
@@ -1474,6 +1472,7 @@ static GList *appendESDDevices(GList *l)
 }
 #endif
 
+#if defined(CONFIG_OSS_AUDIO) || defined(CONFIG_ALSA) || defined(CONFIG_SDL) || defined (CONFIG_ESD)
 // Gets text string from a gtk entry, interpreting
 // MSGTR_PREFERENCES_DriverDefault as null string.
 static const char *getGtkEntryText(GtkWidget *from)
@@ -1494,6 +1493,7 @@ static void setGtkEntryText(GtkWidget *dest, char *to)
   }
   gtk_entry_set_text(GTK_ENTRY(dest),to);
 }
+#endif
 
        GtkWidget *AudioConfig;
 static GtkWidget *CEAudioDevice;
@@ -1706,7 +1706,6 @@ GtkWidget *create_AudioConfig( void ) {
   return AudioConfig;
 }
 
-#ifdef CONFIG_DXR3
 // --- dxr3 config box
 
 static GtkWidget * DXR3Config;
@@ -1826,5 +1825,3 @@ GtkWidget * create_DXR3Config( void )
 
  return DXR3Config;
 }
-
-#endif

@@ -253,7 +253,7 @@ Advanced options (experts only):
   --disable-armvfp         disable ARM VFP optimizations
   --disable-iwmmxt         disable iwmmxt optimizations
   --disable-mmi            disable MMI optimizations
-  --disable-neon           disable neon optimizations
+  --disable-neon           disable NEON optimizations
   --disable-vis            disable VIS optimizations
   --disable-yasm           disable use of yasm assembler
   --enable-pic             build position-independent code
@@ -3590,7 +3590,7 @@ get_version(){
 
 get_version LIBAVCODEC  libavcodec/version.h
 get_version LIBAVDEVICE libavdevice/avdevice.h
-get_version LIBAVFILTER libavfilter/avfilter.h
+get_version LIBAVFILTER libavfilter/version.h
 get_version LIBAVFORMAT libavformat/version.h
 get_version LIBAVUTIL   libavutil/avutil.h
 get_version LIBPOSTPROC libpostproc/postprocess.h

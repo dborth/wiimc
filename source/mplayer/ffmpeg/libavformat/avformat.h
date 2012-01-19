@@ -508,7 +508,6 @@ typedef struct AVInputFormat {
      */
     int (*read_close)(struct AVFormatContext *);
 
-#if FF_API_READ_SEEK
     /**
      * Seek to a given timestamp relative to the frames in
      * stream component stream_index.
@@ -517,9 +516,9 @@ typedef struct AVInputFormat {
      *              match is available.
      * @return >= 0 on success (but not necessarily the new offset)
      */
-    attribute_deprecated int (*read_seek)(struct AVFormatContext *,
-                                          int stream_index, int64_t timestamp, int flags);
-#endif
+    int (*read_seek)(struct AVFormatContext *,
+                     int stream_index, int64_t timestamp, int flags);
+
     /**
      * Get the next timestamp in stream[stream_index].time_base units.
      * @return the timestamp or AV_NOPTS_VALUE if an error occurred
@@ -1820,9 +1819,18 @@ int av_write_frame(AVFormatContext *s, AVPacket *pkt);
  * demuxer level.
  *
  * @param s media file handle
- * @param pkt The packet, which contains the stream_index, buf/buf_size,
-              dts/pts, ...
- * @return < 0 on error, = 0 if OK, 1 if end of stream wanted
+ * @param pkt The packet containing the data to be written. Libavformat takes
+ * ownership of the data and will free it when it sees fit using the packet's
+ * @ref AVPacket.destruct "destruct" field. The caller must not access the data
+ * after this function returns, as it may already be freed.
+ * Packet's @ref AVPacket.stream_index "stream_index" field must be set to the
+ * index of the corresponding stream in @ref AVFormatContext.streams
+ * "s.streams".
+ * It is very strongly recommended that timing information (@ref AVPacket.pts
+ * "pts", @ref AVPacket.dts "dts" @ref AVPacket.duration "duration") is set to
+ * correct values.
+ *
+ * @return 0 on success, a negative AVERROR on error.
  */
 int av_interleaved_write_frame(AVFormatContext *s, AVPacket *pkt);
 

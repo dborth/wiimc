@@ -339,8 +339,9 @@ av_cold int MPV_encode_init(AVCodecContext *avctx)
     s->height   = avctx->height;
     if (avctx->gop_size > 600 &&
         avctx->strict_std_compliance > FF_COMPLIANCE_EXPERIMENTAL) {
-        av_log(avctx, AV_LOG_ERROR,
-               "Warning keyframe interval too large! reducing it ...\n");
+        av_log(avctx, AV_LOG_WARNING,
+               "keyframe interval too large!, reducing it from %d to %d\n",
+               avctx->gop_size, 600);
         avctx->gop_size = 600;
     }
     s->gop_size     = avctx->gop_size;
@@ -500,8 +501,11 @@ av_cold int MPV_encode_init(AVCodecContext *avctx)
                    avctx->sample_aspect_ratio.num,  avctx->sample_aspect_ratio.den, 255);
     }
 
-    if ((s->flags & (CODEC_FLAG_INTERLACED_DCT | CODEC_FLAG_INTERLACED_ME |
-                     CODEC_FLAG_ALT_SCAN)) &&
+    if ((s->flags & (CODEC_FLAG_INTERLACED_DCT | CODEC_FLAG_INTERLACED_ME
+#if FF_API_MPEGVIDEO_GLOBAL_OPTS
+                    | CODEC_FLAG_ALT_SCAN
+#endif
+        )) &&
         s->codec_id != CODEC_ID_MPEG4 && s->codec_id != CODEC_ID_MPEG2VIDEO) {
         av_log(avctx, AV_LOG_ERROR, "interlacing not supported by codec\n");
         return -1;
@@ -533,12 +537,14 @@ av_cold int MPV_encode_init(AVCodecContext *avctx)
         return -1;
     }
 
+#if FF_API_MPEGVIDEO_GLOBAL_OPTS
     if ((s->flags2 & CODEC_FLAG2_INTRA_VLC) &&
         s->codec_id != CODEC_ID_MPEG2VIDEO) {
         av_log(avctx, AV_LOG_ERROR,
                "intra vlc table not supported by codec\n");
         return -1;
     }
+#endif
 
     if (s->flags & CODEC_FLAG_LOW_DELAY) {
         if (s->codec_id != CODEC_ID_MPEG2VIDEO) {
@@ -572,8 +578,11 @@ av_cold int MPV_encode_init(AVCodecContext *avctx)
         s->codec_id != CODEC_ID_MPEG4      &&
         s->codec_id != CODEC_ID_MPEG1VIDEO &&
         s->codec_id != CODEC_ID_MPEG2VIDEO &&
-        (s->codec_id != CODEC_ID_H263P ||
-         !(s->flags & CODEC_FLAG_H263P_SLICE_STRUCT))) {
+        (s->codec_id != CODEC_ID_H263P
+#if FF_API_MPEGVIDEO_GLOBAL_OPTS
+         || !(s->flags & CODEC_FLAG_H263P_SLICE_STRUCT)
+#endif
+         )) {
         av_log(avctx, AV_LOG_ERROR,
                "multi threaded encoding not supported by codec\n");
         return -1;
@@ -813,8 +822,8 @@ av_cold int MPV_encode_init(AVCodecContext *avctx)
 
     s->progressive_frame    =
     s->progressive_sequence = !(avctx->flags & (CODEC_FLAG_INTERLACED_DCT |
-                                                CODEC_FLAG_INTERLACED_ME  |
-                                                CODEC_FLAG_ALT_SCAN));
+                                                CODEC_FLAG_INTERLACED_ME) ||
+                                s->alternate_scan);
 
     /* init */
     if (MPV_common_init(s) < 0)

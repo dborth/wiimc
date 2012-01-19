@@ -72,7 +72,7 @@ typedef struct FormatEntry {
     int is_supported_in, is_supported_out;
 } FormatEntry;
 
-const static FormatEntry format_entries[PIX_FMT_NB] = {
+static const FormatEntry format_entries[PIX_FMT_NB] = {
     [PIX_FMT_YUV420P]     = { 1 , 1 },
     [PIX_FMT_YUYV422]     = { 1 , 1 },
     [PIX_FMT_RGB24]       = { 1 , 1 },
@@ -850,7 +850,14 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
     getSubSampleFactors(&c->chrDstHSubSample, &c->chrDstVSubSample, dstFormat);
 
     // reuse chroma for 2 pixels RGB/BGR unless user wants full chroma interpolation
-    if (isAnyRGB(dstFormat) && !(flags&SWS_FULL_CHR_H_INT)) c->chrDstHSubSample=1;
+    if (isAnyRGB(dstFormat) && !(flags&SWS_FULL_CHR_H_INT)) {
+        if (dstW&1) {
+            av_log(c, AV_LOG_DEBUG, "Forcing full internal H chroma due to odd output size\n");
+            flags |= SWS_FULL_CHR_H_INT;
+            c->flags = flags;
+        } else
+            c->chrDstHSubSample = 1;
+    }
 
     // drop some chroma lines if the user wants it
     c->vChrDrop= (flags&SWS_SRC_V_CHR_DROP_MASK)>>SWS_SRC_V_CHR_DROP_SHIFT;

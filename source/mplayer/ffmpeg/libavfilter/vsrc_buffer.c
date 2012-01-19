@@ -39,6 +39,12 @@ typedef struct {
     char              sws_param[256];
 } BufferSourceContext;
 
+#define CHECK_PARAM_CHANGE(s, c, width, height, format)\
+    if (c->w != width || c->h != height || c->pix_fmt != format) {\
+        av_log(s, AV_LOG_ERROR, "Changing frame properties on the fly is not supported.\n");\
+        return AVERROR(EINVAL);\
+    }
+
 int av_vsrc_buffer_add_video_buffer_ref(AVFilterContext *buffer_filter,
                                         AVFilterBufferRef *picref, int flags)
 {
@@ -125,6 +131,8 @@ int av_buffersrc_buffer(AVFilterContext *s, AVFilterBufferRef *buf)
         return AVERROR(EINVAL);
     }
 
+//     CHECK_PARAM_CHANGE(s, c, buf->video->w, buf->video->h, buf->format);
+
     c->picref = buf;
 
     return 0;
@@ -172,6 +180,14 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
            c->time_base.num, c->time_base.den,
            c->sample_aspect_ratio.num, c->sample_aspect_ratio.den, c->sws_param);
     return 0;
+}
+
+static av_cold void uninit(AVFilterContext *ctx)
+{
+    BufferSourceContext *s = ctx->priv;
+    if (s->picref)
+        avfilter_unref_buffer(s->picref);
+    s->picref = NULL;
 }
 
 static int query_formats(AVFilterContext *ctx)
@@ -227,6 +243,7 @@ AVFilter avfilter_vsrc_buffer = {
     .query_formats = query_formats,
 
     .init      = init,
+    .uninit    = uninit,
 
     .inputs    = (const AVFilterPad[]) {{ .name = NULL }},
     .outputs   = (const AVFilterPad[]) {{ .name      = "default",

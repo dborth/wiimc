@@ -2112,9 +2112,6 @@ input sample aspect ratio
 @item dar
 input display aspect ratio, it is the same as (@var{iw} / @var{ih}) * @var{sar}
 
-@item sar
-input sample aspect ratio
-
 @item hsub, vsub
 horizontal and vertical chroma subsample values. For example for the
 pixel format "yuv422p" @var{hsub} is 2 and @var{vsub} is 1.
@@ -3230,7 +3227,7 @@ number or a valid video frame rate abbreviation. The default value is
 @item sar
 Set the sample aspect ratio of the sourced video.
 
-@item duration
+@item duration, d
 Set the video duration of the sourced video. The accepted syntax is:
 @example
 [-]HH[:MM[:SS[.m...]]]
@@ -3240,6 +3237,14 @@ See also the function @code{av_parse_time()}.
 
 If not specified, or the expressed duration is negative, the video is
 supposed to be generated forever.
+
+@item decimals, n
+Set the number of decimals to show in the timestamp, only used in the
+@code{testsrc} source.
+
+The displayed timestamp value will correspond to the original
+timestamp value multiplied by the power of 10 of the specified
+value. Default value is 0.
 @end table
 
 For example the following:

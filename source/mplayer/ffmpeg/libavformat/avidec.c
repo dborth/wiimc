@@ -544,6 +544,10 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
             st->start_time = 0;
             avio_rl32(pb); /* buffer size */
             avio_rl32(pb); /* quality */
+            if (ast->cum_len*ast->scale/ast->rate > 3600) {
+                av_log(s, AV_LOG_ERROR, "crazy start time, iam scared, giving up\n");
+                return AVERROR_INVALIDDATA;
+            }
             ast->sample_size = avio_rl32(pb); /* sample ssize */
             ast->cum_len *= FFMAX(1, ast->sample_size);
 //            av_log(s, AV_LOG_DEBUG, "%d %d %d %d\n", ast->rate, ast->scale, ast->start, ast->sample_size);
@@ -692,6 +696,29 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
                     avio_skip(pb, size);
                     break;
                 }
+            }
+            break;
+        case MKTAG('s', 't', 'r', 'd'):
+            if (stream_index >= (unsigned)s->nb_streams || st->codec->extradata_size) {
+                avio_skip(pb, size);
+            } else {
+                uint64_t cur_pos = avio_tell(pb);
+                if (cur_pos < list_end)
+                    size = FFMIN(size, list_end - cur_pos);
+                st = s->streams[stream_index];
+
+                if(size<(1<<30)){
+                    st->codec->extradata_size= size;
+                    st->codec->extradata= av_malloc(st->codec->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE);
+                    if (!st->codec->extradata) {
+                        st->codec->extradata_size= 0;
+                        return AVERROR(ENOMEM);
+                    }
+                    avio_read(pb, st->codec->extradata, st->codec->extradata_size);
+                }
+
+                if(st->codec->extradata_size & 1) //FIXME check if the encoder really did this correctly
+                    avio_r8(pb);
             }
             break;
         case MKTAG('i', 'n', 'd', 'x'):

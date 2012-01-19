@@ -114,6 +114,7 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
 
     /* YUV formats with alpha plane */
     [PIX_FMT_YUVA420P] = {
+        .is_alpha = 1,
         .color_type = FF_COLOR_YUV,
     },
 
@@ -187,6 +188,10 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
         .color_type = FF_COLOR_GRAY,
     },
     [PIX_FMT_GRAY8] = {
+        .color_type = FF_COLOR_GRAY,
+    },
+    [PIX_FMT_GRAY8A] = {
+        .is_alpha = 1,
         .color_type = FF_COLOR_GRAY,
     },
     [PIX_FMT_MONOWHITE] = {

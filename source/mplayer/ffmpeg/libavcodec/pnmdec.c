@@ -20,7 +20,6 @@
  */
 
 #include "avcodec.h"
-#include "bytestream.h"
 #include "put_bits.h"
 #include "pnm.h"
 
@@ -58,6 +57,11 @@ static int pnm_decode_frame(AVCodecContext *avctx, void *data,
     switch (avctx->pix_fmt) {
     default:
         return -1;
+    case PIX_FMT_RGBA64BE:
+        n = avctx->width * 8;
+        components=4;
+        sample_len=16;
+        goto do_read;
     case PIX_FMT_RGB48BE:
         n = avctx->width * 6;
         components=3;
@@ -74,6 +78,11 @@ static int pnm_decode_frame(AVCodecContext *avctx, void *data,
         sample_len=8;
         if (s->maxval < 255)
             upgrade = 1;
+        goto do_read;
+    case PIX_FMT_GRAY8A:
+        n = avctx->width * 2;
+        components=2;
+        sample_len=8;
         goto do_read;
     case PIX_FMT_GRAY16BE:
     case PIX_FMT_GRAY16LE:

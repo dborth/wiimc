@@ -671,4 +671,7 @@ msgid "Inactivity Shutdown"
 msgstr "Wyłączenie przy braku aktywności"
 
 msgid "Invalid subtitle delay."
-msgstr "Niepoprawne opóźnienie napisów"
+msgstr "Niepoprawne opóźnienie napisów"
+
+msgid "DVD playback is not supported on this Wii."
+msgstr "Twoje Wii nie umożliwia odtwarzania płyt DVD"

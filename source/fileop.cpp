@@ -1822,7 +1822,7 @@ nomemParseDirEntries:
 
 	// Sort the file list
 	if(i > 0)
-		SortBrower(&browser, FileSortCallback);
+		SortBrowser(&browser, FileSortCallback);
 
 	if(entry == NULL || parseHalt)
 	{
@@ -2583,7 +2583,7 @@ int ParseOnlineMedia()
 	}
 
 	// Sort the file list
-	SortBrower(&browser, FileSortCallback);
+	SortBrowser(&browser, FileSortCallback);
 
 	if(browser.lastdir[0] != 0)
 		FindDirectory(); // try to find and select the last directory

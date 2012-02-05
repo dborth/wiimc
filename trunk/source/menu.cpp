@@ -2138,6 +2138,9 @@ static void MenuBrowse(int menu)
 	GuiTrigger trigPlus;
 	trigPlus.SetButtonOnlyTrigger(-1, WPAD_BUTTON_PLUS | WPAD_CLASSIC_BUTTON_PLUS, PAD_BUTTON_X);
 
+	GuiTrigger trigMinus;
+	trigMinus.SetButtonOnlyTrigger(-1, WPAD_BUTTON_MINUS | WPAD_CLASSIC_BUTTON_MINUS, PAD_BUTTON_Y);
+
 	GuiButton upOneLevelBtn(0,0);
 	upOneLevelBtn.SetTrigger(trigB);
 	upOneLevelBtn.SetSelectable(false);
@@ -2185,6 +2188,10 @@ static void MenuBrowse(int menu)
 	GuiButton playlistAddBtn(0, 0);
 	playlistAddBtn.SetTrigger(&trigPlus);
 	playlistAddBtn.SetSelectable(false);
+
+	GuiButton playlistResetBtn(0, 0);
+	playlistResetBtn.SetTrigger(&trigMinus);
+	playlistResetBtn.SetSelectable(false);
 
 	BROWSERENTRY *currentIndex = NULL;
 
@@ -2309,6 +2316,7 @@ static void MenuBrowse(int menu)
 			audiobarBackwardBtn->SetState(STATE_DEFAULT);
 			audiobarForwardBtn->SetState(STATE_DEFAULT);
 			mainWindow->Append(&playlistAddBtn);
+			mainWindow->Append(&playlistResetBtn);
 			UpdateAudiobarModeBtn();
 			mainWindow->Append(audiobar);
 		}
@@ -2641,6 +2649,31 @@ static void MenuBrowse(int menu)
 				}
 				fileBrowser->TriggerUpdate();
 			}
+		}
+
+		if(playlistResetBtn.GetState() == STATE_CLICKED)
+		{
+			playlistResetBtn.ResetState();
+
+			ResetMusic();
+
+			if ((browser.dir[0] != 0)
+			    && (strcmp(browser.first->display, "Exit Playlist") == 0))
+			{
+				fileBrowser->SetState(STATE_DISABLED);
+				browser.selIndex = browser.first;
+				if(!BrowserChangeFolder())
+				{
+					CancelAction();
+					mainWindow->Remove(disabled);
+					mainWindow->SetState(STATE_DEFAULT);
+					goto done;
+				}
+			}
+			fileBrowser->ResetState();
+			CancelAction();
+			mainWindow->Remove(disabled);
+			mainWindow->SetState(STATE_DEFAULT);
 		}
 
 		if(!mainWindow->Find(audiobar))

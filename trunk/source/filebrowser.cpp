@@ -70,7 +70,7 @@ static void Reset(BROWSER *info)
 	info->last = NULL;
 }
 
-void SortBrower(BROWSER *_browser, int ( * comparator ) ( const void *, const void * ) )
+void SortBrowser(BROWSER *_browser, int ( * comparator ) ( const void *, const void * ) )
 {
 	/* preform a bubble sort on the list */
 	BROWSERENTRY *a = NULL;

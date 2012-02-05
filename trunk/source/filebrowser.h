@@ -90,7 +90,7 @@ bool DeleteEntryOnlineMedia(BROWSERENTRY *entry);
 int EntryDistance(BROWSERENTRY * p1,BROWSERENTRY * p2);
 int EntryPosition(BROWSER *info, BROWSERENTRY * i);
 BROWSERENTRY * PositionToEntry(BROWSER *info, int pos);
-void SortBrower(BROWSER *_browser, int ( * comparator ) ( const void *, const void * ) );
+void SortBrowser(BROWSER *_browser, int ( * comparator ) ( const void *, const void * ) );
 void BrowserHistoryStore(char *path);
 const char * BrowserHistoryRetrieve();
 void BrowserHistoryDiscard();

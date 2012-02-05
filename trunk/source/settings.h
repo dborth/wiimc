@@ -12,7 +12,8 @@ enum {
 	PLAY_SINGLE,
 	PLAY_CONTINUOUS,
 	PLAY_SHUFFLE,
-	PLAY_LOOP
+	PLAY_LOOP,
+	PLAY_THROUGH
 };
 
 enum {
@@ -118,7 +119,7 @@ struct SWiiSettings {
 	int		skipForward;
 	char 	videosFolder[MAXPATHLEN];
 	// Music
-	int 	playOrder; // PLAY_SINGLE, PLAY_CONTINUOUS, PLAY_SHUFFLE, PLAY_LOOP
+	int 	playOrder; // PLAY_SINGLE, PLAY_CONTINUOUS, PLAY_SHUFFLE, PLAY_LOOP, PLAY_THROUGH
 	char	musicFolder[MAXPATHLEN];
 	// Pictures
 	int		slideshowDelay;

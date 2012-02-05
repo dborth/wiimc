@@ -146,6 +146,7 @@ static GuiImageData *actionbarLoop = NULL;
 static GuiImageData *actionbarPlaylist = NULL;
 static GuiImageData *actionbarClose = NULL;
 static GuiImageData *actionbarVolume = NULL;
+static GuiImageData *actionbarThrough = NULL;
 
 static GuiImage *videobarLeftImg = NULL;
 static GuiImage *videobarMidImg = NULL;
@@ -1838,6 +1839,10 @@ static void UpdateAudiobarModeBtn()
 			audiobarModeImg->SetImage(actionbarLoop);
 			audiobarModeTip->SetText("Loop");
 			break;
+		case PLAY_THROUGH:
+			audiobarModeImg->SetImage(actionbarThrough);
+			audiobarModeTip->SetText("Through");
+			break;
 	}
 }
 
@@ -2829,8 +2834,8 @@ static void MenuBrowse(int menu)
 		{
 			audiobarModeBtn->ResetState();
 			WiiSettings.playOrder++;
-			if(WiiSettings.playOrder > PLAY_LOOP)
-				WiiSettings.playOrder = 0;
+			if(WiiSettings.playOrder > PLAY_THROUGH)
+				WiiSettings.playOrder = PLAY_SINGLE;
 
 			UpdateAudiobarModeBtn();
 		}
@@ -4806,6 +4811,7 @@ static void MenuSettingsMusic()
 				case PLAY_CONTINUOUS:	sprintf(options.value[0], "Continuous"); break;
 				case PLAY_SHUFFLE:		sprintf(options.value[0], "Shuffle"); break;
 				case PLAY_LOOP:			sprintf(options.value[0], "Loop"); break;
+				case PLAY_THROUGH:		sprintf(options.value[0], "Through"); break;
 			}
 			snprintf(options.value[1], 60, "%s", WiiSettings.musicFolder);
 
@@ -6631,6 +6637,7 @@ static void SetupGui()
 	actionbarClose = new GuiImageData(actionbar_close_png);
 	actionbarPlaylist = new GuiImageData(actionbar_playlist_png);
 	actionbarVolume = new GuiImageData(actionbar_volume_png);
+	actionbarThrough = new GuiImageData(actionbar_through_png);
 
 	// video bar
 

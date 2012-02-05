@@ -133,6 +133,8 @@ extern const u8		actionbar_single_png[];
 extern const u32	actionbar_single_png_size;
 extern const u8		actionbar_volume_png[];
 extern const u32	actionbar_volume_png_size;
+extern const u8		actionbar_through_png[];
+extern const u32	actionbar_through_png_size;
 
 extern const u8		volume_empty_png[];
 extern const u32	volume_empty_png_size;

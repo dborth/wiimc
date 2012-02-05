@@ -754,7 +754,7 @@ static void FixInvalidSettings()
 	CleanupPath(WiiSettings.videosFolder);
 
 	// Music
-	if(WiiSettings.playOrder < 0 || WiiSettings.playOrder > PLAY_LOOP)
+	if(WiiSettings.playOrder < 0 || WiiSettings.playOrder > PLAY_THROUGH)
 		WiiSettings.playOrder = PLAY_SINGLE;
 	CleanupPath(WiiSettings.musicFolder);
 

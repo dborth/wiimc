@@ -196,7 +196,7 @@ static int get_packet_header(AVFormatContext *s, uint8_t *header, uint32_t *form
     return ret;
 }
 
-static int lxf_read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int lxf_read_header(AVFormatContext *s)
 {
     LXFDemuxContext *lxf = s->priv_data;
     AVIOContext   *pb  = s->pb;
@@ -346,4 +346,3 @@ AVInputFormat ff_lxf_demuxer = {
     .read_packet    = lxf_read_packet,
     .codec_tag      = (const AVCodecTag* const []){lxf_tags, 0},
 };
-

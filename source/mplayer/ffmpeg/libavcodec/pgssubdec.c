@@ -29,6 +29,7 @@
 #include "bytestream.h"
 #include "libavutil/colorspace.h"
 #include "libavutil/imgutils.h"
+#include "libavutil/opt.h"
 
 #define RGBA(r,g,b,a) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
 
@@ -40,11 +41,17 @@ enum SegmentType {
     DISPLAY_SEGMENT      = 0x80,
 };
 
-typedef struct PGSSubPresentation {
+typedef struct PGSSubPictureReference {
     int x;
     int y;
-    int id_number;
-    int object_number;
+    int picture_id;
+    int composition;
+} PGSSubPictureReference;
+
+typedef struct PGSSubPresentation {
+    int                    id_number;
+    int                    object_count;
+    PGSSubPictureReference *objects;
 } PGSSubPresentation;
 
 typedef struct PGSSubPicture {
@@ -56,24 +63,33 @@ typedef struct PGSSubPicture {
 } PGSSubPicture;
 
 typedef struct PGSSubContext {
+    AVClass *class;
     PGSSubPresentation presentation;
     uint32_t           clut[256];
-    PGSSubPicture      picture;
+    PGSSubPicture      pictures[UINT16_MAX];
+    int forced_subs_only;
 } PGSSubContext;
 
 static av_cold int init_decoder(AVCodecContext *avctx)
 {
-    avctx->pix_fmt = PIX_FMT_PAL8;
+    avctx->pix_fmt     = PIX_FMT_PAL8;
 
     return 0;
 }
 
 static av_cold int close_decoder(AVCodecContext *avctx)
 {
+    uint16_t picture;
+
     PGSSubContext *ctx = avctx->priv_data;
 
-    av_freep(&ctx->picture.rle);
-    ctx->picture.rle_buffer_size  = 0;
+    av_freep(&ctx->presentation.objects);
+    ctx->presentation.object_count = 0;
+
+    for (picture = 0; picture < UINT16_MAX; ++picture) {
+        av_freep(&ctx->pictures[picture].rle);
+        ctx->pictures[picture].rle_buffer_size = 0;
+    }
 
     return 0;
 }
@@ -88,7 +104,7 @@ static av_cold int close_decoder(AVCodecContext *avctx)
  * @param buf pointer to the RLE data to process
  * @param buf_size size of the RLE data to process
  */
-static int decode_rle(AVCodecContext *avctx, AVSubtitle *sub,
+static int decode_rle(AVCodecContext *avctx, AVSubtitle *sub, int rect,
                       const uint8_t *buf, unsigned int buf_size)
 {
     const uint8_t *rle_bitmap_end;
@@ -96,15 +112,15 @@ static int decode_rle(AVCodecContext *avctx, AVSubtitle *sub,
 
     rle_bitmap_end = buf + buf_size;
 
-    sub->rects[0]->pict.data[0] = av_malloc(sub->rects[0]->w * sub->rects[0]->h);
+    sub->rects[rect]->pict.data[0] = av_malloc(sub->rects[rect]->w * sub->rects[rect]->h);
 
-    if (!sub->rects[0]->pict.data[0])
+    if (!sub->rects[rect]->pict.data[0])
         return -1;
 
     pixel_count = 0;
     line_count  = 0;
 
-    while (buf < rle_bitmap_end && line_count < sub->rects[0]->h) {
+    while (buf < rle_bitmap_end && line_count < sub->rects[rect]->h) {
         uint8_t flags, color;
         int run;
 
@@ -119,27 +135,27 @@ static int decode_rle(AVCodecContext *avctx, AVSubtitle *sub,
             color = flags & 0x80 ? bytestream_get_byte(&buf) : 0;
         }
 
-        if (run > 0 && pixel_count + run <= sub->rects[0]->w * sub->rects[0]->h) {
-            memset(sub->rects[0]->pict.data[0] + pixel_count, color, run);
+        if (run > 0 && pixel_count + run <= sub->rects[rect]->w * sub->rects[rect]->h) {
+            memset(sub->rects[rect]->pict.data[0] + pixel_count, color, run);
             pixel_count += run;
         } else if (!run) {
             /*
              * New Line. Check if correct pixels decoded, if not display warning
              * and adjust bitmap pointer to correct new line position.
              */
-            if (pixel_count % sub->rects[0]->w > 0)
+            if (pixel_count % sub->rects[rect]->w > 0)
                 av_log(avctx, AV_LOG_ERROR, "Decoded %d pixels, when line should be %d pixels\n",
-                       pixel_count % sub->rects[0]->w, sub->rects[0]->w);
+                       pixel_count % sub->rects[rect]->w, sub->rects[rect]->w);
             line_count++;
         }
     }
 
-    if (pixel_count < sub->rects[0]->w * sub->rects[0]->h) {
+    if (pixel_count < sub->rects[rect]->w * sub->rects[rect]->h) {
         av_log(avctx, AV_LOG_ERROR, "Insufficient RLE data for subtitle\n");
         return -1;
     }
 
-    av_dlog(avctx, "Pixel Count = %d, Area = %d\n", pixel_count, sub->rects[0]->w * sub->rects[0]->h);
+    av_dlog(avctx, "Pixel Count = %d, Area = %d\n", pixel_count, sub->rects[rect]->w * sub->rects[rect]->h);
 
     return 0;
 }
@@ -162,25 +178,28 @@ static int parse_picture_segment(AVCodecContext *avctx,
 
     uint8_t sequence_desc;
     unsigned int rle_bitmap_len, width, height;
+    uint16_t picture_id;
 
     if (buf_size <= 4)
         return -1;
     buf_size -= 4;
 
-    /* skip 3 unknown bytes: Object ID (2 bytes), Version Number */
-    buf += 3;
+    picture_id = bytestream_get_be16(&buf);
+
+    /* skip 1 unknown byte: Version Number */
+    buf++;
 
     /* Read the Sequence Description to determine if start of RLE data or appended to previous RLE */
     sequence_desc = bytestream_get_byte(&buf);
 
     if (!(sequence_desc & 0x80)) {
         /* Additional RLE data */
-        if (buf_size > ctx->picture.rle_remaining_len)
+        if (buf_size > ctx->pictures[picture_id].rle_remaining_len)
             return -1;
 
-        memcpy(ctx->picture.rle + ctx->picture.rle_data_len, buf, buf_size);
-        ctx->picture.rle_data_len += buf_size;
-        ctx->picture.rle_remaining_len -= buf_size;
+        memcpy(ctx->pictures[picture_id].rle + ctx->pictures[picture_id].rle_data_len, buf, buf_size);
+        ctx->pictures[picture_id].rle_data_len += buf_size;
+        ctx->pictures[picture_id].rle_remaining_len -= buf_size;
 
         return 0;
     }
@@ -202,17 +221,17 @@ static int parse_picture_segment(AVCodecContext *avctx,
         return -1;
     }
 
-    ctx->picture.w = width;
-    ctx->picture.h = height;
+    ctx->pictures[picture_id].w = width;
+    ctx->pictures[picture_id].h = height;
 
-    av_fast_malloc(&ctx->picture.rle, &ctx->picture.rle_buffer_size, rle_bitmap_len);
+    av_fast_malloc(&ctx->pictures[picture_id].rle, &ctx->pictures[picture_id].rle_buffer_size, rle_bitmap_len);
 
-    if (!ctx->picture.rle)
+    if (!ctx->pictures[picture_id].rle)
         return -1;
 
-    memcpy(ctx->picture.rle, buf, buf_size);
-    ctx->picture.rle_data_len = buf_size;
-    ctx->picture.rle_remaining_len = rle_bitmap_len - buf_size;
+    memcpy(ctx->pictures[picture_id].rle, buf, buf_size);
+    ctx->pictures[picture_id].rle_data_len      = buf_size;
+    ctx->pictures[picture_id].rle_remaining_len = rle_bitmap_len - buf_size;
 
     return 0;
 }
@@ -268,17 +287,16 @@ static void parse_palette_segment(AVCodecContext *avctx,
  * @param buf pointer to the packet to process
  * @param buf_size size of packet to process
  * @todo TODO: Implement cropping
- * @todo TODO: Implement forcing of subtitles
  */
 static void parse_presentation_segment(AVCodecContext *avctx,
                                        const uint8_t *buf, int buf_size)
 {
     PGSSubContext *ctx = avctx->priv_data;
 
-    int x, y;
-
     int w = bytestream_get_be16(&buf);
     int h = bytestream_get_be16(&buf);
+
+    uint16_t object_index;
 
     av_dlog(avctx, "Video Dimensions %dx%d\n",
             w, h);
@@ -298,34 +316,46 @@ static void parse_presentation_segment(AVCodecContext *avctx,
      */
     buf += 3;
 
-    ctx->presentation.object_number = bytestream_get_byte(&buf);
-    if (!ctx->presentation.object_number)
+    ctx->presentation.object_count = bytestream_get_byte(&buf);
+    if (!ctx->presentation.object_count)
         return;
 
-    /*
-     * Skip 4 bytes of unknown:
-     *     object_id_ref (2 bytes),
-     *     window_id_ref,
-     *     composition_flag (0x80 - object cropped, 0x40 - object forced)
-     */
-    buf += 4;
-
-    x = bytestream_get_be16(&buf);
-    y = bytestream_get_be16(&buf);
-
-    /* TODO If cropping, cropping_x, cropping_y, cropping_width, cropping_height (all 2 bytes).*/
-
-    av_dlog(avctx, "Subtitle Placement x=%d, y=%d\n", x, y);
-
-    if (x > avctx->width || y > avctx->height) {
-        av_log(avctx, AV_LOG_ERROR, "Subtitle out of video bounds. x = %d, y = %d, video width = %d, video height = %d.\n",
-               x, y, avctx->width, avctx->height);
-        x = 0; y = 0;
+    /* Verify that enough bytes are remaining for all of the objects. */
+    buf_size -= 11;
+    if (buf_size < ctx->presentation.object_count * 8) {
+        ctx->presentation.object_count = 0;
+        return;
     }
 
-    /* Fill in dimensions */
-    ctx->presentation.x = x;
-    ctx->presentation.y = y;
+    av_freep(&ctx->presentation.objects);
+    ctx->presentation.objects = av_malloc(sizeof(PGSSubPictureReference) * ctx->presentation.object_count);
+    if (!ctx->presentation.objects) {
+        ctx->presentation.object_count = 0;
+        return;
+    }
+
+    for (object_index = 0; object_index < ctx->presentation.object_count; ++object_index) {
+        PGSSubPictureReference *reference = &ctx->presentation.objects[object_index];
+        reference->picture_id             = bytestream_get_be16(&buf);
+
+        /* Skip window_id_ref */
+        buf++;
+        /* composition_flag (0x80 - object cropped, 0x40 - object forced) */
+        reference->composition = bytestream_get_byte(&buf);
+
+        reference->x = bytestream_get_be16(&buf);
+        reference->y = bytestream_get_be16(&buf);
+
+        /* TODO If cropping, cropping_x, cropping_y, cropping_width, cropping_height (all 2 bytes).*/
+        av_dlog(avctx, "Subtitle Placement ID=%d, x=%d, y=%d\n", reference->picture_id, reference->x, reference->y);
+
+        if (reference->x > avctx->width || reference->y > avctx->height) {
+            av_log(avctx, AV_LOG_ERROR, "Subtitle out of video bounds. x = %d, y = %d, video width = %d, video height = %d.\n",
+                   reference->x, reference->y, avctx->width, avctx->height);
+            reference->x = 0;
+            reference->y = 0;
+        }
+    }
 }
 
 /**
@@ -349,45 +379,53 @@ static int display_end_segment(AVCodecContext *avctx, void *data,
     AVSubtitle    *sub = data;
     PGSSubContext *ctx = avctx->priv_data;
 
+    uint16_t rect;
+
     /*
      *      The end display time is a timeout value and is only reached
-     *      if the next subtitle is later then timeout or subtitle has
+     *      if the next subtitle is later than timeout or subtitle has
      *      not been cleared by a subsequent empty display command.
      */
 
-    // Blank if last object_number was 0.
-    // Note that this may be wrong for more complex subtitles.
-    if (!ctx->presentation.object_number)
+    memset(sub, 0, sizeof(*sub));
+
+    // Blank if last object_count was 0.
+    if (!ctx->presentation.object_count)
         return 1;
+
     sub->start_display_time = 0;
     sub->end_display_time   = 20000;
     sub->format             = 0;
 
-    sub->rects     = av_mallocz(sizeof(*sub->rects));
-    sub->rects[0]  = av_mallocz(sizeof(*sub->rects[0]));
-    sub->num_rects = 1;
+    sub->num_rects = ctx->presentation.object_count;
+    sub->rects     = av_mallocz(sizeof(*sub->rects) * sub->num_rects);
 
-    sub->rects[0]->x    = ctx->presentation.x;
-    sub->rects[0]->y    = ctx->presentation.y;
-    sub->rects[0]->w    = ctx->picture.w;
-    sub->rects[0]->h    = ctx->picture.h;
-    sub->rects[0]->type = SUBTITLE_BITMAP;
+    for (rect = 0; rect < sub->num_rects; ++rect) {
+        uint16_t picture_id    = ctx->presentation.objects[rect].picture_id;
+        sub->rects[rect]       = av_mallocz(sizeof(*sub->rects[rect]));
+        sub->rects[rect]->x    = ctx->presentation.objects[rect].x;
+        sub->rects[rect]->y    = ctx->presentation.objects[rect].y;
+        sub->rects[rect]->w    = ctx->pictures[picture_id].w;
+        sub->rects[rect]->h    = ctx->pictures[picture_id].h;
+        sub->rects[rect]->type = SUBTITLE_BITMAP;
 
-    /* Process bitmap */
-    sub->rects[0]->pict.linesize[0] = ctx->picture.w;
+        /* Process bitmap */
+        sub->rects[rect]->pict.linesize[0] = ctx->pictures[picture_id].w;
+        if (ctx->pictures[picture_id].rle) {
+            if (ctx->pictures[picture_id].rle_remaining_len)
+                av_log(avctx, AV_LOG_ERROR, "RLE data length %u is %u bytes shorter than expected\n",
+                       ctx->pictures[picture_id].rle_data_len, ctx->pictures[picture_id].rle_remaining_len);
+            if (decode_rle(avctx, sub, rect, ctx->pictures[picture_id].rle, ctx->pictures[picture_id].rle_data_len) < 0)
+                return 0;
+        }
 
-    if (ctx->picture.rle) {
-        if (ctx->picture.rle_remaining_len)
-            av_log(avctx, AV_LOG_ERROR, "RLE data length %u is %u bytes shorter than expected\n",
-                   ctx->picture.rle_data_len, ctx->picture.rle_remaining_len);
-        if(decode_rle(avctx, sub, ctx->picture.rle, ctx->picture.rle_data_len) < 0)
-            return 0;
+        /* Allocate memory for colors */
+        sub->rects[rect]->nb_colors    = 256;
+        sub->rects[rect]->pict.data[1] = av_mallocz(AVPALETTE_SIZE);
+
+        if (!ctx->forced_subs_only || ctx->presentation.objects[rect].composition & 0x40)
+        memcpy(sub->rects[rect]->pict.data[1], ctx->clut, sub->rects[rect]->nb_colors * sizeof(uint32_t));
     }
-    /* Allocate memory for colors */
-    sub->rects[0]->nb_colors    = 256;
-    sub->rects[0]->pict.data[1] = av_mallocz(AVPALETTE_SIZE);
-
-    memcpy(sub->rects[0]->pict.data[1], ctx->clut, sub->rects[0]->nb_colors * sizeof(uint32_t));
 
     return 1;
 }
@@ -467,6 +505,20 @@ static int decode(AVCodecContext *avctx, void *data, int *data_size,
     return buf_size;
 }
 
+#define OFFSET(x) offsetof(PGSSubContext, x)
+#define SD AV_OPT_FLAG_SUBTITLE_PARAM | AV_OPT_FLAG_DECODING_PARAM
+static const AVOption options[] = {
+    {"forced_subs_only", "Only show forced subtitles", OFFSET(forced_subs_only), AV_OPT_TYPE_INT, {.dbl = 0}, 0, 1, SD},
+    { NULL },
+};
+
+static const AVClass pgsdec_class = {
+    .class_name = "PGS subtitle decoder",
+    .item_name  = av_default_item_name,
+    .option     = options,
+    .version    = LIBAVUTIL_VERSION_INT,
+};
+
 AVCodec ff_pgssub_decoder = {
     .name           = "pgssub",
     .type           = AVMEDIA_TYPE_SUBTITLE,
@@ -476,4 +528,5 @@ AVCodec ff_pgssub_decoder = {
     .close          = close_decoder,
     .decode         = decode,
     .long_name = NULL_IF_CONFIG_SMALL("HDMV Presentation Graphic Stream subtitles"),
+    .priv_class     = &pgsdec_class,
 };

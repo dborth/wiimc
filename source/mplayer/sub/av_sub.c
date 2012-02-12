@@ -21,6 +21,7 @@
 #include "mp_msg.h"
 #include "sub.h"
 #include "spudec.h"
+#include "av_helpers.h"
 #include "av_sub.h"
 
 void reset_avsub(struct sh_sub *sh)
@@ -63,11 +64,10 @@ int decode_avsub(struct sh_sub *sh, uint8_t **data, int *size,
         pkt.convergence_duration = (*endpts - *pts) * 1000;
     if (!ctx) {
         AVCodec *sub_codec;
-        avcodec_init();
-        avcodec_register_all();
-        ctx = avcodec_alloc_context();
+        init_avcodec();
+        ctx = avcodec_alloc_context3(NULL);
         sub_codec = avcodec_find_decoder(cid);
-        if (!ctx || !sub_codec || avcodec_open(ctx, sub_codec) < 0) {
+        if (!ctx || !sub_codec || avcodec_open2(ctx, sub_codec, NULL) < 0) {
             mp_msg(MSGT_SUBREADER, MSGL_FATAL,
                    "Could not open subtitle decoder\n");
             av_freep(&ctx);

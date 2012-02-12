@@ -202,8 +202,8 @@ typedef struct WmallDecodeCtx {
     int              buf_bit_size;                  ///< buffer size in bits
     int16_t*         samples_16;                    ///< current samplebuffer pointer (16-bit)
     int16_t*         samples_16_end;                ///< maximum samplebuffer pointer
-    int16_t*         samples_32;                    ///< current samplebuffer pointer (24-bit)
-    int16_t*         samples_32_end;                ///< maximum samplebuffer pointer
+    int             *samples_32;                    ///< current samplebuffer pointer (24-bit)
+    int             *samples_32_end;                ///< maximum samplebuffer pointer
     uint8_t          drc_gain;                      ///< gain for the DRC tool
     int8_t           skip_frame;                    ///< skip output step
     int8_t           parsed_all_subframes;          ///< all subframes decoded?
@@ -1424,8 +1424,8 @@ static int decode_packet(AVCodecContext *avctx,
         s->samples_16     = (int16_t *) data;
         s->samples_16_end = (int16_t *) ((int8_t*)data + *data_size);
     } else {
-        s->samples_32     = (int *) data;
-        s->samples_32_end = (int *) ((int8_t*)data + *data_size);
+        s->samples_32     = (void *) data;
+        s->samples_32_end = (void *) ((int8_t*)data + *data_size);
     }
     *data_size = 0;
 
@@ -1550,15 +1550,14 @@ static void flush(AVCodecContext *avctx)
  *@brief wmall decoder
  */
 AVCodec ff_wmalossless_decoder = {
-    "wmalossless",
-    AVMEDIA_TYPE_AUDIO,
-    CODEC_ID_WMALOSSLESS,
-    sizeof(WmallDecodeCtx),
-    decode_init,
-    NULL,
-    decode_end,
-    decode_packet,
+    .name           = "wmalossless",
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = CODEC_ID_WMALOSSLESS,
+    .priv_data_size = sizeof(WmallDecodeCtx),
+    .init           = decode_init,
+    .close          = decode_end,
+    .decode         = decode_packet,
+    .flush          = flush,
     .capabilities = CODEC_CAP_SUBFRAMES | CODEC_CAP_EXPERIMENTAL,
-    .flush= flush,
     .long_name = NULL_IF_CONFIG_SMALL("Windows Media Audio 9 Lossless"),
 };

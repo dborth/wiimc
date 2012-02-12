@@ -696,7 +696,8 @@ SRCS_MENCODER = mencoder.c \
                 $(SRCS_MENCODER-yes)
 
 # (linking) order matters for these libraries
-FFMPEGPARTS = libpostproc libswscale libavformat libavcodec libavutil
+FFMPEGPARTS_ALL = libpostproc libavformat libavcodec libswscale libavutil
+FFMPEGPARTS = $(foreach part, $(FFMPEGPARTS_ALL), $(if $(wildcard ffmpeg/$(part)), $(part)))
 FFMPEGLIBS  = $(foreach part, $(FFMPEGPARTS), ffmpeg/$(part)/$(part).a)
 FFMPEGFILES = $(foreach part, $(FFMPEGPARTS), $(wildcard $(addprefix ffmpeg/$(part)/,*.[chS] /*/*.[chS] /*/*.asm)))
 
@@ -877,7 +878,7 @@ $(foreach lang, $(DOC_LANG_ALL),$(eval $(lang-def)))
 # Make sure all generated header files are created.
 codec-cfg.o: codecs.conf.h
 $(DEP_FILES) $(MENCODER_DEPS) $(MPLAYER_DEPS): help_mp.h
-mpcommon.o osdep/mplayer-rc.o gui/ui/gtk/about.o: version.h
+mpcommon.o osdep/mplayer-rc.o gui/ui/gtk/about.o gui/win32/gui.o: version.h
 
 #osdep/mplayer-rc.o: osdep/mplayer.exe.manifest
 

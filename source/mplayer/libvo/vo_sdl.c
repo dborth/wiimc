@@ -396,6 +396,8 @@ static int sdl_open (void *plugin, void *name)
 	if (vo_doublebuffering)
 	    priv->sdlflags |= SDL_DOUBLEBUF;
 #endif
+        if (!vo_border)
+            priv->sdlflags |= SDL_NOFRAME;
 
 	/* get information about the graphics adapter */
 	vidInfo = SDL_GetVideoInfo ();
@@ -765,9 +767,11 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 	if (sdl_open(NULL, NULL) != 0)
 	    return -1;
 
+    if (WinID < 0) {
 	/* Set output window title */
 	SDL_WM_SetCaption (".: MPlayer : F = Fullscreen/Windowed : C = Cycle Fullscreen Resolutions :.", title);
 	//SDL_WM_SetCaption (title, title);
+    }
 
     if(priv->X) {
 	aspect_save_screenres(priv->XWidth,priv->XHeight);

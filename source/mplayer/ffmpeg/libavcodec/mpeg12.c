@@ -33,6 +33,7 @@
 #include "dsputil.h"
 #include "mpegvideo.h"
 #include "libavutil/avassert.h"
+#include "libavutil/timecode.h"
 
 #include "mpeg12.h"
 #include "mpeg12data.h"
@@ -1496,7 +1497,7 @@ static int load_matrix(MpegEncContext *s, uint16_t matrix0[64], uint16_t matrix1
             return -1;
         }
         if (intra && i == 0 && v != 8) {
-            av_log(s->avctx, AV_LOG_ERROR, "intra matrix invalid, ignoring\n");
+            av_log(s->avctx, AV_LOG_DEBUG, "intra matrix specifies invalid DC quantizer %d, ignoring\n", v);
             v = 8; // needed by pink.mpg / issue1046
         }
         matrix0[j] = v;
@@ -1694,7 +1695,7 @@ static int mpeg_decode_slice(MpegEncContext *s, int mb_y,
     if (mb_y == 0 && s->codec_tag == AV_RL32("SLIF")) {
         skip_bits1(&s->gb);
     } else {
-        for (;;) {
+        while (get_bits_left(&s->gb) > 0) {
             int code = get_vlc2(&s->gb, mbincr_vlc.table, MBINCR_VLC_BITS, 2);
             if (code < 0) {
                 av_log(s->avctx, AV_LOG_ERROR, "first mb_incr damaged\n");
@@ -2165,15 +2166,11 @@ static void mpeg_decode_gop(AVCodecContext *avctx,
     broken_link = get_bits1(&s->gb);
 
     if (s->avctx->debug & FF_DEBUG_PICT_INFO) {
-        int time_code_hours    = tc>>19 & 0x1f;
-        int time_code_minutes  = tc>>13 & 0x3f;
-        int time_code_seconds  = tc>>6  & 0x3f;
-        int drop_frame_flag    = tc     & 1<<24;
-        int time_code_pictures = tc     & 0x3f;
-        av_log(s->avctx, AV_LOG_DEBUG, "GOP (%02d:%02d:%02d%c%02d) closed_gop=%d broken_link=%d\n",
-               time_code_hours, time_code_minutes, time_code_seconds,
-               drop_frame_flag ? ';' : ':',
-               time_code_pictures, s->closed_gop, broken_link);
+        char tcbuf[AV_TIMECODE_STR_SIZE];
+        av_timecode_make_mpeg_tc_string(tcbuf, tc);
+        av_log(s->avctx, AV_LOG_DEBUG,
+               "GOP (%s) closed_gop=%d broken_link=%d\n",
+               tcbuf, s->closed_gop, broken_link);
     }
 }
 /**
@@ -2216,6 +2213,7 @@ int ff_mpeg1_find_frame_end(ParseContext *pc, const uint8_t *buf, int buf_size, 
                 pc->frame_start_found = 4;
             }
             if (state == SEQ_END_CODE) {
+                pc->frame_start_found = 0;
                 pc->state=-1;
                 return i+1;
             }
@@ -2667,4 +2665,3 @@ AVCodec ff_mpeg1_vdpau_decoder = {
     .long_name      = NULL_IF_CONFIG_SMALL("MPEG-1 video (VDPAU acceleration)"),
 };
 #endif
-

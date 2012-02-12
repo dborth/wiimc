@@ -3431,6 +3431,12 @@ dvd_angle=1;
         // setup global sub numbering
         mpctx->sub_counts[SUB_SOURCE_VOBSUB] = vobsub_get_indexes_count(vo_vobsub);
     }
+#ifdef CONFIG_ASS
+    // must be before demuxer open, since the settings are
+    // used in generating the ASSTrack
+    if (ass_enabled && ass_library)
+        ass_mp_reset_config(ass_library);
+#endif
 
 //============ Open & Sync STREAM --- fork cache2 ====================
 

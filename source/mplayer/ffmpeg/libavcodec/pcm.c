@@ -49,7 +49,8 @@ static av_cold int pcm_encode_init(AVCodecContext *avctx)
     avctx->bits_per_coded_sample = av_get_bits_per_sample(avctx->codec->id);
     avctx->block_align = avctx->channels * avctx->bits_per_coded_sample/8;
     avctx->coded_frame= avcodec_alloc_frame();
-    avctx->coded_frame->key_frame= 1;
+    if (!avctx->coded_frame)
+        return AVERROR(ENOMEM);
 
     return 0;
 }
@@ -193,7 +194,6 @@ static int pcm_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
         return -1;
     }
 
-    avpkt->size = frame->nb_samples * avctx->channels * sample_size;
     *got_packet_ptr = 1;
     return 0;
 }
@@ -512,14 +512,14 @@ AVCodec ff_ ## name_ ## _decoder = {            \
     PCM_ENCODER(id,sample_fmt_,name,long_name_); PCM_DECODER(id,sample_fmt_,name,long_name_)
 
 /* Note: Do not forget to add new entries to the Makefile as well. */
-PCM_CODEC  (CODEC_ID_PCM_ALAW,  AV_SAMPLE_FMT_S16, pcm_alaw, "PCM A-law");
+PCM_CODEC  (CODEC_ID_PCM_ALAW,  AV_SAMPLE_FMT_S16, pcm_alaw, "PCM A-law / G.711 A-law");
 PCM_DECODER(CODEC_ID_PCM_DVD,   AV_SAMPLE_FMT_S32, pcm_dvd, "PCM signed 20|24-bit big-endian");
 PCM_CODEC  (CODEC_ID_PCM_F32BE, AV_SAMPLE_FMT_FLT, pcm_f32be, "PCM 32-bit floating point big-endian");
 PCM_CODEC  (CODEC_ID_PCM_F32LE, AV_SAMPLE_FMT_FLT, pcm_f32le, "PCM 32-bit floating point little-endian");
 PCM_CODEC  (CODEC_ID_PCM_F64BE, AV_SAMPLE_FMT_DBL, pcm_f64be, "PCM 64-bit floating point big-endian");
 PCM_CODEC  (CODEC_ID_PCM_F64LE, AV_SAMPLE_FMT_DBL, pcm_f64le, "PCM 64-bit floating point little-endian");
 PCM_DECODER(CODEC_ID_PCM_LXF,   AV_SAMPLE_FMT_S32, pcm_lxf, "PCM signed 20-bit little-endian planar");
-PCM_CODEC  (CODEC_ID_PCM_MULAW, AV_SAMPLE_FMT_S16, pcm_mulaw, "PCM mu-law");
+PCM_CODEC  (CODEC_ID_PCM_MULAW, AV_SAMPLE_FMT_S16, pcm_mulaw, "PCM mu-law / G.711 mu-law");
 PCM_CODEC  (CODEC_ID_PCM_S8,    AV_SAMPLE_FMT_U8,  pcm_s8, "PCM signed 8-bit");
 PCM_CODEC  (CODEC_ID_PCM_S16BE, AV_SAMPLE_FMT_S16, pcm_s16be, "PCM signed 16-bit big-endian");
 PCM_CODEC  (CODEC_ID_PCM_S16LE, AV_SAMPLE_FMT_S16, pcm_s16le, "PCM signed 16-bit little-endian");

@@ -28,12 +28,7 @@ static av_cold int encode_init(AVCodecContext *avctx)
 {
     if (avctx->width & 1) {
         av_log(avctx, AV_LOG_ERROR, "v210 needs even width\n");
-        return -1;
-    }
-
-    if (avctx->pix_fmt != PIX_FMT_YUV422P10) {
-        av_log(avctx, AV_LOG_ERROR, "v210 needs YUV422P10\n");
-        return -1;
+        return AVERROR(EINVAL);
     }
 
     if (avctx->bits_per_raw_sample != 10)
@@ -41,8 +36,9 @@ static av_cold int encode_init(AVCodecContext *avctx)
                avctx->bits_per_raw_sample);
 
     avctx->coded_frame = avcodec_alloc_frame();
+    if (!avctx->coded_frame)
+        return AVERROR(ENOMEM);
 
-    avctx->coded_frame->key_frame = 1;
     avctx->coded_frame->pict_type = AV_PICTURE_TYPE_I;
 
     return 0;
@@ -54,17 +50,19 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf,
     const AVFrame *pic = data;
     int aligned_width = ((avctx->width + 47) / 48) * 48;
     int stride = aligned_width * 8 / 3;
+    int line_padding = stride - ((avctx->width * 8 + 11) / 12) * 4;
     int h, w;
     const uint16_t *y = (const uint16_t*)pic->data[0];
     const uint16_t *u = (const uint16_t*)pic->data[1];
     const uint16_t *v = (const uint16_t*)pic->data[2];
-    uint8_t *p = buf;
-    uint8_t *pdst = buf;
+    PutByteContext p;
 
-    if (buf_size < aligned_width * avctx->height * 8 / 3) {
+    if (buf_size < avctx->height * stride) {
         av_log(avctx, AV_LOG_ERROR, "output buffer too small\n");
-        return -1;
+        return AVERROR(ENOMEM);
     }
+
+    bytestream2_init_writer(&p, buf, buf_size);
 
 #define CLIP(v) av_clip(v, 4, 1019)
 
@@ -73,7 +71,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf,
         val =   CLIP(*a++);             \
         val |= (CLIP(*b++) << 10) |     \
                (CLIP(*c++) << 20);      \
-        bytestream_put_le32(&p, val);   \
+        bytestream2_put_le32u(&p, val); \
     } while (0)
 
     for (h = 0; h < avctx->height; h++) {
@@ -89,25 +87,24 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf,
 
             val = CLIP(*y++);
             if (w == avctx->width - 2)
-                bytestream_put_le32(&p, val);
+                bytestream2_put_le32u(&p, val);
             if (w < avctx->width - 3) {
                 val |= (CLIP(*u++) << 10) | (CLIP(*y++) << 20);
-                bytestream_put_le32(&p, val);
+                bytestream2_put_le32u(&p, val);
 
                 val = CLIP(*v++) | (CLIP(*y++) << 10);
-                bytestream_put_le32(&p, val);
+                bytestream2_put_le32u(&p, val);
             }
         }
 
-        pdst += stride;
-        memset(p, 0, pdst - p);
-        p = pdst;
+        bytestream2_set_buffer(&p, 0, line_padding);
+
         y += pic->linesize[0] / 2 - avctx->width;
         u += pic->linesize[1] / 2 - avctx->width / 2;
         v += pic->linesize[2] / 2 - avctx->width / 2;
     }
 
-    return p - buf;
+    return bytestream2_tell_p(&p);
 }
 
 static av_cold int encode_close(AVCodecContext *avctx)

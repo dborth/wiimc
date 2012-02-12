@@ -127,9 +127,13 @@ typedef struct MOVStreamContext {
     int dts_shift;        ///< dts shift when ctts is negative
     uint32_t palette[256];
     int has_palette;
+    int64_t data_size;
+    uint32_t tmcd_flags;  ///< tmcd track flags
+    int64_t track_end;    ///< used for dts generation in fragmented movie files
 } MOVStreamContext;
 
 typedef struct MOVContext {
+    AVClass *avclass;
     AVFormatContext *fc;
     int time_scale;
     int64_t duration;     ///< duration of the longest track
@@ -143,6 +147,7 @@ typedef struct MOVContext {
     unsigned trex_count;
     int itunes_metadata;  ///< metadata are itunes style
     int chapter_track;
+    int use_absolute_path;
 } MOVContext;
 
 int ff_mp4_read_descr_len(AVIOContext *pb);

@@ -29,8 +29,9 @@ MMX-OBJS-$(CONFIG_H264PRED)            += x86/h264_intrapred_init.o
 MMX-OBJS-$(CONFIG_RV30_DECODER)        += x86/rv34dsp_init.o
 YASM-OBJS-$(CONFIG_RV30_DECODER)       += x86/rv34dsp.o
 MMX-OBJS-$(CONFIG_RV40_DECODER)        += x86/rv34dsp_init.o            \
+                                          x86/rv40dsp_init.o
+YASM-OBJS-$(CONFIG_RV40_DECODER)       += x86/rv34dsp.o                 \
                                           x86/rv40dsp.o
-YASM-OBJS-$(CONFIG_RV40_DECODER)       += x86/rv34dsp.o
 
 YASM-OBJS-$(CONFIG_VC1_DECODER)        += x86/vc1dsp_yasm.o
 
@@ -42,13 +43,14 @@ MMX-OBJS-$(CONFIG_CAVS_DECODER)        += x86/cavsdsp_mmx.o
 MMX-OBJS-$(CONFIG_DNXHD_ENCODER)       += x86/dnxhd_mmx.o
 MMX-OBJS-$(CONFIG_MPEGAUDIODSP)        += x86/mpegaudiodec_mmx.o
 YASM-OBJS-$(CONFIG_MPEGAUDIODSP)       += x86/imdct36_sse.o
-MMX-OBJS-$(CONFIG_PNG_DECODER)         += x86/png_mmx.o
 MMX-OBJS-$(CONFIG_ENCODERS)            += x86/dsputilenc_mmx.o
 YASM-OBJS-$(CONFIG_ENCODERS)           += x86/dsputilenc_yasm.o
 MMX-OBJS-$(CONFIG_GPL)                 += x86/idct_mmx.o
 MMX-OBJS-$(CONFIG_LPC)                 += x86/lpc_mmx.o
 YASM-OBJS-$(CONFIG_PRORES_LGPL_DECODER)     += x86/proresdsp.o
 MMX-OBJS-$(CONFIG_PRORES_LGPL_DECODER)      += x86/proresdsp-init.o
+YASM-OBJS-$(CONFIG_PNG_DECODER)        += x86/pngdsp.o
+MMX-OBJS-$(CONFIG_PNG_DECODER)         += x86/pngdsp-init.o
 YASM-OBJS-$(CONFIG_PRORES_DECODER)     += x86/proresdsp.o
 MMX-OBJS-$(CONFIG_PRORES_DECODER)      += x86/proresdsp-init.o
 MMX-OBJS-$(CONFIG_DWT)                 += x86/snowdsp_mmx.o \
@@ -81,3 +83,4 @@ OBJS-$(HAVE_MMX)                       += x86/dsputil_mmx.o             \
                                           x86/mpegvideo_mmx.o           \
                                           x86/simple_idct_mmx.o         \
 
+OBJS-$(CONFIG_XMM_CLOBBER_TEST)        += x86/w64xmmtest.o

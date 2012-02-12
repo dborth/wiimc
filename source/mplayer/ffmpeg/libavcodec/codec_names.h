@@ -285,8 +285,6 @@ case CODEC_ID_TIFF:
 case CODEC_ID_GIF:
     { extern AVCodec ff_gif_decoder;
       return ff_gif_decoder.name; }
-case CODEC_ID_FFH264:
-    return "ffh264";
 case CODEC_ID_DXA:
     return "dxa";
 case CODEC_ID_DNXHD:
@@ -326,7 +324,8 @@ case CODEC_ID_SUNRAST:
     { extern AVCodec ff_sunrast_decoder;
       return ff_sunrast_decoder.name; }
 case CODEC_ID_INDEO4:
-    return "indeo4";
+    { extern AVCodec ff_indeo4_decoder;
+      return ff_indeo4_decoder.name; }
 case CODEC_ID_INDEO5:
     { extern AVCodec ff_indeo5_decoder;
       return ff_indeo5_decoder.name; }
@@ -336,10 +335,6 @@ case CODEC_ID_MIMIC:
 case CODEC_ID_RL2:
     { extern AVCodec ff_rl2_decoder;
       return ff_rl2_decoder.name; }
-case CODEC_ID_8SVX_EXP:
-    return "8svx_exp";
-case CODEC_ID_8SVX_FIB:
-    return "8svx_fib";
 case CODEC_ID_ESCAPE124:
     { extern AVCodec ff_escape124_decoder;
       return ff_escape124_decoder.name; }
@@ -445,12 +440,9 @@ case CODEC_ID_DFA:
 //case CODEC_ID_VC1IMAGE:
 //    { extern AVCodec ff_vc1image_decoder;
 //      return ff_vc1image_decoder.name; }
-//case CODEC_ID_G723_1_DEPRECATED:
-//    return "g723_1_deprecated";
-//case CODEC_ID_G729_DEPRECATED:
-//    return "g729_deprecated";
-//case CODEC_ID_UTVIDEO_DEPRECATED:
-//    return "utvideo_deprecated";
+//case CODEC_ID_UTVIDEO:
+//    { extern AVCodec ff_utvideo_decoder;
+//      return ff_utvideo_decoder.name; }
 //case CODEC_ID_BMV_VIDEO:
 //    { extern AVCodec ff_bmv_video_decoder;
 //      return ff_bmv_video_decoder.name; }
@@ -463,14 +455,32 @@ case CODEC_ID_DFA:
 //case CODEC_ID_V410:
 //    { extern AVCodec ff_v410_decoder;
 //      return ff_v410_decoder.name; }
-//case CODEC_ID_UTVIDEO:
-//    { extern AVCodec ff_utvideo_decoder;
-//      return ff_utvideo_decoder.name; }
+//case CODEC_ID_XWD:
+//    { extern AVCodec ff_xwd_decoder;
+//      return ff_xwd_decoder.name; }
+//case CODEC_ID_Y41P:
+//    { extern AVCodec ff_y41p_decoder;
+//      return ff_y41p_decoder.name; }
 //case CODEC_ID_ESCAPE130:
 //    { extern AVCodec ff_escape130_decoder;
 //      return ff_escape130_decoder.name; }
+//case CODEC_ID_AVRP:
+//    { extern AVCodec ff_avrp_decoder;
+//      return ff_avrp_decoder.name; }
 case CODEC_ID_G2M:
     return "g2m";
+//case CODEC_ID_AYUV:
+//    { extern AVCodec ff_ayuv_decoder;
+//      return ff_ayuv_decoder.name; }
+//case CODEC_ID_V308:
+//    { extern AVCodec ff_v308_decoder;
+//      return ff_v308_decoder.name; }
+//case CODEC_ID_V408:
+//    { extern AVCodec ff_v408_decoder;
+//      return ff_v408_decoder.name; }
+//case CODEC_ID_YUV4:
+//    { extern AVCodec ff_yuv4_decoder;
+//      return ff_yuv4_decoder.name; }
 case CODEC_ID_PCM_S16LE:
     { extern AVCodec ff_pcm_s16le_decoder;
       return ff_pcm_s16le_decoder.name; }
@@ -642,6 +652,9 @@ case CODEC_ID_ADPCM_IMA_ISS:
 case CODEC_ID_ADPCM_G722:
     { extern AVCodec ff_adpcm_g722_decoder;
       return ff_adpcm_g722_decoder.name; }
+case CODEC_ID_ADPCM_IMA_APC:
+    { extern AVCodec ff_adpcm_ima_apc_decoder;
+      return ff_adpcm_ima_apc_decoder.name; }
 case CODEC_ID_AMR_NB:
     return "amr_nb";
 case CODEC_ID_AMR_WB:
@@ -698,12 +711,6 @@ case CODEC_ID_MACE6:
 case CODEC_ID_VMDAUDIO:
     { extern AVCodec ff_vmdaudio_decoder;
       return ff_vmdaudio_decoder.name; }
-case CODEC_ID_SONIC:
-    { extern AVCodec ff_sonic_decoder;
-      return ff_sonic_decoder.name; }
-//case CODEC_ID_SONIC_LS:
-//    { extern AVCodec ff_sonic_ls_encoder;
-//      return ff_sonic_ls_encoder.name; }
 case CODEC_ID_FLAC:
     { extern AVCodec ff_flac_decoder;
       return ff_flac_decoder.name; }
@@ -817,20 +824,30 @@ case CODEC_ID_QDMC:
     return "qdmc";
 case CODEC_ID_CELT:
     return "celt";
-//case CODEC_ID_BMV_AUDIO:
-//    { extern AVCodec ff_bmv_audio_decoder;
-//      return ff_bmv_audio_decoder.name; }
-//case CODEC_ID_G729:
-//    { extern AVCodec ff_g729_decoder;
-//      return ff_g729_decoder.name; }
 //case CODEC_ID_G723_1:
 //    { extern AVCodec ff_g723_1_decoder;
 //      return ff_g723_1_decoder.name; }
+//case CODEC_ID_G729:
+//    { extern AVCodec ff_g729_decoder;
+//      return ff_g729_decoder.name; }
+//case CODEC_ID_8SVX_EXP:
+//    return "8svx_exp";
+//case CODEC_ID_8SVX_FIB:
+//    return "8svx_fib";
+//case CODEC_ID_BMV_AUDIO:
+//    { extern AVCodec ff_bmv_audio_decoder;
+//      return ff_bmv_audio_decoder.name; }
 //case CODEC_ID_FFWAVESYNTH:
 //    { extern AVCodec ff_ffwavesynth_decoder;
 //      return ff_ffwavesynth_decoder.name; }
 case CODEC_ID_8SVX_RAW:
     return "8svx_raw";
+case CODEC_ID_SONIC:
+    { extern AVCodec ff_sonic_decoder;
+      return ff_sonic_decoder.name; }
+//case CODEC_ID_SONIC_LS:
+//    { extern AVCodec ff_sonic_ls_encoder;
+//      return ff_sonic_ls_encoder.name; }
 case CODEC_ID_DVD_SUBTITLE:
     return "dvd_subtitle";
 case CODEC_ID_DVB_SUBTITLE:

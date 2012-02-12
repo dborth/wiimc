@@ -24,6 +24,7 @@
 #include "avformat.h"
 #include "internal.h"
 #include "ffm.h"
+#include "avio_internal.h"
 #if CONFIG_FFSERVER
 #include <unistd.h>
 
@@ -124,7 +125,7 @@ static int ffm_read_data(AVFormatContext *s,
     retry_read:
             if (pb->buffer_size != ffm->packet_size) {
                 int64_t tell = avio_tell(pb);
-                url_setbufsize(pb, ffm->packet_size);
+                ffio_set_buf_size(pb, ffm->packet_size);
                 avio_seek(pb, tell, SEEK_SET);
             }
             id = avio_rb16(pb); /* PACKET_ID */
@@ -264,7 +265,7 @@ static int ffm_close(AVFormatContext *s)
 }
 
 
-static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int ffm_read_header(AVFormatContext *s)
 {
     FFMContext *ffm = s->priv_data;
     AVStream *st;
@@ -325,7 +326,8 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
             codec->qcompress = avio_rb16(pb) / 10000.0;
             codec->qblur = avio_rb16(pb) / 10000.0;
             codec->bit_rate_tolerance = avio_rb32(pb);
-            codec->rc_eq = av_strdup(get_strz(pb, rc_eq_buf, sizeof(rc_eq_buf)));
+            avio_get_str(pb, INT_MAX, rc_eq_buf, sizeof(rc_eq_buf));
+            codec->rc_eq = av_strdup(rc_eq_buf);
             codec->rc_max_rate = avio_rb32(pb);
             codec->rc_min_rate = avio_rb32(pb);
             codec->rc_buffer_size = avio_rb32(pb);
@@ -349,7 +351,6 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
             codec->thread_count = avio_r8(pb);
             codec->coder_type = avio_rb32(pb);
             codec->me_cmp = avio_rb32(pb);
-            codec->partitions = avio_rb32(pb);
             codec->me_subpel_quality = avio_rb32(pb);
             codec->me_range = avio_rb32(pb);
             codec->keyint_min = avio_rb32(pb);
@@ -359,7 +360,6 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
             codec->qblur = av_int2double(avio_rb64(pb));
             codec->max_qdiff = avio_rb32(pb);
             codec->refs = avio_rb32(pb);
-            codec->directpred = avio_rb32(pb);
             break;
         case AVMEDIA_TYPE_AUDIO:
             codec->sample_rate = avio_rb32(pb);

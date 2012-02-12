@@ -139,30 +139,16 @@ void *listSet(int cmd, void *vparam)
 
     // delete list
     case gtkDelPl:
-    {
-        plItem *curr = plList;
-        plItem *next;
+        while (plList) {
+            plItem *next = plList->next;
 
-        if (!plList)
-            return NULL;
+            free(plList->path);
+            free(plList->name);
+            free(plList);
 
-        if (!curr->next) {
-            free(curr->path);
-            free(curr->name);
-            free(curr);
-        } else {
-            while (curr->next) {
-                next = curr->next;
-                free(curr->path);
-                free(curr->name);
-                free(curr);
-                curr = next;
-            }
+            plList = next;
         }
-
-        plList    = NULL;
         plCurrent = NULL;
-    }
         return NULL;
 
     // handle url
@@ -185,6 +171,17 @@ void *listSet(int cmd, void *vparam)
         } else {
             url_item->next = NULL;
             urlList = url_item;
+        }
+        return NULL;
+
+    case gtkDelURL:
+        while (urlList) {
+            urlItem *next = urlList->next;
+
+            free(urlList->url);
+            free(urlList);
+
+            urlList = next;
         }
         return NULL;
     }

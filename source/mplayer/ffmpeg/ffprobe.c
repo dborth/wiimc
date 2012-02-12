@@ -32,6 +32,7 @@
 #include "libavutil/opt.h"
 #include "libavutil/pixdesc.h"
 #include "libavutil/dict.h"
+#include "libavutil/timecode.h"
 #include "libavdevice/avdevice.h"
 #include "libswscale/swscale.h"
 #include "libswresample/swresample.h"
@@ -102,34 +103,32 @@ static char *value_string(char *buf, int buf_size, struct unit_value uv)
         hours = mins / 60;
         mins %= 60;
         snprintf(buf, buf_size, "%d:%02d:%09.6f", hours, mins, secs);
-    } else if (use_value_prefix) {
-        const char *prefix_string;
-        long long int index;
+    } else {
+        const char *prefix_string = "";
         int l;
 
-        if (uv.unit == unit_byte_str && use_byte_value_binary_prefix) {
-            index = (long long int) (log(vald)/log(2)) / 10;
-            index = av_clip(index, 0, FF_ARRAY_ELEMS(binary_unit_prefixes) - 1);
-            vald /= pow(2, index * 10);
-            prefix_string = binary_unit_prefixes[index];
-        } else {
-            index = (long long int) (log10(vald)) / 3;
-            index = av_clip(index, 0, FF_ARRAY_ELEMS(decimal_unit_prefixes) - 1);
-            vald /= pow(10, index * 3);
-            prefix_string = decimal_unit_prefixes[index];
+        if (use_value_prefix && vald > 1) {
+            long long int index;
+
+            if (uv.unit == unit_byte_str && use_byte_value_binary_prefix) {
+                index = (long long int) (log(vald)/log(2)) / 10;
+                index = av_clip(index, 0, FF_ARRAY_ELEMS(binary_unit_prefixes) - 1);
+                vald /= pow(2, index * 10);
+                prefix_string = binary_unit_prefixes[index];
+            } else {
+                index = (long long int) (log10(vald)) / 3;
+                index = av_clip(index, 0, FF_ARRAY_ELEMS(decimal_unit_prefixes) - 1);
+                vald /= pow(10, index * 3);
+                prefix_string = decimal_unit_prefixes[index];
+            }
         }
 
-        if (show_float || vald != (long long int)vald) l = snprintf(buf, buf_size, "%.3f", vald);
-        else                                           l = snprintf(buf, buf_size, "%lld", (long long int)vald);
-        snprintf(buf+l, buf_size-l, "%s%s%s", prefix_string || show_value_unit ? " " : "",
+        if (show_float || (use_value_prefix && vald != (long long int)vald))
+            l = snprintf(buf, buf_size, "%f", vald);
+        else
+            l = snprintf(buf, buf_size, "%lld", (long long int)vald);
+        snprintf(buf+l, buf_size-l, "%s%s%s", *prefix_string || show_value_unit ? " " : "",
                  prefix_string, show_value_unit ? uv.unit : "");
-    } else {
-        int l;
-
-        if (show_float) l = snprintf(buf, buf_size, "%.3f", vald);
-        else            l = snprintf(buf, buf_size, "%lld", (long long int)vald);
-        snprintf(buf+l, buf_size-l, "%s%s", show_value_unit ? " " : "",
-                 show_value_unit ? uv.unit : "");
     }
 
     return buf;
@@ -386,7 +385,7 @@ fail:
         char buf[64];                                                   \
         snprintf(buf, sizeof(buf), "%s", src);                          \
         av_log(log_ctx, AV_LOG_WARNING,                                 \
-               "String '%s...' with is too big\n", buf);                \
+               "String '%s...' is too big\n", buf);                     \
         return "FFPROBE_TOO_BIG_STRING";                                \
     }
 
@@ -1455,13 +1454,9 @@ static void show_stream(WriterContext *w, AVFormatContext *fmt_ctx, int stream_i
             else   print_str_opt("pix_fmt", "unknown");
             print_int("level",   dec_ctx->level);
             if (dec_ctx->timecode_frame_start >= 0) {
-                uint32_t tc = dec_ctx->timecode_frame_start;
-                print_fmt("timecode", "%02d:%02d:%02d%c%02d",
-                          tc>>19 & 0x1f,              // hours
-                          tc>>13 & 0x3f,              // minutes
-                          tc>>6  & 0x3f,              // seconds
-                          tc     & 1<<24 ? ';' : ':', // drop
-                          tc     & 0x3f);             // frames
+                char tcbuf[AV_TIMECODE_STR_SIZE];
+                av_timecode_make_mpeg_tc_string(tcbuf, dec_ctx->timecode_frame_start);
+                print_str("timecode", tcbuf);
             } else {
                 print_str_opt("timecode", "N/A");
             }

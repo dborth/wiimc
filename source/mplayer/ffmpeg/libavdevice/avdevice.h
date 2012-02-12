@@ -56,10 +56,6 @@
                                            LIBAVDEVICE_VERSION_MICRO)
 #define LIBAVDEVICE_BUILD       LIBAVDEVICE_VERSION_INT
 
-#ifndef FF_API_V4L
-#define FF_API_V4L              (LIBAVDEVICE_VERSION_MAJOR < 54)
-#endif
-
 /**
  * Return the LIBAVDEVICE_VERSION_INT constant.
  */
@@ -82,4 +78,3 @@ const char *avdevice_license(void);
 void avdevice_register_all(void);
 
 #endif /* AVDEVICE_AVDEVICE_H */
-

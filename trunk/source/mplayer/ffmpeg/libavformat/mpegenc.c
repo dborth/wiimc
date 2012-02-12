@@ -421,11 +421,6 @@ static int mpeg_mux_init(AVFormatContext *ctx)
             video_bitrate += codec_rate;
     }
 
-#if FF_API_MUXRATE
-    if(ctx->mux_rate){
-        s->mux_rate= (ctx->mux_rate + (8 * 50) - 1) / (8 * 50);
-    } else
-#endif
     if (!s->mux_rate) {
         /* we increase slightly the bitrate to take into account the
            headers. XXX: compute it exactly */
@@ -1047,7 +1042,7 @@ retry:
         StreamInfo *stream = st->priv_data;
         const int avail_data=  av_fifo_size(stream->fifo);
         const int space= stream->max_buffer_size - stream->buffer_index;
-        int rel_space= 1024*space / stream->max_buffer_size;
+        int rel_space= 1024LL*space / stream->max_buffer_size;
         PacketDesc *next_pkt= stream->premux_packet;
 
         /* for subtitle, a single PES packet must be generated,
@@ -1163,10 +1158,6 @@ static int mpeg_mux_write_packet(AVFormatContext *ctx, AVPacket *pkt)
     int preload;
     const int is_iframe = st->codec->codec_type == AVMEDIA_TYPE_VIDEO && (pkt->flags & AV_PKT_FLAG_KEY);
 
-#if FF_API_PRELOAD
-    if (ctx->preload)
-        s->preload = ctx->preload;
-#endif
     preload = av_rescale(s->preload, 90000, AV_TIME_BASE);
 
     pts= pkt->pts;

@@ -37,7 +37,7 @@ static int probe(AVProbeData *p)
     return 0;
 }
 
-static int read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int read_header(AVFormatContext *s)
 {
     AVStream *st;
 
@@ -115,5 +115,4 @@ AVInputFormat ff_iv8_demuxer = {
     .read_header    = read_header,
     .read_packet    = read_packet,
     .flags= AVFMT_GENERIC_INDEX,
-    .value = CODEC_ID_MPEG4,
 };

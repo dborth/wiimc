@@ -94,7 +94,7 @@ details), you must upgrade FFmpeg's license to GPL in order to use it.
 
 
 
-@chapter Supported File Formats and Codecs
+@chapter Supported File Formats, Codecs or Features
 
 You can use the @code{-formats} and @code{-codecs} options to have an exhaustive list.
 
@@ -399,6 +399,8 @@ following image formats are supported:
     @tab YUV, JPEG and some extension is not supported yet.
 @item Truevision Targa  @tab X @tab X
     @tab Targa (.TGA) image format
+@item XWD  @tab X @tab X
+    @tab X Window Dump image format
 @end multitable
 
 @code{X} means that encoding (resp. decoding) is supported.
@@ -438,10 +440,12 @@ following image formats are supported:
 @item Autodesk Animator Flic video  @tab     @tab  X
 @item Autodesk RLE           @tab     @tab  X
     @tab fourcc: AASC
-@item Avid 1:1 10-bit RGB Packer  @tab   @tab  X
+@item Avid 1:1 10-bit RGB Packer  @tab  X  @tab  X
     @tab fourcc: AVrp
 @item AVS (Audio Video Standard) video  @tab     @tab  X
     @tab Video encoding used by the Creature Shock game.
+@item AYUV                   @tab  X  @tab  X
+    @tab Microsoft uncompressed packed 4:4:4:4
 @item Beam Software VB       @tab     @tab  X
 @item Bethesda VID video     @tab     @tab  X
     @tab Used in some games from Bethesda Softworks.
@@ -489,12 +493,13 @@ following image formats are supported:
 @item Escape 124             @tab     @tab  X
 @item Escape 130             @tab     @tab  X
 @item FFmpeg video codec #1  @tab  X  @tab  X
-    @tab experimental lossless codec (fourcc: FFV1)
+    @tab lossless codec (fourcc: FFV1)
 @item Flash Screen Video v1  @tab  X  @tab  X
     @tab fourcc: FSV1
 @item Flash Screen Video v2  @tab  X  @tab  X
 @item Flash Video (FLV)      @tab  X  @tab  X
     @tab Sorenson H.263 used in Flash
+@item Forward Uncompressed   @tab     @tab  X
 @item Fraps                  @tab     @tab  X
 @item H.261                  @tab  X  @tab  X
 @item H.263 / H.263-1996     @tab  X  @tab  X
@@ -575,8 +580,8 @@ following image formats are supported:
     @tab fourcc: 'smc '
 @item QuickTime video (RPZA) @tab     @tab  X
     @tab fourcc: rpza
-@item R10K AJA Kona 10-bit RGB Codec     @tab     @tab  X
-@item R210 Quicktime Uncompressed RGB 10-bit     @tab     @tab  X
+@item R10K AJA Kona 10-bit RGB Codec     @tab  X  @tab  X
+@item R210 Quicktime Uncompressed RGB 10-bit     @tab  X  @tab  X
 @item Raw Video              @tab  X  @tab  X
 @item RealVideo 1.0          @tab  X  @tab  X
 @item RealVideo 2.0          @tab  X  @tab  X
@@ -610,6 +615,7 @@ following image formats are supported:
 @item Ut Video               @tab     @tab  X
 @item v210 QuickTime uncompressed 4:2:2 10-bit     @tab  X  @tab  X
 @item v308 QuickTime uncompressed 4:4:4            @tab  X  @tab  X
+@item v408 QuickTime uncompressed 4:4:4:4          @tab  X  @tab  X
 @item v410 QuickTime uncompressed 4:4:4 10-bit     @tab  X  @tab  X
 @item VBLE Lossless Codec    @tab     @tab  X
 @item VMware Screen Codec / VMware Video  @tab     @tab  X
@@ -863,5 +869,16 @@ performance on systems without hardware floating point support).
 @end multitable
 
 @code{X} means that input/output is supported.
+
+@section Timecode
+
+@multitable @columnfractions .4 .1 .1
+@item Codec/format      @tab Read   @tab Write
+@item DV                @tab X      @tab X
+@item GXF               @tab X      @tab X
+@item MOV               @tab X      @tab
+@item MPEG1/2           @tab X      @tab X
+@item MXF               @tab        @tab X
+@end multitable
 
 @bye

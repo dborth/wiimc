@@ -118,6 +118,11 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
         .color_type = FF_COLOR_YUV,
     },
 
+    [PIX_FMT_YUVA444P] = {
+        .is_alpha = 1,
+        .color_type = FF_COLOR_YUV,
+    },
+
     /* JPEG YUV */
     [PIX_FMT_YUVJ420P] = {
         .color_type = FF_COLOR_YUV_JPEG,
@@ -294,13 +299,6 @@ void avcodec_get_chroma_sub_sample(enum PixelFormat pix_fmt, int *h_shift, int *
     *v_shift = av_pix_fmt_descriptors[pix_fmt].log2_chroma_h;
 }
 
-#if FF_API_GET_PIX_FMT_NAME
-const char *avcodec_get_pix_fmt_name(enum PixelFormat pix_fmt)
-{
-    return av_get_pix_fmt_name(pix_fmt);
-}
-#endif
-
 int ff_is_hwaccel_pix_fmt(enum PixelFormat pix_fmt)
 {
     return av_pix_fmt_descriptors[pix_fmt].flags & PIX_FMT_HWACCEL;
@@ -368,15 +366,9 @@ int avpicture_get_size(enum PixelFormat pix_fmt, int width, int height)
     AVPicture dummy_pict;
     if(av_image_check_size(width, height, 0, NULL))
         return -1;
-    switch (pix_fmt) {
-    case PIX_FMT_RGB8:
-    case PIX_FMT_BGR8:
-    case PIX_FMT_RGB4_BYTE:
-    case PIX_FMT_BGR4_BYTE:
-    case PIX_FMT_GRAY8:
+    if (av_pix_fmt_descriptors[pix_fmt].flags & PIX_FMT_PSEUDOPAL)
         // do not include palette for these pseudo-paletted formats
         return width * height;
-    }
     return avpicture_fill(&dummy_pict, NULL, pix_fmt, width, height);
 }
 
@@ -461,8 +453,9 @@ int avcodec_get_pix_fmt_loss(enum PixelFormat dst_pix_fmt, enum PixelFormat src_
     if (!pf->is_alpha && (ps->is_alpha && has_alpha))
         loss |= FF_LOSS_ALPHA;
     if (dst_pix_fmt == PIX_FMT_PAL8 &&
-        (src_pix_fmt != PIX_FMT_PAL8 && ps->color_type != FF_COLOR_GRAY))
+        (src_pix_fmt != PIX_FMT_PAL8 && (ps->color_type != FF_COLOR_GRAY || (ps->is_alpha && has_alpha))))
         loss |= FF_LOSS_COLORQUANT;
+
     return loss;
 }
 
@@ -757,55 +750,6 @@ int av_picture_pad(AVPicture *dst, const AVPicture *src, int height, int width,
     return 0;
 }
 
-#if FF_API_GET_ALPHA_INFO
-/* NOTE: we scan all the pixels to have an exact information */
-static int get_alpha_info_pal8(const AVPicture *src, int width, int height)
-{
-    const unsigned char *p;
-    int src_wrap, ret, x, y;
-    unsigned int a;
-    uint32_t *palette = (uint32_t *)src->data[1];
-
-    p = src->data[0];
-    src_wrap = src->linesize[0] - width;
-    ret = 0;
-    for(y=0;y<height;y++) {
-        for(x=0;x<width;x++) {
-            a = palette[p[0]] >> 24;
-            if (a == 0x00) {
-                ret |= FF_ALPHA_TRANSP;
-            } else if (a != 0xff) {
-                ret |= FF_ALPHA_SEMI_TRANSP;
-            }
-            p++;
-        }
-        p += src_wrap;
-    }
-    return ret;
-}
-
-int img_get_alpha_info(const AVPicture *src,
-                       enum PixelFormat pix_fmt, int width, int height)
-{
-    const PixFmtInfo *pf = &pix_fmt_info[pix_fmt];
-    int ret;
-
-    /* no alpha can be represented in format */
-    if (!pf->is_alpha)
-        return 0;
-    switch(pix_fmt) {
-    case PIX_FMT_PAL8:
-        ret = get_alpha_info_pal8(src, width, height);
-        break;
-    default:
-        /* we do not know, so everything is indicated */
-        ret = FF_ALPHA_TRANSP | FF_ALPHA_SEMI_TRANSP;
-        break;
-    }
-    return ret;
-}
-#endif
-
 #if !((HAVE_MMX && HAVE_YASM) || HAVE_PAIRED)
 /* filter parameters: [-1 4 2 4 -1] // 8 */
 static void deinterlace_line_c(uint8_t *dst,
@@ -964,4 +908,3 @@ int avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
     emms_c();
     return 0;
 }
-

@@ -104,7 +104,7 @@ int ff_h264_check_intra4x4_pred_mode(H264Context *h){
     return 0;
 } //FIXME cleanup like check_intra_pred_mode
 
-static int check_intra_pred_mode(H264Context *h, int mode, int is_chroma){
+int ff_h264_check_intra_pred_mode(H264Context *h, int mode, int is_chroma){
     MpegEncContext * const s = &h->s;
     static const int8_t top [7]= {LEFT_DC_PRED8x8, 1,-1,-1};
     static const int8_t left[7]= { TOP_DC_PRED8x8,-1, 2,-1,DC_128_PRED8x8};
@@ -134,22 +134,6 @@ static int check_intra_pred_mode(H264Context *h, int mode, int is_chroma){
     }
 
     return mode;
-}
-
-/**
- * checks if the top & left blocks are available if needed & changes the dc mode so it only uses the available blocks.
- */
-int ff_h264_check_intra16x16_pred_mode(H264Context *h, int mode)
-{
-    return check_intra_pred_mode(h, mode, 0);
-}
-
-/**
- * checks if the top & left blocks are available if needed & changes the dc mode so it only uses the available blocks.
- */
-int ff_h264_check_intra_chroma_pred_mode(H264Context *h, int mode)
-{
-    return check_intra_pred_mode(h, mode, 1);
 }
 
 
@@ -1125,7 +1109,7 @@ int ff_h264_decode_extradata(H264Context *h, const uint8_t *buf, int size)
         if(decode_nal_units(h, buf, size) < 0)
             return -1;
     }
-    return 0;
+    return size;
 }
 
 av_cold int ff_h264_decode_init(AVCodecContext *avctx){
@@ -1170,7 +1154,7 @@ av_cold int ff_h264_decode_init(AVCodecContext *avctx){
     }
 
     if(avctx->extradata_size > 0 && avctx->extradata &&
-        ff_h264_decode_extradata(h, avctx->extradata, avctx->extradata_size))
+        ff_h264_decode_extradata(h, avctx->extradata, avctx->extradata_size)<0)
         return -1;
 
     if(h->sps.bitstream_restriction_flag && s->avctx->has_b_frames < h->sps.num_reorder_frames){
@@ -1224,7 +1208,7 @@ static int decode_update_thread_context(AVCodecContext *dst, const AVCodecContex
     int inited = s->context_initialized, err;
     int i;
 
-    if(dst == src || !s1->context_initialized) return 0;
+    if(dst == src) return 0;
 
     err = ff_mpeg_update_thread_context(dst, src);
     if(err) return err;
@@ -1240,11 +1224,18 @@ static int decode_update_thread_context(AVCodecContext *dst, const AVCodecContex
         memcpy(&h->s + 1, &h1->s + 1, sizeof(H264Context) - sizeof(MpegEncContext)); //copy all fields after MpegEnc
         memset(h->sps_buffers, 0, sizeof(h->sps_buffers));
         memset(h->pps_buffers, 0, sizeof(h->pps_buffers));
+
+        if (s1->context_initialized) {
         if (ff_h264_alloc_tables(h) < 0) {
             av_log(dst, AV_LOG_ERROR, "Could not allocate memory for h264\n");
             return AVERROR(ENOMEM);
         }
         context_init(h);
+
+        // frame_start may not be called for the next thread (if it's decoding a bottom field)
+        // so this has to be allocated here
+        h->s.obmc_scratchpad = av_malloc(16*6*s->linesize);
+        }
 
         for(i=0; i<2; i++){
             h->rbsp_buffer[i] = NULL;
@@ -1252,10 +1243,6 @@ static int decode_update_thread_context(AVCodecContext *dst, const AVCodecContex
         }
 
         h->thread_context[0] = h;
-
-        // frame_start may not be called for the next thread (if it's decoding a bottom field)
-        // so this has to be allocated here
-        h->s.obmc_scratchpad = av_malloc(16*6*s->linesize);
 
         s->dsp.clear_blocks(h->mb);
         s->dsp.clear_blocks(h->mb+(24*16<<h->pixel_shift));
@@ -2727,7 +2714,7 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
             || s->avctx->bits_per_raw_sample != h->sps.bit_depth_luma
             || h->cur_chroma_format_idc != h->sps.chroma_format_idc
             || av_cmp_q(h->sps.sar, s->avctx->sample_aspect_ratio))) {
-        if(h != h0) {
+        if(h != h0 || (s->avctx->active_thread_type & FF_THREAD_FRAME)) {
             av_log_missing_feature(s->avctx, "Width/height/bit depth/chroma idc changing with threads is", 0);
             return -1;   // width / height changed during parallelized decoding
         }
@@ -3695,7 +3682,7 @@ static int decode_slice(struct AVCodecContext *avctx, void *arg){
                     tprintf(s->avctx, "slice end %d %d\n", get_bits_count(&s->gb), s->gb.size_in_bits);
 
                     if(   get_bits_count(&s->gb) == s->gb.size_in_bits
-                       || get_bits_count(&s->gb) <  s->gb.size_in_bits && s->avctx->error_recognition < FF_ER_AGGRESSIVE) {
+                       || get_bits_count(&s->gb) <  s->gb.size_in_bits && !(s->avctx->err_recognition & AV_EF_AGGRESSIVE)) {
                         ff_er_add_slice(s, s->resync_mb_x, s->resync_mb_y, s->mb_x-1, s->mb_y, ER_MB_END&part_mask);
 
                         return 0;
@@ -4158,77 +4145,6 @@ static inline void fill_mb_avail(H264Context *h){
     h->mb_avail[5]= 0; //FIXME move out
 }
 #endif
-
-#ifdef TEST
-#undef printf
-#undef random
-#define COUNT 8000
-#define SIZE (COUNT*40)
-extern AVCodec ff_h264_decoder;
-int main(void){
-    int i;
-    uint8_t temp[SIZE];
-    PutBitContext pb;
-    GetBitContext gb;
-    DSPContext dsp;
-    AVCodecContext avctx;
-
-    avcodec_get_context_defaults3(&avctx, &ff_h264_decoder);
-
-    dsputil_init(&dsp, &avctx);
-
-    init_put_bits(&pb, temp, SIZE);
-    printf("testing unsigned exp golomb\n");
-    for(i=0; i<COUNT; i++){
-        START_TIMER
-        set_ue_golomb(&pb, i);
-        STOP_TIMER("set_ue_golomb");
-    }
-    flush_put_bits(&pb);
-
-    init_get_bits(&gb, temp, 8*SIZE);
-    for(i=0; i<COUNT; i++){
-        int j, s = show_bits(&gb, 24);
-
-        {START_TIMER
-        j= get_ue_golomb(&gb);
-        if(j != i){
-            printf("mismatch! at %d (%d should be %d) bits:%6X\n", i, j, i, s);
-//            return -1;
-        }
-        STOP_TIMER("get_ue_golomb");}
-    }
-
-
-    init_put_bits(&pb, temp, SIZE);
-    printf("testing signed exp golomb\n");
-    for(i=0; i<COUNT; i++){
-        START_TIMER
-        set_se_golomb(&pb, i - COUNT/2);
-        STOP_TIMER("set_se_golomb");
-    }
-    flush_put_bits(&pb);
-
-    init_get_bits(&gb, temp, 8*SIZE);
-    for(i=0; i<COUNT; i++){
-        int j, s = show_bits(&gb, 24);
-
-        {START_TIMER
-        j= get_se_golomb(&gb);
-        if(j != i - COUNT/2){
-            printf("mismatch! at %d (%d should be %d) bits:%6X\n", i, j, i, s);
-//            return -1;
-        }
-        STOP_TIMER("get_se_golomb");}
-    }
-
-    printf("Testing RBSP\n");
-
-
-    return 0;
-}
-#endif /* TEST */
-
 
 av_cold void ff_h264_free_context(H264Context *h)
 {

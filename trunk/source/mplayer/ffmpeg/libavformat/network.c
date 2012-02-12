@@ -185,4 +185,3 @@ int ff_is_multicast_address(struct sockaddr *addr)
 
     return 0;
 }
-

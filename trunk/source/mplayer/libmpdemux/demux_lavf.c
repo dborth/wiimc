@@ -41,7 +41,7 @@
 #include "libavutil/avutil.h"
 #include "libavutil/avstring.h"
 #include "libavutil/mathematics.h"
-#include "libavcodec/opt.h"
+#include "libavutil/opt.h"
 
 #include "mp_taglists.h"
 
@@ -478,7 +478,6 @@ static void handle_stream(demuxer_t *demuxer, AVFormatContext *avfc, int i) {
 
 static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
     AVFormatContext *avfc;
-    const AVOption *opt;
     AVDictionaryEntry *t = NULL;
     lavf_priv_t *priv= demuxer->priv;
     int i;
@@ -496,12 +495,12 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
         avfc->flags |= AVFMT_FLAG_IGNIDX;
 
     if(opt_probesize) {
-        opt = av_set_int(avfc, "probesize", opt_probesize);
-        if(!opt) mp_msg(MSGT_HEADER,MSGL_ERR, "demux_lavf, couldn't set option probesize to %u\n", opt_probesize);
+        if (av_opt_set_int(avfc, "probesize", opt_probesize, 0) < 0)
+            mp_msg(MSGT_HEADER,MSGL_ERR, "demux_lavf, couldn't set option probesize to %u\n", opt_probesize);
     }
     if(opt_analyzeduration) {
-        opt = av_set_int(avfc, "analyzeduration", opt_analyzeduration * AV_TIME_BASE);
-        if(!opt) mp_msg(MSGT_HEADER,MSGL_ERR, "demux_lavf, couldn't set option analyzeduration to %u\n", opt_analyzeduration);
+        if (av_opt_set_int(avfc, "analyzeduration", opt_analyzeduration * AV_TIME_BASE, 0) < 0)
+            mp_msg(MSGT_HEADER,MSGL_ERR, "demux_lavf, couldn't set option analyzeduration to %u\n", opt_analyzeduration);
     }
 
     if(opt_avopt){
@@ -523,8 +522,8 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
         priv->pb = avio_alloc_context(priv->buffer, BIO_BUFFER_SIZE, 0,
                                       demuxer, mp_read, NULL, mp_seek);
         priv->pb->read_seek = mp_read_seek;
-        priv->pb->is_streamed = !demuxer->stream->end_pos || (demuxer->stream->flags & MP_STREAM_SEEK) != MP_STREAM_SEEK;
-        priv->pb->seekable = priv->pb->is_streamed ? 0 : AVIO_SEEKABLE_NORMAL;
+        if (!demuxer->stream->end_pos || (demuxer->stream->flags & MP_STREAM_SEEK) != MP_STREAM_SEEK)
+            priv->pb->seekable = 0;
         avfc->pb = priv->pb;
     }
 
@@ -541,7 +540,7 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
     }
 
     /* Add metadata. */
-    while((t = av_dict_get(avfc->metadata, "", t, AV_METADATA_IGNORE_SUFFIX)))
+    while((t = av_dict_get(avfc->metadata, "", t, AV_DICT_IGNORE_SUFFIX)))
         demux_info_add(demuxer, t->key, t->value);
 
     for(i=0; i < avfc->nb_chapters; i++) {
@@ -834,7 +833,7 @@ static void demux_close_lavf(demuxer_t *demuxer)
         if(priv->avfc)
         {
          av_freep(&priv->avfc->key);
-         av_close_input_stream(priv->avfc);
+         avformat_close_input(&priv->avfc);
         }
         av_freep(&priv->pb);
         free(priv); demuxer->priv= NULL;

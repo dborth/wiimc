@@ -29,7 +29,7 @@
 #include "libavutil/pixdesc.h"
 
 /* raw input */
-int ff_raw_read_header(AVFormatContext *s, AVFormatParameters *ap)
+int ff_raw_read_header(AVFormatContext *s)
 {
     AVStream *st;
     enum CodecID id;
@@ -38,7 +38,7 @@ int ff_raw_read_header(AVFormatContext *s, AVFormatParameters *ap)
     if (!st)
         return AVERROR(ENOMEM);
 
-        id = s->iformat->value;
+        id = s->iformat->raw_codec_id;
         if (id == CODEC_ID_RAWVIDEO) {
             st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
         } else {
@@ -126,14 +126,13 @@ int ff_raw_read_partial_packet(AVFormatContext *s, AVPacket *pkt)
     return ret;
 }
 
-int ff_raw_audio_read_header(AVFormatContext *s,
-                             AVFormatParameters *ap)
+int ff_raw_audio_read_header(AVFormatContext *s)
 {
     AVStream *st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_id = s->iformat->value;
+    st->codec->codec_id = s->iformat->raw_codec_id;
     st->need_parsing = AVSTREAM_PARSE_FULL;
     st->start_time = 0;
     /* the parameters will be extracted from the compressed bitstream */
@@ -142,8 +141,7 @@ int ff_raw_audio_read_header(AVFormatContext *s,
 }
 
 /* MPEG-1/H.263 input */
-int ff_raw_video_read_header(AVFormatContext *s,
-                             AVFormatParameters *ap)
+int ff_raw_video_read_header(AVFormatContext *s)
 {
     AVStream *st;
     FFRawVideoDemuxerContext *s1 = s->priv_data;
@@ -158,7 +156,7 @@ int ff_raw_video_read_header(AVFormatContext *s,
     }
 
     st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    st->codec->codec_id = s->iformat->value;
+    st->codec->codec_id = s->iformat->raw_codec_id;
     st->need_parsing = AVSTREAM_PARSE_FULL;
 
     if ((ret = av_parse_video_rate(&framerate, s1->framerate)) < 0) {
@@ -190,7 +188,7 @@ AVInputFormat ff_g722_demuxer = {
     .read_packet    = ff_raw_read_partial_packet,
     .flags= AVFMT_GENERIC_INDEX,
     .extensions = "g722,722",
-    .value = CODEC_ID_ADPCM_G722,
+    .raw_codec_id   = CODEC_ID_ADPCM_G722,
 };
 #endif
 
@@ -202,7 +200,7 @@ AVInputFormat ff_latm_demuxer = {
     .read_packet    = ff_raw_read_partial_packet,
     .flags= AVFMT_GENERIC_INDEX,
     .extensions = "latm",
-    .value = CODEC_ID_AAC_LATM,
+    .raw_codec_id   = CODEC_ID_AAC_LATM,
 };
 #endif
 
@@ -218,7 +216,7 @@ AVInputFormat ff_mlp_demuxer = {
     .read_packet    = ff_raw_read_partial_packet,
     .flags= AVFMT_GENERIC_INDEX,
     .extensions = "mlp",
-    .value = CODEC_ID_MLP,
+    .raw_codec_id   = CODEC_ID_MLP,
 };
 #endif
 
@@ -230,7 +228,7 @@ AVInputFormat ff_truehd_demuxer = {
     .read_packet    = ff_raw_read_partial_packet,
     .flags= AVFMT_GENERIC_INDEX,
     .extensions = "thd",
-    .value = CODEC_ID_TRUEHD,
+    .raw_codec_id   = CODEC_ID_TRUEHD,
 };
 #endif
 
@@ -242,7 +240,7 @@ AVInputFormat ff_shorten_demuxer = {
     .read_packet    = ff_raw_read_partial_packet,
     .flags          = AVFMT_NOBINSEARCH | AVFMT_NOGENSEARCH | AVFMT_NO_BYTE_SEEK,
     .extensions = "shn",
-    .value = CODEC_ID_SHORTEN,
+    .raw_codec_id   = CODEC_ID_SHORTEN,
 };
 #endif
 

@@ -379,7 +379,8 @@ static int rv20_decode_picture_header(MpegEncContext *s)
         if(s->avctx->debug & FF_DEBUG_PICT_INFO){
             av_log(s->avctx, AV_LOG_DEBUG, "F %d/%d\n", f, rpr_bits);
         }
-    }
+    } else if (av_image_check_size(s->width, s->height, 0, s->avctx) < 0)
+        return AVERROR_INVALIDDATA;
 
     mb_pos = ff_h263_decode_mba(s);
 
@@ -666,8 +667,11 @@ static int rv10_decode_frame(AVCodecContext *avctx,
         slice_count = avctx->slice_count;
 
     for(i=0; i<slice_count; i++){
-        int offset= get_slice_offset(avctx, slices_hdr, i);
+        unsigned offset = get_slice_offset(avctx, slices_hdr, i);
         int size, size2;
+
+        if (offset >= buf_size)
+            return AVERROR_INVALIDDATA;
 
         if(i+1 == slice_count)
             size= buf_size - offset;
@@ -678,6 +682,10 @@ static int rv10_decode_frame(AVCodecContext *avctx,
             size2= buf_size - offset;
         else
             size2= get_slice_offset(avctx, slices_hdr, i+2) - offset;
+
+        if (size <= 0 || size2 <= 0 ||
+            offset + FFMAX(size, size2) > buf_size)
+            return AVERROR_INVALIDDATA;
 
         if(rv10_decode_packet(avctx, buf+offset, size, size2) > 8*size)
             i++;

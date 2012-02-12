@@ -30,7 +30,6 @@
 #include <time.h>
 
 #include "config.h"
-#include "libavcodec/timecode.h"
 #include "libavutil/avstring.h"
 #include "libavutil/colorspace.h"
 #include "libavutil/file.h"
@@ -39,6 +38,7 @@
 #include "libavutil/random_seed.h"
 #include "libavutil/parseutils.h"
 #include "libavutil/pixdesc.h"
+#include "libavutil/timecode.h"
 #include "libavutil/tree.h"
 #include "libavutil/lfg.h"
 #include "avfilter.h"
@@ -139,6 +139,7 @@ typedef struct {
     short int draw_box;             ///< draw box around text - true or false
     int use_kerning;                ///< font kerning is used - true/false
     int tabsize;                    ///< tab size
+    int fix_bounds;                 ///< do we let it go out of frame bounds - t/f
 
     FT_Library library;             ///< freetype font library handle
     FT_Face face;                   ///< freetype font face handle
@@ -157,7 +158,9 @@ typedef struct {
     AVExpr *d_pexpr;
     int draw;                       ///< set to zero to prevent drawing
     AVLFG  prng;                    ///< random
-    struct ff_timecode tc;
+    char       *tc_opt_string;      ///< specified timecode option string
+    AVRational  tc_rate;            ///< frame rate for timecode
+    AVTimecode  tc;                 ///< timecode context
     int frame_id;
 } DrawTextContext;
 
@@ -179,9 +182,11 @@ static const AVOption drawtext_options[]= {
 {"tabsize",  "set tab size",         OFFSET(tabsize),            AV_OPT_TYPE_INT,    {.dbl=4},     0,        INT_MAX  },
 {"basetime", "set base time",        OFFSET(basetime),           AV_OPT_TYPE_INT64,  {.dbl=AV_NOPTS_VALUE},     INT64_MIN,        INT64_MAX  },
 {"draw",     "if false do not draw", OFFSET(d_expr),             AV_OPT_TYPE_STRING, {.str="1"},   CHAR_MIN, CHAR_MAX },
-{"timecode", "set initial timecode", OFFSET(tc.str),             AV_OPT_TYPE_STRING, {.str=NULL},  CHAR_MIN, CHAR_MAX },
-{"r",        "set rate (timecode only)", OFFSET(tc.rate),        AV_OPT_TYPE_RATIONAL, {.dbl=0},          0,  INT_MAX },
-{"rate",     "set rate (timecode only)", OFFSET(tc.rate),        AV_OPT_TYPE_RATIONAL, {.dbl=0},          0,  INT_MAX },
+{"timecode", "set initial timecode", OFFSET(tc_opt_string),      AV_OPT_TYPE_STRING, {.str=NULL},  CHAR_MIN, CHAR_MAX },
+{"r",        "set rate (timecode only)", OFFSET(tc_rate),        AV_OPT_TYPE_RATIONAL, {.dbl=0},          0,  INT_MAX },
+{"rate",     "set rate (timecode only)", OFFSET(tc_rate),        AV_OPT_TYPE_RATIONAL, {.dbl=0},          0,  INT_MAX },
+{"fix_bounds", "if true, check and fix text coords to avoid clipping",
+                                     OFFSET(fix_bounds),         AV_OPT_TYPE_INT,    {.dbl=1},     0,        1        },
 
 /* FT_LOAD_* flags */
 {"ft_load_flags", "set font loading flags for libfreetype",   OFFSET(ft_load_flags),  AV_OPT_TYPE_FLAGS,  {.dbl=FT_LOAD_DEFAULT|FT_LOAD_RENDER}, 0, INT_MAX, 0, "ft_load_flags" },
@@ -341,17 +346,13 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
         av_file_unmap(textbuf, textbuf_size);
     }
 
-    if (dtext->tc.str) {
-#if CONFIG_AVCODEC
-        if (avpriv_init_smpte_timecode(ctx, &dtext->tc) < 0)
-            return AVERROR(EINVAL);
+    if (dtext->tc_opt_string) {
+        int ret = av_timecode_init_from_string(&dtext->tc, dtext->tc_rate,
+                                               dtext->tc_opt_string, ctx);
+        if (ret < 0)
+            return ret;
         if (!dtext->text)
             dtext->text = av_strdup("");
-#else
-        av_log(ctx, AV_LOG_ERROR,
-               "Timecode options are only available if libavfilter is built with libavcodec enabled.\n");
-        return AVERROR(EINVAL);
-#endif
     }
 
     if (!dtext->text) {
@@ -729,13 +730,11 @@ static int draw_text(AVFilterContext *ctx, AVFilterBufferRef *picref,
         buf_size *= 2;
     } while ((buf = av_realloc(buf, buf_size)));
 
-#if CONFIG_AVCODEC
-    if (dtext->tc.str) {
-        char tcbuf[16];
-        avpriv_timecode_to_string(tcbuf, &dtext->tc, dtext->frame_id++);
+    if (dtext->tc_opt_string) {
+        char tcbuf[AV_TIMECODE_STR_SIZE];
+        av_timecode_make_string(&dtext->tc, tcbuf, dtext->frame_id++);
         buf = av_asprintf("%s%s", dtext->text, tcbuf);
     }
-#endif
 
     if (!buf)
         return AVERROR(ENOMEM);
@@ -758,8 +757,9 @@ static int draw_text(AVFilterContext *ctx, AVFilterBufferRef *picref,
         /* get glyph */
         dummy.code = code;
         glyph = av_tree_find(dtext->glyphs, &dummy, glyph_cmp, NULL);
-        if (!glyph)
+        if (!glyph) {
             load_glyph(ctx, &glyph, code);
+        }
 
         y_min = FFMIN(glyph->bbox.yMin, y_min);
         y_max = FFMAX(glyph->bbox.yMax, y_max);

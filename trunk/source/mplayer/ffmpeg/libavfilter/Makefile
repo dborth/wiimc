@@ -3,12 +3,13 @@ include $(SUBDIR)../config.mak
 NAME = avfilter
 FFLIBS = avutil
 
-FFLIBS-$(CONFIG_ACONVERT_FILTER) += avcodec
-FFLIBS-$(CONFIG_AMOVIE_FILTER) += avformat avcodec
-FFLIBS-$(CONFIG_ARESAMPLE_FILTER) += avcodec
-FFLIBS-$(CONFIG_MOVIE_FILTER) += avformat avcodec
-FFLIBS-$(CONFIG_SCALE_FILTER) += swscale
-FFLIBS-$(CONFIG_MP_FILTER) += avcodec
+FFLIBS-$(CONFIG_ACONVERT_FILTER)             += swresample
+FFLIBS-$(CONFIG_AMOVIE_FILTER)               += avformat avcodec
+FFLIBS-$(CONFIG_ARESAMPLE_FILTER)            += swresample
+FFLIBS-$(CONFIG_MOVIE_FILTER)                += avformat avcodec
+FFLIBS-$(CONFIG_PAN_FILTER)                  += swresample
+FFLIBS-$(CONFIG_SCALE_FILTER)                += swscale
+FFLIBS-$(CONFIG_MP_FILTER)                   += avcodec
 
 HEADERS = avcodec.h avfilter.h avfiltergraph.h buffersink.h version.h vsrc_buffer.h
 
@@ -18,6 +19,7 @@ OBJS = allfilters.o                                                     \
        defaults.o                                                       \
        drawutils.o                                                      \
        formats.o                                                        \
+       graphdump.o                                                      \
        graphparser.o                                                    \
        transform.o                                                      \
        vsrc_buffer.o
@@ -77,6 +79,7 @@ OBJS-$(CONFIG_PIXDESCTEST_FILTER)            += vf_pixdesctest.o
 OBJS-$(CONFIG_SCALE_FILTER)                  += vf_scale.o
 OBJS-$(CONFIG_SELECT_FILTER)                 += vf_select.o
 OBJS-$(CONFIG_SETDAR_FILTER)                 += vf_aspect.o
+OBJS-$(CONFIG_SETFIELD_FILTER)               += vf_setfield.o
 OBJS-$(CONFIG_SETPTS_FILTER)                 += vf_setpts.o
 OBJS-$(CONFIG_SETSAR_FILTER)                 += vf_aspect.o
 OBJS-$(CONFIG_SETTB_FILTER)                  += vf_settb.o
@@ -103,7 +106,6 @@ OBJS-$(CONFIG_TESTSRC_FILTER)                += vsrc_testsrc.o
 
 OBJS-$(CONFIG_BUFFERSINK_FILTER)             += sink_buffer.o
 OBJS-$(CONFIG_NULLSINK_FILTER)               += vsink_nullsink.o
-
 
 OBJS-$(CONFIG_MP_FILTER) += libmpcodecs/mp_image.o
 OBJS-$(CONFIG_MP_FILTER) += libmpcodecs/img_format.o
@@ -161,8 +163,6 @@ OBJS-$(CONFIG_MP_FILTER) += libmpcodecs/vf_yuvcsp.o
 OBJS-$(CONFIG_MP_FILTER) += libmpcodecs/vf_yvu9.o
 OBJS-$(CONFIG_MP_FILTER) += libmpcodecs/pullup.o
 
-
--include $(SRC_PATH)/$(SUBDIR)$(ARCH)/Makefile
 
 DIRS = x86 libmpcodecs
 

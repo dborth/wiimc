@@ -38,13 +38,13 @@ fi
 
 if [ -n "$do_mpeg2_ivlc_qprd" ]; then
 # mpeg2 encoding intra vlc qprd
-do_video_encoding mpeg2ivlc-qprd.mpg "-vb 500k -bf 2 -trellis 1 -flags +qprd+mv0 -flags2 +ivlc -cmp 2 -subcmp 2 -mbd rd -vcodec mpeg2video -f mpeg2video"
+do_video_encoding mpeg2ivlc-qprd.mpg "-vb 500k -bf 2 -trellis 1 -flags +qprd+mv0 -intra_vlc 1 -cmp 2 -subcmp 2 -mbd rd -vcodec mpeg2video -f mpeg2video"
 do_video_decoding
 fi
 
 if [ -n "$do_mpeg2_422" ]; then
 #mpeg2 4:2:2 encoding
-do_video_encoding mpeg2_422.mpg "-vb 1000k -bf 2 -trellis 1 -flags +qprd+mv0+ildct+ilme -flags2 +ivlc -mbd rd -vcodec mpeg2video -pix_fmt yuv422p -f mpeg2video"
+do_video_encoding mpeg2_422.mpg "-vb 1000k -bf 2 -trellis 1 -flags +qprd+mv0+ildct+ilme -intra_vlc 1 -mbd rd -vcodec mpeg2video -pix_fmt yuv422p -f mpeg2video"
 do_video_decoding
 fi
 
@@ -68,7 +68,7 @@ fi
 
 if [ -n "$do_mpeg2thread_ilace" ]; then
 # mpeg2 encoding interlaced using intra vlc
-do_video_encoding mpeg2threadivlc.mpg "-qscale 10 -vcodec mpeg2video -f mpeg1video -bf 2 -flags +ildct+ilme -flags2 +ivlc -threads 2 -slices 2"
+do_video_encoding mpeg2threadivlc.mpg "-qscale 10 -vcodec mpeg2video -f mpeg1video -bf 2 -flags +ildct+ilme -intra_vlc 1 -threads 2 -slices 2"
 do_video_decoding
 
 # mpeg2 encoding interlaced
@@ -113,7 +113,7 @@ do_video_decoding
 fi
 
 if [ -n "$do_h263p" ] ; then
-do_video_encoding h263p.avi "-qscale 2 -flags +umv+aiv+aic -s 352x288 -an -vcodec h263p -ps 300"
+do_video_encoding h263p.avi "-qscale 2 -flags +aic -umv 1 -aiv 1 -s 352x288 -an -vcodec h263p -ps 300"
 do_video_decoding
 fi
 
@@ -138,7 +138,7 @@ do_video_decoding
 fi
 
 if [ -n "$do_mpeg4adv" ] ; then
-do_video_encoding mpeg4-adv.avi "-qscale 9 -flags +mv4+part+aic -trellis 1 -mbd bits -ps 200 -an -vcodec mpeg4"
+do_video_encoding mpeg4-adv.avi "-qscale 9 -flags +mv4+aic -data_partitioning 1 -trellis 1 -mbd bits -ps 200 -an -vcodec mpeg4"
 do_video_decoding
 fi
 
@@ -158,12 +158,12 @@ do_video_decoding
 fi
 
 if [ -n "$do_mpeg4thread" ] ; then
-do_video_encoding mpeg4-thread.avi "-b 500k -flags +mv4+part+aic -trellis 1 -mbd bits -ps 200 -bf 2 -an -vcodec mpeg4 -threads 2 -slices 2"
+do_video_encoding mpeg4-thread.avi "-b 500k -flags +mv4+aic -data_partitioning 1 -trellis 1 -mbd bits -ps 200 -bf 2 -an -vcodec mpeg4 -threads 2 -slices 2"
 do_video_decoding
 fi
 
 if [ -n "$do_error" ] ; then
-do_video_encoding error-mpeg4-adv.avi "-qscale 7 -flags +mv4+part+aic -mbd rd -ps 250 -error 10 -an -vcodec mpeg4"
+do_video_encoding error-mpeg4-adv.avi "-qscale 7 -flags +mv4+aic -data_partitioning 1 -mbd rd -ps 250 -error 10 -an -vcodec mpeg4"
 do_video_decoding
 fi
 
@@ -294,7 +294,7 @@ do_video_decoding "" "-pix_fmt yuv420p -sws_flags area+accurate_rnd+bitexact"
 fi
 
 if [ -n "$do_flashsv2" ] ; then
-do_video_encoding flashsv2.flv "-an -vcodec flashsv2 -sws_flags neighbor+full_chroma_int+accurate_rnd+bitexact -strict experimental"
+do_video_encoding flashsv2.flv "-an -vcodec flashsv2 -sws_flags neighbor+full_chroma_int+accurate_rnd+bitexact -strict experimental -compression_level 0"
 do_video_encoding flashsv2I.flv "-an -vcodec flashsv2 -sws_flags neighbor+full_chroma_int+accurate_rnd+bitexact -strict experimental -g 1"
 do_video_decoding "" "-pix_fmt yuv420p -sws_flags area+accurate_rnd+bitexact"
 fi
@@ -319,14 +319,34 @@ do_video_encoding rgb.avi "-an -vcodec rawvideo -pix_fmt bgr24"
 do_video_decoding "" "-pix_fmt yuv420p"
 fi
 
+if [ -n "$do_r210" ] ; then
+do_video_encoding r210.avi "-an -c:v r210"
+do_video_decoding "" "-pix_fmt yuv420p"
+fi
+
 if [ -n "$do_v210" ] ; then
 do_video_encoding v210.avi "-an -c:v v210"
+do_video_decoding "" "-pix_fmt yuv420p"
+fi
+
+if [ -n "$do_v308" ] ; then
+do_video_encoding v308.avi "-an -c:v v308"
 do_video_decoding "" "-pix_fmt yuv420p"
 fi
 
 if [ -n "$do_yuv" ] ; then
 do_video_encoding yuv.avi "-an -vcodec rawvideo -pix_fmt yuv420p"
 do_video_decoding "" "-pix_fmt yuv420p"
+fi
+
+if [ -n "$do_yuv4" ] ; then
+do_video_encoding yuv4.avi "-an -c:v yuv4"
+do_video_decoding
+fi
+
+if [ -n "$do_y41p" ] ; then
+do_video_encoding y41p.avi "-an -c:v y41p"
+do_video_decoding
 fi
 
 if [ -n "$do_zlib" ] ; then
@@ -348,7 +368,7 @@ $tiny_psnr $pcm_dst $pcm_ref 2 1924
 fi
 
 if [ -n "$do_ac3_fixed" ] ; then
-do_audio_encoding ac3.rm "-vn -acodec ac3_fixed"
+do_audio_encoding ac3.ac3 "-vn -acodec ac3_fixed"
 # binaries configured with --disable-sse decode ac3 differently
 #do_audio_decoding
 #$tiny_psnr $pcm_dst $pcm_ref 2 1024

@@ -330,6 +330,8 @@ typedef struct SwsContext {
     int dstColorspaceTable[4];
     int srcRange;                 ///< 0 = MPG YUV range, 1 = JPG YUV range (source      image).
     int dstRange;                 ///< 0 = MPG YUV range, 1 = JPG YUV range (destination image).
+    int src0Alpha;
+    int dst0Alpha;
     int yuv2rgb_y_offset;
     int yuv2rgb_y_coeff;
     int yuv2rgb_v2r_coeff;
@@ -357,8 +359,8 @@ typedef struct SwsContext {
 #define V_TEMP                "11*8+4*4*256*2+32"
 #define Y_TEMP                "11*8+4*4*256*2+40"
 #define ALP_MMX_FILTER_OFFSET "11*8+4*4*256*2+48"
-#define UV_OFF                "11*8+4*4*256*3+48"
-#define UV_OFFx2              "11*8+4*4*256*3+56"
+#define UV_OFF_PX             "11*8+4*4*256*3+48"
+#define UV_OFF_BYTE           "11*8+4*4*256*3+56"
 #define DITHER16              "11*8+4*4*256*3+64"
 #define DITHER32              "11*8+4*4*256*3+80"
 
@@ -540,7 +542,6 @@ void updateMMXDitherTables(SwsContext *c, int dstY, int lumBufIndex, int chrBufI
 
 SwsFunc ff_yuv2rgb_init_mmx(SwsContext *c);
 SwsFunc ff_yuv2rgb_init_vis(SwsContext *c);
-SwsFunc ff_yuv2rgb_init_mlib(SwsContext *c);
 SwsFunc ff_yuv2rgb_init_altivec(SwsContext *c);
 SwsFunc ff_yuv2rgb_get_func_ptr_bfin(SwsContext *c);
 void ff_bfin_get_unscaled_swscale(SwsContext *c);
@@ -680,7 +681,9 @@ const char *sws_format_name(enum PixelFormat format);
     (av_pix_fmt_descriptors[x].nb_components >= 2          &&  \
      (av_pix_fmt_descriptors[x].flags & PIX_FMT_PLANAR))
 
-#define usePal(x) ((av_pix_fmt_descriptors[x].flags & PIX_FMT_PAL) || (x) == PIX_FMT_Y400A)
+#define usePal(x) ((av_pix_fmt_descriptors[x].flags & PIX_FMT_PAL) ||       \
+                   (av_pix_fmt_descriptors[x].flags & PIX_FMT_PSEUDOPAL) || \
+                   (x) == PIX_FMT_Y400A)
 
 extern const uint64_t ff_dither4[2];
 extern const uint64_t ff_dither8[2];
@@ -704,6 +707,14 @@ void ff_swscale_get_unscaled_altivec(SwsContext *c);
  */
 SwsFunc ff_getSwsFunc(SwsContext *c);
 
+void ff_sws_init_input_funcs(SwsContext *c);
+void ff_sws_init_output_funcs(SwsContext *c,
+                              yuv2planar1_fn *yuv2plane1,
+                              yuv2planarX_fn *yuv2planeX,
+                              yuv2interleavedX_fn *yuv2nv12cX,
+                              yuv2packed1_fn *yuv2packed1,
+                              yuv2packed2_fn *yuv2packed2,
+                              yuv2packedX_fn *yuv2packedX);
 void ff_sws_init_swScale_altivec(SwsContext *c);
 void ff_sws_init_swScale_mmx(SwsContext *c);
 

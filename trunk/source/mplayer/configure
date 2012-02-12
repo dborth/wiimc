@@ -2937,7 +2937,7 @@ if arm ; then
   echores "$_iwmmxt"
 fi
 
-cpuexts_all='ALTIVEC MMX MMX2 AMD3DNOW AMD3DNOWEXT SSE SSE2 SSSE3 FAST_CMOV CMOV FAST_CLZ ARMV5TE ARMV6 ARMV6T2 ARMVFP VFPV3 NEON IWMMXT MMI VIS MVI'
+cpuexts_all='ALTIVEC AVX MMX MMX2 AMD3DNOW AMD3DNOWEXT SSE SSE2 SSSE3 FAST_CMOV CMOV FAST_CLZ ARMV5TE ARMV6 ARMV6T2 ARMVFP VFPV3 NEON IWMMXT MMI VIS MVI'
 test "$_altivec"   = yes && cpuexts="ALTIVEC $cpuexts"
 test "$_mmx"       = yes && cpuexts="MMX $cpuexts"
 test "$_mmxext"    = yes && cpuexts="MMX2 $cpuexts"
@@ -3359,7 +3359,7 @@ else
   def_networking='#undef CONFIG_NETWORKING'
   def_rtpdec='#define CONFIG_RTPDEC 0'
   libavprotocols=$(echo $libavprotocols | sed -e s/GOPHER_PROTOCOL// -e s/HTTP_PROTOCOL// -e s/RTMP_PROTOCOL// -e s/RTP_PROTOCOL// -e s/TCP_PROTOCOL// -e s/UDP_PROTOCOL// -e s/MMSH_PROTOCOL// -e s/MMST_PROTOCOL//)
-  libavdemuxers=$(echo $libavdemuxers | sed -e s/RTSP_DEMUXER// -e s/SDP_DEMUXER// -e s/RTP_DEMUXER//)
+  libavdemuxers=$(echo $libavdemuxers | sed -e s/RTSP_DEMUXER// -e s/SDP_DEMUXER// -e s/SAP_DEMUXER// -e s/RTP_DEMUXER//)
 fi
 echores "$networking"
 
@@ -3608,6 +3608,8 @@ if cygwin ; then
   fi
 fi
 
+
+if win32; then
 echocheck "w32threads"
 if test "$_pthreads" = yes ; then
   res_comment="using pthread instead"
@@ -3619,6 +3621,8 @@ if test "$_w32threads" = auto ; then
 fi
 test "$_w32threads" = yes && def_threads='#define HAVE_THREADS 1' && def_w32threads='#define HAVE_W32THREADS 1'
 echores "$_w32threads"
+fi #if win32; then
+
 
 if os2 ; then
 echocheck "os2threads"
@@ -5191,7 +5195,7 @@ echores "$matrixview"
 
 
 if os2 ; then
-echocheck "KVA (SNAP/WarpOverlay!/DIVE)"
+echocheck "KVA (SNAP/WarpOverlay!/VMAN/DIVE)"
 if test "$_kva" = auto; then
   _kva=no;
   header_check_broken os2.h kva.h -lkva && _kva=yes
@@ -8156,6 +8160,7 @@ CONFIG_AVFORMAT = $ffmpeg_a
 CONFIG_AVUTIL   = $ffmpeg_a
 CONFIG_POSTPROC = $ffmpeg_a
 CONFIG_SWSCALE  = $ffmpeg_a
+CONFIG_SWRESAMPLE = $ffmpeg_a
 
 ASFLAGS    = \$(CFLAGS)
 AS_DEPFLAGS= $DEPFLAGS
@@ -8782,11 +8787,9 @@ cmp -s "$TMPH" ffmpeg/libavutil/avconfig.h || mv -f "$TMPH" ffmpeg/libavutil/avc
 if x86; then
 # Create a skeleton config.asm with just the ARCH_ definitions for FFmpeg.
 > "$TMPS"
-echo "%define CONFIG_GPL" >> "$TMPS"
-for part in $arch $subarch; do
-  part=$(echo $part | tr '[a-z]' '[A-Z]')
-  echo "%define ARCH_${part}" >> "$TMPS"
-done
+echo "%define CONFIG_GPL 1" >> "$TMPS"
+echo "$(ff_config_enable "$arch_all" "$arch" "%" "ARCH")" >> "$TMPS"
+echo "$(ff_config_enable "$subarch_all" "$subarch" "%" "ARCH")" >> "$TMPS"
 echo "$(ff_config_enable "$cpuexts_all" "$cpuexts" "%" "HAVE")" >> "$TMPS"
 
 cmp -s "$TMPS" ffmpeg/config.asm || mv -f "$TMPS" ffmpeg/config.asm

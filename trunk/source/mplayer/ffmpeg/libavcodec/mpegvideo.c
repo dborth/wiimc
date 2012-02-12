@@ -191,8 +191,6 @@ av_cold int ff_dct_common_init(MpegEncContext *s)
     MPV_common_init_mmx(s);
 #elif ARCH_ALPHA
     MPV_common_init_axp(s);
-#elif CONFIG_MLIB
-    MPV_common_init_mlib(s);
 #elif HAVE_MMI
     MPV_common_init_mmi(s);
 #elif ARCH_ARM
@@ -531,7 +529,7 @@ int ff_mpeg_update_thread_context(AVCodecContext *dst,
 {
     MpegEncContext *s = dst->priv_data, *s1 = src->priv_data;
 
-    if (dst == src || !s1->context_initialized)
+    if (dst == src)
         return 0;
 
     // FIXME can parameters change on I-frames?
@@ -540,12 +538,14 @@ int ff_mpeg_update_thread_context(AVCodecContext *dst,
         memcpy(s, s1, sizeof(MpegEncContext));
 
         s->avctx                 = dst;
-        s->picture_range_start  += MAX_PICTURE_COUNT;
-        s->picture_range_end    += MAX_PICTURE_COUNT;
         s->bitstream_buffer      = NULL;
         s->bitstream_buffer_size = s->allocated_bitstream_buffer_size = 0;
 
-        MPV_common_init(s);
+        if (s1->context_initialized){
+            s->picture_range_start  += MAX_PICTURE_COUNT;
+            s->picture_range_end    += MAX_PICTURE_COUNT;
+            MPV_common_init(s);
+        }
     }
 
     s->avctx->coded_height  = s1->avctx->coded_height;
@@ -1344,15 +1344,15 @@ void MPV_frame_end(MpegEncContext *s)
               !(s->flags & CODEC_FLAG_EMU_EDGE)) {
         int hshift = av_pix_fmt_descriptors[s->avctx->pix_fmt].log2_chroma_w;
         int vshift = av_pix_fmt_descriptors[s->avctx->pix_fmt].log2_chroma_h;
-        s->dsp.draw_edges(s->current_picture.f.data[0], s->linesize,
+        s->dsp.draw_edges(s->current_picture.f.data[0], s->current_picture.f.linesize[0],
                           s->h_edge_pos, s->v_edge_pos,
                           EDGE_WIDTH, EDGE_WIDTH,
                           EDGE_TOP | EDGE_BOTTOM);
-        s->dsp.draw_edges(s->current_picture.f.data[1], s->uvlinesize,
+        s->dsp.draw_edges(s->current_picture.f.data[1], s->current_picture.f.linesize[1],
                           s->h_edge_pos >> hshift, s->v_edge_pos >> vshift,
                           EDGE_WIDTH >> hshift, EDGE_WIDTH >> vshift,
                           EDGE_TOP | EDGE_BOTTOM);
-        s->dsp.draw_edges(s->current_picture.f.data[2], s->uvlinesize,
+        s->dsp.draw_edges(s->current_picture.f.data[2], s->current_picture.f.linesize[2],
                           s->h_edge_pos >> hshift, s->v_edge_pos >> vshift,
                           EDGE_WIDTH >> hshift, EDGE_WIDTH >> vshift,
                           EDGE_TOP | EDGE_BOTTOM);
@@ -1805,8 +1805,8 @@ static inline int hpel_motion_lowres(MpegEncContext *s,
 
     src   += src_y * stride + src_x;
 
-    if ((unsigned)src_x >  h_edge_pos - (!!sx) - w ||
-        (unsigned)src_y > (v_edge_pos >> field_based) - (!!sy) - h) {
+    if ((unsigned)src_x > FFMAX( h_edge_pos - (!!sx) - w,                 0) ||
+        (unsigned)src_y > FFMAX((v_edge_pos >> field_based) - (!!sy) - h, 0)) {
         s->dsp.emulated_edge_mc(s->edge_emu_buffer, src, s->linesize, w + 1,
                                 (h + 1) << field_based, src_x,
                                 src_y   << field_based,
@@ -1907,8 +1907,8 @@ static av_always_inline void mpeg_motion_lowres(MpegEncContext *s,
     ptr_cb = ref_picture[1] + uvsrc_y * uvlinesize + uvsrc_x;
     ptr_cr = ref_picture[2] + uvsrc_y * uvlinesize + uvsrc_x;
 
-    if ((unsigned) src_x >  h_edge_pos - (!!sx) - 2 * block_s ||
-        (unsigned) src_y > (v_edge_pos >> field_based) - (!!sy) - h) {
+    if ((unsigned) src_x > FFMAX( h_edge_pos - (!!sx) - 2 * block_s,       0) ||
+        (unsigned) src_y > FFMAX((v_edge_pos >> field_based) - (!!sy) - h, 0)) {
         s->dsp.emulated_edge_mc(s->edge_emu_buffer, ptr_y,
                                 s->linesize, 17, 17 + field_based,
                                 src_x, src_y << field_based, h_edge_pos,
@@ -1990,8 +1990,8 @@ static inline void chroma_4mv_motion_lowres(MpegEncContext *s,
     offset = src_y * s->uvlinesize + src_x;
     ptr = ref_picture[1] + offset;
     if (s->flags & CODEC_FLAG_EMU_EDGE) {
-        if ((unsigned) src_x > h_edge_pos - (!!sx) - block_s ||
-            (unsigned) src_y > v_edge_pos - (!!sy) - block_s) {
+        if ((unsigned) src_x > FFMAX(h_edge_pos - (!!sx) - block_s, 0) ||
+            (unsigned) src_y > FFMAX(v_edge_pos - (!!sy) - block_s, 0)) {
             s->dsp.emulated_edge_mc(s->edge_emu_buffer, ptr, s->uvlinesize,
                                     9, 9, src_x, src_y, h_edge_pos, v_edge_pos);
             ptr = s->edge_emu_buffer;
@@ -2648,10 +2648,7 @@ static void dct_unquantize_mpeg1_intra_c(MpegEncContext *s,
 
     nCoeffs= s->block_last_index[n];
 
-    if (n < 4)
-        block[0] = block[0] * s->y_dc_scale;
-    else
-        block[0] = block[0] * s->c_dc_scale;
+    block[0] *= n < 4 ? s->y_dc_scale : s->c_dc_scale;
     /* XXX: only mpeg1 */
     quant_matrix = s->intra_matrix;
     for(i=1;i<=nCoeffs;i++) {
@@ -2710,10 +2707,7 @@ static void dct_unquantize_mpeg2_intra_c(MpegEncContext *s,
     if(s->alternate_scan) nCoeffs= 63;
     else nCoeffs= s->block_last_index[n];
 
-    if (n < 4)
-        block[0] = block[0] * s->y_dc_scale;
-    else
-        block[0] = block[0] * s->c_dc_scale;
+    block[0] *= n < 4 ? s->y_dc_scale : s->c_dc_scale;
     quant_matrix = s->intra_matrix;
     for(i=1;i<=nCoeffs;i++) {
         int j= s->intra_scantable.permutated[i];
@@ -2741,10 +2735,8 @@ static void dct_unquantize_mpeg2_intra_bitexact(MpegEncContext *s,
     if(s->alternate_scan) nCoeffs= 63;
     else nCoeffs= s->block_last_index[n];
 
-    if (n < 4)
-        block[0] = block[0] * s->y_dc_scale;
-    else
-        block[0] = block[0] * s->c_dc_scale;
+    block[0] *= n < 4 ? s->y_dc_scale : s->c_dc_scale;
+    sum += block[0];
     quant_matrix = s->intra_matrix;
     for(i=1;i<=nCoeffs;i++) {
         int j= s->intra_scantable.permutated[i];
@@ -2806,10 +2798,7 @@ static void dct_unquantize_h263_intra_c(MpegEncContext *s,
     qmul = qscale << 1;
 
     if (!s->h263_aic) {
-        if (n < 4)
-            block[0] = block[0] * s->y_dc_scale;
-        else
-            block[0] = block[0] * s->c_dc_scale;
+        block[0] *= n < 4 ? s->y_dc_scale : s->c_dc_scale;
         qadd = (qscale - 1) | 1;
     }else{
         qadd = 0;

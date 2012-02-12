@@ -2,10 +2,10 @@ Never assume the API of libav* to be stable unless at least 1 month has passed
 since the last major version increase.
 
 The last version increases were:
-libavcodec:  2011-04-18
+libavcodec:  2012-01-27
 libavdevice: 2011-04-18
 libavfilter: 2011-04-18
-libavformat: 2011-04-18
+libavformat: 2012-01-27
 libpostproc: 2011-04-18
 libswscale:  2011-06-20
 libavutil:   2011-04-18
@@ -13,15 +13,58 @@ libavutil:   2011-04-18
 
 API changes, most recent first:
 
-2012-xx-xx - lavc 53.34.0
+2012-02-09 - xxxxxxx - lavu 51.39.100
+  Add a new installed header libavutil/timestamp.h with timestamp
+  utilities.
+
+2012-02-06 - xxxxxxx - lavu 51.38.100
+  Add av_parse_ratio() function to parseutils.h.
+
+2012-02-06 - xxxxxxx - lavu 51.38.100
+  Add AV_LOG_MAX_OFFSET macro to log.h.
+
+2012-02-02 - xxxxxxx - lavu 51.37.100
+  Add public timecode helpers.
+
+2012-01-24 - xxxxxxx - lavfi 2.60.100
+  Add avfilter_graph_dump.
+
+2012-02-xx - xxxxxxx - lavu 51.22.1 - pixdesc.h
+  Add PIX_FMT_PSEUDOPAL flag.
+
+2012-02-01 - xxxxxxx - lavc 54.01.0
+  Add avcodec_encode_video2() and deprecate avcodec_encode_video().
+
+2012-02-01 - 316fc74 - lavc 54.01.0
+  Add av_fast_padded_malloc() as alternative for av_realloc() when aligned
+  memory is required. The buffer will always have FF_INPUT_BUFFER_PADDING_SIZE
+  zero-padded bytes at the end.
+
+2012-01-31 - dd6d3b0 - lavf 54.01.0
+  Add avformat_get_riff_video_tags() and avformat_get_riff_audio_tags().
+
+2012-01-31 - af08d9a - lavc 54.01.0
+  Add avcodec_is_open() function.
+
+2012-01-30 - 8b93312 - lavu 51.22.0 - intfloat.h
+  Add a new installed header libavutil/intfloat.h with int/float punning
+  functions.
+
+2012-01-25 - lavf 53.22.0
+  f1caf01 Allow doing av_write_frame(ctx, NULL) for flushing possible
+          buffered data within a muxer. Added AVFMT_ALLOW_FLUSH for
+          muxers supporting it (av_write_frame makes sure it is called
+          only for muxers with this flag).
+
+2012-01-15 - lavc 53.34.0
   New audio encoding API:
-  xxxxxxx Add CODEC_CAP_VARIABLE_FRAME_SIZE capability for use by audio
+  b2c75b6 Add CODEC_CAP_VARIABLE_FRAME_SIZE capability for use by audio
           encoders.
-  xxxxxxx Add avcodec_fill_audio_frame() as a convenience function.
-  xxxxxxx Add avcodec_encode_audio2() and deprecate avcodec_encode_audio().
+  5ee5fa0 Add avcodec_fill_audio_frame() as a convenience function.
+  b2c75b6 Add avcodec_encode_audio2() and deprecate avcodec_encode_audio().
           Add AVCodec.encode2().
 
-2012-01-xx - xxxxxxx - lavfi 2.15.0
+2012-01-12 - 3167dc9 - lavfi 2.15.0
   Add a new installed header -- libavfilter/version.h -- with version macros.
 
 2011-12-08 - a502939 - lavfi 2.52.0
@@ -100,7 +143,7 @@ API changes, most recent first:
   Add av_toupper()/av_tolower()
 
 2011-11-05 - b6d08f4 - lavf 53.13.0
-  Add avformat_network_init()/avformat_network_uninit()
+  Add avformat_network_init()/avformat_network_deinit()
 
 2011-10-27 - 512557b - lavc 53.15.0
   Remove avcodec_parse_frame.
@@ -214,6 +257,8 @@ API changes, most recent first:
 
 2011-07-10 - 0b950fe - lavc 53.8.0
   Add avcodec_open2(), deprecate avcodec_open().
+  Add avcodec_alloc_context3. Deprecate avcodec_alloc_context() and
+  avcodec_alloc_context2().
 
 2011-07-01 - b442ca6 - lavf 53.5.0 - avformat.h
   Add function av_get_output_timestamp().

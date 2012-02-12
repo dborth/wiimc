@@ -19,6 +19,7 @@ HEADERS = adler32.h                                                     \
           fifo.h                                                        \
           file.h                                                        \
           imgutils.h                                                    \
+          intfloat.h                                                    \
           intfloat_readwrite.h                                          \
           intreadwrite.h                                                \
           lfg.h                                                         \
@@ -36,6 +37,8 @@ HEADERS = adler32.h                                                     \
           rational.h                                                    \
           samplefmt.h                                                   \
           sha.h                                                         \
+          timecode.h                                                    \
+          timestamp.h                                                   \
 
 BUILT_HEADERS = avconfig.h
 
@@ -70,6 +73,7 @@ OBJS = adler32.o                                                        \
        rc4.o                                                            \
        samplefmt.o                                                      \
        sha.o                                                            \
+       timecode.o                                                       \
        tree.o                                                           \
        utils.o                                                          \
 
@@ -84,7 +88,7 @@ TESTPROGS-$(HAVE_LZO1X_999_COMPRESS) += lzo
 
 TOOLS = ffeval
 
-DIRS = arm bfin sh4 x86
+DIRS = arm avr32 bfin mips ppc sh4 tomi x86
 
 ARCH_HEADERS = bswap.h intmath.h intreadwrite.h timer.h
 

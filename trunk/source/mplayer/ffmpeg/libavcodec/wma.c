@@ -85,7 +85,7 @@ int av_cold ff_wma_get_frame_len_bits(int sample_rate, int version,
     } else if (sample_rate <= 22050 ||
              (sample_rate <= 32000 && version == 1)) {
         frame_len_bits = 10;
-    } else if (sample_rate <= 48000) {
+    } else if (sample_rate <= 48000 || version < 3) {
         frame_len_bits = 11;
     } else if (sample_rate <= 96000) {
         frame_len_bits = 12;
@@ -525,4 +525,3 @@ int ff_wma_run_level_decode(AVCodecContext* avctx, GetBitContext* gb,
 
     return 0;
 }
-

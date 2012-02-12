@@ -195,7 +195,7 @@ AVOutputFormat ff_yuv4mpegpipe_muxer = {
 #define MAX_YUV4_HEADER 80
 #define MAX_FRAME_HEADER 80
 
-static int yuv4_read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int yuv4_read_header(AVFormatContext *s)
 {
     char header[MAX_YUV4_HEADER + 10];  // Include headroom for
                                         // the longest option
@@ -249,6 +249,9 @@ static int yuv4_read_header(AVFormatContext *s, AVFormatParameters *ap)
             } else if (strncmp("420paldv", tokstart, 8) == 0) {
                 pix_fmt = PIX_FMT_YUV420P;
                 chroma_sample_location = AVCHROMA_LOC_TOPLEFT;
+            } else if (strncmp("420", tokstart, 3) == 0) {
+                pix_fmt = PIX_FMT_YUV420P;
+                chroma_sample_location = AVCHROMA_LOC_CENTER;
             } else if (strncmp("411", tokstart, 3) == 0)
                 pix_fmt = PIX_FMT_YUV411P;
             else if (strncmp("422", tokstart, 3) == 0)

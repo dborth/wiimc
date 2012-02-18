@@ -23,6 +23,9 @@
 #include "utils/unzip/unzip.h"
 #include "utils/unzip/miniunz.h"
 #include "utils/gettext.h"
+#include "libwiigui/gui.h"
+
+void ShowAction (const char *msg, UpdateCallback c);
 
 static int netHalt = 0;
 static bool networkInit = false;
@@ -205,23 +208,30 @@ static void * netcb (void *arg)
 		
 		while (retry>0 && (netHalt != 2))
 		{			
-			if(prevInit) 
+			int i;
+			net_deinit();
+
+			for(i=0; i < 400 && (netHalt != 2); i++)
 			{
-				int i;
-				net_deinit();
-				for(i=0; i < 400 && (netHalt != 2); i++) // 10 seconds to try to reset
+				res = net_get_status();
+				if(res != -EBUSY) // trying to init net so we can't kill the net
 				{
-					res = net_get_status();
-					if(res != -EBUSY) // trying to init net so we can't kill the net
+					usleep(2000);
+
+					if(prevInit)
 					{
-						usleep(2000);
-						net_wc24cleanup(); //kill the net 
-						prevInit=false; // net_wc24cleanup is called only once
-						usleep(20000);
-						break;					
+						prevInit=false; // only call net_wc24cleanup once
+						net_wc24cleanup(); // kill wc24
 					}
-					usleep(20000);
+
+					usleep(10000);
+					break;					
 				}
+
+				if(res == -ENETDOWN) // net deinit was successful
+					break;
+
+				usleep(10000);
 			}
 
 			usleep(2000);
@@ -235,10 +245,10 @@ static void * netcb (void *arg)
 			}
 
 			res = net_get_status();
-			wait = 400; // only wait 8 sec
+			wait = 500; // only wait 5 sec
 			while (res == -EBUSY && wait > 0  && (netHalt != 2))
 			{
-				usleep(20000);
+				usleep(10000);
 				res = net_get_status();
 				wait--;
 			}
@@ -247,6 +257,7 @@ static void * netcb (void *arg)
 			retry--;
 			usleep(2000);
 		}
+
 		if (res == 0)
 		{
 			struct in_addr hostip;
@@ -254,11 +265,13 @@ static void * netcb (void *arg)
 			if (hostip.s_addr)
 			{
 				strcpy(wiiIP, inet_ntoa(hostip));
-				networkInit = true;	
-				prevInit = true;
+				networkInit = true;
+				prevInit = true;				
 			}
 		}
-		if(netHalt != 2) LWP_SuspendThread(networkthread);
+
+		if(netHalt != 2)
+			LWP_SuspendThread(networkthread);
 	}
 	return NULL;
 }
@@ -308,44 +321,42 @@ void CheckMplayerNetwork() //to use in cache2.c in mplayer
 }
 }
 
+static bool cancelNetworkInit = false;
+
+static void networkInitCallback(void *ptr)
+{
+	GuiButton *b = (GuiButton *)ptr;
+	
+	if(b->GetState() == STATE_CLICKED)
+	{
+		b->ResetState();
+		cancelNetworkInit = true;
+	}
+}
+
 bool InitializeNetwork(bool silent)
 {
-	StopNetworkThread();
-
-	if(networkInit && net_gethostip() > 0)
+	if(networkInit)
 		return true;
 
-	networkInit = false;
+	ShowAction("Initializing network...", networkInitCallback);
+	cancelNetworkInit = false;
 
-	int retry = 1;
-	wchar_t msg[150];
-
-	while(retry)
+	while(!networkInit)
 	{
-		u64 start = gettime();
-
-		ShowAction("Initializing network...");
 		StartNetworkThread();
 
-		while (!LWP_ThreadIsSuspended(networkthread))
-		{
+		while (!LWP_ThreadIsSuspended(networkthread) && !cancelNetworkInit)
 			usleep(50 * 1000);
 
-			if(diff_sec(start, gettime()) > 10) // wait for 10 seconds max for net init
-				break;
-		}
+		StopNetworkThread();
 
-		CancelAction();
-
-		if(networkInit || silent)
+		if(silent || cancelNetworkInit)
 			break;
-
-		swprintf(msg, 150, L"%s %i)", gettext("Unable to initialize network (Error #:"), net_get_status());
-		retry = ErrorPromptRetry(msg);
-		
-		if(networkInit && net_gethostip() > 0) //while waiting network thread can init the net so we check before reinit
-				return true;
 	}
+
+	CancelAction();
+
 	return networkInit;
 }
 

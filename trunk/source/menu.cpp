@@ -1137,6 +1137,7 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
  * action is in progress.
  ***************************************************************************/
 static int progsleep = 0;
+static UpdateCallback progressCancelCallback = NULL;
 
 static void
 ProgressWindow(char *title, char *msg)
@@ -1186,11 +1187,33 @@ ProgressWindow(char *title, char *msg)
 	titleTxt.SetPosition(0,18);
 	GuiText msgTxt(msg, 20, (GXColor){255, 255, 255, 255});
 	msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	msgTxt.SetPosition(0,80);
+	msgTxt.SetPosition(0, 80);
 
+	GuiText cancelBtnTxt("Cancel", 20, (GXColor){255, 255, 255, 255});
+	GuiImage cancelBtnImg(&btnOutline);
+	GuiImage cancelBtnImgOver(&btnOutlineOver);
+	GuiButton cancelBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+
+	cancelBtn.SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
+	cancelBtn.SetPosition(0, -20);
+	cancelBtn.SetLabel(&cancelBtnTxt);
+	cancelBtn.SetImage(&cancelBtnImg);
+	cancelBtn.SetImageOver(&cancelBtnImgOver);
+	cancelBtn.SetTrigger(trigA);
+	cancelBtn.SetSelectable(false);
+	cancelBtn.SetEffectGrow();
+	cancelBtn.SetUpdateCallback(progressCancelCallback);
+	
 	promptWindow.Append(&dialogBoxImg);
 	promptWindow.Append(&titleTxt);
 	promptWindow.Append(&msgTxt);
+	
+	if(progressCancelCallback)
+	{
+		msgTxt.SetPosition(0, 60);
+		throbberImg.SetPosition(0, 10);
+		promptWindow.Append(&cancelBtn);
+	}
 
 	if(showProgress == 1)
 	{
@@ -1314,6 +1337,7 @@ CancelAction()
 {
 	progressThreadHalt = 1;
 	showProgress = 0;
+	progressCancelCallback = NULL;
 
 	if(progressthread == LWP_THREAD_NULL)
 		return;
@@ -1365,7 +1389,7 @@ ShowProgress (const char *msg, int done, int total)
  * if it is suspended.
  ***************************************************************************/
 void
-ShowAction (const char *msg)
+ShowAction (const char *msg, UpdateCallback cancelCallback)
 {
 	if(!mainWindow || ExitRequested)
 		return;
@@ -1382,8 +1406,15 @@ ShowAction (const char *msg)
 	showProgress = 2;
 	progressDone = 0;
 	progressTotal = 0;
-
+	progressCancelCallback = cancelCallback;
+		
 	LWP_ResumeThread (progressthread);
+}
+
+void
+ShowAction (const char *msg)
+{
+	ShowAction (msg, NULL);
 }
 
 void ErrorPrompt(const char *msg)

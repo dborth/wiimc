@@ -206,35 +206,17 @@ static void * netcb (void *arg)
 	{
 		retry = 5;
 		
-		while (retry>0 && (netHalt != 2))
-		{			
-			int i;
+		while (retry > 0 && netHalt != 2)
+		{
 			net_deinit();
-
-			for(i=0; i < 400 && (netHalt != 2); i++)
+			
+			if(prevInit)
 			{
-				res = net_get_status();
-				if(res != -EBUSY) // trying to init net so we can't kill the net
-				{
-					usleep(2000);
-
-					if(prevInit)
-					{
-						prevInit=false; // only call net_wc24cleanup once
-						net_wc24cleanup(); // kill wc24
-					}
-
-					usleep(10000);
-					break;					
-				}
-
-				if(res == -ENETDOWN) // net deinit was successful
-					break;
-
+				prevInit=false; // only call net_wc24cleanup once
+				net_wc24cleanup(); // kill wc24
 				usleep(10000);
 			}
 
-			usleep(2000);
 			res = net_init_async(NULL, NULL);
 
 			if(res != 0)
@@ -245,29 +227,31 @@ static void * netcb (void *arg)
 			}
 
 			res = net_get_status();
-			wait = 500; // only wait 5 sec
-			while (res == -EBUSY && wait > 0  && (netHalt != 2))
+			wait = 500; // only wait 10 sec
+
+			while (res == -EBUSY && wait > 0 && netHalt != 2)
 			{
-				usleep(10000);
+				usleep(200000);
 				res = net_get_status();
 				wait--;
 			}
 
-			if(res==0) break;
+			if (res == 0)
+			{
+				struct in_addr hostip;
+				hostip.s_addr = net_gethostip();
+				
+				if (hostip.s_addr)
+				{
+					strcpy(wiiIP, inet_ntoa(hostip));
+					networkInit = true;
+					prevInit = true;
+					break;
+				}
+			}
+
 			retry--;
 			usleep(2000);
-		}
-
-		if (res == 0)
-		{
-			struct in_addr hostip;
-			hostip.s_addr = net_gethostip();
-			if (hostip.s_addr)
-			{
-				strcpy(wiiIP, inet_ntoa(hostip));
-				networkInit = true;
-				prevInit = true;				
-			}
 		}
 
 		if(netHalt != 2)

@@ -246,7 +246,7 @@ void cfg_read(void)
 
     player_idle_mode = 1;   // GUI is in idle mode by default
 
-    // configuration
+    /* configuration */
 
     fname = get_path(gui_configuration);
 
@@ -268,7 +268,7 @@ void cfg_read(void)
 
     free(fname);
 
-    // playlist
+    /* playlist */
 
     fname = get_path(gui_playlist);
     file  = fopen(fname, "rt");
@@ -291,7 +291,7 @@ void cfg_read(void)
 
             if (fgetstr(line, sizeof(line), file) && *line) {
                 item->name = strdup(line);
-                listSet(gtkAddPlItem, item);
+                listMgr(PLAYLIST_ITEM_APPEND, item);
             } else {
                 free(item->path);
                 free(item);
@@ -303,7 +303,7 @@ void cfg_read(void)
 
     free(fname);
 
-    // URL list
+    /* URL list */
 
     fname = get_path(gui_urllist);
     file  = fopen(fname, "rt");
@@ -323,7 +323,7 @@ void cfg_read(void)
             }
 
             item->url = strdup(line);
-            listSet(gtkAddURLItem, item);
+            listMgr(URLLIST_ITEM_ADD, item);
         }
 
         fclose(file);
@@ -331,7 +331,7 @@ void cfg_read(void)
 
     free(fname);
 
-    // directory history
+    /* directory history */
 
     fname = get_path(gui_history);
     file  = fopen(fname, "rt");
@@ -353,19 +353,20 @@ void cfg_write(void)
 {
     char *fname;
     FILE *file;
-    unsigned int i;
 
-    // configuration
+    /* configuration */
 
     fname = get_path(gui_configuration);
     file  = fopen(fname, "wt+");
 
     if (file) {
-        for (i = 0; gui_opts[i].name; i++) {
-            char *val = m_option_print(&gui_opts[i], gui_opts[i].p);
+        const m_option_t *opts = gui_opts;
+
+        while (opts->name) {
+            char *val = m_option_print(opts, opts->p);
 
             if (val == (char *)-1) {
-                gmp_msg(MSGT_GPLAYER, MSGL_WARN, MSGTR_UnableToSaveOption, gui_opts[i].name);
+                gmp_msg(MSGT_GPLAYER, MSGL_WARN, MSGTR_UnableToSaveOption, opts->name);
                 val = NULL;
             }
 
@@ -375,9 +376,11 @@ void cfg_write(void)
                 if (!strchr(val, ' '))
                     *delim = 0;
 
-                fprintf(file, "%s=%s%s%s\n", gui_opts[i].name, delim, val, delim);
+                fprintf(file, "%s=%s%s%s\n", opts->name, delim, val, delim);
                 free(val);
             }
+
+            opts++;
         }
 
         fclose(file);
@@ -385,13 +388,13 @@ void cfg_write(void)
 
     free(fname);
 
-    // playlist
+    /* playlist */
 
     fname = get_path(gui_playlist);
     file  = fopen(fname, "wt+");
 
     if (file) {
-        plItem *item = plList;
+        plItem *item = listMgr(PLAYLIST_GET, 0);
 
         while (item) {
             if (item->path && item->name) {
@@ -407,13 +410,13 @@ void cfg_write(void)
 
     free(fname);
 
-    // URL list
+    /* URL list */
 
     fname = get_path(gui_urllist);
     file  = fopen(fname, "wt+");
 
     if (file) {
-        urlItem *item = urlList;
+        urlItem *item = listMgr(URLLIST_GET, 0);
 
         while (item) {
             if (item->url)
@@ -427,12 +430,14 @@ void cfg_write(void)
 
     free(fname);
 
-    // directory history
+    /* directory history */
 
     fname = get_path(gui_history);
     file  = fopen(fname, "wt+");
 
     if (file) {
+        unsigned int i;
+
         for (i = 0; i < FF_ARRAY_ELEMS(fsHistory); i++)
             if (fsHistory[i])
                 fprintf(file, "%s\n", fsHistory[i]);

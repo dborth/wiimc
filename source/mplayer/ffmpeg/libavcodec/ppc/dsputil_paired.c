@@ -195,7 +195,7 @@ static void ac3_downmix_paired(float (*samples)[256], float (*matrix)[2], int ou
 	}
 }
 
-void dsputil_init_paired(DSPContext *c, AVCodecContext *avctx)
+void ff_dsputil_init_paired(DSPContext *c, AVCodecContext *avctx)
 {
 	register uint32_t gqr;
 	__asm__ volatile (

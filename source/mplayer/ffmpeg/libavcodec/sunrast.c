@@ -22,32 +22,7 @@
 #include "libavutil/intreadwrite.h"
 #include "libavutil/imgutils.h"
 #include "avcodec.h"
-
-#define RAS_MAGIC 0x59a66a95
-
-/* The Old and Standard format types indicate that the image data is
- * uncompressed. There is no difference between the two formats. */
-#define RT_OLD          0
-#define RT_STANDARD     1
-
-/* The Byte-Encoded format type indicates that the image data is compressed
- * using a run-length encoding scheme. */
-#define RT_BYTE_ENCODED 2
-
-/* The RGB format type indicates that the image is uncompressed with reverse
- * component order from Old and Standard (RGB vs BGR). */
-#define RT_FORMAT_RGB   3
-
-/* The TIFF and IFF format types indicate that the raster file was originally
- * converted from either of these file formats. We do not have any samples or
- * documentation of the format details. */
-#define RT_FORMAT_TIFF  4
-#define RT_FORMAT_IFF   5
-
-/* The Experimental format type is implementation-specific and is generally an
- * indication that the image file does not conform to the Sun Raster file
- * format specification. */
-#define RT_EXPERIMENTAL 0xffff
+#include "sunrast.h"
 
 typedef struct SUNRASTContext {
     AVFrame picture;
@@ -102,7 +77,11 @@ static int sunrast_decode_frame(AVCodecContext *avctx, void *data,
         av_log(avctx, AV_LOG_ERROR, "invalid image size\n");
         return AVERROR_INVALIDDATA;
     }
-    if (maptype & ~1) {
+    if (maptype == RMT_RAW) {
+        av_log_ask_for_sample(avctx, "unsupported colormap type\n");
+        return AVERROR_PATCHWELCOME;
+    }
+    if (maptype > RMT_RAW) {
         av_log(avctx, AV_LOG_ERROR, "invalid colormap type\n");
         return AVERROR_INVALIDDATA;
     }
@@ -190,7 +169,7 @@ static int sunrast_decode_frame(AVCodecContext *avctx, void *data,
             if (buf_end - buf < 1)
                 return AVERROR_INVALIDDATA;
 
-            if ((value = *buf++) == 0x80) {
+            if ((value = *buf++) == RLE_TRIGGER) {
                 run = *buf++ + 1;
                 if (run != 1)
                     value = *buf++;

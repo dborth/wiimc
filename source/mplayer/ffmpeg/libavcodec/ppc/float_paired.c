@@ -141,7 +141,7 @@ static void vector_fmul_scalar_paired(float *dst, const float *src, float mul, i
 	}
 }
 
-void float_init_paired(DSPContext *c, AVCodecContext *avctx)
+void ff_float_init_paired(DSPContext *c, AVCodecContext *avctx)
 {
 	c->vector_fmul = vector_fmul_paired;
 	c->vector_fmul_reverse = vector_fmul_reverse_paired;

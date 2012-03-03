@@ -1545,7 +1545,6 @@ h264_parser_select="golomb h264chroma h264dsp h264pred"
 libaacplus_encoder_deps="libaacplus"
 libcelt_decoder_deps="libcelt"
 libdirac_decoder_deps="libdirac !libschroedinger"
-libdirac_encoder_deps="libdirac"
 libfaac_encoder_deps="libfaac"
 libgsm_decoder_deps="libgsm"
 libgsm_encoder_deps="libgsm"
@@ -1640,8 +1639,14 @@ httpproxy_protocol_select="tcp_protocol"
 http_protocol_deps="network"
 http_protocol_select="tcp_protocol"
 https_protocol_select="tls_protocol"
+librtmp_protocol_deps="librtmp"
+librtmpe_protocol_deps="librtmp"
+librtmps_protocol_deps="librtmp"
+librtmpt_protocol_deps="librtmp"
+librtmpte_protocol_deps="librtmp"
 mmsh_protocol_select="http_protocol"
 mmst_protocol_deps="network"
+rtmp_protocol_deps="!librtmp_protocol"
 rtmp_protocol_select="tcp_protocol"
 rtp_protocol_select="udp_protocol"
 tcp_protocol_deps="network"
@@ -1663,7 +1668,7 @@ frei0r_filter_deps="frei0r dlopen"
 frei0r_src_filter_deps="frei0r dlopen"
 hqdn3d_filter_deps="gpl"
 movie_filter_deps="avcodec avformat"
-mp_filter_deps="gpl avcodec swscale"
+mp_filter_deps="gpl avcodec swscale postproc"
 mptestsrc_filter_deps="gpl"
 negate_filter_deps="lut_filter"
 ocv_filter_deps="libopencv"
@@ -1768,11 +1773,11 @@ test_deps _muxer _demuxer                                               \
     gxf                                                                 \
     matroska=mkv                                                        \
     mmf                                                                 \
-    mov                                                                 \
+    mov="mov ismv"                                                      \
     pcm_mulaw=mulaw                                                     \
     mxf="mxf mxf_d10"                                                   \
     nut                                                                 \
-    ogg                                                                 \
+    ogg="ogg ogg_vp3"                                                   \
     rawvideo=pixfmt                                                     \
     rm                                                                  \
     swf                                                                 \
@@ -1940,11 +1945,12 @@ find_tests(){
 
 ACODEC_TESTS=$(find_tests acodec)
 VCODEC_TESTS=$(find_tests vsynth1)
+LAVF_FATE_TESTS=$(find_tests lavf-fate)
 LAVF_TESTS=$(find_tests lavf)
 LAVFI_TESTS=$(find_tests lavfi)
 SEEK_TESTS=$(find_tests seek seek_)
 
-ALL_TESTS="$ACODEC_TESTS $VCODEC_TESTS $LAVF_TESTS $LAVFI_TESTS $SEEK_TESTS"
+ALL_TESTS="$ACODEC_TESTS $VCODEC_TESTS $LAVF_FATE_TESTS $LAVF_TESTS $LAVFI_TESTS $SEEK_TESTS"
 
 pcm_test_deps=$(map 'echo ${v%_*}_decoder $v' $(filter pcm_* $ENCODER_LIST))
 
@@ -3138,8 +3144,8 @@ enabled libcelt    && require libcelt celt/celt.h celt_decode -lcelt0 &&
                       { check_lib celt/celt.h celt_decoder_create_custom -lcelt0 ||
                         die "ERROR: libcelt version must be >= 0.11.0."; }
 enabled libdirac   && require_pkg_config dirac                          \
-    "libdirac_decoder/dirac_parser.h libdirac_encoder/dirac_encoder.h"  \
-    "dirac_decoder_init dirac_encoder_init"
+    "libdirac_decoder/dirac_parser.h"  \
+    "dirac_decoder_init"
 enabled libfaac    && require2 libfaac "stdint.h faac.h" faacEncGetVersion -lfaac
 enabled libfreetype && require_pkg_config freetype2 "ft2build.h freetype/freetype.h" FT_Init_FreeType
 enabled libgsm     && require  libgsm gsm/gsm.h gsm_create -lgsm
@@ -3415,6 +3421,33 @@ fi
 
 ! enabled_any memalign posix_memalign malloc_aligned &&
     enabled_any $need_memalign && enable memalign_hack
+
+# add_dep lib dep
+# -> enable ${lib}_deps_${dep}
+# -> add $dep to ${lib}_deps only once
+add_dep() {
+    lib=$1
+    dep=$2
+    enabled "${lib}_deps_${dep}" && return 0
+    enable  "${lib}_deps_${dep}"
+    prepend "${lib}_deps" $dep
+}
+
+# merge deps lib components
+# merge all ${component}_deps into ${lib}_deps and ${lib}_deps_*
+merge_deps() {
+    lib=$1
+    shift
+    for comp in $*; do
+        enabled $comp || continue
+        eval "dep=\"\$${comp}_deps\""
+        for d in $dep; do
+            add_dep $lib $d
+        done
+    done
+}
+
+merge_deps libavfilter $FILTER_LIST
 
 echo "install prefix            $prefix"
 echo "source path               $source_path"
@@ -3693,6 +3726,7 @@ print_config CONFIG_ "$config_files" $CONFIG_LIST       \
 cat >>config.mak <<EOF
 ACODEC_TESTS=$(print_enabled -n _test $ACODEC_TESTS)
 VCODEC_TESTS=$(print_enabled -n _test $VCODEC_TESTS)
+LAVF_FATE_TESTS=$(print_enabled -n _test $LAVF_FATE_TESTS)
 LAVF_TESTS=$(print_enabled   -n _test $LAVF_TESTS)
 LAVFI_TESTS=$(print_enabled  -n _test $LAVFI_TESTS)
 SEEK_TESTS=$(print_enabled   -n _test $SEEK_TESTS)
@@ -3770,11 +3804,19 @@ Cflags: -I\${includedir}
 EOF
 }
 
+libavfilter_pc_deps=""
+enabled libavfilter_deps_avcodec    && prepend libavfilter_pc_deps "libavcodec = $LIBAVCODEC_VERSION,"
+enabled libavfilter_deps_avformat   && prepend libavfilter_pc_deps "libavformat = $LIBAVFORMAT_VERSION,"
+enabled libavfilter_deps_swscale    && prepend libavfilter_pc_deps "libswscale = $LIBSWSCALE_VERSION,"
+enabled libavfilter_deps_swresample && prepend libavfilter_pc_deps "libswresample = $LIBSWRESAMPLE_VERSION,"
+enabled libavfilter_deps_postproc   && prepend libavfilter_pc_deps "libpostproc = $LIBPOSTPROC_VERSION,"
+libavfilter_pc_deps=${libavfilter_pc_deps%, }
+
 pkgconfig_generate libavutil "FFmpeg utility library" "$LIBAVUTIL_VERSION" "$LIBM"
 pkgconfig_generate libavcodec "FFmpeg codec library" "$LIBAVCODEC_VERSION" "$extralibs" "libavutil = $LIBAVUTIL_VERSION"
 pkgconfig_generate libavformat "FFmpeg container format library" "$LIBAVFORMAT_VERSION" "$extralibs" "libavcodec = $LIBAVCODEC_VERSION"
 pkgconfig_generate libavdevice "FFmpeg device handling library" "$LIBAVDEVICE_VERSION" "$extralibs" "libavformat = $LIBAVFORMAT_VERSION"
-pkgconfig_generate libavfilter "FFmpeg video filtering library" "$LIBAVFILTER_VERSION" "$extralibs"
+pkgconfig_generate libavfilter "FFmpeg video filtering library" "$LIBAVFILTER_VERSION" "$extralibs" "$libavfilter_pc_deps"
 pkgconfig_generate libpostproc "FFmpeg postprocessing library" "$LIBPOSTPROC_VERSION" "" "libavutil = $LIBAVUTIL_VERSION"
 pkgconfig_generate libswscale "FFmpeg image rescaling library" "$LIBSWSCALE_VERSION" "$LIBM" "libavutil = $LIBAVUTIL_VERSION"
 pkgconfig_generate libswresample "FFmpeg audio rescaling library" "$LIBSWRESAMPLE_VERSION" "$LIBM" "libavutil = $LIBAVUTIL_VERSION"

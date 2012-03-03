@@ -93,7 +93,7 @@ struct variant {
     uint8_t key[16];
 };
 
-typedef struct AppleHTTPContext {
+typedef struct HLSContext {
     int n_variants;
     struct variant **variants;
     int cur_seq_no;
@@ -103,7 +103,7 @@ typedef struct AppleHTTPContext {
     int64_t seek_timestamp;
     int seek_flags;
     AVIOInterruptCB *interrupt_callback;
-} AppleHTTPContext;
+} HLSContext;
 
 static int read_chomp_line(AVIOContext *s, char *buf, int maxlen)
 {
@@ -122,7 +122,7 @@ static void free_segment_list(struct variant *var)
     var->n_segments = 0;
 }
 
-static void free_variant_list(AppleHTTPContext *c)
+static void free_variant_list(HLSContext *c)
 {
     int i;
     for (i = 0; i < c->n_variants; i++) {
@@ -152,7 +152,7 @@ static void reset_packet(AVPacket *pkt)
     pkt->data = NULL;
 }
 
-static struct variant *new_variant(AppleHTTPContext *c, int bandwidth,
+static struct variant *new_variant(HLSContext *c, int bandwidth,
                                    const char *url, const char *base)
 {
     struct variant *var = av_mallocz(sizeof(struct variant));
@@ -199,7 +199,7 @@ static void handle_key_args(struct key_info *info, const char *key,
     }
 }
 
-static int parse_playlist(AppleHTTPContext *c, const char *url,
+static int parse_playlist(HLSContext *c, const char *url,
                           struct variant *var, AVIOContext *in)
 {
     int ret = 0, duration = 0, is_segment = 0, is_variant = 0, bandwidth = 0;
@@ -373,7 +373,7 @@ static int open_input(struct variant *var)
 static int read_data(void *opaque, uint8_t *buf, int buf_size)
 {
     struct variant *v = opaque;
-    AppleHTTPContext *c = v->parent->priv_data;
+    HLSContext *c = v->parent->priv_data;
     int ret, i;
 
 restart:
@@ -445,9 +445,9 @@ reload:
     goto restart;
 }
 
-static int applehttp_read_header(AVFormatContext *s)
+static int hls_read_header(AVFormatContext *s)
 {
-    AppleHTTPContext *c = s->priv_data;
+    HLSContext *c = s->priv_data;
     int ret = 0, i, j, stream_offset = 0;
 
     c->interrupt_callback = &s->interrupt_callback;
@@ -547,7 +547,7 @@ static int applehttp_read_header(AVFormatContext *s)
 
     c->first_packet = 1;
     c->first_timestamp = AV_NOPTS_VALUE;
-    c->seek_timestamp = AV_NOPTS_VALUE;
+    c->seek_timestamp  = AV_NOPTS_VALUE;
 
     return 0;
 fail:
@@ -557,7 +557,7 @@ fail:
 
 static int recheck_discard_flags(AVFormatContext *s, int first)
 {
-    AppleHTTPContext *c = s->priv_data;
+    HLSContext *c = s->priv_data;
     int i, changed = 0;
 
     /* Check if any new streams are needed */
@@ -590,9 +590,9 @@ static int recheck_discard_flags(AVFormatContext *s, int first)
     return changed;
 }
 
-static int applehttp_read_packet(AVFormatContext *s, AVPacket *pkt)
+static int hls_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
-    AppleHTTPContext *c = s->priv_data;
+    HLSContext *c = s->priv_data;
     int ret, i, minvariant = -1;
 
     if (c->first_packet) {
@@ -609,16 +609,13 @@ start:
         if (var->needed && !var->pkt.data) {
             while (1) {
                 int64_t ts_diff;
+                AVStream *st;
                 ret = av_read_frame(var->ctx, &var->pkt);
                 if (ret < 0) {
-                    if (!url_feof(&var->pb)) {
+                    if (!url_feof(&var->pb))
                         return ret;
-                    } else {
-                        if ((var->cur_seq_no - var->start_seq_no) == (var->n_segments)) {
-                            return AVERROR_EOF;
-                        }
-                    }
                     reset_packet(&var->pkt);
+                    break;
                 } else {
                     if (c->first_timestamp == AV_NOPTS_VALUE)
                         c->first_timestamp = var->pkt.dts;
@@ -632,18 +629,14 @@ start:
                     break;
                 }
 
-                ts_diff = var->pkt.dts - c->seek_timestamp;
-                if (ts_diff >= 0) {
-                    if (c->seek_flags & AVSEEK_FLAG_ANY) {
-                        c->seek_timestamp = AV_NOPTS_VALUE;
-                        break;
-                    }
-
-                    /* Seek to keyframe */
-                    if (var->pkt.flags & AV_PKT_FLAG_KEY) {
-                        c->seek_timestamp = AV_NOPTS_VALUE;
-                        break;
-                    }
+                st = var->ctx->streams[var->pkt.stream_index];
+                ts_diff = av_rescale_rnd(var->pkt.dts, AV_TIME_BASE,
+                                         st->time_base.den, AV_ROUND_DOWN) -
+                          c->seek_timestamp;
+                if (ts_diff >= 0 && (c->seek_flags  & AVSEEK_FLAG_ANY ||
+                                     var->pkt.flags & AV_PKT_FLAG_KEY)) {
+                    c->seek_timestamp = AV_NOPTS_VALUE;
+                    break;
                 }
             }
         }
@@ -668,25 +661,29 @@ start:
     return AVERROR_EOF;
 }
 
-static int applehttp_close(AVFormatContext *s)
+static int hls_close(AVFormatContext *s)
 {
-    AppleHTTPContext *c = s->priv_data;
+    HLSContext *c = s->priv_data;
 
     free_variant_list(c);
     return 0;
 }
 
-static int applehttp_read_seek(AVFormatContext *s, int stream_index,
+static int hls_read_seek(AVFormatContext *s, int stream_index,
                                int64_t timestamp, int flags)
 {
-    AppleHTTPContext *c = s->priv_data;
+    HLSContext *c = s->priv_data;
     int i, j, ret;
 
     if ((flags & AVSEEK_FLAG_BYTE) || !c->variants[0]->finished)
         return AVERROR(ENOSYS);
 
-    c->seek_timestamp = timestamp;
-    c->seek_flags = flags;
+    c->seek_flags     = flags;
+    c->seek_timestamp = stream_index < 0 ? timestamp :
+                        av_rescale_rnd(timestamp, AV_TIME_BASE,
+                                       s->streams[stream_index]->time_base.den,
+                                       flags & AVSEEK_FLAG_BACKWARD ?
+                                       AV_ROUND_DOWN : AV_ROUND_UP);
     timestamp = av_rescale_rnd(timestamp, 1, stream_index >= 0 ?
                                s->streams[stream_index]->time_base.den :
                                AV_TIME_BASE, flags & AVSEEK_FLAG_BACKWARD ?
@@ -712,6 +709,10 @@ static int applehttp_read_seek(AVFormatContext *s, int stream_index,
         av_free_packet(&var->pkt);
         reset_packet(&var->pkt);
         var->pb.eof_reached = 0;
+        /* Clear any buffered data */
+        var->pb.buf_end = var->pb.buf_ptr = var->pb.buffer;
+        /* Reset the pos, to let the mpegts demuxer know we've seeked. */
+        var->pb.pos = 0;
 
         /* Locate the segment that contains the target timestamp */
         for (j = 0; j < var->n_segments; j++) {
@@ -723,13 +724,13 @@ static int applehttp_read_seek(AVFormatContext *s, int stream_index,
             }
             pos += var->segments[j]->duration;
         }
-        if (ret != 0)
+        if (ret)
             c->seek_timestamp = AV_NOPTS_VALUE;
     }
     return ret;
 }
 
-static int applehttp_probe(AVProbeData *p)
+static int hls_probe(AVProbeData *p)
 {
     /* Require #EXTM3U at the start, and either one of the ones below
      * somewhere for a proper match. */
@@ -742,13 +743,13 @@ static int applehttp_probe(AVProbeData *p)
     return 0;
 }
 
-AVInputFormat ff_applehttp_demuxer = {
-    .name           = "applehttp",
+AVInputFormat ff_hls_demuxer = {
+    .name           = "hls,applehttp",
     .long_name      = NULL_IF_CONFIG_SMALL("Apple HTTP Live Streaming format"),
-    .priv_data_size = sizeof(AppleHTTPContext),
-    .read_probe     = applehttp_probe,
-    .read_header    = applehttp_read_header,
-    .read_packet    = applehttp_read_packet,
-    .read_close     = applehttp_close,
-    .read_seek      = applehttp_read_seek,
+    .priv_data_size = sizeof(HLSContext),
+    .read_probe     = hls_probe,
+    .read_header    = hls_read_header,
+    .read_packet    = hls_read_packet,
+    .read_close     = hls_close,
+    .read_seek      = hls_read_seek,
 };

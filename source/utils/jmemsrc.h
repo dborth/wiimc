@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009-2011
+ * Tantric 2009-2012
  *
  * jmemsrc.h
  * Memory based JPEG decoding to 4x4RGBA texture

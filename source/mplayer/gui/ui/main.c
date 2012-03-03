@@ -111,7 +111,7 @@ static void guiInfoMediumClear (int what)
     nfree(guiInfo.Filename);
     nfree(guiInfo.SubtitleFilename);
     nfree(guiInfo.AudioFilename);
-    listSet(gtkDelPl, NULL);
+    listMgr(PLAYLIST_DELETE, 0);
   }
 
   if (what & CLEAR_VCD) guiInfo.Tracks = 0;
@@ -135,7 +135,7 @@ void uiEventHandling( int msg,float param )
 
  switch( msg )
   {
-// --- user events
+/* user events */
    case evExit:
         mplayer( MPLAYER_EXIT_GUI, EXIT_QUIT, 0 );
         break;
@@ -208,10 +208,9 @@ play:
 
         if ( ( msg == evPlaySwitchToPause )&&( guiInfo.Playing == GUI_PAUSE ) ) goto NoPause;
 
-	if ( listSet( gtkGetCurrPlItem,NULL ) &&( guiInfo.StreamType == STREAMTYPE_FILE ) )
+	if ( listMgr( PLAYLIST_ITEM_GET_CURR,0 ) &&( guiInfo.StreamType == STREAMTYPE_FILE ) )
 	 {
-	  plItem * next = listSet( gtkGetCurrPlItem,NULL );
-	  plLastPlayed=next;
+	  plItem * next = listMgr( PLAYLIST_ITEM_GET_CURR,0 );
 	  uiSetFileName( next->path,next->name,SAME_STREAMTYPE );
 	 }
 
@@ -271,7 +270,7 @@ NoPause:
         uiMainAutoPlay=1;
 //	guiInfo.StreamType=STREAMTYPE_FILE;
    case evLoad:
-	listSet( gtkDelPl,NULL );
+	listMgr( PLAYLIST_DELETE,0 );
         gtkShow( evLoad,NULL );
         break;
    case evLoadSubtitle:  gtkShow( evLoadSubtitle,NULL );  break;
@@ -407,7 +406,7 @@ set_volume:
 	 guiInfo.NewPlay=GUI_FILE_NEW;
 	break;
 
-// --- timer events
+/* timer events */
    case ivRedraw:
         {
           unsigned now = GetTimerMS();
@@ -421,7 +420,7 @@ set_volume:
         wsPostRedisplay( &guiApp.mainWindow );
 	wsPostRedisplay( &guiApp.playbarWindow );
         break;
-// --- system events
+/* system events */
    case evNone:
         mp_msg( MSGT_GPLAYER,MSGL_DBG2,"[main] uiEventHandling: evNone\n" );
         break;
@@ -508,7 +507,7 @@ void uiMainMouseHandle( int Button,int X,int Y,int RX,int RY )
         gtkShow( ivShowPopUpMenu,NULL );
         break;
 
-// --- rolled mouse ... de szar :)))
+/* rolled mouse ... de szar :))) */
    case wsP5MouseButton: value=-2.5f; goto rollerhandled;
    case wsP4MouseButton: value= 2.5f;
 rollerhandled:
@@ -521,7 +520,7 @@ rollerhandled:
            }
           break;
 
-// --- moving
+/* moving */
    case wsMoveMouse:
           item=&guiApp.mainItems[SelectedItem];
           switch ( itemtype )
@@ -643,7 +642,7 @@ void uiDandDHandler(int num,char** files)
       /* clear playlist */
       if (filename == NULL) {
 	filename = files[f];
-	listSet(gtkDelPl,NULL);
+	listMgr(PLAYLIST_DELETE,0);
       }
 
       item = calloc(1,sizeof(plItem));
@@ -658,7 +657,7 @@ void uiDandDHandler(int num,char** files)
 	item->name = strdup(str);
 	item->path = strdup("");
       }
-      listSet(gtkAddPlItem,item);
+      listMgr(PLAYLIST_ITEM_APPEND,item);
     } else {
       mp_msg( MSGT_GPLAYER,MSGL_WARN,MSGTR_NotAFile,str );
     }

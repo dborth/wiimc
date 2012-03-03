@@ -72,8 +72,6 @@ static const struct AVCodecTag mp_wav_tags[] = {
     { 0, 0 },
 };
 
-static const struct AVCodecTag * const mp_wav_taglists[] = {mp_wav_tags, 0};
-
 static const struct AVCodecTag mp_codecid_override_tags[] = {
     { CODEC_ID_8SVX_EXP,          MKTAG('8', 'e', 'x', 'p')},
     { CODEC_ID_8SVX_FIB,          MKTAG('8', 'f', 'i', 'b')},
@@ -123,6 +121,7 @@ static const struct AVCodecTag mp_bmp_tags[] = {
     { CODEC_ID_BMV_VIDEO,         MKTAG('B', 'M', 'V', 'V')},
     { CODEC_ID_C93,               MKTAG('C', '9', '3', 'V')},
     { CODEC_ID_CDGRAPHICS,        MKTAG('C', 'D', 'G', 'R')},
+    { CODEC_ID_CDXL,              MKTAG('C', 'D', 'X', 'L')},
     { CODEC_ID_CMV,               MKTAG('M', 'V', 'I', 'f')},
     { CODEC_ID_DFA,               MKTAG('C', 'D', 'F', 'A')},
     { CODEC_ID_DNXHD,             MKTAG('A', 'V', 'd', 'n')},
@@ -157,25 +156,23 @@ static const struct AVCodecTag mp_bmp_tags[] = {
     { 0, 0 },
 };
 
-static const struct AVCodecTag * const mp_bmp_taglists[] = {mp_bmp_tags, 0};
+static void get_taglists(const struct AVCodecTag *dst[3], int audio)
+{
+    dst[0] = audio ? mp_wav_tags : mp_bmp_tags;
+    dst[1] = audio ? avformat_get_riff_audio_tags() : avformat_get_riff_video_tags();
+    dst[2] = NULL;
+}
 
 enum CodecID mp_tag2codec_id(uint32_t tag, int audio)
 {
-    AVOutputFormat *avi_format;
-    enum CodecID id = av_codec_get_id(audio ? mp_wav_taglists : mp_bmp_taglists, tag);
-    if (id != CODEC_ID_NONE)
-        return id;
-    avi_format = av_guess_format("avi", NULL, NULL);
-    if (!avi_format) {
-        mp_msg(MSGT_DEMUXER, MSGL_FATAL, "MPlayer cannot work properly without AVI muxer in libavformat!\n");
-        return 0;
-    }
-    return av_codec_get_id(avi_format->codec_tag, tag);
+    const struct AVCodecTag *taglists[3];
+    get_taglists(taglists, audio);
+    return av_codec_get_id(taglists, tag);
 }
 
 uint32_t mp_codec_id2tag(enum CodecID codec_id, uint32_t old_tag, int audio)
 {
-    AVOutputFormat *avi_format;
+    const struct AVCodecTag *taglists[3];
     // For some formats (like PCM) always trust CODEC_ID_* more than codec_tag
     uint32_t tag = av_codec_get_tag(mp_codecid_override_taglists, codec_id);
     if (tag)
@@ -189,14 +186,6 @@ uint32_t mp_codec_id2tag(enum CodecID codec_id, uint32_t old_tag, int audio)
     if (tag)
         return tag;
 
-    tag = av_codec_get_tag(audio ? mp_wav_taglists : mp_bmp_taglists, codec_id);
-    if (tag)
-        return tag;
-
-    avi_format = av_guess_format("avi", NULL, NULL);
-    if (!avi_format) {
-        mp_msg(MSGT_DEMUXER, MSGL_FATAL, "MPlayer cannot work properly without AVI muxer in libavformat!\n");
-        return 0;
-    }
-    return av_codec_get_tag(avi_format->codec_tag, codec_id);
+    get_taglists(taglists, audio);
+    return av_codec_get_tag(taglists, codec_id);
 }

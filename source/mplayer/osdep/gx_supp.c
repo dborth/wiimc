@@ -4,7 +4,7 @@
 *	dhewg 2008
 *	sepp256 2008-2011 - Coded YUV->RGB conversion and filters in TEV
 *	Extrems 2009-2011
-*	Tantric / rodries 2009-2011
+*	Tantric / rodries 2009-2012
 *
 *	This program is free software; you can redistribute it and/or modify
 *	it under the terms of the GNU General Public License as published by

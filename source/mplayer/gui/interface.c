@@ -68,6 +68,7 @@ static int initialized;
 void guiInit(void)
 {
     int i;
+    plItem *playlist;
 
     mp_msg(MSGT_GPLAYER, MSGL_V, "GUI init.\n");
 
@@ -96,10 +97,10 @@ void guiInit(void)
 
     gtkInit();
 
-    // initialize X
+    /* initialize X */
     wsXInit(mDisplay);
 
-    // load skin
+    /* load skin */
 
     skinDirInHome  = get_path("skins");
     skinMPlayerDir = MPLAYER_DATADIR "/skins";
@@ -129,7 +130,7 @@ void guiInit(void)
         mplayer(MPLAYER_EXIT_GUI, EXIT_ERROR, 0);
     }
 
-    // initialize windows
+    /* initialize windows */
 
     mainDrawBuffer = malloc(guiApp.main.Bitmap.ImageSize);
 
@@ -233,8 +234,10 @@ void guiInit(void)
 
     uiSubRender = 1;
 
-    if (plCurrent && !filename) {
-        uiSetFileName(plCurrent->path, plCurrent->name, STREAMTYPE_FILE);
+    playlist = listMgr(PLAYLIST_ITEM_GET_CURR, 0);
+
+    if (playlist && !filename) {
+        uiSetFileName(playlist->path, playlist->name, STREAMTYPE_FILE);
         filename = NULL; // don't start playing
     }
 
@@ -268,8 +271,8 @@ void guiDone(void)
     }
 
     appFreeStruct();
-    listSet(gtkDelPl, NULL);
-    listSet(gtkDelURL, NULL);
+    listMgr(PLAYLIST_DELETE, 0);
+    listMgr(URLLIST_DELETE, 0);
     free(guiIcon.collection);
 
     if (gui_conf) {
@@ -442,14 +445,14 @@ int gui(int what, void *data)
             break;
         }
 
-        // video opts
+        /* video opts */
 
         if (!video_driver_list) {
             int i = 0;
 
             while (video_out_drivers[i++]) {
                 if (video_out_drivers[i - 1]->control(VOCTRL_GUISUPPORT, NULL) == VO_TRUE) {
-                    gaddlist(&video_driver_list, (char *)video_out_drivers[i - 1]->info->short_name);
+                    listSet(&video_driver_list, (char *)video_out_drivers[i - 1]->info->short_name);
                     break;
                 }
             }
@@ -483,14 +486,14 @@ int gui(int what, void *data)
         if (gtkVfPP)
             add_vf("pp");
 
-        // audio opts
+        /* audio opts */
 
 // if ( ao_plugin_cfg.plugin_list ) { free( ao_plugin_cfg.plugin_list ); ao_plugin_cfg.plugin_list=NULL; }
         if (gtkAONorm)
-            greplace(&af_cfg.list, "volnorm", "volnorm");
+            listRepl(&af_cfg.list, "volnorm", "volnorm");
 
         if (gtkEnableAudioEqualizer)
-            greplace(&af_cfg.list, "equalizer", "equalizer");
+            listRepl(&af_cfg.list, "equalizer", "equalizer");
 
         if (gtkAOExtraStereo) {
             char *name;
@@ -498,69 +501,61 @@ int gui(int what, void *data)
             name = malloc(12 + 20 + 1);
             snprintf(name, 12 + 20, "extrastereo=%f", gtkAOExtraStereoMul);
             name[12 + 20] = 0;
-            greplace(&af_cfg.list, "extrastereo", name);
+            listRepl(&af_cfg.list, "extrastereo", name);
             free(name);
         }
 
         if (audio_driver_list && !gstrncmp(audio_driver_list[0], "oss", 3)) {
-            char *tmp;
-
             mixer_device  = gtkAOOSSMixer;
             mixer_channel = gtkAOOSSMixerChannel;
 
             if (gtkAOOSSDevice) {
+                char *tmp;
+
                 tmp = calloc(1, strlen(gtkAOOSSDevice) + 7);
                 sprintf(tmp, "oss:%s", gtkAOOSSDevice);
-            } else
-                tmp = strdup("oss");
-
-            gaddlist(&audio_driver_list, tmp);
-            free(tmp);
+                listSet(&audio_driver_list, tmp);
+                free(tmp);
+            }
         }
 
         if (audio_driver_list && !gstrncmp(audio_driver_list[0], "alsa", 4)) {
-            char *tmp;
-
             mixer_device  = gtkAOALSAMixer;
             mixer_channel = gtkAOALSAMixerChannel;
 
             if (gtkAOALSADevice) {
+                char *tmp;
+
                 tmp = calloc(1, strlen(gtkAOALSADevice) + 14);
                 sprintf(tmp, "alsa:device=%s", gtkAOALSADevice);
-            } else
-                tmp = strdup("alsa");
-
-            gaddlist(&audio_driver_list, tmp);
-            free(tmp);
+                listSet(&audio_driver_list, tmp);
+                free(tmp);
+            }
         }
 
         if (audio_driver_list && !gstrncmp(audio_driver_list[0], "sdl", 3)) {
-            char *tmp;
-
             if (gtkAOSDLDriver) {
+                char *tmp;
+
                 tmp = calloc(1, strlen(gtkAOSDLDriver) + 10);
                 sprintf(tmp, "sdl:%s", gtkAOSDLDriver);
-            } else
-                tmp = strdup("sdl");
-
-            gaddlist(&audio_driver_list, tmp);
-            free(tmp);
+                listSet(&audio_driver_list, tmp);
+                free(tmp);
+            }
         }
 
         if (audio_driver_list && !gstrncmp(audio_driver_list[0], "esd", 3)) {
-            char *tmp;
-
             if (gtkAOESDDevice) {
+                char *tmp;
+
                 tmp = calloc(1, strlen(gtkAOESDDevice) + 10);
                 sprintf(tmp, "esd:%s", gtkAOESDDevice);
-            } else
-                tmp = strdup("esd");
-
-            gaddlist(&audio_driver_list, tmp);
-            free(tmp);
+                listSet(&audio_driver_list, tmp);
+                free(tmp);
+            }
         }
 
-        // subtitle
+        /* subtitle */
 
 // subdata->filename=gstrdup( guiInfo.SubtitleFilename );
         stream_dump_type = 0;
@@ -574,7 +569,7 @@ int gui(int what, void *data)
         gtkSubDumpMPSub = gtkSubDumpSrt = 0;
         mplayerLoadFont();
 
-        // misc
+        /* misc */
 
         if (gtkCacheOn)
             stream_cache_size = gtkCacheSize;
@@ -646,7 +641,7 @@ int gui(int what, void *data)
 
     case GUI_SET_VIDEO:
 
-        // video
+        /* video */
 
         guiInfo.sh_video = data;
 
@@ -777,8 +772,9 @@ int gui(int what, void *data)
                 break;
         }
 
-        if (guiInfo.Playing && (next = listSet(gtkGetNextPlItem, NULL)) && (plLastPlayed != next)) {
-            plLastPlayed = next;
+        next = listMgr(PLAYLIST_ITEM_GET_NEXT, 0);
+
+        if (guiInfo.Playing && next) {
             uiSetFileName(next->path, next->name, STREAMTYPE_FILE);
             guiInfo.NewPlay = GUI_FILE_NEW;
             guiInfo.Track++;
@@ -858,9 +854,9 @@ static int import_file_into_gui(char *temp, int insert)
     item->path = pathname;
 
     if (insert)
-        listSet(gtkInsertPlItem, item);           // inserts the item after current, and makes current=item
+        listMgr(PLAYLIST_ITEM_INSERT, item);           // inserts the item after current, and makes current=item
     else
-        listSet(gtkAddPlItem, item);
+        listMgr(PLAYLIST_ITEM_APPEND, item);
 
     return 1;
 }
@@ -875,11 +871,11 @@ int guiPlaylistInitialize(play_tree_t *my_playtree, m_config_t *config, int enqu
     int result = 0;
 
     if (!enqueue)
-        listSet(gtkDelPl, NULL);             // delete playlist before "appending"
+        listMgr(PLAYLIST_DELETE, 0);             // delete playlist before "appending"
 
     if ((my_pt_iter = pt_iter_create(&my_playtree, config))) {
         while ((filename = pt_iter_get_next_file(my_pt_iter)) != NULL)
-            // add it to end of list
+            /* add it to end of list */
             if (import_file_into_gui(filename, 0))
                 result = 1;
     }
@@ -904,11 +900,11 @@ int guiPlaylistAdd(play_tree_t *my_playtree, m_config_t *config)
     int result = 0;
     plItem *save;
 
-    save = (plItem *)listSet(gtkGetCurrPlItem, NULL);    // save current item
+    save = (plItem *)listMgr(PLAYLIST_ITEM_GET_CURR, 0);    // save current item
 
     if ((my_pt_iter = pt_iter_create(&my_playtree, config))) {
         while ((filename = pt_iter_get_next_file(my_pt_iter)) != NULL)
-            // insert it into the list and set plCurrent=new item
+            /* insert it into the list and set plCurrent=new item */
             if (import_file_into_gui(filename, 1))
                 result = 1;
 
@@ -916,12 +912,12 @@ int guiPlaylistAdd(play_tree_t *my_playtree, m_config_t *config)
     }
 
     if (save)
-        listSet(gtkSetCurrPlItem, save);
+        listMgr(PLAYLIST_ITEM_SET_CURR, save);
     else
-        listSet(gtkSetCurrPlItem, plList);    // go to head, if plList was empty before
+        listMgr(PLAYLIST_ITEM_SET_CURR, listMgr(PLAYLIST_GET, 0));    // go to head, if plList was empty before
 
     if (save && result)
-        listSet(gtkDelCurrPlItem, NULL);
+        listMgr(PLAYLIST_ITEM_DEL_CURR, 0);
 
     uiCurr();   // update filename
 
@@ -935,7 +931,7 @@ void mplayer(int what, float value, void *data)
     equalizer_t *eq = (equalizer_t *)data;
 
     switch (what) {
-        // subtitle
+    /* subtitle */
 
     case MPLAYER_SET_FONT_FACTOR:
         font_factor = value;
@@ -1001,7 +997,7 @@ void mplayer(int what, float value, void *data)
         auto_quality = (int)value;
         break;
 
-    // set equalizers
+    /* set equalizers */
 
     case MPLAYER_SET_CONTRAST:
         if (guiInfo.sh_video)

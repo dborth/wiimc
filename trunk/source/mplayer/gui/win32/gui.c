@@ -46,8 +46,9 @@
 #include "gui/util/mem.h"
 #include "gui.h"
 #include "dialogs.h"
+#include "version.h"
 
-// HACK around bug in old mingw
+/* HACK around bug in old mingw */
 #undef INVALID_FILE_ATTRIBUTES
 #define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 
@@ -175,6 +176,12 @@ void capitalize(char *filename)
             filename[i] = tolower(filename[i]);
     }
 }
+static void display_about_box(HWND hWnd)
+{
+    char about_msg[512];
+    snprintf(about_msg, sizeof(about_msg), MP_TITLE "\n" COPYRIGHT, "MPlayer");
+    MessageBox(hWnd, about_msg, acp(MSGTR_About), MB_OK);
+}
 
 static image *get_drawground(HWND hwnd)
 {
@@ -249,7 +256,7 @@ static void handlemsg(HWND hWnd, int msg)
             display_eqwindow(gui);
             break;
         case evAbout:
-            MessageBox(hWnd, COPYRIGHT, "About", MB_OK);
+            display_about_box(hWnd);
             break;
         case evIconify:
             ShowWindow(hWnd, SW_MINIMIZE);
@@ -1018,6 +1025,9 @@ static LRESULT CALLBACK EventProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
                 case ID_ONLINEHELP:
                     ShellExecute(NULL, "open", ONLINE_HELP_URL, NULL, NULL, SW_SHOWNORMAL);
                     break;
+                case IDHELP_ABOUT:
+                    handlemsg(hWnd, evAbout);
+                    break;
             }
             if((IDPLAYDISK <= LOWORD(wParam)) && (LOWORD(wParam) < (IDPLAYDISK + 100)))
             {
@@ -1169,49 +1179,51 @@ static void create_menu(gui_t *gui)
     gui->diskmenu = CreatePopupMenu();
     gui->menu=CreatePopupMenu();
     gui->trayplaymenu = CreatePopupMenu();
-    AppendMenu(gui->menu, MF_STRING | MF_POPUP, (UINT_PTR) gui->trayplaymenu, "Open...");
-    AppendMenu(gui->trayplaymenu, MF_STRING, IDFILE_OPEN, "File...");
-    AppendMenu(gui->trayplaymenu, MF_STRING, IDURL_OPEN, "Url...");
-    AppendMenu(gui->trayplaymenu, MF_STRING, IDDIR_OPEN, "Directory...");
+    AppendMenu(gui->menu, MF_STRING | MF_POPUP, (UINT_PTR) gui->trayplaymenu, acp(MSGTR_MENU_Open));
+    AppendMenu(gui->trayplaymenu, MF_STRING, IDFILE_OPEN, acp(MSGTR_MENU_PlayFile));
+    AppendMenu(gui->trayplaymenu, MF_STRING, IDURL_OPEN, acp(MSGTR_MENU_PlayURL));
+    AppendMenu(gui->trayplaymenu, MF_STRING, IDDIR_OPEN, acp(MSGTR_MENU_PlayDirectory));
     AppendMenu(gui->menu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->menu, MF_STRING | MF_POPUP, (UINT_PTR) gui->diskmenu, "Play &CD/DVD/VCD/SVCD");
+    AppendMenu(gui->menu, MF_STRING | MF_POPUP, (UINT_PTR) gui->diskmenu, acp(MSGTR_MENU_PlayDisc));
     AppendMenu(gui->menu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->menu, MF_STRING, IDSUBTITLE_OPEN, "Open Subtitle");
-    AppendMenu(gui->menu, MF_STRING, ID_SKINBROWSER, "Skin Browser");
+    AppendMenu(gui->menu, MF_STRING, IDSUBTITLE_OPEN, acp(MSGTR_MENU_LoadSubtitle));
+    AppendMenu(gui->menu, MF_STRING, ID_SKINBROWSER, acp(MSGTR_MENU_SkinBrowser));
     AppendMenu(gui->menu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->menu, MF_STRING, ID_PREFS, "Preferences");
-    AppendMenu(gui->menu, MF_STRING, ID_CONSOLE, "Debug Console");
-    AppendMenu(gui->menu, MF_STRING, ID_ONLINEHELP, "Online Help");
+    AppendMenu(gui->menu, MF_STRING, ID_PREFS, acp(MSGTR_MENU_Preferences));
+    AppendMenu(gui->menu, MF_STRING, ID_CONSOLE, acp(MSGTR_MENU_DebugConsole));
+    AppendMenu(gui->menu, MF_STRING, ID_ONLINEHELP, acp(MSGTR_MENU_OnlineHelp));
+    AppendMenu(gui->menu, MF_STRING, IDHELP_ABOUT, acp(MSGTR_MENU_AboutMPlayer));
     AppendMenu(gui->menu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->menu, MF_STRING, IDEXIT, "&Exit");
+    AppendMenu(gui->menu, MF_STRING, IDEXIT, acp(MSGTR_MENU_Exit));
 }
 
 static void create_traymenu(gui_t *gui)
 {
     gui->traymenu = CreatePopupMenu();
     gui->trayplaybackmenu = CreatePopupMenu();
-    AppendMenu(gui->traymenu, MF_STRING | MF_POPUP, (UINT_PTR) gui->trayplaymenu, "Open...");
+    AppendMenu(gui->traymenu, MF_STRING | MF_POPUP, (UINT_PTR) gui->trayplaymenu, acp(MSGTR_MENU_Open));
     AppendMenu(gui->traymenu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->traymenu, MF_STRING | MF_POPUP, (UINT_PTR) gui->trayplaybackmenu, "Playback");
-    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_SEEKB, "Seek Backwards");
-    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_PTRACK, "Previous Track");
-    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_PLAY, "Play/Pause");
-    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_STOP, "Stop");
-    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_NTRACK, "Next Track");
-    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_SEEKF, "Seek Forwards");
+    AppendMenu(gui->traymenu, MF_STRING | MF_POPUP, (UINT_PTR) gui->trayplaybackmenu, acp(MSGTR_MENU_Playing));
+    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_SEEKB, acp(MSGTR_MENU_SeekBack));
+    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_PTRACK, acp(MSGTR_MENU_PrevStream));
+    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_PLAY, acp(MSGTR_MENU_Play "/" MSGTR_MENU_Pause));
+    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_STOP, acp(MSGTR_MENU_Stop));
+    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_NTRACK, acp(MSGTR_MENU_NextStream));
+    AppendMenu(gui->trayplaybackmenu, MF_STRING, ID_SEEKF, acp(MSGTR_MENU_SeekForw));
     AppendMenu(gui->traymenu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->traymenu, MF_STRING, ID_MUTE, "Toggle Mute");
+    AppendMenu(gui->traymenu, MF_STRING, ID_MUTE, acp(MSGTR_MENU_Mute));
     AppendMenu(gui->traymenu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->traymenu, MF_STRING, IDSUBTITLE_OPEN, "Open Subtitle");
-    AppendMenu(gui->traymenu, MF_STRING, ID_PLAYLIST, "Playlist");
+    AppendMenu(gui->traymenu, MF_STRING, IDSUBTITLE_OPEN, acp(MSGTR_MENU_LoadSubtitle));
+    AppendMenu(gui->traymenu, MF_STRING, ID_PLAYLIST, acp(MSGTR_MENU_PlayList));
     AppendMenu(gui->traymenu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->traymenu, MF_STRING, ID_SHOWHIDE, "Show/Hide");
+    AppendMenu(gui->traymenu, MF_STRING, ID_SHOWHIDE, acp(MSGTR_MENU_ShowHide));
     AppendMenu(gui->traymenu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->traymenu, MF_STRING, ID_PREFS, "Preferences");
-    AppendMenu(gui->traymenu, MF_STRING, ID_CONSOLE, "Debug Console");
-    AppendMenu(gui->traymenu, MF_STRING, ID_ONLINEHELP, "Online Help");
+    AppendMenu(gui->traymenu, MF_STRING, ID_PREFS, acp(MSGTR_MENU_Preferences));
+    AppendMenu(gui->traymenu, MF_STRING, ID_CONSOLE, acp(MSGTR_MENU_DebugConsole));
+    AppendMenu(gui->traymenu, MF_STRING, ID_ONLINEHELP, acp(MSGTR_MENU_OnlineHelp));
+    AppendMenu(gui->traymenu, MF_STRING, IDHELP_ABOUT, acp(MSGTR_MENU_AboutMPlayer));
     AppendMenu(gui->traymenu, MF_SEPARATOR, 0, 0);
-    AppendMenu(gui->traymenu, MF_STRING, IDEXIT, "&Exit");
+    AppendMenu(gui->traymenu, MF_STRING, IDEXIT, acp(MSGTR_MENU_Exit));
 }
 
 static void create_submenu(gui_t *gui)

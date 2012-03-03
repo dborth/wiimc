@@ -163,17 +163,16 @@ int gstrcmp(const char *a, const char *b)
     return strcmp(a, b);
 }
 
-int gstrcasecmp(const char *a, const char *b)
-{
-    if (!a && !b)
-        return 0;
-    if (!a || !b)
-        return -1;
-
-    return strcasecmp(a, b);
-}
-
-int gstrncmp(const char *a, const char *b, int n)
+/**
+ * @brief A strncmp() that can handle NULL pointers.
+ *
+ * @param a string to be compared
+ * @param b string which is compared
+ * @param n number of characters compared at the most
+ *
+ * @return return value of strncmp() or -1, if a or b are NULL
+ */
+int gstrncmp(const char *a, const char *b, size_t n)
 {
     if (!a && !b)
         return 0;
@@ -324,7 +323,7 @@ char *TranslateFilename(int how, char *fname, size_t maxlen)
 /**
  * @brief Read characters from @a file.
  *
- * @note Reading stops with '\\r', '\\n' or EOF.
+ * @note Reading stops with an end-of-line character or at end of file.
  *
  * @param str pointer to a buffer to receive the read characters
  * @param size number of characters read at the most (including a terminating null-character)

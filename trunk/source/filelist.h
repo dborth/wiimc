@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009-2011
+ * Tantric 2009-2012
  *
  * imagelist.h
  * Contains a list of all of the files in the images, fonts, sounds folders

@@ -27,11 +27,13 @@
  */
 
 #define _XOPEN_SOURCE 600 /* for usleep */
+#include <unistd.h>
 
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavfilter/avfiltergraph.h>
-#include <libavfilter/vsrc_buffer.h>
+#include <libavfilter/avcodec.h>
+#include <libavfilter/buffersink.h>
 
 const char *filter_descr = "scale=78:24";
 
@@ -45,7 +47,7 @@ static int64_t last_pts = AV_NOPTS_VALUE;
 
 static int open_input_file(const char *filename)
 {
-    int ret, i;
+    int ret;
     AVCodec *dec;
 
     if ((ret = avformat_open_input(&fmt_ctx, filename, NULL, NULL)) < 0) {
@@ -53,7 +55,7 @@ static int open_input_file(const char *filename)
         return ret;
     }
 
-    if ((ret = av_find_stream_info(fmt_ctx)) < 0) {
+    if ((ret = avformat_find_stream_info(fmt_ctx, NULL)) < 0) {
         av_log(NULL, AV_LOG_ERROR, "Cannot find stream information\n");
         return ret;
     }
@@ -68,7 +70,7 @@ static int open_input_file(const char *filename)
     dec_ctx = fmt_ctx->streams[video_stream_index]->codec;
 
     /* init the video decoder */
-    if ((ret = avcodec_open(dec_ctx, dec)) < 0) {
+    if ((ret = avcodec_open2(dec_ctx, dec, NULL)) < 0) {
         av_log(NULL, AV_LOG_ERROR, "Cannot open video decoder\n");
         return ret;
     }
@@ -124,6 +126,7 @@ static int init_filters(const char *filters_descr)
 
     if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0)
         return ret;
+    return 0;
 }
 
 static void display_picref(AVFilterBufferRef *picref, AVRational time_base)
@@ -199,11 +202,11 @@ int main(int argc, char **argv)
                     frame.pts = frame.pkt_dts == AV_NOPTS_VALUE ?
                         frame.pkt_dts : frame.pkt_pts;
                 /* push the decoded frame into the filtergraph */
-                av_vsrc_buffer_add_frame(buffersrc_ctx, &frame);
+                av_vsrc_buffer_add_frame(buffersrc_ctx, &frame, 0);
 
                 /* pull filtered pictures from the filtergraph */
                 while (avfilter_poll_frame(buffersink_ctx->inputs[0])) {
-                    av_vsink_buffer_get_video_buffer_ref(buffersink_ctx, &picref, 0);
+                    av_buffersink_get_buffer_ref(buffersink_ctx, &picref, 0);
                     if (picref) {
                         display_picref(picref, buffersink_ctx->inputs[0]->time_base);
                         avfilter_unref_buffer(picref);
@@ -216,7 +219,7 @@ end:
     avfilter_graph_free(&filter_graph);
     if (dec_ctx)
         avcodec_close(dec_ctx);
-    av_close_input_file(fmt_ctx);
+    avformat_close_input(&fmt_ctx);
 
     if (ret < 0 && ret != AVERROR_EOF) {
         char buf[1024];

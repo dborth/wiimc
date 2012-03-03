@@ -1200,7 +1200,7 @@ H264_WEIGHT(4,2)
 H264_WEIGHT(2,4)
 H264_WEIGHT(2,2)
 
-void dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
+void ff_dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 {
 	c->put_h264_chroma_pixels_tab[0] = put_h264_chroma_mc8_paired;
 	c->put_h264_chroma_pixels_tab[1] = put_h264_chroma_mc4_paired;

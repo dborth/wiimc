@@ -31,7 +31,7 @@
 .\" Title
 .\" --------------------------------------------------------------------------
 .
-.TH MPlayer 1 "2011-12-23" "The MPlayer Project" "The Movie Player"
+.TH MPlayer 1 "2012-02-24" "The MPlayer Project" "The Movie Player"
 .
 .SH NAME
 mplayer  \- movie player
@@ -533,6 +533,8 @@ flip=yes
 mf=type=png:fps=25
 # Eerie negative images are cool.
 vf=eq2=1.0:\-0.8
+# OSD progress bar vertical alignment
+progbar-align=50
 .fi
 .PP
 .I "EXAMPLE MENCODER CONFIGURATION FILE:"
@@ -2609,6 +2611,11 @@ still visible (default is to enable the support only for specific
 formats).
 .
 .TP
+.B \-progbar\-align <0-100>
+Specify the vertical alignment of the progress bar
+(0: top, 100: bottom, default is 50, i.e. centered).
+.
+.TP
 .B \-sid <ID> (also see \-slang, \-vobsubid)
 Display the subtitle stream specified by <ID> (0\-31).
 MPlayer prints the available subtitle IDs when run in verbose (\-v) mode.
@@ -3459,7 +3466,8 @@ vdpau, x11, xv, xvmc, corevideo).
 .br
 .I NOTE:
 This option is only supported by the x11, xmga, xv, xvmc, xvidix,
-gl, gl2, directx, fbdev, tdfxfb and corevideo video output drivers.
+gl, gl2, direct3d, directx, fbdev, sdl, dfxfb and corevideo
+video output drivers.
 .sp 1
 .I EXAMPLE:
 .PD 0

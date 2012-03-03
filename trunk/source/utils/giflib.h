@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009-2011
+ * Tantric 2009-2012
  *
  * giflib.h
  * Memory based GIF decoding to 4x4RGBA texture

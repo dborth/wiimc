@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009-2011
+ * Tantric 2009-2012
  *
  * menu.h
  * Menu flow routines - handles all menu logic

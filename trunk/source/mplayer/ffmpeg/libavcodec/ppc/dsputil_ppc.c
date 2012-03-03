@@ -186,7 +186,7 @@ static void fill_block8_gekko(uint8_t *block, uint8_t value, int line_size, int 
 }
 #endif /* GEKKO */
 
-void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
+void ff_dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 {
     const int high_bit_depth = avctx->bits_per_raw_sample > 8;
     int mm_flags = av_get_cpu_flags();
@@ -254,10 +254,10 @@ void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 #endif /* HAVE_ALTIVEC */
 
 #if HAVE_PAIRED
-    dsputil_init_paired(c, avctx);
-    float_init_paired(c, avctx);
+    ff_dsputil_init_paired(c, avctx);
+    ff_float_init_paired(c, avctx);
 
     if (CONFIG_H264_DECODER)
-        dsputil_h264_init_ppc(c, avctx);
+        ff_dsputil_h264_init_ppc(c, avctx);
 #endif /* HAVE_PAIRED */
 }

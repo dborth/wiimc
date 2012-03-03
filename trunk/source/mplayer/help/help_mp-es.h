@@ -209,7 +209,7 @@ static const char help_text[]=
 #define MSGTR_OSDSpeed "Velocidad: x %6.2f"
 #define MSGTR_OSDosd "OSD: %s"
 #define MSGTR_OSDChapter "Capítulo: (%d) %s"
-#define MSGTR_OSDAngle "Ángulo: %d/%d"
+#define MSGTR_OSDAngle "�?ngulo: %d/%d"
 
 // property values
 #define MSGTR_Enabled "habilitado"
@@ -653,7 +653,7 @@ static const char help_text[]=
 #define MSGTR_PLAYLIST_Path "Ubicación"
 #define MSGTR_PLAYLIST_Selected "Archivos seleccionados"
 #define MSGTR_PLAYLIST_Files "Archivos"
-#define MSGTR_PLAYLIST_DirectoryTree "Árbol de directorios"
+#define MSGTR_PLAYLIST_DirectoryTree "�?rbol de directorios"
 
 // --- preferences
 #define MSGTR_PREFERENCES_Audio MSGTR_EQU_Audio
@@ -718,7 +718,7 @@ static const char help_text[]=
 #define MSGTR_PREFERENCES_FontEncoding5 "Esperanto, Gallego, Maltés, Turco (ISO-8859-3)"
 #define MSGTR_PREFERENCES_FontEncoding6 "Báltico (ISO-8859-4)"
 #define MSGTR_PREFERENCES_FontEncoding7 "Cirílico (ISO-8859-5)"
-#define MSGTR_PREFERENCES_FontEncoding8 "Árabe (ISO-8859-6)"
+#define MSGTR_PREFERENCES_FontEncoding8 "�?rabe (ISO-8859-6)"
 #define MSGTR_PREFERENCES_FontEncoding9 "Griego moderno (ISO-8859-7)"
 #define MSGTR_PREFERENCES_FontEncoding10 "Turco (ISO-8859-9)"
 #define MSGTR_PREFERENCES_FontEncoding11 "Báltico (ISO-8859-13)"
@@ -948,7 +948,6 @@ static const char help_text[]=
 // vo_sdl.c
 #define MSGTR_LIBVO_SDL_CouldntGetAnyAcceptableSDLModeForOutput "[VO_SDL] No pude obtener ni un solo modo SDL aceptable para la salida.\n"
 #define MSGTR_LIBVO_SDL_SetVideoModeFailed "[VO_SDL] set_video_mode: SDL_SetVideoMode fallido: %s.\n"
-#define MSGTR_LIBVO_SDL_SetVideoModeFailedFull "[VO_SDL] Set_fullmode: SDL_SetVideoMode fallido: %s.\n"
 #define MSGTR_LIBVO_SDL_MappingI420ToIYUV "[VO_SDL] Mapeando I420 a IYUV.\n"
 #define MSGTR_LIBVO_SDL_UnsupportedImageFormat "[VO_SDL] Formato de imagen no soportado (0x%X).\n"
 #define MSGTR_LIBVO_SDL_InfoPleaseUseVmOrZoom "[VO_SDL] Info - por favor utiliza -vm ó -zoom para cambiar a la mejor resolución.\n"
@@ -1191,7 +1190,7 @@ static const char help_text[]=
 #define MSGTR_AO_SUN_CantReopenReset "[AO SUN]\nError fatal: *** IMPOSIBLE RE-ABRIR / RESETEAR DISPOSITIVO DE AUDIO (%s) ***\n"
 
 // ao_alsa.c
-#define MSGTR_AO_ALSA_InvalidMixerIndexDefaultingToZero "[AO_ALSA] Índice del mezclador inválido. Usando 0.\n"
+#define MSGTR_AO_ALSA_InvalidMixerIndexDefaultingToZero "[AO_ALSA] �?ndice del mezclador inválido. Usando 0.\n"
 #define MSGTR_AO_ALSA_MixerOpenError "[AO_ALSA] Mezclador, error abriendo: %s\n"
 #define MSGTR_AO_ALSA_MixerAttachError "[AO_ALSA] Mezclador, adjunto %s error: %s\n"
 #define MSGTR_AO_ALSA_MixerRegisterError "[AO_ALSA] Mezclador, error de registro: %s\n"

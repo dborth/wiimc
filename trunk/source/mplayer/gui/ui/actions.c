@@ -135,7 +135,7 @@ void uiChangeSkin(char *name)
         }
     }
 
-    // reload menu window
+    /* reload menu window */
 
     if (prev && guiApp.menuIsPresent) {
         free(menuDrawBuffer);
@@ -153,7 +153,7 @@ void uiChangeSkin(char *name)
     } else
         uiMenuInit();
 
-    // reload sub window
+    /* reload sub window */
 
     if (guiApp.sub.Bitmap.Image)
         wsResizeImage(&guiApp.subWindow, guiApp.sub.Bitmap.Width, guiApp.sub.Bitmap.Height);
@@ -173,14 +173,14 @@ void uiChangeSkin(char *name)
         wsPostRedisplay(&guiApp.subWindow);
     }
 
-    // reload playbar
+    /* reload playbar */
 
     if (bprev)
         wsDestroyWindow(&guiApp.playbarWindow);
 
     uiPlaybarInit();
 
-    // reload main window
+    /* reload main window */
 
     free(mainDrawBuffer);
     mainDrawBuffer = calloc(1, guiApp.main.Bitmap.ImageSize);
@@ -254,11 +254,11 @@ void uiCurr(void)
 
     default:
 
-        curr = listSet(gtkGetCurrPlItem, NULL);
+        curr = listMgr(PLAYLIST_ITEM_GET_CURR, 0);
 
         if (curr) {
             uiSetFileName(curr->path, curr->name, STREAMTYPE_FILE);
-            uiGotoTheNext = 0;
+            uiGotoTheNext = (guiInfo.Playing ? 0 : 1);
             break;
         }
 
@@ -310,11 +310,11 @@ void uiPrev(void)
 
     default:
 
-        prev = listSet(gtkGetPrevPlItem, NULL);
+        prev = listMgr(PLAYLIST_ITEM_GET_PREV, 0);
 
         if (prev) {
             uiSetFileName(prev->path, prev->name, STREAMTYPE_FILE);
-            uiGotoTheNext = 0;
+            uiGotoTheNext = (guiInfo.Playing ? 0 : 1);
             guiInfo.Track--;
             break;
         }
@@ -371,11 +371,11 @@ void uiNext(void)
 
     default:
 
-        next = listSet(gtkGetNextPlItem, NULL);
+        next = listMgr(PLAYLIST_ITEM_GET_NEXT, 0);
 
         if (next) {
             uiSetFileName(next->path, next->name, STREAMTYPE_FILE);
-            uiGotoTheNext = 0;
+            uiGotoTheNext = (guiInfo.Playing ? 0 : 1);
             guiInfo.Track++;
             break;
         }

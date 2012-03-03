@@ -940,7 +940,9 @@ image = font.png
           </para>
         </listitem>
       </varlistentry>
+    </variablelist>
 
+    <variablelist>
       <title>Playback-Kontrolle:</title>
       <varlistentry>
         <term>
@@ -959,7 +961,6 @@ image = font.png
           <para>Stoppe das Abspielen.</para>
         </listitem>
       </varlistentry>
-    </variablelist>
 
       <varlistentry>
         <term><emphasis role="bold">evPause</emphasis></term>
@@ -1044,7 +1045,7 @@ image = font.png
         <term><emphasis role="bold">evPlayCD</emphasis></term>
         <listitem>
           <para>
-            Versucht die CD im angegebenen CD-ROM-Laufwerk zu Ã¶ffnen.
+            Versucht die CD im angegebenen CD-ROM-Laufwerk zu öffnen.
           </para>
         </listitem>
       </varlistentry>
@@ -1104,6 +1105,7 @@ image = font.png
           </para>
         </listitem>
       </varlistentry>
+    </variablelist>
 
     <variablelist>
       <title>Springen:</title>
@@ -1304,7 +1306,7 @@ image = font.png
         <term><emphasis role="bold">evMenu</emphasis></term>
         <listitem>
           <para>
-            Ã–ffne das (Standard-)MenÃ¼.
+            Öffne das (Standard-)Menü.
           </para>
         </listitem>
       </varlistentry>

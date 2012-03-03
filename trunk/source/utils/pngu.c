@@ -3,7 +3,7 @@
  * PNGU
  * 
  * Original author: frontier (http://frontier-dev.net)
- * Modified by Tantric, 2009-2011
+ * Modified by Tantric, 2009-2012
  *
  ***************************************************************************/
 

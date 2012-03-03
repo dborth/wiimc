@@ -26,7 +26,6 @@
 #include "libavutil/avstring.h"
 #include "libavutil/dict.h"
 #include "libavutil/mathematics.h"
-#include "libavcodec/mpegaudio.h"
 #include "avformat.h"
 #include "internal.h"
 #include "avio_internal.h"
@@ -199,6 +198,8 @@ static int asf_read_file_properties(AVFormatContext *s, int64_t size)
     asf->hdr.flags              = avio_rl32(pb);
     asf->hdr.min_pktsize        = avio_rl32(pb);
     asf->hdr.max_pktsize        = avio_rl32(pb);
+    if (asf->hdr.min_pktsize >= (1U<<29))
+        return AVERROR_INVALIDDATA;
     asf->hdr.max_bitrate        = avio_rl32(pb);
     s->packet_size = asf->hdr.max_pktsize;
 
@@ -317,25 +318,6 @@ static int asf_read_stream_properties(AVFormatContext *s, int64_t size)
                     || asf_st->ds_packet_size % asf_st->ds_chunk_size)
                 asf_st->ds_span = 0; // disable descrambling
         }
-        switch (st->codec->codec_id) {
-            case CODEC_ID_MP3:
-                st->codec->frame_size = MPA_FRAME_SIZE;
-                break;
-            case CODEC_ID_PCM_S16LE:
-            case CODEC_ID_PCM_S16BE:
-            case CODEC_ID_PCM_U16LE:
-            case CODEC_ID_PCM_U16BE:
-            case CODEC_ID_PCM_S8:
-            case CODEC_ID_PCM_U8:
-            case CODEC_ID_PCM_ALAW:
-            case CODEC_ID_PCM_MULAW:
-                st->codec->frame_size = 1;
-                break;
-            default:
-                /* This is probably wrong, but it prevents a crash later */
-                st->codec->frame_size = 1;
-                break;
-        }
     } else if (type == AVMEDIA_TYPE_VIDEO &&
             size - (avio_tell(pb) - pos1 + 24) >= 51) {
         avio_rl32(pb);
@@ -361,8 +343,8 @@ static int asf_read_stream_properties(AVFormatContext *s, int64_t size)
         /* This code assumes that extradata contains only palette */
         /* This is true for all paletted codecs implemented in libavcodec */
         if (st->codec->extradata_size && (st->codec->bits_per_coded_sample <= 8)) {
-            int av_unused i;
 #if HAVE_BIGENDIAN
+            int i;
             for (i = 0; i < FFMIN(st->codec->extradata_size, AVPALETTE_SIZE)/4; i++)
                 asf_st->palette[i] = av_bswap32(((uint32_t*)st->codec->extradata)[i]);
 #else
@@ -612,7 +594,9 @@ static int asf_read_header(AVFormatContext *s)
         if (gsize < 24)
             return -1;
         if (!ff_guidcmp(&g, &ff_asf_file_header)) {
-            asf_read_file_properties(s, gsize);
+            int ret = asf_read_file_properties(s, gsize);
+            if (ret < 0)
+                return ret;
         } else if (!ff_guidcmp(&g, &ff_asf_stream_header)) {
             asf_read_stream_properties(s, gsize);
         } else if (!ff_guidcmp(&g, &ff_asf_comment_header)) {
@@ -796,6 +780,13 @@ static int ff_asf_get_packet(AVFormatContext *s, AVIOContext *pb)
     } else {
         asf->packet_segments = 1;
         asf->packet_segsizetype = 0x80;
+    }
+    if (rsize > packet_length - padsize) {
+        asf->packet_size_left = 0;
+        av_log(s, AV_LOG_ERROR,
+               "invalid packet header length %d for pktlen %d-%d at %"PRId64"\n",
+               rsize, packet_length, padsize, avio_tell(pb));
+        return -1;
     }
     asf->packet_size_left = packet_length - padsize - rsize;
     if (packet_length < asf->hdr.min_pktsize)

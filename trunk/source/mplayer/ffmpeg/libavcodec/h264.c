@@ -179,10 +179,8 @@ const uint8_t *ff_h264_decode_nal(H264Context *h, const uint8_t *src, int *dst_l
 
     bufidx = h->nal_unit_type == NAL_DPC ? 1 : 0; // use second escape buffer for inter data
     si=h->rbsp_buffer_size[bufidx];
-    av_fast_malloc(&h->rbsp_buffer[bufidx], &h->rbsp_buffer_size[bufidx], length+FF_INPUT_BUFFER_PADDING_SIZE+MAX_MBPAIR_SIZE);
+    av_fast_padded_malloc(&h->rbsp_buffer[bufidx], &h->rbsp_buffer_size[bufidx], length+MAX_MBPAIR_SIZE);
     dst= h->rbsp_buffer[bufidx];
-    if(si != h->rbsp_buffer_size[bufidx])
-        memset(dst + length, 0, FF_INPUT_BUFFER_PADDING_SIZE+MAX_MBPAIR_SIZE);
 
     if (dst == NULL){
         return NULL;
@@ -1051,7 +1049,7 @@ static av_cold void common_init(H264Context *h){
     s->unrestricted_mv=1;
 
     s->dsp.dct_bits = 16;
-    dsputil_init(&s->dsp, s->avctx); // needed so that idct permutation is known early
+    ff_dsputil_init(&s->dsp, s->avctx); // needed so that idct permutation is known early
 
     memset(h->pps.scaling_matrix4, 16, 6*16*sizeof(uint8_t));
     memset(h->pps.scaling_matrix8, 16, 2*64*sizeof(uint8_t));
@@ -1117,7 +1115,7 @@ av_cold int ff_h264_decode_init(AVCodecContext *avctx){
     MpegEncContext * const s = &h->s;
     int i;
 
-    MPV_decode_defaults(s);
+    ff_MPV_decode_defaults(s);
 
     s->avctx = avctx;
     common_init(h);
@@ -1303,11 +1301,11 @@ int ff_h264_frame_start(H264Context *h){
     int i;
     const int pixel_shift = h->pixel_shift;
 
-    if(MPV_frame_start(s, s->avctx) < 0)
+    if(ff_MPV_frame_start(s, s->avctx) < 0)
         return -1;
     ff_er_frame_start(s);
     /*
-     * MPV_frame_start uses pict_type to derive key_frame.
+     * ff_MPV_frame_start uses pict_type to derive key_frame.
      * This is incorrect for H.264; IDR markings must be used.
      * Zero here; IDR markings per slice in frame or fields are ORed in later.
      * See decode_nal_units().
@@ -1342,7 +1340,7 @@ int ff_h264_frame_start(H264Context *h){
 
     // We mark the current picture as non-reference after allocating it, so
     // that if we break out due to an error it can be released automatically
-    // in the next MPV_frame_start().
+    // in the next ff_MPV_frame_start().
     // SVQ3 as well as most other codecs have only last/next/current and thus
     // get released even with set reference, besides SVQ3 and others do not
     // mark frames as reference later "naturally".
@@ -2549,7 +2547,7 @@ static int field_end(H264Context *h, int in_setup){
     if (!FIELD_PICTURE)
         ff_er_frame_end(s);
 
-    MPV_frame_end(s);
+    ff_MPV_frame_end(s);
 
     h->current_slice=0;
 
@@ -2612,7 +2610,7 @@ int ff_h264_get_profile(SPS *sps)
 
 /**
  * Decode a slice header.
- * This will also call MPV_common_init() and frame_start() as needed.
+ * This will also call ff_MPV_common_init() and frame_start() as needed.
  *
  * @param h h264context
  * @param h0 h264 master context (differs from 'h' when doing sliced based parallel decoding)
@@ -2694,11 +2692,6 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
     s->avctx->level   = h->sps.level_idc;
     s->avctx->refs    = h->sps.ref_frame_count;
 
-    if(h == h0 && h->dequant_coeff_pps != pps_id){
-        h->dequant_coeff_pps = pps_id;
-        init_dequant_tables(h);
-    }
-
     s->mb_width= h->sps.mb_width;
     s->mb_height= h->sps.mb_height * (2 - h->sps.frame_mbs_only_flag);
 
@@ -2720,7 +2713,7 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
         }
         free_tables(h, 0);
         flush_dpb(s->avctx);
-        MPV_common_end(s);
+        ff_MPV_common_end(s);
         h->list_count = 0;
     }
     if (!s->context_initialized) {
@@ -2745,7 +2738,7 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
                 ff_h264dsp_init(&h->h264dsp, h->sps.bit_depth_luma, h->sps.chroma_format_idc);
                 ff_h264_pred_init(&h->hpc, s->codec_id, h->sps.bit_depth_luma, h->sps.chroma_format_idc);
                 s->dsp.dct_bits = h->sps.bit_depth_luma > 8 ? 32 : 16;
-                dsputil_init(&s->dsp, s->avctx);
+                ff_dsputil_init(&s->dsp, s->avctx);
             } else {
                 av_log(s->avctx, AV_LOG_ERROR, "Unsupported bit depth: %d chroma_idc: %d\n",
                        h->sps.bit_depth_luma, h->sps.chroma_format_idc);
@@ -2793,7 +2786,7 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
                 else
                     s->avctx->pix_fmt = PIX_FMT_YUV420P10;
                 break;
-            default:
+            case 8:
                 if (CHROMA444){
                     s->avctx->pix_fmt = s->avctx->color_range == AVCOL_RANGE_JPEG ? PIX_FMT_YUVJ444P : PIX_FMT_YUV444P;
                     if (s->avctx->colorspace == AVCOL_SPC_RGB) {
@@ -2812,12 +2805,17 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
                                                              hwaccel_pixfmt_list_h264_jpeg_420 :
                                                              ff_hwaccel_pixfmt_list_420);
                 }
+                break;
+            default:
+                av_log(s->avctx, AV_LOG_ERROR,
+                       "Unsupported bit depth: %d\n", h->sps.bit_depth_luma);
+                return AVERROR_INVALIDDATA;
         }
 
         s->avctx->hwaccel = ff_find_hwaccel(s->avctx->codec->id, s->avctx->pix_fmt);
 
-        if (MPV_common_init(s) < 0) {
-            av_log(h->s.avctx, AV_LOG_ERROR, "MPV_common_init() failed.\n");
+        if (ff_MPV_common_init(s) < 0) {
+            av_log(h->s.avctx, AV_LOG_ERROR, "ff_MPV_common_init() failed.\n");
             return -1;
         }
         s->first_field = 0;
@@ -2855,6 +2853,11 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
                     return -1;
                 }
         }
+    }
+
+    if(h == h0 && h->dequant_coeff_pps != pps_id){
+        h->dequant_coeff_pps = pps_id;
+        init_dequant_tables(h);
     }
 
     h->frame_num= get_bits(&s->gb, h->sps.log2_max_frame_num);
@@ -2943,6 +2946,8 @@ static int decode_slice_header(H264Context *h, H264Context *h0){
 
             } else {
                 if (s0->current_picture_ptr->frame_num != h->frame_num) {
+                    ff_thread_report_progress((AVFrame*)s0->current_picture_ptr, INT_MAX,
+                                              s0->picture_structure==PICT_BOTTOM_FIELD);
                     /*
                      * This and previous field had
                      * different frame_nums. Consider this field first in
@@ -4167,7 +4172,7 @@ av_cold int ff_h264_decode_end(AVCodecContext *avctx)
     ff_h264_remove_all_refs(h);
     ff_h264_free_context(h);
 
-    MPV_common_end(s);
+    ff_MPV_common_end(s);
 
 //    memset(h, 0, sizeof(H264Context));
 

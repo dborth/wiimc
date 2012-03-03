@@ -1,6 +1,6 @@
 /****************************************************************************
  * WiiMC
- * Tantric 2009-2011
+ * Tantric 2009-2012
  *
  * wiimc.h
  ***************************************************************************/
@@ -12,7 +12,7 @@
 #include "network.h"
 
 #define APPNAME			"WiiMC"
-#define APPVERSION		"1.2.2"
+#define APPVERSION		"1.2.3"
 #define APPFOLDER		"wiimc"
 
 enum {

@@ -5,7 +5,17 @@
                                (Under GPL License)
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
- 
+
+[1.2.3 - March 3, 2012]
+
+* Synced to MPlayer r34780 and ffmpeg 83c418e68ee5
+* Compiled with latest libogc and devkitPPC r25
+* Improved network initialization
+* Improved music playlist sorting - now it is per-folder (patch by entropy)
+* Added playlist reset with minus key (patch by entropy)
+* Added a new "Through" setting for music playlists (patch by
+entropy)
+
 [1.2.2 - January 14, 2012]
 
 * Fixed YouTube search

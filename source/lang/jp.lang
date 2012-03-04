@@ -5,10 +5,10 @@ msgid "Videos"
 msgstr "ビデオ"
 
 msgid "Music"
-msgstr "ミュージック"
+msgstr "音楽"
 
 msgid "Pictures"
-msgstr "ピクチャー"
+msgstr "写真"
 
 msgid "Online Media"
 msgstr "ネットメディア"
@@ -155,10 +155,10 @@ msgid "Settings - Videos"
 msgstr "設定 - ビデオ"
 
 msgid "Settings - Music"
-msgstr "設定 - ミュージック"
+msgstr "設定 - 音楽"
 
 msgid "Settings - Pictures"
-msgstr "設定 - ピクチャー"
+msgstr "設定 - 写真"
 
 msgid "Settings - Online Media"
 msgstr "設定 - ネットメディア"
@@ -194,7 +194,7 @@ msgid "Auto"
 msgstr "自動"
 
 msgid "Return to Wii Menu"
-msgstr "Ｗｉｉメニューに戻る"
+msgstr "Wiiメニューに戻る"
 
 msgid "Power Off Wii"
 msgstr "電源を切る"
@@ -230,10 +230,10 @@ msgid "Play Order"
 msgstr "再生指定"
 
 msgid "Music Files Folder"
-msgstr "ミュージックフォルダ"
+msgstr "音楽フォルダ"
 
 msgid "Pictures Files Folder"
-msgstr "ピクチャーフォルダ"
+msgstr "写真フォルダ"
 
 msgid "Display Name"
 msgstr "表示名"
@@ -356,7 +356,7 @@ msgid "No disc inserted!"
 msgstr "ディスクが挿入されていません！"
 
 msgid "Unsupported DVD."
-msgstr "無効なＤＶＤです"
+msgstr "非対応のDVDです"
 
 msgid "Up One Level"
 msgstr "上の階層へ.."
@@ -535,14 +535,11 @@ msgstr "閉じる"
 msgid "Subtitle Codepage"
 msgstr "字幕コードページの設定"
 
-msgid "Japanese"
-msgstr "日本語"
-
 msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
-msgstr "フォルダ内のエントリ数が多過ぎます 全てを表示できません"
+msgstr "フォルダ内のエントリ数が多過ぎるので全てを表示できません"
 
 msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
-msgstr "再生リストのエントリ数が多過ぎます 全てを表示できません"
+msgstr "再生リストのエントリ数が多過ぎるので全てを表示できません"
 
 msgid "Downloading..."
 msgstr "ダウンロード中…"
@@ -636,3 +633,90 @@ msgstr "無効なネットメディアファイルです"
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
 msgstr "字幕フォントが無いため 字幕は表示されません"
+
+msgid "Portuguese"
+msgstr "ポルトガル語"
+
+msgid "English"
+msgstr "英語"
+
+msgid "German"
+msgstr "ドイツ語"
+
+msgid "Japanese"
+msgstr "日本語"
+
+msgid "French"
+msgstr "フランス語"
+
+msgid "Brazilian Portuguese"
+msgstr "ブラジルポルトガル語"
+
+msgid "Chinese (Simplified)"
+msgstr "簡体字中国語"
+
+msgid "Chinese (Traditional)"
+msgstr "繁体字中国語"
+
+msgid "Spanish"
+msgstr "スペイン語"
+
+msgid "Italian"
+msgstr "イタリア語"
+
+msgid "Polish"
+msgstr "ポーランド語"
+
+msgid "Dutch"
+msgstr "オランダ語"
+
+msgid "Korean"
+msgstr "韓国語"
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "DVDアクセス権がありません - AHBPROTが無効です"
+
+msgid "Starting Area"
+msgstr "開始エリア"
+
+msgid "Error downloading font file!"
+msgstr "フォントのダウンロードに失敗しました!"
+
+msgid "Error opening font file!"
+msgstr "フォントを開けません!"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "フォントが破損しているため言語を変更出来ません!"
+
+msgid "YouTube Quality"
+msgstr "YouTube画質"
+
+msgid "Low (400x240)"
+msgstr "低 (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "中 (480x360)"
+
+msgid "High (640x360)"
+msgstr "高 (640x360)"
+
+msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
+msgstr "現在のIOSは非対応で機能や安定性に影響します"
+
+msgid "Screensaver Delay"
+msgstr "スクリーンセーバーの待ち時間"
+
+msgid "Inactivity Shutdown"
+msgstr "非アクティブ時に電源を切る"
+
+msgid "Invalid subtitle delay."
+msgstr "不正な字幕の遅延です"
+
+msgid "DVD playback is not supported on this Wii."
+msgstr "DVD再生はこのWiiでは対応していません"
+
+msgid "hours"
+msgstr "時間"
+
+msgid "Through"
+msgstr "介する"

@@ -1280,15 +1280,12 @@ typedef struct AVCodecContext {
      */
     unsigned int stream_codec_tag;
 
+#if FF_API_SUB_ID
     /**
-     * Some codecs need additional format info. It is stored here.
-     * If any muxer uses this then ALL demuxers/parsers AND encoders for the
-     * specific codec MUST set it correctly otherwise stream copy breaks.
-     * In general use of this field by muxers is not recommended.
-     * - encoding: Set by libavcodec.
-     * - decoding: Set by libavcodec. (FIXME: Is this OK?)
+     * @deprecated this field is unused
      */
-    int sub_id;
+    attribute_deprecated int sub_id;
+#endif
 
     void *priv_data;
 
@@ -2027,7 +2024,17 @@ typedef struct AVCodecContext {
      * Samples per packet, initialized when calling 'init'.
      */
     int frame_size;
-    int frame_number;   ///< audio or video frame number
+
+    /**
+     * Frame counter, set by libavcodec.
+     *
+     * - decoding: total number of frames returned from the decoder so far.
+     * - encoding: total number of frames passed to the encoder so far.
+     *
+     *   @note the counter is not incremented if encoding/decoding resulted in
+     *   an error.
+     */
+    int frame_number;
 
     /**
      * number of bytes per packet if constant and known or 0
@@ -3966,6 +3973,10 @@ int attribute_deprecated avcodec_encode_audio(AVCodecContext *avctx,
  *                  avpkt->data is NULL, the encoder will allocate it.
  *                  The encoder will set avpkt->size to the size of the
  *                  output packet.
+ *
+ *                  If this function fails or produces no output, avpkt will be
+ *                  freed using av_free_packet() (i.e. avpkt->destruct will be
+ *                  called to free the user supplied buffer).
  * @param[in] frame AVFrame containing the raw audio data to be encoded.
  *                  May be NULL when flushing an encoder that has the
  *                  CODEC_CAP_DELAY capability set.
@@ -4048,6 +4059,10 @@ int avcodec_encode_video(AVCodecContext *avctx, uint8_t *buf, int buf_size,
  *                  The encoder will set avpkt->size to the size of the
  *                  output packet. The returned data (if any) belongs to the
  *                  caller, he is responsible for freeing it.
+ *
+ *                  If this function fails or produces no output, avpkt will be
+ *                  freed using av_free_packet() (i.e. avpkt->destruct will be
+ *                  called to free the user supplied buffer).
  * @param[in] frame AVFrame containing the raw video data to be encoded.
  *                  May be NULL when flushing an encoder that has the
  *                  CODEC_CAP_DELAY capability set.
@@ -4112,6 +4127,26 @@ int av_get_bits_per_sample(enum CodecID codec_id);
  * @return  CODEC_ID_PCM_* or CODEC_ID_NONE
  */
 enum CodecID av_get_pcm_codec(enum AVSampleFormat fmt, int be);
+
+/**
+ * Return codec bits per sample.
+ * Only return non-zero if the bits per sample is exactly correct, not an
+ * approximation.
+ *
+ * @param[in] codec_id the codec
+ * @return Number of bits per sample or zero if unknown for the given codec.
+ */
+int av_get_exact_bits_per_sample(enum CodecID codec_id);
+
+/**
+ * Return audio frame duration.
+ *
+ * @param avctx        codec context
+ * @param frame_bytes  size of the frame, or 0 if unknown
+ * @return             frame duration, in samples, if known. 0 if not able to
+ *                     determine.
+ */
+int av_get_audio_frame_duration(AVCodecContext *avctx, int frame_bytes);
 
 /* frame parsing */
 typedef struct AVCodecParserContext {
@@ -4485,5 +4520,15 @@ const AVClass *avcodec_get_frame_class(void);
  * with no corresponding avcodec_close()), 0 otherwise.
  */
 int avcodec_is_open(AVCodecContext *s);
+
+/**
+ * @return a non-zero number if codec is an encoder, zero otherwise
+ */
+int av_codec_is_encoder(AVCodec *codec);
+
+/**
+ * @return a non-zero number if codec is a decoder, zero otherwise
+ */
+int av_codec_is_decoder(AVCodec *codec);
 
 #endif /* AVCODEC_AVCODEC_H */

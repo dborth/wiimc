@@ -60,9 +60,11 @@
 #define deinterlace_line         deinterlace_line_c
 #endif
 
+#define pixdesc_has_alpha(pixdesc) \
+    ((pixdesc)->nb_components == 2 || (pixdesc)->nb_components == 4 || (pixdesc)->flags & PIX_FMT_PAL)
+
 typedef struct PixFmtInfo {
     uint8_t color_type;      /**< color type (see FF_COLOR_xxx constants) */
-    uint8_t is_alpha : 1;    /**< true if alpha can be specified */
     uint8_t padded_size;     /**< padded size in bits if different from the non-padded size */
 } PixFmtInfo;
 
@@ -114,12 +116,10 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
 
     /* YUV formats with alpha plane */
     [PIX_FMT_YUVA420P] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_YUV,
     },
 
     [PIX_FMT_YUVA444P] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_YUV,
     },
 
@@ -145,7 +145,6 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_ARGB] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_RGB48BE] = {
@@ -155,11 +154,9 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_RGBA64BE] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_RGBA64LE] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_RGB565BE] = {
@@ -196,7 +193,6 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
         .color_type = FF_COLOR_GRAY,
     },
     [PIX_FMT_GRAY8A] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_GRAY,
     },
     [PIX_FMT_MONOWHITE] = {
@@ -208,14 +204,12 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
 
     /* paletted formats */
     [PIX_FMT_PAL8] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_UYYVYY411] = {
         .color_type = FF_COLOR_YUV,
     },
     [PIX_FMT_ABGR] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_BGR48BE] = {
@@ -225,11 +219,9 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_BGRA64BE] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_BGRA64LE] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_BGR565BE] = {
@@ -284,11 +276,9 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
     },
 
     [PIX_FMT_BGRA] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
     [PIX_FMT_RGBA] = {
-        .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
 };
@@ -450,10 +440,10 @@ int avcodec_get_pix_fmt_loss(enum PixelFormat dst_pix_fmt, enum PixelFormat src_
     if (pf->color_type == FF_COLOR_GRAY &&
         ps->color_type != FF_COLOR_GRAY)
         loss |= FF_LOSS_CHROMA;
-    if (!pf->is_alpha && (ps->is_alpha && has_alpha))
+    if (!pixdesc_has_alpha(dst_desc) && (pixdesc_has_alpha(src_desc) && has_alpha))
         loss |= FF_LOSS_ALPHA;
     if (dst_pix_fmt == PIX_FMT_PAL8 &&
-        (src_pix_fmt != PIX_FMT_PAL8 && (ps->color_type != FF_COLOR_GRAY || (ps->is_alpha && has_alpha))))
+        (src_pix_fmt != PIX_FMT_PAL8 && (ps->color_type != FF_COLOR_GRAY || (pixdesc_has_alpha(src_desc) && has_alpha))))
         loss |= FF_LOSS_COLORQUANT;
 
     return loss;

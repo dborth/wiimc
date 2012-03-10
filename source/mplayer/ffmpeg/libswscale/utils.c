@@ -114,8 +114,8 @@ static const FormatEntry format_entries[PIX_FMT_NB] = {
     [PIX_FMT_YUVA444P]    = { 1 , 1 },
     [PIX_FMT_RGB48BE]     = { 1 , 1 },
     [PIX_FMT_RGB48LE]     = { 1 , 1 },
-    [PIX_FMT_RGBA64BE]    = { 0 , 0 },
-    [PIX_FMT_RGBA64LE]    = { 0 , 0 },
+    [PIX_FMT_RGBA64BE]    = { 1 , 0 },
+    [PIX_FMT_RGBA64LE]    = { 1 , 0 },
     [PIX_FMT_RGB565BE]    = { 1 , 1 },
     [PIX_FMT_RGB565LE]    = { 1 , 1 },
     [PIX_FMT_RGB555BE]    = { 1 , 1 },
@@ -151,7 +151,6 @@ static const FormatEntry format_entries[PIX_FMT_NB] = {
     [PIX_FMT_YUV444P9LE]  = { 1 , 1 },
     [PIX_FMT_YUV444P10BE] = { 1 , 1 },
     [PIX_FMT_YUV444P10LE] = { 1 , 1 },
-    [PIX_FMT_GBR24P]      = { 1 , 0 },
     [PIX_FMT_GBRP]        = { 1 , 0 },
     [PIX_FMT_GBRP9LE]     = { 1 , 0 },
     [PIX_FMT_GBRP9BE]     = { 1 , 0 },
@@ -192,7 +191,7 @@ static double getSplineCoeff(double a, double b, double c, double d, double dist
                                          dist-1.0);
 }
 
-static int initFilter(int16_t **outFilter, int16_t **filterPos, int *outFilterSize, int xInc,
+static int initFilter(int16_t **outFilter, int32_t **filterPos, int *outFilterSize, int xInc,
                       int srcW, int dstW, int filterAlign, int one, int flags, int cpu_flags,
                       SwsVector *srcFilter, SwsVector *dstFilter, double param[2])
 {
@@ -208,7 +207,7 @@ static int initFilter(int16_t **outFilter, int16_t **filterPos, int *outFilterSi
     emms_c(); //FIXME this should not be required but it IS (even for non-MMX versions)
 
     // NOTE: the +3 is for the MMX(+1)/SSE(+3) scaler which reads over the end
-    FF_ALLOC_OR_GOTO(NULL, *filterPos, (dstW+3)*sizeof(int16_t), fail);
+    FF_ALLOC_OR_GOTO(NULL, *filterPos, (dstW+3)*sizeof(**filterPos), fail);
 
     if (FFABS(xInc - 0x10000) <10) { // unscaled
         int i;

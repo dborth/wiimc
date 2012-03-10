@@ -1715,11 +1715,12 @@ static void print_report(OutputFile *output_files,
             snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "q=%2.1f ", q);
         }
         if (!vid && enc->codec_type == AVMEDIA_TYPE_VIDEO) {
-            float t = (cur_time-timer_start) / 1000000.0;
+            float fps, t = (cur_time-timer_start) / 1000000.0;
 
             frame_number = ost->frame_number;
-            snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "frame=%5d fps=%3d q=%3.1f ",
-                     frame_number, (t > 1) ? (int)(frame_number / t + 0.5) : 0, q);
+            fps = t > 1 ? frame_number / t : 0;
+            snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "frame=%5d fps=%3.*f q=%3.1f ",
+                     frame_number, fps < 9.95, fps, q);
             if (is_last_report)
                 snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "L");
             if (qp_hist) {
@@ -4257,6 +4258,7 @@ static int read_ffserver_streams(OptionsContext *o, AVFormatContext *s, const ch
 
         // FIXME: a more elegant solution is needed
         memcpy(st, ic->streams[i], sizeof(AVStream));
+        st->cur_dts = 0;
         st->info = av_malloc(sizeof(*st->info));
         memcpy(st->info, ic->streams[i]->info, sizeof(*st->info));
         st->codec= avctx;
@@ -4310,6 +4312,7 @@ static void opt_output_file(void *optctx, const char *filename)
                     ost->sync_ist= ist;
                     ost->source_index= i;
                     ist->discard = 0;
+                    ist->st->discard = AVDISCARD_NONE;
                     break;
                 }
             }
@@ -4962,6 +4965,13 @@ static int opt_deinterlace(const char *opt, const char *arg)
     return 0;
 }
 
+static void parse_cpuflags(int argc, char **argv, const OptionDef *options)
+{
+    int idx = locate_option(argc, argv, options, "cpuflags");
+    if (idx && argv[idx + 1])
+        opt_cpuflags("cpuflags", argv[idx + 1]);
+}
+
 #define OFFSET(x) offsetof(OptionsContext, x)
 static const OptionDef options[] = {
     /* main options */
@@ -5134,6 +5144,8 @@ int main(int argc, char **argv)
     show_banner(argc, argv, options);
 
     term_init();
+
+    parse_cpuflags(argc, argv, options);
 
     /* parse options */
     parse_options(&o, argc, argv, options, opt_output_file);

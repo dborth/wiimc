@@ -243,7 +243,7 @@ const devoptab_t gecko_out = {
 
 static void USBGeckoOutput()
 {
-	gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
+	//gecko = usb_isgeckoalive(1); // uncomment to enable USB Gecko output
 
 	LWP_MutexInit(&gecko_mutex, false);
 

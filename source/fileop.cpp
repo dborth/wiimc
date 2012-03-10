@@ -1040,7 +1040,7 @@ bool WakeupUSB()
 	if(USBStorage_IsDVD())
 		return true;
 
-	char buf[2048];  // 512 should be enough if USBStorage_IsDVD works
+	char buf[BYTES_PER_SECTOR];
 	return usb->readSectors(0, 1, buf);
 }
 }

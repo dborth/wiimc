@@ -520,7 +520,6 @@ inline void DrawMPlayer()
 void GX_AllocTextureMemory()
 {
         //make memory fixed (max texture 1024*1024, gx can't manage more)
-        if(Yltexture) return;
 
         Yltexture = (u8 *) (mem2_memalign(32, 1024*MAX_HEIGHT, MEM2_VIDEO));
         Yrtexture = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, MEM2_VIDEO));

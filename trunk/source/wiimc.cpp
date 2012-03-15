@@ -190,7 +190,10 @@ static void SaveLogToSD()
 
 static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
 {
-	if (!gecko || !ptr || len <= 0)
+	if (!gecko || len == 0)
+		return len;
+	
+	if(!ptr || len < 0)
 		return -1;
 
 	u32 level;

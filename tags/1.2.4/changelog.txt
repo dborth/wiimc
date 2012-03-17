@@ -1,0 +1,306 @@
+¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
+ 
+                                    - WiiMC -
+                              http://www.wiimc.org   
+                               (Under GPL License)
+ 
+¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
+
+[1.2.4 - March 17, 2012]
+
+* Synced to MPlayer r34805 and ffmpeg 8fbf825ecc32
+* Fixed a bug with 4KB sector drives
+* Added padding below subtitles
+* Fixed display of non-latin characters in 1.2.3
+* Fixed freezing issue in 1.2.3
+* Fixed online media issues in 1.2.3
+
+[1.2.3 - March 3, 2012]
+
+* Synced to MPlayer r34780 and ffmpeg 83c418e68ee5
+* Compiled with latest libogc and devkitPPC r25
+* Improved network initialization
+* Improved music playlist sorting - now it is per-folder (patch by entropy)
+* Added playlist reset with minus key (patch by entropy)
+* Added a new "Through" setting for music playlists (patch by
+entropy)
+
+[1.2.2 - January 14, 2012]
+
+* Fixed YouTube search
+
+[1.2.1 - January 14, 2012]
+
+* Synced to MPlayer r34540 and ffmpeg a9bd29e15e8d
+* Fixed HTTP bugs that made YouTube unstable
+* Added thumbnails for YouTube
+* Improved video resizing granularity (thanks eric!)
+* Translation updates
+* Other minor bug fixes
+
+[1.2.0 - September 4, 2011]
+
+* Synced to MPlayer r34053 and libav 5938e0218543
+* Adjusted DVD drive ID detection - fixes drives that stopped working 
+
+[1.1.9 - August 26, 2011]
+
+* Synced to MPlayer r34002
+* New YouTube scraping code (thanks jhb50!)
+* Fixed problem with some subtitles not appearing
+* Added support for subtitles over FTP
+* Added chunk support in HTTP protocol
+* Added Bulgarian translation
+* Other minor bug fixes
+
+[1.1.8 - May 17, 2011]
+
+* Synced to MPlayer r33269
+* Added Danish translation
+* Clicking on a browser file already loaded will now resume instead of reload
+* Faster loading of online streams
+* Fixed a bug with some MMS streams
+* Improved network initialization - now you can unplug/plug USB ethernet
+* Fixed a potential crash caused by the audio code
+* Improved memory management
+* Other minor optimizations and improvements
+
+[1.1.7 - April 16, 2011]
+
+* Fixed a bug that caused a crash if Aspect Ratio was not set to Auto
+
+[1.1.6 - April 14, 2011]
+
+* Synced to MPlayer r33122
+* Fixed an issue with music playlist queuing
+* Fixed an issue playing a music playlist with a picture slideshow
+* Fixed a bug that caused some MMS streams not to work
+* Fixed a bug that caused WiiMC to crash with a malformed restore_points file
+* Added a setting to write a debug log to SD - set "debug" to "1"
+* Video rendering corrections and optimizations
+* Translation updates
+
+[1.1.5 - March 25, 2011]
+
+* Synced to MPlayer r33036
+* Fixed Inactivity Shutdown feature
+* Fixed plain playlist support
+* Added support for encrypted DVDs for USB DVD drives (thanks clava!)
+* Fixed network initialization for some USB LAN adapters
+* Other minor changes
+
+[1.1.4 - March 4, 2011]
+
+* Synced to MPlayer r32994
+* Fixed crash in Online Media area
+* Fixed crashes on ogg and mp4 files
+* Fixed YouTube support
+* Added Inactivity Shutdown setting
+* Added separate settings to change backward/forward skip
+* Improved memory management
+* Other minor changes
+
+[1.1.3 - February 19, 2011]
+
+* Synced to MPlayer r32866
+* Fixed crash for some USB drives
+* Added option to change screensaver delay
+* Fixed incorrect warning about picture sizes being > 6MB
+* Improved network initialization routines
+* Improved subtitle scaling calculations
+* Improved shutdown - if WiiMC fails to shut down within 5 seconds, shutdown
+  will be forced
+* Experimental USB DVD drive support (thanks clava!)
+* Other minor optimizations and improvements
+
+[1.1.2 - January 29, 2011]
+
+* Synced to MPlayer r32815
+* Fixed broken audio/subtitle switching
+* Fixed "Exception (Alignment)" crash
+* Changed from mpg123 to ffmp3 (fixes some audio-related problems)
+* Added ext 2/3/4 support
+* USB compatibility improvements
+* Improved performance (enabled 64-byte fetch mode for the L2 cache)
+* Large file (> 4GB) support
+* Fixed relative playlist paths
+* Paired-singles enhancements (thanks Extrems!)
+* Added IOS whitelist - a warning will now appear if you are not using IOS58 or
+  IOS61
+* Disable dvdnav over SMB (it's too slow!)
+* Added Tamil translation (thanks dpandian!)
+* Other minor optimizations and bug fixes
+
+[1.1.1 - December 16, 2010]
+
+* Synced to MPlayer r32709
+* Fixed image stuttering and audio sync issues
+* Fixed pointer alignment on DVD menus
+* Added ISO/IFO DVD playback, with DVD menu support
+* Added screen resizing while watching a video via the Wiimote. Just hold down
+  B and use the arrow keys (thanks clava!)
+* Performance optimizations using paired singles (thanks Extrems!)
+* Improved USB compatibility
+* Added support for playlist files in the Videos and Music areas
+* Enable negative subtitle delay values
+* Replace libmp3 with libmpg123. Fixes a number of MP3 audio bugs
+* Added a setting to change the starting area
+* New JPG scaler for the Picture Viewer (thanks puddles!)
+* Display artist and song on separate lines for SHOUTcast (thanks jhb50!)
+* Added settings for YouTube quality and caching for online media
+* Subtitle autoscaling
+* Added a delay on startup so those with slow USB drives are not bumped back to
+  the main browser list
+* Shifted all GUI elements inwards to fix left/right cropping occuring on 16:9
+  for some people
+* Fixed a Picture Viewer crash
+* Fixed lowercase bug for NTFS
+* Many other minor fixes and improvements
+
+[1.1.0 - October 8, 2010]
+
+* Synced to MPlayer r32341
+* Fixed a crash that happened if your router was turned off
+* Fixed "blank listing" issue for SMB
+* Improved memory management, resulting in improved performance
+* Improved USB compatibility and speed
+* USB bug fixes
+* NTFS bug fixes
+* Fixed audio sync regression from 1.0.9
+* Change YouTube default to 480p
+* Fixed "vanishing pointer" issue when watching CPU-intensive videos
+* Improved shuffle for music
+* Channel updated (improved USB compatibility)
+* Other miscellaneous bug fixes/improvements
+
+[1.0.9 - August 18, 2010]
+
+* Fixed a bug that caused NTFS drives not to show up
+
+[1.0.8 - August 17, 2010]
+
+* Improved USB mounting and updated channel. Should hopefully help those who 
+  are receiving the "Could not find a valid SD or USB device" message
+* Improved network initialization
+
+[1.0.7 - August 15, 2010]
+
+* IOS 202 support removed
+* USB 2.0 support via IOS 58 added - requires that IOS58 be pre-installed
+* WiiMC channel updated - requires IOS58 and does NOT require a cIOS to install
+  Thanks to megazig and svpe for help with this
+* DVD support via AHBPROT - requires latest HBC or latest WiiMC channel
+* Synced to MPlayer r31961
+* YouTube support (thanks to lukegb and ataraxis for some help)
+* Picture zoom, rotate, pan, auto-rotate via exif data (thanks ataraxis!)
+* Fixed seeking for local FLV files
+* Fixed black-screen video issue with videos having widths over 1024
+* Fixed playback of MKV files
+* New YUV->RGB conversion in TEV for videos up to 720p (thanks sepp256!)
+* Restrict video loading to 720p (1280x720)
+* Enable caching of DVD CSS keys. They are written to the 'css' folder
+  (created automatically).
+* Fixed playback of files with mono sound
+* Fixed issue with HTTP over-buffering
+* Other minor improvements/corrections
+
+[1.0.6 - July 21, 2010]
+
+* Reverted USB2 changes
+* Synced to MPlayer r31761
+* Fixed display of radio stream information
+* Other minor changes
+
+[1.0.5 - July 14, 2010]
+
+* Synced to MPlayer r31641
+* Added volume control in Music area
+* Added option to hide DVD functionality from the UI
+* UTF-8 SMB support
+* Ability to use both USB ports (requires updated IOS 202 - WARNING: older 
+  versions of IOS 202 are NO LONGER supported)
+* Increase max SMB shares to 9
+* Fixed sleep timer
+* Added "Now Playing" to screensaver
+* Disable screensaver while slideshow is active
+* Increased video auto-play limit from 20 to 50
+* MMS support (thanks denper!)
+* Improved online stream display (thanks gazstone!)
+* New SHOUTcast support (WARNING: updating will overwrite your onlinemedia.xml
+  to install new links - backup your old links if necessary)
+* Audio language setting
+* Jump to and highlight folder when going up one level
+* Highlight file when returning to menu
+* Save settings when power button is used
+* Added option to use static folder locations
+* Display parent directory beside Up One Level
+* Improved restore points behavior
+* Other miscellaneous improvements/corrections
+* Language updates
+
+[1.0.4 - June 3, 2010]
+
+* Subtitle color/size adjustment
+* Added checkmark next to viewed files
+* Added sleep timer
+* Improved device mounting
+* Improved stability
+* Fixed artifacts issue with online media files (VP6 codec)
+* Synced to MPlayer r31303
+* Added option to auto-play next video
+* Add GIF image viewing
+* More codepages added
+* Thumbnail support for online media (Navi-X)
+* Hide folders beginning with '.' and '$'
+* Added screensaver
+* Add ability to view PNG's over 1024x1024
+* Added theme color options
+* Add more seek time options
+* Language updates
+
+[1.0.3 - May 12, 2010]
+
+* Fixed issue with browser reloading
+* Fixed freeze on seek issue
+* Fixed a back-to-menu freeze
+* Changed stereo downmixing
+* Added codepages
+* Translation updates (and added Hungarian and Polish translations)
+* Other minor changes
+
+[1.0.2 - May 8, 2010]
+
+* Significant changes to improve stability
+* Significant improvements to video performance
+* Frame dropping now disabled by default (change it to Disabled in the Video
+  settings to improve performance if you are updating from a previous version)
+* Corrections to device mounting code (fixes crashes on startup)
+* Translations to the following languages: Japanese, German, French, Spanish, 
+  Italian, Dutch, Chinese (Simplified), Chinese (Traditional), Korean,
+  Romanian, Estonian, and Brazilian Portuguese
+* Video scaling issues fixed
+* Audio static bug at EOF fixed
+* Fixed issues with radio streams
+* Fixed DVD issues
+* Improvements to settings loading code
+* FF/RW time is now configurable
+* Friendly names now shown for playlists
+* Radio stream information now shown in the now playing area
+* Allowed file extensions list expanded
+* ASS subtitle file support added
+* Added settings for subtitle language and codepage
+* Other various bugfixes and improvements
+
+[1.0.1 - April 18, 2010]
+
+* Fixed NTFS crashes
+* Fixed Navi-X search, audio files work in Navi-X now
+* Added Down button to switch audio stream, Up is now to switch subtitles
+* Added FTP port setting
+* Fixed potential picture viewer crashes
+* Fixed some pause/resume issues
+* Fixed some cache issues
+
+[1.0.0 - April 16, 2010]
+
+* Initial release

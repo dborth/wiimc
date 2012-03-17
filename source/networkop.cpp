@@ -255,7 +255,10 @@ static void * netcb (void *arg)
 		}
 
 		if(netHalt != 2)
+		{
 			LWP_SuspendThread(networkthread);
+			usleep(100);
+		}
 	}
 	return NULL;
 }

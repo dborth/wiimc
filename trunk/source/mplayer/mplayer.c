@@ -3437,11 +3437,13 @@ dvd_angle=1;
         // setup global sub numbering
         mpctx->sub_counts[SUB_SOURCE_VOBSUB] = vobsub_get_indexes_count(vo_vobsub);
     }
+#ifndef GEKKO
 #ifdef CONFIG_ASS
     // must be before demuxer open, since the settings are
     // used in generating the ASSTrack
     if (ass_enabled && ass_library)
         ass_mp_reset_config(ass_library);
+#endif
 #endif
 
 //============ Open & Sync STREAM --- fork cache2 ====================
@@ -3580,9 +3582,9 @@ goto_enable_cache:
 #ifdef GEKKO
 stream_cache_min_percent=0.2;
 #endif
-        res = stream_enable_cache(mpctx->stream, stream_cache_size * 1024ull,
-                                  stream_cache_size * 1024ull * (stream_cache_min_percent / 100.0),
-                                  stream_cache_size * 1024ull * (stream_cache_seek_min_percent / 100.0));
+        res = stream_enable_cache(mpctx->stream, stream_cache_size * 1024,
+                                  stream_cache_size * 1024 * (stream_cache_min_percent / 100.0),
+                                  stream_cache_size * 1024 * (stream_cache_seek_min_percent / 100.0));
         if (res == 0)
             if ((mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY)))
                 goto goto_next_file;

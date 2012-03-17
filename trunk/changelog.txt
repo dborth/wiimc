@@ -6,6 +6,15 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.2.4 - March 17, 2012]
+
+* Synced to MPlayer r34805 and ffmpeg 8fbf825ecc32
+* Fixed a bug with 4KB sector drives
+* Added padding below subtitles
+* Fixed display of non-latin characters in 1.2.3
+* Fixed freezing issue in 1.2.3
+* Fixed online media issues in 1.2.3
+
 [1.2.3 - March 3, 2012]
 
 * Synced to MPlayer r34780 and ffmpeg 83c418e68ee5

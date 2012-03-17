@@ -80,21 +80,21 @@ extern void ShowProgress (const char *msg, int done, int total);
 typedef struct {
   // constats:
   unsigned char *buffer;      // base pointer of the allocated buffer memory
-  int64_t buffer_size; // size of the allocated buffer memory
+  int buffer_size; // size of the allocated buffer memory
   int sector_size; // size of a single sector (2048/2324)
-  int64_t back_size;   // we should keep back_size amount of old bytes for backward seek
-  int64_t fill_limit;  // we should fill buffer only if space>=fill_limit
-  int64_t seek_limit;  // keep filling cache if distance is less that seek limit
+  int back_size;   // we should keep back_size amount of old bytes for backward seek
+  int fill_limit;  // we should fill buffer only if space>=fill_limit
+  int seek_limit;  // keep filling cache if distance is less that seek limit
 #if FORKED_CACHE
   pid_t ppid; // parent PID to detect killed parent
 #endif
   // filler's pointers:
   int eof;
-  int64_t min_filepos; // buffer contain only a part of the file, from min-max pos
-  int64_t max_filepos;
-  int64_t offset;      // filepos <-> bufferpos  offset value (filepos of the buffer's first byte)
+  off_t min_filepos; // buffer contain only a part of the file, from min-max pos
+  off_t max_filepos;
+  off_t offset;      // filepos <-> bufferpos  offset value (filepos of the buffer's first byte)
   // reader's pointers:
-  int64_t read_filepos;
+  off_t read_filepos;
   // commands/locking:
 //  int seek_lock;   // 1 if we will seek/reset buffer, 2 if we are ready for cmd
 //  int fifo_flag;  // 1 if we should use FIFO to notice cache about buffer reads.
@@ -122,7 +122,7 @@ static int cache_read(cache_vars_t *s, unsigned char *buf, int size)
   int total=0;
   
   while(size>0 ){
-    int64_t pos,newb,len;
+    int pos,newb,len;
 
   //printf("CACHE2_READ: 0x%X <= 0x%X <= 0x%X  \n",s->min_filepos,s->read_filepos,s->max_filepos);
 
@@ -183,14 +183,14 @@ static int cache_fill(cache_vars_t *s)
   }
 #endif
 
-  int64_t back,back2,newb,space,len,pos;
-  int64_t read=s->read_filepos;
+  int back,back2,newb,space,len,pos;
+  off_t read=s->read_filepos;
   int read_chunk;
   int wraparound_copy = 0;
 
   if(read<s->min_filepos || read>s->max_filepos){
       // seek...
-      //mp_msg(MSGT_CACHE,MSGL_DBG2,"Out of boundaries... seeking to 0x%"PRIX64"  \n",read);
+      //mp_msg(MSGT_CACHE,MSGL_DBG2,"Out of boundaries... seeking to 0x%"PRIX64"  \n",(int64_t)read);
       // streaming: drop cache contents only if seeking backward or too much fwd:
       if(s->stream->type!=STREAMTYPE_STREAM ||
           read<s->min_filepos || read>=s->max_filepos+s->seek_limit)
@@ -198,7 +198,7 @@ static int cache_fill(cache_vars_t *s)
     	cache_flush(s);
         if(s->stream->eof) stream_reset(s->stream);
         stream_seek_internal(s->stream,read);
-        //mp_msg(MSGT_CACHE,MSGL_DBG2,"Seek done. new pos: 0x%"PRIX64"  \n",stream_tell(s->stream));
+        //mp_msg(MSGT_CACHE,MSGL_DBG2,"Seek done. new pos: 0x%"PRIX64"  \n",(int64_t)stream_tell(s->stream));
       }
   }
 
@@ -322,14 +322,13 @@ static int cache_execute_control(cache_vars_t *s) {
   double double_res;
   unsigned uint_res;
   int needs_flush = 0;
-  static unsigned last;
-  int quit = s->control == -2;
-  uint64_t old_pos = s->stream->pos;
-  int old_eof = s->stream->eof;
+  static u64 last;
+  u64 now;
 #ifdef GEKKO
   if(!s || !s->stream)
 	  return 0;
 #endif
+  int quit = s->control == -2;
   if (quit || !s->stream->control) {
     s->stream_time_length = 0;
     s->stream_time_pos = MP_NOPTS_VALUE;
@@ -337,7 +336,9 @@ static int cache_execute_control(cache_vars_t *s) {
     s->control = -1;
     return !quit;
   }
-  if (GetTimerMS() - last > 99) {
+  
+  now = GetTimerMS();
+  if (now - last > 99) {
     double len, pos;
     if (s->stream->control(s->stream, STREAM_CTRL_GET_TIME_LENGTH, &len) == STREAM_OK)
       s->stream_time_length = len;
@@ -354,7 +355,7 @@ static int cache_execute_control(cache_vars_t *s) {
       return 0;
     }
 #endif
-    last = GetTimerMS();
+    last = now;
   }
   if (s->control == -1) return 1;
   switch (s->control) {
@@ -384,19 +385,17 @@ static int cache_execute_control(cache_vars_t *s) {
       s->control_res = STREAM_UNSUPPORTED;
       break;
   }
-  if (s->control_res == STREAM_OK && needs_flush) {
+  if (needs_flush) {
     s->read_filepos = s->stream->pos;
     s->eof = s->stream->eof;
     cache_flush(s);
-  } else if (needs_flush &&
-             (old_pos != s->stream->pos || old_eof != s->stream->eof))
-    mp_msg(MSGT_STREAM, MSGL_ERR, "STREAM_CTRL changed stream pos but returned error, this is not allowed!\n");
+  }
   s->control = -1;
   return 1;
 }
 
-static cache_vars_t* cache_init(int64_t size,int sector){
-  int64_t num;
+static cache_vars_t* cache_init(int size,int sector){
+  int num;
 #if !defined(__MINGW32__) && !defined(PTHREAD_CACHE) && !defined(__OS2__) && !defined(GEKKO)
   cache_vars_t* s=shmem_alloc(sizeof(cache_vars_t));
 #else
@@ -497,7 +496,7 @@ static void exit_sighandler(int x){
 /**
  * \return 1 on success, 0 if the function was interrupted and -1 on error
  */
-int stream_enable_cache(stream_t *stream,int64_t size,int64_t min,int64_t seek_limit){
+int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
   int ss = stream->sector_size ? stream->sector_size : STREAM_BUFFER_SIZE;
   int res = -1;
   cache_vars_t* s;
@@ -507,10 +506,6 @@ int stream_enable_cache(stream_t *stream,int64_t size,int64_t min,int64_t seek_l
   if (stream->flags & STREAM_NON_CACHEABLE) {
     //mp_msg(MSGT_CACHE,MSGL_STATUS,"\rThis stream is non-cacheable\n");
     return 1;
-  }
-  if (size > SIZE_MAX) {
-    mp_msg(MSGT_CACHE, MSGL_FATAL, "Cache size larger than max. allocation size\n");
-    return -1;
   }
 #ifdef GEKKO
   if(cache_mutex == LWP_MUTEX_NULL)
@@ -568,12 +563,13 @@ int stream_enable_cache(stream_t *stream,int64_t size,int64_t min,int64_t seek_l
         goto err_out;
     }
     // wait until cache is filled at least prefill_init %
-    mp_msg(MSGT_CACHE,MSGL_V,"CACHE_PRE_INIT: %"PRId64" [%"PRId64"] %"PRId64"  pre:%"PRId64"  eof:%d  \n",
-	s->min_filepos,s->read_filepos,s->max_filepos,min,s->eof);
+    mp_msg(MSGT_CACHE,MSGL_V,"CACHE_PRE_INIT: %"PRId64" [%"PRId64"] %"PRId64"  pre:%d  eof:%d  \n",
+	(int64_t)s->min_filepos,(int64_t)s->read_filepos,(int64_t)s->max_filepos,min,s->eof);
+
     while(s->read_filepos<s->min_filepos || s->max_filepos-s->read_filepos<min){
 	mp_msg(MSGT_CACHE,MSGL_STATUS,MSGTR_CacheFill,
 	    100.0*(float)(s->max_filepos-s->read_filepos)/(float)(s->buffer_size),
-	    s->max_filepos-s->read_filepos
+	    (int64_t)s->max_filepos-s->read_filepos
 	);
 
 #ifdef GEKKO
@@ -669,9 +665,9 @@ int cache_stream_fill_buffer(stream_t *s){
 
 }
 
-int cache_stream_seek_long(stream_t *stream,int64_t pos){
+int cache_stream_seek_long(stream_t *stream,off_t pos){
   cache_vars_t* s;
-  int64_t newpos;
+  off_t newpos;
   if(!stream->cache_pid) return stream_seek_long(stream,pos);
   LWP_MutexLock(cache_mutex);
 
@@ -703,7 +699,6 @@ int cache_stream_seek_long(stream_t *stream,int64_t pos){
 }
 
 int cache_do_control(stream_t *stream, int cmd, void *arg) {
-  int sleep_count = 0;
   int pos_change = 0;
   cache_vars_t* s = stream->cache_data;
   switch (cmd) {

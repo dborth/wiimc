@@ -161,6 +161,9 @@ wchar_t* GuiText::ToWchar(const char* t)
 
 void GuiText::SetText(const char * t)
 {
+	if(t && origText && strcmp(t, origText) == 0)
+		return;
+	
 	if(origText)
 		gui_free(origText);
 	if(text)

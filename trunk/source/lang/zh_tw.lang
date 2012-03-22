@@ -669,3 +669,9 @@ msgstr "螢幕保護程式延遲"
 
 msgid "Inactivity Shutdown"
 msgstr "閒置關機"
+
+msgid "Invalid subtitle delay."
+msgstr "字幕延遲無效。"
+
+msgid "DVD playback is not supported on this Wii."
+msgstr "這台Wii主機不支援 DVD播放。"

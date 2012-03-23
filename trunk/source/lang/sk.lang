@@ -658,8 +658,8 @@ msgstr "Nízka (400x240)"
 msgid "Medium (480x360)"
 msgstr "Stredná (480x360)"
 
-msgid "High (640x360)"
-msgstr "Vysoká (640x360)"
+msgid "High (854x480)"
+msgstr "Vysoká (854x480)"
 
 msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
 msgstr "Aktuálny IOS nie je podporovaný. Funkčnosť alebo stabilita môže byť nepriaznivo ovplyvnená."

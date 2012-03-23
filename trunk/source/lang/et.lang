@@ -658,8 +658,8 @@ msgstr "Madal (400x240)"
 msgid "Medium (480x360)"
 msgstr "Keskmine (480x360)"
 
-msgid "High (640x360)"
-msgstr "Kõrge (640x360)"
+msgid "High (854x480)"
+msgstr "Kõrge (854x480)"
 
 msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
 msgstr "Antud IOS ei ole toetatud. Funktsionaalsus ja/või stabiilsus võib olla puudulik."

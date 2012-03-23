@@ -697,8 +697,8 @@ msgstr "低 (400x240)"
 msgid "Medium (480x360)"
 msgstr "中 (480x360)"
 
-msgid "High (640x360)"
-msgstr "高 (640x360)"
+msgid "High (854x480)"
+msgstr "高 (854x480)"
 
 msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
 msgstr "現在のIOSは非対応で機能や安定性に影響します"

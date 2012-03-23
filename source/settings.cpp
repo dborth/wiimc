@@ -648,7 +648,7 @@ void DefaultSettings ()
 	WiiSettings.dvdDisabled = 0;
 	// Online Media
 	WiiSettings.onlineCacheFill = 20;
-	WiiSettings.youtubeFormat = 34;
+	WiiSettings.youtubeFormat = 35;
 	WiiSettings.onlinemediaFolder[0] = 0;
 	// Network
 	for(int i=0; i<MAX_SHARES; i++)
@@ -772,8 +772,8 @@ static void FixInvalidSettings()
 	// Online Media
 	if(WiiSettings.onlineCacheFill < 5 || WiiSettings.onlineCacheFill > 100)
 		WiiSettings.onlineCacheFill = 20;
-	if(WiiSettings.youtubeFormat != 34 && WiiSettings.youtubeFormat != 18 && WiiSettings.youtubeFormat != 5)
-		WiiSettings.youtubeFormat = 34;
+	if(WiiSettings.youtubeFormat != 35 && WiiSettings.youtubeFormat != 18 && WiiSettings.youtubeFormat != 5)
+		WiiSettings.youtubeFormat = 35;
 
 	if(!IsOnlineMediaPath(WiiSettings.onlinemediaFolder))
 		CleanupPath(WiiSettings.onlinemediaFolder);

@@ -2087,7 +2087,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		
 	int fmt, chosenFormat = 0;
 	char *strstart = str;
-	char *urlc, *urlcend, *fmtc, *fmtcend, *fmtcend2;
+	char *urlc, *urlcend, *fmtc, *fmtcend;
 	char format[5];
 
 	while(chosenFormat != WiiSettings.youtubeFormat && str-strstart < 16384)
@@ -2096,30 +2096,29 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		
 		if(!urlc)
 			break;
-		
+			
 		urlcend = strstr(urlc, "%26quality"); // get new url from url%3D to %26quality = http....
-	
+
 		if(!urlcend || urlcend-urlc-6 < 1 || urlcend-urlc-6 >= MAXPATHLEN)
 			break;
 
-		fmtc = strstr(urlcend, "%26itag%3D");
+		fmtc = strstr(urlc, "%2526itag%253D"); // find %26itag%3D within url
 		
-		if(!fmtc)
-			break;
-		
-		fmtcend = strstr(fmtc, "%2C");
-		fmtcend2 = strstr(fmtc, "&amp;"); // get format code from %26itag%3D to &2C or &amp; = nn
-		
-		if(!fmtcend || !fmtcend2 || fmtcend-fmtc-10 < 1 || fmtcend-fmtc-10 >= 5)
+		if(!fmtc || fmtc > urlcend ) // no format found
 			break;
 
-		if (fmtcend2 < fmtcend)
-			fmtcend = fmtcend2;
-		
-		snprintf(format, fmtcend-fmtc-10+1, "%s", fmtc+10);
+		fmtcend = strstr(fmtc+10, "%2526");  // delimited by next %26 tag within url
+
+		if(!fmtcend || fmtcend > urlcend || fmtcend-fmtc-14 < 1 || fmtcend-fmtc-14 >= 5)
+		{
+		    str = urlc + 10;
+			continue; // skip this definition
+		}
+    	
+		snprintf(format, fmtcend-fmtc-14+1, "%s", fmtc+14);
 		fmt = atoi(format);
-		
-		if((fmt == 5 || fmt == 18 || fmt == 34) && fmt <= WiiSettings.youtubeFormat && fmt > chosenFormat)
+
+		if((fmt == 5 || fmt == 18 || fmt == 35) && fmt <= WiiSettings.youtubeFormat && fmt > chosenFormat)
 		{
 			snprintf(newurl, urlcend-urlc-6+1, "%s", urlc+6);
 			url_unescape_string(newurl, newurl); // remove 3 levels of url codes ie: %252526 = %2526
@@ -2128,7 +2127,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 			chosenFormat = fmt;
 		}
 
-		str = fmtcend + 3; // move to next url
+		str = urlcend + 10; // move to next url
 	}
 	
 	mem2_free(buffer, MEM2_OTHER);
@@ -2136,7 +2135,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	if(chosenFormat > 0)
 		return true;
 
-	return false;
+	return false; 
 }
 
 static GuiFileBrowser *fileBrowser = NULL;
@@ -5122,7 +5121,7 @@ static void MenuSettingsOnlineMedia()
 				if(WiiSettings.youtubeFormat == 5)
 					WiiSettings.youtubeFormat = 18;
 				else if(WiiSettings.youtubeFormat == 18)
-					WiiSettings.youtubeFormat = 34;
+					WiiSettings.youtubeFormat = 35;
 				else
 					WiiSettings.youtubeFormat = 5;
 				break;
@@ -5144,7 +5143,7 @@ static void MenuSettingsOnlineMedia()
 			else if(WiiSettings.youtubeFormat == 18)
 				sprintf(options.value[1], "Medium (480x360)");
 			else
-				sprintf(options.value[1], "High (640x360)");
+				sprintf(options.value[1], "High (854x480)");
 
 			snprintf(options.value[2], 60, "%s", WiiSettings.onlinemediaFolder);
 			optionBrowser.TriggerUpdate();

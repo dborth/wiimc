@@ -20,7 +20,7 @@ msgid "Error"
 msgstr "エラー"
 
 msgid "OK"
-msgstr "ＯＫ"
+msgstr "OK"
 
 msgid "Retry"
 msgstr "再試行"
@@ -41,7 +41,7 @@ msgid "Pause"
 msgstr "一時停止"
 
 msgid "Single Play"
-msgstr "１曲だけ再生"
+msgstr "1曲だけ再生"
 
 msgid "Continuous Play"
 msgstr "連続再生"
@@ -80,10 +80,10 @@ msgid "Settings"
 msgstr "設定"
 
 msgid "On"
-msgstr "ＯＮ"
+msgstr "ON"
 
 msgid "Off"
-msgstr "ＯＦＦ"
+msgstr "OFF"
 
 msgid "Always"
 msgstr "常時"
@@ -116,7 +116,7 @@ msgid "Close"
 msgstr "閉じる"
 
 msgid "DVD"
-msgstr "ＤＶＤ"
+msgstr "DVD"
 
 msgid "Go back"
 msgstr "戻る"
@@ -137,7 +137,7 @@ msgid "Online media file not found."
 msgstr "ネットメディアファイルが見つかりません"
 
 msgid "Unrecognized DVD format!"
-msgstr "認識できない種類のＤＶＤです"
+msgstr "認識できない種類のDVDです"
 
 msgid "Port cannot be blank!"
 msgstr "ポートの設定は必須です"
@@ -167,7 +167,7 @@ msgid "Settings - Network"
 msgstr "設定 - ネットワーク"
 
 msgid "Settings - DVD"
-msgstr "設定 - ＤＶＤ"
+msgstr "設定 - DVD"
 
 msgid "File Extensions"
 msgstr "ファイル拡張子"
@@ -179,10 +179,10 @@ msgid "Volume"
 msgstr "音量"
 
 msgid "Exit Action"
-msgstr "ＷｉｉＭＣ終了処理"
+msgstr "WiiMC終了処理"
 
 msgid "Wiimote Rumble"
-msgstr "Ｗｉｉリモコンの振動"
+msgstr "Wiiリモコンの振動"
 
 msgid "Hide"
 msgstr "非表示"
@@ -200,7 +200,7 @@ msgid "Power Off Wii"
 msgstr "電源を切る"
 
 msgid "Return to Loader"
-msgstr "ＨＢＣに戻る"
+msgstr "HBCに戻る"
 
 msgid "Screen Zoom"
 msgstr "スクリーンの拡大率"
@@ -239,7 +239,7 @@ msgid "Display Name"
 msgstr "表示名"
 
 msgid "Share IP"
-msgstr "共有ＩＰアドレス"
+msgstr "共有IPアドレス"
 
 msgid "Share Name"
 msgstr "共有名"
@@ -263,7 +263,7 @@ msgid "Are you sure that you want to delete this share?"
 msgstr "本当に削除しますか？"
 
 msgid "IP"
-msgstr "ＩＰアドレス"
+msgstr "IPアドレス"
 
 msgid "Folder"
 msgstr "フォルダ"
@@ -308,13 +308,13 @@ msgid "Online Media Folder"
 msgstr "ネットメディアフォルダ"
 
 msgid "Add SMB Share"
-msgstr "ＳＭＢ設定"
+msgstr "SMB設定"
 
 msgid "Add FTP Site"
-msgstr "ＦＴＰ設定"
+msgstr "FTP設定"
 
 msgid "DVD Menu"
-msgstr "ＤＶＤメニュー"
+msgstr "DVDメニュー"
 
 msgid "Skip to Main Title"
 msgstr "メインタイトルをスキップ"
@@ -335,22 +335,22 @@ msgid "Directory name is too long!"
 msgstr "フォルダ名を短くしてください"
 
 msgid "SD Card"
-msgstr "ＳＤカード"
+msgstr "SDカード"
 
 msgid "USB Mass Storage"
-msgstr "ＵＳＢ機器"
+msgstr "USB機器"
 
 msgid "Data DVD"
-msgstr "データＤＶＤ"
+msgstr "データDVD"
 
 msgid "USB drive not found!"
-msgstr "ＵＳＢドライブが見つかりません"
+msgstr "USBドライブが見つかりません"
 
 msgid "SD card not found!"
-msgstr "ＳＤカードが見つかりません"
+msgstr "SDカードが見つかりません"
 
 msgid "Loading DVD..."
-msgstr "ＤＶＤを読み込み中…"
+msgstr "DVDを読み込み中…"
 
 msgid "No disc inserted!"
 msgstr "ディスクが挿入されていません！"
@@ -368,7 +368,7 @@ msgid "Warning"
 msgstr "警告"
 
 msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
-msgstr "６ＭＢ以上の画像ファイルがフォルダ内に存在します 該当する画像ファイルは表示できません"
+msgstr "6MB以上の画像ファイルがフォルダ内に存在します 該当する画像ファイルは表示できません"
 
 msgid "Error loading playlist!"
 msgstr "再生リストの読み込み中にエラーが発生しました"
@@ -419,7 +419,7 @@ msgid "Share name is blank."
 msgstr "共有名が設定されていません"
 
 msgid "Share IP is blank."
-msgstr "共有ＩＰアドレスが設定されていません"
+msgstr "共有IPアドレスが設定されていません"
 
 msgid "Invalid network share settings"
 msgstr "ネットワーク共有設定が無効です"
@@ -431,7 +431,7 @@ msgid "Failed to connect to network share."
 msgstr "共有フォルダへの接続に失敗しました"
 
 msgid "IP is blank."
-msgstr "ＩＰアドレスが設定されていません"
+msgstr "IPアドレスが設定されていません"
 
 msgid "Username is blank."
 msgstr "ユーザー名が設定されていません"
@@ -440,16 +440,16 @@ msgid "Password is blank."
 msgstr "パスワードが設定されていません"
 
 msgid "Invalid FTP site settings"
-msgstr "ＦＴＰの設定が無効です"
+msgstr "FTPの設定が無効です"
 
 msgid "Connecting to FTP site..."
-msgstr "ＦＴＰサイトに接続中…"
+msgstr "FTPサイトに接続中…"
 
 msgid "Failed to connect to FTP site."
-msgstr "ＦＴＰサイトへの接続に失敗しました"
+msgstr "FTPサイトへの接続に失敗しました"
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "有効なＳＤ・ＵＳＢデバイスが見つかりません"
+msgstr "有効なSD・USBデバイスが見つかりません"
 
 msgid "Could not create folder"
 msgstr "フォルダを作成できませんでした"
@@ -611,7 +611,7 @@ msgid "Audio Language"
 msgstr "音声の言語"
 
 msgid "DVD Support"
-msgstr "ＤＶＤのサポート"
+msgstr "DVDのサポート"
 
 msgid "Enabled"
 msgstr "有効"
@@ -707,13 +707,13 @@ msgid "Screensaver Delay"
 msgstr "スクリーンセーバーの待ち時間"
 
 msgid "Inactivity Shutdown"
-msgstr "非アクティブ時に電源を切る"
+msgstr "電源オフタイマー"
 
 msgid "Invalid subtitle delay."
 msgstr "不正な字幕の遅延です"
 
 msgid "DVD playback is not supported on this Wii."
-msgstr "DVD再生はこのWiiでは対応していません"
+msgstr "DVD再生はこのWiiでは非対応です"
 
 msgid "hours"
 msgstr "時間"

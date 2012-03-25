@@ -160,7 +160,7 @@ static int mov_read_mac_string(MOVContext *c, AVIOContext *pb, int len,
         uint8_t t, c = avio_r8(pb);
         if (c < 0x80 && p < end)
             *p++ = c;
-        else
+        else if (p < end)
             PUT_UTF8(mac_to_unicode[c-0x80], t, if (p < end) *p++ = t;);
     }
     *p = 0;
@@ -805,7 +805,8 @@ static int mov_read_mvhd(MOVContext *c, AVIOContext *pb, MOVAtom atom)
     c->duration = (version == 1) ? avio_rb64(pb) : avio_rb32(pb); /* duration */
     // set the AVCodecContext duration because the duration of individual tracks
     // may be inaccurate
-    c->fc->duration = av_rescale(c->duration, AV_TIME_BASE, c->time_scale);
+    if (c->time_scale > 0)
+        c->fc->duration = av_rescale(c->duration, AV_TIME_BASE, c->time_scale);
     avio_rb32(pb); /* preferred scale */
 
     avio_rb16(pb); /* preferred volume */
@@ -2874,7 +2875,7 @@ static int mov_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     pkt->stream_index = sc->ffindex;
     pkt->dts = sample->timestamp;
-    if (sc->ctts_data) {
+    if (sc->ctts_data && sc->ctts_index < sc->ctts_count) {
         pkt->pts = pkt->dts + sc->dts_shift + sc->ctts_data[sc->ctts_index].duration;
         /* update ctts context */
         sc->ctts_sample++;

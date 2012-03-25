@@ -418,6 +418,10 @@ static void decode_mb_b(AVSContext *h, enum cavs_mb mb_type) {
 static inline int decode_slice_header(AVSContext *h, GetBitContext *gb) {
     if(h->stc > 0xAF)
         av_log(h->s.avctx, AV_LOG_ERROR, "unexpected start code 0x%02x\n", h->stc);
+
+    if (h->stc >= h->mb_height)
+        return -1;
+
     h->mby = h->stc;
     h->mbidx = h->mby*h->mb_width;
 
@@ -609,12 +613,19 @@ static int decode_pic(AVSContext *h) {
 static int decode_seq_header(AVSContext *h) {
     MpegEncContext *s = &h->s;
     int frame_rate_code;
+    int width, height;
 
     h->profile =         get_bits(&s->gb,8);
     h->level =           get_bits(&s->gb,8);
     skip_bits1(&s->gb); //progressive sequence
-    s->width =           get_bits(&s->gb,14);
-    s->height =          get_bits(&s->gb,14);
+       width =           get_bits(&s->gb,14);
+       height =          get_bits(&s->gb,14);
+    if ((s->width || s->height) && (s->width != width || s->height != height)) {
+        av_log_missing_feature(s, "Width/height changing in CAVS is", 0);
+        return -1;
+    }
+    s->width  = width;
+    s->height = height;
     skip_bits(&s->gb,2); //chroma format
     skip_bits(&s->gb,3); //sample_precision
     h->aspect_ratio =    get_bits(&s->gb,4);

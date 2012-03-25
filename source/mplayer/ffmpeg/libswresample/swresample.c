@@ -226,6 +226,11 @@ int swr_init(struct SwrContext *s){
         return -1;
     }
 
+    if ((!s->out_ch_layout || !s->in_ch_layout) && s->used_ch_count != s->out.ch_count && !s->rematrix_custom) {
+        av_log(s, AV_LOG_ERROR, "Rematrix is needed but there is not enough information to do it\n");
+        return -1;
+    }
+
 av_assert0(s->used_ch_count);
 av_assert0(s->out.ch_count);
     s->resample_first= RSC*s->out.ch_count/s->in.ch_count - RSC < s->out_sample_rate/(float)s-> in_sample_rate - 1.0;
@@ -491,7 +496,7 @@ int swr_convert(struct SwrContext *s, uint8_t *out_arg[SWR_CH_MAX], int out_coun
 
     if(s->int_sample_fmt == s->out_sample_fmt && s->out.planar){
         if(preout==in){
-            out_count= FFMIN(out_count, in_count); //TODO check at teh end if this is needed or redundant
+            out_count= FFMIN(out_count, in_count); //TODO check at the end if this is needed or redundant
             av_assert0(s->in.planar); //we only support planar internally so it has to be, we support copying non planar though
             copy(out, in, out_count);
             return out_count;

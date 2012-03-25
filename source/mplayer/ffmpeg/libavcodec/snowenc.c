@@ -22,6 +22,7 @@
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
 #include "avcodec.h"
+#include "internal.h"
 #include "dsputil.h"
 #include "dwt.h"
 #include "snow.h"
@@ -247,6 +248,8 @@ static av_cold int encode_init(AVCodecContext *avctx)
             s->ref_scores[i]= av_mallocz(size*sizeof(uint32_t));
         }
     }
+
+    s->runs = av_malloc(avctx->width * avctx->height * sizeof(*s->runs));
 
     return 0;
 }
@@ -827,14 +830,13 @@ static int get_4block_rd(SnowContext *s, int mb_x, int mb_y, int plane_index){
     return distortion + rate*penalty_factor;
 }
 
-static int encode_subband_c0run(SnowContext *s, SubBand *b, IDWTELEM *src, IDWTELEM *parent, int stride, int orientation){
+static int encode_subband_c0run(SnowContext *s, SubBand *b, const IDWTELEM *src, const IDWTELEM *parent, int stride, int orientation){
     const int w= b->width;
     const int h= b->height;
     int x, y;
 
     if(1){
         int run=0;
-        int runs[w*h];
         int run_index=0;
         int max_index;
 
@@ -868,7 +870,7 @@ static int encode_subband_c0run(SnowContext *s, SubBand *b, IDWTELEM *src, IDWTE
                 }
                 if(!(/*ll|*/l|lt|t|rt|p)){
                     if(v){
-                        runs[run_index++]= run;
+                        s->runs[run_index++]= run;
                         run=0;
                     }else{
                         run++;
@@ -877,9 +879,9 @@ static int encode_subband_c0run(SnowContext *s, SubBand *b, IDWTELEM *src, IDWTE
             }
         }
         max_index= run_index;
-        runs[run_index++]= run;
+        s->runs[run_index++]= run;
         run_index=0;
-        run= runs[run_index++];
+        run= s->runs[run_index++];
 
         put_symbol2(&s->c, b->state[30], max_index, 0);
         if(run_index <= max_index)
@@ -923,7 +925,7 @@ static int encode_subband_c0run(SnowContext *s, SubBand *b, IDWTELEM *src, IDWTE
                     put_rac(&s->c, &b->state[0][context], !!v);
                 }else{
                     if(!run){
-                        run= runs[run_index++];
+                        run= s->runs[run_index++];
 
                         if(run_index <= max_index)
                             put_symbol2(&s->c, b->state[1], run, 3);
@@ -947,7 +949,7 @@ static int encode_subband_c0run(SnowContext *s, SubBand *b, IDWTELEM *src, IDWTE
     return 0;
 }
 
-static int encode_subband(SnowContext *s, SubBand *b, IDWTELEM *src, IDWTELEM *parent, int stride, int orientation){
+static int encode_subband(SnowContext *s, SubBand *b, const IDWTELEM *src, const IDWTELEM *parent, int stride, int orientation){
 //    encode_subband_qtree(s, b, src, parent, stride, orientation);
 //    encode_subband_z0run(s, b, src, parent, stride, orientation);
     return encode_subband_c0run(s, b, src, parent, stride, orientation);
@@ -1612,11 +1614,8 @@ static int encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     uint8_t rc_header_bak[sizeof(s->header_state)];
     uint8_t rc_block_bak[sizeof(s->block_state)];
 
-    if (!pkt->data &&
-        (ret = av_new_packet(pkt, s->b_width*s->b_height*MB_SIZE*MB_SIZE*3 + FF_MIN_BUFFER_SIZE)) < 0) {
-        av_log(avctx, AV_LOG_ERROR, "Error getting output packet.\n");
+    if ((ret = ff_alloc_packet2(avctx, pkt, s->b_width*s->b_height*MB_SIZE*MB_SIZE*3 + FF_MIN_BUFFER_SIZE)) < 0)
         return ret;
-    }
 
     ff_init_range_encoder(c, pkt->data, pkt->size);
     ff_build_rac_states(c, 0.05*(1LL<<32), 256-8);
@@ -1800,6 +1799,7 @@ redo_frame:
                         quantize(s, b, b->ibuf, b->buf, b->stride, s->qbias);
                     if(orientation==0)
                         decorrelate(s, b, b->ibuf, b->stride, pic->pict_type == AV_PICTURE_TYPE_P, 0);
+                    if (!s->no_bitstream)
                     encode_subband(s, b, b->ibuf, b->parent ? b->parent->ibuf : NULL, b->stride, orientation);
                     assert(b->parent==NULL || b->parent->stride == b->stride*2);
                     if(orientation==0)
@@ -1896,6 +1896,7 @@ static av_cold int encode_end(AVCodecContext *avctx)
     if (s->input_picture.data[0])
         avctx->release_buffer(avctx, &s->input_picture);
     av_free(avctx->stats_out);
+    av_freep(&s->runs);
 
     return 0;
 }
@@ -1904,6 +1905,7 @@ static av_cold int encode_end(AVCodecContext *avctx)
 #define VE AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM
 static const AVOption options[] = {
     { "memc_only",      "Only do ME/MC (I frames -> ref, P frame -> ME+MC).",   OFFSET(memc_only), AV_OPT_TYPE_INT, { 0 }, 0, 1, VE },
+    { "no_bitstream",   "Skip final bitstream writeout.",                    OFFSET(no_bitstream), AV_OPT_TYPE_INT, { 0 }, 0, 1, VE },
     { NULL },
 };
 

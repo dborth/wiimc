@@ -1418,7 +1418,7 @@ no_output_pic:
 }
 
 int ff_MPV_encode_picture(AVCodecContext *avctx, AVPacket *pkt,
-                          const AVFrame *pic_arg, int *got_packet)
+                          AVFrame *pic_arg, int *got_packet)
 {
     MpegEncContext *s = avctx->priv_data;
     int i, stuffing_count, ret;
@@ -1435,8 +1435,7 @@ int ff_MPV_encode_picture(AVCodecContext *avctx, AVPacket *pkt,
 
     /* output? */
     if (s->new_picture.f.data[0]) {
-        if (!pkt->data &&
-            (ret = ff_alloc_packet(pkt, s->mb_width*s->mb_height*(MAX_MB_BYTES+100)+10000)) < 0)
+        if ((ret = ff_alloc_packet2(avctx, pkt, s->mb_width*s->mb_height*(MAX_MB_BYTES+100)+10000)) < 0)
             return ret;
         if (s->mb_info) {
             s->mb_info_ptr = av_packet_new_side_data(pkt,

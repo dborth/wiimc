@@ -158,10 +158,12 @@ typedef struct SnowContext{
     unsigned me_cache_generation;
     slice_buffer sb;
     int memc_only;
+    int no_bitstream;
 
     MpegEncContext m; // needed for motion estimation, should not be used for anything else, the idea is to eventually make the motion estimation independent of MpegEncContext, so this will be removed then (FIXME/XXX)
 
     uint8_t *scratchbuf;
+    int *runs;
 }SnowContext;
 
 /* Tables */

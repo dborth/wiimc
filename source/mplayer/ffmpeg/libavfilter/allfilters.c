@@ -55,7 +55,8 @@ void avfilter_register_all(void)
     REGISTER_FILTER (ABUFFERSINK, abuffersink, asink);
     REGISTER_FILTER (ANULLSINK,   anullsink,   asink);
 
-    REGISTER_FILTER (ASS,         ass,  vf);
+    REGISTER_FILTER (ASS,         ass,         vf);
+    REGISTER_FILTER (BBOX,        bbox,        vf);
     REGISTER_FILTER (BLACKDETECT, blackdetect, vf);
     REGISTER_FILTER (BLACKFRAME,  blackframe,  vf);
     REGISTER_FILTER (BOXBLUR,     boxblur,     vf);
@@ -97,6 +98,7 @@ void avfilter_register_all(void)
     REGISTER_FILTER (SPLIT,       split,       vf);
     REGISTER_FILTER (SWAPUV,      swapuv,      vf);
     REGISTER_FILTER (THUMBNAIL,   thumbnail,   vf);
+    REGISTER_FILTER (TILE,        tile,        vf);
     REGISTER_FILTER (TINTERLACE,  tinterlace,  vf);
     REGISTER_FILTER (TRANSPOSE,   transpose,   vf);
     REGISTER_FILTER (UNSHARP,     unsharp,     vf);

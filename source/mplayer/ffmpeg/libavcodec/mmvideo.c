@@ -85,8 +85,8 @@ static int mm_decode_pal(MmContext *s)
  */
 static int mm_decode_intra(MmContext * s, int half_horiz, int half_vert)
 {
-    int i, x, y;
-    i=0; x=0; y=0;
+    int x, y;
+    x=0; y=0;
 
     while (bytestream2_get_bytes_left(&s->gb) > 0) {
         int run_length, color;
@@ -127,7 +127,7 @@ static int mm_decode_intra(MmContext * s, int half_horiz, int half_vert)
  */
 static int mm_decode_inter(MmContext * s, int half_horiz, int half_vert)
 {
-    int data_off = bytestream2_get_le16(&s->gb), y;
+    int data_off = bytestream2_get_le16(&s->gb), y = 0;
     GetByteContext data_ptr;
 
     if (bytestream2_get_bytes_left(&s->gb) < data_off)

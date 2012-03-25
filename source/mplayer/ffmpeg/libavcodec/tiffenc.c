@@ -29,6 +29,7 @@
 #include "libavutil/opt.h"
 
 #include "avcodec.h"
+#include "internal.h"
 #if CONFIG_ZLIB
 #include <zlib.h>
 #endif
@@ -303,12 +304,9 @@ static int encode_frame(AVCodecContext * avctx, AVPacket *pkt,
 
     strips = (s->height - 1) / s->rps + 1;
 
-    if (!pkt->data &&
-        (ret = av_new_packet(pkt, avctx->width * avctx->height * s->bpp * 2 +
-                                  avctx->height * 4 + FF_MIN_BUFFER_SIZE)) < 0) {
-        av_log(avctx, AV_LOG_ERROR, "Error getting output packet.\n");
+    if ((ret = ff_alloc_packet2(avctx, pkt, avctx->width * avctx->height * s->bpp * 2 +
+                                  avctx->height * 4 + FF_MIN_BUFFER_SIZE)) < 0)
         return ret;
-    }
     ptr          = pkt->data;
     s->buf_start = pkt->data;
     s->buf       = &ptr;
@@ -463,7 +461,7 @@ fail:
     av_free(strip_sizes);
     av_free(strip_offsets);
     av_free(yuv_line);
-    return ret;
+    return ret < 0 ? ret : 0;
 }
 
 #define OFFSET(x) offsetof(TiffEncoderContext, x)

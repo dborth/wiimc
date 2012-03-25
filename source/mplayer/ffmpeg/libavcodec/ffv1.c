@@ -26,6 +26,7 @@
  */
 
 #include "avcodec.h"
+#include "internal.h"
 #include "get_bits.h"
 #include "put_bits.h"
 #include "dsputil.h"
@@ -936,6 +937,10 @@ static av_cold int encode_init(AVCodecContext *avctx)
     if (s->transparency) {
         av_log(avctx, AV_LOG_WARNING, "Storing alpha plane, this will require a recent FFV1 decoder to playback!\n");
     }
+    if (avctx->context_model > 1U) {
+        av_log(avctx, AV_LOG_ERROR, "Invalid context model %d, valid values are 0 and 1\n", avctx->context_model);
+        return AVERROR(EINVAL);
+    }
 
     for(i=0; i<256; i++){
         s->quant_table_count=2;
@@ -1149,12 +1154,9 @@ static int encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     uint8_t *buf_p;
     int i, ret;
 
-    if (!pkt->data &&
-        (ret = av_new_packet(pkt, avctx->width*avctx->height*((8*2+1+1)*4)/8
-                                  + FF_MIN_BUFFER_SIZE)) < 0) {
-        av_log(avctx, AV_LOG_ERROR, "Error getting output packet.\n");
+    if ((ret = ff_alloc_packet2(avctx, pkt, avctx->width*avctx->height*((8*2+1+1)*4)/8
+                                  + FF_MIN_BUFFER_SIZE)) < 0)
         return ret;
-    }
 
     ff_init_range_encoder(c, pkt->data, pkt->size);
     ff_build_rac_states(c, 0.05*(1LL<<32), 256-8);

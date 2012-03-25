@@ -56,6 +56,7 @@
 #define MAX_TIMEOUTS READ_PACKET_TIMEOUT_S * 1000 / POLL_TIMEOUT_MS
 #define SDP_MAX_SIZE 16384
 #define RECVBUF_SIZE 10 * RTP_MAX_PACKET_LENGTH
+#define DEFAULT_REORDERING_DELAY 100000
 
 #define OFFSET(x) offsetof(RTSPState, x)
 #define DEC AV_OPT_FLAG_DECODING_PARAM
@@ -1005,7 +1006,7 @@ start:
             av_freep(content_ptr);
         /* If method is set, this is called from ff_rtsp_send_cmd,
          * where a reply to exactly this request is awaited. For
-         * callers from within packet reciving, we just want to
+         * callers from within packet receiving, we just want to
          * return to the caller and go back to receiving packets. */
         if (method)
             goto start;
@@ -1122,7 +1123,7 @@ int ff_rtsp_send_cmd_with_content(AVFormatContext *s,
 {
     RTSPState *rt = s->priv_data;
     HTTPAuthType cur_auth_type;
-    int ret;
+    int ret, attempts = 0;
 
 retry:
     cur_auth_type = rt->auth_state.auth_type;
@@ -1133,9 +1134,11 @@ retry:
 
     if ((ret = ff_rtsp_read_reply(s, reply, content_ptr, 0, method) ) < 0)
         return ret;
+    attempts++;
 
-    if (reply->status_code == 401 && cur_auth_type == HTTP_AUTH_NONE &&
-        rt->auth_state.auth_type != HTTP_AUTH_NONE)
+    if (reply->status_code == 401 &&
+        (cur_auth_type == HTTP_AUTH_NONE || rt->auth_state.stale) &&
+        rt->auth_state.auth_type != HTTP_AUTH_NONE && attempts < 2)
         goto retry;
 
     if (reply->status_code > 400){
@@ -1418,6 +1421,9 @@ int ff_rtsp_connect(AVFormatContext *s)
 
     if (!ff_network_init())
         return AVERROR(EIO);
+
+    if (s->max_delay < 0) /* Not set by the caller */
+        s->max_delay = s->iformat ? DEFAULT_REORDERING_DELAY : 0;
 
     rt->control_transport = RTSP_MODE_PLAIN;
     if (rt->lower_transport_mask & (1 << RTSP_LOWER_TRANSPORT_HTTP)) {
@@ -1859,6 +1865,9 @@ static int sdp_read_header(AVFormatContext *s)
     if (!ff_network_init())
         return AVERROR(EIO);
 
+    if (s->max_delay < 0) /* Not set by the caller */
+        s->max_delay = DEFAULT_REORDERING_DELAY;
+
     /* read the whole sdp file */
     /* XXX: better loading */
     content = av_malloc(SDP_MAX_SIZE);
@@ -1922,7 +1931,7 @@ AVInputFormat ff_sdp_demuxer = {
     .read_header    = sdp_read_header,
     .read_packet    = ff_rtsp_fetch_packet,
     .read_close     = sdp_read_close,
-    .priv_class     = &sdp_demuxer_class
+    .priv_class     = &sdp_demuxer_class,
 };
 #endif /* CONFIG_SDP_DEMUXER */
 
@@ -2040,7 +2049,7 @@ AVInputFormat ff_rtp_demuxer = {
     .read_header    = rtp_read_header,
     .read_packet    = ff_rtsp_fetch_packet,
     .read_close     = sdp_read_close,
-    .flags = AVFMT_NOFILE,
-    .priv_class     = &rtp_demuxer_class
+    .flags          = AVFMT_NOFILE,
+    .priv_class     = &rtp_demuxer_class,
 };
 #endif /* CONFIG_RTP_DEMUXER */

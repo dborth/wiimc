@@ -419,8 +419,8 @@ static int decode_cell_data(Cell *cell, uint8_t *block, uint8_t *ref_block,
     blk_row_offset = (row_offset << (2 + v_zoom)) - (cell->width << 2);
     line_offset    = v_zoom ? row_offset : 0;
 
-    for (y = 0; y < cell->height; is_first_row = 0, y += 1 + v_zoom) {
-        for (x = 0; x < cell->width; x += 1 + h_zoom) {
+    for (y = 0; y + v_zoom < cell->height; is_first_row = 0, y += 1 + v_zoom) {
+        for (x = 0; x + h_zoom < cell->width; x += 1 + h_zoom) {
             ref = ref_block;
             dst = block;
 
@@ -729,6 +729,7 @@ static int parse_bintree(Indeo3DecodeContext *ctx, AVCodecContext *avctx,
 {
     Cell    curr_cell;
     int     bytes_used;
+    int mv_x, mv_y;
 
     if (depth <= 0) {
         av_log(avctx, AV_LOG_ERROR, "Stack overflow (corrupted binary tree)!\n");
@@ -779,6 +780,17 @@ static int parse_bintree(Indeo3DecodeContext *ctx, AVCodecContext *avctx,
                 CHECK_CELL
                 if (!curr_cell.mv_ptr)
                     return AVERROR_INVALIDDATA;
+
+                mv_y = curr_cell.mv_ptr[0];
+                mv_x = curr_cell.mv_ptr[1];
+                if (   mv_x + 4*curr_cell.xpos < 0
+                    || mv_y + 4*curr_cell.ypos < 0
+                    || mv_x + 4*curr_cell.xpos + 4*curr_cell.width  > plane->width
+                    || mv_y + 4*curr_cell.ypos + 4*curr_cell.height > plane->height) {
+                    av_log(avctx, AV_LOG_ERROR, "motion vector %d %d outside reference\n", mv_x + 4*curr_cell.xpos, mv_y + 4*curr_cell.ypos);
+                    return AVERROR_INVALIDDATA;
+                }
+
                 copy_cell(ctx, plane, &curr_cell);
                 return 0;
             }

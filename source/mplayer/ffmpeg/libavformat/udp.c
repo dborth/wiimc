@@ -59,6 +59,7 @@ typedef struct {
     int is_multicast;
     int local_port;
     int reuse_socket;
+    int overrun_nonfatal;
     struct sockaddr_storage dest_addr;
     int dest_addr_len;
     int is_connected;
@@ -72,7 +73,6 @@ typedef struct {
     pthread_mutex_t mutex;
     pthread_cond_t cond;
     int thread_started;
-    volatile int exit_thread;
 #endif
     uint8_t tmp[UDP_MAX_PKT_SIZE+4];
     int remaining_in_dg;
@@ -260,6 +260,7 @@ static int udp_port(struct sockaddr_storage *addr, int addr_len)
  *         'localport=n' : set the local port
  *         'pkt_size=n'  : set max packet size
  *         'reuse=1'     : enable reusing the socket
+ *         'overrun_nonfatal=1': survive in case of circular buffer overrun
  *
  * @param h media file context
  * @param uri of the remote server
@@ -326,62 +327,50 @@ static void *circular_buffer_task( void *_URLContext)
 {
     URLContext *h = _URLContext;
     UDPContext *s = h->priv_data;
-    fd_set rfds;
-    struct timeval tv;
+    int old_cancelstate;
 
-    while(!s->exit_thread) {
-        int left;
-        int ret;
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancelstate);
+    ff_socket_nonblock(s->udp_fd, 0);
+    pthread_mutex_lock(&s->mutex);
+    while(1) {
         int len;
 
-        if (ff_check_interrupt(&h->interrupt_callback)) {
-            s->circular_buffer_error = AVERROR(EINTR);
-            goto end;
-        }
-
-        FD_ZERO(&rfds);
-        FD_SET(s->udp_fd, &rfds);
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
-        ret = select(s->udp_fd + 1, &rfds, NULL, NULL, &tv);
-        if (ret < 0) {
-            if (ff_neterrno() == AVERROR(EINTR))
-                continue;
-            s->circular_buffer_error = AVERROR(EIO);
-            goto end;
-        }
-
-        if (!(ret > 0 && FD_ISSET(s->udp_fd, &rfds)))
-            continue;
-
-        /* How much do we have left to the end of the buffer */
-        /* Whats the minimum we can read so that we dont comletely fill the buffer */
-        left = av_fifo_space(s->fifo);
-
-        /* No Space left, error, what do we do now */
-        if(left < UDP_MAX_PKT_SIZE + 4) {
-            av_log(h, AV_LOG_ERROR, "circular_buffer: OVERRUN\n");
-            s->circular_buffer_error = AVERROR(EIO);
-            goto end;
-        }
-        left = FFMIN(left, s->fifo->end - s->fifo->wptr);
+        pthread_mutex_unlock(&s->mutex);
+        /* Blocking operations are always cancellation points;
+           see "General Information" / "Thread Cancelation Overview"
+           in Single Unix. */
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_cancelstate);
         len = recv(s->udp_fd, s->tmp+4, sizeof(s->tmp)-4, 0);
+        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancelstate);
+        pthread_mutex_lock(&s->mutex);
         if (len < 0) {
             if (ff_neterrno() != AVERROR(EAGAIN) && ff_neterrno() != AVERROR(EINTR)) {
-                s->circular_buffer_error = AVERROR(EIO);
+                s->circular_buffer_error = ff_neterrno();
                 goto end;
             }
             continue;
         }
         AV_WL32(s->tmp, len);
-        pthread_mutex_lock(&s->mutex);
+
+        if(av_fifo_space(s->fifo) < len + 4) {
+            /* No Space left */
+            if (s->overrun_nonfatal) {
+                av_log(h, AV_LOG_WARNING, "Circular buffer overrun. "
+                        "Surviving due to overrun_nonfatal option\n");
+                continue;
+            } else {
+                av_log(h, AV_LOG_ERROR, "Circular buffer overrun. "
+                        "To avoid, increase fifo_size URL option. "
+                        "To survive in such case, use overrun_nonfatal option\n");
+                s->circular_buffer_error = AVERROR(EIO);
+                goto end;
+            }
+        }
         av_fifo_generic_write(s->fifo, s->tmp, len+4, NULL);
         pthread_cond_signal(&s->cond);
-        pthread_mutex_unlock(&s->mutex);
     }
 
 end:
-    pthread_mutex_lock(&s->mutex);
     pthread_cond_signal(&s->cond);
     pthread_mutex_unlock(&s->mutex);
     return NULL;
@@ -421,6 +410,13 @@ static int udp_open(URLContext *h, const char *uri, int flags)
             if (buf == endptr)
                 s->reuse_socket = 1;
             reuse_specified = 1;
+        }
+        if (av_find_info_tag(buf, sizeof(buf), "overrun_nonfatal", p)) {
+            char *endptr = NULL;
+            s->overrun_nonfatal = strtol(buf, &endptr, 10);
+            /* assume if no digits were found it is a request to enable it */
+            if (buf == endptr)
+                s->overrun_nonfatal = 1;
         }
         if (av_find_info_tag(buf, sizeof(buf), "ttl", p)) {
             s->ttl = strtol(buf, NULL, 10);
@@ -574,7 +570,7 @@ static int udp_read(URLContext *h, uint8_t *buf, int size)
 {
     UDPContext *s = h->priv_data;
     int ret;
-    int avail;
+    int avail, nonblock = h->flags & AVIO_FLAG_NONBLOCK;
 
 #if HAVE_PTHREADS
     if (s->fifo) {
@@ -583,7 +579,6 @@ static int udp_read(URLContext *h, uint8_t *buf, int size)
             avail = av_fifo_size(s->fifo);
             if (avail) { // >=size) {
                 uint8_t tmp[4];
-                pthread_mutex_unlock(&s->mutex);
 
                 av_fifo_generic_read(s->fifo, tmp, 4, NULL);
                 avail= AV_RL32(tmp);
@@ -594,16 +589,25 @@ static int udp_read(URLContext *h, uint8_t *buf, int size)
 
                 av_fifo_generic_read(s->fifo, buf, avail, NULL);
                 av_fifo_drain(s->fifo, AV_RL32(tmp) - avail);
+                pthread_mutex_unlock(&s->mutex);
                 return avail;
             } else if(s->circular_buffer_error){
+                int err = s->circular_buffer_error;
                 pthread_mutex_unlock(&s->mutex);
-                return s->circular_buffer_error;
-            } else if(h->flags & AVIO_FLAG_NONBLOCK) {
+                return err;
+            } else if(nonblock) {
                 pthread_mutex_unlock(&s->mutex);
                 return AVERROR(EAGAIN);
             }
             else {
-                pthread_cond_wait(&s->cond, &s->mutex);
+                /* FIXME: using the monotonic clock would be better,
+                   but it does not exist on all supported platforms. */
+                int64_t t = av_gettime() + 100000;
+                struct timespec tv = { .tv_sec  =  t / 1000000,
+                                       .tv_nsec = (t % 1000000) * 1000 };
+                if (pthread_cond_timedwait(&s->cond, &s->mutex, &tv) < 0)
+                    return AVERROR(errno == ETIMEDOUT ? EAGAIN : errno);
+                nonblock = 1;
             }
         } while( 1);
     }
@@ -651,7 +655,7 @@ static int udp_close(URLContext *h)
     av_fifo_free(s->fifo);
 #if HAVE_PTHREADS
     if (s->thread_started) {
-        s->exit_thread = 1;
+        pthread_cancel(s->circular_buffer_thread);
         ret = pthread_join(s->circular_buffer_thread, NULL);
         if (ret != 0)
             av_log(h, AV_LOG_ERROR, "pthread_join(): %s\n", strerror(ret));

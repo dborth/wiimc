@@ -130,7 +130,7 @@ typedef struct Picture{
     int ref_poc[2][2][32];      ///< h264 POCs of the frames/fields used as reference (FIXME need per slice)
     int ref_count[2][2];        ///< number of entries in ref_poc              (FIXME need per slice)
     int mbaff;                  ///< h264 1 -> MBAFF frame 0-> not MBAFF
-    int field_picture;          ///< whether or not the picture was encoded in seperate fields
+    int field_picture;          ///< whether or not the picture was encoded in separate fields
     int sync;                   ///< has been decoded after a keyframe
 
     int mb_var_sum;             ///< sum of MB variance for current frame
@@ -750,7 +750,7 @@ void ff_MPV_frame_end(MpegEncContext *s);
 int ff_MPV_encode_init(AVCodecContext *avctx);
 int ff_MPV_encode_end(AVCodecContext *avctx);
 int ff_MPV_encode_picture(AVCodecContext *avctx, AVPacket *pkt,
-                          const AVFrame *frame, int *got_packet);
+                          AVFrame *frame, int *got_packet);
 void ff_MPV_common_init_mmx(MpegEncContext *s);
 void ff_MPV_common_init_axp(MpegEncContext *s);
 void ff_MPV_common_init_mmi(MpegEncContext *s);

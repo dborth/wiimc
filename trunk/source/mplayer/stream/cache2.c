@@ -385,7 +385,7 @@ static int cache_execute_control(cache_vars_t *s) {
       s->control_res = STREAM_UNSUPPORTED;
       break;
   }
-  if (needs_flush) {
+  if (s->control_res == STREAM_OK && needs_flush) {
     s->read_filepos = s->stream->pos;
     s->eof = s->stream->eof;
     cache_flush(s);

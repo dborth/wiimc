@@ -28,6 +28,7 @@
 #include <xvid.h>
 #include <unistd.h>
 #include "avcodec.h"
+#include "internal.h"
 #include "libavutil/file.h"
 #include "libavutil/cpu.h"
 #include "libavutil/intreadwrite.h"
@@ -384,11 +385,8 @@ static int xvid_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     xvid_enc_frame_t xvid_enc_frame;
     xvid_enc_stats_t xvid_enc_stats;
 
-    if (!user_packet &&
-        (ret = av_new_packet(pkt, mb_width*mb_height*MAX_MB_BYTES + FF_MIN_BUFFER_SIZE)) < 0) {
-        av_log(avctx, AV_LOG_ERROR, "Error getting output packet.\n");
+    if ((ret = ff_alloc_packet2(avctx, pkt, mb_width*mb_height*MAX_MB_BYTES + FF_MIN_BUFFER_SIZE)) < 0)
         return ret;
-    }
 
     /* Start setting up the frame */
     memset(&xvid_enc_frame, 0, sizeof(xvid_enc_frame));

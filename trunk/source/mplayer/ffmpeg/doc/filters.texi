@@ -753,13 +753,34 @@ using the libass library.
 To enable compilation of this filter you need to configure FFmpeg with
 @code{--enable-libass}.
 
-This filter accepts in input the name of the ass file to render.
+This filter accepts the syntax: @var{ass_filename}[:@var{options}],
+where @var{ass_filename} is the filename of the ASS file to read, and
+@var{options} is an optional sequence of @var{key}=@var{value} pairs,
+separated by ":".
+
+A description of the accepted options follows.
+
+@table @option
+@item dar
+Specifies the display aspect ratio adopted for rendering the
+subtitles. Default value is "1.0".
+@end table
 
 For example, to render the file @file{sub.ass} on top of the input
 video, use the command:
 @example
 ass=sub.ass
 @end example
+
+@section bbox
+
+Compute the bounding box for the non-black pixels in the input frame
+luminance plane.
+
+This filter computes the bounding box containing all the pixels with a
+luminance value greater than the minimum allowed value.
+The parameters describing the bounding box are printed on the filter
+log.
 
 @section blackdetect
 
@@ -903,9 +924,14 @@ testing purposes.
 
 @section crop
 
-Crop the input video to @var{out_w}:@var{out_h}:@var{x}:@var{y}.
+Crop the input video to @var{out_w}:@var{out_h}:@var{x}:@var{y}:@var{keep_aspect}
 
-The parameters are expressions containing the following constants:
+The @var{keep_aspect} parameter is optional, if specified and set to a
+non-zero value will force the output display aspect ratio to be the
+same of the input, by changing the output sample aspect ratio.
+
+The @var{out_w}, @var{out_h}, @var{x}, @var{y} parameters are
+expressions containing the following constants:
 
 @table @option
 @item x, y
@@ -2197,6 +2223,9 @@ can be used to test the monowhite pixel format descriptor definition.
 
 Scale the input video to @var{width}:@var{height}[:@var{interl}=@{1|-1@}] and/or convert the image format.
 
+The scale filter forces the output display aspect ratio to be the same
+of the input, by changing the output sample aspect ratio.
+
 The parameters @var{width} and @var{height} are expressions containing
 the following constants:
 
@@ -2653,6 +2682,22 @@ Complete example of a thumbnail creation with @command{ffmpeg}:
 ffmpeg -i in.avi -vf thumbnail,scale=300:200 -frames:v 1 out.png
 @end example
 
+@section tile
+
+Tile several successive frames together.
+
+It accepts as argument the tile size (i.e. the number of lines and columns)
+in the form "@var{w}x@var{h}".
+
+For example, produce 8×8 PNG tiles of all keyframes (@option{-skip_frame
+nokey}) in a movie:
+@example
+ffmpeg -skip_frame nokey -i file.avi -vf 'scale=128:72,tile=8x8' -an -vsync 0 keyframes%03d.png
+@end example
+The @option{-vsync 0} is necessary to prevent @command{ffmpeg} from
+duplicating each output frame to accomodate the originally detected frame
+rate.
+
 @section tinterlace
 
 Perform various types of temporal field interlacing.
@@ -3086,6 +3131,13 @@ Specifies the index of the video stream to read. If the value is -1,
 the best suited video stream will be automatically selected. Default
 value is "-1".
 
+@item loop
+Specifies how many times to read the video stream in sequence.
+If the value is less than 1, the stream will be read again and again.
+Default value is "1".
+
+Note that when the movie is looped the source timestamps are not
+changed, so it will generate non monotonically increasing timestamps.
 @end table
 
 This filter allows to overlay a second video on top of main input of

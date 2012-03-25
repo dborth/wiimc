@@ -48,6 +48,7 @@ OBJS-$(CONFIG_ABUFFERSINK_FILTER)            += sink_buffer.o
 OBJS-$(CONFIG_ANULLSINK_FILTER)              += asink_anullsink.o
 
 OBJS-$(CONFIG_ASS_FILTER)                    += vf_ass.o
+OBJS-$(CONFIG_BBOX_FILTER)                   += bbox.o vf_bbox.o
 OBJS-$(CONFIG_BLACKDETECT_FILTER)            += vf_blackdetect.o
 OBJS-$(CONFIG_BLACKFRAME_FILTER)             += vf_blackframe.o
 OBJS-$(CONFIG_BOXBLUR_FILTER)                += vf_boxblur.o
@@ -89,6 +90,7 @@ OBJS-$(CONFIG_SLICIFY_FILTER)                += vf_slicify.o
 OBJS-$(CONFIG_SPLIT_FILTER)                  += vf_split.o
 OBJS-$(CONFIG_SWAPUV_FILTER)                 += vf_swapuv.o
 OBJS-$(CONFIG_THUMBNAIL_FILTER)              += vf_thumbnail.o
+OBJS-$(CONFIG_TILE_FILTER)                   += vf_tile.o
 OBJS-$(CONFIG_TINTERLACE_FILTER)             += vf_tinterlace.o
 OBJS-$(CONFIG_TRANSPOSE_FILTER)              += vf_transpose.o
 OBJS-$(CONFIG_UNSHARP_FILTER)                += vf_unsharp.o
@@ -168,6 +170,6 @@ OBJS-$(CONFIG_MP_FILTER) += libmpcodecs/pullup.o
 
 DIRS = x86 libmpcodecs
 
-TESTPROGS = formats
+TESTPROGS = drawutils formats
 
 TOOLS = graph2dot lavfi-showfiltfmts

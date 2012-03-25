@@ -227,6 +227,11 @@ do_video_encoding ffv1.avi "-strict -2 -an -vcodec ffv1"
 do_video_decoding
 fi
 
+if [ -n "$do_ffvhuff" ] ; then
+do_video_encoding ffvhuff.avi "-an -vcodec ffvhuff"
+do_video_decoding ""
+fi
+
 if [ -n "$do_snow" ] ; then
 do_video_encoding snow.avi "-strict -2 -an -vcodec snow -qscale 2 -flags +qpel -me_method iter -dia_size 2 -cmp 12 -subcmp 12 -s 128x64"
 do_video_decoding "" "-s 352x288"
@@ -432,17 +437,6 @@ fi
 if [ -n "$do_flac" ] ; then
 do_audio_encoding flac.flac "-acodec flac -compression_level 2"
 do_audio_decoding
-fi
-
-if [ -n "$do_wmav1" ] ; then
-do_audio_encoding wmav1.asf "-acodec wmav1"
-do_avconv_nomd5 $pcm_dst $DEC_OPTS -i $target_path/$file -f wav
-$tiny_psnr $pcm_dst $pcm_ref 2 8192
-fi
-if [ -n "$do_wmav2" ] ; then
-do_audio_encoding wmav2.asf "-acodec wmav2"
-do_avconv_nomd5 $pcm_dst $DEC_OPTS -i $target_path/$file -f wav
-$tiny_psnr $pcm_dst $pcm_ref 2 8192
 fi
 
 #if [ -n "$do_vorbis" ] ; then

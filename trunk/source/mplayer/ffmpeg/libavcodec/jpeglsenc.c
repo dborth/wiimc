@@ -250,11 +250,9 @@ static int encode_picture_ls(AVCodecContext *avctx, AVPacket *pkt,
     else
         comps = 3;
 
-    if ((ret = ff_alloc_packet(pkt, avctx->width*avctx->height*comps*4 +
-                                    FF_MIN_BUFFER_SIZE)) < 0) {
-        av_log(avctx, AV_LOG_ERROR, "Error getting output packet.\n");
+    if ((ret = ff_alloc_packet2(avctx, pkt, avctx->width*avctx->height*comps*4 +
+                                    FF_MIN_BUFFER_SIZE)) < 0)
         return ret;
-    }
 
     buf2 = av_malloc(pkt->size);
 
@@ -295,7 +293,9 @@ static int encode_picture_ls(AVCodecContext *avctx, AVPacket *pkt,
 
     ls_store_lse(state, &pb);
 
-    zero = av_mallocz(p->linesize[0]);
+    zero = av_mallocz(FFABS(p->linesize[0]));
+    if (!zero)
+        return AVERROR(ENOMEM);
     last = zero;
     cur = p->data[0];
     if(avctx->pix_fmt == PIX_FMT_GRAY8){

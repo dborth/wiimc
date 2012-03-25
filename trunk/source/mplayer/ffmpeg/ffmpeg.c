@@ -179,8 +179,8 @@ static int debug_ts = 0;
 
 static uint8_t *audio_buf;
 static unsigned int allocated_audio_buf_size;
-
-static uint8_t *input_tmp= NULL;
+static uint8_t *async_buf;
+static unsigned int allocated_async_buf_size;
 
 #define DEFAULT_PASS_LOGFILENAME_PREFIX "ffmpeg2pass"
 
@@ -868,15 +868,15 @@ void av_noreturn exit_program(int ret)
     av_freep(&output_files);
 
     uninit_opts();
-    av_free(audio_buf);
+    av_freep(&audio_buf);
     allocated_audio_buf_size = 0;
+    av_freep(&async_buf);
+    allocated_async_buf_size = 0;
 
 #if CONFIG_AVFILTER
     avfilter_uninit();
 #endif
     avformat_network_deinit();
-
-    av_freep(&input_tmp);
 
     if (received_sigterm) {
         av_log(NULL, AV_LOG_INFO, "Received signal %d: terminating.\n",
@@ -999,6 +999,10 @@ static void write_frame(AVFormatContext *s, AVPacket *pkt, OutputStream *ost)
     AVCodecContext          *avctx = ost->st->codec;
     int ret;
 
+    if ((avctx->codec_type == AVMEDIA_TYPE_VIDEO && video_sync_method == VSYNC_DROP) ||
+        (avctx->codec_type == AVMEDIA_TYPE_AUDIO && audio_sync_method < 0))
+        pkt->pts = pkt->dts = AV_NOPTS_VALUE;
+
     /*
      * Audio encoders may split the packets --  #frames in != #packets out.
      * But there is no reordering, so we can limit the number of output packets
@@ -1007,8 +1011,10 @@ static void write_frame(AVFormatContext *s, AVPacket *pkt, OutputStream *ost)
      * reordering, see do_video_out()
      */
     if (!(avctx->codec_type == AVMEDIA_TYPE_VIDEO && avctx->codec)) {
-        if (ost->frame_number >= ost->max_frames)
+        if (ost->frame_number >= ost->max_frames) {
+            av_free_packet(pkt);
             return;
+        }
         ost->frame_number++;
     }
 
@@ -1083,6 +1089,7 @@ static int encode_audio_frame(AVFormatContext *s, OutputStream *ost,
             exit_program(1);
         }
 
+        frame->pts = ost->sync_opts;
         ost->sync_opts += frame->nb_samples;
     }
 
@@ -1119,36 +1126,56 @@ static int encode_audio_frame(AVFormatContext *s, OutputStream *ost,
     return ret;
 }
 
+static int alloc_audio_output_buf(AVCodecContext *dec, AVCodecContext *enc,
+                                  int nb_samples)
+{
+    int64_t audio_buf_samples;
+    int audio_buf_size;
+
+    /* calculate required number of samples to allocate */
+    audio_buf_samples = ((int64_t)nb_samples * enc->sample_rate + dec->sample_rate) /
+                        dec->sample_rate;
+    audio_buf_samples = 4 * audio_buf_samples + 10000; // safety factors for resampling
+    audio_buf_samples = FFMAX(audio_buf_samples, enc->frame_size);
+    if (audio_buf_samples > INT_MAX)
+        return AVERROR(EINVAL);
+
+    audio_buf_size = av_samples_get_buffer_size(NULL, enc->channels,
+                                                audio_buf_samples,
+                                                enc->sample_fmt, 32);
+    if (audio_buf_size < 0)
+        return audio_buf_size;
+
+    av_fast_malloc(&audio_buf, &allocated_audio_buf_size, audio_buf_size);
+    if (!audio_buf)
+        return AVERROR(ENOMEM);
+
+    return 0;
+}
+
 static void do_audio_out(AVFormatContext *s, OutputStream *ost,
                          InputStream *ist, AVFrame *decoded_frame)
 {
     uint8_t *buftmp;
-    int64_t audio_buf_size, size_out;
+    int64_t size_out;
 
     int frame_bytes, resample_changed;
     AVCodecContext *enc = ost->st->codec;
     AVCodecContext *dec = ist->st->codec;
     int osize = av_get_bytes_per_sample(enc->sample_fmt);
     int isize = av_get_bytes_per_sample(dec->sample_fmt);
-    uint8_t *buf = decoded_frame->data[0];
+    uint8_t *buf[AV_NUM_DATA_POINTERS];
     int size     = decoded_frame->nb_samples * dec->channels * isize;
-    int64_t allocated_for_size = size;
+    int planes   = av_sample_fmt_is_planar(dec->sample_fmt) ? dec->channels : 1;
+    int i;
 
-need_realloc:
-    audio_buf_size  = (allocated_for_size + isize * dec->channels - 1) / (isize * dec->channels);
-    audio_buf_size  = (audio_buf_size * enc->sample_rate + dec->sample_rate) / dec->sample_rate;
-    audio_buf_size  = audio_buf_size * 2 + 10000; // safety factors for the deprecated resampling API
-    audio_buf_size  = FFMAX(audio_buf_size, enc->frame_size);
-    audio_buf_size *= osize * enc->channels;
+    av_assert0(planes <= AV_NUM_DATA_POINTERS);
 
-    if (audio_buf_size > INT_MAX) {
-        av_log(NULL, AV_LOG_FATAL, "Buffer sizes too large\n");
-        exit_program(1);
-    }
+    for(i=0; i<planes; i++)
+        buf[i]= decoded_frame->data[i];
 
-    av_fast_malloc(&audio_buf, &allocated_audio_buf_size, audio_buf_size);
-    if (!audio_buf) {
-        av_log(NULL, AV_LOG_FATAL, "Out of memory in do_audio_out\n");
+    if (alloc_audio_output_buf(dec, enc, decoded_frame->nb_samples) < 0) {
+        av_log(NULL, AV_LOG_FATAL, "Error allocating audio buffer\n");
         exit_program(1);
     }
 
@@ -1217,7 +1244,7 @@ need_realloc:
 
     av_assert0(ost->audio_resample || dec->sample_fmt==enc->sample_fmt);
 
-    if (audio_sync_method) {
+    if (audio_sync_method > 0) {
         double delta = get_sync_ipts(ost, ist->pts) * enc->sample_rate - ost->sync_opts -
                        av_fifo_size(ost->fifo) / (enc->channels * osize);
         int idelta = delta * dec->sample_rate / enc->sample_rate;
@@ -1229,24 +1256,33 @@ need_realloc:
                 if (byte_delta < 0) {
                     byte_delta = FFMAX(byte_delta, -size);
                     size += byte_delta;
-                    buf  -= byte_delta;
+                    for (i=0; i<planes; i++)
+                        buf[i]  -= byte_delta/planes;
                     av_log(NULL, AV_LOG_VERBOSE, "discarding %d audio samples\n",
                            -byte_delta / (isize * dec->channels));
                     if (!size)
                         return;
                     ist->is_start = 0;
                 } else {
-                    input_tmp = av_realloc(input_tmp, byte_delta + size);
+                    av_fast_malloc(&async_buf, &allocated_async_buf_size,
+                                   byte_delta + size);
+                    if (!async_buf) {
+                        av_log(NULL, AV_LOG_FATAL, "Out of memory in do_audio_out\n");
+                        exit_program(1);
+                    }
 
-                    if (byte_delta > allocated_for_size - size) {
-                        allocated_for_size = byte_delta + (int64_t)size;
-                        goto need_realloc;
+                    if (alloc_audio_output_buf(dec, enc, decoded_frame->nb_samples + idelta) < 0) {
+                        av_log(NULL, AV_LOG_FATAL, "Error allocating audio buffer\n");
+                        exit_program(1);
                     }
                     ist->is_start = 0;
 
-                    generate_silence(input_tmp, dec->sample_fmt, byte_delta);
-                    memcpy(input_tmp + byte_delta, buf, size);
-                    buf = input_tmp;
+                    for (i=0; i<planes; i++) {
+                        uint8_t *t = async_buf + i*((byte_delta + size)/planes);
+                        generate_silence(t, dec->sample_fmt, byte_delta/planes);
+                        memcpy(t + byte_delta/planes, buf[i], size/planes);
+                        buf[i] = t;
+                    }
                     size += byte_delta;
                     av_log(NULL, AV_LOG_VERBOSE, "adding %d audio samples of silence\n", idelta);
                 }
@@ -1265,15 +1301,15 @@ need_realloc:
 
     if (ost->audio_resample || ost->audio_channels_mapped) {
         buftmp = audio_buf;
-        size_out = swr_convert(ost->swr, (      uint8_t*[]){buftmp}, audio_buf_size / (enc->channels * osize),
-                                         (const uint8_t*[]){buf   }, size / (dec->channels * isize));
+        size_out = swr_convert(ost->swr, (      uint8_t*[]){buftmp}, allocated_audio_buf_size / (enc->channels * osize),
+                                         buf, size / (dec->channels * isize));
         if (size_out < 0) {
             av_log(NULL, AV_LOG_FATAL, "swr_convert failed\n");
             exit_program(1);
         }
         size_out = size_out * enc->channels * osize;
     } else {
-        buftmp = buf;
+        buftmp = buf[0];
         size_out = size;
     }
 
@@ -1638,9 +1674,6 @@ static void do_video_out(AVFormatContext *s, OutputStream *ost,
                            av_ts2str(pkt.dts), av_ts2timestr(pkt.dts, &ost->st->time_base));
                 }
 
-                if (format_video_sync == VSYNC_DROP)
-                    pkt.pts = pkt.dts = AV_NOPTS_VALUE;
-
                 write_frame(s, &pkt, ost);
                 frame_size = pkt.size;
                 video_size += pkt.size;
@@ -1992,6 +2025,10 @@ static int transcode_audio(InputStream *ist, AVPacket *pkt, int *got_output)
     if (ret < 0) {
         return ret;
     }
+    if (avctx->sample_rate <= 0) {
+        av_log(avctx, AV_LOG_ERROR, "Sample rate %d invalid\n", avctx->sample_rate);
+        return AVERROR_INVALIDDATA;
+    }
 
     if (!*got_output) {
         /* no audio frame */
@@ -2167,13 +2204,13 @@ static int transcode_video(InputStream *ist, AVPacket *pkt, int *got_output, int
             }
             if (!ist->filtered_frame && !(ist->filtered_frame = avcodec_alloc_frame())) {
                 ret = AVERROR(ENOMEM);
-                goto end;
+                goto fail;
             }
             filtered_frame = ist->filtered_frame;
             *filtered_frame= *decoded_frame; //for me_threshold
             avfilter_fill_frame_from_video_buffer_ref(filtered_frame, ost->picref);
             filtered_frame->pts = av_rescale_q(ost->picref->pts, ist_pts_tb, AV_TIME_BASE_Q);
-            if (ost->picref->video && !ost->frame_aspect_ratio)
+            if (!ost->frame_aspect_ratio)
                 ost->st->codec->sample_aspect_ratio = ost->picref->video->sample_aspect_ratio;
             do_video_out(output_files[ost->file_index].ctx, ost, ist, filtered_frame);
             cont:
@@ -2184,7 +2221,7 @@ static int transcode_video(InputStream *ist, AVPacket *pkt, int *got_output, int
 #endif
     }
 
-end:
+fail:
     av_free(buffer_to_free);
     return ret;
 }
@@ -2651,32 +2688,35 @@ static int transcode_init(OutputFile *output_files, int nb_output_files,
                 break;
             }
             /* two pass mode */
-            if (codec->codec_id != CODEC_ID_H264 &&
-                (codec->flags & (CODEC_FLAG_PASS1 | CODEC_FLAG_PASS2))) {
+            if (codec->flags & (CODEC_FLAG_PASS1 | CODEC_FLAG_PASS2)) {
                 char logfilename[1024];
                 FILE *f;
 
                 snprintf(logfilename, sizeof(logfilename), "%s-%d.log",
                          pass_logfilename_prefix ? pass_logfilename_prefix : DEFAULT_PASS_LOGFILENAME_PREFIX,
                          i);
-                if (codec->flags & CODEC_FLAG_PASS2) {
-                    char  *logbuffer;
-                    size_t logbuffer_size;
-                    if (cmdutils_read_file(logfilename, &logbuffer, &logbuffer_size) < 0) {
-                        av_log(NULL, AV_LOG_FATAL, "Error reading log file '%s' for pass-2 encoding\n",
-                               logfilename);
-                        exit_program(1);
+                if (!strcmp(ost->enc->name, "libx264")) {
+                    av_dict_set(&ost->opts, "stats", logfilename, AV_DICT_DONT_OVERWRITE);
+                } else {
+                    if (codec->flags & CODEC_FLAG_PASS2) {
+                        char  *logbuffer;
+                        size_t logbuffer_size;
+                        if (cmdutils_read_file(logfilename, &logbuffer, &logbuffer_size) < 0) {
+                            av_log(NULL, AV_LOG_FATAL, "Error reading log file '%s' for pass-2 encoding\n",
+                                logfilename);
+                            exit_program(1);
+                        }
+                        codec->stats_in = logbuffer;
                     }
-                    codec->stats_in = logbuffer;
-                }
-                if (codec->flags & CODEC_FLAG_PASS1) {
-                    f = fopen(logfilename, "wb");
-                    if (!f) {
-                        av_log(NULL, AV_LOG_FATAL, "Cannot write log file '%s' for pass-1 encoding: %s\n",
-                               logfilename, strerror(errno));
-                        exit_program(1);
+                    if (codec->flags & CODEC_FLAG_PASS1) {
+                        f = fopen(logfilename, "wb");
+                        if (!f) {
+                            av_log(NULL, AV_LOG_FATAL, "Cannot write log file '%s' for pass-1 encoding: %s\n",
+                                logfilename, strerror(errno));
+                            exit_program(1);
+                        }
+                        ost->logfile = f;
                     }
-                    ost->logfile = f;
                 }
             }
         }
@@ -3409,6 +3449,16 @@ static int copy_metadata(char *outspec, char *inspec, AVFormatContext *oc, AVFor
 
     parse_meta_type(inspec,  &type_in,  &idx_in,  &istream_spec);
     parse_meta_type(outspec, &type_out, &idx_out, &ostream_spec);
+
+    if (!ic) {
+        if (type_out == 'g' || !*outspec)
+            o->metadata_global_manual = 1;
+        if (type_out == 's' || !*outspec)
+            o->metadata_streams_manual = 1;
+        if (type_out == 'c' || !*outspec)
+            o->metadata_chapters_manual = 1;
+        return 0;
+    }
 
     if (type_in == 'g' || type_out == 'g')
         o->metadata_global_manual = 1;
@@ -4497,13 +4547,11 @@ static void opt_output_file(void *optctx, const char *filename)
         char *p;
         int in_file_index = strtol(o->metadata_map[i].u.str, &p, 0);
 
-        if (in_file_index < 0)
-            continue;
         if (in_file_index >= nb_input_files) {
             av_log(NULL, AV_LOG_FATAL, "Invalid input file index %d while processing metadata maps\n", in_file_index);
             exit_program(1);
         }
-        copy_metadata(o->metadata_map[i].specifier, *p ? p + 1 : p, oc, input_files[in_file_index].ctx, o);
+        copy_metadata(o->metadata_map[i].specifier, *p ? p + 1 : p, oc, in_file_index >= 0 ? input_files[in_file_index].ctx : NULL, o);
     }
 
     /* copy chapters */
@@ -5043,7 +5091,7 @@ static const OptionDef options[] = {
     { "padleft", HAS_ARG | OPT_VIDEO, {(void*)opt_pad}, "Removed, use the pad filter instead", "size" },
     { "padright", HAS_ARG | OPT_VIDEO, {(void*)opt_pad}, "Removed, use the pad filter instead", "size" },
     { "padcolor", HAS_ARG | OPT_VIDEO, {(void*)opt_pad}, "Removed, use the pad filter instead", "color" },
-    { "intra", OPT_BOOL | OPT_EXPERT | OPT_VIDEO, {(void*)&intra_only}, "use only intra frames"},
+    { "intra", OPT_BOOL | OPT_EXPERT | OPT_VIDEO, {(void*)&intra_only}, "deprecated use -g 1"},
     { "vn", OPT_BOOL | OPT_VIDEO | OPT_OFFSET, {.off = OFFSET(video_disable)}, "disable video" },
     { "vdt", OPT_INT | HAS_ARG | OPT_EXPERT | OPT_VIDEO, {(void*)&video_discard}, "discard threshold", "n" },
     { "rc_override", HAS_ARG | OPT_EXPERT | OPT_VIDEO | OPT_STRING | OPT_SPEC, {.off = OFFSET(rc_overrides)}, "rate control override for specific intervals", "override" },

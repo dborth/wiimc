@@ -96,11 +96,9 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 					-L$(LIBOGC_LIB) \
 				-L$(MPLAYER)/ \
-				-L$(MPLAYER)/ffmpeg/libavcore \
 				-L$(MPLAYER)/ffmpeg/libavcodec \
 				-L$(MPLAYER)/ffmpeg/libavformat \
 				-L$(MPLAYER)/ffmpeg/libavutil \
-				-L$(MPLAYER)/ffmpeg/libpostproc \
 				-L$(MPLAYER)/ffmpeg/libswscale 
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)

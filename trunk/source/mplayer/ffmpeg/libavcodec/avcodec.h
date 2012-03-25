@@ -80,7 +80,7 @@
  * If you add a codec ID to this list, add it so that
  * 1. no value of a existing codec ID changes (that would break ABI),
  * 2. Give it a value which when taken as ASCII is recognized uniquely by a human as this specific codec.
- *    This ensures that 2 forks can independantly add CodecIDs without producing conflicts.
+ *    This ensures that 2 forks can independently add CodecIDs without producing conflicts.
  */
 enum CodecID {
     CODEC_ID_NONE,
@@ -247,6 +247,8 @@ enum CodecID {
     CODEC_ID_V410,
     CODEC_ID_XWD,
     CODEC_ID_CDXL,
+    CODEC_ID_XBM,
+    CODEC_ID_ZEROCODEC,
     CODEC_ID_Y41P       = MKBETAG('Y','4','1','P'),
     CODEC_ID_ESCAPE130  = MKBETAG('E','1','3','0'),
     CODEC_ID_AVRP       = MKBETAG('A','V','R','P'),
@@ -393,8 +395,9 @@ enum CodecID {
     CODEC_ID_8SVX_EXP,
     CODEC_ID_8SVX_FIB,
     CODEC_ID_BMV_AUDIO,
+    CODEC_ID_RALF,
     CODEC_ID_FFWAVESYNTH = MKBETAG('F','F','W','S'),
-    CODEC_ID_8SVX_RAW   = MKBETAG('8','S','V','X'),
+    CODEC_ID_8SVX_RAW    = MKBETAG('8','S','V','X'),
     CODEC_ID_SONIC       = MKBETAG('S','O','N','C'),
     CODEC_ID_SONIC_LS    = MKBETAG('S','O','N','L'),
 

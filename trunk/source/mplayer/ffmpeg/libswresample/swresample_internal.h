@@ -32,7 +32,7 @@ typedef struct AudioData{
     int planar;                 ///< 1 if planar audio, 0 otherwise
 } AudioData;
 
-typedef struct SwrContext {
+struct SwrContext {
     const AVClass *av_class;                        ///< AVClass used for AVOption and av_log()
     int log_level_offset;                           ///< logging level offset
     void *log_ctx;                                  ///< parent logging context
@@ -64,6 +64,7 @@ typedef struct SwrContext {
     int in_buffer_index;                            ///< cached buffer position
     int in_buffer_count;                            ///< cached buffer length
     int resample_in_constraint;                     ///< 1 if the input end was reach before the output end, 0 otherwise
+    int flushed;                                    ///< 1 if data is to be flushed and no further input is expected
 
     struct AudioConvert *in_convert;                ///< input conversion context
     struct AudioConvert *out_convert;               ///< output conversion context
@@ -75,7 +76,7 @@ typedef struct SwrContext {
     uint8_t matrix_ch[SWR_CH_MAX][SWR_CH_MAX+1];    ///< Lists of input channels per output channel that have non zero rematrixing coefficients
 
     /* TODO: callbacks for ASM optimizations */
-}SwrContext;
+};
 
 struct ResampleContext *swri_resample_init(struct ResampleContext *, int out_rate, int in_rate, int filter_size, int phase_shift, int linear, double cutoff);
 void swri_resample_free(struct ResampleContext **c);

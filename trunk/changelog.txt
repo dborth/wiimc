@@ -6,6 +6,10 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.2.5]
+
+* Synced to MPlayer r34836 and ffmpeg 49891784ce70
+
 [1.2.4 - March 17, 2012]
 
 * Synced to MPlayer r34805 and ffmpeg 8fbf825ecc32

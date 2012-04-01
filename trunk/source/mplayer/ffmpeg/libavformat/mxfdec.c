@@ -1077,7 +1077,7 @@ static int mxf_edit_unit_absolute_offset(MXFContext *mxf, MXFIndexTable *index_t
                 if (s->nb_index_entries == 2 * s->index_duration + 1)
                     index *= 2;     /* Avid index */
 
-                if (index < 0 || index > s->nb_index_entries) {
+                if (index < 0 || index >= s->nb_index_entries) {
                     av_log(mxf->fc, AV_LOG_ERROR, "IndexSID %i segment at %"PRId64" IndexEntryArray too small\n",
                            index_table->index_sid, s->index_start_position);
                     return AVERROR_INVALIDDATA;
@@ -1354,7 +1354,7 @@ static int mxf_parse_structural_metadata(MXFContext *mxf)
         if ((component = mxf_resolve_strong_ref(mxf, &material_track->sequence_ref, TimecodeComponent))) {
             mxf_tc = (MXFTimecodeComponent*)component;
             flags = mxf_tc->drop_frame == 1 ? AV_TIMECODE_FLAG_DROPFRAME : 0;
-            if (av_timecode_init(&tc, mxf_tc->rate, flags, mxf_tc->start_frame, mxf) == 0) {
+            if (av_timecode_init(&tc, mxf_tc->rate, flags, mxf_tc->start_frame, mxf->fc) == 0) {
                 mxf_add_timecode_metadata(&mxf->fc->metadata, "timecode", &tc);
             }
         }
@@ -1371,7 +1371,7 @@ static int mxf_parse_structural_metadata(MXFContext *mxf)
 
             mxf_tc = (MXFTimecodeComponent*)component;
             flags = mxf_tc->drop_frame == 1 ? AV_TIMECODE_FLAG_DROPFRAME : 0;
-            if (av_timecode_init(&tc, mxf_tc->rate, flags, mxf_tc->start_frame, mxf) == 0) {
+            if (av_timecode_init(&tc, mxf_tc->rate, flags, mxf_tc->start_frame, mxf->fc) == 0) {
                 mxf_add_timecode_metadata(&mxf->fc->metadata, "timecode", &tc);
                 break;
             }

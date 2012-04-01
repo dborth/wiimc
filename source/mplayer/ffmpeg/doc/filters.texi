@@ -761,9 +761,10 @@ separated by ":".
 A description of the accepted options follows.
 
 @table @option
-@item dar
-Specifies the display aspect ratio adopted for rendering the
-subtitles. Default value is "1.0".
+@item original_size
+Specifies the size of the original video, the video for which the ASS file
+was composed. Due to a misdesign in ASS aspect ratio arithmetic, this is
+necessary to correctly scale the fonts if the aspect ratio has been changed.
 @end table
 
 For example, to render the file @file{sub.ass} on top of the input
@@ -2280,6 +2281,8 @@ select interlaced aware scaling depending on whether the source frames
 are flagged as interlaced or not
 @end table
 
+Unless @var{interl} is set to one of the above options, interlaced scaling will not be used.
+
 Some examples follow:
 @example
 # scale the input video to a size of 200x100.
@@ -2289,6 +2292,9 @@ scale=200:100
 scale=2*iw:2*ih
 # the above is the same as
 scale=2*in_w:2*in_h
+
+# scale the input to 2x with forced interlaced scaling
+scale=2*iw:2*ih:interl=1
 
 # scale the input to half size
 scale=iw/2:ih/2

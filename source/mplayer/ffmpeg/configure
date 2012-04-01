@@ -118,7 +118,6 @@ Component options:
   --enable-x11grab         enable X11 grabbing [no]
   --disable-network        disable network support [no]
   --disable-dct            disable DCT code
-  --disable-fft            disable FFT code
   --disable-mdct           disable MDCT code
   --disable-rdft           disable RDFT code
   --disable-fft            disable FFT code
@@ -1184,6 +1183,7 @@ HAVE_LIST="
     GetProcessMemoryInfo
     GetProcessTimes
     getrusage
+    glob
     gnu_as
     ibm_asm
     inet_aton
@@ -1266,6 +1266,7 @@ CONFIG_EXTRA="
     h264chroma
     h264dsp
     h264pred
+    h264qpel
     huffman
     lgplv3
     lpc
@@ -1424,7 +1425,7 @@ h263_vaapi_hwaccel_select="vaapi h263_decoder"
 h263i_decoder_select="h263_decoder"
 h263p_encoder_select="h263_encoder"
 h264_crystalhd_decoder_select="crystalhd h264_mp4toannexb_bsf h264_parser"
-h264_decoder_select="golomb h264chroma h264dsp h264pred"
+h264_decoder_select="golomb h264chroma h264dsp h264pred h264qpel"
 h264_dxva2_hwaccel_deps="dxva2api_h"
 h264_dxva2_hwaccel_select="dxva2 h264_decoder"
 h264_vaapi_hwaccel_select="vaapi h264_decoder"
@@ -1481,12 +1482,13 @@ png_encoder_select="zlib"
 qcelp_decoder_select="lsp"
 qdm2_decoder_select="mdct rdft mpegaudiodsp"
 ra_144_encoder_select="lpc"
+ralf_decoder_select="golomb"
 rv10_decoder_select="h263_decoder"
 rv10_encoder_select="h263_encoder"
 rv20_decoder_select="h263_decoder"
 rv20_encoder_select="h263_encoder"
-rv30_decoder_select="golomb h264chroma h264pred"
-rv40_decoder_select="golomb h264chroma h264pred"
+rv30_decoder_select="golomb h264chroma h264pred h264qpel"
+rv40_decoder_select="golomb h264chroma h264pred h264qpel"
 shorten_decoder_select="golomb"
 sipr_decoder_select="lsp"
 snow_decoder_select="dwt"
@@ -1495,7 +1497,7 @@ sonic_decoder_select="golomb"
 sonic_encoder_select="golomb"
 sonic_ls_encoder_select="golomb"
 svq1_encoder_select="aandct"
-svq3_decoder_select="golomb h264chroma h264dsp h264pred"
+svq3_decoder_select="golomb h264chroma h264dsp h264pred h264qpel"
 svq3_decoder_suggest="zlib"
 theora_decoder_select="vp3_decoder"
 tiff_decoder_suggest="zlib"
@@ -1504,7 +1506,7 @@ truehd_decoder_select="mlp_decoder"
 tscc_decoder_select="zlib"
 twinvq_decoder_select="mdct lsp sinewin"
 vc1_crystalhd_decoder_select="crystalhd"
-vc1_decoder_select="h263_decoder h264chroma"
+vc1_decoder_select="h263_decoder h264chroma h264qpel"
 vc1_dxva2_hwaccel_deps="dxva2api_h"
 vc1_dxva2_hwaccel_select="dxva2 vc1_decoder"
 vc1_vaapi_hwaccel_select="vaapi vc1_decoder"
@@ -1515,7 +1517,7 @@ vorbis_encoder_select="mdct"
 vp6_decoder_select="huffman"
 vp6a_decoder_select="vp6_decoder"
 vp6f_decoder_select="vp6_decoder"
-vp8_decoder_select="h264pred"
+vp8_decoder_select="h264pred h264qpel"
 wmapro_decoder_select="mdct sinewin"
 wmav1_decoder_select="mdct sinewin"
 wmav1_encoder_select="mdct sinewin"
@@ -1544,7 +1546,7 @@ vda_deps="VideoDecodeAcceleration_VDADecoder_h pthreads"
 vdpau_deps="vdpau_vdpau_h vdpau_vdpau_x11_h"
 
 # parsers
-h264_parser_select="golomb h264chroma h264dsp h264pred"
+h264_parser_select="golomb h264dsp h264pred"
 
 # external libraries
 libaacplus_encoder_deps="libaacplus"
@@ -3074,6 +3076,7 @@ check_func_headers windows.h GetProcessAffinityMask
 check_func_headers windows.h GetProcessTimes
 check_func_headers windows.h MapViewOfFile
 check_func_headers windows.h VirtualAlloc
+check_func_headers glob.h glob
 
 check_header dlfcn.h
 check_header dxva2api.h -D_WIN32_WINNT=0x0600
@@ -3216,7 +3219,7 @@ if enabled libdc1394; then
 fi
 
 SDL_CONFIG="${cross_prefix}sdl-config"
-if check_pkg_config sdl SDL_version.h SDL_Linked_Version; then
+if check_pkg_config sdl SDL_events.h SDL_PollEvent; then
     check_cpp_condition SDL.h "(SDL_MAJOR_VERSION<<16 | SDL_MINOR_VERSION<<8 | SDL_PATCHLEVEL) >= 0x010201" $sdl_cflags &&
     enable sdl &&
     check_struct SDL.h SDL_VideoInfo current_w $sdl_cflags && enable sdl_video_size

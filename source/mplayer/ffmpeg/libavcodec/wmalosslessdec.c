@@ -903,6 +903,7 @@ static int decode_subframe(WmallDecodeCtx *s)
     } else if (!s->cdlms[0][0].order) {
         av_log(s->avctx, AV_LOG_DEBUG,
                "Waiting for seekable tile\n");
+        s->frame.nb_samples = 0;
         return -1;
     }
 
@@ -1152,14 +1153,6 @@ static void save_bits(WmallDecodeCtx *s, GetBitContext* gb, int len,
     skip_bits(&s->gb, s->frame_offset);
 }
 
-/**
- * @brief Decode a single WMA packet.
- * @param avctx     codec context
- * @param data      the output buffer
- * @param data_size number of bytes that were written to the output buffer
- * @param avpkt     input packet
- * @return number of bytes that were read from the input buffer
- */
 static int decode_packet(AVCodecContext *avctx, void *data, int *got_frame_ptr,
                          AVPacket* avpkt)
 {
@@ -1265,6 +1258,17 @@ static int decode_packet(AVCodecContext *avctx, void *data, int *got_frame_ptr,
     return (s->packet_loss) ? AVERROR_INVALIDDATA : get_bits_count(gb) >> 3;
 }
 
+static void flush(AVCodecContext *avctx)
+{
+    WmallDecodeCtx *s    = avctx->priv_data;
+    s->packet_loss       = 1;
+    s->packet_done       = 0;
+    s->num_saved_bits    = 0;
+    s->frame_offset      = 0;
+    s->next_packet_start = 0;
+    s->cdlms[0][0].order = 0;
+    s->frame.nb_samples  = 0;
+}
 
 AVCodec ff_wmalossless_decoder = {
     .name           = "wmalossless",
@@ -1273,6 +1277,7 @@ AVCodec ff_wmalossless_decoder = {
     .priv_data_size = sizeof(WmallDecodeCtx),
     .init           = decode_init,
     .decode         = decode_packet,
+    .flush          = flush,
     .capabilities   = CODEC_CAP_SUBFRAMES | CODEC_CAP_DR1 | CODEC_CAP_DELAY,
     .long_name      = NULL_IF_CONFIG_SMALL("Windows Media Audio Lossless"),
 };

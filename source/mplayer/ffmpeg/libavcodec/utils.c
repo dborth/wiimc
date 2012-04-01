@@ -425,11 +425,6 @@ static int video_get_buffer(AVCodecContext *s, AVFrame *pic)
     buf = &avci->buffer[avci->buffer_count];
 
     if(buf->base[0] && (buf->width != w || buf->height != h || buf->pix_fmt != s->pix_fmt)){
-        if(s->active_thread_type&FF_THREAD_FRAME) {
-            av_log_missing_feature(s, "Width/height changing with frame threads is", 0);
-            return -1;
-        }
-
         for (i = 0; i < AV_NUM_DATA_POINTERS; i++) {
             av_freep(&buf->base[i]);
             buf->data[i]= NULL;
@@ -513,6 +508,10 @@ static int video_get_buffer(AVCodecContext *s, AVFrame *pic)
     }
     pic->extended_data = pic->data;
     avci->buffer_count++;
+    pic->width  = buf->width;
+    pic->height = buf->height;
+    pic->format = buf->pix_fmt;
+    pic->sample_aspect_ratio = s->sample_aspect_ratio;
 
     if (s->pkt) {
         pic->pkt_pts = s->pkt->pts;
@@ -1405,6 +1404,11 @@ int attribute_align_arg avcodec_decode_video2(AVCodecContext *avctx, AVFrame *pi
     // copy to ensure we do not change avpkt
     AVPacket tmp = *avpkt;
 
+    if (avctx->codec->type != AVMEDIA_TYPE_VIDEO) {
+        av_log(avctx, AV_LOG_ERROR, "Invalid media type for video\n");
+        return AVERROR(EINVAL);
+    }
+
     *got_picture_ptr= 0;
     if((avctx->coded_width||avctx->coded_height) && av_image_check_size(avctx->coded_width, avctx->coded_height, 0, avctx))
         return -1;
@@ -1514,6 +1518,10 @@ int attribute_align_arg avcodec_decode_audio4(AVCodecContext *avctx,
         av_log(avctx, AV_LOG_ERROR, "invalid packet: NULL data, size != 0\n");
         return AVERROR(EINVAL);
     }
+    if (avctx->codec->type != AVMEDIA_TYPE_AUDIO) {
+        av_log(avctx, AV_LOG_ERROR, "Invalid media type for audio\n");
+        return AVERROR(EINVAL);
+    }
 
     if ((avctx->codec->capabilities & CODEC_CAP_DELAY) || avpkt->size) {
         av_packet_split_side_data(avpkt);
@@ -1536,6 +1544,11 @@ int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
                             AVPacket *avpkt)
 {
     int ret;
+
+    if (avctx->codec->type != AVMEDIA_TYPE_SUBTITLE) {
+        av_log(avctx, AV_LOG_ERROR, "Invalid media type for subtitles\n");
+        return AVERROR(EINVAL);
+    }
 
     avctx->pkt = avpkt;
     *got_sub_ptr = 0;

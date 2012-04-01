@@ -15,10 +15,11 @@ version next:
 - libutvideo encoder wrapper (--enable-libutvideo)
 - swapuv filter
 - bbox filter
-- XBM encoder
+- XBM encoder and decoder
 - RealAudio Lossless decoder
 - ZeroCodec decoder
 - tile video filter
+- Metal Gear Solid: The Twin Snakes demuxer
 
 
 version 0.10:

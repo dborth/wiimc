@@ -1133,6 +1133,9 @@ static int parse_packet(AVFormatContext *s, AVPacket *pkt, int stream_index)
         av_init_packet(&flush_pkt);
         pkt = &flush_pkt;
         got_output = 1;
+    } else if (!size && st->parser->flags & PARSER_FLAG_COMPLETE_FRAMES) {
+        // preserve 0-size sync packets
+        compute_pkt_fields(s, st, st->parser, pkt);
     }
 
     while (size > 0 || (pkt == &flush_pkt && got_output)) {
@@ -3255,7 +3258,7 @@ static int compute_pkt_fields2(AVFormatContext *s, AVStream *st, AVPacket *pkt){
         return AVERROR(EINVAL);
     }
     if(pkt->dts != AV_NOPTS_VALUE && pkt->pts != AV_NOPTS_VALUE && pkt->pts < pkt->dts){
-        av_log(s, AV_LOG_ERROR, "pts < dts in stream %d\n", st->index);
+        av_log(s, AV_LOG_ERROR, "pts (%"PRId64") < dts (%"PRId64") in stream %d\n", pkt->pts, pkt->dts, st->index);
         return AVERROR(EINVAL);
     }
 
@@ -3478,24 +3481,30 @@ static int interleave_packet(AVFormatContext *s, AVPacket *out, AVPacket *in, in
 }
 
 int av_interleaved_write_frame(AVFormatContext *s, AVPacket *pkt){
-    AVStream *st= s->streams[ pkt->stream_index];
-    int ret;
+    int ret, flush = 0;
 
-    //FIXME/XXX/HACK drop zero sized packets
-    if(st->codec->codec_type == AVMEDIA_TYPE_AUDIO && pkt->size==0)
-        return 0;
+    if (pkt) {
+        AVStream *st= s->streams[ pkt->stream_index];
 
-    av_dlog(s, "av_interleaved_write_frame size:%d dts:%"PRId64" pts:%"PRId64"\n",
-            pkt->size, pkt->dts, pkt->pts);
-    if((ret = compute_pkt_fields2(s, st, pkt)) < 0 && !(s->oformat->flags & AVFMT_NOTIMESTAMPS))
-        return ret;
+        //FIXME/XXX/HACK drop zero sized packets
+        if(st->codec->codec_type == AVMEDIA_TYPE_AUDIO && pkt->size==0)
+            return 0;
 
-    if(pkt->dts == AV_NOPTS_VALUE && !(s->oformat->flags & AVFMT_NOTIMESTAMPS))
-        return AVERROR(EINVAL);
+        av_dlog(s, "av_interleaved_write_frame size:%d dts:%"PRId64" pts:%"PRId64"\n",
+                pkt->size, pkt->dts, pkt->pts);
+        if((ret = compute_pkt_fields2(s, st, pkt)) < 0 && !(s->oformat->flags & AVFMT_NOTIMESTAMPS))
+            return ret;
+
+        if(pkt->dts == AV_NOPTS_VALUE && !(s->oformat->flags & AVFMT_NOTIMESTAMPS))
+            return AVERROR(EINVAL);
+    } else {
+        av_dlog(s, "av_interleaved_write_frame FLUSH\n");
+        flush = 1;
+    }
 
     for(;;){
         AVPacket opkt;
-        int ret= interleave_packet(s, &opkt, pkt, 0);
+        int ret= interleave_packet(s, &opkt, pkt, flush);
         if(ret<=0) //FIXME cleanup needed for ret<0 ?
             return ret;
 
@@ -4064,7 +4073,7 @@ int ff_url_join(char *str, int size, const char *proto,
                 int port, const char *fmt, ...)
 {
 #if CONFIG_NETWORK
-    struct addrinfo hints, *ai;
+    struct addrinfo hints = { 0 }, *ai;
 #endif
 
     str[0] = '\0';
@@ -4075,7 +4084,6 @@ int ff_url_join(char *str, int size, const char *proto,
 #if CONFIG_NETWORK && defined(AF_INET6)
     /* Determine if hostname is a numerical IPv6 address,
      * properly escape it within [] in that case. */
-    memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_NUMERICHOST;
     if (!getaddrinfo(hostname, NULL, &hints, &ai)) {
         if (ai->ai_family == AF_INET6) {

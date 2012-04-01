@@ -210,6 +210,7 @@ library:
 @item MAXIS XA                  @tab   @tab X
     @tab Used in Sim City 3000; file extension .xa.
 @item MD Studio                 @tab   @tab X
+@item Metal Gear Solid: The Twin Snakes @tab @tab X
 @item Mobotix .mxg              @tab   @tab X
 @item Monkey's Audio            @tab   @tab X
 @item Motion Pixels MVI         @tab   @tab X
@@ -402,7 +403,7 @@ following image formats are supported:
     @tab YUV, JPEG and some extension is not supported yet.
 @item Truevision Targa  @tab X @tab X
     @tab Targa (.TGA) image format
-@item XBM  @tab X @tab
+@item XBM  @tab X @tab X
     @tab X BitMap image format
 @item XWD  @tab X @tab X
     @tab X Window Dump image format

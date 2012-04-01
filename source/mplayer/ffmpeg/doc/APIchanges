@@ -13,47 +13,51 @@ libavutil:   2011-04-18
 
 API changes, most recent first:
 
-2012-03-21 - xxxxxxx - lavu 51.43.100
+2012-03-26 - a67d9cf - lavfi 2.66.100
+  Add avfilter_fill_frame_from_{audio_,}buffer_ref() functions.
+
+2012-03-21 - b75c67d - lavu 51.43.100
   Add bprint.h for bprint API.
 
-2012-02-21 - xxxxxxx - lavc 54.4.100
+2012-02-21 - 9cbf17e - lavc 54.4.100
   Add av_get_pcm_codec() function.
 
-2012-02-16 - xxxxxxx - libswr 0.7.100
+2012-02-16 - 560b224 - libswr 0.7.100
   Add swr_set_matrix() function.
 
-2012-02-09 - xxxxxxx - lavu 51.39.100
+2012-02-09 - c28e7af - lavu 51.39.100
   Add a new installed header libavutil/timestamp.h with timestamp
   utilities.
 
-2012-02-06 - xxxxxxx - lavu 51.38.100
+2012-02-06 - 70ffda3 - lavu 51.38.100
   Add av_parse_ratio() function to parseutils.h.
 
-2012-02-06 - xxxxxxx - lavu 51.38.100
+2012-02-06 - 70ffda3 - lavu 51.38.100
   Add AV_LOG_MAX_OFFSET macro to log.h.
 
-2012-02-02 - xxxxxxx - lavu 51.37.100
+2012-02-02 - 0eaa123 - lavu 51.37.100
   Add public timecode helpers.
 
-2012-01-24 - xxxxxxx - lavfi 2.60.100
+2012-01-24 - 0c3577b - lavfi 2.60.100
   Add avfilter_graph_dump.
 
-2012-xx-xx - lavc 54.8.0
-  xxxxxxx Add av_get_exact_bits_per_sample()
-  xxxxxxx Add av_get_audio_frame_duration()
+2012-03-05 - lavc 54.8.0
+  6699d07 Add av_get_exact_bits_per_sample()
+  9524cf7 Add av_get_audio_frame_duration()
 
-2012-03-xx - xxxxxxx - lavc 54.7.0 - avcodec.h
+2012-03-04 - 44fe77b - lavc 54.7.0 - avcodec.h
   Add av_codec_is_encoder/decoder().
 
-2012-xx-xx - xxxxxxx - lavc 54.3.0 - avcodec.h
+2012-03-01 - 442c132 - lavc 54.3.0 - avcodec.h
   Add av_packet_shrink_side_data.
 
-2012-xx-xx - xxxxxxx - lavf 54.2.0 - avformat.h
+2012-02-29 - dd2a4bc - lavf 54.2.0 - avformat.h
   Add AVStream.attached_pic and AV_DISPOSITION_ATTACHED_PIC,
   used for dealing with attached pictures/cover art.
 
 2012-02-25 - c9bca80 - lavu 51.24.0 - error.h
   Add AVERROR_UNKNOWN
+  NOTE: this was backported to 0.8
 
 2012-02-20 - e9cda85 - lavc 54.2.0
   Add duration field to AVCodecParserContext
@@ -74,13 +78,16 @@ API changes, most recent first:
 
 2012-01-31 - dd6d3b0 - lavf 54.01.0
   Add avformat_get_riff_video_tags() and avformat_get_riff_audio_tags().
+  NOTE: this was backported to 0.8
 
 2012-01-31 - af08d9a - lavc 54.01.0
   Add avcodec_is_open() function.
+  NOTE: this was backported to 0.8
 
 2012-01-30 - 8b93312 - lavu 51.22.0 - intfloat.h
   Add a new installed header libavutil/intfloat.h with int/float punning
   functions.
+  NOTE: this was backported to 0.8
 
 2012-01-25 - lavf 53.22.0
   f1caf01 Allow doing av_write_frame(ctx, NULL) for flushing possible
@@ -102,13 +109,13 @@ API changes, most recent first:
 2011-12-08 - a502939 - lavfi 2.52.0
   Add av_buffersink_poll_frame() to buffersink.h.
 
-2011-12-08 - xxxxxxx - lavu 51.31.0
+2011-12-08 - 26c6fec - lavu 51.31.0
   Add av_log_format_line.
 
-2011-12-03 - xxxxxxx - lavu 51.30.0
+2011-12-03 - 976b095 - lavu 51.30.0
   Add AVERROR_BUG.
 
-2011-xx-xx - xxxxxxx - lavu 51.28.1
+2011-11-24 - 573ffbb - lavu 51.28.1
   Add av_get_alt_sample_fmt() to samplefmt.h.
 
 2011-11-03 - 96949da - lavu 51.23.0
@@ -286,9 +293,12 @@ API changes, most recent first:
 
 2011-07-10 - a67c061 - lavf 53.6.0
   Add avformat_find_stream_info(), deprecate av_find_stream_info().
+  NOTE: this was backported to 0.7
 
 2011-07-10 - 0b950fe - lavc 53.8.0
   Add avcodec_open2(), deprecate avcodec_open().
+  NOTE: this was backported to 0.7
+
   Add avcodec_alloc_context3. Deprecate avcodec_alloc_context() and
   avcodec_alloc_context2().
 

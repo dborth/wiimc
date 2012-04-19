@@ -169,7 +169,7 @@ static inline void small_memcpy(void *to, const void *from, size_t len)
 	);
 }
 
-static void *fast_memcpy_Gekko(void *to, const void *from, size_t len)
+void *fast_memcpy_Gekko(void *to, const void *from, size_t len)
 {
 	void *retval = to;
 	int delta;
@@ -223,9 +223,7 @@ end:
 	if (len) small_memcpy(to, from, len);
 	return retval;
 }
-
-#endif /* GEKKO */
-
+#endif
 #undef fast_memcpy
 void * fast_memcpy(void * to, const void * from, size_t len)
 {
@@ -253,7 +251,7 @@ void * fast_memcpy(void * to, const void * from, size_t len)
 #elif HAVE_MMX
 		fast_memcpy_MMX(to, from, len);
 #elif defined(GEKKO)
-		fast_memcpy_Gekko(to, from, len);
+		return fast_memcpy_Gekko(to, from, len);
 #else
 		memcpy(to, from, len); // prior to mmx we use the standart memcpy
 #endif
@@ -288,6 +286,8 @@ void * mem2agpcpy(void * to, const void * from, size_t len)
 		mem2agpcpy_3DNow(to, from, len);
 #elif HAVE_MMX
 		mem2agpcpy_MMX(to, from, len);
+#elif defined(GEKKO)
+		fast_memcpy_Gekko(to, from, len);		
 #else
 		memcpy(to, from, len); // prior to mmx we use the standart memcpy
 #endif

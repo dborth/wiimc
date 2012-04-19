@@ -129,7 +129,9 @@ static int init(int rate, int channels, int format, int flags)
 {
 	AUDIO_StopDMA();
 
-	ao_data.samplerate = 48000;
+	if(rate>32000) quality = AI_SAMPLERATE_48KHZ; 
+	else quality = AI_SAMPLERATE_32KHZ;
+	ao_data.samplerate = (quality==AI_SAMPLERATE_48KHZ) ? 48000 : 32000;
 	ao_data.channels = clamp(channels, 2, 6);
 	ao_data.format = AF_FORMAT_S16_NE;
 	ao_data.bps = ao_data.channels * ao_data.samplerate * sizeof(s16);

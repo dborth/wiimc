@@ -26,17 +26,17 @@ INCLUDES	:=	source source/mplayer
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE) \
-				-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
+CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)  \
+				-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wframe-larger-than=8192
 CXXFLAGS	=	$(CFLAGS)
-LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map -specs=wiimc.spec
+LDFLAGS		=	-g $(MACHDEP) -specs=wiimc.spec -Wl,-wrap,memcpy
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:= -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
-			-lfribidi -ljpeg -ldi -liso9660 -liconv -lpng -lz -lntfs -lext2fs \
-			-lfat -lwiiuse -lbte -logc -lfreetype -lmxml -ltinysmb -lexif
+LIBS    := -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
+                        -lfribidi -ljpeg -ldi -liso9660 -liconv -lpng -lz -lntfs -lext2fs \
+                        -lfat -lwiiuse -lbte -logc -lfreetype -lmxml -ltinysmb -lexif
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

@@ -94,7 +94,11 @@ void *av_malloc(size_t size)
     if (posix_memalign(&ptr,ALIGN,size))
         ptr = NULL;
 #elif HAVE_MEMALIGN
-    ptr = memalign(ALIGN,size);
+#ifdef GEKKO
+    ptr = memalign(32,size);
+#else
+	ptr = memalign(ALIGN,size);
+#endif
     /* Why 64?
        Indeed, we should align it:
          on 4 for 386

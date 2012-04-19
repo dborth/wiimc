@@ -121,6 +121,8 @@ found:
 	StopGX();
 	VIDEO_WaitVSync();
 	VIDEO_WaitVSync();
+	
+	__IOS_LaunchNewIOS(58);
 
 	u32 level;
 	SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);

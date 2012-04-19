@@ -878,7 +878,7 @@ static void ff_h264_idct_add8_paired(uint8_t **dest, const int *block_offset, DC
 	}
 }
 
-#if 0
+#if 1
 // FIXME: Rounding errors.
 static void ff_h264_idct8_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 {
@@ -1211,11 +1211,11 @@ void ff_dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 void ff_h264dsp_init_ppc(H264DSPContext *c, const int bit_depth, const int chroma_format_idc)
 {
 	c->h264_idct_add = ff_h264_idct_add_paired;
-	//c->h264_idct_add8 = ff_h264_idct_add8_paired;
+	c->h264_idct_add8 = ff_h264_idct_add8_paired;
 	c->h264_idct_add16 = ff_h264_idct_add16_paired;
 	c->h264_idct_add16intra = ff_h264_idct_add16intra_paired;
 	c->h264_idct_dc_add = ff_h264_idct_dc_add_paired;
-	//c->h264_idct8_add = ff_h264_idct8_add_paired;
+	c->h264_idct8_add = ff_h264_idct8_add_paired;
 	c->h264_idct8_dc_add = ff_h264_idct8_dc_add_paired;
 	c->h264_idct8_add4 = ff_h264_idct8_add4_paired;
 	

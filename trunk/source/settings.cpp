@@ -627,7 +627,7 @@ void DefaultSettings ()
 	WiiSettings.videoZoomVert = 1;
 	WiiSettings.videoXshift = 0;
 	WiiSettings.videoYshift = 0;
-	WiiSettings.frameDropping = FRAMEDROPPING_DISABLED;
+	WiiSettings.frameDropping = FRAMEDROPPING_AUTO;
 	WiiSettings.aspectRatio = -2;
 	WiiSettings.cacheFill = 30;
 	WiiSettings.audioLanguage[0] = 0;

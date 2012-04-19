@@ -147,7 +147,7 @@ bool AddMem2Area (u32 size, const int index)
 	if((u32)mem2_areas[index].heap_ptr < (u32)SYS_GetArena2Lo())
 	{
 #ifdef DEBUG_MEM2_LEVEL
-		printf("not enough mem2: %i\n",index);
+		printf("not enough mem2: %i   max free mem2: %d\n",index, (u32) (SYS_GetArena2Hi() - SYS_GetArena2Lo()));
 #endif		
 		mem2_areas[index].old_arena2hi = NULL;
 		mem2_areas[index].heap_ptr = NULL;
@@ -391,3 +391,14 @@ void ShowAreaInfo(const int area) //if area == -1 print all areas info
 		for(i = 0; i < MEM2_MAX; i++) PrintAreaInfo(i);
 #endif
 }
+
+void *__real_memcpy(void * , const void * , size_t );
+void *fast_memcpy_Gekko(void * , const void * , size_t );
+
+
+void *__wrap_memcpy(void * destination, const void * source, size_t size)
+{
+	return fast_memcpy_Gekko(destination, source, size);
+}
+
+

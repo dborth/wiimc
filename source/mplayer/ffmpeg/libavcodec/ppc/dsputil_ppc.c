@@ -66,7 +66,7 @@ static void clear_blocks_dcbz32_ppc(DCTELEM *blocks)
         ((unsigned long*)blocks)[189] = 0L;
         ((unsigned long*)blocks)[190] = 0L;
         ((unsigned long*)blocks)[191] = 0L;
-        i += 16;
+        //i += 16;
     }
 }
 
@@ -216,6 +216,7 @@ void ff_dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 #if defined(GEKKO)
     c->fill_block_tab[0] = fill_block16_gekko;
     c->fill_block_tab[1] = fill_block8_gekko;
+    c->clear_blocks = clear_blocks_dcbz32_ppc;
 #endif
 
 #if HAVE_ALTIVEC

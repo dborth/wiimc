@@ -94,8 +94,9 @@ static const int table_offs[] = {
  111430, 111462, 111494, 112878, 114320, 114988, 115660, 116310, 116950, 117592
 };
 
+#ifndef GEKKO
 static VLC_TYPE table_data[117592][2];
-
+#endif
 /**
  * Generate VLC from codeword lengths.
  * @param bits   codeword lengths (zeroes are accepted)
@@ -129,12 +130,19 @@ static void rv34_gen_vlc(const uint8_t *bits, int size, VLC *vlc, const uint8_t 
     for(i = 0; i < realsize; i++)
         cw[i] = codes[bits2[i]]++;
 
+#ifdef GEKKO
+    ff_init_vlc_sparse(vlc, FFMIN(maxbits, 9), realsize,
+                       bits2, 1, 1,
+                       cw,    2, 2,
+                       syms,  2, 2, 0);
+#else
     vlc->table = &table_data[table_offs[num]];
     vlc->table_allocated = table_offs[num + 1] - table_offs[num];
     ff_init_vlc_sparse(vlc, FFMIN(maxbits, 9), realsize,
                        bits2, 1, 1,
                        cw,    2, 2,
                        syms,  2, 2, INIT_VLC_USE_NEW_STATIC);
+#endif                       
 }
 
 /**

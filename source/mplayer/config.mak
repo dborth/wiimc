@@ -35,9 +35,9 @@ WINDRES = windres
 EXTRA_INC = -I$(DEVKITPRO)/portlibs/ppc/include -I$(DEVKITPRO)/libogc/include -Ilibdvdread4 -Ilibdvdnav -I$(DEVKITPRO)/portlibs/ppc/include/freetype2 -I$(DEVKITPRO)/libogc/include/ogc/machine -I$(DEVKITPPC)/../buildscripts/powerpc-eabi/gcc/gcc/include
 WIIFLAGS = -mpaired -DGEKKO -mrvl -mcpu=750 -meabi -msdata -mmultiple -mstring -frename-registers
 
-CFLAGS   = -std=gnu99 -O3 -pipe -ffast-math -fomit-frame-pointer -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE $(EXTRA_INC) -I. -Iffmpeg $(WIIFLAGS)
-CXXFLAGS = -O3 -pipe -ffast-math -fomit-frame-pointer -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS $(EXTRA_INC) -I. -Iffmpeg $(WIIFLAGS)
-CC_DEPFLAGS = -MD -MP -O3 -pipe -g -ffast-math -mcpu=750 -meabi -mrvl -msdata -mpaired -mmultiple -mstring -frename-registers
+CFLAGS   = -Wundef -Wall -Wno-switch -Wno-parentheses -Wpointer-arith -Wredundant-decls -Wmissing-prototypes -Wdisabled-optimization -Wno-pointer-sign -Wdeclaration-after-statement -std=gnu99  -O3 -mcpu=750 -meabi -mrvl -msdata -mpaired -mmultiple -mstring -pipe -g -ffast-math -frename-registers -DGEKKO -DHW_RVL -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -Ilibdvdread4 $(EXTRA_INC) -I. -Iffmpeg  -DFF_API_MAX_STREAMS=0
+CXXFLAGS = -Wundef -Wall -Wno-switch -Wno-parentheses -Wpointer-arith -Wredundant-decls  -O3 -mcpu=750 -meabi -mrvl -msdata -mpaired -mmultiple -mstring -pipe -g -ffast-math -frename-registers -DGEKKO -DHW_RVL -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -Ilibdvdread4 -I$(DEVKITPRO)/portlibs/ppc/include -I$(DEVKITPRO)/libogc/include -I. -Iffmpeg  -DFF_API_MAX_STREAMS=0
+CC_DEPFLAGS = -MD -MP -O3 -mcpu=750 -meabi -mrvl -msdata -mpaired -mmultiple -mstring -pipe -g -ffast-math -frename-registers
 
 CFLAGS_DHAHELPER         = 
 CFLAGS_FAAD_FIXED        = 
@@ -79,6 +79,7 @@ SETENV       = yes
 SHMEM        = yes
 STRSEP       = yes
 VSSCANF      = yes
+
 
 # features
 3DFX = no
@@ -251,9 +252,9 @@ CONFIG_POSTPROC = no
 CONFIG_SWSCALE  = yes
 
 ASFLAGS    = $(CFLAGS)
-AS_DEPFLAGS= -MD -MP -O3 -pipe -g -ffast-math -mcpu=750 -meabi -mrvl -msdata -mpaired -mmultiple -mstring -frename-registers
+AS_DEPFLAGS= -MD -MP -O3 -mcpu=750 -meabi -mrvl -msdata -mpaired -mmultiple -mstring -pipe -g -ffast-math -frename-registers
 HOSTCC     = $(HOST_CC)
-HOSTCFLAGS = -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 -O3
+HOSTCFLAGS = -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 -O3 -Iffmpeg -I. -I..
 HOSTLIBS   = -lm
 AS_O       = -o $@
 CC_O       = -o $@

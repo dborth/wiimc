@@ -374,6 +374,12 @@ static u32 http_request(char *url, FILE *hfile, char *buffer, u32 maxsize, bool 
 	free(http_path);
 	free(http_host);
 
+	if(res == 0) // can't send request to server
+	{
+		net_close(s);
+		return 0;
+	}
+
 	char *line = NULL;
 	char *redirect = NULL;
 	char encoding[128] = { 0 };

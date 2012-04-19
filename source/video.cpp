@@ -29,6 +29,8 @@ static Mtx GXmodelView2D;
 
 unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
 u8 whichfb = 0; // Switch
+bool need_wait=false;
+
 GXRModeObj *vmode; // Menu video mode
 u8 * videoScreenshot = NULL;
 int screenheight = 480;
@@ -235,6 +237,7 @@ int DrawMPlayerGui()
  ***************************************************************************/
 void Draw_VIDEO()
 {
+	need_wait=false;
 	VIDEO_Flush();
 }
 
@@ -246,11 +249,8 @@ InitVideo ()
 
 	bool pal = false;
 
-	if (vmode == &TVPal528IntDf)
-	{
+	if (vmode == &TVPal576IntDfScale || vmode == &TVPal576ProgScale)
 		pal = true;
-		vmode = &TVPal574IntDfScale;
-	}
 
 	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
 	{

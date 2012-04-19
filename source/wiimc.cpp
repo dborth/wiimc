@@ -57,8 +57,8 @@ char loadedFileDisplay[128] = { 0 };
 static bool settingsSet = false;
 
 // MPlayer threads
-#define STACKSIZE (512*1024)
-#define CACHE_STACKSIZE (8*1024)
+#define MPLAYER_STACKSIZE (512*1024)
+#define CACHE_STACKSIZE (16*1024)
 static lwp_t mthread = LWP_THREAD_NULL;
 static lwp_t cthread = LWP_THREAD_NULL;
 static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
@@ -161,13 +161,14 @@ static void SaveLogToSD()
 
 	sd->startup();
 	
-	if(!fatMount("sdlog",sd,0,4,128)) return;
+	if(!fatMount("sdlog",sd,0,2,64)) return;
 
 	char s[50];
 	struct tm tim;
 	time_t now;
 	now = time(NULL);
 	tim = *(localtime(&now));
+	strftime(s,49,"%Y%m%d_%k%M%S",&tim);
 
 	sprintf(_file,"sdlog:/wiimc_log_%s.txt",s);
 	fp=fopen(_file,"wb");
@@ -250,11 +251,9 @@ static void USBGeckoOutput()
 
 	LWP_MutexInit(&gecko_mutex, false);
 
-	gecko_buf[0] = (char*) malloc(GECKO_BUFFER_SIZE);
-	gecko_buf[1] = (char*) malloc(GECKO_BUFFER_SIZE);
+	gecko_buf[0] = (char*) calloc(GECKO_BUFFER_SIZE, 1);
+	gecko_buf[1] = (char*) calloc(GECKO_BUFFER_SIZE, 1);
 	gecko_buf_ptr = gecko_buf[0];
-	gecko_buf[0][0] = '\0';
-	gecko_buf[1][0] = '\0';
 
 	devoptab_list[STD_OUT] = &gecko_out;
 	devoptab_list[STD_ERR] = &gecko_out;
@@ -276,7 +275,7 @@ bool SaneIOS(u32 ios)
 	bool res = false;
 	u32 num_titles=0;
 	u32 tmd_size;
-
+	
 	if(ios > 200)
 		return false;
 
@@ -333,7 +332,6 @@ bool SaneIOS(u32 ios)
 /****************************************************************************
  * MPlayer interface
  ***************************************************************************/
-
 extern "C" bool FindNextFile(bool load)
 {
 	nowPlayingSet = false;
@@ -428,6 +426,7 @@ extern "C" bool FindNextFile(bool load)
 	if(load)
 	{
 	    char *partitionlabel = GetPartitionLabel(loadedFile);
+		
 		wiiLoadFile(loadedFile, partitionlabel);
 	}
 
@@ -522,9 +521,9 @@ bool InitMPlayer()
 	network_useragent = mem2_strdup(agent, MEM2_OTHER);
 
 	// create mplayer thread
-	mplayerstack=(u8*)memalign(32,STACKSIZE*sizeof(u8));
-	memset(mplayerstack,0,STACKSIZE*sizeof(u8));
-	LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, STACKSIZE, 68);
+	mplayerstack=(u8*)(memalign(32,MPLAYER_STACKSIZE*sizeof(u8)));
+	memset(mplayerstack,0,MPLAYER_STACKSIZE*sizeof(u8));
+	LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, MPLAYER_STACKSIZE, 68);
 
 	init = true;
 	return true;
@@ -550,6 +549,8 @@ void LoadMPlayerFile()
 	char ext[7];
 	GetExt(loadedFile, ext);
 
+	wiiSetDVDDevice(NULL);
+
 	if(WiiSettings.dvdMenu && strlen(ext) > 0 && 
 		(strcasecmp(ext, "iso") == 0 || strcasecmp(ext, "ifo") == 0) &&
 		strncmp(loadedFile, "smb", 3) != 0)
@@ -564,8 +565,7 @@ void LoadMPlayerFile()
 		partitionlabel = NULL;
 	}
 	else
-	{
-		wiiSetDVDDevice(NULL);
+	{		
 		if (strncmp(loadedFile, "dvd://", 6) == 0 || strncmp(loadedFile, "dvdnav://", 9) == 0)
 		    wiiSetDVDDevice(loadedDevice);
 		partitionlabel = GetPartitionLabel(loadedFile);
@@ -574,7 +574,7 @@ void LoadMPlayerFile()
 	// wait for directory parsing to finish (to find subtitles)	
 	while(WiiSettings.subtitleVisibility && !ParseDone())
 		usleep(100);
-
+	
 	// set new file to load
 	wiiLoadFile(loadedFile, partitionlabel);
 
@@ -655,7 +655,6 @@ void SetMPlayerSettings()
 }
 }
 
-
 /****************************************************************************
  * Main
  ***************************************************************************/
@@ -666,6 +665,7 @@ extern "C" {
 int main(int argc, char *argv[])
 {
 	L2Enhance();
+	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
 	AUDIO_Init(NULL);
 	DSP_Init();
 	AUDIO_StopDMA();
@@ -678,21 +678,27 @@ int main(int argc, char *argv[])
 	__STM_Init();
 	SYS_SetPowerCallback(ShutdownCB);
 	SYS_SetResetCallback(ResetCB);
-
-	USBGeckoOutput(); // don't disable - we need the stdout/stderr devoptab!
+	
 	__exception_setreload(8);
 
 	DI_Init();
 	WPAD_Init();
 	USBStorage_Initialize(); // to set aside MEM2 area
+
+	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
 	
+	StartNetworkThread(); //to set net heap aside MEM2 area
+	usleep(100); //force network thread execution 
+
 	u32 size = ( (1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2) ) + // textures
                 (vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot                     
                 (32*1024); // padding	
 	AddMem2Area (size, MEM2_VIDEO); 
 	AddMem2Area (2*1024*1024, MEM2_BROWSER);
-	AddMem2Area (6*1024*1024, MEM2_GUI);
+	AddMem2Area (7.5*1024*1024, MEM2_GUI);
 	AddMem2Area (5*1024*1024, MEM2_OTHER); // vars + ttf
+
+	GX_AllocTextureMemory();
 
 	BrowserInit(&browser);
 	BrowserInit(&browserSubs);
@@ -702,11 +708,7 @@ int main(int argc, char *argv[])
 
 	InitVideo2();
 	SetupPads();
-	StartNetworkThread();
 	WPAD_SetPowerButtonCallback((WPADShutdownCallback)ShutdownCB);
-	GX_AllocTextureMemory();
-
-	FindAppPath(); // Initialize SD and USB devices and look for apps/wiimc
 
 	DefaultSettings(); // set defaults
 	srand (time (0)); // random seed
@@ -715,10 +717,12 @@ int main(int argc, char *argv[])
 		return 0;
 
 	// mplayer cache thread
+	memset(cachestack,0,CACHE_STACKSIZE*sizeof(u8));
 	LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
 
-	// create GUI thread
+	usleep(200);
 
+	// create GUI thread
  	while(1)
 	{
 		ResetVideo_Menu();
@@ -731,6 +735,9 @@ int main(int argc, char *argv[])
 	}
  	
  	// application exiting
+	SuspendDeviceThread();
+	SuspendPictureThread();
+	SuspendParseThread();
 	StopGX();
 	UnmountAllDevices();
 

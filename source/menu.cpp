@@ -694,7 +694,7 @@ static void *GuiThread (void *arg)
 
 		Menu_Render();
 
-		if(updateFound)
+		if(updateFound && ParseDone())
 		{
 			updateFound = false;
 			ResumeUpdateThread();
@@ -3027,7 +3027,7 @@ static bool AllocPicBuffer()
 
 	int maxpic = MAX_TEX_WIDTH * MAX_TEX_HEIGHT * 4; // max size of 1 RGBA8 picture
 
-	if(!AddMem2Area(MAX_PICTURE_SIZE + maxpic*5 + 16*1024, MEM2_PICTURE))
+	if(!AddMem2Area(MAX_PICTURE_SIZE + maxpic*NUM_PICTURES + 16*1024, MEM2_PICTURE))
 		return false;
 
 	picBuffer = (u8 *)mem2_memalign(32, MAX_PICTURE_SIZE, MEM2_PICTURE);
@@ -4233,8 +4233,10 @@ static void ScreenZoomWindowUpdate(void *ptr, float h, float v)
 	GuiButton *b = (GuiButton *)ptr;
 	if(b->GetState() == STATE_CLICKED)
 	{
-		WiiSettings.videoZoomHor += h;
-		WiiSettings.videoZoomVert += v;
+		if (h!=0.0)
+			WiiSettings.videoZoomHor = ((int)((WiiSettings.videoZoomHor+h)/fabs(h)+0.5))*fabs(h);
+		if (v!=0.0)
+			WiiSettings.videoZoomVert = ((int)((WiiSettings.videoZoomVert+v)/fabs(v)+0.5))*fabs(v);
 
 		char zoom[10];
 		sprintf(zoom, "%.2f%%", WiiSettings.videoZoomHor*100);
@@ -4242,6 +4244,7 @@ static void ScreenZoomWindowUpdate(void *ptr, float h, float v)
 		sprintf(zoom, "%.2f%%", WiiSettings.videoZoomVert*100);
 		settingText2->SetText(zoom);
 		b->ResetState();
+
 	}
 }
 
@@ -7428,6 +7431,7 @@ void WiiMenu()
 	StartGuiThreads();
 	EnableRumble();
 
+	usleep(2000);
 	// Load settings (only happens once)
 	if(!LoadSettings())
 	{
@@ -7460,11 +7464,13 @@ void WiiMenu()
 		ExitRequested = true;
 		return;
 	}
-
+	usleep(500);
 	ResumeGui();
 
 	ResumeDeviceThread();
 	ResumeParseThread();
+
+	usleep(500);
 
 	static bool checkIOS = true;
 

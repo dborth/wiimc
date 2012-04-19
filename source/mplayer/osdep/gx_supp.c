@@ -61,7 +61,7 @@ float g_brightness = 0.0f;
 float g_contrast = 0.0f;
 
 /*** 2D ***/
-static bool need_wait=false;
+extern bool need_wait;
 extern u8 whichfb;
 extern unsigned int *xfb[2];
 
@@ -386,13 +386,17 @@ static void draw_initYUV()
 	GX_InitTexObj(&VtexObj, Vtexture, (u16) UVwidth, (u16) UVheight, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
 	GX_InitTexObjLOD(&VtexObj, GX_LINEAR, GX_LINEAR, 0.0, 0.0, 0.0, GX_TRUE, GX_TRUE, GX_ANISO_4);
 
+	GX_LoadTexObj(&YltexObj, GX_TEXMAP0);	// MAP0 <- Yl
+	GX_LoadTexObj(&YrtexObj, GX_TEXMAP1);	// MAP1 <- Yr
+	GX_LoadTexObj(&UtexObj, GX_TEXMAP2);	// MAP2 <- U
+	GX_LoadTexObj(&VtexObj, GX_TEXMAP3);	// MAP3 <- V
+
 }
 
 //------- rodries change: to avoid image_buffer intermediate ------
 static int w1,w2,h1,h2,wl,wr,st0,st1;
 static int p01,p02,p03,p11,p12,p13;
-static u16 Yrowpitch;
-static u16 UVrowpitch;
+static u16 Yrowpitch,UVrowpitch;
 static u64 *Yldst, *Yrdst, *Udst, *Vdst;
 
 static void draw_scaling()
@@ -457,24 +461,20 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_hei
 	draw_initYUV();
 	draw_scaling();
 }
+#include "osdep/timer.h"
 
 inline void DrawMPlayer()
 {
 	DCFlushRange(Yltexture, Yltexsize);
-	DCFlushRange(Yrtexture, Yrtexsize);
+	if (wr>0) DCFlushRange(Yrtexture, Yrtexsize);
 	DCFlushRange(Utexture, UVtexsize);
 	DCFlushRange(Vtexture, UVtexsize);
 
 	if(need_wait)
 		GX_WaitDrawDone();
-	
+		
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
-
-	GX_LoadTexObj(&YltexObj, GX_TEXMAP0);	// MAP0 <- Yl
-	GX_LoadTexObj(&YrtexObj, GX_TEXMAP1);	// MAP1 <- Yr
-	GX_LoadTexObj(&UtexObj, GX_TEXMAP2);	// MAP2 <- U
-	GX_LoadTexObj(&VtexObj, GX_TEXMAP3);	// MAP3 <- V
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 		GX_Position1x8(0); GX_Color1x8(0); GX_TexCoord1x8(0); GX_TexCoord1x8(4); GX_TexCoord1x8(0);
@@ -509,8 +509,9 @@ inline void DrawMPlayer()
 		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
 		drawMode = 0;
 	}
-	whichfb ^= 1; // flip framebuffer
 	
+	whichfb ^= 1; // flip framebuffer
+
 	GX_CopyDisp(xfb[whichfb], GX_TRUE);
 	VIDEO_SetNextFramebuffer(xfb[whichfb]);
 	GX_SetDrawDone();
@@ -519,12 +520,10 @@ inline void DrawMPlayer()
 
 void GX_AllocTextureMemory()
 {
-        //make memory fixed (max texture 1024*1024, gx can't manage more)
-
-        Yltexture = (u8 *) (mem2_memalign(32, 1024*MAX_HEIGHT, MEM2_VIDEO));
-        Yrtexture = (u8 *) (mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, MEM2_VIDEO));
-        Utexture = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));
-        Vtexture = (u8 *) (mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO));  
+	Yltexture = (u8*)mem2_memalign(32, 1024*MAX_HEIGHT, MEM2_VIDEO);
+	Yrtexture = (u8*)mem2_memalign(32, (MAX_WIDTH-1024)*MAX_HEIGHT, MEM2_VIDEO);
+	Utexture = (u8*)mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO);
+	Vtexture = (u8*)mem2_memalign(32, 1024*(MAX_HEIGHT/2), MEM2_VIDEO);        
 }
 
 /****************************************************************************
@@ -548,7 +547,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	Yltexsize = (wYl*h);
     Yrtexsize = (wYr*h);
 	UVtexsize = (w*h)/4;
-        
+
     memset(Yltexture, 0, 1024*MAX_HEIGHT);
     memset(Yrtexture, 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
     memset(Utexture, 0x80, 1024*(MAX_HEIGHT/2));
@@ -585,27 +584,30 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	type *Yldst = (type *)Yltexture - 1; \
 	type *Yrdst = (type *)Yrtexture - 1; \
 	 \
-	type *Ysrc1 = (type *)buffer[0] - 1; \
-	type *Ysrc2 = (type *)(buffer[0] + stride[0]) - 1; \
-	type *Ysrc3 = (type *)(buffer[0] + (stride[0] * 2)) - 1; \
-	type *Ysrc4 = (type *)(buffer[0] + (stride[0] * 3)) - 1; \
+	type *Ysrc1 = (type *) (buffer[0]) - 1; \
+	type *Ysrc2 = (type *)((buffer[0]) + stride[0]) - 1; \
+	type *Ysrc3 = (type *)((buffer[0]) + (stride[0] * 2)) - 1; \
+	type *Ysrc4 = (type *)((buffer[0]) + (stride[0] * 3)) - 1; \
 	 \
 	Yrdst += 4; \
 	int rows = Yheight / 4; \
+	int tiles; \
 	while (rows--) { \
-		int tiles = wl; \
+		tiles = wl; \
 		 \
-		while (tiles--) { \
-			*++Yldst = *++Ysrc1; \
+		while (tiles--) { \		
+			__asm__ volatile("dcbz 0,%0" : : "b" (++Yldst)); \ 
+			*Yldst = *++Ysrc1; \
 			*++Yldst = *++Ysrc2; \
 			*++Yldst = *++Ysrc3; \
 			*++Yldst = *++Ysrc4; \
-		} \
+		} \	
 		if (wr>0){ \
 			tiles = wr; \
 			 \
 			while (tiles--) { \
-				*++Yrdst = *++Ysrc1; \
+				__asm__ volatile("dcbz 0,%0" : : "b" (++Yrdst)); \
+				*Yrdst = *++Ysrc1; \
 				*++Yrdst = *++Ysrc2; \
 				*++Yrdst = *++Ysrc3; \
 				*++Yrdst = *++Ysrc4; \
@@ -626,28 +628,30 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	type *Udst = (type *)Utexture - 1; \
 	type *Vdst = (type *)Vtexture - 1; \
 	 \
-	type *Usrc1 = (type *)buffer[1] - 1; \
-	type *Usrc2 = (type *)(buffer[1] + stride[1]) - 1; \
-	type *Usrc3 = (type *)(buffer[1] + (stride[1] * 2)) - 1; \
-	type *Usrc4 = (type *)(buffer[1] + (stride[1] * 3)) - 1; \
+	type *Usrc1 = (type *) (buffer[1]) - 1; \
+	type *Usrc2 = (type *)((buffer[1]) + stride[1]) - 1; \
+	type *Usrc3 = (type *)((buffer[1]) + (stride[1] * 2)) - 1; \
+	type *Usrc4 = (type *)((buffer[1]) + (stride[1] * 3)) - 1; \
 	 \
-	type *Vsrc1 = (type *)buffer[2] - 1; \
-	type *Vsrc2 = (type *)(buffer[2] + stride[2]) - 1; \
-	type *Vsrc3 = (type *)(buffer[2] + (stride[2] * 2)) - 1; \
-	type *Vsrc4 = (type *)(buffer[2] + (stride[2] * 3)) - 1; \
+	type *Vsrc1 = (type *) (buffer[2]) - 1; \
+	type *Vsrc2 = (type *)((buffer[2]) + stride[2]) - 1; \
+	type *Vsrc3 = (type *)((buffer[2]) + (stride[2] * 2)) - 1; \
+	type *Vsrc4 = (type *)((buffer[2]) + (stride[2] * 3)) - 1; \
 	 \
 	int rows = UVheight / 4; \
-	 \
+	int tiles, ntiles = UVwidth / 8; \
+		\
 	while (rows--) { \
-		int tiles = UVwidth / 8; \
-		 \
+		tiles = ntiles; \
 		while (tiles--) { \
-			*++Udst = *++Usrc1; \
+			__asm__ volatile("dcbz 0,%0" : : "b" (++Udst) ); \
+			*Udst = *++Usrc1; \
 			*++Udst = *++Usrc2; \
 			*++Udst = *++Usrc3; \
 			*++Udst = *++Usrc4; \
 			 \
-			*++Vdst = *++Vsrc1; \
+			__asm__ volatile("dcbz 0,%0" : : "b" (++Vdst) ); \ 
+			*Vdst = *++Vsrc1; \
 			*++Vdst = *++Vsrc2; \
 			*++Vdst = *++Vsrc3; \
 			*++Vdst = *++Vsrc4; \
@@ -664,9 +668,11 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 		Vsrc4 = (type *)((u32)Vsrc4 + UVrowpitch); \
 	} \
 }
-	
+
+
 void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 {
+
 	if(st0!=stride[0] || st1!=stride[1])
 	{
 		st0=stride[0];
@@ -674,7 +680,7 @@ void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 		Yrowpitch = (stride[0] * 4) - Ywidth;
 		UVrowpitch = (stride[1] * 4) - UVwidth;
 	}
-	
+
 	if(need_wait)
 		GX_WaitDrawDone();
 
@@ -686,12 +692,12 @@ void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 	if (stride[1] & 7)
 		CHROMA_COPY(u64)
 	else
-		CHROMA_COPY(double)
+		CHROMA_COPY(double) 
 }
 
 void GX_RenderTexture()
 {
-	DrawMPlayer();
+	DrawMPlayer();  
 }
 
 void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride)
@@ -699,24 +705,40 @@ void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsig
 	s16 pitch = stride - w;
 	u8 *Ydst;
 
-	int dxs;
+	int dxs,x;
 	int dys = y0;
-	
+	int w1 = w < 1024 ? w : 1024;
+	u8 *yt;
+
+	h = h < 1024 ? h : 1024;
+
 	for (int y = 0; y < h; y++) 
 	{
+		yt = Yltexture + ((dys & (~3)) * Ylwidth) + ((dys & 3) << 3);
 		dxs = x0;
-		for (int x = 0; x < w; x++) 
+		for (x = 0; x < w1; x++) 
 		{
 			if (*srca) 
 			{
-				if (dxs < 1024)
-					Ydst = Yltexture + ((dys & (~3)) * Ylwidth) + ((dxs & (~7)) << 2) + ((dys & 3) << 3) + (dxs & 7);
-				else
-					Ydst = Yrtexture + ((dys & (~3)) * Yrwidth) + ((dxs & (~7)) << 2) + ((dys & 3) << 3) + (dxs & 7);
+				Ydst = yt + ((dxs & (~7)) << 2)  + (dxs & 7);
 				*Ydst = (((*Ydst) * (*srca)) >> 8) + (*src);
 			}
 			dxs++;
 			src++; srca++;
+		}
+		if(w>1024)
+		{
+			yt = Yrtexture + ((dys & (~3)) * Yrwidth) + ((dys & 3) << 3);
+			for (; x < w; x++) 
+			{
+				if (*srca) 
+				{
+					Ydst = yt + ((dxs & (~7)) << 2) + (dxs & 7);
+					*Ydst = (((*Ydst) * (*srca)) >> 8) + (*src);
+				}
+				dxs++;
+				src++; srca++;
+			}
 		}
 		dys++;
 		src += pitch;

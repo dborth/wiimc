@@ -161,7 +161,6 @@ void ResumeCacheThread();
 bool CacheThreadSuspended();
 bool DisableVideoImg();
 
-void ReInitTTFLib();
 void reinit_video();
 void reinit_audio();
 void load_builtin_codecs();
@@ -233,7 +232,7 @@ static int drop_frame_cnt; // total number of dropped frames
 int benchmark;
 
 // options:
-#define DEFAULT_STARTUP_DECODE_RETRY 8
+#define DEFAULT_STARTUP_DECODE_RETRY 4
 int auto_quality;
 static int output_quality;
 
@@ -323,7 +322,7 @@ static int softsleep;
 double force_fps;
 static int force_srate;
 static int audio_output_format = AF_FORMAT_UNKNOWN;
-int frame_dropping;        // option  0=no drop  1= drop vo  2= drop decode
+int frame_dropping = 1;        // option  0=no drop  1= drop vo  2= drop decode
 static int play_n_frames    = -1;
 static int play_n_frames_mf = -1;
 
@@ -332,8 +331,8 @@ char **video_driver_list;
 char **audio_driver_list;
 
 // sub:
-char *font_name;
-char *sub_font_name;
+char *font_name = NULL;
+char *sub_font_name = NULL;
 float font_factor = 0.75;
 char **sub_name;
 char **sub_paths;
@@ -1830,7 +1829,7 @@ static int check_framedrop(double frame_time)
     // check for frame-drop:
     current_module = "check_framedrop";
     if (mpctx->sh_audio && !mpctx->d_audio->eof) {
-        static int dropped_frames;
+        static int dropped_frames = 0;
         float delay = playback_speed * mpctx->audio_out->get_delay();
         float d     = delay - mpctx->delay;
         ++total_frame_cnt;
@@ -2311,7 +2310,7 @@ static int sleep_until_update(float *time_frame, float *aq_sleep_time)
 #endif /* CONFIG_NETWORKING */
 #endif
 
-    *time_frame -= GetRelativeTime(); // reset timer
+    *time_frame -= GetRelativeTime() * 0.000001F; // reset timer
 
     if (mpctx->sh_audio && !mpctx->d_audio->eof) {
         float delay = mpctx->audio_out->get_delay();
@@ -2362,7 +2361,7 @@ static int sleep_until_update(float *time_frame, float *aq_sleep_time)
         *time_frame = timing_sleep(*time_frame);
 
 #ifdef GEKKO
-    else usleep(1); // to help LWP threads
+  //  else usleep(1); // to help LWP threads
 #else
     handle_udp_master(mpctx->sh_video->pts);
 #endif
@@ -2446,21 +2445,22 @@ if (sh_video->disp_w > 1024)
 	if (strncmp(c->name, "ffmpeg", 6) == 0 || strncmp(c->name, "ffodivx", 7) == 0)
 	{
 		m_config_set_option(mconfig, "lavdopts", "fast=0:lowres=1:skipframe=default:skiploopfilter=default");
-		force_frame_dropping = 1;
+		//force_frame_dropping = 1;
 	}
 	else
 	{
 		m_config_set_option(mconfig, "lavdopts", "fast=1:lowres=0:skipframe=nonref:skiploopfilter=all");
-		force_frame_dropping = 0;
+		//force_frame_dropping = 0;
 	}
 }
 else
 {
 	// set back to default
 	m_config_set_option(mconfig, "lavdopts", "fast=0:lowres=0:skipframe=default:skiploopfilter=default");
-	force_frame_dropping = -1;
+	//force_frame_dropping = -1;
 }
 #endif
+
 
 #ifdef CONFIG_ASS
     if (ass_enabled)
@@ -2557,6 +2557,7 @@ static double update_video(int *blit_frame)
 
             if (full_frame) {
                 sh_video->timer += frame_time;
+                
                 if (mpctx->sh_audio)
                     mpctx->delay -= frame_time;
                 // video_read_frame can change fps (e.g. for ASF video)
@@ -3251,7 +3252,6 @@ play_next_file:
 
 #ifdef GEKKO
 usleep(100);
-
 if(filename)
 {
   free(filename);
@@ -3272,14 +3272,14 @@ if(end_film_error==0)
 else //end film by error
 	controlledbygui = 1; // send control back to GUI
 
-  while (!filename)
+do 
 {
   usleep(50000);
 
   // received the signal to stop playing
   if(controlledbygui == 2)
 	  controlledbygui = 0; // none playing, so discard
-}
+}while (!filename);
 end_film_error=0;
 wii_error = 0;
 controlledbygui = 0;
@@ -3293,6 +3293,9 @@ dvd_chapter=1;
 dvd_last_chapter=0;
 dvd_title=0;
 dvd_angle=1;
+sub_delay=0;
+audio_delay=0;
+
 #endif
 
     // init global sub numbers
@@ -3996,7 +3999,6 @@ if (mpctx->sh_video)
 	{
 	
 	    force_load_font = 0;
-	    ReInitTTFLib();
 		load_font_ft(mpctx->sh_video->disp_w, mpctx->sh_video->disp_h, &vo_font, font_name, osd_font_scale_factor);
 		prev_dxs = mpctx->sh_video->disp_w; prev_dys = mpctx->sh_video->disp_h;
 
@@ -4155,13 +4157,14 @@ total_time_usage_start=GetTimer();
 #endif
                 if (!skip_timing)
                     frame_time_remaining = sleep_until_update(&mpctx->time_frame, &aq_sleep_time);
+                
 
 //====================== FLIP PAGE (VIDEO BLT): =========================
 
                 if (!edl_needs_reset) {
                     current_module = "flip_page";
                     if (!frame_time_remaining && blit_frame) {
-                        unsigned int t2 = GetTimer();
+                        u64 t2 = GetTimer();
 
                         if (vo_config_count)
                             mpctx->video_out->flip_page();
@@ -4704,6 +4707,7 @@ static float timing_sleep(float time_frame)
 		frame = frame - GetRelativeTime();
 	}
 	time_frame=(float)(frame * 0.000001F);
+	
 	return time_frame;
 }
 
@@ -4743,7 +4747,7 @@ void PauseAndGotoGUI()
 
 	mpctx->osd_function = OSD_PLAY;
 
-	if ((strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0) && !dvd_device)
+	if ((strncmp(filename, "dvd:", 4) == 0 || strncmp(filename, "dvdnav:", 7) == 0)/* && !dvd_device*/)
 		StartDVDMotor();
 	else if(strncmp(filename, "usb", 3) == 0 || (dvd_device && strncmp(dvd_device, "usb", 3) == 0))
 		WakeupUSB();
@@ -4863,9 +4867,9 @@ void fast_continue()
 /****************************************************************************
  * Wii hooks
  ***************************************************************************/
-
 void wiiLoadFile(char *_filename, char *_partitionlabel)
 {
+
 	if (partitionlabel)
 	    free(partitionlabel);
 	partitionlabel = (_partitionlabel) ? strdup(_partitionlabel) : strdup("");
@@ -5187,7 +5191,7 @@ void wiiSetVolume(int vol)
 void wiiSetProperty(int command, float value)
 {
 	static float current_audio_delay = 0;
-
+	
 	mp_cmd_t * cmd = calloc( 1,sizeof( *cmd ) );
 	cmd->id=command;
 	cmd->nargs = 1;

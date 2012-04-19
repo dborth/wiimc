@@ -27,9 +27,9 @@
 void * fast_memcpy(void * to, const void * from, size_t len);
 void * mem2agpcpy(void * to, const void * from, size_t len);
 
+#ifndef GEKKO
 #if ! defined(CONFIG_FASTMEMCPY) || ! (HAVE_MMX || HAVE_MMX2 || HAVE_AMD3DNOW /* || HAVE_SSE || HAVE_SSE2 */)
 #define mem2agpcpy(a,b,c) memcpy(a,b,c)
-#ifndef GEKKO
 #define fast_memcpy(a,b,c) memcpy(a,b,c)
 #endif
 #endif

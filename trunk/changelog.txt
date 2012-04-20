@@ -6,9 +6,11 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
-[1.2.5]
+[1.2.5 - April 19, 2012]
 
-* Synced to MPlayer r34836 and ffmpeg 49891784ce70
+* Fixed stability issues
+* Fixed YouTube (thanks jhb50!)
+* Synced to MPlayer r34869 and ffmpeg 74e4bb691254
 
 [1.2.4 - March 17, 2012]
 

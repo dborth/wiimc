@@ -20,6 +20,12 @@ version next:
 - ZeroCodec decoder
 - tile video filter
 - Metal Gear Solid: The Twin Snakes demuxer
+- OpenEXR image decoder
+- removelogo filter
+- drop support for ffmpeg without libavfilter
+- drawtext video filter: fontconfig support
+- ffmpeg -benchmark_all option
+- super2xsai filter ported from libmpcodecs
 
 
 version 0.10:

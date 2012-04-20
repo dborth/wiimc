@@ -2107,7 +2107,7 @@ static int mpegts_read_close(AVFormatContext *s)
     return 0;
 }
 
-static int64_t mpegts_get_pcr(AVFormatContext *s, int stream_index,
+static av_unused int64_t mpegts_get_pcr(AVFormatContext *s, int stream_index,
                               int64_t *ppos, int64_t pos_limit)
 {
     MpegTSContext *ts = s->priv_data;
@@ -2319,9 +2319,9 @@ AVInputFormat ff_mpegts_demuxer = {
     .read_packet    = mpegts_read_packet,
     .read_close     = mpegts_read_close,
     .read_timestamp = mpegts_get_dts,
-    .flags = AVFMT_SHOW_IDS|AVFMT_TS_DISCONT,
+    .flags          = AVFMT_SHOW_IDS | AVFMT_TS_DISCONT,
 #ifdef USE_SYNCPOINT_SEARCH
-    .read_seek2 = read_seek2,
+    .read_seek2     = read_seek2,
 #endif
 };
 
@@ -2333,9 +2333,9 @@ AVInputFormat ff_mpegtsraw_demuxer = {
     .read_packet    = mpegts_raw_read_packet,
     .read_close     = mpegts_read_close,
     .read_timestamp = mpegts_get_dts,
-    .flags = AVFMT_SHOW_IDS|AVFMT_TS_DISCONT,
+    .flags          = AVFMT_SHOW_IDS | AVFMT_TS_DISCONT,
 #ifdef USE_SYNCPOINT_SEARCH
-    .read_seek2 = read_seek2,
+    .read_seek2     = read_seek2,
 #endif
-    .priv_class = &mpegtsraw_class,
+    .priv_class     = &mpegtsraw_class,
 };

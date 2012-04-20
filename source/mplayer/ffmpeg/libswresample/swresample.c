@@ -52,7 +52,13 @@ static const AVOption options[]={
 {"slev", "sourround mix level"  , OFFSET(slev)         , AV_OPT_TYPE_FLOAT, {.dbl=C_30DB}, 0, 4, 0},
 {"rmvol", "rematrix volume"     , OFFSET(rematrix_volume), AV_OPT_TYPE_FLOAT, {.dbl=1.0}, -1000, 1000, 0},
 {"flags", NULL                  , OFFSET(flags)        , AV_OPT_TYPE_FLAGS, {.dbl=0}, 0,  UINT_MAX, 0, "flags"},
+{"swr_flags", NULL              , OFFSET(flags)        , AV_OPT_TYPE_FLAGS, {.dbl=0}, 0,  UINT_MAX, 0, "flags"},
 {"res", "force resampling", 0, AV_OPT_TYPE_CONST, {.dbl=SWR_FLAG_RESAMPLE}, INT_MIN, INT_MAX, 0, "flags"},
+{"dither_scale" , "dither scale"       , OFFSET(dither_scale ), AV_OPT_TYPE_FLOAT, {.dbl=1}, 0, INT_MAX, 0},
+{"dither_method", "dither method"      , OFFSET(dither_method), AV_OPT_TYPE_INT  , {.dbl=0}, 0, SWR_DITHER_NB-1, 0, "dither_method"},
+{"rectangular", "rectangular dither", 0, AV_OPT_TYPE_CONST, {.dbl=SWR_DITHER_RECTANGULAR}, INT_MIN, INT_MAX, 0, "dither_method"},
+{"triangular" , "triangular dither" , 0, AV_OPT_TYPE_CONST, {.dbl=SWR_DITHER_TRIANGULAR }, INT_MIN, INT_MAX, 0, "dither_method"},
+{"triangular_hp" , "triangular dither with high pass" , 0, AV_OPT_TYPE_CONST, {.dbl=SWR_DITHER_TRIANGULAR_HIGHPASS }, INT_MIN, INT_MAX, 0, "dither_method"},
 
 {0}
 };
@@ -94,6 +100,11 @@ int swr_set_channel_mapping(struct SwrContext *s, const int *channel_map){
     return 0;
 }
 
+const AVClass *swr_get_class(void)
+{
+    return &av_class;
+}
+
 struct SwrContext *swr_alloc(void){
     SwrContext *s= av_mallocz(sizeof(SwrContext));
     if(s){
@@ -119,7 +130,7 @@ struct SwrContext *swr_alloc_set_opts(struct SwrContext *s,
     av_opt_set_int(s, "icl", in_ch_layout,    0);
     av_opt_set_int(s, "isf", in_sample_fmt,   0);
     av_opt_set_int(s, "isr", in_sample_rate,  0);
-    av_opt_set_int(s, "tsf", AV_SAMPLE_FMT_S16, 0);
+    av_opt_set_int(s, "tsf", AV_SAMPLE_FMT_NONE,   0);
     av_opt_set_int(s, "ich", av_get_channel_layout_nb_channels(s-> in_ch_layout), 0);
     av_opt_set_int(s, "och", av_get_channel_layout_nb_channels(s->out_ch_layout), 0);
     av_opt_set_int(s, "uch", 0, 0);
@@ -139,6 +150,7 @@ void swr_free(SwrContext **ss){
         free_temp(&s->midbuf);
         free_temp(&s->preout);
         free_temp(&s->in_buffer);
+        free_temp(&s->dither);
         swri_audio_convert_free(&s-> in_convert);
         swri_audio_convert_free(&s->out_convert);
         swri_audio_convert_free(&s->full_convert);
@@ -156,6 +168,7 @@ int swr_init(struct SwrContext *s){
     free_temp(&s->midbuf);
     free_temp(&s->preout);
     free_temp(&s->in_buffer);
+    free_temp(&s->dither);
     swri_audio_convert_free(&s-> in_convert);
     swri_audio_convert_free(&s->out_convert);
     swri_audio_convert_free(&s->full_convert);
@@ -176,25 +189,28 @@ int swr_init(struct SwrContext *s){
         return AVERROR(EINVAL);
     }
 
-    if(   s->int_sample_fmt != AV_SAMPLE_FMT_S16
-        &&s->int_sample_fmt != AV_SAMPLE_FMT_FLT){
-        av_log(s, AV_LOG_ERROR, "Requested sample format %s is not supported internally, only float & S16 is supported\n", av_get_sample_fmt_name(s->int_sample_fmt));
-        return AVERROR(EINVAL);
-    }
-
     //FIXME should we allow/support using FLT on material that doesnt need it ?
     if(s->in_sample_fmt <= AV_SAMPLE_FMT_S16 || s->int_sample_fmt==AV_SAMPLE_FMT_S16){
         s->int_sample_fmt= AV_SAMPLE_FMT_S16;
     }else
         s->int_sample_fmt= AV_SAMPLE_FMT_FLT;
 
+    if(   s->int_sample_fmt != AV_SAMPLE_FMT_S16
+        &&s->int_sample_fmt != AV_SAMPLE_FMT_S32
+        &&s->int_sample_fmt != AV_SAMPLE_FMT_FLT){
+        av_log(s, AV_LOG_ERROR, "Requested sample format %s is not supported internally, S16/S32/FLT is supported\n", av_get_sample_fmt_name(s->int_sample_fmt));
+        return AVERROR(EINVAL);
+    }
 
     if (s->out_sample_rate!=s->in_sample_rate || (s->flags & SWR_FLAG_RESAMPLE)){
-        s->resample = swri_resample_init(s->resample, s->out_sample_rate, s->in_sample_rate, 16, 10, 0, 0.8);
+        s->resample = swri_resample_init(s->resample, s->out_sample_rate, s->in_sample_rate, 16, 10, 0, 0.8, s->int_sample_fmt);
     }else
         swri_resample_free(&s->resample);
-    if(s->int_sample_fmt != AV_SAMPLE_FMT_S16 && s->resample){
-        av_log(s, AV_LOG_ERROR, "Resampling only supported with internal s16 currently\n"); //FIXME
+    if(    s->int_sample_fmt != AV_SAMPLE_FMT_S16
+        && s->int_sample_fmt != AV_SAMPLE_FMT_S32
+        && s->int_sample_fmt != AV_SAMPLE_FMT_FLT
+        && s->resample){
+        av_log(s, AV_LOG_ERROR, "Resampling only supported with internal s16/s32/flt\n");
         return -1;
     }
 
@@ -277,6 +293,8 @@ av_assert0(s->out.ch_count);
         s->in_buffer.bps    = s->int_bps;
         s->in_buffer.planar = 1;
     }
+
+    s->dither = s->preout;
 
     if(s->rematrix)
         return swri_rematrix_init(s);
@@ -502,6 +520,25 @@ static int swr_convert_internal(struct SwrContext *s, AudioData *out, int out_co
     }
 
     if(preout != out && out_count){
+        if(s->dither_method){
+            int ch;
+            int dither_count= FFMAX(out_count, 1<<16);
+            av_assert0(preout != in);
+
+            if((ret=realloc_audio(&s->dither, dither_count))<0)
+                return ret;
+            if(ret)
+                for(ch=0; ch<s->dither.ch_count; ch++)
+                    swri_get_dither(s, s->dither.ch[ch], s->dither.count, 12345678913579<<ch, s->out_sample_fmt, s->int_sample_fmt);
+            av_assert0(s->dither.ch_count == preout->ch_count);
+
+            if(s->dither_pos + out_count > s->dither.count)
+                s->dither_pos = 0;
+            for(ch=0; ch<preout->ch_count; ch++)
+                swri_sum2(s->int_sample_fmt, preout->ch[ch], preout->ch[ch], s->dither.ch[ch] + s->dither.bps * s->dither_pos, 1, 1, out_count);
+
+            s->dither_pos += out_count;
+        }
 //FIXME packed doesnt need more than 1 chan here!
         swri_audio_convert(s->out_convert, out, preout, out_count);
     }

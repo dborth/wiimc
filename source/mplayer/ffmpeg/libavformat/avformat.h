@@ -787,6 +787,11 @@ typedef struct AVStream {
      * NOT PART OF PUBLIC API
      */
     int request_probe;
+    /**
+     * Indicates that everything up to the next keyframe
+     * should be discarded.
+     */
+    int skip_to_keyframe;
 } AVStream;
 
 #define AV_PROGRAM_RUNNING 1
@@ -1083,6 +1088,8 @@ typedef struct AVFormatContext {
      */
 #define RAW_PACKET_BUFFER_SIZE 2500000
     int raw_packet_buffer_remaining_size;
+
+    int avio_flags;
 } AVFormatContext;
 
 typedef struct AVPacketList {

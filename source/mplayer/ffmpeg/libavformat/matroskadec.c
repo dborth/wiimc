@@ -1011,6 +1011,10 @@ static int matroska_decode_buffer(uint8_t** buf, int* buf_size,
 
     switch (encodings[0].compression.algo) {
     case MATROSKA_TRACK_ENCODING_COMP_HEADERSTRIP:
+        if (encodings[0].compression.settings.size && !encodings[0].compression.settings.data) {
+            av_log(0, AV_LOG_ERROR, "Compression size but no data in headerstrip\n");
+            return -1;
+        }
         return encodings[0].compression.settings.size;
     case MATROSKA_TRACK_ENCODING_COMP_LZO:
         do {
@@ -1126,12 +1130,10 @@ static void matroska_fix_ass_packet(MatroskaDemuxContext *matroska,
 
 static int matroska_merge_packets(AVPacket *out, AVPacket *in)
 {
-    void *newdata = av_realloc(out->data, out->size+in->size);
-    if (!newdata)
-        return AVERROR(ENOMEM);
-    out->data = newdata;
-    memcpy(out->data+out->size, in->data, in->size);
-    out->size += in->size;
+    int ret = av_grow_packet(out, in->size);
+    if (ret < 0)
+        return ret;
+    memcpy(out->data + out->size - in->size, in->data, in->size);
     av_destruct_packet(in);
     av_free(in);
     return 0;
@@ -1446,7 +1448,7 @@ static int matroska_read_header(AVFormatContext *s)
             continue;
 
         if (track->type == MATROSKA_TRACK_TYPE_VIDEO) {
-            if (!track->default_duration)
+            if (!track->default_duration && track->video.frame_rate > 0)
                 track->default_duration = 1000000000/track->video.frame_rate;
             if (!track->video.display_width)
                 track->video.display_width = track->video.pixel_width;
@@ -1581,9 +1583,11 @@ static int matroska_read_header(AVFormatContext *s)
         } else if (codec_id == CODEC_ID_RA_144) {
             track->audio.out_samplerate = 8000;
             track->audio.channels = 1;
-        } else if (codec_id == CODEC_ID_RA_288 || codec_id == CODEC_ID_COOK ||
-                   codec_id == CODEC_ID_ATRAC3 || codec_id == CODEC_ID_SIPR) {
+        } else if ((codec_id == CODEC_ID_RA_288 || codec_id == CODEC_ID_COOK ||
+                    codec_id == CODEC_ID_ATRAC3 || codec_id == CODEC_ID_SIPR)
+                    && track->codec_priv.data) {
             int flavor;
+
             ffio_init_context(&b, track->codec_priv.data,track->codec_priv.size,
                           0, NULL, NULL, NULL, NULL);
             avio_skip(&b, 22);
@@ -1657,8 +1661,11 @@ static int matroska_read_header(AVFormatContext *s)
                       st->codec-> width * track->video.display_height,
                       255);
             st->need_parsing = AVSTREAM_PARSE_HEADERS;
-            if (track->default_duration)
-                st->avg_frame_rate = av_d2q(1000000000.0/track->default_duration, INT_MAX);
+            if (track->default_duration) {
+                av_reduce(&st->r_frame_rate.num, &st->r_frame_rate.den,
+                          1000000000, track->default_duration, 30000);
+                st->avg_frame_rate = st->r_frame_rate;
+            }
 
             /* export stereo mode flag as metadata tag */
             if (track->video.stereo_mode && track->video.stereo_mode < MATROSKA_VIDEO_STEREO_MODE_COUNT)
@@ -1837,9 +1844,14 @@ static int matroska_parse_block(MatroskaDemuxContext *matroska, uint8_t *data,
     }
 
     if (matroska->skip_to_keyframe && track->type != MATROSKA_TRACK_TYPE_SUBTITLE) {
-        if (!is_keyframe || timecode < matroska->skip_to_timecode)
+        if (timecode < matroska->skip_to_timecode)
             return res;
-        matroska->skip_to_keyframe = 0;
+        if (!st->skip_to_keyframe) {
+            av_log(matroska->ctx, AV_LOG_ERROR, "File is broken, keyframes not correctly marked!\n");
+            matroska->skip_to_keyframe = 0;
+        }
+        if (is_keyframe)
+            matroska->skip_to_keyframe = 0;
     }
 
     switch ((flags & 0x06) >> 1) {
@@ -1940,7 +1952,8 @@ static int matroska_parse_block(MatroskaDemuxContext *matroska, uint8_t *data,
                         if (size < cfs * h / 2) {
                             av_log(matroska->ctx, AV_LOG_ERROR,
                                    "Corrupt int4 RM-style audio packet size\n");
-                            return AVERROR_INVALIDDATA;
+                            res = AVERROR_INVALIDDATA;
+                            goto end;
                         }
                         for (x=0; x<h/2; x++)
                             memcpy(track->audio.buf+x*2*w+y*cfs,
@@ -1949,14 +1962,16 @@ static int matroska_parse_block(MatroskaDemuxContext *matroska, uint8_t *data,
                         if (size < w) {
                             av_log(matroska->ctx, AV_LOG_ERROR,
                                    "Corrupt sipr RM-style audio packet size\n");
-                            return AVERROR_INVALIDDATA;
+                            res = AVERROR_INVALIDDATA;
+                            goto end;
                         }
                         memcpy(track->audio.buf + y*w, data, w);
                     } else {
                         if (size < sps * w / sps) {
                             av_log(matroska->ctx, AV_LOG_ERROR,
                                    "Corrupt generic RM-style audio packet size\n");
-                            return AVERROR_INVALIDDATA;
+                            res = AVERROR_INVALIDDATA;
+                            goto end;
                         }
                         for (x=0; x<w/sps; x++)
                             memcpy(track->audio.buf+sps*(h*x+((h+1)/2)*(y&1)+(y>>1)), data+x*sps, sps);
@@ -2046,6 +2061,7 @@ static int matroska_parse_block(MatroskaDemuxContext *matroska, uint8_t *data,
         }
     }
 
+end:
     av_free(lace_size);
     return res;
 }
@@ -2141,6 +2157,7 @@ static int matroska_read_seek(AVFormatContext *s, int stream_index,
 
     avio_seek(s->pb, st->index_entries[index_min].pos, SEEK_SET);
     matroska->current_id = 0;
+    st->skip_to_keyframe =
     matroska->skip_to_keyframe = !(flags & AVSEEK_FLAG_ANY);
     matroska->skip_to_timecode = st->index_entries[index].timestamp;
     matroska->done = 0;
@@ -2152,6 +2169,7 @@ err:
     // the generic seeking code.
     matroska_clear_queue(matroska);
     matroska->current_id = 0;
+    st->skip_to_keyframe =
     matroska->skip_to_keyframe = 0;
     matroska->done = 0;
     matroska->num_levels = 0;

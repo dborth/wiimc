@@ -36,6 +36,11 @@
 #include "libavutil/pixdesc.h"
 #include "libavutil/avassert.h"
 
+#ifdef __INTEL_COMPILER
+#undef av_flatten
+#define av_flatten
+#endif
+
 #define MAX_PLANES 4
 #define CONTEXT_SIZE 32
 
@@ -165,6 +170,7 @@ typedef struct FFV1Context{
     uint64_t rc_stat[256][2];
     uint64_t (*rc_stat2[MAX_QUANT_TABLES])[32][2];
     int version;
+    int minor_version;
     int width, height;
     int chroma_h_shift, chroma_v_shift;
     int chroma_planes;
@@ -328,7 +334,7 @@ do{\
 #undef put_rac
 }
 
-static void av_noinline put_symbol(RangeCoder *c, uint8_t *state, int v, int is_signed){
+static av_noinline void put_symbol(RangeCoder *c, uint8_t *state, int v, int is_signed){
     put_symbol_inline(c, state, v, is_signed, NULL, NULL);
 }
 
@@ -352,7 +358,7 @@ static inline av_flatten int get_symbol_inline(RangeCoder *c, uint8_t *state, in
     }
 }
 
-static int av_noinline get_symbol(RangeCoder *c, uint8_t *state, int is_signed){
+static av_noinline int get_symbol(RangeCoder *c, uint8_t *state, int is_signed){
     return get_symbol_inline(c, state, is_signed);
 }
 
@@ -444,7 +450,7 @@ static inline int get_vlc_symbol(GetBitContext *gb, VlcState * const state, int 
 
 #if CONFIG_FFV1_ENCODER
 static av_always_inline int encode_line(FFV1Context *s, int w,
-                                        int16_t *sample[2],
+                                        int16_t *sample[3],
                                         int plane_index, int bits)
 {
     PlaneContext * const p= &s->plane[plane_index];
@@ -778,6 +784,8 @@ static int write_extra_header(FFV1Context *f){
     ff_build_rac_states(c, 0.05*(1LL<<32), 256-8);
 
     put_symbol(c, state, f->version, 0);
+    if(f->version > 2)
+        put_symbol(c, state, f->minor_version, 0);
     put_symbol(c, state, f->ac, 0);
     if(f->ac>1){
         for(i=1; i<256; i++){
@@ -870,6 +878,15 @@ static av_cold int encode_init(AVCodecContext *avctx)
     common_init(avctx);
 
     s->version=0;
+
+    if((avctx->flags & (CODEC_FLAG_PASS1|CODEC_FLAG_PASS2)) || avctx->slices>1)
+        s->version = FFMAX(s->version, 2);
+
+    if(s->version >= 2 && avctx->strict_std_compliance > FF_COMPLIANCE_EXPERIMENTAL) {
+        av_log(avctx, AV_LOG_ERROR, "Version 2 needed for requested features but version 2 is experimental and not enabled\n");
+        return -1;
+    }
+
     s->ac= avctx->coder_type ? 2:0;
 
     if(s->ac>1)
@@ -1053,8 +1070,15 @@ static av_cold int encode_init(AVCodecContext *avctx)
     }
 
     if(s->version>1){
-        s->num_h_slices=2;
-        s->num_v_slices=2;
+        for(s->num_v_slices=2; s->num_v_slices<9; s->num_v_slices++){
+            for(s->num_h_slices=s->num_v_slices; s->num_h_slices<2*s->num_v_slices; s->num_h_slices++){
+                if(avctx->slices == s->num_h_slices * s->num_v_slices && avctx->slices <= 64)
+                    goto slices_ok;
+            }
+        }
+        av_log(avctx, AV_LOG_ERROR, "Unsupported number %d of slices requested\n", avctx->slices);
+        return -1;
+        slices_ok:
         write_extra_header(s);
     }
 
@@ -1543,6 +1567,8 @@ static int read_extra_header(FFV1Context *f){
     ff_build_rac_states(c, 0.05*(1LL<<32), 256-8);
 
     f->version= get_symbol(c, state, 0);
+    if(f->version > 2)
+        f->minor_version= get_symbol(c, state, 0);
     f->ac= f->avctx->coder_type= get_symbol(c, state, 0);
     if(f->ac>1){
         for(i=1; i<256; i++){
@@ -1551,7 +1577,7 @@ static int read_extra_header(FFV1Context *f){
     }
     f->colorspace= get_symbol(c, state, 0); //YUV cs type
     f->avctx->bits_per_raw_sample= get_symbol(c, state, 0);
-    get_rac(c, state); //no chroma = false
+    f->chroma_planes= get_rac(c, state);
     f->chroma_h_shift= get_symbol(c, state, 0);
     f->chroma_v_shift= get_symbol(c, state, 0);
     f->transparency= get_rac(c, state);
@@ -1851,8 +1877,9 @@ AVCodec ff_ffv1_decoder = {
     .init           = decode_init,
     .close          = common_end,
     .decode         = decode_frame,
-    .capabilities   = CODEC_CAP_DR1 /*| CODEC_CAP_DRAW_HORIZ_BAND*/ | CODEC_CAP_SLICE_THREADS,
-    .long_name= NULL_IF_CONFIG_SMALL("FFmpeg video codec #1"),
+    .capabilities   = CODEC_CAP_DR1 /*| CODEC_CAP_DRAW_HORIZ_BAND*/ |
+                      CODEC_CAP_SLICE_THREADS,
+    .long_name      = NULL_IF_CONFIG_SMALL("FFmpeg video codec #1"),
 };
 
 #if CONFIG_FFV1_ENCODER
@@ -1864,8 +1891,8 @@ AVCodec ff_ffv1_encoder = {
     .init           = encode_init,
     .encode2        = encode_frame,
     .close          = common_end,
-    .capabilities = CODEC_CAP_SLICE_THREADS,
+    .capabilities   = CODEC_CAP_SLICE_THREADS,
     .pix_fmts= (const enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_YUVA420P, PIX_FMT_YUV444P, PIX_FMT_YUVA444P, PIX_FMT_YUV440P, PIX_FMT_YUV422P, PIX_FMT_YUV411P, PIX_FMT_YUV410P, PIX_FMT_0RGB32, PIX_FMT_RGB32, PIX_FMT_YUV420P16, PIX_FMT_YUV422P16, PIX_FMT_YUV444P16, PIX_FMT_YUV444P9, PIX_FMT_YUV422P9, PIX_FMT_YUV420P9, PIX_FMT_YUV420P10, PIX_FMT_YUV422P10, PIX_FMT_YUV444P10, PIX_FMT_GRAY16, PIX_FMT_GRAY8, PIX_FMT_NONE},
-    .long_name= NULL_IF_CONFIG_SMALL("FFmpeg video codec #1"),
+    .long_name      = NULL_IF_CONFIG_SMALL("FFmpeg video codec #1"),
 };
 #endif

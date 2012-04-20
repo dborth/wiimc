@@ -166,6 +166,7 @@ Individual component options:
 External library support:
   --enable-avisynth        enable reading of AVISynth script files [no]
   --enable-bzlib           enable bzlib [autodetect]
+  --enable-fontconfig      enable fontconfig
   --enable-frei0r          enable frei0r video filtering
   --enable-gnutls          enable gnutls [no]
   --enable-libaacplus      enable AAC+ encoding via libaacplus [no]
@@ -277,6 +278,8 @@ Developer options (useful when working on FFmpeg itself):
   --disable-optimizations  disable compiler optimizations
   --enable-extra-warnings  enable more compiler warnings
   --disable-stripping      disable stripping of executables and shared libraries
+  --assert-level=level     0(default), 1 or 2, amount of assertion testing,
+                           2 causes a slowdown at runtime.
   --valgrind=VALGRIND      run "make fate" tests through valgrind to detect memory
                            leaks and errors, using the specified valgrind binary.
                            Cannot be combined with --target-exec
@@ -1020,6 +1023,7 @@ CONFIG_LIST="
     dxva2
     fastdiv
     fft
+    fontconfig
     frei0r
     gnutls
     gpl
@@ -1157,6 +1161,7 @@ HAVE_LIST="
     attribute_may_alias
     attribute_packed
     cbrtf
+    clock_gettime
     closesocket
     cmov
     dcbzl
@@ -1303,6 +1308,7 @@ CMDLINE_SET="
     ar
     arch
     as
+    assert_level
     build_suffix
     cc
     cpu
@@ -1669,11 +1675,14 @@ aresample_filter_deps="swresample"
 ass_filter_deps="libass"
 blackframe_filter_deps="gpl"
 boxblur_filter_deps="gpl"
+colormatrix_filter_deps="gpl"
 cropdetect_filter_deps="gpl"
 delogo_filter_deps="gpl"
 drawtext_filter_deps="libfreetype"
 frei0r_filter_deps="frei0r dlopen"
+frei0r_filter_extralibs='$ldl'
 frei0r_src_filter_deps="frei0r dlopen"
+frei0r_src_filter_extralibs='$ldl'
 hqdn3d_filter_deps="gpl"
 movie_filter_deps="avcodec avformat"
 mp_filter_deps="gpl avcodec swscale postproc"
@@ -1681,7 +1690,9 @@ mptestsrc_filter_deps="gpl"
 negate_filter_deps="lut_filter"
 ocv_filter_deps="libopencv"
 pan_filter_deps="swresample"
+removelogo_filter_deps="avcodec avformat swscale"
 scale_filter_deps="swscale"
+super2xsai_filter_deps="gpl"
 tinterlace_filter_deps="gpl"
 yadif_filter_deps="gpl"
 
@@ -1696,7 +1707,7 @@ ffplay_select="buffersink_filter rdft"
 ffprobe_deps="avcodec avformat"
 ffserver_deps="avformat ffm_muxer fork rtp_protocol rtsp_demuxer"
 ffserver_extralibs='$ldl'
-ffmpeg_deps="avcodec avformat swscale swresample"
+ffmpeg_deps="avcodec avfilter avformat swscale swresample"
 ffmpeg_select="buffersink_filter"
 
 doc_deps="texi2html"
@@ -1795,6 +1806,8 @@ test_deps _muxer _demuxer                                               \
     yuv4mpegpipe=yuv4mpeg                                               \
 
 ac3_fixed_test_deps="ac3_fixed_encoder ac3_decoder"
+colormatrix1_test_deps="colormatrix_filter"
+colormatrix2_test_deps="colormatrix_filter"
 flashsv2_test_deps="zlib"
 mpg_test_deps="mpeg1system_muxer mpegps_demuxer"
 mpng_test_deps="zlib"
@@ -2792,7 +2805,11 @@ case $target_os in
         ;;
 esac
 
-echo "config:$arch:$subarch:$cpu:$target_os:$cc_ident:$FFMPEG_CONFIGURATION" >config.fate
+esc(){
+    echo "$*" | sed 's/%/%25/g;s/:/%3a/g'
+}
+
+echo "config:$arch:$subarch:$cpu:$target_os:$(esc $cc_ident):$(esc $FFMPEG_CONFIGURATION)" >config.fate
 
 check_cpp_condition stdlib.h "defined(__PIC__) || defined(__pic__) || defined(PIC)" && enable pic
 
@@ -3048,6 +3065,7 @@ fi
 # Solaris has nanosleep in -lrt, OpenSolaris no longer needs that
 check_func nanosleep || { check_func nanosleep -lrt && add_extralibs -lrt; }
 
+check_func  clock_gettime || { check_func clock_gettime -lrt && add_extralibs -lrt; }
 check_func  fcntl
 check_func  fork
 check_func  getaddrinfo $network_extralibs
@@ -3155,6 +3173,7 @@ check_mathfunc truncf
 
 # these are off by default, so fail if requested and not available
 enabled avisynth   && require2 vfw32 "windows.h vfw.h" AVIFileInit -lavifil32
+enabled fontconfig && require_pkg_config fontconfig "fontconfig/fontconfig.h" FcInit
 enabled frei0r     && { check_header frei0r.h || die "ERROR: frei0r.h header not found"; }
 enabled gnutls     && require_pkg_config gnutls gnutls/gnutls.h gnutls_global_init
 enabled libaacplus && require  "libaacplus >= 2.0.0" aacplus.h aacplusEncOpen -laacplus
@@ -3182,7 +3201,7 @@ enabled libschroedinger && require_pkg_config schroedinger-1.0 schroedinger/schr
 enabled libspeex   && require  libspeex speex/speex.h speex_decoder_init -lspeex
 enabled libstagefright_h264  && require_cpp libstagefright_h264 "binder/ProcessState.h media/stagefright/MetaData.h
     media/stagefright/MediaBufferGroup.h media/stagefright/MediaDebug.h media/stagefright/MediaDefs.h
-    media/stagefright/OMXClient.h media/stagefright/OMXCodec.h" android::OMXClient -lstagefright -lmedia -lutils -lbinder
+    media/stagefright/OMXClient.h media/stagefright/OMXCodec.h" android::OMXClient -lstagefright -lmedia -lutils -lbinder -lgnustl_static
 enabled libtheora  && require  libtheora theora/theoraenc.h th_info_init -ltheoraenc -ltheoradec -logg
 enabled libutvideo    && require_cpp utvideo "stdint.h stdlib.h utvideo/utvideo.h utvideo/Codec.h" 'CCodec*' -lutvideo -lstdc++
 enabled libv4l2    && require_pkg_config libv4l2 libv4l2.h v4l2_ioctl
@@ -3715,6 +3734,9 @@ cat > $TMPH <<EOF
 #define EXTERN_ASM ${extern_prefix}
 #define SLIBSUF "$SLIBSUF"
 EOF
+
+test -n "$assert_level" &&
+    echo "#define ASSERT_LEVEL $assert_level" >>$TMPH
 
 test -n "$malloc_prefix" &&
     echo "#define MALLOC_PREFIX $malloc_prefix" >>$TMPH

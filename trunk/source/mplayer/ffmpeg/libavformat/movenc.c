@@ -939,7 +939,7 @@ static const AVCodecTag codec_3gp_tags[] = {
 
 static int mov_find_codec_tag(AVFormatContext *s, MOVTrack *track)
 {
-    int tag = track->enc->codec_tag;
+    int tag;
 
     if (track->mode == MODE_MP4 || track->mode == MODE_PSP)
         tag = mp4_get_codec_tag(s, track);
@@ -2871,7 +2871,7 @@ static int mov_flush_fragment(AVFormatContext *s)
     return 0;
 }
 
-static int mov_write_packet_internal(AVFormatContext *s, AVPacket *pkt)
+int ff_mov_write_packet(AVFormatContext *s, AVPacket *pkt)
 {
     MOVMuxContext *mov = s->priv_data;
     AVIOContext *pb = s->pb;
@@ -2880,26 +2880,6 @@ static int mov_write_packet_internal(AVFormatContext *s, AVPacket *pkt)
     unsigned int samples_in_chunk = 0;
     int size= pkt->size;
     uint8_t *reformatted_data = NULL;
-    int64_t frag_duration = 0;
-
-    if (!s->pb->seekable && !(mov->flags & FF_MOV_FLAG_EMPTY_MOOV))
-        return 0; /* Can't handle that */
-
-    if (!size) return 0; /* Discard 0 sized packets */
-
-    if (trk->entry)
-        frag_duration = av_rescale_q(pkt->dts - trk->cluster[0].dts,
-                                     s->streams[pkt->stream_index]->time_base,
-                                     AV_TIME_BASE_Q);
-    if ((mov->max_fragment_duration &&
-         frag_duration >= mov->max_fragment_duration) ||
-         (mov->max_fragment_size && mov->mdat_size + size >= mov->max_fragment_size) ||
-         (mov->flags & FF_MOV_FLAG_FRAG_KEYFRAME &&
-          enc->codec_type == AVMEDIA_TYPE_VIDEO &&
-          trk->entry && pkt->flags & AV_PKT_FLAG_KEY)) {
-        if (frag_duration >= mov->min_fragment_duration)
-            mov_flush_fragment(s);
-    }
 
     if (mov->flags & FF_MOV_FLAG_FRAGMENT) {
         int ret;
@@ -3033,13 +3013,35 @@ static int mov_write_packet_internal(AVFormatContext *s, AVPacket *pkt)
     return 0;
 }
 
-int ff_mov_write_packet(AVFormatContext *s, AVPacket *pkt)
+static int mov_write_packet(AVFormatContext *s, AVPacket *pkt)
 {
     if (!pkt) {
         mov_flush_fragment(s);
         return 1;
     } else {
-        return mov_write_packet_internal(s, pkt);
+        MOVMuxContext *mov = s->priv_data;
+        MOVTrack *trk = &mov->tracks[pkt->stream_index];
+        AVCodecContext *enc = trk->enc;
+        int64_t frag_duration = 0;
+        int size = pkt->size;
+
+        if (!pkt->size) return 0; /* Discard 0 sized packets */
+
+        if (trk->entry && pkt->stream_index < s->nb_streams)
+            frag_duration = av_rescale_q(pkt->dts - trk->cluster[0].dts,
+                                         s->streams[pkt->stream_index]->time_base,
+                                         AV_TIME_BASE_Q);
+        if ((mov->max_fragment_duration &&
+             frag_duration >= mov->max_fragment_duration) ||
+             (mov->max_fragment_size && mov->mdat_size + size >= mov->max_fragment_size) ||
+             (mov->flags & FF_MOV_FLAG_FRAG_KEYFRAME &&
+              enc->codec_type == AVMEDIA_TYPE_VIDEO &&
+              trk->entry && pkt->flags & AV_PKT_FLAG_KEY)) {
+            if (frag_duration >= mov->min_fragment_duration)
+                mov_flush_fragment(s);
+        }
+
+        return ff_mov_write_packet(s, pkt);
     }
 }
 
@@ -3373,11 +3375,13 @@ AVOutputFormat ff_mov_muxer = {
     .video_codec       = CODEC_ID_MPEG4,
 #endif
     .write_header      = mov_write_header,
-    .write_packet      = ff_mov_write_packet,
+    .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
-    .flags = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
-    .codec_tag = (const AVCodecTag* const []){ff_codec_movvideo_tags, ff_codec_movaudio_tags, 0},
-    .priv_class = &mov_muxer_class,
+    .flags             = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
+    .codec_tag         = (const AVCodecTag* const []){
+        ff_codec_movvideo_tags, ff_codec_movaudio_tags, 0
+    },
+    .priv_class        = &mov_muxer_class,
 };
 #endif
 #if CONFIG_TGP_MUXER
@@ -3390,11 +3394,11 @@ AVOutputFormat ff_tgp_muxer = {
     .audio_codec       = CODEC_ID_AMR_NB,
     .video_codec       = CODEC_ID_H263,
     .write_header      = mov_write_header,
-    .write_packet      = ff_mov_write_packet,
+    .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
-    .flags = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
-    .codec_tag = (const AVCodecTag* const []){codec_3gp_tags, 0},
-    .priv_class = &tgp_muxer_class,
+    .flags             = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
+    .codec_tag         = (const AVCodecTag* const []){ codec_3gp_tags, 0 },
+    .priv_class        = &tgp_muxer_class,
 };
 #endif
 #if CONFIG_MP4_MUXER
@@ -3412,11 +3416,11 @@ AVOutputFormat ff_mp4_muxer = {
     .video_codec       = CODEC_ID_MPEG4,
 #endif
     .write_header      = mov_write_header,
-    .write_packet      = ff_mov_write_packet,
+    .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
-    .flags = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
-    .codec_tag = (const AVCodecTag* const []){ff_mp4_obj_type, 0},
-    .priv_class = &mp4_muxer_class,
+    .flags             = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
+    .codec_tag         = (const AVCodecTag* const []){ ff_mp4_obj_type, 0 },
+    .priv_class        = &mp4_muxer_class,
 };
 #endif
 #if CONFIG_PSP_MUXER
@@ -3433,11 +3437,11 @@ AVOutputFormat ff_psp_muxer = {
     .video_codec       = CODEC_ID_MPEG4,
 #endif
     .write_header      = mov_write_header,
-    .write_packet      = ff_mov_write_packet,
+    .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
-    .flags = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
-    .codec_tag = (const AVCodecTag* const []){ff_mp4_obj_type, 0},
-    .priv_class = &psp_muxer_class,
+    .flags             = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
+    .codec_tag         = (const AVCodecTag* const []){ ff_mp4_obj_type, 0 },
+    .priv_class        = &psp_muxer_class,
 };
 #endif
 #if CONFIG_TG2_MUXER
@@ -3450,11 +3454,11 @@ AVOutputFormat ff_tg2_muxer = {
     .audio_codec       = CODEC_ID_AMR_NB,
     .video_codec       = CODEC_ID_H263,
     .write_header      = mov_write_header,
-    .write_packet      = ff_mov_write_packet,
+    .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
-    .flags = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
-    .codec_tag = (const AVCodecTag* const []){codec_3gp_tags, 0},
-    .priv_class = &tg2_muxer_class,
+    .flags             = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
+    .codec_tag         = (const AVCodecTag* const []){ codec_3gp_tags, 0 },
+    .priv_class        = &tg2_muxer_class,
 };
 #endif
 #if CONFIG_IPOD_MUXER
@@ -3468,11 +3472,11 @@ AVOutputFormat ff_ipod_muxer = {
     .audio_codec       = CODEC_ID_AAC,
     .video_codec       = CODEC_ID_H264,
     .write_header      = mov_write_header,
-    .write_packet      = ff_mov_write_packet,
+    .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
-    .flags = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
-    .codec_tag = (const AVCodecTag* const []){codec_ipod_tags, 0},
-    .priv_class = &ipod_muxer_class,
+    .flags             = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
+    .codec_tag         = (const AVCodecTag* const []){ codec_ipod_tags, 0 },
+    .priv_class        = &ipod_muxer_class,
 };
 #endif
 #if CONFIG_ISMV_MUXER
@@ -3486,10 +3490,10 @@ AVOutputFormat ff_ismv_muxer = {
     .audio_codec       = CODEC_ID_AAC,
     .video_codec       = CODEC_ID_H264,
     .write_header      = mov_write_header,
-    .write_packet      = ff_mov_write_packet,
+    .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
     .flags             = AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH,
-    .codec_tag         = (const AVCodecTag* const []){ff_mp4_obj_type, 0},
+    .codec_tag         = (const AVCodecTag* const []){ ff_mp4_obj_type, 0 },
     .priv_class        = &ismv_muxer_class,
 };
 #endif

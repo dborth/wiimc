@@ -306,6 +306,14 @@ static void mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
                 *q++=1; // 1 byte, all flags sets to 0
                 *q++=0; // omit all fields...
             }
+            if(st->codec->codec_id==CODEC_ID_S302M){
+                *q++ = 0x05; /* MPEG-2 registration descriptor*/
+                *q++ = 4;
+                *q++ = 'B';
+                *q++ = 'S';
+                *q++ = 'S';
+                *q++ = 'D';
+            }
 
             if (lang) {
                 char *p;
@@ -1157,5 +1165,5 @@ AVOutputFormat ff_mpegts_muxer = {
     .write_packet      = mpegts_write_packet,
     .write_trailer     = mpegts_write_end,
     .flags             = AVFMT_ALLOW_FLUSH,
-    .priv_class = &mpegts_muxer_class,
+    .priv_class        = &mpegts_muxer_class,
 };

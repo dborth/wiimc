@@ -319,7 +319,7 @@ static int audio_get_buffer(AVCodecContext *avctx, AVFrame *frame)
 
     buf_size = av_samples_get_buffer_size(NULL, avctx->channels,
                                           frame->nb_samples, avctx->sample_fmt,
-                                          32);
+                                          0);
     if (buf_size < 0)
         return AVERROR(EINVAL);
 
@@ -361,7 +361,7 @@ static int audio_get_buffer(AVCodecContext *avctx, AVFrame *frame)
         }
         if ((ret = avcodec_fill_audio_frame(frame, avctx->channels,
                                             avctx->sample_fmt, buf->data[0],
-                                            buf->audio_data_size, 32)))
+                                            buf->audio_data_size, 0)))
             return ret;
 
         if (frame->extended_data == frame->data)
@@ -913,10 +913,18 @@ int attribute_align_arg avcodec_open2(AVCodecContext *avctx, AVCodec *codec, AVD
         }
     }
 
-    if (av_codec_is_decoder(avctx->codec) && !avctx->bit_rate)
-        avctx->bit_rate = get_bit_rate(avctx);
-
     ret=0;
+
+    if (av_codec_is_decoder(avctx->codec)) {
+        if (!avctx->bit_rate)
+            avctx->bit_rate = get_bit_rate(avctx);
+        /* validate channel layout from the decoder */
+        if (avctx->channel_layout &&
+            av_get_channel_layout_nb_channels(avctx->channel_layout) != avctx->channels) {
+            av_log(avctx, AV_LOG_WARNING, "channel layout does not match number of channels\n");
+            avctx->channel_layout = 0;
+        }
+    }
 end:
     entangled_thread_counter--;
 
@@ -1508,7 +1516,7 @@ int attribute_align_arg avcodec_decode_audio3(AVCodecContext *avctx, int16_t *sa
 int attribute_align_arg avcodec_decode_audio4(AVCodecContext *avctx,
                                               AVFrame *frame,
                                               int *got_frame_ptr,
-                                              AVPacket *avpkt)
+                                              const AVPacket *avpkt)
 {
     int ret = 0;
 
@@ -1524,17 +1532,23 @@ int attribute_align_arg avcodec_decode_audio4(AVCodecContext *avctx,
     }
 
     if ((avctx->codec->capabilities & CODEC_CAP_DELAY) || avpkt->size) {
-        av_packet_split_side_data(avpkt);
-        apply_param_change(avctx, avpkt);
+        // copy to ensure we do not change avpkt
+        AVPacket tmp = *avpkt;
+        int did_split = av_packet_split_side_data(&tmp);
+        apply_param_change(avctx, &tmp);
 
-        avctx->pkt = avpkt;
-        ret = avctx->codec->decode(avctx, frame, got_frame_ptr, avpkt);
+        avctx->pkt = &tmp;
+        ret = avctx->codec->decode(avctx, frame, got_frame_ptr, &tmp);
         if (ret >= 0 && *got_frame_ptr) {
             avctx->frame_number++;
             frame->pkt_dts = avpkt->dts;
             if (frame->format == AV_SAMPLE_FMT_NONE)
                 frame->format = avctx->sample_fmt;
         }
+
+        avctx->pkt = NULL;
+        if (did_split)
+            ff_packet_free_side_data(&tmp);
     }
     return ret;
 }
@@ -1743,8 +1757,11 @@ void avcodec_string(char *buf, int buf_size, AVCodecContext *enc, int encode)
     codec_type = av_get_media_type_string(enc->codec_type);
     codec_name = avcodec_get_name(enc->codec_id);
     if (enc->profile != FF_PROFILE_UNKNOWN) {
-        p = encode ? avcodec_find_encoder(enc->codec_id) :
-                     avcodec_find_decoder(enc->codec_id);
+        if (enc->codec)
+            p = enc->codec;
+        else
+            p = encode ? avcodec_find_encoder(enc->codec_id) :
+                        avcodec_find_decoder(enc->codec_id);
         if (p)
             profile = av_get_profile_name(p, enc->profile);
     }
@@ -1865,6 +1882,9 @@ void avcodec_flush_buffers(AVCodecContext *avctx)
         ff_thread_flush(avctx);
     else if(avctx->codec->flush)
         avctx->codec->flush(avctx);
+
+    avctx->pts_correction_last_pts =
+    avctx->pts_correction_last_dts = INT64_MIN;
 }
 
 static void video_free_buffers(AVCodecContext *s)

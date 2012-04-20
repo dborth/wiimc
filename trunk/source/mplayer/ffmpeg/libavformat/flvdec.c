@@ -112,7 +112,7 @@ static int flv_set_video_codec(AVFormatContext *s, AVStream *vstream, int flv_co
                 vcodec->codec_id = CODEC_ID_VP6A;
             if(vcodec->extradata_size != 1) {
                 vcodec->extradata_size = 1;
-                vcodec->extradata = av_malloc(1);
+                vcodec->extradata = av_malloc(1 + FF_INPUT_BUFFER_PADDING_SIZE);
             }
             vcodec->extradata[0] = avio_r8(s->pb);
             return 1; // 1 byte body size adjustment for flv_read_packet()
@@ -731,10 +731,10 @@ AVInputFormat ff_flv_demuxer = {
     .read_probe     = flv_probe,
     .read_header    = flv_read_header,
     .read_packet    = flv_read_packet,
-    .read_seek = flv_read_seek,
+    .read_seek      = flv_read_seek,
 #if 0
-    .read_seek2 = flv_read_seek2,
+    .read_seek2     = flv_read_seek2,
 #endif
-    .read_close = flv_read_close,
-    .extensions = "flv",
+    .read_close     = flv_read_close,
+    .extensions     = "flv",
 };

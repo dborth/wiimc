@@ -77,7 +77,7 @@ typedef struct TiffEncoderContext {
  * @param need Needed bytes
  * @return 0 - ok, 1 - no free space
  */
-inline static int check_size(TiffEncoderContext * s, uint64_t need)
+static inline int check_size(TiffEncoderContext * s, uint64_t need)
 {
     if (s->buf_size < *s->buf - s->buf_start + need) {
         *s->buf = s->buf_start + s->buf_size + 1;
@@ -252,23 +252,28 @@ static int encode_frame(AVCodecContext * avctx, AVPacket *pkt,
         bpp_tab[3] = 16;
         break;
     case PIX_FMT_RGBA:
+        avctx->bits_per_coded_sample =
         s->bpp = 32;
         s->photometric_interpretation = 2;
         break;
     case PIX_FMT_RGB24:
+        avctx->bits_per_coded_sample =
         s->bpp = 24;
         s->photometric_interpretation = 2;
         break;
     case PIX_FMT_GRAY8:
+        avctx->bits_per_coded_sample = 0x28;
         s->bpp = 8;
         s->photometric_interpretation = 1;
         break;
     case PIX_FMT_PAL8:
+        avctx->bits_per_coded_sample =
         s->bpp = 8;
         s->photometric_interpretation = 3;
         break;
     case PIX_FMT_MONOBLACK:
     case PIX_FMT_MONOWHITE:
+        avctx->bits_per_coded_sample =
         s->bpp = 1;
         s->photometric_interpretation = avctx->pix_fmt == PIX_FMT_MONOBLACK;
         bpp_tab[0] = 1;
@@ -491,13 +496,14 @@ AVCodec ff_tiff_encoder = {
     .id             = CODEC_ID_TIFF,
     .priv_data_size = sizeof(TiffEncoderContext),
     .encode2        = encode_frame,
-    .pix_fmts =
-        (const enum PixelFormat[]) {PIX_FMT_RGB24, PIX_FMT_PAL8, PIX_FMT_GRAY8,
-                              PIX_FMT_MONOBLACK, PIX_FMT_MONOWHITE,
-                              PIX_FMT_YUV420P, PIX_FMT_YUV422P,
-                              PIX_FMT_YUV444P, PIX_FMT_YUV410P,
-                              PIX_FMT_YUV411P, PIX_FMT_RGB48LE,
-                              PIX_FMT_RGBA, PIX_FMT_RGBA64LE, PIX_FMT_NONE},
-    .long_name = NULL_IF_CONFIG_SMALL("TIFF image"),
+    .pix_fmts       = (const enum PixelFormat[]) {
+        PIX_FMT_RGB24, PIX_FMT_PAL8, PIX_FMT_GRAY8,
+        PIX_FMT_MONOBLACK, PIX_FMT_MONOWHITE,
+        PIX_FMT_YUV420P, PIX_FMT_YUV422P, PIX_FMT_YUV444P,
+        PIX_FMT_YUV410P, PIX_FMT_YUV411P, PIX_FMT_RGB48LE,
+        PIX_FMT_RGBA, PIX_FMT_RGBA64LE,
+        PIX_FMT_NONE
+    },
+    .long_name      = NULL_IF_CONFIG_SMALL("TIFF image"),
     .priv_class     = &tiffenc_class,
 };

@@ -438,6 +438,14 @@ retry:
         ret = ff_h263_decode_picture_header(s);
     }
 
+    if (HAVE_THREADS && (s->avctx->active_thread_type&FF_THREAD_FRAME) && ret < 0) {
+        if (   s->width  != avctx->coded_width
+            || s->height != avctx->coded_height) {
+                av_log(s->avctx, AV_LOG_WARNING, "Reverting picture dimensions change due to header decoding failure\n");
+                s->width = avctx->coded_width;
+                s->height= avctx->coded_height;
+        }
+    }
     if(ret==FRAME_SKIPPED) return get_consumed_bytes(s, buf_size);
 
     /* skip if the header was thrashed */
@@ -571,7 +579,6 @@ retry:
     if (s->codec_id == CODEC_ID_MPEG4 && s->xvid_build>=0 && avctx->idct_algo == FF_IDCT_AUTO && (av_get_cpu_flags() & AV_CPU_FLAG_MMX)) {
         avctx->idct_algo= FF_IDCT_XVIDMMX;
         ff_dct_common_init(s);
-        s->picture_number=0;
     }
 #endif
 
@@ -754,9 +761,10 @@ AVCodec ff_h263_decoder = {
     .init           = ff_h263_decode_init,
     .close          = ff_h263_decode_end,
     .decode         = ff_h263_decode_frame,
-    .capabilities   = CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_DR1 | CODEC_CAP_TRUNCATED | CODEC_CAP_DELAY,
-    .flush= ff_mpeg_flush,
-    .max_lowres= 3,
-    .long_name= NULL_IF_CONFIG_SMALL("H.263 / H.263-1996, H.263+ / H.263-1998 / H.263 version 2"),
-    .pix_fmts= ff_hwaccel_pixfmt_list_420,
+    .capabilities   = CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_DR1 |
+                      CODEC_CAP_TRUNCATED | CODEC_CAP_DELAY,
+    .flush          = ff_mpeg_flush,
+    .max_lowres     = 3,
+    .long_name      = NULL_IF_CONFIG_SMALL("H.263 / H.263-1996, H.263+ / H.263-1998 / H.263 version 2"),
+    .pix_fmts       = ff_hwaccel_pixfmt_list_420,
 };

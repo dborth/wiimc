@@ -14,11 +14,13 @@ number of input and output pads of the filter.
 A filter with no input pads is called a "source", a filter with no
 output pads is called a "sink".
 
+@anchor{Filtergraph syntax}
 @section Filtergraph syntax
 
-A filtergraph can be represented using a textual representation, which
-is recognized by the @code{-vf} option of the ff*
-tools, and by the @code{avfilter_graph_parse()} function defined in
+A filtergraph can be represented using a textual representation, which is
+recognized by the @option{-filter}/@option{-vf} and @option{-filter_complex}
+options in @command{ffmpeg} and @option{-vf} in @command{ffplay}, and by the
+@code{avfilter_graph_parse()}/@code{avfilter_graph_parse2()} function defined in
 @file{libavfilter/avfiltergraph.h}.
 
 A filterchain consists of a sequence of connected filters, each one
@@ -76,6 +78,12 @@ In a complete filterchain all the unlabelled filter input and output
 pads must be connected. A filtergraph is considered valid if all the
 filter input and output pads of all the filterchains are connected.
 
+Libavfilter will automatically insert scale filters where format
+conversion is required. It is possible to specify swscale flags
+for those automatically inserted scalers by prepending
+@code{sws_flags=@var{flags};}
+to the filtergraph description.
+
 Follows a BNF description for the filtergraph syntax:
 @example
 @var{NAME}             ::= sequence of alphanumeric characters and '_'
@@ -84,7 +92,7 @@ Follows a BNF description for the filtergraph syntax:
 @var{FILTER_ARGUMENTS} ::= sequence of chars (eventually quoted)
 @var{FILTER}           ::= [@var{LINKNAMES}] @var{NAME} ["=" @var{ARGUMENTS}] [@var{LINKNAMES}]
 @var{FILTERCHAIN}      ::= @var{FILTER} [,@var{FILTERCHAIN}]
-@var{FILTERGRAPH}      ::= @var{FILTERCHAIN} [;@var{FILTERGRAPH}]
+@var{FILTERGRAPH}      ::= [sws_flags=@var{flags};] @var{FILTERCHAIN} [;@var{FILTERGRAPH}]
 @end example
 
 @c man end FILTERGRAPH DESCRIPTION
@@ -918,6 +926,18 @@ boxblur=min(h\,w)/10:1:min(cw\,ch)/10:1
 
 @end itemize
 
+@section colormatrix
+
+The colormatrix filter allows conversion between any of the following color
+space: BT.709 (@var{bt709}), BT.601 (@var{bt601}), SMPTE-240M (@var{smpte240m})
+and FCC (@var{fcc}).
+
+The syntax of the parameters is @var{source}:@var{destination}:
+
+@example
+colormatrix=bt601:smpte240m
+@end example
+
 @section copy
 
 Copy the input source unchanged to the output. Mainly useful for
@@ -1402,6 +1422,9 @@ with or without text parameter. @var{rate} option must be specified.
 frame rate (timecode only)
 @end table
 
+If libavfilter was built with @code{--enable-fontconfig}, then
+@option{fontfile} can be a fontconfig pattern or omitted.
+
 Some examples follow.
 
 @itemize
@@ -1455,10 +1478,19 @@ The glyph baseline is placed at half screen height.
 drawtext=fontsize=60:fontfile=FreeSerif.ttf:fontcolor=green:text=g:x=(w-max_glyph_w)/2:y=h/2-ascent
 @end example
 
+@item
+Use fontconfig to set the font. Note that the colons need to be escaped.
+@example
+drawtext='fontfile=Linux Libertine O-40\\:style=Semibold:text=FFmpeg'
+@end example
+
 @end itemize
 
 For more information about libfreetype, check:
 @url{http://www.freetype.org/}.
+
+For more information about fontconfig, check:
+@url{http://freedesktop.org/software/fontconfig/fontconfig-user.html}.
 
 @section fade
 
@@ -1695,6 +1727,11 @@ a float number which specifies chroma temporal strength, defaults to
 @var{luma_tmp}*@var{chroma_spatial}/@var{luma_spatial}
 @end table
 
+@section idet
+
+Interlaceing detect filter. This filter tries to detect if the input is
+interlaced or progressive. Top or bottom field first.
+
 @section lut, lutrgb, lutyuv
 
 Compute a look-up table for binding each pixel component input value
@@ -1836,7 +1873,6 @@ the named filter.
 
 The list of the currently supported filters follows:
 @table @var
-@item 2xsai
 @item decimate
 @item denoise3d
 @item detc
@@ -1870,7 +1906,6 @@ The list of the currently supported filters follows:
 @item pullup
 @item qp
 @item rectangle
-@item remove-logo
 @item rotate
 @item sab
 @item screenshot
@@ -1893,9 +1928,6 @@ the "VIDEO FILTERS" section in the MPlayer manual.
 
 Some examples follow:
 @example
-# remove a logo by interpolating the surrounding pixels
-mp=delogo=200:200:80:20:1
-
 # adjust gamma, brightness, contrast
 mp=eq2=1.0:2:0.5
 
@@ -2083,15 +2115,12 @@ Follow some examples:
 overlay=main_w-overlay_w-10:main_h-overlay_h-10
 
 # insert a transparent PNG logo in the bottom left corner of the input
-movie=logo.png [logo];
-[in][logo] overlay=10:main_h-overlay_h-10 [out]
+ffmpeg -i input -i logo -filter_complex 'overlay=10:main_h-overlay_h-10' output
 
 # insert 2 different transparent PNG logos (second logo on bottom
 # right corner):
-movie=logo1.png [logo1];
-movie=logo2.png [logo2];
-[in][logo1]       overlay=10:H-h-10 [in+logo1];
-[in+logo1][logo2] overlay=W-w-10:H-h-10 [out]
+ffmpeg -i input -i logo1 -i logo2 -filter_complex
+'overlay=10:H-h-10,overlay=W-w-10:H-h-10' output
 
 # add a transparent color layer on top of the main video,
 # WxH specifies the size of the main input to the overlay filter
@@ -2219,6 +2248,32 @@ format=monow, pixdesctest
 @end example
 
 can be used to test the monowhite pixel format descriptor definition.
+
+@section removelogo
+
+Suppress a TV station logo, using an image file to determine which
+pixels comprise the logo. It works by filling in the pixels that
+comprise the logo with neighboring pixels.
+
+This filter requires one argument which specifies the filter bitmap
+file, which can be any image format supported by libavformat. The
+width and height of the image file must match those of the video
+stream being processed.
+
+Pixels in the provided bitmap image with a value of zero are not
+considered part of the logo, non-zero pixels are considered part of
+the logo. If you use white (255) for the logo and black (0) for the
+rest, you will be safe. For making the filter bitmap, it is
+recommended to take a screen capture of a black frame with the logo
+visible, and then using a threshold filter followed by the erode
+filter once or twice.
+
+If needed, little splotches can be fixed manually. Remember that if
+logo pixels are not covered, the filter quality will be much
+reduced. Marking too many pixels as part of the logo does not hurt as
+much, but it will increase the amount of blurring needed to cover over
+the image and will destroy more information than necessary, and extra
+pixels will slow things down on a large logo.
 
 @section scale
 
@@ -2664,6 +2719,13 @@ For example:
 
 will create two separate outputs from the same input, one cropped and
 one padded.
+
+@section super2xsai
+
+Scale the input by 2x and smooth using the Super2xSaI (Scale and
+Interpolate) pixel art scaling algorithm.
+
+Useful for enlarging pixel art images without reducing sharpness.
 
 @section swapuv
 Swap U & V plane.

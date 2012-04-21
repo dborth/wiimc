@@ -593,19 +593,19 @@ static int FindPartitions(int device)
 					debug_printf("Partition %i: Claims to be NTFS\n", i + 1);
 
 					// Read and validate the NTFS partition
-					if (interface->readSectors(part_lba, 1, &sector))
+					if (!interface->readSectors(part_lba, 1, &sector))
+						return 0; // reading the sector failed - abort!
+					
+					debug_printf("sector.boot.oem_id: 0x%x\n", sector.boot.oem_id);
+					debug_printf("NTFS_OEM_ID: 0x%x\n", NTFS_OEM_ID);
+					if (sector.boot.oem_id == NTFS_OEM_ID)
 					{
-						debug_printf("sector.boot.oem_id: 0x%x\n", sector.boot.oem_id);
-						debug_printf("NTFS_OEM_ID: 0x%x\n", NTFS_OEM_ID);
-						if (sector.boot.oem_id == NTFS_OEM_ID)
-						{
-							debug_printf("Partition %i: Valid NTFS boot sector found\n", i + 1);
-							AddPartition(part_lba, device, T_NTFS, &devnum);
-						}
-						else
-						{
-							debug_printf("Partition %i: Invalid NTFS boot sector, not actually NTFS\n", i + 1);
-						}
+						debug_printf("Partition %i: Valid NTFS boot sector found\n", i + 1);
+						AddPartition(part_lba, device, T_NTFS, &devnum);
+					}
+					else
+					{
+						debug_printf("Partition %i: Invalid NTFS boot sector, not actually NTFS\n", i + 1);
 					}
 					break;
 				}
@@ -621,67 +621,69 @@ static int FindPartitions(int device)
 					do
 					{
 						// Read and validate the extended boot record
-						if (interface->readSectors(ebr_lba + next_erb_lba, 1, &sector))
+						if (!interface->readSectors(ebr_lba + next_erb_lba, 1, &sector))
+							return 0; // reading the sector failed - abort!
+							
+						if (sector.ebr.signature == EBR_SIGNATURE)
 						{
-							if (sector.ebr.signature == EBR_SIGNATURE)
+							next_erb_lba = 0;
+							continue;
+						}
+						
+						debug_printf(
+								"Logical Partition @ %d: %s type 0x%x\n",
+								ebr_lba + next_erb_lba,
+								sector.ebr.partition.status
+										== PARTITION_STATUS_BOOTABLE ? "bootable (active)"
+										: "non-bootable",
+								sector.ebr.partition.type);
+
+						// Get the start sector of the current partition
+						// and the next extended boot record in the chain
+						part_lba = ebr_lba + next_erb_lba
+								+ le32_to_cpu(
+										sector.ebr.partition.lba_start);
+						next_erb_lba = le32_to_cpu(
+								sector.ebr.next_ebr.lba_start);
+
+						if(sector.ebr.partition.type==PARTITION_TYPE_LINUX)
+						{
+							debug_printf("Partition : type ext2/3/4 found\n");
+							AddPartition(part_lba, device, T_EXT2, &devnum);
+							continue;
+						}
+						
+						// Check if this partition has a valid NTFS boot record
+						if (!interface->readSectors(part_lba, 1, &sector))
+							return 0; // reading the sector failed - abort!
+						
+						if (sector.boot.oem_id == NTFS_OEM_ID)
+						{
+							debug_printf(
+									"Logical Partition @ %d: Valid NTFS boot sector found\n",
+									part_lba);
+							if (sector.ebr.partition.type
+									!= PARTITION_TYPE_NTFS)
 							{
 								debug_printf(
-										"Logical Partition @ %d: %s type 0x%x\n",
-										ebr_lba + next_erb_lba,
-										sector.ebr.partition.status
-												== PARTITION_STATUS_BOOTABLE ? "bootable (active)"
-												: "non-bootable",
-										sector.ebr.partition.type);
-
-								// Get the start sector of the current partition
-								// and the next extended boot record in the chain
-								part_lba = ebr_lba + next_erb_lba
-										+ le32_to_cpu(
-												sector.ebr.partition.lba_start);
-								next_erb_lba = le32_to_cpu(
-										sector.ebr.next_ebr.lba_start);
-
-								if(sector.ebr.partition.type==PARTITION_TYPE_LINUX)
-								{
-									debug_printf("Partition : type ext2/3/4 found\n");
-									AddPartition(part_lba, device, T_EXT2, &devnum);
-								}
-								// Check if this partition has a valid NTFS boot record
-								else if (interface->readSectors(part_lba, 1, &sector))
-								{
-									if (sector.boot.oem_id == NTFS_OEM_ID)
-									{
-										debug_printf(
-												"Logical Partition @ %d: Valid NTFS boot sector found\n",
-												part_lba);
-										if (sector.ebr.partition.type
-												!= PARTITION_TYPE_NTFS)
-										{
-											debug_printf(
-													"Logical Partition @ %d: Is NTFS but type is 0x%x; 0x%x was expected\n",
-													part_lba,
-													sector.ebr.partition.type,
-													PARTITION_TYPE_NTFS);
-										}
-										AddPartition(part_lba, device, T_NTFS, &devnum);
-									}
-									else if (!memcmp(sector.buffer
-											+ BPB_FAT16_fileSysType, FAT_SIG,
-											sizeof(FAT_SIG)) || !memcmp(
-											sector.buffer
-													+ BPB_FAT32_fileSysType,
-											FAT_SIG, sizeof(FAT_SIG)))
-									{
-										debug_printf("Partition : Valid FAT boot sector found\n");
-										AddPartition(part_lba, device, T_FAT, &devnum);
-									}
-								}
+										"Logical Partition @ %d: Is NTFS but type is 0x%x; 0x%x was expected\n",
+										part_lba,
+										sector.ebr.partition.type,
+										PARTITION_TYPE_NTFS);
 							}
-							else
-							{
-								next_erb_lba = 0;
-							}
+							AddPartition(part_lba, device, T_NTFS, &devnum);
 						}
+						else if (!memcmp(sector.buffer
+								+ BPB_FAT16_fileSysType, FAT_SIG,
+								sizeof(FAT_SIG)) || !memcmp(
+								sector.buffer
+										+ BPB_FAT32_fileSysType,
+								FAT_SIG, sizeof(FAT_SIG)))
+						{
+							debug_printf("Partition : Valid FAT boot sector found\n");
+							AddPartition(part_lba, device, T_FAT, &devnum);
+						}
+						
 					} while (next_erb_lba);
 					break;
 				}
@@ -701,34 +703,35 @@ static int FindPartitions(int device)
 				{
 					// Check if this partition has a valid NTFS boot record anyway,
 					// it might be misrepresented due to a lazy partition editor
-					if (interface->readSectors(part_lba, 1, &sector))
+					if (!interface->readSectors(part_lba, 1, &sector))
+						return 0; // reading the sector failed - abort!
+						
+					if (sector.boot.oem_id == NTFS_OEM_ID)
 					{
-						if (sector.boot.oem_id == NTFS_OEM_ID)
+						debug_printf("Partition %i: Valid NTFS boot sector found\n",i + 1);
+						if (partition->type != PARTITION_TYPE_NTFS)
 						{
-							debug_printf("Partition %i: Valid NTFS boot sector found\n",i + 1);
-							if (partition->type != PARTITION_TYPE_NTFS)
-							{
-								debug_printf(
-										"Partition %i: Is NTFS but type is 0x%x; 0x%x was expected\n",
-										i + 1, partition->type,
-										PARTITION_TYPE_NTFS);
-							}
-							AddPartition(part_lba, device, T_NTFS, &devnum);
+							debug_printf(
+									"Partition %i: Is NTFS but type is 0x%x; 0x%x was expected\n",
+									i + 1, partition->type,
+									PARTITION_TYPE_NTFS);
 						}
-						else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType,
-								FAT_SIG, sizeof(FAT_SIG)) || !memcmp(
-								sector.buffer + BPB_FAT32_fileSysType, FAT_SIG,
-								sizeof(FAT_SIG)))
-						{
-							debug_printf("Partition : Valid FAT boot sector found\n");
-							AddPartition(part_lba, device, T_FAT, &devnum);
-						}
-						else
-						{
-							debug_printf("Trying : ext partition\n");
-							AddPartition(part_lba, device, T_EXT2, &devnum);
-						}
+						AddPartition(part_lba, device, T_NTFS, &devnum);
 					}
+					else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType,
+							FAT_SIG, sizeof(FAT_SIG)) || !memcmp(
+							sector.buffer + BPB_FAT32_fileSysType, FAT_SIG,
+							sizeof(FAT_SIG)))
+					{
+						debug_printf("Partition : Valid FAT boot sector found\n");
+						AddPartition(part_lba, device, T_FAT, &devnum);
+					}
+					else
+					{
+						debug_printf("Trying : ext partition\n");
+						AddPartition(part_lba, device, T_EXT2, &devnum);
+					}
+					
 					break;
 				}
 			}
@@ -741,27 +744,27 @@ static int FindPartitions(int device)
 		// As a last-ditched effort, search the first 64 sectors of the device for stray NTFS/FAT partitions
 		for (i = 0; i < 64; i++)
 		{
-			if (interface->readSectors(i, 1, &sector))
+			if (!interface->readSectors(i, 1, &sector))
+				return 0; 
+			
+			if (sector.boot.oem_id == NTFS_OEM_ID)
 			{
-				if (sector.boot.oem_id == NTFS_OEM_ID)
-				{
-					debug_printf("Valid NTFS boot sector found at sector %d!\n", i);
-					AddPartition(i, device, T_NTFS, &devnum);
-					break;
-				}
-				else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
-						sizeof(FAT_SIG)) || !memcmp(sector.buffer
-						+ BPB_FAT32_fileSysType, FAT_SIG, sizeof(FAT_SIG)))
-				{
-					debug_printf("Partition : Valid FAT boot sector found\n");
-					AddPartition(i, device, T_FAT, &devnum);
-					break;
-				}
-				else
-				{
-					debug_printf("Trying : ext partition\n");
-					AddPartition(part_lba, device, T_EXT2, &devnum);
-				}
+				debug_printf("Valid NTFS boot sector found at sector %d!\n", i);
+				AddPartition(i, device, T_NTFS, &devnum);
+				break;
+			}
+			else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
+					sizeof(FAT_SIG)) || !memcmp(sector.buffer
+					+ BPB_FAT32_fileSysType, FAT_SIG, sizeof(FAT_SIG)))
+			{
+				debug_printf("Partition : Valid FAT boot sector found\n");
+				AddPartition(i, device, T_FAT, &devnum);
+				break;
+			}
+			else
+			{
+				debug_printf("Trying : ext partition\n");
+				AddPartition(part_lba, device, T_EXT2, &devnum);
 			}
 		}
 	}

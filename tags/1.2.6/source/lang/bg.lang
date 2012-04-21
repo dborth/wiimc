@@ -1,0 +1,676 @@
+msgid "********"
+msgstr "••••••••"
+
+msgid "Videos"
+msgstr "Видео"
+
+msgid "Music"
+msgstr "Музика"
+
+msgid "Pictures"
+msgstr "Снимки"
+
+msgid "Online Media"
+msgstr "Онлайн медия"
+
+msgid "Please Wait"
+msgstr "Моля изчакайте"
+
+msgid "Error"
+msgstr "Грешка"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Retry"
+msgstr "Повтори"
+
+msgid "Cancel"
+msgstr "Отказ"
+
+msgid "Information"
+msgstr "Информация"
+
+msgid "Credits"
+msgstr "Относно"
+
+msgid "Play"
+msgstr "Старт"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Single Play"
+msgstr "Единично изпълнение"
+
+msgid "Continuous Play"
+msgstr "Продължаващо изпълнение"
+
+msgid "Shuffle"
+msgstr "Разместване"
+
+msgid "Loop"
+msgstr "Повторение"
+
+msgid "Continuous"
+msgstr "Продължаващо"
+
+msgid "Playlist"
+msgstr "Плейлист"
+
+msgid "Restart"
+msgstr "Рестарт"
+
+msgid "Loading..."
+msgstr "Зареждане..."
+
+msgid "Global"
+msgstr "Общи"
+
+msgid "Network"
+msgstr "Мрежа"
+
+msgid "Subtitles"
+msgstr "Субтитри"
+
+msgid "Subtitle Delay"
+msgstr "Забавяне на субтитри"
+
+msgid "Settings"
+msgstr "Настройки"
+
+msgid "On"
+msgstr "Включено"
+
+msgid "Off"
+msgstr "Изключено"
+
+msgid "Always"
+msgstr "Вниаги"
+
+msgid "Disabled"
+msgstr "Забранено"
+
+msgid "Skip Backward"
+msgstr "Назад"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Skip Forward"
+msgstr "Премини напред"
+
+msgid "Single"
+msgstr "Единичен"
+
+msgid "now playing"
+msgstr "изпълнява се"
+
+msgid "Previous"
+msgstr "Предишен"
+
+msgid "Next"
+msgstr "Следващ"
+
+msgid "Close"
+msgstr "Затвори"
+
+msgid "DVD"
+msgstr "DVD"
+
+msgid "Go back"
+msgstr "Връщане"
+
+msgid "Update Available"
+msgstr "Обновление"
+
+msgid "An update is available!"
+msgstr "Налично е обновление!"
+
+msgid "Update now"
+msgstr "Обнови"
+
+msgid "Update later"
+msgstr "Обнови по-късно"
+
+msgid "Online media file not found."
+msgstr "Онлайн съдържанието не е намерено."
+
+msgid "Unrecognized DVD format!"
+msgstr "Неизвестен DVD формат!"
+
+msgid "Port cannot be blank!"
+msgstr "Липсва номер на порт!"
+
+msgid "Port is not a number!"
+msgstr "Не е въведен номер за порт!"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "Порта е извън позволения интервал (4-49151)!"
+
+msgid "Settings - Global"
+msgstr "Настройки - Общи"
+
+msgid "Settings - Videos"
+msgstr "Настройки - Видео"
+
+msgid "Settings - Music"
+msgstr "Настройки - Музика"
+
+msgid "Settings - Pictures"
+msgstr "Настройки - Снимки"
+
+msgid "Settings - Online Media"
+msgstr "Настройки – Онлайн медия"
+
+msgid "Settings - Network"
+msgstr "Настройки - Мрежа"
+
+msgid "Settings - DVD"
+msgstr "Настройки - DVD"
+
+msgid "File Extensions"
+msgstr "Файлови разширения"
+
+msgid "Language"
+msgstr "Език"
+
+msgid "Volume"
+msgstr "Звук"
+
+msgid "Exit Action"
+msgstr "Действие 'Изход'"
+
+msgid "Wiimote Rumble"
+msgstr "Вибрация на Wiimote"
+
+msgid "Hide"
+msgstr "Скрий"
+
+msgid "Show"
+msgstr "Покажи"
+
+msgid "Auto"
+msgstr "Автоматчичен"
+
+msgid "Return to Wii Menu"
+msgstr "Върни се в Wii меню"
+
+msgid "Power Off Wii"
+msgstr "Изключи Wii"
+
+msgid "Return to Loader"
+msgstr "Върни се в Loader"
+
+
+msgid "Screen Zoom"
+msgstr "Мащаб на екрана"
+
+msgid "Screen Position"
+msgstr "Позиция на екрана"
+
+msgid "Frame Dropping"
+msgstr "Пропускане на кадри"
+
+msgid "Aspect Ratio"
+msgstr "Съотношение на екрана"
+
+msgid "Cache Fill"
+msgstr "Запълване на кеш"
+
+msgid "Audio Delay"
+msgstr "Забавяне на звука"
+
+msgid "Auto-Resume"
+msgstr "Авто-продължение"
+
+msgid "Videos Files Folder"
+msgstr "Папка с видео"
+
+msgid "Play Order"
+msgstr "Подредба на изпълнение"
+
+msgid "Music Files Folder"
+msgstr "Папка с музика"
+
+msgid "Pictures Files Folder"
+msgstr "Папка със снимки"
+
+msgid "Display Name"
+msgstr "Име"
+
+msgid "Share IP"
+msgstr "IP адрес"
+
+msgid "Share Name"
+msgstr "Име на споделена папка"
+
+msgid "Username"
+msgstr "Потребител"
+
+msgid "Password"
+msgstr "Парола"
+
+msgid "New Share"
+msgstr "Нова споделена папка"
+
+msgid "Delete"
+msgstr "Изтрий"
+
+msgid "Delete Share"
+msgstr "Изтрий споделена папка"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "Сигурни ли сте, че изкате да изтриете тази споделена папка?"
+
+msgid "IP"
+msgstr "IP"
+
+msgid "Folder"
+msgstr "Папка"
+
+msgid "Mode"
+msgstr "Режим"
+
+msgid "New Site"
+msgstr "Нов сайт"
+
+msgid "Passive"
+msgstr "Пасивен"
+
+msgid "Active"
+msgstr "Активен"
+
+msgid "Delete Site"
+msgstr "Изтрий сайт"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "Сигурни ли сте, че изкате да изтриете този сайт?"
+
+msgid "Port"
+msgstr "Порт"
+
+msgid "Error loading file!"
+msgstr "Грешка при зареждане на файла!"
+
+msgid "Resume"
+msgstr "Продължи"
+
+msgid "Stop Slideshow"
+msgstr "Спри слайдшоу"
+
+msgid "Start Slideshow"
+msgstr "Пусни слайдшоу"
+
+msgid "Slideshow Delay"
+msgstr "Забавяне на слайдшоу"
+
+msgid "Online Media Folder"
+msgstr "Папка с онлайн-медия"
+
+msgid "Add SMB Share"
+msgstr "Добави SMB папка"
+
+msgid "Add FTP Site"
+msgstr "Добави FTP сайт"
+
+msgid "DVD Menu"
+msgstr "DVD меню"
+
+msgid "Skip to Main Title"
+msgstr "Връщане към главното меню"
+
+msgid "Unable to Initialize MPlayer"
+msgstr "Не може да се инициализира MPlayer"
+
+msgid "Unable to find a valid working path"
+msgstr "Не може да се открие валидна работна папка"
+
+msgid "Unable to change path to"
+msgstr "Пътя не може да се промени на "
+
+msgid "Out of memory: too many files!"
+msgstr "Няма памет: твърде много файлове!"
+
+msgid "Directory name is too long!"
+msgstr "Името на папката е твърде дълго!"
+
+msgid "SD Card"
+msgstr "SD карта"
+
+msgid "USB Mass Storage"
+msgstr "USB диск"
+
+msgid "Data DVD"
+msgstr "DVD с данни"
+
+msgid "USB drive not found!"
+msgstr "Не е намерен USB диск!"
+
+msgid "SD card not found!"
+msgstr "Не е намерена SD карта!"
+
+msgid "Loading DVD..."
+msgstr "Зареждане на DVD..."
+
+msgid "No disc inserted!"
+msgstr "Не е поставен диск!"
+
+msgid "Unsupported DVD."
+msgstr "Невалиден DVD."
+
+msgid "Up One Level"
+msgstr "Назад"
+
+msgid "Error opening"
+msgstr "Грешка при отваряне"
+
+msgid "Warning"
+msgstr "Предупреждение"
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "Една или повече снимки от тази папка превишават ограничението за размер (6 MB) и няма да се покажат."
+
+msgid "Error loading playlist!"
+msgstr "Грешка при зареждане на плейлист!"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr "Плейлиста не съдържа поддържани формати!"
+
+msgid "No Results Found"
+msgstr "Няма открити резултати"
+
+msgid "Your search did not match any media files."
+msgstr "Вашето търсене не върна никакви резултати."
+
+msgid "Error opening file!"
+msgstr "Грешка при отваряне на файла!"
+
+msgid "Saving..."
+msgstr "Записване..."
+
+msgid "Error creating file!"
+msgstr "Грешка при създаване на файла!"
+
+msgid "Error saving file!"
+msgstr "Грешка при съхранение на файла!"
+
+msgid "Playlist is Empty"
+msgstr "Плейлиста е празен"
+
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "Посочете елементите и натиснете бутона + за да ги добавите към плейлиста."
+
+msgid "Exit Playlist"
+msgstr "Изход от плейлист"
+
+msgid "Update successful!"
+msgstr "Успешно обновление!"
+
+msgid "Update failed!"
+msgstr "Неуспешно обновление!"
+
+msgid "Initializing network..."
+msgstr "Инициализиране на мрежа..."
+
+msgid "Check settings file."
+msgstr "Проверка на файла с настройки."
+
+msgid "Share name is blank."
+msgstr "Липсва име на споделена папка."
+
+msgid "Share IP is blank."
+msgstr "Липсва IP адрес на споделена папка."
+
+msgid "Invalid network share settings"
+msgstr "Грешни настройки на споделена папка"
+
+msgid "Connecting to network share..."
+msgstr "Свързване към споделена папка..."
+
+msgid "Failed to connect to network share."
+msgstr "Неуспешно свързване към споделена папка."
+
+msgid "IP is blank."
+msgstr "IP е празно."
+
+msgid "Username is blank."
+msgstr "Липсва потребителско име."
+
+msgid "Password is blank."
+msgstr "Липсва парола."
+
+msgid "Invalid FTP site settings"
+msgstr "Грешни FTP настройки"
+
+msgid "Connecting to FTP site..."
+msgstr "Свързване към FTP..."
+
+msgid "Failed to connect to FTP site."
+msgstr "Неуспешно свързване към FTP."
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "Не може да се намери SD или USB устройство, а е необходимо за нормална работа."
+
+msgid "Could not create folder"
+msgstr "Не може да се създаде папка"
+
+msgid "Saving settings..."
+msgstr "Съхраняване на настройки..."
+
+msgid "Could not save settings to"
+msgstr "Настройките не могат да е съхранят в"
+
+msgid "Thanks to"
+msgstr "Благодарности"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+
+msgid "Menu artwork"
+msgstr "Графики на меню"
+
+msgid "Coding"
+msgstr "Програмиране"
+
+msgid "Coding & menu design"
+msgstr "Кодиране и дизайн на меню"
+
+msgid "Logo"
+msgstr "Лого"
+
+msgid "Version"
+msgstr "Версия"
+
+msgid "Buffering..."
+msgstr "Буфериране..."
+
+msgid "Buffering"
+msgstr "Буфериране"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Не може да се инициализира мрежата(Грешка #:"
+
+msgid "Settings - Subtitles"
+msgstr "Настройки - Субтитри"
+
+msgid "Visibility"
+msgstr "Видимост"
+
+msgid "Delay"
+msgstr "Забавяне"
+
+msgid "Codepage"
+msgstr "Кодиране"
+
+msgid "Subtitle Language"
+msgstr "Език на субтитрите"
+
+msgid "Default"
+msgstr "По подразбиране"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "Не може дас е смени езика. Няма достатъчно памет!"
+
+msgid "Font Required"
+msgstr "Необходим е шрифт"
+
+msgid "A new font is required to display this language."
+msgstr "Нужен е нов шрифт за да се използва този език."
+
+msgid "Download font"
+msgstr "Изтегляне на шрифт"
+
+msgid "Unable to save font file!"
+msgstr "Не може да се съхрани шрифта!"
+
+msgid "Out of Memory"
+msgstr "Няма достатъчно памет"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr "WiiMC не разполага с достатъчно свободна памет за зареждане на изображения."
+
+msgid "Close MPlayer"
+msgstr "Затвори MPlayer"
+
+msgid "Subtitle Codepage"
+msgstr "Кодиране на субтитри"
+
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Тази папка съдържа повече елементи от позволеното. Не всички елементи ще бъдат видими."
+
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Този плейлист съдържа повече елементи от позволеното. Не всички елементи ще бъдат видими."
+
+msgid "Downloading..."
+msgstr "Изтегляне..."
+
+msgid "Unzipping..."
+msgstr "Разархивиране..."
+
+msgid "Color"
+msgstr "Цвят"
+
+msgid "Size"
+msgstr "Размер"
+
+msgid "White"
+msgstr "Бяло"
+
+msgid "Black"
+msgstr "Черно"
+
+msgid "Yellow"
+msgstr "Жълто"
+
+msgid "Red"
+msgstr "Червено"
+
+msgid "Sleep Timer"
+msgstr "Автоизключване"
+
+msgid "sec"
+msgstr "сек"
+
+msgid "min"
+msgstr "мин"
+
+msgid "Blue"
+msgstr "Синьо"
+
+msgid "Green"
+msgstr "Зелено"
+
+msgid "Grey"
+msgstr "Сиво"
+
+msgid "Orange"
+msgstr "Оранжево"
+
+msgid "Theme"
+msgstr "Стил"
+
+msgid "Purple (Default)"
+msgstr "Лилаво (по подразбиране)"
+
+msgid "Auto-Play Next Video"
+msgstr "Автоматично стартиране на следващото видео"
+
+msgid "Adding files to playlist..."
+msgstr "Добавяне на файлове към плейлиста..."
+
+msgid "Browser Folders"
+msgstr "Преглеждане на папки"
+
+msgid "Static"
+msgstr "Статичен"
+
+msgid "Use Last Browsed"
+msgstr "Използване на послената прегледана"
+
+msgid "Audio Language"
+msgstr "Език на аудио"
+
+msgid "DVD Support"
+msgstr "Поддръжка на DVD"
+
+msgid "Enabled"
+msgstr "Разрешен"
+
+msgid "Error loading YouTube file!"
+msgstr "Грешка при зареждане на YouTube файл!"
+
+msgid "Rotate"
+msgstr "Завъртане"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "Разделителната способност превишава максимално допустимата (1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "Текущия IOS е променен (fake-sign). Възможно е негативно влияние на стабилността на работа."
+
+msgid "Online media file is invalid."
+msgstr "Онлайн медията е невалидна."
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Шрифта за субтитрите не е намерен. Субтитрите не могат да се покажат."
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC няма достъп до DVD - AHBPROT не е включен"
+
+msgid "Starting Area"
+msgstr "Стартов екран"
+
+msgid "Error downloading font file!"
+msgstr "Грешка при изтегляне на шрифта!"
+
+msgid "Error opening font file!"
+msgstr "Грешка при отваряне на шрифта!"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "Не може да се смени езика. Шрифта е повреден!"
+
+msgid "YouTube Quality"
+msgstr "Качество на YouTube"
+
+msgid "Low (400x240)"
+msgstr "Ниско (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "Средно (480x360)"
+
+msgid "High (854x480)"
+msgstr "Високо (854x480)"
+
+msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
+msgstr "Текущия IOS не се поддържа. Възможно е негативно влияние на стабилността на работа."
+
+msgid "Screensaver Delay"
+msgstr "Забавяне на скрийнсейвър"
+
+msgid "Inactivity Shutdown"
+msgstr "Изключване при бездействие"
+
+msgid "Invalid subtitle delay."
+msgstr "Грешна стойност за забавяне на субтитри"

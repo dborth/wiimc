@@ -2951,7 +2951,10 @@ done:
 		mainWindow->Remove(audiobar);
 
 	if(menu == MENU_BROWSE_MUSIC) // remove playlist functionality
+	{
 		mainWindow->Remove(&playlistAddBtn);
+		mainWindow->Remove(&playlistResetBtn);
+	}
 
 	if(guiShutdown)
 		SaveFolder();

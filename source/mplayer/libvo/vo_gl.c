@@ -42,11 +42,7 @@
 #include "sub/eosd.h"
 
 #ifdef CONFIG_GL_SDL
-#ifdef CONFIG_SDL_SDL_H
-#include <SDL/SDL.h>
-#else
-#include <SDL.h>
-#endif
+#include "sdl_common.h"
 #endif
 
 static const vo_info_t info =
@@ -169,6 +165,9 @@ static int vo_flipped;
 static int ass_border_x, ass_border_y;
 
 static unsigned int slice_height = 1;
+
+// performance statistics
+static int imgcnt, dr_imgcnt, dr_rejectcnt;
 
 static void redraw(void);
 
@@ -448,6 +447,8 @@ skip_upload:
  */
 static void uninitGl(void) {
   int i = 0;
+  mp_msg(MSGT_VO, MSGL_V, "Drawn %i frames, %i using DR, DR refused %i\n",
+         imgcnt, dr_imgcnt, dr_rejectcnt);
   if (mpglDeletePrograms && fragprog)
     mpglDeletePrograms(1, &fragprog);
   fragprog = 0;
@@ -500,7 +501,8 @@ static void autodetectGlExtensions(void) {
   if (ati_hack      == -1) ati_hack      = ati_broken_pbo;
   if (force_pbo     == -1) {
     force_pbo = 0;
-    if (extensions && strstr(extensions, "_pixel_buffer_object"))
+    // memcpy is just too slow at least on PPC.
+    if (ARCH_X86 && extensions && strstr(extensions, "_pixel_buffer_object"))
       force_pbo = is_ati;
   }
   if (use_rectangle == -1) {
@@ -550,7 +552,7 @@ static int initGl(uint32_t d_width, uint32_t d_height) {
   mpglEnable(gl_target);
   if (mpglDrawBuffer)
     mpglDrawBuffer(vo_doublebuffering?GL_BACK:GL_FRONT);
-  mpglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  mpglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
   mp_msg(MSGT_VO, MSGL_V, "[gl] Creating %dx%d texture...\n",
           texture_width, texture_height);
@@ -659,9 +661,12 @@ static int create_window(uint32_t d_width, uint32_t d_height, uint32_t flags, co
 #endif
 #ifdef CONFIG_GL_SDL
   if (glctx.type == GLTYPE_SDL) {
-    SDL_WM_SetCaption(title, NULL);
-    vo_dwidth  = d_width;
-    vo_dheight = d_height;
+#if SDL_VERSION_ATLEAST(1, 2, 10)
+    // Ugly to do this here, but SDL ignores it if set later
+    SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, swap_interval);
+#endif
+    if (!vo_sdl_config(d_width, d_height, flags, title))
+        return -1;
   }
 #endif
   return 0;
@@ -804,6 +809,8 @@ static void do_render_osd(int type) {
     mpglPushMatrix();
     mpglLoadMatrixf(matrix);
   }
+  if (osd_color != 0xffffff)
+    mpglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
   mpglEnable(GL_BLEND);
   if (draw_eosd) {
     mpglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -821,6 +828,8 @@ static void do_render_osd(int type) {
   }
   // set rendering parameters back to defaults
   mpglDisable(GL_BLEND);
+  if (osd_color != 0xffffff)
+    mpglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
   if (!scaled_osd)
     mpglPopMatrix();
   mpglBindTexture(gl_target, 0);
@@ -841,9 +850,6 @@ static void draw_osd(void)
 }
 
 static void do_render(void) {
-//  Enable(GL_TEXTURE_2D);
-//  BindTexture(GL_TEXTURE_2D, texture_id);
-
   mpglColor4f(1,1,1,1);
   if (is_yuv || custom_prog)
     glEnableYUVConversion(gl_target, yuvconvtype);
@@ -912,6 +918,7 @@ static int draw_slice(uint8_t *src[], int stride[], int w,int h,int x,int y)
 
 static uint32_t get_image(mp_image_t *mpi) {
   int needed_size;
+  dr_rejectcnt++;
   if (!mpglGenBuffers || !mpglBindBuffer || !mpglBufferData || !mpglMapBuffer) {
     if (!err_shown)
       mp_msg(MSGT_VO, MSGL_ERR, "[gl] extensions missing for dr\n"
@@ -929,7 +936,7 @@ static uint32_t get_image(mp_image_t *mpi) {
     mpi->height = texture_height;
   }
   mpi->stride[0] = mpi->width * mpi->bpp / 8;
-  needed_size = mpi->stride[0] * mpi->height;
+  needed_size = mpi->stride[0] * mpi->height + 31;
   if (mesa_buffer) {
 #ifdef CONFIG_GL_X11
     if (mesa_bufferptr && needed_size > mesa_buffersize) {
@@ -952,7 +959,8 @@ static uint32_t get_image(mp_image_t *mpi) {
     }
     if (!gl_bufferptr)
       gl_bufferptr = mpglMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
-    mpi->planes[0] = gl_bufferptr;
+    mpi->priv = gl_bufferptr;
+    mpi->planes[0] = (uint8_t *)gl_bufferptr + (-(intptr_t)gl_bufferptr & 31);
     mpglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
   }
   if (!mpi->planes[0]) {
@@ -997,6 +1005,7 @@ static uint32_t get_image(mp_image_t *mpi) {
     }
   }
   mpi->flags |= MP_IMGFLAG_DIRECT;
+  dr_rejectcnt--;
   return VO_TRUE;
 }
 
@@ -1018,8 +1027,10 @@ static uint32_t draw_image(mp_image_t *mpi) {
   unsigned char *planes[3];
   mp_image_t mpi2 = *mpi;
   int w = mpi->w, h = mpi->h;
+  imgcnt++;
   if (mpi->flags & MP_IMGFLAG_DRAW_CALLBACK)
     goto skip_upload;
+  dr_imgcnt += !!(mpi->flags & MP_IMGFLAG_DIRECT);
   mpi2.flags = 0; mpi2.type = MP_IMGTYPE_TEMP;
   mpi2.width = mpi2.w; mpi2.height = mpi2.h;
   if (force_pbo && !(mpi->flags & MP_IMGFLAG_DIRECT) && !gl_bufferptr && get_image(&mpi2) == VO_TRUE) {
@@ -1052,7 +1063,7 @@ static uint32_t draw_image(mp_image_t *mpi) {
       mpglPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, 1);
       w = texture_width;
     } else {
-      intptr_t base = (intptr_t)planes[0];
+      intptr_t base = (intptr_t)mpi->priv;
       if (ati_hack) { w = texture_width; h = texture_height; }
       if (mpi_flipped)
         base += (mpi->h - 1) * stride[0];
@@ -1328,6 +1339,7 @@ static int preinit_internal(const char *arg, int allow_sw)
                "Use -vo gl:nomanyfmts if playback fails.\n");
     mp_msg(MSGT_VO, MSGL_V, "[gl] Using %d as slice height "
              "(0 means image height).\n", slice_height);
+    imgcnt = dr_imgcnt = dr_rejectcnt = 0;
 
     return 0;
 

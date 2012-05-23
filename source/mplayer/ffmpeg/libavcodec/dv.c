@@ -294,8 +294,6 @@ av_cold int ff_dvvideo_init(AVCodecContext *avctx)
             ff_dv_rl_vlc[i].run   = run;
         }
         ff_free_vlc(&dv_vlc);
-
-        dv_vlc_map_tableinit();
     }
 
     /* Generic DSP setup */
@@ -337,6 +335,8 @@ static av_cold int dvvideo_init_encoder(AVCodecContext *avctx)
         ff_dv_print_profiles(avctx, AV_LOG_ERROR);
         return AVERROR(EINVAL);
     }
+
+    dv_vlc_map_tableinit();
 
     return ff_dvvideo_init(avctx);
 }
@@ -668,7 +668,7 @@ static int dv_encode_video_segment(AVCodecContext *avctx, void *arg)
     int mb_x, mb_y, c_offset, linesize, y_stride;
     uint8_t*  y_ptr;
     uint8_t*  dif;
-    LOCAL_ALIGNED_8(uint8_t, scratch, [64]);
+    LOCAL_ALIGNED_8(uint8_t, scratch, [128]);
     EncBlockInfo  enc_blks[5*DV_MAX_BPM];
     PutBitContext pbs[5*DV_MAX_BPM];
     PutBitContext* pb;
@@ -723,10 +723,10 @@ static int dv_encode_video_segment(AVCodecContext *avctx, void *arg)
                     b[0] = c_ptr[0]; b[1] = c_ptr[1]; b[2] = c_ptr[2]; b[3] = c_ptr[3];
                     b[4] =     d[0]; b[5] =     d[1]; b[6] =     d[2]; b[7] =     d[3];
                     c_ptr += linesize;
-                    b += 8;
+                    b += 16;
                 }
                 c_ptr = scratch;
-                linesize = 8;
+                linesize = 16;
             }
 
             vs_bit_size += dv_init_enc_block(    enc_blk++, c_ptr           , linesize, s, 1);

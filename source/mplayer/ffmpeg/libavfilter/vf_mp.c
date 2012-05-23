@@ -155,7 +155,6 @@ extern const vf_info_t vf_info_kerndeint;
 extern const vf_info_t vf_info_lavc;
 extern const vf_info_t vf_info_lavcdeint;
 extern const vf_info_t vf_info_mcdeint;
-extern const vf_info_t vf_info_mirror;
 extern const vf_info_t vf_info_noformat;
 extern const vf_info_t vf_info_noise;
 extern const vf_info_t vf_info_ow;
@@ -170,7 +169,6 @@ extern const vf_info_t vf_info_rectangle;
 extern const vf_info_t vf_info_rotate;
 extern const vf_info_t vf_info_sab;
 extern const vf_info_t vf_info_scale;
-extern const vf_info_t vf_info_screenshot;
 extern const vf_info_t vf_info_smartblur;
 extern const vf_info_t vf_info_softpulldown;
 extern const vf_info_t vf_info_softskip;
@@ -215,7 +213,6 @@ static const vf_info_t* const filters[]={
     &vf_info_ivtc,
     &vf_info_kerndeint,
     &vf_info_mcdeint,
-    &vf_info_mirror,
     &vf_info_noise,
     &vf_info_ow,
     &vf_info_palette,
@@ -228,7 +225,6 @@ static const vf_info_t* const filters[]={
     &vf_info_rectangle,
     &vf_info_rotate,
     &vf_info_sab,
-    &vf_info_screenshot,
     &vf_info_smartblur,
     &vf_info_softpulldown,
     &vf_info_softskip,

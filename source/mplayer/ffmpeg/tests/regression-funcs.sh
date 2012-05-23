@@ -28,7 +28,7 @@ raw_ref="$datadir/$test_ref.ref.yuv"
 pcm_src="$target_datadir/asynth1.sw"
 pcm_dst="$datadir/$this.out.wav"
 pcm_ref="$datadir/$test_ref.ref.wav"
-pcm_src_1ch="$target_datadir/asynth-16000-1.sw"
+pcm_src_1ch="$target_datadir/asynth-16000-1.wav"
 pcm_ref_1ch="$datadir/$test_ref-16000-1.ref.wav"
 crcfile="$datadir/$this.crc"
 target_crcfile="$target_datadir/$this.crc"
@@ -70,7 +70,7 @@ do_avconv()
     elif [ $f = $pcm_dst ] ; then
         $tiny_psnr $f $pcm_ref 2
     else
-        wc -c $f
+        echo $(wc -c $f)
     fi
 }
 
@@ -85,7 +85,7 @@ do_avconv_nomd5()
     elif [ $f = $pcm_dst ] ; then
         $tiny_psnr $f $pcm_ref 2
     else
-        wc -c $f
+        echo $(wc -c $f)
     fi
 }
 

@@ -887,10 +887,12 @@ static int synthfilt_build_sb_samples (QDM2Context *q, GetBitContext *gb, int le
 
                     case 30:
                         if (get_bits_left(gb) >= 4) {
-                            unsigned v = qdm2_get_vlc(gb, &vlc_tab_type30, 0, 1);
-                            if (v >= FF_ARRAY_ELEMS(type30_dequant))
+                            unsigned index = qdm2_get_vlc(gb, &vlc_tab_type30, 0, 1);
+                            if (index >= FF_ARRAY_ELEMS(type30_dequant)) {
+                                av_log(NULL, AV_LOG_ERROR, "index %d out of type30_dequant array\n", index);
                                 return AVERROR_INVALIDDATA;
-                            samples[0] = type30_dequant[v];
+                            }
+                            samples[0] = type30_dequant[index];
                         } else
                             samples[0] = SB_DITHERING_NOISE(sb,q->noise_idx);
 
@@ -905,10 +907,12 @@ static int synthfilt_build_sb_samples (QDM2Context *q, GetBitContext *gb, int le
                                 type34_predictor = samples[0];
                                 type34_first = 0;
                             } else {
-                                unsigned v = qdm2_get_vlc(gb, &vlc_tab_type34, 0, 1);
-                                if (v >= FF_ARRAY_ELEMS(type34_delta))
+                                unsigned index = qdm2_get_vlc(gb, &vlc_tab_type34, 0, 1);
+                                if (index >= FF_ARRAY_ELEMS(type34_delta)) {
+                                    av_log(NULL, AV_LOG_ERROR, "index %d out of type34_delta array\n", index);
                                     return AVERROR_INVALIDDATA;
-                                samples[0] = type34_delta[v] / type34_div + type34_predictor;
+                                }
+                                samples[0] = type34_delta[index] / type34_div + type34_predictor;
                                 type34_predictor = samples[0];
                             }
                         } else {
@@ -1834,8 +1838,10 @@ static av_cold int qdm2_decode_init(AVCodecContext *avctx)
 
     avctx->channels = s->nb_channels = s->channels = AV_RB32(extradata);
     extradata += 4;
-    if (s->channels > MPA_MAX_CHANNELS)
+    if (s->channels > MPA_MAX_CHANNELS) {
+        av_log(avctx, AV_LOG_ERROR, "Too many channels\n");
         return AVERROR_INVALIDDATA;
+    }
 
     avctx->sample_rate = AV_RB32(extradata);
     extradata += 4;

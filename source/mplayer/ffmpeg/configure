@@ -112,6 +112,7 @@ Component options:
   --disable-swscale        disable libswscale build
   --disable-postproc       disable libpostproc build
   --disable-avfilter       disable video filter support [no]
+  --disable-avresample     disable libavresample build [no]
   --disable-pthreads       disable pthreads [auto]
   --disable-w32threads     disable Win32 threads [auto]
   --disable-os2threads     disable OS/2 threads [auto]
@@ -179,7 +180,6 @@ External library support:
   --enable-libcdio         enable audio CD grabbing with libcdio
   --enable-libdc1394       enable IIDC-1394 grabbing using libdc1394
                            and libraw1394 [no]
-  --enable-libdirac        enable Dirac support via libdirac [no]
   --enable-libfaac         enable FAAC support via libfaac [no]
   --enable-libfreetype     enable libfreetype [no]
   --enable-libgsm          enable GSM support via libgsm [no]
@@ -198,7 +198,7 @@ External library support:
   --enable-libv4l2         enable libv4l2/v4l-utils [no]
   --enable-libvo-aacenc    enable AAC encoding via libvo-aacenc [no]
   --enable-libvo-amrwbenc  enable AMR-WB encoding via libvo-amrwbenc [no]
-  --enable-libvorbis       enable Vorbis encoding via libvorbis,
+  --enable-libvorbis       enable Vorbis en/decoding via libvorbis,
                            native implementation exists [no]
   --enable-libvpx          enable VP8 support via libvpx [no]
   --enable-libx264         enable H.264 encoding via x264 [no]
@@ -1014,6 +1014,7 @@ CONFIG_LIST="
     avdevice
     avfilter
     avformat
+    avresample
     avisynth
     bzlib
     crystalhd
@@ -1035,7 +1036,6 @@ CONFIG_LIST="
     libcdio
     libcelt
     libdc1394
-    libdirac
     libfaac
     libfreetype
     libgsm
@@ -1217,9 +1217,11 @@ HAVE_LIST="
     memalign
     mkstemp
     mmap
+    netinet_sctp_h
     PeekNamedPipe
     poll_h
     posix_memalign
+    pthread_cancel
     round
     roundf
     sched_getaffinity
@@ -1557,7 +1559,6 @@ h264_parser_select="golomb h264dsp h264pred"
 # external libraries
 libaacplus_encoder_deps="libaacplus"
 libcelt_decoder_deps="libcelt"
-libdirac_decoder_deps="libdirac !libschroedinger"
 libfaac_encoder_deps="libfaac"
 libgsm_decoder_deps="libgsm"
 libgsm_encoder_deps="libgsm"
@@ -1578,6 +1579,7 @@ libstagefright_h264_decoder_deps="libstagefright_h264"
 libtheora_encoder_deps="libtheora"
 libvo_aacenc_encoder_deps="libvo_aacenc"
 libvo_amrwbenc_encoder_deps="libvo_amrwbenc"
+libvorbis_decoder_deps="libvorbis"
 libvorbis_encoder_deps="libvorbis"
 libvpx_decoder_deps="libvpx"
 libvpx_encoder_deps="libvpx"
@@ -1663,6 +1665,7 @@ mmst_protocol_deps="network"
 rtmp_protocol_deps="!librtmp_protocol"
 rtmp_protocol_select="tcp_protocol"
 rtp_protocol_select="udp_protocol"
+sctp_protocol_deps="network netinet_sctp_h"
 tcp_protocol_deps="network"
 tls_protocol_deps_any="openssl gnutls"
 tls_protocol_select="tcp_protocol"
@@ -1688,6 +1691,7 @@ movie_filter_deps="avcodec avformat"
 mp_filter_deps="gpl avcodec swscale postproc"
 mptestsrc_filter_deps="gpl"
 negate_filter_deps="lut_filter"
+resample_filter_deps="avresample"
 ocv_filter_deps="libopencv"
 pan_filter_deps="swresample"
 removelogo_filter_deps="avcodec avformat swscale"
@@ -1698,6 +1702,7 @@ yadif_filter_deps="gpl"
 
 # libraries
 avdevice_deps="avcodec avformat"
+avfilter_deps="swscale"
 avformat_deps="avcodec"
 postproc_deps="gpl"
 
@@ -1707,7 +1712,7 @@ ffplay_select="buffersink_filter rdft"
 ffprobe_deps="avcodec avformat"
 ffserver_deps="avformat ffm_muxer fork rtp_protocol rtsp_demuxer"
 ffserver_extralibs='$ldl'
-ffmpeg_deps="avcodec avfilter avformat swscale swresample"
+ffmpeg_deps="avcodec avfilter avformat swscale swresample format_filter"
 ffmpeg_select="buffersink_filter"
 
 doc_deps="texi2html"
@@ -1873,6 +1878,7 @@ enable avcodec
 enable avdevice
 enable avfilter
 enable avformat
+enable avresample
 enable avutil
 enable postproc
 enable stripping
@@ -2344,6 +2350,24 @@ elif $cc -v 2>&1 | grep -q Open64; then
     speed_cflags='-O2'
     size_cflags='-Os'
     filter_cflags='filter_out -Wdisabled-optimization|-Wtype-limits|-fno-signed-zeros'
+elif $cc -V 2>&1 | grep -q Portland; then
+    cc_type=pgi
+    cc_version='AV_STRINGIFY(__PGIC__.__PGIC_MINOR__.__PGIC_PATCHLEVEL__)'
+    cc_ident="PGI $($cc -V 2>&1 | awk '/^pgcc/ { print $2; exit }')"
+    opt_common='-alias=ansi -Mlre -Mpre'
+    speed_cflags="-O3 -Mautoinline -Munroll=c:4 $opt_common"
+    size_cflags="-O2 -Munroll=c:1 $opt_common"
+    noopt_cflags="-O1"
+    filter_cflags=pgi_flags
+    pgi_flags(){
+        for flag; do
+            case $flag in
+                -fomit-frame-pointer) echo -Mnoframe ;;
+                -g)                   echo -gopt ;;
+                *)                    echo $flag ;;
+            esac
+        done
+    }
 fi
 
 test -n "$cc_type" && enable $cc_type ||
@@ -2463,8 +2487,11 @@ elif enabled ppc; then
         74*|ppc74*|powerpc74*)
             cpuflags="-mcpu=7400 -mpowerpc-gfxopt"
         ;;
-        g5|970|ppc970|powerpc970|power4*)
+        g5|970|ppc970|powerpc970)
             cpuflags="-mcpu=970 -mpowerpc-gfxopt -mpowerpc64"
+        ;;
+        power[3-7]*)
+            cpuflags="-mcpu=$cpu -mpowerpc-gfxopt -mpowerpc64"
         ;;
         cell)
             cpuflags="-mcpu=cell"
@@ -2637,7 +2664,7 @@ case $target_os in
         SHFLAGS='-shared -Wl,-h,$$(@F)'
         enabled x86 && SHFLAGS="-mimpure-text $SHFLAGS"
         network_extralibs="-lsocket -lnsl"
-        add_cppflags -D__EXTENSIONS__
+        add_cppflags -D__EXTENSIONS__ -D_XOPEN_SOURCE=600
         # When using suncc to build, the Solaris linker will mark
         # an executable with each instruction set encountered by
         # the Solaris assembler.  As our libraries contain their own
@@ -2652,7 +2679,6 @@ case $target_os in
         oss_outdev_extralibs="-lossaudio"
         ;;
     openbsd)
-        enable malloc_aligned
         # On OpenBSD 4.5. the compiler does not use PIC unless
         # explicitly using -fPIC. FFmpeg builds fine without PIC,
         # however the generated executable will not do anything
@@ -2665,18 +2691,15 @@ case $target_os in
         oss_outdev_extralibs="-lossaudio"
         ;;
     dragonfly)
-        enable malloc_aligned
         disable symver
         ;;
     freebsd)
-        enable malloc_aligned
         ;;
     bsd/os)
         add_extralibs -lpoll -lgnugetopt
         strip="strip -d"
         ;;
     darwin)
-        enable malloc_aligned
         gas="gas-preprocessor.pl $cc"
         enabled ppc && add_asflags -force_cpusubtype_ALL
         SHFLAGS='-dynamiclib -Wl,-single_module -Wl,-install_name,$(SHLIBDIR)/$(SLIBNAME_WITH_MAJOR),-current_version,$(LIBVERSION),-compatibility_version,$(LIBMAJOR)'
@@ -2700,7 +2723,6 @@ case $target_os in
         fi
         LIBTARGET=i386
         if enabled x86_64; then
-            enable malloc_aligned
             LIBTARGET=x64
         elif enabled arm; then
             LIBTARGET=arm-wince
@@ -3043,6 +3065,7 @@ if enabled network; then
     check_type netinet/in.h "struct sockaddr_in6"
     check_type "sys/types.h sys/socket.h" "struct sockaddr_storage"
     check_struct "sys/types.h sys/socket.h" "struct sockaddr" sa_len
+    check_header netinet/sctp.h
     # Prefer arpa/inet.h over winsock2
     if check_header arpa/inet.h ; then
         check_func closesocket
@@ -3153,6 +3176,10 @@ for thread in $THREADS_LIST; do
     fi
 done
 
+if enabled pthreads; then
+  check_func pthread_cancel
+fi
+
 check_lib math.h sin -lm && LIBM="-lm"
 disabled crystalhd || check_lib libcrystalhd/libcrystalhd_if.h DtsCrystalHDVersion -lcrystalhd || disable crystalhd
 enabled vaapi && require vaapi va/va.h vaInitialize -lva
@@ -3182,9 +3209,6 @@ enabled libbluray  && require libbluray libbluray/bluray.h bd_open -lbluray
 enabled libcelt    && require libcelt celt/celt.h celt_decode -lcelt0 &&
                       { check_lib celt/celt.h celt_decoder_create_custom -lcelt0 ||
                         die "ERROR: libcelt version must be >= 0.11.0."; }
-enabled libdirac   && require_pkg_config dirac                          \
-    "libdirac_decoder/dirac_parser.h"  \
-    "dirac_decoder_init"
 enabled libfaac    && require2 libfaac "stdint.h faac.h" faacEncGetVersion -lfaac
 enabled libfreetype && require_pkg_config freetype2 "ft2build.h freetype/freetype.h" FT_Init_FreeType
 enabled libgsm     && require  libgsm gsm/gsm.h gsm_create -lgsm
@@ -3333,7 +3357,6 @@ check_cflags -Wdisabled-optimization
 check_cflags -Wpointer-arith
 check_cflags -Wredundant-decls
 check_cflags -Wno-pointer-sign
-check_cflags -Wcast-qual
 check_cflags -Wwrite-strings
 check_cflags -Wtype-limits
 check_cflags -Wundef
@@ -3344,7 +3367,7 @@ enabled extra_warnings && check_cflags -Winline
 
 # add some linker flags
 check_ldflags -Wl,--warn-common
-check_ldflags -Wl,-rpath-link=libpostproc:libswresample:libswscale:libavfilter:libavdevice:libavformat:libavcodec:libavutil
+check_ldflags -Wl,-rpath-link=libpostproc:libswresample:libswscale:libavfilter:libavdevice:libavformat:libavcodec:libavutil:libavresample
 test_ldflags -Wl,-Bsymbolic && append SHFLAGS -Wl,-Bsymbolic
 
 enabled xmm_clobber_test &&                             \
@@ -3393,10 +3416,11 @@ if enabled icc; then
     # -wd: Disable following warnings
     # 144, 167, 556: -Wno-pointer-sign
     # 1292: attribute "foo" ignored
+    # 1419: external declaration in primary source file
     # 10006: ignoring unknown option -fno-signed-zeros
     # 10148: ignoring unknown option -Wno-parentheses
     # 10156: ignoring option '-W'; no argument required
-    check_cflags -wd144,167,556,1292,10006,10148,10156
+    check_cflags -wd144,167,556,1292,1419,10006,10148,10156
     # 11030: Warning unknown option --as-needed
     # 10156: ignoring option '-export'; no argument required
     check_ldflags -wd10156,11030
@@ -3455,7 +3479,7 @@ if test $target_os = "haiku"; then
     disable posix_memalign
 fi
 
-! enabled_any memalign posix_memalign malloc_aligned &&
+! enabled_any memalign posix_memalign &&
     enabled_any $need_memalign && enable memalign_hack
 
 # add_dep lib dep
@@ -3555,7 +3579,6 @@ echo "libass enabled            ${libass-no}"
 echo "libcdio support           ${libcdio-no}"
 echo "libcelt enabled           ${libcelt-no}"
 echo "libdc1394 support         ${libdc1394-no}"
-echo "libdirac enabled          ${libdirac-no}"
 echo "libfaac enabled           ${libfaac-no}"
 echo "libgsm enabled            ${libgsm-no}"
 echo "libmodplug enabled        ${libmodplug-no}"
@@ -3714,6 +3737,7 @@ get_version LIBAVCODEC  libavcodec/version.h
 get_version LIBAVDEVICE libavdevice/avdevice.h
 get_version LIBAVFILTER libavfilter/version.h
 get_version LIBAVFORMAT libavformat/version.h
+get_version LIBAVRESAMPLE libavresample/version.h
 get_version LIBAVUTIL   libavutil/avutil.h
 get_version LIBPOSTPROC libpostproc/postprocess.h
 get_version LIBSWRESAMPLE libswresample/swresample.h
@@ -3859,5 +3883,6 @@ pkgconfig_generate libavformat "FFmpeg container format library" "$LIBAVFORMAT_V
 pkgconfig_generate libavdevice "FFmpeg device handling library" "$LIBAVDEVICE_VERSION" "$extralibs" "$libavdevice_pc_deps"
 pkgconfig_generate libavfilter "FFmpeg video filtering library" "$LIBAVFILTER_VERSION" "$extralibs" "$libavfilter_pc_deps"
 pkgconfig_generate libpostproc "FFmpeg postprocessing library" "$LIBPOSTPROC_VERSION" "" "libavutil = $LIBAVUTIL_VERSION"
+pkgconfig_generate libavresample "Libav audio resampling library" "$LIBAVRESAMPLE_VERSION" "$extralibs"
 pkgconfig_generate libswscale "FFmpeg image rescaling library" "$LIBSWSCALE_VERSION" "$LIBM" "libavutil = $LIBAVUTIL_VERSION"
 pkgconfig_generate libswresample "FFmpeg audio rescaling library" "$LIBSWRESAMPLE_VERSION" "$LIBM" "libavutil = $LIBAVUTIL_VERSION"

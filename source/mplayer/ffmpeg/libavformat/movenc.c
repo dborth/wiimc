@@ -661,7 +661,8 @@ static int mov_write_audio_tag(AVIOContext *pb, MOVTrack *track)
         }
 
         avio_wb16(pb, 0); /* packet size (= 0) */
-        avio_wb16(pb, track->enc->sample_rate);
+        avio_wb16(pb, track->enc->sample_rate <= UINT16_MAX ?
+                      track->enc->sample_rate : 0);
         avio_wb16(pb, 0); /* Reserved */
     }
 
@@ -1069,6 +1070,8 @@ static int mov_write_video_tag(AVIOContext *pb, MOVTrack *track)
         mov_write_d263_tag(pb);
     else if(track->enc->codec_id == CODEC_ID_SVQ3)
         mov_write_svq3_tag(pb);
+    else if(track->enc->codec_id == CODEC_ID_AVUI)
+        mov_write_extradata_tag(pb, track);
     else if(track->enc->codec_id == CODEC_ID_DNXHD)
         mov_write_avid_tag(pb, track);
     else if(track->enc->codec_id == CODEC_ID_H264) {
@@ -3185,8 +3188,8 @@ static int mov_write_header(AVFormatContext *s)
         }else if(st->codec->codec_type == AVMEDIA_TYPE_AUDIO){
             track->timescale = st->codec->sample_rate;
             if(!st->codec->frame_size && !av_get_bits_per_sample(st->codec->codec_id)) {
-                av_log(s, AV_LOG_ERROR, "track %d: codec frame size is not set\n", i);
-                goto error;
+                av_log(s, AV_LOG_WARNING, "track %d: codec frame size is not set\n", i);
+                track->audio_vbr = 1;
             }else if(st->codec->codec_id == CODEC_ID_ADPCM_MS ||
                      st->codec->codec_id == CODEC_ID_ADPCM_IMA_WAV){
                 if (!st->codec->block_align) {
@@ -3199,17 +3202,11 @@ static int mov_write_header(AVFormatContext *s)
             }else{
                 track->sample_size = (av_get_bits_per_sample(st->codec->codec_id) >> 3) * st->codec->channels;
             }
-            if (track->mode != MODE_MOV) {
-                if (track->timescale > UINT16_MAX) {
-                    av_log(s, AV_LOG_ERROR, "track %d: output format does not support "
-                           "sample rate %dhz\n", i, track->timescale);
-                    goto error;
-                }
-                if (track->enc->codec_id == CODEC_ID_MP3 && track->timescale < 16000) {
-                    av_log(s, AV_LOG_ERROR, "track %d: muxing mp3 at %dhz is not supported\n",
-                           i, track->enc->sample_rate);
-                    goto error;
-                }
+            if (track->mode != MODE_MOV &&
+                track->enc->codec_id == CODEC_ID_MP3 && track->timescale < 16000) {
+                av_log(s, AV_LOG_ERROR, "track %d: muxing mp3 at %dhz is not supported\n",
+                       i, track->enc->sample_rate);
+                goto error;
             }
         }else if(st->codec->codec_type == AVMEDIA_TYPE_SUBTITLE){
             track->timescale = st->codec->time_base.den;

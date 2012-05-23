@@ -1676,7 +1676,6 @@ static int mpeg_decode_slice(MpegEncContext *s, int mb_y,
                              const uint8_t **buf, int buf_size)
 {
     AVCodecContext *avctx = s->avctx;
-    const int lowres      = s->avctx->lowres;
     const int field_pic   = s->picture_structure != PICT_FRAME;
 
     s->resync_mb_x =
@@ -1685,6 +1684,8 @@ static int mpeg_decode_slice(MpegEncContext *s, int mb_y,
     assert(mb_y < s->mb_height);
 
     init_get_bits(&s->gb, *buf, buf_size * 8);
+    if(s->codec_id != CODEC_ID_MPEG1VIDEO && s->mb_height > 2800/16)
+        skip_bits(&s->gb, 3);
 
     ff_mpeg1_clean_buffers(s);
     s->interlaced_dct = 0;
@@ -1797,14 +1798,14 @@ static int mpeg_decode_slice(MpegEncContext *s, int mb_y,
             }
         }
 
-        s->dest[0] += 16 >> lowres;
-        s->dest[1] +=(16 >> lowres) >> s->chroma_x_shift;
-        s->dest[2] +=(16 >> lowres) >> s->chroma_x_shift;
+        s->dest[0] += 16;
+        s->dest[1] += 16 >> s->chroma_x_shift;
+        s->dest[2] += 16 >> s->chroma_x_shift;
 
         ff_MPV_decode_mb(s, s->block);
 
         if (++s->mb_x >= s->mb_width) {
-            const int mb_size = 16 >> s->avctx->lowres;
+            const int mb_size = 16;
 
             ff_draw_horiz_band(s, mb_size*(s->mb_y >> field_pic), mb_size);
             ff_MPV_report_decode_progress(s);
@@ -1924,7 +1925,10 @@ static int slice_decode_thread(AVCodecContext *c, void *arg)
 
         start_code = -1;
         buf = avpriv_mpv_find_start_code(buf, s->gb.buffer_end, &start_code);
-        mb_y= (start_code - SLICE_MIN_START_CODE) << field_pic;
+        mb_y= start_code - SLICE_MIN_START_CODE;
+        if(s->codec_id != CODEC_ID_MPEG1VIDEO && s->mb_height > 2800/16)
+            mb_y += (*buf&0xE0)<<2;
+        mb_y <<= field_pic;
         if (s->picture_structure == PICT_BOTTOM_FIELD)
             mb_y++;
         if (mb_y < 0 || mb_y >= s->end_mb_y)
@@ -2287,8 +2291,13 @@ static int mpeg_decode_frame(AVCodecContext *avctx,
 
     s->slice_count = 0;
 
-    if (avctx->extradata && !avctx->frame_number) {
+    if (avctx->extradata && !s->parsed_extra) {
         int ret = decode_chunks(avctx, picture, data_size, avctx->extradata, avctx->extradata_size);
+        if(*data_size) {
+            av_log(avctx, AV_LOG_ERROR, "picture in extradata\n");
+            *data_size = 0;
+        }
+        s->parsed_extra = 1;
         if (ret < 0 && (avctx->err_recognition & AV_EF_EXPLODE))
             return ret;
     }
@@ -2439,9 +2448,12 @@ static int decode_chunks(AVCodecContext *avctx,
             if (start_code >= SLICE_MIN_START_CODE &&
                 start_code <= SLICE_MAX_START_CODE && last_code != 0) {
                 const int field_pic = s2->picture_structure != PICT_FRAME;
-                int mb_y = (start_code - SLICE_MIN_START_CODE) << field_pic;
+                int mb_y = start_code - SLICE_MIN_START_CODE;
                 last_code = SLICE_MIN_START_CODE;
+                if(s2->codec_id != CODEC_ID_MPEG1VIDEO && s2->mb_height > 2800/16)
+                    mb_y += (*buf_ptr&0xE0)<<2;
 
+                mb_y <<= field_pic;
                 if (s2->picture_structure == PICT_BOTTOM_FIELD)
                     mb_y++;
 
@@ -2578,7 +2590,6 @@ AVCodec ff_mpeg1video_decoder = {
                              CODEC_CAP_TRUNCATED | CODEC_CAP_DELAY |
                              CODEC_CAP_SLICE_THREADS,
     .flush                 = flush,
-    .max_lowres            = 3,
     .long_name             = NULL_IF_CONFIG_SMALL("MPEG-1 video"),
     .update_thread_context = ONLY_IF_THREADS_ENABLED(mpeg_decode_update_thread_context)
 };
@@ -2595,7 +2606,6 @@ AVCodec ff_mpeg2video_decoder = {
                       CODEC_CAP_TRUNCATED | CODEC_CAP_DELAY |
                       CODEC_CAP_SLICE_THREADS,
     .flush          = flush,
-    .max_lowres     = 3,
     .long_name      = NULL_IF_CONFIG_SMALL("MPEG-2 video"),
     .profiles       = NULL_IF_CONFIG_SMALL(mpeg2_video_profiles),
 };

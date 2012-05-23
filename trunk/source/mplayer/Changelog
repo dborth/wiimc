@@ -1,6 +1,6 @@
-MPlayer (1.0)
+MPlayer
 
-  rc5:
+  1.1: "We gave up on 1.0"
 
     Decoders:
     * FFmpeg AAC decoder is now preferred over libfaad2 and the internal
@@ -15,19 +15,28 @@ MPlayer (1.0)
     * lavfi: libavfilter filter graphs (experimental).
 
     Other:
+    * -dr support for H.264 B-frames.
     * support adding noise at output resolution with -vo gl:noise-strength=8
-    * experimental support for PGS (BluRay-compatible), DVB and XSUB subtitles.
-    * experimental af_cmdline slave command to change e.g. audio equalizer options at runtime.
+    * experimental support for OpenGL ES 1.0 in -vo gl
+    * support for PGS (BluRay-compatible), DVB and XSUB subtitles.
+    * af_cmdline slave command to change e.g. audio equalizer options at runtime.
     * vo x11: don't hide or show cursor any more if attached to an existing window (-wid)
+    * try reconnecting network streams e.g. after network timeouts
+    * lots of bug fixes as always (and surely a few new bugs, too :-( )
 
-    GUI:
+    GUI: Support for the GUI continues.
+    * numerous fixes, improvements and updates
+    * UTF-8 support
     * all skin messages available as slave commands (gui <message>)
+    * fancy new icon
 
     Ports:
     * Wine (see DOCS/tech/crosscompile.txt)
 
     MEncoder:
     * -force-key-frames option to set explicit seek points.
+
+MPlayer (1.0)
 
   rc4: "Yes We Can"
 

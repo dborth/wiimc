@@ -33,6 +33,18 @@ typedef struct AVFilterGraph {
     AVFilterContext **filters;
 
     char *scale_sws_opts; ///< sws options to use for the auto-inserted scale filters
+
+    /**
+     * Private fields
+     *
+     * The following fields are for internal use only.
+     * Their type, offset, number and semantic can change without notice.
+     */
+
+    AVFilterLink **sink_links;
+    int sink_links_count;
+
+    unsigned disable_auto_convert;
 } AVFilterGraph;
 
 /**
@@ -72,6 +84,21 @@ int avfilter_graph_add_filter(AVFilterGraph *graphctx, AVFilterContext *filter);
 int avfilter_graph_create_filter(AVFilterContext **filt_ctx, AVFilter *filt,
                                  const char *name, const char *args, void *opaque,
                                  AVFilterGraph *graph_ctx);
+
+/**
+ * Enable or disable automatic format conversion inside the graph.
+ *
+ * Note that format conversion can still happen inside explicitly inserted
+ * scale and aconvert filters.
+ *
+ * @param flags  any of the AVFILTER_AUTO_CONVERT_* constants
+ */
+void avfilter_graph_set_auto_convert(AVFilterGraph *graph, unsigned flags);
+
+enum {
+    AVFILTER_AUTO_CONVERT_ALL  =  0, /**< all automatic conversions enabled */
+    AVFILTER_AUTO_CONVERT_NONE = -1, /**< all automatic conversions disabled */
+};
 
 /**
  * Check validity and configure all the links and formats in the graph.
@@ -220,5 +247,19 @@ int avfilter_graph_queue_command(AVFilterGraph *graph, const char *target, const
  *          the string must be freed using av_free
  */
 char *avfilter_graph_dump(AVFilterGraph *graph, const char *options);
+
+/**
+ * Request a frame on the oldest sink link.
+ *
+ * If the request returns AVERROR_EOF, try the next.
+ *
+ * Note that this function is not meant to be the sole scheduling mechanism
+ * of a filtergraph, only a convenience function to help drain a filtergraph
+ * in a balanced way under normal circumstances.
+ *
+ * @return  the return value of avfilter_request_frame,
+ *          or AVERROR_EOF of all links returned AVERROR_EOF.
+ */
+int avfilter_graph_request_oldest(AVFilterGraph *graph);
 
 #endif /* AVFILTER_AVFILTERGRAPH_H */

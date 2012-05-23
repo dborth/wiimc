@@ -644,10 +644,8 @@ void uninit_player(unsigned int mask)
     if (mask & INITIALIZED_DEMUXER) {
         initialized_flags &= ~INITIALIZED_DEMUXER;
         current_module     = "free_demuxer";
-        if (mpctx->demuxer) {
-            mpctx->stream = mpctx->demuxer->stream;
+        if (mpctx->demuxer)
             free_demuxer(mpctx->demuxer);
-        }
         mpctx->demuxer = NULL;
     }
 
@@ -2809,6 +2807,7 @@ static void edl_loadfile(void)
 // Execute EDL command for the current position if one exists
 static void edl_update(MPContext *mpctx)
 {
+    double pts;
     if (!edl_records)
         return;
 
@@ -2820,6 +2819,7 @@ static void edl_update(MPContext *mpctx)
         return;
     }
 
+    pts = mpctx->sh_video->pts;
     // This indicates that we need to reset next EDL record according
     // to new PTS due to seek or other condition
     if (edl_needs_reset) {
@@ -2830,19 +2830,19 @@ static void edl_update(MPContext *mpctx)
         // Find next record, also skip immediately if we are already
         // inside any record
         while (next_edl_record) {
-            if (next_edl_record->start_sec > mpctx->sh_video->pts)
+            if (next_edl_record->start_sec > pts)
                 break;
-            if (next_edl_record->stop_sec >= mpctx->sh_video->pts) {
+            if (next_edl_record->stop_sec >= pts) {
                 if (edl_backward) {
                     mpctx->osd_function = OSD_REW;
                     edl_decision  = 1;
                     abs_seek_pos  = 0;
-                    rel_seek_secs = -(mpctx->sh_video->pts -
+                    rel_seek_secs = -(pts -
                                       next_edl_record->start_sec +
                                       edl_backward_delay);
                     mp_msg(MSGT_CPLAYER, MSGL_DBG4, "EDL_SKIP: pts [%f], "
                                                     "offset [%f], start [%f], stop [%f], length [%f]\n",
-                           mpctx->sh_video->pts, rel_seek_secs,
+                           pts, rel_seek_secs,
                            next_edl_record->start_sec, next_edl_record->stop_sec,
                            next_edl_record->length_sec);
                     return;
@@ -2860,15 +2860,15 @@ static void edl_update(MPContext *mpctx)
     }
 
     if (next_edl_record &&
-        mpctx->sh_video->pts >= next_edl_record->start_sec) {
+        pts >= next_edl_record->start_sec) {
         if (next_edl_record->action == EDL_SKIP) {
             mpctx->osd_function = OSD_FFW;
             edl_decision  = 1;
             abs_seek_pos  = 0;
-            rel_seek_secs = next_edl_record->stop_sec - mpctx->sh_video->pts;
+            rel_seek_secs = next_edl_record->stop_sec - pts;
             mp_msg(MSGT_CPLAYER, MSGL_DBG4, "EDL_SKIP: pts [%f], offset [%f], "
                                             "start [%f], stop [%f], length [%f]\n",
-                   mpctx->sh_video->pts, rel_seek_secs,
+                   pts, rel_seek_secs,
                    next_edl_record->start_sec, next_edl_record->stop_sec,
                    next_edl_record->length_sec);
         } else if (next_edl_record->action == EDL_MUTE) {

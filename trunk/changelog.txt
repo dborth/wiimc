@@ -6,6 +6,11 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.2.7 - May 24, 2012]
+
+* Fixed crash caused when leaving the Music area
+* Synced to MPlayer r34946 and ffmpeg 307562be98b4
+
 [1.2.6 - April 20, 2012]
 
 * Fixed USB support

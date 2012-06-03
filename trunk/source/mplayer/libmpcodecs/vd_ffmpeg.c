@@ -248,6 +248,11 @@ static int init(sh_video_t *sh){
     if(lavc_codec->capabilities&CODEC_CAP_DR1 && !do_vis_debug && lavc_codec->id != CODEC_ID_INTERPLAY_VIDEO && lavc_codec->id != CODEC_ID_VP8 && lavc_codec->id != CODEC_ID_LAGARITH)
         ctx->do_dr1=1;
     ctx->nonref_dr = lavc_codec->id == CODEC_ID_H264;
+    // temporarily disable nonref_dr for 1.1 release
+    if (ctx->nonref_dr) {
+        ctx->do_dr1 = 0;
+        ctx->nonref_dr = 0;
+    }
     ctx->ip_count= ctx->b_count= 0;
 
     ctx->pic = avcodec_alloc_frame();
@@ -564,11 +569,11 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
     }
 
     if (ctx->nonref_dr) {
-        if (flags & MP_IMGFLAG_PRESERVE || ctx->b_count > 1) {
-            if (!(flags & MP_IMGFLAG_PRESERVE)) ctx->b_count--;
+        if (flags & MP_IMGFLAG_PRESERVE)
             return avcodec_default_get_buffer(avctx, pic);
-        }
-        type = MP_IMGTYPE_TEMP;
+        // Use NUMBERED since for e.g. TEMP vos assume there will
+        // be no other frames between the get_image and matching put_image.
+        type = MP_IMGTYPE_NUMBERED;
     }
 
     if(init_vo(sh, avctx->pix_fmt) < 0){
@@ -581,7 +586,7 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic){
     }
 
     if (IMGFMT_IS_HWACCEL(ctx->best_csp)) {
-        type =  MP_IMGTYPE_NUMBERED | (0xffff << 16);
+        type =  MP_IMGTYPE_NUMBERED;
     } else
     if (type == MP_IMGTYPE_IP || type == MP_IMGTYPE_IPB) {
         if(ctx->b_count>1 || ctx->ip_count>2){

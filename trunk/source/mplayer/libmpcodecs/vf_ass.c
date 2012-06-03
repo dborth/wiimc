@@ -118,7 +118,8 @@ static void get_image(struct vf_instance *vf, mp_image_t *mpi)
     // width never changes, always try full DR
     mpi->priv = vf->dmpi = vf_get_image(vf->next, mpi->imgfmt, mpi->type,
                                         mpi->flags | MP_IMGFLAG_READABLE,
-                                        vf->priv->outw, vf->priv->outh);
+                                        FFMAX(mpi->width,  vf->priv->outw),
+                                        FFMAX(mpi->height, vf->priv->outh));
 
     if ( (vf->dmpi->flags & MP_IMGFLAG_DRAW_CALLBACK) &&
         !(vf->dmpi->flags & MP_IMGFLAG_DIRECT)) {
@@ -286,7 +287,7 @@ static void copy_to_image(struct vf_instance *vf)
         unsigned char *dst      = vf->dmpi->planes[pl];
         unsigned char *src      = vf->priv->planes[pl];
         unsigned char *src_next = vf->priv->planes[pl] + src_stride;
-        for (i = 0; i < vf->dmpi->chroma_height; ++i) {
+        for (i = 0; i < vf->priv->outh / 2; ++i) {
             if ((vf->priv->dirty_rows[i * 2] == 1)) {
                 assert(vf->priv->dirty_rows[i * 2 + 1] == 1);
                 for (j = 0, k = 0; j < vf->dmpi->chroma_width; ++j, k += 2) {

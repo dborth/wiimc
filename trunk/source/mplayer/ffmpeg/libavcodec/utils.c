@@ -789,7 +789,7 @@ int attribute_align_arg avcodec_open2(AVCodecContext *avctx, AVCodec *codec, AVD
 
     if (codec->capabilities & CODEC_CAP_EXPERIMENTAL)
         if (avctx->strict_std_compliance > FF_COMPLIANCE_EXPERIMENTAL) {
-            av_log(avctx, AV_LOG_ERROR, "Codec is experimental but experimental codecs are not enabled, see -strict -2\n");
+            av_log(avctx, AV_LOG_ERROR, "Codec is experimental but experimental codecs are not enabled, try -strict -2\n");
             ret = -1;
             goto free_and_end;
         }
@@ -1482,8 +1482,11 @@ int attribute_align_arg avcodec_decode_video2(AVCodecContext *avctx, AVFrame *pi
         emms_c(); //needed to avoid an emms_c() call before every return;
 
         avctx->pkt = NULL;
-        if (did_split)
+        if (did_split) {
             ff_packet_free_side_data(&tmp);
+            if(ret == tmp.size)
+                ret = avpkt->size;
+        }
 
         if (*got_picture_ptr){
             avctx->frame_number++;
@@ -1583,8 +1586,11 @@ int attribute_align_arg avcodec_decode_audio4(AVCodecContext *avctx,
         }
 
         avctx->pkt = NULL;
-        if (did_split)
+        if (did_split) {
             ff_packet_free_side_data(&tmp);
+            if(ret == tmp.size)
+                ret = avpkt->size;
+        }
     }
     return ret;
 }
@@ -1768,9 +1774,14 @@ size_t av_get_codec_tag_string(char *buf, size_t buf_size, unsigned int codec_ta
 {
     int i, len, ret = 0;
 
+#define IS_PRINT(x)                                               \
+    (((x) >= '0' && (x) <= '9') ||                                \
+     ((x) >= 'a' && (x) <= 'z') || ((x) >= 'A' && (x) <= 'Z') ||  \
+     ((x) == '.' || (x) == ' '))
+
     for (i = 0; i < 4; i++) {
         len = snprintf(buf, buf_size,
-                       isprint(codec_tag&0xFF) ? "%c" : "[%d]", codec_tag&0xFF);
+                       IS_PRINT(codec_tag&0xFF) ? "%c" : "[%d]", codec_tag&0xFF);
         buf      += len;
         buf_size  = buf_size > len ? buf_size - len : 0;
         ret      += len;
@@ -2188,8 +2199,12 @@ int av_get_audio_frame_duration(AVCodecContext *avctx, int frame_bytes)
                 /* calc from frame_bytes, channels, and bits_per_coded_sample */
                 switch (avctx->codec_id) {
                 case CODEC_ID_PCM_DVD:
+                    if(bps<4)
+                        return 0;
                     return 2 * (frame_bytes / ((bps * 2 / 8) * ch));
                 case CODEC_ID_PCM_BLURAY:
+                    if(bps<4)
+                        return 0;
                     return frame_bytes / ((FFALIGN(ch, 2) * bps) / 8);
                 case CODEC_ID_S302M:
                     return 2 * (frame_bytes / ((bps + 4) / 4)) / ch;

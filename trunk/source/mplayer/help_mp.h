@@ -563,6 +563,7 @@ static const char help_text[]=
 #define MSGTR_NoChapter "No chapter"
 #define MSGTR_Chapter "Chapter %d"
 #define MSGTR_NoFileLoaded "No file loaded."
+#define MSGTR_Filter_UTF8Subtitles "UTF-8 encoded subtitles (*.utf, *.utf-8, *.utf8)"
 #define MSGTR_Filter_AllSubtitles "All subtitles"
 #define MSGTR_Filter_AllFiles "All files"
 #define MSGTR_Filter_TTF "True Type fonts (*.ttf)"
@@ -581,7 +582,7 @@ static const char help_text[]=
 #define MSGTR_Filter_DivXFiles "DivX files"
 #define MSGTR_Filter_FlashVideo "Flash Video"
 #define MSGTR_Filter_MP3Files "MP3 files"
-#define MSGTR_Filter_MP4Files "MP4 files
+#define MSGTR_Filter_MP4Files "MP4 files"
 #define MSGTR_Filter_MPEGFiles "MPEG files"
 #define MSGTR_Filter_MP2TS "MPEG-2 transport streams"
 #define MSGTR_Filter_MatroskaMedia "Matroska media"

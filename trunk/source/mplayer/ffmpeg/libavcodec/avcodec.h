@@ -3130,9 +3130,6 @@ typedef struct AVPicture {
  * @}
  */
 
-#define AVPALETTE_SIZE 1024
-#define AVPALETTE_COUNT 256
-
 enum AVSubtitleType {
     SUBTITLE_NONE,
 
@@ -3807,6 +3804,7 @@ typedef struct AVCodecParserContext {
 #define PARSER_FLAG_ONCE                      0x0002
 /// Set if the parser has a valid file offset
 #define PARSER_FLAG_FETCHED_OFFSET            0x0004
+#define PARSER_FLAG_USE_CODEC_TS              0x1000
 
     int64_t offset;      ///< byte offset from starting packet start
     int64_t cur_frame_end[AV_PARSER_PTS_NB];

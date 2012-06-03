@@ -278,7 +278,7 @@ void vf_mpi_clear(mp_image_t* mpi,int x0,int y0,int w,int h){
 mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype, int mp_imgflag, int w, int h){
   mp_image_t* mpi=NULL;
   int w2;
-  int number = mp_imgtype >> 16;
+  int number = (mp_imgtype >> 16) - 1;
 
 #ifdef MP_DEBUG
   assert(w == -1 || w >= vf->w);
@@ -333,7 +333,10 @@ mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype,
           break;
       number = i;
     }
-    if (number < 0 || number >= NUM_NUMBERED_MPI) return NULL;
+    if (number < 0 || number >= NUM_NUMBERED_MPI) {
+      mp_msg(MSGT_VFILTER, MSGL_FATAL, "Ran out of numbered images, expect crash. Filter before %s is broken.\n", vf->info->name);
+      return NULL;
+    }
     if (!vf->imgctx.numbered_images[number]) vf->imgctx.numbered_images[number] = new_mp_image(w2,h);
     mpi = vf->imgctx.numbered_images[number];
     mpi->number = number;
@@ -358,7 +361,8 @@ mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype,
                 if (mpi->flags & MP_IMGFLAG_RGB_PALETTE)
                     av_freep(&mpi->planes[1]);
                 mpi->flags&=~MP_IMGFLAG_ALLOCATED;
-                mp_msg(MSGT_VFILTER,MSGL_V,"vf.c: have to REALLOCATE buffer memory :(\n");
+                mp_msg(MSGT_VFILTER,MSGL_V,"vf.c: have to REALLOCATE buffer memory in vf_%s :(\n",
+                       vf->info->name);
             }
 //      } else {
         } {
@@ -425,6 +429,10 @@ mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype,
   mpi->qscale = NULL;
   }
   mpi->usage_count++;
+  // TODO: figure out what is going on with EXPORT types
+  if (mpi->usage_count > 1 && mpi->type != MP_IMGTYPE_EXPORT)
+      mp_msg(MSGT_VFILTER, MSGL_V, "Suspicious mp_image usage count %i in vf_%s (type %i)\n",
+             mpi->usage_count, vf->info->name, mpi->type);
 //  printf("\rVF_MPI: %p %p %p %d %d %d    \n",
 //      mpi->planes[0],mpi->planes[1],mpi->planes[2],
 //      mpi->stride[0],mpi->stride[1],mpi->stride[2]);
@@ -689,6 +697,12 @@ int vf_next_query_format(struct vf_instance *vf, unsigned int fmt){
 }
 
 int vf_next_put_image(struct vf_instance *vf,mp_image_t *mpi, double pts){
+    mpi->usage_count--;
+    if (mpi->usage_count < 0) {
+        mp_msg(MSGT_VFILTER, MSGL_V, "Bad mp_image usage count %i in vf_%s (type %i)\n",
+               mpi->usage_count, vf->info->name, mpi->type);
+        mpi->usage_count = 0;
+    }
     return vf->next->put_image(vf->next,mpi, pts);
 }
 

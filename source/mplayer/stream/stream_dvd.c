@@ -26,8 +26,8 @@
 #include "config.h"
 #include "mp_msg.h"
 #include "help_mp.h"
+#include "path.h"
 
-#include <libgen.h>
 #include <errno.h>
 
 #define FIRST_AC3_AID 128
@@ -1151,7 +1151,7 @@ static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_fo
 #ifdef GEKKO
     filename = gekko_basename(stream->url);
 #else
-    filename = strdup(basename(stream->url));
+    filename = strdup(mp_basename(stream->url));
 #endif
 
     spriv=calloc(1, sizeof(struct stream_priv_s));
@@ -1159,7 +1159,7 @@ static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_fo
 #ifdef GEKKO
     spriv->device = gekko_dirname(stream->url);
 #else
-    spriv->device = strdup(dirname(stream->url));
+    spriv->device = mp_dirname(stream->url);
 #endif
 
     if(!strncasecmp(filename,"vts_",4))

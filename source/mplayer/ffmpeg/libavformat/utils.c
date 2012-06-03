@@ -1207,6 +1207,9 @@ static int parse_packet(AVFormatContext *s, AVPacket *pkt, int stream_index)
              st->parser->pict_type == AV_PICTURE_TYPE_I))
             out_pkt.flags |= AV_PKT_FLAG_KEY;
 
+        if(st->parser->key_frame == -1 && st->parser->pict_type==AV_PICTURE_TYPE_NONE && (pkt->flags&AV_PKT_FLAG_KEY))
+            out_pkt.flags |= AV_PKT_FLAG_KEY;
+
         compute_pkt_fields(s, st, st->parser, &out_pkt);
 
         if ((s->iformat->flags & AVFMT_GENERIC_INDEX) &&
@@ -1316,6 +1319,8 @@ static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
                 st->parser->flags |= PARSER_FLAG_COMPLETE_FRAMES;
             } else if(st->need_parsing == AVSTREAM_PARSE_FULL_ONCE) {
                 st->parser->flags |= PARSER_FLAG_ONCE;
+            } else if(st->need_parsing == AVSTREAM_PARSE_FULL_RAW) {
+                st->parser->flags |= PARSER_FLAG_USE_CODEC_TS;
             }
         }
 
@@ -2456,8 +2461,12 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
         //only for the split stuff
         if (!st->parser && !(ic->flags & AVFMT_FLAG_NOPARSE)) {
             st->parser = av_parser_init(st->codec->codec_id);
-            if(st->need_parsing == AVSTREAM_PARSE_HEADERS && st->parser){
-                st->parser->flags |= PARSER_FLAG_COMPLETE_FRAMES;
+            if(st->parser){
+                if(st->need_parsing == AVSTREAM_PARSE_HEADERS){
+                    st->parser->flags |= PARSER_FLAG_COMPLETE_FRAMES;
+                } else if(st->need_parsing == AVSTREAM_PARSE_FULL_RAW) {
+                    st->parser->flags |= PARSER_FLAG_USE_CODEC_TS;
+                }
             }
         }
         codec = st->codec->codec ? st->codec->codec :
@@ -3315,7 +3324,9 @@ static int compute_pkt_fields2(AVFormatContext *s, AVStream *st, AVPacket *pkt){
         pkt->dts= st->pts_buffer[0];
     }
 
-    if(st->cur_dts && st->cur_dts != AV_NOPTS_VALUE && ((!(s->oformat->flags & AVFMT_TS_NONSTRICT) && st->cur_dts >= pkt->dts) || st->cur_dts > pkt->dts)){
+    if (st->cur_dts && st->cur_dts != AV_NOPTS_VALUE &&
+        ((!(s->oformat->flags & AVFMT_TS_NONSTRICT) &&
+          st->cur_dts >= pkt->dts) || st->cur_dts > pkt->dts)) {
         av_log(s, AV_LOG_ERROR,
                "Application provided invalid, non monotonically increasing dts to muxer in stream %d: %s >= %s\n",
                st->index, av_ts2str(st->cur_dts), av_ts2str(pkt->dts));
@@ -4128,7 +4139,7 @@ void avpriv_set_pts_info(AVStream *s, int pts_wrap_bits,
         av_log(NULL, AV_LOG_WARNING, "st:%d has too large timebase, reducing\n", s->index);
 
     if(new_tb.num <= 0 || new_tb.den <= 0) {
-        av_log(NULL, AV_LOG_ERROR, "Ignoring attempt to set invalid timebase for st:%d\n", s->index);
+        av_log(NULL, AV_LOG_ERROR, "Ignoring attempt to set invalid timebase %d/%d for st:%d\n", new_tb.num, new_tb.den, s->index);
         return;
     }
     s->time_base = new_tb;

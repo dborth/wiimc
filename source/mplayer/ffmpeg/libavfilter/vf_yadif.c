@@ -17,10 +17,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include "libavutil/avassert.h"
 #include "libavutil/cpu.h"
 #include "libavutil/common.h"
 #include "libavutil/pixdesc.h"
 #include "avfilter.h"
+#include "video.h"
 #include "yadif.h"
 
 #undef NDEBUG
@@ -178,7 +180,7 @@ static AVFilterBufferRef *get_video_buffer(AVFilterLink *link, int perms, int w,
     int height= FFALIGN(h+2, 32);
     int i;
 
-    picref = avfilter_default_get_video_buffer(link, perms, width, height);
+    picref = ff_default_get_video_buffer(link, perms, width, height);
 
     picref->video->w = w;
     picref->video->h = h;
@@ -237,6 +239,8 @@ static void start_frame(AVFilterLink *link, AVFilterBufferRef *picref)
 {
     AVFilterContext *ctx = link->dst;
     YADIFContext *yadif = ctx->priv;
+
+    av_assert0(picref);
 
     if (yadif->frame_pending)
         return_frame(ctx, 1);
@@ -308,7 +312,7 @@ static int request_frame(AVFilterLink *link)
 
         ret  = avfilter_request_frame(link->src->inputs[0]);
 
-        if (ret == AVERROR_EOF && yadif->next) {
+        if (ret == AVERROR_EOF && yadif->cur) {
             AVFilterBufferRef *next = avfilter_ref_buffer(yadif->next, AV_PERM_READ);
             next->pts = yadif->next->pts * 2 - yadif->cur->pts;
 

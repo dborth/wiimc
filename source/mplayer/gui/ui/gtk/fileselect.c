@@ -77,9 +77,9 @@ char * fsVideoFilterNames[][2] =
 	   { MSGTR_Filter_VideoCDImages, "*.bin" },
 	   { MSGTR_Filter_WAVFiles,      "*.wav" },
 	   { MSGTR_Filter_WindowsMedia,  "*.asf,*.wma,*.wmv" },
-	   { MSGTR_Filter_Playlists,     "*.asx,*.m3u,*.m3u8,*.pls,*.ram,*.rmj,*.rmm,*.smi,*.smil,*.sml,*.vlc,*.wax,*.wmx,*.wvx" },
+	   { MSGTR_Filter_Playlists,     "*.asx,*.m3u,*.m3u8,*.nsc,*.pls,*.ram,*.smi,*.smil,*.sml,*.vlc,*.wax,*.wmx,*.wvx" },
 	   { MSGTR_Filter_AllAudioFiles, "*.aac,*.ac3,*.aif,*.aifc,*.aiff,*.amr,*.ape,*.au,*.awb,*.cdg,*.f4a,*.f4b,*.flac,*.m4a,*.m4b,*.mka,*.mp+,*.mp2,*.mp3,*.mpc,*.mpga,*.mpp,*.nsa,*.oga,*.ogg,*.pcm,*.qcp,*.ra,*.snd,*.spx,*.voc,*.vqf,*.w64,*.wav,*.wma,*.wv,*.wvp" },
-	   { MSGTR_Filter_AllVideoFiles, "*.264,*.3g2,*.3ga,*.3gp,*.3gp2,*.3gpp,*.3gpp2,*.asf,*.avi,*.bdm,*.bdmv,*.bin,*.clpi,*.cpi,*.divx,*.dv,*.f4v,*.flc,*.fli,*.flv,*.m1v,*.m2t,*.m2ts,*.m2v,*.m4v,*.mkv,*.moov,*.mov,*.mp2,*.mp4,*.mpe,*.mpeg,*.mpg,*.mpl,*.mpls,*.mts,*.mxf,*.nsv,*.nuv,*.ogg,*.ogm,*.ogv,*.ogx,*.pva,*.qt,*.qtvr,*.rec,*.rm,*.rmvb,*.rv,*.spl,*.str,*.swf,*.trp,*.ts,*.ty,*.vdr,*.viv,*.vivo,*.vob,*.webm,*.wmv" },
+	   { MSGTR_Filter_AllVideoFiles, "*.264,*.3g2,*.3ga,*.3gp,*.3gp2,*.3gpp,*.3gpp2,*.asf,*.avi,*.bdm,*.bdmv,*.bin,*.clpi,*.cpi,*.cpk,*.divx,*.dv,*.f4v,*.flc,*.fli,*.flv,*.m1v,*.m2t,*.m2ts,*.m2v,*.m4v,*.mjpg,*.mkv,*.moov,*.mov,*.mp2,*.mp4,*.mpe,*.mpeg,*.mpg,*.mpl,*.mpls,*.mts,*.mxf,*.nsv,*.nuv,*.ogg,*.ogm,*.ogv,*.ogx,*.pva,*.qt,*.qtvr,*.rec,*.rm,*.rmvb,*.roq,*.rv,*.spl,*.str,*.swf,*.trp,*.ts,*.ty,*.vdr,*.viv,*.vivo,*.vob,*.webm,*.wmv,*.y4m" },
 	   { MSGTR_Filter_AllFiles,      "*" },
 	   { NULL,NULL }
 	 };
@@ -96,7 +96,7 @@ char * fsSubtitleFilterNames[][2] =
            { "SubStation Alpha (*.ssa)",          "*.ssa" },
            { "MicroDVD (*.sub)",                  "*.sub" },
            { "Text (*.txt)",                      "*.txt" },
-           { "UTF (*.utf)",                       "*.utf" },
+           { MSGTR_Filter_UTF8Subtitles,          "*.utf,*.utf-8,*.utf8" },
            { MSGTR_Filter_AllSubtitles,           "*.aqt,*.ass,*.jss,*.rt,*.smi,*.srt,*.ssa,*.sub,*.txt,*.utf" },
            { MSGTR_Filter_AllFiles,               "*" },
 	   { NULL,NULL }
@@ -485,7 +485,7 @@ static void fs_Up_released( GtkButton * button, gpointer user_data )
 static void fs_Ok_released( GtkButton * button, gpointer user_data )
 {
  GList         * item;
- int             i = 1;
+ int             i = 1, l;
  struct stat     fs;
 
  stat( fsSelectedFile,&fs );
@@ -503,7 +503,9 @@ static void fs_Ok_released( GtkButton * button, gpointer user_data )
  switch ( fsType )
   {
    case fsVideoSelector:
-          uiSetFileName( fsSelectedDirectory,fsSelectedFile,STREAMTYPE_FILE );
+          for (l = 0; fsVideoFilterNames[l][0]; l++)
+            if (strcmp(fsVideoFilterNames[l][0], MSGTR_Filter_Playlists) == 0) break;
+          uiSetFileName( fsSelectedDirectory,fsSelectedFile, fsLastVideoFilterSelected == l ? STREAMTYPE_PLAYLIST : STREAMTYPE_FILE );
           guiInfo.NewPlay=GUI_FILE_NEW; sub_fps=0;
           fs_PersistantHistory( get_current_dir_name_utf8() );      //totem, write into history
           break;
@@ -714,6 +716,7 @@ GtkWidget * create_FileSelect( void )
  gtk_widget_set_name( fsFilterCombo,"fsFilterCombo" );
  gtk_widget_show( fsFilterCombo );
  gtk_entry_set_editable (GTK_ENTRY( fsFilterCombo ),FALSE );
+ gtk_widget_set_usize( fsFilterCombo,-2,20 );
 
  AddHSeparator( vbox4 );
 

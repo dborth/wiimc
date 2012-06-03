@@ -591,8 +591,8 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
         }
         if(!st->codec->codec_id){
             flv_set_audio_codec(s, st, st->codec, flags & FLV_AUDIO_CODECID_MASK);
-            flv->last_sample_rate = st->codec->sample_rate;
-            flv->last_channels    = st->codec->channels;
+            flv->last_sample_rate = sample_rate = st->codec->sample_rate;
+            flv->last_channels    = channels    = st->codec->channels;
         } else {
             AVCodecContext ctx;
             ctx.sample_rate = sample_rate;
@@ -618,7 +618,7 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
             if (flv->wrong_dts)
                 dts = AV_NOPTS_VALUE;
         }
-        if (type == 0 && !st->codec->extradata) {
+        if (type == 0 && (!st->codec->extradata || st->codec->codec_id == CODEC_ID_AAC)) {
             if (st->codec->extradata) {
                 if ((ret = flv_queue_extradata(flv, s->pb, stream_type, size)) < 0)
                     return ret;

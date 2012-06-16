@@ -6,6 +6,10 @@
  
 ¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤°`°¤ø,¸,ø¤°`°¤ø,¸¸,ø¤
 
+[1.2.9 - June 16, 2012]
+
+* Fixed incompatibility with NAS devices
+
 [1.2.8 - June 10, 2012]
 
 * Synced to MPlayer r34991 and ffmpeg 44c10168cff4

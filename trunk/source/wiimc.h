@@ -12,7 +12,7 @@
 #include "network.h"
 
 #define APPNAME			"WiiMC"
-#define APPVERSION		"1.2.8"
+#define APPVERSION		"1.2.9"
 #define APPFOLDER		"wiimc"
 
 enum {

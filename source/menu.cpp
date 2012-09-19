@@ -2088,7 +2088,6 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	int fmt, chosenFormat = 0;
 	char *strstart = str;
 	char *urlc, *urlcend, *fmtc, *fmtcend, *urle, *urleend;
-	char urlstart[255];
 	char urlend[255];
 	char format[5];
 	
@@ -2130,9 +2129,9 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		if((fmt == 5 || fmt == 18 || fmt == 35) && fmt <= WiiSettings.youtubeFormat && fmt > chosenFormat)
 		{
 			// build new youtube url
-			snprintf(urlstart, urlcend-urlc-6+1, "%s", urlc+6);
-			snprintf(urlend, urleend-urle-9+1, "%s", urle+9);
-			sprintf(newurl,"%s&signature=%s",urlstart,urlend);
+			snprintf(newurl, urlcend-urlc-6+1, "%s", urlc+6);
+			snprintf(urlend, urleend-urle-9+1+11, "&signature=%s", urle+9);
+			strcat(newurl, urlend);
 
 			url_unescape_string(newurl, newurl); // remove 3 levels of url codes ie: %252526 = %2526
 			url_unescape_string(newurl, newurl); // %2526 = %26

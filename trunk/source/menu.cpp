@@ -2087,26 +2087,35 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		
 	int fmt, chosenFormat = 0;
 	char *strstart = str;
-	char *urlc, *urlcend, *fmtc, *fmtcend;
+	char *urlc, *urlcend, *fmtc, *fmtcend, *urle, *urleend;
+	char urlstart[255];
+	char urlend[255];
 	char format[5];
-
+	
+	
 	while(chosenFormat != WiiSettings.youtubeFormat && str-strstart < 16384)
 	{
 		urlc = strstr(str, "url%3D");
 		
 		if(!urlc)
 			break;
-			
-		urlcend = strstr(urlc, "%26quality"); // get new url from url%3D to %26quality = http....
+
+		urlcend = strstr(urlc, "%26type"); // get new url from url%3D to %26type = http....
 
 		if(!urlcend || urlcend-urlc-6 < 1 || urlcend-urlc-6 >= MAXPATHLEN)
+			break;
+
+		urle = strstr(urlc, "%26sig%3D"); // get signature
+		urleend = strstr(urlc, "%26quality");  // get new url end from url%3D to %26quality = http....
+
+		if(!urleend || urleend-urle-9 < 1 || urlcend-urlc-6+urleend-urle-9 >= MAXPATHLEN)
 			break;
 
 		fmtc = strstr(urlc, "%2526itag%253D"); // find %26itag%3D within url
 		
 		if(!fmtc || fmtc > urlcend ) // no format found
 			break;
-
+			
 		fmtcend = strstr(fmtc+10, "%2526");  // delimited by next %26 tag within url
 
 		if(!fmtcend || fmtcend > urlcend || fmtcend-fmtc-14 < 1 || fmtcend-fmtc-14 >= 5)
@@ -2114,20 +2123,24 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		    str = urlc + 10;
 			continue; // skip this definition
 		}
-    	
+		
 		snprintf(format, fmtcend-fmtc-14+1, "%s", fmtc+14);
 		fmt = atoi(format);
 
 		if((fmt == 5 || fmt == 18 || fmt == 35) && fmt <= WiiSettings.youtubeFormat && fmt > chosenFormat)
 		{
-			snprintf(newurl, urlcend-urlc-6+1, "%s", urlc+6);
+			// build new youtube url
+			snprintf(urlstart, urlcend-urlc-6+1, "%s", urlc+6);
+			snprintf(urlend, urleend-urle-9+1, "%s", urle+9);
+			sprintf(newurl,"%s&signature=%s",urlstart,urlend);
+
 			url_unescape_string(newurl, newurl); // remove 3 levels of url codes ie: %252526 = %2526
 			url_unescape_string(newurl, newurl); // %2526 = %26
 			url_unescape_string(newurl, newurl); // %26 = &
 			chosenFormat = fmt;
 		}
 
-		str = urlcend + 10; // move to next url
+		str = urleend + 10; // move to next url
 	}
 	
 	mem2_free(buffer, MEM2_OTHER);

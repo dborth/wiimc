@@ -2064,7 +2064,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 
 	if(!buffer)
 		return false;
-
+		
 	int size = http_request(url, NULL, buffer, (128*1024), SILENT);
 
 	if(size <= 0)
@@ -2072,7 +2072,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		mem2_free(buffer, MEM2_OTHER);
 		return false;
 	}
-
+	
 	buffer[size-1] = 0;
 	char *str = strstr(buffer, "url_encoded_fmt_stream_map=");
 
@@ -2082,72 +2082,100 @@ bool LoadYouTubeFile(char *url, char *newurl)
 		return false;
 	}
 
-	if(size-(str-buffer) > 16384)
-		str[16384] = 0; // truncate string
-		
 	int fmt, chosenFormat = 0;
-	char *strstart = str;
-	char *urlc, *urlcend, *fmtc, *fmtcend, *urle, *urleend;
-	char urlend[255];
+	char *urlc, *urlcod, *urlcend, *fmtc, *fmtcend;
 	char format[5];
 	
+	// get start point
+	urlc = str+27;
 	
-	while(chosenFormat != WiiSettings.youtubeFormat && str-strstart < 16384)
+	// get end point
+	char *strend = strstr(str, ";");
+	
+	if(strend == NULL)
 	{
-		urlc = strstr(str, "url%3D");
-		
-		if(!urlc)
-			break;
-
-		urlcend = strstr(urlc, "%26type"); // get new url from url%3D to %26type = http....
-
-		if(!urlcend || urlcend-urlc-6 < 1 || urlcend-urlc-6 >= MAXPATHLEN)
-			break;
-
-		urle = strstr(urlc, "%26sig%3D"); // get signature
-		urleend = strstr(urlc, "%26quality");  // get new url end from url%3D to %26quality = http....
-
-		if(!urleend || urleend-urle-9 < 1 || urlcend-urlc-6+urleend-urle-9 >= MAXPATHLEN)
-			break;
-
-		fmtc = strstr(urlc, "%2526itag%253D"); // find %26itag%3D within url
-		
-		if(!fmtc || fmtc > urlcend ) // no format found
-			break;
-			
-		fmtcend = strstr(fmtc+10, "%2526");  // delimited by next %26 tag within url
-
-		if(!fmtcend || fmtcend > urlcend || fmtcend-fmtc-14 < 1 || fmtcend-fmtc-14 >= 5)
-		{
-		    str = urlc + 10;
-			continue; // skip this definition
-		}
-		
-		snprintf(format, fmtcend-fmtc-14+1, "%s", fmtc+14);
-		fmt = atoi(format);
-
-		if((fmt == 5 || fmt == 18 || fmt == 35) && fmt <= WiiSettings.youtubeFormat && fmt > chosenFormat)
-		{
-			// build new youtube url
-			snprintf(newurl, urlcend-urlc-6+1, "%s", urlc+6);
-			snprintf(urlend, urleend-urle-9+1+11, "&signature=%s", urle+9);
-			strcat(newurl, urlend);
-
-			url_unescape_string(newurl, newurl); // remove 3 levels of url codes ie: %252526 = %2526
-			url_unescape_string(newurl, newurl); // %2526 = %26
-			url_unescape_string(newurl, newurl); // %26 = &
-			chosenFormat = fmt;
-		}
-
-		str = urleend + 10; // move to next url
+		mem2_free(buffer, MEM2_OTHER);
+		return false;
 	}
 	
+	strend[0] = 0; //terminate the string
+
+	// work through the string looking for required format
+	char *tempurl = (char *)mem2_malloc(2048, MEM2_OTHER);
+	
+	while(chosenFormat != WiiSettings.youtubeFormat && urlc < strend-10)
+	{
+		//find section end %2C and set pointer to next section
+		urlcend = strstr(urlc, "%2C");
+	    char *nexturl = urlcend + 3;
+		if(!urlcend) urlcend = strend; 
+		
+		//get and decode section
+		snprintf(tempurl,urlcend-urlc+1,"%s",urlc);
+		
+		url_unescape_string(tempurl, tempurl); // %252526 = %2526
+		url_unescape_string(tempurl, tempurl); // %2526 = %26
+		url_unescape_string(tempurl, tempurl); // %26 = &
+		//get format code of this section
+		fmtc = strstr(tempurl, "itag="); 
+		if(!fmtc) break;
+		fmtcend = strstr(fmtc+7,"&");  
+		if(!fmtcend) break;
+		snprintf(format, fmtcend-fmtc-5+1, "%s", fmtc+5);
+		fmt = atoi(format);
+		
+		if((fmt == 5 || fmt == 18 || fmt == 35) && fmt <= WiiSettings.youtubeFormat && fmt > chosenFormat)
+		{
+			urlcod = strstr(tempurl,"url="); 
+			if(!urlcod) break;
+			
+			// swap front and back
+			snprintf(urlc,urlcod-tempurl+1,"%s",tempurl); 
+			strcpy(tempurl,urlcod+4);
+			strcat(tempurl,"&");
+			strcat(tempurl,urlc);
+			
+			// expand signature   
+			char *sig = strstr(tempurl,"&sig=");  
+			int siglen = strlen(tempurl)-(sig-tempurl)-3; 
+			memmove(sig+10,sig+4,siglen);   
+			memmove(sig,"&signature=",11);  
+			
+			// remove &type=
+			sig = strstr(tempurl,"&type=");    
+			char *sigend = strstr(sig+6,"&"); 
+			siglen = strlen(tempurl)-(sigend-tempurl)+1; 
+			memmove(sig,sigend,siglen);     
+			
+			// remove &fallback_host=
+			sig = strstr(tempurl,"&fallback_host=");
+			sigend = strstr(sig+15,"&");
+			siglen = strlen(tempurl)-(sigend-tempurl)+1; 
+			memmove(sig,sigend,siglen);                
+
+			// remove duplicate &itag=
+			sig = strstr(tempurl,"&itag=");
+			sigend = strstr(sig+6,"&");
+			siglen = strlen(tempurl)-(sigend-tempurl)+1; 
+			memmove(sig,sigend,siglen);                
+
+			//remove last &
+			siglen = strlen(tempurl);
+			tempurl[siglen-1] = 0;
+
+			chosenFormat = fmt;
+			strcpy(newurl, tempurl);
+		}
+		urlc = nexturl; // do next section
+	}
+	
+	mem2_free(tempurl, MEM2_OTHER);
 	mem2_free(buffer, MEM2_OTHER);
 
 	if(chosenFormat > 0)
 		return true;
 
-	return false; 
+	return false;
 }
 
 static GuiFileBrowser *fileBrowser = NULL;
@@ -2501,7 +2529,7 @@ static void MenuBrowse(int menu)
 				GetExt(browser.selIndex->file, ext);
 				int numItems = 0;
 
-				if(strncmp(browser.selIndex->file, "http://www.youtube.com", 22) == 0)
+				if(strncmp(browser.selIndex->file, "http://www.youtube.", 19) == 0)
 				{
 					if(!mainWindow->Find(disabled))
 						mainWindow->Append(disabled);

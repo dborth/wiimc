@@ -2074,7 +2074,7 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	}
 	
 	buffer[size-1] = 0;
-	char *str = strstr(buffer, "url_encoded_fmt_stream_map=");
+	char *str = strstr(buffer, "url_encoded_fmt_stream_map");
 
 	if(str == NULL)
 	{
@@ -2087,10 +2087,10 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	char format[5];
 	
 	// get start point
-	urlc = str+27;
+	urlc = str+30;
 	
 	// get end point
-	char *strend = strstr(str, ";");
+	char *strend = strstr(urlc,"\"");
 	
 	if(strend == NULL)
 	{
@@ -2099,77 +2099,99 @@ bool LoadYouTubeFile(char *url, char *newurl)
 	}
 	
 	strend[0] = 0; //terminate the string
-
-	// work through the string looking for required format
-	char *tempurl = (char *)mem2_malloc(2048, MEM2_OTHER);
 	
+	// work through the string looking for required format
 	while(chosenFormat != WiiSettings.youtubeFormat && urlc < strend-10)
 	{
-		//find section end %2C and set pointer to next section
-		urlcend = strstr(urlc, "%2C");
-	    char *nexturl = urlcend + 3;
-		if(!urlcend) urlcend = strend; 
+		//find section end ,
+		//and set pointer to next section
+		urlcend = strstr(urlc, ",");
+	    char *nexturl = urlcend + 1;
+		if(!urlcend) urlcend = strend; // last section
 		
-		//get and decode section
-		snprintf(tempurl,urlcend-urlc+1,"%s",urlc);
+		snprintf(newurl,urlcend-urlc+1,"%s",urlc); //get section with 0
+
+		// remove 3 levels of url codes
+		url_unescape_string(newurl, newurl); // %252526 = %2526
+		url_unescape_string(newurl, newurl); // %2526 = %26
+		url_unescape_string(newurl, newurl); // %26 = &
 		
-		url_unescape_string(tempurl, tempurl); // %252526 = %2526
-		url_unescape_string(tempurl, tempurl); // %2526 = %26
-		url_unescape_string(tempurl, tempurl); // %26 = &
+		char *sig;
+		int siglen;
+		
+		while (1)
+		{
+			// replace \u0026 with &
+			sig = strstr(newurl,"u0026");
+			if (!sig) break;
+			siglen = strlen(newurl)-(sig+5-newurl)+1;
+			if(siglen <= 0) break;
+			memmove(sig,sig+5,siglen);
+			memmove(sig-1,"&",1);
+		}
+		
 		//get format code of this section
-		fmtc = strstr(tempurl, "itag="); 
+		fmtc = strstr(newurl, "itag="); // find itag= within section
 		if(!fmtc) break;
-		fmtcend = strstr(fmtc+7,"&");  
-		if(!fmtcend) break;
-		snprintf(format, fmtcend-fmtc-5+1, "%s", fmtc+5);
-		fmt = atoi(format);
 		
+		fmtcend = strstr(fmtc+5,"&");  // delimited by next & tag within url
+		if(!fmtcend) break;
+		
+		snprintf(format, fmtcend-fmtc-5+1, "%s", fmtc+5);
+		
+		fmt = atoi(format);
+
 		if((fmt == 5 || fmt == 18 || fmt == 35) && fmt <= WiiSettings.youtubeFormat && fmt > chosenFormat)
 		{
-			urlcod = strstr(tempurl,"url="); 
+			// section is decoded in newurl
+			urlcod = strstr(newurl,"url="); //find start of url in urlc
 			if(!urlcod) break;
 			
-			// swap front and back
-			snprintf(urlc,urlcod-tempurl+1,"%s",tempurl); 
-			strcpy(tempurl,urlcod+4);
-			strcat(tempurl,"&");
-			strcat(tempurl,urlc);
+			// put start of section back in urlc
+			snprintf(urlc,urlcod-newurl+1,"%s",newurl); //includes & before url= 
 			
-			// expand signature   
-			char *sig = strstr(tempurl,"&sig=");  
-			int siglen = strlen(tempurl)-(sig-tempurl)-3; 
-			memmove(sig+10,sig+4,siglen);   
-			memmove(sig,"&signature=",11);  
+			// shift end of section after url= to newline with & on end
+			strcpy(newurl,urlcod+4);
+			strcat(newurl,"&");
+			
+			// add start of section to end of section
+			strcat(newurl,urlc);
+			
+			// expand signature   http://xxx&parm=xxx&sig=xxx&parm=xxx&0
+			sig = strstr(newurl,"&sig=");  // = 19
+			// get length of shift data including = and/0
+			siglen = strlen(newurl)-(sig-newurl)-3; // =37-(19-0)-3= 15   =xxx&parm=xxx&0
+			// shift signature data within newurl  
+			memmove(sig+10,sig+4,siglen);   // make 6 spaces                 http://xxx&parm=xxx&sig......=xxx&parm=xxx&0
+			memmove(sig,"&signature=",11);  // insert &signature= in newurl  http://xxx&parm=xxx&signature=xxx&parm=xxx&0
 			
 			// remove &type=
-			sig = strstr(tempurl,"&type=");    
-			char *sigend = strstr(sig+6,"&"); 
-			siglen = strlen(tempurl)-(sigend-tempurl)+1; 
-			memmove(sig,sigend,siglen);     
+			sig = strstr(newurl,"&type=");    //http://xxx&type=xxx&signature=xxx&parm=xxx&0 =  10
+			char *sigend = strstr(sig+6,"&"); // = 19
+			siglen = strlen(newurl)-(sigend-newurl)+1; // get length of shift data including /0 = 43-(19-0)+1=25
+			memmove(sig,sigend,siglen);     // shift data within newurl  http://xxx&type=xxx&signature=xxx&parm=xxx&0
 			
 			// remove &fallback_host=
-			sig = strstr(tempurl,"&fallback_host=");
+			sig = strstr(newurl,"&fallback_host=");
 			sigend = strstr(sig+15,"&");
-			siglen = strlen(tempurl)-(sigend-tempurl)+1; 
-			memmove(sig,sigend,siglen);                
+			siglen = strlen(newurl)-(sigend-newurl)+1; // get length of shift data including /0
+			memmove(sig,sigend,siglen);                // shift data within newurl
 
 			// remove duplicate &itag=
-			sig = strstr(tempurl,"&itag=");
+			sig = strstr(newurl,"&itag=");
 			sigend = strstr(sig+6,"&");
-			siglen = strlen(tempurl)-(sigend-tempurl)+1; 
-			memmove(sig,sigend,siglen);                
+			siglen = strlen(newurl)-(sigend-newurl)+1; // get length of shift data including /0
+			memmove(sig,sigend,siglen);                // shift data within newurl
 
-			//remove last &
-			siglen = strlen(tempurl);
-			tempurl[siglen-1] = 0;
+			//remove last &    http://xxx&parm=xxx&parm=xxx&parm=xxx&0
+			siglen = strlen(newurl);  //  =38
+			newurl[siglen-1] = 0;  //  http://xxx&parm=xxx&sig=xxx&parm=xxx00
 
 			chosenFormat = fmt;
-			strcpy(newurl, tempurl);
 		}
 		urlc = nexturl; // do next section
 	}
 	
-	mem2_free(tempurl, MEM2_OTHER);
 	mem2_free(buffer, MEM2_OTHER);
 
 	if(chosenFormat > 0)

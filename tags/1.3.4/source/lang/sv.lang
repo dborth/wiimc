@@ -1,0 +1,674 @@
+msgid "********"
+msgstr "••••••••"
+
+msgid "Videos"
+msgstr "Videos"
+
+msgid "Music"
+msgstr "Musik"
+
+msgid "Pictures"
+msgstr "Bilder"
+
+msgid "Online Media"
+msgstr "Online Media"
+
+msgid "Please Wait"
+msgstr "Var vänlig vänta"
+
+msgid "Error"
+msgstr "Fel"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Retry"
+msgstr "Försök igen"
+
+msgid "Cancel"
+msgstr "Avbryt"
+
+msgid "Information"
+msgstr "Information"
+
+msgid "Credits"
+msgstr "Credits"
+
+msgid "Play"
+msgstr "Spela upp"
+
+msgid "Pause"
+msgstr "Paus"
+
+msgid "Single Play"
+msgstr "Spela enstaka"
+
+msgid "Continuous Play"
+msgstr "Spela kontinuerligt"
+
+msgid "Shuffle"
+msgstr "Blanda"
+
+msgid "Loop"
+msgstr "Upprepa"
+
+msgid "Continuous"
+msgstr "Kontinuerligt"
+
+msgid "Playlist"
+msgstr "Spellista"
+
+msgid "Restart"
+msgstr "Omstart"
+
+msgid "Loading..."
+msgstr "Laddar..."
+
+msgid "Global"
+msgstr "Allmänt"
+
+msgid "Network"
+msgstr "Nätverk"
+
+msgid "Subtitles"
+msgstr "Undertexter"
+
+msgid "Subtitle Delay"
+msgstr "Undertextsynk"
+
+msgid "Settings"
+msgstr "Inställningar"
+
+msgid "On"
+msgstr "På"
+
+msgid "Off"
+msgstr "Av"
+
+msgid "Always"
+msgstr "Alltid"
+
+msgid "Disabled"
+msgstr "Avstängd"
+
+msgid "Skip Backward"
+msgstr "Hoppa bakåt"
+
+msgid "Pause"
+msgstr "Paus"
+
+msgid "Skip Forward"
+msgstr "Hoppa framåt"
+
+msgid "Single"
+msgstr "Enstaka"
+
+msgid "now playing"
+msgstr "Spelar just nu"
+
+msgid "Previous"
+msgstr "Föregående"
+
+msgid "Next"
+msgstr "Nästa"
+
+msgid "Close"
+msgstr "Stäng"
+
+msgid "DVD"
+msgstr "DVD"
+
+msgid "Go back"
+msgstr "Tillbaka"
+
+msgid "Update Available"
+msgstr "Uppdatering tillgänglig"
+
+msgid "An update is available!"
+msgstr "En uppdatering är tillgänglig!"
+
+msgid "Update now"
+msgstr "Uppdatera nu"
+
+msgid "Update later"
+msgstr "Uppdatera senare"
+
+msgid "Online media file not found."
+msgstr "Online mediafil ej funnen."
+
+msgid "Unrecognized DVD format!"
+msgstr "Okänt DVD-Format!"
+
+msgid "Port cannot be blank!"
+msgstr "Porten får ej vara tom!"
+
+msgid "Port is not a number!"
+msgstr "Porten är ej ett nummer!"
+
+msgid "Port is outside the allowed range (4-49151)!"
+msgstr "Porten ligger utanför tillåtet område (4-49151)!"
+
+msgid "Settings - Global"
+msgstr "Inställningar - Allmänna"
+
+msgid "Settings - Videos"
+msgstr "Inställningar - Videos"
+
+msgid "Settings - Music"
+msgstr "Inställningar - Musik"
+
+msgid "Settings - Pictures"
+msgstr "Inställningar - Bilder"
+
+msgid "Settings - Online Media"
+msgstr "Inställningar - Online Media"
+
+msgid "Settings - Network"
+msgstr "Inställningar - Nätverk"
+
+msgid "Settings - DVD"
+msgstr "Inställningar - DVD"
+
+msgid "File Extensions"
+msgstr "Filtillägg"
+
+msgid "Language"
+msgstr "Språk"
+
+msgid "Volume"
+msgstr "Volym"
+
+msgid "Exit Action"
+msgstr "Avstängning"
+
+msgid "Wiimote Rumble"
+msgstr "Wiimote-vibrering"
+
+msgid "Hide"
+msgstr "Göm"
+
+msgid "Show"
+msgstr "Visa"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Return to Wii Menu"
+msgstr "Tillbaka till Wii Menu"
+
+msgid "Power Off Wii"
+msgstr "Stäng av Wii"
+
+msgid "Return to Loader"
+msgstr "Tillbaka till loader"
+
+msgid "Screen Zoom"
+msgstr "Bildzoom"
+
+msgid "Screen Position"
+msgstr "Bildposition"
+
+msgid "Frame Dropping"
+msgstr "Frame Dropping"
+
+msgid "Aspect Ratio"
+msgstr "Aspekt/Format"
+
+msgid "Cache Fill"
+msgstr "Cachefyllning"
+
+msgid "Audio Delay"
+msgstr "Audio-synk"
+
+msgid "Auto-Resume"
+msgstr "Automatisk fortsättning"
+
+msgid "Videos Files Folder"
+msgstr "Videomapp"
+
+msgid "Play Order"
+msgstr "Uppspelningsordning"
+
+msgid "Music Files Folder"
+msgstr "Musikmapp"
+
+msgid "Pictures Files Folder"
+msgstr "Bildmapp"
+
+msgid "Display Name"
+msgstr "Önskat namn på plats"
+
+msgid "Share IP"
+msgstr "Share-IP"
+
+msgid "Share Name"
+msgstr "Share-namn"
+
+msgid "Username"
+msgstr "Användarnamn"
+
+msgid "Password"
+msgstr "Lösenord"
+
+msgid "New Share"
+msgstr "Ny Share"
+
+msgid "Delete"
+msgstr "Radera"
+
+msgid "Delete Share"
+msgstr "Radera Share"
+
+msgid "Are you sure that you want to delete this share?"
+msgstr "Är du säker på att du vill radera denna share?"
+
+msgid "IP"
+msgstr "IP"
+
+msgid "Folder"
+msgstr "Mapp"
+
+msgid "Mode"
+msgstr "Läge"
+
+msgid "New Site"
+msgstr "Ny sajt"
+
+msgid "Passive"
+msgstr "Passiv"
+
+msgid "Active"
+msgstr "Aktiv"
+
+msgid "Delete Site"
+msgstr "Radera sajt"
+
+msgid "Are you sure that you want to delete this site?"
+msgstr "Är du säker på att du vill radera denna sajt?"
+
+msgid "Port"
+msgstr "Port"
+
+msgid "Error loading file!"
+msgstr "Fel vid laddning av fil!"
+
+msgid "Resume"
+msgstr "Återuppta"
+
+msgid "Stop Slideshow"
+msgstr "Stoppa bildspel"
+
+msgid "Start Slideshow"
+msgstr "Starta bildspel"
+
+msgid "Slideshow Delay"
+msgstr "Visningstid mellan bildväxling"
+
+msgid "Online Media Folder"
+msgstr "Online Media-mapp"
+
+msgid "Add SMB Share"
+msgstr "Ny SMB-Share"
+
+msgid "Add FTP Site"
+msgstr "Ny FTP-sajt"
+
+msgid "DVD Menu"
+msgstr "DVD-meny"
+
+msgid "Skip to Main Title"
+msgstr "Hoppa till huvudtitel"
+
+msgid "Unable to Initialize MPlayer"
+msgstr "Kan ej initialisera MPlayer"
+
+msgid "Unable to find a valid working path"
+msgstr "Kan ej hitta giltig sökväg"
+
+msgid "Unable to change path to"
+msgstr "Kan ej ändra sökväg till"
+
+msgid "Out of memory: too many files!"
+msgstr "Slut på minne: för många filer!"
+
+msgid "Directory name is too long!"
+msgstr "Mappnamnet är för långt!"
+
+msgid "SD Card"
+msgstr "SD-kort"
+
+msgid "USB Mass Storage"
+msgstr "USB-masslagring"
+
+msgid "Data DVD"
+msgstr "Data-DVD"
+
+msgid "USB drive not found!"
+msgstr "USB-enhet ej funnen!"
+
+msgid "SD card not found!"
+msgstr "SD-kort ej funnet!"
+
+msgid "Loading DVD..."
+msgstr "Laddar DVD..."
+
+msgid "No disc inserted!"
+msgstr "Ingen skiva insatt!"
+
+msgid "Unsupported DVD."
+msgstr "Ogiltig DVD."
+
+msgid "Up One Level"
+msgstr "Upp en nivå"
+
+msgid "Error opening"
+msgstr "Fel vid öppning"
+
+msgid "Warning"
+msgstr "Varning"
+
+msgid "One or more pictures within this folder exceeds the maximum size (6 MB) and will not be viewable."
+msgstr "En eller fler bilder i denna mapp överstiger maxstorleken (6 MB) och kommer inte vara öppningsbara."
+
+msgid "Error loading playlist!"
+msgstr "Fel vid laddning av spellista!"
+
+msgid "Playlist does not contain any supported entries!"
+msgstr "Spellistan innehåller inte stödda filformat!"
+
+msgid "No Results Found"
+msgstr "Inget resultat"
+
+msgid "Your search did not match any media files."
+msgstr "Sökningen matchade ej någon mediafil."
+
+msgid "Error opening file!"
+msgstr "Fel vid öppning av fil!"
+
+msgid "Saving..."
+msgstr "Sparar..."
+
+msgid "Error creating file!"
+msgstr "Fel vid skapande av fil!"
+
+msgid "Error saving file!"
+msgstr "Fel vid sparande av fil!"
+
+msgid "Playlist is Empty"
+msgstr "Spellistan är tom"
+
+msgid "Hover over items and push the + button to add them to your playlist."
+msgstr "Peka på objekt och tryck + för att lägga till objekten i din spellista."
+
+msgid "Exit Playlist"
+msgstr "Lämna spellista."
+
+msgid "Update successful!"
+msgstr "Uppdateringen lyckades!"
+
+msgid "Update failed!"
+msgstr "Uppdateringen misslyckades!"
+
+msgid "Initializing network..."
+msgstr "Initialiserar nätverk..."
+
+msgid "Check settings file."
+msgstr "Kontrollera inställningsfil."
+
+msgid "Share name is blank."
+msgstr "Platsnamn är tomt."
+
+msgid "Share IP is blank."
+msgstr "Share-IP är tomt."
+
+msgid "Invalid network share settings"
+msgstr "Ogiltiga inställningar på nätverks-share"
+
+msgid "Connecting to network share..."
+msgstr "Kopplar upp till nätverks-share..."
+
+msgid "Failed to connect to network share."
+msgstr "Lyckades ej koppla upp till nätverks-share."
+
+msgid "IP is blank."
+msgstr "IP är tomt."
+
+msgid "Username is blank."
+msgstr "Användarnamn är tomt."
+
+msgid "Password is blank."
+msgstr "Lösenord är tomt."
+
+msgid "Invalid FTP site settings"
+msgstr "Ogiltiga FTP-inställningar"
+
+msgid "Connecting to FTP site..."
+msgstr "Kopplar upp till FTP..."
+
+msgid "Failed to connect to FTP site."
+msgstr "Lyckades ej koppla upp till FTP."
+
+msgid "Could not find a valid SD or USB device - one is required for normal operation."
+msgstr "Kunde inte detektera SD-kort eller USB-enhet - endera behövs för normal funktion."
+
+msgid "Could not create folder"
+msgstr "Kunde ej skapa mapp."
+
+msgid "Saving settings..."
+msgstr "Sparar inställningar..."
+
+msgid "Could not save settings to"
+msgstr "Kunde inte spara inställningar till"
+
+msgid "Thanks to"
+msgstr "Tack till"
+
+msgid "This software is open source and may be copied, distributed, or modified under the terms of the GNU General Public License (GPL) Version 2."
+msgstr "Denna mjukvara är öppen källkod och får kopieras, distribueras och modifieras under villkoren enligt GNU General Public License (GPL) Version 2."
+
+msgid "Menu artwork"
+msgstr "Menydesign"
+
+msgid "Coding"
+msgstr "Programmering"
+
+msgid "Coding & menu design"
+msgstr "Programmering och menydesign"
+
+msgid "Logo"
+msgstr "Logo"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Buffering..."
+msgstr "Buffrar..."
+
+msgid "Buffering"
+msgstr "Buffrar"
+
+msgid "Unable to initialize network (Error #:"
+msgstr "Kan ej initialisera nätverk (Felkod #:"
+
+msgid "Settings - Subtitles"
+msgstr "Inställningar - Undertexter"
+
+msgid "Visibility"
+msgstr "Visibilitet"
+
+msgid "Delay"
+msgstr "Synk"
+
+msgid "Codepage"
+msgstr "Teckentabell"
+
+msgid "Subtitle Language"
+msgstr "Textspråk"
+
+msgid "Default"
+msgstr "Default"
+
+msgid "Could not change language. Not enough memory!"
+msgstr "Kunde inte ändra språk. Inte tillräckligt med minne!"
+
+msgid "Font Required"
+msgstr "Font behövs"
+
+msgid "A new font is required to display this language."
+msgstr "En ny font behövs för att visa detta språk."
+
+msgid "Download font"
+msgstr "Ladda ner font"
+
+msgid "Unable to save font file!"
+msgstr "Kan ej spara fontfil!"
+
+msgid "Out of Memory"
+msgstr "Slut på minne"
+
+msgid "WiiMC does not have enough free memory to load the picture viewer."
+msgstr "WiiMC har inte tillräckligt med ledigt minne för att köra bildvisaren."
+
+msgid "Close MPlayer"
+msgstr "Avsluta Mplayer"
+
+msgid "Subtitle Codepage"
+msgstr "Teckentabell för undertext"
+
+msgid "This directory contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Denna mapp innehåller fler objekt än maximalt tillåtet. Vissa objekt kommer därför inte att vara synliga."
+
+msgid "This playlist contains more entries than the maximum allowed. Not all entries will be visible."
+msgstr "Denna spellista innehåller fler objekt än maximalt tillåtet. Vissa objekt kommer därför inte att vara synliga."
+
+msgid "Downloading..."
+msgstr "Laddar ner..."
+
+msgid "Unzipping..."
+msgstr "Packar upp..."
+
+msgid "Color"
+msgstr "Färg"
+
+msgid "Size"
+msgstr "Storlek"
+
+msgid "White"
+msgstr "Vit"
+
+msgid "Black"
+msgstr "Svart"
+
+msgid "Yellow"
+msgstr "Gul"
+
+msgid "Red"
+msgstr "Röd"
+
+msgid "Sleep Timer"
+msgstr "Sleep timer"
+
+msgid "sec"
+msgstr "sek"
+
+msgid "min"
+msgstr "min"
+
+msgid "Theme"
+msgstr "Tema"
+
+msgid "Blue"
+msgstr "Blå"
+
+msgid "Green"
+msgstr "Grön"
+
+msgid "Grey"
+msgstr "Grå"
+
+msgid "Orange"
+msgstr "Orange"
+
+msgid "Purple (Default)"
+msgstr "Lila (Default)"
+
+msgid "Auto-Play Next Video"
+msgstr "Spela upp nästa video automatiskt"
+
+msgid "Adding files to playlist..."
+msgstr "Lägger till filer i spellistan..."
+
+msgid "Browser Folders"
+msgstr "Startmapp"
+
+msgid "Static"
+msgstr "Fast"
+
+msgid "Use Last Browsed"
+msgstr "Sist besökta mapp"
+
+msgid "Audio Language"
+msgstr "Audio-språk"
+
+msgid "DVD Support"
+msgstr "DVD-stöd"
+
+msgid "Enabled"
+msgstr "Aktiverad"
+
+msgid "Error loading YouTube file!"
+msgstr "Fel vid laddning av YouTube-klipp!"
+
+msgid "Rotate"
+msgstr "Rotera"
+
+msgid "Resolution exceeds maximum allowed (1280x720)!"
+msgstr "Upplösningen överstiger maximalt tillåten (1280x720)!"
+
+msgid "The current IOS has been altered (fake-signed). Functionality and/or stability may be adversely affected."
+msgstr "Det IOS som används har blivit modifierat (fake-signed). Funktionalitet och/eller stabilitet kan påverkas negativt."
+
+msgid "Online media file is invalid."
+msgstr "Online mediafilen är ogiltig"
+
+msgid "Subtitle font file not found. Subtitles will not be visible."
+msgstr "Font för undertext ej funnen. Undertexter kommer ej att visas."
+
+msgid "WiiMC does not have DVD access - AHBPROT is not enabled."
+msgstr "WiiMC har inte DVD-access - AHBPROT är ej aktiverad."
+
+msgid "Starting Area"
+msgstr "Startområde"
+
+msgid "Error downloading font file!"
+msgstr "Fel vid nerladdning av fontfil!"
+
+msgid "Error opening font file!"
+msgstr "Fel vid öppning av fontfil!"
+
+msgid "Could not change language. The font file is corrupted!"
+msgstr "Kunde ej ändra språk. Fontfilen är skadad!"
+
+msgid "YouTube Quality"
+msgstr "YouTube-kvalitet"
+
+msgid "Low (400x240)"
+msgstr "Låg (400x240)"
+
+msgid "Medium (480x360)"
+msgstr "Medium (480x360)"
+
+msgid "High (854x480)"
+msgstr "Hög (854x480)"
+
+msgid "The current IOS is unsupported. Functionality and/or stability may be adversely affected."
+msgstr "Det IOS som används stöds ej. Funktionalitet och/eller stabilitet kan påverkas negativt."
+
+msgid "Screensaver Delay"
+msgstr "Skärmsläckare väntetid"
+
+msgid "Inactivity Shutdown"
+msgstr "Avstängning vid inaktivitet"
+
+msgid "Invalid subtitle delay."
+msgstr "Ogiltig undertextsynk."

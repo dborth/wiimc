@@ -1703,57 +1703,49 @@ static bool ParseDirEntries()
 		if(entry == NULL)
 			break;
 
-		if(strcmp(entry->d_name, "..") == 0)
+		if(strcmp(entry->d_name, "..") == 0 || entry->d_name[0] == '.' || entry->d_name[0] == '$')
 		{
-			if(IsDeviceRoot(browser.dir))
-				continue;
-
-			filestat.st_mode = _IFDIR;
+			continue;
 		}
+		
+		#ifdef _DIRENT_HAVE_D_TYPE
+		if(entry->d_type==DT_DIR)
+			filestat.st_mode = S_IFDIR;
 		else
+			filestat.st_mode = S_IFREG;
+
+		if(menuCurrent == MENU_BROWSE_PICTURES)
 		{
-			if(entry->d_name[0] == '.' || entry->d_name[0] == '$')
+		#endif
+			snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
+
+			if(stat(path, &filestat) < 0)
 				continue;
+		#ifdef _DIRENT_HAVE_D_TYPE
+		}
+		#endif
 
-			#ifdef _DIRENT_HAVE_D_TYPE
-			if(entry->d_type==DT_DIR)
-				filestat.st_mode = S_IFDIR;
-			else
-				filestat.st_mode = S_IFREG;
+		// skip this file if it's not an allowed extension 
+		if(!S_ISDIR(filestat.st_mode))
+		{
+			GetExt(entry->d_name, ext);
 
-			if(menuCurrent == MENU_BROWSE_PICTURES)
+			if(menuCurrent == MENU_BROWSE_VIDEOS && IsSubtitleExt(ext))
 			{
-			#endif
-				snprintf(path, MAXPATHLEN, "%s%s", browser.dir, entry->d_name);
-	
-				if(stat(path, &filestat) < 0)
-					continue;
-			#ifdef _DIRENT_HAVE_D_TYPE
-			}
-			#endif
-
-			// skip this file if it's not an allowed extension 
-			if(!S_ISDIR(filestat.st_mode))
-			{
-				GetExt(entry->d_name, ext);
-
-				if(menuCurrent == MENU_BROWSE_VIDEOS && IsSubtitleExt(ext))
+				BROWSERENTRY *s_entry = AddEntrySubs();
+				if(s_entry)
+					s_entry->file = mem2_strdup(entry->d_name, MEM2_BROWSER);
+				if(!s_entry->file) // no mem
 				{
-					BROWSERENTRY *s_entry = AddEntrySubs();
-					if(s_entry)
-						s_entry->file = mem2_strdup(entry->d_name, MEM2_BROWSER);
-					if(!s_entry->file) // no mem
-					{
-						DeleteEntrySubs(s_entry);						
-						InfoPrompt("Warning", "This directory contains more entries than the maximum allowed. Not all entries will be visible.");
-						entry = NULL;
-						break;						
-					}	
-				}
-
-				if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
-					continue;
+					DeleteEntrySubs(s_entry);						
+					InfoPrompt("Warning", "This directory contains more entries than the maximum allowed. Not all entries will be visible.");
+					entry = NULL;
+					break;						
+				}	
 			}
+
+			if(!IsAllowedExt(ext) && (!IsPlaylistExt(ext) || menuCurrent == MENU_BROWSE_PICTURES))
+				continue;
 		}
 
 		// add the entry
@@ -1906,30 +1898,29 @@ ParseDirectory(bool waitParse)
 	if(dirHandle == NULL)
 		return -1;
 
-	if(IsDeviceRoot(browser.dir))
+	// add Up One Level
+	BROWSERENTRY *f_entry = AddEntryFiles();
+	
+	if(!f_entry)
+		return 0;
+
+	f_entry->file = mem2_strdup("..", MEM2_BROWSER);
+	if(!f_entry->file) // no mem
 	{
-		BROWSERENTRY *f_entry = AddEntryFiles();
-		
-		if(!f_entry)
-			return 0;
-
-		f_entry->file = mem2_strdup("..", MEM2_BROWSER);
-		if(!f_entry->file) // no mem
-		{
-			DeleteEntryFiles(f_entry);
-			return 0;
-		}
-		f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
-		if(!f_entry->display) // no mem
-		{
-			DeleteEntryFiles(f_entry);
-			return 0;
-		}
-		f_entry->length = 0;
-		f_entry->type = TYPE_FOLDER; // flag this as a dir
-		f_entry->icon = ICON_FOLDER;
+		DeleteEntryFiles(f_entry);
+		return 0;
 	}
-
+	f_entry->display = mem2_strdup(gettext("Up One Level"), MEM2_BROWSER);
+	if(!f_entry->display) // no mem
+	{
+		DeleteEntryFiles(f_entry);
+		return 0;
+	}
+	f_entry->length = 0;
+	f_entry->type = TYPE_FOLDER; // flag this as a dir
+	f_entry->icon = ICON_FOLDER;
+	
+	// start parsing
 	parseHalt = 0;
 	findLoadedFile = 1;
 	ParseDirEntries(); // index first 20 entries

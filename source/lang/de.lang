@@ -2,7 +2,7 @@ msgid "********"
 msgstr "••••••••"
 
 msgid "Videos"
-msgstr "Videos"
+msgstr ""
 
 msgid "Music"
 msgstr "Musik"
@@ -11,7 +11,7 @@ msgid "Pictures"
 msgstr "Bilder"
 
 msgid "Online Media"
-msgstr "Online Medien"
+msgstr "Online-Medien"
 
 msgid "Please Wait"
 msgstr "Bitte warten"
@@ -20,7 +20,7 @@ msgid "Error"
 msgstr "Fehler"
 
 msgid "OK"
-msgstr "OK"
+msgstr ""
 
 msgid "Retry"
 msgstr "Wiederholen"
@@ -29,7 +29,7 @@ msgid "Cancel"
 msgstr "Abbrechen"
 
 msgid "Information"
-msgstr "Information"
+msgstr ""
 
 msgid "Credits"
 msgstr "Über"
@@ -38,7 +38,7 @@ msgid "Play"
 msgstr "Wiedergabe"
 
 msgid "Pause"
-msgstr "Pause"
+msgstr ""
 
 msgid "Single Play"
 msgstr "Einzeln abspielen"
@@ -59,7 +59,7 @@ msgid "Playlist"
 msgstr "Wiedergabeliste"
 
 msgid "Restart"
-msgstr "Neu starten"
+msgstr "Neustarten"
 
 msgid "Loading..."
 msgstr "Laden..."
@@ -95,7 +95,7 @@ msgid "Skip Backward"
 msgstr "Zurückspringen"
 
 msgid "Pause"
-msgstr "Pause"
+msgstr ""
 
 msgid "Skip Forward"
 msgstr "Vorwärtsspringen"
@@ -128,13 +128,13 @@ msgid "An update is available!"
 msgstr "Ein Update ist verfügbar!"
 
 msgid "Update now"
-msgstr "Jetzt updaten"
+msgstr "Jetzt aktualisieren"
 
 msgid "Update later"
-msgstr "Später updaten"
+msgstr "Später aktualisieren"
 
 msgid "Online media file not found."
-msgstr "Online Mediendatei nicht gefunden."
+msgstr "Online-Mediendatei nicht gefunden."
 
 msgid "Unrecognized DVD format!"
 msgstr "Unbekanntes DVD-Format!"
@@ -161,7 +161,7 @@ msgid "Settings - Pictures"
 msgstr "Einstellungen - Bilder"
 
 msgid "Settings - Online Media"
-msgstr "Einstellungen - Online Medien"
+msgstr "Einstellungen - Online-Medien"
 
 msgid "Settings - Network"
 msgstr "Einstellungen - Netzwerk"
@@ -182,7 +182,7 @@ msgid "Exit Action"
 msgstr "Ausschaltaktion"
 
 msgid "Wiimote Rumble"
-msgstr "Wiimote Vibration"
+msgstr "Wiimote-Vibration"
 
 msgid "Hide"
 msgstr "Verbergen"
@@ -191,7 +191,7 @@ msgid "Show"
 msgstr "Anzeigen"
 
 msgid "Auto"
-msgstr "Auto"
+msgstr ""
 
 msgid "Return to Wii Menu"
 msgstr "Zurück zum Wii Menü"
@@ -206,10 +206,10 @@ msgid "Screen Zoom"
 msgstr "Bild Zoom"
 
 msgid "Screen Position"
-msgstr "Bild Position"
+msgstr "Bildposition"
 
 msgid "Frame Dropping"
-msgstr "Frame Dropping"
+msgstr "Frame-Dropping"
 
 msgid "Aspect Ratio"
 msgstr "Seitenverhältnis"
@@ -230,10 +230,10 @@ msgid "Play Order"
 msgstr "Abspielreihenfolge"
 
 msgid "Music Files Folder"
-msgstr "Musik Verzeichnis"
+msgstr "Musik-Verzeichnis"
 
 msgid "Pictures Files Folder"
-msgstr "Bilder Verzeichnis"
+msgstr "Bilder-Verzeichnis"
 
 msgid "Display Name"
 msgstr "Anzeigename"
@@ -305,22 +305,22 @@ msgid "Slideshow Delay"
 msgstr "Slideshow Verzögerung"
 
 msgid "Online Media Folder"
-msgstr "Online Medien Verzeichnis"
+msgstr "Online-Medien Verzeichnis"
 
 msgid "Add SMB Share"
-msgstr "Neuer SMB Share"
+msgstr "Neuer SMB-Share"
 
 msgid "Add FTP Site"
-msgstr "Neue FTP Seite"
+msgstr "Neue FTP-Seite"
 
 msgid "DVD Menu"
-msgstr "DVD Menü"
+msgstr "DVD-Menü"
 
 msgid "Skip to Main Title"
-msgstr "Springe zum Haupttitel"
+msgstr "Zum Haupttitel springen"
 
 msgid "Unable to Initialize MPlayer"
-msgstr "Mplayer Initialisierung fehlgeschlagen"
+msgstr "Mplayer-Initialisierung fehlgeschlagen"
 
 msgid "Unable to find a valid working path"
 msgstr "Kein gültiger Programmpfad gefunden"
@@ -335,19 +335,19 @@ msgid "Directory name is too long!"
 msgstr "Verzeichnisname ist zu lange!"
 
 msgid "SD Card"
-msgstr "SD Karte"
+msgstr "SD-Karte"
 
 msgid "USB Mass Storage"
-msgstr "USB Massenspeicher"
+msgstr "USB-Massenspeicher"
 
 msgid "Data DVD"
 msgstr "Daten-DVD"
 
 msgid "USB drive not found!"
-msgstr "Kein USB Speicher gefunden!"
+msgstr "Kein USB-Speicher gefunden!"
 
 msgid "SD card not found!"
-msgstr "Keine SD Kate gefunden!"
+msgstr "Keine SD-Karte gefunden!"
 
 msgid "Loading DVD..."
 msgstr "Lade DVD..."
@@ -443,13 +443,13 @@ msgid "Invalid FTP site settings"
 msgstr "Ungültige FTP Seiten Einstellungen"
 
 msgid "Connecting to FTP site..."
-msgstr "Verbinde zu FTP Seite..."
+msgstr "Verbinde zu FTP-Seite..."
 
 msgid "Failed to connect to FTP site."
-msgstr "Fehler beim verbinden zu FTP Seite."
+msgstr "Fehler beim verbinden zu FTP-Seite."
 
 msgid "Could not find a valid SD or USB device - one is required for normal operation."
-msgstr "Kein gültiges SD oder USB Geräte gefunden - eines wird für Normalbetrieb benötigt."
+msgstr "Kein gültiges SD oder USB-Geräte gefunden - eines wird für Normalbetrieb benötigt."
 
 msgid "Could not create folder"
 msgstr "Ordner konnte nicht erstellt werden."
@@ -479,13 +479,13 @@ msgid "Logo"
 msgstr ""
 
 msgid "Version"
-msgstr "Version"
+msgstr ""
 
 msgid "Buffering..."
-msgstr "Puffern..."
+msgstr "Buffern..."
 
 msgid "Buffering"
-msgstr "Puffern"
+msgstr "Buffern"
 
 msgid "Unable to initialize network (Error #:"
 msgstr "Konnte Netzwerk nicht initialisieren (Fehler #:"
@@ -509,7 +509,7 @@ msgid "Default"
 msgstr "Standard"
 
 msgid "Could not change language. Not enough memory!"
-msgstr "Konnte Sprache nicht ändern. Nicht genug Speicher!"
+msgstr "Sprache konnte nicht geändert werden. Nicht genug Speicher!"
 
 msgid "Font Required"
 msgstr "Schriftart benötigt"
@@ -542,7 +542,7 @@ msgid "This playlist contains more entries than the maximum allowed. Not all ent
 msgstr "Diese Wiedergabeliste hat mehr Einträge als maximal erlaubt sind. Nicht alle Einträge werden angezeigt."
 
 msgid "Downloading..."
-msgstr "Lade herunter..."
+msgstr "Herunterladen..."
 
 msgid "Unzipping..."
 msgstr "Entpacke..."
@@ -575,7 +575,7 @@ msgid "min"
 msgstr "min"
 
 msgid "Theme"
-msgstr "Oberfläche"
+msgstr ""
 
 msgid "Blue"
 msgstr "Blau"
@@ -587,7 +587,7 @@ msgid "Grey"
 msgstr "Grau"
 
 msgid "Orange"
-msgstr "Orange"
+msgstr ""
 
 msgid "Purple (Default)"
 msgstr "Violett (Standard)"
@@ -611,7 +611,7 @@ msgid "Audio Language"
 msgstr "Audio-Sprache"
 
 msgid "DVD Support"
-msgstr "DVD Unterstützung"
+msgstr "DVD-Unterstützung"
 
 msgid "Enabled"
 msgstr "Aktiviert"
@@ -629,7 +629,7 @@ msgid "The current IOS has been altered (fake-signed). Functionality and/or stab
 msgstr "Das aktuelle IOS wurde modifiziert (fake-signed). Funktionalität und/oder Stabilität können beeinträchtigt sein."
 
 msgid "Online media file is invalid."
-msgstr "Online Mediendatei ist ungültig"
+msgstr "Online-Mediendatei ist ungültig"
 
 msgid "Subtitle font file not found. Subtitles will not be visible."
 msgstr "Untertitel Schriftartdatei nicht vorhanden. Untertitel werden nicht angezeigt."

@@ -1,0 +1,7 @@
+*.d
+*.o
+*.a
+build/*.h
+wiimc.dol
+wiimc.elf
+.project

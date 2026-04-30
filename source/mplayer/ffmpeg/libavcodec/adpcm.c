@@ -56,6 +56,8 @@
  * readstr http://www.geocities.co.jp/Playtown/2004/
  */
 
+extern int useMono;
+
 /* These are for CD-ROM XA ADPCM */
 static const int xa_adpcm_table[5][2] = {
     {   0,   0 },
@@ -87,6 +89,7 @@ typedef struct ADPCMDecodeContext {
     AVFrame frame;
     ADPCMChannelStatus status[6];
     int vqa_version;                /**< VQA version. Used for ADPCM_IMA_WS */
+	int has_status;
 } ADPCMDecodeContext;
 
 static av_cold int adpcm_decode_init(AVCodecContext * avctx)
@@ -103,7 +106,9 @@ static av_cold int adpcm_decode_init(AVCodecContext * avctx)
     case CODEC_ID_ADPCM_EA_R2:
     case CODEC_ID_ADPCM_EA_R3:
     case CODEC_ID_ADPCM_EA_XAS:
-        max_channels = 6;
+    case CODEC_ID_ADPCM_THP:
+    case CODEC_ID_ADPCM_THP_LE:
+        max_channels = 14;
         break;
     }
     if (avctx->channels < min_channels || avctx->channels > max_channels) {
@@ -547,11 +552,24 @@ static int get_nb_samples(AVCodecContext *avctx, GetByteContext *gb,
         break;
     }
     case CODEC_ID_ADPCM_THP:
+    case CODEC_ID_ADPCM_THP_LE:
+        if (avctx->extradata) {
+            nb_samples = buf_size * 14 / (8 * ch);
+            break;
+        }
         has_coded_samples = 1;
         bytestream2_skip(gb, 4); // channel size
-        *coded_samples  = bytestream2_get_be32(gb);
-        *coded_samples -= *coded_samples % 14;
-        nb_samples      = (buf_size - 80) / (8 * ch) * 14;
+        *coded_samples  = (avctx->codec->id == CODEC_ID_ADPCM_THP_LE) ?
+                          bytestream2_get_le32(gb) :
+                          bytestream2_get_be32(gb);
+        buf_size       -= 8 + 36 * ch;
+        buf_size       /= ch;
+        nb_samples      = buf_size / 8 * 14;
+        if (buf_size % 8 > 1) {
+            nb_samples     += (buf_size % 8 - 1) * 2;
+            if (*coded_samples & 1)
+                nb_samples -= 1;
+        }
         break;
     case CODEC_ID_ADPCM_XA:
         nb_samples = (buf_size / 128) * 224 / ch;
@@ -1207,25 +1225,175 @@ static int adpcm_decode_frame(AVCodecContext *avctx, void *data,
         }
         break;
     case CODEC_ID_ADPCM_THP:
+    case CODEC_ID_ADPCM_THP_LE:
     {
+#if 1
+	if(useMono) {
+		//yet another, this latest, only 1 channel is working...
+		int table[14][16];
+		int channels = avctx->channels;
+
+#define THP_GET16(g) \
+    sign_extend( \
+        avctx->codec->id == CODEC_ID_ADPCM_THP_LE ? \
+        bytestream2_get_le16u(&(g)) : \
+        bytestream2_get_be16u(&(g)), 16)
+
+        if (avctx->extradata) {
+            GetByteContext tb;
+            if (avctx->extradata_size < 32 * channels) {
+                av_log(avctx, AV_LOG_ERROR, "Missing coeff table\n");
+                return AVERROR_INVALIDDATA;
+            }
+
+            bytestream2_init(&tb, avctx->extradata, avctx->extradata_size);
+            for (int i = 0; i < channels; i++)
+                for (int n = 0; n < 16; n++)
+                    table[i][n] = THP_GET16(tb);
+        } else {
+            for (int i = 0; i < channels; i++)
+                for (int n = 0; n < 16; n++)
+                    table[i][n] = THP_GET16(gb);
+
+            if (!c->has_status) {
+                /* Initialize the previous sample.  */
+                for (int i = 0; i < channels; i++) {
+                    c->status[i].sample1 = THP_GET16(gb);
+                    c->status[i].sample2 = THP_GET16(gb);
+                }
+                c->has_status = 1;
+            } else {
+                bytestream2_skip(&gb, channels * 4);
+            }
+        }
+
+        for (int ch = 0; ch < channels; ch++) {
+            samples = (short *)c->frame.data[0] + ch;
+
+            /* Read in every sample for this channel.  */
+            for (int i = 0; i < (nb_samples + 13) / 14; i++) {
+                int byte = bytestream2_get_byteu(&gb);
+                int index = (byte >> 4) & 7;
+                unsigned int exp = byte & 0x0F;
+                int64_t factor1 = table[ch][index * 2];
+                int64_t factor2 = table[ch][index * 2 + 1];
+
+                /* Decode 14 samples.  */
+                for (int n = 0; n < 14 && (i * 14 + n < nb_samples); n++) {
+                    int32_t sampledat;
+
+                    if (n & 1) {
+                        sampledat = sign_extend(byte, 4);
+                    } else {
+                        byte = bytestream2_get_byteu(&gb);
+                        sampledat = sign_extend(byte >> 4, 4);
+                    }
+
+                    sampledat = ((c->status[ch].sample1 * factor1
+                                + c->status[ch].sample2 * factor2) >> 11) + sampledat * (1 << exp);
+                    *samples = av_clip_int16(sampledat);
+                    c->status[ch].sample2 = c->status[ch].sample1;
+                    c->status[ch].sample1 = *samples++;
+				}
+			}
+		}
+	}//special case
+	else {
+#endif
+
+#if 0
+		//allows 1 channel streams to work, breaks everything else.
+		int table[14][16];
+        int ch;
+
+#define THP_GET16(g) \
+    sign_extend( \
+        avctx->codec->id == CODEC_ID_ADPCM_THP_LE ? \
+        bytestream2_get_le16u(&(g)) : \
+        bytestream2_get_be16u(&(g)), 16)
+
+        if (avctx->extradata) {
+            GetByteContext tb;
+            if (avctx->extradata_size < 32 * avctx->channels) {
+                av_log(avctx, AV_LOG_ERROR, "Missing coeff table\n");
+                return AVERROR_INVALIDDATA;
+            }
+
+            bytestream2_init(&tb, avctx->extradata, avctx->extradata_size);
+            for (i = 0; i < avctx->channels; i++)
+                for (n = 0; n < 16; n++)
+                    table[i][n] = THP_GET16(tb);
+        } else {
+            for (i = 0; i < avctx->channels; i++)
+                for (n = 0; n < 16; n++)
+                    table[i][n] = THP_GET16(gb);
+
+            if (!c->has_status) {
+                /* Initialize the previous sample.  */
+                for (i = 0; i < avctx->channels; i++) {
+                    c->status[i].sample1 = THP_GET16(gb);
+                    c->status[i].sample2 = THP_GET16(gb);
+                }
+                c->has_status = 1;
+            } else {
+                bytestream2_skip(&gb, avctx->channels * 4);
+            }
+        }
+
+        for (ch = 0; ch < avctx->channels; ch++) {
+            samples = (short *)c->frame.data[0] + ch;
+
+            /* Read in every sample for this channel.  */
+            for (i = 0; i < (nb_samples + 13) / 14; i++) {
+                int byte = bytestream2_get_byteu(&gb);
+                int index = (byte >> 4) & 7;
+                unsigned int exp = byte & 0x0F;
+                int64_t factor1 = table[ch][index * 2];
+                int64_t factor2 = table[ch][index * 2 + 1];
+
+                /* Decode 14 samples.  */
+                for (n = 0; n < 14 && (i * 14 + n < nb_samples); n++) {
+                    int32_t sampledat;
+
+                    if (n & 1) {
+                        sampledat = sign_extend(byte, 4);
+                    } else {
+                        byte = bytestream2_get_byteu(&gb);
+                        sampledat = sign_extend(byte >> 4, 4);
+                    }
+
+                    sampledat = ((c->status[ch].sample1 * factor1
+                                + c->status[ch].sample2 * factor2) >> 11) + sampledat * (1 << exp);
+                    *samples = av_clip_int16(sampledat);
+                    c->status[ch].sample2 = c->status[ch].sample1;
+                    c->status[ch].sample1 = *samples++;
+#endif
+		//og
+#if 1
         int table[2][16];
         int prev[2][2];
         int ch;
 
+#define THP_GET16(g) \
+    sign_extend( \
+        avctx->codec->id == CODEC_ID_ADPCM_THP_LE ? \
+        bytestream2_get_le16u(&(g)) : \
+        bytestream2_get_be16u(&(g)), 16)
+
         for (i = 0; i < 2; i++)
             for (n = 0; n < 16; n++)
-                table[i][n] = sign_extend(bytestream2_get_be16u(&gb), 16);
+                table[i][n] = THP_GET16(gb);
 
         /* Initialize the previous sample.  */
         for (i = 0; i < 2; i++)
             for (n = 0; n < 2; n++)
-                prev[i][n] = sign_extend(bytestream2_get_be16u(&gb), 16);
+                prev[i][n] = THP_GET16(gb);
 
         for (ch = 0; ch <= st; ch++) {
             samples = (short *)c->frame.data[0] + ch;
 
             /* Read in every sample for this channel.  */
-            for (i = 0; i < nb_samples / 14; i++) {
+            for (i = 0; i < (nb_samples + 13) / 14; i++) {
                 int byte = bytestream2_get_byteu(&gb);
                 int index = (byte >> 4) & 7;
                 unsigned int exp = byte & 0x0F;
@@ -1233,7 +1401,7 @@ static int adpcm_decode_frame(AVCodecContext *avctx, void *data,
                 int factor2 = table[ch][index * 2 + 1];
 
                 /* Decode 14 samples.  */
-                for (n = 0; n < 14; n++) {
+                for (n = 0; n < 14 && (i * 14 + n < nb_samples); n++) {
                     int32_t sampledat;
 
                     if (n & 1) {
@@ -1252,9 +1420,11 @@ static int adpcm_decode_frame(AVCodecContext *avctx, void *data,
                     /* In case of stereo, skip one sample, this sample
                        is for the other channel.  */
                     samples += st;
+#endif
                 }
             }
         }
+				}//special mono case
         break;
     }
 
@@ -1306,6 +1476,7 @@ ADPCM_DECODER(CODEC_ID_ADPCM_SBPRO_2, adpcm_sbpro_2, "ADPCM Sound Blaster Pro 2-
 ADPCM_DECODER(CODEC_ID_ADPCM_SBPRO_3, adpcm_sbpro_3, "ADPCM Sound Blaster Pro 2.6-bit");
 ADPCM_DECODER(CODEC_ID_ADPCM_SBPRO_4, adpcm_sbpro_4, "ADPCM Sound Blaster Pro 4-bit");
 ADPCM_DECODER(CODEC_ID_ADPCM_SWF, adpcm_swf, "ADPCM Shockwave Flash");
-ADPCM_DECODER(CODEC_ID_ADPCM_THP, adpcm_thp, "ADPCM Nintendo Gamecube THP");
+ADPCM_DECODER(CODEC_ID_ADPCM_THP_LE, adpcm_thp_le, "ADPCM Nintendo THP (little-endian)");
+ADPCM_DECODER(CODEC_ID_ADPCM_THP, adpcm_thp, "ADPCM Nintendo THP");
 ADPCM_DECODER(CODEC_ID_ADPCM_XA, adpcm_xa, "ADPCM CDROM XA");
 ADPCM_DECODER(CODEC_ID_ADPCM_YAMAHA, adpcm_yamaha, "ADPCM Yamaha");

@@ -116,22 +116,15 @@ static int control(int cmd, void *arg)
 void reinit_audio()
 {
 	AUDIO_RegisterDMACallback(switch_buffers);
-/*
-	if(!playing)
-	{
-		switch_buffers();
-		AUDIO_StartDMA();
-	}
-*/	
 }
+
+extern bool use32kHz;
 
 static int init(int rate, int channels, int format, int flags)
 {
 	AUDIO_StopDMA();
 
-	if(rate>32000) quality = AI_SAMPLERATE_48KHZ; 
-	else quality = AI_SAMPLERATE_32KHZ;
-	ao_data.samplerate = (quality==AI_SAMPLERATE_48KHZ) ? 48000 : 32000;
+	ao_data.samplerate = use32kHz ? 32000 : 48000;
 	ao_data.channels = clamp(channels, 2, 6);
 	ao_data.format = AF_FORMAT_S16_NE;
 	ao_data.bps = ao_data.channels * ao_data.samplerate * sizeof(s16);
@@ -297,7 +290,7 @@ static int play(void *data, int remaining, int flags)
 		buffered += BUFFER_SIZE;
 	}
 
-	if (!playing)// && buffered > request_size)
+	if (!playing)
 	{
 		playing = true;
 		switch_buffers();

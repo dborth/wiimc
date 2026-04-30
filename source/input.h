@@ -11,9 +11,10 @@
 
 #include <gccore.h>
 #include <wiiuse/wpad.h>
+#include "utils/3ds.h"
 
 #define PI 				3.14159265f
-#define PADCAL			50
+#define PADCAL			30
 
 void SetupPads();
 void UpdatePads();

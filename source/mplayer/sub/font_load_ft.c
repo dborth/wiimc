@@ -50,13 +50,14 @@
 #include "mpcommon.h"
 #include "path.h"
 #include "osd_font.h"
+/*
 #ifdef GEKKO
 #include "../../utils/mem2_manager.h"
 #define malloc(x) mem2_malloc(x,MEM2_OTHER)
 #define free(x) mem2_free(x,MEM2_OTHER)
 #define realloc(x,y) mem2_realloc(x,y,MEM2_OTHER)
 #define calloc(x,y) mem2_calloc(x,y,MEM2_OTHER)
-#endif
+#endif*/
 
 #if (FREETYPE_MAJOR > 2) || (FREETYPE_MAJOR == 2 && FREETYPE_MINOR >= 1)
 #define HAVE_FREETYPE21
@@ -356,7 +357,7 @@ static void outline0(
 }
 
 // gaussian blur
-void blur(
+/*void blur(
 	unsigned char *buffer,
 	unsigned short *tmp2,
 	int width,
@@ -477,7 +478,7 @@ void blur(
 	s+= stride;
 	t+= width + 1;
     }
-}
+}*/
 
 static void resample_alpha(unsigned char *abuf, unsigned char *bbuf, int width, int height, int stride, float factor)
 {
@@ -607,9 +608,9 @@ void render_one_glyph(font_desc_t *desc, int c)
 //    fprintf(stderr, "fg: outline t = %f\n", GetTimer()-t);
 
     if (desc->tables.g_r) {
-	blur(abuffer+off, desc->tables.tmp, width, height, stride,
+	/*blur(abuffer+off, desc->tables.tmp, width, height, stride,
 	     desc->tables.gt2, desc->tables.g_r,
-	     desc->tables.g_w);
+	     desc->tables.g_w);*/
 //	fprintf(stderr, "fg: blur t = %f\n", GetTimer()-t);
     }
 

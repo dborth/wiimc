@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-#define MAX_TEX_WIDTH 768
+#define MAX_TEX_WIDTH 854
 #define MAX_TEX_HEIGHT 480
 
 #define MAX_WIDTH 1280
@@ -29,6 +29,10 @@ void Menu_Render();
 void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[], f32 degrees, f32 scaleX, f32 scaleY, u8 alphaF, u8 format);
 void Menu_DrawRectangle(f32 x, f32 y, f32 width, f32 height, GXColor color, u8 filled);
 int DrawMPlayerGui();
+void SetMplTiled();
+void SetMplTiledOff();
+void SetInterlaceOff();
+void SetInterlace();
 
 extern GXRModeObj *vmode;
 extern int screenheight;

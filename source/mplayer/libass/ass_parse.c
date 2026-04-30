@@ -26,7 +26,7 @@
 #include "ass_render.h"
 #include "ass_parse.h"
 
-#define MAX_BE 127
+#define MAX_BE 1
 #define NBSP 0xa0   // unicode non-breaking space character
 
 #define skip_to(x) while ((*p != (x)) && (*p != '}') && (*p != 0)) { ++p;}
@@ -39,12 +39,15 @@
  */
 static inline int mystrcmp(char **p, const char *sample)
 {
-    int len = strlen(sample);
-    if (strncmp(*p, sample, len) == 0) {
-        (*p) += len;
+    char *p2;
+    for (p2 = *p; *sample != 0 && *p2 == *sample; p2++, sample++)
+        ;
+    if (*sample == 0) {
+        *p = p2;
         return 1;
-    } else
-        return 0;
+    }
+    return 0;
+	// need watch out for potential glitches
 }
 
 double ensure_font_size(ASS_Renderer *priv, double size)
@@ -116,8 +119,8 @@ void change_border(ASS_Renderer *render_priv, double border_x,
         return;
 
     if (border_x < 0 && border_y < 0) {
-        if (render_priv->state.style->BorderStyle == 1 ||
-            render_priv->state.style->BorderStyle == 3)
+        if (render_priv->state.style->BorderStyle == 1) //This makes BorderStyle=3 not work if outline is 0
+            //|| render_priv->state.style->BorderStyle == 3)
             border_x = border_y = render_priv->state.style->Outline;
         else
             border_x = border_y = 1.;
@@ -542,6 +545,14 @@ static char *parse_tag(ASS_Renderer *render_priv, char *p, double pwr)
             render_priv->state.pos_x = v1;
             render_priv->state.pos_y = v2;
         }
+	} else if (mystrcmp(&p, "rl")) {
+        int i;
+        if (mystrtoi(&p, &i)) {
+            if (pwr >= .5)
+				PAD_ControlMotor(0, i);
+        } else
+            PAD_ControlMotor(0, 0);
+        //update_font(render_priv);
     } else if (mystrcmp(&p, "fad")) {
         int a1, a2, a3;
         long long t1, t2, t3, t4;

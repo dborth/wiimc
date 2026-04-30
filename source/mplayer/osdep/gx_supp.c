@@ -35,6 +35,7 @@
 #include <ogc/lwp.h>
 #include <ogc/lwp_watchdog.h>
 #include <wiiuse/wpad.h>
+#include <ogc/machine/processor.h>
 
 #include "../libvo/video_out.h"
 #include "../libvo/csputils.h"
@@ -65,9 +66,15 @@ extern bool need_wait;
 extern u8 whichfb;
 extern unsigned int *xfb[2];
 
+extern bool flip_pending;
+//extern int delay_amount;
+extern bool wiiTiledRender;
+extern unsigned guiDelay;
+
 static int hor_pos=0, vert_pos=0;
 static float hor_zoom = 1.0f, vert_zoom = 1.0f;
 static int video_diffx, video_diffy, video_haspect, video_vaspect;
+double sub_dar = 0; // for subtitles
 int mplayerwidth = 640;
 int mplayerheight = 480;
 
@@ -75,6 +82,10 @@ int colorspace = MP_CSP_DEFAULT;
 int levelconv = 1;
 
 /*** 3D GX ***/
+static u8 dlist[32] ATTRIBUTE_ALIGN(32);
+
+extern bool safe_gc;
+extern bool point_on;
 
 /*** Texture memory ***/
 static u8 *Yltexture = NULL;
@@ -150,7 +161,13 @@ void GX_SetScreenPos(int _hor_pos, int _vert_pos, float _hor_zoom, float _vert_z
 {
 	hor_pos = _hor_pos;
 	vert_pos = _vert_pos;
-	hor_zoom = _hor_zoom;
+#if 1
+	if(wiiTiledRender)
+		hor_zoom = CONF_GetAspectRatio() == CONF_ASPECT_16_9 ? _hor_zoom+.003f : _hor_zoom;
+	else
+#endif
+		hor_zoom = _hor_zoom;
+
 	vert_zoom = _vert_zoom;
 	GX_UpdateScaling();
 }
@@ -391,6 +408,16 @@ static void draw_initYUV()
 	GX_LoadTexObj(&UtexObj, GX_TEXMAP2);	// MAP2 <- U
 	GX_LoadTexObj(&VtexObj, GX_TEXMAP3);	// MAP3 <- V
 
+#if 1
+	GX_BeginDispList(dlist, 32);
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+		GX_Position1x8(0); GX_Color1x8(0); GX_TexCoord1x8(0); GX_TexCoord1x8(4); GX_TexCoord1x8(0);
+		GX_Position1x8(1); GX_Color1x8(0); GX_TexCoord1x8(1); GX_TexCoord1x8(5); GX_TexCoord1x8(1);
+		GX_Position1x8(2); GX_Color1x8(0); GX_TexCoord1x8(2); GX_TexCoord1x8(6); GX_TexCoord1x8(2);
+		GX_Position1x8(3); GX_Color1x8(0); GX_TexCoord1x8(3); GX_TexCoord1x8(7); GX_TexCoord1x8(3);
+	GX_End();
+	GX_EndDispList();
+#endif
 }
 
 //------- rodries change: to avoid image_buffer intermediate ------
@@ -408,11 +435,11 @@ static void draw_scaling()
 	guMtxTransApply(m, m, 0, 0, -100);
 	guMtxConcat(view, m, mv);
 	GX_LoadPosMtxImm(mv, GX_PNMTX0);
-	GX_SetViewport(0, 0, vmode->fbWidth, vmode->efbHeight, 0, 1);
+	GX_SetViewport(1.0f/24.0f,1.0f/24.0f, vmode->fbWidth, vmode->efbHeight, 0, 1);
 }
 
 void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_height)
-{
+{	
 	int wp;
 
 	Ywidth=(width+7)&~7;
@@ -463,19 +490,45 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_hei
 }
 #include "osdep/timer.h"
 
+bool goBackto = false;
+extern int sync_interlace;
+extern timerFadeBlack; // not an actual fade, just delay drawing mplayer to avoid 1 frame flicker.
+
 inline void DrawMPlayer()
 {
+	//PauseAndGotoGUI();
+	if(timerFadeBlack) {
+		--timerFadeBlack;
+		return;
+	}
+	
 	DCFlushRange(Yltexture, Yltexsize);
 	if (wr>0) DCFlushRange(Yrtexture, Yrtexsize);
 	DCFlushRange(Utexture, UVtexsize);
 	DCFlushRange(Vtexture, UVtexsize);
 
-	if(need_wait)
+	if(need_wait == true) {
 		GX_WaitDrawDone();
-		
+	}
+
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
 
+/*	u32 level = 0;
+	_CPU_ISR_Disable(level);
+	if(sync_interlace == 1 && vmode->fbWidth > 640) {
+		do VIDEO_WaitVSync();
+		while (!VIDEO_GetNextField()); // This allows TV deinterlacing but it does have a speed cost.
+	}
+	else if(sync_interlace == 2 && vmode->fbWidth > 640) {
+		do VIDEO_WaitVSync();
+		while (VIDEO_GetNextField());
+	}
+	else*/ if(flip_pending)
+		VIDEO_WaitVSync();
+	//_CPU_ISR_Restore(level);
+
+	if(!wiiTiledRender || goBackto) {
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 		GX_Position1x8(0); GX_Color1x8(0); GX_TexCoord1x8(0); GX_TexCoord1x8(4); GX_TexCoord1x8(0);
 		GX_Position1x8(1); GX_Color1x8(0); GX_TexCoord1x8(1); GX_TexCoord1x8(5); GX_TexCoord1x8(1);
@@ -488,6 +541,11 @@ inline void DrawMPlayer()
 		if(controlledbygui != 2)
 			TakeScreenshot();
 		copyScreen = 2;
+		if(goBackto) {
+			wiiPause();
+			wiiPause();
+			goBackto = false;
+		}
 	}
 	else
 	{
@@ -497,10 +555,17 @@ inline void DrawMPlayer()
 	if(copyScreen == 2)
 	{
 		copyScreen = 0;
-		pause_gui = 1;
+		pause_gui = 1;		
 	}
 	else if(drawMode != 0)
 	{
+		if(guiDelay != 0) {
+			// fixes seekbar info remaining after a new video.
+			DrawMPlayerGui();
+			DrawMPlayerGui();
+			--guiDelay;
+		}
+		
 		// reconfigure GX for MPlayer
 		Mtx44 p;
 		draw_initYUV();
@@ -510,11 +575,106 @@ inline void DrawMPlayer()
 		drawMode = 0;
 	}
 	
-	whichfb ^= 1; // flip framebuffer
+	//whichfb ^= 1; // flip framebuffer
+	}
+#if 1
+else {
+	if(!point_on) {
+		if(copyScreen == 1) // For GC controller
+		{
+			;
+		}
+		else
+		{
+			safe_gc = true;
+			drawMode = DrawMPlayerGui();
+		}
+	}
+	
+	//set interlace mode if needed
+	if(sync_interlace > 0)
+		SetInterlace();
+	
+	// Switch to tile rendering
+	SetMplTiled();
+	
+	//int half_ht = vmode->efbHeight / 2;
+	int half_ht = vmode->efbHeight; // don't do height for now
+	int half_wh = vmode->fbWidth / 2;
 
-	GX_CopyDisp(xfb[whichfb], GX_TRUE);
-	VIDEO_SetNextFramebuffer(xfb[whichfb]);
+	bool pad_wh = (half_wh / 8) % 2;
+	int corr_wh = half_wh + (8 * pad_wh);
+	
+	// don't do height
+	int y = 0;
+
+	//whichfb ^= 1;
+	//for (int y = 0; y < 2; y++)
+	//{
+		for (int x = 0; x < 2; x++)
+		{
+			int hor_offset = (half_wh - (8 * pad_wh)) * x;
+
+			GX_SetScissor(hor_offset, half_ht * y, corr_wh + ((8 * pad_wh) * x), half_ht);
+			GX_SetScissorBoxOffset(hor_offset, half_ht * y);
+			GX_SetDispCopySrc(0, 0, corr_wh, half_ht);
+			GX_CallDispList(dlist, 32);
+
+		if(copyScreen == 1)
+		{
+			if(controlledbygui != 2) {
+				SetMplTiledOff();
+				if(sync_interlace > 0)
+					SetInterlaceOff();
+				goBackto = true;
+				break;
+			}
+			copyScreen = 2;
+		}
+		else
+		{
+			safe_gc = false;
+			drawMode = DrawMPlayerGui();
+		}
+
+		if(copyScreen == 2)
+		{
+			copyScreen = 0;
+			pause_gui = 1;
+		}
+		else if(drawMode != 0)
+		{
+			//SetMplTiled();
+			
+			// Fixes gui bar from not displaying
+			// the left chunk on the first frame.
+			if(guiDelay != 0) {
+				DrawMPlayerGui();
+				DrawMPlayerGui();
+				--guiDelay;
+			}
+			
+			//DrawMPlayerGui(); //fixes left chunk seek bar from remaining after loading a new video.
+			// reconfigure GX for MPlayer
+			Mtx44 p;
+			draw_initYUV();
+			draw_scaling();
+			guOrtho(p, mplayerheight/2, -(mplayerheight/2), -(mplayerwidth/2), mplayerwidth/2, 10, 1000);
+			GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
+			drawMode = 0;
+		}
+
+		//	GX_SetColorUpdate(GX_TRUE);
+			u32 xfb_offset = (((vmode->fbWidth * VI_DISPLAY_PIX_SZ) * (vmode->xfbHeight / 2)) * y) + ((half_wh * VI_DISPLAY_PIX_SZ) * x);
+			GX_CopyDisp((void *)((u32)xfb[whichfb] + xfb_offset), GX_TRUE);
+		}
+//	}
+#endif
+	}
+	if(!wiiTiledRender)
+		GX_CopyDisp(xfb[whichfb], GX_TRUE);
 	GX_SetDrawDone();
+	//VIDEO_SetNextFramebuffer(xfb[whichfb]);
 	need_wait=true;
 }
 
@@ -552,13 +712,14 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
     memset(Yrtexture, 0, (MAX_WIDTH-1024)*MAX_HEIGHT);
     memset(Utexture, 0x80, 1024*(MAX_HEIGHT/2));
     memset(Vtexture, 0x80, 1024*(MAX_HEIGHT/2));	
-	
 
 	// center, to correct difference between pitch and real width
 	video_diffx = (w - width)/2.0;
 	video_diffy = (h - height)/2.0;
 	video_haspect = haspect;
 	video_vaspect = vaspect;
+	// for subtitles
+	sub_dar = (double)video_haspect / (double)video_vaspect;
 
 	GX_UpdateScaling();
 
@@ -566,7 +727,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 	GX_SetCullMode(GX_CULL_NONE);
 	GX_SetClipMode(GX_DISABLE);
 	GX_SetZMode(GX_FALSE, GX_ALWAYS, GX_TRUE);
-	GX_CopyDisp(xfb[whichfb ^ 1], GX_TRUE);
+	GX_CopyDisp(xfb[0], GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
 	guOrtho(p, mplayerheight/2.0, -(mplayerheight/2.0), -(mplayerwidth/2.0), mplayerwidth/2.0, 10.0, 1000.0);
 	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
@@ -672,7 +833,7 @@ void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect)
 
 void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 {
-
+	
 	if(st0!=stride[0] || st1!=stride[1])
 	{
 		st0=stride[0];
@@ -681,8 +842,9 @@ void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 		UVrowpitch = (stride[1] * 4) - UVwidth;
 	}
 
-	if(need_wait)
+	if(need_wait == true) {
 		GX_WaitDrawDone();
+	}
 
 	if (stride[0] & 7)
 		LUMA_COPY(u64)
@@ -692,7 +854,7 @@ void GX_FillTextureYUV(u8 *buffer[3], int stride[3])
 	if (stride[1] & 7)
 		CHROMA_COPY(u64)
 	else
-		CHROMA_COPY(double) 
+		CHROMA_COPY(double)
 }
 
 void GX_RenderTexture()

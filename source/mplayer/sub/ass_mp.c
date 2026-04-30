@@ -54,6 +54,8 @@ char* ass_border_color = NULL;
 char* ass_styles_file = NULL;
 int ass_hinting = ASS_HINTING_NATIVE + 4; // native hinting for unscaled osd
 
+extern int monospaced;
+
 static void init_style(ASS_Style *style, const char *name, double playres)
 {
 	double fs;
@@ -68,6 +70,8 @@ static void init_style(ASS_Style *style, const char *name, double playres)
 		fs *= 1.3;
 	else if (subtitle_autoscale == 3)
 		fs *= 1.4;
+	else
+		fs = 24;
 	style->FontSize = fs;
 
 	if (ass_color) c1 = strtoll(ass_color, NULL, 16);
@@ -82,13 +86,14 @@ static void init_style(ASS_Style *style, const char *name, double playres)
 	style->BorderStyle = 1;
 	style->Alignment = 2;
 #ifdef GEKKO
-	style->Outline = 1;
+	style->Outline = 1.7f;
+	style->Shadow = 0;
 #else
 	style->Outline = 2;
 #endif
 	style->MarginL = 10;
 	style->MarginR = 10;
-	style->MarginV = 5;
+	style->MarginV = 30;
 	style->ScaleX = 1.;
 	style->ScaleY = 1.;
 }
@@ -233,7 +238,7 @@ ASS_Track* ass_read_stream(ASS_Library* library, const char *fname, char *charse
 		buf_alloc = fd->end_pos;
 	for (;;) {
 		int i;
-		if (buf_alloc >= 100*1024*1024) {
+		if (buf_alloc >= 8*1024*1024) {
 			mp_msg(MSGT_ASS, MSGL_INFO, MSGTR_LIBASS_RefusingToLoadSubtitlesLargerThan100M, fname);
 			sz = 0;
 			break;
@@ -268,9 +273,13 @@ static void adjust_font_scale(ASS_Track* track)
 	extern int mplayerheight;
 	extern float mplayer_ass_font_scale;
 
-	if(track && track->PlayResY == 288	&& (!track->PlayResX || track->PlayResX==384)) // embedded font not detected
-		ass_font_scale = ((double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.0f)+3.0f;
-	else
+	//The case that I've commented out handles the font size of non-ass subs
+	//to fix this, just rely on setting init_styles FontSize to a hard default.
+	
+	//This messes EIA-608 FFmpeg converted ASS files that use those playres values.
+	//if(track && track->PlayResY == 288	&& (!track->PlayResX || track->PlayResX==384)) // embedded font not detected
+		//ass_font_scale = ((double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.0f)+3.0f;
+	//else
 		ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale / 1.8f;
 }
 #endif
@@ -295,9 +304,11 @@ void ass_configure(ASS_Renderer* priv, int w, int h, int unscaled) {
 void ass_configure_fonts(ASS_Renderer* priv) {
 	char *dir, *path, *family;
 	dir = get_path("fonts");
-	if (font_fontconfig < 0 && sub_font_name) path = strdup(sub_font_name);
-	else if (font_fontconfig < 0 && font_name) path = strdup(font_name);
-	else path = get_path("subfont.ttf");
+	//if (font_fontconfig < 0 && sub_font_name) path = strdup(sub_font_name);
+	//else if (font_fontconfig < 0 && font_name) path = strdup(font_name);
+	//else if (font_fontconfig < 0 && !monospaced) path = get_path("subfont.ttf");
+	if (font_fontconfig < 0 && !monospaced) path = get_path("subfont.ttf");
+	else path = get_path("monospace.ttf");
 	if (font_fontconfig >= 0 && sub_font_name) family = strdup(sub_font_name);
 	else if (font_fontconfig >= 0 && font_name) family = strdup(font_name);
 	else family = 0;
@@ -345,11 +356,14 @@ ASS_Library* ass_init(void) {
 }
 
 int ass_force_reload = 0; // flag set if global ass-related settings were changed
+//extern int use_nocorrect;
 
 ASS_Image* ass_mp_render_frame(ASS_Renderer *priv, ASS_Track* track, long long now, int* detect_change) {
 	if (ass_force_reload) {
 #ifdef GEKKO
 		adjust_font_scale(track);
+		// test correct_pts
+		//++use_nocorrect;
 #endif
 		ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
 		ass_set_use_margins(priv, ass_use_margins);

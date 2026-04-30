@@ -135,7 +135,7 @@ InitVideo ()
 	{
 		vmode->fbWidth = 640;
 		vmode->efbHeight = 456;
-		vmode->viWidth = 686;
+		vmode->viWidth = 704;
 
 		if (pal)
 		{
@@ -151,9 +151,13 @@ InitVideo ()
 	else
 	{
 		if (pal)
-			vmode = &TVPal574IntDfScale;
+			vmode = &TVPal576IntDfScale;
 
-		vmode->viWidth = 672;
+        vmode->fbWidth = 640;
+        vmode->efbHeight = 456;
+        vmode->viWidth = 704;
+        vmode->xfbHeight = 456;
+        vmode->viHeight = 456;
 	}
 
 	if (pal)

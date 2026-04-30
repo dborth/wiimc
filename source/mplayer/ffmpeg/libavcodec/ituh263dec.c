@@ -461,7 +461,7 @@ static int h263_decode_block(MpegEncContext * s, DCTELEM * block,
     } else if (s->mb_intra) {
         /* DC coef */
         if(s->codec_id == CODEC_ID_RV10){
-#if CONFIG_RV10_DECODER
+/*#if CONFIG_RV10_DECODER
           if (s->rv10_version == 3 && s->pict_type == AV_PICTURE_TYPE_I) {
             int component, diff;
             component = (n <= 3 ? 0 : n - 4 + 1);
@@ -471,7 +471,7 @@ static int h263_decode_block(MpegEncContext * s, DCTELEM * block,
                 if (diff == 0xffff)
                     return -1;
                 level += diff;
-                level = level & 0xff; /* handle wrap round */
+                level = level & 0xff; /* handle wrap round */ /*
                 s->last_dc[component] = level;
             } else {
                 s->rv10_first_dc_coded[component] = 1;
@@ -481,7 +481,7 @@ static int h263_decode_block(MpegEncContext * s, DCTELEM * block,
                 if (level == 255)
                     level = 128;
           }
-#endif
+#endif */
         }else{
             level = get_bits(&s->gb, 8);
             if((level&0x7F) == 0){

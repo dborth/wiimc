@@ -26,6 +26,10 @@ INCLUDES	:=	source source/mplayer
 # options for code generation
 #---------------------------------------------------------------------------------
 
+# Compile settings, NTFS = 191KB, EXT2 = 91KB, Full = 282KB
+ENABLE_NTFS                   = 1
+ENABLE_EXT2                   = 1
+
 CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)  \
 				-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wframe-larger-than=8192
 CXXFLAGS	=	$(CFLAGS)
@@ -35,8 +39,18 @@ LDFLAGS		=	-g $(MACHDEP) -specs=wiimc.spec -Wl,-wrap,memcpy
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
 LIBS    := -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
-                        -lfribidi -ljpeg -ldi -liso9660 -liconv -lpng -lz -lntfs -lext2fs \
+                        -ljpeg -ldi -liso9660 -liconv -lpng -lz \
                         -lfat -lwiiuse -lbte -logc -lfreetype -lmxml -ltinysmb -lexif
+
+ifeq ($(ENABLE_NTFS), 1)
+CFLAGS += -DWANT_NTFS
+LIBS += -lntfs
+endif
+
+ifeq ($(ENABLE_EXT2), 1)
+CFLAGS += -DWANT_EXT2
+LIBS += -lext2fs
+endif
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

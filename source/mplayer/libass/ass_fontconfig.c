@@ -506,6 +506,7 @@ FCInstance *fontconfig_init(ASS_Library *library,
 
     priv = calloc(1, sizeof(FCInstance));
 
+	// Wii: Font gets read here!
     priv->path_default = path ? strdup(path) : 0;
     priv->index_default = 0;
     return priv;

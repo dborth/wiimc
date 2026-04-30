@@ -36,6 +36,19 @@
 #include "ass_utils.h"
 #include "ass_shaper.h"
 
+#ifdef GEKKO
+//#include "../../utils/mem2_manager.h"
+//int once_fnt = 0;
+extern const font_ttf[];
+extern font_mem;
+extern mono_mem;
+extern unsigned font_mem_size;
+extern unsigned mono_mem_size;
+extern int have_mono;
+extern int monospaced;
+extern int subtitleFontFound;
+#endif
+
 /**
  * Select a good charmap, prefer Microsoft Unicode charmaps.
  * Otherwise, let FreeType decide.
@@ -119,7 +132,7 @@ static int add_face(void *fc_priv, ASS_Font *font, uint32_t ch)
     int index;
     FT_Face face;
     int error;
-    int mem_idx;
+    //int mem_idx;
 
     if (font->n_faces == ASS_FONT_MAX_FACES)
         return -1;
@@ -131,7 +144,7 @@ static int add_face(void *fc_priv, ASS_Font *font, uint32_t ch)
     if (!path)
         return -1;
 
-    mem_idx = find_font(font->library, path);
+  /*  mem_idx = find_font(font->library, path);
     if (mem_idx >= 0) {
         error =
             FT_New_Memory_Face(font->ftlibrary,
@@ -145,17 +158,48 @@ static int add_face(void *fc_priv, ASS_Font *font, uint32_t ch)
             free(path);
             return -1;
         }
-    } else {
-        error = FT_New_Face(font->ftlibrary, path, index, &face);
+    } else { */
+        //error = FT_New_Face(font->ftlibrary, path, index, &face);
+		/* MEM FONT START */
+	/*	unsigned *fnt_buf = (unsigned *) malloc(1*1024*1024);
+		//unsigned *fnt_buffer = (unsigned *) mem2_malloc(1*1024*1024, MEM2_OTHER);
+		
+		FILE *ft = fopen("sd1:/apps/wiimc/monospace.ttf", "rb");
+		if (ft == NULL)
+			return -1;
+		fseeko(ft, 0, SEEK_END);
+		FT_Long fsize = ftello(ft);
+		//rewind(ft);
+		fseeko(ft, 0, SEEK_SET);  // The same as rewind(ft)
+		
+		//unsigned *fnt_buffer = (unsigned *) mem2_malloc(fsize, MEM2_OTHER);
+		//unsigned *fnt_buffer = (unsigned *) malloc(fsize);
+
+		fread (&fnt_buf, 1, fsize, ft);
+		fclose(ft); */
+		
+		/*int *name = (int *) 0x8076A310;
+	if(*name != 0x44696567)
+		ExitRequested = true;*/
+		
+		if (have_mono && monospaced)
+			error = FT_New_Memory_Face(font->ftlibrary, (FT_Byte *)mono_mem, mono_mem_size, index, &face);
+		else if(!subtitleFontFound)
+			error = FT_New_Memory_Face(font->ftlibrary, (FT_Byte *)font_ttf, 0x8450, 0, &face);
+		else
+			error = FT_New_Memory_Face(font->ftlibrary, (FT_Byte *)font_mem, font_mem_size, index, &face);
+
+	//	once_fnt = 1;
+		/* MEM FONT END */
         if (error) {
             ass_msg(font->library, MSGL_WARN,
                     "Error opening font: '%s', %d", path, index);
             free(path);
             return -1;
         }
-    }
-    charmap_magic(font->library, face);
-    buggy_font_workaround(face);
+   // }
+    //charmap_magic(font->library, face);
+   // buggy_font_workaround(face);
 
     font->faces[font->n_faces++] = face;
     ass_face_set_size(face, font->size);
@@ -437,8 +481,8 @@ int ass_font_get_index(void *fcpriv, ASS_Font *font, uint32_t symbol,
         return 0;
     }
     // Handle NBSP like a regular space when rendering the glyph
-    if (symbol == 0xa0)
-        symbol = ' ';
+    //if (symbol == 0xa0)
+      //  symbol = ' ';
     if (font->n_faces == 0) {
         *face_index = 0;
         return 0;

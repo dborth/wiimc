@@ -50,6 +50,9 @@
 #include <bzlib.h>
 #endif
 
+extern int monospaced;
+extern int alt_font;
+
 typedef enum {
     EBML_NONE,
     EBML_UINT,
@@ -113,6 +116,8 @@ typedef struct {
     uint64_t pixel_width;
     uint64_t pixel_height;
     EbmlBin color_space;
+    uint64_t interlaced;
+    uint64_t field_order;
     uint64_t stereo_mode;
 } MatroskaTrackVideo;
 
@@ -320,7 +325,8 @@ static EbmlSyntax matroska_track_video[] = {
     { MATROSKA_ID_VIDEOPIXELCROPL,    EBML_NONE },
     { MATROSKA_ID_VIDEOPIXELCROPR,    EBML_NONE },
     { MATROSKA_ID_VIDEODISPLAYUNIT,   EBML_NONE },
-    { MATROSKA_ID_VIDEOFLAGINTERLACED,EBML_NONE },
+    { MATROSKA_ID_VIDEOFLAGINTERLACED,EBML_UINT, 0, offsetof(MatroskaTrackVideo,interlaced) },
+	{ MATROSKA_ID_VIDEOFIELDORDER,    EBML_UINT, 0, offsetof(MatroskaTrackVideo,field_order) },
     { MATROSKA_ID_VIDEOASPECTRATIO,   EBML_NONE },
     { 0 }
 };
@@ -1399,6 +1405,9 @@ static void matroska_metadata_creation_time(AVDictionary **metadata, int64_t dat
     av_dict_set(metadata, "creation_time", buffer, 0);
 }
 
+//extern double find_prob;
+extern int sync_interlace;
+
 static int matroska_read_header(AVFormatContext *s)
 {
     MatroskaDemuxContext *matroska = s->priv_data;
@@ -1457,6 +1466,7 @@ static int matroska_read_header(AVFormatContext *s)
     if (matroska->duration)
         matroska->ctx->duration = matroska->duration * matroska->time_scale
                                   * 1000 / AV_TIME_BASE;
+
     av_dict_set(&s->metadata, "title", matroska->title, 0);
 
     if (matroska->date_utc.size == 8)
@@ -1664,6 +1674,14 @@ static int matroska_read_header(AVFormatContext *s)
         st->start_time = 0;
         if (strcmp(track->language, "und"))
             av_dict_set(&st->metadata, "language", track->language, 0);
+
+		//try to use title to determine if monospace font should be use
+		if(track->name != NULL && alt_font) {
+			if(!av_strncasecmp(track->name, "closed", 6) || !av_strncasecmp(track->name, "monospace", 9)
+				|| !av_strncasecmp(track->name, "eia", 3) || !av_strncasecmp(track->name, "CC", 2))
+				monospaced = 1;
+		}
+
         av_dict_set(&st->metadata, "title", track->name, 0);
 
         if (track->flag_default)
@@ -1694,17 +1712,26 @@ static int matroska_read_header(AVFormatContext *s)
             st->codec->codec_tag  = fourcc;
             st->codec->width  = track->video.pixel_width;
             st->codec->height = track->video.pixel_height;
+			
+			if (track->video.interlaced == MATROSKA_VIDEO_INTERLACE_FLAG_INTERLACED) {
+				sync_interlace = 1;
+				if(track->video.field_order > 1)
+					sync_interlace = 2;
+                //st->codecpar->field_order = mkv_field_order(track->video.field_order);
+			}
+			
             av_reduce(&st->sample_aspect_ratio.num,
                       &st->sample_aspect_ratio.den,
                       st->codec->height * track->video.display_width,
                       st->codec-> width * track->video.display_height,
                       255);
             st->need_parsing = AVSTREAM_PARSE_HEADERS;
-            if (track->default_duration) {
-                av_reduce(&st->r_frame_rate.num, &st->r_frame_rate.den,
+            if (track->default_duration)   // Breaks decoding on certain framerates, only when framedrop is enabled
+                av_reduce(&st->avg_frame_rate.num, &st->avg_frame_rate.den,
                           1000000000, track->default_duration, 30000);
-                st->avg_frame_rate = st->r_frame_rate;
-            }
+			//	st->avg_frame_rate.num = 15712911;
+			//	st->avg_frame_rate.den = 524288;
+				//st->avg_frame_rate = av_d2q(1000000000.0/track->default_duration, INT_MAX);
 
             /* export stereo mode flag as metadata tag */
             if (track->video.stereo_mode && track->video.stereo_mode < MATROSKA_VIDEO_STEREO_MODE_COUNT)

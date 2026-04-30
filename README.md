@@ -3,6 +3,26 @@ http://www.wiimc.org (Under GPL License)
 
 ### Update History
 
+[3.0.0 - March 30, 2024]
+
+* Embedded cover art in MP3, MP4 (AAC, ALAC), FLAC, OGG, WMA, and AIFF.
+* Dynamic cover art updating from Tunein, Yggdrasil Radio, and ANISON.FM.
+* Automatic tiled rendering (true 720x480p from MPlayer CE.)
+* Enabled vsync in 30 fps videos in 480i/p modes.
+* Correct display of interlaced video in MPEG-2 files. Other codecs using MKV elements.
+* Subtitles always use DAR instead of SAR.
+* GameCube controller support.
+* Better handling of game formats ADX and BRSTM.
+* Various options: 240p mode, night filter, volnorm, deflicker, etc.
+* Use the ".dash" extension to skip the deblock filter in H.264 and VP8 files.
+* Added Shuffle, Loop, and Continuous modes for video.
+* Artwork Viewer for videos and music using external files.
+* Wii Message Board playlog support when started from a Channel.
+* Changing themes now requires arguments.
+* Force IOS argument allows using a different usb module with IOS202.
+* Reconnect radio streams after a minute if a fail is detected.
+* Removed photo viewer, BMP, GIF, NTFS and several codecs for low mem usage.
+
 [1.3.4 - November 23, 2013]
 
 * SMB support for Synology DSM 4.3

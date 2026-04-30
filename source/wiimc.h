@@ -12,7 +12,7 @@
 #include "network.h"
 
 #define APPNAME			"WiiMC"
-#define APPVERSION		"1.3.4"
+#define APPVERSION		"3.0.0"
 #define APPFOLDER		"wiimc"
 
 enum {
@@ -40,8 +40,9 @@ void ActivateExitThread();
 
 extern bool ExitRequested;
 extern bool ShutdownRequested;
+extern bool AutobootExit;
 extern FreeTypeGX *fontSystem[];
-extern bool subtitleFontFound;
+extern int subtitleFontFound;
 extern char loadedFile[];
 extern char loadedDevice[];
 extern char loadedFileDisplay[];
@@ -56,6 +57,8 @@ int mplayer_main(); // in mplayer.c
 
 void wiiLoadFile(char *filename, char *partitionlabel);
 void wiiGotoGui();
+void wiiDash();
+void wiiElse();
 void wiiPause();
 bool wiiIsPaused();
 bool wiiIsPlaying();
@@ -65,9 +68,13 @@ void wiiSetSeekForward(int sec);
 void wiiSeekPos(int sec);
 void wiiFastForward();
 void wiiRewind();
+void wiiSync();
 double wiiGetTimeLength();
 double wiiGetTimePos();
 void wiiGetTimeDisplay(char *buf);
+void wiiGetDroppedFrames(char *buf);
+void wiiGetMemory(char *buf);
+void wiiGetFPS(char *buf);
 void wiiSetDVDDevice(char *dev);
 bool wiiAudioOnly();
 char * wiiGetMetaTitle();
@@ -79,6 +86,48 @@ void wiiUpdatePointer(int x, int y);
 bool wiiPlayingDVD();
 bool wiiInDVDMenu();
 void wiiSetCacheFill(int fill);
+void wiiSetVolNorm();
+void wiiSetVolNorm0();
+void wiiSetVolNorm1();
+void wiiSetVolNorm2();
+void wiiSetVidFull();
+void wiiSetScreenNorm();
+void wiiSetFullScreen();
+void wiiSetDf();
+void SetDf();
+void SetDfOff();
+void wiiSet576p();
+void Set576p();
+void Set576pOff();
+void wiiSetVIscale();
+void SetVIscale();
+void SetVIscaleback();
+void wiiSetDoubleStrike();
+void SetDoubleStrike();
+void SetDoubleStrikeOff();
+void wiiSetAssOff();
+void wiiAssOff();
+void wiiBStyleOverride();
+void wiiForceStyle(int borderstyle);
+void wiiShadowOverride();
+void wiiForceShadow(float shadow);
+void wiiOutlineOverride();
+void wiiForceOutline(float outline);
+void wiiBoldFont();
+void wiiForceBold();
+void wiiUseAltFont();
+void wiiMainFont();
+void wiiTHP();
+void wiiSFD();
+void wiiSetLoopOn();
+void wiiSpecialLoops(int val);
+void nightfade_cb();
+void nofade_cb();
+void fadein_copyfilter();
+void fadeout_copyfilter();
+void wiiSetTiledVar();
+void wiiSetTiledAuto();
+void wiiSetTiledOFF();
 void wiiSetOnlineCacheFill(int fill);
 void wiiSetAutoResume(int enable);
 void wiiSetVolume(int vol);

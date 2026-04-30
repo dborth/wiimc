@@ -5,3 +5,4 @@ build/*.h
 wiimc.dol
 wiimc.elf
 .project
+/executables/

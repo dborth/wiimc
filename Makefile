@@ -19,6 +19,7 @@ export	FREETYPE_LIBS	:=	`$(DEVKITPRO)/portlibs/ppc/bin/powerpc-eabi-pkg-config -
 #---------------------------------------------------------------------------------
 MPLAYER		:=	$(CURDIR)/source/mplayer
 TARGET		:=	wiimc
+TARGETDIR	:=	executables
 BUILD		:=	build
 SOURCES		:=	source source/libwiigui source/utils source/utils/unzip
 DATA		:=	source/images source/lang source/fonts
@@ -119,11 +120,12 @@ export LIBPATHS	:= -L$(LIBOGC_LIB) $(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 				-L$(MPLAYER)/ffmpeg/libavutil \
 				-L$(MPLAYER)/ffmpeg/libswscale 
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export OUTPUT	:=	$(CURDIR)/$(TARGETDIR)/$(TARGET)
 .PHONY: $(BUILD) clean
 
 #---------------------------------------------------------------------------------
 $(BUILD):
+	@[ -d $(TARGETDIR) ] || mkdir -p $(TARGETDIR)
 	cd source/mplayer; $(MAKE) -f Makefile; cd ../..
 	@[ -d $@ ] || mkdir -p $@
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile

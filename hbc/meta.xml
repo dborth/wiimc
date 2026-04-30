@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1">
+  <name>WiiMC</name>
+  <coder>Tantric, rodries</coder>
+  <version>1.3.4</version>
+  <release_date>20131123</release_date>
+  <short_description>Wii Media Player</short_description>
+  <long_description>Homebrew media player for Nintendo Wii.</long_description>
+  <no_ios_reload/>
+</app>

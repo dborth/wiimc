@@ -19,10 +19,6 @@
 #include <sdcard/wiisd_io.h>
 #include <time.h>
 
-#include "utils/ehcmodule_elf.h"
-#include "utils/mload.h"
-#include "utils/usb2storage.h"
-
 #include "utils/FreeTypeGX.h"
 #include "utils/gettext.h"
 #include "utils/mem2_manager.h"
@@ -38,10 +34,10 @@
 #include "wiimc.h"
 #include "settings.h"
 
-extern char MPLAYER_DATADIR[512]; 
-extern char MPLAYER_CONFDIR[512]; 
-extern char MPLAYER_LIBDIR[512]; 
-extern char MPLAYER_CSSDIR[512];
+char MPLAYER_DATADIR[512];
+char MPLAYER_CONFDIR[512];
+char MPLAYER_LIBDIR[512];
+char MPLAYER_CSSDIR[512];
 
 #include "mplayer/input/input.h"
 #include "mplayer/osdep/gx_supp.h"
@@ -49,38 +45,6 @@ extern char MPLAYER_CSSDIR[512];
 bool want3DS = false;
 bool isReload = false;
 u8 iosVal = 58;
-
-static bool load_ehci_module()
-{
-	data_elf my_data_elf;
-	
-	if (mload_elf(ehcmodule_elf, &my_data_elf) < 0)
-		return false;
-	
-	if (mload_run_thread(my_data_elf.start, my_data_elf.stack, my_data_elf.size_stack, my_data_elf.prio) < 0) {
-		usleep(100);
-		if (mload_run_thread(my_data_elf.start, my_data_elf.stack, my_data_elf.size_stack, 0x47) < 0)
-			return false;
-	}
-	
-	return true;
-}
-/*
-bool load_ehci_module()
-{
-	data_elf elf;
-	memset(&elf, 0, sizeof(data_elf));
-
-	if(mload_elf((void *) ehcmodule_elf, &elf) != 0)
-		return false;
-
-	if(mload_run_thread(elf.start, elf.stack, elf.size_stack, elf.prio) < 0)
-		return false;
-	
-	usleep(5000);
-	return true;
-}
-*/
 
 extern "C" {
 extern void __exception_setreload(int t);
@@ -99,6 +63,10 @@ bool AutobootExit = false;
 bool isDynamic = false;
 int sync_interlace = 0;
 int use_lavf = 0;
+
+// MPlayer buffer
+#define MPLAYER_BUFFER_SIZE (8*1024*1024)
+unsigned char *global_buffer=NULL;
 
 // MPlayer threads
 #define MPLAYER_STACKSIZE (512*1024)
@@ -199,11 +167,11 @@ static void SaveLogToSD()
 {
 	char _file[128];
 	FILE *fp;
-	const DISC_INTERFACE* sd = &__io_wiisd;
+	DISC_INTERFACE* sd = &__io_wiisd;
 
 	if(WiiSettings.debug != 1) return;
 
-	sd->startup();
+	sd->startup(sd);
 	
 	if(!fatMount("sdlog",sd,0,2,64)) return;
 
@@ -233,7 +201,7 @@ static void SaveLogToSD()
 	fatUnmount("sdlog");
 }
 
-static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
+static ssize_t __out_write(struct _reent *r, void* fd, const char *ptr, size_t len)
 {
 	if (!gecko || len == 0)
 		return len;
@@ -1106,12 +1074,6 @@ void handleIOSreload(void)
 	// Regain access, this allows burn-in reduction dimmer to work.
 	cIOS_access();
 	IOS_ReloadIOS(iosVal);
-	
-	if(IOS_GetVersion() == 202) {
-		if(mload_init())
-			ehci = load_ehci_module();
-		USB2Enable(ehci);
-	}
 }
 
 /****************************************************************************
@@ -1166,6 +1128,9 @@ int main(int argc, char *argv[])
 	StartNetworkThread(); //to set net heap aside MEM2 area
 	usleep(100); //force network thread execution
 	
+	AddMem2Area (MPLAYER_BUFFER_SIZE, MEM2_MPLAYER_BUFFER);
+	global_buffer = (unsigned char *)mem2_malloc(MPLAYER_BUFFER_SIZE, MEM2_MPLAYER_BUFFER);
+
 	u32 size = ( (1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2) ) + // textures
                 (vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
                 (32*1024); // padding

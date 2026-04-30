@@ -16,6 +16,10 @@ of Crazy Nation and the GC Linux project.
 
 #include <gccore.h>
 
+#include <string.h>
+
+extern void udelay(int us);
+
 #define HW_REG_BASE 0xd800000
 #define HW_GPIO1BOUT (HW_REG_BASE + 0x0c0)
 #define HW_GPIO1BDIR (HW_REG_BASE + 0x0c4)

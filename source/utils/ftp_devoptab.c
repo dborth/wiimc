@@ -2056,7 +2056,7 @@ static int __ftp_open(struct _reent *r, void *fileStruct, const char *path, int 
 	return 0;
 }
 
-static off_t __ftp_seek(struct _reent *r, int fd, off_t pos, int dir)
+static off_t __ftp_seek(struct _reent *r, void *fd, off_t pos, int dir)
 {
 	off_t position;
 	FTPFILESTRUCT *file = (FTPFILESTRUCT*) fd;
@@ -2102,7 +2102,7 @@ static off_t __ftp_seek(struct _reent *r, int fd, off_t pos, int dir)
 	return position;
 }
 
-static ssize_t __ftp_read(struct _reent *r, int fd, char *ptr, size_t len)
+static ssize_t __ftp_read(struct _reent *r, void *fd, char *ptr, size_t len)
 {
 	FTPFILESTRUCT *file = (FTPFILESTRUCT*) fd;
 
@@ -2145,7 +2145,7 @@ static ssize_t __ftp_read(struct _reent *r, int fd, char *ptr, size_t len)
 	return len;
 }
 
-static ssize_t __ftp_write(struct _reent *r, int fd, const char *ptr, size_t len)
+static ssize_t __ftp_write(struct _reent *r, void *fd, const char *ptr, size_t len)
 {
 	FTPFILESTRUCT *file = (FTPFILESTRUCT*) fd;
 	if (file == NULL)
@@ -2174,7 +2174,7 @@ static ssize_t __ftp_write(struct _reent *r, int fd, const char *ptr, size_t len
 	return len;
 }
 
-static int __ftp_close(struct _reent *r, int fd)
+static int __ftp_close(struct _reent *r, void *fd)
 {
 	NET_PRINTF("__ftp_close()\n", 0 );
 
@@ -2441,11 +2441,11 @@ static int dentry_to_stat(FTPDIRENTRY *dentry, struct stat *st)
 	st->st_gid = 2; // Faked
 	st->st_size = dentry->size;
 	st->st_atime = 0;
-	st->st_spare1 = 0;
+	//st->st_spare1 = 0;
 	st->st_mtime = 0;
-	st->st_spare2 = 0;
+	//st->st_spare2 = 0;
 	st->st_ctime = 0;
-	st->st_spare3 = 0;
+	//st->st_spare3 = 0;
 	st->st_blksize = 1024;
 	st->st_blocks = (st->st_size + st->st_blksize - 1) / st->st_blksize; // File size in blocks
 	st->st_spare4[0] = 0;
@@ -2535,7 +2535,7 @@ static int __ftp_stat(struct _reent *r, const char *path, struct stat *st)
 	return 0;
 }
 
-static int __ftp_fstat(struct _reent *r, int fd, struct stat *st)
+static int __ftp_fstat(struct _reent *r, void *fd, struct stat *st)
 {
 	FTPFILESTRUCT *filestate = (FTPFILESTRUCT *) fd;
 

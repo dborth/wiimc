@@ -6,6 +6,7 @@
  * Settings save/load to XML file
  ***************************************************************************/
 
+#include <sys/param.h>
 #include "networkop.h"
 
 enum {
@@ -52,7 +53,7 @@ enum {
 	LANG_SIMP_CHINESE,
 	LANG_TRAD_CHINESE,
 	LANG_KOREAN,
-	/*LANG_ROMANIAN,
+	LANG_ROMANIAN,
 	LANG_ESTONIAN,
 	LANG_BRAZILIAN_PORTUGUESE,
 	LANG_HUNGARIAN,
@@ -63,7 +64,7 @@ enum {
 	LANG_TAMIL,
 	LANG_SWEDISH,
 	LANG_DANISH,
-	LANG_BULGARIAN,*/
+	LANG_BULGARIAN,
 	LANG_LENGTH
 };
 

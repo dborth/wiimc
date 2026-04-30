@@ -342,7 +342,7 @@ static int MusicSortCallback(const void *f1, const void *f2)
 	{
 		return 0;
 	}
-	return stricmp(((BROWSERENTRY *)f1)->display, ((BROWSERENTRY *)f2)->display);
+	return strcasecmp(((BROWSERENTRY *)f1)->display, ((BROWSERENTRY *)f2)->display);
 }
 
 /****************************************************************************

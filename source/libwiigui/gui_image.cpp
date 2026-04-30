@@ -10,7 +10,7 @@
 
 #include "gui.h"
 
-static u64 prev;
+static u64 timeprev;
 static u64 now;
 
 /**
@@ -336,9 +336,9 @@ void GuiImage::Draw()
 
 		now = gettime();
 
-		if(diff_usec(prev, now) > (u32)(effectAmount*1000))
+		if(diff_usec(timeprev, now) > (u32)(effectAmount*1000))
 		{
-			prev = now;
+			timeprev = now;
 
 			imageangle+=45.0f;
 			if(imageangle >= 360.0f)

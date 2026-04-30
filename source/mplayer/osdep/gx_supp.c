@@ -52,6 +52,7 @@ void StartDrawThread();
 void PauseAndGotoGUI();
 void TakeScreenshot();
 int DrawMPlayerGui();
+void wiiPause();
 int copyScreen = 0;
 extern int pause_gui;
 extern int controlledbygui;
@@ -492,7 +493,7 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_hei
 
 bool goBackto = false;
 extern int sync_interlace;
-extern timerFadeBlack; // not an actual fade, just delay drawing mplayer to avoid 1 frame flicker.
+extern unsigned timerFadeBlack; // not an actual fade, just delay drawing mplayer to avoid 1 frame flicker.
 
 inline void DrawMPlayer()
 {

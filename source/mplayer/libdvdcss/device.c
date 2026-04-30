@@ -1240,7 +1240,7 @@ static int usb_open(dvdcss_t dvdcss, char const * psz_device)
 		return -1;
 	}
 
-	if (usb->isInserted() == 0 || USBStorage_IsDVD() == 0)
+	if (usb->isInserted(usb) == 0 || USBStorage_IsDVD() == 0)
 		return -1;
 
 	if(!read_buffer)
@@ -1266,7 +1266,7 @@ static int __read(dvdcss_t dvdcss, void *ptr, int start, int sectors)
 		return sectors;
 	}
 
-	if (!usb->readSectors(start, BUFFER_SECTOR_SIZE, read_buffer))
+	if (!usb->readSectors(usb, start, BUFFER_SECTOR_SIZE, read_buffer))
 	{
 		cache_sectors = 0;
 		return -1;

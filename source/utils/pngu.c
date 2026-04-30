@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <malloc.h>
+#include <string.h>
 #include <png.h>
 #include "pngu.h"
 

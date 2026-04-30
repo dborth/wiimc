@@ -36,7 +36,7 @@
 
 static bool rumbleDisabled = false;
 static int rumbleOn[4] = {0,0,0,0};
-static u64 prev[4];
+static u64 timeprev[4];
 static u64 now[4];
 static int osdLevel = 0;
 static int volprev = 0, volnow = 0;
@@ -103,7 +103,7 @@ static void ShutoffRumble(int i, int cooloff)
 	if(CONF_GetPadMotorMode() == 0)
 		return;
 
-	prev[i] = gettime() + cooloff;
+	timeprev[i] = gettime() + cooloff;
 	WPAD_Rumble(i, 0); // rumble off
 	rumbleOn[i] = 0;
 }
@@ -131,14 +131,14 @@ void RequestRumble(int i)
 
 	now[i] = gettime();
 
-	if(prev[i] > now[i])
+	if(timeprev[i] > now[i])
 		return;
 
-	if(diff_usec(prev[i], now[i]) > RUMBLE_MAX)
+	if(diff_usec(timeprev[i], now[i]) > RUMBLE_MAX)
 	{
 		rumbleOn[i] = 1;
 		WPAD_Rumble(i, 1); // rumble on
-		prev[i] = now[i];
+		timeprev[i] = now[i];
 	}
 }
 
@@ -152,7 +152,7 @@ void DoRumble(int i)
 	{
 		now[i] = gettime();
 
-		if(diff_usec(prev[i], now[i]) > RUMBLE_MAX)
+		if(diff_usec(timeprev[i], now[i]) > RUMBLE_MAX)
 			ShutoffRumble(i, RUMBLE_COOLOFF);
 	}
 }

@@ -33,10 +33,10 @@
 
 #define CONFIGURATION ""
 
-char MPLAYER_DATADIR[512]; 
-char MPLAYER_CONFDIR[512]; 
-char MPLAYER_LIBDIR[512]; 
-char MPLAYER_CSSDIR[512]; 
+extern char MPLAYER_DATADIR[512];
+extern char MPLAYER_CONFDIR[512];
+extern char MPLAYER_LIBDIR[512];
+extern char MPLAYER_CSSDIR[512];
 
 /* definitions needed by included libraries */
 #define HAVE_INTTYPES_H 1
@@ -156,7 +156,7 @@ char MPLAYER_CSSDIR[512];
 #define ARCH_X86_64 0
 #define ARCH_PPC64 0
 #define HAVE_ALTIVEC 0
-#define HAVE_PAIRED 1
+#define HAVE_PAIRED 0
 #define HAVE_MMX 0
 #define HAVE_MMX2 0
 #define HAVE_AMD3DNOW 0

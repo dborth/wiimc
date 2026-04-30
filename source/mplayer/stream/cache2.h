@@ -25,5 +25,6 @@ extern float cache_fill_status;
 
 void cache_uninit(stream_t *s);
 int cache_do_control(stream_t *stream, int cmd, void *arg);
+int stream_error(stream_t *stream);
 
 #endif /* MPLAYER_CACHE2_H */

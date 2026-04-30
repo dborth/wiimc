@@ -309,7 +309,7 @@ void PopulateVideoPlaylist()
 	i=browser.first;
 	while(i!=NULL)
 	{
-		if(!i->file || i->type != TYPE_FILE)
+		if(!i->file || i->type != TYPE_FILE) //|| strncmp(i->file, "http://www.youtube.com", 22) == 0)
 		{
 			i=i->next;
 			continue;

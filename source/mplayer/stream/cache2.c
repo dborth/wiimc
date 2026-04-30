@@ -49,11 +49,17 @@ static void ThreadProc( void *s );
 #include <pthread.h>
 static void *ThreadProc(void *s);
 #elif defined(GEKKO)
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
+
 #include <ogcsys.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogc/mutex.h>
+#include "../../utils/mem2_manager.h"
+
 static void *ThreadProc(void *s);
-static unsigned char *global_buffer=NULL;
+extern unsigned char *global_buffer;
 static void *cachearg = NULL;
 static mutex_t cache_mutex = LWP_MUTEX_NULL;
 int stop_cache_thread = 1;
@@ -433,7 +439,6 @@ static cache_vars_t* cache_init(int size,int sector){
 #if !defined(__MINGW32__) && !defined(PTHREAD_CACHE) && !defined(__OS2__) && !defined(GEKKO)
   s->buffer=shmem_alloc(s->buffer_size);
 #else
-  if(global_buffer==NULL) global_buffer=0x90002000;
   s->buffer=global_buffer;
 #endif
 

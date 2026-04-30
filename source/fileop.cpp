@@ -65,9 +65,9 @@ dvdcss_t dvdcss = NULL;
 
 static char prefix[2][4] = { "sd", "usb" };
 
-static const DISC_INTERFACE* sd = &__io_wiisd;
-static const DISC_INTERFACE* usb = &__io_usbstorage;
-static const DISC_INTERFACE* dvd = &__io_wiidvd;
+static DISC_INTERFACE* sd = &__io_wiisd;
+static DISC_INTERFACE* usb = &__io_usbstorage;
+static DISC_INTERFACE* dvd = &__io_wiidvd;
 
 // folder parsing thread
 static lwp_t parsethread = LWP_THREAD_NULL;
@@ -108,10 +108,10 @@ static void * devicecallback (void *arg)
 	{
 		if(isInserted[DEVICE_SD])
 		{
-			if(!sd->isInserted()) // device was removed
+			if(!sd->isInserted(sd)) // device was removed
 			{
 				UnmountPartitions(DEVICE_SD);
-				sd->shutdown();
+				sd->shutdown(sd);
 
 				if(strlen(loadedFile) > 2 && strncmp(loadedFile, "sd", 2) == 0)
 				{
@@ -123,7 +123,7 @@ static void * devicecallback (void *arg)
 				devicesChanged = true;
 			}
 		}
-		else if(sd->startup() && sd->isInserted()) // device was inserted
+		else if(sd->startup(sd) && sd->isInserted(sd)) // device was inserted
 		{
 			MountPartitions(DEVICE_SD, SILENT);
 			isInserted[DEVICE_SD] = true;
@@ -132,10 +132,10 @@ static void * devicecallback (void *arg)
 
 		if(isInserted[DEVICE_USB])
 		{
-			if(!usb->isInserted()) // device was removed
+			if(!usb->isInserted(usb)) // device was removed
 			{
 				UnmountPartitions(DEVICE_USB);
-				usb->shutdown();
+				usb->shutdown(usb);
 
 				if(strlen(loadedFile) > 3 && (strncmp(loadedFile, "usb", 3) == 0 ||
 				    (strncmp(loadedFile, "dvd", 3) == 0 && strcmp(loadedDevice, "/dev/usb") == 0)))
@@ -150,7 +150,7 @@ static void * devicecallback (void *arg)
 				devicesChanged = true;
 			}
 		}
-		else if(usb->startup() && usb->isInserted()) // device was inserted
+		else if(usb->startup(usb) && usb->isInserted(usb)) // device was inserted
 		{
 			MountPartitions(DEVICE_USB, SILENT);
 			isInserted[DEVICE_USB] = true;
@@ -159,7 +159,7 @@ static void * devicecallback (void *arg)
 
 		if(isInserted[DEVICE_DVD])
 		{
-			if(!dvd->isInserted())
+			if(!dvd->isInserted(dvd))
 			{
 				dvdLastUsed = 0;
 				isInserted[DEVICE_DVD] = false;
@@ -185,7 +185,7 @@ static void * devicecallback (void *arg)
 				}
 			}
 		}
-		else if(!WiiSettings.dvdDisabled && dvd->isInserted())
+		else if(!WiiSettings.dvdDisabled && dvd->isInserted(dvd))
 		{
 			isInserted[DEVICE_DVD] = true;
 			devicesChanged = true;
@@ -574,7 +574,7 @@ static int FindPartitions(int device)
 	}
 
 	// Read the first sector on the device
-	if (!interface->readSectors(0, 1, &sector.buffer))
+	if (!interface->readSectors(interface, 0, 1, &sector.buffer))
 	{
 		errno = EIO;
 		return -1;
@@ -608,7 +608,7 @@ static int FindPartitions(int device)
 					debug_printf("Partition %i: Claims to be NTFS\n", i + 1);
 
 					// Read and validate the NTFS partition
-					if (interface->readSectors(part_lba, 1, &sector))
+					if (interface->readSectors(interface, part_lba, 1, &sector))
 					{
 						debug_printf("sector.boot.oem_id: 0x%x\n", sector.boot.oem_id);
 						debug_printf("NTFS_OEM_ID: 0x%x\n", NTFS_OEM_ID);
@@ -636,7 +636,7 @@ static int FindPartitions(int device)
 					do
 					{
 						// Read and validate the extended boot record
-						if (interface->readSectors(ebr_lba + next_erb_lba, 1, &sector))
+						if (interface->readSectors(interface, ebr_lba + next_erb_lba, 1, &sector))
 						{
 							if (sector.ebr.signature == EBR_SIGNATURE)
 							{
@@ -662,9 +662,9 @@ static int FindPartitions(int device)
 									AddPartition(part_lba, device, T_EXT2, &devnum);
 								}
 								// Check if this partition has a valid NTFS boot record
-								else if (interface->readSectors(part_lba, 1, &sector))
+								else if (interface->readSectors(interface, part_lba, 1, &sector))
 #else
-								if (interface->readSectors(part_lba, 1, &sector))
+								if (interface->readSectors(interface, part_lba, 1, &sector))
 #endif
 								{
 									if (sector.boot.oem_id == NTFS_OEM_ID)
@@ -721,7 +721,7 @@ static int FindPartitions(int device)
 				{
 					// Check if this partition has a valid NTFS boot record anyway,
 					// it might be misrepresented due to a lazy partition editor
-					if (interface->readSectors(part_lba, 1, &sector))
+					if (interface->readSectors(interface, part_lba, 1, &sector))
 					{
 						if (sector.boot.oem_id == NTFS_OEM_ID)
 						{
@@ -763,7 +763,7 @@ static int FindPartitions(int device)
 		// As a last-ditched effort, search the first 64 sectors of the device for stray NTFS/FAT partitions
 		for (i = 0; i < 64; i++)
 		{
-			if (interface->readSectors(i, 1, &sector))
+			if (interface->readSectors(interface, i, 1, &sector))
 			{
 				if (sector.boot.oem_id == NTFS_OEM_ID)
 				{
@@ -888,7 +888,7 @@ static bool Remount(int device, int silent)
 	if(isInserted[device])
 	{
 		UnmountPartitions(device);
-		disc->shutdown();
+		disc->shutdown(disc);
 
 		if(strlen(loadedFile) > 3 && strncmp(loadedFile, prefix[device], strlen(prefix[device])) == 0)
 		{
@@ -906,7 +906,7 @@ static bool Remount(int device, int silent)
 
 	usleep(250000); // 1/4 sec
 
-	if(disc->startup() && disc->isInserted())
+	if(disc->startup(disc) && disc->isInserted(disc))
 	{
 		mounted = true;
 		MountPartitions(device, SILENT);
@@ -926,7 +926,7 @@ void FindAppPath()
 	char filepath[MAXPATHLEN];
 	DIR *dir;
 
-	if(sd->startup() && sd->isInserted())
+	if(sd->startup(sd) && sd->isInserted(sd))
 	{
 		isInserted[DEVICE_SD] = true;
 		MountPartitions(DEVICE_SD, SILENT);
@@ -948,7 +948,7 @@ void FindAppPath()
 
 	while(diff_sec(start, gettime()) < 5) // 5 sec
 	{
-		if(usb->startup() && usb->isInserted())
+		if(usb->startup(usb) && usb->isInserted(usb))
 		{
 			isInserted[DEVICE_USB] = true;
 			break;
@@ -1011,7 +1011,7 @@ static bool MountDVD(bool silent)
 		if(!silent)
 			ShowAction("Loading DVD...");
 
-		if(!dvd->isInserted())
+		if(!dvd->isInserted(dvd))
 		{
 			if(silent)
 				break;
@@ -1049,7 +1049,7 @@ void SetLastDVDMotorTime()
 
 bool StartDVDMotor()
 {
-	if(!dvd->isInserted())
+	if(!dvd->isInserted(dvd))
 		return false;
 
 	if(dvdLastUsed)
@@ -1071,7 +1071,7 @@ bool WakeupUSB()
 		return true;
 
 	char buf[BYTES_PER_SECTOR];
-	return usb->readSectors(0, 1, buf);
+	return usb->readSectors(usb, 0, 1, buf);
 }
 }
 
@@ -1222,7 +1222,7 @@ void CleanupPath(char * path)
 	}
 
 	// Remove ../
-	if(strstr(path, "../") > 0)
+	if(strstr(path, "../"))
 	{
 		int total=0;
 		int parentCount=0;
@@ -1409,7 +1409,7 @@ static int FileSortCallback(const void *f1, const void *f2)
 	if(((BROWSERENTRY *)f1)->type == TYPE_FOLDER && !(((BROWSERENTRY *)f2)->type == TYPE_FOLDER)) return -1;
 	if(!(((BROWSERENTRY *)f1)->type == TYPE_FOLDER) && ((BROWSERENTRY *)f2)->type == TYPE_FOLDER) return 1;
 
-	return stricmp(((BROWSERENTRY *)f1)->file, ((BROWSERENTRY *)f2)->file);
+	return strcasecmp(((BROWSERENTRY *)f1)->file, ((BROWSERENTRY *)f2)->file);
 }
 
 /****************************************************************************
@@ -1729,9 +1729,9 @@ int ParseJPEG()
 		while ((entry = readdir(dir)))
 		{
 			size_t length = strlen(entry->d_name);
-			if (length > 4 && (stricmp(entry->d_name+length-4, ".JPG") == 0 ||
-								stricmp(entry->d_name+length-5, ".JPEG") == 0 ||
-								stricmp(entry->d_name+length-4, ".PNG") == 0))
+			if (length > 4 && (strcasecmp(entry->d_name+length-4, ".JPG") == 0 ||
+								strcasecmp(entry->d_name+length-5, ".JPEG") == 0 ||
+								strcasecmp(entry->d_name+length-4, ".PNG") == 0))
 			{
 				count++;
 				if(count > 9000)

@@ -140,6 +140,10 @@
 
 #ifdef GEKKO
 
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
+
 #include <malloc.h>
 #include "osdep/gx_supp.h"
 #include "../utils/mem2_manager.h"
